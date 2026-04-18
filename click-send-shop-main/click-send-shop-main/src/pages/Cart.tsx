@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+﻿import { useEffect } from "react";
 import { ArrowLeft, Minus, Plus, Trash2, ShoppingBag, Loader2, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useGoBack } from "@/hooks/useGoBack";
 import { useCartStore } from "@/stores/useCartStore";
 import { isLoggedIn } from "@/utils/token";
 import EmptyState from "@/components/EmptyState";
@@ -11,6 +12,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 export default function Cart() {
   useDocumentTitle("购物车");
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const {
     items,
     loading,
@@ -40,7 +42,7 @@ export default function Cart() {
     <div className="min-h-screen bg-background pb-44">
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
-          <button onClick={() => navigate(-1)} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
+          <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
           <h1 className="text-base font-semibold text-foreground">购物车</h1>

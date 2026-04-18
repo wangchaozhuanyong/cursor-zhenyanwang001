@@ -5,6 +5,7 @@ import { useCartStore } from "@/stores/useCartStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import * as orderService from "@/services/orderService";
 import * as paymentService from "@/services/paymentService";
+import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
 import { toast } from "sonner";
 import type { Order } from "@/types/order";
@@ -57,6 +58,7 @@ function generateOrderText(order: Order) {
 export default function Checkout() {
   useDocumentTitle("结算");
   const navigate = useNavigate();
+  const goBack = useGoBack("/cart");
   const getSelectedItems = useCartStore((s) => s.getSelectedItems);
   const removeOrderedItems = useCartStore((s) => s.removeOrderedItems);
   const { items: cartItems, buyNowItem, clearCart, clearBuyNow } = useCartStore();
@@ -295,7 +297,7 @@ export default function Checkout() {
     <div className="min-h-screen bg-background pb-28">
       <header className="sticky top-0 z-40 bg-background/95 px-4 py-3 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center gap-3">
-          <button onClick={() => navigate(-1)} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
+          <button onClick={goBack} aria-label="返回购物车" className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
           <h1 className="text-base font-semibold text-foreground">确认订单</h1>

@@ -1,9 +1,10 @@
-import { ArrowLeft, Loader2 } from "lucide-react";
+﻿import { ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { createCoupon, updateCoupon, fetchCoupons } from "@/services/admin/couponService";
 import PermissionGate from "@/components/admin/PermissionGate";
+import { useGoBack } from "@/hooks/useGoBack";
 
 const couponTypes = [
   { value: "fixed", label: "满减券" },
@@ -13,6 +14,7 @@ const couponTypes = [
 
 export default function AdminCouponForm() {
   const navigate = useNavigate();
+  const goBack = useGoBack("/admin/coupons");
   const { id } = useParams();
   const isNew = id === "new";
   const [loading, setLoading] = useState(!isNew);
@@ -74,7 +76,7 @@ export default function AdminCouponForm() {
         await updateCoupon(id!, payload);
         toast.success("优惠券更新成功");
       }
-      navigate(-1);
+      navigate("/admin/coupons");
     } catch {
       toast.error("保存失败，请重试");
     } finally {
@@ -93,7 +95,7 @@ export default function AdminCouponForm() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)}>
+        <button onClick={goBack}>
           <ArrowLeft size={20} className="text-foreground" />
         </button>
         <h2 className="text-lg font-semibold text-foreground">{isNew ? "新建优惠券" : "编辑优惠券"}</h2>
@@ -148,7 +150,7 @@ export default function AdminCouponForm() {
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "保存"}
             </button>
           </PermissionGate>
-          <button type="button" onClick={() => navigate(-1)} className="rounded-lg border border-border px-6 py-2.5 text-sm text-muted-foreground">取消</button>
+          <button type="button" onClick={goBack} className="rounded-lg border border-border px-6 py-2.5 text-sm text-muted-foreground">取消</button>
         </div>
       </div>
     </div>

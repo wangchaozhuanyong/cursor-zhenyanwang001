@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+﻿import { useEffect } from "react";
 import { ArrowLeft, Bell, Package, Ticket, Megaphone, Check, Loader2, Gift } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useGoBack } from "@/hooks/useGoBack";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import type { NotificationType } from "@/types/notification";
@@ -17,6 +18,7 @@ const fallbackConfig = { icon: Bell, color: "bg-primary/10 text-foreground" };
 
 export default function Notifications() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const { notifications, unreadCount, loading, error, loadNotifications, markAsRead, markAllAsRead } =
     useNotificationStore();
 
@@ -51,7 +53,7 @@ export default function Notifications() {
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate(-1)} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
+            <button onClick={goBack} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
               <ArrowLeft size={20} className="text-foreground" />
             </button>
             <h1 className="text-base font-semibold text-foreground">

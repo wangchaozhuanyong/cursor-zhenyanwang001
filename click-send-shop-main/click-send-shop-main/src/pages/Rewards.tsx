@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { ArrowLeft, Gift, TrendingUp, TrendingDown, Loader2, Wallet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useGoBack } from "@/hooks/useGoBack";
 import * as rewardService from "@/services/rewardService";
 import type { RewardRecord } from "@/types/reward";
 import { toast } from "sonner";
 
 export default function Rewards() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const [records, setRecords] = useState<RewardRecord[]>([]);
   const [balance, setBalance] = useState(0);
   const [pendingAmount, setPendingAmount] = useState(0);
@@ -71,7 +73,7 @@ export default function Rewards() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 bg-background/95 px-4 py-3 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center gap-3">
-          <button onClick={() => navigate(-1)}>
+          <button onClick={goBack}>
             <ArrowLeft size={20} className="text-foreground" />
           </button>
           <h1 className="text-base font-semibold text-foreground">返现记录</h1>

@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+﻿import { useState, useEffect, useCallback, useRef } from "react";
 import { ArrowLeft, SlidersHorizontal } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useGoBack } from "@/hooks/useGoBack";
 import { useProductStore } from "@/stores/useProductStore";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
@@ -9,6 +10,7 @@ import type { ProductSortType } from "@/types/product";
 
 export default function Categories() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const [searchParams] = useSearchParams();
   const [activeCat, setActiveCat] = useState(searchParams.get("cat") || "all");
   const [sort, setSort] = useState<ProductSortType>("default");
@@ -57,7 +59,7 @@ export default function Categories() {
     <div className="min-h-screen bg-background pb-20">
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
-          <button onClick={() => navigate(-1)} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
+          <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
           <input

@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { ArrowLeft, Package, Clock, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useGoBack } from "@/hooks/useGoBack";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -20,6 +21,7 @@ const steps = ["提交申请", "商家审核", "寄回商品", "退款完成"];
 
 export default function Returns() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const { orders, loadOrders } = useOrderStore();
   const [showForm, setShowForm] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState("");
@@ -81,7 +83,7 @@ export default function Returns() {
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate(-1)} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
+            <button onClick={goBack} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
               <ArrowLeft size={20} className="text-foreground" />
             </button>
             <h1 className="text-base font-semibold text-foreground">退换货</h1>

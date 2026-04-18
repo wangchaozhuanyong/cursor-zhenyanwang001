@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { ArrowLeft, Heart, Minus, Plus, Share2, ShoppingCart } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
@@ -12,10 +12,12 @@ import ProductImageGallery from "@/components/ProductImageGallery";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useGoBack } from "@/hooks/useGoBack";
 
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const goBack = useGoBack("/");
   const addItem = useCartStore((s) => s.addItem);
   const totalItems = useCartStore((s) => s.totalItems());
   const [qty, setQty] = useState(1);
@@ -51,7 +53,7 @@ export default function ProductDetail() {
     return (
       <div className="min-h-screen bg-background pb-28">
         <header className="sticky top-0 z-40 flex items-center justify-between bg-background/95 px-4 py-3 backdrop-blur-md">
-          <button onClick={() => navigate(-1)} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
+          <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
           <span className="text-sm font-medium text-foreground">商品详情</span>
@@ -73,7 +75,7 @@ export default function ProductDetail() {
     return (
       <div className="min-h-screen bg-background">
         <header className="sticky top-0 z-40 flex items-center justify-between bg-background/95 px-4 py-3 backdrop-blur-md">
-          <button onClick={() => navigate(-1)} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
+          <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
           <span className="text-sm font-medium text-foreground">商品详情</span>
@@ -120,7 +122,7 @@ export default function ProductDetail() {
     <div className="min-h-screen bg-background pb-28">
       {/* Header */}
       <header className="sticky top-0 z-40 flex items-center justify-between bg-background/95 px-4 py-3 backdrop-blur-md">
-        <button onClick={() => navigate(-1)} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary active:bg-muted touch-target">
+        <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary active:bg-muted touch-target">
           <ArrowLeft size={20} className="text-foreground" />
         </button>
         <span className="text-sm font-medium text-foreground">商品详情</span>

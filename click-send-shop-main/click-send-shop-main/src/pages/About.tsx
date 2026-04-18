@@ -6,9 +6,11 @@ import logoWebp from "@/assets/logo.webp";
 import * as contentService from "@/services/contentService";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { renderBrandTitle } from "@/utils/brand";
+import { useGoBack } from "@/hooks/useGoBack";
 
 export default function About() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const [cmsContent, setCmsContent] = useState("");
   const siteInfo = useSiteInfo();
   const logoSrc = siteInfo.logoUrl || logoWebp;
@@ -25,7 +27,7 @@ export default function About() {
     <div className="min-h-screen bg-background pb-6">
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
-          <button onClick={() => navigate(-1)} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
+          <button onClick={goBack} aria-label="返回" className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
           <h1 className="text-base font-semibold text-foreground">关于我们</h1>

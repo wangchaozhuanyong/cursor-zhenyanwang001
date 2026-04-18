@@ -1,12 +1,14 @@
-import { ArrowLeft, Loader2 } from "lucide-react";
+﻿import { ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { fetchUserById, adjustUserPoints } from "@/services/admin/userService";
 import PermissionGate from "@/components/admin/PermissionGate";
+import { useGoBack } from "@/hooks/useGoBack";
 
 export default function AdminUserDetail() {
   const navigate = useNavigate();
+  const goBack = useGoBack("/admin/users");
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
@@ -48,7 +50,7 @@ export default function AdminUserDetail() {
     return (
       <div className="text-center py-20 text-muted-foreground">
         <p>用户不存在</p>
-        <button onClick={() => navigate(-1)} className="mt-4 text-gold underline">返回</button>
+        <button onClick={goBack} className="mt-4 text-gold underline">返回</button>
       </div>
     );
   }
@@ -56,7 +58,7 @@ export default function AdminUserDetail() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)}>
+        <button onClick={goBack}>
           <ArrowLeft size={20} className="text-foreground" />
         </button>
         <h2 className="text-lg font-semibold text-foreground">用户详情</h2>

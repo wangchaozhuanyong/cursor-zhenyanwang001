@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+﻿import { useEffect, useRef } from "react";
 import { ArrowLeft, Loader2, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useGoBack } from "@/hooks/useGoBack";
 import { useOrderStore } from "@/stores/useOrderStore";
 import StatusBadge from "@/components/StatusBadge";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,6 +21,7 @@ const tabs: { key: OrderStatus | "all"; label: string }[] = [
 export default function Orders() {
   useDocumentTitle("我的订单");
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const {
     orders,
     loading,
@@ -58,7 +60,7 @@ export default function Orders() {
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
           <button
-            onClick={() => navigate(-1)}
+            onClick={goBack}
             className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target"
           >
             <ArrowLeft size={20} className="text-foreground" />

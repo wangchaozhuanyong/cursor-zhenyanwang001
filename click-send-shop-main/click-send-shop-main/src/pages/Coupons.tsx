@@ -1,6 +1,7 @@
-import { useState, useEffect, forwardRef } from "react";
+﻿import { useState, useEffect, forwardRef } from "react";
 import { ArrowLeft, Ticket, Clock, CheckCircle2, Sparkles, Gift, Zap, Crown, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useGoBack } from "@/hooks/useGoBack";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCouponStore } from "@/stores/useCouponStore";
@@ -90,6 +91,7 @@ type Tab = "available" | "mine";
 
 export default function Coupons() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const { coupons: rawCoupons, loading, error, loadCoupons, claimCoupon } = useCouponStore();
   const [tab, setTab] = useState<Tab>("available");
   const [claimingId, setClaimingId] = useState<string | null>(null);
@@ -146,7 +148,7 @@ export default function Coupons() {
       {/* Header */}
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
-          <button onClick={() => navigate(-1)} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
+          <button onClick={goBack} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
           <h1 className="text-base font-semibold text-foreground">优惠券</h1>

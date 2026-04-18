@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import {
   ArrowLeft, MessageCircle, ChevronDown, ChevronUp, Phone,
   HelpCircle, Package, CreditCard, Truck, RotateCcw, Shield, Clock
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useGoBack } from "@/hooks/useGoBack";
 import { motion, AnimatePresence } from "framer-motion";
 import { FAQS, FAQ_CATEGORIES, WHATSAPP_URL, WECHAT_ID, WORKING_HOURS } from "@/constants/help";
 import * as contentService from "@/services/contentService";
@@ -19,6 +20,7 @@ const categoryIcons: Record<string, React.ElementType> = {
 
 export default function Help() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [siteInfo, setSiteInfo] = useState<SiteInfo>({});
@@ -42,7 +44,7 @@ export default function Help() {
     <div className="min-h-screen bg-background pb-6">
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
-          <button onClick={() => navigate(-1)} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
+          <button onClick={goBack} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
           <h1 className="text-base font-semibold text-foreground">帮助中心</h1>

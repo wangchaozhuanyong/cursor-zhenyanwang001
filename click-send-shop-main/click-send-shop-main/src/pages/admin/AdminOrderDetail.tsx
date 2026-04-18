@@ -1,7 +1,8 @@
-import { ArrowLeft, MessageSquare, Copy, Check, Loader2, Truck } from "lucide-react";
+﻿import { ArrowLeft, MessageSquare, Copy, Check, Loader2, Truck } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { useGoBack } from "@/hooks/useGoBack";
 import { fetchOrderById, updateOrderStatus, shipOrder } from "@/services/admin/orderService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import {
@@ -21,6 +22,7 @@ const allStatuses = ORDER_STATUS_PROGRESS;
 
 export default function AdminOrderDetail() {
   const navigate = useNavigate();
+  const goBack = useGoBack("/admin/orders");
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<any>(null);
@@ -97,7 +99,7 @@ export default function AdminOrderDetail() {
     return (
       <div className="text-center py-20 text-muted-foreground">
         <p>订单不存在</p>
-        <button onClick={() => navigate(-1)} className="mt-4 text-gold underline">返回</button>
+        <button onClick={goBack} className="mt-4 text-gold underline">返回</button>
       </div>
     );
   }
@@ -105,7 +107,7 @@ export default function AdminOrderDetail() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)}>
+        <button onClick={goBack}>
           <ArrowLeft size={20} className="text-foreground" />
         </button>
         <h2 className="text-lg font-semibold text-foreground">订单详情</h2>

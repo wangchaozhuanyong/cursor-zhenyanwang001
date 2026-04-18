@@ -1,6 +1,7 @@
-import { useRef, useCallback, useEffect, useState } from "react";
+﻿import { useRef, useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Copy, Download, Share2, Users, Link2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
 import { toast } from "sonner";
 import { QRCodeCanvas } from "qrcode.react";
@@ -9,6 +10,7 @@ import type { InviteStats, InviteRecord } from "@/types/invite";
 
 export default function Invite() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const { inviteCode, parentInviteCode, subordinateEnabled, loadProfile } = useUserStore();
   const [stats, setStats] = useState<InviteStats | null>(null);
   const [records, setRecords] = useState<InviteRecord[]>([]);
@@ -169,7 +171,7 @@ export default function Invite() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 bg-background/95 px-4 py-3 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center gap-3">
-          <button onClick={() => navigate(-1)}>
+          <button onClick={goBack}>
             <ArrowLeft size={20} className="text-foreground" />
           </button>
           <h1 className="text-base font-semibold text-foreground">邀请中心</h1>

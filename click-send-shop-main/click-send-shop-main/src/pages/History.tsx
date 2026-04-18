@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+﻿import { useEffect } from "react";
 import { ArrowLeft, Trash2, Clock, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useGoBack } from "@/hooks/useGoBack";
 import { useHistoryStore } from "@/stores/useHistoryStore";
 import { isLoggedIn } from "@/utils/token";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,6 +9,7 @@ import { toast } from "sonner";
 
 export default function History() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const { history, loading, loadHistory, clearHistory } = useHistoryStore();
 
   useEffect(() => {
@@ -19,7 +21,7 @@ export default function History() {
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate(-1)} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
+            <button onClick={goBack} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
               <ArrowLeft size={20} className="text-foreground" />
             </button>
             <h1 className="text-base font-semibold text-foreground">浏览历史</h1>

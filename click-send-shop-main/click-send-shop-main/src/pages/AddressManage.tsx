@@ -1,12 +1,14 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { ArrowLeft, MapPin, Plus, Trash2, Check, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore, type Address } from "@/stores/useUserStore";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function AddressManage() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const { addresses, addressLoading, loadAddresses, addAddress, updateAddress, removeAddress, setDefaultAddress } = useUserStore();
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -56,7 +58,7 @@ export default function AddressManage() {
       <header className="sticky top-0 z-40 bg-background/95 px-4 py-3 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate(-1)}>
+            <button onClick={goBack}>
               <ArrowLeft size={20} className="text-foreground" />
             </button>
             <h1 className="text-base font-semibold text-foreground">收货地址</h1>

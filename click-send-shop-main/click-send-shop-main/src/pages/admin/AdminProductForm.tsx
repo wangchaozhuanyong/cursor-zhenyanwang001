@@ -1,4 +1,4 @@
-import { ArrowLeft, Upload, ImagePlus, Loader2 } from "lucide-react";
+﻿import { ArrowLeft, Upload, ImagePlus, Loader2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -6,9 +6,11 @@ import { fetchProductById, createProduct, updateProduct } from "@/services/admin
 import * as categoryService from "@/services/admin/categoryService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as uploadService from "@/services/uploadService";
+import { useGoBack } from "@/hooks/useGoBack";
 
 export default function AdminProductForm() {
   const navigate = useNavigate();
+  const goBack = useGoBack("/admin/products");
   const { id } = useParams();
   const isNew = id === "new";
 
@@ -110,7 +112,7 @@ export default function AdminProductForm() {
         await updateProduct(id!, payload);
         toast.success("商品更新成功");
       }
-      navigate(-1);
+      navigate("/admin/products");
     } catch {
       toast.error("保存失败，请重试");
     } finally {
@@ -129,7 +131,7 @@ export default function AdminProductForm() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)}>
+        <button onClick={goBack}>
           <ArrowLeft size={20} className="text-foreground" />
         </button>
         <h2 className="text-lg font-semibold text-foreground">{isNew ? "新增商品" : "编辑商品"}</h2>
@@ -285,7 +287,7 @@ export default function AdminProductForm() {
               {saving ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "保存"}
             </button>
             <button disabled={saving} onClick={() => handleSave(true)} className="w-full rounded-lg border border-gold bg-gold/10 px-6 py-3 text-sm font-semibold text-gold disabled:opacity-50">保存并上架</button>
-            <button onClick={() => navigate(-1)} className="w-full rounded-lg border border-border px-6 py-3 text-sm text-muted-foreground">取消</button>
+            <button onClick={goBack} className="w-full rounded-lg border border-border px-6 py-3 text-sm text-muted-foreground">取消</button>
           </div>
         </div>
       </div>

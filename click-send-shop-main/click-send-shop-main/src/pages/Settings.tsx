@@ -1,6 +1,7 @@
-import { useRef, useState } from "react";
+﻿import { useRef, useState } from "react";
 import { ArrowLeft, Camera, Moon, Sun, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
 import { toast } from "sonner";
 import { useTheme } from "@/hooks/useTheme";
@@ -9,6 +10,7 @@ import * as userService from "@/services/userService";
 
 export default function Settings() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const { nickname, phone, avatar, wechat, whatsapp, profileSaving, setNickname, setPhone, setWechat, setWhatsapp, saveProfile } = useUserStore();
   const { theme, toggle } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -62,7 +64,7 @@ export default function Settings() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 bg-background/95 px-4 py-3 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center gap-3">
-          <button onClick={() => navigate(-1)} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
+          <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
           <h1 className="text-base font-semibold text-foreground">个人资料</h1>

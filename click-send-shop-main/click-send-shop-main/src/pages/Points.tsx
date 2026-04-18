@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { ArrowLeft, Star, TrendingUp, TrendingDown, Loader2, CalendarCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
 import { usePointsStore } from "@/stores/usePointsStore";
 import { signIn } from "@/services/pointsService";
@@ -8,6 +9,7 @@ import { toast } from "sonner";
 
 export default function Points() {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const { pointsBalance, loadProfile } = useUserStore();
   const { records, loading, loadingMore, error, hasMore, loadPointsData, loadMore } = usePointsStore();
   const [signingIn, setSigningIn] = useState(false);
@@ -34,7 +36,7 @@ export default function Points() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 bg-background/95 px-4 py-3 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center gap-3">
-          <button onClick={() => navigate(-1)} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
+          <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
           <h1 className="text-base font-semibold text-foreground">我的积分</h1>

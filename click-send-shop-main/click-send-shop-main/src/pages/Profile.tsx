@@ -103,21 +103,33 @@ export default function Profile() {
     );
   }
 
-  const menuItems = [
-    { icon: Package, label: "我的订单", path: "/orders", show: true },
+  /* ─────────────────────────────────────────────────────────────────
+   *  菜单分级（专业电商优先级）
+   *   一级（QuickGrid）：核心购物链路 — 订单 / 收藏 / 地址 / 退换货
+   *   二级（Benefits）：会员权益 — 优惠券 / 积分 / 邀请 / 返现
+   *   三级（Misc）：系统/帮助 — 浏览历史 / 通知 / 设置 / 帮助 / 关于
+   * ───────────────────────────────────────────────────────────────── */
+  const quickItems = [
+    { icon: Package, label: "全部订单", path: "/orders", desc: `${orders.length} 笔` },
+    { icon: Heart, label: "我的收藏", path: "/favorites", desc: favoriteCount > 0 ? `${favoriteCount} 件` : "去收藏" },
+    { icon: MapPin, label: "收货地址", path: "/address", desc: "管理" },
+    { icon: RotateCcw, label: "退换/售后", path: "/returns", desc: "查询" },
+  ];
+
+  const benefitItems = [
     { icon: Ticket, label: "优惠券", path: "/coupons", show: true },
-    { icon: Star, label: "我的积分", path: "/points", show: true },
-    { icon: Bell, label: "消息通知", path: "/notifications", show: true },
-    { icon: RotateCcw, label: "退换货", path: "/returns", show: true },
-    { icon: Clock, label: "浏览历史", path: "/history", show: true },
-    { icon: Users, label: "邀请中心", path: "/invite", show: true },
+    { icon: Star, label: "积分中心", path: "/points", show: true, hint: `${pointsBalance} 分` },
+    { icon: Users, label: "邀请好友", path: "/invite", show: true, hint: subCount > 0 ? `${subCount} 位下级` : undefined },
     { icon: Gift, label: "返现记录", path: "/rewards", show: subordinateEnabled },
-    { icon: MapPin, label: "收货地址", path: "/address", show: true },
-    { icon: Heart, label: "收藏夹", path: "/favorites", show: true, badge: favoriteCount > 0 ? favoriteCount : undefined },
-    { icon: Settings, label: "个人资料", path: "/settings", show: true },
-    { icon: HelpCircle, label: "帮助中心", path: "/help", show: true },
-    { icon: Info, label: "关于我们", path: "/about", show: true },
   ].filter((m) => m.show);
+
+  const miscItems = [
+    { icon: Clock, label: "浏览历史", path: "/history" },
+    { icon: Bell, label: "消息通知", path: "/notifications" },
+    { icon: Settings, label: "个人资料", path: "/settings" },
+    { icon: HelpCircle, label: "帮助中心", path: "/help" },
+    { icon: Info, label: "关于我们", path: "/about" },
+  ];
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -153,57 +165,98 @@ export default function Profile() {
             </button>
           </div>
 
-          {/* Stats */}
+          {/* Stats: 订单/收藏 优先，积分/下级 次之 */}
           <div className={`mt-6 grid gap-4 rounded-xl bg-white/8 backdrop-blur-sm p-4 ${subordinateEnabled ? "grid-cols-4" : "grid-cols-3"}`}>
-            <button onClick={() => navigate("/points")} className="text-center active:scale-95 transition-transform">
-              <p className="text-xl font-bold text-gold">{pointsBalance}</p>
-              <p className="text-[10px] text-white/50">积分</p>
-            </button>
             <button onClick={() => navigate("/orders")} className="text-center active:scale-95 transition-transform">
               <p className="text-xl font-bold text-white">{orders.length}</p>
-              <p className="text-[10px] text-white/50">订单</p>
+              <p className="text-[10px] text-white/60">订单</p>
             </button>
             <button onClick={() => navigate("/favorites")} className="text-center active:scale-95 transition-transform">
               <p className="text-xl font-bold text-white">{favoriteCount}</p>
-              <p className="text-[10px] text-white/50">收藏</p>
+              <p className="text-[10px] text-white/60">收藏</p>
+            </button>
+            <button onClick={() => navigate("/points")} className="text-center active:scale-95 transition-transform">
+              <p className="text-xl font-bold text-gold">{pointsBalance}</p>
+              <p className="text-[10px] text-white/60">积分</p>
             </button>
             {subordinateEnabled && (
               <button onClick={() => navigate("/invite")} className="text-center active:scale-95 transition-transform">
                 <p className="text-xl font-bold text-white">{subCount}</p>
-                <p className="text-[10px] text-white/50">下级</p>
+                <p className="text-[10px] text-white/60">下级</p>
               </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Menu */}
-      <main className="mx-auto max-w-lg px-4 py-4">
-        <div className="rounded-xl border border-border bg-card">
-          {menuItems.map((item, i) => (
-            <button
-              key={item.path}
-              onClick={() => navigate(item.path)}
-              className={`flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-secondary ${
-                i < menuItems.length - 1 ? "border-b border-border" : ""
-              }`}
-            >
-              <item.icon size={18} className="text-gold" />
-              <span className="flex-1 text-sm text-foreground">{item.label}</span>
-              {"badge" in item && item.badge && (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gold/10 px-1.5 text-[10px] font-bold text-gold">
-                  {item.badge}
-                </span>
-              )}
-              <ChevronRight size={16} className="text-muted-foreground" />
-            </button>
-          ))}
-        </div>
+      <main className="mx-auto max-w-lg px-4 py-4 space-y-4">
+        {/* 一级 - 核心购物入口（九宫格） */}
+        <section>
+          <h3 className="mb-2 px-1 text-xs font-medium text-muted-foreground">我的购物</h3>
+          <div className="grid grid-cols-4 gap-2 rounded-xl border border-border bg-card p-3">
+            {quickItems.map((item) => (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className="flex flex-col items-center gap-1.5 rounded-lg p-2 transition-colors hover:bg-secondary active:scale-[0.97]"
+              >
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gold/10">
+                  <item.icon size={20} className="text-gold" />
+                </div>
+                <span className="text-[12px] font-medium text-foreground">{item.label}</span>
+                <span className="text-[10px] text-muted-foreground">{item.desc}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* 二级 - 会员权益 */}
+        <section>
+          <h3 className="mb-2 px-1 text-xs font-medium text-muted-foreground">会员权益</h3>
+          <div className="rounded-xl border border-border bg-card">
+            {benefitItems.map((item, i) => (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-secondary ${
+                  i < benefitItems.length - 1 ? "border-b border-border" : ""
+                }`}
+              >
+                <item.icon size={18} className="text-gold" />
+                <span className="flex-1 text-sm text-foreground">{item.label}</span>
+                {item.hint && (
+                  <span className="text-xs text-muted-foreground">{item.hint}</span>
+                )}
+                <ChevronRight size={16} className="text-muted-foreground" />
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* 三级 - 系统 / 帮助 */}
+        <section>
+          <h3 className="mb-2 px-1 text-xs font-medium text-muted-foreground">其他</h3>
+          <div className="rounded-xl border border-border bg-card">
+            {miscItems.map((item, i) => (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-secondary ${
+                  i < miscItems.length - 1 ? "border-b border-border" : ""
+                }`}
+              >
+                <item.icon size={18} className="text-muted-foreground" />
+                <span className="flex-1 text-sm text-foreground">{item.label}</span>
+                <ChevronRight size={16} className="text-muted-foreground" />
+              </button>
+            ))}
+          </div>
+        </section>
 
         {/* Logout button */}
         <button
           onClick={handleLogout}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/20 bg-card py-3.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/5 active:scale-[0.98]"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/20 bg-card py-3.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/5 active:scale-[0.98]"
         >
           <LogOut size={16} />
           退出登录

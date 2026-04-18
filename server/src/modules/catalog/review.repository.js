@@ -123,6 +123,42 @@ async function selectReviewById(id) {
   return row || null;
 }
 
+async function selectFeaturedReviews(limit) {
+  const [rows] = await db.query(
+    `SELECT r.id, r.product_id, r.user_id, r.nickname, r.avatar,
+            r.rating, r.content, r.images, r.likes_count, r.created_at,
+            p.name AS product_name, p.cover_image AS product_cover
+     FROM product_reviews r
+     LEFT JOIN products p ON p.id = r.product_id
+     WHERE r.is_featured = 1
+       AND (r.status IS NULL OR r.status = 'normal')
+     ORDER BY r.created_at DESC
+     LIMIT ?`,
+    [limit],
+  );
+  return rows;
+}
+
+/**
+ * 当 is_featured 不足时退化为按高分 + 较多点赞 + 内容长度的"自动精选"
+ */
+async function selectAutoFeaturedReviews(limit) {
+  const [rows] = await db.query(
+    `SELECT r.id, r.product_id, r.user_id, r.nickname, r.avatar,
+            r.rating, r.content, r.images, r.likes_count, r.created_at,
+            p.name AS product_name, p.cover_image AS product_cover
+     FROM product_reviews r
+     LEFT JOIN products p ON p.id = r.product_id
+     WHERE (r.status IS NULL OR r.status = 'normal')
+       AND r.rating >= 4
+       AND CHAR_LENGTH(r.content) >= 12
+     ORDER BY r.likes_count DESC, r.rating DESC, r.created_at DESC
+     LIMIT ?`,
+    [limit],
+  );
+  return rows;
+}
+
 module.exports = {
   ensureReviewSchema,
   countReviewsByProduct,
@@ -139,4 +175,6 @@ module.exports = {
   selectUserNicknameAvatar,
   insertReview,
   selectReviewById,
+  selectFeaturedReviews,
+  selectAutoFeaturedReviews,
 };

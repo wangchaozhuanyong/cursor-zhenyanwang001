@@ -16,6 +16,10 @@ export async function toggleVisibility(id: string) {
   await reviewApi.toggleReviewVisibility(id);
 }
 
+export async function toggleFeatured(id: string) {
+  await reviewApi.toggleReviewFeatured(id);
+}
+
 export async function replyReview(id: string, reply: string) {
   await reviewApi.replyReview(id, reply);
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Star, Eye, EyeOff, Trash2, RotateCcw, MessageSquare, Loader2, AlertTriangle } from "lucide-react";
+import { Star, Eye, EyeOff, Trash2, RotateCcw, MessageSquare, AlertTriangle, Sparkles } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -96,6 +96,14 @@ export default function AdminReviews() {
     try {
       await reviewService.toggleVisibility(id);
       toast.success("状态已更新");
+      loadData();
+    } catch { toast.error("操作失败"); }
+  };
+
+  const handleToggleFeatured = async (id: string) => {
+    try {
+      await reviewService.toggleFeatured(id);
+      toast.success("精选状态已更新");
       loadData();
     } catch { toast.error("操作失败"); }
   };
@@ -247,6 +255,14 @@ export default function AdminReviews() {
                         <div className="flex flex-wrap gap-2 pt-1">
                           {r.status !== "deleted" && (
                             <>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleFeatured(r.id)}
+                                className={`touch-manipulation min-h-[40px] rounded-lg border px-3 py-1.5 text-xs hover:bg-secondary ${r.is_featured ? "border-gold bg-gold/10 text-gold" : "border-border"}`}
+                              >
+                                <Sparkles size={12} className="mr-1 inline" />
+                                {r.is_featured ? "已精选" : "设精选"}
+                              </button>
                               <button type="button" onClick={() => handleToggle(r.id)} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
                                 {r.status === "hidden" ? <><Eye size={12} className="mr-1 inline" />显示</> : <><EyeOff size={12} className="mr-1 inline" />隐藏</>}
                               </button>
@@ -329,6 +345,14 @@ export default function AdminReviews() {
                           <div className="flex gap-1">
                             {r.status !== "deleted" ? (
                               <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleFeatured(r.id)}
+                                  className={`touch-manipulation rounded-lg border p-1.5 hover:bg-secondary ${r.is_featured ? "border-gold bg-gold/10 text-gold" : "border-border text-muted-foreground"}`}
+                                  title={r.is_featured ? "取消精选" : "设为精选"}
+                                >
+                                  <Sparkles size={14} />
+                                </button>
                                 <button type="button" onClick={() => handleToggle(r.id)} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title={r.status === "hidden" ? "显示" : "隐藏"}>
                                   {r.status === "hidden" ? <Eye size={14} /> : <EyeOff size={14} />}
                                 </button>

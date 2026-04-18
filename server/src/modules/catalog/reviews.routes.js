@@ -4,6 +4,7 @@ const auth = require('../../middleware/auth');
 
 const router = Router();
 
+router.get('/featured', ctrl.getFeaturedReviews);
 router.get('/product/:productId', ctrl.getProductReviews);
 router.post('/', auth, ctrl.createReview);
 router.post('/:id/like', auth, ctrl.toggleLike);

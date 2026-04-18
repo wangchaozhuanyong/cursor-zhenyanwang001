@@ -74,6 +74,13 @@ async function batchUpdateStatus(ids, status) {
   );
 }
 
+async function updateReviewFeatured(id, isFeatured) {
+  await db.query(
+    'UPDATE product_reviews SET is_featured = ? WHERE id = ?',
+    [isFeatured ? 1 : 0, id],
+  );
+}
+
 async function batchSoftDelete(ids, deletedBy) {
   if (!ids.length) return;
   const placeholders = ids.map(() => '?').join(',');
@@ -94,4 +101,5 @@ module.exports = {
   permanentDeleteReview,
   batchUpdateStatus,
   batchSoftDelete,
+  updateReviewFeatured,
 };

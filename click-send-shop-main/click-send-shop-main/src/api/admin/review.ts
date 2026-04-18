@@ -12,6 +12,7 @@ export interface AdminReview {
   images: string[];
   likes_count: number;
   status: "normal" | "hidden" | "deleted";
+  is_featured?: boolean | number;
   admin_reply: string | null;
   admin_reply_at: string | null;
   deleted_at: string | null;
@@ -42,6 +43,10 @@ export function getReviews(params: ReviewListParams) {
 
 export function toggleReviewVisibility(id: string) {
   return put<void>(`/admin/reviews/${id}/toggle`);
+}
+
+export function toggleReviewFeatured(id: string) {
+  return put<{ is_featured: boolean } | null>(`/admin/reviews/${id}/feature`);
 }
 
 export function replyReview(id: string, reply: string) {

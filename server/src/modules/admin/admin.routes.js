@@ -82,6 +82,7 @@ router.put('/returns/:id/reject', adminAuth, requirePermission('return.handle'),
 
 router.get('/reviews', adminAuth, requirePermission('review.manage'), ctrl.getReviews);
 router.put('/reviews/:id/toggle', adminAuth, requirePermission('review.manage'), ctrl.toggleReviewVisibility);
+router.put('/reviews/:id/feature', adminAuth, requirePermission('review.manage'), ctrl.toggleReviewFeatured);
 router.put('/reviews/:id/reply', adminAuth, requirePermission('review.manage'), ctrl.replyReview);
 router.delete('/reviews/:id', adminAuth, requirePermission('review.manage'), ctrl.deleteReview);
 router.put('/reviews/:id/restore', adminAuth, requirePermission('review.manage'), ctrl.restoreReview);

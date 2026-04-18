@@ -79,8 +79,35 @@ async function createReview(userId, body) {
   return { data: row, message: '评价成功' };
 }
 
+/**
+ * 首页"用户口碑"精选评价聚合
+ *  - 优先返回 is_featured=1 的评论
+ *  - 不足则按 rating>=4 / 内容>=12字 / 点赞数 自动补齐
+ *  - 与商品 join，便于前端跳转商品详情
+ */
+async function getFeaturedReviews(limit = 6) {
+  const safeLimit = Math.min(20, Math.max(1, parseInt(limit, 10) || 6));
+  const featured = await repo.selectFeaturedReviews(safeLimit);
+  let list = featured;
+  if (list.length < safeLimit) {
+    const extra = await repo.selectAutoFeaturedReviews(safeLimit);
+    const seen = new Set(list.map((r) => r.id));
+    for (const r of extra) {
+      if (list.length >= safeLimit) break;
+      if (!seen.has(r.id)) list.push(r);
+    }
+  }
+  list = list.slice(0, safeLimit).map((r) => ({
+    ...r,
+    images: typeof r.images === 'string' ? JSON.parse(r.images || '[]') : (r.images || []),
+    likes_count: r.likes_count || 0,
+  }));
+  return list;
+}
+
 module.exports = {
   getProductReviews,
   toggleLike,
   createReview,
+  getFeaturedReviews,
 };

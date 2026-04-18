@@ -21,3 +21,10 @@ exports.createReview = async (req, res, next) => {
     res.success(result.data, result.message);
   } catch (err) { next(err); }
 };
+
+exports.getFeaturedReviews = async (req, res, next) => {
+  try {
+    const list = await reviewService.getFeaturedReviews(req.query.limit);
+    res.success(list);
+  } catch (err) { next(err); }
+};

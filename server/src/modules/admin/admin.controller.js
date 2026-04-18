@@ -481,6 +481,12 @@ exports.toggleReviewVisibility = asyncRoute(async (req, res) => {
   res.success(null, result.message);
 });
 
+exports.toggleReviewFeatured = asyncRoute(async (req, res) => {
+  const result = await adminReviewService.toggleFeatured(req.params.id, req.user?.id, req);
+  if (result.error) return res.fail(result.error.code, result.error.message);
+  res.success(result.data || null, result.message);
+});
+
 exports.replyReview = asyncRoute(async (req, res) => {
   const result = await adminReviewService.replyReview(req.params.id, req.body, req.user?.id, req);
   if (result.error) return res.fail(result.error.code, result.error.message);

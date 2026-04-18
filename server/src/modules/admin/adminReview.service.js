@@ -168,6 +168,24 @@ async function batchDelete(ids, adminUserId, req) {
   return { message: `已删除 ${ids.length} 条评论` };
 }
 
+async function toggleFeatured(id, adminUserId, req) {
+  const review = await repo.selectReviewById(id);
+  if (!review) return { error: { code: 404, message: '评论不存在' } };
+  if (review.status === 'deleted') return { error: { code: 400, message: '已删除的评论不能精选' } };
+
+  const wasFeatured = !!review.is_featured;
+  await repo.updateReviewFeatured(id, !wasFeatured);
+  await writeAuditLog({
+    req, operatorId: adminUserId,
+    actionType: `review.${wasFeatured ? 'unfeature' : 'feature'}`,
+    objectType: 'product_review', objectId: id,
+    summary: `${wasFeatured ? '取消精选' : '设为精选'} 评论 ${id}`,
+    before: { is_featured: wasFeatured }, after: { is_featured: !wasFeatured },
+    result: 'success',
+  });
+  return { message: wasFeatured ? '已取消精选' : '已设为精选', data: { is_featured: !wasFeatured } };
+}
+
 module.exports = {
   listReviews,
   toggleVisibility,
@@ -177,4 +195,5 @@ module.exports = {
   permanentDelete,
   batchHide,
   batchDelete,
+  toggleFeatured,
 };

@@ -225,6 +225,67 @@ export default function AdminOrderDetail() {
               </>
             )}
           </div>
+
+          {/* 支付信息 */}
+          <div className="rounded-xl border border-border bg-card p-6 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground">支付信息</h3>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                  (order.payment_status ?? PAYMENT_STATUS.PENDING) === PAYMENT_STATUS.PAID
+                    ? "bg-green-500/10 text-green-600"
+                    : (order.payment_status ?? PAYMENT_STATUS.PENDING) === PAYMENT_STATUS.REFUNDED
+                    ? "bg-orange-500/10 text-orange-600"
+                    : "bg-secondary text-muted-foreground"
+                }`}
+              >
+                {getPaymentStatusLabel(order.payment_status ?? PAYMENT_STATUS.PENDING)}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">支付方式</span>
+              <span className="text-foreground">
+                {order.payment_method === "online"
+                  ? "在线支付"
+                  : order.payment_method === "whatsapp"
+                  ? "联系客服"
+                  : order.payment_method || "—"}
+              </span>
+            </div>
+            {order.payment_channel && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">支付渠道</span>
+                <span className="text-foreground capitalize">{order.payment_channel}</span>
+              </div>
+            )}
+            {order.payment_time && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">支付时间</span>
+                <span className="text-foreground">{new Date(order.payment_time).toLocaleString("zh-CN")}</span>
+              </div>
+            )}
+            {order.payment_transaction_no && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">交易号</span>
+                <span className="font-mono text-foreground text-xs break-all max-w-[60%] text-right">
+                  {order.payment_transaction_no}
+                </span>
+              </div>
+            )}
+            {order.payment_channel === "stripe" && order.payment_transaction_no && (
+              <a
+                href={`https://dashboard.stripe.com/payments/${order.payment_transaction_no}`}
+                target="_blank"
+                rel="noreferrer"
+                className="block text-xs text-gold underline text-right"
+              >
+                在 Stripe Dashboard 查看 →
+              </a>
+            )}
+            {!order.payment_time && (
+              <p className="text-xs text-muted-foreground">尚未支付</p>
+            )}
+          </div>
         </div>
 
         {/* Center - items */}

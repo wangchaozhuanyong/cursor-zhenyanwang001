@@ -1,0 +1,15 @@
+backups/
+server/.env
+.env
+**/.env
+!**/.env.example
+*.sql
+.env.local
+
+node_modules/
+**/dist/
+**/dist-ssr/
+*.log
+
+# GitHub Actions — use a PAT with `workflow` scope to push these; keep local only otherwise
+.github/workflows/

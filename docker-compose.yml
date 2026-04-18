@@ -1,0 +1,21 @@
+# 本地/云主机 MySQL（应用仍在本机或另一容器用 NODE_ENV + 连接串访问）
+# 用法：docker compose up -d
+# 数据目录：mysql_data 卷
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: click-send-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change_me_root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-click_send_shop}
+      TZ: Asia/Shanghai
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+volumes:
+  mysql_data:

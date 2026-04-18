@@ -1,0 +1,81 @@
+const db = require('../../config/db');
+
+async function countUserCoupons(userId, status) {
+  let where = 'WHERE uc.user_id = ?';
+  const params = [userId];
+  if (status) {
+    where += ' AND uc.status = ?';
+    params.push(status);
+  }
+  const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total FROM user_coupons uc ${where}`, params);
+  return total;
+}
+
+async function selectUserCouponsPage(userId, status, pageSize, offset) {
+  let where = 'WHERE uc.user_id = ?';
+  const params = [userId];
+  if (status) {
+    where += ' AND uc.status = ?';
+    params.push(status);
+  }
+  const [rows] = await db.query(
+    `SELECT uc.id, uc.claimed_at, uc.used_at, uc.status,
+            c.id AS coupon_id, c.code, c.title, c.type, c.value,
+            c.min_amount, c.start_date, c.end_date, c.status AS coupon_status, c.description
+     FROM user_coupons uc
+     JOIN coupons c ON uc.coupon_id = c.id
+     ${where}
+     ORDER BY uc.created_at DESC
+     LIMIT ? OFFSET ?`,
+    [...params, pageSize, offset],
+  );
+  return rows;
+}
+
+async function selectAvailableCoupons() {
+  const [rows] = await db.query(
+    `SELECT * FROM coupons WHERE status = 'available' AND end_date >= CURDATE() AND start_date <= CURDATE() ORDER BY created_at DESC`,
+  );
+  return rows;
+}
+
+async function selectClaimedCouponIds(userId) {
+  const [rows] = await db.query(
+    'SELECT coupon_id FROM user_coupons WHERE user_id = ?',
+    [userId],
+  );
+  return rows;
+}
+
+async function selectCouponByCodeOrId(code) {
+  const [[row]] = await db.query(
+    `SELECT * FROM coupons WHERE (code = ? OR id = ?) AND status = 'available' AND end_date >= CURDATE() AND start_date <= CURDATE()`,
+    [code, code],
+  );
+  return row || null;
+}
+
+async function findUserCoupon(userId, couponId) {
+  const [[row]] = await db.query(
+    'SELECT id FROM user_coupons WHERE user_id = ? AND coupon_id = ?',
+    [userId, couponId],
+  );
+  return row || null;
+}
+
+async function insertUserCoupon(id, userId, couponId) {
+  await db.query(
+    'INSERT INTO user_coupons (id, user_id, coupon_id, claimed_at, status) VALUES (?,?,?,NOW(),?)',
+    [id, userId, couponId, 'available'],
+  );
+}
+
+module.exports = {
+  countUserCoupons,
+  selectUserCouponsPage,
+  selectAvailableCoupons,
+  selectClaimedCouponIds,
+  selectCouponByCodeOrId,
+  findUserCoupon,
+  insertUserCoupon,
+};

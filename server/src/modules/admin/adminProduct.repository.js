@@ -28,15 +28,20 @@ async function selectProductById(id) {
 
 async function insertProduct(params) {
   const {
-    id, name, cover_image, imagesJson, price, points, category_id, stock,
+    id, name, cover_image, imagesJson, price, original_price, sales_count,
+    points, category_id, stock,
     status, sort_order, description, is_recommended, is_new, is_hot,
   } = params;
   await db.query(
-    `INSERT INTO products (id, name, cover_image, images, price, points, category_id, stock,
+    `INSERT INTO products (id, name, cover_image, images, price, original_price, sales_count,
+      points, category_id, stock,
       status, sort_order, description, is_recommended, is_new, is_hot)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
-      id, name, cover_image, imagesJson, price, points, category_id, stock,
+      id, name, cover_image, imagesJson, price,
+      original_price ?? null,
+      Number.isFinite(sales_count) ? sales_count : 0,
+      points, category_id, stock,
       status, sort_order, description, is_recommended, is_new, is_hot,
     ],
   );

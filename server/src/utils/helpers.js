@@ -55,6 +55,8 @@ function formatProduct(row) {
     cover_image: row.cover_image,
     images: typeof row.images === 'string' ? JSON.parse(row.images || '[]') : (row.images || []),
     price: parseFloat(row.price),
+    original_price: row.original_price != null ? parseFloat(row.original_price) : null,
+    sales_count: row.sales_count != null ? Number(row.sales_count) : 0,
     points: row.points,
     category_id: row.category_id || '',
     stock: row.stock,

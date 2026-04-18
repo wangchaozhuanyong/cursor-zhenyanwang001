@@ -48,7 +48,8 @@ async function getProductById(id) {
 
 async function createProduct(body, adminUserId, req) {
   const {
-    name, cover_image, images, price, points, category_id, stock, status, sort_order,
+    name, cover_image, images, price, original_price, sales_count,
+    points, category_id, stock, status, sort_order,
     description, is_recommended, is_new, is_hot,
   } = body;
   if (!name || !price) throw new BusinessError(400, '名称和价格必填');
@@ -61,6 +62,10 @@ async function createProduct(body, adminUserId, req) {
       cover_image: cover_image || '',
       imagesJson: JSON.stringify(images || []),
       price,
+      original_price: original_price === '' || original_price == null
+        ? null
+        : Number(original_price),
+      sales_count: Number.isFinite(Number(sales_count)) ? Number(sales_count) : 0,
       points: points || 0,
       category_id: category_id || '',
       stock: stock || 0,
@@ -113,12 +118,18 @@ async function updateProduct(id, body, adminUserId, req) {
     const fields = [];
     const values = [];
     const allowedFields = ['name', 'cover_image', 'price', 'points', 'category_id', 'stock',
-      'status', 'sort_order', 'description'];
+      'status', 'sort_order', 'description', 'sales_count'];
     for (const f of allowedFields) {
       if (body[f] !== undefined) {
         fields.push(`${f} = ?`);
         values.push(body[f]);
       }
+    }
+    // original_price 单独处理：允许显式置空
+    if (body.original_price !== undefined) {
+      const op = body.original_price;
+      fields.push('original_price = ?');
+      values.push(op === '' || op == null ? null : Number(op));
     }
     if (body.images !== undefined) {
       fields.push('images = ?');
@@ -198,7 +209,8 @@ async function deleteProduct(id, adminUserId, req) {
 }
 
 const EXPORT_HEADERS = [
-  'id', 'name', 'price', 'stock', 'category_id', 'cover_image', 'status', 'sort_order',
+  'id', 'name', 'price', 'original_price', 'sales_count', 'stock', 'category_id',
+  'cover_image', 'status', 'sort_order',
   'description', 'points', 'is_recommended', 'is_new', 'is_hot', 'images',
 ];
 
@@ -214,6 +226,8 @@ async function exportProductsCsv(query) {
       id: r.id,
       name: r.name,
       price: r.price,
+      original_price: r.original_price ?? '',
+      sales_count: r.sales_count ?? 0,
       stock: r.stock,
       category_id: r.category_id || '',
       cover_image: r.cover_image || '',
@@ -256,11 +270,20 @@ async function importProductsCsv(text, adminUserId) {
       }
     }
 
+    const originalPriceRaw = row.original_price !== undefined && row.original_price !== ''
+      ? Number(row.original_price)
+      : null;
+    const salesCountRaw = row.sales_count !== undefined && row.sales_count !== ''
+      ? parseInt(row.sales_count, 10)
+      : 0;
+
     const payload = {
       name,
       cover_image: (row.cover_image || '').trim(),
       images: JSON.parse(imagesJson),
       price,
+      original_price: Number.isFinite(originalPriceRaw) ? originalPriceRaw : null,
+      sales_count: Number.isFinite(salesCountRaw) ? salesCountRaw : 0,
       points: Number.isFinite(points) ? points : 0,
       category_id: (row.category_id || '').trim(),
       stock: Number.isFinite(stock) ? stock : 0,
@@ -288,6 +311,8 @@ async function importProductsCsv(text, adminUserId) {
           cover_image: payload.cover_image,
           imagesJson,
           price: payload.price,
+          original_price: payload.original_price,
+          sales_count: payload.sales_count,
           points: payload.points,
           category_id: payload.category_id,
           stock: payload.stock,
@@ -308,6 +333,8 @@ async function importProductsCsv(text, adminUserId) {
         cover_image: payload.cover_image,
         imagesJson,
         price: payload.price,
+        original_price: payload.original_price,
+        sales_count: payload.sales_count,
         points: payload.points,
         category_id: payload.category_id,
         stock: payload.stock,

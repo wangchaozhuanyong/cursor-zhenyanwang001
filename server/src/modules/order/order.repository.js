@@ -164,6 +164,13 @@ async function restoreProductStock(q, productId, qty) {
   await q.query('UPDATE products SET stock = stock + ? WHERE id = ?', [qty, productId]);
 }
 
+async function incrementProductSales(q, productId, qty) {
+  await q.query(
+    'UPDATE products SET sales_count = sales_count + ? WHERE id = ?',
+    [qty, productId],
+  );
+}
+
 async function decrementUserPoints(q, userId, points) {
   await q.query('UPDATE users SET points_balance = GREATEST(0, points_balance - ?) WHERE id = ?', [points, userId]);
 }
@@ -261,6 +268,7 @@ module.exports = {
   updateOrderStatus,
   selectOrderItemQtyRows,
   restoreProductStock,
+  incrementProductSales,
   decrementUserPoints,
   restoreUserCouponById,
   restoreUserCouponHeuristic,

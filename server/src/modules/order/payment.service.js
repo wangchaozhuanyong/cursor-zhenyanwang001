@@ -78,6 +78,18 @@ async function handleStripeEvent(event) {
     paymentChannel: 'stripe',
     paymentTransactionNo: pi.id || '',
   });
+
+  try {
+    const itemRows = await repo.selectOrderItemQtyRows(db, orderId);
+    for (const it of itemRows) {
+      if (it?.product_id && Number(it.qty) > 0) {
+        await repo.incrementProductSales(db, it.product_id, Number(it.qty));
+      }
+    }
+  } catch (err) {
+    console.error('[stripe webhook] increment sales_count failed:', err?.message || err);
+  }
+
   await repo.insertNotification(db, {
     id: generateId(),
     userId: order.user_id,

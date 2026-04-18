@@ -122,6 +122,28 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
 
       const [[fullOrder]] = await conn.query('SELECT * FROM orders WHERE id = ?', [orderId]);
 
+      // 销量计数：当管理员手动确认付款（PENDING -> PAID 等）时累加 sales_count
+      if (
+        newPayment === PAYMENT_STATUS.PAID
+        && prevPay !== PAYMENT_STATUS.PAID
+        && fullOrder
+      ) {
+        try {
+          const [salesItems] = await conn.query(
+            'SELECT product_id, qty FROM order_items WHERE order_id = ?',
+            [fullOrder.id],
+          );
+          for (const it of salesItems) {
+            if (it?.product_id && Number(it.qty) > 0) {
+              await conn.query(
+                'UPDATE products SET sales_count = sales_count + ? WHERE id = ?',
+                [Number(it.qty), it.product_id],
+              );
+            }
+          }
+        } catch { /* sales_count is non-critical */ }
+      }
+
       if (status === ORDER_STATUS.CANCELLED && fullOrder) {
         const [items] = await conn.query('SELECT product_id, qty FROM order_items WHERE order_id = ?', [fullOrder.id]);
         for (const item of items) {

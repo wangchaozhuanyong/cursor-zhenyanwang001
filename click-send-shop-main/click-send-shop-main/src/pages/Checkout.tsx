@@ -216,7 +216,7 @@ export default function Checkout() {
     }
     try {
       const payloadItems = items.map((i) => ({ product_id: i.product.id, qty: i.qty }));
-      let order = await submitOrder({
+      const order = await submitOrder({
         items: payloadItems,
         contact_name: name,
         contact_phone: phone,

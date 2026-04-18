@@ -5,6 +5,7 @@ import { useProductStore } from "@/stores/useProductStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
 import ProductCard from "@/components/ProductCard";
+import type { Product } from "@/types/product";
 import BannerCarousel from "@/components/BannerCarousel";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import BannerSkeleton from "@/components/BannerSkeleton";
@@ -246,7 +247,7 @@ function ProductGrid({
   skeletonCount = 4,
 }: {
   loading: boolean;
-  products: any[];
+  products: Product[];
   skeletonCount?: number;
 }) {
   return (

@@ -4,19 +4,20 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import logoWebp from "@/assets/logo.webp";
 import * as contentService from "@/services/contentService";
-import type { SiteInfo } from "@/types/content";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { renderBrandTitle } from "@/utils/brand";
 
 export default function About() {
   const navigate = useNavigate();
   const [cmsContent, setCmsContent] = useState("");
-  const [siteInfo, setSiteInfo] = useState<SiteInfo>({});
+  const siteInfo = useSiteInfo();
+  const logoSrc = siteInfo.logoUrl || logoWebp;
+  const siteName = siteInfo.siteName || "真烟网";
+  const slogan = siteInfo.siteSlogan || siteInfo.siteDescription || "尊享品质，精选全球好物";
 
   useEffect(() => {
     contentService.fetchContentBySlug("about").then((page) => {
       if (page?.content) setCmsContent(page.content);
-    }).catch(() => {});
-    contentService.fetchSiteInfo().then((data) => {
-      if (data) setSiteInfo(data);
     }).catch(() => {});
   }, []);
 
@@ -38,15 +39,15 @@ export default function About() {
           animate={{ opacity: 1, y: 0 }}
           className="rounded-2xl bg-primary p-6 text-center"
         >
-          <img src={logoWebp} alt="真烟网" width={64} height={64} className="mx-auto rounded-xl" />
+          <img src={logoSrc} alt={siteName} width={64} height={64} className="mx-auto rounded-xl object-contain" />
           <h2 className="mt-3 font-display text-3xl font-bold text-primary-foreground">
-            真烟<span className="text-gold">网</span>
+            {renderBrandTitle(siteName)}
           </h2>
-          <p className="mt-2 text-sm text-primary-foreground/70">尊享品质，精选全球好物</p>
+          <p className="mt-2 text-sm text-primary-foreground/70">{slogan}</p>
           <div className="mx-auto mt-4 h-px w-12 bg-gold" />
           <p className="mt-4 text-xs leading-relaxed text-primary-foreground/60">
-            真烟网创立于 2024 年，致力于为马来西亚消费者提供精选的全球高品质商品。
-            我们严格把控供应链，确保每一件商品都经过品质认证，让您在家即可享受全球精品购物体验。
+            {siteInfo.siteDescription ||
+              `${siteName}致力于为消费者提供精选的全球高品质商品。我们严格把控供应链，确保每一件商品都经过品质认证，让您在家即可享受全球精品购物体验。`}
           </p>
         </motion.div>
 
@@ -80,7 +81,7 @@ export default function About() {
         >
           <h3 className="text-sm font-semibold text-foreground">品牌故事</h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            真烟网的创始团队拥有多年跨境电商经验，深知消费者对品质和服务的追求。
+            {siteName}的创始团队拥有多年跨境电商经验，深知消费者对品质和服务的追求。
             我们与全球数百个品牌建立了直接合作关系，从源头把控品质，为您省去中间环节。
           </p>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
@@ -111,43 +112,64 @@ export default function About() {
           <h3 className="mb-4 text-sm font-semibold text-foreground">联系我们</h3>
           <div className="space-y-3">
             {[
-              { icon: Phone, label: siteInfo.contactPhone || "+60 12-345 6789" },
-              { icon: Mail, label: siteInfo.contactEmail || "support@zhenyan.com" },
-              { icon: MessageCircle, label: `微信: ${siteInfo.wechatId || "ZhenYan_CS"}` },
-              { icon: Globe, label: "www.zhenyan.com" },
-              { icon: MapPin, label: siteInfo.address || "Kuala Lumpur, Malaysia" },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center gap-3">
-                <item.icon size={16} className="text-gold flex-shrink-0" />
-                <span className="text-sm text-muted-foreground">{item.label}</span>
-              </div>
-            ))}
+              siteInfo.contactPhone && { icon: Phone, label: siteInfo.contactPhone },
+              siteInfo.contactEmail && { icon: Mail, label: siteInfo.contactEmail },
+              siteInfo.wechatId && { icon: MessageCircle, label: `微信: ${siteInfo.wechatId}` },
+              siteInfo.businessHours && { icon: Globe, label: siteInfo.businessHours },
+              siteInfo.address && { icon: MapPin, label: siteInfo.address },
+            ]
+              .filter(Boolean)
+              .map((item) => {
+                const it = item as { icon: typeof Phone; label: string };
+                return (
+                  <div key={it.label} className="flex items-center gap-3">
+                    <it.icon size={16} className="text-gold flex-shrink-0" />
+                    <span className="text-sm text-muted-foreground">{it.label}</span>
+                  </div>
+                );
+              })}
           </div>
         </motion.div>
 
         {/* Social */}
         <div className="mt-5 flex justify-center gap-4 pb-4 flex-wrap">
           {[
-            { label: "WhatsApp", url: siteInfo.whatsappUrl || siteInfo.contactWhatsApp ? `https://wa.me/${(siteInfo.contactWhatsApp || "").replace(/\D/g, "")}` : "" },
-            { label: "WeChat", url: "" },
-            { label: "Instagram", url: siteInfo.instagramUrl || "" },
-            { label: "Facebook", url: siteInfo.facebookUrl || "" },
-          ].map((s) => (
-            <button
-              key={s.label}
-              onClick={() => {
-                if (s.url) {
-                  window.open(s.url, "_blank");
-                } else if (s.label === "WeChat") {
-                  navigator.clipboard.writeText(siteInfo.wechatId || "ZhenYan_CS");
-                  import("sonner").then(({ toast }) => toast.success("微信号已复制"));
-                }
-              }}
-              className="rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-medium text-muted-foreground hover:border-gold/30 active:scale-95 transition-all"
-            >
-              {s.label}
-            </button>
-          ))}
+            {
+              label: "WhatsApp",
+              url:
+                siteInfo.whatsappUrl ||
+                (siteInfo.contactWhatsApp
+                  ? `https://wa.me/${siteInfo.contactWhatsApp.replace(/\D/g, "")}`
+                  : ""),
+              showWhenWechat: false,
+            },
+            { label: "WeChat", url: "", showWhenWechat: true },
+            { label: "Instagram", url: siteInfo.instagramUrl || "", showWhenWechat: false },
+            { label: "Facebook", url: siteInfo.facebookUrl || "", showWhenWechat: false },
+            { label: "TikTok", url: siteInfo.tiktokUrl || "", showWhenWechat: false },
+            { label: "小红书", url: siteInfo.xhsUrl || "", showWhenWechat: false },
+          ]
+            .filter((s) =>
+              s.label === "WeChat" ? Boolean(siteInfo.wechatId) : Boolean(s.url),
+            )
+            .map((s) => (
+              <button
+                key={s.label}
+                onClick={() => {
+                  if (s.url) {
+                    window.open(s.url, "_blank");
+                  } else if (s.label === "WeChat" && siteInfo.wechatId) {
+                    navigator.clipboard.writeText(siteInfo.wechatId);
+                    import("sonner").then(({ toast }) =>
+                      toast.success("微信号已复制"),
+                    );
+                  }
+                }}
+                className="rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-medium text-muted-foreground hover:border-gold/30 active:scale-95 transition-all"
+              >
+                {s.label}
+              </button>
+            ))}
         </div>
       </main>
     </div>

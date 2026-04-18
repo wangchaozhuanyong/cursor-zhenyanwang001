@@ -12,6 +12,8 @@ import banner1 from "@/assets/banner1.jpg";
 import banner2 from "@/assets/banner2.jpg";
 import banner3 from "@/assets/banner3.jpg";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { renderBrandTitle } from "@/utils/brand";
 
 const loginBanners = [
   { image: banner1, title: "新用户注册享 9 折优惠", link: "" },
@@ -28,6 +30,12 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const authStore = useAuthStore();
+  const siteInfo = useSiteInfo();
+  const logoSrc = siteInfo.logoUrl || logoWebp;
+  const siteName = siteInfo.siteName || "真烟网";
+  const slogan = siteInfo.siteSlogan || "Premium Lifestyle";
+  const supportContact =
+    siteInfo.contactWhatsApp || siteInfo.contactPhone || "客服";
   const rawFrom = (location.state as { from?: string } | null)?.from;
   const from =
     rawFrom && rawFrom !== "/login" && !rawFrom.startsWith("/admin")
@@ -83,13 +91,13 @@ export default function Login() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* ══════════════ Top Brand Bar ══════════════ */}
       <header className="flex items-center gap-3 px-5 pt-safe pb-3 pt-10">
-        <img src={logoWebp} alt="真烟网" width={44} height={44} className="rounded-xl" />
+        <img src={logoSrc} alt={siteName} width={44} height={44} className="rounded-xl object-contain" />
         <div className="flex flex-col">
           <h1 className="font-display text-xl font-bold tracking-tight leading-tight text-foreground">
-            真烟<span className="text-gold">网</span>
+            {renderBrandTitle(siteName)}
           </h1>
           <p className="text-[11px] tracking-widest text-muted-foreground uppercase">
-            Premium Lifestyle
+            {slogan}
           </p>
         </div>
       </header>
@@ -215,7 +223,9 @@ export default function Login() {
                 <span className="text-xs text-muted-foreground">记住账号</span>
               </label>
               <button
-                onClick={() => toast.info("请联系客服重置密码：WhatsApp +60 12-345 6789")}
+                onClick={() =>
+                  toast.info(`请联系客服重置密码：${supportContact}`)
+                }
                 className="text-xs text-gold font-medium active:opacity-70"
               >
                 忘记密码？

@@ -10,9 +10,13 @@ import { useTheme } from "@/hooks/useTheme";
 import { toast } from "sonner";
 import logoWebp from "@/assets/logo.webp";
 import * as inviteService from "@/services/inviteService";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
 
 export default function Profile() {
   const navigate = useNavigate();
+  const siteInfo = useSiteInfo();
+  const logoSrc = siteInfo.logoUrl || logoWebp;
+  const siteName = siteInfo.siteName || "真烟网";
   const { nickname, avatar, pointsBalance, inviteCode, subordinateEnabled, loadProfile } = useUserStore();
   const authStore = useAuthStore();
   const { orders, loadOrders } = useOrderStore();
@@ -42,10 +46,10 @@ export default function Profile() {
           <div className="mx-auto max-w-lg flex items-start justify-between">
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-white/10">
-                <img src={logoWebp} alt="" className="h-full w-full object-cover p-2" />
+                <img src={logoSrc} alt="" className="h-full w-full object-contain p-2" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-white">欢迎来到真烟网</h2>
+                <h2 className="text-lg font-semibold text-white">欢迎来到{siteName}</h2>
                 <p className="text-xs text-white/60 mt-1">登录后查看订单、积分与优惠</p>
               </div>
             </div>
@@ -126,7 +130,7 @@ export default function Profile() {
                 {avatar ? (
                   <img src={avatar} alt="avatar" className="h-full w-full object-cover" />
                 ) : (
-                  <img src={logoWebp} alt="真烟网" className="h-full w-full object-cover p-1" />
+                  <img src={logoSrc} alt={siteName} className="h-full w-full object-contain p-1" />
                 )}
               </div>
               <div>

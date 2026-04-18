@@ -12,12 +12,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import logoWebp from "@/assets/logo.webp";
 import { isLoggedIn } from "@/utils/token";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { renderBrandTitle } from "@/utils/brand";
 
 export default function Index() {
   useDocumentTitle("首页");
   const navigate = useNavigate();
   const { banners, loading: bannerLoading } = useHomeBanners();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const siteInfo = useSiteInfo();
+  const logoSrc = siteInfo.logoUrl || logoWebp;
+  const siteName = siteInfo.siteName || "真烟网";
 
   useEffect(() => {
     if (isLoggedIn()) {
@@ -45,9 +50,9 @@ export default function Index() {
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
           <div className="flex items-center gap-2">
-            <img src={logoWebp} alt="真烟网" width={32} height={32} className="rounded-md" />
+            <img src={logoSrc} alt={siteName} width={32} height={32} className="rounded-md object-contain" />
             <h1 className="font-display text-lg font-bold tracking-tight text-foreground">
-              真烟<span className="text-gold">网</span>
+              {renderBrandTitle(siteName)}
             </h1>
           </div>
           <div

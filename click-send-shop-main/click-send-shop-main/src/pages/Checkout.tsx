@@ -294,17 +294,19 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-28">
-      <header className="sticky top-0 z-40 bg-background/95 px-4 py-3 backdrop-blur-md">
-        <div className="mx-auto flex max-w-lg items-center gap-3">
+    <div className="min-h-screen bg-background pb-28 md:pb-0">
+      <header className="sticky top-0 z-40 bg-background/95 px-4 py-3 backdrop-blur-md md:px-6">
+        <div className="mx-auto flex w-full max-w-screen-xl items-center gap-3">
           <button onClick={goBack} aria-label="返回购物车" className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
-          <h1 className="text-base font-semibold text-foreground">确认订单</h1>
+          <h1 className="text-base font-semibold text-foreground md:text-xl">确认订单</h1>
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg px-4 py-4 space-y-4">
+      <main className="mx-auto w-full max-w-screen-xl px-4 py-4 md:px-6 md:py-6">
+        <div className="md:grid md:grid-cols-[1fr_380px] md:items-start md:gap-8">
+          <div className="space-y-4">
         {/* Contact info */}
         <div className="rounded-2xl border border-border bg-card p-5">
           <div className="mb-4 flex items-center justify-between">
@@ -386,37 +388,48 @@ export default function Checkout() {
           ))}
         </div>
 
-        {/* Summary */}
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">商品总额</span>
-            <span className="font-medium text-foreground">RM {rawTotal}</span>
+        {/* 移动端：摘要内联在主流上 */}
+        <div className="rounded-2xl border border-border bg-card p-5 md:hidden">
+          <SummaryRows
+            rawTotal={rawTotal}
+            discountAmount={discountAmount}
+            shippingFee={shippingFee}
+            totalPoints={totalPoints()}
+            finalTotal={finalTotal}
+          />
+        </div>
           </div>
-          {discountAmount > 0 && (
-            <div className="mt-2 flex justify-between text-sm">
-              <span className="text-muted-foreground">优惠券抵扣</span>
-              <span className="font-medium text-destructive">-RM {discountAmount}</span>
+
+          {/* 桌面端：右侧粘性结算摘要 */}
+          <aside className="mt-6 hidden self-start md:sticky md:top-20 md:mt-0 md:block">
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <h3 className="mb-4 text-base font-semibold text-foreground">订单摘要</h3>
+              <SummaryRows
+                rawTotal={rawTotal}
+                discountAmount={discountAmount}
+                shippingFee={shippingFee}
+                totalPoints={totalPoints()}
+                finalTotal={finalTotal}
+              />
+              <button
+                onClick={handleSubmit}
+                disabled={submitting || shippingRulesLoading || shippingQuoteLoading || !!shippingRulesError || !!shippingQuoteError || !selectedTemplate}
+                className="mt-5 w-full rounded-full bg-gold py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all hover:opacity-95 disabled:opacity-60"
+              >
+                {submitting ? "提交中…" : paymentMethod === "online" ? "立即支付" : "提交订单"}
+              </button>
+              <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                <span className="flex items-center gap-1"><ShieldCheck size={12} /> SSL 安全加密</span>
+                <span className="flex items-center gap-1"><Truck size={12} /> 快速发货</span>
+                <span className="flex items-center gap-1"><RefreshCcw size={12} /> 7 天无忧退换</span>
+              </div>
             </div>
-          )}
-          <div className="mt-2 flex justify-between text-sm">
-            <span className="text-muted-foreground">运费</span>
-            <span className={`font-medium ${shippingFee === 0 ? "text-emerald-600" : "text-foreground"}`}>
-              {shippingFee === 0 ? "包邮" : `RM ${shippingFee}`}
-            </span>
-          </div>
-          <div className="mt-2 flex justify-between text-sm">
-            <span className="text-muted-foreground">可获积分</span>
-            <span className="font-medium text-foreground">{totalPoints()}</span>
-          </div>
-          <div className="mt-3 border-t border-border pt-3 flex justify-between">
-            <span className="text-sm font-medium text-foreground">应付金额</span>
-            <span className="text-lg font-bold text-gold">RM {finalTotal}</span>
-          </div>
+          </aside>
         </div>
       </main>
 
-      {/* Submit bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-md pb-safe safe-bottom-bar">
+      {/* 移动端：底部固定提交栏 */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3.5">
           <div>
             <p className="text-xs text-muted-foreground">合计</p>
@@ -430,6 +443,54 @@ export default function Checkout() {
             {submitting ? "提交中…" : paymentMethod === "online" ? "立即支付" : "提交订单"}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** 结算摘要行（移动 + 桌面共用） */
+function SummaryRows({
+  rawTotal,
+  discountAmount,
+  shippingFee,
+  totalPoints,
+  finalTotal,
+}: {
+  rawTotal: number;
+  discountAmount: number;
+  shippingFee: number;
+  totalPoints: number;
+  finalTotal: number;
+}) {
+  return (
+    <div>
+      <div className="flex justify-between text-sm">
+        <span className="text-muted-foreground">商品总额</span>
+        <span className="font-medium text-foreground">RM {rawTotal}</span>
+      </div>
+      {discountAmount > 0 && (
+        <div className="mt-2 flex justify-between text-sm">
+          <span className="text-muted-foreground">优惠券抵扣</span>
+          <span className="font-medium text-destructive">-RM {discountAmount}</span>
+        </div>
+      )}
+      <div className="mt-2 flex justify-between text-sm">
+        <span className="text-muted-foreground">运费</span>
+        <span
+          className={`font-medium ${
+            shippingFee === 0 ? "text-emerald-600" : "text-foreground"
+          }`}
+        >
+          {shippingFee === 0 ? "包邮" : `RM ${shippingFee}`}
+        </span>
+      </div>
+      <div className="mt-2 flex justify-between text-sm">
+        <span className="text-muted-foreground">可获积分</span>
+        <span className="font-medium text-foreground">{totalPoints}</span>
+      </div>
+      <div className="mt-3 flex items-baseline justify-between border-t border-border pt-3">
+        <span className="text-sm font-medium text-foreground">应付金额</span>
+        <span className="text-2xl font-bold text-gold">RM {finalTotal}</span>
       </div>
     </div>
   );

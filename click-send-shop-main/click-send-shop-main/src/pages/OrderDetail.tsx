@@ -325,17 +325,25 @@ export default function OrderDetail() {
                   type="button"
                   onClick={handlePayStripe}
                   disabled={stripeRedirecting}
-                  className="flex w-full items-center justify-center gap-2 rounded-full bg-gold py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98] disabled:opacity-60"
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-gold py-4 text-base font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98] disabled:opacity-60"
                 >
-                  <CreditCard size={16} /> {stripeRedirecting ? "跳转中…" : "银行卡支付（Stripe）"}
+                  <CreditCard size={18} /> {stripeRedirecting ? "跳转中…" : "立即支付"}
                 </button>
               )}
               {!stripeCheckoutReady && (
                 <p className="rounded-xl border border-border bg-card px-4 py-3 text-xs text-muted-foreground">
-                  当前环境未配置 Stripe Checkout，请联系管理员配置支付参数后再完成在线支付。
+                  当前环境未配置在线支付，请联系客服完成付款。
                 </p>
               )}
             </>
+          )}
+          {order.status === ORDER_STATUS.PENDING && order.payment_method === "whatsapp" && (
+            <button
+              onClick={openWhatsApp}
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-[hsl(142,70%,45%)] py-3.5 text-sm font-bold text-white shadow-lg shadow-[hsl(142,70%,45%)]/20 transition-all active:scale-[0.98]"
+            >
+              <Phone size={16} /> 发送到 WhatsApp 联系客服
+            </button>
           )}
           {order.status === ORDER_STATUS.SHIPPED && (
             <button
@@ -359,15 +367,18 @@ export default function OrderDetail() {
           >
             <Copy size={16} /> 复制订单内容
           </button>
-          <button
-            onClick={openWhatsApp}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-[hsl(142,70%,45%)] py-3.5 text-sm font-bold text-white shadow-lg shadow-[hsl(142,70%,45%)]/20 transition-all active:scale-[0.98]"
-          >
-            <Phone size={16} /> 发送到 WhatsApp
-          </button>
+          {/* 已支付/已发货 订单：把"联系客服"降级为辅助按钮 */}
+          {order.payment_method !== "whatsapp" && order.status !== ORDER_STATUS.PENDING && (
+            <button
+              onClick={openWhatsApp}
+              className="flex w-full items-center justify-center gap-2 rounded-full border border-border py-3 text-xs font-medium text-muted-foreground transition-all active:scale-[0.98] hover:bg-secondary"
+            >
+              <Phone size={14} /> 联系客服
+            </button>
+          )}
           <button
             onClick={() => navigate("/")}
-            className="w-full rounded-full bg-primary py-3.5 text-sm font-semibold text-primary-foreground transition-all active:scale-[0.98]"
+            className="w-full rounded-full py-3 text-center text-xs font-medium text-muted-foreground transition-all hover:text-foreground"
           >
             返回首页
           </button>

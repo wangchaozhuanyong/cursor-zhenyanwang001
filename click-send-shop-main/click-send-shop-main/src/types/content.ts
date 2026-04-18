@@ -51,4 +51,24 @@ export interface SiteInfo {
   footerIcpNo?: string;
   footerPolicyUrl?: string;
   footerTermsUrl?: string;
+
+  /* ─ 政策内部页路径（CMS slug 路由） ─ */
+  privacyPolicyPath?: string;
+  termsPath?: string;
+  refundPolicyPath?: string;
+  shippingPolicyPath?: string;
+
+  /* ─ 购物 / 售后 / 支付说明 ─ */
+  supportText?: string;
+  shippingNotice?: string;
+  paymentNotice?: string;
+
+  /* ─ 自定义页脚导航：JSON 字符串 [{ label, path }]，未设置时回退为内置默认 ─ */
+  footerNav?: string;
+}
+
+/** 页脚导航条目（footerNav JSON 解析后的形态） */
+export interface FooterNavItem {
+  label: string;
+  path: string;
 }

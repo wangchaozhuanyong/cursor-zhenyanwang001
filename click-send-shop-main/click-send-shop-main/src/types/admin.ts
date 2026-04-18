@@ -74,6 +74,20 @@ export interface SiteSettings {
   footerPolicyUrl?: string;
   footerTermsUrl?: string;
 
+  /* 政策内部页路径（CMS slug 路由） */
+  privacyPolicyPath?: string;
+  termsPath?: string;
+  refundPolicyPath?: string;
+  shippingPolicyPath?: string;
+
+  /* 购物 / 售后 / 支付说明文案 */
+  supportText?: string;
+  shippingNotice?: string;
+  paymentNotice?: string;
+
+  /* 自定义页脚导航 JSON 字符串 [{label,path}] */
+  footerNav?: string;
+
   /* 允许任意扩展键（运营后期新增字段无需先发版） */
   [key: string]: string | undefined;
 }

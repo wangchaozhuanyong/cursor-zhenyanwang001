@@ -232,9 +232,9 @@ export default function ProductDetail() {
               />
             </button>
 
-            {/* TrustInfo - 信任三件套 */}
+            {/* TrustInfo - 信任三件套（详情页使用 card 强转化样式） */}
             <div className="mt-5 px-4 md:px-0">
-              <TrustInfo />
+              <TrustInfo variant="card" />
             </div>
 
             {/* 描述 */}

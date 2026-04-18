@@ -26,11 +26,6 @@ export async function confirmReceive(id: string) {
   await orderApi.confirmReceive(id);
 }
 
-export async function payOrder(id: string, channel: "mock" = "mock") {
-  const res = await orderApi.payOrder(id, { channel });
-  return res.data;
-}
-
 export async function createStripeCheckoutSession(id: string) {
   const res = await orderApi.createStripeCheckoutSession(id);
   return res.data;

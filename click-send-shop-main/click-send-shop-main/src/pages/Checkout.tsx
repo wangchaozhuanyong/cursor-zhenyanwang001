@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Copy, MessageCircle, Phone, MapPin, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Copy, MessageCircle, Phone, MapPin, CheckCircle2, ShieldCheck, Truck, RefreshCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "@/stores/useCartStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import * as orderService from "@/services/orderService";
+import * as paymentService from "@/services/paymentService";
 import { useUserStore } from "@/stores/useUserStore";
 import { toast } from "sonner";
 import type { Order } from "@/types/order";
@@ -98,7 +99,9 @@ export default function Checkout() {
     window.addEventListener("focus", handler);
     return () => window.removeEventListener("focus", handler);
   }, [getDefaultAddress]);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("whatsapp");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("online");
+  const [stripeReady, setStripeReady] = useState(true);
+  const [paymentConfigLoaded, setPaymentConfigLoaded] = useState(false);
   const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null);
   const [selectedCoupon, setSelectedCoupon] = useState<CheckoutPickerCoupon | null>(null);
   const [shippingId, setShippingId] = useState<number | null>(null);
@@ -107,6 +110,30 @@ export default function Checkout() {
   const [shippingQuoteError, setShippingQuoteError] = useState<string | null>(null);
 
   useEffect(() => { useShippingStore.getState().loadTemplates(); }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    paymentService
+      .getPaymentConfig()
+      .then((config) => {
+        if (cancelled) return;
+        const ready = !!config.stripeCheckoutReady;
+        setStripeReady(ready);
+        setPaymentConfigLoaded(true);
+        if (!ready) {
+          setPaymentMethod("whatsapp");
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setStripeReady(false);
+        setPaymentConfigLoaded(true);
+        setPaymentMethod("whatsapp");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const rawTotal = totalAmount();
   const { coupons: pickerCoupons, loading: pickerCouponsLoading } = useCheckoutPickerCoupons(rawTotal);
@@ -259,6 +286,7 @@ export default function Checkout() {
         onWeChat={openWeChat}
         onHome={() => navigate("/")}
         onViewOrders={() => navigate("/orders")}
+        onViewOrderDetail={() => navigate(`/orders/${submittedOrder.id}`)}
       />
     );
   }
@@ -297,8 +325,23 @@ export default function Checkout() {
 
         {/* Payment method */}
         <div className="rounded-2xl border border-border bg-card p-5">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">支付方式</h3>
-          <PaymentMethodPicker value={paymentMethod} onChange={setPaymentMethod} />
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-foreground">支付方式</h3>
+            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+              <ShieldCheck size={12} className="text-emerald-600" /> 安全支付
+            </span>
+          </div>
+          <PaymentMethodPicker
+            value={paymentMethod}
+            onChange={setPaymentMethod}
+            onlineDisabled={paymentConfigLoaded && !stripeReady}
+            onlineDisabledHint="商户暂未开通在线支付，请选择联系客服下单"
+          />
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-1"><ShieldCheck size={12} /> SSL 安全加密</span>
+            <span className="flex items-center gap-1"><Truck size={12} /> 快速发货</span>
+            <span className="flex items-center gap-1"><RefreshCcw size={12} /> 7 天无忧退换</span>
+          </div>
         </div>
 
         {/* Coupon */}
@@ -391,14 +434,17 @@ export default function Checkout() {
 }
 
 /* ───── Order Success Page ───── */
-function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onHome, onViewOrders }: {
+function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onHome, onViewOrders, onViewOrderDetail }: {
   order: Order;
   onCopy: () => void;
   onWhatsApp: () => void;
   onWeChat: () => void;
   onHome: () => void;
   onViewOrders: () => void;
+  onViewOrderDetail: () => void;
 }) {
+  const isOnlinePaid = order.payment_method === "online" && order.status === ORDER_STATUS.PAID;
+  const isWhatsappOrder = order.payment_method === "whatsapp";
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 bg-background/95 px-4 py-3 backdrop-blur-md">
@@ -406,7 +452,9 @@ function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onHome, onViewOrder
           <button onClick={onHome} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
-          <h1 className="text-base font-semibold text-foreground">订单已提交</h1>
+          <h1 className="text-base font-semibold text-foreground">
+            {isOnlinePaid ? "支付成功" : "订单已提交"}
+          </h1>
         </div>
       </header>
 
@@ -422,41 +470,55 @@ function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onHome, onViewOrder
             <CheckCircle2 size={40} className="text-gold" />
           </motion.div>
           <h2 className="font-display text-2xl font-bold text-foreground">
-            {order.status === ORDER_STATUS.PAID ? "支付成功！" : "订单提交成功！"}
+            {isOnlinePaid ? "支付成功！" : "订单提交成功！"}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
             订单编号: <span className="font-mono font-semibold text-foreground">{order.order_no}</span>
           </p>
           <div className="mt-5 rounded-xl bg-secondary p-4">
             <p className="text-xs leading-relaxed text-muted-foreground">
-              📋 订单内容已自动复制到剪贴板
-              <br />
-              {order.status === ORDER_STATUS.PAID
-                ? "在线支付已完成，您仍可将订单信息发给客服以便跟进发货。"
-                : "请选择下方方式发送给客服完成下单"}
+              {isOnlinePaid && "支付已完成，我们会尽快为您安排发货，可在「我的订单」实时查看进度。"}
+              {!isOnlinePaid && order.payment_method === "online" && "支付正在处理中，结果将自动同步到您的订单。"}
+              {isWhatsappOrder && "📋 订单内容已自动复制到剪贴板，请选择下方方式发送给客服完成对接。"}
             </p>
           </div>
         </div>
 
         {/* Action buttons */}
         <div className="mt-6 space-y-3">
+          {/* 在线支付：主 CTA = 查看订单 */}
+          {!isWhatsappOrder && (
+            <button
+              onClick={onViewOrderDetail}
+              className="flex w-full items-center justify-center gap-2.5 rounded-full bg-gold py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98]"
+            >
+              查看订单详情
+            </button>
+          )}
+
+          {/* 仅客服下单时显示 WhatsApp / 微信 主 CTA */}
+          {isWhatsappOrder && (
+            <>
+              <button
+                onClick={onWhatsApp}
+                className="flex w-full items-center justify-center gap-2.5 rounded-full bg-[hsl(142,70%,45%)] py-4 text-sm font-bold text-white shadow-lg shadow-[hsl(142,70%,45%)]/20 transition-all active:scale-[0.98]"
+              >
+                <Phone size={18} /> 发送到 WhatsApp
+              </button>
+              <button
+                onClick={onWeChat}
+                className="flex w-full items-center justify-center gap-2.5 rounded-full bg-[hsl(120,60%,45%)] py-4 text-sm font-bold text-white shadow-lg shadow-[hsl(120,60%,45%)]/20 transition-all active:scale-[0.98]"
+              >
+                <MessageCircle size={18} /> 发送到微信
+              </button>
+            </>
+          )}
+
           <button
             onClick={onCopy}
             className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
           >
             <Copy size={18} /> 复制订单内容
-          </button>
-          <button
-            onClick={onWhatsApp}
-            className="flex w-full items-center justify-center gap-2.5 rounded-full bg-[hsl(142,70%,45%)] py-4 text-sm font-bold text-white shadow-lg shadow-[hsl(142,70%,45%)]/20 transition-all active:scale-[0.98]"
-          >
-            <Phone size={18} /> 发送到 WhatsApp
-          </button>
-          <button
-            onClick={onWeChat}
-            className="flex w-full items-center justify-center gap-2.5 rounded-full bg-[hsl(120,60%,45%)] py-4 text-sm font-bold text-white shadow-lg shadow-[hsl(120,60%,45%)]/20 transition-all active:scale-[0.98]"
-          >
-            <MessageCircle size={18} /> 发送到微信
           </button>
         </div>
 
@@ -504,15 +566,15 @@ function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onHome, onViewOrder
         <div className="mt-6 space-y-3">
           <button
             onClick={onViewOrders}
-            className="w-full rounded-full bg-gold py-4 text-center text-sm font-bold text-primary-foreground transition-all active:scale-[0.98]"
+            className="w-full rounded-full border-2 border-border py-4 text-center text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
           >
             查看我的订单
           </button>
           <button
             onClick={onHome}
-            className="w-full rounded-full border-2 border-border py-4 text-center text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
+            className="w-full rounded-full py-3 text-center text-sm font-medium text-muted-foreground transition-all hover:text-foreground"
           >
-            返回首页
+            继续逛
           </button>
         </div>
       </motion.main>

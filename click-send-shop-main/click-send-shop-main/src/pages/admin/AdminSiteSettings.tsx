@@ -35,7 +35,28 @@ const EMPTY: SiteSettings = {
   footerIcpNo: "",
   footerPolicyUrl: "",
   footerTermsUrl: "",
+  privacyPolicyPath: "/content/privacy-policy",
+  termsPath: "/content/terms-of-service",
+  refundPolicyPath: "/content/refund-policy",
+  shippingPolicyPath: "/content/shipping-policy",
+  supportText: "",
+  shippingNotice: "",
+  paymentNotice: "",
+  footerNav: "",
 };
+
+const DEFAULT_FOOTER_NAV_JSON = JSON.stringify(
+  [
+    { label: "关于我们", path: "/about" },
+    { label: "帮助中心", path: "/help" },
+    { label: "隐私政策", path: "/content/privacy-policy" },
+    { label: "用户协议", path: "/content/terms-of-service" },
+    { label: "退款政策", path: "/content/refund-policy" },
+    { label: "配送政策", path: "/content/shipping-policy" },
+  ],
+  null,
+  2,
+);
 
 type Field = {
   key: keyof SiteSettings;
@@ -121,8 +142,41 @@ const SECTIONS: Section[] = [
       { key: "footerCompanyName", label: "公司名称", placeholder: "真烟网" },
       { key: "footerCopyright", label: "版权信息", placeholder: "© 2026 真烟网 版权所有" },
       { key: "footerIcpNo", label: "备案号 / 工商注册号", placeholder: "可选" },
-      { key: "footerPolicyUrl", label: "隐私政策链接", placeholder: "/help" },
-      { key: "footerTermsUrl", label: "服务条款链接", placeholder: "/help" },
+      { key: "footerPolicyUrl", label: "隐私政策外链", placeholder: "可选 - 优先使用站内 CMS 路径" },
+      { key: "footerTermsUrl", label: "服务条款外链", placeholder: "可选 - 优先使用站内 CMS 路径" },
+    ],
+  },
+  {
+    title: "政策内部页路径",
+    desc: "对应 CMS 文章 slug，前端 Footer / Checkout 等位置直接跳转到内部 CMS 页面",
+    fields: [
+      { key: "privacyPolicyPath", label: "隐私政策路径", placeholder: "/content/privacy-policy" },
+      { key: "termsPath", label: "用户协议路径", placeholder: "/content/terms-of-service" },
+      { key: "refundPolicyPath", label: "退款政策路径", placeholder: "/content/refund-policy" },
+      { key: "shippingPolicyPath", label: "配送政策路径", placeholder: "/content/shipping-policy" },
+    ],
+  },
+  {
+    title: "购物 / 售后 / 支付说明",
+    desc: "短文案，可在购物车、Checkout、订单详情等转化关键节点透出，提升信任度",
+    fields: [
+      { key: "supportText", label: "客服支持说明", type: "textarea", rows: 2, placeholder: "如：7×24 小时人工客服，下单 24 小时内必复" },
+      { key: "shippingNotice", label: "配送说明", type: "textarea", rows: 2, placeholder: "如：每日 16:00 前付款当天发货，全马 2-5 天到达" },
+      { key: "paymentNotice", label: "支付说明", type: "textarea", rows: 2, placeholder: "如：支持 Visa / Master / FPX，支付通道由 Stripe 提供，全程 SSL 加密" },
+    ],
+  },
+  {
+    title: "页脚自定义导航 (高级)",
+    desc: "JSON 格式 [{label,path}]。配置后将完全覆盖默认页脚导航；不填则使用内置默认（关于我们 / 帮助中心 / 隐私 / 协议 / 退款 / 配送）",
+    fields: [
+      {
+        key: "footerNav",
+        label: "Footer 菜单 JSON",
+        type: "textarea",
+        rows: 8,
+        placeholder: DEFAULT_FOOTER_NAV_JSON,
+        hint: "建议条目数 4-8。每行一条 {label, path}；path 为内部跳转或以 http 开头的外链",
+      },
     ],
   },
 ];
@@ -150,6 +204,23 @@ export default function AdminSiteSettings() {
     setSettings((prev) => ({ ...prev, [key]: value }));
 
   const handleSave = async () => {
+    // footerNav 若有内容必须是合法 JSON 数组，否则前端解析失败会回退到默认导航
+    const navRaw = (settings.footerNav ?? "").trim();
+    if (navRaw) {
+      try {
+        const parsed = JSON.parse(navRaw);
+        if (!Array.isArray(parsed)) throw new Error("footerNav 必须为数组");
+        for (const item of parsed) {
+          if (!item || typeof item.label !== "string" || typeof item.path !== "string") {
+            throw new Error("每个条目必须包含 label 与 path 字段");
+          }
+        }
+      } catch (e) {
+        toast.error(`Footer 菜单 JSON 格式错误：${e instanceof Error ? e.message : "解析失败"}`);
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       await updateSiteSettings(settings);

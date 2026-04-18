@@ -7,16 +7,48 @@ export interface ContentPage {
   updated_at: string;
 }
 
+/**
+ * 站点公开信息（来源：site_settings 表，无需登录可读）
+ * 与 server/src/modules/content/content.service.js 中的 PUBLIC_SITE_KEYS 严格对齐。
+ * 所有字段均为可选 — 后台未配置时由前端兜底渲染。
+ */
 export interface SiteInfo {
+  /* ─ 基础品牌 ─ */
   siteName?: string;
   siteDescription?: string;
+  siteSlogan?: string;
+  logoUrl?: string;
+  faviconUrl?: string;
+  brandColor?: string;
+
+  /* ─ 联系方式 ─ */
   contactPhone?: string;
   contactEmail?: string;
   contactWhatsApp?: string;
-  currency?: string;
   whatsappUrl?: string;
   wechatId?: string;
+  address?: string;
+  businessHours?: string;
+
+  /* ─ 社交 ─ */
   instagramUrl?: string;
   facebookUrl?: string;
-  address?: string;
+  tiktokUrl?: string;
+  xhsUrl?: string;
+
+  /* ─ 业务 ─ */
+  currency?: string;
+
+  /* ─ SEO ─ */
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string;
+  ogImageUrl?: string;
+
+  /* ─ 页脚 ─ */
+  footerCompanyName?: string;
+  footerCopyright?: string;
+  footerIcpNo?: string;
+  footerPolicyUrl?: string;
+  footerTermsUrl?: string;
 }

@@ -29,14 +29,53 @@ export interface DashboardStats {
   monthlyRevenue: number;
 }
 
+/**
+ * 站点设置（管理后台 /admin/settings 读写）
+ * 字段命名与后端 site_settings.setting_key 一致（驼峰）
+ * 所有字段均为可选 - 后台首次进入时可能尚未填写
+ */
 export interface SiteSettings {
-  siteName: string;
-  logo: string;
-  contactPhone: string;
-  contactEmail: string;
-  contactWhatsapp: string;
-  aboutText: string;
-  announcementText: string;
+  /* 基础品牌 */
+  siteName?: string;
+  siteDescription?: string;
+  siteSlogan?: string;
+  logoUrl?: string;
+  faviconUrl?: string;
+  brandColor?: string;
+
+  /* 联系方式 */
+  contactPhone?: string;
+  contactEmail?: string;
+  contactWhatsApp?: string;
+  whatsappUrl?: string;
+  wechatId?: string;
+  address?: string;
+  businessHours?: string;
+
+  /* 社交 */
+  instagramUrl?: string;
+  facebookUrl?: string;
+  tiktokUrl?: string;
+  xhsUrl?: string;
+
+  /* 业务 */
+  currency?: string;
+
+  /* SEO */
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string;
+  ogImageUrl?: string;
+
+  /* 页脚 */
+  footerCompanyName?: string;
+  footerCopyright?: string;
+  footerIcpNo?: string;
+  footerPolicyUrl?: string;
+  footerTermsUrl?: string;
+
+  /* 允许任意扩展键（运营后期新增字段无需先发版） */
+  [key: string]: string | undefined;
 }
 
 export interface AdminLog {

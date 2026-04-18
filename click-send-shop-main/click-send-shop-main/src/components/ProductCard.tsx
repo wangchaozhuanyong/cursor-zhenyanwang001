@@ -13,6 +13,12 @@ interface Props {
   index?: number;
 }
 
+function formatSales(n: number): string {
+  if (n >= 10000) return `${(n / 10000).toFixed(1).replace(/\.0$/, "")}w+`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}k+`;
+  return String(n);
+}
+
 export default function ProductCard({ product, index = 0 }: Props) {
   const navigate = useNavigate();
   const addItem = useCartStore((s) => s.addItem);
@@ -76,12 +82,23 @@ export default function ProductCard({ product, index = 0 }: Props) {
         </h3>
         <div className="flex items-end justify-between gap-1">
           <div className="min-w-0">
-            <span className="text-lg font-bold leading-none text-gold">
-              RM {product.price}
-            </span>
-            <span className="ml-1 whitespace-nowrap text-[10px] text-muted-foreground">
-              +{product.points}积分
-            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-lg font-bold leading-none text-gold">
+                RM {product.price}
+              </span>
+              {typeof product.original_price === "number"
+                && product.original_price > product.price && (
+                  <span className="text-[11px] text-muted-foreground line-through">
+                    RM {product.original_price}
+                  </span>
+                )}
+            </div>
+            <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
+              <span>+{product.points}积分</span>
+              {typeof product.sales_count === "number" && product.sales_count > 0 && (
+                <span>已售 {formatSales(product.sales_count)}</span>
+              )}
+            </div>
           </div>
           <button
             onClick={(e) => {

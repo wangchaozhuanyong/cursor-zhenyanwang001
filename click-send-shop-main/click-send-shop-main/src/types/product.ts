@@ -8,6 +8,10 @@ export interface Product {
   cover_image: string;
   images: string[];
   price: number;
+  /** 划线原价（可选）。前端在 > price 时才以删除线渲染 */
+  original_price?: number | null;
+  /** 累计销量（订单付款后由后端自动累加） */
+  sales_count?: number;
   points: number;
   category_id: string;
   stock: number;

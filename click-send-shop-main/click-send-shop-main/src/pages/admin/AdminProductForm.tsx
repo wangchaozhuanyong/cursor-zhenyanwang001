@@ -21,6 +21,7 @@ export default function AdminProductForm() {
     name: "",
     price: "",
     original_price: "",
+    sales_count: "",
     stock: "",
     points: "",
     category_id: "",
@@ -47,7 +48,9 @@ export default function AdminProductForm() {
             setForm({
               name: data.name || "",
               price: data.price?.toString() || "",
-              original_price: data.original_price?.toString() || "",
+              original_price:
+                data.original_price != null ? data.original_price.toString() : "",
+              sales_count: data.sales_count != null ? String(data.sales_count) : "0",
               stock: data.stock?.toString() || "",
               points: data.points?.toString() || "",
               category_id: data.category_id || "",
@@ -89,10 +92,14 @@ export default function AdminProductForm() {
     if (!form.name) { toast.error("请输入商品名称"); return; }
     setSaving(true);
     try {
+      const opNum = parseFloat(form.original_price);
+      const scNum = parseInt(form.sales_count, 10);
       const payload: any = {
         name: form.name,
         price: parseFloat(form.price) || 0,
-        original_price: parseFloat(form.original_price) || 0,
+        original_price:
+          form.original_price === "" || !Number.isFinite(opNum) ? null : opNum,
+        sales_count: Number.isFinite(scNum) ? scNum : 0,
         stock: parseInt(form.stock) || 0,
         points: parseInt(form.points) || 0,
         category_id: form.category_id || null,
@@ -196,8 +203,9 @@ export default function AdminProductForm() {
                 <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="0.00" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">原价 (RM)</label>
-                <input value={form.original_price} onChange={(e) => setForm({ ...form, original_price: e.target.value })} placeholder="0.00" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">划线原价 (RM)</label>
+                <input value={form.original_price} onChange={(e) => setForm({ ...form, original_price: e.target.value })} placeholder="留空则不展示" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                <p className="mt-1 text-[10px] text-muted-foreground">仅当大于售价时，前台商品卡/详情页才会以删除线显示。</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -209,6 +217,20 @@ export default function AdminProductForm() {
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">积分值</label>
                 <input value={form.points} onChange={(e) => setForm({ ...form, points: e.target.value })} placeholder="与售价相同" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">销量</label>
+                <input
+                  type="number"
+                  value={form.sales_count}
+                  onChange={(e) => setForm({ ...form, sales_count: e.target.value })}
+                  placeholder="0"
+                  className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                />
+                <p className="mt-1 text-[10px] text-muted-foreground">订单付款后由系统自动累加；可手动修正起步销量。</p>
+              </div>
+              <div />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>

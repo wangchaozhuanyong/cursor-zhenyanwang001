@@ -158,14 +158,30 @@ export default function ProductDetail() {
 
             {/* 价格 */}
             <div className="px-4 pt-3 md:px-0 md:pt-5">
-              <div className="flex items-baseline gap-2">
+              <div className="flex flex-wrap items-baseline gap-2">
                 <span className="text-3xl font-bold text-gold md:text-4xl">
                   RM {product.price}
                 </span>
+                {typeof product.original_price === "number"
+                  && product.original_price > product.price && (
+                    <>
+                      <span className="text-sm text-muted-foreground line-through">
+                        RM {product.original_price}
+                      </span>
+                      <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive">
+                        省 RM {(product.original_price - product.price).toFixed(2)}
+                      </span>
+                    </>
+                  )}
                 <span className="text-xs text-muted-foreground">
                   +{product.points} 积分
                 </span>
               </div>
+              {typeof product.sales_count === "number" && product.sales_count > 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  已售 {product.sales_count.toLocaleString()} 件
+                </p>
+              )}
             </div>
 
             {/* 数量 */}

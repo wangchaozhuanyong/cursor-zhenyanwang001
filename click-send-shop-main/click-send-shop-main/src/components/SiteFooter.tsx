@@ -1,10 +1,57 @@
 import { Link } from "react-router-dom";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { renderBrandTitle } from "@/utils/brand";
+import type { FooterNavItem } from "@/types/content";
+
+/**
+ * 解析后台配置的 footerNav JSON
+ * 失败时返回 null，由调用方回退到默认导航
+ */
+function parseFooterNav(json?: string): FooterNavItem[] | null {
+  if (!json || !json.trim()) return null;
+  try {
+    const parsed = JSON.parse(json);
+    if (!Array.isArray(parsed)) return null;
+    const items = parsed.filter(
+      (it): it is FooterNavItem =>
+        it && typeof it.label === "string" && typeof it.path === "string",
+    );
+    return items.length > 0 ? items : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 渲染单条页脚链接 - 自动识别外链 / 内链
+ */
+function FooterLink({ item }: { item: FooterNavItem }) {
+  if (item.path.startsWith("http")) {
+    return (
+      <a
+        href={item.path}
+        target="_blank"
+        rel="noreferrer"
+        className="hover:text-foreground"
+      >
+        {item.label}
+      </a>
+    );
+  }
+  return (
+    <Link to={item.path} className="hover:text-foreground">
+      {item.label}
+    </Link>
+  );
+}
 
 /**
  * 全站统一页脚 - 桌面端为 4 列，移动端为单列
  * 内容均来自后端 site_settings (useSiteInfo)
+ *
+ * 导航策略：
+ * 1) 后台配置了 footerNav JSON → 拆分为「服务支持」(前 3 条) + 「政策与说明」(其余)
+ * 2) 未配置 → 使用内置默认（快速导航 + 帮助中心）
  */
 export default function SiteFooter() {
   const site = useSiteInfo();
@@ -13,6 +60,10 @@ export default function SiteFooter() {
   const company = site.footerCompanyName || site.siteName || "真烟网";
   const copyright =
     site.footerCopyright || `© ${year} ${company}. All rights reserved.`;
+
+  const customNav = parseFooterNav(site.footerNav);
+  const supportNav = customNav ? customNav.slice(0, 3) : null;
+  const policyNav = customNav ? customNav.slice(3) : null;
 
   return (
     <footer className="mt-16 border-t border-border bg-card/40">
@@ -42,58 +93,82 @@ export default function SiteFooter() {
             )}
           </div>
 
-          {/* 快捷导航 */}
+          {/* 服务支持 */}
           <div>
-            <h4 className="mb-3 text-sm font-semibold">快速导航</h4>
+            <h4 className="mb-3 text-sm font-semibold">服务支持</h4>
             <ul className="space-y-2 text-xs text-muted-foreground">
-              <li>
-                <Link to="/" className="hover:text-foreground">首页</Link>
-              </li>
-              <li>
-                <Link to="/categories" className="hover:text-foreground">全部分类</Link>
-              </li>
-              <li>
-                <Link to="/cart" className="hover:text-foreground">购物车</Link>
-              </li>
-              <li>
-                <Link to="/orders" className="hover:text-foreground">我的订单</Link>
-              </li>
+              {supportNav ? (
+                supportNav.map((it, i) => (
+                  <li key={`${it.label}-${i}`}>
+                    <FooterLink item={it} />
+                  </li>
+                ))
+              ) : (
+                <>
+                  <li>
+                    <Link to="/" className="hover:text-foreground">首页</Link>
+                  </li>
+                  <li>
+                    <Link to="/categories" className="hover:text-foreground">全部分类</Link>
+                  </li>
+                  <li>
+                    <Link to="/cart" className="hover:text-foreground">购物车</Link>
+                  </li>
+                  <li>
+                    <Link to="/orders" className="hover:text-foreground">我的订单</Link>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
 
-          {/* 帮助 / 政策 */}
+          {/* 政策与说明 */}
           <div>
-            <h4 className="mb-3 text-sm font-semibold">帮助中心</h4>
+            <h4 className="mb-3 text-sm font-semibold">政策与说明</h4>
             <ul className="space-y-2 text-xs text-muted-foreground">
-              <li>
-                <Link to="/help" className="hover:text-foreground">常见问题</Link>
-              </li>
-              <li>
-                <Link to="/about" className="hover:text-foreground">关于我们</Link>
-              </li>
-              {site.footerPolicyUrl && (
-                <li>
-                  <a
-                    href={site.footerPolicyUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-foreground"
-                  >
-                    隐私政策
-                  </a>
-                </li>
-              )}
-              {site.footerTermsUrl && (
-                <li>
-                  <a
-                    href={site.footerTermsUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-foreground"
-                  >
-                    服务条款
-                  </a>
-                </li>
+              {policyNav && policyNav.length > 0 ? (
+                policyNav.map((it, i) => (
+                  <li key={`${it.label}-${i}`}>
+                    <FooterLink item={it} />
+                  </li>
+                ))
+              ) : (
+                <>
+                  <li>
+                    <Link to="/help" className="hover:text-foreground">常见问题</Link>
+                  </li>
+                  <li>
+                    <Link to="/about" className="hover:text-foreground">关于我们</Link>
+                  </li>
+                  {site.privacyPolicyPath ? (
+                    <li>
+                      <FooterLink item={{ label: "隐私政策", path: site.privacyPolicyPath }} />
+                    </li>
+                  ) : site.footerPolicyUrl ? (
+                    <li>
+                      <FooterLink item={{ label: "隐私政策", path: site.footerPolicyUrl }} />
+                    </li>
+                  ) : null}
+                  {site.termsPath ? (
+                    <li>
+                      <FooterLink item={{ label: "服务条款", path: site.termsPath }} />
+                    </li>
+                  ) : site.footerTermsUrl ? (
+                    <li>
+                      <FooterLink item={{ label: "服务条款", path: site.footerTermsUrl }} />
+                    </li>
+                  ) : null}
+                  {site.refundPolicyPath && (
+                    <li>
+                      <FooterLink item={{ label: "退款政策", path: site.refundPolicyPath }} />
+                    </li>
+                  )}
+                  {site.shippingPolicyPath && (
+                    <li>
+                      <FooterLink item={{ label: "配送政策", path: site.shippingPolicyPath }} />
+                    </li>
+                  )}
+                </>
               )}
             </ul>
           </div>

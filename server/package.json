@@ -6,6 +6,7 @@
     "start": "node src/index.js",
     "start:prod": "cross-env NODE_ENV=production node src/index.js",
     "dev": "nodemon src/index.js",
+    "dev:local": "cross-env DB_PASSWORD= nodemon src/index.js",
     "db:init": "node scripts/apply-sql.js",
     "admin:create": "node scripts/create-admin.js",
     "admin:role": "node scripts/set-admin-role.js",

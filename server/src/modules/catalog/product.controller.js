@@ -1,19 +1,16 @@
 const catalogService = require('./catalog.service');
+const productApiService = require('./services/product.api.service');
+const { asyncRoute } = require('../../middleware/asyncRoute');
 
-exports.getProducts = async (req, res, next) => {
-  try {
-    const { list, total, page, pageSize } = await catalogService.getProducts(req.query);
-    res.paginate(list, total, page, pageSize);
-  } catch (err) { next(err); }
-};
+exports.getProducts = asyncRoute(async (req, res) => {
+  const { list, total, page, pageSize } = await productApiService.listProducts(req.query);
+  res.paginate(list, total, page, pageSize);
+});
 
-exports.getProductById = async (req, res, next) => {
-  try {
-    const data = await catalogService.getProductById(req.params.id);
-    if (!data) return res.fail(404, '商品不存在');
-    res.success(data);
-  } catch (err) { next(err); }
-};
+exports.getProductById = asyncRoute(async (req, res) => {
+  const data = await productApiService.getProductById(req.params.id);
+  res.success(data);
+});
 
 exports.getHomeProducts = async (req, res, next) => {
   try {

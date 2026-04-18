@@ -1,0 +1,22 @@
+/**
+ * 复制到 /srv/projects/gift-system/backend/ecosystem.config.cjs 并按入口文件调整 script
+ * 启动: pm2 start ecosystem.config.cjs
+ */
+module.exports = {
+  apps: [
+    {
+      name: 'gift-api',
+      cwd: '/srv/projects/gift-system/backend',
+      script: 'src/index.js',
+      instances: 1,
+      exec_mode: 'fork',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 3001,
+      },
+      error_file: '/srv/projects/gift-system/logs/pm2-gift-api-error.log',
+      out_file: '/srv/projects/gift-system/logs/pm2-gift-api-out.log',
+      merge_logs: false,
+    },
+  ],
+};

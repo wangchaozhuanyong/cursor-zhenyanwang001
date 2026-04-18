@@ -1,0 +1,26 @@
+---
+description: 后端分层与 API 约定（controller / api.service / service / 错误 / 响应）
+globs: "**/server/src/**/*.js"
+alwaysApply: false
+---
+
+# 后端模块架构（必须遵守）
+
+以下规则适用于 `server/src` 下业务代码。若任务或补丁违反任一条，**不得执行**，并须向用户说明冲突点。
+
+## 分层职责
+
+1. **Controller**：只做 HTTP 层事（取 `req`、调本模块入口、调用 `res.success` / `res.paginate` / 交给 `asyncRoute`）。**禁止**业务判断、事务、拼装复杂 DTO。
+2. **`*.api.service.js`（门面）**：仅作「对外 API 入口」薄封装，**禁止**实现核心业务逻辑；只能委托本模块内的 **domain `*.service.js`**（或同模块 repository 的极薄编排，且不得复制业务规则）。
+3. **Domain `*.service.js`**：**唯一**承载核心业务逻辑与领域规则；对外业务入口应经此层（经 api.service 或统一导出的 service）。
+4. **跨模块**：禁止 A 模块 **直接 `require` B 模块的 `*.service.js`**。跨域能力通过事件、共享 `utils`、或明确的 **application / orchestration** 层（若后续引入）协作；新增跨模块调用须先经人工架构确认。
+
+## 错误与响应
+
+5. 所有可预期业务失败必须 **`throw new BusinessError(code, message)`**（`server/src/errors/BusinessError.js`）。禁止随意 `throw new Error('...')` 表示业务错误（除非不可恢复的编程错误，仍由 `errorHandler` 兜底）。
+6. HTTP 成功与业务失败响应结构必须与全局中间件一致：**`{ code, message, data, traceId }`**（使用 `res.success` / `res.fail` / `res.paginate`，勿手写不一致 JSON）。
+
+## 实施提示
+
+- 路由文件仅注册路径，不写逻辑。
+- 若需新增功能：先改/扩 **domain service** → 再由 **api.service** 暴露给 controller → controller 保持薄。

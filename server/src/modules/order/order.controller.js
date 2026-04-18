@@ -1,13 +1,14 @@
 const orderService = require('./order.service');
+const orderApiService = require('./services/order.api.service');
 const { asyncRoute } = require('../../middleware/asyncRoute');
 
 exports.createOrder = asyncRoute(async (req, res) => {
-  const result = await orderService.createOrder(req.user.id, req.body);
+  const result = await orderApiService.createOrder(req.user.id, req.body);
   res.success(result.data, result.message);
 });
 
 exports.getOrders = asyncRoute(async (req, res) => {
-  const result = await orderService.getOrders(req.user.id, req.query);
+  const result = await orderApiService.listOrders(req.user.id, req.query);
   res.paginate(result.list, result.total, result.page, result.pageSize);
 });
 

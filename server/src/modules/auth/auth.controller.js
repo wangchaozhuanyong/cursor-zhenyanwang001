@@ -1,13 +1,14 @@
 const authService = require('./auth.service');
+const authApiService = require('./services/auth.api.service');
 const { asyncRoute } = require('../../middleware/asyncRoute');
 
 exports.register = asyncRoute(async (req, res) => {
-  const result = await authService.register(req.body);
+  const result = await authApiService.register(req.body);
   res.success(result.data, result.message);
 });
 
 exports.login = asyncRoute(async (req, res) => {
-  const result = await authService.login(req.body);
+  const result = await authApiService.login(req.body);
   res.success(result.data, result.message);
 });
 

@@ -11,6 +11,7 @@ import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import BannerSkeleton from "@/components/BannerSkeleton";
 import TrustBar from "@/components/TrustBar";
 import SiteFooter from "@/components/SiteFooter";
+import FeaturedReviewsSection from "@/components/FeaturedReviewsSection";
 import { Skeleton } from "@/components/ui/skeleton";
 import logoWebp from "@/assets/logo.webp";
 import { isLoggedIn } from "@/utils/token";
@@ -233,6 +234,10 @@ export default function Index() {
             skeletonCount={4}
           />
         </Section>
+
+        <div className="mt-6 md:mt-10">
+          <FeaturedReviewsSection limit={6} />
+        </div>
       </main>
 
       <SiteFooter />

@@ -1,12 +1,16 @@
 import { get, post } from "../request";
 import type { PaginatedData } from "@/types/common";
-import type { Review } from "@/types/review";
-export type { Review };
+import type { Review, FeaturedReview } from "@/types/review";
+export type { Review, FeaturedReview };
 
 export function getProductReviews(productId: string, page = 1) {
   return get<PaginatedData<Review>>(`/reviews/product/${productId}`, {
     page: String(page),
   });
+}
+
+export function getFeaturedReviews(limit = 6) {
+  return get<FeaturedReview[]>("/reviews/featured", { limit: String(limit) });
 }
 
 export function createReview(params: {

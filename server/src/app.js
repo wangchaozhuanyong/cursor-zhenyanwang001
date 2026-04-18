@@ -12,7 +12,29 @@ const stripeWebhook = require('./modules/order/stripeWebhook.controller');
 
 const app = express();
 
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+/**
+ * 纯 HTTP（IP/未上证书）部署时，Helmet 默认的 CSP upgrade-insecure-requests + HSTS
+ * 会让部分移动浏览器把请求「升级」到 https://，因无证书而表现为「网络连接失败」。
+ * 仅当 PUBLIC_APP_URL 明确为 https:// 时保留完整安全头。
+ */
+const publicUrl = (process.env.PUBLIC_APP_URL || '').trim();
+const useHttpsSite = publicUrl.startsWith('https://');
+
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    ...(!useHttpsSite
+      ? {
+          contentSecurityPolicy: {
+            directives: {
+              upgradeInsecureRequests: null,
+            },
+          },
+          strictTransportSecurity: false,
+        }
+      : {}),
+  }),
+);
 
 const isProduction = process.env.NODE_ENV === 'production';
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:4173,http://localhost:8080,http://localhost:8081,http://localhost:3000,http://127.0.0.1:3000').split(',');

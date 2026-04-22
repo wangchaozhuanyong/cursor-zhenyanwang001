@@ -76,7 +76,13 @@ export default function Settings() {
         <div className="flex flex-col items-center py-6">
           <div className="relative">
             {avatar ? (
-              <img src={avatar} alt="头像" className="h-24 w-24 rounded-full object-cover shadow-lg shadow-gold/20" />
+              <div className="h-24 w-24 overflow-hidden rounded-full shadow-lg shadow-gold/20">
+                <img
+                  src={avatar}
+                  alt="头像"
+                  className="block h-full w-full scale-110 object-cover object-center"
+                />
+              </div>
             ) : (
               <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gold text-3xl font-bold text-primary-foreground shadow-lg shadow-gold/20">
                 {nickname.charAt(0).toUpperCase()}

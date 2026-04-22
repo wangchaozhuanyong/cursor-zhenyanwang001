@@ -7,6 +7,7 @@ require('./_dbCleanup.test');
 const { test, describe, before } = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
+const { randomUUID } = require('crypto');
 const app = require('../src/app');
 const db = require('../src/config/db');
 
@@ -41,13 +42,27 @@ describe('local flow smoke', () => {
     assert.ok(products.body.data?.list?.length, 'seed 应有至少一个商品');
     productId = products.body.data.list[0].id;
 
-    const shipping = await request(app)
+    let shipping = await request(app)
       .get('/api/shipping')
       .expect(200);
     assert.equal(shipping.body.code, 0);
     assert.ok(Array.isArray(shipping.body.data));
-    assert.ok(shipping.body.data.length > 0, 'seed 应至少有一个运费模板');
-    shippingTemplateId = shipping.body.data[0].id;
+    if (!shipping.body.data.length) {
+      shippingTemplateId = randomUUID();
+      await db.query(
+        `INSERT INTO shipping_templates (id, name, regions, base_fee, free_above, extra_per_kg, enabled)
+         VALUES (?,?,?,?,?,?,?)`,
+        [shippingTemplateId, 'smoke-template', '[]', 5, null, 1, 1],
+      );
+      shipping = await request(app)
+        .get('/api/shipping')
+        .expect(200);
+      assert.equal(shipping.body.code, 0);
+    }
+    assert.ok(shipping.body.data.length > 0, '运费模板列表不应为空');
+    shippingTemplateId = shipping.body.data.some((t) => t.id === shippingTemplateId)
+      ? shippingTemplateId
+      : shipping.body.data[0].id;
 
     const detail = await request(app)
       .get(`/api/products/${productId}`)

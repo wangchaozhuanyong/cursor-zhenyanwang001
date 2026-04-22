@@ -138,9 +138,13 @@ export default function Profile() {
         <div className="mx-auto max-w-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-gold text-2xl font-bold text-white">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gold text-2xl font-bold text-white">
                 {avatar ? (
-                  <img src={avatar} alt="avatar" className="h-full w-full object-cover" />
+                  <img
+                    src={avatar}
+                    alt="avatar"
+                    className="block h-full w-full scale-110 object-cover object-center"
+                  />
                 ) : (
                   <img src={logoSrc} alt={siteName} className="h-full w-full object-contain p-1" />
                 )}

@@ -1,0 +1,29 @@
+# 示例：不经过 PM2，由 systemd 直接启动 Node（可选）
+# 安装：sudo cp gc-api.direct.service.example /etc/systemd/system/gc-api.service
+#       sudo systemctl daemon-reload && sudo systemctl enable --now gc-api
+#
+# 注意：当前仓库 CI/verify 以 PM2 为主；若改用本文件，请同步调整验收脚本。
+#
+[Unit]
+Description=click-send-shop API (Node)
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/click-send-shop/server
+EnvironmentFile=/var/www/click-send-shop/server/.env
+ExecStart=/usr/bin/node src/index.js
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gc-api
+
+# 日志也可单独落盘：
+# StandardOutput=append:/var/log/click-send-shop/app.out.log
+# StandardError=append:/var/log/click-send-shop/app.err.log
+
+[Install]
+WantedBy=multi-user.target

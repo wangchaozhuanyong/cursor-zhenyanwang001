@@ -9,6 +9,7 @@ import {
   clearAdminTokens,
 } from "@/utils/token";
 import { normalizeMediaUrls } from "@/utils/mediaUrl";
+import { notifyAuthExpired } from "@/lib/authSessionBridge";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
@@ -85,10 +86,7 @@ async function request<T>(
       return request<T>(endpoint, { ...options, headers: retryHeaders }, false);
     } catch {
       clearTokens();
-      try {
-        const { useAuthStore } = await import("@/stores/useAuthStore");
-        useAuthStore.setState({ isAuthenticated: false });
-      } catch { /* avoid circular import failure */ }
+      notifyAuthExpired();
       if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
         window.location.href = "/login";
       }

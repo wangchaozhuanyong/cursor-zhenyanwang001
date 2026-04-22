@@ -8,6 +8,7 @@ import { useHistoryStore } from "@/stores/useHistoryStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import type { LoginParams, RegisterParams } from "@/types/auth";
 import type { CartItem } from "@/types/cart";
+import { registerAuthExpiredHandler } from "@/lib/authSessionBridge";
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -79,3 +80,7 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 );
+
+registerAuthExpiredHandler(() => {
+  useAuthStore.setState({ isAuthenticated: false });
+});

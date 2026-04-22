@@ -11,5 +11,10 @@ node_modules/
 **/dist-ssr/
 *.log
 
-# GitHub Actions — use a PAT with `workflow` scope to push these; keep local only otherwise
+# GitHub Actions — 默认忽略，但允许提交我们的部署 workflow
 .github/workflows/
+!.github/workflows/deploy.yml
+
+# 部署状态文件（last_good_head / history.log 等）
+.deploy-state/
+deploy.log

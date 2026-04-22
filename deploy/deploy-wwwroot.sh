@@ -4,15 +4,26 @@
 #   bash deploy/deploy-wwwroot.sh
 #
 # 可选环境变量：
-#   PROJECT_DIR        默认 /www/wwwroot/cursor-zhenyanwang001
+#   PROJECT_DIR        默认 /var/www/click-send-shop
 #   FRONTEND_DIR       显式指定前端目录（相对 PROJECT_DIR），否则自动探测
 #   PUBLIC_FRONTEND    静态资源输出目录，默认 $PROJECT_DIR/public-frontend（与 nginx root 一致）
+#   PM2_APP            pm2 进程名，默认 gc-api
+#   NPM_CI=1           若存在 package-lock.json 则用 npm ci 替代 npm install（根/前端/后端）
 #
 set -euo pipefail
 
+npm_install_here() {
+  if [[ "${NPM_CI:-}" == "1" ]] && [[ -f package-lock.json ]]; then
+    npm ci
+  else
+    npm install
+  fi
+}
+
 echo "🚀 开始部署..."
 
-PROJECT_DIR="${PROJECT_DIR:-/www/wwwroot/cursor-zhenyanwang001}"
+PROJECT_DIR="${PROJECT_DIR:-/var/www/click-send-shop}"
+PM2_APP="${PM2_APP:-gc-api}"
 LOG_FILE="$PROJECT_DIR/deploy.log"
 NGINX_SITE_SRC="$PROJECT_DIR/deploy/cursor-main-frontend.nginx.conf"
 NGINX_SITE_DST="${NGINX_SITE_DST:-/etc/nginx/sites-available/cursor-main-frontend.conf}"
@@ -34,7 +45,7 @@ echo "🌐 远程版本: $REMOTE_COMMIT" | tee -a "$LOG_FILE"
 
 if [[ -f "$PROJECT_DIR/package.json" ]]; then
   echo "📦 安装仓库根目录依赖..." | tee -a "$LOG_FILE"
-  npm install
+  npm_install_here
 else
   echo "⏭ 跳过根目录 npm（无 package.json）" | tee -a "$LOG_FILE"
 fi
@@ -67,7 +78,7 @@ fi
 if [[ -n "$FRONTEND_SUB" ]]; then
   echo "🎨 构建前端 ($FRONTEND_SUB)..." | tee -a "$LOG_FILE"
   cd "$PROJECT_DIR/$FRONTEND_SUB" || exit 1
-  npm install
+  npm_install_here
   npm run build
   cd "$PROJECT_DIR" || exit 1
 
@@ -85,7 +96,7 @@ fi
 
 echo "📦 安装后端依赖..." | tee -a "$LOG_FILE"
 cd "$PROJECT_DIR/server" || exit 1
-npm install
+npm_install_here
 
 echo "🗄 执行数据库迁移..." | tee -a "$LOG_FILE"
 npm run migrate
@@ -99,8 +110,15 @@ else
   echo "⏭ 跳过 Nginx（未找到 $NGINX_SITE_SRC）" | tee -a "$LOG_FILE"
 fi
 
-echo "🔁 重启后端 (pm2)..." | tee -a "$LOG_FILE"
-pm2 reload gc-api --update-env
+echo "🔁 (Re)启动后端（统一通过 ecosystem.config.cjs / $PM2_APP）..." | tee -a "$LOG_FILE"
+cd "$PROJECT_DIR/server" || exit 1
+mkdir -p "$PROJECT_DIR/server/logs"
+if pm2 describe "$PM2_APP" >/dev/null 2>&1; then
+  pm2 reload "$PM2_APP" --update-env
+else
+  pm2 start ecosystem.config.cjs --only "$PM2_APP" --env production
+fi
+pm2 save 2>/dev/null || true
 
 echo "🩺 健康检查..." | tee -a "$LOG_FILE"
 
@@ -122,5 +140,8 @@ if [[ "$STATUS" != "200" ]]; then
   echo "❌ 健康检查失败，状态码: $STATUS" | tee -a "$LOG_FILE"
   exit 1
 fi
+
+echo "🔎 强制执行 deploy/verify-pm2.sh（唯一验收标准）..." | tee -a "$LOG_FILE"
+PM2_APP="$PM2_APP" bash "$PROJECT_DIR/deploy/verify-pm2.sh" | tee -a "$LOG_FILE"
 
 echo "🎉 部署完成！版本: $LOCAL_COMMIT" | tee -a "$LOG_FILE"

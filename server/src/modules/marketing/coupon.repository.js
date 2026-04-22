@@ -25,7 +25,7 @@ async function selectUserCouponsPage(userId, status, pageSize, offset) {
      FROM user_coupons uc
      JOIN coupons c ON uc.coupon_id = c.id
      ${where}
-     ORDER BY uc.created_at DESC
+     ORDER BY uc.claimed_at DESC, uc.id DESC
      LIMIT ? OFFSET ?`,
     [...params, pageSize, offset],
   );

@@ -188,11 +188,13 @@ const STMTS = [
   type VARCHAR(50) NOT NULL DEFAULT 'system',
   title VARCHAR(200) NOT NULL DEFAULT '',
   content TEXT,
+  is_read TINYINT(1) NOT NULL DEFAULT 0,
   publish_status VARCHAR(20) NOT NULL DEFAULT 'published',
   last_modified_by VARCHAR(36) DEFAULT NULL,
   last_modified_at DATETIME DEFAULT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_notif_user (user_id)
+  INDEX idx_notif_user (user_id),
+  INDEX idx_notif_user_read (user_id, is_read)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
   `CREATE TABLE IF NOT EXISTS browsing_history (

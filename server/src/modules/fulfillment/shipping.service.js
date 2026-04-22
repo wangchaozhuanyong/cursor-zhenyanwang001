@@ -21,13 +21,16 @@ module.exports = {
 };
 
 async function quoteShipping(payload) {
-  const shippingTemplateId = Number(payload?.shipping_template_id);
+  const rawTpl = payload?.shipping_template_id;
+  const shippingTemplateId = rawTpl === undefined || rawTpl === null
+    ? ''
+    : String(rawTpl).trim();
   const rawAmount = Number(payload?.raw_amount);
   const estimatedWeightKg = payload?.estimated_weight_kg == null
     ? null
     : Number(payload.estimated_weight_kg);
 
-  if (!Number.isFinite(shippingTemplateId) || shippingTemplateId <= 0) {
+  if (!shippingTemplateId) {
     throw new BusinessError(400, 'shipping_template_id 无效');
   }
   if (!Number.isFinite(rawAmount) || rawAmount < 0) {

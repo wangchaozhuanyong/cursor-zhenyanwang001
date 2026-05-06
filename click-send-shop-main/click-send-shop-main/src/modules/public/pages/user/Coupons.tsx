@@ -24,32 +24,32 @@ interface DisplayCoupon {
 
 const couponColors = {
   gold: {
-    bg: "from-[hsl(43,72%,52%)] to-[hsl(35,80%,45%)]",
-    light: "bg-[hsl(43,72%,52%)]/10",
-    text: "text-[hsl(43,72%,52%)]",
-    border: "border-[hsl(43,72%,52%)]/20",
-    stamp: "bg-[hsl(43,72%,52%)]",
+    bg: "",
+    light: "bg-[color-mix(in_srgb,var(--theme-price)_14%,transparent)]",
+    text: "text-[var(--theme-price)]",
+    border: "border-[color-mix(in_srgb,var(--theme-price)_22%,transparent)]",
+    stamp: "bg-[var(--theme-price)] text-[var(--theme-price-foreground)]",
   },
   ruby: {
     bg: "from-[hsl(350,75%,55%)] to-[hsl(340,70%,45%)]",
     light: "bg-[hsl(350,75%,55%)]/10",
     text: "text-[hsl(350,75%,55%)]",
     border: "border-[hsl(350,75%,55%)]/20",
-    stamp: "bg-[hsl(350,75%,55%)]",
+    stamp: "bg-[hsl(350,75%,55%)] text-white",
   },
   emerald: {
     bg: "from-[hsl(160,60%,42%)] to-[hsl(170,55%,35%)]",
     light: "bg-[hsl(160,60%,42%)]/10",
     text: "text-[hsl(160,60%,42%)]",
     border: "border-[hsl(160,60%,42%)]/20",
-    stamp: "bg-[hsl(160,60%,42%)]",
+    stamp: "bg-[hsl(160,60%,42%)] text-white",
   },
   sapphire: {
     bg: "from-[hsl(220,70%,55%)] to-[hsl(230,65%,45%)]",
     light: "bg-[hsl(220,70%,55%)]/10",
     text: "text-[hsl(220,70%,55%)]",
     border: "border-[hsl(220,70%,55%)]/20",
-    stamp: "bg-[hsl(220,70%,55%)]",
+    stamp: "bg-[hsl(220,70%,55%)] text-white",
   },
 };
 
@@ -253,6 +253,15 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
   const isDisabled = coupon.status === "used" || coupon.status === "expired";
   const colors = couponColors[coupon.color];
   const Icon = coupon.icon;
+  const leftStripeClass =
+    coupon.color === "gold"
+      ? "bg-theme-coupon-accent"
+      : `bg-gradient-to-br ${colors.bg}`;
+  const stripeFg = coupon.color === "gold" ? "text-[var(--theme-price-foreground)]" : "text-white";
+  const stripeFgMuted =
+    coupon.color === "gold"
+      ? "text-[color-mix(in_srgb,var(--theme-price-foreground)_72%,transparent)]"
+      : "text-white/70";
 
   return (
     <motion.div
@@ -266,22 +275,22 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
     >
       {/* Tag */}
       {coupon.tag && !isDisabled && (
-        <div className={`absolute right-0 top-0 z-10 rounded-bl-xl px-2.5 py-1 text-[10px] font-bold text-white ${colors.stamp}`}>
+        <div className={`absolute right-0 top-0 z-10 rounded-bl-xl px-2.5 py-1 text-[10px] font-bold ${colors.stamp}`}>
           {coupon.tag}
         </div>
       )}
 
       <div className="flex items-stretch border border-border bg-card rounded-2xl overflow-hidden">
         {/* Left: gradient discount area */}
-        <div className={`relative flex w-[110px] flex-shrink-0 flex-col items-center justify-center bg-gradient-to-br ${colors.bg} p-4`}>
+        <div className={`relative flex w-[110px] flex-shrink-0 flex-col items-center justify-center p-4 ${leftStripeClass}`}>
           {/* Semicircle cutouts */}
           <div className="absolute -right-2.5 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-background" />
 
-          <Icon size={16} className="mb-1.5 text-white/70" />
-          <span className="text-2xl font-bold text-white leading-none">
+          <Icon size={16} className={`mb-1.5 ${stripeFgMuted}`} />
+          <span className={`text-2xl font-bold leading-none ${stripeFg}`}>
             {coupon.discount}
           </span>
-          <span className="mt-1.5 text-[10px] text-white/70 text-center leading-tight">{coupon.condition}</span>
+          <span className={`mt-1.5 text-[10px] text-center leading-tight ${stripeFgMuted}`}>{coupon.condition}</span>
         </div>
 
         {/* Right: info + action */}
@@ -300,7 +309,7 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
                 onClick={onClaim}
                 disabled={claiming}
                 whileTap={{ scale: 0.9 }}
-                className={`relative overflow-hidden rounded-full px-5 py-2.5 text-xs font-bold text-white transition-all ${colors.stamp} ${claiming ? "opacity-60" : "shadow-lg"}`}
+                className={`relative overflow-hidden rounded-full px-5 py-2.5 text-xs font-bold transition-all ${colors.stamp} ${claiming ? "opacity-60" : "shadow-lg"}`}
               >
                 {claiming ? (
                   <motion.span

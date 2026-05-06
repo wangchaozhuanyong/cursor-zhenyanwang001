@@ -40,7 +40,10 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
   if (images.length === 0) {
     return (
       <div className="relative">
-        <div className="relative aspect-square w-full overflow-hidden bg-secondary" />
+        <div
+          className="relative w-full overflow-hidden bg-secondary"
+          style={{ aspectRatio: "var(--theme-image-ratio)" }}
+        />
       </div>
     );
   }
@@ -49,7 +52,8 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
     <div className="relative">
       {/* Main image */}
       <div
-        className="relative aspect-square w-full overflow-hidden bg-secondary"
+        className="relative w-full overflow-hidden bg-secondary"
+        style={{ aspectRatio: "var(--theme-image-ratio)" }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -69,14 +73,14 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
               blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
               alt={`${name} ${current + 1}`}
               className="h-full w-full bg-transparent"
-              imgClassName="h-full w-full object-cover"
+              imgClassName="h-full w-full [object-fit:var(--theme-image-fit,cover)]"
               {...(current === 0 ? { fetchPriority: "high" as const } : {})}
             />
           </motion.div>
         </AnimatePresence>
 
-        {/* Counter */}
-        <div className="absolute bottom-3 right-3 rounded-full bg-foreground/60 px-2.5 py-1 text-[11px] font-medium text-background backdrop-blur-sm">
+        {/* Counter — 叠在图上：用主题表面色与边框，避免固定 foreground/background */}
+        <div className="absolute bottom-3 right-3 rounded-full border border-[color-mix(in_srgb,var(--theme-border)_60%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_88%,transparent)] px-2.5 py-1 text-[11px] font-medium text-[var(--theme-text-on-surface)] shadow-sm backdrop-blur-sm">
           {current + 1} / {images.length}
         </div>
       </div>
@@ -90,7 +94,7 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
             onClick={() => goTo(i)}
             className={`flex-shrink-0 overflow-hidden rounded-lg transition-all ${
               i === current
-                ? "ring-2 ring-gold ring-offset-2 ring-offset-background"
+                ? "ring-2 ring-[var(--theme-price)] ring-offset-2 ring-offset-[var(--theme-bg)]"
                 : "opacity-50 hover:opacity-80"
             }`}
           >
@@ -99,7 +103,7 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
               blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
               alt={`${name} thumb ${i + 1}`}
               className="h-14 w-14 bg-transparent"
-              imgClassName="h-full w-full object-cover"
+              imgClassName="h-full w-full [object-fit:var(--theme-image-fit,cover)]"
             />
           </button>
         ))}

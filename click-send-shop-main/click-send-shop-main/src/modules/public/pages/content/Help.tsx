@@ -51,7 +51,7 @@ export default function Help() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg px-4">
+      <main className="mx-auto max-w-lg px-4 pt-4">
         {/* Contact card */}
         <div className="rounded-2xl bg-primary p-5">
           <div className="flex items-center gap-3">
@@ -86,7 +86,7 @@ export default function Help() {
         </div>
 
         {/* Category filter */}
-        <div className="no-scrollbar mt-5 flex gap-2 overflow-x-auto">
+        <div className="no-scrollbar mt-8 flex gap-2 overflow-x-auto">
           <button
             onClick={() => setActiveCategory(null)}
             className={`flex-shrink-0 rounded-full px-4 py-2 text-xs font-medium transition-all ${
@@ -112,7 +112,7 @@ export default function Help() {
         </div>
 
         {/* FAQ list */}
-        <div className="mt-4 space-y-2">
+        <div className="mt-6 space-y-3">
           {filtered.map((faq, i) => (
             <motion.div
               key={faq.id}

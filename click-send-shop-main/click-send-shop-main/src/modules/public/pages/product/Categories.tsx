@@ -73,7 +73,7 @@ export default function Categories() {
 
       <main className="mx-auto max-w-lg">
         {/* Category tabs */}
-        <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 py-2">
+        <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 py-3 border-b border-[var(--theme-border)]">
           {loading && categories.length === 0
             ? Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-8 w-16 flex-shrink-0 rounded-full" />
@@ -98,7 +98,7 @@ export default function Categories() {
         </div>
 
         {/* Sort */}
-        <div className="flex items-center gap-2 px-4 py-2">
+        <div className="flex items-center gap-2 px-4 pb-4 pt-3">
           <SlidersHorizontal size={14} className="text-muted-foreground" />
           {(["default", "price-asc", "price-desc"] as const).map((s) => (
             <button
@@ -119,7 +119,7 @@ export default function Categories() {
         )}
 
         {/* Products */}
-        <div className="grid grid-cols-2 gap-3 px-4 pb-4">
+        <div className="grid grid-cols-2 gap-4 px-4 pb-6 pt-1">
           {loading
             ? Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)
             : products.map((p, i) => (

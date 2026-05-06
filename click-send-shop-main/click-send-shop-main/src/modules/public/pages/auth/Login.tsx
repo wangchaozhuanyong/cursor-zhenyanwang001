@@ -107,7 +107,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* ══════════════ Top Brand Bar ══════════════ */}
-      <header className="flex items-center gap-3 px-5 pt-safe pb-3 pt-10">
+      <header className="flex items-center gap-3 px-5 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
         <img src={logoSrc} alt={siteName} width={44} height={44} className="rounded-xl object-contain" />
         <div className="flex flex-col">
           <h1 className="font-display text-xl font-bold tracking-tight leading-tight text-foreground">
@@ -130,7 +130,7 @@ export default function Login() {
       </motion.div>
 
       {/* ══════════════ Main Content ══════════════ */}
-      <main className="flex-1 mx-auto w-full max-w-lg px-5 mt-6">
+      <main className="flex-1 mx-auto w-full max-w-lg px-5 mt-8">
         {/* Welcome text */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}

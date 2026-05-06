@@ -67,7 +67,7 @@ const ROLE_PERM_CODES = {
     'shipping.manage',
     'settings.manage',
     'content.manage',
-    'admin_log.view',
+    'audit.view',
   ],
   customer_service: [
     'dashboard.view',

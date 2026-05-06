@@ -91,7 +91,7 @@ export default function Index() {
           <div className="mx-auto flex w-full max-w-screen-xl items-center gap-3 px-4 py-3 md:px-6">
             <button
               onClick={() => navigate("/")}
-              className="flex items-center gap-2 rounded-full border border-white/10 bg-[var(--theme-surface)]/75 px-2.5 py-2 shadow-sm backdrop-blur-xl"
+              className="flex items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--theme-text-on-surface)_14%,transparent)] bg-[var(--theme-surface)]/75 px-2.5 py-2 shadow-sm backdrop-blur-xl"
               aria-label={siteName}
             >
               <img
@@ -152,7 +152,7 @@ export default function Index() {
           </div>
         </header>
 
-        <div className="mx-auto grid w-full max-w-screen-xl gap-5 px-4 pb-6 pt-3 md:grid-cols-[1.08fr_0.92fr] md:px-6 md:pb-9 md:pt-6">
+        <div className="mx-auto grid w-full max-w-screen-xl gap-6 px-4 pb-8 pt-4 md:grid-cols-[1.08fr_0.92fr] md:gap-8 md:px-6 md:pb-12 md:pt-8">
           <Reveal index={0} className="rounded-[1.75rem] border border-[var(--theme-border)] bg-[var(--theme-surface)]/90 p-5 shadow-[var(--theme-shadow)] backdrop-blur-xl md:p-7">
             <div className="inline-flex items-center gap-2 rounded-full border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-price)_9%,transparent)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-price)]">
               <Sparkles size={14} />
@@ -219,7 +219,7 @@ export default function Index() {
             </div>
           </Reveal>
 
-          <Reveal index={1} className="space-y-4">
+          <Reveal index={1} className="space-y-5 md:space-y-6">
             <div className="overflow-hidden rounded-[1.5rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-2 shadow-[var(--theme-shadow)]">
               {bannerLoading ? <BannerSkeleton /> : <BannerCarousel banners={banners} />}
             </div>
@@ -285,7 +285,7 @@ export default function Index() {
 
       <main className="mx-auto w-full max-w-screen-xl px-0 md:px-6">
         <Reveal index={0} className="block">
-          <div className="mt-5 hidden md:block">
+          <div className="mt-8 hidden md:block md:mt-10">
             <TrustBar />
           </div>
           <TrustBar compact className="md:hidden" />
@@ -305,7 +305,7 @@ export default function Index() {
         </Section>
 
         {/* Categories */}
-        <Reveal index={0} className="no-scrollbar mt-8 flex gap-5 overflow-x-auto px-4 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-8 md:gap-3 md:overflow-visible md:px-0 md:snap-none">
+        <Reveal index={0} className="no-scrollbar mt-section flex gap-4 overflow-x-auto px-4 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:mt-section-lg md:grid md:grid-cols-8 md:gap-4 md:overflow-visible md:px-0 md:snap-none">
           {loading
             ? Array.from({ length: 6 }).map((_, i) => (
                 <div
@@ -335,17 +335,17 @@ export default function Index() {
         {/* Coupon Banner */}
         <Reveal index={0} className="block">
           {loading ? (
-            <div className="mx-4 mt-5 md:mx-0">
+            <div className="mx-4 mt-section md:mx-0 md:mt-section-lg">
               <Skeleton className="h-14 w-full rounded-2xl" />
             </div>
           ) : (
             <button
               type="button"
               onClick={() => navigate("/coupons")}
-              className="mx-4 mt-5 flex items-center gap-3 theme-rounded px-4 py-3.5 theme-shadow transition-transform active:scale-[0.98] md:mx-0 md:px-6 md:py-4"
+              className="mx-4 mt-section flex items-center gap-3 theme-rounded px-4 py-3.5 theme-shadow transition-transform active:scale-[0.98] md:mx-0 md:mt-section-lg md:px-6 md:py-4"
               style={{ background: "var(--theme-gradient)" }}
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--theme-gradient-foreground)_22%,transparent)] backdrop-blur-sm">
                 <Ticket size={20} className="text-[var(--theme-gradient-foreground)]" />
               </div>
               <div className="flex-1 text-left">
@@ -363,7 +363,7 @@ export default function Index() {
 
         {/* Error */}
         {error && (
-          <div className="mx-4 mt-4 rounded-xl bg-destructive/10 p-4 text-center text-sm text-destructive md:mx-0">
+          <div className="mx-4 mt-6 rounded-xl bg-destructive/10 p-4 text-center text-sm text-destructive md:mx-0">
             {error}
             <button onClick={loadHomeData} className="ml-2 underline">
               重试
@@ -392,7 +392,7 @@ export default function Index() {
           />
         </Section>
 
-        <div className="mt-6 md:mt-10">
+        <div className="mt-section md:mt-section-lg">
           <FeaturedReviewsSection limit={6} />
         </div>
       </main>
@@ -421,7 +421,7 @@ function ProductGrid({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.22, ease: "easeInOut" }}
-          className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5"
+          className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5 lg:grid-cols-4 xl:grid-cols-5"
         >
           {Array.from({ length: Math.max(skeletonCount, 5) }).map((_, i) => (
             <ProductCardSkeleton key={i} />
@@ -434,7 +434,7 @@ function ProductGrid({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.26, ease: "easeInOut" }}
-          className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5"
+          className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-5 lg:grid-cols-4 xl:grid-cols-5"
         >
           {products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
         </motion.div>
@@ -457,8 +457,8 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="mt-8 px-4 md:px-0">
-      <Reveal index={0} className="mb-4 block">
+    <section className="mt-section px-4 md:mt-section-lg md:px-0">
+      <Reveal index={0} className="mb-5 block md:mb-6">
         <div className="flex items-center justify-between">
           {loading ? (
             <Skeleton className="h-6 w-28" />
@@ -492,7 +492,7 @@ function Section({
 
 function PercentBadge() {
   return (
-    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-sm font-black backdrop-blur">
+    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--theme-gradient-foreground)_22%,transparent)] text-sm font-black text-[var(--theme-gradient-foreground)] backdrop-blur">
       %
     </div>
   );

@@ -135,7 +135,7 @@ export default function Search() {
         </div>
       </div>
 
-      <main className="mx-auto max-w-lg px-4 py-4">
+      <main className="mx-auto max-w-lg px-4 py-6">
         {shouldShowHistory && (
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
@@ -181,7 +181,7 @@ export default function Search() {
 
         {!shouldShowHistory && (
           <>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               {loading
                 ? Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)
                 : products.map((product) => (

@@ -10,6 +10,7 @@ import {
   ProgressiveImage,
   SquishButton,
 } from "@/modules/micro-interactions";
+import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 
 interface Props {
   product: Product;
@@ -27,11 +28,13 @@ export default function ProductCard({ product, index = 0 }: Props) {
   const addItem = useCartStore((s) => s.addItem);
   const isFavorite = useFavoritesStore((s) => s.isFavorite(product.id));
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const { themeConfig } = useThemeRuntime();
+  const cardCenter = themeConfig.cardTextAlign === "center";
 
   return (
     <Reveal
       index={index}
-      className="group cursor-pointer overflow-hidden border bg-[var(--theme-surface)] border-[var(--theme-border)] theme-rounded theme-shadow transition-shadow hover:shadow-[var(--theme-shadow-hover)]"
+      className="theme-product-card group cursor-pointer overflow-hidden theme-rounded"
     >
       <div
         className="relative overflow-hidden bg-[var(--theme-bg)]"
@@ -43,7 +46,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
           blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
           alt={product.name}
           className="h-full w-full bg-transparent"
-          imgClassName={`h-full w-full object-cover transition-all duration-300 ease-in-out group-hover:scale-105`}
+          imgClassName="h-full w-full transition-all duration-300 ease-in-out group-hover:scale-105 [object-fit:var(--theme-image-fit,cover)]"
         />
         <div className="absolute left-2 top-2 flex gap-1">
           {product.is_hot && (
@@ -75,15 +78,15 @@ export default function ProductCard({ product, index = 0 }: Props) {
           />
         </SquishButton>
       </div>
-      <div className="p-3 flex flex-col gap-2">
+      <div className={`flex flex-col gap-2 p-3 ${cardCenter ? "items-center text-center" : ""}`}>
         <h3
           className="line-clamp-2 text-[13px] font-medium leading-tight text-[var(--theme-text)]"
           onClick={() => navigate(`/product/${product.id}`)}
         >
           {product.name}
         </h3>
-        <div className="flex items-end justify-between gap-2">
-          <div className="min-w-0 flex-1">
+        <div className={`flex items-end gap-2 ${cardCenter ? "w-full justify-center" : "justify-between"}`}>
+          <div className={`min-w-0 ${cardCenter ? "flex flex-col items-center" : "flex-1"}`}>
             <div className="flex items-baseline gap-1.5">
               <span className="text-lg font-bold leading-none text-[var(--theme-price)]">
                 RM {product.price}
@@ -95,7 +98,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
                   </span>
                 )}
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-[var(--theme-text-muted)]">
+            <div className={`mt-1 flex flex-wrap items-center gap-2 text-[10px] text-[var(--theme-text-muted)] ${cardCenter ? "justify-center" : ""}`}>
               <span>+{product.points}积分</span>
               {typeof product.sales_count === "number" && product.sales_count > 0 && (
                 <span>已售 {formatSales(product.sales_count)}</span>

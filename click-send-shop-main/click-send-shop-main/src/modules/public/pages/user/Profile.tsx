@@ -19,8 +19,7 @@ function ThemeToggleButton({ theme, onToggle }: { theme: ThemeMode; onToggle: ()
     <button
       type="button"
       onClick={onToggle}
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--theme-gradient-foreground)_18%,transparent)] bg-[color-mix(in_srgb,var(--theme-gradient-foreground)_10%,transparent)] backdrop-blur transition-transform active:scale-90"
-      style={{ color: "var(--theme-gradient-foreground)" }}
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-text-on-surface)_6%,transparent)] text-[var(--theme-text-on-surface)] backdrop-blur transition-transform active:scale-90"
       title={theme === "dark" ? "切换亮色" : "切换暗色"}
     >
       {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
@@ -38,13 +37,27 @@ function ProfileAvatar({
   alt: string;
 }) {
   return (
-    <div className="relative flex h-[4.25rem] w-[4.25rem] shrink-0 items-center justify-center rounded-3xl border border-[color-mix(in_srgb,var(--theme-gradient-foreground)_22%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_88%,transparent)] p-1.5 shadow-lg shadow-black/10">
+    <div className="relative flex h-[4.25rem] w-[4.25rem] shrink-0 items-center justify-center rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-bg)] p-1.5 shadow-sm">
       <img
         src={src || fallback}
         alt={alt}
         className="h-full w-full rounded-2xl object-contain"
       />
     </div>
+  );
+}
+
+/** 仅亮色模式：在 surface 上叠加极淡主色→价格色渐变，深色模式由 .dark 隐藏 */
+function ProfileHeaderLightWash() {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-0 dark:hidden"
+      style={{
+        background:
+          "linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 11%, var(--theme-surface)), color-mix(in srgb, var(--theme-price) 7%, var(--theme-surface)))",
+      }}
+    />
   );
 }
 
@@ -63,8 +76,7 @@ function StatChip({
     <button
       type="button"
       onClick={onClick}
-      className="rounded-2xl border border-[color-mix(in_srgb,var(--theme-gradient-foreground)_16%,transparent)] bg-[color-mix(in_srgb,var(--theme-gradient-foreground)_9%,transparent)] px-2 py-3 text-center backdrop-blur transition-transform active:scale-95"
-      style={{ color: "var(--theme-gradient-foreground)" }}
+      className="rounded-2xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-text-on-surface)_5%,transparent)] px-2 py-3 text-center text-[var(--theme-text-on-surface)] backdrop-blur transition-transform active:scale-95"
     >
       <p
         className="text-lg font-black leading-none"
@@ -72,7 +84,7 @@ function StatChip({
       >
         {value}
       </p>
-      <p className="mt-1 text-[10px] font-medium opacity-70">{label}</p>
+      <p className="mt-1 text-[10px] font-medium text-[var(--theme-text-muted-on-surface)]">{label}</p>
     </button>
   );
 }
@@ -120,40 +132,37 @@ export default function Profile() {
     return (
       <div className="min-h-screen bg-[var(--theme-bg)] pb-20 text-[var(--theme-text)]">
         <div className="px-4 pb-4 pt-[max(env(safe-area-inset-top),1rem)]">
-          <section
-            className="theme-rounded theme-shadow relative mx-auto max-w-lg overflow-hidden p-5"
-            style={{ background: "var(--theme-gradient)", color: "var(--theme-gradient-foreground)" }}
-          >
-            <div className="pointer-events-none absolute -right-12 -top-14 h-36 w-36 rounded-full bg-[color-mix(in_srgb,var(--theme-gradient-foreground)_16%,transparent)] blur-2xl" />
-            <div className="pointer-events-none absolute -bottom-16 -left-10 h-32 w-32 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_22%,transparent)] blur-2xl" />
+          <section className="theme-rounded relative mx-auto max-w-lg overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow text-[var(--theme-text-on-surface)]">
+            <ProfileHeaderLightWash />
+            <div className="pointer-events-none absolute -right-12 -top-14 z-[1] h-36 w-36 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_14%,transparent)] blur-2xl" />
+            <div className="pointer-events-none absolute -bottom-16 -left-10 z-[1] h-32 w-32 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_10%,transparent)] blur-2xl" />
 
-            <div className="relative flex items-start justify-between gap-4">
+            <div className="relative z-10 flex items-start justify-between gap-4">
               <div className="flex min-w-0 items-center gap-4">
                 <ProfileAvatar src={logoSrc} fallback={logoWebp} alt={siteName} />
                 <div className="min-w-0">
-                  <p className="mb-2 inline-flex rounded-full bg-[color-mix(in_srgb,var(--theme-gradient-foreground)_12%,transparent)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] opacity-90">
+                  <p className="mb-2 inline-flex rounded-full bg-[color-mix(in_srgb,var(--theme-price)_14%,transparent)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--theme-price)]">
                     Member Access
                   </p>
-                  <h2 className="text-xl font-black leading-tight">登录{siteName}</h2>
-                  <p className="mt-1 max-w-[12rem] text-xs leading-5 opacity-75">管理订单、积分、优惠券与会员权益</p>
+                  <h2 className="text-xl font-black leading-tight text-[var(--theme-text-on-surface)]">登录{siteName}</h2>
+                  <p className="mt-1 max-w-[12rem] text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">管理订单、积分、优惠券与会员权益</p>
                 </div>
               </div>
               <ThemeToggleButton theme={theme} onToggle={toggle} />
             </div>
 
-            <div className="relative mt-6 grid grid-cols-2 gap-3">
+            <div className="relative z-10 mt-6 grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={goLogin}
-                className="rounded-2xl bg-[var(--theme-surface)] py-3.5 text-sm font-black shadow-lg shadow-black/10 transition-transform active:scale-[0.98]"
-                style={{ color: "var(--theme-text-on-surface)" }}
+                className="rounded-2xl bg-[var(--theme-primary)] py-3.5 text-sm font-black text-[var(--theme-primary-foreground)] shadow-lg shadow-black/10 transition-transform active:scale-[0.98]"
               >
                 登录
               </button>
               <button
                 type="button"
                 onClick={goLogin}
-                className="rounded-2xl border border-[color-mix(in_srgb,var(--theme-gradient-foreground)_28%,transparent)] bg-[color-mix(in_srgb,var(--theme-gradient-foreground)_10%,transparent)] py-3.5 text-sm font-bold backdrop-blur transition-transform active:scale-[0.98]"
+                className="rounded-2xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-bg)_40%,var(--theme-surface))] py-3.5 text-sm font-bold text-[var(--theme-text-on-surface)] transition-transform active:scale-[0.98]"
               >
                 注册
               </button>
@@ -264,22 +273,20 @@ export default function Profile() {
     <div className="min-h-screen bg-[var(--theme-bg)] pb-20 text-[var(--theme-text)]">
       {/* Profile header */}
       <div className="px-4 pb-5 pt-[max(env(safe-area-inset-top),1rem)]">
-        <section
-          className="theme-rounded theme-shadow relative mx-auto max-w-lg overflow-hidden p-5"
-          style={{ background: "var(--theme-gradient)", color: "var(--theme-gradient-foreground)" }}
-        >
-          <div className="pointer-events-none absolute -right-16 top-0 h-40 w-40 rounded-full bg-[color-mix(in_srgb,var(--theme-gradient-foreground)_14%,transparent)] blur-2xl" />
-          <div className="pointer-events-none absolute -bottom-20 left-4 h-36 w-36 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_22%,transparent)] blur-2xl" />
+        <section className="theme-rounded relative mx-auto max-w-lg overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow text-[var(--theme-text-on-surface)]">
+          <ProfileHeaderLightWash />
+          <div className="pointer-events-none absolute -right-16 top-0 z-[1] h-40 w-40 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-20 left-4 z-[1] h-36 w-36 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_10%,transparent)] blur-2xl" />
 
-          <div className="relative flex items-start justify-between gap-4">
+          <div className="relative z-10 flex items-start justify-between gap-4">
             <div className="flex min-w-0 items-center gap-4">
               <ProfileAvatar src={avatar || logoSrc} fallback={logoWebp} alt={nickname || siteName} />
               <div className="min-w-0">
-                <p className="mb-2 inline-flex rounded-full bg-[color-mix(in_srgb,var(--theme-gradient-foreground)_12%,transparent)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] opacity-90">
+                <p className="mb-2 inline-flex rounded-full bg-[color-mix(in_srgb,var(--theme-price)_14%,transparent)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--theme-price)]">
                   VIP Account
                 </p>
-                <h2 className="truncate text-xl font-black leading-tight">{nickname || "会员用户"}</h2>
-                <p className="mt-1 text-xs opacity-75">邀请码: {inviteCode || "暂无"}</p>
+                <h2 className="truncate text-xl font-black leading-tight text-[var(--theme-text-on-surface)]">{nickname || "会员用户"}</h2>
+                <p className="mt-1 text-xs text-[var(--theme-text-muted-on-surface)]">邀请码: {inviteCode || "暂无"}</p>
               </div>
             </div>
 
@@ -287,7 +294,7 @@ export default function Profile() {
           </div>
 
           {/* Stats: 订单/收藏 优先，积分/下级 次之 */}
-          <div className={`relative mt-6 grid gap-2.5 ${subordinateEnabled ? "grid-cols-4" : "grid-cols-3"}`}>
+          <div className={`relative z-10 mt-6 grid gap-2.5 ${subordinateEnabled ? "grid-cols-4" : "grid-cols-3"}`}>
             <StatChip value={orders.length} label="订单" onClick={() => navigate("/orders")} />
             <StatChip value={favoriteCount} label="收藏" onClick={() => navigate("/favorites")} />
             <StatChip value={pointsBalance} label="积分" onClick={() => navigate("/points")} accent />

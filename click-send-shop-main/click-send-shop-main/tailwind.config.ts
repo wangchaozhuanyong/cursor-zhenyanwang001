@@ -14,6 +14,11 @@ export default {
       },
     },
     extend: {
+      /** 页面级模块纵向间距：移动端约 40px，桌面端约 56px（常见 8px 栅格倍数） */
+      spacing: {
+        section: "2.5rem",
+        "section-lg": "3.5rem",
+      },
       fontFamily: {
         display: ["var(--font-display)"],
         body: ["var(--font-body)"],

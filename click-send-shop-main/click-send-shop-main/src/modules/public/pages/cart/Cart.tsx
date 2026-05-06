@@ -73,7 +73,7 @@ export default function Cart() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-screen-xl px-4 md:px-6 md:py-6">
+      <main className="mx-auto w-full max-w-screen-xl px-4 md:px-6 md:py-8">
         {/* 桌面端：左商品列表 / 右结算摘要 */}
         <div className="md:grid md:grid-cols-[1fr_360px] md:gap-8">
           <div>

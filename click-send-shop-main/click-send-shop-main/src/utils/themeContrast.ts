@@ -188,6 +188,45 @@ function getShadowVariables(style: string, isDark: boolean) {
   };
 }
 
+function getCardShellVariables(
+  cardStyle: ThemeConfig["cardStyle"],
+  surfaceCss: string,
+  borderCss: string,
+  themeShadow: string,
+  themeShadowHover: string,
+): Record<string, string> {
+  switch (cardStyle) {
+    case "seamless":
+      return {
+        "--theme-card-shell-bg": "transparent",
+        "--theme-card-shell-border": "none",
+        "--theme-card-shell-shadow": "none",
+        "--theme-card-shell-shadow-hover": "none",
+      };
+    case "elevated":
+      return {
+        "--theme-card-shell-bg": surfaceCss,
+        "--theme-card-shell-border": "none",
+        "--theme-card-shell-shadow": themeShadow,
+        "--theme-card-shell-shadow-hover": themeShadowHover,
+      };
+    case "minimal":
+      return {
+        "--theme-card-shell-bg": surfaceCss,
+        "--theme-card-shell-border": `1px solid ${borderCss}`,
+        "--theme-card-shell-shadow": "none",
+        "--theme-card-shell-shadow-hover": "none",
+      };
+    default:
+      return {
+        "--theme-card-shell-bg": surfaceCss,
+        "--theme-card-shell-border": `1px solid ${borderCss}`,
+        "--theme-card-shell-shadow": themeShadow,
+        "--theme-card-shell-shadow-hover": themeShadowHover,
+      };
+  }
+}
+
 export function generateThemePalette(adminConfig: ThemeConfig, userMode: ThemeMode) {
   const currentColors = userMode === "dark" ? adminConfig.dark : adminConfig.light;
   const bg = parseColor(currentColors.bgColor, userMode === "dark" ? BLACK : WHITE);
@@ -217,6 +256,8 @@ export function generateThemePalette(adminConfig: ThemeConfig, userMode: ThemeMo
   const priceText = getReadableTextColor(priceCss);
   const mutedBg = mixColors(bg, parseColor(text), isDarkBg ? 0.1 : 0.06);
   const accentBg = mixColors(bg, price, isDarkBg ? 0.28 : 0.14);
+  const borderCss = rgbToCss(border);
+  const shadows = getShadowVariables(adminConfig.shadowStyle, isDarkBg);
 
   return {
     "--theme-primary": primaryCss,
@@ -238,8 +279,11 @@ export function generateThemePalette(adminConfig: ThemeConfig, userMode: ThemeMo
     "--theme-text-subtle": rgbToCss(mixColors(parseColor(text), bg, 0.78)),
     "--theme-radius": adminConfig.radius,
     "--theme-font": getFontFamily(adminConfig.fontFamily),
+    "--font-display": getFontFamily(adminConfig.fontFamily),
     "--theme-image-ratio": adminConfig.imageRatio,
+    "--theme-image-fit": adminConfig.imageFit,
     "--theme-card-align": adminConfig.cardTextAlign,
+    ...getCardShellVariables(adminConfig.cardStyle, surfaceCss, borderCss, shadows["--theme-shadow"], shadows["--theme-shadow-hover"]),
 
     "--background": rgbToHslChannels(bg),
     "--foreground": rgbToHslChannels(parseColor(text)),
@@ -261,7 +305,7 @@ export function generateThemePalette(adminConfig: ThemeConfig, userMode: ThemeMo
     "--border": rgbToHslChannels(border),
     "--input": rgbToHslChannels(border),
     "--ring": rgbToHslChannels(price),
-    ...getShadowVariables(adminConfig.shadowStyle, isDarkBg),
+    ...shadows,
   } as Record<string, string>;
 }
 

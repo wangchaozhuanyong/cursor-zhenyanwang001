@@ -113,7 +113,7 @@ export default function BannerCarousel({ banners }: BannerCarouselProps) {
               animate={{
                 width: i === current ? 16 : 6,
                 height: 6,
-                backgroundColor: i === current ? "hsl(43, 72%, 52%)" : "rgba(255,255,255,0.5)",
+                backgroundColor: i === current ? "var(--theme-price)" : "color-mix(in srgb, #ffffff 50%, transparent)",
               }}
               transition={{ duration: 0.3 }}
             />

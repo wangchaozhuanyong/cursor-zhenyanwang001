@@ -100,7 +100,7 @@ const navItemsRaw: NavItem[] = [
       { icon: Truck, label: "运费规则", path: "/admin/settings/shipping", permission: "shipping.manage" },
       { icon: UserCog, label: "账号设置", path: "/admin/account", permission: "dashboard.view" },
       { icon: FileText, label: "内容管理", path: "/admin/content", permission: "content.manage" },
-      { icon: ScrollText, label: "操作日志", path: "/admin/logs", permission: { anyOf: ["audit.view", "admin_log.view"] } },
+      { icon: ScrollText, label: "审计日志", path: "/admin/logs", permission: "audit.view" },
       { icon: Shield, label: "角色权限", path: "/admin/settings/roles", permission: "role.manage" },
       { icon: UserCog, label: "管理员管理", path: "/admin/accounts", permission: "role.manage" },
       { icon: RotateCcw, label: "回收站", path: "/admin/recycle-bin", permission: "recycle_bin.manage" },

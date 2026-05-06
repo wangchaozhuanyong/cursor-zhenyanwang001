@@ -40,8 +40,6 @@ const Points = lazy(() => import("@/modules/public/pages/user/Points"));
 const Rewards = lazy(() => import("@/modules/public/pages/user/Rewards"));
 const Invite = lazy(() => import("@/modules/public/pages/user/Invite"));
 
-const MicroInteractionsDemo = lazy(() => import("@/modules/micro-interactions/MicroInteractionsDemoPage"));
-
 const Help = lazy(() => import("@/modules/public/pages/content/Help"));
 const About = lazy(() => import("@/modules/public/pages/content/About"));
 
@@ -168,7 +166,6 @@ const App = () => (
 
               {/* Public pages */}
               <Route path="/product/:id" element={<ProductDetail />} />
-              <Route path="/demo/micro-interactions" element={<MicroInteractionsDemo />} />
               <Route path="/login" element={<Login />} />
               <Route path="/help" element={<Help />} />
               <Route path="/about" element={<About />} />

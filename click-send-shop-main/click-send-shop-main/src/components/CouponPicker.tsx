@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { CheckoutPickerCoupon } from "@/types/coupon";
 
 const couponGradients = {
-  gold: "from-[hsl(43,72%,52%)] to-[hsl(35,80%,45%)]",
+  gold: "",
   ruby: "from-[hsl(350,75%,55%)] to-[hsl(340,70%,45%)]",
   emerald: "from-[hsl(160,60%,42%)] to-[hsl(170,55%,35%)]",
   sapphire: "from-[hsl(220,70%,55%)] to-[hsl(230,65%,45%)]",
@@ -13,10 +13,15 @@ const couponGradients = {
 const colors: Array<keyof typeof couponGradients> = ["gold", "ruby", "sapphire", "emerald"];
 const icons = [Gift, Sparkles, Crown, Zap];
 
+function stripeClassForCouponVariant(color: keyof typeof couponGradients) {
+  if (color === "gold") return "bg-theme-coupon-accent";
+  return `bg-gradient-to-br ${couponGradients[color]}`;
+}
+
 function styleForVariant(variantIndex: number) {
   const color = colors[variantIndex % colors.length];
   const Icon = icons[variantIndex % icons.length];
-  return { color, Icon, gradient: couponGradients[color] };
+  return { color, Icon };
 }
 
 interface CouponPickerProps {
@@ -114,7 +119,12 @@ export default function CouponPicker({
               {coupons.map((coupon) => {
                 const usable = isUsable(coupon);
                 const isSelected = selectedCouponId === coupon.id;
-                const { Icon, gradient } = styleForVariant(coupon.variantIndex);
+                const { Icon, color: stripeColor } = styleForVariant(coupon.variantIndex);
+                const stripeFg = stripeColor === "gold" ? "text-[var(--theme-price-foreground)]" : "text-white";
+                const stripeFgMuted =
+                  stripeColor === "gold"
+                    ? "text-[color-mix(in_srgb,var(--theme-price-foreground)_72%,transparent)]"
+                    : "text-white/70";
                 return (
                   <motion.button
                     key={coupon.id}
@@ -129,9 +139,9 @@ export default function CouponPicker({
                       isSelected ? "border-gold ring-1 ring-gold/30" : usable ? "border-border hover:border-gold/20" : "border-border opacity-35"
                     }`}
                   >
-                    <div className={`flex h-full w-20 flex-shrink-0 flex-col items-center justify-center bg-gradient-to-br ${gradient} py-3.5`}>
-                      <Icon size={12} className="mb-1 text-white/70" />
-                      <span className="text-base font-bold text-white leading-none">{getDiscountText(coupon)}</span>
+                    <div className={`flex h-full w-20 flex-shrink-0 flex-col items-center justify-center py-3.5 ${stripeClassForCouponVariant(stripeColor)}`}>
+                      <Icon size={12} className={`mb-1 ${stripeFgMuted}`} />
+                      <span className={`text-base font-bold leading-none ${stripeFg}`}>{getDiscountText(coupon)}</span>
                     </div>
                     <div className="flex-1 text-left min-w-0 py-2">
                       <p className="text-sm font-medium text-foreground">{coupon.title}</p>
@@ -148,7 +158,7 @@ export default function CouponPicker({
                     <div className="pr-4">
                       {isSelected ? (
                         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gold">
-                          <Check size={14} className="text-white" />
+                          <Check size={14} className="text-[var(--theme-price-foreground)]" />
                         </div>
                       ) : usable ? (
                         <div className="h-6 w-6 rounded-full border-2 border-border" />

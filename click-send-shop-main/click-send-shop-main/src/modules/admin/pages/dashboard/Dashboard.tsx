@@ -7,7 +7,7 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import * as dashboardService from "@/services/admin/dashboardService";
 import { ORDER_STATUS, getOrderStatusLabel } from "@/constants/statusDictionary";
 
-const PIE_COLORS = ["hsl(43, 96%, 56%)", "hsl(210, 80%, 55%)", "hsl(150, 60%, 45%)", "hsl(340, 70%, 55%)", "hsl(270, 60%, 55%)", "hsl(30, 80%, 55%)"];
+const PIE_COLORS = ["var(--theme-price)", "hsl(210, 80%, 55%)", "hsl(150, 60%, 45%)", "hsl(340, 70%, 55%)", "hsl(270, 60%, 55%)", "hsl(30, 80%, 55%)"];
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -131,7 +131,7 @@ export default function Dashboard() {
               <XAxis dataKey="day" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
               <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
               <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }} />
-              <Bar dataKey="completed" fill="hsl(43, 96%, 56%)" radius={[4, 4, 0, 0]} name="已完成" />
+              <Bar dataKey="completed" fill="var(--theme-price)" radius={[4, 4, 0, 0]} name="已完成" />
               <Bar dataKey="cancelled" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} name="已取消" />
             </BarChart>
           </ResponsiveContainer>

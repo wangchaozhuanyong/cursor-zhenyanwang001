@@ -138,7 +138,7 @@ export default function FeaturedReviewsSection({
 
   return (
     <section className={`px-4 md:px-0 ${className}`}>
-      <Reveal index={0} className="mb-3 block">
+      <Reveal index={0} className="mb-5 block md:mb-6">
         <div className="flex items-end justify-between">
           <div>
             <h2 className="text-base font-semibold text-foreground md:text-lg">
@@ -151,7 +151,7 @@ export default function FeaturedReviewsSection({
         </div>
       </Reveal>
 
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 md:gap-5 lg:grid-cols-3">
         {loading
           ? Array.from({ length: 3 }, (_, i) => <SkeletonCard key={i} />)
           : list.map((r, i) => (

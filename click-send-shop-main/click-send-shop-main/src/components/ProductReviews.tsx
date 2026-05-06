@@ -30,7 +30,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
   } = vm;
 
   return (
-    <div className="border-t border-border px-4 py-5">
+    <div className="border-t border-border px-4 py-8 md:px-0 md:py-10">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-foreground">商品评价</h3>
@@ -45,7 +45,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
         </button>
       </div>
 
-      <div className="mt-3 flex items-center gap-3 rounded-xl bg-secondary p-3">
+      <div className="mt-4 flex items-center gap-3 rounded-xl bg-secondary p-3 md:p-4">
         <span className="text-3xl font-bold text-gold">{avgRating.toFixed(1)}</span>
         <div>
           <div className="flex gap-0.5">

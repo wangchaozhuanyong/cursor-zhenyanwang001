@@ -115,7 +115,7 @@ export default function AdminReports() {
                   <stop offset="95%" stopColor="var(--theme-price)" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,90%)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="date" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip />
@@ -139,7 +139,7 @@ export default function AdminReports() {
         {userChart.length > 0 ? (
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={userChart}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(0,0%,90%)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="date" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip />

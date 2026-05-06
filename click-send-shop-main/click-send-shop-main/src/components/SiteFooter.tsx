@@ -67,9 +67,9 @@ export default function SiteFooter() {
   const policyNav = customNav ? customNav.slice(3) : null;
 
   return (
-    <footer className="mt-16 overflow-hidden border-t border-[var(--theme-border)] bg-[radial-gradient(circle_at_top_right,rgba(214,170,76,0.16),transparent_30%),linear-gradient(180deg,var(--theme-surface),var(--theme-bg))]">
-      <div className="mx-auto w-full max-w-screen-xl px-4 py-8 md:px-6 md:py-12">
-        <div className="mb-8 overflow-hidden rounded-[1.75rem] border border-[var(--theme-border)] bg-[var(--theme-surface)]/70 p-5 shadow-xl shadow-black/5 backdrop-blur-xl md:p-7">
+    <footer className="mt-12 overflow-hidden border-t border-[var(--theme-border)] bg-[radial-gradient(circle_at_top_right,color-mix(in_srgb,var(--theme-price)_16%,transparent),transparent_30%),linear-gradient(180deg,var(--theme-surface),var(--theme-bg))] md:mt-20">
+      <div className="mx-auto w-full max-w-screen-xl px-4 py-10 md:px-6 md:py-14">
+        <div className="mb-10 overflow-hidden rounded-[1.75rem] border border-[var(--theme-border)] bg-[var(--theme-surface)]/70 p-5 shadow-xl shadow-black/5 backdrop-blur-xl md:mb-12 md:p-7">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-gold/10 px-3 py-1.5 text-xs font-semibold text-gold">
@@ -106,7 +106,7 @@ export default function SiteFooter() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-[1.25fr_0.85fr_0.85fr_1.05fr]">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-[1.25fr_0.85fr_0.85fr_1.05fr] md:gap-12">
           {/* 品牌 */}
           <div>
             <div className="mb-4 flex items-center gap-3">
@@ -263,7 +263,7 @@ export default function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-[var(--theme-border)] pt-6 text-xs text-muted-foreground md:flex-row">
+        <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-[var(--theme-border)] pt-8 text-xs text-muted-foreground md:mt-14 md:flex-row">
           <span>{copyright}</span>
           {site.footerIcpNo && (
             <a

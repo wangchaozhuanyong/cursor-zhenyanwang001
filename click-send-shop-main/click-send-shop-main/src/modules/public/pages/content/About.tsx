@@ -34,7 +34,7 @@ export default function About() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg px-4">
+      <main className="mx-auto max-w-lg px-4 pt-4">
         {/* Hero */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -54,7 +54,7 @@ export default function About() {
         </motion.div>
 
         {/* Values */}
-        <div className="mt-5 grid grid-cols-3 gap-3">
+        <div className="mt-8 grid grid-cols-3 gap-4 md:mt-10">
           {[
             { icon: Award, label: "品质保证", desc: "全球精选正品" },
             { icon: Truck, label: "极速配送", desc: "2-5天送达" },
@@ -79,7 +79,7 @@ export default function About() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="mt-5 rounded-2xl border border-border bg-card p-5"
+          className="mt-8 rounded-2xl border border-border bg-card p-5 md:mt-10"
         >
           <h3 className="text-sm font-semibold text-foreground">品牌故事</h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
@@ -98,7 +98,7 @@ export default function About() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
-            className="mt-5 rounded-2xl border border-border bg-card p-5"
+            className="mt-8 rounded-2xl border border-border bg-card p-5 md:mt-10"
           >
             <div className="prose prose-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: cmsContent }} />
           </motion.div>
@@ -109,7 +109,7 @@ export default function About() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="mt-5 rounded-2xl border border-border bg-card p-5"
+          className="mt-8 rounded-2xl border border-border bg-card p-5 md:mt-10"
         >
           <h3 className="mb-4 text-sm font-semibold text-foreground">联系我们</h3>
           <div className="space-y-3">
@@ -134,7 +134,7 @@ export default function About() {
         </motion.div>
 
         {/* Social */}
-        <div className="mt-5 flex justify-center gap-4 pb-4 flex-wrap">
+        <div className="mt-8 flex justify-center gap-4 pb-6 flex-wrap md:mt-10">
           {[
             {
               label: "WhatsApp",

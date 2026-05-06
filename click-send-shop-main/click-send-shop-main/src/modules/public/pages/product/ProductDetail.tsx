@@ -57,8 +57,8 @@ export default function ProductDetail() {
       <div className="min-h-screen bg-background pb-28 md:pb-0">
         <DetailHeader goBack={goBack} totalItems={totalItems} />
         <div className="mx-auto w-full max-w-screen-xl px-0 md:px-6">
-          <div className="md:grid md:grid-cols-2 md:gap-10 md:py-6">
-            <Skeleton className="aspect-square w-full md:rounded-2xl" />
+          <div className="md:grid md:grid-cols-2 md:gap-10 md:py-10">
+            <Skeleton className="w-full md:rounded-2xl" style={{ aspectRatio: "var(--theme-image-ratio)" }} />
             <div className="space-y-3 p-4 md:p-0">
               <Skeleton className="h-8 w-24" />
               <Skeleton className="h-6 w-full" />
@@ -125,7 +125,7 @@ export default function ProductDetail() {
 
       <main className="mx-auto w-full max-w-screen-xl px-0 md:px-6">
         {/* 桌面端双列：左图 / 右信息 */}
-        <div className="md:grid md:grid-cols-2 md:gap-10 md:py-8">
+        <div className="md:grid md:grid-cols-2 md:gap-10 md:py-10">
           {/* 左：图集 */}
           <div className="md:sticky md:top-20 md:self-start">
             <div className="md:overflow-hidden md:theme-rounded md:border md:border-[var(--theme-border)]">
@@ -139,12 +139,12 @@ export default function ProductDetail() {
             <div className="px-4 pt-5 md:px-0 md:pt-0">
               <div className="flex flex-wrap items-center gap-2">
                 {product.is_hot && (
-                  <span className="theme-rounded bg-[var(--theme-price)] px-2 py-1 text-[10px] font-bold text-white">
+                  <span className="theme-rounded bg-[var(--theme-price)] px-2 py-1 text-[10px] font-bold text-[var(--theme-price-foreground)]">
                     热销
                   </span>
                 )}
                 {product.is_new && (
-                  <span className="theme-rounded bg-[var(--theme-primary)] px-2 py-1 text-[10px] font-bold text-white">
+                  <span className="theme-rounded bg-[var(--theme-primary)] px-2 py-1 text-[10px] font-bold text-[var(--theme-primary-foreground)]">
                     新品
                   </span>
                 )}
@@ -258,13 +258,13 @@ export default function ProductDetail() {
             </SquishButton>
 
             {/* TrustInfo - 信任三件套（详情页使用 card 强转化样式） */}
-            <div className="mt-5 px-4 md:px-0">
+            <div className="mt-6 px-4 md:px-0">
               <TrustInfo variant="card" />
             </div>
 
             {/* 描述 */}
-            <div className="mt-6 border-t border-[var(--theme-border)] px-4 pt-5 md:theme-rounded md:border md:bg-[var(--theme-surface)]/40 md:p-5">
-              <h3 className="mb-2.5 text-sm font-semibold text-foreground">商品详情</h3>
+            <div className="mt-8 border-t border-[var(--theme-border)] px-4 pt-6 md:mt-10 md:theme-rounded md:border md:bg-[var(--theme-surface)]/40 md:p-6">
+              <h3 className="mb-3 text-sm font-semibold text-foreground md:mb-4">商品详情</h3>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 {product.description}
               </p>
@@ -277,11 +277,11 @@ export default function ProductDetail() {
 
         {/* 同类推荐 */}
         {relatedProducts.length > 0 && (
-          <div className="border-t border-[var(--theme-border)] px-4 py-5 md:border-0 md:px-0 md:py-8">
-            <h3 className="mb-3 text-sm font-semibold text-foreground md:text-lg">
+          <div className="border-t border-[var(--theme-border)] px-4 py-8 md:border-0 md:px-0 md:py-12">
+            <h3 className="mb-4 text-sm font-semibold text-foreground md:mb-5 md:text-lg">
               同类推荐
             </h3>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4 lg:grid-cols-5">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-5 lg:grid-cols-5">
               {relatedProducts.map((p, i) => (
                 <ProductCard key={p.id} product={p} index={i} />
               ))}

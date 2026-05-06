@@ -97,7 +97,7 @@ export default function LoginBannerCarousel({ banners }: LoginBannerCarouselProp
                 animate={{
                   width: i === current ? 14 : 5,
                   height: 5,
-                  backgroundColor: i === current ? "hsl(43, 72%, 52%)" : "rgba(255,255,255,0.5)",
+                  backgroundColor: i === current ? "var(--theme-price)" : "color-mix(in srgb, #ffffff 50%, transparent)",
                 }}
                 transition={{ duration: 0.3 }}
               />

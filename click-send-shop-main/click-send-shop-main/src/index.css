@@ -73,6 +73,12 @@
     --theme-font: var(--font-body);
     --theme-shadow: 0 10px 30px -10px rgba(0,0,0,0.06);
     --theme-shadow-hover: 0 20px 40px -10px rgba(0,0,0,0.12);
+    --theme-image-fit: cover;
+    --theme-card-align: left;
+    --theme-card-shell-bg: var(--theme-surface);
+    --theme-card-shell-border: 1px solid var(--theme-border);
+    --theme-card-shell-shadow: var(--theme-shadow);
+    --theme-card-shell-shadow-hover: var(--theme-shadow-hover);
   }
 
   .dark {
@@ -133,7 +139,7 @@
     -moz-osx-font-smoothing: grayscale;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display);
+    font-family: var(--font-display, 'Playfair Display', serif);
   }
   /* Improve input focus on mobile */
   input, textarea, select {
@@ -184,6 +190,25 @@
   .bg-theme-gradient {
     background: var(--theme-gradient);
     color: var(--theme-gradient-foreground);
+  }
+
+  .theme-product-card {
+    background-color: var(--theme-card-shell-bg);
+    border: var(--theme-card-shell-border);
+    box-shadow: var(--theme-card-shell-shadow);
+    transition: box-shadow 0.2s ease;
+  }
+  .theme-product-card:hover {
+    box-shadow: var(--theme-card-shell-shadow-hover);
+  }
+
+  /** 优惠券「金色」分区：随 --theme-price 变化 */
+  .bg-theme-coupon-accent {
+    background-image: linear-gradient(
+      to bottom right,
+      var(--theme-price),
+      color-mix(in srgb, var(--theme-price) 72%, black)
+    );
   }
 
   .bg-gold.text-primary-foreground,

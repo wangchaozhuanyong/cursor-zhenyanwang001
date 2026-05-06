@@ -92,17 +92,6 @@ export interface SiteSettings {
   [key: string]: string | undefined;
 }
 
-export interface AdminLog {
-  id: string;
-  admin_id: string;
-  admin_name: string;
-  action: string;
-  target: string;
-  detail: string;
-  ip: string;
-  created_at: string;
-}
-
 export interface ReportData {
   labels: string[];
   datasets: { label: string; data: number[] }[];

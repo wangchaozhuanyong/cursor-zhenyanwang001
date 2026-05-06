@@ -6,6 +6,7 @@ import { fetchSiteSettings, updateSiteSettings } from "@/services/admin/settings
 import { uploadSingle } from "@/services/uploadService";
 import { refreshSiteInfo } from "@/hooks/useSiteInfo";
 import type { SiteSettings } from "@/types/admin";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 const EMPTY: SiteSettings = {
   siteName: "",
@@ -94,8 +95,8 @@ const SECTIONS: Section[] = [
       { key: "siteName", label: "站点名称", placeholder: "例如：真烟网", hint: "全站头部 / 浏览器标题尾缀" },
       { key: "siteSlogan", label: "Slogan / 副标题", placeholder: "尊享品质，精选全球好物" },
       { key: "siteDescription", label: "站点描述", type: "textarea", rows: 2, placeholder: "用于首页 hero / SEO description 兜底" },
-      { key: "logoUrl", label: "Logo (推荐 256×256 PNG/WEBP)", type: "image", hint: "未配置时回退到打包内置 logo" },
-      { key: "faviconUrl", label: "Favicon (32×32 ICO/PNG)", type: "image" },
+      { key: "logoUrl", label: "Logo (推荐 256×256，上传后统一转 WEBP)", type: "image", hint: "未配置时回退到打包内置 logo" },
+      { key: "faviconUrl", label: "Favicon (推荐 32×32，上传后统一转 WEBP)", type: "image" },
       { key: "brandColor", label: "品牌主色", type: "color", hint: "用于按钮/强调色（前端可逐步接入）" },
     ],
   },
@@ -217,7 +218,7 @@ export default function AdminSiteSettings() {
           setSettings({ ...EMPTY, ...(data as SiteSettings) });
         }
       })
-      .catch(() => toast.error("加载设置失败"))
+      .catch((e) => toast.error(toastErrorMessage(e, "加载设置失败")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -247,8 +248,8 @@ export default function AdminSiteSettings() {
       await updateSiteSettings(settings);
       await refreshSiteInfo();
       toast.success("设置已保存，前端缓存已刷新");
-    } catch {
-      toast.error("保存失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "保存失败"));
     } finally {
       setSaving(false);
     }
@@ -262,7 +263,7 @@ export default function AdminSiteSettings() {
       setField(key, res.url);
       toast.success("图片已上传，请记得点击底部「保存设置」");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "上传失败");
+      toast.error(toastErrorMessage(e, "上传失败"));
     } finally {
       setUploadingKey(null);
       if (fileInputRef.current) fileInputRef.current.value = "";

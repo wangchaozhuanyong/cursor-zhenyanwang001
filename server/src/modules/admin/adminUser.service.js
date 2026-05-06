@@ -1,9 +1,9 @@
-const { generateId } = require('../../utils/helpers');
 const { BusinessError } = require('../../errors/BusinessError');
 const { rowsToCsv } = require('../../utils/csv');
 const repo = require('./adminUser.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
 const { formatUserResponse } = require('../../utils/formatUserResponse');
+const pointsService = require('../user/points.service');
 
 async function listUsers(query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
@@ -70,14 +70,7 @@ async function adjustUserPoints(userId, body, adminUserId, req) {
 
   try {
     if (points === undefined) throw new BusinessError(400, '请输入积分数值');
-    await repo.adjustPointsBalance(userId, points);
-    await repo.insertPointsRecord({
-      id: generateId(),
-      userId,
-      action: points > 0 ? 'admin_add' : 'admin_deduct',
-      amount: points,
-      description: reason || '管理员调整',
-    });
+    await pointsService.adjustUserPoints(userId, Number(points), reason || '管理员调整', adminUserId);
     const afterBal = beforeBal + Number(points);
     await writeAuditLog({
       req,

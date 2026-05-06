@@ -95,11 +95,36 @@ const frontendDist = process.env.FRONTEND_DIST || defaultFrontendDist;
 /** dist 存在且未设置 SERVE_SPA=0 时托管前端（仅跑 API 时可在 .env 写 SERVE_SPA=0） */
 const serveSpa = fs.existsSync(frontendDist) && process.env.SERVE_SPA !== '0';
 if (serveSpa) {
-  app.use(express.static(frontendDist));
+  const frontendAssetsDir = path.join(frontendDist, 'assets');
+
+  // Hashed build artifacts can be long-cached safely.
+  app.use(
+    '/assets',
+    express.static(frontendAssetsDir, {
+      immutable: true,
+      maxAge: '30d',
+    }),
+  );
+
+  // HTML entry should always revalidate to avoid stale chunk references.
+  app.use(
+    express.static(frontendDist, {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('index.html')) {
+          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+          return;
+        }
+        if (!filePath.includes(`${path.sep}assets${path.sep}`)) {
+          res.setHeader('Cache-Control', 'public, max-age=300');
+        }
+      },
+    }),
+  );
   // Express 5 / path-to-regexp 不支持 app.get('*')，用中间件做 SPA 回退
   app.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
     if (req.path.startsWith('/api')) return next();
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.sendFile(path.join(frontendDist, 'index.html'), (err) => next(err));
   });
   console.log(`📦 前端静态资源: ${frontendDist}`);

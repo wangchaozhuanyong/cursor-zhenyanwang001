@@ -139,11 +139,6 @@ export default function Checkout() {
 
   const rawTotal = totalAmount();
   const { coupons: pickerCoupons, loading: pickerCouponsLoading } = useCheckoutPickerCoupons(rawTotal);
-  const discountAmount = selectedCoupon
-    ? selectedCoupon.discountType === "fixed"
-      ? selectedCoupon.discount
-      : Math.floor(rawTotal * selectedCoupon.discount / 100)
-    : 0;
   
   const { templates: shippingTemplates, loading: shippingRulesLoading, loadError: shippingRulesError } = useShippingStore();
   const enabledTemplates = shippingTemplates.filter((t) => t.enabled);
@@ -153,7 +148,24 @@ export default function Checkout() {
     ? calcShippingFee(selectedTemplate, rawTotal, { totalWeightKg: weightKg })
     : 0;
   const shippingFee = serverShippingFee ?? previewShippingFee;
+  const discountAmount = selectedCoupon
+    ? selectedCoupon.discountType === "percent"
+      ? Math.min(rawTotal, Math.floor(rawTotal * selectedCoupon.discount / 100))
+      : selectedCoupon.discountType === "shipping"
+        ? Math.min(shippingFee, selectedCoupon.discount > 0 ? selectedCoupon.discount : shippingFee)
+        : Math.min(rawTotal, selectedCoupon.discount)
+    : 0;
   const finalTotal = Math.max(0, rawTotal - discountAmount + shippingFee);
+
+  useEffect(() => {
+    if (!selectedCoupon) return;
+    const stillExists = pickerCoupons.some((c) => c.id === selectedCoupon.id);
+    const meetsAmount = rawTotal >= selectedCoupon.condition;
+    const canUseShippingCoupon = selectedCoupon.discountType !== "shipping" || shippingFee > 0;
+    if (!stillExists || !meetsAmount || !canUseShippingCoupon) {
+      setSelectedCoupon(null);
+    }
+  }, [pickerCoupons, rawTotal, selectedCoupon, shippingFee]);
 
   useEffect(() => {
     if (!selectedTemplate || rawTotal < 0) {
@@ -351,6 +363,7 @@ export default function Checkout() {
         {/* Coupon */}
         <CouponPicker
           totalAmount={rawTotal}
+          shippingFee={shippingFee}
           selectedCouponId={selectedCoupon?.id ?? null}
           onSelect={(c) => setSelectedCoupon(c)}
           coupons={pickerCoupons}

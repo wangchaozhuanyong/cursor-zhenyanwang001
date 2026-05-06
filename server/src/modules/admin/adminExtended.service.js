@@ -4,6 +4,9 @@ const repo = require('./adminExtended.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
 const { assertReturnTransition } = require('../order/returnStateMachine');
 const { ORDER_STATUS, RETURN_STATUS } = require('../../constants/status');
+const { isNotificationTriggerEnabled } = require('../notification/triggerSettings.service');
+const rewardService = require('../user/reward.service');
+const pointsService = require('../user/points.service');
 
 function buildReturnListWhere(query) {
   let where = 'WHERE 1=1';
@@ -149,36 +152,34 @@ async function approveReturn(id, body, adminUserId, req) {
     const order = await repo.selectOrderByIdConn(conn, ret.order_id);
     if (order) {
       await repo.updateOrderStatusConn(conn, ORDER_STATUS.REFUNDED, order.id);
+      await pointsService.reverseOrderPoints(conn, order, '售后退款批准，积分回滚', {
+        operatorId: adminUserId,
+        trigger: 'return_approved',
+      });
+      await rewardService.reverseOrderRewards(conn, order, '售后退款批准，返现冲正', {
+        operatorId: adminUserId,
+        trigger: 'return_approved',
+      });
 
       const orderItems = await repo.selectOrderItemsConn(conn, order.id);
       for (const oi of orderItems) {
         await repo.addProductStockConn(conn, oi.product_id, oi.qty);
       }
 
-      if (order.total_points > 0) {
-        await repo.deductUserPointsConn(conn, order.user_id, order.total_points);
-        await repo.insertPointsRecordConn(
-          conn,
-          generateId(),
-          order.user_id,
-          'refund',
-          -order.total_points,
-          `退款扣回 ${order.order_no}`,
-        );
-      }
-
       if (order.coupon_uc_id) {
         await repo.restoreUserCouponConn(conn, order.coupon_uc_id);
       }
 
-      await repo.insertNotificationConn(
-        conn,
-        generateId(),
-        order.user_id,
-        'order',
-        '退款已批准',
-        `您的订单 ${order.order_no} 退款已批准，退款金额 RM ${refund_amount || order.total_amount}`,
-      );
+      if (await isNotificationTriggerEnabled('return_approved')) {
+        await repo.insertNotificationConn(
+          conn,
+          generateId(),
+          order.user_id,
+          'order',
+          '退款已批准',
+          `您的订单 ${order.order_no} 退款已批准，退款金额 RM ${refund_amount || order.total_amount}`,
+        );
+      }
     }
 
     await conn.commit();

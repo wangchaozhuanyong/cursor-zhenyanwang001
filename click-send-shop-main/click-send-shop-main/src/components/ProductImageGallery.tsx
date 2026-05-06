@@ -1,6 +1,9 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+import { PRODUCT_BLUR_PLACEHOLDER } from "@/constants/productBlurPlaceholder";
+import { ProgressiveImage } from "@/modules/micro-interactions";
+
 interface ProductImageGalleryProps {
   images: string[];
   name: string;
@@ -34,6 +37,14 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
     exit: (d: number) => ({ x: d > 0 ? "-100%" : "100%", opacity: 0 }),
   };
 
+  if (images.length === 0) {
+    return (
+      <div className="relative">
+        <div className="relative aspect-square w-full overflow-hidden bg-secondary" />
+      </div>
+    );
+  }
+
   return (
     <div className="relative">
       {/* Main image */}
@@ -43,18 +54,25 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
         onTouchEnd={handleTouchEnd}
       >
         <AnimatePresence initial={false} custom={direction} mode="popLayout">
-          <motion.img
+          <motion.div
             key={current}
-            src={images[current]}
-            alt={`${name} ${current + 1}`}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full"
             custom={direction}
             variants={variants}
             initial="enter"
             animate="center"
             exit="exit"
             transition={{ duration: 0.3, ease: "easeInOut" }}
-          />
+          >
+            <ProgressiveImage
+              src={images[current]}
+              blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
+              alt={`${name} ${current + 1}`}
+              className="h-full w-full bg-transparent"
+              imgClassName="h-full w-full object-cover"
+              {...(current === 0 ? { fetchPriority: "high" as const } : {})}
+            />
+          </motion.div>
         </AnimatePresence>
 
         {/* Counter */}
@@ -68,6 +86,7 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
         {images.map((img, i) => (
           <button
             key={i}
+            type="button"
             onClick={() => goTo(i)}
             className={`flex-shrink-0 overflow-hidden rounded-lg transition-all ${
               i === current
@@ -75,7 +94,13 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
                 : "opacity-50 hover:opacity-80"
             }`}
           >
-            <img src={img} alt={`${name} thumb ${i + 1}`} className="h-14 w-14 object-cover" />
+            <ProgressiveImage
+              src={img}
+              blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
+              alt={`${name} thumb ${i + 1}`}
+              className="h-14 w-14 bg-transparent"
+              imgClassName="h-full w-full object-cover"
+            />
           </button>
         ))}
       </div>

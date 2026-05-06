@@ -4,6 +4,7 @@ import { Star } from "lucide-react";
 import * as reviewService from "@/services/reviewService";
 import type { FeaturedReview } from "@/types/review";
 import { Skeleton } from "@/components/ui/skeleton";
+import Reveal from "@/components/Reveal";
 
 interface Props {
   limit?: number;
@@ -137,21 +138,27 @@ export default function FeaturedReviewsSection({
 
   return (
     <section className={`px-4 md:px-0 ${className}`}>
-      <div className="mb-3 flex items-end justify-between">
-        <div>
-          <h2 className="text-base font-semibold text-foreground md:text-lg">
-            ⭐ 真实用户口碑
-          </h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            来自已购顾客的真实评价
-          </p>
+      <Reveal index={0} className="mb-3 block">
+        <div className="flex items-end justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-foreground md:text-lg">
+              ⭐ 真实用户口碑
+            </h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              来自已购顾客的真实评价
+            </p>
+          </div>
         </div>
-      </div>
+      </Reveal>
 
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {loading
           ? Array.from({ length: 3 }, (_, i) => <SkeletonCard key={i} />)
-          : list.map((r) => <ReviewCard key={r.id} r={r} />)}
+          : list.map((r, i) => (
+              <Reveal key={r.id} index={i} className="h-full">
+                <ReviewCard r={r} />
+              </Reveal>
+            ))}
       </div>
     </section>
   );

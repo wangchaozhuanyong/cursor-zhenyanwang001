@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useGoBack } from "@/hooks/useGoBack";
 import { fetchOrderById, updateOrderStatus, shipOrder } from "@/services/admin/orderService";
 import PermissionGate from "@/components/admin/PermissionGate";
+import { toastErrorMessage } from "@/utils/errorMessage";
 import {
   ORDER_STATUS,
   PAYMENT_STATUS,
@@ -35,13 +36,13 @@ export default function AdminOrderDetail() {
     setLoading(true);
     fetchOrderById(id)
       .then((data) => setOrder(data))
-      .catch(() => toast.error("加载订单详情失败"))
+      .catch((e) => toast.error(toastErrorMessage(e, "加载订单详情失败")))
       .finally(() => setLoading(false));
   }, [id]);
 
   const reload = () => {
     if (!id) return;
-    fetchOrderById(id).then(setOrder).catch(() => toast.error("刷新订单失败"));
+    fetchOrderById(id).then(setOrder).catch((e) => toast.error(toastErrorMessage(e, "刷新订单失败")));
   };
 
   const handleStatusChange = async (newStatus: string) => {
@@ -49,8 +50,8 @@ export default function AdminOrderDetail() {
       await updateOrderStatus(id!, newStatus);
       reload();
       toast.success(`订单状态已更新为「${getOrderStatusLabel(newStatus)}」`);
-    } catch {
-      toast.error("更新状态失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "更新状态失败"));
     }
   };
 
@@ -61,8 +62,8 @@ export default function AdminOrderDetail() {
       reload();
       setShowShipForm(false);
       toast.success("发货成功");
-    } catch {
-      toast.error("发货失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "发货失败"));
     }
   };
 

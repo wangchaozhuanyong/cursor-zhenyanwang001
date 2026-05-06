@@ -9,7 +9,24 @@ const {
 const { formatOrderItem, formatOrder } = require('./order.mapper');
 const { canUserCancel } = require('./orderStateMachine');
 const repo = require('./order.repository');
-const { ORDER_STATUS, PAYMENT_STATUS, REWARD_STATUS } = require('../../constants/status');
+const rewardService = require('../user/reward.service');
+const pointsService = require('../user/points.service');
+const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
+
+function calculateCouponDiscount(coupon, rawAmount, shippingFee) {
+  const type = coupon.type;
+  const value = parseFloat(coupon.value) || 0;
+  if (type === 'fixed') {
+    return Math.min(value, rawAmount);
+  }
+  if (type === 'percentage') {
+    return Math.min(rawAmount, Math.floor(rawAmount * value / 100));
+  }
+  if (type === 'shipping') {
+    return Math.min(shippingFee, value > 0 ? value : shippingFee);
+  }
+  return 0;
+}
 
 /**
  * 创建订单。形状校验已由 routes 层 zod schema 完成；
@@ -74,6 +91,7 @@ async function createOrder(userId, body) {
 
     let discountAmount = 0;
     let usedCouponUcId = null;
+    let usedCouponTitle = coupon_title;
     if (coupon_id) {
       const uc = await repo.selectUserCouponForUpdate(conn, coupon_id, userId);
       if (!uc) {
@@ -85,12 +103,14 @@ async function createOrder(userId, body) {
         await conn.rollback();
         throw new ValidationError(`订单金额未满 RM ${minAmount}，无法使用该优惠券`);
       }
-      discountAmount = uc.type === 'fixed'
-        ? parseFloat(uc.value)
-        : Math.floor(rawAmount * parseFloat(uc.value) / 100);
-      discountAmount = Math.min(discountAmount, rawAmount);
+      discountAmount = calculateCouponDiscount(uc, rawAmount, shippingFee);
+      if (discountAmount <= 0) {
+        await conn.rollback();
+        throw new ValidationError(uc.type === 'shipping' ? '当前订单无可抵扣运费，无法使用该运费券' : '该优惠券当前不可抵扣');
+      }
       await repo.updateUserCouponUsed(conn, uc.uc_id);
       usedCouponUcId = uc.uc_id;
+      usedCouponTitle = uc.title || coupon_title;
     }
 
     const totalAmount = Math.max(0, rawAmount - discountAmount + shippingFee);
@@ -103,7 +123,7 @@ async function createOrder(userId, body) {
       orderNo,
       rawAmount,
       discountAmount,
-      couponTitle: coupon_title,
+      couponTitle: usedCouponTitle,
       shippingFee,
       shippingName: shipping_name,
       totalAmount,
@@ -138,17 +158,6 @@ async function createOrder(userId, body) {
         await conn.rollback();
         throw new ValidationError(`商品「${oi.name}」库存不足`);
       }
-    }
-
-    await repo.incrementUserPoints(conn, userId, totalPoints);
-    if (totalPoints > 0) {
-      await repo.insertPointsRecord(conn, {
-        id: generateId(),
-        userId,
-        action: 'order',
-        amount: totalPoints,
-        description: `下单奖励 ${orderNo}`,
-      });
     }
 
     const orderedIds = items.map((i) => i.product_id);
@@ -225,9 +234,9 @@ async function cancelOrder(userId, orderId) {
       await repo.restoreProductStock(conn, item.product_id, item.qty);
     }
 
-    if (order.total_points > 0) {
-      await repo.decrementUserPoints(conn, userId, order.total_points);
-    }
+    await pointsService.reverseOrderPoints(conn, order, `订单取消回滚积分 ${order.order_no}`, {
+      trigger: 'user_cancel_order',
+    });
 
     if (order.coupon_uc_id) {
       await repo.restoreUserCouponById(conn, order.coupon_uc_id);
@@ -327,38 +336,8 @@ async function confirmReceive(userId, orderId) {
 
     await repo.updateOrderStatus(conn, order.id, ORDER_STATUS.COMPLETED);
 
-    const buyer = await repo.selectUserInviteCode(conn, userId);
-    if (buyer && buyer.parent_invite_code) {
-      const inviter = await repo.selectUserIdByInviteCode(conn, buyer.parent_invite_code);
-      if (inviter) {
-        const rules = await repo.selectReferralRulesEnabled(conn);
-        const l1Rule = rules.find((r) => r.level === 1);
-        if (l1Rule) {
-          const rewardAmount = Math.floor(
-            parseFloat(order.total_amount) * parseFloat(l1Rule.reward_percent) / 100,
-          );
-          if (rewardAmount > 0) {
-            await repo.insertRewardRecord(conn, {
-              id: generateId(),
-              userId: inviter.id,
-              orderId: order.id,
-              orderNo: order.order_no,
-              amount: rewardAmount,
-              rate: l1Rule.reward_percent,
-              status: REWARD_STATUS.APPROVED,
-            });
-            await repo.incrementUserPoints(conn, inviter.id, rewardAmount);
-            await repo.insertPointsRecord(conn, {
-              id: generateId(),
-              userId: inviter.id,
-              action: 'invite_reward',
-              amount: rewardAmount,
-              description: `邀请奖励 订单${order.order_no}`,
-            });
-          }
-        }
-      }
-    }
+    await pointsService.settleOrderPoints(conn, order, { trigger: 'user_confirm_receive' });
+    await rewardService.settleOrderRewards(conn, order, { trigger: 'user_confirm_receive' });
 
     await conn.commit();
     return { data: null, message: '已确认收货' };

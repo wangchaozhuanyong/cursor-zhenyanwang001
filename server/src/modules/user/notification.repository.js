@@ -1,7 +1,10 @@
 const db = require('../../config/db');
 
 async function countNotifications(userId, type, isRead) {
-  let where = 'WHERE user_id = ?';
+  let where = `WHERE user_id = ?
+    AND deleted_at IS NULL
+    AND publish_status = 'published'
+    AND (scheduled_at IS NULL OR scheduled_at <= NOW())`;
   const params = [userId];
   if (type) {
     where += ' AND type = ?';
@@ -16,7 +19,10 @@ async function countNotifications(userId, type, isRead) {
 }
 
 async function selectNotificationsPage(userId, type, isRead, pageSize, offset) {
-  let where = 'WHERE user_id = ?';
+  let where = `WHERE user_id = ?
+    AND deleted_at IS NULL
+    AND publish_status = 'published'
+    AND (scheduled_at IS NULL OR scheduled_at <= NOW())`;
   const params = [userId];
   if (type) {
     where += ' AND type = ?';
@@ -35,21 +41,38 @@ async function selectNotificationsPage(userId, type, isRead, pageSize, offset) {
 
 async function markRead(userId, id) {
   await db.query(
-    'UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?',
+    `UPDATE notifications
+        SET is_read = 1
+      WHERE id = ?
+        AND user_id = ?
+        AND deleted_at IS NULL
+        AND publish_status = 'published'`,
     [id, userId],
   );
 }
 
 async function markAllRead(userId) {
   await db.query(
-    'UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0',
+    `UPDATE notifications
+        SET is_read = 1
+      WHERE user_id = ?
+        AND is_read = 0
+        AND deleted_at IS NULL
+        AND publish_status = 'published'
+        AND (scheduled_at IS NULL OR scheduled_at <= NOW())`,
     [userId],
   );
 }
 
 async function countUnread(userId) {
   const [[{ count }]] = await db.query(
-    'SELECT COUNT(*) AS count FROM notifications WHERE user_id = ? AND is_read = 0',
+    `SELECT COUNT(*) AS count
+       FROM notifications
+      WHERE user_id = ?
+        AND is_read = 0
+        AND deleted_at IS NULL
+        AND publish_status = 'published'
+        AND (scheduled_at IS NULL OR scheduled_at <= NOW())`,
     [userId],
   );
   return count;

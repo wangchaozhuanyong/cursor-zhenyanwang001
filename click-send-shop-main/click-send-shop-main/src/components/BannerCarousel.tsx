@@ -57,7 +57,7 @@ export default function BannerCarousel({ banners }: BannerCarouselProps) {
 
   return (
     <div
-      className="relative mx-4 overflow-hidden rounded-2xl"
+      className="relative overflow-hidden rounded-[1.35rem]"
       style={{ aspectRatio: "2.34 / 1" }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}

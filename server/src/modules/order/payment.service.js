@@ -2,6 +2,7 @@ const db = require('../../config/db');
 const { generateId } = require('../../utils/helpers');
 const repo = require('./order.repository');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
+const { isNotificationTriggerEnabled } = require('../notification/triggerSettings.service');
 
 /**
  * 校验 Stripe PaymentIntent 与订单金额、币种一致（与 createStripeCheckoutSession 中 unit_amount 逻辑对齐）
@@ -90,13 +91,15 @@ async function handleStripeEvent(event) {
     console.error('[stripe webhook] increment sales_count failed:', err?.message || err);
   }
 
-  await repo.insertNotification(db, {
-    id: generateId(),
-    userId: order.user_id,
-    type: 'order',
-    title: '支付成功',
-    content: `订单 ${order.order_no} 已通过 Stripe 支付成功`,
-  });
+  if (await isNotificationTriggerEnabled('stripe_payment_success')) {
+    await repo.insertNotification(db, {
+      id: generateId(),
+      userId: order.user_id,
+      type: 'order',
+      title: '支付成功',
+      content: `订单 ${order.order_no} 已通过 Stripe 支付成功`,
+    });
+  }
   return { handled: true };
 }
 

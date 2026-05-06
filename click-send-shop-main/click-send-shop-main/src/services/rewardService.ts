@@ -1,11 +1,18 @@
 import * as rewardApi from "@/api/modules/reward";
-import type { RewardRecord, RewardListParams } from "@/types/reward";
+import type { RewardRecord, RewardTransaction, RewardListParams } from "@/types/reward";
 import type { PaginatedData } from "@/types/common";
 
 export async function fetchRewardRecords(
   params?: RewardListParams,
 ): Promise<PaginatedData<RewardRecord>> {
   const res = await rewardApi.getRewardRecords(params);
+  return res.data;
+}
+
+export async function fetchRewardTransactions(
+  params?: RewardListParams,
+): Promise<PaginatedData<RewardTransaction>> {
+  const res = await rewardApi.getRewardTransactions(params);
   return res.data;
 }
 

@@ -21,6 +21,7 @@ function styleForVariant(variantIndex: number) {
 
 interface CouponPickerProps {
   totalAmount: number;
+  shippingFee?: number;
   selectedCouponId: string | null;
   onSelect: (coupon: CheckoutPickerCoupon | null) => void;
   /** 由页面经 useCheckoutPickerCoupons → couponService 注入 */
@@ -30,6 +31,7 @@ interface CouponPickerProps {
 
 export default function CouponPicker({
   totalAmount,
+  shippingFee = 0,
   selectedCouponId,
   onSelect,
   coupons,
@@ -39,13 +41,19 @@ export default function CouponPicker({
 
   const selected = coupons.find((c) => c.id === selectedCouponId) ?? null;
 
-  const getDiscountText = (c: CheckoutPickerCoupon) =>
-    c.discountType === "fixed" ? `RM ${c.discount}` : `${c.discount}%`;
+  const getDiscountText = (c: CheckoutPickerCoupon) => {
+    if (c.discountType === "percent") return `${c.discount}%`;
+    if (c.discountType === "shipping") return c.discount > 0 ? `运费减 RM ${c.discount}` : "免运费";
+    return `RM ${c.discount}`;
+  };
 
-  const getDiscountAmount = (c: CheckoutPickerCoupon) =>
-    c.discountType === "fixed" ? c.discount : Math.floor((totalAmount * c.discount) / 100);
+  const getDiscountAmount = (c: CheckoutPickerCoupon) => {
+    if (c.discountType === "percent") return Math.min(totalAmount, Math.floor((totalAmount * c.discount) / 100));
+    if (c.discountType === "shipping") return Math.min(shippingFee, c.discount > 0 ? c.discount : shippingFee);
+    return Math.min(totalAmount, c.discount);
+  };
 
-  const isUsable = (c: CheckoutPickerCoupon) => totalAmount >= c.condition;
+  const isUsable = (c: CheckoutPickerCoupon) => totalAmount >= c.condition && (c.discountType !== "shipping" || shippingFee > 0);
   const usableCount = coupons.filter(isUsable).length;
 
   return (
@@ -130,6 +138,11 @@ export default function CouponPicker({
                       <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
                         <Clock size={10} />
                         {coupon.condition > 0 ? `满 RM ${coupon.condition}` : "无门槛"} · {coupon.expire}
+                        {!usable && (
+                          <span className="text-destructive">
+                            {totalAmount < coupon.condition ? ` · 还差 RM ${coupon.condition - totalAmount}` : " · 当前订单无运费可抵扣"}
+                          </span>
+                        )}
                       </p>
                     </div>
                     <div className="pr-4">

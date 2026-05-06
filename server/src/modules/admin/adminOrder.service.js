@@ -14,6 +14,9 @@ const { BusinessError, NotFoundError, ValidationError } = require('../../errors'
 const { logAdminAction } = require('../../utils/adminAudit');
 const { rowsToCsv } = require('../../utils/csv');
 const notificationRepo = require('../user/notification.repository');
+const { isNotificationTriggerEnabled } = require('../notification/triggerSettings.service');
+const rewardService = require('../user/reward.service');
+const pointsService = require('../user/points.service');
 const {
   assertFulfillmentTransition,
   assertPaymentTransition,
@@ -22,7 +25,7 @@ const {
 } = require('../order/orderStateMachine');
 const repo = require('./adminOrder.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
-const { ORDER_STATUS, PAYMENT_STATUS, ORDER_STATUS_LIST, REWARD_STATUS } = require('../../constants/status');
+const { ORDER_STATUS, PAYMENT_STATUS, ORDER_STATUS_LIST } = require('../../constants/status');
 
 function buildAdminOrderListWhere(query) {
   let where = 'WHERE 1=1';
@@ -154,49 +157,35 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
         for (const item of items) {
           await repo.restoreProductStock(conn, item.product_id, item.qty);
         }
-        if (fullOrder.total_points > 0) {
-          await repo.decrementUserPoints(conn, fullOrder.user_id, fullOrder.total_points);
-        }
+        await pointsService.reverseOrderPoints(conn, fullOrder, `订单取消回滚积分 ${fullOrder.order_no}`, {
+          operatorId: adminUserId,
+          trigger: 'admin_order_cancelled',
+        });
         if (fullOrder.coupon_uc_id) {
           await repo.restoreUserCouponById(conn, fullOrder.coupon_uc_id);
         }
       }
 
       if (status === ORDER_STATUS.COMPLETED && fullOrder) {
-        try {
-          const buyer = await repo.selectUserParentInviteCode(conn, fullOrder.user_id);
-          if (buyer && buyer.parent_invite_code) {
-            const inviter = await repo.selectUserIdByInviteCode(conn, buyer.parent_invite_code);
-            if (inviter) {
-              const rules = await repo.selectReferralRulesEnabled(conn);
-              const l1Rule = rules.find((r) => r.level === 1);
-              if (l1Rule) {
-                const rewardAmount = Math.floor(
-                  parseFloat(fullOrder.total_amount) * parseFloat(l1Rule.reward_percent) / 100,
-                );
-                if (rewardAmount > 0) {
-                  await repo.insertRewardRecord(conn, {
-                    id: generateId(),
-                    userId: inviter.id,
-                    orderId: fullOrder.id,
-                    orderNo: fullOrder.order_no,
-                    amount: rewardAmount,
-                    rate: l1Rule.reward_percent,
-                    status: REWARD_STATUS.APPROVED,
-                  });
-                  await repo.incrementUserPoints(conn, inviter.id, rewardAmount);
-                  await repo.insertPointsRecord(conn, {
-                    id: generateId(),
-                    userId: inviter.id,
-                    action: 'invite_reward',
-                    amount: rewardAmount,
-                    description: `邀请奖励 订单${fullOrder.order_no}`,
-                  });
-                }
-              }
-            }
-          }
-        } catch { /* non-critical referral */ }
+        await pointsService.settleOrderPoints(conn, fullOrder, {
+          operatorId: adminUserId,
+          trigger: 'admin_order_completed',
+        });
+        await rewardService.settleOrderRewards(conn, fullOrder, {
+          operatorId: adminUserId,
+          trigger: 'admin_order_completed',
+        });
+      }
+
+      if ((status === ORDER_STATUS.CANCELLED || status === ORDER_STATUS.REFUNDED) && fullOrder) {
+        await pointsService.reverseOrderPoints(conn, fullOrder, `订单状态变更为 ${status}，积分回滚`, {
+          operatorId: adminUserId,
+          trigger: `admin_order_${status}`,
+        });
+        await rewardService.reverseOrderRewards(conn, fullOrder, `订单状态变更为 ${status}，返现冲正`, {
+          operatorId: adminUserId,
+          trigger: `admin_order_${status}`,
+        });
       }
 
       if (fullOrder) {
@@ -209,7 +198,7 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
           [ORDER_STATUS.REFUNDED]: '退款已到账',
         };
         const msg = notifMessages[status];
-        if (msg) {
+        if (msg && await isNotificationTriggerEnabled(`order_status_${status}`)) {
           await repo.insertOrderNotification(conn, {
             id: generateId(),
             userId: fullOrder.user_id,
@@ -280,13 +269,15 @@ async function shipOrder(orderId, body, adminUserId, req) {
     const carrier = body.carrier || '';
     await repo.updateOrderShipped(orderId, trackingNo, carrier);
 
-    await notificationRepo.insertNotification({
-      id: generateId(),
-      user_id: order.user_id,
-      type: 'order',
-      title: '订单已发货',
-      content: `您的订单 ${order.order_no} 已发货，物流：${carrier || '暂无'} ${trackingNo || ''}`,
-    });
+    if (await isNotificationTriggerEnabled('order_ship')) {
+      await notificationRepo.insertNotification({
+        id: generateId(),
+        user_id: order.user_id,
+        type: 'order',
+        title: '订单已发货',
+        content: `您的订单 ${order.order_no} 已发货，物流：${carrier || '暂无'} ${trackingNo || ''}`,
+      });
+    }
 
     await logAdminAction(adminUserId, '订单发货', `${orderId} ${carrier} ${trackingNo}`);
 

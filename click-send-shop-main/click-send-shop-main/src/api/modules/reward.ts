@@ -1,9 +1,13 @@
 import { get, post } from "../request";
-import type { RewardRecord, WithdrawRequest, RewardListParams } from "@/types/reward";
+import type { RewardRecord, RewardTransaction, WithdrawRequest, RewardListParams } from "@/types/reward";
 import type { PaginatedData } from "@/types/common";
 
 export function getRewardRecords(params?: RewardListParams) {
   return get<PaginatedData<RewardRecord>>("/rewards/records", params as Record<string, string>);
+}
+
+export function getRewardTransactions(params?: RewardListParams) {
+  return get<PaginatedData<RewardTransaction>>("/rewards/transactions", params as Record<string, string>);
 }
 
 export function getRewardBalance() {

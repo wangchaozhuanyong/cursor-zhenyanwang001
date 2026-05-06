@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { ArrowRight, Headphones, Mail, MapPin, Phone, ShieldCheck, Sparkles } from "lucide-react";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { renderBrandTitle } from "@/utils/brand";
 import type { FooterNavItem } from "@/types/content";
@@ -57,7 +58,7 @@ export default function SiteFooter() {
   const site = useSiteInfo();
   const year = new Date().getFullYear();
 
-  const company = site.footerCompanyName || site.siteName || "真烟网";
+  const company = site.footerCompanyName || site.siteName || "真货网";
   const copyright =
     site.footerCopyright || `© ${year} ${company}. All rights reserved.`;
 
@@ -66,37 +67,82 @@ export default function SiteFooter() {
   const policyNav = customNav ? customNav.slice(3) : null;
 
   return (
-    <footer className="mt-16 border-t border-border bg-card/40">
-      <div className="mx-auto w-full max-w-screen-xl px-4 py-10 md:px-6 md:py-12">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+    <footer className="mt-16 overflow-hidden border-t border-[var(--theme-border)] bg-[radial-gradient(circle_at_top_right,rgba(214,170,76,0.16),transparent_30%),linear-gradient(180deg,var(--theme-surface),var(--theme-bg))]">
+      <div className="mx-auto w-full max-w-screen-xl px-4 py-8 md:px-6 md:py-12">
+        <div className="mb-8 overflow-hidden rounded-[1.75rem] border border-[var(--theme-border)] bg-[var(--theme-surface)]/70 p-5 shadow-xl shadow-black/5 backdrop-blur-xl md:p-7">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-gold/10 px-3 py-1.5 text-xs font-semibold text-gold">
+                <Sparkles size={14} />
+                专属会员服务
+              </div>
+              <h3 className="font-display text-2xl font-black tracking-tight text-foreground md:text-3xl">
+                需要帮助？我们随时在线。
+              </h3>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                从商品咨询、订单配送到售后处理，客服团队会协助你完成每一步。
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {site.whatsappUrl && (
+                <a
+                  href={site.whatsappUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full bg-gold px-5 py-3 text-sm font-bold text-[var(--theme-price-foreground)] shadow-lg shadow-gold/20"
+                >
+                  <Headphones size={16} />
+                  联系客服
+                </a>
+              )}
+              <Link
+                to="/help"
+                className="inline-flex items-center gap-2 rounded-full border border-[var(--theme-border)] bg-background/60 px-5 py-3 text-sm font-semibold text-foreground"
+              >
+                帮助中心
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-[1.25fr_0.85fr_0.85fr_1.05fr]">
           {/* 品牌 */}
-          <div className="md:col-span-1">
-            <div className="mb-3 flex items-center gap-2">
+          <div>
+            <div className="mb-4 flex items-center gap-3">
               {site.logoUrl && (
                 <img
                   src={site.logoUrl}
                   alt={site.siteName || "logo"}
-                  className="h-8 w-8 rounded-md object-cover"
+                  className="h-11 w-11 rounded-2xl object-contain ring-1 ring-[var(--theme-border)]"
                 />
               )}
-              <h3 className="text-base font-bold tracking-wide">
-                {renderBrandTitle(site.siteName || "真烟网")}
+              <h3 className="font-display text-xl font-black tracking-tight">
+                {renderBrandTitle(site.siteName || "华人真货网")}
               </h3>
             </div>
             {site.siteSlogan && (
-              <p className="text-xs text-muted-foreground">{site.siteSlogan}</p>
+              <p className="text-sm font-medium text-foreground">{site.siteSlogan}</p>
             )}
             {site.siteDescription && (
-              <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-muted-foreground">
+              <p className="mt-3 line-clamp-4 text-sm leading-7 text-muted-foreground">
                 {site.siteDescription}
               </p>
             )}
+            <div className="mt-5 flex flex-wrap gap-2">
+              {["正品保障", "快速配送", "安心售后"].map((label) => (
+                <span key={label} className="inline-flex items-center gap-1 rounded-full border border-[var(--theme-border)] bg-background/60 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                  <ShieldCheck size={13} className="text-gold" />
+                  {label}
+                </span>
+              ))}
+            </div>
           </div>
 
           {/* 服务支持 */}
           <div>
-            <h4 className="mb-3 text-sm font-semibold">服务支持</h4>
-            <ul className="space-y-2 text-xs text-muted-foreground">
+            <h4 className="mb-3 text-sm font-bold text-foreground">服务支持</h4>
+            <ul className="space-y-2.5 text-sm text-muted-foreground">
               {supportNav ? (
                 supportNav.map((it, i) => (
                   <li key={`${it.label}-${i}`}>
@@ -124,8 +170,8 @@ export default function SiteFooter() {
 
           {/* 政策与说明 */}
           <div>
-            <h4 className="mb-3 text-sm font-semibold">政策与说明</h4>
-            <ul className="space-y-2 text-xs text-muted-foreground">
+            <h4 className="mb-3 text-sm font-bold text-foreground">政策与说明</h4>
+            <ul className="space-y-2.5 text-sm text-muted-foreground">
               {policyNav && policyNav.length > 0 ? (
                 policyNav.map((it, i) => (
                   <li key={`${it.label}-${i}`}>
@@ -175,12 +221,17 @@ export default function SiteFooter() {
 
           {/* 联系 */}
           <div>
-            <h4 className="mb-3 text-sm font-semibold">联系我们</h4>
-            <ul className="space-y-2 text-xs text-muted-foreground">
-              {site.contactPhone && <li>电话：{site.contactPhone}</li>}
+            <h4 className="mb-3 text-sm font-bold text-foreground">联系我们</h4>
+            <ul className="space-y-3 text-sm text-muted-foreground">
+              {site.contactPhone && (
+                <li className="flex items-start gap-2">
+                  <Phone size={15} className="mt-0.5 shrink-0 text-gold" />
+                  <span>{site.contactPhone}</span>
+                </li>
+              )}
               {site.contactEmail && (
-                <li>
-                  邮箱：
+                <li className="flex items-start gap-2">
+                  <Mail size={15} className="mt-0.5 shrink-0 text-gold" />
                   <a
                     href={`mailto:${site.contactEmail}`}
                     className="hover:text-foreground"
@@ -190,8 +241,8 @@ export default function SiteFooter() {
                 </li>
               )}
               {site.contactWhatsApp && (
-                <li>
-                  WhatsApp：
+                <li className="flex items-start gap-2">
+                  <Headphones size={15} className="mt-0.5 shrink-0 text-gold" />
                   {site.whatsappUrl ? (
                     <a
                       href={site.whatsappUrl}
@@ -206,13 +257,13 @@ export default function SiteFooter() {
                   )}
                 </li>
               )}
-              {site.businessHours && <li>营业：{site.businessHours}</li>}
-              {site.address && <li>地址：{site.address}</li>}
+              {site.businessHours && <li className="flex items-start gap-2"><ShieldCheck size={15} className="mt-0.5 shrink-0 text-gold" /><span>{site.businessHours}</span></li>}
+              {site.address && <li className="flex items-start gap-2"><MapPin size={15} className="mt-0.5 shrink-0 text-gold" /><span>{site.address}</span></li>}
             </ul>
           </div>
         </div>
 
-        <div className="mt-8 flex flex-col items-center justify-between gap-2 border-t border-border pt-6 text-[11px] text-muted-foreground md:flex-row">
+        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-[var(--theme-border)] pt-6 text-xs text-muted-foreground md:flex-row">
           <span>{copyright}</span>
           {site.footerIcpNo && (
             <a

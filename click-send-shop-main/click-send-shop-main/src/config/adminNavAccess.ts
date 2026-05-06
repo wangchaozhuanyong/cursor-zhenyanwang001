@@ -17,6 +17,8 @@ const RULES: { test: (path: string) => boolean; rule: PathRule }[] = [
   { test: (p) => p.startsWith("/admin/reviews"), rule: { kind: "one", permission: "review.manage" } },
   { test: (p) => p.startsWith("/admin/users"), rule: { kind: "one", permission: "user.view" } },
   { test: (p) => p.startsWith("/admin/invites"), rule: { kind: "one", permission: "invite.view" } },
+  { test: (p) => p.startsWith("/admin/rewards"), rule: { kind: "one", permission: "referral.manage" } },
+  { test: (p) => p.startsWith("/admin/points/records"), rule: { kind: "one", permission: "points.manage" } },
   { test: (p) => p.startsWith("/admin/settings/points"), rule: { kind: "one", permission: "points.manage" } },
   { test: (p) => p.startsWith("/admin/settings/referral"), rule: { kind: "one", permission: "referral.manage" } },
   { test: (p) => p.startsWith("/admin/settings/site"), rule: { kind: "one", permission: "settings.manage" } },

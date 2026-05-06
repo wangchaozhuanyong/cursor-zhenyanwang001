@@ -8,6 +8,7 @@ import {
   type ReportExportKind,
 } from "@/services/admin/reportExportService";
 import PermissionGate from "@/components/admin/PermissionGate";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 export default function AdminReports() {
   const [dateRange, setDateRange] = useState("30d");
@@ -38,8 +39,8 @@ export default function AdminReports() {
         const d = bundle.products as { topProducts?: unknown[] };
         setTopProducts((d.topProducts || []) as Record<string, unknown>[]);
       }
-    } catch {
-      toast.error("加载报表失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "加载报表失败"));
     } finally {
       setLoading(false);
     }

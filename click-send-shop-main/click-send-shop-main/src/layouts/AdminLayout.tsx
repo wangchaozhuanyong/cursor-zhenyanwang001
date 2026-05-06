@@ -72,6 +72,8 @@ const navItemsRaw: NavItem[] = [
   { icon: MessageSquareMore, label: "评论管理", path: "/admin/reviews", permission: "review.manage" },
   { icon: Users, label: "用户管理", path: "/admin/users", permission: "user.view" },
   { icon: Link2, label: "邀请管理", path: "/admin/invites", permission: "invite.view" },
+  { icon: Gift, label: "返现记录", path: "/admin/rewards", permission: "referral.manage" },
+  { icon: Star, label: "积分明细", path: "/admin/points/records", permission: "points.manage" },
   { icon: Star, label: "积分规则", path: "/admin/settings/points", permission: "points.manage" },
   { icon: Gift, label: "返现规则", path: "/admin/settings/referral", permission: "referral.manage" },
   {

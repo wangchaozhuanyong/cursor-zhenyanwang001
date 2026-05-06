@@ -9,6 +9,7 @@ import * as productService from "@/services/admin/productService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import type { Product, ProductStatus } from "@/types/product";
 import { useAdminProductsStore } from "@/stores/useAdminProductsStore";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 export default function AdminProducts() {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ export default function AdminProducts() {
   }, []);
 
   useEffect(() => {
-    loadProducts().catch(() => toast.error("加载数据失败"));
+    loadProducts().catch((e) => toast.error(toastErrorMessage(e, "加载数据失败")));
   }, [loadProducts]);
 
   useEffect(() => () => resetProductsStore(), [resetProductsStore]);
@@ -45,8 +46,8 @@ export default function AdminProducts() {
       await Promise.all(selected.map((id) => productService.updateProduct(id, { status })));
       applyStatusToIds(selected, status as ProductStatus);
       toast.success(`已将 ${selected.length} 个商品${status === "active" ? "上架" : "下架"}`);
-    } catch {
-      toast.error("操作失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "操作失败"));
     }
   };
 
@@ -54,8 +55,8 @@ export default function AdminProducts() {
     try {
       await productService.exportProductsCsv({ keyword: search || undefined });
       toast.success("已开始下载 CSV");
-    } catch {
-      toast.error("导出失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "导出失败"));
     }
   };
 
@@ -69,7 +70,7 @@ export default function AdminProducts() {
       const p = await productService.fetchProducts();
       replaceProducts(p.list as Product[]);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "导入失败");
+      toast.error(toastErrorMessage(err, "导入失败"));
     }
   };
 
@@ -81,8 +82,8 @@ export default function AdminProducts() {
       await productService.updateProduct(id, { status: newStatus });
       applyProductStatus(id, newStatus);
       toast.success(`${p.name} 已${newStatus === "active" ? "上架" : "下架"}`);
-    } catch {
-      toast.error("操作失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "操作失败"));
     }
   };
 

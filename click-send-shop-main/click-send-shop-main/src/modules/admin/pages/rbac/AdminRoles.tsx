@@ -4,6 +4,7 @@ import { Shield, Plus, Trash2, Pencil, X } from "lucide-react";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as rbacService from "@/services/admin/rbacService";
 import type { RbacAdminUserRow, RbacRoleRow } from "@/services/admin/rbacService";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 interface PermRow { id: number; code: string; name: string; sort_order: number }
 
@@ -37,8 +38,8 @@ export default function AdminRoles() {
       setAdmins(a);
       setPerms(p);
       if (a.length && !selectedUserId) setSelectedUserId(a[0].id);
-    } catch {
-      toast.error("加载失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "加载失败"));
     } finally {
       setLoading(false);
     }
@@ -56,8 +57,8 @@ export default function AdminRoles() {
         const next: Record<number, boolean> = {};
         for (const id of ur.roleIds) next[id] = true;
         setChecked(next);
-      } catch {
-        toast.error("无法加载该用户的角色");
+      } catch (e) {
+        toast.error(toastErrorMessage(e, "无法加载该用户的角色"));
       }
     })();
     return () => { cancelled = true; };
@@ -72,7 +73,7 @@ export default function AdminRoles() {
     try {
       await rbacService.saveUserRoles(selectedUserId, roleIds);
       toast.success("已保存");
-    } catch { toast.error("保存失败"); }
+    } catch (e) { toast.error(toastErrorMessage(e, "保存失败")); }
     finally { setSaving(false); }
   };
 
@@ -105,7 +106,7 @@ export default function AdminRoles() {
       }
       setShowRoleModal(false);
       void reload();
-    } catch { toast.error("操作失败"); }
+    } catch (e) { toast.error(toastErrorMessage(e, "操作失败")); }
     finally { setSaving(false); }
   };
 
@@ -116,7 +117,7 @@ export default function AdminRoles() {
       await rbacService.deleteRole(r.id);
       toast.success("已删除");
       void reload();
-    } catch { toast.error("删除失败"); }
+    } catch (e) { toast.error(toastErrorMessage(e, "删除失败")); }
   };
 
   if (loading) {
@@ -224,7 +225,7 @@ export default function AdminRoles() {
                 <PermissionGate permission="role.manage">
                   <div className="flex gap-2">
                     {u.role !== "super_admin" && (
-                      <button onClick={async () => { try { await rbacService.toggleAdminUser(u.id, u.role === "disabled"); toast.success("已更新"); void reload(); } catch { toast.error("操作失败"); } }} className="theme-rounded px-2 py-1 text-xs border border-[var(--theme-border)] hover:bg-[var(--theme-bg)]">
+                      <button onClick={async () => { try { await rbacService.toggleAdminUser(u.id, u.role === "disabled"); toast.success("已更新"); void reload(); } catch (e) { toast.error(toastErrorMessage(e, "操作失败")); } }} className="theme-rounded px-2 py-1 text-xs border border-[var(--theme-border)] hover:bg-[var(--theme-bg)]">
                         {u.role === "disabled" ? "启用" : "禁用"}
                       </button>
                     )}
@@ -249,7 +250,7 @@ export default function AdminRoles() {
               <div><label className="text-xs font-medium text-muted-foreground">密码</label><input type="password" value={adminForm.password} onChange={(e) => setAdminForm((p) => ({ ...p, password: e.target.value }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" /></div>
               <div><label className="text-xs font-medium text-muted-foreground">昵称</label><input value={adminForm.nickname} onChange={(e) => setAdminForm((p) => ({ ...p, nickname: e.target.value }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" /></div>
             </div>
-            <button onClick={async () => { setSaving(true); try { await rbacService.createAdminUser({ phone: adminForm.phone, password: adminForm.password, nickname: adminForm.nickname }); toast.success("已创建"); setShowAdminModal(false); void reload(); } catch { toast.error("创建失败"); } finally { setSaving(false); } }} disabled={saving || !adminForm.phone || !adminForm.password} className="w-full theme-rounded py-3 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--theme-gradient)" }}>
+            <button onClick={async () => { setSaving(true); try { await rbacService.createAdminUser({ phone: adminForm.phone, password: adminForm.password, nickname: adminForm.nickname }); toast.success("已创建"); setShowAdminModal(false); void reload(); } catch (e) { toast.error(toastErrorMessage(e, "创建失败")); } finally { setSaving(false); } }} disabled={saving || !adminForm.phone || !adminForm.password} className="w-full theme-rounded py-3 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--theme-gradient)" }}>
               {saving ? "创建中…" : "创建"}
             </button>
           </div>
@@ -261,7 +262,7 @@ export default function AdminRoles() {
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm theme-rounded bg-[var(--theme-surface)] p-6 theme-shadow space-y-4">
             <h3 className="font-bold text-foreground">重置密码</h3>
             <input type="password" value={resetPw} onChange={(e) => setResetPw(e.target.value)} placeholder="输入新密码（至少6位）" className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" />
-            <button onClick={async () => { if (resetPw.length < 6) { toast.error("密码至少6位"); return; } try { await rbacService.resetAdminPassword(showResetModal, resetPw); toast.success("密码已重置"); setShowResetModal(null); } catch { toast.error("重置失败"); } }} disabled={resetPw.length < 6} className="w-full theme-rounded py-3 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--theme-gradient)" }}>确认重置</button>
+            <button onClick={async () => { if (resetPw.length < 6) { toast.error("密码至少6位"); return; } try { await rbacService.resetAdminPassword(showResetModal, resetPw); toast.success("密码已重置"); setShowResetModal(null); } catch (e) { toast.error(toastErrorMessage(e, "重置失败")); } }} disabled={resetPw.length < 6} className="w-full theme-rounded py-3 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--theme-gradient)" }}>确认重置</button>
           </div>
         </div>
       )}

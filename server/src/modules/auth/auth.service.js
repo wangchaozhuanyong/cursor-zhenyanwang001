@@ -64,13 +64,33 @@ async function login(body) {
   const user = await repo.findUserByPhones(buildPhoneLookupCandidates(phone, countryCode));
   if (!user) throw new AuthError('手机号或密码错误');
 
-  const match = await comparePassword(password, user.password_hash);
+  let hash = user.password_hash;
+  if (Buffer.isBuffer(hash)) hash = hash.toString('utf8');
+  else if (hash != null && typeof hash !== 'string') hash = String(hash);
+  if (typeof hash !== 'string' || !hash.trim()) {
+    throw new AuthError('账号异常，请使用找回密码或联系客服');
+  }
+
+  let match = false;
+  try {
+    match = await comparePassword(password, hash);
+  } catch (err) {
+    console.error('[auth.login] bcrypt compare error', err);
+    throw new AuthError('手机号或密码错误');
+  }
   if (!match) throw new AuthError('手机号或密码错误');
 
+  const uid = String(user.id ?? '');
+  if (!uid) throw new AuthError('账号异常，请使用找回密码或联系客服');
+
   const rv = Number.isFinite(Number(user.refresh_token_version)) ? Number(user.refresh_token_version) : 0;
-  const token = signToken(user.id, rv);
+  const token = signToken(uid, rv);
   return {
-    data: { token, userId: user.id, role: user.role || 'user' },
+    data: {
+      token,
+      userId: uid,
+      role: String(user.role || 'user'),
+    },
     message: '登录成功',
   };
 }
@@ -128,7 +148,14 @@ async function changePassword(userId, body) {
   const row = await repo.selectPasswordHash(userId);
   if (!row) throw new NotFoundError('用户不存在');
 
-  const match = await comparePassword(oldPassword, row.password_hash);
+  let stored = row.password_hash;
+  if (Buffer.isBuffer(stored)) stored = stored.toString('utf8');
+  else if (stored != null && typeof stored !== 'string') stored = String(stored);
+  if (typeof stored !== 'string' || !stored.trim()) {
+    throw new ValidationError('账号异常，请联系客服');
+  }
+
+  const match = await comparePassword(oldPassword, stored);
   if (!match) throw new ValidationError('旧密码错误');
 
   const hash = await hashPassword(newPassword);

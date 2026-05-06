@@ -3,6 +3,7 @@ import { Plus, GripVertical, Pencil, Trash2, Loader2, Check, X } from "lucide-re
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as categoryService from "@/services/admin/categoryService";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 export default function AdminCategories() {
   const [categories, setCategories] = useState<any[]>([]);
@@ -15,7 +16,7 @@ export default function AdminCategories() {
   useEffect(() => {
     categoryService.fetchCategories()
       .then(setCategories)
-      .catch(() => toast.error("加载数据失败"))
+      .catch((e) => toast.error(toastErrorMessage(e, "加载数据失败")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -29,7 +30,7 @@ export default function AdminCategories() {
         setFormData({ name: "", icon: "", sort: 0 });
         toast.success("分类已添加");
       })
-      .catch(() => toast.error("添加失败"));
+      .catch((e) => toast.error(toastErrorMessage(e, "添加失败")));
   };
 
   const handleEditSave = (id: string) => {
@@ -40,7 +41,7 @@ export default function AdminCategories() {
         setEditingId(null);
         toast.success("分类已更新");
       })
-      .catch(() => toast.error("更新失败"));
+      .catch((e) => toast.error(toastErrorMessage(e, "更新失败")));
   };
 
   const handleDelete = (id: string) => {
@@ -49,7 +50,7 @@ export default function AdminCategories() {
         setCategories(categories.filter((c) => c.id !== id));
         toast.success("分类已删除");
       })
-      .catch(() => toast.error("删除失败"));
+      .catch((e) => toast.error(toastErrorMessage(e, "删除失败")));
   };
 
   if (loading) {

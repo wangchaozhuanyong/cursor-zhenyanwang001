@@ -47,13 +47,28 @@ function parseBool(val) {
   return val === 'true' || val === '1' || val === true;
 }
 
+/** 避免 DB 中 images 非合法 JSON 导致整页 /products/home 500 */
+function parseProductImages(images) {
+  if (images == null || images === '') return [];
+  if (Array.isArray(images)) return images;
+  if (typeof images === 'string') {
+    try {
+      const p = JSON.parse(images);
+      return Array.isArray(p) ? p : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 function formatProduct(row) {
   if (!row) return null;
   return {
     id: row.id,
     name: row.name,
     cover_image: row.cover_image,
-    images: typeof row.images === 'string' ? JSON.parse(row.images || '[]') : (row.images || []),
+    images: parseProductImages(row.images),
     price: parseFloat(row.price),
     original_price: row.original_price != null ? parseFloat(row.original_price) : null,
     sales_count: row.sales_count != null ? Number(row.sales_count) : 0,

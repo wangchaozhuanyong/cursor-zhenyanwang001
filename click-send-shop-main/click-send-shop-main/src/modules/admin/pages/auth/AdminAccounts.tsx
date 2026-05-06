@@ -7,6 +7,7 @@ import { usePagination } from "@/hooks/usePagination";
 import { toast } from "sonner";
 import * as rbacService from "@/services/admin/rbacService";
 import type { RbacAdminUserRow } from "@/services/admin/rbacService";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 const ROLE_BADGE: Record<string, { cls: string; text: string }> = {
   super_admin: { cls: "bg-red-500/10 text-red-600", text: "超级管理员" },
@@ -28,7 +29,7 @@ export default function AdminAccounts() {
     try {
       const data = await rbacService.loadRbacAdminUsers();
       setAdmins(Array.isArray(data) ? data : []);
-    } catch { toast.error("加载管理员列表失败"); }
+    } catch (e) { toast.error(toastErrorMessage(e, "加载管理员列表失败")); }
     finally { setLoading(false); }
   };
 
@@ -50,7 +51,7 @@ export default function AdminAccounts() {
       setShowCreate(false);
       setCreateForm({ phone: "", password: "", nickname: "" });
       loadData();
-    } catch (err) { toast.error(err instanceof Error ? err.message : "创建失败"); }
+    } catch (err) { toast.error(toastErrorMessage(err, "创建失败")); }
   };
 
   const handleToggle = async (user: RbacAdminUserRow) => {
@@ -59,7 +60,7 @@ export default function AdminAccounts() {
       await rbacService.toggleAdminUser(user.id, enabled);
       toast.success(enabled ? "已启用" : "已禁用");
       loadData();
-    } catch (err) { toast.error(err instanceof Error ? err.message : "操作失败"); }
+    } catch (err) { toast.error(toastErrorMessage(err, "操作失败")); }
   };
 
   const handleReset = async () => {
@@ -69,7 +70,7 @@ export default function AdminAccounts() {
       toast.success("密码已重置");
       setResetTarget(null);
       setNewPassword("");
-    } catch (err) { toast.error(err instanceof Error ? err.message : "重置失败"); }
+    } catch (err) { toast.error(toastErrorMessage(err, "重置失败")); }
   };
 
   const handleDelete = async () => {
@@ -79,7 +80,7 @@ export default function AdminAccounts() {
       toast.success("管理员已删除");
       setConfirmDelete(null);
       loadData();
-    } catch (err) { toast.error(err instanceof Error ? err.message : "删除失败"); }
+    } catch (err) { toast.error(toastErrorMessage(err, "删除失败")); }
   };
 
   if (loading) {

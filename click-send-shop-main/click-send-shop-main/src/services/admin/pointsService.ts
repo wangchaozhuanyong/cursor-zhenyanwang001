@@ -1,5 +1,5 @@
 import * as pointsApi from "@/api/admin/points";
-import type { PointsRule } from "@/types/points";
+import type { AdminPointsRecordsResponse, PointsListParams, PointsRule } from "@/types/points";
 import { unwrapList } from "@/services/responseNormalize";
 
 export async function fetchPointsRules(): Promise<PointsRule[]> {
@@ -9,6 +9,13 @@ export async function fetchPointsRules(): Promise<PointsRule[]> {
 
 export async function updatePointsRule(id: string, data: Partial<PointsRule>) {
   const res = await pointsApi.updatePointsRule(id, data);
+  return res.data;
+}
+
+export async function fetchAdminPointsRecords(
+  params?: PointsListParams,
+): Promise<AdminPointsRecordsResponse> {
+  const res = await pointsApi.getAdminPointsRecords(params);
   return res.data;
 }
 

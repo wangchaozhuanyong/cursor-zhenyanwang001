@@ -6,6 +6,7 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import { toast } from "sonner";
 import * as reviewService from "@/services/admin/reviewService";
 import type { AdminReview, ReviewListParams } from "@/services/admin/reviewService";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 const STATUS_OPTIONS = [
   { value: "", label: "全部状态" },
@@ -83,8 +84,8 @@ export default function AdminReviews() {
       const data = await reviewService.fetchReviews(params);
       setReviews(data.list);
       setTotal(data.total);
-    } catch {
-      setError("加载评论失败");
+    } catch (e) {
+      setError(toastErrorMessage(e, "加载评论失败"));
     } finally {
       setLoading(false);
     }
@@ -97,7 +98,7 @@ export default function AdminReviews() {
       await reviewService.toggleVisibility(id);
       toast.success("状态已更新");
       loadData();
-    } catch { toast.error("操作失败"); }
+    } catch (e) { toast.error(toastErrorMessage(e, "操作失败")); }
   };
 
   const handleToggleFeatured = async (id: string) => {
@@ -105,7 +106,7 @@ export default function AdminReviews() {
       await reviewService.toggleFeatured(id);
       toast.success("精选状态已更新");
       loadData();
-    } catch { toast.error("操作失败"); }
+    } catch (e) { toast.error(toastErrorMessage(e, "操作失败")); }
   };
 
   const handleDelete = async (id: string) => {
@@ -113,7 +114,7 @@ export default function AdminReviews() {
       await reviewService.deleteReview(id);
       toast.success("已删除");
       loadData();
-    } catch { toast.error("删除失败"); }
+    } catch (e) { toast.error(toastErrorMessage(e, "删除失败")); }
   };
 
   const handleRestore = async (id: string) => {
@@ -121,7 +122,7 @@ export default function AdminReviews() {
       await reviewService.restoreReview(id);
       toast.success("已恢复");
       loadData();
-    } catch { toast.error("恢复失败"); }
+    } catch (e) { toast.error(toastErrorMessage(e, "恢复失败")); }
   };
 
   const handlePermanentDelete = async (id: string) => {
@@ -130,7 +131,7 @@ export default function AdminReviews() {
       toast.success("已彻底删除");
       setConfirmDelete(null);
       loadData();
-    } catch { toast.error("删除失败"); }
+    } catch (e) { toast.error(toastErrorMessage(e, "删除失败")); }
   };
 
   const handleReply = async () => {
@@ -141,7 +142,7 @@ export default function AdminReviews() {
       setReplyTarget(null);
       setReplyText("");
       loadData();
-    } catch { toast.error("回复失败"); }
+    } catch (e) { toast.error(toastErrorMessage(e, "回复失败")); }
   };
 
   const handleBatchHide = async () => {
@@ -150,7 +151,7 @@ export default function AdminReviews() {
       toast.success(`已隐藏 ${selected.length} 条评论`);
       setSelected([]);
       loadData();
-    } catch { toast.error("操作失败"); }
+    } catch (e) { toast.error(toastErrorMessage(e, "操作失败")); }
   };
 
   const handleBatchDelete = async () => {
@@ -159,7 +160,7 @@ export default function AdminReviews() {
       toast.success(`已删除 ${selected.length} 条评论`);
       setSelected([]);
       loadData();
-    } catch { toast.error("操作失败"); }
+    } catch (e) { toast.error(toastErrorMessage(e, "操作失败")); }
   };
 
   const toggleSelect = (id: string) => {

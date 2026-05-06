@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchReferralRules, updateReferralRule } from "@/services/admin/inviteService";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 interface ReferralRule {
   id: string;
@@ -21,7 +22,7 @@ export default function AdminReferralRules() {
     setLoading(true);
     fetchReferralRules()
       .then(setRules)
-      .catch(() => toast.error("加载返现规则失败"))
+      .catch((e) => toast.error(toastErrorMessage(e, "加载返现规则失败")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -36,8 +37,8 @@ export default function AdminReferralRules() {
         await updateReferralRule(rule.id, { name: rule.name, rewardPercent: rule.rewardPercent, enabled: rule.enabled } as any);
       }
       toast.success("返现规则已保存");
-    } catch {
-      toast.error("保存失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "保存失败"));
     } finally {
       setSaving(false);
     }

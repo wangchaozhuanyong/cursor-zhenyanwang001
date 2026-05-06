@@ -3,7 +3,7 @@ import * as contentService from "@/services/contentService";
 import type { SiteInfo } from "@/types/content";
 
 const FALLBACK: SiteInfo = {
-  siteName: "真烟网",
+  siteName: "华人真货网",
   siteDescription: "尊享品质，精选全球好物",
   siteSlogan: "尊享品质，精选全球好物",
   brandColor: "#caa45c",
@@ -15,8 +15,8 @@ const FALLBACK: SiteInfo = {
   address: "Kuala Lumpur, Malaysia",
   businessHours: "周一至周日 09:00 - 22:00",
   currency: "RM",
-  footerCompanyName: "真烟网",
-  footerCopyright: `© ${new Date().getFullYear()} 真烟网 版权所有`,
+  footerCompanyName: "真货网",
+  footerCopyright: `© ${new Date().getFullYear()} 真货网 版权所有`,
 };
 
 /* ── 模块级缓存（多组件共享一次请求）── */

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import Pagination from "@/components/admin/Pagination";
 import * as returnService from "@/services/admin/returnService";
 import PermissionGate from "@/components/admin/PermissionGate";
+import { toastErrorMessage } from "@/utils/errorMessage";
 import {
   RETURN_STATUS,
   RETURN_STATUS_FILTER_OPTIONS,
@@ -35,8 +36,8 @@ export default function AdminReturns() {
       const p = await returnService.fetchReturnRequests(params as any);
       setReturns(p.list);
       setTotal(p.total);
-    } catch {
-      toast.error("加载数据失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "加载数据失败"));
     } finally {
       setLoading(false);
     }
@@ -62,7 +63,7 @@ export default function AdminReturns() {
         setDetail(null);
         void loadData();
       })
-      .catch(() => toast.error("操作失败"));
+      .catch((e) => toast.error(toastErrorMessage(e, "操作失败")));
   };
 
   if (loading) {

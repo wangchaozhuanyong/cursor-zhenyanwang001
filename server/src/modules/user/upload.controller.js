@@ -9,26 +9,18 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
-const allowedExts = /\.(jpg|jpeg|png|webp|svg)$/i;
+const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+const allowedExts = /\.(jpg|jpeg|png|webp)$/i;
 
 const fileFilter = (_req, file, cb) => {
   if (allowedExts.test(path.extname(file.originalname)) && allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('只允许上传图片文件 (jpg, png, webp, svg)'));
+    cb(new Error('只允许上传图片文件 (jpg, png, webp)'));
   }
 };
 
 async function writeImageFromFile(file) {
-  const isSvg = file?.mimetype === 'image/svg+xml';
-  if (isSvg) {
-    const filename = `${crypto.randomBytes(16).toString('hex')}.svg`;
-    const outPath = path.join(uploadDir, filename);
-    await fs.promises.writeFile(outPath, file.buffer);
-    return { filename, url: `/uploads/${filename}` };
-  }
-
   const filename = `${crypto.randomBytes(16).toString('hex')}.webp`;
   const outPath = path.join(uploadDir, filename);
   await sharp(file.buffer)
@@ -42,7 +34,7 @@ async function writeImageFromFile(file) {
 const upload = multer({
   storage: multer.memoryStorage(),
   fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 15 * 1024 * 1024 },
 });
 
 exports.uploadMiddleware = upload.single('file');

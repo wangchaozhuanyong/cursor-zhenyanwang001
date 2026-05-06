@@ -10,6 +10,7 @@ import {
   restoreRecycleBinItem,
 } from "@/services/admin/recycleBinService";
 import type { RecycleBinItem } from "@/services/admin/recycleBinService";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 const TYPE_OPTIONS = [
   { value: "", label: "全部类型" },
@@ -42,7 +43,7 @@ export default function AdminRecycleBin() {
       const params = typeFilter ? { type: typeFilter } : {};
       const rows = await loadRecycleBin(params);
       setItems(rows);
-    } catch { toast.error("加载回收站失败"); }
+    } catch (e) { toast.error(toastErrorMessage(e, "加载回收站失败")); }
     finally { setLoading(false); }
   }, [typeFilter]);
 
@@ -55,7 +56,7 @@ export default function AdminRecycleBin() {
       await restoreRecycleBinItem(item.id, item.type);
       toast.success("已恢复");
       loadData();
-    } catch { toast.error("恢复失败"); }
+    } catch (e) { toast.error(toastErrorMessage(e, "恢复失败")); }
   };
 
   const handlePermanentDelete = async () => {
@@ -65,7 +66,7 @@ export default function AdminRecycleBin() {
       toast.success("已彻底删除");
       setConfirmDelete(null);
       loadData();
-    } catch { toast.error("删除失败"); }
+    } catch (e) { toast.error(toastErrorMessage(e, "删除失败")); }
   };
 
   return (

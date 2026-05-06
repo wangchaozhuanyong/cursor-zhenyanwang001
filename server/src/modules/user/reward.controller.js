@@ -7,6 +7,13 @@ exports.getRecords = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+exports.getTransactions = async (req, res, next) => {
+  try {
+    const { list, total, page, pageSize } = await rewardService.getTransactions(req.user.id, req.query);
+    res.paginate(list, total, page, pageSize);
+  } catch (err) { next(err); }
+};
+
 exports.withdraw = async (req, res, next) => {
   try {
     const result = await rewardService.withdraw(req.user.id, req.body);
@@ -18,6 +25,13 @@ exports.withdraw = async (req, res, next) => {
 exports.getBalance = async (req, res, next) => {
   try {
     const data = await rewardService.getBalance(req.user.id);
+    res.success(data);
+  } catch (err) { next(err); }
+};
+
+exports.adminListRecords = async (req, res, next) => {
+  try {
+    const data = await rewardService.getAdminRecords(req.query);
     res.success(data);
   } catch (err) { next(err); }
 };

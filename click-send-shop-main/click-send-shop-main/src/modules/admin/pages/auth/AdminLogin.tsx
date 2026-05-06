@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Lock, User } from "lucide-react";
 import { toast } from "sonner";
 import { adminLogin } from "@/services/admin/accountService";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -21,8 +22,8 @@ export default function AdminLogin() {
       await adminLogin({ username: account, password });
       toast.success("登录成功");
       navigate("/admin");
-    } catch {
-      toast.error("登录失败，请检查账号密码");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "登录失败，请检查账号密码"));
     } finally {
       setLoading(false);
     }

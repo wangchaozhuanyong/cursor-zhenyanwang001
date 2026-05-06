@@ -1,8 +1,8 @@
-const rateLimit = require('express-rate-limit');
+const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
 
 function clientKey(req) {
   // 登录后优先按用户维度限流，否则按 IP
-  return req.user?.id || req.ip;
+  return req.user?.id || ipKeyGenerator(req.ip);
 }
 
 /** 普通 API：1 分钟最多 100 次 */

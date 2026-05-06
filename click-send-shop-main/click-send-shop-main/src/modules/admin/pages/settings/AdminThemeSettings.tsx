@@ -18,8 +18,24 @@ import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchActiveThemeConfig, saveSystemThemeConfig } from "@/services/admin/themeService";
 import type { ThemeConfig } from "@/types/theme";
+import { toastErrorMessage } from "@/utils/errorMessage";
+import { getThemeReadabilityReport } from "@/utils/themeContrast";
 import banner1 from "@/assets/banner1.jpg";
 import banner2 from "@/assets/banner2.jpg";
+
+const PREVIEW_FALLBACK_DATA_URI = `data:image/svg+xml;utf8,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+    <defs>
+      <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+        <stop offset="0%" stop-color="#111827"/>
+        <stop offset="100%" stop-color="#4b5563"/>
+      </linearGradient>
+    </defs>
+    <rect width="1200" height="675" fill="url(#g)"/>
+    <text x="50%" y="48%" fill="#ffffff" font-size="42" font-family="Arial, sans-serif" text-anchor="middle">Preview Image</text>
+    <text x="50%" y="56%" fill="#d1d5db" font-size="24" font-family="Arial, sans-serif" text-anchor="middle">Theme settings mock banner</text>
+  </svg>`,
+)}`;
 
 const DEFAULT_THEME_CONFIG: ThemeConfig = {
   radius: "8px",
@@ -67,86 +83,6 @@ const shadowStyleList: Array<{ value: ThemeConfig["shadowStyle"]; label: string;
   { value: "flat", label: "扁平无影", desc: "极简风格，更克制" },
   { value: "brutalism", label: "硬朗投影", desc: "强对比，适合品牌表达" },
 ];
-
-function parseToRGB(colorStr: string) {
-  let r = 255;
-  let g = 255;
-  let b = 255;
-  if (!colorStr) return { r, g, b };
-
-  const hexMatch = colorStr.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})?$/i);
-  if (hexMatch) {
-    r = Number.parseInt(hexMatch[1], 16);
-    g = Number.parseInt(hexMatch[2], 16);
-    b = Number.parseInt(hexMatch[3], 16);
-  } else {
-    const rgbMatch = colorStr.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
-    if (rgbMatch) {
-      r = Number.parseInt(rgbMatch[1], 10);
-      g = Number.parseInt(rgbMatch[2], 10);
-      b = Number.parseInt(rgbMatch[3], 10);
-    }
-  }
-  return { r, g, b };
-}
-
-function getBrightness(colorStr: string) {
-  const { r, g, b } = parseToRGB(colorStr);
-  return (r * 299 + g * 587 + b * 114) / 1000;
-}
-
-function adjustColor(colorStr: string, amount: number) {
-  const { r, g, b } = parseToRGB(colorStr);
-  const clamp = (val: number) => Math.min(255, Math.max(0, val));
-  return `rgb(${clamp(r + amount)}, ${clamp(g + amount)}, ${clamp(b + amount)})`;
-}
-
-function getShadowVariables(style: string, isDark: boolean) {
-  if (style === "flat") return { shadow: "none", shadowHover: "none" };
-  if (style === "brutalism") {
-    const color = isDark ? "rgba(255,255,255,0.9)" : "#000000";
-    return { shadow: `4px 4px 0px ${color}`, shadowHover: `6px 6px 0px ${color}` };
-  }
-  const shadowColor = isDark ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.06)";
-  const shadowHoverColor = isDark ? "rgba(0,0,0,0.95)" : "rgba(0,0,0,0.12)";
-  return {
-    shadow: `0 10px 30px -10px ${shadowColor}`,
-    shadowHover: `0 20px 40px -10px ${shadowHoverColor}`,
-  };
-}
-
-type PreviewPalette = Record<string, string>;
-function generateThemePalette(adminConfig: ThemeConfig, userMode: "light" | "dark"): PreviewPalette {
-  const currentColors = userMode === "dark" ? adminConfig.dark : adminConfig.light;
-  const { primaryColor, secondaryColor, priceColor, bgColor, surfaceColor, borderColor } = currentColors;
-  const isDarkBg = getBrightness(bgColor) < 128;
-  const computedBorder =
-    borderColor && borderColor !== "auto" && borderColor.trim() !== ""
-      ? borderColor
-      : isDarkBg
-        ? adjustColor(bgColor, 30)
-        : adjustColor(bgColor, -15);
-  const fontObj = fontsList.find((f) => f.val === adminConfig.fontFamily) || fontsList[0];
-  const shadowVars = getShadowVariables(adminConfig.shadowStyle, isDarkBg);
-
-  return {
-    "--theme-primary": primaryColor,
-    "--theme-secondary": secondaryColor,
-    "--theme-price": priceColor,
-    "--theme-gradient": `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`,
-    "--theme-bg": bgColor,
-    "--theme-surface": surfaceColor,
-    "--theme-border": computedBorder,
-    "--theme-text": isDarkBg ? "#FFFFFF" : "#000000",
-    "--theme-text-muted": isDarkBg ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.55)",
-    "--theme-radius": adminConfig.radius,
-    "--theme-font": fontObj.font,
-    "--theme-image-ratio": adminConfig.imageRatio,
-    "--theme-card-align": adminConfig.cardTextAlign,
-    "--theme-shadow": shadowVars.shadow,
-    "--theme-shadow-hover": shadowVars.shadowHover,
-  };
-}
 
 function AdvancedColorInput({
   label,
@@ -202,12 +138,13 @@ export default function AdminThemeSettings() {
       .then((data) => {
         if (data) setThemeConfig({ ...DEFAULT_THEME_CONFIG, ...data });
       })
-      .catch(() => toast.error("加载主题配置失败"))
+      .catch((e) => toast.error(toastErrorMessage(e, "加载主题配置失败")))
       .finally(() => setLoading(false));
   }, []);
 
-  const palette = useMemo(() => generateThemePalette(themeConfig, previewMode), [themeConfig, previewMode]);
-  const previewImage = previewMode === "dark" ? banner2 : banner1;
+  const readabilityReport = useMemo(() => getThemeReadabilityReport(themeConfig, previewMode), [themeConfig, previewMode]);
+  const palette = readabilityReport.palette;
+  const previewImages = previewMode === "dark" ? [banner2, banner1] : [banner1, banner2];
 
   const updateThemeConfig = (mode: "light" | "dark", field: string, value: string) => {
     setThemeConfig((prev) => ({
@@ -224,8 +161,8 @@ export default function AdminThemeSettings() {
     try {
       await saveSystemThemeConfig(themeConfig);
       toast.success("主题配置已保存");
-    } catch {
-      toast.error("保存失败，请稍后重试");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "保存失败，请稍后重试"));
     } finally {
       setSaving(false);
     }
@@ -479,6 +416,28 @@ export default function AdminThemeSettings() {
             已内置默认预览图（本地资源），不依赖外网图片，深色模式也可稳定预览。
           </p>
           <div
+            className={`rounded-lg border p-3 text-xs ${
+              readabilityReport.pass ? "border-emerald-500/30 bg-emerald-500/10" : "border-amber-500/30 bg-amber-500/10"
+            }`}
+          >
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="font-semibold text-foreground">可读性检测</span>
+              <span className={readabilityReport.pass ? "text-emerald-600" : "text-amber-600"}>
+                {readabilityReport.pass ? "全部达标" : "自动修正中"}
+              </span>
+            </div>
+            <div className="grid gap-1.5">
+              {readabilityReport.checks.map((item) => (
+                <div key={item.label} className="flex items-center justify-between gap-2">
+                  <span className="text-muted-foreground">{item.label}</span>
+                  <span className={item.ratio >= item.min ? "text-emerald-600" : "text-amber-600"}>
+                    {item.ratio}:1 / {item.min}:1
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div
             className="rounded-xl border p-3 space-y-3"
             style={{
               background: palette["--theme-bg"],
@@ -504,10 +463,14 @@ export default function AdminThemeSettings() {
                 style={{ aspectRatio: palette["--theme-image-ratio"], background: palette["--theme-surface"], borderRadius: palette["--theme-radius"] }}
               >
                 <img
-                  src={previewImage}
+                  src={previewImages[(i - 1) % previewImages.length]}
                   alt="preview"
                   className="h-full w-full"
                   style={{ objectFit: themeConfig.imageFit }}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = PREVIEW_FALLBACK_DATA_URI;
+                  }}
                 />
               </div>
               <div className={`flex flex-col gap-2 ${themeConfig.cardTextAlign === "center" ? "items-center text-center" : "items-start text-left"}`}>
@@ -520,8 +483,8 @@ export default function AdminThemeSettings() {
                   </div>
                   <button
                     type="button"
-                    className="rounded-md px-3 py-1.5 text-sm text-white"
-                    style={{ background: palette["--theme-gradient"] }}
+                    className="rounded-md px-3 py-1.5 text-sm"
+                    style={{ background: palette["--theme-gradient"], color: palette["--theme-gradient-foreground"] }}
                   >
                     加购
                   </button>

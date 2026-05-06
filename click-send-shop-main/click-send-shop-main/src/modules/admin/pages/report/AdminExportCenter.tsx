@@ -10,6 +10,7 @@ import {
 import type { ExportTask } from "@/services/admin/exportCenterService";
 import { getAdminAccessToken } from "@/utils/token";
 import { EXPORT_TASK_STATUS, EXPORT_TASK_STATUS_META } from "@/constants/statusDictionary";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 const EXPORT_TYPES = [
   { value: "sales", label: "销售报表" },
@@ -49,7 +50,7 @@ export default function AdminExportCenter() {
     try {
       const rows = await loadExportTasks();
       setTasks(rows);
-    } catch { toast.error("加载导出列表失败"); }
+    } catch (e) { toast.error(toastErrorMessage(e, "加载导出列表失败")); }
     finally { setLoading(false); }
   }, []);
 
@@ -68,7 +69,7 @@ export default function AdminExportCenter() {
       await createExportTask(selectedType);
       toast.success("导出任务已创建");
       loadTasks();
-    } catch { toast.error("创建失败"); }
+    } catch (e) { toast.error(toastErrorMessage(e, "创建失败")); }
     finally { setCreating(false); }
   };
 

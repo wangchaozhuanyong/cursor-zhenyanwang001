@@ -1,9 +1,42 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+
+import { toast } from "@/components/ui/sonner";
 import { isLoggedIn } from "@/utils/token";
 import type { Product } from "@/types/product";
 import type { CartItem } from "@/types/cart";
 import * as cartService from "@/services/cartService";
+
+/** 沙箱商品 ID 前缀：仅参与本地乐观 UI，默认不走 cartService（Demo / 实验用） */
+export const LOCAL_ONLY_CART_PRODUCT_PREFIX = "demo-micro-interactions:" as const;
+
+function isLocalOnlyCartProductId(productId: string) {
+  return productId.startsWith(LOCAL_ONLY_CART_PRODUCT_PREFIX);
+}
+
+/**
+ * 登录态下演示用：可对「本地沙箱 SKU」注入异步同步（延时 / 模拟失败）。
+ * 传 `null` 清除。真实商品不受影响。
+ */
+type DemoLoggedInCartAddSyncFn = (
+  productId: string,
+  qty: number,
+) => Promise<void>;
+
+let demoLoggedInCartAddSync: DemoLoggedInCartAddSyncFn | null = null;
+
+export function setDemoCartAddSync(handler: DemoLoggedInCartAddSyncFn | null) {
+  demoLoggedInCartAddSync = handler;
+}
+
+function mergeCartWithLocalOnlyPreserve(
+  serverItems: CartItem[],
+  preservedLocalOnly: CartItem[],
+): CartItem[] {
+  const ids = new Set(serverItems.map((i) => i.product.id));
+  const extra = preservedLocalOnly.filter((i) => !ids.has(i.product.id));
+  return [...serverItems, ...extra];
+}
 
 function mergeSelection(
   prev: Record<string, boolean>,
@@ -32,6 +65,8 @@ interface CartState {
   /** 登录/注册后：把登录前本地有、服务端尚无的行写入服务端，再拉齐 */
   mergeLocalThenSync: (localBeforeAuth: CartItem[]) => Promise<void>;
   addItem: (product: Product, qty?: number) => void;
+  /** 与 `addItem` 等价，便于业务层统一「加入购物车」语义 */
+  addToCart: (product: Product, qty?: number) => void;
   removeItem: (productId: string) => void;
   updateQty: (productId: string, qty: number) => void;
   clearCart: () => void;
@@ -69,11 +104,17 @@ export const useCartStore = create<CartState>()(
         set({ loading: true, error: null });
         try {
           const items = await cartService.fetchCart();
-          set((s) => ({
-            items,
-            selection: mergeSelection(s.selection, items),
-            loading: false,
-          }));
+          set((s) => {
+            const preserved = s.items.filter((i) =>
+              isLocalOnlyCartProductId(i.product.id),
+            );
+            const merged = mergeCartWithLocalOnlyPreserve(items, preserved);
+            return {
+              items: merged,
+              selection: mergeSelection(s.selection, merged),
+              loading: false,
+            };
+          });
         } catch (e) {
           set({
             loading: false,
@@ -88,6 +129,7 @@ export const useCartStore = create<CartState>()(
           await get().loadCart();
           const serverIds = new Set(get().items.map((i) => i.product.id));
           for (const { product, qty } of localBeforeAuth) {
+            if (isLocalOnlyCartProductId(product.id)) continue;
             if (!serverIds.has(product.id)) {
               try {
                 await cartService.addToCart(product.id, qty);
@@ -125,8 +167,23 @@ export const useCartStore = create<CartState>()(
           return { items: newItems, selection: mergeSelection(sel, newItems) };
         });
         if (isLoggedIn()) {
-          cartService.addToCart(product.id, qty).catch(() => set(beforeSnapshot));
+          if (isLocalOnlyCartProductId(product.id)) {
+            const run = demoLoggedInCartAddSync ?? (async () => {});
+            run(product.id, qty).catch(() => {
+              set(beforeSnapshot);
+              toast.error("网络波动，请重试");
+            });
+          } else {
+            cartService.addToCart(product.id, qty).catch(() => {
+              set(beforeSnapshot);
+              toast.error("网络波动，请重试");
+            });
+          }
         }
+      },
+
+      addToCart: (product, qty = 1) => {
+        get().addItem(product, qty);
       },
 
       removeItem: (productId) => {
@@ -139,8 +196,11 @@ export const useCartStore = create<CartState>()(
           const { [productId]: _, ...rest } = state.selection;
           return { items, selection: mergeSelection(rest, items) };
         });
-        if (isLoggedIn()) {
-          cartService.removeFromCart(productId).catch(() => set(beforeSnapshot));
+        if (isLoggedIn() && !isLocalOnlyCartProductId(productId)) {
+          cartService.removeFromCart(productId).catch(() => {
+            set(beforeSnapshot);
+            toast.error("网络波动，请重试");
+          });
         }
       },
 
@@ -158,8 +218,11 @@ export const useCartStore = create<CartState>()(
             i.product.id === productId ? { ...i, qty } : i,
           ),
         }));
-        if (isLoggedIn()) {
-          cartService.updateCartItemQty(productId, qty).catch(() => set(beforeSnapshot));
+        if (isLoggedIn() && !isLocalOnlyCartProductId(productId)) {
+          cartService.updateCartItemQty(productId, qty).catch(() => {
+            set(beforeSnapshot);
+            toast.error("网络波动，请重试");
+          });
         }
       },
 
@@ -168,7 +231,10 @@ export const useCartStore = create<CartState>()(
         const prevSel = get().selection;
         set({ items: [], selection: {} });
         if (isLoggedIn()) {
-          cartService.clearCart().catch(() => set({ items: prev, selection: prevSel }));
+          cartService.clearCart().catch(() => {
+            set({ items: prev, selection: prevSel });
+            toast.error("网络波动，请重试");
+          });
         }
       },
 
@@ -181,9 +247,14 @@ export const useCartStore = create<CartState>()(
           return { items, selection: mergeSelection(sel, items) };
         });
         if (isLoggedIn()) {
-          Promise.all(productIds.map((id) => cartService.removeFromCart(id))).catch(() => {
-            get().loadCart();
-          });
+          const serverIds = productIds.filter(
+            (id) => !isLocalOnlyCartProductId(id),
+          );
+          if (serverIds.length) {
+            Promise.all(serverIds.map((id) => cartService.removeFromCart(id))).catch(() => {
+              get().loadCart();
+            });
+          }
         }
       },
 

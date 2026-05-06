@@ -7,6 +7,7 @@ import { usePagination } from "@/hooks/usePagination";
 import { toast } from "sonner";
 import * as couponService from "@/services/admin/couponService";
 import PermissionGate from "@/components/admin/PermissionGate";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 const typeLabels: Record<string, { label: string; color: string }> = {
   fixed: { label: "满减券", color: "bg-red-500/10 text-red-500" },
@@ -35,7 +36,7 @@ export default function AdminCoupons() {
   useEffect(() => {
     couponService.fetchCoupons()
       .then((p) => setCoupons(p.list))
-      .catch(() => toast.error("加载数据失败"))
+      .catch((e) => toast.error(toastErrorMessage(e, "加载数据失败")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -45,7 +46,7 @@ export default function AdminCoupons() {
         setCoupons(coupons.filter((c) => c.id !== id));
         toast.success("已删除");
       })
-      .catch(() => toast.error("删除失败"));
+      .catch((e) => toast.error(toastErrorMessage(e, "删除失败")));
   };
 
   if (loading) {

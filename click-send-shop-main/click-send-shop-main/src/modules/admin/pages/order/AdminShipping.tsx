@@ -3,6 +3,7 @@ import { Truck, Plus, Trash2, Edit2, MapPin, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as shippingService from "@/services/admin/shippingService";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 interface Template {
   id: number;
@@ -26,8 +27,8 @@ export default function AdminShipping() {
     try {
       const data = await shippingService.fetchTemplates();
       setTemplates(data);
-    } catch {
-      toast.error("加载运费模板失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "加载运费模板失败"));
     } finally {
       setLoading(false);
     }
@@ -49,8 +50,8 @@ export default function AdminShipping() {
       setEditing(null);
       setForm({ name: "", regions: "", baseFee: 0, freeAbove: 0, extraPerKg: 0 });
       await loadData();
-    } catch {
-      toast.error("保存失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "保存失败"));
     }
   };
 
@@ -65,8 +66,8 @@ export default function AdminShipping() {
       await shippingService.deleteTemplate(id);
       setTemplates(templates.filter((t) => t.id !== id));
       toast.success("已删除");
-    } catch {
-      toast.error("删除失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "删除失败"));
     }
   };
 
@@ -77,8 +78,8 @@ export default function AdminShipping() {
       await shippingService.updateTemplate(id, { enabled: !t.enabled } as any);
       setTemplates(templates.map((x) => x.id === id ? { ...x, enabled: !x.enabled } : x));
       toast.success(t.enabled ? "已停用" : "已启用");
-    } catch {
-      toast.error("操作失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "操作失败"));
     }
   };
 

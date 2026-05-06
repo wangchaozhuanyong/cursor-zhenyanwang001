@@ -3,13 +3,13 @@ import { ArrowLeft, Gift, TrendingUp, TrendingDown, Loader2, Wallet } from "luci
 import { useNavigate } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
 import * as rewardService from "@/services/rewardService";
-import type { RewardRecord } from "@/types/reward";
+import type { RewardTransaction } from "@/types/reward";
 import { toast } from "sonner";
 
 export default function Rewards() {
   const navigate = useNavigate();
   const goBack = useGoBack();
-  const [records, setRecords] = useState<RewardRecord[]>([]);
+  const [records, setRecords] = useState<RewardTransaction[]>([]);
   const [balance, setBalance] = useState(0);
   const [pendingAmount, setPendingAmount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -26,7 +26,7 @@ export default function Rewards() {
     setPage(1);
     try {
       const [data, bal] = await Promise.all([
-        rewardService.fetchRewardRecords({ page: 1, pageSize: PAGE_SIZE }),
+        rewardService.fetchRewardTransactions({ page: 1, pageSize: PAGE_SIZE }),
         rewardService.fetchRewardBalance(),
       ]);
       setRecords(data.list);
@@ -45,7 +45,7 @@ export default function Rewards() {
     setLoadingMore(true);
     try {
       const nextPage = page + 1;
-      const data = await rewardService.fetchRewardRecords({ page: nextPage, pageSize: PAGE_SIZE });
+      const data = await rewardService.fetchRewardTransactions({ page: nextPage, pageSize: PAGE_SIZE });
       setRecords((prev) => [...prev, ...data.list]);
       setPage(nextPage);
       setHasMore(data.list.length >= PAGE_SIZE);
@@ -123,17 +123,17 @@ export default function Rewards() {
             <div className="space-y-2">
               {records.map((r) => (
                 <div key={r.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
-                  <div className={`flex h-9 w-9 items-center justify-center rounded-full ${r.amount >= 0 ? "bg-green-500/10 text-green-500" : "bg-destructive/10 text-destructive"}`}>
-                    {r.amount >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-full ${Number(r.amount) >= 0 ? "bg-green-500/10 text-green-500" : "bg-destructive/10 text-destructive"}`}>
+                    {Number(r.amount) >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">订单 {r.order_no}</p>
+                    <p className="text-sm font-medium text-foreground truncate">{r.reason || `订单 ${r.order_no || "—"}`}</p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {new Date(r.created_at).toLocaleDateString("zh-CN")}
+                      {r.order_no ? `订单 ${r.order_no} · ` : ""}{new Date(r.created_at).toLocaleDateString("zh-CN")}
                     </p>
                   </div>
-                  <span className={`text-sm font-bold ${r.amount >= 0 ? "text-green-500" : "text-destructive"}`}>
-                    {r.amount > 0 ? "+" : ""}{r.amount}
+                  <span className={`text-sm font-bold ${Number(r.amount) >= 0 ? "text-green-500" : "text-destructive"}`}>
+                    {Number(r.amount) > 0 ? "+" : ""}{Number(r.amount).toFixed(2)}
                   </span>
                 </div>
               ))}

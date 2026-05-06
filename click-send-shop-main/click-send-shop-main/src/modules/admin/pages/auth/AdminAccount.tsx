@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { User, Lock, Mail, Phone, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { fetchAdminProfile, updateAdminProfile, changeAdminPassword } from "@/services/admin/accountService";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 export default function AdminAccount() {
   const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
@@ -20,7 +21,7 @@ export default function AdminAccount() {
           phone: data?.phone ?? "",
         });
       })
-      .catch(() => toast.error("加载数据失败"))
+      .catch((e) => toast.error(toastErrorMessage(e, "加载数据失败")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -33,8 +34,8 @@ export default function AdminAccount() {
         phone: profile.phone,
       });
       toast.success("个人信息已更新");
-    } catch {
-      toast.error("保存失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "保存失败"));
     } finally {
       setSaving(false);
     }
@@ -49,8 +50,8 @@ export default function AdminAccount() {
       await changeAdminPassword(pwd.old, pwd.new1);
       toast.success("密码已修改");
       setPwd({ old: "", new1: "", new2: "" });
-    } catch {
-      toast.error("修改失败，请检查原密码");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "修改失败，请检查原密码"));
     } finally {
       setSaving(false);
     }

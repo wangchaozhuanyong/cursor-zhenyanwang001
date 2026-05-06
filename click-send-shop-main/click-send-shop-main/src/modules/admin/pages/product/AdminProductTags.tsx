@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchProductTags, createProductTag, deleteProductTag } from "@/services/admin/productService";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 export default function AdminProductTags() {
   const [showForm, setShowForm] = useState(false);
@@ -15,8 +16,8 @@ export default function AdminProductTags() {
     try {
       const data = await fetchProductTags();
       setTags(data || []);
-    } catch {
-      toast.error("加载标签失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "加载标签失败"));
     } finally {
       setLoading(false);
     }
@@ -40,8 +41,8 @@ export default function AdminProductTags() {
       setNewTag({ name: "", color: "红色" });
       setShowForm(false);
       loadTags();
-    } catch {
-      toast.error("创建标签失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "创建标签失败"));
     } finally {
       setSaving(false);
     }
@@ -52,8 +53,8 @@ export default function AdminProductTags() {
       await deleteProductTag(tagId);
       toast.success("标签已删除");
       setTags(tags.filter((t) => t.id !== tagId));
-    } catch {
-      toast.error("删除标签失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "删除标签失败"));
     }
   };
 

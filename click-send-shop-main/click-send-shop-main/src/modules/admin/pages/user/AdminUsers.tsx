@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import * as userService from "@/services/admin/userService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useAdminUsersStore } from "@/stores/useAdminUsersStore";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 export default function AdminUsers() {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ export default function AdminUsers() {
   }, []);
 
   useEffect(() => {
-    loadUsers().catch(() => toast.error("加载数据失败"));
+    loadUsers().catch((e) => toast.error(toastErrorMessage(e, "加载数据失败")));
   }, [loadUsers]);
 
   useEffect(() => () => resetUsersStore(), [resetUsersStore]);
@@ -39,8 +40,8 @@ export default function AdminUsers() {
     try {
       await userService.exportUsersCsv({ keyword: search || undefined });
       toast.success("已开始下载 CSV");
-    } catch {
-      toast.error("导出失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "导出失败"));
     }
   };
 

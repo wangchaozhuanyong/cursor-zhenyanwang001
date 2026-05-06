@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { createCoupon, updateCoupon, fetchCoupons } from "@/services/admin/couponService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useGoBack } from "@/hooks/useGoBack";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 const couponTypes = [
   { value: "fixed", label: "满减券" },
@@ -49,7 +50,7 @@ export default function AdminCouponForm() {
             });
           }
         })
-        .catch(() => toast.error("加载优惠券失败"))
+        .catch((e) => toast.error(toastErrorMessage(e, "加载优惠券失败")))
         .finally(() => setLoading(false));
     }
   }, [id, isNew]);
@@ -77,8 +78,8 @@ export default function AdminCouponForm() {
         toast.success("优惠券更新成功");
       }
       navigate("/admin/coupons");
-    } catch {
-      toast.error("保存失败，请重试");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "保存失败，请重试"));
     } finally {
       setSaving(false);
     }

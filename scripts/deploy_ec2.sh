@@ -52,6 +52,7 @@ echo "[4/5] Sleep 3s for warmup..."
 sleep 3
 
 echo "[5/5] 强制执行 deploy/verify-pm2.sh（唯一验收标准）"
+perl -pi -e 's/\r$//' "${ROOT_DIR}/deploy/verify-pm2.sh" 2>/dev/null || true
 PM2_APP="${APP_NAME}" bash "${ROOT_DIR}/deploy/verify-pm2.sh"
 
 echo "[deploy] Done."

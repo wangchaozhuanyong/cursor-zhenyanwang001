@@ -21,3 +21,10 @@ exports.signIn = async (req, res, next) => {
     res.success(result.data, result.message);
   } catch (err) { next(err); }
 };
+
+exports.adminListRecords = async (req, res, next) => {
+  try {
+    const data = await pointsService.getAdminRecords(req.query);
+    res.success(data);
+  } catch (err) { next(err); }
+};

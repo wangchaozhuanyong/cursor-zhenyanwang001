@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchPointsRules, updatePointsRule } from "@/services/admin/pointsService";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 interface PointRule {
   id: string;
@@ -21,7 +22,7 @@ export default function AdminPointsRules() {
     setLoading(true);
     fetchPointsRules()
       .then(setRules)
-      .catch(() => toast.error("加载积分规则失败"))
+      .catch((e) => toast.error(toastErrorMessage(e, "加载积分规则失败")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -36,8 +37,8 @@ export default function AdminPointsRules() {
         await updatePointsRule(rule.id, { name: rule.name, points: rule.points, enabled: rule.enabled } as any);
       }
       toast.success("积分规则已保存");
-    } catch {
-      toast.error("保存失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "保存失败"));
     } finally {
       setSaving(false);
     }

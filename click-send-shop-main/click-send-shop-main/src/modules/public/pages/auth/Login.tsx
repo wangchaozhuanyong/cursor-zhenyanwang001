@@ -8,6 +8,7 @@ import LoginBannerCarousel from "@/components/LoginBannerCarousel";
 import WeChatIcon from "@/components/icons/WeChatIcon";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
 import logoWebp from "@/assets/logo.webp";
+import { ApiError } from "@/types/common";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { renderBrandTitle } from "@/utils/brand";
@@ -91,7 +92,14 @@ export default function Login() {
       navigate(from, { replace: true });
     } catch (e) {
       const fallback = useAuthStore.getState().error;
-      const msg = e instanceof Error ? e.message : (fallback ?? (mode === "login" ? "登录失败" : "注册失败"));
+      let msg =
+        e instanceof Error ? e.message : (fallback ?? (mode === "login" ? "登录失败" : "注册失败"));
+      /* 仅当服务端未返回具体说明时才用泛化文案，避免本地排障时看不到真实 500 原因（如数据库未连上） */
+      if (e instanceof ApiError && e.code === 500) {
+        const vague =
+          msg === "请求失败 (500)" || msg === "服务器内部错误" || msg.trim() === "";
+        if (vague) msg = "服务暂时不可用，请稍后再试";
+      }
       toast.error(msg);
     }
   };

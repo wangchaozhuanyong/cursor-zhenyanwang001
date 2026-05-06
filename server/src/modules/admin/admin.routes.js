@@ -28,6 +28,8 @@ const reviewCtrl = require('./controller/adminReview.controller');
 const bannerCtrl = require('./controller/adminBanner.controller');
 const notificationCtrl = require('./controller/adminNotification.controller');
 const inviteCtrl = require('./controller/adminInvite.controller');
+const rewardCtrl = require('./controller/adminReward.controller');
+const pointsCtrl = require('./controller/adminPoints.controller');
 const logCtrl = require('./controller/adminLog.controller');
 const rbacCtrl = require('./controller/adminRbac.controller');
 const shippingCtrl = require('./controller/adminShipping.controller');
@@ -141,16 +143,23 @@ router.delete('/banners/:id', adminAuth, requirePermission('banner.manage'), ban
 /* ── Notifications ── */
 router.get('/notifications', adminAuth, requirePermission('notification.manage'), notificationCtrl.list);
 router.post('/notifications', adminAuth, requirePermission('notification.manage'), notificationCtrl.send);
+router.post('/notifications/drafts', adminAuth, requirePermission('notification.manage'), notificationCtrl.draft);
+router.put('/notifications/:id/publish', adminAuth, requirePermission('notification.manage'), notificationCtrl.publish);
+router.get('/notifications/templates', adminAuth, requirePermission('notification.manage'), notificationCtrl.templates);
+router.get('/notifications/trigger-settings', adminAuth, requirePermission('notification.manage'), notificationCtrl.triggerSettings);
+router.put('/notifications/trigger-settings', adminAuth, requirePermission('notification.manage'), notificationCtrl.updateTriggerSettings);
 router.delete('/notifications/:id', adminAuth, requirePermission('notification.manage'), notificationCtrl.remove);
 
 /* ── Invites ── */
 router.get('/invites', adminAuth, requirePermission('invite.view'), inviteCtrl.list);
+router.get('/rewards/records', adminAuth, requirePermission('referral.manage'), rewardCtrl.listRecords);
 
 /* ── Settings: referral / points / site / content ── */
 router.get('/referral-rules', adminAuth, requirePermission('referral.manage'), settingsCtrl.listReferral);
 router.put('/referral-rules/:id', adminAuth, requirePermission('referral.manage'), settingsCtrl.updateReferral);
 router.get('/points/rules', adminAuth, requirePermission('points.manage'), settingsCtrl.listPoints);
 router.put('/points/rules/:id', adminAuth, requirePermission('points.manage'), settingsCtrl.updatePoints);
+router.get('/points/records', adminAuth, requirePermission('points.manage'), pointsCtrl.listRecords);
 router.get('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.getSite);
 router.put('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.updateSite);
 router.put('/system/theme', adminAuth, requirePermission('settings.manage'), themeCtrl.updateTheme);

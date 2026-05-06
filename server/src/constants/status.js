@@ -30,6 +30,7 @@ const REWARD_STATUS = Object.freeze({
   APPROVED: 'approved',
   REJECTED: 'rejected',
   PAID: 'paid',
+  REVERSED: 'reversed',
 });
 
 const EXPORT_TASK_STATUS = Object.freeze({

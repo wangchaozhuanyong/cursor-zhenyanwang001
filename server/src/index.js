@@ -5,12 +5,14 @@ validateEnv();
 const app = require('./app');
 const { runPendingMigrations } = require('./db/migrateRunner');
 const { startCleanupScheduler } = require('./modules/admin/adminExport.service');
+const { startNotificationScheduler } = require('./modules/admin/adminNotification.service');
 
 const PORT = process.env.PORT || 3000;
 
 runPendingMigrations()
   .then(() => {
     startCleanupScheduler();
+    startNotificationScheduler();
     app.listen(PORT, () => {
       console.log(`✅ Server running → http://localhost:${PORT}`);
     });

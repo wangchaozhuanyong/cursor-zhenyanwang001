@@ -16,34 +16,50 @@ async function login(body, req) {
     const user = await authApi.findUserByPhones(buildPhoneLookupCandidates(phone, countryCode));
     if (!user) throw new BusinessError(401, '手机号或密码错误');
 
-    const match = await comparePassword(password, user.password_hash);
+    let hash = user.password_hash;
+    if (Buffer.isBuffer(hash)) hash = hash.toString('utf8');
+    else if (hash != null && typeof hash !== 'string') hash = String(hash);
+    if (typeof hash !== 'string' || !hash.trim()) {
+      throw new BusinessError(401, '手机号或密码错误');
+    }
+
+    let match = false;
+    try {
+      match = await comparePassword(password, hash);
+    } catch (e) {
+      console.error('[adminAuth.login] bcrypt compare error', e);
+      match = false;
+    }
     if (!match) throw new BusinessError(401, '手机号或密码错误');
 
     if (user.role !== 'admin' && user.role !== 'super_admin') {
       throw new BusinessError(403, '该账号无管理员权限');
     }
 
+    const uid = String(user.id ?? '');
+    if (!uid) throw new BusinessError(401, '手机号或密码错误');
+
     const rv = Number.isFinite(Number(user.refresh_token_version)) ? Number(user.refresh_token_version) : 0;
-    const token = signToken(user.id, rv);
-    const access = await rbacService.getAccessContext(user.id, user.role);
-    try { await authApi.updateLastLogin(user.id); } catch { /* non-critical */ }
+    const token = signToken(uid, rv);
+    const access = await rbacService.getAccessContext(uid, user.role);
+    try { await authApi.updateLastLogin(uid); } catch { /* non-critical */ }
     await logAdminAction(user.nickname || phone, '管理员登录', '');
     await writeAuditLog({
       req,
-      operatorId: user.id,
+      operatorId: uid,
       operatorName: user.nickname || phone,
       operatorRole: user.role,
       actionType: 'admin.login',
       objectType: 'auth',
-      objectId: user.id,
+      objectId: uid,
       summary: '管理员登录成功',
       result: 'success',
     });
     return {
       data: {
         token,
-        userId: user.id,
-        role: user.role,
+        userId: uid,
+        role: String(user.role || ''),
         permissions: access.permissions,
         isSuperAdmin: access.isSuperAdmin,
         roleCodes: access.roleCodes,

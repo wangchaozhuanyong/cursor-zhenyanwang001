@@ -4,18 +4,21 @@ import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as bannerService from "@/services/admin/bannerService";
 import * as uploadService from "@/services/uploadService";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 export default function AdminBanners() {
   const [banners, setBanners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [savingOrder, setSavingOrder] = useState(false);
   const [form, setForm] = useState({ title: "", link: "", image: "" });
 
   useEffect(() => {
     bannerService.fetchBanners()
       .then(setBanners)
-      .catch(() => toast.error("加载 Banner 失败"))
+      .catch((e) => toast.error(toastErrorMessage(e, "加载 Banner 失败")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -27,7 +30,7 @@ export default function AdminBanners() {
         setBanners(banners.map((b) => b.id === id ? { ...b, enabled: !b.enabled } : b));
         toast.success("状态已更新");
       })
-      .catch(() => toast.error("更新失败"));
+      .catch((e) => toast.error(toastErrorMessage(e, "更新失败")));
   };
 
   const handleDelete = (id: string) => {
@@ -36,7 +39,7 @@ export default function AdminBanners() {
         setBanners(banners.filter((b) => b.id !== id));
         toast.success("已删除");
       })
-      .catch(() => toast.error("删除失败"));
+      .catch((e) => toast.error(toastErrorMessage(e, "删除失败")));
   };
 
   const openEdit = (b: any) => {
@@ -56,7 +59,7 @@ export default function AdminBanners() {
           setForm({ title: "", link: "", image: "" });
           toast.success("Banner 已更新");
         })
-        .catch(() => toast.error("更新失败"));
+        .catch((e) => toast.error(toastErrorMessage(e, "更新失败")));
     } else {
       bannerService.createBanner({ title: form.title, link: form.link, image: form.image, sort_order: banners.length + 1, enabled: true } as any)
         .then((newBanner) => {
@@ -65,8 +68,44 @@ export default function AdminBanners() {
           setForm({ title: "", link: "", image: "" });
           toast.success("Banner 已添加");
         })
-        .catch(() => toast.error("添加失败"));
+        .catch((e) => toast.error(toastErrorMessage(e, "添加失败")));
     }
+  };
+
+  const persistBannerOrder = async (ordered: any[]) => {
+    setSavingOrder(true);
+    try {
+      await Promise.all(
+        ordered.map((b, idx) =>
+          bannerService.updateBanner(String(b.id), { sort_order: idx + 1 }),
+        ),
+      );
+      setBanners(ordered.map((b, idx) => ({ ...b, sort_order: idx + 1 })));
+      toast.success("Banner 排序已更新");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "排序保存失败，请重试"));
+    } finally {
+      setSavingOrder(false);
+    }
+  };
+
+  const handleDrop = async (targetId: string) => {
+    if (!draggingId || draggingId === targetId) {
+      setDraggingId(null);
+      return;
+    }
+    const fromIdx = banners.findIndex((b) => String(b.id) === draggingId);
+    const toIdx = banners.findIndex((b) => String(b.id) === targetId);
+    if (fromIdx < 0 || toIdx < 0) {
+      setDraggingId(null);
+      return;
+    }
+    const next = [...banners];
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    setBanners(next.map((b, idx) => ({ ...b, sort_order: idx + 1 })));
+    setDraggingId(null);
+    await persistBannerOrder(next);
   };
 
   if (loading) {
@@ -104,7 +143,21 @@ export default function AdminBanners() {
 
       <div className="space-y-2">
         {banners.map((b) => (
-          <div key={b.id} className={`flex items-center gap-4 rounded-2xl border bg-card p-4 transition-all ${b.enabled ? "border-border" : "border-border opacity-60"}`}>
+          <div
+            key={b.id}
+            draggable={!savingOrder}
+            onDragStart={() => setDraggingId(String(b.id))}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => void handleDrop(String(b.id))}
+            onDragEnd={() => setDraggingId(null)}
+            className={`flex items-center gap-4 rounded-2xl border bg-card p-4 transition-all ${
+              b.enabled ? "border-border" : "border-border opacity-60"
+            } ${
+              draggingId === String(b.id) ? "opacity-50" : ""
+            } ${
+              savingOrder ? "cursor-wait" : "cursor-move"
+            }`}
+          >
             <GripVertical size={16} className="text-muted-foreground cursor-grab" />
             <div className="h-16 w-28 rounded-xl bg-secondary flex items-center justify-center overflow-hidden flex-shrink-0">
               {b.image ? <img src={b.image} alt="" className="h-full w-full object-cover" /> : <Image size={24} className="text-muted-foreground" />}
@@ -132,6 +185,9 @@ export default function AdminBanners() {
           </div>
         ))}
       </div>
+      {savingOrder && (
+        <div className="text-xs text-muted-foreground">正在保存排序...</div>
+      )}
 
       {banners.length === 0 && (
         <div className="py-8 text-center text-sm text-muted-foreground">暂无 Banner</div>
@@ -158,7 +214,7 @@ export default function AdminBanners() {
                   const url = res.url || "";
                   if (url) setForm({ ...form, image: url });
                   else toast.error("上传失败");
-                } catch { toast.error("上传失败"); }
+                } catch (e) { toast.error(toastErrorMessage(e, "上传失败")); }
               }} />
             </label>
             <input placeholder="Banner 标题" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />

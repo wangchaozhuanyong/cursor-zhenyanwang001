@@ -3,6 +3,7 @@ import { FileText, Edit2, Shield, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchContentPages, updateContentPage } from "@/services/admin/contentService";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 interface ContentItem {
   id: string;
@@ -24,7 +25,7 @@ export default function AdminContent() {
     setLoading(true);
     fetchContentPages()
       .then(setItems)
-      .catch(() => toast.error("加载内容失败"))
+      .catch((e) => toast.error(toastErrorMessage(e, "加载内容失败")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -38,8 +39,8 @@ export default function AdminContent() {
       toast.success("内容已更新");
       setShowForm(false);
       setEditing(null);
-    } catch {
-      toast.error("保存失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "保存失败"));
     } finally {
       setSaving(false);
     }

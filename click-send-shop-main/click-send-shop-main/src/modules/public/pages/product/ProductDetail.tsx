@@ -9,6 +9,7 @@ import ProductCard from "@/components/ProductCard";
 import ProductReviews from "@/components/ProductReviews";
 import { useProductReviews } from "@/hooks/useProductReviews";
 import ProductImageGallery from "@/components/ProductImageGallery";
+import { SquishButton } from "@/modules/micro-interactions";
 import TrustInfo from "@/components/TrustInfo";
 import SiteFooter from "@/components/SiteFooter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -188,41 +189,48 @@ export default function ProductDetail() {
             <div className="mt-4 flex items-center justify-between border-t border-[var(--theme-border)] px-4 py-4 md:mt-6 md:theme-rounded md:border md:bg-[var(--theme-surface)] md:px-5">
               <span className="text-sm font-medium text-foreground">数量</span>
               <div className="flex items-center gap-3 rounded-full border border-[var(--theme-border)] px-1.5">
-                <button
+                <SquishButton
+                  type="button"
+                  aria-label="减少数量"
                   onClick={() => setQty(Math.max(1, qty - 1))}
-                  className="flex h-9 w-9 items-center justify-center active:bg-[var(--theme-bg)] rounded-full touch-target"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] touch-target shadow-none !p-0"
                 >
                   <Minus size={16} className="text-foreground" />
-                </button>
+                </SquishButton>
                 <span className="min-w-[28px] text-center text-sm font-bold text-foreground">
                   {qty}
                 </span>
-                <button
+                <SquishButton
+                  type="button"
+                  aria-label="增加数量"
                   onClick={() => setQty(Math.min(product.stock, qty + 1))}
-                  className="flex h-9 w-9 items-center justify-center active:bg-[var(--theme-bg)] rounded-full touch-target"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] touch-target shadow-none !p-0"
                 >
                   <Plus size={16} className="text-foreground" />
-                </button>
+                </SquishButton>
               </div>
             </div>
 
             {/* 桌面端：操作按钮（移动端使用底部固定栏） */}
             <div className="mt-4 hidden gap-3 px-0 md:flex">
-              <button
+              <SquishButton
+                type="button"
                 onClick={handleAddToCart}
-                className="flex-1 rounded-full border-2 border-[var(--theme-primary)] py-3.5 text-sm font-semibold text-foreground transition-all hover:bg-[var(--theme-bg)]"
+                className="flex-1 rounded-full border-2 border-[var(--theme-primary)] py-3.5 text-sm font-semibold text-foreground transition-all hover:bg-[var(--theme-bg)] shadow-none !min-h-0"
               >
                 加入购物车
-              </button>
-              <button
+              </SquishButton>
+              <SquishButton
+                type="button"
                 onClick={handleBuyNow}
-                className="flex-1 rounded-full bg-gold py-3.5 text-sm font-semibold text-primary-foreground transition-all hover:opacity-95"
+                className="flex-1 rounded-full bg-gold py-3.5 text-sm font-semibold text-primary-foreground transition-all hover:opacity-95 shadow-none !min-h-0"
               >
                 立即购买
-              </button>
-              <button
+              </SquishButton>
+              <SquishButton
+                type="button"
                 onClick={handleFavorite}
-                className="flex h-12 w-12 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] hover:bg-[var(--theme-bg)]"
+                className="flex h-12 w-12 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] hover:bg-[var(--theme-bg)] shadow-none !p-0"
                 aria-label="收藏"
               >
                 <Heart
@@ -231,13 +239,14 @@ export default function ProductDetail() {
                     isFavorite ? "fill-destructive text-destructive" : "text-muted-foreground"
                   }
                 />
-              </button>
+              </SquishButton>
             </div>
 
             {/* 移动端：收藏按钮浮在右上角（保留交互） */}
-            <button
+            <SquishButton
+              type="button"
               onClick={handleFavorite}
-              className="fixed right-4 top-16 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/90 backdrop-blur-sm theme-shadow md:hidden touch-target"
+              className="fixed right-4 top-16 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/90 backdrop-blur-sm theme-shadow md:hidden touch-target shadow-none !p-0"
               aria-label="收藏"
             >
               <Heart
@@ -246,7 +255,7 @@ export default function ProductDetail() {
                   isFavorite ? "fill-destructive text-destructive" : "text-muted-foreground"
                 }`}
               />
-            </button>
+            </SquishButton>
 
             {/* TrustInfo - 信任三件套（详情页使用 card 强转化样式） */}
             <div className="mt-5 px-4 md:px-0">
@@ -288,18 +297,20 @@ export default function ProductDetail() {
       {/* 底部固定操作栏 - 仅移动端 */}
       <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
-          <button
+          <SquishButton
+            type="button"
             onClick={handleAddToCart}
-            className="flex-1 rounded-full border-2 border-[var(--theme-primary)] py-3.5 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-[var(--theme-bg)]"
+            className="flex-1 rounded-full border-2 border-[var(--theme-primary)] py-3.5 text-sm font-semibold text-foreground transition-all hover:bg-[var(--theme-bg)] shadow-none !min-h-0"
           >
             加入购物车
-          </button>
-          <button
+          </SquishButton>
+          <SquishButton
+            type="button"
             onClick={handleBuyNow}
-            className="flex-1 rounded-full bg-gold py-3.5 text-sm font-semibold text-primary-foreground transition-all active:scale-[0.98]"
+            className="flex-1 rounded-full bg-gold py-3.5 text-sm font-semibold text-primary-foreground transition-all shadow-none !min-h-0"
           >
             立即购买
-          </button>
+          </SquishButton>
         </div>
       </div>
     </div>
@@ -320,27 +331,30 @@ function DetailHeader({
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
       <div className="mx-auto flex w-full max-w-screen-xl items-center justify-between px-4 py-3 md:px-6">
-        <button
+        <SquishButton
+          type="button"
           onClick={goBack}
-          className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-transparent hover:bg-[var(--theme-bg)] touch-target shadow-none !p-0"
           aria-label="返回"
         >
           <ArrowLeft size={20} className="text-foreground" />
-        </button>
+        </SquishButton>
         <span className="text-sm font-medium text-foreground">商品详情</span>
         <div className="flex items-center gap-1">
           {onShare && (
-            <button
+            <SquishButton
+              type="button"
               onClick={onShare}
-              className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-transparent hover:bg-[var(--theme-bg)] touch-target shadow-none !p-0"
               aria-label="分享"
             >
               <Share2 size={18} className="text-foreground" />
-            </button>
+            </SquishButton>
           )}
-          <button
+          <SquishButton
+            type="button"
             onClick={() => navigate("/cart")}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full bg-transparent hover:bg-[var(--theme-bg)] touch-target shadow-none !p-0"
             aria-label="购物车"
           >
             <ShoppingCart size={20} className="text-foreground" />
@@ -349,7 +363,7 @@ function DetailHeader({
                 {totalItems}
               </span>
             )}
-          </button>
+          </SquishButton>
         </div>
       </div>
     </header>

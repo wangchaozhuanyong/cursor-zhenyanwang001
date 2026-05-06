@@ -7,6 +7,7 @@ import * as categoryService from "@/services/admin/categoryService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as uploadService from "@/services/uploadService";
 import { useGoBack } from "@/hooks/useGoBack";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 export default function AdminProductForm() {
   const navigate = useNavigate();
@@ -65,7 +66,7 @@ export default function AdminProductForm() {
             });
           }
         })
-        .catch(() => toast.error("加载商品信息失败"))
+        .catch((e) => toast.error(toastErrorMessage(e, "加载商品信息失败")))
         .finally(() => setLoading(false));
     }
   }, [id, isNew]);
@@ -83,8 +84,8 @@ export default function AdminProductForm() {
         setForm((f) => ({ ...f, images: [...f.images, url] }));
       }
       toast.success("图片已上传");
-    } catch {
-      toast.error("图片上传失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "图片上传失败"));
     }
   };
 
@@ -120,8 +121,8 @@ export default function AdminProductForm() {
         toast.success("商品更新成功");
       }
       navigate("/admin/products");
-    } catch {
-      toast.error("保存失败，请重试");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "保存失败，请重试"));
     } finally {
       setSaving(false);
     }

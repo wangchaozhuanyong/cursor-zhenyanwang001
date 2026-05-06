@@ -25,7 +25,7 @@ function mapUserCouponToCheckoutPicker(uc: UserCoupon, idx: number): CheckoutPic
     id: uc.id,
     title: c.title,
     discount: c.value,
-    discountType: c.type === "percentage" ? "percent" : "fixed",
+    discountType: c.type === "percentage" ? "percent" : c.type === "shipping" ? "shipping" : "fixed",
     condition: c.min_amount,
     expire: typeof c.end_date === "string" ? c.end_date.slice(0, 10) : "",
     variantIndex: idx,
@@ -38,21 +38,21 @@ function isCouponInValidPeriod(endDate: string, startDate: string): boolean {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   const today = `${y}-${m}-${day}`;
-  return startDate <= today && today <= endDate.slice(0, 10);
+  return startDate.slice(0, 10) <= today && today <= endDate.slice(0, 10);
 }
 
-/** 结算页：仅「我的券」中未使用且在有效期内、满足满减门槛的券（需传 user_coupons.id 下单） */
+/** 结算页：仅「我的券」中未使用且在有效期内的券（需传 user_coupons.id 下单）。门槛由选择器展示禁用原因。 */
 export async function fetchCheckoutPickerCoupons(
-  orderAmount: number,
+  _orderAmount: number,
 ): Promise<CheckoutPickerCoupon[]> {
   const res = await fetchUserCoupons({ status: "available", pageSize: 100 });
   const rows = res.list ?? [];
-  const usable = rows.filter((uc) => {
+  const valid = rows.filter((uc) => {
     if (uc.status !== "available") return false;
     const c = uc.coupon;
-    if (!c || (c.type !== "fixed" && c.type !== "percentage")) return false;
+    if (!c || (c.type !== "fixed" && c.type !== "percentage" && c.type !== "shipping")) return false;
     if (!isCouponInValidPeriod(c.end_date, c.start_date)) return false;
-    return orderAmount >= c.min_amount;
+    return true;
   });
-  return usable.map(mapUserCouponToCheckoutPicker);
+  return valid.map(mapUserCouponToCheckoutPicker);
 }

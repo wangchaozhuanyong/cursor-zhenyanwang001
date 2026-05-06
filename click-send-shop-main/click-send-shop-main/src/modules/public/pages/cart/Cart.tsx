@@ -8,6 +8,8 @@ import EmptyState from "@/components/EmptyState";
 import TrustInfo from "@/components/TrustInfo";
 import SiteFooter from "@/components/SiteFooter";
 import { motion, AnimatePresence } from "framer-motion";
+import { PRODUCT_BLUR_PLACEHOLDER } from "@/constants/productBlurPlaceholder";
+import { ProgressiveImage, SquishButton } from "@/modules/micro-interactions";
 import { toast } from "sonner";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
@@ -53,12 +55,14 @@ export default function Cart() {
       {/* Header */}
       <header className="sticky top-0 z-40 bg-[var(--theme-surface)]/95 backdrop-blur-md border-b border-[var(--theme-border)]">
         <div className="mx-auto flex w-full max-w-screen-xl items-center gap-3 px-4 py-3 md:px-6">
-          <button
+          <SquishButton
+            type="button"
             onClick={goBack}
-            className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-transparent hover:bg-[var(--theme-bg)] touch-target shadow-none !p-0"
+            aria-label="返回"
           >
             <ArrowLeft size={20} className="text-foreground" />
-          </button>
+          </SquishButton>
           <h1 className="text-base font-semibold text-foreground md:text-xl">购物车</h1>
           {items.length > 0 && (
             <span className="text-xs text-muted-foreground">
@@ -116,10 +120,10 @@ export default function Cart() {
               <div className="md:theme-rounded md:border md:border-[var(--theme-border)] md:bg-[var(--theme-surface)] md:px-4">
                 {/* 桌面：列表头 + 全选 */}
                 <div className="hidden items-center justify-between border-b border-[var(--theme-border)] py-3 md:flex">
-                  <button
+                  <SquishButton
                     type="button"
                     onClick={() => setSelectAll(!allSelected)}
-                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+                    className="flex items-center gap-2 rounded-none bg-transparent text-sm text-muted-foreground hover:text-foreground shadow-none !min-h-0 !px-0 !py-0"
                   >
                     <span
                       className={`flex h-5 w-5 items-center justify-center rounded border-2 ${
@@ -136,7 +140,7 @@ export default function Cart() {
                       )}
                     </span>
                     全选 ({selectedCount}/{items.length})
-                  </button>
+                  </SquishButton>
                   <span className="text-xs text-muted-foreground">
                     可获积分: {totalPointsSelected()}
                   </span>
@@ -149,10 +153,10 @@ export default function Cart() {
                       exit={{ opacity: 0, x: -100 }}
                       className="flex gap-3 border-b border-[var(--theme-border)] py-4 last:border-b-0"
                     >
-                      <button
+                      <SquishButton
                         type="button"
                         onClick={() => toggleSelect(item.product.id)}
-                        className={`mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md border-2 transition-colors ${
+                        className={`mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md border-2 shadow-none !p-0 transition-colors ${
                           isSelected(item.product.id)
                             ? "border-gold bg-gold text-primary-foreground"
                             : "border-muted-foreground/40 bg-background"
@@ -160,13 +164,21 @@ export default function Cart() {
                         aria-label={isSelected(item.product.id) ? "取消勾选" : "勾选结算"}
                       >
                         {isSelected(item.product.id) && <Check size={14} strokeWidth={3} />}
-                      </button>
-                      <img
-                        src={item.product.cover_image}
-                        alt={item.product.name}
+                      </SquishButton>
+                      <button
+                        type="button"
                         onClick={() => navigate(`/product/${item.product.id}`)}
-                        className="h-24 w-24 flex-shrink-0 cursor-pointer rounded-xl object-cover md:h-28 md:w-28"
-                      />
+                        className="h-24 w-24 flex-shrink-0 cursor-pointer overflow-hidden rounded-xl border-0 bg-transparent p-0 md:h-28 md:w-28"
+                        aria-label={`查看 ${item.product.name}`}
+                      >
+                        <ProgressiveImage
+                          src={item.product.cover_image}
+                          blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
+                          alt={item.product.name}
+                          className="h-full w-full bg-transparent"
+                          imgClassName="h-full w-full rounded-xl object-cover"
+                        />
+                      </button>
                       <div className="flex flex-1 flex-col justify-between py-0.5">
                         <div>
                           <h3
@@ -184,28 +196,38 @@ export default function Cart() {
                             RM {item.product.price}
                           </span>
                           <div className="flex items-center gap-3">
-                            <button
+                            <SquishButton
+                              type="button"
                               onClick={() => removeItem(item.product.id)}
-                              className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target"
+                              className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent hover:bg-[var(--theme-bg)] touch-target shadow-none !p-0"
+                              aria-label="删除"
                             >
                               <Trash2 size={15} className="text-muted-foreground" />
-                            </button>
+                            </SquishButton>
                             <div className="flex items-center gap-1 rounded-full border border-[var(--theme-border)]">
-                              <button
-                                onClick={() => updateQty(item.product.id, item.qty - 1)}
-                                className="flex h-8 w-8 items-center justify-center rounded-full active:bg-[var(--theme-bg)] touch-target"
+                              <SquishButton
+                                type="button"
+                                onClick={() =>
+                                  updateQty(item.product.id, item.qty - 1)
+                                }
+                                className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] touch-target shadow-none !p-0"
+                                aria-label="减少数量"
                               >
                                 <Minus size={14} className="text-foreground" />
-                              </button>
+                              </SquishButton>
                               <span className="min-w-[24px] text-center text-sm font-semibold text-foreground">
                                 {item.qty}
                               </span>
-                              <button
-                                onClick={() => updateQty(item.product.id, item.qty + 1)}
-                                className="flex h-8 w-8 items-center justify-center rounded-full active:bg-[var(--theme-bg)] touch-target"
+                              <SquishButton
+                                type="button"
+                                onClick={() =>
+                                  updateQty(item.product.id, item.qty + 1)
+                                }
+                                className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] touch-target shadow-none !p-0"
+                                aria-label="增加数量"
                               >
                                 <Plus size={14} className="text-foreground" />
-                              </button>
+                              </SquishButton>
                             </div>
                           </div>
                         </div>
@@ -243,13 +265,14 @@ export default function Cart() {
                     </span>
                   </div>
                 </div>
-                <button
+                <SquishButton
+                  type="button"
                   onClick={handleCheckout}
                   disabled={totalItemsSelected() === 0}
-                  className="mt-5 w-full rounded-full bg-gold py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="mt-5 w-full rounded-full bg-gold py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
                 >
                   去结算
-                </button>
+                </SquishButton>
                 <div className="mt-4">
                   <TrustInfo />
                 </div>
@@ -267,10 +290,10 @@ export default function Cart() {
       {items.length > 0 && (
         <div className="fixed bottom-[calc(68px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-50 border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md md:hidden">
           <div className="mx-auto flex max-w-lg flex-col gap-2 px-4 py-2.5">
-            <button
+            <SquishButton
               type="button"
               onClick={() => setSelectAll(!allSelected)}
-              className="flex items-center gap-2 self-start text-xs text-muted-foreground"
+              className="flex items-center gap-2 self-start rounded-none bg-transparent text-xs text-muted-foreground shadow-none !min-h-0 !px-0 !py-0"
             >
               <span
                 className={`flex h-5 w-5 items-center justify-center rounded border-2 ${
@@ -285,7 +308,7 @@ export default function Cart() {
                 {!allSelected && someSelected && <span className="h-2 w-2 rounded-sm bg-gold" />}
               </span>
               全选
-            </button>
+            </SquishButton>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-foreground">
@@ -298,13 +321,14 @@ export default function Cart() {
                   可获积分: {totalPointsSelected()}
                 </p>
               </div>
-              <button
+              <SquishButton
+                type="button"
                 onClick={handleCheckout}
                 disabled={totalItemsSelected() === 0}
-                className="rounded-full bg-gold px-8 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full bg-gold px-8 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
               >
                 去结算
-              </button>
+              </SquishButton>
             </div>
           </div>
         </div>

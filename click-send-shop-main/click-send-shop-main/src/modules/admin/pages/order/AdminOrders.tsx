@@ -9,6 +9,7 @@ import * as orderService from "@/services/admin/orderService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import type { OrderStatus, PaymentStatus } from "@/types/order";
 import { useAdminOrdersStore } from "@/stores/useAdminOrdersStore";
+import { toastErrorMessage } from "@/utils/errorMessage";
 import {
   ORDER_STATUS,
   PAYMENT_STATUS,
@@ -42,7 +43,7 @@ export default function AdminOrders() {
   }, []);
 
   useEffect(() => {
-    loadOrders().catch(() => toast.error("加载数据失败"));
+    loadOrders().catch((e) => toast.error(toastErrorMessage(e, "加载数据失败")));
   }, [statusFilter, paymentFilter, loadOrders]);
 
   useEffect(() => () => resetOrdersStore(), [resetOrdersStore]);
@@ -62,8 +63,8 @@ export default function AdminOrders() {
         keyword: search.trim() || undefined,
       });
       toast.success("已开始下载 CSV");
-    } catch {
-      toast.error("导出失败");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "导出失败"));
     }
   };
 
@@ -73,7 +74,7 @@ export default function AdminOrders() {
         applyOrderStatus(orderId, newStatus as OrderStatus);
         toast.success(`订单状态已更新为「${getOrderStatusLabel(newStatus)}」`);
       })
-      .catch(() => toast.error("状态更新失败"));
+      .catch((e) => toast.error(toastErrorMessage(e, "状态更新失败")));
   };
 
   if (loading) {
@@ -109,7 +110,7 @@ export default function AdminOrders() {
           <select value={paymentFilter} onChange={(e) => { setPaymentFilter(e.target.value as "" | PaymentStatus); setPage(1); }} className="touch-manipulation min-h-[44px] max-w-[160px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2.5 text-sm text-foreground outline-none">
             {PAYMENT_STATUS_FILTER_OPTIONS.map((s) => <option key={s.value || "all"} value={s.value}>{s.label}</option>)}
           </select>
-          <button type="button" onClick={() => { setPage(1); void loadOrders().catch(() => toast.error("加载数据失败")); }} className="touch-manipulation min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-sm text-foreground hover:opacity-90">
+          <button type="button" onClick={() => { setPage(1); void loadOrders().catch((e) => toast.error(toastErrorMessage(e, "加载数据失败"))); }} className="touch-manipulation min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-sm text-foreground hover:opacity-90">
             搜索
           </button>
           <PermissionGate permission="order.view">

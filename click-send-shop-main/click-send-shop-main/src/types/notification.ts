@@ -7,6 +7,15 @@ export interface Notification {
   content: string;
   is_read: boolean;
   created_at: string;
+  audience_type?: "all" | "single" | "specific";
+  send_status?: "draft" | "sent" | "scheduled" | "cancelled";
+  workflow_status?: "draft" | "published" | "cancelled";
+  recipient_count?: number;
+  read_count?: number;
+  scheduled_at?: string | null;
+  sent_at?: string | null;
+  link_url?: string | null;
+  template_code?: string | null;
 }
 
 export interface NotificationListParams {

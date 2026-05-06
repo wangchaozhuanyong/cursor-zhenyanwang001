@@ -23,11 +23,14 @@ const {
 } = require('../../errors');
 const repo = require('./auth.repository');
 const { formatUserResponse } = require('../../utils/formatUserResponse');
+const { normalizeIntlPhone, buildPhoneLookupCandidates } = require('../../utils/phone');
 
 async function register(body) {
-  const { phone, password, nickname, inviteCode } = body;
+  const { phone, countryCode, password, nickname, inviteCode } = body;
+  const normalizedPhone = normalizeIntlPhone(phone, countryCode);
+  if (!normalizedPhone) throw new ValidationError('手机号格式不正确');
 
-  const existing = await repo.findUserIdByPhone(phone);
+  const existing = await repo.findUserIdByPhones(buildPhoneLookupCandidates(phone, countryCode));
   if (existing) throw new ConflictError('该手机号已注册');
 
   const id = generateId();
@@ -36,7 +39,7 @@ async function register(body) {
 
   await repo.insertUser({
     id,
-    phone,
+    phone: normalizedPhone,
     passwordHash: hash,
     nickname: nickname || '用户',
     inviteCode: code,
@@ -55,9 +58,10 @@ async function register(body) {
 
 async function login(body) {
   const phone = body.phone || body.username;
+  const countryCode = body.countryCode;
   const { password } = body;
 
-  const user = await repo.findUserByPhone(phone);
+  const user = await repo.findUserByPhones(buildPhoneLookupCandidates(phone, countryCode));
   if (!user) throw new AuthError('手机号或密码错误');
 
   const match = await comparePassword(password, user.password_hash);
@@ -78,7 +82,7 @@ async function getProfile(userId) {
 }
 
 async function updateProfile(userId, body) {
-  const { nickname, avatar, phone, wechat, whatsapp } = body;
+  const { nickname, avatar, phone, countryCode, wechat, whatsapp } = body;
   const fragments = [];
   const values = [];
 
@@ -91,10 +95,15 @@ async function updateProfile(userId, body) {
     values.push(avatar);
   }
   if (phone !== undefined) {
-    const dup = await repo.findPhoneDuplicate(userId, phone);
+    const normalizedPhone = normalizeIntlPhone(phone, countryCode);
+    if (!normalizedPhone) throw new ValidationError('手机号格式不正确');
+    const dup = await repo.findPhoneDuplicateByPhones(
+      userId,
+      buildPhoneLookupCandidates(phone, countryCode),
+    );
     if (dup) throw new ConflictError('该手机号已被其他用户使用');
     fragments.push('phone = ?');
-    values.push(phone);
+    values.push(normalizedPhone);
   }
   if (wechat !== undefined) {
     fragments.push('wechat = ?');
@@ -165,6 +174,10 @@ async function findUserByPhone(phone) {
   return repo.findUserByPhone(phone);
 }
 
+async function findUserByPhones(phones) {
+  return repo.findUserByPhones(phones);
+}
+
 /** 使该用户 refresh 令牌失效（与 logout 内逻辑一致） */
 async function bumpRefreshTokenVersion(userId) {
   if (userId) await repo.incrementRefreshTokenVersion(userId);
@@ -183,6 +196,7 @@ module.exports = {
   refresh,
   logout,
   findUserByPhone,
+  findUserByPhones,
   bumpRefreshTokenVersion,
   updateLastLogin,
 };

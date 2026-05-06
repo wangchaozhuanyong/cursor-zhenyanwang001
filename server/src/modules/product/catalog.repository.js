@@ -2,7 +2,7 @@ const db = require('../../config/db');
 
 async function selectActiveBanners() {
   const [rows] = await db.query(
-    'SELECT * FROM banners WHERE enabled = 1 ORDER BY sort_order ASC',
+    'SELECT * FROM banners WHERE enabled = 1 AND deleted_at IS NULL ORDER BY sort_order ASC',
   );
   return rows;
 }

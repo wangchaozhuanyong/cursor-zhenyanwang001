@@ -9,21 +9,29 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
-const allowedExts = /\.(jpg|jpeg|png|webp)$/i;
+const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
+const allowedExts = /\.(jpg|jpeg|png|webp|svg)$/i;
 
 const fileFilter = (_req, file, cb) => {
   if (allowedExts.test(path.extname(file.originalname)) && allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('只允许上传图片文件 (jpg, png, webp)'));
+    cb(new Error('只允许上传图片文件 (jpg, png, webp, svg)'));
   }
 };
 
-async function writeWebpFromBuffer(buf, opts = {}) {
+async function writeImageFromFile(file) {
+  const isSvg = file?.mimetype === 'image/svg+xml';
+  if (isSvg) {
+    const filename = `${crypto.randomBytes(16).toString('hex')}.svg`;
+    const outPath = path.join(uploadDir, filename);
+    await fs.promises.writeFile(outPath, file.buffer);
+    return { filename, url: `/uploads/${filename}` };
+  }
+
   const filename = `${crypto.randomBytes(16).toString('hex')}.webp`;
   const outPath = path.join(uploadDir, filename);
-  await sharp(buf)
+  await sharp(file.buffer)
     .rotate()
     .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
     .webp({ quality: 82 })
@@ -42,7 +50,7 @@ exports.uploadMiddleware = upload.single('file');
 exports.uploadFile = async (req, res) => {
   if (!req.file || !req.file.buffer) return res.fail(400, '请选择要上传的文件');
   try {
-    const { url, filename } = await writeWebpFromBuffer(req.file.buffer);
+    const { url, filename } = await writeImageFromFile(req.file);
     res.success({ url, filename });
   } catch (e) {
     res.fail(500, e instanceof Error ? e.message : '图片转换失败');
@@ -55,7 +63,7 @@ exports.uploadFiles = async (req, res) => {
   if (!req.files || !req.files.length) return res.fail(400, '请选择要上传的文件');
   try {
     const files = await Promise.all(
-      req.files.map((f) => writeWebpFromBuffer(f.buffer)),
+      req.files.map((f) => writeImageFromFile(f)),
     );
     res.success(files.map(({ url, filename }) => ({ url, filename })));
   } catch (e) {

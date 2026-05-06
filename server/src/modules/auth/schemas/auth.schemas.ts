@@ -10,8 +10,14 @@ import { z } from 'zod';
 export const phoneSchema = z
   .string({ message: '手机号不能为空' })
   .trim()
-  .min(6, '手机号长度不正确')
+  .regex(/^[0-9\s\-()]+$/, '手机号格式不正确')
+  .min(4, '手机号长度不正确')
   .max(20, '手机号长度不正确');
+
+export const countryCodeSchema = z
+  .string({ message: '国家代码不能为空' })
+  .trim()
+  .regex(/^\+?[0-9]{1,4}$/, '国家代码格式不正确');
 
 export const passwordSchema = z
   .string({ message: '密码不能为空' })
@@ -19,6 +25,7 @@ export const passwordSchema = z
   .max(64, '密码不能超过 64 位');
 
 export const registerBodySchema = z.object({
+  countryCode: countryCodeSchema,
   phone: phoneSchema,
   password: passwordSchema,
   nickname: z.string().trim().max(32).optional(),
@@ -28,6 +35,7 @@ export const registerBodySchema = z.object({
 export const loginBodySchema = z
   .object({
     phone: z.string().trim().min(1).max(20).optional(),
+    countryCode: countryCodeSchema.optional(),
     username: z.string().trim().min(1).max(20).optional(),
     password: passwordSchema,
   })
@@ -45,6 +53,7 @@ export const updateProfileBodySchema = z
     nickname: z.string().trim().max(32).optional(),
     avatar: z.string().trim().max(512).optional(),
     phone: phoneSchema.optional(),
+    countryCode: countryCodeSchema.optional(),
     wechat: z.string().trim().max(64).optional(),
     whatsapp: z.string().trim().max(64).optional(),
   })

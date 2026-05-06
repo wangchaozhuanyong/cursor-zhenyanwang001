@@ -18,6 +18,8 @@ import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchActiveThemeConfig, saveSystemThemeConfig } from "@/services/admin/themeService";
 import type { ThemeConfig } from "@/types/theme";
+import banner1 from "@/assets/banner1.jpg";
+import banner2 from "@/assets/banner2.jpg";
 
 const DEFAULT_THEME_CONFIG: ThemeConfig = {
   radius: "8px",
@@ -59,6 +61,12 @@ const fontsList = [
 ];
 
 const radiusList = ["0px", "2px", "4px", "6px", "8px", "12px", "16px", "20px", "24px", "32px"];
+const imageRatioList = ["1 / 1", "4 / 5", "3 / 4", "16 / 9"];
+const shadowStyleList: Array<{ value: ThemeConfig["shadowStyle"]; label: string; desc: string }> = [
+  { value: "soft", label: "柔和阴影", desc: "电商常规，层次更自然" },
+  { value: "flat", label: "扁平无影", desc: "极简风格，更克制" },
+  { value: "brutalism", label: "硬朗投影", desc: "强对比，适合品牌表达" },
+];
 
 function parseToRGB(colorStr: string) {
   let r = 255;
@@ -186,6 +194,7 @@ export default function AdminThemeSettings() {
   const [saving, setSaving] = useState(false);
   const [themeConfig, setThemeConfig] = useState<ThemeConfig>(DEFAULT_THEME_CONFIG);
   const [previewMode, setPreviewMode] = useState<"light" | "dark">("light");
+  const [editingMode, setEditingMode] = useState<"light" | "dark">("light");
 
   useEffect(() => {
     setLoading(true);
@@ -198,6 +207,7 @@ export default function AdminThemeSettings() {
   }, []);
 
   const palette = useMemo(() => generateThemePalette(themeConfig, previewMode), [themeConfig, previewMode]);
+  const previewImage = previewMode === "dark" ? banner2 : banner1;
 
   const updateThemeConfig = (mode: "light" | "dark", field: string, value: string) => {
     setThemeConfig((prev) => ({
@@ -251,8 +261,66 @@ export default function AdminThemeSettings() {
         </button>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <div className="space-y-6 xl:col-span-2">
+      <div className="grid gap-6 2xl:grid-cols-[1fr_420px]">
+        <div className="space-y-6">
+          <section className="rounded-xl border border-border bg-card p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold flex items-center gap-2"><Palette size={16} /> 配色编辑区</h3>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingMode("light")}
+                  className={`rounded-md border p-1.5 ${editingMode === "light" ? "border-gold text-gold" : "border-border"}`}
+                >
+                  <Sun size={14} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingMode("dark")}
+                  className={`rounded-md border p-1.5 ${editingMode === "dark" ? "border-gold text-gold" : "border-border"}`}
+                >
+                  <Moon size={14} />
+                </button>
+              </div>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <AdvancedColorInput
+                label="背景色"
+                value={themeConfig[editingMode].bgColor}
+                onChange={(v) => updateThemeConfig(editingMode, "bgColor", v)}
+              />
+              <AdvancedColorInput
+                label="表面色"
+                value={themeConfig[editingMode].surfaceColor}
+                onChange={(v) => updateThemeConfig(editingMode, "surfaceColor", v)}
+              />
+              <AdvancedColorInput
+                label="主色"
+                value={themeConfig[editingMode].primaryColor}
+                onChange={(v) => updateThemeConfig(editingMode, "primaryColor", v)}
+              />
+              <AdvancedColorInput
+                label="辅色"
+                value={themeConfig[editingMode].secondaryColor}
+                onChange={(v) => updateThemeConfig(editingMode, "secondaryColor", v)}
+              />
+              <AdvancedColorInput
+                label="边框色"
+                value={themeConfig[editingMode].borderColor}
+                onChange={(v) => updateThemeConfig(editingMode, "borderColor", v)}
+                allowAuto
+              />
+              <AdvancedColorInput
+                label="价格色"
+                value={themeConfig[editingMode].priceColor}
+                onChange={(v) => updateThemeConfig(editingMode, "priceColor", v)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              当前正在编辑：{editingMode === "light" ? "浅色模式" : "深色模式"}。预览可独立切换，不会影响编辑状态。
+            </p>
+          </section>
+
           <div className="grid gap-4 md:grid-cols-2">
             <section className="rounded-xl border border-border bg-card p-4 space-y-3">
               <h3 className="text-sm font-semibold flex items-center gap-2"><Type size={16} /> 排版引擎</h3>
@@ -309,6 +377,24 @@ export default function AdminThemeSettings() {
             </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">阴影风格</p>
+                <div className="grid gap-2">
+                  {shadowStyleList.map((s) => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() => setThemeConfig((prev) => ({ ...prev, shadowStyle: s.value }))}
+                      className={`rounded-md border p-2 text-left ${
+                        themeConfig.shadowStyle === s.value ? "border-gold bg-gold/10" : "border-border"
+                      }`}
+                    >
+                      <div className="text-xs font-semibold">{s.label}</div>
+                      <div className="text-[11px] text-muted-foreground">{s.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">内容对齐</p>
                 <div className="flex gap-2">
                   <button
@@ -346,13 +432,32 @@ export default function AdminThemeSettings() {
                   </button>
                 </div>
               </div>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">图片比例</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {imageRatioList.map((ratio) => (
+                    <button
+                      key={ratio}
+                      type="button"
+                      onClick={() => setThemeConfig((prev) => ({ ...prev, imageRatio: ratio }))}
+                      className={`rounded-md border p-2 text-xs ${
+                        themeConfig.imageRatio === ratio ? "border-gold text-gold" : "border-border"
+                      }`}
+                    >
+                      {ratio}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </section>
         </div>
 
-        <section className="rounded-xl border border-border bg-card p-4 space-y-4">
+        <section
+          className="rounded-xl border border-border bg-card p-4 space-y-4 2xl:sticky 2xl:top-20 h-fit"
+        >
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold flex items-center gap-2"><Palette size={16} /> 双轨配色</h3>
+            <p className="text-sm font-semibold">实时预览（{previewMode === "light" ? "浅色" : "深色"}）</p>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -370,52 +475,19 @@ export default function AdminThemeSettings() {
               </button>
             </div>
           </div>
-
-          <div className="space-y-4">
-            <div className="rounded-lg border border-border p-3 space-y-3">
-              <p className="text-xs font-semibold">浅色模式</p>
-              <AdvancedColorInput label="背景色" value={themeConfig.light.bgColor} onChange={(v) => updateThemeConfig("light", "bgColor", v)} />
-              <AdvancedColorInput label="表面色" value={themeConfig.light.surfaceColor} onChange={(v) => updateThemeConfig("light", "surfaceColor", v)} />
-              <AdvancedColorInput label="主色" value={themeConfig.light.primaryColor} onChange={(v) => updateThemeConfig("light", "primaryColor", v)} />
-              <AdvancedColorInput label="辅色" value={themeConfig.light.secondaryColor} onChange={(v) => updateThemeConfig("light", "secondaryColor", v)} />
-              <AdvancedColorInput
-                label="边框色"
-                value={themeConfig.light.borderColor}
-                onChange={(v) => updateThemeConfig("light", "borderColor", v)}
-                allowAuto
-              />
-              <AdvancedColorInput label="价格色" value={themeConfig.light.priceColor} onChange={(v) => updateThemeConfig("light", "priceColor", v)} />
-            </div>
-
-            <div className="rounded-lg border border-border p-3 space-y-3">
-              <p className="text-xs font-semibold">深色模式</p>
-              <AdvancedColorInput label="背景色" value={themeConfig.dark.bgColor} onChange={(v) => updateThemeConfig("dark", "bgColor", v)} />
-              <AdvancedColorInput label="表面色" value={themeConfig.dark.surfaceColor} onChange={(v) => updateThemeConfig("dark", "surfaceColor", v)} />
-              <AdvancedColorInput label="主色" value={themeConfig.dark.primaryColor} onChange={(v) => updateThemeConfig("dark", "primaryColor", v)} />
-              <AdvancedColorInput label="辅色" value={themeConfig.dark.secondaryColor} onChange={(v) => updateThemeConfig("dark", "secondaryColor", v)} />
-              <AdvancedColorInput
-                label="边框色"
-                value={themeConfig.dark.borderColor}
-                onChange={(v) => updateThemeConfig("dark", "borderColor", v)}
-                allowAuto
-              />
-              <AdvancedColorInput label="价格色" value={themeConfig.dark.priceColor} onChange={(v) => updateThemeConfig("dark", "priceColor", v)} />
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <section
-        className="rounded-xl border p-4"
-        style={{
-          background: palette["--theme-bg"],
-          color: palette["--theme-text"],
-          borderColor: palette["--theme-border"],
-          fontFamily: palette["--theme-font"],
-        }}
-      >
-        <p className="mb-3 text-sm font-semibold">实时预览（{previewMode === "light" ? "浅色" : "深色"}）</p>
-        <div className="grid gap-4 md:grid-cols-2">
+          <p className="text-xs text-muted-foreground">
+            已内置默认预览图（本地资源），不依赖外网图片，深色模式也可稳定预览。
+          </p>
+          <div
+            className="rounded-xl border p-3 space-y-3"
+            style={{
+              background: palette["--theme-bg"],
+              color: palette["--theme-text"],
+              borderColor: palette["--theme-border"],
+              fontFamily: palette["--theme-font"],
+            }}
+          >
+            <div className="grid gap-4">
           {[1, 2].map((i) => (
             <div
               key={i}
@@ -432,7 +504,7 @@ export default function AdminThemeSettings() {
                 style={{ aspectRatio: palette["--theme-image-ratio"], background: palette["--theme-surface"], borderRadius: palette["--theme-radius"] }}
               >
                 <img
-                  src="https://images.unsplash.com/photo-1515347619362-672cefc4d59e?auto=format&fit=crop&q=80&w=800&h=1000"
+                  src={previewImage}
                   alt="preview"
                   className="h-full w-full"
                   style={{ objectFit: themeConfig.imageFit }}
@@ -457,8 +529,10 @@ export default function AdminThemeSettings() {
               </div>
             </div>
           ))}
-        </div>
-      </section>
+            </div>
+          </div>
+        </section>
+      </div>
 
       <div className="sticky bottom-0 -mx-6 border-t border-border bg-background/95 px-6 py-4 backdrop-blur-md">
         <div className="flex items-center justify-end">

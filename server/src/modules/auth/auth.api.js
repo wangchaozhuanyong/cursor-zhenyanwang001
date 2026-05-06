@@ -6,6 +6,7 @@ const authService = require('./auth.service');
 
 module.exports = {
   findUserByPhone: authService.findUserByPhone,
+  findUserByPhones: authService.findUserByPhones,
   bumpRefreshTokenVersion: authService.bumpRefreshTokenVersion,
   changePassword: authService.changePassword,
   updateLastLogin: authService.updateLastLogin,

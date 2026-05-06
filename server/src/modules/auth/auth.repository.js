@@ -5,6 +5,13 @@ async function findUserIdByPhone(phone) {
   return row || null;
 }
 
+async function findUserIdByPhones(phones) {
+  if (!Array.isArray(phones) || phones.length === 0) return null;
+  const placeholders = phones.map(() => '?').join(',');
+  const [[row]] = await db.query(`SELECT id FROM users WHERE phone IN (${placeholders}) LIMIT 1`, phones);
+  return row || null;
+}
+
 async function insertUser(params) {
   const { id, phone, passwordHash, nickname, inviteCode, parentInviteCode } = params;
   await db.query(
@@ -16,6 +23,13 @@ async function insertUser(params) {
 
 async function findUserByPhone(phone) {
   const [[row]] = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
+  return row || null;
+}
+
+async function findUserByPhones(phones) {
+  if (!Array.isArray(phones) || phones.length === 0) return null;
+  const placeholders = phones.map(() => '?').join(',');
+  const [[row]] = await db.query(`SELECT * FROM users WHERE phone IN (${placeholders}) LIMIT 1`, phones);
   return row || null;
 }
 
@@ -31,6 +45,16 @@ async function selectProfileFields(userId) {
 
 async function findPhoneDuplicate(userId, phone) {
   const [[row]] = await db.query('SELECT id FROM users WHERE phone = ? AND id != ?', [phone, userId]);
+  return row || null;
+}
+
+async function findPhoneDuplicateByPhones(userId, phones) {
+  if (!Array.isArray(phones) || phones.length === 0) return null;
+  const placeholders = phones.map(() => '?').join(',');
+  const [[row]] = await db.query(
+    `SELECT id FROM users WHERE phone IN (${placeholders}) AND id != ? LIMIT 1`,
+    [...phones, userId],
+  );
   return row || null;
 }
 
@@ -77,10 +101,13 @@ async function updateLastLogin(userId) {
 
 module.exports = {
   findUserIdByPhone,
+  findUserIdByPhones,
   insertUser,
   findUserByPhone,
+  findUserByPhones,
   selectProfileFields,
   findPhoneDuplicate,
+  findPhoneDuplicateByPhones,
   updateUserProfile,
   selectPasswordHash,
   updatePasswordHash,

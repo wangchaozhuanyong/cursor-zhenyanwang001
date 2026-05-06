@@ -71,12 +71,24 @@ type Field = {
 type Section = {
   title: string;
   desc?: string;
+  category: "brand" | "contact" | "seo" | "content";
   fields: Field[];
+};
+
+type SectionCategory = Section["category"] | "all";
+
+const CATEGORY_LABELS: Record<SectionCategory, string> = {
+  all: "全部",
+  brand: "品牌与视觉",
+  contact: "联系与业务",
+  seo: "SEO 与分享",
+  content: "页脚与内容",
 };
 
 const SECTIONS: Section[] = [
   {
     title: "品牌信息",
+    category: "brand",
     desc: "网站名称、Slogan、Logo / Favicon — 全站头部、底部、登录页、文档标题都会读取",
     fields: [
       { key: "siteName", label: "站点名称", placeholder: "例如：真烟网", hint: "全站头部 / 浏览器标题尾缀" },
@@ -89,6 +101,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "联系方式",
+    category: "contact",
     desc: "底部、关于我们、订单页都会展示",
     fields: [
       { key: "contactPhone", label: "客服电话", placeholder: "+60 12-345 6789" },
@@ -102,6 +115,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "社交媒体",
+    category: "contact",
     fields: [
       { key: "instagramUrl", label: "Instagram", placeholder: "https://instagram.com/..." },
       { key: "facebookUrl", label: "Facebook", placeholder: "https://facebook.com/..." },
@@ -111,6 +125,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "业务设置",
+    category: "contact",
     fields: [
       {
         key: "currency",
@@ -127,6 +142,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "SEO",
+    category: "seo",
     desc: "搜索引擎抓取与社交分享时使用，未填写时回退到「站点名称 / 站点描述 / Logo」",
     fields: [
       { key: "seoTitle", label: "SEO 标题", placeholder: "真烟网 - 马来西亚优选商城" },
@@ -137,6 +153,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "页脚信息",
+    category: "content",
     desc: "前端 Footer 组件读取",
     fields: [
       { key: "footerCompanyName", label: "公司名称", placeholder: "真烟网" },
@@ -148,6 +165,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "政策内部页路径",
+    category: "content",
     desc: "对应 CMS 文章 slug，前端 Footer / Checkout 等位置直接跳转到内部 CMS 页面",
     fields: [
       { key: "privacyPolicyPath", label: "隐私政策路径", placeholder: "/content/privacy-policy" },
@@ -158,6 +176,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "购物 / 售后 / 支付说明",
+    category: "content",
     desc: "短文案，可在购物车、Checkout、订单详情等转化关键节点透出，提升信任度",
     fields: [
       { key: "supportText", label: "客服支持说明", type: "textarea", rows: 2, placeholder: "如：7×24 小时人工客服，下单 24 小时内必复" },
@@ -167,6 +186,7 @@ const SECTIONS: Section[] = [
   },
   {
     title: "页脚自定义导航 (高级)",
+    category: "content",
     desc: "JSON 格式 [{label,path}]。配置后将完全覆盖默认页脚导航；不填则使用内置默认（关于我们 / 帮助中心 / 隐私 / 协议 / 退款 / 配送）",
     fields: [
       {
@@ -186,6 +206,7 @@ export default function AdminSiteSettings() {
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<SiteSettings>(EMPTY);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<SectionCategory>("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -256,17 +277,46 @@ export default function AdminSiteSettings() {
     );
   }
 
+  const visibleSections =
+    activeCategory === "all"
+      ? SECTIONS
+      : SECTIONS.filter((section) => section.category === activeCategory);
+
   return (
     <div className="space-y-6 pb-24">
-      <div>
-        <h1 className="text-xl font-bold text-foreground">站点设置</h1>
-        <p className="text-sm text-muted-foreground">
-          配置全站通用信息：品牌、联系方式、SEO、页脚等。所有字段实时驱动前台展示。
-        </p>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">站点设置</h1>
+          <p className="text-sm text-muted-foreground">
+            配置全站通用信息：品牌、联系方式、SEO、页脚等。所有字段实时驱动前台展示。
+          </p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-2 lg:sticky lg:top-20">
+          <div className="mb-2 px-2 text-xs font-medium text-muted-foreground">功能导航</div>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(CATEGORY_LABELS).map(([key, label]) => {
+              const isActive = activeCategory === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setActiveCategory(key as SectionCategory)}
+                  className={`rounded-lg px-3 py-1.5 text-xs transition-colors ${
+                    isActive
+                      ? "bg-gold text-primary-foreground"
+                      : "bg-secondary text-foreground hover:bg-secondary/80"
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       <div className="grid max-w-5xl gap-6 lg:grid-cols-2">
-        {SECTIONS.map((section) => (
+        {visibleSections.map((section) => (
           <div
             key={section.title}
             className="rounded-xl border border-border bg-card p-6 space-y-4"

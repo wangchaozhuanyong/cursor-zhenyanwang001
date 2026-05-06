@@ -60,6 +60,9 @@ async function request<T>(
   retry = true,
 ): Promise<T> {
   const isAdminEndpoint = endpoint.startsWith("/admin/");
+  const isAuthLoginOrRegister =
+    endpoint.startsWith("/auth/login")
+    || endpoint.startsWith("/auth/register");
   const token = isAdminEndpoint ? getAdminAccessToken() : getAccessToken();
 
   const headers: HeadersInit = {
@@ -75,7 +78,7 @@ async function request<T>(
     throw new ApiError(0, "网络连接失败，请检查网络设置", err);
   }
 
-  if (res.status === 401 && retry && !isAdminEndpoint) {
+  if (res.status === 401 && retry && !isAdminEndpoint && !isAuthLoginOrRegister) {
     if (!refreshing) refreshing = tryRefreshToken().finally(() => { refreshing = null; });
     try {
       const newToken = await refreshing;

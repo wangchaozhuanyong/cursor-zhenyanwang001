@@ -8,20 +8,19 @@ import LoginBannerCarousel from "@/components/LoginBannerCarousel";
 import WeChatIcon from "@/components/icons/WeChatIcon";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
 import logoWebp from "@/assets/logo.webp";
-import banner1 from "@/assets/banner1.jpg";
-import banner2 from "@/assets/banner2.jpg";
-import banner3 from "@/assets/banner3.jpg";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { renderBrandTitle } from "@/utils/brand";
-
-const loginBanners = [
-  { image: banner1, title: "新用户注册享 9 折优惠", link: "" },
-  { image: banner2, title: "限时抢购 · 精选好物低至5折", link: "" },
-  { image: banner3, title: "邀请好友注册 赢取积分奖励", link: "" },
-];
+import { useHomeBanners } from "@/hooks/useHomeBanners";
 
 const REMEMBER_KEY = "login_remembered_phone";
+const REMEMBER_COUNTRY_CODE_KEY = "login_remembered_country_code";
+const COUNTRY_CODE_OPTIONS = [
+  { value: "+60", label: "🇲🇾 +60" },
+  { value: "+86", label: "🇨🇳 +86" },
+  { value: "+65", label: "🇸🇬 +65" },
+  { value: "+1", label: "🇺🇸 +1" },
+];
 
 type AuthMode = "login" | "register";
 
@@ -30,6 +29,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const authStore = useAuthStore();
+  const { banners } = useHomeBanners();
   const siteInfo = useSiteInfo();
   const logoSrc = siteInfo.logoUrl || logoWebp;
   const siteName = siteInfo.siteName || "真烟网";
@@ -42,6 +42,7 @@ export default function Login() {
       ? rawFrom
       : "/";
   const [mode, setMode] = useState<AuthMode>("login");
+  const [countryCode, setCountryCode] = useState("+60");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [nickname, setNickname] = useState("");
@@ -54,6 +55,8 @@ export default function Login() {
       setPhone(saved);
       setRemember(true);
     }
+    const savedCc = localStorage.getItem(REMEMBER_COUNTRY_CODE_KEY);
+    if (savedCc) setCountryCode(savedCc);
   }, []);
 
   const loading = authStore.loading;
@@ -61,6 +64,10 @@ export default function Login() {
   const handleSubmit = async () => {
     if (!phone || !password) {
       toast.error("请填写手机号和密码");
+      return;
+    }
+    if (!countryCode) {
+      toast.error("请选择国家代码");
       return;
     }
     if (mode === "register" && !nickname) {
@@ -71,12 +78,14 @@ export default function Login() {
       if (mode === "login") {
         if (remember) {
           localStorage.setItem(REMEMBER_KEY, phone);
+          localStorage.setItem(REMEMBER_COUNTRY_CODE_KEY, countryCode);
         } else {
           localStorage.removeItem(REMEMBER_KEY);
+          localStorage.removeItem(REMEMBER_COUNTRY_CODE_KEY);
         }
-        await authStore.login({ phone, password });
+        await authStore.login({ phone, countryCode, password });
       } else {
-        await authStore.register({ phone, password, nickname });
+        await authStore.register({ phone, countryCode, password, nickname });
       }
       toast.success(mode === "login" ? "登录成功" : "注册成功");
       navigate(from, { replace: true });
@@ -109,7 +118,7 @@ export default function Login() {
         transition={{ duration: 0.5 }}
         className="px-5 mt-2"
       >
-        <LoginBannerCarousel banners={loginBanners} />
+        <LoginBannerCarousel banners={banners} />
       </motion.div>
 
       {/* ══════════════ Main Content ══════════════ */}
@@ -183,15 +192,29 @@ export default function Login() {
             )}
           </AnimatePresence>
 
-          <div className="relative">
-            <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="tel"
-              placeholder="手机号"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full rounded-2xl border border-border bg-card py-3.5 pl-12 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-all"
-            />
+          <div className="grid grid-cols-[112px_1fr] gap-2">
+            <select
+              value={countryCode}
+              onChange={(e) => setCountryCode(e.target.value)}
+              className="rounded-2xl border border-border bg-card px-3 py-3.5 text-sm text-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
+            >
+              {COUNTRY_CODE_OPTIONS.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+            <div className="relative">
+              <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="tel"
+                inputMode="numeric"
+                placeholder="手机号"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/[^\d\s\-()]/g, ""))}
+                className="w-full rounded-2xl border border-border bg-card py-3.5 pl-12 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-all"
+              />
+            </div>
           </div>
 
           <div className="relative">

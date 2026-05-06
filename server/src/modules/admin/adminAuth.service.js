@@ -4,14 +4,16 @@ const { comparePassword, signToken } = require('../../utils/helpers');
 const { logAdminAction } = require('../../utils/adminAudit');
 const { writeAuditLog } = require('../../utils/auditLog');
 const rbacService = require('./rbac.service');
+const { buildPhoneLookupCandidates } = require('../../utils/phone');
 
 async function login(body, req) {
   const phone = body.phone || body.username;
+  const countryCode = body.countryCode;
   const { password } = body;
   try {
     if (!phone || !password) throw new BusinessError(400, '手机号和密码不能为空');
 
-    const user = await authApi.findUserByPhone(phone);
+    const user = await authApi.findUserByPhones(buildPhoneLookupCandidates(phone, countryCode));
     if (!user) throw new BusinessError(401, '手机号或密码错误');
 
     const match = await comparePassword(password, user.password_hash);

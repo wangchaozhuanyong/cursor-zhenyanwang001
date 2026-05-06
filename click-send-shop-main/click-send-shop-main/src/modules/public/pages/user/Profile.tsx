@@ -12,6 +12,71 @@ import logoWebp from "@/assets/logo.webp";
 import * as inviteService from "@/services/inviteService";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 
+type ThemeMode = "light" | "dark";
+
+function ThemeToggleButton({ theme, onToggle }: { theme: ThemeMode; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--theme-gradient-foreground)_18%,transparent)] bg-[color-mix(in_srgb,var(--theme-gradient-foreground)_10%,transparent)] backdrop-blur transition-transform active:scale-90"
+      style={{ color: "var(--theme-gradient-foreground)" }}
+      title={theme === "dark" ? "切换亮色" : "切换暗色"}
+    >
+      {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
+    </button>
+  );
+}
+
+function ProfileAvatar({
+  src,
+  fallback,
+  alt,
+}: {
+  src?: string;
+  fallback: string;
+  alt: string;
+}) {
+  return (
+    <div className="relative flex h-[4.25rem] w-[4.25rem] shrink-0 items-center justify-center rounded-3xl border border-[color-mix(in_srgb,var(--theme-gradient-foreground)_22%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_88%,transparent)] p-1.5 shadow-lg shadow-black/10">
+      <img
+        src={src || fallback}
+        alt={alt}
+        className="h-full w-full rounded-2xl object-contain"
+      />
+    </div>
+  );
+}
+
+function StatChip({
+  value,
+  label,
+  onClick,
+  accent = false,
+}: {
+  value: string | number;
+  label: string;
+  onClick: () => void;
+  accent?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-2xl border border-[color-mix(in_srgb,var(--theme-gradient-foreground)_16%,transparent)] bg-[color-mix(in_srgb,var(--theme-gradient-foreground)_9%,transparent)] px-2 py-3 text-center backdrop-blur transition-transform active:scale-95"
+      style={{ color: "var(--theme-gradient-foreground)" }}
+    >
+      <p
+        className="text-lg font-black leading-none"
+        style={accent ? { color: "var(--theme-price)" } : undefined}
+      >
+        {value}
+      </p>
+      <p className="mt-1 text-[10px] font-medium opacity-70">{label}</p>
+    </button>
+  );
+}
+
 export default function Profile() {
   const navigate = useNavigate();
   const siteInfo = useSiteInfo();
@@ -37,67 +102,130 @@ export default function Profile() {
     toast.success("已退出登录");
     navigate("/login");
   };
+  const goLogin = () => navigate("/login", { state: { from: "/profile" } });
+  const guestBenefits = [
+    { icon: Package, label: "订单追踪", desc: "实时查看状态" },
+    { icon: Star, label: "积分抵扣", desc: "消费累计积分" },
+    { icon: Ticket, label: "专属优惠", desc: "会员专享好券" },
+  ];
+  const guestPreviewItems = [
+    { icon: Package, label: "我的订单" },
+    { icon: Ticket, label: "优惠券" },
+    { icon: Star, label: "积分中心" },
+    { icon: Heart, label: "收藏商品" },
+  ];
 
   /** 未登录：与 ProtectedRoute 一致以 token 为准，避免持久化状态与 token 不一致 */
   if (!isLoggedIn()) {
     return (
-      <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-20">
-        <div className="profile-header-dark rounded-b-3xl px-4 pb-10 pt-12 pt-safe shadow-lg">
-          <div className="mx-auto max-w-lg flex items-start justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-white/10">
-                <img src={logoSrc} alt="" className="h-full w-full object-contain p-2" />
+      <div className="min-h-screen bg-[var(--theme-bg)] pb-20 text-[var(--theme-text)]">
+        <div className="px-4 pb-4 pt-[max(env(safe-area-inset-top),1rem)]">
+          <section
+            className="theme-rounded theme-shadow relative mx-auto max-w-lg overflow-hidden p-5"
+            style={{ background: "var(--theme-gradient)", color: "var(--theme-gradient-foreground)" }}
+          >
+            <div className="pointer-events-none absolute -right-12 -top-14 h-36 w-36 rounded-full bg-[color-mix(in_srgb,var(--theme-gradient-foreground)_16%,transparent)] blur-2xl" />
+            <div className="pointer-events-none absolute -bottom-16 -left-10 h-32 w-32 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_22%,transparent)] blur-2xl" />
+
+            <div className="relative flex items-start justify-between gap-4">
+              <div className="flex min-w-0 items-center gap-4">
+                <ProfileAvatar src={logoSrc} fallback={logoWebp} alt={siteName} />
+                <div className="min-w-0">
+                  <p className="mb-2 inline-flex rounded-full bg-[color-mix(in_srgb,var(--theme-gradient-foreground)_12%,transparent)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] opacity-90">
+                    Member Access
+                  </p>
+                  <h2 className="text-xl font-black leading-tight">登录{siteName}</h2>
+                  <p className="mt-1 max-w-[12rem] text-xs leading-5 opacity-75">管理订单、积分、优惠券与会员权益</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-lg font-semibold text-white">欢迎来到{siteName}</h2>
-                <p className="text-xs text-white/60 mt-1">登录后查看订单、积分与优惠</p>
-              </div>
+              <ThemeToggleButton theme={theme} onToggle={toggle} />
             </div>
-            <button
-              type="button"
-              onClick={toggle}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10"
-              title={theme === "dark" ? "切换亮色" : "切换暗色"}
-            >
-              {theme === "dark" ? <Sun size={20} className="text-gold" /> : <Moon size={20} className="text-white/80" />}
-            </button>
-          </div>
-          <div className="mx-auto max-w-lg mt-8 flex gap-3">
-            <button
-              type="button"
-              onClick={() => navigate("/login", { state: { from: "/profile" } })}
-            className="flex-1 theme-rounded py-3.5 text-sm font-bold text-white theme-shadow"
-            style={{ background: "var(--theme-gradient)" }}
-            >
-              登录
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("/login", { state: { from: "/profile" } })}
-              className="flex-1 rounded-2xl border border-white/30 bg-white/10 py-3.5 text-sm font-semibold text-white"
-            >
-              注册
-            </button>
-          </div>
+
+            <div className="relative mt-6 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={goLogin}
+                className="rounded-2xl bg-[var(--theme-surface)] py-3.5 text-sm font-black shadow-lg shadow-black/10 transition-transform active:scale-[0.98]"
+                style={{ color: "var(--theme-text-on-surface)" }}
+              >
+                登录
+              </button>
+              <button
+                type="button"
+                onClick={goLogin}
+                className="rounded-2xl border border-[color-mix(in_srgb,var(--theme-gradient-foreground)_28%,transparent)] bg-[color-mix(in_srgb,var(--theme-gradient-foreground)_10%,transparent)] py-3.5 text-sm font-bold backdrop-blur transition-transform active:scale-[0.98]"
+              >
+                注册
+              </button>
+            </div>
+          </section>
         </div>
-        <main className="mx-auto max-w-lg px-4 py-4 space-y-2">
+        <main className="mx-auto max-w-lg space-y-4 px-4 py-1">
+          <section className="grid grid-cols-3 gap-2.5">
+            {guestBenefits.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                onClick={goLogin}
+                className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-3 text-center theme-shadow transition-transform active:scale-[0.97]"
+              >
+                <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)]">
+                  <item.icon size={18} className="text-[var(--theme-price)]" />
+                </div>
+                <p className="text-xs font-bold text-[var(--theme-text-on-surface)]">{item.label}</p>
+                <p className="mt-1 text-[10px] text-theme-muted">{item.desc}</p>
+              </button>
+            ))}
+          </section>
+
+          <section className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-black text-[var(--theme-text-on-surface)]">登录后可用</h3>
+                <p className="mt-1 text-xs text-theme-muted">开启你的会员工作台</p>
+              </div>
+              <button
+                type="button"
+                onClick={goLogin}
+                className="rounded-full bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] px-3 py-1.5 text-xs font-bold text-[var(--theme-price)]"
+              >
+                去登录
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
+              {guestPreviewItems.map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={goLogin}
+                  className="flex items-center gap-3 rounded-2xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-bg)_58%,var(--theme-surface))] px-3 py-3 text-left transition-transform active:scale-[0.98]"
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,transparent)]">
+                    <item.icon size={17} className="text-[var(--theme-price)]" />
+                  </div>
+                  <span className="text-sm font-semibold text-[var(--theme-text-on-surface)]">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
           <button
             type="button"
             onClick={() => navigate("/help")}
-            className="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-4 text-left text-sm"
+            className="theme-rounded flex w-full items-center gap-3 border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-4 text-left text-sm theme-shadow"
           >
-            <HelpCircle size={18} className="text-gold" />
-            <span className="flex-1">帮助中心</span>
-            <ChevronRight size={16} className="text-muted-foreground" />
+            <HelpCircle size={18} className="text-[var(--theme-price)]" />
+            <span className="flex-1 text-[var(--theme-text-on-surface)]">帮助中心</span>
+            <ChevronRight size={16} className="text-theme-muted" />
           </button>
           <button
             type="button"
             onClick={() => navigate("/about")}
-            className="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-4 text-left text-sm"
+            className="theme-rounded flex w-full items-center gap-3 border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-4 text-left text-sm theme-shadow"
           >
-            <Info size={18} className="text-gold" />
-            <span className="flex-1">关于我们</span>
-            <ChevronRight size={16} className="text-muted-foreground" />
+            <Info size={18} className="text-[var(--theme-price)]" />
+            <span className="flex-1 text-[var(--theme-text-on-surface)]">关于我们</span>
+            <ChevronRight size={16} className="text-theme-muted" />
           </button>
         </main>
       </div>
@@ -133,65 +261,41 @@ export default function Profile() {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-[var(--theme-bg)] pb-20 text-[var(--theme-text)]">
       {/* Profile header */}
-      <div className="profile-header-dark rounded-b-3xl px-4 pb-8 pt-12 pt-safe shadow-lg">
-        <div className="mx-auto max-w-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gold text-2xl font-bold text-white">
-                {avatar ? (
-                  <img
-                    src={avatar}
-                    alt="avatar"
-                    className="block h-full w-full scale-110 object-cover object-center"
-                  />
-                ) : (
-                  <img src={logoSrc} alt={siteName} className="h-full w-full object-contain p-1" />
-                )}
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-white">{nickname}</h2>
-                <p className="text-xs text-white/50">邀请码: {inviteCode}</p>
+      <div className="px-4 pb-5 pt-[max(env(safe-area-inset-top),1rem)]">
+        <section
+          className="theme-rounded theme-shadow relative mx-auto max-w-lg overflow-hidden p-5"
+          style={{ background: "var(--theme-gradient)", color: "var(--theme-gradient-foreground)" }}
+        >
+          <div className="pointer-events-none absolute -right-16 top-0 h-40 w-40 rounded-full bg-[color-mix(in_srgb,var(--theme-gradient-foreground)_14%,transparent)] blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-20 left-4 h-36 w-36 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_22%,transparent)] blur-2xl" />
+
+          <div className="relative flex items-start justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-4">
+              <ProfileAvatar src={avatar || logoSrc} fallback={logoWebp} alt={nickname || siteName} />
+              <div className="min-w-0">
+                <p className="mb-2 inline-flex rounded-full bg-[color-mix(in_srgb,var(--theme-gradient-foreground)_12%,transparent)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] opacity-90">
+                  VIP Account
+                </p>
+                <h2 className="truncate text-xl font-black leading-tight">{nickname || "会员用户"}</h2>
+                <p className="mt-1 text-xs opacity-75">邀请码: {inviteCode || "暂无"}</p>
               </div>
             </div>
 
-            {/* Dark mode toggle */}
-            <button
-              onClick={toggle}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 active:scale-90 transition-transform"
-              title={theme === "dark" ? "切换亮色" : "切换暗色"}
-            >
-              {theme === "dark" ? (
-                <Sun size={20} className="text-gold" />
-              ) : (
-                <Moon size={20} className="text-white/80" />
-              )}
-            </button>
+            <ThemeToggleButton theme={theme} onToggle={toggle} />
           </div>
 
           {/* Stats: 订单/收藏 优先，积分/下级 次之 */}
-          <div className={`mt-6 grid gap-4 rounded-xl bg-white/8 backdrop-blur-sm p-4 ${subordinateEnabled ? "grid-cols-4" : "grid-cols-3"}`}>
-            <button onClick={() => navigate("/orders")} className="text-center active:scale-95 transition-transform">
-              <p className="text-xl font-bold text-white">{orders.length}</p>
-              <p className="text-[10px] text-white/60">订单</p>
-            </button>
-            <button onClick={() => navigate("/favorites")} className="text-center active:scale-95 transition-transform">
-              <p className="text-xl font-bold text-white">{favoriteCount}</p>
-              <p className="text-[10px] text-white/60">收藏</p>
-            </button>
-            <button onClick={() => navigate("/points")} className="text-center active:scale-95 transition-transform">
-              <p className="text-xl font-bold text-gold">{pointsBalance}</p>
-              <p className="text-[10px] text-white/60">积分</p>
-            </button>
+          <div className={`relative mt-6 grid gap-2.5 ${subordinateEnabled ? "grid-cols-4" : "grid-cols-3"}`}>
+            <StatChip value={orders.length} label="订单" onClick={() => navigate("/orders")} />
+            <StatChip value={favoriteCount} label="收藏" onClick={() => navigate("/favorites")} />
+            <StatChip value={pointsBalance} label="积分" onClick={() => navigate("/points")} accent />
             {subordinateEnabled && (
-              <button onClick={() => navigate("/invite")} className="text-center active:scale-95 transition-transform">
-                <p className="text-xl font-bold text-white">{subCount}</p>
-                <p className="text-[10px] text-white/60">下级</p>
-              </button>
+              <StatChip value={subCount} label="下级" onClick={() => navigate("/invite")} />
             )}
           </div>
-        </div>
+        </section>
       </div>
 
       <main className="mx-auto max-w-lg px-4 py-4 space-y-4">
@@ -205,8 +309,8 @@ export default function Profile() {
                 onClick={() => navigate(item.path)}
                 className="flex flex-col items-center gap-1.5 rounded-lg p-2 transition-colors hover:bg-secondary active:scale-[0.97]"
               >
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gold/10">
-                  <item.icon size={20} className="text-gold" />
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)]">
+                  <item.icon size={20} className="text-[var(--theme-price)]" />
                 </div>
                 <span className="text-[12px] font-medium text-foreground">{item.label}</span>
                 <span className="text-[10px] text-muted-foreground">{item.desc}</span>
@@ -227,7 +331,7 @@ export default function Profile() {
                   i < benefitItems.length - 1 ? "border-b border-border" : ""
                 }`}
               >
-                <item.icon size={18} className="text-gold" />
+                <item.icon size={18} className="text-[var(--theme-price)]" />
                 <span className="flex-1 text-sm text-foreground">{item.label}</span>
                 {item.hint && (
                   <span className="text-xs text-muted-foreground">{item.hint}</span>

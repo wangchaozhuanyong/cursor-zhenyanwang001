@@ -1,5 +1,20 @@
 import { useEffect, type ReactNode } from "react";
-import { Search, Bell, Ticket, ChevronRight, ArrowRight, ShieldCheck, Truck, Sparkles } from "lucide-react";
+import {
+  Search,
+  Bell,
+  Ticket,
+  ChevronRight,
+  ArrowRight,
+  ShieldCheck,
+  Truck,
+  Sparkles,
+  ShoppingCart,
+  ClipboardList,
+  Headphones,
+  Gift,
+  Flame,
+  PackageCheck,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
@@ -31,6 +46,7 @@ export default function Index() {
   const logoSrc = siteInfo.logoUrl || logoWebp;
   const siteName = siteInfo.siteName || "华人真货网";
   const barsHidden = useScrollBarsHidden();
+  const loggedIn = isLoggedIn();
 
   useEffect(() => {
     if (isLoggedIn()) {
@@ -48,15 +64,25 @@ export default function Index() {
     loadHomeData,
   } = useProductStore();
 
+  const quickActions = [
+    { icon: ClipboardList, label: "我的订单", desc: "查物流/售后", path: loggedIn ? "/orders" : "/login" },
+    { icon: Ticket, label: "领优惠券", desc: "先领券再买", path: "/coupons" },
+    { icon: Gift, label: "积分返现", desc: "权益明细", path: loggedIn ? "/points" : "/login" },
+    { icon: Headphones, label: "联系客服", desc: "购买咨询", path: "/profile" },
+  ];
+
+  const categoryShortcuts = categories.slice(0, 6);
+  const heroHotProducts = hotProducts.slice(0, 3);
+
   useEffect(() => {
     loadHomeData();
   }, [loadHomeData]);
 
   return (
     <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-24 md:pb-0">
-      <section className="relative overflow-hidden border-b border-[var(--theme-border)] bg-[radial-gradient(circle_at_top_left,rgba(214,170,76,0.20),transparent_34%),linear-gradient(135deg,var(--theme-surface),var(--theme-bg)_52%,rgba(17,24,39,0.08))]">
-        <div className="pointer-events-none absolute -right-24 top-12 h-72 w-72 rounded-full bg-gold/10 blur-3xl" />
-        <div className="pointer-events-none absolute left-1/3 top-0 h-px w-1/2 bg-gradient-to-r from-transparent via-gold/50 to-transparent" />
+      <section className="relative overflow-hidden border-b border-[var(--theme-border)] bg-[linear-gradient(180deg,var(--theme-surface),var(--theme-bg))]">
+        <div className="pointer-events-none absolute -right-24 top-8 h-72 w-72 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_16%,transparent)] blur-3xl" />
+        <div className="pointer-events-none absolute -left-24 top-40 h-64 w-64 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_10%,transparent)] blur-3xl" />
 
         <header
           className={`sticky top-0 z-40 transform-gpu will-change-transform transition-transform duration-500 ${barsHidden ? "-translate-y-full" : "translate-y-0"}`}
@@ -75,7 +101,7 @@ export default function Index() {
                 height={34}
                 className="theme-rounded object-contain"
               />
-              <h1 className="hidden font-display text-base font-bold tracking-tight text-foreground sm:block">
+              <h1 className="hidden font-display text-base font-bold tracking-tight text-[var(--theme-text-on-surface)] sm:block">
                 {renderBrandTitle(siteName)}
               </h1>
             </button>
@@ -90,7 +116,7 @@ export default function Index() {
                 <button
                   key={path}
                   onClick={() => navigate(path)}
-                  className="rounded-full px-4 py-2 text-foreground/70 transition hover:bg-gold/10 hover:text-foreground"
+                  className="rounded-full px-4 py-2 text-[var(--theme-text-muted-on-surface)] transition hover:bg-[color-mix(in_srgb,var(--theme-price)_10%,transparent)] hover:text-[var(--theme-text-on-surface)]"
                 >
                   {label}
                 </button>
@@ -107,76 +133,151 @@ export default function Index() {
 
             <button
               onClick={() => navigate("/notifications")}
-              className="touch-target relative flex h-11 w-11 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/75 shadow-sm backdrop-blur-xl transition hover:bg-gold/10"
+              className="touch-target relative flex h-11 w-11 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/75 shadow-sm backdrop-blur-xl transition hover:bg-[color-mix(in_srgb,var(--theme-price)_10%,transparent)]"
             >
-              <Bell size={20} className="text-foreground" />
+              <Bell size={20} className="text-[var(--theme-text-on-surface)]" />
               {unreadCount > 0 && (
-                <span className="absolute right-0 top-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1 text-[10px] font-bold text-[var(--theme-price-foreground)] ring-2 ring-[var(--theme-surface)]">
+                <span className="absolute right-0 top-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-[var(--theme-price)] px-1 text-[10px] font-bold text-[var(--theme-price-foreground)] ring-2 ring-[var(--theme-surface)]">
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
             </button>
 
             <button
-              onClick={() => navigate(isLoggedIn() ? "/profile" : "/login")}
-              className="hidden rounded-full bg-foreground px-5 py-2.5 text-sm font-semibold text-background shadow-sm transition hover:opacity-90 md:inline-block"
+              onClick={() => navigate(loggedIn ? "/profile" : "/login")}
+              className="hidden rounded-full bg-[var(--theme-primary)] px-5 py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)] shadow-sm transition hover:opacity-90 md:inline-block"
             >
-              {isLoggedIn() ? "我的账户" : "登录 / 注册"}
+              {loggedIn ? "我的账户" : "登录 / 注册"}
             </button>
           </div>
         </header>
 
-        <div className="mx-auto grid w-full max-w-screen-xl gap-6 px-4 pb-7 pt-3 md:grid-cols-[0.9fr_1.35fr] md:px-6 md:pb-10 md:pt-8">
-          <Reveal index={0} className="flex flex-col justify-center">
-            <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-gold/25 bg-gold/10 px-3 py-1.5 text-xs font-semibold text-gold">
+        <div className="mx-auto grid w-full max-w-screen-xl gap-5 px-4 pb-6 pt-3 md:grid-cols-[1.08fr_0.92fr] md:px-6 md:pb-9 md:pt-6">
+          <Reveal index={0} className="rounded-[1.75rem] border border-[var(--theme-border)] bg-[var(--theme-surface)]/90 p-5 shadow-[var(--theme-shadow)] backdrop-blur-xl md:p-7">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-price)_9%,transparent)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-price)]">
               <Sparkles size={14} />
-              精选品质 · 快速配送 · 安心购物
+              今日推荐 · 领券下单更划算
             </div>
-            <h2 className="font-display text-3xl font-black leading-tight tracking-tight text-foreground md:text-5xl">
-              为懂品质的人，
-              <span className="block bg-gradient-to-r from-gold via-amber-400 to-gold bg-clip-text text-transparent">
-                打造更高级的购物体验
+            <h2 className="mt-4 font-display text-2xl font-black leading-tight tracking-tight text-[var(--theme-text-on-surface)] md:text-4xl">
+              想买什么，直接搜索
+              <span className="mt-1 block text-[var(--theme-price)]">
+                热销好物和优惠都在这里
               </span>
             </h2>
-            <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground md:text-base">
-              {siteInfo.siteSlogan || "严选热销好物、优惠券福利与会员权益，一站式完成浏览、下单、配送与售后。"}
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-theme-muted md:text-base">
+              {siteInfo.siteSlogan || "先找商品，再领优惠；订单、积分、返现和售后入口都放在首页，购物更直接。"}
             </p>
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                onClick={() => navigate("/categories")}
-                className="group flex items-center gap-2 rounded-full bg-gold px-5 py-3 text-sm font-bold text-[var(--theme-price-foreground)] shadow-lg shadow-gold/20 transition active:scale-[0.98]"
-              >
-                开始选购
-                <ArrowRight size={16} className="transition group-hover:translate-x-0.5" />
-              </button>
-              <button
-                onClick={() => navigate("/coupons")}
-                className="flex items-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/80 px-5 py-3 text-sm font-semibold text-foreground shadow-sm backdrop-blur-xl transition hover:bg-secondary"
-              >
-                <Ticket size={16} className="text-gold" />
-                领取优惠
-              </button>
+            <button
+              type="button"
+              onClick={() => navigate("/search")}
+              className="mt-5 flex w-full items-center gap-3 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-4 text-left shadow-inner transition active:scale-[0.99]"
+            >
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]">
+                <Search size={20} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-[var(--theme-text)]">搜索商品、品牌、关键词</p>
+                <p className="mt-0.5 text-xs text-[var(--theme-text-muted)]">快速找到想买的商品</p>
+              </div>
+              <ArrowRight size={18} className="text-[var(--theme-text-muted)]" />
+            </button>
+
+            <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+              {quickActions.map((actionItem) => (
+                <button
+                  key={actionItem.label}
+                  type="button"
+                  onClick={() => navigate(actionItem.path)}
+                  className="group rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-left transition hover:-translate-y-0.5 hover:shadow-[var(--theme-shadow-hover)] active:scale-[0.98]"
+                >
+                  <actionItem.icon size={19} className="text-[var(--theme-price)]" />
+                  <p className="mt-2 text-sm font-semibold text-[var(--theme-text-on-surface)]">{actionItem.label}</p>
+                  <p className="mt-0.5 text-[11px] text-theme-muted">{actionItem.desc}</p>
+                </button>
+              ))}
             </div>
 
-            <div className="mt-7 grid grid-cols-3 gap-2 text-xs md:max-w-md">
-              {[
-                { icon: ShieldCheck, label: "正品保障" },
-                { icon: Truck, label: "快速配送" },
-                { icon: Ticket, label: "会员优惠" },
-              ].map((it) => (
-                <div key={it.label} className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)]/70 p-3 shadow-sm backdrop-blur-xl">
-                  <it.icon size={18} className="mb-2 text-gold" />
-                  <p className="font-semibold text-foreground">{it.label}</p>
-                </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {(loading ? [] : categoryShortcuts).map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => navigate(`/categories?cat=${cat.id}`)}
+                  className="rounded-full border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))] px-3 py-1.5 text-xs font-medium text-[var(--theme-text-on-surface)]"
+                >
+                  {cat.icon} {cat.name}
+                </button>
               ))}
+              <button
+                type="button"
+                onClick={() => navigate("/categories")}
+                className="rounded-full bg-[var(--theme-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]"
+              >
+                全部分类
+              </button>
             </div>
           </Reveal>
 
-          <Reveal index={1} className="relative md:pl-2">
-            <div className="absolute -inset-2 rounded-[2rem] bg-gradient-to-br from-gold/20 via-transparent to-foreground/10 blur-xl" />
-            <div className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-[var(--theme-surface)]/70 p-2 shadow-2xl shadow-black/10 backdrop-blur-xl">
+          <Reveal index={1} className="space-y-4">
+            <div className="overflow-hidden rounded-[1.5rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-2 shadow-[var(--theme-shadow)]">
               {bannerLoading ? <BannerSkeleton /> : <BannerCarousel banners={banners} />}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => navigate("/coupons")}
+                className="rounded-2xl p-4 text-left shadow-[var(--theme-shadow)] transition active:scale-[0.98]"
+                style={{ background: "var(--theme-gradient)", color: "var(--theme-gradient-foreground)" }}
+              >
+                <PercentBadge />
+                <p className="mt-3 text-sm font-bold">先领券再下单</p>
+                <p className="mt-1 text-xs opacity-80">查看可用优惠</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/cart")}
+                className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-left shadow-[var(--theme-shadow)] transition active:scale-[0.98]"
+              >
+                <ShoppingCart size={22} className="text-[var(--theme-price)]" />
+                <p className="mt-3 text-sm font-bold text-[var(--theme-text-on-surface)]">继续购物车</p>
+                <p className="mt-1 text-xs text-theme-muted">结账前再核对</p>
+              </button>
+            </div>
+
+            <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]">
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Flame size={18} className="text-[var(--theme-price)]" />
+                  <p className="text-sm font-bold text-[var(--theme-text-on-surface)]">今日热销</p>
+                </div>
+                <button type="button" onClick={() => navigate("/categories")} className="text-xs text-theme-muted">
+                  更多
+                </button>
+              </div>
+              <div className="space-y-2">
+                {(loading ? [] : heroHotProducts).map((product) => (
+                  <button
+                    key={product.id}
+                    type="button"
+                    onClick={() => navigate(`/product/${product.id}`)}
+                    className="flex w-full items-center gap-3 rounded-xl bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))] p-2 text-left"
+                  >
+                    <img src={product.cover_image} alt={product.name} className="h-12 w-12 rounded-lg object-cover" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold text-[var(--theme-text-on-surface)]">{product.name}</p>
+                      <p className="mt-0.5 text-sm font-bold text-[var(--theme-price)]">RM {product.price}</p>
+                    </div>
+                    <ChevronRight size={16} className="text-theme-muted" />
+                  </button>
+                ))}
+                {!loading && heroHotProducts.length === 0 && (
+                  <p className="rounded-xl bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))] p-4 text-center text-xs text-theme-muted">
+                    暂无热销商品
+                  </p>
+                )}
+              </div>
             </div>
           </Reveal>
         </div>
@@ -184,14 +285,27 @@ export default function Index() {
 
       <main className="mx-auto w-full max-w-screen-xl px-0 md:px-6">
         <Reveal index={0} className="block">
-          <div className="mt-4 hidden md:block">
+          <div className="mt-5 hidden md:block">
             <TrustBar />
           </div>
           <TrustBar compact className="md:hidden" />
         </Reveal>
 
+        <Section
+          title="今日热销"
+          subtitle="消费者正在买，适合快速下单"
+          onMore={() => navigate("/categories")}
+          loading={loading}
+        >
+          <ProductGrid
+            loading={loading}
+            products={hotProducts}
+            skeletonCount={5}
+          />
+        </Section>
+
         {/* Categories */}
-        <Reveal index={0} className="no-scrollbar mt-6 flex gap-5 overflow-x-auto px-4 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-8 md:gap-3 md:overflow-visible md:px-0 md:snap-none">
+        <Reveal index={0} className="no-scrollbar mt-8 flex gap-5 overflow-x-auto px-4 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-8 md:gap-3 md:overflow-visible md:px-0 md:snap-none">
           {loading
             ? Array.from({ length: 6 }).map((_, i) => (
                 <div
@@ -258,19 +372,8 @@ export default function Index() {
         )}
 
         <Section
-          title="🔥 热门推荐"
-          onMore={() => navigate("/categories")}
-          loading={loading}
-        >
-          <ProductGrid
-            loading={loading}
-            products={hotProducts}
-            skeletonCount={4}
-          />
-        </Section>
-
-        <Section
-          title="✨ 新品上市"
+          title="新品上架"
+          subtitle="新到商品，适合看看有没有新选择"
           onMore={() => navigate("/categories")}
           loading={loading}
         >
@@ -281,7 +384,7 @@ export default function Index() {
           />
         </Section>
 
-        <Section title="💎 为你精选" loading={loading}>
+        <Section title="为你精选" subtitle="按热度和推荐度整理的商品" loading={loading}>
           <ProductGrid
             loading={loading}
             products={recommendedProducts}
@@ -342,11 +445,13 @@ function ProductGrid({
 
 function Section({
   title,
+  subtitle,
   onMore,
   loading,
   children,
 }: {
   title: string;
+  subtitle?: string;
   onMore?: () => void;
   loading?: boolean;
   children: ReactNode;
@@ -358,9 +463,16 @@ function Section({
           {loading ? (
             <Skeleton className="h-6 w-28" />
           ) : (
-            <h2 className="font-display text-lg font-semibold text-foreground md:text-xl">
-              {title}
-            </h2>
+            <div>
+              <h2 className="font-display text-lg font-semibold text-foreground md:text-xl">
+                {title}
+              </h2>
+              {subtitle && (
+                <p className="mt-0.5 text-xs text-muted-foreground md:text-sm">
+                  {subtitle}
+                </p>
+              )}
+            </div>
           )}
           {onMore && !loading && (
             <button
@@ -375,5 +487,13 @@ function Section({
       </Reveal>
       {children}
     </section>
+  );
+}
+
+function PercentBadge() {
+  return (
+    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 text-sm font-black backdrop-blur">
+      %
+    </div>
   );
 }

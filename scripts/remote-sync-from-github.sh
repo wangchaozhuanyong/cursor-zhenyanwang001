@@ -30,7 +30,6 @@ echo "remote-sync-from-github"
 echo "TARGET=$TARGET"
 echo "REPO_URL=$REPO_URL"
 echo "BRANCH=$BRANCH"
-echo "ROOT_DIR=$ROOT_DIR"
 echo "=========================================="
 
 rm -rf "$TMP"

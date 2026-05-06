@@ -3,6 +3,7 @@ const { BusinessError } = require('../../errors/BusinessError');
 const { rowsToCsv } = require('../../utils/csv');
 const repo = require('./adminUser.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
+const { formatUserResponse } = require('../../utils/formatUserResponse');
 
 async function listUsers(query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
@@ -12,7 +13,7 @@ async function listUsers(query) {
   const total = await repo.countUsers(where, params);
   const offset = (page - 1) * pageSize;
   const list = await repo.selectUsersPage(where, params, pageSize, offset);
-  return { kind: 'paginate', list, total, page, pageSize };
+  return { kind: 'paginate', list: list.map((u) => formatUserResponse(u, 'admin')), total, page, pageSize };
 }
 
 async function getUserById(userId) {
@@ -22,7 +23,7 @@ async function getUserById(userId) {
   const totalSpentRaw = await repo.sumUserSpentExcludingCancelled(userId);
   user.orderCount = orderCount;
   user.totalSpent = parseFloat(totalSpentRaw);
-  return { data: user };
+  return { data: formatUserResponse(user, 'admin') };
 }
 
 async function updateUser(userId, body) {

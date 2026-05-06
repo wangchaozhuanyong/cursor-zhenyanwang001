@@ -1,0 +1,40 @@
+{
+  "base": "http://13.212.179.213",
+  "generatedAt": "2026-04-25T11:34:25.351Z",
+  "accounts": {
+    "admin": {
+      "phone": "18800000001",
+      "password": "Admin123456"
+    },
+    "inviter": {
+      "phone": "16846478453",
+      "password": "ShotFlow123A",
+      "inviteCode": "2C8687"
+    },
+    "invitee": {
+      "phone": "16846972943",
+      "password": "ShotFlow123A"
+    }
+  },
+  "data": {
+    "orderId": "6523ae84-a10d-4cb9-a75e-0b9b88770a16",
+    "productId": "ef83401d-2296-4012-a219-c690263702ad",
+    "inviteStats": {
+      "totalInvited": 1,
+      "totalReward": 0,
+      "directCount": 1,
+      "indirectCount": 0,
+      "totalOrderAmount": 473
+    },
+    "inviteRecordsCount": 1
+  },
+  "screenshots": [
+    "01-home.png",
+    "02-invite-center-inviter.png",
+    "03-orders-inviter.png",
+    "04-orders-invitee.png",
+    "05-profile-invitee.png",
+    "06-admin-invites.png",
+    "07-admin-orders.png"
+  ]
+}

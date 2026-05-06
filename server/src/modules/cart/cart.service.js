@@ -1,4 +1,13 @@
+/**
+ * Cart Service
+ *
+ * 分层约定：
+ * - 入参由 routes 层 zod 校验后到达 service，无需重复校验形状
+ * - 业务规则（商品是否存在、库存等）抛 AppError 子类
+ * - 不直接拼 SQL：所有数据访问通过 `./cart.repository`
+ */
 const { generateId, formatProduct } = require('../../utils/helpers');
+const { NotFoundError } = require('../../errors');
 const repo = require('./cart.repository');
 
 function formatCartItem(row) {
@@ -11,14 +20,12 @@ async function getCart(userId) {
 }
 
 async function addToCart(userId, body) {
-  const { productId, qty = 1 } = body;
-  if (!productId) return { error: { code: 400, message: '商品ID不能为空' } };
+  const { productId, qty } = body;
 
   const product = await repo.selectActiveProductId(productId);
-  if (!product) return { error: { code: 404, message: '商品不存在或已下架' } };
+  if (!product) throw new NotFoundError('商品不存在或已下架');
 
-  const id = generateId();
-  await repo.upsertCartItem(id, userId, productId, qty);
+  await repo.upsertCartItem(generateId(), userId, productId, qty);
 
   const row = await repo.selectCartLine(userId, productId);
   return { data: formatCartItem(row) };
@@ -26,10 +33,8 @@ async function addToCart(userId, body) {
 
 async function updateCartItem(userId, productId, body) {
   const { qty } = body;
-  if (!qty || qty < 1) return { error: { code: 400, message: '数量至少为1' } };
-
   const affected = await repo.updateCartItemQty(userId, productId, qty);
-  if (affected === 0) return { error: { code: 404, message: '购物车中没有该商品' } };
+  if (affected === 0) throw new NotFoundError('购物车中没有该商品');
 
   const row = await repo.selectCartLine(userId, productId);
   return { data: formatCartItem(row) };

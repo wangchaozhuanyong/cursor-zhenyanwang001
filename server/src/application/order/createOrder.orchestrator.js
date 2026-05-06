@@ -9,7 +9,7 @@
  *   - 不在此层实现任何领域规则（领域规则仍归各自 domain service）
  */
 const authService = require('../../modules/auth/auth.service');
-const catalogService = require('../../modules/catalog/catalog.service');
+const catalogService = require('../../modules/product/catalog.service');
 const orderService = require('../../modules/order/order.service');
 const { BusinessError } = require('../../errors/BusinessError');
 

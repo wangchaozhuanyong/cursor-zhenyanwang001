@@ -1,9 +1,19 @@
+/**
+ * Admin Order Service
+ *
+ * 职责：管理员对订单的列表/详情/状态变更/发货 等业务编排。
+ *
+ * 分层约定：
+ * - 不直接拼 SQL，所有数据访问通过 `./adminOrder.repository`
+ * - 事务由本层控制：`db.getConnection()` + `beginTransaction()`，
+ *   把 `conn` 传给 repository 的事务方法
+ */
 const db = require('../../config/db');
 const { generateId } = require('../../utils/helpers');
-const { BusinessError } = require('../../errors/BusinessError');
+const { BusinessError, NotFoundError, ValidationError } = require('../../errors');
 const { logAdminAction } = require('../../utils/adminAudit');
 const { rowsToCsv } = require('../../utils/csv');
-const notificationRepo = require('../notification/notification.repository');
+const notificationRepo = require('../user/notification.repository');
 const {
   assertFulfillmentTransition,
   assertPaymentTransition,
@@ -78,22 +88,29 @@ async function listOrders(query) {
 }
 
 async function getOrderById(orderId) {
-  const order = await repo.selectOrderById(db, orderId);
-  if (!order) throw new BusinessError(404, '订单不存在');
+  const order = await repo.selectOrderById(null, orderId);
+  if (!order) throw new NotFoundError('订单不存在');
   const items = await repo.selectOrderItemsWithProduct(db, order.id);
   attachItemsAndAmounts(order, items);
   return { data: order };
 }
 
+/**
+ * 管理员手动调整订单状态：包含状态机校验、库存/积分/优惠券回滚、邀请奖励、消息通知等编排。
+ */
 async function updateOrderStatus(orderId, body, adminUserId, req) {
   const { status, remark } = body;
-  const validStatuses = ORDER_STATUS_LIST;
-  if (!validStatuses.includes(status)) throw new BusinessError(400, `无效状态: ${status}`);
+  if (!ORDER_STATUS_LIST.includes(status)) {
+    throw new ValidationError(`无效状态: ${status}`);
+  }
 
   const orderRow = await repo.selectOrderStateById(orderId);
-  if (!orderRow) throw new BusinessError(404, '订单不存在');
+  if (!orderRow) throw new NotFoundError('订单不存在');
 
-  const beforeSnap = { status: orderRow.status, payment_status: orderRow.payment_status || PAYMENT_STATUS.PENDING };
+  const beforeSnap = {
+    status: orderRow.status,
+    payment_status: orderRow.payment_status || PAYMENT_STATUS.PENDING,
+  };
 
   try {
     assertFulfillmentTransition(orderRow.status, status);
@@ -107,101 +124,74 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
     const conn = await db.getConnection();
     try {
       await conn.beginTransaction();
-      await conn.query('UPDATE orders SET status = ?, payment_status = ? WHERE id = ?', [
-        status,
-        newPayment,
-        orderId,
-      ]);
+      await repo.updateOrderStatusAndPayment(conn, orderId, status, newPayment);
 
       if (remark) {
-        await conn.query(
-          'UPDATE orders SET note = CONCAT(IFNULL(note, ""), ?) WHERE id = ?',
-          [`\n[管理备注] ${remark}`, orderId],
-        );
+        await repo.appendAdminRemark(conn, orderId, remark);
       }
 
-      const [[fullOrder]] = await conn.query('SELECT * FROM orders WHERE id = ?', [orderId]);
+      const fullOrder = await repo.selectFullOrder(conn, orderId);
 
-      // 销量计数：当管理员手动确认付款（PENDING -> PAID 等）时累加 sales_count
+      /** 销量计数：管理员手动确认付款时累加 sales_count；故障容忍 */
       if (
         newPayment === PAYMENT_STATUS.PAID
         && prevPay !== PAYMENT_STATUS.PAID
         && fullOrder
       ) {
         try {
-          const [salesItems] = await conn.query(
-            'SELECT product_id, qty FROM order_items WHERE order_id = ?',
-            [fullOrder.id],
-          );
+          const salesItems = await repo.selectOrderItemPairs(conn, fullOrder.id);
           for (const it of salesItems) {
-            if (it?.product_id && Number(it.qty) > 0) {
-              await conn.query(
-                'UPDATE products SET sales_count = sales_count + ? WHERE id = ?',
-                [Number(it.qty), it.product_id],
-              );
+            const qty = Number(it?.qty);
+            if (it?.product_id && qty > 0) {
+              await repo.bumpProductSalesCount(conn, it.product_id, qty);
             }
           }
         } catch { /* sales_count is non-critical */ }
       }
 
       if (status === ORDER_STATUS.CANCELLED && fullOrder) {
-        const [items] = await conn.query('SELECT product_id, qty FROM order_items WHERE order_id = ?', [fullOrder.id]);
+        const items = await repo.selectOrderItemPairs(conn, fullOrder.id);
         for (const item of items) {
-          await conn.query('UPDATE products SET stock = stock + ? WHERE id = ?', [item.qty, item.product_id]);
+          await repo.restoreProductStock(conn, item.product_id, item.qty);
         }
         if (fullOrder.total_points > 0) {
-          await conn.query(
-            'UPDATE users SET points_balance = GREATEST(0, points_balance - ?) WHERE id = ?',
-            [fullOrder.total_points, fullOrder.user_id],
-          );
+          await repo.decrementUserPoints(conn, fullOrder.user_id, fullOrder.total_points);
         }
         if (fullOrder.coupon_uc_id) {
-          await conn.query(
-            "UPDATE user_coupons SET status = 'available', used_at = NULL WHERE id = ?",
-            [fullOrder.coupon_uc_id],
-          );
+          await repo.restoreUserCouponById(conn, fullOrder.coupon_uc_id);
         }
       }
 
       if (status === ORDER_STATUS.COMPLETED && fullOrder) {
         try {
-          const [[buyer]] = await conn.query('SELECT parent_invite_code FROM users WHERE id = ?', [fullOrder.user_id]);
+          const buyer = await repo.selectUserParentInviteCode(conn, fullOrder.user_id);
           if (buyer && buyer.parent_invite_code) {
-            const [[inviter]] = await conn.query('SELECT id FROM users WHERE invite_code = ?', [buyer.parent_invite_code]);
+            const inviter = await repo.selectUserIdByInviteCode(conn, buyer.parent_invite_code);
             if (inviter) {
-              const [rules] = await conn.query('SELECT * FROM referral_rules WHERE enabled = 1 ORDER BY level ASC');
+              const rules = await repo.selectReferralRulesEnabled(conn);
               const l1Rule = rules.find((r) => r.level === 1);
               if (l1Rule) {
                 const rewardAmount = Math.floor(
                   parseFloat(fullOrder.total_amount) * parseFloat(l1Rule.reward_percent) / 100,
                 );
                 if (rewardAmount > 0) {
-                  await conn.query(
-                    `INSERT INTO reward_records (id, user_id, order_id, order_no, amount, rate, status) VALUES (?,?,?,?,?,?,?)`,
-                    [
-                      generateId(),
-                      inviter.id,
-                      fullOrder.id,
-                      fullOrder.order_no,
-                      rewardAmount,
-                      l1Rule.reward_percent,
-                      REWARD_STATUS.APPROVED,
-                    ],
-                  );
-                  await conn.query('UPDATE users SET points_balance = points_balance + ? WHERE id = ?', [
-                    rewardAmount,
-                    inviter.id,
-                  ]);
-                  await conn.query(
-                    `INSERT INTO points_records (id, user_id, action, amount, description) VALUES (?,?,?,?,?)`,
-                    [
-                      generateId(),
-                      inviter.id,
-                      'invite_reward',
-                      rewardAmount,
-                      `邀请奖励 订单${fullOrder.order_no}`,
-                    ],
-                  );
+                  await repo.insertRewardRecord(conn, {
+                    id: generateId(),
+                    userId: inviter.id,
+                    orderId: fullOrder.id,
+                    orderNo: fullOrder.order_no,
+                    amount: rewardAmount,
+                    rate: l1Rule.reward_percent,
+                    status: REWARD_STATUS.APPROVED,
+                  });
+                  await repo.incrementUserPoints(conn, inviter.id, rewardAmount);
+                  await repo.insertPointsRecord(conn, {
+                    id: generateId(),
+                    userId: inviter.id,
+                    action: 'invite_reward',
+                    amount: rewardAmount,
+                    description: `邀请奖励 订单${fullOrder.order_no}`,
+                  });
                 }
               }
             }
@@ -220,10 +210,12 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
         };
         const msg = notifMessages[status];
         if (msg) {
-          await conn.query(
-            `INSERT INTO notifications (id, user_id, type, title, content) VALUES (?,?,?,?,?)`,
-            [generateId(), fullOrder.user_id, 'order', `订单${fullOrder.order_no}`, msg],
-          );
+          await repo.insertOrderNotification(conn, {
+            id: generateId(),
+            userId: fullOrder.user_id,
+            title: `订单${fullOrder.order_no}`,
+            content: msg,
+          });
         }
       }
 
@@ -265,7 +257,7 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
 }
 
 async function shipOrder(orderId, body, adminUserId, req) {
-  const order = await repo.selectOrderById(db, orderId);
+  const order = await repo.selectOrderById(null, orderId);
   const beforeSnap = order
     ? {
         status: order.status,
@@ -276,7 +268,7 @@ async function shipOrder(orderId, body, adminUserId, req) {
     : null;
 
   try {
-    if (!order) throw new BusinessError(404, '订单不存在');
+    if (!order) throw new NotFoundError('订单不存在');
     if (!canShip(order)) {
       throw new BusinessError(
         400,

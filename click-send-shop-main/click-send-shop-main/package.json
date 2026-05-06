@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "regression:shots": "node scripts/regression-with-screenshots.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

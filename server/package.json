@@ -3,22 +3,23 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "node src/index.js",
-    "start:prod": "cross-env NODE_ENV=production node src/index.js",
-    "dev": "nodemon src/index.js",
-    "dev:local": "cross-env DB_PASSWORD= nodemon src/index.js",
+    "start": "node -r tsx/cjs src/index.js",
+    "start:prod": "cross-env NODE_ENV=production node -r tsx/cjs src/index.js",
+    "dev": "nodemon --exec \"node -r tsx/cjs\" src/index.js",
+    "dev:local": "cross-env DB_PASSWORD= nodemon --exec \"node -r tsx/cjs\" src/index.js",
+    "typecheck": "tsc --noEmit",
     "db:init": "node scripts/apply-sql.js",
     "admin:create": "node scripts/create-admin.js",
     "admin:role": "node scripts/set-admin-role.js",
     "migrate": "node scripts/migrate-cli.js",
     "migrate:down": "node scripts/migrate-cli.js down",
     "migrate:status": "node scripts/migrate-cli.js status",
-    "test": "node --test test/health.test.js",
-    "test:integration": "node --test test/auth-flow.test.js",
-    "test:flow": "node --test test/flow-smoke.test.js",
-    "test:smoke": "node --test test/flow-smoke.test.js",
-    "test:stripe": "node --test test/stripe-amount.test.js",
-    "test:all": "node --test --test-force-exit test/health.test.js test/auth-flow.test.js test/flow-smoke.test.js test/stripe-amount.test.js test/order-state-machine.test.js test/return-state-machine.test.js"
+    "test": "node -r tsx/cjs --test test/health.test.js",
+    "test:integration": "node -r tsx/cjs --test test/auth-flow.test.js",
+    "test:flow": "node -r tsx/cjs --test test/flow-smoke.test.js",
+    "test:smoke": "node -r tsx/cjs --test test/flow-smoke.test.js",
+    "test:stripe": "node -r tsx/cjs --test test/stripe-amount.test.js",
+    "test:all": "node -r tsx/cjs --test --test-force-exit test/health.test.js test/auth-flow.test.js test/flow-smoke.test.js test/stripe-amount.test.js test/order-state-machine.test.js test/return-state-machine.test.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -32,11 +33,22 @@
     "morgan": "^1.10.1",
     "multer": "^2.1.1",
     "mysql2": "^3.20.0",
-    "stripe": "^17.7.0"
+    "sharp": "^0.34.5",
+    "stripe": "^17.7.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.1.0",
+    "@types/node": "^25.6.0",
     "cross-env": "^7.0.3",
     "nodemon": "^3.1.14",
-    "supertest": "^7.1.4"
+    "supertest": "^7.1.4",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
   }
 }

@@ -1,13 +1,19 @@
 const db = require('../../config/db');
 const { generateId, generateOrderNo } = require('../../utils/helpers');
 const { computeShippingFee, estimateWeightFromItems } = require('../../utils/shippingFee');
-const { BusinessError } = require('../../errors/BusinessError');
+const {
+  BusinessError,
+  NotFoundError,
+  ValidationError,
+} = require('../../errors');
 const { formatOrderItem, formatOrder } = require('./order.mapper');
 const { canUserCancel } = require('./orderStateMachine');
 const repo = require('./order.repository');
 const { ORDER_STATUS, PAYMENT_STATUS, REWARD_STATUS } = require('../../constants/status');
 
 /**
+ * 创建订单。形状校验已由 routes 层 zod schema 完成；
+ * 这里仅做业务规则（库存、优惠券资格、积分扣减、邀请奖励）与事务编排。
  * @param {string} userId
  * @param {object} body
  */
@@ -17,15 +23,6 @@ async function createOrder(userId, body) {
     coupon_id, coupon_title, shipping_template_id, shipping_name, payment_method,
     estimated_weight_kg,
   } = body;
-
-  if (!items || !items.length) throw new BusinessError(400, '订单商品不能为空');
-  if (!contact_name) throw new BusinessError(400, '联系人姓名不能为空');
-  if (!contact_phone) throw new BusinessError(400, '联系人电话不能为空');
-  for (const it of items) {
-    if (!it.product_id || !Number.isInteger(it.qty) || it.qty <= 0) {
-      throw new BusinessError(400, '商品数量无效');
-    }
-  }
 
   const conn = await db.getConnection();
   try {
@@ -39,11 +36,11 @@ async function createOrder(userId, body) {
       const p = productMap[item.product_id];
       if (!p) {
         await conn.rollback();
-        throw new BusinessError(400, `商品 ${item.product_id} 不存在或已下架`);
+        throw new NotFoundError(`商品 ${item.product_id} 不存在或已下架`);
       }
       if (p.stock < item.qty) {
         await conn.rollback();
-        throw new BusinessError(400, `商品「${p.name}」库存不足，剩余 ${p.stock} 件`);
+        throw new ValidationError(`商品「${p.name}」库存不足，剩余 ${p.stock} 件`);
       }
     }
 
@@ -81,12 +78,12 @@ async function createOrder(userId, body) {
       const uc = await repo.selectUserCouponForUpdate(conn, coupon_id, userId);
       if (!uc) {
         await conn.rollback();
-        throw new BusinessError(400, '优惠券不存在、已使用或不可用');
+        throw new ValidationError('优惠券不存在、已使用或不可用');
       }
       const minAmount = parseFloat(uc.min_amount);
       if (rawAmount < minAmount) {
         await conn.rollback();
-        throw new BusinessError(400, `订单金额未满 RM ${minAmount}，无法使用该优惠券`);
+        throw new ValidationError(`订单金额未满 RM ${minAmount}，无法使用该优惠券`);
       }
       discountAmount = uc.type === 'fixed'
         ? parseFloat(uc.value)
@@ -139,7 +136,7 @@ async function createOrder(userId, body) {
       const affected = await repo.deductProductStock(conn, oi.productId, oi.qty);
       if (affected === 0) {
         await conn.rollback();
-        throw new BusinessError(400, `商品「${oi.name}」库存不足`);
+        throw new ValidationError(`商品「${oi.name}」库存不足`);
       }
     }
 
@@ -207,7 +204,7 @@ async function getOrders(userId, query) {
 
 async function getOrderById(userId, orderId) {
   const order = await repo.selectOrderByIdAndUser(db, orderId, userId);
-  if (!order) throw new BusinessError(404, '订单不存在');
+  if (!order) throw new NotFoundError('订单不存在');
   const items = await repo.selectOrderItems(db, order.id);
   return { data: formatOrder(order, items.map(formatOrderItem)) };
 }
@@ -216,8 +213,8 @@ async function cancelOrder(userId, orderId) {
   const conn = await db.getConnection();
   try {
     const order = await repo.selectOrderByIdAndUser(conn, orderId, userId);
-    if (!order) throw new BusinessError(404, '订单不存在');
-    if (!canUserCancel(order)) throw new BusinessError(400, '当前订单状态无法取消（仅未付款的待处理订单可取消）');
+    if (!order) throw new NotFoundError('订单不存在');
+    if (!canUserCancel(order)) throw new ValidationError('当前订单状态无法取消（仅未付款的待处理订单可取消）');
 
     await conn.beginTransaction();
 
@@ -251,17 +248,17 @@ async function cancelOrder(userId, orderId) {
 async function payOrder(userId, orderId, body) {
   const channel = body?.channel || '';
   const order = await repo.selectOrderByIdAndUser(db, orderId, userId);
-  if (!order) throw new BusinessError(404, '订单不存在');
+  if (!order) throw new NotFoundError('订单不存在');
   if (order.status !== ORDER_STATUS.PENDING || (order.payment_status || PAYMENT_STATUS.PENDING) !== PAYMENT_STATUS.PENDING) {
-    throw new BusinessError(400, '当前订单状态无法支付');
+    throw new ValidationError('当前订单状态无法支付');
   }
   if (order.payment_method !== 'online') {
-    throw new BusinessError(400, '该订单非在线支付，请按提示联系客服完成付款');
+    throw new ValidationError('该订单非在线支付，请按提示联系客服完成付款');
   }
   if (channel === 'mock') {
-    throw new BusinessError(400, '生产环境已禁用 mock 支付，请使用 Stripe Checkout 完成支付');
+    throw new ValidationError('生产环境已禁用 mock 支付，请使用 Stripe Checkout 完成支付');
   }
-  throw new BusinessError(400, '请使用 Stripe Checkout 发起支付，支付结果以服务端 Webhook 回写为准');
+  throw new ValidationError('请使用 Stripe Checkout 发起支付，支付结果以服务端 Webhook 回写为准');
 }
 
 async function createStripeCheckoutSession(userId, orderId) {
@@ -277,18 +274,18 @@ async function createStripeCheckoutSession(userId, orderId) {
   }
 
   const order = await repo.selectOrderByIdAndUser(db, orderId, userId);
-  if (!order) throw new BusinessError(404, '订单不存在');
+  if (!order) throw new NotFoundError('订单不存在');
   if (order.status !== ORDER_STATUS.PENDING || (order.payment_status || PAYMENT_STATUS.PENDING) !== PAYMENT_STATUS.PENDING) {
-    throw new BusinessError(400, '当前订单状态无法发起支付');
+    throw new ValidationError('当前订单状态无法发起支付');
   }
   if (order.payment_method !== 'online') {
-    throw new BusinessError(400, '该订单非在线支付');
+    throw new ValidationError('该订单非在线支付');
   }
 
   const total = parseFloat(order.total_amount);
   const amountCents = Math.round(total * 100);
   if (!Number.isFinite(amountCents) || amountCents < 200) {
-    throw new BusinessError(400, '订单金额不满足 Stripe 最低支付要求（一般 ≥ RM 2.00）');
+    throw new ValidationError('订单金额不满足 Stripe 最低支付要求（一般 ≥ RM 2.00）');
   }
 
   const stripe = require('stripe')(secretKey);
@@ -323,8 +320,8 @@ async function confirmReceive(userId, orderId) {
   const conn = await db.getConnection();
   try {
     const order = await repo.selectOrderByIdAndUser(conn, orderId, userId);
-    if (!order) throw new BusinessError(404, '订单不存在');
-    if (order.status !== ORDER_STATUS.SHIPPED) throw new BusinessError(400, '当前状态无法确认收货');
+    if (!order) throw new NotFoundError('订单不存在');
+    if (order.status !== ORDER_STATUS.SHIPPED) throw new ValidationError('当前状态无法确认收货');
 
     await conn.beginTransaction();
 

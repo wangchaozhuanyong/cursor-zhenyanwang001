@@ -41,7 +41,7 @@ async function selectUsersForExport(where, params) {
 async function selectUserSummaryById(userId) {
   const [[user]] = await db.query(
     `SELECT id, phone, nickname, avatar, invite_code, parent_invite_code,
-            points_balance, wechat, whatsapp, created_at, updated_at
+            points_balance, wechat, whatsapp, created_at
      FROM users WHERE id = ?`,
     [userId],
   );

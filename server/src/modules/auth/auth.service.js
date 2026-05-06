@@ -1,3 +1,11 @@
+/**
+ * Auth Service：注册、登录、刷新令牌、登出、资料、改密
+ *
+ * 分层约定：
+ * - controller 仅传入「已通过 schemas 校验的 req.body / req.user」
+ * - service 不直接拼 SQL，所有 DB 访问通过 `./auth.repository`
+ * - service 抛 AppError 子类（BusinessError/NotFoundError/...），由 errorHandler 统一映射
+ */
 const {
   generateId,
   generateInviteCode,
@@ -6,16 +14,21 @@ const {
   signToken,
   verifyToken,
 } = require('../../utils/helpers');
-const { BusinessError } = require('../../errors/BusinessError');
+const {
+  BusinessError,
+  AuthError,
+  NotFoundError,
+  ConflictError,
+  ValidationError,
+} = require('../../errors');
 const repo = require('./auth.repository');
+const { formatUserResponse } = require('../../utils/formatUserResponse');
 
 async function register(body) {
   const { phone, password, nickname, inviteCode } = body;
-  if (!phone || !password) throw new BusinessError(400, '手机号和密码不能为空');
-  if (password.length < 6) throw new BusinessError(400, '密码至少6位');
 
   const existing = await repo.findUserIdByPhone(phone);
-  if (existing) throw new BusinessError(409, '该手机号已注册');
+  if (existing) throw new ConflictError('该手机号已注册');
 
   const id = generateId();
   const hash = await hashPassword(password);
@@ -30,7 +43,7 @@ async function register(body) {
     parentInviteCode: inviteCode || '',
   });
 
-  // 全库第一个注册用户自动成为管理员（与仅在建库时执行 extend3.sql 不同，避免「先 db:init 后注册」无管理员）
+  /** 全库第一个注册用户自动成为管理员（与仅在建库时执行 extend3.sql 不同，避免「先 db:init 后注册」无管理员） */
   const userCount = await repo.countUsers();
   if (userCount === 1) {
     await repo.setUserRole(id, 'admin');
@@ -43,13 +56,12 @@ async function register(body) {
 async function login(body) {
   const phone = body.phone || body.username;
   const { password } = body;
-  if (!phone || !password) throw new BusinessError(400, '手机号和密码不能为空');
 
   const user = await repo.findUserByPhone(phone);
-  if (!user) throw new BusinessError(401, '手机号或密码错误');
+  if (!user) throw new AuthError('手机号或密码错误');
 
   const match = await comparePassword(password, user.password_hash);
-  if (!match) throw new BusinessError(401, '手机号或密码错误');
+  if (!match) throw new AuthError('手机号或密码错误');
 
   const rv = Number.isFinite(Number(user.refresh_token_version)) ? Number(user.refresh_token_version) : 0;
   const token = signToken(user.id, rv);
@@ -61,8 +73,8 @@ async function login(body) {
 
 async function getProfile(userId) {
   const user = await repo.selectProfileFields(userId);
-  if (!user) throw new BusinessError(404, '用户不存在');
-  return { data: user };
+  if (!user) throw new NotFoundError('用户不存在');
+  return { data: formatUserResponse(user, 'user') };
 }
 
 async function updateProfile(userId, body) {
@@ -80,7 +92,7 @@ async function updateProfile(userId, body) {
   }
   if (phone !== undefined) {
     const dup = await repo.findPhoneDuplicate(userId, phone);
-    if (dup) throw new BusinessError(409, '该手机号已被其他用户使用');
+    if (dup) throw new ConflictError('该手机号已被其他用户使用');
     fragments.push('phone = ?');
     values.push(phone);
   }
@@ -93,24 +105,22 @@ async function updateProfile(userId, body) {
     values.push(whatsapp);
   }
 
-  if (fragments.length === 0) throw new BusinessError(400, '没有需要更新的字段');
+  if (fragments.length === 0) throw new ValidationError('没有需要更新的字段');
 
   await repo.updateUserProfile(userId, fragments, values);
 
   const user = await repo.selectProfileFields(userId);
-  return { data: user, message: '资料已更新' };
+  return { data: formatUserResponse(user, 'user'), message: '资料已更新' };
 }
 
 async function changePassword(userId, body) {
   const { oldPassword, newPassword } = body;
-  if (!oldPassword || !newPassword) throw new BusinessError(400, '请输入旧密码和新密码');
-  if (newPassword.length < 6) throw new BusinessError(400, '新密码至少6位');
 
   const row = await repo.selectPasswordHash(userId);
-  if (!row) throw new BusinessError(404, '用户不存在');
+  if (!row) throw new NotFoundError('用户不存在');
 
   const match = await comparePassword(oldPassword, row.password_hash);
-  if (!match) throw new BusinessError(400, '旧密码错误');
+  if (!match) throw new ValidationError('旧密码错误');
 
   const hash = await hashPassword(newPassword);
   await repo.updatePasswordHash(userId, hash);
@@ -118,25 +128,25 @@ async function changePassword(userId, body) {
 }
 
 async function refresh(refreshToken) {
-  if (!refreshToken) throw new BusinessError(400, 'refreshToken 不能为空');
+  if (!refreshToken) throw new ValidationError('refreshToken 不能为空');
 
   let payload;
   try {
     payload = verifyToken(refreshToken);
   } catch {
-    throw new BusinessError(401, '刷新令牌已过期');
+    throw new AuthError('刷新令牌已过期');
   }
 
-  if (payload.type !== 'refresh') throw new BusinessError(401, '无效的刷新令牌');
+  if (payload.type !== 'refresh') throw new AuthError('无效的刷新令牌');
 
   const user = await repo.selectRefreshVersion(payload.userId);
-  if (!user) throw new BusinessError(401, '用户不存在');
+  if (!user) throw new AuthError('用户不存在');
 
   const ver = Number.isFinite(Number(user.refresh_token_version)) ? Number(user.refresh_token_version) : 0;
   if (payload.rv === undefined) {
-    if (ver !== 0) throw new BusinessError(401, '刷新令牌已失效，请重新登录');
+    if (ver !== 0) throw new AuthError('刷新令牌已失效，请重新登录');
   } else if (Number(payload.rv) !== ver) {
-    throw new BusinessError(401, '刷新令牌已失效，请重新登录');
+    throw new AuthError('刷新令牌已失效，请重新登录');
   }
 
   const newToken = signToken(user.id, ver);
@@ -176,3 +186,6 @@ module.exports = {
   bumpRefreshTokenVersion,
   updateLastLogin,
 };
+
+// 兼容历史：保留具名导出 BusinessError 以防有外部 require 该模块时使用
+module.exports.BusinessError = BusinessError;

@@ -19,5 +19,5 @@ export function refreshToken(token: string) {
 }
 
 export function getProfile() {
-  return get<UserProfile>("/auth/profile");
+  return get<UserProfile>("/user/profile");
 }

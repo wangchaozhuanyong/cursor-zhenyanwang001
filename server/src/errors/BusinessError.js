@@ -1,14 +1,10 @@
-/** 业务可预期错误（4xx/503），由 controller 映射为 res.fail */
-class BusinessError extends Error {
-  /**
-   * @param {number} code HTTP 状态码或与 res.fail 一致的业务码
-   * @param {string} message
-   */
-  constructor(code, message) {
-    super(message);
-    this.code = code;
-    this.name = 'BusinessError';
-  }
-}
+/**
+ * 历史保留：`BusinessError` 已迁移到 `server/src/errors/index.js`
+ * 这里仅做转发，避免任何引用 `./errors/BusinessError` 的旧代码出错。
+ *
+ * 新代码请直接使用：
+ *   const { BusinessError, ValidationError, ... } = require('../../errors');
+ */
+const { BusinessError } = require('./');
 
 module.exports = { BusinessError };

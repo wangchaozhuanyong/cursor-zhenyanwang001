@@ -12,60 +12,78 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { isLoggedIn } from "@/utils/token";
 
-const Index = lazy(() => import("./pages/Index"));
-const Categories = lazy(() => import("./pages/Categories"));
-const ProductDetail = lazy(() => import("./pages/ProductDetail"));
-const Cart = lazy(() => import("./pages/Cart"));
-const Checkout = lazy(() => import("./pages/Checkout"));
-const Profile = lazy(() => import("./pages/Profile"));
-const Settings = lazy(() => import("./pages/Settings"));
-const Orders = lazy(() => import("./pages/Orders"));
-const OrderDetail = lazy(() => import("./pages/OrderDetail"));
-const Invite = lazy(() => import("./pages/Invite"));
-const Points = lazy(() => import("./pages/Points"));
-const Rewards = lazy(() => import("./pages/Rewards"));
-const AddressManage = lazy(() => import("./pages/AddressManage"));
-const Favorites = lazy(() => import("./pages/Favorites"));
-const Search = lazy(() => import("./pages/Search"));
-const Login = lazy(() => import("./pages/Login"));
-const Coupons = lazy(() => import("./pages/Coupons"));
-const Notifications = lazy(() => import("./pages/Notifications"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-const Help = lazy(() => import("./pages/Help"));
-const About = lazy(() => import("./pages/About"));
-const Returns = lazy(() => import("./pages/Returns"));
-const History = lazy(() => import("./pages/History"));
+/* ───────── Public（前台）页面，按业务域 ───────── */
+const Index = lazy(() => import("@/modules/public/pages/home/Index"));
+const Login = lazy(() => import("@/modules/public/pages/auth/Login"));
 
-const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
-const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
-const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
-const AdminProductForm = lazy(() => import("./pages/admin/AdminProductForm"));
-const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"));
-const AdminProductTags = lazy(() => import("./pages/admin/AdminProductTags"));
-const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
-const AdminOrderDetail = lazy(() => import("./pages/admin/AdminOrderDetail"));
-const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
-const AdminUserDetail = lazy(() => import("./pages/admin/AdminUserDetail"));
-const AdminInvites = lazy(() => import("./pages/admin/AdminInvites"));
-const AdminPointsRules = lazy(() => import("./pages/admin/AdminPointsRules"));
-const AdminReferralRules = lazy(() => import("./pages/admin/AdminReferralRules"));
-const AdminSiteSettings = lazy(() => import("./pages/admin/AdminSiteSettings"));
-const AdminCoupons = lazy(() => import("./pages/admin/AdminCoupons"));
-const AdminCouponForm = lazy(() => import("./pages/admin/AdminCouponForm"));
-const AdminReturns = lazy(() => import("./pages/admin/AdminReturns"));
-const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
-const AdminAccount = lazy(() => import("./pages/admin/AdminAccount"));
-const AdminShipping = lazy(() => import("./pages/admin/AdminShipping"));
-const AdminBanners = lazy(() => import("./pages/admin/AdminBanners"));
-const AdminReports = lazy(() => import("./pages/admin/AdminReports"));
-const AdminLogs = lazy(() => import("./pages/admin/AdminLogs"));
-const AdminContent = lazy(() => import("./pages/admin/AdminContent"));
-const AdminCouponRecords = lazy(() => import("./pages/admin/AdminCouponRecords"));
-const AdminRoles = lazy(() => import("./pages/admin/AdminRoles"));
-const AdminReviews = lazy(() => import("./pages/admin/AdminReviews"));
-const AdminAccounts = lazy(() => import("./pages/admin/AdminAccounts"));
-const AdminRecycleBin = lazy(() => import("./pages/admin/AdminRecycleBin"));
-const AdminExportCenter = lazy(() => import("./pages/admin/AdminExportCenter"));
+const Categories = lazy(() => import("@/modules/public/pages/product/Categories"));
+const ProductDetail = lazy(() => import("@/modules/public/pages/product/ProductDetail"));
+const Search = lazy(() => import("@/modules/public/pages/product/Search"));
+
+const Cart = lazy(() => import("@/modules/public/pages/cart/Cart"));
+
+const Checkout = lazy(() => import("@/modules/public/pages/order/Checkout"));
+const Orders = lazy(() => import("@/modules/public/pages/order/Orders"));
+const OrderDetail = lazy(() => import("@/modules/public/pages/order/OrderDetail"));
+const Returns = lazy(() => import("@/modules/public/pages/order/Returns"));
+
+const Profile = lazy(() => import("@/modules/public/pages/user/Profile"));
+const Settings = lazy(() => import("@/modules/public/pages/user/Settings"));
+const AddressManage = lazy(() => import("@/modules/public/pages/user/AddressManage"));
+const Favorites = lazy(() => import("@/modules/public/pages/user/Favorites"));
+const History = lazy(() => import("@/modules/public/pages/user/History"));
+const Notifications = lazy(() => import("@/modules/public/pages/user/Notifications"));
+const Coupons = lazy(() => import("@/modules/public/pages/user/Coupons"));
+const Points = lazy(() => import("@/modules/public/pages/user/Points"));
+const Rewards = lazy(() => import("@/modules/public/pages/user/Rewards"));
+const Invite = lazy(() => import("@/modules/public/pages/user/Invite"));
+
+const Help = lazy(() => import("@/modules/public/pages/content/Help"));
+const About = lazy(() => import("@/modules/public/pages/content/About"));
+
+const NotFound = lazy(() => import("@/modules/public/pages/error/NotFound"));
+
+/* ───────── Admin（后台）页面，按业务域 ───────── */
+const AdminLogin = lazy(() => import("@/modules/admin/pages/auth/AdminLogin"));
+const AdminAccount = lazy(() => import("@/modules/admin/pages/auth/AdminAccount"));
+const AdminAccounts = lazy(() => import("@/modules/admin/pages/auth/AdminAccounts"));
+
+const Dashboard = lazy(() => import("@/modules/admin/pages/dashboard/Dashboard"));
+
+const AdminProducts = lazy(() => import("@/modules/admin/pages/product/AdminProducts"));
+const AdminProductForm = lazy(() => import("@/modules/admin/pages/product/AdminProductForm"));
+const AdminCategories = lazy(() => import("@/modules/admin/pages/product/AdminCategories"));
+const AdminProductTags = lazy(() => import("@/modules/admin/pages/product/AdminProductTags"));
+const AdminBanners = lazy(() => import("@/modules/admin/pages/product/AdminBanners"));
+
+const AdminOrders = lazy(() => import("@/modules/admin/pages/order/AdminOrders"));
+const AdminOrderDetail = lazy(() => import("@/modules/admin/pages/order/AdminOrderDetail"));
+const AdminReturns = lazy(() => import("@/modules/admin/pages/order/AdminReturns"));
+const AdminShipping = lazy(() => import("@/modules/admin/pages/order/AdminShipping"));
+
+const AdminUsers = lazy(() => import("@/modules/admin/pages/user/AdminUsers"));
+const AdminUserDetail = lazy(() => import("@/modules/admin/pages/user/AdminUserDetail"));
+const AdminInvites = lazy(() => import("@/modules/admin/pages/user/AdminInvites"));
+
+const AdminCoupons = lazy(() => import("@/modules/admin/pages/coupon/AdminCoupons"));
+const AdminCouponForm = lazy(() => import("@/modules/admin/pages/coupon/AdminCouponForm"));
+const AdminCouponRecords = lazy(() => import("@/modules/admin/pages/coupon/AdminCouponRecords"));
+
+const AdminReviews = lazy(() => import("@/modules/admin/pages/review/AdminReviews"));
+const AdminNotifications = lazy(() => import("@/modules/admin/pages/notification/AdminNotifications"));
+
+const AdminReports = lazy(() => import("@/modules/admin/pages/report/AdminReports"));
+const AdminExportCenter = lazy(() => import("@/modules/admin/pages/report/AdminExportCenter"));
+
+const AdminSiteSettings = lazy(() => import("@/modules/admin/pages/settings/AdminSiteSettings"));
+const AdminContent = lazy(() => import("@/modules/admin/pages/settings/AdminContent"));
+const AdminPointsRules = lazy(() => import("@/modules/admin/pages/settings/AdminPointsRules"));
+const AdminReferralRules = lazy(() => import("@/modules/admin/pages/settings/AdminReferralRules"));
+
+const AdminRoles = lazy(() => import("@/modules/admin/pages/rbac/AdminRoles"));
+
+const AdminLogs = lazy(() => import("@/modules/admin/pages/system/AdminLogs"));
+const AdminRecycleBin = lazy(() => import("@/modules/admin/pages/system/AdminRecycleBin"));
 
 function PageLoader() {
   return (

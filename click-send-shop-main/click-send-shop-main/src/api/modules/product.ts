@@ -21,5 +21,6 @@ export function getHomeProducts() {
 }
 
 export function getProductReviews(productId: string, page = 1) {
-  return get<PaginatedData<ProductReview>>(`/products/${productId}/reviews`, { page });
+  // 后端 reviews 独立资源：GET /api/reviews/product/:productId
+  return get<PaginatedData<ProductReview>>(`/reviews/product/${productId}`, { page });
 }

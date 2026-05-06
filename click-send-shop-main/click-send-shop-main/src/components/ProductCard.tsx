@@ -1,12 +1,15 @@
-import { useState } from "react";
 import { Heart, ShoppingCart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "@/stores/useCartStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import type { Product } from "@/types/product";
-import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Skeleton } from "@/components/ui/skeleton";
+import Reveal from "@/components/Reveal";
+import { PRODUCT_BLUR_PLACEHOLDER } from "@/constants/productBlurPlaceholder";
+import {
+  ProgressiveImage,
+  SquishButton,
+} from "@/modules/micro-interactions";
 
 interface Props {
   product: Product;
@@ -24,13 +27,10 @@ export default function ProductCard({ product, index = 0 }: Props) {
   const addItem = useCartStore((s) => s.addItem);
   const isFavorite = useFavoritesStore((s) => s.isFavorite(product.id));
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
-  const [imgLoaded, setImgLoaded] = useState(false);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
+    <Reveal
+      index={index}
       className="group cursor-pointer overflow-hidden border bg-[var(--theme-surface)] border-[var(--theme-border)] theme-rounded theme-shadow transition-shadow hover:shadow-[var(--theme-shadow-hover)]"
     >
       <div
@@ -38,41 +38,42 @@ export default function ProductCard({ product, index = 0 }: Props) {
         style={{ aspectRatio: "var(--theme-image-ratio)" }}
         onClick={() => navigate(`/product/${product.id}`)}
       >
-        {!imgLoaded && <Skeleton className="absolute inset-0 h-full w-full" />}
-        <img
+        <ProgressiveImage
           src={product.cover_image}
+          blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
           alt={product.name}
-          loading="lazy"
-          onLoad={() => setImgLoaded(true)}
-          className={`h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+          className="h-full w-full bg-transparent"
+          imgClassName={`h-full w-full object-cover transition-all duration-300 ease-in-out group-hover:scale-105`}
         />
         <div className="absolute left-2 top-2 flex gap-1">
           {product.is_hot && (
-            <span className="theme-rounded bg-[var(--theme-price)] px-2 py-0.5 text-[10px] font-bold text-white theme-shadow">
+            <span className="theme-rounded bg-[var(--theme-price)] px-2 py-0.5 text-[10px] font-bold text-[var(--theme-price-foreground)] theme-shadow">
               热销
             </span>
           )}
           {product.is_new && (
-            <span className="theme-rounded bg-[var(--theme-primary)] px-2 py-0.5 text-[10px] font-bold text-white theme-shadow">
+            <span className="theme-rounded bg-[var(--theme-primary)] px-2 py-0.5 text-[10px] font-bold text-[var(--theme-primary-foreground)] theme-shadow">
               新品
             </span>
           )}
         </div>
 
         {/* Favorite button */}
-        <button
+        <SquishButton
+          type="button"
+          aria-label={isFavorite ? "取消收藏" : "收藏"}
           onClick={(e) => {
             e.stopPropagation();
             toggleFavorite(product.id);
             toast.success(isFavorite ? "已取消收藏" : "已收藏");
           }}
-          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-[var(--theme-surface)]/90 backdrop-blur-sm transition-all active:scale-90 border border-[var(--theme-border)]"
+          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/90 backdrop-blur-sm transition-all active:scale-90 shadow-none !p-0"
         >
           <Heart
             size={16}
             className={isFavorite ? "fill-[var(--theme-price)] text-[var(--theme-price)]" : "text-[var(--theme-text)]"}
           />
-        </button>
+        </SquishButton>
       </div>
       <div className="p-3 flex flex-col gap-2">
         <h3
@@ -101,18 +102,20 @@ export default function ProductCard({ product, index = 0 }: Props) {
               )}
             </div>
           </div>
-          <button
+          <SquishButton
+            type="button"
+            aria-label="加入购物车"
             onClick={(e) => {
               e.stopPropagation();
               addItem(product);
               toast.success("已加入购物车");
             }}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--theme-primary)] text-white transition-all active:scale-90 touch-target hover:opacity-90"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)] transition-all active:scale-90 touch-target hover:opacity-90 shadow-none !p-0"
           >
             <ShoppingCart size={15} />
-          </button>
+          </SquishButton>
         </div>
       </div>
-    </motion.div>
+    </Reveal>
   );
 }

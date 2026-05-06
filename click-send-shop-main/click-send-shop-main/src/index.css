@@ -51,6 +51,28 @@
 
     --font-display: 'Playfair Display', serif;
     --font-body: 'Inter', sans-serif;
+
+    --theme-primary: #000000;
+    --theme-primary-hover: #111111;
+    --theme-primary-foreground: #ffffff;
+    --theme-secondary: #4b5563;
+    --theme-secondary-foreground: #ffffff;
+    --theme-price: #dc2626;
+    --theme-price-foreground: #ffffff;
+    --theme-gradient: linear-gradient(135deg, #000000, #4b5563);
+    --theme-gradient-foreground: #ffffff;
+    --theme-bg: #f9fafb;
+    --theme-surface: #ffffff;
+    --theme-border: #e5e7eb;
+    --theme-text: #000000;
+    --theme-text-on-surface: #000000;
+    --theme-text-muted: rgba(0, 0, 0, 0.58);
+    --theme-text-muted-on-surface: rgba(0, 0, 0, 0.58);
+    --theme-text-subtle: rgba(0, 0, 0, 0.38);
+    --theme-radius: 8px;
+    --theme-font: var(--font-body);
+    --theme-shadow: 0 10px 30px -10px rgba(0,0,0,0.06);
+    --theme-shadow-hover: 0 20px 40px -10px rgba(0,0,0,0.12);
   }
 
   .dark {
@@ -103,7 +125,9 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: var(--font-body);
+    background: var(--theme-bg, hsl(var(--background)));
+    color: var(--theme-text, hsl(var(--foreground)));
+    font-family: var(--theme-font, var(--font-body));
     -webkit-tap-highlight-color: transparent;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -114,6 +138,7 @@
   /* Improve input focus on mobile */
   input, textarea, select {
     font-size: 16px !important; /* Prevent iOS zoom on focus */
+    color: var(--theme-text-on-surface, hsl(var(--foreground)));
   }
   /* Safe area for notch devices */
   .pb-safe {
@@ -132,10 +157,10 @@
     box-shadow: var(--theme-shadow);
   }
   .text-gold {
-    color: hsl(var(--gold));
+    color: var(--theme-price, hsl(var(--gold)));
   }
   .bg-gold {
-    background-color: hsl(var(--gold));
+    background-color: var(--theme-price, hsl(var(--gold)));
   }
   .bg-gold-light {
     background-color: hsl(var(--gold-light));
@@ -144,7 +169,50 @@
     background-color: hsl(var(--gold-dark));
   }
   .border-gold {
-    border-color: hsl(var(--gold));
+    border-color: var(--theme-price, hsl(var(--gold)));
+  }
+  .text-theme-muted {
+    color: var(--theme-text-muted);
+  }
+  .text-theme-surface {
+    color: var(--theme-text-on-surface);
+  }
+  .bg-theme-surface {
+    background-color: var(--theme-surface);
+    color: var(--theme-text-on-surface);
+  }
+  .bg-theme-gradient {
+    background: var(--theme-gradient);
+    color: var(--theme-gradient-foreground);
+  }
+
+  .bg-gold.text-primary-foreground,
+  .bg-gold .text-primary-foreground,
+  .bg-gold .text-primary-foreground\/70,
+  .bg-gold .text-primary-foreground\/60,
+  .bg-gold .text-primary-foreground\/50,
+  .bg-gold .text-primary-foreground\/40 {
+    color: var(--theme-price-foreground) !important;
+  }
+
+  [style*="var(--theme-gradient)"].text-white,
+  [style*="var(--theme-gradient)"] .text-white,
+  [style*="var(--theme-gradient)"].text-primary-foreground,
+  [style*="var(--theme-gradient)"] .text-primary-foreground,
+  [style*="var(--theme-gradient)"] .text-primary-foreground\/70,
+  [style*="var(--theme-gradient)"] .text-primary-foreground\/60,
+  [style*="var(--theme-gradient)"] .text-primary-foreground\/50 {
+    color: var(--theme-gradient-foreground) !important;
+  }
+
+  [class*="bg-[var(--theme-primary)]"].text-white,
+  [class*="bg-[var(--theme-primary)]"] .text-white {
+    color: var(--theme-primary-foreground) !important;
+  }
+
+  [class*="bg-[var(--theme-price)]"].text-white,
+  [class*="bg-[var(--theme-price)]"] .text-white {
+    color: var(--theme-price-foreground) !important;
   }
   /* Profile header */
   .profile-header-dark {
@@ -179,6 +247,33 @@
 /* Smooth scroll everywhere */
 html {
   scroll-behavior: smooth;
+}
+
+/* Global loading skeleton: inherit dynamic skin variables only */
+.skeleton-base {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--theme-surface, hsl(var(--muted)));
+  border-radius: var(--theme-radius, var(--radius));
+}
+
+.skeleton-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    100deg,
+    transparent 0%,
+    color-mix(in srgb, var(--theme-text, hsl(var(--foreground))) 5%, transparent) 45%,
+    transparent 100%
+  );
+  animation: skeleton-shimmer 2.2s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 /* 管理后台 / 移动端：安全区与触控（刘海屏、Home 指示条） */

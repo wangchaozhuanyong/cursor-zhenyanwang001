@@ -10,8 +10,21 @@ import {
 } from "@/utils/token";
 import { normalizeMediaUrls } from "@/utils/mediaUrl";
 import { notifyAuthExpired } from "@/lib/authSessionBridge";
+import { startGlobalLoadingDeferred, stopGlobalLoading } from "@/lib/loadingProgress";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
+
+function extractResponseMessage(body: Record<string, unknown>, status: number): string {
+  const candidates = [
+    body.message,
+    body.error,
+    body.msg,
+    (body.data as Record<string, unknown> | undefined)?.message,
+    (body.data as Record<string, unknown> | undefined)?.error,
+  ];
+  const message = candidates.find((v) => typeof v === "string" && v.trim());
+  return typeof message === "string" ? message : `请求失败 (${status})`;
+}
 
 /* ─── query-string 工具 ─── */
 
@@ -29,17 +42,24 @@ export function toQueryString(params?: Record<string, unknown>): string {
 let refreshing: Promise<string> | null = null;
 
 async function tryRefreshToken(): Promise<string> {
+  const loadingToken = startGlobalLoadingDeferred();
   const rt = getRefreshToken();
   if (!rt) {
+    stopGlobalLoading(loadingToken);
     clearTokens();
     throw new ApiError(401, "登录已过期，请重新登录");
   }
 
-  const res = await fetch(`${BASE_URL}/auth/refresh`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken: rt }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken: rt }),
+    });
+  } finally {
+    stopGlobalLoading(loadingToken);
+  }
 
   if (!res.ok) {
     clearTokens();
@@ -59,6 +79,7 @@ async function request<T>(
   options: RequestInit = {},
   retry = true,
 ): Promise<T> {
+  const loadingToken = startGlobalLoadingDeferred();
   const isAdminEndpoint = endpoint.startsWith("/admin/");
   const isAuthLoginOrRegister =
     endpoint.startsWith("/auth/login")
@@ -76,6 +97,8 @@ async function request<T>(
     res = await fetch(`${BASE_URL}${endpoint}`, { ...options, headers });
   } catch (err) {
     throw new ApiError(0, "网络连接失败，请检查网络设置", err);
+  } finally {
+    stopGlobalLoading(loadingToken);
   }
 
   if (res.status === 401 && retry && !isAdminEndpoint && !isAuthLoginOrRegister) {
@@ -108,11 +131,11 @@ async function request<T>(
     try {
       body = (await res.json()) as Record<string, unknown>;
     } catch { /* empty */ }
-    throw new ApiError(
-      res.status,
-      (body.message as string) ?? `请求失败 (${res.status})`,
-      body,
-    );
+    throw new ApiError(res.status, extractResponseMessage(body, res.status), {
+      ...body,
+      status: res.status,
+      endpoint,
+    });
   }
 
   const payload = (await res.json()) as T;

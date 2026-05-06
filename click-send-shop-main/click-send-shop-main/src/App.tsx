@@ -3,7 +3,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Loader2 } from "lucide-react";
+import { RouterLoadingBridge, TopProgressBar } from "@/components/ui/top-progress-bar";
+import AppRouteFallback from "@/components/AppRouteFallback";
 
 import AdminLayout from "./layouts/AdminLayout";
 import FrontLayout from "./layouts/FrontLayout";
@@ -11,6 +12,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { isLoggedIn } from "@/utils/token";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
 
 /* ───────── Public（前台）页面，按业务域 ───────── */
 const Index = lazy(() => import("@/modules/public/pages/home/Index"));
@@ -38,6 +40,8 @@ const Points = lazy(() => import("@/modules/public/pages/user/Points"));
 const Rewards = lazy(() => import("@/modules/public/pages/user/Rewards"));
 const Invite = lazy(() => import("@/modules/public/pages/user/Invite"));
 
+const MicroInteractionsDemo = lazy(() => import("@/modules/micro-interactions/MicroInteractionsDemoPage"));
+
 const Help = lazy(() => import("@/modules/public/pages/content/Help"));
 const About = lazy(() => import("@/modules/public/pages/content/About"));
 
@@ -64,6 +68,8 @@ const AdminShipping = lazy(() => import("@/modules/admin/pages/order/AdminShippi
 const AdminUsers = lazy(() => import("@/modules/admin/pages/user/AdminUsers"));
 const AdminUserDetail = lazy(() => import("@/modules/admin/pages/user/AdminUserDetail"));
 const AdminInvites = lazy(() => import("@/modules/admin/pages/user/AdminInvites"));
+const AdminRewardRecords = lazy(() => import("@/modules/admin/pages/user/AdminRewardRecords"));
+const AdminPointsRecords = lazy(() => import("@/modules/admin/pages/user/AdminPointsRecords"));
 
 const AdminCoupons = lazy(() => import("@/modules/admin/pages/coupon/AdminCoupons"));
 const AdminCouponForm = lazy(() => import("@/modules/admin/pages/coupon/AdminCouponForm"));
@@ -86,14 +92,6 @@ const AdminRoles = lazy(() => import("@/modules/admin/pages/rbac/AdminRoles"));
 const AdminLogs = lazy(() => import("@/modules/admin/pages/system/AdminLogs"));
 const AdminRecycleBin = lazy(() => import("@/modules/admin/pages/system/AdminRecycleBin"));
 
-function PageLoader() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <Loader2 size={28} className="animate-spin text-gold" />
-    </div>
-  );
-}
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -114,6 +112,33 @@ function AuthTokenSync() {
   return null;
 }
 
+function SiteIdentitySync() {
+  const siteInfo = useSiteInfo();
+
+  useLayoutEffect(() => {
+    const favicon = (siteInfo.faviconUrl || "").trim() || "/favicon.webp";
+    const links = Array.from(
+      document.querySelectorAll<HTMLLinkElement>(
+        "link[rel='icon'], link[rel='shortcut icon'], link[rel='apple-touch-icon']",
+      ),
+    );
+
+    if (links.length === 0) {
+      const link = document.createElement("link");
+      link.rel = "icon";
+      link.href = favicon;
+      document.head.appendChild(link);
+      return;
+    }
+
+    links.forEach((link) => {
+      link.href = favicon;
+    });
+  }, [siteInfo.faviconUrl]);
+
+  return null;
+}
+
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
@@ -125,8 +150,11 @@ const App = () => (
             v7_relativeSplatPath: true,
           }}
         >
+          <TopProgressBar />
+          <RouterLoadingBridge />
           <AuthTokenSync />
-          <Suspense fallback={<PageLoader />}>
+          <SiteIdentitySync />
+          <Suspense fallback={<AppRouteFallback />}>
             <Routes>
               {/* Pages with bottom nav */}
               <Route element={<FrontLayout />}>
@@ -140,6 +168,7 @@ const App = () => (
 
               {/* Public pages */}
               <Route path="/product/:id" element={<ProductDetail />} />
+              <Route path="/demo/micro-interactions" element={<MicroInteractionsDemo />} />
               <Route path="/login" element={<Login />} />
               <Route path="/help" element={<Help />} />
               <Route path="/about" element={<About />} />
@@ -172,6 +201,8 @@ const App = () => (
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="users/:id" element={<AdminUserDetail />} />
                 <Route path="invites" element={<AdminInvites />} />
+                <Route path="rewards" element={<AdminRewardRecords />} />
+                <Route path="points/records" element={<AdminPointsRecords />} />
                 <Route path="settings/points" element={<AdminPointsRules />} />
                 <Route path="settings/referral" element={<AdminReferralRules />} />
                 <Route path="settings/site" element={<AdminSiteSettings />} />

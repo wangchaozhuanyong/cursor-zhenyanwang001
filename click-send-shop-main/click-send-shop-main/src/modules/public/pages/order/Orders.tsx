@@ -56,12 +56,12 @@ export default function Orders() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-6">
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
+    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-6">
+      <header className="sticky top-0 z-40 bg-[var(--theme-surface)]/95 backdrop-blur-md border-b border-[var(--theme-border)]">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
           <button
             onClick={goBack}
-            className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target"
+            className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target"
           >
             <ArrowLeft size={20} className="text-foreground" />
           </button>
@@ -76,8 +76,8 @@ export default function Orders() {
                 onClick={() => switchTab(tab.key)}
                 className={`flex-shrink-0 rounded-full px-4 py-2 text-xs font-medium transition-all ${
                   filterStatus === tab.key
-                    ? "bg-gold text-primary-foreground"
-                    : "bg-secondary text-muted-foreground hover:text-foreground"
+                    ? "bg-[var(--theme-price)] text-white"
+                    : "bg-[var(--theme-surface)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]"
                 }`}
               >
                 {tab.label}
@@ -93,7 +93,8 @@ export default function Orders() {
             <p className="text-sm text-destructive mb-3">{error}</p>
             <button
               onClick={() => loadOrders({ page: 1 })}
-              className="rounded-full bg-gold px-6 py-2.5 text-sm font-semibold text-primary-foreground"
+              className="rounded-full px-6 py-2.5 text-sm font-semibold text-white"
+              style={{ background: "var(--theme-gradient)" }}
             >
               重试
             </button>
@@ -108,7 +109,8 @@ export default function Orders() {
             </p>
             <button
               onClick={() => navigate("/")}
-              className="mt-4 rounded-full bg-gold px-6 py-2.5 text-sm font-semibold text-primary-foreground"
+              className="mt-4 rounded-full px-6 py-2.5 text-sm font-semibold text-white"
+              style={{ background: "var(--theme-gradient)" }}
             >
               去逛逛
             </button>
@@ -131,7 +133,7 @@ export default function Orders() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03 }}
                   onClick={() => navigate(`/orders/${order.id}`)}
-                  className="cursor-pointer rounded-xl border border-border bg-card p-4 transition-colors active:bg-secondary"
+                  className="cursor-pointer theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 transition-colors active:bg-[var(--theme-bg)] theme-shadow"
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-muted-foreground font-mono">
@@ -149,12 +151,12 @@ export default function Orders() {
                       />
                     ))}
                   </div>
-                  <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+                  <div className="mt-3 flex items-center justify-between border-t border-[var(--theme-border)] pt-3">
                     <span className="text-xs text-muted-foreground">
                       {new Date(order.created_at).toLocaleDateString("zh-CN")} · 共{" "}
                       {order.items.reduce((s, i) => s + i.qty, 0)} 件
                     </span>
-                    <span className="text-base font-bold text-gold">
+                    <span className="text-base font-bold text-[var(--theme-price)]">
                       RM {order.total_amount}
                     </span>
                   </div>
@@ -166,7 +168,7 @@ export default function Orders() {
 
         {loading && (
           <div className="flex items-center justify-center py-8">
-            <Loader2 size={24} className="animate-spin text-gold" />
+            <Loader2 size={24} className="animate-spin text-[var(--theme-price)]" />
           </div>
         )}
 

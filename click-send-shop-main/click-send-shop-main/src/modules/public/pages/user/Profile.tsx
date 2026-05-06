@@ -41,7 +41,7 @@ export default function Profile() {
   /** 未登录：与 ProtectedRoute 一致以 token 为准，避免持久化状态与 token 不一致 */
   if (!isLoggedIn()) {
     return (
-      <div className="min-h-screen bg-background pb-20">
+      <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-20">
         <div className="profile-header-dark rounded-b-3xl px-4 pb-10 pt-12 pt-safe shadow-lg">
           <div className="mx-auto max-w-lg flex items-start justify-between">
             <div className="flex items-center gap-4">
@@ -66,7 +66,8 @@ export default function Profile() {
             <button
               type="button"
               onClick={() => navigate("/login", { state: { from: "/profile" } })}
-              className="flex-1 rounded-2xl bg-gold py-3.5 text-sm font-bold text-primary-foreground shadow-lg"
+            className="flex-1 theme-rounded py-3.5 text-sm font-bold text-white theme-shadow"
+            style={{ background: "var(--theme-gradient)" }}
             >
               登录
             </button>
@@ -197,7 +198,7 @@ export default function Profile() {
         {/* 一级 - 核心购物入口（九宫格） */}
         <section>
           <h3 className="mb-2 px-1 text-xs font-medium text-muted-foreground">我的购物</h3>
-          <div className="grid grid-cols-4 gap-2 rounded-xl border border-border bg-card p-3">
+          <div className="grid grid-cols-4 gap-2 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow">
             {quickItems.map((item) => (
               <button
                 key={item.path}
@@ -217,7 +218,7 @@ export default function Profile() {
         {/* 二级 - 会员权益 */}
         <section>
           <h3 className="mb-2 px-1 text-xs font-medium text-muted-foreground">会员权益</h3>
-          <div className="rounded-xl border border-border bg-card">
+          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow">
             {benefitItems.map((item, i) => (
               <button
                 key={item.path}
@@ -240,7 +241,7 @@ export default function Profile() {
         {/* 三级 - 系统 / 帮助 */}
         <section>
           <h3 className="mb-2 px-1 text-xs font-medium text-muted-foreground">其他</h3>
-          <div className="rounded-xl border border-border bg-card">
+          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow">
             {miscItems.map((item, i) => (
               <button
                 key={item.path}

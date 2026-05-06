@@ -76,6 +76,7 @@ const AdminReports = lazy(() => import("@/modules/admin/pages/report/AdminReport
 const AdminExportCenter = lazy(() => import("@/modules/admin/pages/report/AdminExportCenter"));
 
 const AdminSiteSettings = lazy(() => import("@/modules/admin/pages/settings/AdminSiteSettings"));
+const AdminThemeSettings = lazy(() => import("@/modules/admin/pages/settings/AdminThemeSettings"));
 const AdminContent = lazy(() => import("@/modules/admin/pages/settings/AdminContent"));
 const AdminPointsRules = lazy(() => import("@/modules/admin/pages/settings/AdminPointsRules"));
 const AdminReferralRules = lazy(() => import("@/modules/admin/pages/settings/AdminReferralRules"));
@@ -174,6 +175,7 @@ const App = () => (
                 <Route path="settings/points" element={<AdminPointsRules />} />
                 <Route path="settings/referral" element={<AdminReferralRules />} />
                 <Route path="settings/site" element={<AdminSiteSettings />} />
+                <Route path="settings/theme" element={<AdminThemeSettings />} />
                 <Route path="settings/shipping" element={<AdminShipping />} />
                 <Route path="settings/roles" element={<AdminRoles />} />
                 <Route path="coupons" element={<AdminCoupons />} />

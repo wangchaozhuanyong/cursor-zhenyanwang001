@@ -115,7 +115,7 @@ export default function ProductDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-28 md:pb-0">
+    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-28 md:pb-0">
       <DetailHeader
         goBack={goBack}
         totalItems={totalItems}
@@ -127,7 +127,7 @@ export default function ProductDetail() {
         <div className="md:grid md:grid-cols-2 md:gap-10 md:py-8">
           {/* 左：图集 */}
           <div className="md:sticky md:top-20 md:self-start">
-            <div className="md:overflow-hidden md:rounded-2xl md:border md:border-border">
+            <div className="md:overflow-hidden md:theme-rounded md:border md:border-[var(--theme-border)]">
               <ProductImageGallery images={product.images} name={product.name} />
             </div>
           </div>
@@ -138,12 +138,12 @@ export default function ProductDetail() {
             <div className="px-4 pt-5 md:px-0 md:pt-0">
               <div className="flex flex-wrap items-center gap-2">
                 {product.is_hot && (
-                  <span className="rounded-md bg-gold px-2 py-1 text-[10px] font-bold text-primary-foreground">
+                  <span className="theme-rounded bg-[var(--theme-price)] px-2 py-1 text-[10px] font-bold text-white">
                     热销
                   </span>
                 )}
                 {product.is_new && (
-                  <span className="rounded-md bg-primary px-2 py-1 text-[10px] font-bold text-primary-foreground">
+                  <span className="theme-rounded bg-[var(--theme-primary)] px-2 py-1 text-[10px] font-bold text-white">
                     新品
                   </span>
                 )}
@@ -159,7 +159,7 @@ export default function ProductDetail() {
             {/* 价格 */}
             <div className="px-4 pt-3 md:px-0 md:pt-5">
               <div className="flex flex-wrap items-baseline gap-2">
-                <span className="text-3xl font-bold text-gold md:text-4xl">
+                <span className="text-3xl font-bold text-[var(--theme-price)] md:text-4xl">
                   RM {product.price}
                 </span>
                 {typeof product.original_price === "number"
@@ -168,7 +168,7 @@ export default function ProductDetail() {
                       <span className="text-sm text-muted-foreground line-through">
                         RM {product.original_price}
                       </span>
-                      <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive">
+                      <span className="theme-rounded bg-[var(--theme-price)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--theme-price)]">
                         省 RM {(product.original_price - product.price).toFixed(2)}
                       </span>
                     </>
@@ -185,12 +185,12 @@ export default function ProductDetail() {
             </div>
 
             {/* 数量 */}
-            <div className="mt-4 flex items-center justify-between border-t border-border px-4 py-4 md:mt-6 md:rounded-xl md:border md:bg-card md:px-5">
+            <div className="mt-4 flex items-center justify-between border-t border-[var(--theme-border)] px-4 py-4 md:mt-6 md:theme-rounded md:border md:bg-[var(--theme-surface)] md:px-5">
               <span className="text-sm font-medium text-foreground">数量</span>
-              <div className="flex items-center gap-3 rounded-full border border-border px-1.5">
+              <div className="flex items-center gap-3 rounded-full border border-[var(--theme-border)] px-1.5">
                 <button
                   onClick={() => setQty(Math.max(1, qty - 1))}
-                  className="flex h-9 w-9 items-center justify-center active:bg-secondary rounded-full touch-target"
+                  className="flex h-9 w-9 items-center justify-center active:bg-[var(--theme-bg)] rounded-full touch-target"
                 >
                   <Minus size={16} className="text-foreground" />
                 </button>
@@ -199,7 +199,7 @@ export default function ProductDetail() {
                 </span>
                 <button
                   onClick={() => setQty(Math.min(product.stock, qty + 1))}
-                  className="flex h-9 w-9 items-center justify-center active:bg-secondary rounded-full touch-target"
+                  className="flex h-9 w-9 items-center justify-center active:bg-[var(--theme-bg)] rounded-full touch-target"
                 >
                   <Plus size={16} className="text-foreground" />
                 </button>
@@ -210,7 +210,7 @@ export default function ProductDetail() {
             <div className="mt-4 hidden gap-3 px-0 md:flex">
               <button
                 onClick={handleAddToCart}
-                className="flex-1 rounded-full border-2 border-primary py-3.5 text-sm font-semibold text-foreground transition-all hover:bg-secondary"
+                className="flex-1 rounded-full border-2 border-[var(--theme-primary)] py-3.5 text-sm font-semibold text-foreground transition-all hover:bg-[var(--theme-bg)]"
               >
                 加入购物车
               </button>
@@ -222,7 +222,7 @@ export default function ProductDetail() {
               </button>
               <button
                 onClick={handleFavorite}
-                className="flex h-12 w-12 items-center justify-center rounded-full border border-border bg-card hover:bg-secondary"
+                className="flex h-12 w-12 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] hover:bg-[var(--theme-bg)]"
                 aria-label="收藏"
               >
                 <Heart
@@ -237,7 +237,7 @@ export default function ProductDetail() {
             {/* 移动端：收藏按钮浮在右上角（保留交互） */}
             <button
               onClick={handleFavorite}
-              className="fixed right-4 top-16 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background/90 backdrop-blur-sm shadow-md md:hidden touch-target"
+              className="fixed right-4 top-16 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/90 backdrop-blur-sm theme-shadow md:hidden touch-target"
               aria-label="收藏"
             >
               <Heart
@@ -254,7 +254,7 @@ export default function ProductDetail() {
             </div>
 
             {/* 描述 */}
-            <div className="mt-6 border-t border-border px-4 pt-5 md:rounded-xl md:border md:bg-card/40 md:p-5">
+            <div className="mt-6 border-t border-[var(--theme-border)] px-4 pt-5 md:theme-rounded md:border md:bg-[var(--theme-surface)]/40 md:p-5">
               <h3 className="mb-2.5 text-sm font-semibold text-foreground">商品详情</h3>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 {product.description}
@@ -268,7 +268,7 @@ export default function ProductDetail() {
 
         {/* 同类推荐 */}
         {relatedProducts.length > 0 && (
-          <div className="border-t border-border px-4 py-5 md:border-0 md:px-0 md:py-8">
+          <div className="border-t border-[var(--theme-border)] px-4 py-5 md:border-0 md:px-0 md:py-8">
             <h3 className="mb-3 text-sm font-semibold text-foreground md:text-lg">
               同类推荐
             </h3>
@@ -286,11 +286,11 @@ export default function ProductDetail() {
       </div>
 
       {/* 底部固定操作栏 - 仅移动端 */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
           <button
             onClick={handleAddToCart}
-            className="flex-1 rounded-full border-2 border-primary py-3.5 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
+            className="flex-1 rounded-full border-2 border-[var(--theme-primary)] py-3.5 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-[var(--theme-bg)]"
           >
             加入购物车
           </button>
@@ -322,7 +322,7 @@ function DetailHeader({
       <div className="mx-auto flex w-full max-w-screen-xl items-center justify-between px-4 py-3 md:px-6">
         <button
           onClick={goBack}
-          className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary active:bg-muted touch-target"
+          className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target"
           aria-label="返回"
         >
           <ArrowLeft size={20} className="text-foreground" />
@@ -332,7 +332,7 @@ function DetailHeader({
           {onShare && (
             <button
               onClick={onShare}
-              className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target"
+              className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target"
               aria-label="分享"
             >
               <Share2 size={18} className="text-foreground" />
@@ -340,7 +340,7 @@ function DetailHeader({
           )}
           <button
             onClick={() => navigate("/cart")}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target"
             aria-label="购物车"
           >
             <ShoppingCart size={20} className="text-foreground" />

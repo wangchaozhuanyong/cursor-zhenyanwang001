@@ -61,8 +61,8 @@ export default function Settings() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 bg-background/95 px-4 py-3 backdrop-blur-md">
+    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
+      <header className="sticky top-0 z-40 bg-[var(--theme-surface)]/95 px-4 py-3 backdrop-blur-md border-b border-[var(--theme-border)]">
         <div className="mx-auto flex max-w-lg items-center gap-3">
           <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
             <ArrowLeft size={20} className="text-foreground" />
@@ -76,7 +76,7 @@ export default function Settings() {
         <div className="flex flex-col items-center py-6">
           <div className="relative">
             {avatar ? (
-              <div className="h-24 w-24 overflow-hidden rounded-full shadow-lg shadow-gold/20">
+              <div className="h-24 w-24 overflow-hidden rounded-full theme-shadow">
                 <img
                   src={avatar}
                   alt="头像"
@@ -84,7 +84,7 @@ export default function Settings() {
                 />
               </div>
             ) : (
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gold text-3xl font-bold text-primary-foreground shadow-lg shadow-gold/20">
+              <div className="flex h-24 w-24 items-center justify-center rounded-full text-3xl font-bold text-white theme-shadow" style={{ background: "var(--theme-gradient)" }}>
                 {nickname.charAt(0).toUpperCase()}
               </div>
             )}
@@ -117,7 +117,7 @@ export default function Settings() {
         </div>
 
         {/* Dark mode toggle */}
-        <div className="mt-6 flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-4">
+        <div className="mt-6 flex items-center justify-between theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-4 theme-shadow">
           <div className="flex items-center gap-3">
             {theme === "dark" ? <Moon size={18} className="text-gold" /> : <Sun size={18} className="text-gold" />}
             <span className="text-sm font-medium text-foreground">深色模式</span>
@@ -135,7 +135,7 @@ export default function Settings() {
         </div>
 
         {/* Change password */}
-        <div className="mt-6 rounded-2xl border border-border bg-card p-4">
+        <div className="mt-6 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
           <button
             onClick={() => setShowPwdForm(!showPwdForm)}
             className="flex w-full items-center justify-between"
@@ -183,7 +183,8 @@ export default function Settings() {
         <button
           onClick={handleSave}
           disabled={profileSaving}
-          className="mt-8 w-full rounded-full bg-gold py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98] disabled:opacity-60"
+          className="mt-8 w-full rounded-full py-3.5 text-sm font-bold text-white theme-shadow transition-all active:scale-[0.98] disabled:opacity-60"
+          style={{ background: "var(--theme-gradient)" }}
         >
           {profileSaving ? "保存中…" : "保存修改"}
         </button>

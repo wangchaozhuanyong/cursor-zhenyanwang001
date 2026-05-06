@@ -49,13 +49,13 @@ export default function Cart() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-44 md:pb-0">
+    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-44 md:pb-0">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
+      <header className="sticky top-0 z-40 bg-[var(--theme-surface)]/95 backdrop-blur-md border-b border-[var(--theme-border)]">
         <div className="mx-auto flex w-full max-w-screen-xl items-center gap-3 px-4 py-3 md:px-6">
           <button
             onClick={goBack}
-            className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target"
+            className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target"
           >
             <ArrowLeft size={20} className="text-foreground" />
           </button>
@@ -74,12 +74,12 @@ export default function Cart() {
         <div className="md:grid md:grid-cols-[1fr_360px] md:gap-8">
           <div>
             {!isLoggedIn() && (
-              <div className="mb-3 rounded-xl border border-gold/30 bg-gold/5 px-4 py-3 text-xs text-foreground">
+              <div className="mb-3 theme-rounded border border-[var(--theme-price)]/30 bg-[var(--theme-price)]/5 px-4 py-3 text-xs text-[var(--theme-text)]">
                 <span className="text-muted-foreground">当前未登录，购物车仅保存在本机；</span>
                 <button
                   type="button"
                   onClick={() => navigate("/login", { state: { from: "/cart" } })}
-                  className="font-semibold text-gold ml-1"
+                  className="font-semibold text-[var(--theme-price)] ml-1"
                 >
                   登录
                 </button>
@@ -113,9 +113,9 @@ export default function Cart() {
                 action={{ label: "去逛逛", onClick: () => navigate("/") }}
               />
             ) : (
-              <div className="md:rounded-2xl md:border md:border-border md:bg-card md:px-4">
+              <div className="md:theme-rounded md:border md:border-[var(--theme-border)] md:bg-[var(--theme-surface)] md:px-4">
                 {/* 桌面：列表头 + 全选 */}
-                <div className="hidden items-center justify-between border-b border-border py-3 md:flex">
+                <div className="hidden items-center justify-between border-b border-[var(--theme-border)] py-3 md:flex">
                   <button
                     type="button"
                     onClick={() => setSelectAll(!allSelected)}
@@ -147,7 +147,7 @@ export default function Cart() {
                       key={item.product.id}
                       layout
                       exit={{ opacity: 0, x: -100 }}
-                      className="flex gap-3 border-b border-border py-4 last:border-b-0"
+                      className="flex gap-3 border-b border-[var(--theme-border)] py-4 last:border-b-0"
                     >
                       <button
                         type="button"
@@ -186,14 +186,14 @@ export default function Cart() {
                           <div className="flex items-center gap-3">
                             <button
                               onClick={() => removeItem(item.product.id)}
-                              className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-secondary active:bg-muted touch-target"
+                              className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target"
                             >
                               <Trash2 size={15} className="text-muted-foreground" />
                             </button>
-                            <div className="flex items-center gap-1 rounded-full border border-border">
+                            <div className="flex items-center gap-1 rounded-full border border-[var(--theme-border)]">
                               <button
                                 onClick={() => updateQty(item.product.id, item.qty - 1)}
-                                className="flex h-8 w-8 items-center justify-center rounded-full active:bg-secondary touch-target"
+                                className="flex h-8 w-8 items-center justify-center rounded-full active:bg-[var(--theme-bg)] touch-target"
                               >
                                 <Minus size={14} className="text-foreground" />
                               </button>
@@ -202,7 +202,7 @@ export default function Cart() {
                               </span>
                               <button
                                 onClick={() => updateQty(item.product.id, item.qty + 1)}
-                                className="flex h-8 w-8 items-center justify-center rounded-full active:bg-secondary touch-target"
+                                className="flex h-8 w-8 items-center justify-center rounded-full active:bg-[var(--theme-bg)] touch-target"
                               >
                                 <Plus size={14} className="text-foreground" />
                               </button>
@@ -220,7 +220,7 @@ export default function Cart() {
           {/* 桌面右侧结算摘要 */}
           {items.length > 0 && (
             <aside className="mt-6 hidden self-start md:sticky md:top-20 md:mt-0 md:block">
-              <div className="rounded-2xl border border-border bg-card p-5">
+              <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
                 <h3 className="mb-4 text-base font-semibold text-foreground">结算摘要</h3>
                 <div className="space-y-2.5 text-sm">
                   <div className="flex justify-between text-muted-foreground">
@@ -235,7 +235,7 @@ export default function Cart() {
                     <span>可获积分</span>
                     <span>+{totalPointsSelected()}</span>
                   </div>
-                  <div className="my-3 border-t border-border" />
+                  <div className="my-3 border-t border-[var(--theme-border)]" />
                   <div className="flex items-baseline justify-between">
                     <span className="text-sm text-foreground">合计</span>
                     <span className="text-2xl font-bold text-gold">
@@ -265,7 +265,7 @@ export default function Cart() {
 
       {/* 移动端：底部固定结算栏 */}
       {items.length > 0 && (
-        <div className="fixed bottom-[calc(68px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-md md:hidden">
+        <div className="fixed bottom-[calc(68px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-50 border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md md:hidden">
           <div className="mx-auto flex max-w-lg flex-col gap-2 px-4 py-2.5">
             <button
               type="button"

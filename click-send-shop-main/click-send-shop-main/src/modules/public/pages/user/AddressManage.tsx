@@ -54,8 +54,8 @@ export default function AddressManage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 bg-background/95 px-4 py-3 backdrop-blur-md">
+    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
+      <header className="sticky top-0 z-40 bg-[var(--theme-surface)]/95 px-4 py-3 backdrop-blur-md border-b border-[var(--theme-border)]">
         <div className="mx-auto flex max-w-lg items-center justify-between">
           <div className="flex items-center gap-3">
             <button onClick={goBack}>
@@ -63,7 +63,7 @@ export default function AddressManage() {
             </button>
             <h1 className="text-base font-semibold text-foreground">收货地址</h1>
           </div>
-          <button onClick={openAdd} className="flex items-center gap-1 text-sm text-gold">
+          <button onClick={openAdd} className="flex items-center gap-1 text-sm text-[var(--theme-price)]">
             <Plus size={16} /> 新增
           </button>
         </div>
@@ -79,32 +79,32 @@ export default function AddressManage() {
           <div className="flex flex-col items-center py-20">
             <MapPin size={40} className="text-muted-foreground" />
             <p className="mt-3 text-sm text-muted-foreground">暂无收货地址</p>
-            <button onClick={openAdd} className="mt-4 rounded-full bg-gold px-6 py-2 text-sm font-semibold text-primary-foreground">
+            <button onClick={openAdd} className="mt-4 rounded-full px-6 py-2 text-sm font-semibold text-white" style={{ background: "var(--theme-gradient)" }}>
               添加地址
             </button>
           </div>
         ) : (
           <div className="space-y-3">
             {addresses.map((addr) => (
-              <div key={addr.id} className="rounded-xl border border-border bg-card p-4">
+              <div key={addr.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-foreground">{addr.name}</span>
                       <span className="text-sm text-muted-foreground">{addr.phone}</span>
                       {addr.isDefault && (
-                        <span className="rounded bg-gold/20 px-1.5 py-0.5 text-[10px] font-semibold text-gold">默认</span>
+                        <span className="theme-rounded bg-[var(--theme-price)]/20 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--theme-price)]">默认</span>
                       )}
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">{addr.address}</p>
                   </div>
                 </div>
-                <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+                <div className="mt-3 flex items-center justify-between border-t border-[var(--theme-border)] pt-3">
                   <button
                     onClick={() => setDefaultAddress(addr.id)}
                     className="flex items-center gap-1 text-xs text-muted-foreground"
                   >
-                    <div className={`flex h-4 w-4 items-center justify-center rounded-full border ${addr.isDefault ? "border-gold bg-gold" : "border-muted-foreground"}`}>
+                    <div className={`flex h-4 w-4 items-center justify-center rounded-full border ${addr.isDefault ? "border-[var(--theme-price)] bg-[var(--theme-price)]" : "border-muted-foreground"}`}>
                       {addr.isDefault && <Check size={10} className="text-primary-foreground" />}
                     </div>
                     设为默认
@@ -156,7 +156,7 @@ export default function AddressManage() {
               />
               设为默认地址
             </label>
-            <button onClick={handleSave} disabled={saving} className="w-full rounded-full bg-gold py-3 text-sm font-semibold text-primary-foreground disabled:opacity-60">
+            <button onClick={handleSave} disabled={saving} className="w-full rounded-full py-3 text-sm font-semibold text-white disabled:opacity-60" style={{ background: "var(--theme-gradient)" }}>
               {saving ? "保存中…" : "保存"}
             </button>
           </div>

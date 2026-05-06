@@ -31,6 +31,7 @@ import {
   LayoutGrid,
   Shield,
   MessageSquareMore,
+  Palette,
 } from "lucide-react";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { isAdminAuthenticated, adminLogout, fetchAdminProfile } from "@/services/admin/accountService";
@@ -93,6 +94,7 @@ const navItemsRaw: NavItem[] = [
     path: "/admin/settings/site",
     children: [
       { icon: Settings, label: "站点设置", path: "/admin/settings/site", permission: "settings.manage" },
+      { icon: Palette, label: "皮肤/视觉设置", path: "/admin/settings/theme", permission: "settings.manage" },
       { icon: Truck, label: "运费规则", path: "/admin/settings/shipping", permission: "shipping.manage" },
       { icon: UserCog, label: "账号设置", path: "/admin/account", permission: "dashboard.view" },
       { icon: FileText, label: "内容管理", path: "/admin/content", permission: "content.manage" },

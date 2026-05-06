@@ -85,7 +85,7 @@ export default function AdminAccounts() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--theme-price)]" />
       </div>
     );
   }
@@ -97,7 +97,7 @@ export default function AdminAccounts() {
           <SearchBar placeholder="搜索管理员手机号/昵称..." value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
         </div>
         <PermissionGate permission="role.manage">
-          <button type="button" onClick={() => setShowCreate(true)} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground active:opacity-90">
+          <button type="button" onClick={() => setShowCreate(true)} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded px-4 py-2.5 text-sm font-semibold text-white active:opacity-90" style={{ background: "var(--theme-gradient)" }}>
             <Plus size={16} /> 创建管理员
           </button>
         </PermissionGate>
@@ -110,7 +110,7 @@ export default function AdminAccounts() {
           { label: "普通管理员", value: admins.filter((a) => a.role === "admin").length },
           { label: "已禁用", value: admins.filter((a) => a.role === "disabled").length },
         ].map((s) => (
-          <div key={s.label} className="rounded-xl border border-border bg-card p-4 text-center">
+          <div key={s.label} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-center theme-shadow">
             <p className="text-lg font-bold text-foreground">{s.value}</p>
             <p className="text-[10px] text-muted-foreground">{s.label}</p>
           </div>
@@ -122,9 +122,9 @@ export default function AdminAccounts() {
         {paginatedData.map((a) => {
           const badge = ROLE_BADGE[a.role] || ROLE_BADGE.admin;
           return (
-            <div key={a.id} className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <div key={a.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
               <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold text-xs font-bold text-primary-foreground">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--theme-gradient)" }}>
                   {(a.nickname || a.phone || "?")[0]}
                 </div>
                 <div className="min-w-0 flex-1 space-y-1.5">
@@ -139,13 +139,13 @@ export default function AdminAccounts() {
                     <div className="flex flex-wrap gap-2 pt-1">
                       {a.role !== "super_admin" && (
                         <>
-                          <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
+                        <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation min-h-[40px] theme-rounded border border-[var(--theme-border)] px-3 py-1.5 text-xs hover:bg-[var(--theme-bg)]">
                             {a.role === "disabled" ? <><ToggleRight size={12} className="mr-1 inline text-green-600" />启用</> : <><ToggleLeft size={12} className="mr-1 inline" />禁用</>}
                           </button>
-                          <button type="button" onClick={() => { setResetTarget(a); setNewPassword(""); }} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
+                          <button type="button" onClick={() => { setResetTarget(a); setNewPassword(""); }} className="touch-manipulation min-h-[40px] theme-rounded border border-[var(--theme-border)] px-3 py-1.5 text-xs hover:bg-[var(--theme-bg)]">
                             <KeyRound size={12} className="mr-1 inline" />重置密码
                           </button>
-                          <button type="button" onClick={() => setConfirmDelete(a)} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs text-destructive hover:bg-secondary">
+                          <button type="button" onClick={() => setConfirmDelete(a)} className="touch-manipulation min-h-[40px] theme-rounded border border-[var(--theme-border)] px-3 py-1.5 text-xs text-destructive hover:bg-[var(--theme-bg)]">
                             <Trash2 size={12} className="mr-1 inline" />删除
                           </button>
                         </>
@@ -162,10 +162,10 @@ export default function AdminAccounts() {
       </div>
 
       {/* Desktop table */}
-      <div className="hidden overflow-x-auto rounded-xl border border-border bg-card md:block">
+      <div className="hidden overflow-x-auto theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] md:block theme-shadow">
         <table className="w-full min-w-[700px] text-sm">
           <thead>
-            <tr className="border-b border-border bg-secondary/50">
+            <tr className="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70">
               {["管理员", "手机号", "角色", "创建时间", "最后登录", "操作"].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
               ))}
@@ -175,10 +175,10 @@ export default function AdminAccounts() {
             {paginatedData.map((a) => {
               const badge = ROLE_BADGE[a.role] || ROLE_BADGE.admin;
               return (
-                <tr key={a.id} className="border-b border-border last:border-0 hover:bg-secondary/30">
+                <tr key={a.id} className="border-b border-[var(--theme-border)] last:border-0 hover:bg-[var(--theme-bg)]">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gold text-xs font-bold text-primary-foreground">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--theme-gradient)" }}>
                         {(a.nickname || a.phone || "?")[0]}
                       </div>
                       <span className="font-medium text-foreground">{a.nickname || "—"}</span>
@@ -193,13 +193,13 @@ export default function AdminAccounts() {
                       <div className="flex gap-1">
                         {a.role !== "super_admin" && (
                           <>
-                            <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title={a.role === "disabled" ? "启用" : "禁用"}>
+                            <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title={a.role === "disabled" ? "启用" : "禁用"}>
                               {a.role === "disabled" ? <ToggleRight size={14} className="text-green-600" /> : <ToggleLeft size={14} />}
                             </button>
-                            <button type="button" onClick={() => { setResetTarget(a); setNewPassword(""); }} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title="重置密码">
+                            <button type="button" onClick={() => { setResetTarget(a); setNewPassword(""); }} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title="重置密码">
                               <KeyRound size={14} />
                             </button>
-                            <button type="button" onClick={() => setConfirmDelete(a)} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground hover:text-destructive hover:bg-secondary" title="删除">
+                            <button type="button" onClick={() => setConfirmDelete(a)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:text-destructive hover:bg-[var(--theme-bg)]" title="删除">
                               <Trash2 size={14} />
                             </button>
                           </>
@@ -221,14 +221,14 @@ export default function AdminAccounts() {
       {/* Create modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowCreate(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl space-y-4">
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md theme-rounded bg-[var(--theme-surface)] p-6 theme-shadow space-y-4">
             <h3 className="flex items-center gap-2 font-bold text-foreground"><UserCog size={18} /> 创建管理员</h3>
-            <input placeholder="手机号 *" value={createForm.phone} onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-            <input placeholder="密码 *（至少6位）" type="password" value={createForm.password} onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-            <input placeholder="昵称（可选）" value={createForm.nickname} onChange={(e) => setCreateForm({ ...createForm, nickname: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+            <input placeholder="手机号 *" value={createForm.phone} onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
+            <input placeholder="密码 *（至少6位）" type="password" value={createForm.password} onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
+            <input placeholder="昵称（可选）" value={createForm.nickname} onChange={(e) => setCreateForm({ ...createForm, nickname: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setShowCreate(false)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary">取消</button>
-              <button type="button" onClick={handleCreate} className="rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground">创建</button>
+              <button type="button" onClick={() => setShowCreate(false)} className="theme-rounded border border-[var(--theme-border)] px-4 py-2.5 text-sm hover:bg-[var(--theme-bg)]">取消</button>
+              <button type="button" onClick={handleCreate} className="theme-rounded px-4 py-2.5 text-sm font-semibold text-white" style={{ background: "var(--theme-gradient)" }}>创建</button>
             </div>
           </div>
         </div>

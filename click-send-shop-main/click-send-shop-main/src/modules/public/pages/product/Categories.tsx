@@ -56,8 +56,8 @@ export default function Categories() {
   }, [activeCat, categories.length]);
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
+    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-20">
+      <header className="sticky top-0 z-40 bg-[var(--theme-surface)]/95 backdrop-blur-md border-b border-[var(--theme-border)]">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
           <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
             <ArrowLeft size={20} className="text-foreground" />
@@ -66,7 +66,7 @@ export default function Categories() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="搜索商品..."
-            className="flex-1 rounded-full bg-secondary px-4 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+            className="flex-1 rounded-full bg-[var(--theme-bg)] border border-[var(--theme-border)] px-4 py-2 text-sm text-[var(--theme-text)] outline-none placeholder:text-[var(--theme-text-muted)]"
           />
         </div>
       </header>
@@ -88,8 +88,8 @@ export default function Categories() {
                   onClick={() => handleCatChange(cat.id)}
                   className={`flex-shrink-0 rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
                     activeCat === cat.id
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-foreground"
+                      ? "bg-[var(--theme-primary)] text-white"
+                      : "bg-[var(--theme-surface)] text-[var(--theme-text)] border border-[var(--theme-border)]"
                   }`}
                 >
                   {cat.icon} {cat.name}

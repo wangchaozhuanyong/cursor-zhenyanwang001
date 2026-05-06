@@ -33,7 +33,7 @@ const statusIconMap: Record<string, React.ElementType> = {
 
 const statusColorMap: Record<string, string> = {
   pending: "text-yellow-500",
-  paid: "text-gold",
+  paid: "text-[var(--theme-price)]",
   shipped: "text-blue-500",
   completed: "text-emerald-500",
   cancelled: "text-destructive",
@@ -182,7 +182,7 @@ export default function OrderDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-6">
+    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-6">
       <PageHeader title="订单详情" />
 
       <motion.main
@@ -191,8 +191,8 @@ export default function OrderDetail() {
         className="mx-auto max-w-lg px-4 py-4 space-y-4"
       >
         {/* Status card */}
-        <div className="rounded-2xl border border-border bg-card p-6 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-gold-light">
+        <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 text-center theme-shadow">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--theme-price)]/10">
             <StatusIcon size={28} className={iconColor} />
           </div>
           <p className="text-base font-semibold text-foreground">{label}</p>
@@ -201,8 +201,8 @@ export default function OrderDetail() {
           <div className="mt-5 flex items-center gap-1">
             {steps.map((step, i) => (
               <div key={step} className="flex flex-1 flex-col items-center">
-                <div className={`h-1.5 w-full rounded-full ${i <= step ? "bg-gold" : "bg-border"}`} />
-                <span className={`mt-1.5 text-[10px] ${i <= step ? "text-gold font-medium" : "text-muted-foreground"}`}>
+                <div className={`h-1.5 w-full rounded-full ${i <= step ? "bg-[var(--theme-price)]" : "bg-[var(--theme-border)]"}`} />
+                <span className={`mt-1.5 text-[10px] ${i <= step ? "text-[var(--theme-price)] font-medium" : "text-muted-foreground"}`}>
                   {step}
                 </span>
               </div>
@@ -212,7 +212,7 @@ export default function OrderDetail() {
 
         {/* Tracking info */}
         {order.tracking_no && (
-          <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
             <h3 className="mb-3 text-sm font-semibold text-foreground flex items-center gap-2">
               <Truck size={16} className="text-blue-500" /> 物流信息
             </h3>
@@ -232,12 +232,12 @@ export default function OrderDetail() {
         )}
 
         {/* Items */}
-        <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
           <h3 className="mb-3 text-sm font-semibold text-foreground">商品清单</h3>
           {order.items.map((item) => (
             <div
               key={item.product.id}
-              className="flex items-center gap-3 border-b border-border py-3 last:border-0 cursor-pointer"
+              className="flex items-center gap-3 border-b border-[var(--theme-border)] py-3 last:border-0 cursor-pointer"
               onClick={() => navigate(`/product/${item.product.id}`)}
             >
               <img src={item.product.cover_image} alt={item.product.name} className="h-14 w-14 rounded-lg object-cover" />
@@ -245,13 +245,13 @@ export default function OrderDetail() {
                 <p className="text-[13px] font-medium text-foreground truncate">{item.product.name}</p>
                 <p className="text-xs text-muted-foreground">x{item.qty}</p>
               </div>
-              <span className="text-sm font-bold text-gold flex-shrink-0">RM {item.product.price * item.qty}</span>
+              <span className="text-sm font-bold text-[var(--theme-price)] flex-shrink-0">RM {item.product.price * item.qty}</span>
             </div>
           ))}
         </div>
 
         {/* Contact */}
-        <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
           <h3 className="mb-3 text-sm font-semibold text-foreground">收货信息</h3>
           {[
             { label: "姓名", value: order.contact_name },
@@ -259,7 +259,7 @@ export default function OrderDetail() {
             { label: "地址", value: order.address || "未填写" },
             { label: "备注", value: order.note || "无" },
           ].map((row) => (
-            <div key={row.label} className="flex justify-between border-b border-border py-2.5 text-sm last:border-0">
+            <div key={row.label} className="flex justify-between border-b border-[var(--theme-border)] py-2.5 text-sm last:border-0">
               <span className="text-muted-foreground flex-shrink-0">{row.label}</span>
               <span className="text-foreground text-right ml-4 min-w-0 truncate">{row.value}</span>
             </div>
@@ -267,7 +267,7 @@ export default function OrderDetail() {
         </div>
 
         {/* Summary */}
-        <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">商品总额</span>
             <span className="font-medium text-foreground">RM {order.raw_amount ?? order.total_amount}</span>
@@ -284,9 +284,9 @@ export default function OrderDetail() {
               {(order.shipping_fee ?? 0) === 0 ? "包邮" : `RM ${order.shipping_fee}`}
             </span>
           </div>
-          <div className="mt-2 border-t border-border pt-2 flex justify-between text-sm">
+          <div className="mt-2 border-t border-[var(--theme-border)] pt-2 flex justify-between text-sm">
             <span className="text-foreground font-medium">应付金额</span>
-            <span className="text-lg font-bold text-gold">RM {order.total_amount}</span>
+            <span className="text-lg font-bold text-[var(--theme-price)]">RM {order.total_amount}</span>
           </div>
           <div className="mt-2 flex justify-between text-xs">
             <span className="text-muted-foreground">获得积分</span>
@@ -325,13 +325,14 @@ export default function OrderDetail() {
                   type="button"
                   onClick={handlePayStripe}
                   disabled={stripeRedirecting}
-                  className="flex w-full items-center justify-center gap-2 rounded-full bg-gold py-4 text-base font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98] disabled:opacity-60"
+                  className="flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-bold text-white theme-shadow transition-all active:scale-[0.98] disabled:opacity-60"
+                  style={{ background: "var(--theme-gradient)" }}
                 >
                   <CreditCard size={18} /> {stripeRedirecting ? "跳转中…" : "立即支付"}
                 </button>
               )}
               {!stripeCheckoutReady && (
-                <p className="rounded-xl border border-border bg-card px-4 py-3 text-xs text-muted-foreground">
+                <p className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-xs text-muted-foreground">
                   当前环境未配置在线支付，请联系客服完成付款。
                 </p>
               )}
@@ -348,7 +349,8 @@ export default function OrderDetail() {
           {order.status === ORDER_STATUS.SHIPPED && (
             <button
               onClick={handleConfirmReceive}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-gold py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98]"
+              className="flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold text-white theme-shadow transition-all active:scale-[0.98]"
+              style={{ background: "var(--theme-gradient)" }}
             >
               <CheckCircle2 size={16} /> 确认收货
             </button>
@@ -363,7 +365,7 @@ export default function OrderDetail() {
           )}
           <button
             onClick={copyOrderText}
-            className="flex w-full items-center justify-center gap-2 rounded-full border-2 border-border py-3.5 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
+            className="flex w-full items-center justify-center gap-2 rounded-full border-2 border-[var(--theme-border)] py-3.5 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-[var(--theme-bg)]"
           >
             <Copy size={16} /> 复制订单内容
           </button>
@@ -371,7 +373,7 @@ export default function OrderDetail() {
           {order.payment_method !== "whatsapp" && order.status !== ORDER_STATUS.PENDING && (
             <button
               onClick={openWhatsApp}
-              className="flex w-full items-center justify-center gap-2 rounded-full border border-border py-3 text-xs font-medium text-muted-foreground transition-all active:scale-[0.98] hover:bg-secondary"
+              className="flex w-full items-center justify-center gap-2 rounded-full border border-[var(--theme-border)] py-3 text-xs font-medium text-muted-foreground transition-all active:scale-[0.98] hover:bg-[var(--theme-bg)]"
             >
               <Phone size={14} /> 联系客服
             </button>

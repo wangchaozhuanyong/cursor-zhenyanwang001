@@ -12,7 +12,7 @@ import { ORDER_STATUS, RETURN_STATUS, RETURN_STATUS_META } from "@/constants/sta
 const statusConfig: Record<ReturnStatus, { label: string; color: string; icon: React.ElementType }> = {
   pending: { label: RETURN_STATUS_META.pending.label, color: "text-yellow-500 bg-yellow-500/10", icon: Clock },
   approved: { label: RETURN_STATUS_META.approved.label, color: "text-blue-500 bg-blue-500/10", icon: CheckCircle2 },
-  processing: { label: RETURN_STATUS_META.processing.label, color: "text-gold bg-gold/10", icon: Package },
+  processing: { label: RETURN_STATUS_META.processing.label, color: "text-[var(--theme-price)] bg-[var(--theme-price)]/10", icon: Package },
   completed: { label: RETURN_STATUS_META.completed.label, color: "text-green-500 bg-green-500/10", icon: CheckCircle2 },
   rejected: { label: RETURN_STATUS_META.rejected.label, color: "text-destructive bg-destructive/10", icon: AlertCircle },
 };
@@ -79,18 +79,19 @@ export default function Returns() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-6">
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
+    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-6">
+      <header className="sticky top-0 z-40 bg-[var(--theme-surface)]/95 backdrop-blur-md border-b border-[var(--theme-border)]">
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <button onClick={goBack} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
+            <button onClick={goBack} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)]">
               <ArrowLeft size={20} className="text-foreground" />
             </button>
             <h1 className="text-base font-semibold text-foreground">退换货</h1>
           </div>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="rounded-full bg-gold px-4 py-2 text-xs font-bold text-primary-foreground active:scale-95 transition-transform"
+            className="rounded-full px-4 py-2 text-xs font-bold text-white active:scale-95 transition-transform"
+            style={{ background: "var(--theme-gradient)" }}
           >
             申请退换
           </button>
@@ -107,7 +108,7 @@ export default function Returns() {
               exit={{ height: 0, opacity: 0 }}
               className="overflow-hidden"
             >
-              <div className="mb-4 rounded-2xl border border-border bg-card p-5">
+              <div className="mb-4 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
                 <h3 className="text-sm font-semibold text-foreground mb-4">新建退换货申请</h3>
 
                 <label className="mb-1.5 block text-xs font-medium text-muted-foreground">选择订单</label>
@@ -129,7 +130,7 @@ export default function Returns() {
                       key={r}
                       onClick={() => setReason(r)}
                       className={`rounded-full px-3 py-1.5 text-xs transition-all ${
-                        reason === r ? "bg-gold text-primary-foreground" : "bg-secondary text-muted-foreground"
+                        reason === r ? "bg-[var(--theme-price)] text-white" : "bg-[var(--theme-bg)] text-muted-foreground"
                       }`}
                     >
                       {r}
@@ -147,7 +148,8 @@ export default function Returns() {
                 <button
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="mt-4 w-full rounded-full bg-gold py-3.5 text-sm font-bold text-primary-foreground active:scale-[0.98] transition-transform disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-4 w-full rounded-full py-3.5 text-sm font-bold text-white active:scale-[0.98] transition-transform disabled:cursor-not-allowed disabled:opacity-60"
+                  style={{ background: "var(--theme-gradient)" }}
                 >
                   {submitting ? "提交中..." : "提交申请"}
                 </button>
@@ -179,7 +181,7 @@ export default function Returns() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="rounded-2xl border border-border bg-card p-4"
+                  className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow"
                 >
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-xs font-mono text-muted-foreground">{item.order_no}</span>
@@ -200,8 +202,8 @@ export default function Returns() {
                     <div className="mt-4 flex items-center gap-1">
                       {steps.map((step, si) => (
                         <div key={step} className="flex flex-1 flex-col items-center">
-                          <div className={`h-1.5 w-full rounded-full ${si <= stepIdx ? "bg-gold" : "bg-border"}`} />
-                          <span className={`mt-1.5 text-[10px] ${si <= stepIdx ? "text-gold font-medium" : "text-muted-foreground"}`}>
+                          <div className={`h-1.5 w-full rounded-full ${si <= stepIdx ? "bg-[var(--theme-price)]" : "bg-[var(--theme-border)]"}`} />
+                          <span className={`mt-1.5 text-[10px] ${si <= stepIdx ? "text-[var(--theme-price)] font-medium" : "text-muted-foreground"}`}>
                             {step}
                           </span>
                         </div>

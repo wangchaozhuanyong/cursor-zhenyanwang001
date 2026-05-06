@@ -294,10 +294,10 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-28 md:pb-0">
-      <header className="sticky top-0 z-40 bg-background/95 px-4 py-3 backdrop-blur-md md:px-6">
+    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-28 md:pb-0">
+      <header className="sticky top-0 z-40 bg-[var(--theme-surface)]/95 px-4 py-3 backdrop-blur-md md:px-6 border-b border-[var(--theme-border)]">
         <div className="mx-auto flex w-full max-w-screen-xl items-center gap-3">
-          <button onClick={goBack} aria-label="返回购物车" className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
+          <button onClick={goBack} aria-label="返回购物车" className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
           <h1 className="text-base font-semibold text-foreground md:text-xl">确认订单</h1>
@@ -308,10 +308,10 @@ export default function Checkout() {
         <div className="md:grid md:grid-cols-[1fr_380px] md:items-start md:gap-8">
           <div className="space-y-4">
         {/* Contact info */}
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-foreground">联系信息</h3>
-            <button onClick={() => navigate("/address")} className="flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium text-gold active:bg-muted">
+            <button onClick={() => navigate("/address")} className="flex items-center gap-1 rounded-full bg-[var(--theme-bg)] px-3 py-1.5 text-xs font-medium text-[var(--theme-price)]">
               <MapPin size={12} /> 选择地址
             </button>
           </div>
@@ -328,7 +328,7 @@ export default function Checkout() {
         </div>
 
         {/* Payment method */}
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-foreground">支付方式</h3>
             <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
@@ -364,7 +364,7 @@ export default function Checkout() {
           onSelect={(t) => { setShippingId(t.id); }}
         />
         {(shippingRulesLoading || shippingQuoteLoading) && (
-          <div className="rounded-xl border border-border bg-card px-4 py-3 text-xs text-muted-foreground">
+          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-xs text-muted-foreground">
             正在同步服务端运费规则...
           </div>
         )}
@@ -374,22 +374,22 @@ export default function Checkout() {
           </div>
         )}
 
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
           <h3 className="mb-3 text-sm font-semibold text-foreground">商品清单</h3>
           {items.map((item) => (
-            <div key={item.product.id} className="flex items-center gap-3 border-b border-border py-3 last:border-0">
+            <div key={item.product.id} className="flex items-center gap-3 border-b border-[var(--theme-border)] py-3 last:border-0">
               <img src={item.product.cover_image} alt={item.product.name} className="h-14 w-14 rounded-lg object-cover" />
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-medium text-foreground truncate">{item.product.name}</p>
                 <p className="text-xs text-muted-foreground">x{item.qty}</p>
               </div>
-              <span className="text-sm font-bold text-gold flex-shrink-0">RM {item.product.price * item.qty}</span>
+              <span className="text-sm font-bold text-[var(--theme-price)] flex-shrink-0">RM {item.product.price * item.qty}</span>
             </div>
           ))}
         </div>
 
         {/* 移动端：摘要内联在主流上 */}
-        <div className="rounded-2xl border border-border bg-card p-5 md:hidden">
+        <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 md:hidden theme-shadow">
           <SummaryRows
             rawTotal={rawTotal}
             discountAmount={discountAmount}
@@ -402,7 +402,7 @@ export default function Checkout() {
 
           {/* 桌面端：右侧粘性结算摘要 */}
           <aside className="mt-6 hidden self-start md:sticky md:top-20 md:mt-0 md:block">
-            <div className="rounded-2xl border border-border bg-card p-5">
+            <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
               <h3 className="mb-4 text-base font-semibold text-foreground">订单摘要</h3>
               <SummaryRows
                 rawTotal={rawTotal}
@@ -414,7 +414,8 @@ export default function Checkout() {
               <button
                 onClick={handleSubmit}
                 disabled={submitting || shippingRulesLoading || shippingQuoteLoading || !!shippingRulesError || !!shippingQuoteError || !selectedTemplate}
-                className="mt-5 w-full rounded-full bg-gold py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all hover:opacity-95 disabled:opacity-60"
+                className="mt-5 w-full rounded-full py-3.5 text-sm font-bold text-white theme-shadow transition-all hover:opacity-95 disabled:opacity-60"
+                style={{ background: "var(--theme-gradient)" }}
               >
                 {submitting ? "提交中…" : paymentMethod === "online" ? "立即支付" : "提交订单"}
               </button>
@@ -429,16 +430,17 @@ export default function Checkout() {
       </main>
 
       {/* 移动端：底部固定提交栏 */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3.5">
           <div>
             <p className="text-xs text-muted-foreground">合计</p>
-            <p className="text-xl font-bold text-gold">RM {finalTotal}</p>
+            <p className="text-xl font-bold text-[var(--theme-price)]">RM {finalTotal}</p>
           </div>
           <button
             onClick={handleSubmit}
             disabled={submitting || shippingRulesLoading || shippingQuoteLoading || !!shippingRulesError || !!shippingQuoteError || !selectedTemplate}
-            className="rounded-full bg-gold px-8 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.97] disabled:opacity-60"
+            className="rounded-full px-8 py-3.5 text-sm font-bold text-white theme-shadow transition-all active:scale-[0.97] disabled:opacity-60"
+            style={{ background: "var(--theme-gradient)" }}
           >
             {submitting ? "提交中…" : paymentMethod === "online" ? "立即支付" : "提交订单"}
           </button>
@@ -488,9 +490,9 @@ function SummaryRows({
         <span className="text-muted-foreground">可获积分</span>
         <span className="font-medium text-foreground">{totalPoints}</span>
       </div>
-      <div className="mt-3 flex items-baseline justify-between border-t border-border pt-3">
+      <div className="mt-3 flex items-baseline justify-between border-t border-[var(--theme-border)] pt-3">
         <span className="text-sm font-medium text-foreground">应付金额</span>
-        <span className="text-2xl font-bold text-gold">RM {finalTotal}</span>
+        <span className="text-2xl font-bold text-[var(--theme-price)]">RM {finalTotal}</span>
       </div>
     </div>
   );

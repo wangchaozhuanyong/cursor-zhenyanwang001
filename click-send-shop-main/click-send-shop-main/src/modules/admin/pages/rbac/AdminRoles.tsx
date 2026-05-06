@@ -126,14 +126,14 @@ export default function AdminRoles() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-2">
-        <Shield className="h-6 w-6 text-gold" />
+        <Shield className="h-6 w-6 text-[var(--theme-price)]" />
         <h1 className="font-display text-xl font-bold text-foreground">角色权限</h1>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <button onClick={() => setTab("assign")} className={`rounded-lg px-4 py-2 text-sm font-medium ${tab === "assign" ? "bg-gold text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>用户角色分配</button>
-        <button onClick={() => setTab("manage")} className={`rounded-lg px-4 py-2 text-sm font-medium ${tab === "manage" ? "bg-gold text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>角色管理</button>
-        <button onClick={() => setTab("admins")} className={`rounded-lg px-4 py-2 text-sm font-medium ${tab === "admins" ? "bg-gold text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>管理员账号</button>
+        <button onClick={() => setTab("assign")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "assign" ? "bg-[var(--theme-price)] text-white" : "bg-secondary text-muted-foreground"}`}>用户角色分配</button>
+        <button onClick={() => setTab("manage")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "manage" ? "bg-[var(--theme-price)] text-white" : "bg-secondary text-muted-foreground"}`}>角色管理</button>
+        <button onClick={() => setTab("admins")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "admins" ? "bg-[var(--theme-price)] text-white" : "bg-secondary text-muted-foreground"}`}>管理员账号</button>
       </div>
 
       {tab === "assign" && (
@@ -141,11 +141,11 @@ export default function AdminRoles() {
           <p className="text-sm text-muted-foreground">为后台管理员账号分配 RBAC 角色。超级管理员角色仅超级管理员账号可分配。</p>
           <div className="space-y-2">
             <label className="text-xs font-medium text-muted-foreground">选择管理员</label>
-            <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)} className="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground">
+            <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2.5 text-sm text-foreground">
               {admins.map((u) => <option key={u.id} value={u.id}>{u.nickname || u.phone} ({u.role}) · {u.phone}</option>)}
             </select>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4">
+          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
             <p className="mb-3 text-sm font-medium text-foreground">分配角色（多选）</p>
             <PermissionGate permission="role.manage" fallback={<p className="text-sm text-muted-foreground">无权限修改角色分配。</p>}>
               <ul className="space-y-2">
@@ -163,7 +163,7 @@ export default function AdminRoles() {
             </PermissionGate>
           </div>
           <PermissionGate permission="role.manage">
-            <button type="button" onClick={() => void handleSave()} disabled={saving || !selectedUserId} className="min-h-[44px] w-full rounded-xl bg-gold py-3 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+            <button type="button" onClick={() => void handleSave()} disabled={saving || !selectedUserId} className="min-h-[44px] w-full theme-rounded py-3 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--theme-gradient)" }}>
               {saving ? "保存中…" : "保存"}
             </button>
           </PermissionGate>
@@ -175,14 +175,14 @@ export default function AdminRoles() {
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">管理角色定义和权限配置。系统内置角色不可删除。</p>
             <PermissionGate permission="role.manage">
-              <button onClick={openRoleCreate} className="flex items-center gap-1 rounded-lg bg-gold px-3 py-2 text-xs font-medium text-primary-foreground">
+              <button onClick={openRoleCreate} className="flex items-center gap-1 theme-rounded px-3 py-2 text-xs font-medium text-white" style={{ background: "var(--theme-gradient)" }}>
                 <Plus size={14} /> 新建角色
               </button>
             </PermissionGate>
           </div>
           <div className="space-y-3">
             {roles.map((r) => (
-              <div key={r.id} className="rounded-xl border border-border bg-card p-4">
+              <div key={r.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="font-medium text-foreground">{r.name}</span>
@@ -191,8 +191,8 @@ export default function AdminRoles() {
                   </div>
                   <PermissionGate permission="role.manage">
                     <div className="flex gap-1">
-                      <button onClick={() => openRoleEdit(r)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary"><Pencil size={14} /></button>
-                      {!r.is_system && <button onClick={() => void handleRoleDelete(r)} className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 size={14} /></button>}
+                      <button onClick={() => openRoleEdit(r)} className="theme-rounded p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]"><Pencil size={14} /></button>
+                      {!r.is_system && <button onClick={() => void handleRoleDelete(r)} className="theme-rounded p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 size={14} /></button>}
                     </div>
                   </PermissionGate>
                 </div>
@@ -208,27 +208,27 @@ export default function AdminRoles() {
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">管理管理员账号。仅超级管理员可创建/禁用/重置密码。</p>
             <PermissionGate permission="role.manage">
-              <button onClick={() => { setAdminForm({ phone: "", password: "", nickname: "" }); setShowAdminModal(true); }} className="flex items-center gap-1 rounded-lg bg-gold px-3 py-2 text-xs font-medium text-primary-foreground">
+              <button onClick={() => { setAdminForm({ phone: "", password: "", nickname: "" }); setShowAdminModal(true); }} className="flex items-center gap-1 theme-rounded px-3 py-2 text-xs font-medium text-white" style={{ background: "var(--theme-gradient)" }}>
                 <Plus size={14} /> 新增管理员
               </button>
             </PermissionGate>
           </div>
           <div className="space-y-3">
             {admins.map((u) => (
-              <div key={u.id} className="rounded-xl border border-border bg-card p-4 flex items-center justify-between gap-3">
+              <div key={u.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 flex items-center justify-between gap-3 theme-shadow">
                 <div>
                   <span className="font-medium text-foreground">{u.nickname || u.phone}</span>
                   <span className="ml-2 text-xs text-muted-foreground">{u.phone}</span>
-                  <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-medium ${u.role === "super_admin" ? "bg-gold/20 text-gold" : "bg-secondary text-muted-foreground"}`}>{u.role}</span>
+                  <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-medium ${u.role === "super_admin" ? "bg-[var(--theme-price)]/20 text-[var(--theme-price)]" : "bg-secondary text-muted-foreground"}`}>{u.role}</span>
                 </div>
                 <PermissionGate permission="role.manage">
                   <div className="flex gap-2">
                     {u.role !== "super_admin" && (
-                      <button onClick={async () => { try { await rbacService.toggleAdminUser(u.id, u.role === "disabled"); toast.success("已更新"); void reload(); } catch { toast.error("操作失败"); } }} className="rounded-lg px-2 py-1 text-xs border border-border hover:bg-secondary">
+                      <button onClick={async () => { try { await rbacService.toggleAdminUser(u.id, u.role === "disabled"); toast.success("已更新"); void reload(); } catch { toast.error("操作失败"); } }} className="theme-rounded px-2 py-1 text-xs border border-[var(--theme-border)] hover:bg-[var(--theme-bg)]">
                         {u.role === "disabled" ? "启用" : "禁用"}
                       </button>
                     )}
-                    <button onClick={() => { setShowResetModal(u.id); setResetPw(""); }} className="rounded-lg px-2 py-1 text-xs border border-border hover:bg-secondary">重置密码</button>
+                    <button onClick={() => { setShowResetModal(u.id); setResetPw(""); }} className="theme-rounded px-2 py-1 text-xs border border-[var(--theme-border)] hover:bg-[var(--theme-bg)]">重置密码</button>
                   </div>
                 </PermissionGate>
               </div>
@@ -239,17 +239,17 @@ export default function AdminRoles() {
 
       {showAdminModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowAdminModal(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl space-y-4">
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md theme-rounded bg-[var(--theme-surface)] p-6 theme-shadow space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-foreground">新增管理员</h3>
-              <button onClick={() => setShowAdminModal(false)} className="rounded-lg p-1 hover:bg-secondary"><X size={18} /></button>
+              <button onClick={() => setShowAdminModal(false)} className="theme-rounded p-1 hover:bg-[var(--theme-bg)]"><X size={18} /></button>
             </div>
             <div className="space-y-3">
-              <div><label className="text-xs font-medium text-muted-foreground">手机号</label><input value={adminForm.phone} onChange={(e) => setAdminForm((p) => ({ ...p, phone: e.target.value }))} className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm" /></div>
-              <div><label className="text-xs font-medium text-muted-foreground">密码</label><input type="password" value={adminForm.password} onChange={(e) => setAdminForm((p) => ({ ...p, password: e.target.value }))} className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm" /></div>
-              <div><label className="text-xs font-medium text-muted-foreground">昵称</label><input value={adminForm.nickname} onChange={(e) => setAdminForm((p) => ({ ...p, nickname: e.target.value }))} className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm" /></div>
+              <div><label className="text-xs font-medium text-muted-foreground">手机号</label><input value={adminForm.phone} onChange={(e) => setAdminForm((p) => ({ ...p, phone: e.target.value }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" /></div>
+              <div><label className="text-xs font-medium text-muted-foreground">密码</label><input type="password" value={adminForm.password} onChange={(e) => setAdminForm((p) => ({ ...p, password: e.target.value }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" /></div>
+              <div><label className="text-xs font-medium text-muted-foreground">昵称</label><input value={adminForm.nickname} onChange={(e) => setAdminForm((p) => ({ ...p, nickname: e.target.value }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" /></div>
             </div>
-            <button onClick={async () => { setSaving(true); try { await rbacService.createAdminUser({ phone: adminForm.phone, password: adminForm.password, nickname: adminForm.nickname }); toast.success("已创建"); setShowAdminModal(false); void reload(); } catch { toast.error("创建失败"); } finally { setSaving(false); } }} disabled={saving || !adminForm.phone || !adminForm.password} className="w-full rounded-xl bg-gold py-3 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+            <button onClick={async () => { setSaving(true); try { await rbacService.createAdminUser({ phone: adminForm.phone, password: adminForm.password, nickname: adminForm.nickname }); toast.success("已创建"); setShowAdminModal(false); void reload(); } catch { toast.error("创建失败"); } finally { setSaving(false); } }} disabled={saving || !adminForm.phone || !adminForm.password} className="w-full theme-rounded py-3 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--theme-gradient)" }}>
               {saving ? "创建中…" : "创建"}
             </button>
           </div>
@@ -258,10 +258,10 @@ export default function AdminRoles() {
 
       {showResetModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowResetModal(null)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4">
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm theme-rounded bg-[var(--theme-surface)] p-6 theme-shadow space-y-4">
             <h3 className="font-bold text-foreground">重置密码</h3>
-            <input type="password" value={resetPw} onChange={(e) => setResetPw(e.target.value)} placeholder="输入新密码（至少6位）" className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm" />
-            <button onClick={async () => { if (resetPw.length < 6) { toast.error("密码至少6位"); return; } try { await rbacService.resetAdminPassword(showResetModal, resetPw); toast.success("密码已重置"); setShowResetModal(null); } catch { toast.error("重置失败"); } }} disabled={resetPw.length < 6} className="w-full rounded-xl bg-gold py-3 text-sm font-semibold text-primary-foreground disabled:opacity-50">确认重置</button>
+            <input type="password" value={resetPw} onChange={(e) => setResetPw(e.target.value)} placeholder="输入新密码（至少6位）" className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" />
+            <button onClick={async () => { if (resetPw.length < 6) { toast.error("密码至少6位"); return; } try { await rbacService.resetAdminPassword(showResetModal, resetPw); toast.success("密码已重置"); setShowResetModal(null); } catch { toast.error("重置失败"); } }} disabled={resetPw.length < 6} className="w-full theme-rounded py-3 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--theme-gradient)" }}>确认重置</button>
           </div>
         </div>
       )}

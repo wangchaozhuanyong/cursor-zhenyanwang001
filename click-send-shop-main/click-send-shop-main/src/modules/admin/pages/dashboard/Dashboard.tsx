@@ -31,7 +31,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--theme-price)]" />
       </div>
     );
   }
@@ -43,7 +43,8 @@ export default function Dashboard() {
         <button
           type="button"
           onClick={() => loadStats()}
-          className="rounded-full bg-gold px-5 py-2 text-sm font-semibold text-primary-foreground"
+          className="rounded-full px-5 py-2 text-sm font-semibold text-white"
+          style={{ background: "var(--theme-gradient)" }}
         >
           重试
         </button>
@@ -70,14 +71,14 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
-        <div className="rounded-xl border border-border bg-card p-4 sm:p-6 lg:col-span-2">
+        <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-6 lg:col-span-2 theme-shadow">
           <h3 className="mb-3 text-sm font-semibold text-foreground sm:mb-4">7日销售趋势</h3>
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={salesTrendData}>
               <defs>
                 <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(43, 96%, 56%)" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="hsl(43, 96%, 56%)" stopOpacity={0} />
+                  <stop offset="5%" stopColor="var(--theme-price)" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="var(--theme-price)" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -87,12 +88,12 @@ export default function Dashboard() {
                 contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
                 labelStyle={{ color: "hsl(var(--foreground))" }}
               />
-              <Area type="monotone" dataKey="sales" stroke="hsl(43, 96%, 56%)" fillOpacity={1} fill="url(#salesGradient)" name="销售额 (RM)" />
+              <Area type="monotone" dataKey="sales" stroke="var(--theme-price)" fillOpacity={1} fill="url(#salesGradient)" name="销售额 (RM)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-4 sm:p-6">
+        <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-6 theme-shadow">
           <h3 className="mb-3 text-sm font-semibold text-foreground sm:mb-4">品类分布</h3>
           {categoryData.length > 0 ? (
             <>
@@ -121,7 +122,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-4 sm:p-6">
+      <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-6 theme-shadow">
         <h3 className="mb-3 text-sm font-semibold text-foreground sm:mb-4">本周订单统计</h3>
         {weeklyOrderData.length > 0 ? (
           <ResponsiveContainer width="100%" height={200}>
@@ -139,18 +140,18 @@ export default function Dashboard() {
         )}
       </div>
 
-      <div className="rounded-xl border border-border bg-card p-4 sm:p-6">
+      <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-6 theme-shadow">
         <div className="mb-3 flex items-center justify-between sm:mb-4">
           <h3 className="text-sm font-semibold text-foreground">最近订单</h3>
           <PermissionGate permission="order.view">
-            <button type="button" onClick={() => navigate("/admin/orders")} className="touch-manipulation min-h-[44px] px-2 text-xs text-gold hover:underline">查看全部</button>
+            <button type="button" onClick={() => navigate("/admin/orders")} className="touch-manipulation min-h-[44px] px-2 text-xs text-[var(--theme-price)] hover:underline">查看全部</button>
           </PermissionGate>
         </div>
         {recentOrders.length > 0 ? (
           <div className="space-y-3">
             {recentOrders.map((o: any) => (
               <PermissionGate key={o.id} permission="order.view" fallback={(
-                <div className="flex min-h-[52px] items-center justify-between rounded-xl border border-border p-3 opacity-80">
+                <div className="flex min-h-[52px] items-center justify-between theme-rounded border border-[var(--theme-border)] p-3 opacity-80">
                   <div>
                     <p className="text-sm font-medium text-foreground font-mono">{o.order_no}</p>
                     <p className="text-xs text-muted-foreground">{o.contact_name} · {new Date(o.created_at).toLocaleString("zh-CN")}</p>
@@ -159,7 +160,7 @@ export default function Dashboard() {
                     <p className="text-sm font-semibold text-foreground">RM {o.total_amount?.toFixed(2)}</p>
                     <span className={`text-[10px] font-medium ${
                       o.status === ORDER_STATUS.COMPLETED ? "text-green-500" :
-                      o.status === ORDER_STATUS.CANCELLED ? "text-destructive" : "text-gold"
+                      o.status === ORDER_STATUS.CANCELLED ? "text-destructive" : "text-[var(--theme-price)]"
                     }`}>{getOrderStatusLabel(o.status)}</span>
                   </div>
                 </div>
@@ -169,7 +170,7 @@ export default function Dashboard() {
                   tabIndex={0}
                   onClick={() => navigate(`/admin/orders/${o.id}`)}
                   onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); navigate(`/admin/orders/${o.id}`); } }}
-                  className="touch-manipulation flex min-h-[52px] cursor-pointer items-center justify-between rounded-xl border border-border p-3 transition-colors hover:bg-secondary/30 active:bg-secondary/40"
+                  className="touch-manipulation flex min-h-[52px] cursor-pointer items-center justify-between theme-rounded border border-[var(--theme-border)] p-3 transition-colors hover:bg-[var(--theme-bg)] active:bg-[var(--theme-bg)]"
                 >
                   <div>
                     <p className="text-sm font-medium text-foreground font-mono">{o.order_no}</p>
@@ -179,7 +180,7 @@ export default function Dashboard() {
                     <p className="text-sm font-semibold text-foreground">RM {o.total_amount?.toFixed(2)}</p>
                     <span className={`text-[10px] font-medium ${
                       o.status === ORDER_STATUS.COMPLETED ? "text-green-500" :
-                      o.status === ORDER_STATUS.CANCELLED ? "text-destructive" : "text-gold"
+                      o.status === ORDER_STATUS.CANCELLED ? "text-destructive" : "text-[var(--theme-price)]"
                     }`}>{getOrderStatusLabel(o.status)}</span>
                   </div>
                 </div>

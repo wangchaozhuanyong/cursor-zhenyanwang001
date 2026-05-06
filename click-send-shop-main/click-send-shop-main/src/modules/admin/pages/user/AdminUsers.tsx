@@ -47,7 +47,7 @@ export default function AdminUsers() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--theme-price)]" />
       </div>
     );
   }
@@ -59,7 +59,7 @@ export default function AdminUsers() {
           <SearchBar placeholder="搜索用户昵称 / 手机号..." value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
         </div>
         <PermissionGate permission="user.view">
-          <button type="button" onClick={handleExportCsv} className="touch-manipulation flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground hover:bg-secondary sm:self-center">
+          <button type="button" onClick={handleExportCsv} className="touch-manipulation flex min-h-[44px] shrink-0 items-center gap-1.5 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2.5 text-sm text-foreground hover:bg-[var(--theme-bg)] sm:self-center">
             <Download size={16} /> 导出
           </button>
         </PermissionGate>
@@ -71,7 +71,7 @@ export default function AdminUsers() {
           { label: "今日新增", value: String(users.filter((u) => { const today = new Date().toISOString().slice(0, 10); return u.created_at?.slice(0, 10) === today; }).length) },
           { label: "有邀请码", value: String(users.filter((u) => u.parent_invite_code).length) },
         ].map((s) => (
-          <div key={s.label} className="rounded-xl border border-border bg-card p-4 text-center">
+          <div key={s.label} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-center theme-shadow">
             <p className="text-lg font-bold text-foreground">{s.value}</p>
             <p className="text-[10px] text-muted-foreground">{s.label}</p>
           </div>
@@ -81,17 +81,17 @@ export default function AdminUsers() {
       {/* 移动端：卡片 */}
       <div className="space-y-3 md:hidden">
         {paginatedData.map((u) => (
-          <div key={u.id} className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <div key={u.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
             <div className="flex items-start gap-3">
               {u.avatar ? (
                 <img src={u.avatar} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover" />
               ) : (
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gold text-sm font-bold text-primary-foreground">{(u.nickname || u.phone || "?")[0]}</div>
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white" style={{ background: "var(--theme-gradient)" }}>{(u.nickname || u.phone || "?")[0]}</div>
               )}
               <div className="min-w-0 flex-1 space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-medium text-foreground">{u.nickname || u.phone || "—"}</p>
-                  <span className="shrink-0 text-sm font-semibold text-gold">{u.points_balance ?? 0} 积分</span>
+                  <span className="shrink-0 text-sm font-semibold text-[var(--theme-price)]">{u.points_balance ?? 0} 积分</span>
                 </div>
                 <p className="text-sm text-muted-foreground">{u.phone || "—"}</p>
                 <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground sm:grid-cols-2">
@@ -99,7 +99,7 @@ export default function AdminUsers() {
                   <span>上级 <span className="font-mono text-foreground">{u.parent_invite_code || "—"}</span></span>
                 </div>
                 <p className="text-[11px] text-muted-foreground">{u.created_at ? new Date(u.created_at).toLocaleString("zh-CN") : "—"}</p>
-                <button type="button" onClick={() => navigate(`/admin/users/${u.id}`)} className="touch-manipulation min-h-[44px] w-full rounded-lg border border-gold/40 py-2.5 text-sm font-medium text-gold active:bg-secondary">
+                <button type="button" onClick={() => navigate(`/admin/users/${u.id}`)} className="touch-manipulation min-h-[44px] w-full theme-rounded border border-[var(--theme-price)]/40 py-2.5 text-sm font-medium text-[var(--theme-price)] active:bg-[var(--theme-bg)]">
                   查看详情
                 </button>
               </div>
@@ -113,10 +113,10 @@ export default function AdminUsers() {
       </div>
 
       {/* 桌面端：表格 */}
-      <div className="hidden overflow-x-auto rounded-xl border border-border bg-card md:block">
+      <div className="hidden overflow-x-auto theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] md:block theme-shadow">
         <table className="w-full min-w-[720px] text-sm">
           <thead>
-            <tr className="border-b border-border bg-secondary/50">
+            <tr className="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70">
               {["用户", "手机号", "邀请码", "上级邀请码", "积分", "注册时间", "操作"].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
               ))}
@@ -124,13 +124,13 @@ export default function AdminUsers() {
           </thead>
           <tbody>
             {paginatedData.map((u) => (
-              <tr key={u.id} className="border-b border-border last:border-0 hover:bg-secondary/30">
+              <tr key={u.id} className="border-b border-[var(--theme-border)] last:border-0 hover:bg-[var(--theme-bg)]">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     {u.avatar ? (
                       <img src={u.avatar} alt="" className="h-8 w-8 rounded-full object-cover" />
                     ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gold text-xs font-bold text-primary-foreground">{(u.nickname || u.phone || "?")[0]}</div>
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--theme-gradient)" }}>{(u.nickname || u.phone || "?")[0]}</div>
                     )}
                     <span className="font-medium text-foreground">{u.nickname || u.phone}</span>
                   </div>
@@ -140,7 +140,7 @@ export default function AdminUsers() {
                 <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{u.parent_invite_code || "—"}</td>
                 <td className="px-4 py-3 text-foreground">{u.points_balance ?? 0}</td>
                 <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{u.created_at ? new Date(u.created_at).toLocaleString("zh-CN") : "—"}</td>
-                <td className="px-4 py-3"><button type="button" onClick={() => navigate(`/admin/users/${u.id}`)} className="text-xs text-gold hover:underline">详情</button></td>
+                <td className="px-4 py-3"><button type="button" onClick={() => navigate(`/admin/users/${u.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">详情</button></td>
               </tr>
             ))}
           </tbody>

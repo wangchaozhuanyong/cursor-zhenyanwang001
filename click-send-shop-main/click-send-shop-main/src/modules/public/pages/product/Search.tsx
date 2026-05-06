@@ -113,8 +113,8 @@ export default function Search() {
   const shouldShowHistory = showHistory && !debouncedQuery && history.length > 0;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <div className="sticky top-0 z-40 bg-background/95 px-4 py-3 backdrop-blur-md">
+    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-20">
+      <div className="sticky top-0 z-40 bg-[var(--theme-surface)]/95 px-4 py-3 backdrop-blur-md border-b border-[var(--theme-border)]">
         <div className="mx-auto max-w-lg space-y-3">
           <SearchBar
             value={query}
@@ -154,7 +154,7 @@ export default function Search() {
                 <button
                   key={term}
                   onClick={() => selectHistory(term)}
-                  className="flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-xs text-foreground hover:bg-gold/10 transition-colors"
+                  className="flex items-center gap-1 rounded-full bg-[var(--theme-surface)] border border-[var(--theme-border)] px-3 py-1.5 text-xs text-[var(--theme-text)] transition-colors"
                 >
                   {term}
                   <X

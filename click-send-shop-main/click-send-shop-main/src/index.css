@@ -125,6 +125,12 @@
 }
 
 @layer utilities {
+  .theme-rounded {
+    border-radius: var(--theme-radius);
+  }
+  .theme-shadow {
+    box-shadow: var(--theme-shadow);
+  }
   .text-gold {
     color: hsl(var(--gold));
   }

@@ -49,9 +49,9 @@ export default function Index() {
   }, [loadHomeData]);
 
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-0">
+    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-24 md:pb-0">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
+      <header className="sticky top-0 z-40 bg-[var(--theme-surface)]/95 backdrop-blur-md border-b border-[var(--theme-border)]">
         <div className="mx-auto flex w-full max-w-screen-xl items-center gap-3 px-4 py-3 md:px-6">
           <button
             onClick={() => navigate("/")}
@@ -63,7 +63,7 @@ export default function Index() {
               alt={siteName}
               width={32}
               height={32}
-              className="rounded-md object-contain"
+              className="theme-rounded object-contain"
             />
             <h1 className="font-display text-lg font-bold tracking-tight text-foreground">
               {renderBrandTitle(siteName)}
@@ -100,7 +100,7 @@ export default function Index() {
 
           <div
             onClick={() => navigate("/search")}
-            className="flex flex-1 items-center gap-2 rounded-full bg-secondary px-4 py-2.5 text-sm text-muted-foreground active:bg-muted md:max-w-sm md:cursor-pointer md:hover:bg-muted"
+            className="flex flex-1 items-center gap-2 rounded-full bg-[var(--theme-bg)] border border-[var(--theme-border)] px-4 py-2.5 text-sm text-[var(--theme-text-muted)] md:max-w-sm md:cursor-pointer"
           >
             <Search size={16} />
             <span>搜索商品...</span>
@@ -108,7 +108,7 @@ export default function Index() {
 
           <button
             onClick={() => navigate("/notifications")}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target"
           >
             <Bell size={20} className="text-foreground" />
             {unreadCount > 0 && (
@@ -158,7 +158,7 @@ export default function Index() {
                   onClick={() => navigate(`/categories?cat=${cat.id}`)}
                   className="flex flex-shrink-0 flex-col items-center gap-1.5 md:flex-shrink"
                 >
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary text-xl transition-all active:scale-95 hover:bg-gold-light touch-target md:h-16 md:w-16 md:text-2xl">
+                  <div className="flex h-14 w-14 items-center justify-center theme-rounded bg-[var(--theme-surface)] border border-[var(--theme-border)] text-xl transition-all active:scale-95 touch-target md:h-16 md:w-16 md:text-2xl">
                     {cat.icon}
                   </div>
                   <span className="text-[11px] font-medium text-foreground md:text-xs">
@@ -176,7 +176,8 @@ export default function Index() {
         ) : (
           <button
             onClick={() => navigate("/coupons")}
-            className="mx-4 mt-5 flex items-center gap-3 rounded-2xl bg-gradient-to-r from-gold to-[hsl(43,72%,62%)] px-4 py-3.5 shadow-md active:scale-[0.98] transition-transform md:mx-0 md:px-6 md:py-4"
+            className="mx-4 mt-5 flex items-center gap-3 theme-rounded px-4 py-3.5 theme-shadow active:scale-[0.98] transition-transform md:mx-0 md:px-6 md:py-4"
+            style={{ background: "var(--theme-gradient)" }}
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
               <Ticket size={20} className="text-primary-foreground" />

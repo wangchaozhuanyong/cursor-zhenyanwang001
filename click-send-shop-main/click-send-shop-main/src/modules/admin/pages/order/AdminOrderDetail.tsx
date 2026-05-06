@@ -90,7 +90,7 @@ export default function AdminOrderDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--theme-price)]" />
       </div>
     );
   }
@@ -99,7 +99,7 @@ export default function AdminOrderDetail() {
     return (
       <div className="text-center py-20 text-muted-foreground">
         <p>订单不存在</p>
-        <button onClick={goBack} className="mt-4 text-gold underline">返回</button>
+        <button onClick={goBack} className="mt-4 text-[var(--theme-price)] underline">返回</button>
       </div>
     );
   }
@@ -114,7 +114,7 @@ export default function AdminOrderDetail() {
         <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
           isCancelled || isRefund ? "bg-red-500/10 text-red-500"
           : order.status === ORDER_STATUS.COMPLETED ? "bg-green-500/10 text-green-500"
-          : "bg-gold/10 text-gold"
+          : "bg-[var(--theme-price)]/10 text-[var(--theme-price)]"
         }`}>{getOrderStatusLabel(order.status)}</span>
         <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
           支付：{getPaymentStatusLabel(order.payment_status ?? PAYMENT_STATUS.PENDING)}
@@ -122,7 +122,7 @@ export default function AdminOrderDetail() {
       </div>
 
       {/* Status timeline */}
-      <div className="rounded-xl border border-border bg-card p-6">
+      <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 theme-shadow">
         <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
           <h3 className="text-sm font-semibold text-foreground">订单状态流转</h3>
           {nextStatus === ORDER_STATUS.SHIPPED && (
@@ -134,7 +134,7 @@ export default function AdminOrderDetail() {
           )}
           {nextStatus && nextStatus !== ORDER_STATUS.SHIPPED && (
             <PermissionGate permission="order.update">
-              <button type="button" onClick={() => handleStatusChange(nextStatus)} className="flex items-center gap-1 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-primary-foreground">
+              <button type="button" onClick={() => handleStatusChange(nextStatus)} className="flex items-center gap-1 theme-rounded px-3 py-1.5 text-xs font-semibold text-white" style={{ background: "var(--theme-gradient)" }}>
                 <Check size={12} /> 推进到「{getOrderStatusLabel(nextStatus)}」
               </button>
             </PermissionGate>
@@ -145,11 +145,11 @@ export default function AdminOrderDetail() {
             <div key={s} className="flex items-center gap-2">
               <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
                 isCancelled || isRefund ? "bg-muted text-muted-foreground"
-                : i <= currentStatusIdx ? "bg-gold text-primary-foreground" : "bg-secondary text-muted-foreground"
+                : i <= currentStatusIdx ? "bg-[var(--theme-price)] text-white" : "bg-secondary text-muted-foreground"
               }`}>{i + 1}</div>
               <span className={`whitespace-nowrap text-xs ${!isCancelled && !isRefund && i <= currentStatusIdx ? "font-medium text-foreground" : "text-muted-foreground"}`}>{getOrderStatusLabel(s)}</span>
               {i < allStatuses.length - 1 && (
-                <div className={`h-0.5 w-8 ${!isCancelled && !isRefund && i < currentStatusIdx ? "bg-gold" : "bg-border"}`} />
+                <div className={`h-0.5 w-8 ${!isCancelled && !isRefund && i < currentStatusIdx ? "bg-[var(--theme-price)]" : "bg-border"}`} />
               )}
             </div>
           ))}
@@ -165,11 +165,11 @@ export default function AdminOrderDetail() {
       {/* Ship form modal */}
       {showShipForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowShipForm(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl space-y-4">
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md theme-rounded bg-[var(--theme-surface)] p-6 theme-shadow space-y-4">
             <h3 className="font-bold text-foreground flex items-center gap-2"><Truck size={18} className="text-blue-600" /> 发货信息</h3>
             <div>
               <label className="mb-1 block text-xs text-muted-foreground">快递公司</label>
-              <select value={carrier} onChange={(e) => setCarrier(e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold">
+              <select value={carrier} onChange={(e) => setCarrier(e.target.value)} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]">
                 {["J&T Express", "Pos Laju", "DHL eCommerce", "Ninja Van", "GD Express", "City-Link Express", "顺丰速运", "其他"].map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
@@ -177,7 +177,7 @@ export default function AdminOrderDetail() {
             </div>
             <div>
               <label className="mb-1 block text-xs text-muted-foreground">快递单号</label>
-              <input value={trackingNo} onChange={(e) => setTrackingNo(e.target.value)} placeholder="输入快递单号" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+              <input value={trackingNo} onChange={(e) => setTrackingNo(e.target.value)} placeholder="输入快递单号" className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
             </div>
             <PermissionGate permission="order.ship">
               <button type="button" onClick={handleShip} className="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white">确认发货</button>
@@ -189,7 +189,7 @@ export default function AdminOrderDetail() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left - user info */}
         <div className="space-y-4">
-          <div className="rounded-xl border border-border bg-card p-6 space-y-3">
+          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 space-y-3 theme-shadow">
             <h3 className="text-sm font-semibold text-foreground">收货信息</h3>
             {[
               { label: "姓名", value: order.contact_name || "—" },
@@ -204,7 +204,7 @@ export default function AdminOrderDetail() {
             ))}
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-6 space-y-3">
+          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 space-y-3 theme-shadow">
             <h3 className="text-sm font-semibold text-foreground">订单信息</h3>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">订单号</span>
@@ -229,7 +229,7 @@ export default function AdminOrderDetail() {
           </div>
 
           {/* 支付信息 */}
-          <div className="rounded-xl border border-border bg-card p-6 space-y-3">
+          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 space-y-3 theme-shadow">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-foreground">支付信息</h3>
               <span
@@ -279,7 +279,7 @@ export default function AdminOrderDetail() {
                 href={`https://dashboard.stripe.com/payments/${order.payment_transaction_no}`}
                 target="_blank"
                 rel="noreferrer"
-                className="block text-xs text-gold underline text-right"
+                className="block text-xs text-[var(--theme-price)] underline text-right"
               >
                 在 Stripe Dashboard 查看 →
               </a>
@@ -291,13 +291,13 @@ export default function AdminOrderDetail() {
         </div>
 
         {/* Center - items */}
-        <div className="rounded-xl border border-border bg-card p-6">
+        <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 theme-shadow">
           <h3 className="mb-4 text-sm font-semibold text-foreground">商品清单</h3>
           <div className="space-y-3">
             {items.map((item: any, idx: number) => {
               const product = item.product || item;
               return (
-                <div key={idx} className="flex items-center justify-between rounded-lg border border-border p-3">
+                <div key={idx} className="flex items-center justify-between theme-rounded border border-[var(--theme-border)] p-3">
                   <div className="flex items-center gap-3">
                     {product.cover_image && <img src={product.cover_image} alt="" className="h-10 w-10 rounded-lg object-cover" />}
                     <div>
@@ -325,16 +325,16 @@ export default function AdminOrderDetail() {
               <span className="text-muted-foreground">运费</span>
               <span className="text-foreground">{parseFloat(order.shipping_fee || 0) === 0 ? "包邮" : `RM ${parseFloat(order.shipping_fee).toFixed(2)}`}</span>
             </div>
-            <div className="flex justify-between text-sm font-bold border-t border-border pt-2">
+            <div className="flex justify-between text-sm font-bold border-t border-[var(--theme-border)] pt-2">
               <span className="text-foreground">实付金额</span>
-              <span className="text-gold">RM {parseFloat(order.total_amount || 0).toFixed(2)}</span>
+              <span className="text-[var(--theme-price)]">RM {parseFloat(order.total_amount || 0).toFixed(2)}</span>
             </div>
           </div>
         </div>
 
         {/* Right - actions */}
         <div className="space-y-4">
-          <div className="rounded-xl border border-border bg-card p-6 space-y-3">
+          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 space-y-3 theme-shadow">
             <h3 className="text-sm font-semibold text-foreground">快捷操作</h3>
             <div className="grid grid-cols-2 gap-2">
               <PermissionGate permission="order.ship">
@@ -342,7 +342,7 @@ export default function AdminOrderDetail() {
                   type="button"
                   onClick={() => setShowShipForm(true)}
                   disabled={isCancelled || isRefund || !showShip}
-                  className="rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="theme-rounded border border-[var(--theme-border)] px-3 py-2 text-sm text-foreground hover:bg-[var(--theme-bg)] disabled:opacity-40 disabled:cursor-not-allowed"
                 >标记发货</button>
               </PermissionGate>
               <PermissionGate permission="order.update">
@@ -350,7 +350,7 @@ export default function AdminOrderDetail() {
                   type="button"
                   onClick={() => handleStatusChange(ORDER_STATUS.COMPLETED)}
                   disabled={isCancelled || isRefund || order.status === ORDER_STATUS.COMPLETED}
-                  className="rounded-lg border border-border px-3 py-2 text-sm text-foreground hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="theme-rounded border border-[var(--theme-border)] px-3 py-2 text-sm text-foreground hover:bg-[var(--theme-bg)] disabled:opacity-40 disabled:cursor-not-allowed"
                 >标记完成</button>
               </PermissionGate>
               <PermissionGate permission="order.update">
@@ -364,14 +364,14 @@ export default function AdminOrderDetail() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-6 space-y-3">
+          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 space-y-3 theme-shadow">
             <h3 className="text-sm font-semibold text-foreground">订单文本预览</h3>
             <div className="rounded-lg bg-secondary p-3 text-xs text-foreground leading-relaxed whitespace-pre-line">{orderText}</div>
             <div className="flex gap-2">
               <button onClick={handleSendWhatsApp} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700">
                 <MessageSquare size={14} /> WhatsApp
               </button>
-              <button onClick={handleCopyText} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-secondary">
+              <button onClick={handleCopyText} className="theme-rounded border border-[var(--theme-border)] p-2 text-muted-foreground hover:bg-[var(--theme-bg)]">
                 <Copy size={14} />
               </button>
             </div>

@@ -122,7 +122,7 @@ export default function AdminLogs() {
   if (loading && tab === "legacy" && canLegacy) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--theme-price)]" />
       </div>
     );
   }
@@ -146,12 +146,12 @@ export default function AdminLogs() {
       </div>
 
       {showTabSwitch ? (
-        <div className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-1">
+        <div className="flex flex-wrap gap-2 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-1 theme-shadow">
           {canAudit ? (
             <button
               type="button"
               onClick={() => setTab("audit")}
-              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === "audit" ? "bg-gold text-primary-foreground" : "text-muted-foreground hover:bg-secondary"}`}
+              className={`flex items-center gap-2 theme-rounded px-4 py-2 text-sm font-medium transition-colors ${tab === "audit" ? "bg-[var(--theme-price)] text-white" : "text-muted-foreground hover:bg-[var(--theme-bg)]"}`}
             >
               <Shield size={16} /> 审计日志
             </button>
@@ -160,7 +160,7 @@ export default function AdminLogs() {
             <button
               type="button"
               onClick={() => setTab("legacy")}
-              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === "legacy" ? "bg-gold text-primary-foreground" : "text-muted-foreground hover:bg-secondary"}`}
+              className={`flex items-center gap-2 theme-rounded px-4 py-2 text-sm font-medium transition-colors ${tab === "legacy" ? "bg-[var(--theme-price)] text-white" : "text-muted-foreground hover:bg-[var(--theme-bg)]"}`}
             >
               <ScrollText size={16} /> 旧版操作日志
             </button>
@@ -170,7 +170,7 @@ export default function AdminLogs() {
 
       {tab === "legacy" && canLegacy && (
         <>
-          <div className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 max-w-md">
+          <div className="flex items-center gap-1.5 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 max-w-md">
             <Search size={14} className="text-muted-foreground" />
             <input
               placeholder="搜索操作/操作人..."
@@ -182,7 +182,7 @@ export default function AdminLogs() {
 
           <div className="space-y-3 md:hidden">
             {paginatedData.map((l) => (
-              <div key={l.id} className="rounded-2xl border border-border bg-card p-4">
+              <div key={l.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
                 <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
                   <Clock size={12} />{l.created_at ? new Date(l.created_at).toLocaleString("zh-CN") : "—"}
                 </p>
@@ -199,11 +199,11 @@ export default function AdminLogs() {
             <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
           </div>
 
-          <div className="hidden overflow-hidden rounded-2xl border border-border bg-card md:block">
+          <div className="hidden overflow-hidden theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] md:block theme-shadow">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-secondary/50">
+                  <tr className="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70">
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">时间</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">操作人</th>
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">操作</th>
@@ -212,7 +212,7 @@ export default function AdminLogs() {
                 </thead>
                 <tbody>
                   {paginatedData.map((l) => (
-                    <tr key={l.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
+                    <tr key={l.id} className="border-b border-[var(--theme-border)] last:border-0 hover:bg-[var(--theme-bg)] transition-colors">
                       <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                         <span className="flex items-center gap-1"><Clock size={12} />{l.created_at ? new Date(l.created_at).toLocaleString("zh-CN") : "—"}</span>
                       </td>
@@ -239,7 +239,7 @@ export default function AdminLogs() {
           <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
             <div className="min-w-0 flex-1">
               <label className="mb-1 block text-xs text-muted-foreground">关键词</label>
-              <div className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2">
+              <div className="flex items-center gap-1.5 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
                 <Search size={14} className="text-muted-foreground shrink-0" />
                 <input
                   placeholder="摘要 / 操作人 / 动作 / 对象 ID / 错误信息"
@@ -254,7 +254,7 @@ export default function AdminLogs() {
               <select
                 value={auditResult}
                 onChange={(e) => setAuditResult(e.target.value as "" | "success" | "failure")}
-                className="w-full min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm"
+                className="w-full min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               >
                 <option value="">全部</option>
                 <option value="success">成功</option>
@@ -267,7 +267,7 @@ export default function AdminLogs() {
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
-                className="w-full min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm"
+                className="w-full min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               />
             </div>
             <div>
@@ -276,13 +276,14 @@ export default function AdminLogs() {
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
-                className="w-full min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm"
+                className="w-full min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               />
             </div>
             <button
               type="button"
               onClick={handleAuditSearch}
-              className="min-h-[44px] rounded-xl bg-gold px-5 py-2 text-sm font-semibold text-primary-foreground"
+              className="min-h-[44px] theme-rounded px-5 py-2 text-sm font-semibold text-white"
+              style={{ background: "var(--theme-gradient)" }}
             >
               查询
             </button>
@@ -290,13 +291,13 @@ export default function AdminLogs() {
 
           {auditLoading ? (
             <div className="flex justify-center py-16">
-              <Loader2 className="h-8 w-8 animate-spin text-gold" />
+              <Loader2 className="h-8 w-8 animate-spin text-[var(--theme-price)]" />
             </div>
           ) : (
             <>
               <div className="space-y-3 md:hidden">
                 {auditList.map((row) => (
-                  <div key={row.id} className="rounded-2xl border border-border bg-card p-4">
+                  <div key={row.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-[11px] text-muted-foreground">{row.created_at ? new Date(row.created_at).toLocaleString("zh-CN") : "—"}</p>
                       <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${row.result === "success" ? "bg-emerald-500/15 text-emerald-700" : "bg-destructive/15 text-destructive"}`}>
@@ -308,7 +309,7 @@ export default function AdminLogs() {
                     <p className="mt-2 font-mono text-xs text-foreground">{row.action_type}</p>
                     <p className="mt-1 text-xs text-muted-foreground">{row.object_type}{row.object_id ? ` · ${row.object_id}` : ""}</p>
                     <p className="mt-2 line-clamp-3 text-xs text-foreground">{row.summary}</p>
-                    <button type="button" onClick={() => setDetail(row)} className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1 rounded-xl border border-border py-2 text-sm text-gold">
+                    <button type="button" onClick={() => setDetail(row)} className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1 theme-rounded border border-[var(--theme-border)] py-2 text-sm text-[var(--theme-price)]">
                       详情 <ChevronRight size={16} />
                     </button>
                   </div>
@@ -325,11 +326,11 @@ export default function AdminLogs() {
                 />
               </div>
 
-              <div className="hidden overflow-hidden rounded-2xl border border-border bg-card md:block">
+              <div className="hidden overflow-hidden theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] md:block theme-shadow">
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[900px] text-sm">
                     <thead>
-                      <tr className="border-b border-border bg-secondary/50">
+                      <tr className="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70">
                         <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground whitespace-nowrap">时间</th>
                         <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground">操作人</th>
                         <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground">动作</th>
@@ -341,7 +342,7 @@ export default function AdminLogs() {
                     </thead>
                     <tbody>
                       {auditList.map((row) => (
-                        <tr key={row.id} className="border-b border-border last:border-0 hover:bg-secondary/30">
+                        <tr key={row.id} className="border-b border-[var(--theme-border)] last:border-0 hover:bg-[var(--theme-bg)]">
                           <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
                             {row.created_at ? new Date(row.created_at).toLocaleString("zh-CN") : "—"}
                           </td>
@@ -361,7 +362,7 @@ export default function AdminLogs() {
                             </span>
                           </td>
                           <td className="px-3 py-2">
-                            <button type="button" onClick={() => setDetail(row)} className="text-gold hover:underline">
+                            <button type="button" onClick={() => setDetail(row)} className="text-[var(--theme-price)] hover:underline">
                               <ChevronRight size={16} />
                             </button>
                           </td>
@@ -388,7 +389,7 @@ export default function AdminLogs() {
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDetail(null)}>
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-xl"
+                className="max-h-[85vh] w-full max-w-lg overflow-y-auto theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow"
               >
                 <h3 className="text-sm font-bold text-foreground mb-3">审计详情</h3>
                 <dl className="space-y-2 text-xs">
@@ -408,7 +409,7 @@ export default function AdminLogs() {
                     <pre className="max-h-40 overflow-auto rounded-lg bg-secondary p-2 text-[10px]">{detail.after_json != null ? JSON.stringify(detail.after_json, null, 2) : "—"}</pre>
                   </div>
                 </dl>
-                <button type="button" onClick={() => setDetail(null)} className="mt-4 w-full rounded-xl border border-border py-2 text-sm">关闭</button>
+                <button type="button" onClick={() => setDetail(null)} className="mt-4 w-full theme-rounded border border-[var(--theme-border)] py-2 text-sm">关闭</button>
               </div>
             </div>
           )}

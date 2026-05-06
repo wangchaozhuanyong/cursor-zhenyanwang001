@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProductCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+    <div className="overflow-hidden theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow">
       <Skeleton className="aspect-square w-full" />
       <div className="p-3 space-y-2">
         <Skeleton className="h-4 w-full" />

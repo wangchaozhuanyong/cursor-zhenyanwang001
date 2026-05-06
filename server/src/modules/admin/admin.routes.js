@@ -33,6 +33,7 @@ const rbacCtrl = require('./controller/adminRbac.controller');
 const shippingCtrl = require('./controller/adminShipping.controller');
 const reportCtrl = require('./controller/adminReport.controller');
 const settingsCtrl = require('./controller/adminSettings.controller');
+const themeCtrl = require('./controller/adminTheme.controller');
 const exportCtrl = require('./controller/adminExport.controller');
 const recycleBinCtrl = require('./controller/adminRecycleBin.controller');
 
@@ -152,6 +153,7 @@ router.get('/points/rules', adminAuth, requirePermission('points.manage'), setti
 router.put('/points/rules/:id', adminAuth, requirePermission('points.manage'), settingsCtrl.updatePoints);
 router.get('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.getSite);
 router.put('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.updateSite);
+router.put('/system/theme', adminAuth, requirePermission('settings.manage'), themeCtrl.updateTheme);
 router.get('/content', adminAuth, requirePermission('content.manage'), settingsCtrl.listContent);
 router.put('/content/:id', adminAuth, requirePermission('content.manage'), settingsCtrl.updateContent);
 

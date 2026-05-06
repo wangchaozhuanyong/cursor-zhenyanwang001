@@ -14,6 +14,11 @@ echo "[atomic-deploy] building frontend to dist.__new ..."
 npm run build -- --outDir dist.__new
 
 if [ -d dist ]; then
+  # Keep old hashed chunks available for users who already loaded the previous
+  # index/admin bundle. Removing them immediately can break React lazy imports.
+  if [ -d dist/assets ] && [ -d dist.__new/assets ]; then
+    cp -an dist/assets/. dist.__new/assets/
+  fi
   mv dist dist.__old
 fi
 mv dist.__new dist

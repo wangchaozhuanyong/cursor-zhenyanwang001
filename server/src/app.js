@@ -124,6 +124,9 @@ if (serveSpa) {
   app.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
     if (req.path.startsWith('/api')) return next();
+    // Missing hashed chunks must be a real 404; returning index.html makes
+    // dynamic import failures harder to diagnose and can cache the wrong MIME.
+    if (req.path.startsWith('/assets/')) return next();
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.sendFile(path.join(frontendDist, 'index.html'), (err) => next(err));
   });

@@ -1,5 +1,5 @@
 param(
-  [string]$ServerHost = "52.65.141.204",
+  [string]$ServerHost = "13.212.179.213",
   [string]$ServerUser = "ubuntu",
   [string]$RemoteProjectRoot = "/var/www/click-send-shop/full-project",
   [string]$IdentityFile = ""

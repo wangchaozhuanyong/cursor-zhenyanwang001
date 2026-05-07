@@ -3,9 +3,9 @@ import * as contentService from "@/services/contentService";
 import type { SiteInfo } from "@/types/content";
 
 const FALLBACK: SiteInfo = {
-  siteName: "华人真货网",
-  siteDescription: "尊享品质，精选全球好物",
-  siteSlogan: "尊享品质，精选全球好物",
+  siteName: "大马通",
+  siteDescription: "精选全球好物，品质生活购物平台",
+  siteSlogan: "精选全球好物，品质生活",
   brandColor: "#caa45c",
   contactPhone: "+60 12-345 6789",
   contactEmail: "support@example.com",
@@ -15,8 +15,8 @@ const FALLBACK: SiteInfo = {
   address: "Kuala Lumpur, Malaysia",
   businessHours: "周一至周日 09:00 - 22:00",
   currency: "RM",
-  footerCompanyName: "真货网",
-  footerCopyright: `© ${new Date().getFullYear()} 真货网 版权所有`,
+  footerCompanyName: "大马通",
+  footerCopyright: `© ${new Date().getFullYear()} 大马通 版权所有`,
 };
 
 /* ── 模块级缓存（多组件共享一次请求）── */

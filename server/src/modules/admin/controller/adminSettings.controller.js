@@ -4,6 +4,12 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 const adminSiteSettingsService = require('../adminSiteSettings.service');
 const adminExtended = require('../adminExtended.service');
+const multer = require('multer');
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 /* ── site settings ── */
 exports.getSite = asyncRoute(async (_req, res) => {
@@ -13,6 +19,15 @@ exports.getSite = asyncRoute(async (_req, res) => {
 
 exports.updateSite = asyncRoute(async (req, res) => {
   const r = await adminSiteSettingsService.updateSiteSettings(req.body, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
+exports.uploadSiteAssetMiddleware = upload.single('file');
+
+exports.uploadSiteAsset = asyncRoute(async (req, res) => {
+  const key = String(req.params.key || '');
+  const r = await adminSiteSettingsService.uploadSiteAsset(req.file, key, req.user?.id, req);
+  if (r.error) return res.fail(r.error.code, r.error.message);
   res.success(r.data, r.message);
 });
 

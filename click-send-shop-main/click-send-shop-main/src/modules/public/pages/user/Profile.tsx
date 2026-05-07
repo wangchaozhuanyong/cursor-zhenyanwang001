@@ -90,7 +90,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const siteInfo = useSiteInfo();
   const logoSrc = siteInfo.logoUrl || logoWebp;
-  const siteName = siteInfo.siteName || "真烟网";
+  const siteName = siteInfo.siteName || "大马通";
   const { nickname, avatar, pointsBalance, inviteCode, subordinateEnabled, loadProfile } = useUserStore();
   const authStore = useAuthStore();
   const { orders, loadOrders } = useOrderStore();

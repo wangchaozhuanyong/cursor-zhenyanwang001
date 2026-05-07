@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 
-const STATIC_FALLBACK = "真烟网";
+const STATIC_FALLBACK = "大马通";
 
 /**
  * 更新浏览器标题（SPA 内轻量 SEO / 体验）

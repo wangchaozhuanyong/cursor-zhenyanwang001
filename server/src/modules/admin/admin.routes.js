@@ -217,6 +217,13 @@ router.put('/points/rules/:id', adminAuth, requirePermission('points.manage'), s
 router.get('/points/records', adminAuth, requirePermission('points.manage'), pointsCtrl.listRecords);
 router.get('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.getSite);
 router.put('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.updateSite);
+router.post(
+  '/settings/assets/:key',
+  adminAuth,
+  requirePermission('settings.manage'),
+  settingsCtrl.uploadSiteAssetMiddleware,
+  settingsCtrl.uploadSiteAsset,
+);
 router.put('/system/theme', adminAuth, requirePermission('settings.manage'), themeCtrl.updateTheme);
 router.put('/system/theme/skins', adminAuth, requirePermission('settings.manage'), themeCtrl.updateThemeSkins);
 router.get('/content', adminAuth, requirePermission('content.manage'), settingsCtrl.listContent);

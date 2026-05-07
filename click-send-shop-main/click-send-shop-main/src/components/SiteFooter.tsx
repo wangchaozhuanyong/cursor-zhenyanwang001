@@ -58,7 +58,7 @@ export default function SiteFooter() {
   const site = useSiteInfo();
   const year = new Date().getFullYear();
 
-  const company = site.footerCompanyName || site.siteName || "真货网";
+  const company = site.footerCompanyName || site.siteName || "大马通";
   const copyright =
     site.footerCopyright || `© ${year} ${company}. All rights reserved.`;
 
@@ -118,7 +118,7 @@ export default function SiteFooter() {
                 />
               )}
               <h3 className="font-display text-xl font-black tracking-tight">
-                {renderBrandTitle(site.siteName || "华人真货网")}
+                {renderBrandTitle(site.siteName || "大马通")}
               </h3>
             </div>
             {site.siteSlogan && (

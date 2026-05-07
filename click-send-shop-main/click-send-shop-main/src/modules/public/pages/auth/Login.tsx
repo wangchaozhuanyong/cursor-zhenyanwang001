@@ -32,7 +32,7 @@ export default function Login() {
   const { banners } = useHomeBanners({ fetchRemote: false });
   const siteInfo = useSiteInfo();
   const logoSrc = siteInfo.logoUrl || logoWebp;
-  const siteName = siteInfo.siteName || "真烟网";
+  const siteName = siteInfo.siteName || "大马通";
   const slogan = siteInfo.siteSlogan || "Premium Lifestyle";
   const supportContact =
     siteInfo.contactWhatsApp || siteInfo.contactPhone || "客服";

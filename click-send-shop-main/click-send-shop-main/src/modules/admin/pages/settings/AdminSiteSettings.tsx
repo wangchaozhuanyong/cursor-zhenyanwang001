@@ -2,7 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { Save, Loader2, Upload, X, Image as ImageIcon } from "lucide-react";
 import PermissionGate from "@/components/admin/PermissionGate";
-import { fetchSiteSettings, updateSiteSettings } from "@/services/admin/settingsService";
+import {
+  fetchSiteSettings,
+  updateSiteSettings,
+  uploadSiteAsset,
+} from "@/services/admin/settingsService";
 import { uploadSingle } from "@/services/uploadService";
 import { refreshSiteInfo } from "@/hooks/useSiteInfo";
 import type { SiteSettings } from "@/types/admin";
@@ -96,7 +100,7 @@ const SECTIONS: Section[] = [
     category: "brand",
     desc: "网站名称、Slogan、Logo / Favicon — 全站头部、底部、登录页、文档标题都会读取",
     fields: [
-      { key: "siteName", label: "站点名称", placeholder: "例如：真烟网", hint: "全站头部 / 浏览器标题尾缀" },
+      { key: "siteName", label: "站点名称", placeholder: "例如：大马通", hint: "全站头部 / 浏览器标题尾缀" },
       { key: "siteSlogan", label: "Slogan / 副标题", placeholder: "尊享品质，精选全球好物" },
       { key: "siteDescription", label: "站点描述", type: "textarea", rows: 2, placeholder: "用于首页 hero / SEO description 兜底" },
       { key: "logoUrl", label: "Logo (推荐 256×256，上传后统一转 WEBP)", type: "image", hint: "未配置时回退到打包内置 logo" },
@@ -161,7 +165,7 @@ const SECTIONS: Section[] = [
     category: "seo",
     desc: "搜索引擎抓取与社交分享时使用，未填写时回退到「站点名称 / 站点描述 / Logo」",
     fields: [
-      { key: "seoTitle", label: "SEO 标题", placeholder: "真烟网 - 马来西亚优选商城" },
+      { key: "seoTitle", label: "SEO 标题", placeholder: "大马通 - 马来西亚优选商城" },
       { key: "seoDescription", label: "SEO 描述", type: "textarea", rows: 2, placeholder: "150 字以内，提升搜索点击率" },
       { key: "seoKeywords", label: "SEO 关键词", placeholder: "用英文逗号分隔, 例: shop,malaysia,gift" },
       { key: "ogImageUrl", label: "分享卡片图（OG Image，推荐 1200×630）", type: "image" },
@@ -172,8 +176,8 @@ const SECTIONS: Section[] = [
     category: "content",
     desc: "前端 Footer 组件读取",
     fields: [
-      { key: "footerCompanyName", label: "公司名称", placeholder: "真烟网" },
-      { key: "footerCopyright", label: "版权信息", placeholder: "© 2026 真烟网 版权所有" },
+      { key: "footerCompanyName", label: "公司名称", placeholder: "大马通" },
+      { key: "footerCopyright", label: "版权信息", placeholder: "© 2026 大马通 版权所有" },
       { key: "footerIcpNo", label: "备案号 / 工商注册号", placeholder: "可选" },
       { key: "footerPolicyUrl", label: "隐私政策外链", placeholder: "可选 - 优先使用站内 CMS 路径" },
       { key: "footerTermsUrl", label: "服务条款外链", placeholder: "可选 - 优先使用站内 CMS 路径" },
@@ -274,9 +278,17 @@ export default function AdminSiteSettings() {
     if (!file) return;
     setUploadingKey(key as string);
     try {
-      const res = await uploadSingle(file);
+      const res =
+        key === "logoUrl" || key === "faviconUrl"
+          ? await uploadSiteAsset(key, file)
+          : await uploadSingle(file);
       setField(key, res.url);
-      toast.success("图片已上传，请记得点击底部「保存设置」");
+      if (key === "logoUrl" || key === "faviconUrl") {
+        await refreshSiteInfo();
+        toast.success("图片已上传并保存到数据库");
+      } else {
+        toast.success("图片已上传，请记得点击底部「保存设置」");
+      }
     } catch (e) {
       toast.error(toastErrorMessage(e, "上传失败"));
     } finally {

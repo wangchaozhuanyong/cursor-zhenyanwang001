@@ -36,6 +36,7 @@ export default function MemberHome() {
   const claimCoupon = useCouponStore((s) => s.claimCoupon);
   const selectedCartCount = useCartStore((s) => s.getSelectedItems().length);
   const [claimingCouponId, setClaimingCouponId] = useState<string | null>(null);
+  const siteName = siteInfo.siteName || "大马通";
 
   useEffect(() => {
     loadHomeData();
@@ -119,8 +120,10 @@ export default function MemberHome() {
       <header className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-14 w-full max-w-screen-xl items-center gap-3 px-4">
           <div className="flex shrink-0 cursor-pointer items-center gap-2" onClick={() => navigate("/")}>
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--theme-text-on-surface)]"><span className="text-sm font-black text-[var(--theme-bg)]">D</span></div>
-            <span className="hidden text-lg font-bold tracking-widest text-[var(--theme-text-on-surface)] sm:block">大马通</span>
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--theme-text-on-surface)]">
+              <span className="text-sm font-black text-[var(--theme-bg)]">{siteName.slice(0, 1)}</span>
+            </div>
+            <span className="hidden text-lg font-bold tracking-widest text-[var(--theme-text-on-surface)] sm:block">{siteName}</span>
           </div>
           <div className="relative flex-1">
             <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center"><Search className="h-4 w-4 text-[var(--theme-text-muted)]" /></div>

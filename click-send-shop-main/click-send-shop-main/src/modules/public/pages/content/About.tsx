@@ -14,7 +14,7 @@ export default function About() {
   const [cmsContent, setCmsContent] = useState("");
   const siteInfo = useSiteInfo();
   const logoSrc = siteInfo.logoUrl || logoWebp;
-  const siteName = siteInfo.siteName || "真烟网";
+  const siteName = siteInfo.siteName || "大马通";
   const slogan = siteInfo.siteSlogan || siteInfo.siteDescription || "尊享品质，精选全球好物";
 
   useEffect(() => {

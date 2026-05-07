@@ -76,3 +76,12 @@ export async function uploadFiles(files: File[]): Promise<{ url: string; filenam
   files.forEach((f) => formData.append("files", f));
   return doUpload<{ url: string; filename: string }[]>(`${BASE_URL}/upload/multiple`, formData);
 }
+
+export async function uploadAdminSiteAsset(
+  key: "logoUrl" | "faviconUrl",
+  file: File,
+): Promise<{ key: string; url: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return doUpload<{ key: string; url: string }>(`${BASE_URL}/admin/settings/assets/${key}`, formData);
+}

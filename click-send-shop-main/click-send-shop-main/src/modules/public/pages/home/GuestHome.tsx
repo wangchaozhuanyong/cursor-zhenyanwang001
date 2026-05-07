@@ -1,12 +1,15 @@
 import { Gem, Menu, ShieldCheck, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
 import ProductCard from "@/components/ProductCard";
 import type { Product } from "@/types/product";
 
 export default function GuestHome() {
   useDocumentTitle("首页");
   const navigate = useNavigate();
+  const siteInfo = useSiteInfo();
+  const siteName = siteInfo.siteName || "大马通";
   const now = new Date().toISOString();
   const products: Product[] = [
     { id: "g1", title: "曜石黑 机械腕表", subtitle: "经典隽永 瑞士机芯", description: "经典隽永 瑞士机芯", price: 12800, originalPrice: 13800, image: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&q=80&w=800", categoryId: "guest", stock: 99, sales: 88, tags: [], status: "active", createdAt: now, updatedAt: now },
@@ -22,8 +25,10 @@ export default function GuestHome() {
           <div className="flex items-center gap-3">
             <Menu className="h-5 w-5 md:hidden" />
             <div className="flex cursor-pointer items-center gap-2" onClick={() => navigate("/welcome")}>
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--theme-text-on-surface)]"><span className="text-sm font-black text-[var(--theme-bg)]">D</span></div>
-              <h1 className="text-lg font-bold tracking-widest text-[var(--theme-text-on-surface)]">大马通</h1>
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--theme-text-on-surface)]">
+                <span className="text-sm font-black text-[var(--theme-bg)]">{siteName.slice(0, 1)}</span>
+              </div>
+              <h1 className="text-lg font-bold tracking-widest text-[var(--theme-text-on-surface)]">{siteName}</h1>
             </div>
           </div>
           <button type="button" onClick={() => navigate("/login", { state: { from: "/welcome" } })} className="rounded-full bg-[var(--theme-primary)] px-4 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]">登录 / 注册</button>

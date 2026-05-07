@@ -74,8 +74,6 @@ const navItemsRaw: NavItem[] = [
   { icon: Link2, label: "邀请管理", path: "/admin/invites", permission: "invite.view" },
   { icon: Gift, label: "返现记录", path: "/admin/rewards", permission: "referral.manage" },
   { icon: Star, label: "积分明细", path: "/admin/points/records", permission: "points.manage" },
-  { icon: Star, label: "积分规则", path: "/admin/settings/points", permission: "points.manage" },
-  { icon: Gift, label: "返现规则", path: "/admin/settings/referral", permission: "referral.manage" },
   {
     icon: Ticket,
     label: "优惠券管理",

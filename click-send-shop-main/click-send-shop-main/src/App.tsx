@@ -1,6 +1,6 @@
 import { lazy, Suspense, useLayoutEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { RouterLoadingBridge, TopProgressBar } from "@/components/ui/top-progress-bar";
@@ -16,6 +16,7 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
 
 /* ───────── Public（前台）页面，按业务域 ───────── */
 const MemberHome = lazy(() => import("@/modules/public/pages/home/MemberHome"));
+const GuestHome = lazy(() => import("@/modules/public/pages/home/GuestHome"));
 const Login = lazy(() => import("@/modules/public/pages/auth/Login"));
 
 const Categories = lazy(() => import("@/modules/public/pages/product/Categories"));
@@ -82,8 +83,6 @@ const AdminExportCenter = lazy(() => import("@/modules/admin/pages/report/AdminE
 const AdminSiteSettings = lazy(() => import("@/modules/admin/pages/settings/AdminSiteSettings"));
 const AdminThemeSettings = lazy(() => import("@/modules/admin/pages/settings/AdminThemeSettings"));
 const AdminContent = lazy(() => import("@/modules/admin/pages/settings/AdminContent"));
-const AdminPointsRules = lazy(() => import("@/modules/admin/pages/settings/AdminPointsRules"));
-const AdminReferralRules = lazy(() => import("@/modules/admin/pages/settings/AdminReferralRules"));
 
 const AdminRoles = lazy(() => import("@/modules/admin/pages/rbac/AdminRoles"));
 
@@ -137,6 +136,12 @@ function SiteIdentitySync() {
   return null;
 }
 
+function HomeRoute() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const hasToken = isLoggedIn();
+  return hasToken || isAuthenticated ? <MemberHome /> : <GuestHome />;
+}
+
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
@@ -156,7 +161,7 @@ const App = () => (
             <Routes>
               {/* Pages with bottom nav */}
               <Route element={<FrontLayout />}>
-              <Route path="/" element={<MemberHome />} />
+              <Route path="/" element={<HomeRoute />} />
               <Route path="/categories" element={<Categories />} />
               <Route path="/search" element={<Search />} />
               <Route path="/cart" element={<Cart />} />
@@ -200,8 +205,8 @@ const App = () => (
                 <Route path="invites" element={<AdminInvites />} />
                 <Route path="rewards" element={<AdminRewardRecords />} />
                 <Route path="points/records" element={<AdminPointsRecords />} />
-                <Route path="settings/points" element={<AdminPointsRules />} />
-                <Route path="settings/referral" element={<AdminReferralRules />} />
+                <Route path="settings/points" element={<Navigate to="/admin/points/records" replace />} />
+                <Route path="settings/referral" element={<Navigate to="/admin/rewards" replace />} />
                 <Route path="settings/site" element={<AdminSiteSettings />} />
                 <Route path="settings/theme" element={<AdminThemeSettings />} />
                 <Route path="settings/shipping" element={<AdminShipping />} />

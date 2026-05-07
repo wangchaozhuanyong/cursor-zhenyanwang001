@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { Loader2, RotateCcw, TrendingDown, TrendingUp, Users } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
+import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchAdminRewardRecords } from "@/services/admin/rewardService";
+import { fetchReferralRules, updateReferralRule } from "@/services/admin/inviteService";
 import type { RewardRecord, RewardStats, RewardStatus } from "@/types/reward";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
@@ -45,6 +47,9 @@ export default function AdminRewardRecords() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [total, setTotal] = useState(0);
+  const [rulesLoading, setRulesLoading] = useState(true);
+  const [rulesSaving, setRulesSaving] = useState(false);
+  const [rules, setRules] = useState<Array<{ id: string; level: number; name: string; rewardPercent: number; enabled: boolean }>>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,6 +67,52 @@ export default function AdminRewardRecords() {
       });
     return () => { cancelled = true; };
   }, [page, pageSize, keyword, status]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setRulesLoading(true);
+    fetchReferralRules()
+      .then((data: any[]) => {
+        if (cancelled) return;
+        const normalized = (Array.isArray(data) ? data : []).map((r: any, idx) => ({
+          id: String(r.id ?? idx),
+          level: Number(r.level ?? idx + 1),
+          name: String(r.name ?? `Level ${idx + 1}`),
+          rewardPercent: Number(r.rewardPercent ?? 0),
+          enabled: Boolean(r.enabled ?? true),
+        }));
+        setRules(normalized);
+      })
+      .catch((e) => toast.error(toastErrorMessage(e, "加载返现规则失败")))
+      .finally(() => {
+        if (!cancelled) setRulesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const updateRuleField = (id: string, field: "rewardPercent" | "enabled", value: number | boolean) => {
+    setRules((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
+  };
+
+  const saveRules = async () => {
+    setRulesSaving(true);
+    try {
+      for (const rule of rules) {
+        await updateReferralRule(rule.id, {
+          name: rule.name,
+          rewardPercent: rule.rewardPercent,
+          enabled: rule.enabled,
+        } as any);
+      }
+      toast.success("返现规则已保存");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "保存返现规则失败"));
+    } finally {
+      setRulesSaving(false);
+    }
+  };
 
   const cards = [
     { label: "累计入账", value: `RM ${money(stats.settledAmount)}`, icon: TrendingUp, className: "text-[var(--theme-price)]" },
@@ -88,6 +139,65 @@ export default function AdminRewardRecords() {
           </div>
         ))}
       </div>
+
+      <section className="rounded-xl border border-[var(--theme-border)] bg-theme-surface p-4 theme-shadow">
+        <div className="mb-3">
+          <h2 className="text-sm font-semibold text-[var(--theme-text-on-surface)]">返现规则</h2>
+          <p className="text-xs text-theme-muted">返现规则与返现记录同页维护，修改后点击保存。</p>
+        </div>
+        {rulesLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-[var(--theme-price)]" />
+          </div>
+        ) : rules.length === 0 ? (
+          <div className="py-8 text-center text-sm text-theme-muted">暂无返现规则</div>
+        ) : (
+          <div className="space-y-3">
+            {rules.map((rule) => (
+              <div key={rule.id} className="flex items-center justify-between rounded-lg border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))] px-3 py-2.5">
+                <div>
+                  <p className="text-sm font-medium text-[var(--theme-text-on-surface)]">{rule.name}</p>
+                  <p className="text-[11px] text-theme-muted">第 {rule.level} 级返现</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <PermissionGate permission="referral.manage">
+                    <label className="flex items-center gap-1.5 text-xs text-theme-muted">
+                      <input
+                        type="checkbox"
+                        className="accent-[var(--theme-price)]"
+                        checked={rule.enabled}
+                        onChange={(e) => updateRuleField(rule.id, "enabled", e.target.checked)}
+                      />
+                      启用
+                    </label>
+                  </PermissionGate>
+                  <PermissionGate permission="referral.manage">
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        value={rule.rewardPercent}
+                        onChange={(e) => updateRuleField(rule.id, "rewardPercent", Number(e.target.value))}
+                        className="w-20 rounded-md border border-[var(--theme-border)] bg-theme-surface px-2 py-1.5 text-right text-xs text-[var(--theme-text-on-surface)] outline-none"
+                      />
+                      <span className="text-xs text-theme-muted">%</span>
+                    </div>
+                  </PermissionGate>
+                </div>
+              </div>
+            ))}
+            <PermissionGate permission="referral.manage">
+              <button
+                type="button"
+                disabled={rulesSaving}
+                onClick={saveRules}
+                className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-xs font-semibold text-[var(--theme-price-foreground)] disabled:opacity-60"
+              >
+                {rulesSaving ? "保存中..." : "保存返现规则"}
+              </button>
+            </PermissionGate>
+          </div>
+        )}
+      </section>
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <div className="flex-1">

@@ -13,6 +13,7 @@ export type ThemeSkin = {
 };
 
 const SKIN_STORAGE_KEY = "theme_skin_id";
+const SKIN_MANUAL_KEY = "theme_skin_manual";
 
 const DEFAULT_THEME_CONFIG: ThemeConfig = {
   radius: "8px",
@@ -58,8 +59,9 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
         setSkins(remoteSkins);
 
         const saved = typeof window !== "undefined" ? localStorage.getItem(SKIN_STORAGE_KEY) : null;
+        const isManual = typeof window !== "undefined" && localStorage.getItem(SKIN_MANUAL_KEY) === "1";
         const chosen =
-          (saved && remoteSkins.some((s) => s.id === saved) ? saved : null) ||
+          (isManual && saved && remoteSkins.some((s) => s.id === saved) ? saved : null) ||
           (remoteDefaultId && remoteSkins.some((s) => s.id === remoteDefaultId) ? remoteDefaultId : null) ||
           remoteSkins[0]?.id ||
           "default";
@@ -81,8 +83,10 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
     root.classList.remove("dark");
-    // keep skin selection persisted
-    if (typeof window !== "undefined") localStorage.setItem(SKIN_STORAGE_KEY, skinId);
+    // keep last chosen skin id for recovery/debug; manual flag controls precedence
+    if (typeof window !== "undefined") {
+      localStorage.setItem(SKIN_STORAGE_KEY, skinId);
+    }
 
     const palette = generateThemePalette(themeConfig);
     Object.entries(palette).forEach(([key, value]) => {
@@ -100,7 +104,13 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
     theme: "light",
     skinId,
     skins,
-    setSkinId: (id: string) => setSkinIdState(id),
+    setSkinId: (id: string) => {
+      setSkinIdState(id);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(SKIN_STORAGE_KEY, id);
+        localStorage.setItem(SKIN_MANUAL_KEY, "1");
+      }
+    },
     themeConfig,
   }), [skinId, skins, themeConfig]);
 

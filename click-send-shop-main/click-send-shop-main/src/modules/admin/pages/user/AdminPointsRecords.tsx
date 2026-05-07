@@ -3,7 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import { Loader2, Star, TrendingDown, TrendingUp, Users } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
-import { fetchAdminPointsRecords } from "@/services/admin/pointsService";
+import PermissionGate from "@/components/admin/PermissionGate";
+import { fetchAdminPointsRecords, fetchPointsRules, updatePointsRule } from "@/services/admin/pointsService";
 import type { PointsAction, PointsRecord, PointsStats } from "@/types/points";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
@@ -53,6 +54,9 @@ export default function AdminPointsRecords() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [total, setTotal] = useState(0);
+  const [rulesLoading, setRulesLoading] = useState(true);
+  const [rulesSaving, setRulesSaving] = useState(false);
+  const [rules, setRules] = useState<Array<{ id: string; name: string; action: string; points: number; enabled: boolean }>>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,6 +81,48 @@ export default function AdminPointsRecords() {
       });
     return () => { cancelled = true; };
   }, [page, pageSize, keyword, action]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setRulesLoading(true);
+    fetchPointsRules()
+      .then((data: any[]) => {
+        if (cancelled) return;
+        const normalized = (Array.isArray(data) ? data : []).map((r: any, idx) => ({
+          id: String(r.id ?? idx),
+          name: String(r.name ?? "积分规则"),
+          action: String(r.action ?? ""),
+          points: Number(r.points ?? r.sign_in_points ?? 0),
+          enabled: Boolean(r.enabled ?? true),
+        }));
+        setRules(normalized);
+      })
+      .catch((e) => toast.error(toastErrorMessage(e, "加载积分规则失败")))
+      .finally(() => {
+        if (!cancelled) setRulesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const updateRuleField = (id: string, field: "points" | "enabled", value: number | boolean) => {
+    setRules((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
+  };
+
+  const saveRules = async () => {
+    setRulesSaving(true);
+    try {
+      for (const rule of rules) {
+        await updatePointsRule(rule.id, { name: rule.name, points: rule.points, enabled: rule.enabled } as any);
+      }
+      toast.success("积分规则已保存");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "保存积分规则失败"));
+    } finally {
+      setRulesSaving(false);
+    }
+  };
 
   const cards = [
     { label: "累计增加", value: String(intValue(stats.totalEarned)), icon: TrendingUp, className: "text-[var(--theme-price)]" },
@@ -103,6 +149,62 @@ export default function AdminPointsRecords() {
           </div>
         ))}
       </div>
+
+      <section className="rounded-xl border border-[var(--theme-border)] bg-theme-surface p-4 theme-shadow">
+        <div className="mb-3">
+          <h2 className="text-sm font-semibold text-[var(--theme-text-on-surface)]">积分规则</h2>
+          <p className="text-xs text-theme-muted">规则与明细同页管理，修改后点击保存立即生效。</p>
+        </div>
+        {rulesLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-[var(--theme-price)]" />
+          </div>
+        ) : rules.length === 0 ? (
+          <div className="py-8 text-center text-sm text-theme-muted">暂无积分规则</div>
+        ) : (
+          <div className="space-y-3">
+            {rules.map((rule) => (
+              <div key={rule.id} className="flex items-center justify-between rounded-lg border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))] px-3 py-2.5">
+                <div>
+                  <p className="text-sm font-medium text-[var(--theme-text-on-surface)]">{rule.name}</p>
+                  <p className="text-[11px] text-theme-muted">{actionLabels[rule.action] || rule.action || "通用规则"}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <PermissionGate permission="points.manage">
+                    <label className="flex items-center gap-1.5 text-xs text-theme-muted">
+                      <input
+                        type="checkbox"
+                        className="accent-[var(--theme-price)]"
+                        checked={rule.enabled}
+                        onChange={(e) => updateRuleField(rule.id, "enabled", e.target.checked)}
+                      />
+                      启用
+                    </label>
+                  </PermissionGate>
+                  <PermissionGate permission="points.manage">
+                    <input
+                      type="number"
+                      value={rule.points}
+                      onChange={(e) => updateRuleField(rule.id, "points", Number(e.target.value))}
+                      className="w-20 rounded-md border border-[var(--theme-border)] bg-theme-surface px-2 py-1.5 text-right text-xs text-[var(--theme-text-on-surface)] outline-none"
+                    />
+                  </PermissionGate>
+                </div>
+              </div>
+            ))}
+            <PermissionGate permission="points.manage">
+              <button
+                type="button"
+                disabled={rulesSaving}
+                onClick={saveRules}
+                className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-xs font-semibold text-[var(--theme-price-foreground)] disabled:opacity-60"
+              >
+                {rulesSaving ? "保存中..." : "保存积分规则"}
+              </button>
+            </PermissionGate>
+          </div>
+        )}
+      </section>
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <div className="flex-1">

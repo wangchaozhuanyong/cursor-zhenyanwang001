@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="${1:-/var/www/click-send-shop/full-project}"
+ROOT_DIR="${1:-/var/www/click-send-shop}"
 FRONT_DIR="$ROOT_DIR/click-send-shop-main/click-send-shop-main"
 SERVER_DIR="$ROOT_DIR/server"
 

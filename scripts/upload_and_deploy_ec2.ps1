@@ -1,7 +1,7 @@
 param(
   [string]$ServerHost = "13.212.179.213",
   [string]$ServerUser = "ubuntu",
-  [string]$RemoteProjectRoot = "/var/www/click-send-shop/full-project",
+  [string]$RemoteProjectRoot = "/var/www/click-send-shop",
   [string]$IdentityFile = ""
 )
 

@@ -15,7 +15,7 @@ import { isLoggedIn } from "@/utils/token";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 
 /* ───────── Public（前台）页面，按业务域 ───────── */
-const Index = lazy(() => import("@/modules/public/pages/home/Index"));
+const MemberHome = lazy(() => import("@/modules/public/pages/home/MemberHome"));
 const Login = lazy(() => import("@/modules/public/pages/auth/Login"));
 
 const Categories = lazy(() => import("@/modules/public/pages/product/Categories"));
@@ -156,7 +156,7 @@ const App = () => (
             <Routes>
               {/* Pages with bottom nav */}
               <Route element={<FrontLayout />}>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<MemberHome />} />
               <Route path="/categories" element={<Categories />} />
               <Route path="/search" element={<Search />} />
               <Route path="/cart" element={<Cart />} />

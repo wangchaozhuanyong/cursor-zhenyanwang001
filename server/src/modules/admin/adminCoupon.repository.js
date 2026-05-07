@@ -7,7 +7,22 @@ async function countCoupons() {
 
 async function selectCouponsPage(pageSize, offset) {
   const [rows] = await db.query(
-    'SELECT * FROM coupons WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT ? OFFSET ?',
+    `SELECT c.*,
+            (
+              SELECT GROUP_CONCAT(cc.category_id ORDER BY cc.category_id SEPARATOR ',')
+              FROM coupon_categories cc
+              WHERE cc.coupon_id = c.id
+            ) AS category_ids,
+            (
+              SELECT GROUP_CONCAT(cat.name ORDER BY cat.sort_order SEPARATOR ',')
+              FROM coupon_categories cc
+              JOIN categories cat ON cat.id = cc.category_id
+              WHERE cc.coupon_id = c.id
+            ) AS category_names
+     FROM coupons c
+     WHERE c.deleted_at IS NULL
+     ORDER BY c.created_at DESC
+     LIMIT ? OFFSET ?`,
     [pageSize, offset],
   );
   return rows;
@@ -15,17 +30,33 @@ async function selectCouponsPage(pageSize, offset) {
 
 async function insertCoupon(params) {
   const {
-    id, code, title, type, value, min_amount, start_date, end_date, description,
+    id, code, title, type, value, min_amount, start_date, end_date, description, scope_type, display_badge,
   } = params;
   await db.query(
-    `INSERT INTO coupons (id, code, title, type, value, min_amount, start_date, end_date, description)
-     VALUES (?,?,?,?,?,?,?,?,?)`,
-    [id, code, title, type, value, min_amount, start_date, end_date, description],
+    `INSERT INTO coupons (id, code, title, type, value, min_amount, start_date, end_date, description, scope_type, display_badge)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+    [id, code, title, type, value, min_amount, start_date, end_date, description, scope_type || 'all', display_badge || ''],
   );
 }
 
 async function selectCouponById(id) {
-  const [[row]] = await db.query('SELECT * FROM coupons WHERE id = ?', [id]);
+  const [[row]] = await db.query(
+    `SELECT c.*,
+            (
+              SELECT GROUP_CONCAT(cc.category_id ORDER BY cc.category_id SEPARATOR ',')
+              FROM coupon_categories cc
+              WHERE cc.coupon_id = c.id
+            ) AS category_ids,
+            (
+              SELECT GROUP_CONCAT(cat.name ORDER BY cat.sort_order SEPARATOR ',')
+              FROM coupon_categories cc
+              JOIN categories cat ON cat.id = cc.category_id
+              WHERE cc.coupon_id = c.id
+            ) AS category_names
+     FROM coupons c
+     WHERE c.id = ?`,
+    [id],
+  );
   return row || null;
 }
 
@@ -39,6 +70,18 @@ async function deleteCouponById(id, deletedBy) {
 
 async function restoreCouponById(id) {
   await db.query('UPDATE coupons SET deleted_at = NULL, deleted_by = NULL WHERE id = ?', [id]);
+}
+
+async function clearCouponCategories(couponId) {
+  await db.query('DELETE FROM coupon_categories WHERE coupon_id = ?', [couponId]);
+}
+
+async function insertCouponCategory(id, couponId, categoryId) {
+  await db.query(
+    `INSERT IGNORE INTO coupon_categories (id, coupon_id, category_id)
+     VALUES (?,?,?)`,
+    [id, couponId, categoryId],
+  );
 }
 
 async function countAllUserCoupons() {
@@ -87,6 +130,8 @@ module.exports = {
   updateCouponDynamic,
   deleteCouponById,
   restoreCouponById,
+  clearCouponCategories,
+  insertCouponCategory,
   countAllUserCoupons,
   selectAllCouponRecordsPage,
   countUserCouponsByCouponId,

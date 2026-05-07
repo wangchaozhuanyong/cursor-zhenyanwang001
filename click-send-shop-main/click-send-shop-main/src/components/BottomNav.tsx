@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useCartStore } from "@/stores/useCartStore";
 import { SquishButton } from "@/modules/micro-interactions";
 import { motion } from "framer-motion";
-import { useScrollBarsHidden } from "@/contexts/ScrollBarsContext";
 
 const tabs = [
   { path: "/", label: "首页", icon: Home },
@@ -16,14 +15,12 @@ export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const totalItems = useCartStore((s) => s.totalItems());
-  const barsHidden = useScrollBarsHidden();
 
   return (
     <nav
-      className={`fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-md pb-safe transform-gpu will-change-transform transition-transform duration-500 ${barsHidden ? "translate-y-full" : "translate-y-0"}`}
+      className="fixed bottom-0 left-0 right-0 z-[70] border-t border-border bg-background/95 backdrop-blur-md pb-safe"
       style={{
         paddingBottom: "max(env(safe-area-inset-bottom), 0.5rem)",
-        transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
       <div className="mx-auto flex max-w-lg items-center justify-around">

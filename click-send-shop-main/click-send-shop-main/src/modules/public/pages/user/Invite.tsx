@@ -39,7 +39,7 @@ export default function Invite() {
       setBinding(false);
     }
   };
-  const inviteLink = `${window.location.origin}?ref=${inviteCode}`;
+  const inviteLink = `${window.location.origin}/login?ref=${encodeURIComponent(inviteCode || "")}`;
   const posterRef = useRef<HTMLDivElement>(null);
   const qrRef = useRef<HTMLCanvasElement>(null);
 
@@ -233,7 +233,7 @@ export default function Invite() {
           </div>
           <div className="rounded-xl border border-border bg-card p-4 text-center">
             <p className="text-xl font-bold text-foreground">RM {stats?.totalOrderAmount ?? 0}</p>
-            <p className="text-[10px] text-muted-foreground">下级消费</p>
+            <p className="text-[10px] text-muted-foreground">分享消费</p>
           </div>
           <div className="rounded-xl border border-border bg-card p-4 text-center">
             <p className="text-xl font-bold text-gold">{stats?.totalReward ?? 0}</p>
@@ -276,11 +276,11 @@ export default function Invite() {
         {/* Subordinate list */}
         <div className="mt-6">
           <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Users size={16} className="text-gold" /> 我的下级
+            <Users size={16} className="text-gold" /> 分享用户
           </h3>
           {records.length === 0 ? (
             <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
-              暂无下级用户，快去邀请好友吧！
+              暂无分享用户，快去邀请好友吧！
             </div>
           ) : (
             <div className="space-y-2">

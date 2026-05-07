@@ -3,6 +3,7 @@ const { generateId } = require('../../utils/helpers');
 const repo = require('./order.repository');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
 const { isNotificationTriggerEnabled } = require('../notification/triggerSettings.service');
+const paymentsService = require('../payments/payments.service');
 
 /**
  * 校验 Stripe PaymentIntent 与订单金额、币种一致（与 createStripeCheckoutSession 中 unit_amount 逻辑对齐）
@@ -79,6 +80,16 @@ async function handleStripeEvent(event) {
     paymentChannel: 'stripe',
     paymentTransactionNo: pi.id || '',
   });
+
+  try {
+    await paymentsService.recordStripeCapture(orderId, pi.id || '', eventId, {
+      payment_order_id: pi.metadata?.payment_order_id,
+      currency: pi.currency,
+      amount: pi.amount,
+    });
+  } catch (e) {
+    console.error('[stripe webhook] payment_orders 记录失败:', e?.message || e);
+  }
 
   try {
     const itemRows = await repo.selectOrderItemQtyRows(db, orderId);

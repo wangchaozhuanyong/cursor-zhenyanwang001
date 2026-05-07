@@ -2,7 +2,6 @@ const db = require('../../config/db');
 const { generateId, generateOrderNo } = require('../../utils/helpers');
 const { computeShippingFee, estimateWeightFromItems } = require('../../utils/shippingFee');
 const {
-  BusinessError,
   NotFoundError,
   ValidationError,
 } = require('../../errors');
@@ -10,6 +9,7 @@ const { formatOrderItem, formatOrder } = require('./order.mapper');
 const { canUserCancel } = require('./orderStateMachine');
 const repo = require('./order.repository');
 const rewardService = require('../user/reward.service');
+const paymentsService = require('../payments/payments.service');
 const pointsService = require('../user/points.service');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
 
@@ -102,6 +102,17 @@ async function createOrder(userId, body) {
       if (rawAmount < minAmount) {
         await conn.rollback();
         throw new ValidationError(`订单金额未满 RM ${minAmount}，无法使用该优惠券`);
+      }
+      if (uc.scope_type === 'category') {
+        const allowedCategoryIds = await repo.selectCouponCategoryIds(conn, uc.id);
+        if (allowedCategoryIds.length > 0) {
+          const orderCategoryIds = [...new Set(orderItems.map((oi) => productMap[oi.productId]?.category_id).filter(Boolean))];
+          const matched = orderCategoryIds.some((cid) => allowedCategoryIds.includes(cid));
+          if (!matched) {
+            await conn.rollback();
+            throw new ValidationError('该优惠券不适用于当前商品分类');
+          }
+        }
       }
       discountAmount = calculateCouponDiscount(uc, rawAmount, shippingFee);
       if (discountAmount <= 0) {
@@ -261,8 +272,8 @@ async function payOrder(userId, orderId, body) {
   if (order.status !== ORDER_STATUS.PENDING || (order.payment_status || PAYMENT_STATUS.PENDING) !== PAYMENT_STATUS.PENDING) {
     throw new ValidationError('当前订单状态无法支付');
   }
-  if (order.payment_method !== 'online') {
-    throw new ValidationError('该订单非在线支付，请按提示联系客服完成付款');
+  if (channel === 'reward_wallet') {
+    return paymentsService.payWithRewardWallet(userId, orderId);
   }
   if (channel === 'mock') {
     throw new ValidationError('生产环境已禁用 mock 支付，请使用 Stripe Checkout 完成支付');
@@ -271,58 +282,8 @@ async function payOrder(userId, orderId, body) {
 }
 
 async function createStripeCheckoutSession(userId, orderId) {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey) throw new BusinessError(503, 'Stripe 未配置 STRIPE_SECRET_KEY');
-
-  const base = (process.env.PUBLIC_APP_URL || '').trim().replace(/\/$/, '');
-  if (!base) {
-    throw new BusinessError(
-      503,
-      '请配置 PUBLIC_APP_URL（支付完成回跳地址，如 https://你的域名 或 http://localhost:5173）',
-    );
-  }
-
-  const order = await repo.selectOrderByIdAndUser(db, orderId, userId);
-  if (!order) throw new NotFoundError('订单不存在');
-  if (order.status !== ORDER_STATUS.PENDING || (order.payment_status || PAYMENT_STATUS.PENDING) !== PAYMENT_STATUS.PENDING) {
-    throw new ValidationError('当前订单状态无法发起支付');
-  }
-  if (order.payment_method !== 'online') {
-    throw new ValidationError('该订单非在线支付');
-  }
-
-  const total = parseFloat(order.total_amount);
-  const amountCents = Math.round(total * 100);
-  if (!Number.isFinite(amountCents) || amountCents < 200) {
-    throw new ValidationError('订单金额不满足 Stripe 最低支付要求（一般 ≥ RM 2.00）');
-  }
-
-  const stripe = require('stripe')(secretKey);
-  const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    payment_method_types: ['card'],
-    line_items: [
-      {
-        price_data: {
-          currency: 'myr',
-          product_data: {
-            name: `订单 ${order.order_no}`,
-          },
-          unit_amount: amountCents,
-        },
-        quantity: 1,
-      },
-    ],
-    success_url: `${base}/orders/${orderId}?stripe=success&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${base}/orders/${orderId}?stripe=cancel`,
-    metadata: { order_id: order.id },
-    payment_intent_data: {
-      metadata: { order_id: order.id },
-    },
-  });
-
-  if (!session.url) throw new BusinessError(500, 'Stripe 未返回支付链接');
-  return { data: { url: session.url } };
+  const r = await paymentsService.createStripeCheckoutForOrder(userId, orderId, '', undefined);
+  return { data: { url: r.data.url } };
 }
 
 async function confirmReceive(userId, orderId) {

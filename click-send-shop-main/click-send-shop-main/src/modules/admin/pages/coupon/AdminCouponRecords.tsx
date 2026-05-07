@@ -38,6 +38,13 @@ export default function AdminCouponRecords() {
   });
   const { page, pageSize, setPage, setPageSize, paginatedData, total } = usePagination(filtered, 10);
 
+  const formatPhone = (phone: string | null | undefined) => {
+    if (!phone) return "—";
+    const raw = String(phone).trim();
+    if (raw.length < 7) return raw;
+    return `${raw.slice(0, 3)}****${raw.slice(-4)}`;
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -69,7 +76,8 @@ export default function AdminCouponRecords() {
                 <p className="font-medium text-foreground">{r.coupon_title || r.coupon_id?.slice(0, 12) || "—"}</p>
                 <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${st.color}`}>{st.label}</span>
               </div>
-              <p className="mt-2 text-sm text-muted-foreground">{r.nickname || r.phone || r.user_id?.slice(0, 12) || "—"}</p>
+              <p className="mt-2 text-sm text-foreground">{r.nickname || r.user_id?.slice(0, 12) || "—"}</p>
+              <p className="mt-1 text-xs text-muted-foreground">手机号：{formatPhone(r.phone)}</p>
               <p className="mt-2 text-[11px] text-muted-foreground">领取 {r.claimed_at ? new Date(r.claimed_at).toLocaleString("zh-CN") : "—"}</p>
               <p className="mt-1 text-[11px] text-muted-foreground">使用 {r.used_at ? new Date(r.used_at).toLocaleString("zh-CN") : "—"}</p>
             </div>
@@ -85,7 +93,7 @@ export default function AdminCouponRecords() {
         <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-border bg-secondary/50">
-              {["用户", "优惠券", "领取时间", "状态", "使用时间"].map((h) => (
+              {["用户", "手机号", "优惠券", "领取时间", "状态", "使用时间"].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
               ))}
             </tr>
@@ -95,7 +103,8 @@ export default function AdminCouponRecords() {
               const st = statusLabels[r.status] ?? { label: r.status, color: "" };
               return (
                 <tr key={r.id} className="border-b border-border last:border-0 hover:bg-secondary/30">
-                  <td className="px-4 py-3 text-foreground">{r.nickname || r.phone || r.user_id?.slice(0, 12) || "—"}</td>
+                  <td className="px-4 py-3 text-foreground">{r.nickname || r.user_id?.slice(0, 12) || "—"}</td>
+                  <td className="px-4 py-3 text-foreground">{formatPhone(r.phone)}</td>
                   <td className="px-4 py-3 text-foreground">{r.coupon_title || r.coupon_id?.slice(0, 12) || "—"}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{r.claimed_at ? new Date(r.claimed_at).toLocaleString("zh-CN") : "—"}</td>
                   <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${st.color}`}>{st.label}</span></td>
@@ -104,7 +113,7 @@ export default function AdminCouponRecords() {
               );
             })}
             {paginatedData.length === 0 && (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">无匹配记录</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-foreground">无匹配记录</td></tr>
             )}
           </tbody>
         </table>

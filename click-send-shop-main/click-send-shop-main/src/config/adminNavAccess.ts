@@ -13,6 +13,7 @@ const RULES: { test: (path: string) => boolean; rule: PathRule }[] = [
     rule: { kind: "one", permission: "product.view" },
   },
   { test: (p) => p.startsWith("/admin/orders"), rule: { kind: "one", permission: "order.view" } },
+  { test: (p) => p.startsWith("/admin/payments"), rule: { kind: "one", permission: "payment.manage" } },
   { test: (p) => p.startsWith("/admin/returns"), rule: { kind: "one", permission: "return.view" } },
   { test: (p) => p.startsWith("/admin/reviews"), rule: { kind: "one", permission: "review.manage" } },
   { test: (p) => p.startsWith("/admin/users"), rule: { kind: "one", permission: "user.view" } },

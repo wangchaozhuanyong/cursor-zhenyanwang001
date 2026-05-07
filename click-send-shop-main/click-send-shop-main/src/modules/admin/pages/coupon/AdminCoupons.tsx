@@ -100,6 +100,11 @@ export default function AdminCoupons() {
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${t.color}`}>{t.label}</span>
                 <span className="text-sm text-foreground">{c.type === "percentage" ? `${c.value}%` : `RM ${c.value}`}</span>
                 <span className="text-xs text-muted-foreground">满 RM {c.min_amount}</span>
+                <span className="text-xs text-muted-foreground">
+                  {c.scope_type === "category"
+                    ? `分类券：${Array.isArray(c.category_names) && c.category_names.length ? c.category_names.join(" / ") : "未配置"}`
+                    : "全场通用"}
+                </span>
               </div>
               <p className="mt-2 text-[11px] text-muted-foreground">{c.start_date?.slice(0, 10)} ~ {c.end_date?.slice(0, 10)}</p>
               <div className="mt-3 flex gap-2">
@@ -121,10 +126,10 @@ export default function AdminCoupons() {
 
       {/* 桌面端：表格 */}
       <div className="hidden overflow-x-auto rounded-xl border border-border bg-card md:block">
-        <table className="w-full min-w-[880px] text-sm">
+        <table className="w-full min-w-[980px] text-sm">
           <thead>
             <tr className="border-b border-border bg-secondary/50">
-              {["券名称", "编码", "类型", "优惠值", "最低消费", "有效期", "状态", "操作"].map((h) => (
+              {["券名称", "编码", "类型", "适用范围", "优惠值", "最低消费", "有效期", "状态", "操作"].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
               ))}
             </tr>
@@ -138,6 +143,11 @@ export default function AdminCoupons() {
                   <td className="px-4 py-3 font-medium text-foreground">{c.title}</td>
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{c.code}</td>
                   <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${t.color}`}>{t.label}</span></td>
+                  <td className="px-4 py-3 text-xs text-foreground">
+                    {c.scope_type === "category"
+                      ? (Array.isArray(c.category_names) && c.category_names.length ? c.category_names.join(" / ") : "分类券")
+                      : "全场通用"}
+                  </td>
                   <td className="px-4 py-3 text-foreground">{c.type === "percentage" ? `${c.value}%` : `RM ${c.value}`}</td>
                   <td className="px-4 py-3 text-foreground">RM {c.min_amount}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{c.start_date?.slice(0, 10)} ~ {c.end_date?.slice(0, 10)}</td>

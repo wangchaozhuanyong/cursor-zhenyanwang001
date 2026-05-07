@@ -5,6 +5,7 @@ import { useCartStore } from "@/stores/useCartStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import * as orderService from "@/services/orderService";
 import * as paymentService from "@/services/paymentService";
+import * as rewardWalletService from "@/services/rewardService";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
 import { useCouponStore } from "@/stores/useCouponStore";
@@ -109,6 +110,8 @@ export default function Checkout() {
   const [paymentConfigLoaded, setPaymentConfigLoaded] = useState(false);
   const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null);
   const [selectedCoupon, setSelectedCoupon] = useState<CheckoutPickerCoupon | null>(null);
+  const [rewardBalance, setRewardBalance] = useState(0);
+  const [payingWallet, setPayingWallet] = useState(false);
   const [couponInitDone, setCouponInitDone] = useState(false);
   const [shippingId, setShippingId] = useState<number | null>(null);
   const [serverShippingFee, setServerShippingFee] = useState<number | null>(null);
@@ -135,6 +138,22 @@ export default function Checkout() {
         setStripeReady(false);
         setPaymentConfigLoaded(true);
         setPaymentMethod("whatsapp");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    rewardWalletService
+      .fetchRewardBalance()
+      .then((data) => {
+        if (cancelled) return;
+        setRewardBalance(Number(data.balance || 0));
+      })
+      .catch(() => {
+        if (!cancelled) setRewardBalance(0);
       });
     return () => {
       cancelled = true;
@@ -283,21 +302,6 @@ export default function Checkout() {
         payment_method: paymentMethod,
         estimated_weight_kg: weightKg,
       });
-      if (paymentMethod === "online") {
-        try {
-          const session = await orderService.createStripeCheckoutSession(order.id);
-          if (!session?.url) {
-            throw new Error("未获取到支付链接");
-          }
-          window.location.href = session.url;
-          return;
-        } catch (payErr) {
-          const msg = payErr instanceof Error ? payErr.message : "支付失败";
-          toast.error(`${msg}。订单已生成，请稍后在「我的订单」中查看或重试支付。`);
-          navigate(`/orders/${order.id}`, { replace: true });
-          return;
-        }
-      }
       const orderedIds = payloadItems.map((i) => i.product_id);
       if (isBuyNow) {
         clearBuyNow();
@@ -307,6 +311,11 @@ export default function Checkout() {
         removeOrderedItems(orderedIds);
       }
       setSubmittedOrder(order);
+      if (paymentMethod === "online") {
+        toast.success("订单已创建，请在下一步选择在线支付完成付款");
+      } else if (paymentMethod === "reward_wallet") {
+        toast.success("订单已创建，可继续使用返现钱包支付");
+      }
       void loadCoupons();
       const text = generateOrderText(order);
       navigator.clipboard.writeText(text).then(() => {
@@ -334,6 +343,34 @@ export default function Checkout() {
     copyOrderText();
   };
 
+  const payOnlineNow = async () => {
+    if (!submittedOrder) return;
+    try {
+      const session = await orderService.createStripeCheckoutSession(submittedOrder.id);
+      if (!session?.url) throw new Error("未获取到支付链接");
+      window.location.href = session.url;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "在线支付发起失败");
+    }
+  };
+
+  const payByRewardWallet = async () => {
+    if (!submittedOrder) return;
+    setPayingWallet(true);
+    try {
+      await orderService.payOrder(submittedOrder.id, "reward_wallet");
+      const latest = await orderService.fetchOrderById(submittedOrder.id);
+      setSubmittedOrder(latest);
+      const balanceData = await rewardWalletService.fetchRewardBalance();
+      setRewardBalance(Number(balanceData.balance || 0));
+      toast.success("返现钱包支付成功");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "返现钱包支付失败");
+    } finally {
+      setPayingWallet(false);
+    }
+  };
+
   if (submittedOrder) {
     return (
       <OrderSuccess
@@ -341,6 +378,10 @@ export default function Checkout() {
         onCopy={copyOrderText}
         onWhatsApp={openWhatsApp}
         onWeChat={openWeChat}
+        onPayOnline={payOnlineNow}
+        onPayRewardWallet={payByRewardWallet}
+        rewardBalance={rewardBalance}
+        payingWallet={payingWallet}
         onHome={() => navigate("/")}
         onViewOrders={() => navigate("/orders")}
         onViewOrderDetail={() => navigate(`/orders/${submittedOrder.id}`)}
@@ -395,6 +436,7 @@ export default function Checkout() {
             onChange={setPaymentMethod}
             onlineDisabled={paymentConfigLoaded && !stripeReady}
             onlineDisabledHint="商户暂未开通在线支付，请选择联系客服下单"
+            rewardBalance={rewardBalance}
           />
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1"><ShieldCheck size={12} /> SSL 安全加密</span>
@@ -473,7 +515,7 @@ export default function Checkout() {
                 className="mt-5 w-full rounded-full py-3.5 text-sm font-bold text-white theme-shadow transition-all hover:opacity-95 disabled:opacity-60"
                 style={{ background: "var(--theme-gradient)" }}
               >
-                {submitting ? "提交中…" : paymentMethod === "online" ? "立即支付" : "提交订单"}
+                {submitting ? "提交中…" : "提交订单"}
               </button>
               <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
                 <span className="flex items-center gap-1"><ShieldCheck size={12} /> SSL 安全加密</span>
@@ -498,7 +540,7 @@ export default function Checkout() {
             className="rounded-full px-8 py-3.5 text-sm font-bold text-white theme-shadow transition-all active:scale-[0.97] disabled:opacity-60"
             style={{ background: "var(--theme-gradient)" }}
           >
-            {submitting ? "提交中…" : paymentMethod === "online" ? "立即支付" : "提交订单"}
+            {submitting ? "提交中…" : "提交订单"}
           </button>
         </div>
       </div>
@@ -555,16 +597,23 @@ function SummaryRows({
 }
 
 /* ───── Order Success Page ───── */
-function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onHome, onViewOrders, onViewOrderDetail }: {
+function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onPayOnline, onPayRewardWallet, rewardBalance, payingWallet, onHome, onViewOrders, onViewOrderDetail }: {
   order: Order;
   onCopy: () => void;
   onWhatsApp: () => void;
   onWeChat: () => void;
+  onPayOnline: () => void;
+  onPayRewardWallet: () => void;
+  rewardBalance: number;
+  payingWallet: boolean;
   onHome: () => void;
   onViewOrders: () => void;
   onViewOrderDetail: () => void;
 }) {
   const isOnlinePaid = order.payment_method === "online" && order.status === ORDER_STATUS.PAID;
+  const isRewardWalletPaid = order.payment_method === "reward_wallet" && order.status === ORDER_STATUS.PAID;
+  const isPaid = isOnlinePaid || isRewardWalletPaid;
+  const canChoosePayment = order.status === ORDER_STATUS.PENDING;
   const isWhatsappOrder = order.payment_method === "whatsapp";
   return (
     <div className="min-h-screen bg-background">
@@ -574,7 +623,7 @@ function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onHome, onViewOrder
             <ArrowLeft size={20} className="text-foreground" />
           </button>
           <h1 className="text-base font-semibold text-foreground">
-            {isOnlinePaid ? "支付成功" : "订单已提交"}
+            {isPaid ? "支付成功" : "订单已提交"}
           </h1>
         </div>
       </header>
@@ -591,16 +640,17 @@ function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onHome, onViewOrder
             <CheckCircle2 size={40} className="text-gold" />
           </motion.div>
           <h2 className="font-display text-2xl font-bold text-foreground">
-            {isOnlinePaid ? "支付成功！" : "订单提交成功！"}
+            {isPaid ? "支付成功！" : "订单提交成功！"}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
             订单编号: <span className="font-mono font-semibold text-foreground">{order.order_no}</span>
           </p>
           <div className="mt-5 rounded-xl bg-secondary p-4">
             <p className="text-xs leading-relaxed text-muted-foreground">
-              {isOnlinePaid && "支付已完成，我们会尽快为您安排发货，可在「我的订单」实时查看进度。"}
+              {isPaid && "支付已完成，我们会尽快为您安排发货，可在「我的订单」实时查看进度。"}
               {!isOnlinePaid && order.payment_method === "online" && "支付正在处理中，结果将自动同步到您的订单。"}
-              {isWhatsappOrder && "📋 订单内容已自动复制到剪贴板，请选择下方方式发送给客服完成对接。"}
+              {canChoosePayment && "请选择支付方式：在线支付 / 返现钱包 / 客服下单。"}
+              {!canChoosePayment && isWhatsappOrder && "📋 订单内容已自动复制到剪贴板，请选择下方方式发送给客服完成对接。"}
             </p>
           </div>
         </div>
@@ -608,7 +658,31 @@ function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onHome, onViewOrder
         {/* Action buttons */}
         <div className="mt-6 space-y-3">
           {/* 在线支付：主 CTA = 查看订单 */}
-          {!isWhatsappOrder && (
+          {canChoosePayment && (
+            <>
+              <button
+                onClick={onPayOnline}
+                className="flex w-full items-center justify-center gap-2.5 rounded-full bg-gold py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98]"
+              >
+                在线支付
+              </button>
+              <button
+                onClick={onPayRewardWallet}
+                disabled={payingWallet}
+                className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-[var(--theme-price)] py-4 text-sm font-bold text-[var(--theme-price)] transition-all active:scale-[0.98] disabled:opacity-60"
+              >
+                {payingWallet ? "支付中…" : `返现钱包支付（可用 RM ${rewardBalance.toFixed(2)}）`}
+              </button>
+              <button
+                onClick={onWhatsApp}
+                className="flex w-full items-center justify-center gap-2.5 rounded-full bg-[hsl(142,70%,45%)] py-4 text-sm font-bold text-white shadow-lg shadow-[hsl(142,70%,45%)]/20 transition-all active:scale-[0.98]"
+              >
+                <Phone size={18} /> 客服下单
+              </button>
+            </>
+          )}
+
+          {!canChoosePayment && !isWhatsappOrder && (
             <button
               onClick={onViewOrderDetail}
               className="flex w-full items-center justify-center gap-2.5 rounded-full bg-gold py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98]"
@@ -618,7 +692,7 @@ function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onHome, onViewOrder
           )}
 
           {/* 仅客服下单时显示 WhatsApp / 微信 主 CTA */}
-          {isWhatsappOrder && (
+          {!canChoosePayment && isWhatsappOrder && (
             <>
               <button
                 onClick={onWhatsApp}

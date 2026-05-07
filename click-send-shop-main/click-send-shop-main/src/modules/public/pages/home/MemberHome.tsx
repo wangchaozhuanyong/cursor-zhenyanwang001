@@ -134,7 +134,7 @@ export default function MemberHome() {
       </header>
       <main className="mx-auto max-w-screen-xl pt-5">
         <section className="px-4">
-          <Header title="权益券包" icon={Ticket} subtitle="先领券再下单，叠加更划算" />
+          <Header title="权益券包" icon={Ticket} />
           <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">
             {(couponLoading ? Array.from({ length: 4 }) : couponTop).map((c: UserCoupon | number, i) => {
               if (couponLoading || typeof c === "number") {
@@ -172,6 +172,7 @@ export default function MemberHome() {
                           <Clock size={10} />
                           <span className="line-clamp-1">有效期至 {display.expireText}</span>
                         </div>
+                        <div className="mt-1 line-clamp-1 text-[11px] text-[var(--theme-text-muted)]">{display.scopeText}</div>
                       </div>
                       {isClaimed ? (
                         <button
@@ -346,6 +347,10 @@ function formatCouponCard(uc: UserCoupon) {
     discount: discountText,
     condition: c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛可用",
     expireText: typeof c.end_date === "string" ? c.end_date.slice(0, 10) : "",
+    scopeText:
+      c.scope_type === "category"
+        ? `适用分类：${Array.isArray(c.category_names) && c.category_names.length ? c.category_names.join(" / ") : "指定分类"}`
+        : "适用范围：全场商品",
   };
 }
 

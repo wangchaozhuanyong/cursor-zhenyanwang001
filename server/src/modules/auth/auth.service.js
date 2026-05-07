@@ -32,6 +32,11 @@ async function register(body) {
 
   const existing = await repo.findUserIdByPhones(buildPhoneLookupCandidates(phone, countryCode));
   if (existing) throw new ConflictError('该手机号已注册');
+  const parentInviteCode = String(inviteCode || '').trim().toUpperCase();
+  if (parentInviteCode) {
+    const inviter = await repo.selectUserIdByInviteCode(parentInviteCode);
+    if (!inviter) throw new ValidationError('邀请码不存在');
+  }
 
   const id = generateId();
   const hash = await hashPassword(password);
@@ -43,7 +48,7 @@ async function register(body) {
     passwordHash: hash,
     nickname: nickname || '用户',
     inviteCode: code,
-    parentInviteCode: inviteCode || '',
+    parentInviteCode,
   });
 
   /** 全库第一个注册用户自动成为管理员（与仅在建库时执行 extend3.sql 不同，避免「先 db:init 后注册」无管理员） */

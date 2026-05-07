@@ -3,9 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { createCoupon, updateCoupon, fetchCoupons } from "@/services/admin/couponService";
+import * as categoryService from "@/services/admin/categoryService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import type { Category } from "@/types/category";
 
 const couponTypes = [
   { value: "fixed", label: "满减券" },
@@ -20,6 +22,7 @@ export default function AdminCouponForm() {
   const isNew = id === "new";
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState({
     title: "",
     code: "",
@@ -29,9 +32,13 @@ export default function AdminCouponForm() {
     start_date: "",
     end_date: "",
     description: "",
+    scope_type: "all" as "all" | "category",
+    category_ids: [] as string[],
+    display_badge: "",
   });
 
   useEffect(() => {
+    categoryService.fetchCategories().then(setCategories).catch(() => {});
     if (!isNew && id) {
       setLoading(true);
       fetchCoupons()
@@ -47,6 +54,9 @@ export default function AdminCouponForm() {
               start_date: coupon.start_date?.slice(0, 10) || "",
               end_date: coupon.end_date?.slice(0, 10) || "",
               description: coupon.description || "",
+              scope_type: coupon.scope_type || "all",
+              category_ids: Array.isArray(coupon.category_ids) ? coupon.category_ids : [],
+              display_badge: coupon.display_badge || "",
             });
           }
         })
@@ -58,6 +68,10 @@ export default function AdminCouponForm() {
   const handleSave = async () => {
     if (!form.title) { toast.error("请输入优惠券名称"); return; }
     if (!form.code) { toast.error("请输入优惠券编码"); return; }
+    if (form.scope_type === "category" && form.category_ids.length === 0) {
+      toast.error("请选择至少一个适用分类");
+      return;
+    }
     setSaving(true);
     try {
       const payload: any = {
@@ -69,6 +83,9 @@ export default function AdminCouponForm() {
         start_date: form.start_date || new Date().toISOString().slice(0, 10),
         end_date: form.end_date || "2026-12-31",
         description: form.description,
+        scope_type: form.scope_type,
+        category_ids: form.scope_type === "category" ? form.category_ids : [],
+        display_badge: form.display_badge,
       };
       if (isNew) {
         await createCoupon(payload);
@@ -143,6 +160,54 @@ export default function AdminCouponForm() {
             <label className="mb-1 block text-xs font-medium text-muted-foreground">描述（可选）</label>
             <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="优惠券说明..." className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground resize-none" />
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">适用范围</label>
+              <select
+                value={form.scope_type}
+                onChange={(e) => setForm({ ...form, scope_type: e.target.value as "all" | "category" })}
+                className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none"
+              >
+                <option value="all">全场通用</option>
+                <option value="category">指定分类</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">客户端标签（可选）</label>
+              <input
+                value={form.display_badge}
+                onChange={(e) => setForm({ ...form, display_badge: e.target.value })}
+                placeholder="如：数码专享"
+                className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+              />
+            </div>
+          </div>
+          {form.scope_type === "category" && (
+            <div>
+              <label className="mb-2 block text-xs font-medium text-muted-foreground">适用分类（多选）</label>
+              <div className="grid gap-2 rounded-lg border border-border bg-secondary/40 p-3 sm:grid-cols-2">
+                {categories.map((cat) => {
+                  const checked = form.category_ids.includes(cat.id);
+                  return (
+                    <label key={cat.id} className="flex items-center gap-2 text-sm text-foreground">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setForm((prev) => ({ ...prev, category_ids: [...prev.category_ids, cat.id] }));
+                          } else {
+                            setForm((prev) => ({ ...prev, category_ids: prev.category_ids.filter((id) => id !== cat.id) }));
+                          }
+                        }}
+                      />
+                      {cat.name}
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-3">

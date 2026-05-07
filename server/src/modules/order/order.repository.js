@@ -31,6 +31,14 @@ async function selectUserCouponForUpdate(q, ucId, userId) {
   return row || null;
 }
 
+async function selectCouponCategoryIds(q, couponId) {
+  const [rows] = await q.query(
+    'SELECT category_id FROM coupon_categories WHERE coupon_id = ?',
+    [couponId],
+  );
+  return rows.map((r) => r.category_id).filter(Boolean);
+}
+
 async function updateUserCouponUsed(q, ucId) {
   await q.query("UPDATE user_coupons SET status = 'used', used_at = NOW() WHERE id = ?", [ucId]);
 }
@@ -146,6 +154,14 @@ async function selectOrderByIdAndUser(q, orderId, userId) {
   return row || null;
 }
 
+async function selectOrderByIdAndUserForUpdate(q, orderId, userId) {
+  const [[row]] = await q.query(
+    'SELECT * FROM orders WHERE id = ? AND user_id = ? FOR UPDATE',
+    [orderId, userId],
+  );
+  return row || null;
+}
+
 async function selectOrderItems(q, orderId) {
   const [rows] = await q.query('SELECT * FROM order_items WHERE order_id = ?', [orderId]);
   return rows;
@@ -189,10 +205,10 @@ async function restoreUserCouponHeuristic(q, userId, createdAt) {
 }
 
 async function updateOrderPaid(q, orderId, params = {}) {
-  const { paymentTime, paymentChannel, paymentTransactionNo } = params;
+  const { paymentTime, paymentChannel, paymentTransactionNo, paymentMethod } = params;
   await q.query(
     `UPDATE orders
-       SET status = ?, payment_status = ?, payment_time = ?, payment_channel = ?, payment_transaction_no = ?
+       SET status = ?, payment_status = ?, payment_time = ?, payment_channel = ?, payment_transaction_no = ?, payment_method = ?
      WHERE id = ?`,
     [
       ORDER_STATUS.PAID,
@@ -200,6 +216,7 @@ async function updateOrderPaid(q, orderId, params = {}) {
       paymentTime || new Date(),
       paymentChannel || 'stripe',
       paymentTransactionNo || '',
+      paymentMethod || 'online',
       orderId,
     ],
   );
@@ -251,6 +268,7 @@ module.exports = {
   selectProductsForUpdate,
   selectShippingTemplate,
   selectUserCouponForUpdate,
+  selectCouponCategoryIds,
   updateUserCouponUsed,
   insertOrder,
   updateOrderCouponUcId,
@@ -264,6 +282,7 @@ module.exports = {
   selectOrdersPage,
   selectOrderItemsByOrderIds,
   selectOrderByIdAndUser,
+  selectOrderByIdAndUserForUpdate,
   selectOrderItems,
   updateOrderStatus,
   selectOrderItemQtyRows,

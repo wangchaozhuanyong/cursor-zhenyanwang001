@@ -15,6 +15,7 @@ const adminAuth = require('../../middleware/adminAuth');
 const requirePermission = adminAuth.requirePermission;
 const { userQueryLimiter } = require('../../middleware/rateLimiters');
 const { paginationCap } = require('../../middleware/paginationCap');
+const { validate } = require('../../middleware/validate');
 
 const authCtrl = require('./controller/adminAuth.controller');
 const dashboardCtrl = require('./controller/adminDashboard.controller');
@@ -38,6 +39,8 @@ const settingsCtrl = require('./controller/adminSettings.controller');
 const themeCtrl = require('./controller/adminTheme.controller');
 const exportCtrl = require('./controller/adminExport.controller');
 const recycleBinCtrl = require('./controller/adminRecycleBin.controller');
+const adminPayCtrl = require('../payments/adminPayments.controller');
+const paySchemas = require('../payments/payments.schemas');
 
 const uploadCsv = multer({
   storage: multer.memoryStorage(),
@@ -86,6 +89,58 @@ router.post('/products/batch-status', adminAuth, requirePermission('product.mana
 router.get('/product-tags', adminAuth, requirePermission('tag.manage'), productCtrl.listTags);
 router.post('/product-tags', adminAuth, requirePermission('tag.manage'), productCtrl.createTag);
 router.delete('/product-tags/:id', adminAuth, requirePermission('tag.manage'), productCtrl.removeTag);
+
+/* ── Payments（支付管理） ── */
+router.get('/payments/channels', adminAuth, requirePermission('payment.manage'), adminPayCtrl.listChannels);
+router.put(
+  '/payments/channels/:id',
+  adminAuth,
+  requirePermission('payment.manage'),
+  validate({ params: paySchemas.adminChannelIdParamSchema, body: paySchemas.updateChannelBodySchema }),
+  adminPayCtrl.updateChannel,
+);
+router.get(
+  '/payments/orders',
+  adminAuth,
+  requirePermission('payment.manage'),
+  validate({ query: paySchemas.listAdminQuerySchema }),
+  adminPayCtrl.listPaymentOrders,
+);
+router.get(
+  '/payments/events',
+  adminAuth,
+  requirePermission('payment.manage'),
+  validate({ query: paySchemas.listAdminQuerySchema }),
+  adminPayCtrl.listPaymentEvents,
+);
+router.post(
+  '/payments/orders/:orderId/mark-paid',
+  adminAuth,
+  requirePermission('payment.manage'),
+  validate({ params: paySchemas.adminOrderIdParamSchema, body: paySchemas.markPaidBodySchema }),
+  adminPayCtrl.markOrderPaid,
+);
+router.post(
+  '/payments/events/:eventId/replay',
+  adminAuth,
+  requirePermission('payment.manage'),
+  validate({ params: paySchemas.adminEventIdParamSchema }),
+  adminPayCtrl.replayEvent,
+);
+router.get(
+  '/payments/reconciliations',
+  adminAuth,
+  requirePermission('payment.manage'),
+  validate({ query: paySchemas.listAdminQuerySchema }),
+  adminPayCtrl.listReconciliations,
+);
+router.post(
+  '/payments/reconciliations',
+  adminAuth,
+  requirePermission('payment.manage'),
+  validate({ body: paySchemas.createReconciliationBodySchema }),
+  adminPayCtrl.createReconciliation,
+);
 
 /* ── Orders ── */
 router.get('/orders/export', adminAuth, requirePermission('order.view'), orderCtrl.exportCsv);

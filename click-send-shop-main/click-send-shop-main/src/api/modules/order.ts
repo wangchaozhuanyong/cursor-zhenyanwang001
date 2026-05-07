@@ -26,3 +26,7 @@ export function confirmReceive(id: string) {
 export function createStripeCheckoutSession(id: string) {
   return post<{ url: string }>(`/orders/${id}/stripe-checkout`);
 }
+
+export function payOrder(id: string, channel: string) {
+  return post<void>(`/orders/${id}/pay`, { channel });
+}

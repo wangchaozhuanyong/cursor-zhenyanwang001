@@ -41,7 +41,7 @@ export interface Order {
   address: string;
   tracking_no?: string;
   carrier?: string;
-  /** 下单时选择：whatsapp | online */
+  /** 下单/支付方式：whatsapp | online | reward_wallet */
   payment_method?: string;
 }
 

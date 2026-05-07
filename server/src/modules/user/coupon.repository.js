@@ -21,7 +21,19 @@ async function selectUserCouponsPage(userId, status, pageSize, offset) {
   const [rows] = await db.query(
     `SELECT uc.id, uc.claimed_at, uc.used_at, uc.status,
             c.id AS coupon_id, c.code, c.title, c.type, c.value,
-            c.min_amount, c.start_date, c.end_date, c.status AS coupon_status, c.description
+            c.min_amount, c.start_date, c.end_date, c.status AS coupon_status, c.description,
+            c.scope_type, c.display_badge,
+            (
+              SELECT GROUP_CONCAT(cc.category_id ORDER BY cc.category_id SEPARATOR ',')
+              FROM coupon_categories cc
+              WHERE cc.coupon_id = c.id
+            ) AS category_ids,
+            (
+              SELECT GROUP_CONCAT(cat.name ORDER BY cat.sort_order SEPARATOR ',')
+              FROM coupon_categories cc
+              JOIN categories cat ON cat.id = cc.category_id
+              WHERE cc.coupon_id = c.id
+            ) AS category_names
      FROM user_coupons uc
      JOIN coupons c ON uc.coupon_id = c.id
      ${where}
@@ -34,7 +46,21 @@ async function selectUserCouponsPage(userId, status, pageSize, offset) {
 
 async function selectAvailableCoupons() {
   const [rows] = await db.query(
-    `SELECT * FROM coupons WHERE status = 'available' AND end_date >= CURDATE() AND start_date <= CURDATE() ORDER BY created_at DESC`,
+    `SELECT c.*,
+            (
+              SELECT GROUP_CONCAT(cc.category_id ORDER BY cc.category_id SEPARATOR ',')
+              FROM coupon_categories cc
+              WHERE cc.coupon_id = c.id
+            ) AS category_ids,
+            (
+              SELECT GROUP_CONCAT(cat.name ORDER BY cat.sort_order SEPARATOR ',')
+              FROM coupon_categories cc
+              JOIN categories cat ON cat.id = cc.category_id
+              WHERE cc.coupon_id = c.id
+            ) AS category_names
+     FROM coupons c
+     WHERE c.status = 'available' AND c.end_date >= CURDATE() AND c.start_date <= CURDATE()
+     ORDER BY c.created_at DESC`,
   );
   return rows;
 }
@@ -49,7 +75,20 @@ async function selectClaimedCouponIds(userId) {
 
 async function selectCouponByCodeOrId(code) {
   const [[row]] = await db.query(
-    `SELECT * FROM coupons WHERE (code = ? OR id = ?) AND status = 'available' AND end_date >= CURDATE() AND start_date <= CURDATE()`,
+    `SELECT c.*,
+            (
+              SELECT GROUP_CONCAT(cc.category_id ORDER BY cc.category_id SEPARATOR ',')
+              FROM coupon_categories cc
+              WHERE cc.coupon_id = c.id
+            ) AS category_ids,
+            (
+              SELECT GROUP_CONCAT(cat.name ORDER BY cat.sort_order SEPARATOR ',')
+              FROM coupon_categories cc
+              JOIN categories cat ON cat.id = cc.category_id
+              WHERE cc.coupon_id = c.id
+            ) AS category_names
+     FROM coupons c
+     WHERE (c.code = ? OR c.id = ?) AND c.status = 'available' AND c.end_date >= CURDATE() AND c.start_date <= CURDATE()`,
     [code, code],
   );
   return row || null;

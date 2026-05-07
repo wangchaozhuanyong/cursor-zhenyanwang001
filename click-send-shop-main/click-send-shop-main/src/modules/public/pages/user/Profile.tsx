@@ -253,7 +253,7 @@ export default function Profile() {
   const benefitItems = [
     { icon: Ticket, label: "优惠券", path: "/coupons", show: true },
     { icon: Star, label: "积分中心", path: "/points", show: true, hint: `${pointsBalance} 分` },
-    { icon: Users, label: "邀请好友", path: "/invite", show: true, hint: subCount > 0 ? `${subCount} 位下级` : undefined },
+    { icon: Users, label: "邀请好友", path: "/invite", show: true, hint: subCount > 0 ? `${subCount} 位分享用户` : undefined },
     { icon: Gift, label: "返现记录", path: "/rewards", show: subordinateEnabled },
   ].filter((m) => m.show);
 
@@ -295,7 +295,7 @@ export default function Profile() {
             <StatChip value={favoriteCount} label="收藏" onClick={() => navigate("/favorites")} />
             <StatChip value={pointsBalance} label="积分" onClick={() => navigate("/points")} accent />
             {subordinateEnabled && (
-              <StatChip value={subCount} label="下级" onClick={() => navigate("/invite")} />
+              <StatChip value={subCount} label="分享用户" onClick={() => navigate("/invite")} />
             )}
           </div>
         </section>

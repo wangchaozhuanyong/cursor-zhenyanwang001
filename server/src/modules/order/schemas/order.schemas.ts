@@ -29,7 +29,7 @@ export const createOrderBodySchema = z.object({
   shipping_template_id: idParam.optional(),
   shipping_name: z.string().trim().max(64).optional(),
   payment_method: z
-    .enum(['online', 'whatsapp', 'offline', 'manual', 'mock', 'cash', 'bank_transfer'])
+    .enum(['online', 'reward_wallet', 'whatsapp', 'offline', 'manual', 'mock', 'cash', 'bank_transfer'])
     .optional(),
   estimated_weight_kg: z.coerce.number().nonnegative().optional(),
 });

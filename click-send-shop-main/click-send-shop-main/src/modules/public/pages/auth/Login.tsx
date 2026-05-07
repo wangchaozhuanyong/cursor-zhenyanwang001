@@ -46,6 +46,7 @@ export default function Login() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [nickname, setNickname] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [remember, setRemember] = useState(false);
 
@@ -58,6 +59,15 @@ export default function Login() {
     const savedCc = localStorage.getItem(REMEMBER_COUNTRY_CODE_KEY);
     if (savedCc) setCountryCode(savedCc);
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const fromShare = params.get("ref") || params.get("inviteCode") || "";
+    const normalized = fromShare.trim().toUpperCase();
+    if (!normalized) return;
+    setMode("register");
+    setInviteCode(normalized);
+  }, [location.search]);
 
   const loading = authStore.loading;
 
@@ -85,9 +95,18 @@ export default function Login() {
         }
         await authStore.login({ phone, countryCode, password });
       } else {
-        await authStore.register({ phone, countryCode, password, nickname });
+        await authStore.register({
+          phone,
+          countryCode,
+          password,
+          nickname,
+          inviteCode: inviteCode.trim() ? inviteCode.trim().toUpperCase() : undefined,
+        });
       }
-      toast.success(mode === "login" ? "登录成功" : "注册成功");
+      toast.success(mode === "login" ? "登录成功" : "注册成功", {
+        duration: 900,
+        position: "top-center",
+      });
       navigate(from, { replace: true });
     } catch (e) {
       const fallback = useAuthStore.getState().error;
@@ -165,6 +184,20 @@ export default function Login() {
                   placeholder="昵称"
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
+                  className="w-full rounded-2xl border border-border bg-card py-3.5 pl-12 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-all"
+                />
+              </div>
+            </div>
+          )}
+          {mode === "register" && (
+            <div className="animate-in fade-in zoom-in-95 duration-200">
+              <div className="relative">
+                <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="邀请码（选填）"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                   className="w-full rounded-2xl border border-border bg-card py-3.5 pl-12 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-all"
                 />
               </div>

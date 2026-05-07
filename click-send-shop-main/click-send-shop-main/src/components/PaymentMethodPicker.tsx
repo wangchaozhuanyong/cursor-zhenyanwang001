@@ -1,6 +1,6 @@
-import { CreditCard, MessageSquare } from "lucide-react";
+import { CreditCard, MessageSquare, Wallet } from "lucide-react";
 
-export type PaymentMethod = "online" | "whatsapp";
+export type PaymentMethod = "online" | "reward_wallet" | "whatsapp";
 
 interface PaymentMethodPickerProps {
   value: PaymentMethod;
@@ -9,6 +9,7 @@ interface PaymentMethodPickerProps {
   onlineDisabled?: boolean;
   /** 在线支付不可用时的提示文案 */
   onlineDisabledHint?: string;
+  rewardBalance?: number;
 }
 
 export default function PaymentMethodPicker({
@@ -16,6 +17,7 @@ export default function PaymentMethodPicker({
   onChange,
   onlineDisabled = false,
   onlineDisabledHint = "在线支付暂不可用，请联系客服",
+  rewardBalance = 0,
 }: PaymentMethodPickerProps) {
   const options = [
     {
@@ -26,6 +28,15 @@ export default function PaymentMethodPicker({
       recommended: true,
       disabled: onlineDisabled,
       disabledHint: onlineDisabledHint,
+    },
+    {
+      id: "reward_wallet" as const,
+      icon: Wallet,
+      title: "返现钱包",
+      desc: `使用返现余额直接支付（可用 RM ${rewardBalance.toFixed(2)}）`,
+      recommended: false,
+      disabled: false,
+      disabledHint: "",
     },
     {
       id: "whatsapp" as const,

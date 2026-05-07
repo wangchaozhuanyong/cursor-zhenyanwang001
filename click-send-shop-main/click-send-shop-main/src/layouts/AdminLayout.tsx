@@ -32,6 +32,7 @@ import {
   Shield,
   MessageSquareMore,
   Palette,
+  CreditCard,
 } from "lucide-react";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { isAdminAuthenticated, adminLogout, fetchAdminProfile } from "@/services/admin/accountService";
@@ -68,6 +69,18 @@ const navItemsRaw: NavItem[] = [
     ],
   },
   { icon: ShoppingCart, label: "订单管理", path: "/admin/orders", permission: "order.view" },
+  {
+    icon: CreditCard,
+    label: "支付管理",
+    path: "/admin/payments/channels",
+    permission: "payment.manage",
+    children: [
+      { icon: CreditCard, label: "渠道配置", path: "/admin/payments/channels", permission: "payment.manage" },
+      { icon: ClipboardList, label: "支付流水", path: "/admin/payments/orders", permission: "payment.manage" },
+      { icon: ScrollText, label: "Webhook / 事件", path: "/admin/payments/events", permission: "payment.manage" },
+      { icon: BarChart3, label: "对账中心", path: "/admin/payments/reconciliations", permission: "payment.manage" },
+    ],
+  },
   { icon: RotateCcw, label: "售后管理", path: "/admin/returns", permission: "return.view" },
   { icon: MessageSquareMore, label: "评论管理", path: "/admin/reviews", permission: "review.manage" },
   { icon: Users, label: "用户管理", path: "/admin/users", permission: "user.view" },

@@ -12,6 +12,10 @@ export interface Coupon {
   end_date: string;
   status: CouponStatus;
   description?: string;
+  scope_type?: "all" | "category";
+  display_badge?: string;
+  category_ids?: string[];
+  category_names?: string[];
 }
 
 export interface UserCoupon {

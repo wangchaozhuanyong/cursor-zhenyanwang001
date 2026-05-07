@@ -89,6 +89,11 @@ const AdminRoles = lazy(() => import("@/modules/admin/pages/rbac/AdminRoles"));
 const AdminLogs = lazy(() => import("@/modules/admin/pages/system/AdminLogs"));
 const AdminRecycleBin = lazy(() => import("@/modules/admin/pages/system/AdminRecycleBin"));
 
+const AdminPaymentChannels = lazy(() => import("@/modules/admin/pages/payment/AdminPaymentChannels"));
+const AdminPaymentOrders = lazy(() => import("@/modules/admin/pages/payment/AdminPaymentOrders"));
+const AdminPaymentEvents = lazy(() => import("@/modules/admin/pages/payment/AdminPaymentEvents"));
+const AdminPaymentReconciliations = lazy(() => import("@/modules/admin/pages/payment/AdminPaymentReconciliations"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -200,6 +205,10 @@ const App = () => (
                 <Route path="tags" element={<AdminProductTags />} />
                 <Route path="orders" element={<AdminOrders />} />
                 <Route path="orders/:id" element={<AdminOrderDetail />} />
+                <Route path="payments/channels" element={<AdminPaymentChannels />} />
+                <Route path="payments/orders" element={<AdminPaymentOrders />} />
+                <Route path="payments/events" element={<AdminPaymentEvents />} />
+                <Route path="payments/reconciliations" element={<AdminPaymentReconciliations />} />
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="users/:id" element={<AdminUserDetail />} />
                 <Route path="invites" element={<AdminInvites />} />

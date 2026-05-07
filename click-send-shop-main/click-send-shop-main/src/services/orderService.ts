@@ -30,3 +30,7 @@ export async function createStripeCheckoutSession(id: string) {
   const res = await orderApi.createStripeCheckoutSession(id);
   return res.data;
 }
+
+export async function payOrder(id: string, channel: "reward_wallet" | "online" | "whatsapp") {
+  await orderApi.payOrder(id, channel);
+}

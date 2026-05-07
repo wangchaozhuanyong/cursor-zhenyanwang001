@@ -33,6 +33,11 @@ async function findUserByPhones(phones) {
   return row || null;
 }
 
+async function selectUserIdByInviteCode(inviteCode) {
+  const [[row]] = await db.query('SELECT id FROM users WHERE invite_code = ? LIMIT 1', [inviteCode]);
+  return row || null;
+}
+
 async function selectProfileFields(userId) {
   const [[row]] = await db.query(
     `SELECT id, phone, nickname, avatar, invite_code, parent_invite_code,
@@ -105,6 +110,7 @@ module.exports = {
   insertUser,
   findUserByPhone,
   findUserByPhones,
+  selectUserIdByInviteCode,
   selectProfileFields,
   findPhoneDuplicate,
   findPhoneDuplicateByPhones,

@@ -2,6 +2,12 @@ const { generateId } = require('../../utils/helpers');
 const repo = require('./coupon.repository');
 
 function mapUserCouponRow(r) {
+  const categoryIds = typeof r.category_ids === 'string' && r.category_ids
+    ? r.category_ids.split(',').filter(Boolean)
+    : [];
+  const categoryNames = typeof r.category_names === 'string' && r.category_names
+    ? r.category_names.split(',').filter(Boolean)
+    : [];
   return {
     id: r.id,
     claimed_at: r.claimed_at || '',
@@ -18,11 +24,21 @@ function mapUserCouponRow(r) {
       end_date: r.end_date,
       status: r.coupon_status,
       description: r.description || undefined,
+      scope_type: r.scope_type || 'all',
+      display_badge: r.display_badge || '',
+      category_ids: categoryIds,
+      category_names: categoryNames,
     },
   };
 }
 
 function mapCouponEntity(c) {
+  const categoryIds = typeof c.category_ids === 'string' && c.category_ids
+    ? c.category_ids.split(',').filter(Boolean)
+    : [];
+  const categoryNames = typeof c.category_names === 'string' && c.category_names
+    ? c.category_names.split(',').filter(Boolean)
+    : [];
   return {
     id: c.id,
     claimed_at: '',
@@ -38,6 +54,10 @@ function mapCouponEntity(c) {
       end_date: c.end_date,
       status: c.status,
       description: c.description || undefined,
+      scope_type: c.scope_type || 'all',
+      display_badge: c.display_badge || '',
+      category_ids: categoryIds,
+      category_names: categoryNames,
     },
   };
 }
@@ -89,6 +109,10 @@ async function claimCoupon(userId, body) {
         end_date: coupon.end_date,
         status: coupon.status,
         description: coupon.description || undefined,
+        scope_type: coupon.scope_type || 'all',
+        display_badge: coupon.display_badge || '',
+        category_ids: typeof coupon.category_ids === 'string' && coupon.category_ids ? coupon.category_ids.split(',').filter(Boolean) : [],
+        category_names: typeof coupon.category_names === 'string' && coupon.category_names ? coupon.category_names.split(',').filter(Boolean) : [],
       },
     },
     message: '领取成功',

@@ -7,6 +7,7 @@ const cart = require('../modules/cart');
 const order = require('../modules/order');
 const admin = require('../modules/admin');
 const theme = require('../modules/theme');
+const payments = require('../modules/payments');
 
 const router = Router();
 
@@ -16,6 +17,7 @@ router.use(user);
 router.use(product);
 router.use(cart);
 router.use(order);
+router.use(payments);
 router.use(admin);
 router.use(theme);
 

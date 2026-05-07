@@ -1,18 +1,20 @@
 ﻿import { useRef, useState } from "react";
-import { ArrowLeft, Camera, Moon, Sun, Lock } from "lucide-react";
+import { ArrowLeft, Camera, Lock, Palette, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
 import { toast } from "sonner";
-import { useTheme } from "@/hooks/useTheme";
+import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import * as uploadService from "@/services/uploadService";
 import * as userService from "@/services/userService";
+import SkinPickerDialog from "@/components/SkinPickerDialog";
 
 export default function Settings() {
   const navigate = useNavigate();
   const goBack = useGoBack();
   const { nickname, phone, avatar, wechat, whatsapp, profileSaving, setNickname, setPhone, setWechat, setWhatsapp, saveProfile } = useUserStore();
-  const { theme, toggle } = useTheme();
+  const { skins, skinId } = useThemeRuntime();
+  const currentSkinName = skins.find((s) => s.id === skinId)?.name || "默认皮肤";
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showPwdForm, setShowPwdForm] = useState(false);
   const [oldPwd, setOldPwd] = useState("");
@@ -116,23 +118,25 @@ export default function Settings() {
           ))}
         </div>
 
-        {/* Dark mode toggle */}
-        <div className="mt-6 flex items-center justify-between theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-4 theme-shadow">
-          <div className="flex items-center gap-3">
-            {theme === "dark" ? <Moon size={18} className="text-gold" /> : <Sun size={18} className="text-gold" />}
-            <span className="text-sm font-medium text-foreground">深色模式</span>
-          </div>
-          <button
-            onClick={toggle}
-            className={`relative h-7 w-12 rounded-full transition-colors ${theme === "dark" ? "bg-gold" : "bg-secondary"}`}
-          >
-            <div
-              className={`absolute top-0.5 h-6 w-6 rounded-full bg-background shadow transition-transform ${
-                theme === "dark" ? "translate-x-[22px]" : "translate-x-0.5"
-              }`}
-            />
-          </button>
-        </div>
+        {/* Skin select */}
+        <SkinPickerDialog
+          title="选择皮肤"
+          trigger={
+            <button
+              type="button"
+              className="mt-6 flex w-full items-center justify-between theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-4 theme-shadow"
+            >
+              <div className="flex items-center gap-3">
+                <Palette size={18} className="text-gold" />
+                <span className="text-sm font-medium text-foreground">皮肤</span>
+              </div>
+              <span className="text-sm font-medium text-muted-foreground truncate max-w-[12rem]">
+                {currentSkinName}
+              </span>
+              <ChevronRight size={16} className="text-muted-foreground" />
+            </button>
+          }
+        />
 
         {/* Change password */}
         <div className="mt-6 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">

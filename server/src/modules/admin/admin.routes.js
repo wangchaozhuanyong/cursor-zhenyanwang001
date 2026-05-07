@@ -163,6 +163,7 @@ router.get('/points/records', adminAuth, requirePermission('points.manage'), poi
 router.get('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.getSite);
 router.put('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.updateSite);
 router.put('/system/theme', adminAuth, requirePermission('settings.manage'), themeCtrl.updateTheme);
+router.put('/system/theme/skins', adminAuth, requirePermission('settings.manage'), themeCtrl.updateThemeSkins);
 router.get('/content', adminAuth, requirePermission('content.manage'), settingsCtrl.listContent);
 router.put('/content/:id', adminAuth, requirePermission('content.manage'), settingsCtrl.updateContent);
 

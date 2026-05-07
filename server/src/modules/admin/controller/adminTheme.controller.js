@@ -5,3 +5,8 @@ exports.updateTheme = asyncRoute(async (req, res) => {
   const data = await themeService.updateThemeConfig(req.body, req.user?.id, req);
   res.success(data, '主题配置已更新');
 });
+
+exports.updateThemeSkins = asyncRoute(async (req, res) => {
+  const data = await themeService.updateThemeSkins(req.body, req.user?.id, req);
+  res.success(data, '皮肤集合已更新');
+});

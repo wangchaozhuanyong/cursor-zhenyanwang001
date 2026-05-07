@@ -11,3 +11,16 @@ export async function saveSystemThemeConfig(data: ThemeConfig) {
   return res.data;
 }
 
+export async function fetchThemeSkins() {
+  const res = await themeApi.getThemeSkins();
+  return res.data;
+}
+
+export async function saveSystemThemeSkins(data: {
+  defaultSkinId: string;
+  skins: Array<{ id: string; name: string; config: ThemeConfig }>;
+}) {
+  const res = await themeApi.updateSystemThemeSkins(data);
+  return res.data;
+}
+

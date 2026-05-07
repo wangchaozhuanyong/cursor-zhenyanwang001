@@ -1,28 +1,25 @@
 import { useEffect, useState } from "react";
-import { ChevronRight, Gift, Heart, MapPin, Package, Settings, Star, Users, Ticket, Bell, HelpCircle, RotateCcw, Clock, Info, Moon, Sun, LogOut } from "lucide-react";
+import { ChevronRight, Gift, Heart, MapPin, Package, Palette, Settings, Star, Users, Ticket, Bell, HelpCircle, RotateCcw, Clock, Info, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "@/stores/useUserStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { isLoggedIn } from "@/utils/token";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
-import { useTheme } from "@/hooks/useTheme";
 import { toast } from "sonner";
 import logoWebp from "@/assets/logo.webp";
 import * as inviteService from "@/services/inviteService";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import SkinPickerDialog from "@/components/SkinPickerDialog";
 
-type ThemeMode = "light" | "dark";
-
-function ThemeToggleButton({ theme, onToggle }: { theme: ThemeMode; onToggle: () => void }) {
+function SkinButton() {
   return (
     <button
       type="button"
-      onClick={onToggle}
       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-text-on-surface)_6%,transparent)] text-[var(--theme-text-on-surface)] backdrop-blur transition-transform active:scale-90"
-      title={theme === "dark" ? "切换亮色" : "切换暗色"}
+      title="更换皮肤"
     >
-      {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
+      <Palette size={19} />
     </button>
   );
 }
@@ -98,7 +95,6 @@ export default function Profile() {
   const authStore = useAuthStore();
   const { orders, loadOrders } = useOrderStore();
   const favoriteCount = useFavoritesStore((s) => s.favoriteIds.length);
-  const { theme, toggle } = useTheme();
   const [subCount, setSubCount] = useState(0);
 
   useEffect(() => {
@@ -148,7 +144,7 @@ export default function Profile() {
                   <p className="mt-1 max-w-[12rem] text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">管理订单、积分、优惠券与会员权益</p>
                 </div>
               </div>
-              <ThemeToggleButton theme={theme} onToggle={toggle} />
+              <SkinPickerDialog trigger={<SkinButton />} />
             </div>
 
             <div className="relative z-10 mt-6 grid grid-cols-2 gap-3">
@@ -190,8 +186,8 @@ export default function Profile() {
           <section className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
             <div className="mb-3 flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-black text-[var(--theme-text-on-surface)]">登录后可用</h3>
-                <p className="mt-1 text-xs text-theme-muted">开启你的会员工作台</p>
+                <h3 className="text-sm font-black text-[var(--theme-text-on-surface)]">会员中心能力</h3>
+                <p className="mt-1 text-xs text-theme-muted">订单、积分、优惠券都在这里统一管理</p>
               </div>
               <button
                 type="button"
@@ -290,7 +286,7 @@ export default function Profile() {
               </div>
             </div>
 
-            <ThemeToggleButton theme={theme} onToggle={toggle} />
+            <SkinPickerDialog trigger={<SkinButton />} />
           </div>
 
           {/* Stats: 订单/收藏 优先，积分/下级 次之 */}
@@ -308,7 +304,7 @@ export default function Profile() {
       <main className="mx-auto max-w-lg px-4 py-4 space-y-4">
         {/* 一级 - 核心购物入口（九宫格） */}
         <section>
-          <h3 className="mb-2 px-1 text-xs font-medium text-muted-foreground">我的购物</h3>
+          <h3 className="mb-2 px-1 text-xs font-medium text-muted-foreground">交易与履约</h3>
           <div className="grid grid-cols-4 gap-2 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow">
             {quickItems.map((item) => (
               <button
@@ -328,7 +324,7 @@ export default function Profile() {
 
         {/* 二级 - 会员权益 */}
         <section>
-          <h3 className="mb-2 px-1 text-xs font-medium text-muted-foreground">会员权益</h3>
+          <h3 className="mb-2 px-1 text-xs font-medium text-muted-foreground">权益资产</h3>
           <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow">
             {benefitItems.map((item, i) => (
               <button
@@ -351,7 +347,7 @@ export default function Profile() {
 
         {/* 三级 - 系统 / 帮助 */}
         <section>
-          <h3 className="mb-2 px-1 text-xs font-medium text-muted-foreground">其他</h3>
+          <h3 className="mb-2 px-1 text-xs font-medium text-muted-foreground">账户与帮助</h3>
           <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow">
             {miscItems.map((item, i) => (
               <button

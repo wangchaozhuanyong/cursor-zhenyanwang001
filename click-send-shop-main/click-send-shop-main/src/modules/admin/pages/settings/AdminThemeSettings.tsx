@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AlignCenter,
   AlignLeft,
+  Plus,
   Loader2,
   Maximize,
   Minimize,
@@ -16,7 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
-import { fetchActiveThemeConfig, saveSystemThemeConfig } from "@/services/admin/themeService";
+import { fetchThemeSkins, saveSystemThemeSkins } from "@/services/admin/themeService";
 import type { ThemeConfig } from "@/types/theme";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { getThemeReadabilityReport } from "@/utils/themeContrast";
@@ -61,6 +62,12 @@ const DEFAULT_THEME_CONFIG: ThemeConfig = {
     surfaceColor: "#171717",
     borderColor: "auto",
   },
+};
+
+type ThemeSkin = {
+  id: string;
+  name: string;
+  config: ThemeConfig;
 };
 
 const fontsList = [
@@ -128,15 +135,27 @@ function AdvancedColorInput({
 export default function AdminThemeSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [skins, setSkins] = useState<ThemeSkin[]>([]);
+  const [defaultSkinId, setDefaultSkinId] = useState<string>("default");
+  const [selectedSkinId, setSelectedSkinId] = useState<string>("default");
   const [themeConfig, setThemeConfig] = useState<ThemeConfig>(DEFAULT_THEME_CONFIG);
   const [previewMode, setPreviewMode] = useState<"light" | "dark">("light");
   const [editingMode, setEditingMode] = useState<"light" | "dark">("light");
 
   useEffect(() => {
     setLoading(true);
-    fetchActiveThemeConfig()
+    fetchThemeSkins()
       .then((data) => {
-        if (data) setThemeConfig({ ...DEFAULT_THEME_CONFIG, ...data });
+        const remoteSkins = Array.isArray(data?.skins) ? (data.skins as ThemeSkin[]) : [];
+        if (!remoteSkins.length) return;
+        const activeId = typeof data?.defaultSkinId === "string" ? data.defaultSkinId : remoteSkins[0].id;
+
+        setSkins(remoteSkins);
+        setDefaultSkinId(activeId);
+        setSelectedSkinId(activeId);
+
+        const activeSkin = remoteSkins.find((s) => s.id === activeId) || remoteSkins[0];
+        setThemeConfig({ ...DEFAULT_THEME_CONFIG, ...(activeSkin.config || {}) });
       })
       .catch((e) => toast.error(toastErrorMessage(e, "加载主题配置失败")))
       .finally(() => setLoading(false));
@@ -159,8 +178,11 @@ export default function AdminThemeSettings() {
   const saveTheme = async () => {
     setSaving(true);
     try {
-      await saveSystemThemeConfig(themeConfig);
-      toast.success("主题配置已保存");
+      const nextSkins = skins.map((s) =>
+        s.id === selectedSkinId ? { ...s, config: themeConfig } : s,
+      );
+      await saveSystemThemeSkins({ defaultSkinId, skins: nextSkins });
+      toast.success("皮肤配置已保存");
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败，请稍后重试"));
     } finally {
@@ -172,6 +194,32 @@ export default function AdminThemeSettings() {
     if (window.confirm("确定恢复默认主题配置？")) {
       setThemeConfig(DEFAULT_THEME_CONFIG);
     }
+  };
+
+  const selectSkin = (id: string) => {
+    setSelectedSkinId(id);
+    const s = skins.find((x) => x.id === id);
+    if (s?.config) setThemeConfig({ ...DEFAULT_THEME_CONFIG, ...s.config });
+  };
+
+  const createNewSkin = () => {
+    // Keep it simple: append a new skin with default config.
+    const nextIndex = skins.length + 1;
+    const id =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `skin_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+
+    const next: ThemeSkin = {
+      id,
+      name: `皮肤 ${nextIndex}`,
+      config: { ...DEFAULT_THEME_CONFIG },
+    };
+
+    const nextSkins = [...skins, next].slice(0, 8); // UX: cap at 8 variants
+    setSkins(nextSkins);
+    setSelectedSkinId(next.id);
+    setThemeConfig({ ...DEFAULT_THEME_CONFIG });
   };
 
   if (loading) {
@@ -197,6 +245,59 @@ export default function AdminThemeSettings() {
           <RotateCcw size={14} /> 恢复默认
         </button>
       </div>
+
+        <section className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm font-semibold text-foreground">皮肤集合</div>
+            <button
+              type="button"
+              onClick={createNewSkin}
+              disabled={skins.length >= 8}
+              className="rounded-lg border border-border px-3 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed hover:bg-secondary flex items-center gap-2"
+            >
+              <Plus size={14} /> 新增皮肤
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {skins.map((s) => {
+              const active = s.id === selectedSkinId;
+              const isDefault = s.id === defaultSkinId;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => selectSkin(s.id)}
+                  className={`theme-rounded border px-3 py-2 text-xs flex items-center gap-2 ${
+                    active ? "border-gold bg-gold/10" : "border-border bg-background"
+                  }`}
+                >
+                  <span className="font-semibold">{s.name}</span>
+                  {isDefault ? (
+                    <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-price)_15%,transparent)] px-2 py-0.5 text-[10px] font-bold text-[var(--theme-price)]">
+                      默认
+                    </span>
+                  ) : (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDefaultSkinId(s.id);
+                      }}
+                      className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-secondary"
+                    >
+                      设为默认
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            客户端将按“默认皮肤”展示；你在本页面编辑的内容只会影响当前选中的皮肤并在保存时写入后端。
+          </p>
+        </section>
 
       <div className="grid gap-6 2xl:grid-cols-[1fr_420px]">
         <div className="space-y-6">

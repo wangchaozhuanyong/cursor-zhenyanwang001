@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface LoginBanner {
@@ -14,7 +14,7 @@ interface LoginBannerCarouselProps {
 export default function LoginBannerCarousel({ banners }: LoginBannerCarouselProps) {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
-  const [touchStart, setTouchStart] = useState(0);
+  const touchStartX = useRef(0);
 
   const goTo = useCallback(
     (index: number) => {
@@ -33,9 +33,11 @@ export default function LoginBannerCarousel({ banners }: LoginBannerCarouselProp
     return () => clearInterval(timer);
   }, [banners.length]);
 
-  const handleTouchStart = (e: React.TouchEvent) => setTouchStart(e.touches[0].clientX);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
   const handleTouchEnd = (e: React.TouchEvent) => {
-    const diff = touchStart - e.changedTouches[0].clientX;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 50) {
       goTo(diff > 0 ? (current + 1) % banners.length : (current - 1 + banners.length) % banners.length);
     }
@@ -65,12 +67,13 @@ export default function LoginBannerCarousel({ banners }: LoginBannerCarouselProp
           initial="enter"
           animate="center"
           exit="exit"
-          transition={{ duration: 0.4, ease: "easeInOut" }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
         >
           <img
             src={banners[current].image}
             alt={banners[current].title}
             className="h-full w-full object-cover"
+            decoding="async"
           />
           {/* Gradient overlay */}
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
@@ -89,17 +92,20 @@ export default function LoginBannerCarousel({ banners }: LoginBannerCarouselProp
           {banners.map((_, i) => (
             <button
               key={i}
+              type="button"
               onClick={() => goTo(i)}
               className="touch-target flex items-center justify-center p-0.5"
+              aria-label={`幻灯 ${i + 1}`}
             >
-              <motion.div
-                className="rounded-full"
-                animate={{
+              <span
+                className="block rounded-full transition-[width,background-color] duration-300 ease-out h-[5px]"
+                style={{
                   width: i === current ? 14 : 5,
-                  height: 5,
-                  backgroundColor: i === current ? "var(--theme-price)" : "color-mix(in srgb, #ffffff 50%, transparent)",
+                  backgroundColor:
+                    i === current
+                      ? "var(--theme-price)"
+                      : "color-mix(in srgb, #ffffff 50%, transparent)",
                 }}
-                transition={{ duration: 0.3 }}
               />
             </button>
           ))}

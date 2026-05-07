@@ -128,15 +128,18 @@ export const useCartStore = create<CartState>()(
         try {
           await get().loadCart();
           const serverIds = new Set(get().items.map((i) => i.product.id));
-          for (const { product, qty } of localBeforeAuth) {
-            if (isLocalOnlyCartProductId(product.id)) continue;
-            if (!serverIds.has(product.id)) {
-              try {
-                await cartService.addToCart(product.id, qty);
-              } catch {
-                /* 单个下架或异常则跳过 */
-              }
-            }
+          const toAdd = localBeforeAuth.filter(
+            ({ product, qty }) =>
+              !isLocalOnlyCartProductId(product.id) &&
+              qty > 0 &&
+              !serverIds.has(product.id),
+          );
+          if (toAdd.length) {
+            await Promise.allSettled(
+              toAdd.map(({ product, qty }) =>
+                cartService.addToCart(product.id, qty),
+              ),
+            );
           }
           await get().loadCart();
         } catch {

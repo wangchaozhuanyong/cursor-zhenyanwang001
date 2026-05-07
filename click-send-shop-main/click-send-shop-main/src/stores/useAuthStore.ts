@@ -33,9 +33,10 @@ export const useAuthStore = create<AuthState>()(
         set({ loading: true, error: null });
         try {
           await authService.login(params);
-          set({ isAuthenticated: true, loading: false });
+          set({ isAuthenticated: true });
           await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
-          useUserStore.getState().loadProfile();
+          await useUserStore.getState().loadProfile();
+          set({ loading: false });
         } catch (e) {
           set({
             loading: false,
@@ -50,9 +51,10 @@ export const useAuthStore = create<AuthState>()(
         set({ loading: true, error: null });
         try {
           await authService.register(params);
-          set({ isAuthenticated: true, loading: false });
+          set({ isAuthenticated: true });
           await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
-          useUserStore.getState().loadProfile();
+          await useUserStore.getState().loadProfile();
+          set({ loading: false });
         } catch (e) {
           set({
             loading: false,

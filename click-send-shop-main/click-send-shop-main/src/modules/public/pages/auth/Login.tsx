@@ -3,7 +3,6 @@ import { Eye, EyeOff, Phone, Lock, User } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
 import LoginBannerCarousel from "@/components/LoginBannerCarousel";
 import WeChatIcon from "@/components/icons/WeChatIcon";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
@@ -30,7 +29,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const authStore = useAuthStore();
-  const { banners } = useHomeBanners();
+  const { banners } = useHomeBanners({ fetchRemote: false });
   const siteInfo = useSiteInfo();
   const logoSrc = siteInfo.logoUrl || logoWebp;
   const siteName = siteInfo.siteName || "真烟网";
@@ -108,7 +107,7 @@ export default function Login() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* ══════════════ Top Brand Bar ══════════════ */}
       <header className="flex items-center gap-3 px-5 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
-        <img src={logoSrc} alt={siteName} width={44} height={44} className="rounded-xl object-contain" />
+        <img src={logoSrc} alt={siteName} width={44} height={44} className="rounded-xl object-contain" loading="eager" decoding="async" />
         <div className="flex flex-col">
           <h1 className="font-display text-xl font-bold tracking-tight leading-tight text-foreground">
             {renderBrandTitle(siteName)}
@@ -120,39 +119,24 @@ export default function Login() {
       </header>
 
       {/* ══════════════ Banner Carousel ══════════════ */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.97 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="px-5 mt-2"
-      >
+      <div className="px-5 mt-2 animate-in fade-in zoom-in-95 duration-300">
         <LoginBannerCarousel banners={banners} />
-      </motion.div>
+      </div>
 
       {/* ══════════════ Main Content ══════════════ */}
-      <main className="flex-1 mx-auto w-full max-w-lg px-5 mt-8">
+      <main className="flex-1 mx-auto w-full max-w-lg px-5 mt-8 animate-in fade-in slide-in-from-bottom-2 duration-300 fill-mode-both">
         {/* Welcome text */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.15 }}
-          className="mb-6"
-        >
+        <div className="mb-6">
           <h2 className="font-display text-2xl font-bold text-foreground">
             {mode === "login" ? "欢迎回来" : "创建账号"}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === "login" ? "登录您的账号，畅享品质购物" : "注册新账号，开启品质购物之旅"}
           </p>
-        </motion.div>
+        </div>
 
         {/* ══════════════ Auth Tabs ══════════════ */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-5"
-        >
+        <div className="mb-5">
           <div className="flex rounded-2xl bg-secondary p-1">
             {(["login", "register"] as AuthMode[]).map((m) => (
               <button
@@ -168,37 +152,24 @@ export default function Login() {
               </button>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* ══════════════ Form ══════════════ */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="space-y-3.5"
-        >
-          <AnimatePresence mode="popLayout">
-            {mode === "register" && (
-              <motion.div
-                key="nickname"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="relative">
-                  <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    type="text"
-                    placeholder="昵称"
-                    value={nickname}
-                    onChange={(e) => setNickname(e.target.value)}
-                    className="w-full rounded-2xl border border-border bg-card py-3.5 pl-12 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-all"
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        <div className="space-y-3.5">
+          {mode === "register" && (
+            <div className="animate-in fade-in zoom-in-95 duration-200">
+              <div className="relative">
+                <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="昵称"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  className="w-full rounded-2xl border border-border bg-card py-3.5 pl-12 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-all"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-[112px_1fr] gap-2">
             <select
@@ -271,16 +242,15 @@ export default function Login() {
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
-                <motion.span
-                  animate={{ rotate: 360 }}
-                  transition={{ repeat: Infinity, duration: 0.8, ease: "linear" }}
-                  className="inline-block w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full"
+                <span
+                  aria-hidden="true"
+                  className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground"
                 />
                 处理中...
               </span>
             ) : mode === "login" ? "登 录" : "注 册"}
           </button>
-        </motion.div>
+        </div>
 
         {/* ══════════════ Divider ══════════════ */}
         <div className="my-7 flex items-center gap-4">

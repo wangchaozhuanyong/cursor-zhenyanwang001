@@ -33,12 +33,16 @@ function mergeBannersWithFallback(apiList: Banner[]): Banner[] {
   });
 }
 
-/** 首页 Banner：由页面引用 → Service → API */
-export function useHomeBanners() {
+type UseHomeBannersOpts = { fetchRemote?: boolean };
+
+/** 首页 Banner：由页面引用 → Service → API。`fetchRemote: false` 仅用本地 fallback（如登录页省一条请求、减竞态） */
+export function useHomeBanners(opts?: UseHomeBannersOpts) {
+  const fetchRemote = opts?.fetchRemote !== false;
   const [banners, setBanners] = useState<Banner[]>(FALLBACK);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(fetchRemote);
 
   useEffect(() => {
+    if (!fetchRemote) return;
     let cancelled = false;
     setLoading(true);
     homeBannerService
@@ -56,7 +60,7 @@ export function useHomeBanners() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [fetchRemote]);
 
   return { banners, loading };
 }

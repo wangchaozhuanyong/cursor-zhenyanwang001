@@ -6,11 +6,9 @@ import {
   Loader2,
   Maximize,
   Minimize,
-  Moon,
   Palette,
   RotateCcw,
   Save,
-  Sun,
   Type,
   Square,
   LayoutGrid,
@@ -46,22 +44,12 @@ const DEFAULT_THEME_CONFIG: ThemeConfig = {
   cardStyle: "bordered",
   cardTextAlign: "left",
   imageFit: "cover",
-  light: {
-    primaryColor: "#000000",
-    secondaryColor: "#4B5563",
-    priceColor: "#DC2626",
-    bgColor: "#F9FAFB",
-    surfaceColor: "#FFFFFF",
-    borderColor: "auto",
-  },
-  dark: {
-    primaryColor: "#FFFFFF",
-    secondaryColor: "#D1D5DB",
-    priceColor: "#EF4444",
-    bgColor: "#0A0A0A",
-    surfaceColor: "#171717",
-    borderColor: "auto",
-  },
+  primaryColor: "#000000",
+  secondaryColor: "#4B5563",
+  priceColor: "#DC2626",
+  bgColor: "#F9FAFB",
+  surfaceColor: "#FFFFFF",
+  borderColor: "auto",
 };
 
 type ThemeSkin = {
@@ -139,8 +127,6 @@ export default function AdminThemeSettings() {
   const [defaultSkinId, setDefaultSkinId] = useState<string>("default");
   const [selectedSkinId, setSelectedSkinId] = useState<string>("default");
   const [themeConfig, setThemeConfig] = useState<ThemeConfig>(DEFAULT_THEME_CONFIG);
-  const [previewMode, setPreviewMode] = useState<"light" | "dark">("light");
-  const [editingMode, setEditingMode] = useState<"light" | "dark">("light");
 
   useEffect(() => {
     setLoading(true);
@@ -161,17 +147,14 @@ export default function AdminThemeSettings() {
       .finally(() => setLoading(false));
   }, []);
 
-  const readabilityReport = useMemo(() => getThemeReadabilityReport(themeConfig, previewMode), [themeConfig, previewMode]);
+  const readabilityReport = useMemo(() => getThemeReadabilityReport(themeConfig), [themeConfig]);
   const palette = readabilityReport.palette;
-  const previewImages = previewMode === "dark" ? [banner2, banner1] : [banner1, banner2];
+  const previewImages = [banner1, banner2];
 
-  const updateThemeConfig = (mode: "light" | "dark", field: string, value: string) => {
+  const updateThemeConfig = (field: string, value: string) => {
     setThemeConfig((prev) => ({
       ...prev,
-      [mode]: {
-        ...prev[mode],
-        [field]: value,
-      },
+      [field]: value,
     }));
   };
 
@@ -235,7 +218,7 @@ export default function AdminThemeSettings() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-foreground">皮肤/视觉设置</h1>
-          <p className="text-sm text-muted-foreground">双轨配色、字体、倒角、卡片外框和图文布局统一配置。</p>
+            <p className="text-sm text-muted-foreground">单态皮肤配置：每个皮肤独立定义颜色、字体、倒角、卡片样式与图文布局。</p>
         </div>
         <button
           type="button"
@@ -304,59 +287,42 @@ export default function AdminThemeSettings() {
           <section className="rounded-xl border border-border bg-card p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold flex items-center gap-2"><Palette size={16} /> 配色编辑区</h3>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingMode("light")}
-                  className={`rounded-md border p-1.5 ${editingMode === "light" ? "border-gold text-gold" : "border-border"}`}
-                >
-                  <Sun size={14} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditingMode("dark")}
-                  className={`rounded-md border p-1.5 ${editingMode === "dark" ? "border-gold text-gold" : "border-border"}`}
-                >
-                  <Moon size={14} />
-                </button>
-              </div>
+              <p className="text-xs text-muted-foreground">单态皮肤：每个皮肤只编辑一套颜色</p>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               <AdvancedColorInput
                 label="背景色"
-                value={themeConfig[editingMode].bgColor}
-                onChange={(v) => updateThemeConfig(editingMode, "bgColor", v)}
+                value={themeConfig.bgColor}
+                onChange={(v) => updateThemeConfig("bgColor", v)}
               />
               <AdvancedColorInput
                 label="表面色"
-                value={themeConfig[editingMode].surfaceColor}
-                onChange={(v) => updateThemeConfig(editingMode, "surfaceColor", v)}
+                value={themeConfig.surfaceColor}
+                onChange={(v) => updateThemeConfig("surfaceColor", v)}
               />
               <AdvancedColorInput
                 label="主色"
-                value={themeConfig[editingMode].primaryColor}
-                onChange={(v) => updateThemeConfig(editingMode, "primaryColor", v)}
+                value={themeConfig.primaryColor}
+                onChange={(v) => updateThemeConfig("primaryColor", v)}
               />
               <AdvancedColorInput
                 label="辅色"
-                value={themeConfig[editingMode].secondaryColor}
-                onChange={(v) => updateThemeConfig(editingMode, "secondaryColor", v)}
+                value={themeConfig.secondaryColor}
+                onChange={(v) => updateThemeConfig("secondaryColor", v)}
               />
               <AdvancedColorInput
                 label="边框色"
-                value={themeConfig[editingMode].borderColor}
-                onChange={(v) => updateThemeConfig(editingMode, "borderColor", v)}
+                value={themeConfig.borderColor}
+                onChange={(v) => updateThemeConfig("borderColor", v)}
                 allowAuto
               />
               <AdvancedColorInput
                 label="价格色"
-                value={themeConfig[editingMode].priceColor}
-                onChange={(v) => updateThemeConfig(editingMode, "priceColor", v)}
+                value={themeConfig.priceColor}
+                onChange={(v) => updateThemeConfig("priceColor", v)}
               />
             </div>
-            <p className="text-xs text-muted-foreground">
-              当前正在编辑：{editingMode === "light" ? "浅色模式" : "深色模式"}。预览可独立切换，不会影响编辑状态。
-            </p>
+            <p className="text-xs text-muted-foreground">每个皮肤都是独立单态，不再区分浅色/深色配置。</p>
           </section>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -495,26 +461,10 @@ export default function AdminThemeSettings() {
           className="rounded-xl border border-border bg-card p-4 space-y-4 2xl:sticky 2xl:top-20 h-fit"
         >
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold">实时预览（{previewMode === "light" ? "浅色" : "深色"}）</p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setPreviewMode("light")}
-                className={`rounded-md border p-1.5 ${previewMode === "light" ? "border-gold text-gold" : "border-border"}`}
-              >
-                <Sun size={14} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setPreviewMode("dark")}
-                className={`rounded-md border p-1.5 ${previewMode === "dark" ? "border-gold text-gold" : "border-border"}`}
-              >
-                <Moon size={14} />
-              </button>
-            </div>
+            <p className="text-sm font-semibold">实时预览（单态）</p>
           </div>
           <p className="text-xs text-muted-foreground">
-            已内置默认预览图（本地资源），不依赖外网图片，深色模式也可稳定预览。
+            已内置默认预览图（本地资源），不依赖外网图片。
           </p>
           <div
             className={`rounded-lg border p-3 text-xs ${

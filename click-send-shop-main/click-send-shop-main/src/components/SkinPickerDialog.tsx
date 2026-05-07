@@ -13,7 +13,7 @@ export default function SkinPickerDialog({
   title?: string;
   className?: string;
 }) {
-  const { skins, skinId, setSkinId, theme } = useThemeRuntime();
+  const { skins, skinId, setSkinId } = useThemeRuntime();
 
   return (
     <Dialog>
@@ -29,8 +29,8 @@ export default function SkinPickerDialog({
             <div className="col-span-full text-sm text-muted-foreground">加载皮肤中...</div>
           ) : (
             skins.map((s) => {
-              const primary = s.config[theme].primaryColor;
-              const secondary = s.config[theme].secondaryColor;
+              const primary = s.config.primaryColor;
+              const secondary = s.config.secondaryColor;
               const gradient = `linear-gradient(135deg, ${primary}, ${secondary})`;
               const active = s.id === skinId;
               return (

@@ -22,22 +22,12 @@ const DEFAULT_THEME_CONFIG: ThemeConfig = {
   cardStyle: "bordered",
   cardTextAlign: "left",
   imageFit: "cover",
-  light: {
-    primaryColor: "#000000",
-    secondaryColor: "#4B5563",
-    priceColor: "#DC2626",
-    bgColor: "#F9FAFB",
-    surfaceColor: "#FFFFFF",
-    borderColor: "auto",
-  },
-  dark: {
-    primaryColor: "#FFFFFF",
-    secondaryColor: "#D1D5DB",
-    priceColor: "#EF4444",
-    bgColor: "#0A0A0A",
-    surfaceColor: "#171717",
-    borderColor: "auto",
-  },
+  primaryColor: "#000000",
+  secondaryColor: "#4B5563",
+  priceColor: "#DC2626",
+  bgColor: "#F9FAFB",
+  surfaceColor: "#FFFFFF",
+  borderColor: "auto",
 };
 
 type ThemeContextValue = {
@@ -50,13 +40,7 @@ type ThemeContextValue = {
 
 const ThemeRuntimeContext = createContext<ThemeContextValue | null>(null);
 
-function getInitialMode(): ThemeMode {
-  if (typeof window === "undefined") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
-
 export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>(getInitialMode);
   const [themeConfig, setThemeConfig] = useState<ThemeConfig>(DEFAULT_THEME_CONFIG);
   const [skins, setSkins] = useState<ThemeSkin[]>([]);
   const [skinId, setSkinIdState] = useState<string>("default");
@@ -95,31 +79,16 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // auto follow system dark/light
-    const mql = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => setThemeState(mql.matches ? "dark" : "light");
-    // set once in case initial state is out-of-sync
-    onChange();
-    if (typeof mql.addEventListener === "function") {
-      mql.addEventListener("change", onChange);
-      return () => mql.removeEventListener("change", onChange);
-    }
-    // fallback for older browsers
-    mql.addListener(onChange);
-    return () => mql.removeListener(onChange);
-  }, []);
-
-  useEffect(() => {
     const root = document.documentElement;
-    root.classList.toggle("dark", theme === "dark");
+    root.classList.remove("dark");
     // keep skin selection persisted
     if (typeof window !== "undefined") localStorage.setItem(SKIN_STORAGE_KEY, skinId);
 
-    const palette = generateThemePalette(themeConfig, theme);
+    const palette = generateThemePalette(themeConfig);
     Object.entries(palette).forEach(([key, value]) => {
       root.style.setProperty(key, value);
     });
-  }, [theme, themeConfig, skinId]);
+  }, [themeConfig, skinId]);
 
   useEffect(() => {
     if (!skins.length) return;
@@ -128,12 +97,12 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   }, [skinId, skins]);
 
   const value = useMemo<ThemeContextValue>(() => ({
-    theme,
+    theme: "light",
     skinId,
     skins,
     setSkinId: (id: string) => setSkinIdState(id),
     themeConfig,
-  }), [theme, skinId, skins, themeConfig]);
+  }), [skinId, skins, themeConfig]);
 
   return <ThemeRuntimeContext.Provider value={value}>{children}</ThemeRuntimeContext.Provider>;
 }

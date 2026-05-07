@@ -15,7 +15,11 @@ export type ThemeConfig = {
   cardStyle: "bordered" | "seamless" | "elevated" | "minimal";
   cardTextAlign: "left" | "center";
   imageFit: "cover" | "contain";
-  light: ThemeModeColorConfig;
-  dark: ThemeModeColorConfig;
+  primaryColor: string;
+  secondaryColor: string;
+  priceColor: string;
+  bgColor: string;
+  surfaceColor: string;
+  borderColor: string;
 };
 

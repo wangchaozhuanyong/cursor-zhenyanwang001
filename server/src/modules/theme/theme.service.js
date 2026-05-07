@@ -4,17 +4,17 @@ const { writeAuditLog } = require('../../utils/auditLog');
 
 function normalizeThemeConfig(rawConfig) {
   if (!rawConfig || typeof rawConfig !== 'object') return DEFAULT_THEME_CONFIG;
+  // Backward compatibility:
+  // - legacy dual-mode config: { light: {...}, dark: {...} }
+  // - new single-mode config: flat color fields
+  const legacySingleFromLight = rawConfig.light && typeof rawConfig.light === 'object'
+    ? rawConfig.light
+    : null;
+  const { light: _legacyLight, dark: _legacyDark, ...flatRaw } = rawConfig;
   return {
     ...DEFAULT_THEME_CONFIG,
-    ...rawConfig,
-    light: {
-      ...DEFAULT_THEME_CONFIG.light,
-      ...(rawConfig.light || {}),
-    },
-    dark: {
-      ...DEFAULT_THEME_CONFIG.dark,
-      ...(rawConfig.dark || {}),
-    },
+    ...flatRaw,
+    ...(legacySingleFromLight || {}),
   };
 }
 

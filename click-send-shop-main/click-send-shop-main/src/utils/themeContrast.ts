@@ -1,7 +1,6 @@
 import type { ThemeConfig } from "@/types/theme";
 
 type RGB = { r: number; g: number; b: number };
-type ThemeMode = "light" | "dark";
 
 const WHITE: RGB = { r: 255, g: 255, b: 255 };
 const BLACK: RGB = { r: 0, g: 0, b: 0 };
@@ -227,17 +226,16 @@ function getCardShellVariables(
   }
 }
 
-export function generateThemePalette(adminConfig: ThemeConfig, userMode: ThemeMode) {
-  const currentColors = userMode === "dark" ? adminConfig.dark : adminConfig.light;
-  const bg = parseColor(currentColors.bgColor, userMode === "dark" ? BLACK : WHITE);
-  const surface = parseColor(currentColors.surfaceColor, bg);
-  const primary = parseColor(currentColors.primaryColor, userMode === "dark" ? WHITE : BLACK);
-  const secondary = parseColor(currentColors.secondaryColor, primary);
-  const price = parseColor(currentColors.priceColor, { r: 220, g: 38, b: 38 });
+export function generateThemePalette(adminConfig: ThemeConfig) {
+  const bg = parseColor(adminConfig.bgColor, WHITE);
+  const surface = parseColor(adminConfig.surfaceColor, bg);
+  const primary = parseColor(adminConfig.primaryColor, BLACK);
+  const secondary = parseColor(adminConfig.secondaryColor, primary);
+  const price = parseColor(adminConfig.priceColor, { r: 220, g: 38, b: 38 });
   const isDarkBg = isDarkColor(bg);
   const border =
-    currentColors.borderColor && currentColors.borderColor !== "auto" && currentColors.borderColor.trim() !== ""
-      ? parseColor(currentColors.borderColor, isDarkBg ? mixColors(bg, WHITE, 0.18) : mixColors(bg, BLACK, 0.12))
+    adminConfig.borderColor && adminConfig.borderColor !== "auto" && adminConfig.borderColor.trim() !== ""
+      ? parseColor(adminConfig.borderColor, isDarkBg ? mixColors(bg, WHITE, 0.18) : mixColors(bg, BLACK, 0.12))
       : isDarkBg
         ? mixColors(bg, WHITE, 0.18)
         : mixColors(bg, BLACK, 0.12);
@@ -309,8 +307,8 @@ export function generateThemePalette(adminConfig: ThemeConfig, userMode: ThemeMo
   } as Record<string, string>;
 }
 
-export function getThemeReadabilityReport(adminConfig: ThemeConfig, userMode: ThemeMode) {
-  const palette = generateThemePalette(adminConfig, userMode);
+export function getThemeReadabilityReport(adminConfig: ThemeConfig) {
+  const palette = generateThemePalette(adminConfig);
   const checks = [
     { label: "页面正文", foreground: palette["--theme-text"], background: palette["--theme-bg"], min: 4.5 },
     { label: "卡片正文", foreground: palette["--theme-text-on-surface"], background: palette["--theme-surface"], min: 4.5 },

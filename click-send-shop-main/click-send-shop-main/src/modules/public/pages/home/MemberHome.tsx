@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from "react";
-import { Bell, ChevronRight, Flame, RefreshCw, Search, Star, Ticket, Zap } from "lucide-react";
+import { Bell, ChevronRight, Clock, Crown, Flame, Gift, RefreshCw, Search, Star, Ticket, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
@@ -33,7 +33,9 @@ export default function MemberHome() {
   const siteInfo = useSiteInfo();
   const couponLoading = useCouponStore((s) => s.loading);
   const coupons = useCouponStore((s) => s.coupons);
+  const claimCoupon = useCouponStore((s) => s.claimCoupon);
   const selectedCartCount = useCartStore((s) => s.getSelectedItems().length);
+  const [claimingCouponId, setClaimingCouponId] = useState<string | null>(null);
 
   useEffect(() => {
     loadHomeData();
@@ -137,7 +139,7 @@ export default function MemberHome() {
             {(couponLoading ? Array.from({ length: 4 }) : couponTop).map((c: UserCoupon | number, i) => {
               if (couponLoading || typeof c === "number") {
                 return (
-                  <div key={i} className="action-card snap-center h-[110px] w-[80vw] shrink-0 rounded-2xl p-5 text-left md:w-[320px]">
+                  <div key={i} className="action-card snap-center h-[128px] w-[80vw] shrink-0 rounded-2xl p-5 text-left md:w-[320px]">
                     <div className="flex items-center justify-between"><span className="text-xs font-semibold">加载中</span><ChevronRight size={14} /></div>
                     <div className="mt-3 text-base font-bold">— —</div>
                   </div>
@@ -145,20 +147,63 @@ export default function MemberHome() {
               }
 
               const display = formatCouponCard(c);
+              const isClaimed = Boolean(c.claimed_at);
+              const visual = getCouponVisual(c, i);
               return (
-                <button
+                <div
                   key={c.id}
-                  type="button"
-                  onClick={() => {
-                    if (selectedCartCount > 0) navigate(`/checkout?coupon_id=${c.id}`);
-                    else navigate("/cart", { state: { coupon_id: c.id } });
-                  }}
-                  className="action-card snap-center h-[110px] w-[80vw] shrink-0 rounded-2xl p-5 text-left md:w-[320px]"
+                  className="snap-center h-[128px] w-[80vw] shrink-0 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] md:w-[320px]"
                 >
-                  <div className="flex items-center justify-between"><span className="text-xs font-semibold">可用优惠券</span><ChevronRight size={14} /></div>
-                  <div className="mt-2 line-clamp-1 text-base font-bold">{display.title}</div>
-                  <div className="mt-1 line-clamp-1 text-xs text-[var(--theme-text-muted)]">{display.condition}</div>
-                </button>
+                  <div className="flex h-full">
+                    <div className={`relative flex w-[106px] shrink-0 flex-col items-center justify-center gap-1 ${visual.stripeClass}`}>
+                      <div className="absolute -right-2 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-[var(--theme-surface)]" />
+                      <visual.Icon size={14} className={visual.mutedTextClass} />
+                      <div className={`text-xl font-bold leading-none ${visual.mainTextClass}`}>{display.discount}</div>
+                      <div className={`px-2 text-center text-[10px] leading-tight ${visual.mutedTextClass}`}>{display.condition}</div>
+                    </div>
+                    <div className="flex min-w-0 flex-1 flex-col justify-between p-3">
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-semibold text-[var(--theme-text-muted)]">{isClaimed ? "可用优惠券" : "活动优惠券"}</span>
+                          <ChevronRight size={12} className="text-[var(--theme-text-muted)]" />
+                        </div>
+                        <div className="mt-1 line-clamp-1 text-sm font-bold text-[var(--theme-text)]">{display.title}</div>
+                        <div className="mt-1 flex items-center gap-1 text-[11px] text-[var(--theme-text-muted)]">
+                          <Clock size={10} />
+                          <span className="line-clamp-1">有效期至 {display.expireText}</span>
+                        </div>
+                      </div>
+                      {isClaimed ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (selectedCartCount > 0) navigate(`/checkout?coupon_id=${c.id}`);
+                            else navigate("/cart", { state: { coupon_id: c.id } });
+                          }}
+                          className="inline-flex w-fit items-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1 text-xs font-semibold text-[var(--theme-text)]"
+                        >
+                          去使用
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={claimingCouponId === c.id}
+                          onClick={async () => {
+                            try {
+                              setClaimingCouponId(c.id);
+                              await claimCoupon(c.coupon.code);
+                            } finally {
+                              setClaimingCouponId(null);
+                            }
+                          }}
+                          className="inline-flex w-fit items-center rounded-full bg-[var(--theme-price)] px-3 py-1 text-xs font-semibold text-[var(--theme-price-foreground)] disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {claimingCouponId === c.id ? "领取中..." : "立即领取"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -297,8 +342,46 @@ function formatCouponCard(uc: UserCoupon) {
           : "免运费"
         : `RM ${c.value}`;
   return {
-    title: `${c.title} · ${discountText}`,
+    title: c.title,
+    discount: discountText,
     condition: c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛可用",
+    expireText: typeof c.end_date === "string" ? c.end_date.slice(0, 10) : "",
+  };
+}
+
+function getCouponVisual(uc: UserCoupon, index: number) {
+  const variants = ["gold", "ruby", "sapphire", "emerald"] as const;
+  const variant = variants[index % variants.length];
+  const colorMap = {
+    gold: {
+      stripeClass: "bg-theme-coupon-accent",
+      mainTextClass: "text-[var(--theme-price-foreground)]",
+      mutedTextClass: "text-[color-mix(in_srgb,var(--theme-price-foreground)_72%,transparent)]",
+    },
+    ruby: {
+      stripeClass: "bg-gradient-to-br from-[hsl(350,75%,55%)] to-[hsl(340,70%,45%)]",
+      mainTextClass: "text-white",
+      mutedTextClass: "text-white/70",
+    },
+    sapphire: {
+      stripeClass: "bg-gradient-to-br from-[hsl(220,70%,55%)] to-[hsl(230,65%,45%)]",
+      mainTextClass: "text-white",
+      mutedTextClass: "text-white/70",
+    },
+    emerald: {
+      stripeClass: "bg-gradient-to-br from-[hsl(160,60%,42%)] to-[hsl(170,55%,35%)]",
+      mainTextClass: "text-white",
+      mutedTextClass: "text-white/70",
+    },
+  } as const;
+  const iconByType = {
+    fixed: Gift,
+    percentage: Crown,
+    shipping: Zap,
+  } as const;
+  return {
+    ...colorMap[variant],
+    Icon: iconByType[uc.coupon.type] ?? Ticket,
   };
 }
 

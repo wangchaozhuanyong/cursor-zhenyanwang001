@@ -154,11 +154,21 @@ export default function AdminThemeSettings() {
   const palette = readabilityReport.palette;
   const previewImages = [banner1, banner2];
 
-  const updateThemeConfig = (field: string, value: string) => {
-    setThemeConfig((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  const syncSelectedSkinConfig = (nextConfig: ThemeConfig) => {
+    setSkins((prev) =>
+      prev.map((s) => (s.id === selectedSkinId ? { ...s, config: nextConfig } : s)),
+    );
+  };
+
+  const updateThemeConfig = <K extends keyof ThemeConfig>(field: K, value: ThemeConfig[K]) => {
+    setThemeConfig((prev) => {
+      const next = {
+        ...prev,
+        [field]: value,
+      };
+      syncSelectedSkinConfig(next);
+      return next;
+    });
   };
 
   const saveTheme = async () => {
@@ -168,6 +178,7 @@ export default function AdminThemeSettings() {
         s.id === selectedSkinId ? { ...s, config: themeConfig } : s,
       );
       await saveSystemThemeSkins({ defaultSkinId, skins: nextSkins });
+      setSkins(nextSkins);
       toast.success("皮肤配置已保存");
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败，请稍后重试"));
@@ -179,6 +190,7 @@ export default function AdminThemeSettings() {
   const resetToDefault = () => {
     if (window.confirm("确定恢复默认主题配置？")) {
       setThemeConfig(DEFAULT_THEME_CONFIG);
+      syncSelectedSkinConfig(DEFAULT_THEME_CONFIG);
     }
   };
 
@@ -409,7 +421,7 @@ export default function AdminThemeSettings() {
                   <button
                     key={f.val}
                     type="button"
-                    onClick={() => setThemeConfig((prev) => ({ ...prev, fontFamily: f.val }))}
+                    onClick={() => updateThemeConfig("fontFamily", f.val)}
                     className={`w-full rounded-lg border px-3 py-2 text-left ${themeConfig.fontFamily === f.val ? "border-gold bg-gold/10" : "border-border"}`}
                   >
                     <div className="font-semibold" style={{ fontFamily: f.font }}>{f.label}</div>
@@ -425,7 +437,7 @@ export default function AdminThemeSettings() {
                   <button
                     key={r}
                     type="button"
-                    onClick={() => setThemeConfig((prev) => ({ ...prev, radius: r }))}
+                    onClick={() => updateThemeConfig("radius", r)}
                     className={`rounded-md border px-2 py-2 text-xs ${themeConfig.radius === r ? "border-gold bg-gold/10" : "border-border"}`}
                     style={{ borderRadius: r }}
                   >
@@ -448,7 +460,7 @@ export default function AdminThemeSettings() {
                 <button
                   key={s.val}
                   type="button"
-                  onClick={() => setThemeConfig((prev) => ({ ...prev, cardStyle: s.val as ThemeConfig["cardStyle"] }))}
+                  onClick={() => updateThemeConfig("cardStyle", s.val as ThemeConfig["cardStyle"])}
                   className={`rounded-lg border px-3 py-2 text-left ${themeConfig.cardStyle === s.val ? "border-gold bg-gold/10" : "border-border"}`}
                 >
                   {s.label}
@@ -463,7 +475,7 @@ export default function AdminThemeSettings() {
                     <button
                       key={s.value}
                       type="button"
-                      onClick={() => setThemeConfig((prev) => ({ ...prev, shadowStyle: s.value }))}
+                      onClick={() => updateThemeConfig("shadowStyle", s.value)}
                       className={`rounded-md border p-2 text-left ${
                         themeConfig.shadowStyle === s.value ? "border-gold bg-gold/10" : "border-border"
                       }`}
@@ -479,14 +491,14 @@ export default function AdminThemeSettings() {
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setThemeConfig((prev) => ({ ...prev, cardTextAlign: "left" }))}
+                    onClick={() => updateThemeConfig("cardTextAlign", "left")}
                     className={`flex-1 rounded-md border p-2 flex justify-center ${themeConfig.cardTextAlign === "left" ? "border-gold text-gold" : "border-border"}`}
                   >
                     <AlignLeft size={16} />
                   </button>
                   <button
                     type="button"
-                    onClick={() => setThemeConfig((prev) => ({ ...prev, cardTextAlign: "center" }))}
+                    onClick={() => updateThemeConfig("cardTextAlign", "center")}
                     className={`flex-1 rounded-md border p-2 flex justify-center ${themeConfig.cardTextAlign === "center" ? "border-gold text-gold" : "border-border"}`}
                   >
                     <AlignCenter size={16} />
@@ -498,14 +510,14 @@ export default function AdminThemeSettings() {
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setThemeConfig((prev) => ({ ...prev, imageFit: "cover" }))}
+                    onClick={() => updateThemeConfig("imageFit", "cover")}
                     className={`flex-1 rounded-md border p-2 flex justify-center ${themeConfig.imageFit === "cover" ? "border-gold text-gold" : "border-border"}`}
                   >
                     <Maximize size={16} />
                   </button>
                   <button
                     type="button"
-                    onClick={() => setThemeConfig((prev) => ({ ...prev, imageFit: "contain" }))}
+                    onClick={() => updateThemeConfig("imageFit", "contain")}
                     className={`flex-1 rounded-md border p-2 flex justify-center ${themeConfig.imageFit === "contain" ? "border-gold text-gold" : "border-border"}`}
                   >
                     <Minimize size={16} />
@@ -519,7 +531,7 @@ export default function AdminThemeSettings() {
                     <button
                       key={ratio}
                       type="button"
-                      onClick={() => setThemeConfig((prev) => ({ ...prev, imageRatio: ratio }))}
+                      onClick={() => updateThemeConfig("imageRatio", ratio)}
                       className={`rounded-md border p-2 text-xs ${
                         themeConfig.imageRatio === ratio ? "border-gold text-gold" : "border-border"
                       }`}

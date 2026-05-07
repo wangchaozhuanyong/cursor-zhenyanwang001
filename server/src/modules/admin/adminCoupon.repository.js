@@ -11,13 +11,13 @@ async function selectCouponsPage(pageSize, offset) {
             (
               SELECT GROUP_CONCAT(cc.category_id ORDER BY cc.category_id SEPARATOR ',')
               FROM coupon_categories cc
-              WHERE cc.coupon_id = c.id
+              WHERE BINARY cc.coupon_id = BINARY c.id
             ) AS category_ids,
             (
               SELECT GROUP_CONCAT(cat.name ORDER BY cat.sort_order SEPARATOR ',')
               FROM coupon_categories cc
-              JOIN categories cat ON cat.id = cc.category_id
-              WHERE cc.coupon_id = c.id
+              JOIN categories cat ON BINARY cat.id = BINARY cc.category_id
+              WHERE BINARY cc.coupon_id = BINARY c.id
             ) AS category_names
      FROM coupons c
      WHERE c.deleted_at IS NULL
@@ -45,35 +45,35 @@ async function selectCouponById(id) {
             (
               SELECT GROUP_CONCAT(cc.category_id ORDER BY cc.category_id SEPARATOR ',')
               FROM coupon_categories cc
-              WHERE cc.coupon_id = c.id
+              WHERE BINARY cc.coupon_id = BINARY c.id
             ) AS category_ids,
             (
               SELECT GROUP_CONCAT(cat.name ORDER BY cat.sort_order SEPARATOR ',')
               FROM coupon_categories cc
-              JOIN categories cat ON cat.id = cc.category_id
-              WHERE cc.coupon_id = c.id
+              JOIN categories cat ON BINARY cat.id = BINARY cc.category_id
+              WHERE BINARY cc.coupon_id = BINARY c.id
             ) AS category_names
      FROM coupons c
-     WHERE c.id = ?`,
+     WHERE BINARY c.id = BINARY ?`,
     [id],
   );
   return row || null;
 }
 
 async function updateCouponDynamic(setFragments, values, id) {
-  await db.query(`UPDATE coupons SET ${setFragments.join(', ')} WHERE id = ?`, [...values, id]);
+  await db.query(`UPDATE coupons SET ${setFragments.join(', ')} WHERE BINARY id = BINARY ?`, [...values, id]);
 }
 
 async function deleteCouponById(id, deletedBy) {
-  await db.query('UPDATE coupons SET deleted_at = NOW(), deleted_by = ? WHERE id = ?', [deletedBy || null, id]);
+  await db.query('UPDATE coupons SET deleted_at = NOW(), deleted_by = ? WHERE BINARY id = BINARY ?', [deletedBy || null, id]);
 }
 
 async function restoreCouponById(id) {
-  await db.query('UPDATE coupons SET deleted_at = NULL, deleted_by = NULL WHERE id = ?', [id]);
+  await db.query('UPDATE coupons SET deleted_at = NULL, deleted_by = NULL WHERE BINARY id = BINARY ?', [id]);
 }
 
 async function clearCouponCategories(couponId) {
-  await db.query('DELETE FROM coupon_categories WHERE coupon_id = ?', [couponId]);
+  await db.query('DELETE FROM coupon_categories WHERE BINARY coupon_id = BINARY ?', [couponId]);
 }
 
 async function insertCouponCategory(id, couponId, categoryId) {
@@ -93,8 +93,8 @@ async function selectAllCouponRecordsPage(pageSize, offset) {
   const [rows] = await db.query(
     `SELECT uc.*, u.nickname, u.phone, c.title AS coupon_title
      FROM user_coupons uc
-     LEFT JOIN users u ON uc.user_id = u.id
-     LEFT JOIN coupons c ON uc.coupon_id = c.id
+     LEFT JOIN users u ON BINARY uc.user_id = BINARY u.id
+     LEFT JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
      ORDER BY uc.claimed_at DESC LIMIT ? OFFSET ?`,
     [pageSize, offset],
   );
@@ -103,7 +103,7 @@ async function selectAllCouponRecordsPage(pageSize, offset) {
 
 async function countUserCouponsByCouponId(couponId) {
   const [[{ total }]] = await db.query(
-    'SELECT COUNT(*) AS total FROM user_coupons WHERE coupon_id = ?',
+    'SELECT COUNT(*) AS total FROM user_coupons WHERE BINARY coupon_id = BINARY ?',
     [couponId],
   );
   return total;
@@ -113,9 +113,9 @@ async function selectCouponRecordsPage(couponId, pageSize, offset) {
   const [rows] = await db.query(
     `SELECT uc.*, u.nickname, u.phone, c.title AS coupon_title
      FROM user_coupons uc
-     LEFT JOIN users u ON uc.user_id = u.id
-     LEFT JOIN coupons c ON uc.coupon_id = c.id
-     WHERE uc.coupon_id = ?
+     LEFT JOIN users u ON BINARY uc.user_id = BINARY u.id
+     LEFT JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
+     WHERE BINARY uc.coupon_id = BINARY ?
      ORDER BY uc.claimed_at DESC LIMIT ? OFFSET ?`,
     [couponId, pageSize, offset],
   );

@@ -150,6 +150,31 @@ function ReferralInviteSync() {
   return null;
 }
 
+function AdminTitleSync() {
+  const location = useLocation();
+  const siteInfo = useSiteInfo();
+
+  useEffect(() => {
+    if (!location.pathname.startsWith("/admin")) return;
+    const siteName = (siteInfo.siteName || "大马通").trim();
+    const seoTitle = (siteInfo.seoTitle || "").trim();
+    const routeTitleMap: Array<{ test: (path: string) => boolean; title: string }> = [
+      { test: (p) => p === "/admin" || p === "/admin/", title: "管理后台" },
+      { test: (p) => p.startsWith("/admin/settings/site"), title: "站点设置" },
+      { test: (p) => p.startsWith("/admin/banners"), title: "Banner管理" },
+      { test: (p) => p.startsWith("/admin/coupons"), title: "优惠券管理" },
+      { test: (p) => p.startsWith("/admin/users"), title: "用户管理" },
+      { test: (p) => p.startsWith("/admin/orders"), title: "订单管理" },
+      { test: (p) => p.startsWith("/admin/products"), title: "商品管理" },
+    ];
+    const match = routeTitleMap.find((item) => item.test(location.pathname));
+    const pageTitle = match?.title || "管理后台";
+    document.title = `${pageTitle} · ${siteName || seoTitle || "大马通"}`;
+  }, [location.pathname, siteInfo.siteName, siteInfo.seoTitle]);
+
+  return null;
+}
+
 function HomeRoute() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hasToken = isLoggedIn();
@@ -172,6 +197,7 @@ const App = () => (
           <AuthTokenSync />
           <SiteIdentitySync />
           <ReferralInviteSync />
+          <AdminTitleSync />
           <Suspense fallback={<AppRouteFallback />}>
             <Routes>
               {/* Pages with bottom nav */}

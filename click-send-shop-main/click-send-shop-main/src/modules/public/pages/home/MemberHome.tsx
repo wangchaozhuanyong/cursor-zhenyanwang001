@@ -9,6 +9,8 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
+import BannerCarousel from "@/components/BannerCarousel";
+import { useHomeBanners } from "@/hooks/useHomeBanners";
 import * as productService from "@/services/productService";
 import type { UserCoupon } from "@/types/coupon";
 import type { Product } from "@/types/product";
@@ -26,7 +28,8 @@ function Header({ title, icon: Icon, subtitle }: { title: string; icon?: React.E
 }
 
 export default function MemberHome() {
-  useDocumentTitle("首页");
+  // 首页标题策略：优先使用后台 SEO 标题（seoTitle），未配置时回退站点名
+  useDocumentTitle(undefined);
   const navigate = useNavigate();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const { hotProducts, newProducts, recommendedProducts, loading: homeLoading, loadHomeData } = useProductStore();
@@ -37,6 +40,7 @@ export default function MemberHome() {
   const selectedCartCount = useCartStore((s) => s.getSelectedItems().length);
   const [claimingCouponId, setClaimingCouponId] = useState<string | null>(null);
   const siteName = siteInfo.siteName || "大马通";
+  const { banners } = useHomeBanners();
 
   useEffect(() => {
     loadHomeData();
@@ -136,6 +140,9 @@ export default function MemberHome() {
         </div>
       </header>
       <main className="mx-auto max-w-screen-xl pt-5">
+        <section className="px-4">
+          <BannerCarousel banners={banners} />
+        </section>
         <section className="px-4">
           <Header title="权益券包" icon={Ticket} />
           <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">

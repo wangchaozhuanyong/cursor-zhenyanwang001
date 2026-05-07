@@ -21,7 +21,7 @@ async function selectShippingTemplate(q, id) {
 async function selectUserCouponForUpdate(q, ucId, userId) {
   const [[row]] = await q.query(
     `SELECT uc.id AS uc_id, c.* FROM user_coupons uc
-     JOIN coupons c ON uc.coupon_id = c.id
+     JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
      WHERE uc.id = ? AND uc.user_id = ? AND uc.status = 'available'
        AND c.end_date >= CURDATE() AND c.start_date <= CURDATE()
        AND c.status = 'available'
@@ -33,7 +33,7 @@ async function selectUserCouponForUpdate(q, ucId, userId) {
 
 async function selectCouponCategoryIds(q, couponId) {
   const [rows] = await q.query(
-    'SELECT category_id FROM coupon_categories WHERE coupon_id = ?',
+    'SELECT category_id FROM coupon_categories WHERE BINARY coupon_id = BINARY ?',
     [couponId],
   );
   return rows.map((r) => r.category_id).filter(Boolean);

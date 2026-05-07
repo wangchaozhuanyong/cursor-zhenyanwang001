@@ -344,6 +344,13 @@ export default function AdminSiteSettings() {
       </div>
 
       <div className="grid max-w-5xl gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border border-border bg-card p-4 text-xs text-muted-foreground lg:col-span-2">
+          <p className="font-medium text-foreground">字段生效提示（避免“设置后看起来没同步”）</p>
+          <p className="mt-2">1) 标题规则：客户端内页 =「页面名 · 站点名称」，首页优先用「SEO 标题」。</p>
+          <p className="mt-1">2) 浏览器标签图标：读取「Favicon」，首屏静态图标与运行时图标会统一更新。</p>
+          <p className="mt-1">3) 页脚内容：公司信息/联系方式/政策路径/footerNav 会实时驱动客户端页脚。</p>
+          <p className="mt-1">4) 首屏静态 Title 仅是兜底，进入页面后会被运行时标题策略接管。</p>
+        </div>
         {visibleSections.map((section) => (
           <div
             key={section.title}

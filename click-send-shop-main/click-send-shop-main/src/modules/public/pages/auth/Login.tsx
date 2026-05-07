@@ -34,7 +34,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const authStore = useAuthStore();
-  const { banners } = useHomeBanners({ fetchRemote: false });
+  const { banners } = useHomeBanners();
   const siteInfo = useSiteInfo();
   const logoSrc = siteInfo.logoUrl || logoWebp;
   const siteName = siteInfo.siteName || "大马通";

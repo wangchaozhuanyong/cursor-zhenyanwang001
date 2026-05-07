@@ -3,13 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import ProductCard from "@/components/ProductCard";
+import BannerCarousel from "@/components/BannerCarousel";
+import { useHomeBanners } from "@/hooks/useHomeBanners";
 import type { Product } from "@/types/product";
 
 export default function GuestHome() {
-  useDocumentTitle("首页");
+  // 首页标题策略：优先使用后台 SEO 标题（seoTitle），未配置时回退站点名
+  useDocumentTitle(undefined);
   const navigate = useNavigate();
   const siteInfo = useSiteInfo();
   const siteName = siteInfo.siteName || "大马通";
+  const { banners } = useHomeBanners();
   const now = new Date().toISOString();
   const products: Product[] = [
     { id: "g1", title: "曜石黑 机械腕表", subtitle: "经典隽永 瑞士机芯", description: "经典隽永 瑞士机芯", price: 12800, originalPrice: 13800, image: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&q=80&w=800", categoryId: "guest", stock: 99, sales: 88, tags: [], status: "active", createdAt: now, updatedAt: now },
@@ -35,11 +39,7 @@ export default function GuestHome() {
         </div>
       </header>
       <main className="mx-auto max-w-screen-xl px-4 pt-[4.5rem]">
-        <div className="relative aspect-[21/9] w-full overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] md:aspect-[3/1]">
-          <img src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&q=80&w=1200" className="h-full w-full object-cover opacity-80" alt="Banner" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-          <div className="absolute bottom-3 left-4 right-4"><h2 className="text-sm font-bold tracking-wide text-white md:text-xl">限时抢购 · 精选好物低至5折</h2></div>
-        </div>
+        <BannerCarousel banners={banners} />
         <div className="mt-1 flex items-center justify-between px-2 py-5 text-[11px] text-[var(--theme-text-muted)] md:text-sm">
           <span className="flex items-center gap-1.5"><ShieldCheck size={16} className="text-[var(--theme-price)]" />正品保障</span>
           <span className="flex items-center gap-1.5"><Gem size={16} className="text-[var(--theme-price)]" />快速配送</span>

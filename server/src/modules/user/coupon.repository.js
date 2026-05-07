@@ -1,10 +1,10 @@
 const db = require('../../config/db');
 
 async function countUserCoupons(userId, status) {
-  let where = 'WHERE uc.user_id = ?';
+  let where = 'WHERE BINARY uc.user_id = BINARY ?';
   const params = [userId];
   if (status) {
-    where += ' AND uc.status = ?';
+    where += ' AND BINARY uc.status = BINARY ?';
     params.push(status);
   }
   const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total FROM user_coupons uc ${where}`, params);
@@ -12,10 +12,10 @@ async function countUserCoupons(userId, status) {
 }
 
 async function selectUserCouponsPage(userId, status, pageSize, offset) {
-  let where = 'WHERE uc.user_id = ?';
+  let where = 'WHERE BINARY uc.user_id = BINARY ?';
   const params = [userId];
   if (status) {
-    where += ' AND uc.status = ?';
+    where += ' AND BINARY uc.status = BINARY ?';
     params.push(status);
   }
   const [rows] = await db.query(
@@ -67,7 +67,7 @@ async function selectAvailableCoupons() {
 
 async function selectClaimedCouponIds(userId) {
   const [rows] = await db.query(
-    'SELECT coupon_id FROM user_coupons WHERE user_id = ?',
+    'SELECT coupon_id FROM user_coupons WHERE BINARY user_id = BINARY ?',
     [userId],
   );
   return rows;
@@ -97,7 +97,7 @@ async function selectCouponByCodeOrId(code) {
 
 async function findUserCoupon(userId, couponId) {
   const [[row]] = await db.query(
-    'SELECT id FROM user_coupons WHERE user_id = ? AND coupon_id = ?',
+    'SELECT id FROM user_coupons WHERE BINARY user_id = BINARY ? AND BINARY coupon_id = BINARY ?',
     [userId, couponId],
   );
   return row || null;

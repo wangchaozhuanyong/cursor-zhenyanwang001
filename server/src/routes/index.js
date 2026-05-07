@@ -17,7 +17,7 @@ router.use(user);
 router.use(product);
 router.use(cart);
 router.use(order);
-router.use(payments);
+router.use('/payments', payments);
 router.use(admin);
 router.use(theme);
 

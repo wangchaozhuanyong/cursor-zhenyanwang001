@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Bell, ChevronRight, Flame, Search, Star, Ticket, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
@@ -7,6 +7,7 @@ import { useCouponStore } from "@/stores/useCouponStore";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
+import type { Product } from "@/types/product";
 
 function Header({ title, icon: Icon, subtitle }: { title: string; icon?: React.ElementType; subtitle?: string }) {
   return (
@@ -24,7 +25,7 @@ export default function MemberHome() {
   useDocumentTitle("首页");
   const navigate = useNavigate();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
-  const { hotProducts, recommendedProducts, loading: homeLoading, loadHomeData } = useProductStore();
+  const { hotProducts, newProducts, recommendedProducts, loading: homeLoading, loadHomeData } = useProductStore();
   const couponLoading = useCouponStore((s) => s.loading);
   const coupons = useCouponStore((s) => s.coupons);
 
@@ -35,8 +36,27 @@ export default function MemberHome() {
   }, [loadHomeData]);
 
   const hot = useMemo(() => hotProducts.slice(0, 2), [hotProducts]);
+  const newest = useMemo(() => newProducts.slice(0, 6), [newProducts]);
   const rec = useMemo(() => recommendedProducts.slice(0, 2), [recommendedProducts]);
   const couponTop = useMemo(() => coupons.slice(0, 4), [coupons]);
+  const [newArrivalIndex, setNewArrivalIndex] = useState(0);
+  const touchStartXRef = useRef(0);
+
+  useEffect(() => {
+    if (newest.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setNewArrivalIndex((prev) => (prev + 1) % newest.length);
+    }, 4200);
+    return () => window.clearInterval(timer);
+  }, [newest.length]);
+
+  useEffect(() => {
+    if (newArrivalIndex >= newest.length) {
+      setNewArrivalIndex(0);
+    }
+  }, [newArrivalIndex, newest.length]);
+
+  const activeNew = newest.length > 0 ? newest[newArrivalIndex] : null;
 
   return (
     <div className="min-h-screen bg-[var(--theme-bg)] pb-24 text-[var(--theme-text)]">
@@ -70,13 +90,66 @@ export default function MemberHome() {
         </section>
         <section className="mt-section px-4">
           <Header title="新品上市" icon={Zap} />
-          <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-[var(--theme-border)] md:aspect-[21/9]">
-            <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=800" className="h-full w-full object-cover opacity-90" alt="New Arrival" />
+          <div
+            className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-[var(--theme-border)] md:aspect-[21/9]"
+            onTouchStart={(e) => {
+              touchStartXRef.current = e.touches[0]?.clientX ?? 0;
+            }}
+            onTouchEnd={(e) => {
+              if (newest.length <= 1) return;
+              const endX = e.changedTouches[0]?.clientX ?? touchStartXRef.current;
+              const diff = touchStartXRef.current - endX;
+              if (Math.abs(diff) < 40) return;
+              if (diff > 0) setNewArrivalIndex((prev) => (prev + 1) % newest.length);
+              else setNewArrivalIndex((prev) => (prev - 1 + newest.length) % newest.length);
+            }}
+          >
+            <img
+              src={resolveNewArrivalImage(activeNew, newArrivalIndex)}
+              className="h-full w-full object-cover opacity-90 transition-all duration-500"
+              alt={activeNew?.name || "New Arrival"}
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
             <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
-              <h3 className="text-lg font-bold text-white md:text-2xl">先锋结构 运动潮鞋</h3>
-              <button type="button" onClick={() => navigate("/categories")} className="rounded-full bg-white px-4 py-2 text-xs font-bold text-black">立即抢购</button>
+              <div className="pr-3">
+                <h3 className="line-clamp-2 text-lg font-bold text-white md:text-2xl">
+                  {activeNew?.name || "新品更新中"}
+                </h3>
+                {activeNew ? (
+                  <p className="mt-1 text-sm font-semibold text-white/85">RM {activeNew.price}</p>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (activeNew) navigate(`/product/${activeNew.id}`);
+                  else navigate("/categories?is_new=1");
+                }}
+                className="rounded-full bg-white px-4 py-2 text-xs font-bold text-black"
+              >
+                立即抢购
+              </button>
             </div>
+            {newest.length > 1 ? (
+              <div className="absolute bottom-4 right-4 flex gap-1.5">
+                {newest.map((item, idx) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setNewArrivalIndex(idx)}
+                    aria-label={`查看新品 ${idx + 1}`}
+                    className="h-2.5 rounded-full transition-all"
+                    style={{
+                      width: idx === newArrivalIndex ? 18 : 8,
+                      backgroundColor:
+                        idx === newArrivalIndex
+                          ? "var(--theme-price)"
+                          : "color-mix(in srgb, #ffffff 45%, transparent)",
+                    }}
+                  />
+                ))}
+              </div>
+            ) : null}
           </div>
         </section>
         <section className="mt-section px-4"><Header title="今日热销" icon={Flame} /><div className="grid grid-cols-2 gap-4">{homeLoading ? Array.from({ length: 2 }).map((_, i) => <ProductCardSkeleton key={i} />) : hot.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}</div></section>
@@ -84,5 +157,17 @@ export default function MemberHome() {
       </main>
     </div>
   );
+}
+
+function resolveNewArrivalImage(product: Product | null, fallbackIndex: number): string {
+  if (!product) {
+    return `https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=800`;
+  }
+  const images = Array.isArray(product.images) ? product.images.filter(Boolean) : [];
+  if (images.length > 0) {
+    return images[fallbackIndex % images.length];
+  }
+  if (product.cover_image) return product.cover_image;
+  return `https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=800`;
 }
 

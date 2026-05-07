@@ -34,6 +34,31 @@ async function getProductReport() {
   return { topProducts };
 }
 
+async function getHomeEngagementReport(query) {
+  const days = parseRangeDays(query.range);
+  const data = await repo.selectHomeNewArrivalsEngagement(days);
+  const impressions = Number(data.summary?.impressions || 0);
+  const clicks = Number(data.summary?.clicks || 0);
+  const uvImpressions = Number(data.summary?.uv_impressions || 0);
+  const uvClicks = Number(data.summary?.uv_clicks || 0);
+  const ctr = impressions > 0 ? Number(((clicks / impressions) * 100).toFixed(2)) : 0;
+  return {
+    rangeDays: days,
+    impressions,
+    clicks,
+    uvImpressions,
+    uvClicks,
+    ctr,
+    topProducts: (data.topProducts || []).map((r) => ({
+      productId: r.product_id,
+      productName: r.product_name || r.product_id,
+      impressions: Number(r.impressions || 0),
+      clicks: Number(r.clicks || 0),
+      ctr: Number(r.impressions > 0 ? ((Number(r.clicks || 0) / Number(r.impressions || 0)) * 100).toFixed(2) : 0),
+    })),
+  };
+}
+
 // ─── CSV 导出 ───
 
 const BOM = '\uFEFF';
@@ -85,6 +110,7 @@ module.exports = {
   getSalesReport,
   getUserReport,
   getProductReport,
+  getHomeEngagementReport,
   exportSalesReportCsv,
   exportUserReportCsv,
   exportProductReportCsv,

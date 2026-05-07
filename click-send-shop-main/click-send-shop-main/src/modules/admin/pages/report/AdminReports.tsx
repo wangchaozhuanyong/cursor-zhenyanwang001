@@ -19,11 +19,31 @@ export default function AdminReports() {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalOrders, setTotalOrders] = useState(0);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [newArrivalStats, setNewArrivalStats] = useState({
+    impressions: 0,
+    clicks: 0,
+    ctr: 0,
+    topProducts: [] as Array<{ productName: string; impressions: number; clicks: number; ctr: number }>,
+  });
 
   const loadReports = async (range: string) => {
     setLoading(true);
     try {
       const bundle = await loadAdminReportsBundle(range);
+      if (bundle.home) {
+        const d = bundle.home as {
+          impressions?: number;
+          clicks?: number;
+          ctr?: number;
+          topProducts?: Array<{ productName: string; impressions: number; clicks: number; ctr: number }>;
+        };
+        setNewArrivalStats({
+          impressions: d.impressions ?? 0,
+          clicks: d.clicks ?? 0,
+          ctr: d.ctr ?? 0,
+          topProducts: d.topProducts ?? [],
+        });
+      }
       if (bundle.sales) {
         const d = bundle.sales as { chart?: unknown[]; totalRevenue?: number; totalOrders?: number };
         setSalesChart((d.chart || []) as Record<string, unknown>[]);
@@ -95,6 +115,37 @@ export default function AdminReports() {
             <p className="mt-1 text-xl font-bold text-foreground">{s.value}</p>
           </div>
         ))}
+      </div>
+
+      <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
+        <h3 className="mb-4 text-sm font-bold text-foreground">首页新品轮播转化</h3>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="rounded-lg bg-secondary p-3">
+            <p className="text-xs text-muted-foreground">曝光</p>
+            <p className="mt-1 text-lg font-bold text-foreground">{newArrivalStats.impressions}</p>
+          </div>
+          <div className="rounded-lg bg-secondary p-3">
+            <p className="text-xs text-muted-foreground">点击</p>
+            <p className="mt-1 text-lg font-bold text-foreground">{newArrivalStats.clicks}</p>
+          </div>
+          <div className="rounded-lg bg-secondary p-3">
+            <p className="text-xs text-muted-foreground">CTR</p>
+            <p className="mt-1 text-lg font-bold text-[var(--theme-price)]">{newArrivalStats.ctr}%</p>
+          </div>
+        </div>
+        <div className="mt-4 space-y-2">
+          {newArrivalStats.topProducts.slice(0, 5).map((it) => (
+            <div key={it.productName} className="flex items-center justify-between text-xs">
+              <span className="truncate text-foreground">{it.productName}</span>
+              <span className="text-muted-foreground">
+                曝光 {it.impressions} / 点击 {it.clicks} / CTR {it.ctr}%
+              </span>
+            </div>
+          ))}
+          {newArrivalStats.topProducts.length === 0 && (
+            <p className="text-center text-xs text-muted-foreground">暂无新品轮播埋点数据</p>
+          )}
+        </div>
       </div>
 
       <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">

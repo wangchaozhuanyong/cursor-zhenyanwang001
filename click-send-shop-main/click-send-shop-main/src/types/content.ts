@@ -65,6 +65,12 @@ export interface SiteInfo {
 
   /* ─ 自定义页脚导航：JSON 字符串 [{ label, path }]，未设置时回退为内置默认 ─ */
   footerNav?: string;
+
+  /* ─ 首页新品运营主视觉 ─ */
+  newArrivalHeroImage?: string;
+  newArrivalHeroTitle?: string;
+  newArrivalHeroSubtitle?: string;
+  newArrivalHeroCtaText?: string;
 }
 
 /** 页脚导航条目（footerNav JSON 解析后的形态） */

@@ -77,6 +77,38 @@ async function selectTopProductsSold() {
   return topProducts;
 }
 
+async function selectHomeNewArrivalsEngagement(days) {
+  const [summaryRows] = await db.query(
+    `SELECT
+       SUM(CASE WHEN event_key='impression' THEN 1 ELSE 0 END) AS impressions,
+       SUM(CASE WHEN event_key='click' THEN 1 ELSE 0 END) AS clicks,
+       COUNT(DISTINCT CASE WHEN event_key='impression' THEN session_id END) AS uv_impressions,
+       COUNT(DISTINCT CASE WHEN event_key='click' THEN session_id END) AS uv_clicks
+     FROM home_engagement_events
+     WHERE module='new_arrivals'
+       AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)`,
+    [days],
+  );
+  const [topRows] = await db.query(
+    `SELECT
+       e.product_id,
+       p.name AS product_name,
+       SUM(CASE WHEN e.event_key='impression' THEN 1 ELSE 0 END) AS impressions,
+       SUM(CASE WHEN e.event_key='click' THEN 1 ELSE 0 END) AS clicks
+     FROM home_engagement_events e
+     LEFT JOIN products p ON p.id = e.product_id
+     WHERE e.module='new_arrivals'
+       AND e.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+       AND e.product_id IS NOT NULL
+       AND e.product_id <> ''
+     GROUP BY e.product_id, p.name
+     ORDER BY clicks DESC, impressions DESC
+     LIMIT 10`,
+    [days],
+  );
+  return { summary: summaryRows?.[0] || {}, topProducts: topRows || [] };
+}
+
 module.exports = {
   selectSalesChart,
   sumRevenueInRange,
@@ -84,4 +116,5 @@ module.exports = {
   selectUserRegistrationsByDay,
   countAllUsers,
   selectTopProductsSold,
+  selectHomeNewArrivalsEngagement,
 };

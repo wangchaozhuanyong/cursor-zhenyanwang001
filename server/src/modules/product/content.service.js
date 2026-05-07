@@ -33,6 +33,8 @@ const PUBLIC_SITE_KEYS = [
   'supportText', 'shippingNotice', 'paymentNotice',
   // 自定义页脚导航（JSON 字符串：[{label,path}]，未设置则前端使用默认导航）
   'footerNav',
+  // 首页新品运营主视觉
+  'newArrivalHeroImage', 'newArrivalHeroTitle', 'newArrivalHeroSubtitle', 'newArrivalHeroCtaText',
 ];
 
 exports.PUBLIC_SITE_KEYS = PUBLIC_SITE_KEYS;

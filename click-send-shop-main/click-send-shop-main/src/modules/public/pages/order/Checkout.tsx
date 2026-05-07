@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, Copy, MessageCircle, Phone, MapPin, CheckCircle2, ShieldCheck, Truck, RefreshCcw } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCartStore } from "@/stores/useCartStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import * as orderService from "@/services/orderService";
 import * as paymentService from "@/services/paymentService";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
+import { useCouponStore } from "@/stores/useCouponStore";
 import { toast } from "sonner";
 import type { Order } from "@/types/order";
 import { motion } from "framer-motion";
@@ -58,6 +59,7 @@ function generateOrderText(order: Order) {
 export default function Checkout() {
   useDocumentTitle("结算");
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const goBack = useGoBack("/cart");
   const getSelectedItems = useCartStore((s) => s.getSelectedItems);
   const removeOrderedItems = useCartStore((s) => s.removeOrderedItems);
@@ -68,6 +70,7 @@ export default function Checkout() {
   const totalPoints = () => items.reduce((s, i) => s + i.product.points * i.qty, 0);
   const { submitOrder, submitting } = useOrderStore();
   const { getDefaultAddress, loadAddresses } = useUserStore();
+  const loadCoupons = useCouponStore((s) => s.loadCoupons);
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -106,6 +109,7 @@ export default function Checkout() {
   const [paymentConfigLoaded, setPaymentConfigLoaded] = useState(false);
   const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null);
   const [selectedCoupon, setSelectedCoupon] = useState<CheckoutPickerCoupon | null>(null);
+  const [couponInitDone, setCouponInitDone] = useState(false);
   const [shippingId, setShippingId] = useState<number | null>(null);
   const [serverShippingFee, setServerShippingFee] = useState<number | null>(null);
   const [shippingQuoteLoading, setShippingQuoteLoading] = useState(false);
@@ -156,6 +160,44 @@ export default function Checkout() {
         : Math.min(rawTotal, selectedCoupon.discount)
     : 0;
   const finalTotal = Math.max(0, rawTotal - discountAmount + shippingFee);
+  const preferredCouponId = searchParams.get("coupon_id");
+
+  const estimateCouponDiscount = (coupon: CheckoutPickerCoupon) => {
+    if (coupon.discountType === "percent") {
+      return Math.min(rawTotal, Math.floor((rawTotal * coupon.discount) / 100));
+    }
+    if (coupon.discountType === "shipping") {
+      return Math.min(shippingFee, coupon.discount > 0 ? coupon.discount : shippingFee);
+    }
+    return Math.min(rawTotal, coupon.discount);
+  };
+
+  useEffect(() => {
+    if (couponInitDone) return;
+    if (pickerCouponsLoading) return;
+
+    const candidates = pickerCoupons.filter((c) => rawTotal >= c.condition && (c.discountType !== "shipping" || shippingFee > 0));
+
+    if (preferredCouponId) {
+      const preferred = candidates.find((c) => c.id === preferredCouponId) ?? null;
+      if (preferred) {
+        setSelectedCoupon(preferred);
+      }
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("coupon_id");
+      setSearchParams(nextParams, { replace: true });
+      setCouponInitDone(true);
+      return;
+    }
+
+    if (candidates.length > 0) {
+      const best = candidates.reduce((max, current) =>
+        estimateCouponDiscount(current) > estimateCouponDiscount(max) ? current : max,
+      );
+      setSelectedCoupon(best);
+    }
+    setCouponInitDone(true);
+  }, [couponInitDone, pickerCouponsLoading, pickerCoupons, preferredCouponId, rawTotal, shippingFee, searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!selectedCoupon) return;
@@ -265,6 +307,7 @@ export default function Checkout() {
         removeOrderedItems(orderedIds);
       }
       setSubmittedOrder(order);
+      void loadCoupons();
       const text = generateOrderText(order);
       navigator.clipboard.writeText(text).then(() => {
         toast.success("订单内容已复制到剪贴板！");

@@ -15,6 +15,10 @@ export function getProductReport() {
   return get<ReportData>("/admin/reports/products");
 }
 
+export function getHomeEngagementReport(range: ApiRange) {
+  return get<ReportData>("/admin/reports/home-engagement", { range });
+}
+
 export function exportSalesReportCsv(range: ApiRange) {
   return `/admin/reports/sales/export?range=${range}`;
 }

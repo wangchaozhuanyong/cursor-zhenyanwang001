@@ -25,3 +25,8 @@ exports.getRelatedProducts = async (req, res, next) => {
     res.success(list);
   } catch (err) { next(err); }
 };
+
+exports.trackHomeEvent = asyncRoute(async (req, res) => {
+  await catalogService.trackHomeEngagement(req.body || {});
+  res.success(null, 'ok');
+});

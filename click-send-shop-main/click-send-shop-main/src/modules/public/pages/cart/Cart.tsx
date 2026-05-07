@@ -1,6 +1,6 @@
 ﻿import { useEffect } from "react";
 import { ArrowLeft, Minus, Plus, Trash2, ShoppingBag, Loader2, Check } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useCartStore } from "@/stores/useCartStore";
 import { isLoggedIn } from "@/utils/token";
@@ -16,6 +16,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 export default function Cart() {
   useDocumentTitle("购物车");
   const navigate = useNavigate();
+  const location = useLocation() as { state?: { coupon_id?: string } };
   const goBack = useGoBack();
   const {
     items,
@@ -47,7 +48,8 @@ export default function Cart() {
       toast.error("请先勾选要结算的商品");
       return;
     }
-    navigate("/checkout");
+    const couponId = location.state?.coupon_id;
+    navigate(couponId ? `/checkout?coupon_id=${couponId}` : "/checkout");
   };
 
   return (

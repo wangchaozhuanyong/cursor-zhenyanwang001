@@ -182,6 +182,7 @@ router.get('/reports/products/export', adminAuth, requirePermission('report.expo
 router.get('/reports/sales', adminAuth, requirePermission('report.view'), reportCtrl.getSales);
 router.get('/reports/users', adminAuth, requirePermission('report.view'), reportCtrl.getUsers);
 router.get('/reports/products', adminAuth, requirePermission('report.view'), reportCtrl.getProducts);
+router.get('/reports/home-engagement', adminAuth, requirePermission('report.view'), reportCtrl.getHomeEngagement);
 
 /* ── Export Center ── */
 router.post('/exports', adminAuth, requirePermission('report.export'), exportCtrl.create);

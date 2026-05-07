@@ -13,6 +13,10 @@ exports.getProducts = asyncRoute(async (_req, res) => {
   res.success(await svc.getProductReport());
 });
 
+exports.getHomeEngagement = asyncRoute(async (req, res) => {
+  res.success(await svc.getHomeEngagementReport(req.query));
+});
+
 exports.exportSales = asyncRoute(async (req, res) => {
   const { csv, filename } = await svc.exportSalesReportCsv(req.query);
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');

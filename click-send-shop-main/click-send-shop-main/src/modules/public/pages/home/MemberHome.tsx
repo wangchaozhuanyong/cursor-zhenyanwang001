@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState, useRef } from "react";
-import { Bell, ChevronRight, Flame, Search, Star, Ticket, Zap } from "lucide-react";
+import { Bell, ChevronRight, Flame, RefreshCw, Search, Star, Ticket, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import { useCouponStore } from "@/stores/useCouponStore";
+import { useCartStore } from "@/stores/useCartStore";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
+import * as productService from "@/services/productService";
+import type { UserCoupon } from "@/types/coupon";
 import type { Product } from "@/types/product";
 
 function Header({ title, icon: Icon, subtitle }: { title: string; icon?: React.ElementType; subtitle?: string }) {
@@ -26,21 +30,43 @@ export default function MemberHome() {
   const navigate = useNavigate();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const { hotProducts, newProducts, recommendedProducts, loading: homeLoading, loadHomeData } = useProductStore();
+  const siteInfo = useSiteInfo();
   const couponLoading = useCouponStore((s) => s.loading);
   const coupons = useCouponStore((s) => s.coupons);
+  const selectedCartCount = useCartStore((s) => s.getSelectedItems().length);
 
   useEffect(() => {
     loadHomeData();
     useNotificationStore.getState().fetchUnreadCount();
-    useCouponStore.getState().fetchCoupons?.();
+    useCouponStore.getState().loadCoupons();
   }, [loadHomeData]);
 
-  const hot = useMemo(() => hotProducts.slice(0, 2), [hotProducts]);
   const newest = useMemo(() => newProducts.slice(0, 6), [newProducts]);
-  const rec = useMemo(() => recommendedProducts.slice(0, 2), [recommendedProducts]);
-  const couponTop = useMemo(() => coupons.slice(0, 4), [coupons]);
+  const couponTop = useMemo(
+    () =>
+      coupons
+        .filter((uc) => uc.status === "available")
+        .slice()
+        .sort((a, b) => Number(b.coupon?.value || 0) - Number(a.coupon?.value || 0))
+        .slice(0, 4),
+    [coupons],
+  );
   const [newArrivalIndex, setNewArrivalIndex] = useState(0);
+  const [hotBatchIndex, setHotBatchIndex] = useState(0);
+  const [recBatchIndex, setRecBatchIndex] = useState(0);
   const touchStartXRef = useRef(0);
+  const exposedProductIdsRef = useRef<Set<string>>(new Set());
+  const HOT_BATCH_SIZE = 4;
+  const REC_BATCH_SIZE = 4;
+
+  const trackingSessionId = useMemo(() => {
+    const key = "home_tracking_session_id";
+    const existing = localStorage.getItem(key);
+    if (existing) return existing;
+    const created = `s_${Math.random().toString(36).slice(2)}_${Date.now()}`;
+    localStorage.setItem(key, created);
+    return created;
+  }, []);
 
   useEffect(() => {
     if (newest.length <= 1) return;
@@ -56,7 +82,35 @@ export default function MemberHome() {
     }
   }, [newArrivalIndex, newest.length]);
 
+  const hotList = useMemo(() => hotProducts.slice(0, 16), [hotProducts]);
+  const recList = useMemo(() => {
+    const hotIds = new Set(hotList.map((p) => p.id));
+    return recommendedProducts.filter((p) => !hotIds.has(p.id)).slice(0, 16);
+  }, [recommendedProducts, hotList]);
+  const hotBatches = useMemo(() => toBatches(hotList, HOT_BATCH_SIZE), [hotList]);
+  const recBatches = useMemo(() => toBatches(recList, REC_BATCH_SIZE), [recList]);
+  const hot = hotBatches.length > 0 ? hotBatches[hotBatchIndex % hotBatches.length] : [];
+  const rec = recBatches.length > 0 ? recBatches[recBatchIndex % recBatches.length] : [];
   const activeNew = newest.length > 0 ? newest[newArrivalIndex] : null;
+  const heroImage = (siteInfo.newArrivalHeroImage || "").trim();
+  const heroTitle = (siteInfo.newArrivalHeroTitle || "").trim() || activeNew?.name || "新品更新中";
+  const heroSubtitle =
+    (siteInfo.newArrivalHeroSubtitle || "").trim() ||
+    (activeNew ? `RM ${activeNew.price}` : "每周精选新品上架，立即查看");
+  const heroCtaText = (siteInfo.newArrivalHeroCtaText || "").trim() || "立即抢购";
+
+  useEffect(() => {
+    if (!activeNew?.id) return;
+    if (exposedProductIdsRef.current.has(activeNew.id)) return;
+    exposedProductIdsRef.current.add(activeNew.id);
+    void productService.trackHomeEngagement({
+      module: "new_arrivals",
+      event: "impression",
+      product_id: activeNew.id,
+      session_id: trackingSessionId,
+      meta: { index: newArrivalIndex },
+    });
+  }, [activeNew?.id, newArrivalIndex, trackingSessionId]);
 
   return (
     <div className="min-h-screen bg-[var(--theme-bg)] pb-24 text-[var(--theme-text)]">
@@ -80,12 +134,33 @@ export default function MemberHome() {
         <section className="px-4">
           <Header title="权益券包" icon={Ticket} subtitle="先领券再下单，叠加更划算" />
           <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">
-            {(couponLoading ? Array.from({ length: 4 }) : couponTop).map((c: any, i) => (
-              <button key={couponLoading ? i : c.id} type="button" onClick={() => navigate("/coupons")} className="action-card snap-center h-[110px] w-[80vw] shrink-0 rounded-2xl p-5 text-left md:w-[320px]">
-                <div className="flex items-center justify-between"><span className="text-xs font-semibold">{couponLoading ? "加载中" : "优惠券"}</span><ChevronRight size={14} /></div>
-                <div className="mt-3 text-base font-bold">{couponLoading ? "— —" : c.name || "专享优惠"}</div>
-              </button>
-            ))}
+            {(couponLoading ? Array.from({ length: 4 }) : couponTop).map((c: UserCoupon | number, i) => {
+              if (couponLoading || typeof c === "number") {
+                return (
+                  <div key={i} className="action-card snap-center h-[110px] w-[80vw] shrink-0 rounded-2xl p-5 text-left md:w-[320px]">
+                    <div className="flex items-center justify-between"><span className="text-xs font-semibold">加载中</span><ChevronRight size={14} /></div>
+                    <div className="mt-3 text-base font-bold">— —</div>
+                  </div>
+                );
+              }
+
+              const display = formatCouponCard(c);
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => {
+                    if (selectedCartCount > 0) navigate(`/checkout?coupon_id=${c.id}`);
+                    else navigate("/cart", { state: { coupon_id: c.id } });
+                  }}
+                  className="action-card snap-center h-[110px] w-[80vw] shrink-0 rounded-2xl p-5 text-left md:w-[320px]"
+                >
+                  <div className="flex items-center justify-between"><span className="text-xs font-semibold">可用优惠券</span><ChevronRight size={14} /></div>
+                  <div className="mt-2 line-clamp-1 text-base font-bold">{display.title}</div>
+                  <div className="mt-1 line-clamp-1 text-xs text-[var(--theme-text-muted)]">{display.condition}</div>
+                </button>
+              );
+            })}
           </div>
         </section>
         <section className="mt-section px-4">
@@ -105,29 +180,34 @@ export default function MemberHome() {
             }}
           >
             <img
-              src={resolveNewArrivalImage(activeNew, newArrivalIndex)}
+              src={heroImage || resolveNewArrivalImage(activeNew, newArrivalIndex)}
               className="h-full w-full object-cover opacity-90 transition-all duration-500"
-              alt={activeNew?.name || "New Arrival"}
+              alt={heroTitle}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
             <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
               <div className="pr-3">
                 <h3 className="line-clamp-2 text-lg font-bold text-white md:text-2xl">
-                  {activeNew?.name || "新品更新中"}
+                  {heroTitle}
                 </h3>
-                {activeNew ? (
-                  <p className="mt-1 text-sm font-semibold text-white/85">RM {activeNew.price}</p>
-                ) : null}
+                <p className="mt-1 text-sm font-semibold text-white/85">{heroSubtitle}</p>
               </div>
               <button
                 type="button"
                 onClick={() => {
+                  void productService.trackHomeEngagement({
+                    module: "new_arrivals",
+                    event: "click",
+                    product_id: activeNew?.id,
+                    session_id: trackingSessionId,
+                    meta: { index: newArrivalIndex, target: activeNew ? "product" : "list" },
+                  });
                   if (activeNew) navigate(`/product/${activeNew.id}`);
                   else navigate("/categories?is_new=1");
                 }}
                 className="rounded-full bg-white px-4 py-2 text-xs font-bold text-black"
               >
-                立即抢购
+                {heroCtaText}
               </button>
             </div>
             {newest.length > 1 ? (
@@ -152,11 +232,74 @@ export default function MemberHome() {
             ) : null}
           </div>
         </section>
-        <section className="mt-section px-4"><Header title="今日热销" icon={Flame} /><div className="grid grid-cols-2 gap-4">{homeLoading ? Array.from({ length: 2 }).map((_, i) => <ProductCardSkeleton key={i} />) : hot.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}</div></section>
-        <section className="mt-section px-4"><Header title="猜你喜欢" icon={Star} subtitle="根据你的浏览与偏好推荐" /><div className="grid grid-cols-2 gap-4">{homeLoading ? Array.from({ length: 2 }).map((_, i) => <ProductCardSkeleton key={i} />) : rec.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}</div></section>
+        <section className="mt-section px-4">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text-on-surface)]">
+              <Flame className="h-5 w-5 text-[var(--theme-price)]" />
+              今日热销
+            </h2>
+            {hotBatches.length > 1 ? (
+              <button
+                type="button"
+                onClick={() => setHotBatchIndex((prev) => (prev + 1) % hotBatches.length)}
+                className="flex items-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs text-[var(--theme-text-muted)]"
+              >
+                <RefreshCw size={12} />
+                换一批
+              </button>
+            ) : null}
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {homeLoading
+              ? Array.from({ length: HOT_BATCH_SIZE }).map((_, i) => <ProductCardSkeleton key={i} />)
+              : hot.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+          </div>
+        </section>
+        <section className="mt-section px-4">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h2 className="flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text-on-surface)]">
+                <Star className="h-5 w-5 text-[var(--theme-price)]" />
+                猜你喜欢
+              </h2>
+              <p className="mt-1 text-xs tracking-wider text-[var(--theme-text-muted)]">根据你的浏览与偏好推荐</p>
+            </div>
+            {recBatches.length > 1 ? (
+              <button
+                type="button"
+                onClick={() => setRecBatchIndex((prev) => (prev + 1) % recBatches.length)}
+                className="flex items-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs text-[var(--theme-text-muted)]"
+              >
+                <RefreshCw size={12} />
+                换一批
+              </button>
+            ) : null}
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {homeLoading
+              ? Array.from({ length: REC_BATCH_SIZE }).map((_, i) => <ProductCardSkeleton key={i} />)
+              : rec.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
+          </div>
+        </section>
       </main>
     </div>
   );
+}
+
+function formatCouponCard(uc: UserCoupon) {
+  const c = uc.coupon;
+  const discountText =
+    c.type === "percentage"
+      ? `${c.value}%`
+      : c.type === "shipping"
+        ? c.value > 0
+          ? `运费减 RM ${c.value}`
+          : "免运费"
+        : `RM ${c.value}`;
+  return {
+    title: `${c.title} · ${discountText}`,
+    condition: c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛可用",
+  };
 }
 
 function resolveNewArrivalImage(product: Product | null, fallbackIndex: number): string {
@@ -169,5 +312,14 @@ function resolveNewArrivalImage(product: Product | null, fallbackIndex: number):
   }
   if (product.cover_image) return product.cover_image;
   return `https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=800`;
+}
+
+function toBatches<T>(list: T[], size: number): T[][] {
+  if (!Array.isArray(list) || list.length === 0 || size <= 0) return [];
+  const out: T[][] = [];
+  for (let i = 0; i < list.length; i += size) {
+    out.push(list.slice(i, i + size));
+  }
+  return out;
 }
 

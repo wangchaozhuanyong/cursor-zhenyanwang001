@@ -84,11 +84,40 @@ async function getProductById(id) {
 
 async function getHomeProducts() {
   const limit = 8;
-  const blocks = await repo.selectHomeProductBlocks(limit);
+  const [hotManual, newArrivals, recommendedManual, fallbackBySales, fallbackByRecommend] = await Promise.all([
+    repo.selectActiveProductsByFlag('is_hot', limit),
+    repo.selectActiveProductsByFlag('is_new', limit),
+    repo.selectActiveProductsByFlag('is_recommended', limit),
+    repo.selectActiveProductsFallback('sales_count DESC, sort_order ASC, created_at DESC', 64),
+    repo.selectActiveProductsFallback('is_recommended DESC, sales_count DESC, sort_order ASC, created_at DESC', 64),
+  ]);
+
+  const pickUnique = (primary, fallback, target, excludeIds = new Set()) => {
+    const out = [];
+    const used = new Set(excludeIds);
+    for (const p of primary) {
+      if (used.has(p.id)) continue;
+      used.add(p.id);
+      out.push(p);
+      if (out.length >= target) return out;
+    }
+    for (const p of fallback) {
+      if (used.has(p.id)) continue;
+      used.add(p.id);
+      out.push(p);
+      if (out.length >= target) return out;
+    }
+    return out;
+  };
+
+  const hot = pickUnique(hotManual, fallbackBySales, limit);
+  const hotIdSet = new Set(hot.map((p) => p.id));
+  const recommended = pickUnique(recommendedManual, fallbackByRecommend, limit, hotIdSet);
+
   return {
-    hot: blocks.hot.map(formatProduct),
-    new_arrivals: blocks.new_arrivals.map(formatProduct),
-    recommended: blocks.recommended.map(formatProduct),
+    hot: hot.map(formatProduct),
+    new_arrivals: newArrivals.map(formatProduct),
+    recommended: recommended.map(formatProduct),
   };
 }
 
@@ -100,6 +129,26 @@ async function getRelatedProducts(productId, limit) {
   return rows.map(formatProduct);
 }
 
+async function trackHomeEngagement(payload) {
+  const module = String(payload?.module || '').trim();
+  const event = String(payload?.event || '').trim();
+  const productId = payload?.product_id ? String(payload.product_id).trim() : '';
+  const sessionId = payload?.session_id ? String(payload.session_id).trim().slice(0, 64) : '';
+
+  const allowedModule = module === 'new_arrivals';
+  const allowedEvent = event === 'impression' || event === 'click';
+  if (!allowedModule || !allowedEvent) return { ok: true };
+
+  await repo.insertHomeEngagementEvent({
+    module,
+    eventKey: event,
+    productId: productId || null,
+    sessionId: sessionId || null,
+    meta: payload?.meta && typeof payload.meta === 'object' ? payload.meta : null,
+  });
+  return { ok: true };
+}
+
 module.exports = {
   getBanners,
   getCategories,
@@ -108,4 +157,5 @@ module.exports = {
   getProductById,
   getHomeProducts,
   getRelatedProducts,
+  trackHomeEngagement,
 };

@@ -1,4 +1,4 @@
-import { get } from "../request";
+import { get, post } from "../request";
 import type { Product, ProductListParams, ProductReview } from "@/types/product";
 import type { PaginatedData } from "@/types/common";
 
@@ -23,4 +23,14 @@ export function getHomeProducts() {
 export function getProductReviews(productId: string, page = 1) {
   // 后端 reviews 独立资源：GET /api/reviews/product/:productId
   return get<PaginatedData<ProductReview>>(`/reviews/product/${productId}`, { page });
+}
+
+export function trackHomeEvent(data: {
+  module: "new_arrivals";
+  event: "impression" | "click";
+  product_id?: string;
+  session_id?: string;
+  meta?: Record<string, unknown>;
+}) {
+  return post<null>("/products/home/events", data);
 }

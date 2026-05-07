@@ -44,6 +44,10 @@ const EMPTY: SiteSettings = {
   shippingNotice: "",
   paymentNotice: "",
   footerNav: "",
+  newArrivalHeroImage: "",
+  newArrivalHeroTitle: "",
+  newArrivalHeroSubtitle: "",
+  newArrivalHeroCtaText: "",
 };
 
 const DEFAULT_FOOTER_NAV_JSON = JSON.stringify(
@@ -98,6 +102,17 @@ const SECTIONS: Section[] = [
       { key: "logoUrl", label: "Logo (推荐 256×256，上传后统一转 WEBP)", type: "image", hint: "未配置时回退到打包内置 logo" },
       { key: "faviconUrl", label: "Favicon (推荐 32×32，上传后统一转 WEBP)", type: "image" },
       { key: "brandColor", label: "品牌主色", type: "color", hint: "用于按钮/强调色（前端可逐步接入）" },
+    ],
+  },
+  {
+    title: "首页新品运营主视觉",
+    category: "brand",
+    desc: "用于首页「新品上市」大图区，优先使用这里的图文；商品图仍作为兜底与轮播素材。",
+    fields: [
+      { key: "newArrivalHeroImage", label: "主视觉图片（推荐 1200×630）", type: "image" },
+      { key: "newArrivalHeroTitle", label: "主视觉标题", placeholder: "新品限时上新，错过再等一季" },
+      { key: "newArrivalHeroSubtitle", label: "主视觉副标题", placeholder: "每周精选，支持快速发货" },
+      { key: "newArrivalHeroCtaText", label: "按钮文案", placeholder: "立即抢购" },
     ],
   },
   {

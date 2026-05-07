@@ -41,3 +41,13 @@ export async function fetchCategories(): Promise<Category[]> {
   const res = await categoryApi.getCategories();
   return res.data;
 }
+
+export async function trackHomeEngagement(data: {
+  module: "new_arrivals";
+  event: "impression" | "click";
+  product_id?: string;
+  session_id?: string;
+  meta?: Record<string, unknown>;
+}): Promise<void> {
+  await productApi.trackHomeEvent(data);
+}

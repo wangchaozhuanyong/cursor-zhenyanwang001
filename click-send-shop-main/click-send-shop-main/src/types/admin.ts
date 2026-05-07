@@ -88,6 +88,12 @@ export interface SiteSettings {
   /* 自定义页脚导航 JSON 字符串 [{label,path}] */
   footerNav?: string;
 
+  /* 首页新品运营主视觉 */
+  newArrivalHeroImage?: string;
+  newArrivalHeroTitle?: string;
+  newArrivalHeroSubtitle?: string;
+  newArrivalHeroCtaText?: string;
+
   /* 允许任意扩展键（运营后期新增字段无需先发版） */
   [key: string]: string | undefined;
 }

@@ -56,6 +56,28 @@ async function selectHomeProductBlocks(limit) {
   return { hot, new_arrivals: nw, recommended: rec };
 }
 
+async function selectActiveProductsByFlag(flagField, limit) {
+  const [rows] = await db.query(
+    `SELECT * FROM products
+     WHERE status="active" AND ${flagField}=1
+     ORDER BY sort_order ASC, created_at DESC
+     LIMIT ?`,
+    [limit],
+  );
+  return rows;
+}
+
+async function selectActiveProductsFallback(orderBySql, limit) {
+  const [rows] = await db.query(
+    `SELECT * FROM products
+     WHERE status="active"
+     ORDER BY ${orderBySql}
+     LIMIT ?`,
+    [limit],
+  );
+  return rows;
+}
+
 async function selectProductCategoryId(productId) {
   const [[row]] = await db.query('SELECT category_id FROM products WHERE id = ?', [productId]);
   return row || null;
@@ -69,6 +91,20 @@ async function selectRelatedByCategory(categoryId, excludeProductId, limit) {
   return rows;
 }
 
+async function insertHomeEngagementEvent({ module, eventKey, productId, sessionId, meta }) {
+  await db.query(
+    `INSERT INTO home_engagement_events (module, event_key, product_id, session_id, meta_json)
+     VALUES (?, ?, ?, ?, ?)`,
+    [
+      module,
+      eventKey,
+      productId || null,
+      sessionId || null,
+      meta ? JSON.stringify(meta) : null,
+    ],
+  );
+}
+
 module.exports = {
   selectActiveBanners,
   selectActiveCategories,
@@ -77,6 +113,9 @@ module.exports = {
   selectActiveProductsPage,
   selectProductById,
   selectHomeProductBlocks,
+  selectActiveProductsByFlag,
+  selectActiveProductsFallback,
   selectProductCategoryId,
   selectRelatedByCategory,
+  insertHomeEngagementEvent,
 };

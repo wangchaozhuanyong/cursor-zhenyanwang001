@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AlignCenter,
   AlignLeft,
+  Copy,
+  Pencil,
   Plus,
   Loader2,
   Maximize,
@@ -9,6 +11,7 @@ import {
   Palette,
   RotateCcw,
   Save,
+  Trash2,
   Type,
   Square,
   LayoutGrid,
@@ -205,6 +208,55 @@ export default function AdminThemeSettings() {
     setThemeConfig({ ...DEFAULT_THEME_CONFIG });
   };
 
+  const renameSkin = (id: string) => {
+    const target = skins.find((s) => s.id === id);
+    if (!target) return;
+    const nextName = window.prompt("请输入新的皮肤名称", target.name)?.trim();
+    if (!nextName || nextName === target.name) return;
+    setSkins((prev) => prev.map((s) => (s.id === id ? { ...s, name: nextName } : s)));
+  };
+
+  const duplicateSkin = (id: string) => {
+    if (skins.length >= 8) {
+      toast.info("最多保留 8 个皮肤");
+      return;
+    }
+    const src = skins.find((s) => s.id === id);
+    if (!src) return;
+    const copyId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `skin_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const copy: ThemeSkin = {
+      id: copyId,
+      name: `${src.name} 副本`,
+      config: { ...src.config },
+    };
+    setSkins((prev) => [...prev, copy]);
+    setSelectedSkinId(copyId);
+    setThemeConfig({ ...DEFAULT_THEME_CONFIG, ...copy.config });
+  };
+
+  const removeSkin = (id: string) => {
+    if (skins.length <= 1) {
+      toast.error("至少保留一个皮肤");
+      return;
+    }
+    const target = skins.find((s) => s.id === id);
+    if (!target) return;
+    if (!window.confirm(`确认删除皮肤「${target.name}」？`)) return;
+
+    const nextSkins = skins.filter((s) => s.id !== id);
+    setSkins(nextSkins);
+
+    const fallbackId = nextSkins[0].id;
+    if (defaultSkinId === id) setDefaultSkinId(fallbackId);
+    const nextSelected = selectedSkinId === id ? fallbackId : selectedSkinId;
+    setSelectedSkinId(nextSelected);
+    const selectedCfg = nextSkins.find((s) => s.id === nextSelected)?.config ?? nextSkins[0].config;
+    setThemeConfig({ ...DEFAULT_THEME_CONFIG, ...selectedCfg });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -247,23 +299,22 @@ export default function AdminThemeSettings() {
               const active = s.id === selectedSkinId;
               const isDefault = s.id === defaultSkinId;
               return (
-                <button
+                <div
                   key={s.id}
-                  type="button"
-                  onClick={() => selectSkin(s.id)}
                   className={`theme-rounded border px-3 py-2 text-xs flex items-center gap-2 ${
                     active ? "border-gold bg-gold/10" : "border-border bg-background"
                   }`}
                 >
-                  <span className="font-semibold">{s.name}</span>
+                  <button type="button" onClick={() => selectSkin(s.id)} className="font-semibold">
+                    {s.name}
+                  </button>
                   {isDefault ? (
                     <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-price)_15%,transparent)] px-2 py-0.5 text-[10px] font-bold text-[var(--theme-price)]">
                       默认
                     </span>
                   ) : (
-                    <span
-                      role="button"
-                      tabIndex={0}
+                    <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setDefaultSkinId(s.id);
@@ -271,9 +322,34 @@ export default function AdminThemeSettings() {
                       className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-secondary"
                     >
                       设为默认
-                    </span>
+                    </button>
                   )}
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => renameSkin(s.id)}
+                    className="rounded-md p-1 text-muted-foreground hover:bg-secondary"
+                    title="重命名"
+                  >
+                    <Pencil size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => duplicateSkin(s.id)}
+                    className="rounded-md p-1 text-muted-foreground hover:bg-secondary"
+                    title="复制"
+                  >
+                    <Copy size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeSkin(s.id)}
+                    className="rounded-md p-1 text-muted-foreground hover:bg-secondary disabled:opacity-40"
+                    title="删除"
+                    disabled={skins.length <= 1}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
               );
             })}
           </div>

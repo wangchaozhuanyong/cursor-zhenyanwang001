@@ -1,6 +1,6 @@
-import { lazy, Suspense, useLayoutEffect } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { RouterLoadingBridge, TopProgressBar } from "@/components/ui/top-progress-bar";
@@ -13,6 +13,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { isLoggedIn } from "@/utils/token";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { syncLockedInviteCodeBySearch } from "@/utils/inviteReferral";
 
 /* ───────── Public（前台）页面，按业务域 ───────── */
 const MemberHome = lazy(() => import("@/modules/public/pages/home/MemberHome"));
@@ -141,6 +142,14 @@ function SiteIdentitySync() {
   return null;
 }
 
+function ReferralInviteSync() {
+  const location = useLocation();
+  useEffect(() => {
+    syncLockedInviteCodeBySearch(location.search);
+  }, [location.search]);
+  return null;
+}
+
 function HomeRoute() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hasToken = isLoggedIn();
@@ -162,6 +171,7 @@ const App = () => (
           <RouterLoadingBridge />
           <AuthTokenSync />
           <SiteIdentitySync />
+          <ReferralInviteSync />
           <Suspense fallback={<AppRouteFallback />}>
             <Routes>
               {/* Pages with bottom nav */}

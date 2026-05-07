@@ -55,10 +55,6 @@ const claimCouponBodySchema = z
     code: 'code' in v ? v.code : v.couponId,
   }));
 
-const inviteBindBodySchema = z.object({
-  inviteCode: z.string().trim().min(1, '请填写邀请码').max(32),
-});
-
 const withdrawBodySchema = z
   .object({
     amount: z.coerce.number().positive('金额必须大于 0'),
@@ -90,7 +86,6 @@ module.exports = {
   notificationIdParamSchema,
   notificationListQuerySchema,
   claimCouponBodySchema,
-  inviteBindBodySchema,
   withdrawBodySchema,
   shippingQuoteBodySchema,
 };

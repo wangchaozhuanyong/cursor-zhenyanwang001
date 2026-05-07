@@ -22,6 +22,7 @@
     "test:all": "node -r tsx/cjs --test --test-force-exit test/health.test.js test/auth-flow.test.js test/payment-channels.test.js test/flow-smoke.test.js test/stripe-amount.test.js test/order-state-machine.test.js test/return-state-machine.test.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1044.0",
     "bcryptjs": "^3.0.3",
     "compression": "^1.8.1",
     "cors": "^2.8.6",

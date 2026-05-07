@@ -1,4 +1,4 @@
-import { get, post } from "../request";
+import { get } from "../request";
 import type { InviteRecord, InviteStats } from "@/types/invite";
 import type { PaginatedData } from "@/types/common";
 
@@ -12,6 +12,3 @@ export function getInviteStats() {
   return get<InviteStats>("/invite/stats");
 }
 
-export function bindInviteCode(inviteCode: string) {
-  return post<void>("/invite/bind", { inviteCode });
-}

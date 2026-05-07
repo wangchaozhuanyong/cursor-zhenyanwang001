@@ -3,6 +3,7 @@ const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs');
 const sharp = require('sharp');
+const { isS3StorageEnabled, uploadBufferToS3 } = require('../../utils/objectStorage');
 
 const uploadDir = path.join(__dirname, '../../../public/uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -22,12 +23,24 @@ const fileFilter = (_req, file, cb) => {
 
 async function writeImageFromFile(file) {
   const filename = `${crypto.randomBytes(16).toString('hex')}.webp`;
-  const outPath = path.join(uploadDir, filename);
-  await sharp(file.buffer)
+  const webpBuffer = await sharp(file.buffer)
     .rotate()
     .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
     .webp({ quality: 82 })
-    .toFile(outPath);
+    .toBuffer();
+
+  if (isS3StorageEnabled()) {
+    const uploaded = await uploadBufferToS3({
+      key: `uploads/${filename}`,
+      body: webpBuffer,
+      contentType: 'image/webp',
+      cacheControl: 'public, max-age=31536000, immutable',
+    });
+    return { filename, url: uploaded.url };
+  }
+
+  const outPath = path.join(uploadDir, filename);
+  await fs.promises.writeFile(outPath, webpBuffer);
   return { filename, url: `/uploads/${filename}` };
 }
 

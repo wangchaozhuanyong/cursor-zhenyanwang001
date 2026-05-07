@@ -57,6 +57,10 @@ function FooterLink({ item }: { item: FooterNavItem }) {
 export default function SiteFooter() {
   const site = useSiteInfo();
   const year = new Date().getFullYear();
+  const supportText = (site.supportText || "").trim();
+  const shippingNotice = (site.shippingNotice || "").trim();
+  const paymentNotice = (site.paymentNotice || "").trim();
+  const supportBadges = [supportText, shippingNotice, paymentNotice].filter(Boolean);
 
   const company = site.footerCompanyName || site.siteName || "大马通";
   const copyright =
@@ -80,7 +84,7 @@ export default function SiteFooter() {
                 需要帮助？我们随时在线。
               </h3>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                从商品咨询、订单配送到售后处理，客服团队会协助你完成每一步。
+                {supportText || "从商品咨询、订单配送到售后处理，客服团队会协助你完成每一步。"}
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -130,7 +134,7 @@ export default function SiteFooter() {
               </p>
             )}
             <div className="mt-5 flex flex-wrap gap-2">
-              {["正品保障", "快速配送", "安心售后"].map((label) => (
+              {(supportBadges.length > 0 ? supportBadges : ["正品保障", "快速配送", "安心售后"]).map((label) => (
                 <span key={label} className="inline-flex items-center gap-1 rounded-full border border-[var(--theme-border)] bg-background/60 px-3 py-1.5 text-xs font-medium text-muted-foreground">
                   <ShieldCheck size={13} className="text-gold" />
                   {label}

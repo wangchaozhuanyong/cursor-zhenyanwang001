@@ -6,7 +6,6 @@ import { useCartStore } from "@/stores/useCartStore";
 import { isLoggedIn } from "@/utils/token";
 import EmptyState from "@/components/EmptyState";
 import TrustInfo from "@/components/TrustInfo";
-import SiteFooter from "@/components/SiteFooter";
 import { motion, AnimatePresence } from "framer-motion";
 import { PRODUCT_BLUR_PLACEHOLDER } from "@/constants/productBlurPlaceholder";
 import { ProgressiveImage, SquishButton } from "@/modules/micro-interactions";
@@ -283,11 +282,6 @@ export default function Cart() {
           )}
         </div>
       </main>
-
-      <div className="hidden md:block">
-        <SiteFooter />
-      </div>
-
       {/* 移动端：底部固定结算栏 */}
       {items.length > 0 && (
         <div className="fixed bottom-[calc(68px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-50 border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md md:hidden">

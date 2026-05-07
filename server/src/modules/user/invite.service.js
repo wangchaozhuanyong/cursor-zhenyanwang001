@@ -33,21 +33,6 @@ async function getStats(userId) {
   };
 }
 
-async function bind(userId, body) {
-  const { inviteCode } = body;
-  if (!inviteCode) return { error: { code: 400, message: '邀请码不能为空' } };
-
-  const self = await repo.selectParentInvite(userId);
-  if (self.parent_invite_code) return { error: { code: 400, message: '你已绑定过邀请码' } };
-
-  const inviter = await repo.selectUserIdByInviteCode(inviteCode);
-  if (!inviter) return { error: { code: 404, message: '邀请码不存在' } };
-  if (inviter.id === userId) return { error: { code: 400, message: '不能绑定自己的邀请码' } };
-
-  await repo.updateParentInviteCode(userId, inviteCode);
-  return { message: '绑定成功' };
-}
-
 async function getRecords(userId, query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const pageSize = Math.min(50, Math.max(1, parseInt(query.pageSize, 10) || 20));
@@ -77,6 +62,5 @@ async function getRecords(userId, query) {
 
 module.exports = {
   getStats,
-  bind,
   getRecords,
 };

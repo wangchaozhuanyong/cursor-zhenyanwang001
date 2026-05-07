@@ -79,10 +79,8 @@ async function main() {
   const inviteCode = inviterProfile.inviteCode || inviterProfile.invite_code;
   if (!inviteCode) throw new Error('邀请人邀请码为空');
 
-  console.log('2) 注册被邀请人账号并绑定邀请码...');
+  console.log('2) 注册被邀请人账号...');
   const invitee = await registerAndLogin('被邀请人');
-  await wait(500);
-  await authPost('/invite/bind', invitee.token, { inviteCode });
   await wait(500);
 
   console.log('3) 被邀请人前端流程：地址/领券/加购/下单...');

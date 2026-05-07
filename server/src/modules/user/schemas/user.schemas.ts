@@ -1,7 +1,7 @@
 /**
  * User 域入参 Schemas（Zod）
  *
- * 覆盖：地址、收藏、积分、积分签到、邀请码绑定、消息、优惠券领取、奖励提现、运费询价。
+ * 覆盖：地址、收藏、积分、积分签到、消息、优惠券领取、奖励提现、运费询价。
  *
  * 注意：profile / password 相关 schema 在 `../auth/schemas/auth.schemas.ts`
  *      （会员资料路由复用 auth controller，schema 跟随业务定义）
@@ -89,12 +89,6 @@ export const claimCouponBodySchema = z
   .transform((v) => ({
     code: 'code' in v ? v.code : v.couponId,
   }));
-
-/* ── invite ── */
-
-export const inviteBindBodySchema = z.object({
-  inviteCode: z.string().trim().min(1, '请填写邀请码').max(32),
-});
 
 /* ── reward withdraw ── */
 

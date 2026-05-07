@@ -8,14 +8,6 @@ exports.getStats = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-exports.bind = async (req, res, next) => {
-  try {
-    const result = await inviteService.bind(req.user.id, req.body);
-    if (result.error) return res.fail(result.error.code, result.error.message);
-    res.success(null, result.message);
-  } catch (err) { next(err); }
-};
-
 exports.getRecords = async (req, res, next) => {
   try {
     const { list, total, page, pageSize } = await inviteService.getRecords(req.user.id, req.query);

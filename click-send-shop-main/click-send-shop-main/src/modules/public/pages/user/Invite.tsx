@@ -1,5 +1,5 @@
 ﻿import { useRef, useCallback, useEffect, useState } from "react";
-import { ArrowLeft, Copy, Download, Share2, Users, Link2 } from "lucide-react";
+import { ArrowLeft, Copy, Download, Share2, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
@@ -14,8 +14,6 @@ export default function Invite() {
   const { inviteCode, parentInviteCode, subordinateEnabled, loadProfile } = useUserStore();
   const [stats, setStats] = useState<InviteStats | null>(null);
   const [records, setRecords] = useState<InviteRecord[]>([]);
-  const [bindCode, setBindCode] = useState("");
-  const [binding, setBinding] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -25,31 +23,9 @@ export default function Invite() {
     ]).catch(() => toast.error("加载失败"));
   }, [loadProfile]);
 
-  const handleBind = async () => {
-    if (!bindCode.trim()) { toast.error("请输入邀请码"); return; }
-    setBinding(true);
-    try {
-      await inviteService.bindInviteCode(bindCode.trim());
-      toast.success("绑定成功");
-      setBindCode("");
-      loadProfile();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "绑定失败");
-    } finally {
-      setBinding(false);
-    }
-  };
   const inviteLink = `${window.location.origin}/login?ref=${encodeURIComponent(inviteCode || "")}`;
   const posterRef = useRef<HTMLDivElement>(null);
   const qrRef = useRef<HTMLCanvasElement>(null);
-
-  const copyCode = () => {
-    if (!inviteCode) { toast.error("邀请码加载中，请稍后"); return; }
-    navigator.clipboard.writeText(inviteCode).then(
-      () => toast.success("邀请码已复制"),
-      () => toast.error("复制失败，请手动复制")
-    );
-  };
 
   const copyLink = () => {
     if (!inviteCode) { toast.error("邀请码加载中，请稍后"); return; }
@@ -191,8 +167,8 @@ export default function Invite() {
           </div>
 
           <div className="mt-4 flex gap-3">
-            <button onClick={copyCode} className="flex flex-1 items-center justify-center gap-1 rounded-full bg-gold py-3 text-sm font-semibold text-primary-foreground">
-              <Copy size={14} /> 复制邀请码
+            <button onClick={copyLink} className="flex flex-1 items-center justify-center gap-1 rounded-full bg-gold py-3 text-sm font-semibold text-primary-foreground">
+              <Copy size={14} /> 复制分享
             </button>
             <button onClick={handleShare} className="flex flex-1 items-center justify-center gap-1 rounded-full border border-primary-foreground/30 py-3 text-sm font-semibold text-primary-foreground">
               <Share2 size={14} /> {typeof navigator !== "undefined" && navigator.share ? "分享" : "复制链接"}
@@ -240,30 +216,6 @@ export default function Invite() {
             <p className="text-[10px] text-muted-foreground">返现奖励</p>
           </div>
         </div>
-
-        {/* Bind invite code */}
-        {!parentInviteCode && (
-          <div className="mt-6 rounded-xl border border-border bg-card p-5">
-            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Link2 size={16} className="text-gold" /> 绑定邀请码
-            </h3>
-            <div className="flex gap-2">
-              <input
-                value={bindCode}
-                onChange={(e) => setBindCode(e.target.value.toUpperCase())}
-                placeholder="输入邀请码"
-                className="flex-1 rounded-lg bg-secondary px-4 py-2.5 text-sm text-foreground outline-none ring-gold focus:ring-2 placeholder:text-muted-foreground"
-              />
-              <button
-                onClick={handleBind}
-                disabled={binding}
-                className="rounded-lg bg-gold px-5 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60"
-              >
-                {binding ? "绑定中..." : "绑定"}
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Parent */}
         {parentInviteCode && (

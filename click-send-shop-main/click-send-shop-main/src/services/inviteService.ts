@@ -12,7 +12,3 @@ export async function fetchInviteRecords(page = 1): Promise<PaginatedData<Invite
   const res = await inviteApi.getInviteRecords(page);
   return unwrapPaginated<InviteRecord>(res.data);
 }
-
-export async function bindInviteCode(code: string): Promise<void> {
-  await inviteApi.bindInviteCode(code);
-}

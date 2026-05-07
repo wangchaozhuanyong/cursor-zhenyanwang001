@@ -26,16 +26,16 @@ async function selectUserCouponsPage(userId, status, pageSize, offset) {
             (
               SELECT GROUP_CONCAT(cc.category_id ORDER BY cc.category_id SEPARATOR ',')
               FROM coupon_categories cc
-              WHERE cc.coupon_id = c.id
+              WHERE BINARY cc.coupon_id = BINARY c.id
             ) AS category_ids,
             (
               SELECT GROUP_CONCAT(cat.name ORDER BY cat.sort_order SEPARATOR ',')
               FROM coupon_categories cc
-              JOIN categories cat ON cat.id = cc.category_id
-              WHERE cc.coupon_id = c.id
+              JOIN categories cat ON BINARY cat.id = BINARY cc.category_id
+              WHERE BINARY cc.coupon_id = BINARY c.id
             ) AS category_names
      FROM user_coupons uc
-     JOIN coupons c ON uc.coupon_id = c.id
+     JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
      ${where}
      ORDER BY uc.claimed_at DESC, uc.id DESC
      LIMIT ? OFFSET ?`,
@@ -50,13 +50,13 @@ async function selectAvailableCoupons() {
             (
               SELECT GROUP_CONCAT(cc.category_id ORDER BY cc.category_id SEPARATOR ',')
               FROM coupon_categories cc
-              WHERE cc.coupon_id = c.id
+              WHERE BINARY cc.coupon_id = BINARY c.id
             ) AS category_ids,
             (
               SELECT GROUP_CONCAT(cat.name ORDER BY cat.sort_order SEPARATOR ',')
               FROM coupon_categories cc
-              JOIN categories cat ON cat.id = cc.category_id
-              WHERE cc.coupon_id = c.id
+              JOIN categories cat ON BINARY cat.id = BINARY cc.category_id
+              WHERE BINARY cc.coupon_id = BINARY c.id
             ) AS category_names
      FROM coupons c
      WHERE c.status = 'available' AND c.end_date >= CURDATE() AND c.start_date <= CURDATE()
@@ -79,16 +79,17 @@ async function selectCouponByCodeOrId(code) {
             (
               SELECT GROUP_CONCAT(cc.category_id ORDER BY cc.category_id SEPARATOR ',')
               FROM coupon_categories cc
-              WHERE cc.coupon_id = c.id
+              WHERE BINARY cc.coupon_id = BINARY c.id
             ) AS category_ids,
             (
               SELECT GROUP_CONCAT(cat.name ORDER BY cat.sort_order SEPARATOR ',')
               FROM coupon_categories cc
-              JOIN categories cat ON cat.id = cc.category_id
-              WHERE cc.coupon_id = c.id
+              JOIN categories cat ON BINARY cat.id = BINARY cc.category_id
+              WHERE BINARY cc.coupon_id = BINARY c.id
             ) AS category_names
      FROM coupons c
-     WHERE (c.code = ? OR c.id = ?) AND c.status = 'available' AND c.end_date >= CURDATE() AND c.start_date <= CURDATE()`,
+     WHERE (BINARY c.code = BINARY ? OR BINARY c.id = BINARY ?)
+       AND c.status = 'available' AND c.end_date >= CURDATE() AND c.start_date <= CURDATE()`,
     [code, code],
   );
   return row || null;

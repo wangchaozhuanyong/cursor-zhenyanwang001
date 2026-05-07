@@ -65,10 +65,7 @@ async function authPut(pathname, token, payload) {
 async function seedFlow() {
   const inviter = await registerAndLogin("截图邀请人");
   const inviterProfile = await authGet("/auth/profile", inviter.token);
-  const inviteCode = inviterProfile.inviteCode || inviterProfile.invite_code;
-
   const invitee = await registerAndLogin("截图被邀请人");
-  await authPost("/invite/bind", invitee.token, { inviteCode });
   await authPost("/addresses", invitee.token, {
     name: "截图测试收件人",
     phone: "13933334444",

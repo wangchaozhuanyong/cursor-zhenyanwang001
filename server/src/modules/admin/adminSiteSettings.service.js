@@ -1,6 +1,7 @@
 const repo = require('./adminSiteSettings.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
 const sharp = require('sharp');
+const { isS3StorageEnabled, uploadBufferToS3 } = require('../../utils/objectStorage');
 
 const SITE_ASSET_KEYS = new Set(['logoUrl', 'faviconUrl']);
 
@@ -84,9 +85,20 @@ async function uploadSiteAsset(file, key, adminUserId, req) {
     .resize({ width: maxWidth, height: maxWidth, fit: 'inside', withoutEnlargement: true })
     .webp({ quality: key === 'faviconUrl' ? 90 : 85 })
     .toBuffer();
-  const dataUrl = `data:image/webp;base64,${webpBuffer.toString('base64')}`;
+  let finalUrl = `data:image/webp;base64,${webpBuffer.toString('base64')}`;
+  if (isS3StorageEnabled()) {
+    const stamp = Date.now();
+    const rand = Math.random().toString(36).slice(2, 10);
+    const uploaded = await uploadBufferToS3({
+      key: `site-assets/${key}/${stamp}-${rand}.webp`,
+      body: webpBuffer,
+      contentType: 'image/webp',
+      cacheControl: 'public, max-age=86400',
+    });
+    finalUrl = uploaded.url;
+  }
 
-  await repo.upsertSetting(key, dataUrl);
+  await repo.upsertSetting(key, finalUrl);
   await writeAuditLog({
     req,
     operatorId: adminUserId,
@@ -95,11 +107,11 @@ async function uploadSiteAsset(file, key, adminUserId, req) {
     objectId: key,
     summary: `上传站点图片 ${key}`,
     before: { [key]: beforeMap[key] || '' },
-    after: { [key]: dataUrl },
+    after: { [key]: finalUrl },
     result: 'success',
   });
 
-  return { data: { key, url: dataUrl }, message: '图片已保存到数据库' };
+  return { data: { key, url: finalUrl }, message: '图片已保存到数据库' };
 }
 
 module.exports = {

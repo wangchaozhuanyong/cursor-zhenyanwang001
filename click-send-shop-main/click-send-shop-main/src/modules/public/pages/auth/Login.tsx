@@ -12,6 +12,11 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { renderBrandTitle } from "@/utils/brand";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
+import {
+  clearLockedInviteCode,
+  getLockedInviteCode,
+  syncLockedInviteCodeBySearch,
+} from "@/utils/inviteReferral";
 
 const REMEMBER_KEY = "login_remembered_phone";
 const REMEMBER_COUNTRY_CODE_KEY = "login_remembered_country_code";
@@ -46,9 +51,10 @@ export default function Login() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [nickname, setNickname] = useState("");
-  const [inviteCode, setInviteCode] = useState("");
+  const [inviteCode, setInviteCode] = useState(getLockedInviteCode());
   const [showPwd, setShowPwd] = useState(false);
   const [remember, setRemember] = useState(false);
+  const hasLockedInviteCode = !!inviteCode;
 
   useEffect(() => {
     const saved = localStorage.getItem(REMEMBER_KEY);
@@ -61,9 +67,7 @@ export default function Login() {
   }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const fromShare = params.get("ref") || params.get("inviteCode") || "";
-    const normalized = fromShare.trim().toUpperCase();
+    const normalized = syncLockedInviteCodeBySearch(location.search);
     if (!normalized) return;
     setMode("register");
     setInviteCode(normalized);
@@ -102,6 +106,7 @@ export default function Login() {
           nickname,
           inviteCode: inviteCode.trim() ? inviteCode.trim().toUpperCase() : undefined,
         });
+        clearLockedInviteCode();
       }
       toast.success(mode === "login" ? "登录成功" : "注册成功", {
         duration: 900,
@@ -175,7 +180,7 @@ export default function Login() {
 
         {/* ══════════════ Form ══════════════ */}
         <div className="space-y-3.5">
-          {mode === "register" && (
+          {mode === "register" && !hasLockedInviteCode && (
             <div className="animate-in fade-in zoom-in-95 duration-200">
               <div className="relative">
                 <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />

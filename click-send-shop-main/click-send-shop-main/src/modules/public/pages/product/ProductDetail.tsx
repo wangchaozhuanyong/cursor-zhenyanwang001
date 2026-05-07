@@ -11,7 +11,6 @@ import { useProductReviews } from "@/hooks/useProductReviews";
 import ProductImageGallery from "@/components/ProductImageGallery";
 import { SquishButton } from "@/modules/micro-interactions";
 import TrustInfo from "@/components/TrustInfo";
-import SiteFooter from "@/components/SiteFooter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -289,11 +288,6 @@ export default function ProductDetail() {
           </div>
         )}
       </main>
-
-      <div className="hidden md:block">
-        <SiteFooter />
-      </div>
-
       {/* 底部固定操作栏 - 仅移动端 */}
       <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">

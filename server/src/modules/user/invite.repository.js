@@ -50,20 +50,6 @@ async function countByParentCodes(codes) {
   return cnt;
 }
 
-async function selectParentInvite(userId) {
-  const [[row]] = await db.query('SELECT parent_invite_code FROM users WHERE id = ?', [userId]);
-  return row || null;
-}
-
-async function selectUserIdByInviteCode(code) {
-  const [[row]] = await db.query('SELECT id FROM users WHERE invite_code = ?', [code]);
-  return row || null;
-}
-
-async function updateParentInviteCode(userId, inviteCode) {
-  await db.query('UPDATE users SET parent_invite_code = ? WHERE id = ?', [inviteCode, userId]);
-}
-
 async function countInviteesByCode(inviteCode) {
   const [[{ total }]] = await db.query(
     'SELECT COUNT(*) AS total FROM users WHERE parent_invite_code = ?',
@@ -102,9 +88,6 @@ module.exports = {
   sumPositiveRewards,
   selectDirectInviteCodes,
   countByParentCodes,
-  selectParentInvite,
-  selectUserIdByInviteCode,
-  updateParentInviteCode,
   countInviteesByCode,
   selectInviteRecordsPage,
 };

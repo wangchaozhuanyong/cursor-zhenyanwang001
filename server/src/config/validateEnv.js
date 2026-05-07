@@ -3,6 +3,7 @@
  */
 function validateEnv() {
   const isProd = process.env.NODE_ENV === 'production';
+  const storageDriver = (process.env.STORAGE_DRIVER || '').trim().toLowerCase();
   const jwt = process.env.JWT_SECRET || '';
 
   const placeholderMarkers = [
@@ -16,6 +17,20 @@ function validateEnv() {
     placeholderMarkers.some((m) => s.includes(m));
 
   if (isProd) {
+    if (storageDriver === 's3') {
+      const requiredS3 = [
+        'STORAGE_S3_BUCKET',
+        'STORAGE_S3_ACCESS_KEY_ID',
+        'STORAGE_S3_SECRET_ACCESS_KEY',
+        'STORAGE_PUBLIC_BASE_URL',
+      ];
+      const missingS3 = requiredS3.filter((k) => !(process.env[k] || '').trim());
+      if (missingS3.length > 0) {
+        console.error(`[FATAL] STORAGE_DRIVER=s3 时缺少配置: ${missingS3.join(', ')}`);
+        process.exit(1);
+      }
+    }
+
     if (!jwt || jwt.length < 64) {
       console.error(
         '[FATAL] 生产环境 JWT_SECRET 须为强随机字符串，长度至少 64（建议使用 openssl rand -hex 48 或等价方式生成）',

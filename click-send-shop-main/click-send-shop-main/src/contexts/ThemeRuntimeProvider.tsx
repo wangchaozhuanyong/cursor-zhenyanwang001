@@ -74,7 +74,12 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
         // 2) Backward compatible: fallback to legacy /theme/active
         getActiveTheme()
           .then((res) => {
-            if (res?.data) setThemeConfig((prev) => ({ ...prev, ...res.data }));
+            if (res?.data) {
+              const fallbackConfig = { ...DEFAULT_THEME_CONFIG, ...res.data };
+              setThemeConfig(fallbackConfig);
+              setSkins([{ id: "default", name: "默认皮肤", config: fallbackConfig }]);
+              setSkinIdState("default");
+            }
           })
           .catch(() => {});
       });

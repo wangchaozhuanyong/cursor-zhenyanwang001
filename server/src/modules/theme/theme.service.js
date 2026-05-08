@@ -145,7 +145,14 @@ async function getThemeSkins() {
 
   // Legacy fallback: single skin from theme_config
   const raw = await repo.selectThemeConfigRaw();
-  const config = raw ? normalizeThemeConfig(JSON.parse(raw)) : DEFAULT_THEME_CONFIG;
+  let config = DEFAULT_THEME_CONFIG;
+  if (raw) {
+    try {
+      config = normalizeThemeConfig(JSON.parse(raw));
+    } catch {
+      config = DEFAULT_THEME_CONFIG;
+    }
+  }
   return {
     defaultSkinId: 'default',
     skins: [{ id: 'default', name: '默认皮肤', config }],

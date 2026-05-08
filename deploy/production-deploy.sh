@@ -48,6 +48,26 @@ echo "📦 安装后端依赖..." | tee -a "$LOG_FILE"
 cd "$BACKEND_DIR" || exit 1
 npm install
 
+echo "🧪 部署前数据库连通检查..." | tee -a "$LOG_FILE"
+if [[ ! -f "$BACKEND_DIR/.env" ]]; then
+  echo "❌ 缺少后端 .env：$BACKEND_DIR/.env" | tee -a "$LOG_FILE"
+  exit 1
+fi
+DB_USER_VAL="$(grep -E '^DB_USER=' "$BACKEND_DIR/.env" | cut -d= -f2- || true)"
+if [[ -z "$DB_USER_VAL" ]]; then
+  echo "❌ .env 缺少 DB_USER，阻断发布" | tee -a "$LOG_FILE"
+  exit 1
+fi
+if [[ "$DB_USER_VAL" == "root" ]]; then
+  echo "❌ 检测到 DB_USER=root，生产环境禁止使用 root，阻断发布" | tee -a "$LOG_FILE"
+  exit 1
+fi
+if ! node -e "require('dotenv').config({path:'$BACKEND_DIR/.env'});const mysql=require('mysql2/promise');(async()=>{const c=await mysql.createConnection({host:process.env.DB_HOST,port:Number(process.env.DB_PORT||3306),user:process.env.DB_USER,password:process.env.DB_PASSWORD||'',database:process.env.DB_NAME});await c.query('SELECT 1');await c.end();})().catch(e=>{console.error(e.message);process.exit(1);});"; then
+  echo "❌ 数据库连接检查失败，阻断发布" | tee -a "$LOG_FILE"
+  exit 1
+fi
+echo "✅ 数据库连接检查通过" | tee -a "$LOG_FILE"
+
 if [[ "${SKIP_MIGRATE:-0}" == "1" ]]; then
   echo "⏭  SKIP_MIGRATE=1，跳过数据库迁移（不改 schema）" | tee -a "$LOG_FILE"
 else
@@ -74,6 +94,7 @@ if pm2 describe "$PM2_APP" >/dev/null 2>&1; then
   pm2 reload "$PM2_APP" --update-env
 else
   pm2 start ecosystem.config.cjs --only "$PM2_APP" --env production
+  pm2 restart "$PM2_APP" --update-env
 fi
 pm2 save 2>/dev/null || true
 

@@ -203,6 +203,11 @@ else
       echo "  ✅ $key 已设置"
     fi
   done
+  DB_USER_VAL=$(grep -E '^DB_USER=' "$ENV_FILE" | cut -d= -f2- || true)
+  if [[ "$DB_USER_VAL" == "root" ]]; then
+    echo "  ❌ 生产部署禁止 DB_USER=root，请改为最小权限账号（如 click_user）"
+    ENV_FAIL=1
+  fi
   # 强校验：生产环境
   NODE_ENV_VAL=$(grep -E '^NODE_ENV=' "$ENV_FILE" | cut -d= -f2- || true)
   if [[ "$NODE_ENV_VAL" == "production" ]]; then

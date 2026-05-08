@@ -9,8 +9,13 @@ const { startNotificationScheduler } = require('./modules/admin/adminNotificatio
 const { getStorageHealthReport } = require('./utils/objectStorage');
 
 const PORT = process.env.PORT || 3000;
+const RUN_MIGRATIONS_ON_BOOT = process.env.RUN_MIGRATIONS_ON_BOOT === '1';
 
-runPendingMigrations()
+const bootPromise = RUN_MIGRATIONS_ON_BOOT
+  ? runPendingMigrations()
+  : Promise.resolve();
+
+bootPromise
   .then(() => {
     const storage = getStorageHealthReport();
     if (storage.mode === 's3') {
@@ -35,6 +40,6 @@ runPendingMigrations()
     });
   })
   .catch((err) => {
-    console.error('Migration failed:', err);
+    console.error('Startup precheck failed:', err);
     process.exit(1);
   });

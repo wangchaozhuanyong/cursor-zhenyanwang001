@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { getActiveTheme, getThemeSkins } from "@/api/admin/theme";
 import type { ThemeConfig } from "@/types/theme";
 import { generateThemePalette } from "@/utils/themeContrast";
+import { toast } from "sonner";
 
 type ThemeMode = "light" | "dark";
 
@@ -81,7 +82,9 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
               setSkinIdState("default");
             }
           })
-          .catch(() => {});
+          .catch(() => {
+            toast.error("皮肤加载失败，请稍后重试");
+          });
       });
   }, []);
 

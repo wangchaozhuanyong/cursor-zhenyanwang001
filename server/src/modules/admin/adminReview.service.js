@@ -1,3 +1,4 @@
+const { parseProductImages } = require('../../utils/helpers');
 const repo = require('./adminReview.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
 
@@ -51,7 +52,7 @@ async function listReviews(query) {
   const rows = await repo.selectReviewsPage(where, params, pageSize, offset, query.sortBy, query.sortOrder);
   const list = rows.map((r) => ({
     ...r,
-    images: typeof r.images === 'string' ? JSON.parse(r.images || '[]') : (r.images || []),
+    images: parseProductImages(r.images),
   }));
   return { list, total, page, pageSize };
 }

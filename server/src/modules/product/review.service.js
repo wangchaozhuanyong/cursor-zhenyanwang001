@@ -1,4 +1,4 @@
-const { generateId, verifyToken } = require('../../utils/helpers');
+const { generateId, verifyToken, parseProductImages } = require('../../utils/helpers');
 const repo = require('./review.repository');
 
 async function getProductReviews(req) {
@@ -27,7 +27,7 @@ async function getProductReviews(req) {
 
   const list = rows.map((r) => ({
     ...r,
-    images: typeof r.images === 'string' ? JSON.parse(r.images || '[]') : (r.images || []),
+    images: parseProductImages(r.images),
     likes_count: r.likes_count || 0,
     liked: likedSet.has(r.id),
   }));
@@ -75,7 +75,7 @@ async function createReview(userId, body) {
   });
 
   const row = await repo.selectReviewById(id);
-  row.images = typeof row.images === 'string' ? JSON.parse(row.images || '[]') : (row.images || []);
+  row.images = parseProductImages(row.images);
   return { data: row, message: '评价成功' };
 }
 
@@ -99,7 +99,7 @@ async function getFeaturedReviews(limit = 6) {
   }
   list = list.slice(0, safeLimit).map((r) => ({
     ...r,
-    images: typeof r.images === 'string' ? JSON.parse(r.images || '[]') : (r.images || []),
+    images: parseProductImages(r.images),
     likes_count: r.likes_count || 0,
   }));
   return list;

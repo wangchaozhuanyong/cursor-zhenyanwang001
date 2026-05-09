@@ -88,8 +88,13 @@ function normalizeVariantPayloadForDb(variants, genId, mainPrice, mainStock) {
 
 async function attachTagsToProducts(rows) {
   if (!rows.length) return [];
-  const map = await tagAssignmentRepo.selectTagsByProductIds(rows.map((r) => r.id));
-  return rows.map((r) => ({ ...formatProduct(r), tags: map.get(r.id) || [] }));
+  try {
+    const map = await tagAssignmentRepo.selectTagsByProductIds(rows.map((r) => r.id));
+    return rows.map((r) => ({ ...formatProduct(r), tags: map.get(r.id) || [] }));
+  } catch (e) {
+    console.error('[adminProduct] attachTagsToProducts failed (listing without tags):', e.code || e.message);
+    return rows.map((r) => ({ ...formatProduct(r), tags: [] }));
+  }
 }
 
 async function syncProductPriceStockFromDefaultVariant(productId) {

@@ -62,7 +62,7 @@ async function restoreBanner(id) {
 }
 
 async function selectProductTags() {
-  const [rows] = await db.query(`
+  const sqlWithColor = `
     SELECT pt.id, pt.name, pt.sort_order, pt.color,
       (
         SELECT COUNT(*)
@@ -72,13 +72,43 @@ async function selectProductTags() {
       ) AS usage_count
     FROM product_tags pt
     ORDER BY pt.created_at DESC
-  `);
-  return rows;
+  `;
+  const sqlLegacy = `
+    SELECT pt.id, pt.name, pt.sort_order, '金色' AS color,
+      (
+        SELECT COUNT(*)
+        FROM product_tag_assignments x
+        INNER JOIN products pr ON pr.id = x.product_id AND pr.deleted_at IS NULL
+        WHERE x.tag_id = pt.id
+      ) AS usage_count
+    FROM product_tags pt
+    ORDER BY pt.created_at DESC
+  `;
+  try {
+    const [rows] = await db.query(sqlWithColor);
+    return rows;
+  } catch (e) {
+    const msg = String(e && e.sqlMessage ? e.sqlMessage : e.message || e);
+    if (e && (e.code === 'ER_BAD_FIELD_ERROR' || /Unknown column.*color/i.test(msg))) {
+      const [rows] = await db.query(sqlLegacy);
+      return rows;
+    }
+    throw e;
+  }
 }
 
 async function insertProductTag(id, name, color) {
   const c = color && String(color).trim() ? String(color).trim().slice(0, 20) : '金色';
-  await db.query('INSERT INTO product_tags (id, name, color) VALUES (?, ?, ?)', [id, name, c]);
+  try {
+    await db.query('INSERT INTO product_tags (id, name, color) VALUES (?, ?, ?)', [id, name, c]);
+  } catch (e) {
+    const msg = String(e && e.sqlMessage ? e.sqlMessage : e.message || e);
+    if (e && (e.code === 'ER_BAD_FIELD_ERROR' || /Unknown column.*color/i.test(msg))) {
+      await db.query('INSERT INTO product_tags (id, name) VALUES (?, ?)', [id, name]);
+      return;
+    }
+    throw e;
+  }
 }
 
 async function deleteProductTag(id) {

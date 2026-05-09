@@ -1,4 +1,4 @@
-const { generateId } = require('../../utils/helpers');
+const { generateId, parseProductImages } = require('../../utils/helpers');
 const { BusinessError } = require('../../errors/BusinessError');
 const repo = require('./return.repository');
 const { ORDER_STATUS, RETURN_STATUS } = require('../../constants/status');
@@ -6,7 +6,7 @@ const { ORDER_STATUS, RETURN_STATUS } = require('../../constants/status');
 function formatReturnRow(row) {
   if (!row) return row;
   const r = { ...row };
-  r.images = typeof r.images === 'string' ? JSON.parse(r.images || '[]') : (r.images || []);
+  r.images = parseProductImages(r.images);
   if (r.refund_amount != null) r.refund_amount = parseFloat(r.refund_amount);
   return r;
 }

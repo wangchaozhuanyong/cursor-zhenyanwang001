@@ -112,5 +112,5 @@ module.exports = {
   generateId, generateOrderNo, generateInviteCode,
   hashPassword, comparePassword,
   signToken, verifyToken,
-  parseBool, formatProduct,
+  parseBool, parseProductImages, formatProduct,
 };

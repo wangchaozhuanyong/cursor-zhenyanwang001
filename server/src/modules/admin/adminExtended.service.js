@@ -1,4 +1,4 @@
-const { generateId } = require('../../utils/helpers');
+const { generateId, parseProductImages } = require('../../utils/helpers');
 const repo = require('./adminExtended.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
 const { assertReturnTransition } = require('../order/returnStateMachine');
@@ -38,7 +38,7 @@ async function listReturns(query) {
   const offset = (page - 1) * pageSize;
   const rows = await repo.selectReturnRequestsPage(where, params, pageSize, offset, query.sortBy, query.sortOrder);
   rows.forEach((r) => {
-    r.images = typeof r.images === 'string' ? JSON.parse(r.images || '[]') : (r.images || []);
+    r.images = parseProductImages(r.images);
   });
   return { list: rows, total, page, pageSize };
 }
@@ -137,7 +137,7 @@ async function deleteProductTag(id, adminUserId, req) {
 async function getReturnById(id) {
   const row = await repo.selectReturnById(id);
   if (!row) return { error: { code: 404, message: '售后单不存在' } };
-  row.images = typeof row.images === 'string' ? JSON.parse(row.images || '[]') : (row.images || []);
+  row.images = parseProductImages(row.images);
   return { data: row };
 }
 

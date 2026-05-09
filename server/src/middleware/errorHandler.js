@@ -58,6 +58,14 @@ module.exports = function errorHandler(err, req, res, _next) {
     });
   }
 
+  if (err && (err.code != null || err.errno != null || err.sqlMessage)) {
+    console.error(`[${traceId}] db detail:`, {
+      code: err.code,
+      errno: err.errno,
+      sqlState: err.sqlState,
+      sqlMessage: err.sqlMessage,
+    });
+  }
   console.error(`[${traceId}]`, err && err.stack ? err.stack : err);
   const rawCode = Number(err?.statusCode || err?.status || 500);
   const code = rawCode >= 400 && rawCode <= 599 ? rawCode : 500;

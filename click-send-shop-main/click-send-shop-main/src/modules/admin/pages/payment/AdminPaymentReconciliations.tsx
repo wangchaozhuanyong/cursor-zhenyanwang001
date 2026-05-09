@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, Plus } from "lucide-react";
 import PermissionGate from "@/components/admin/PermissionGate";
+import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import Pagination from "@/components/admin/Pagination";
 import PaymentAdminSubnav from "./PaymentAdminSubnav";
 import * as paymentAdmin from "@/services/admin/paymentAdminService";
@@ -72,12 +73,13 @@ export default function AdminPaymentReconciliations() {
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
             <label className="text-xs text-muted-foreground">
               对账日期
-              <input
-                type="date"
-                value={reconcileDate}
-                onChange={(e) => setReconcileDate(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              />
+              <div className="mt-1">
+                <SegmentedDateInput
+                  value={reconcileDate}
+                  onChange={setReconcileDate}
+                  className="w-full [&>div]:border-border [&>div]:bg-background"
+                />
+              </div>
             </label>
             <label className="text-xs text-muted-foreground">
               Provider

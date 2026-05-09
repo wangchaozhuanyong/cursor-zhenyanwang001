@@ -104,17 +104,24 @@ async function deleteBanner(id, adminUserId, req) {
 }
 
 async function listProductTags() {
-  return repo.selectProductTags();
+  const rows = await repo.selectProductTags();
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    sort_order: r.sort_order,
+    color: r.color || '金色',
+    count: Number(r.usage_count) || 0,
+  }));
 }
 
 async function createProductTag(body, adminUserId, req) {
-  const { name } = body;
+  const { name, color } = body;
   if (!name) return { error: { code: 400, message: '标签名称必填' } };
   try {
     const id = generateId();
-    await repo.insertProductTag(id, name);
+    await repo.insertProductTag(id, name, color);
     await writeAuditLog({ req, operatorId: adminUserId, actionType: 'tag.create', objectType: 'product_tag', objectId: id, summary: `创建标签 ${name}`, result: 'success' });
-    return { data: { id, name }, message: '创建成功' };
+    return { data: { id, name, color: color || '金色' }, message: '创建成功' };
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') return { error: { code: 400, message: '标签已存在' } };
     throw err;

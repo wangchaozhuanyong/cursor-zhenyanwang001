@@ -27,16 +27,28 @@ async function selectActiveBanners() {
 async function selectActiveCategories() {
   return publicRows(
     'categories',
-    'SELECT id, name, icon, sort_order FROM categories WHERE is_active = 1 AND deleted_at IS NULL ORDER BY sort_order',
+    `SELECT id, parent_id, name, icon, icon_url, sort_order, is_visible, is_active
+     FROM categories
+     WHERE is_active = 1 AND is_visible = 1 AND deleted_at IS NULL
+     ORDER BY parent_id IS NOT NULL, parent_id ASC, sort_order ASC, created_at ASC`,
   );
 }
 
 async function selectCategoryById(id) {
   const [[row]] = await db.query(
-    'SELECT id, name, icon, sort_order FROM categories WHERE id = ? AND deleted_at IS NULL',
+    `SELECT id, parent_id, name, icon, icon_url, sort_order, is_visible, is_active
+     FROM categories
+     WHERE id = ? AND deleted_at IS NULL`,
     [id],
   );
   return row || null;
+}
+
+async function selectVisibleCategoryIds() {
+  const [rows] = await db.query(
+    'SELECT id, parent_id FROM categories WHERE is_active = 1 AND is_visible = 1 AND deleted_at IS NULL',
+  );
+  return rows;
 }
 
 async function countActiveProducts(where, params) {
@@ -132,6 +144,7 @@ module.exports = {
   selectActiveBanners,
   selectActiveCategories,
   selectCategoryById,
+  selectVisibleCategoryIds,
   countActiveProducts,
   selectActiveProductsPage,
   selectProductById,

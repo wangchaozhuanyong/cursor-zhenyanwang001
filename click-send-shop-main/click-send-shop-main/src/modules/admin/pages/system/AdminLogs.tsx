@@ -4,6 +4,7 @@ import Pagination from "@/components/admin/Pagination";
 import { toast } from "sonner";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { fetchAuditLogs } from "@/services/admin/logService";
+import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import type { AuditLogRow } from "@/services/admin/logService";
 
 export default function AdminLogs() {
@@ -111,21 +112,25 @@ export default function AdminLogs() {
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-muted-foreground">开始日期</label>
-          <input
-            type="date"
+          <label htmlFor="audit-date-from" className="mb-1 block text-xs text-muted-foreground">
+            开始日期
+          </label>
+          <SegmentedDateInput
+            id="audit-date-from"
             value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="w-full min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+            onChange={setDateFrom}
+            className="w-full [&>div]:theme-rounded [&>div]:border-[var(--theme-border)] [&>div]:bg-[var(--theme-surface)]"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs text-muted-foreground">结束日期</label>
-          <input
-            type="date"
+          <label htmlFor="audit-date-to" className="mb-1 block text-xs text-muted-foreground">
+            结束日期
+          </label>
+          <SegmentedDateInput
+            id="audit-date-to"
             value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="w-full min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+            onChange={setDateTo}
+            className="w-full [&>div]:theme-rounded [&>div]:border-[var(--theme-border)] [&>div]:bg-[var(--theme-surface)]"
           />
         </div>
         <button

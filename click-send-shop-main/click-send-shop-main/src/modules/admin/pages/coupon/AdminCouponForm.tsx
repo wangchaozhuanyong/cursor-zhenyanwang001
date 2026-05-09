@@ -9,6 +9,7 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import type { Category } from "@/types/category";
+import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 
 const couponTypes = [
   { value: "fixed", label: "满减券" },
@@ -149,12 +150,24 @@ export default function AdminCouponForm() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">开始日期</label>
-              <input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none" />
+              <label htmlFor="coupon-start-date" className="mb-1 block text-xs font-medium text-muted-foreground">
+                开始日期
+              </label>
+              <SegmentedDateInput
+                id="coupon-start-date"
+                value={form.start_date}
+                onChange={(v) => setForm({ ...form, start_date: v })}
+              />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">结束日期</label>
-              <input type="date" value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none" />
+              <label htmlFor="coupon-end-date" className="mb-1 block text-xs font-medium text-muted-foreground">
+                结束日期
+              </label>
+              <SegmentedDateInput
+                id="coupon-end-date"
+                value={form.end_date}
+                onChange={(v) => setForm({ ...form, end_date: v })}
+              />
             </div>
           </div>
           <div>

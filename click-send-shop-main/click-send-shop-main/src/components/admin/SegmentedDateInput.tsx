@@ -1,0 +1,217 @@
+import { useEffect, useRef, useState } from "react";
+import { Calendar } from "lucide-react";
+
+function parseDateValue(v: string): { y: string; m: string; d: string } {
+  if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+    return { y: "", m: "", d: "" };
+  }
+  const [a, b, c] = v.split("-");
+  return { y: a, m: String(parseInt(b, 10)), d: String(parseInt(c, 10)) };
+}
+
+function normalizeYmd(y: string, m: string, d: string): string | null {
+  if (y.length !== 4 || !m || !d) return null;
+  const month = parseInt(m, 10);
+  const day = parseInt(d, 10);
+  if (!Number.isFinite(month) || !Number.isFinite(day) || month < 1 || month > 12 || day < 1 || day > 31) {
+    return null;
+  }
+  const mm = String(month).padStart(2, "0");
+  const dd = String(day).padStart(2, "0");
+  const dt = new Date(`${y}-${mm}-${dd}T12:00:00`);
+  if (dt.getFullYear() !== +y || dt.getMonth() + 1 !== month || dt.getDate() !== day) {
+    return null;
+  }
+  return `${y}-${mm}-${dd}`;
+}
+
+export type SegmentedDateInputProps = {
+  value: string;
+  onChange: (isoDate: string) => void;
+  /** 外层容器，默认 `w-full` */
+  className?: string;
+  disabled?: boolean;
+  id?: string;
+};
+
+/**
+ * 替代原生 `type="date"`：年最多 4 位、月/日各 2 位，满位自动跳到下一段；值始终为 `YYYY-MM-DD` 或空字符串。
+ */
+export default function SegmentedDateInput({
+  value,
+  onChange,
+  className = "w-full",
+  disabled = false,
+  id,
+}: SegmentedDateInputProps) {
+  const parsed = parseDateValue(value);
+  const [y, setY] = useState(parsed.y);
+  const [m, setM] = useState(parsed.m);
+  const [d, setD] = useState(parsed.d);
+
+  const yRef = useRef<HTMLInputElement>(null);
+  const mRef = useRef<HTMLInputElement>(null);
+  const dRef = useRef<HTMLInputElement>(null);
+  const hiddenPickerRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const p = parseDateValue(value);
+    setY(p.y);
+    setM(p.m);
+    setD(p.d);
+  }, [value]);
+
+  const tryEmit = (ny: string, nm: string, nd: string) => {
+    if (!ny && !nm && !nd) {
+      onChange("");
+      return;
+    }
+    const norm = normalizeYmd(ny, nm, nd);
+    if (norm) onChange(norm);
+  };
+
+  const handleBlurContainer = (e: React.FocusEvent<HTMLDivElement>) => {
+    const next = e.relatedTarget as Node | null;
+    if (e.currentTarget.contains(next)) return;
+
+    if (!y && !m && !d) {
+      onChange("");
+      return;
+    }
+    const norm = normalizeYmd(y, m, d);
+    if (norm) {
+      onChange(norm);
+      const p = parseDateValue(norm);
+      setY(p.y);
+      setM(p.m);
+      setD(p.d);
+      return;
+    }
+    const p = parseDateValue(value);
+    setY(p.y);
+    setM(p.m);
+    setD(p.d);
+  };
+
+  const digitOnly = (raw: string, maxLen: number) => raw.replace(/\D/g, "").slice(0, maxLen);
+
+  return (
+    <div className={`relative ${className}`}>
+      <div
+        className="flex min-h-[44px] w-full items-center gap-1 rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground"
+        onBlur={handleBlurContainer}
+      >
+        <input
+          ref={yRef}
+          id={id}
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder="年"
+          disabled={disabled}
+          maxLength={4}
+          value={y}
+          aria-label="年（4 位）"
+          className="w-[4.25ch] min-w-0 bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
+          onChange={(e) => {
+            const v = digitOnly(e.target.value, 4);
+            setY(v);
+            if (v.length === 4) mRef.current?.focus();
+            tryEmit(v, m, d);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowRight" && y.length === 4) mRef.current?.focus();
+          }}
+        />
+        <span className="text-muted-foreground select-none" aria-hidden>
+          /
+        </span>
+        <input
+          ref={mRef}
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder="月"
+          disabled={disabled}
+          maxLength={2}
+          value={m}
+          aria-label="月（2 位）"
+          className="w-[2.75ch] min-w-0 bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
+          onChange={(e) => {
+            const v = digitOnly(e.target.value, 2);
+            setM(v);
+            if (v.length === 2) dRef.current?.focus();
+            tryEmit(y, v, d);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Backspace" && m === "") {
+              e.preventDefault();
+              yRef.current?.focus();
+            }
+            if (e.key === "ArrowLeft" && m === "") yRef.current?.focus();
+            if (e.key === "ArrowRight" && m.length === 2) dRef.current?.focus();
+          }}
+        />
+        <span className="text-muted-foreground select-none" aria-hidden>
+          /
+        </span>
+        <input
+          ref={dRef}
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder="日"
+          disabled={disabled}
+          maxLength={2}
+          value={d}
+          aria-label="日（2 位）"
+          className="w-[2.75ch] min-w-0 bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
+          onChange={(e) => {
+            const v = digitOnly(e.target.value, 2);
+            setD(v);
+            tryEmit(y, m, v);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Backspace" && d === "") {
+              e.preventDefault();
+              mRef.current?.focus();
+            }
+            if (e.key === "ArrowLeft" && d === "") mRef.current?.focus();
+          }}
+        />
+        <button
+          type="button"
+          disabled={disabled}
+          title="打开日历"
+          className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-background/80 hover:text-foreground disabled:opacity-40"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            const el = hiddenPickerRef.current;
+            if (!el) return;
+            if (typeof el.showPicker === "function") el.showPicker();
+            else el.click();
+          }}
+        >
+          <Calendar size={16} />
+        </button>
+      </div>
+      <input
+        ref={hiddenPickerRef}
+        type="date"
+        className="pointer-events-none absolute h-0 w-0 opacity-0"
+        tabIndex={-1}
+        value={normalizeYmd(y, m, d) || ""}
+        disabled={disabled}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (!v) return;
+          const p = parseDateValue(v);
+          setY(p.y);
+          setM(p.m);
+          setD(p.d);
+          onChange(v);
+        }}
+      />
+    </div>
+  );
+}

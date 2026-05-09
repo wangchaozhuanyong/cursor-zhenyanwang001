@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchProductTags, createProductTag, deleteProductTag } from "@/services/admin/productService";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { productTagBadgeClass } from "@/utils/productTagBadge";
 
 export default function AdminProductTags() {
   const [showForm, setShowForm] = useState(false);
@@ -25,13 +26,6 @@ export default function AdminProductTags() {
   };
 
   useEffect(() => { loadTags(); }, []);
-
-  const colorMap: Record<string, string> = {
-    "红色": "bg-red-500/10 text-red-500",
-    "绿色": "bg-green-500/10 text-green-500",
-    "蓝色": "bg-blue-500/10 text-blue-500",
-    "金色": "bg-gold/10 text-gold",
-  };
 
   const handleAdd = async () => {
     if (!newTag.name) { toast.error("请输入标签名称"); return; }
@@ -69,8 +63,11 @@ export default function AdminProductTags() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-foreground">标签管理</h2>
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">标签管理</h2>
+          <p className="mt-1 text-xs text-muted-foreground">创建后，在「商品管理 → 新增/编辑商品」中勾选即可关联；前台列表与详情页会展示。</p>
+        </div>
         <PermissionGate permission="tag.manage">
           <button
             onClick={() => setShowForm(!showForm)}
@@ -111,7 +108,7 @@ export default function AdminProductTags() {
         {tags.map((tag) => (
           <div key={tag.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
             <div>
-              <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${colorMap[tag.color] || "bg-gold/10 text-gold"}`}>{tag.name}</span>
+              <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${productTagBadgeClass(tag.color)}`}>{tag.name}</span>
               <p className="mt-2 text-[10px] text-muted-foreground">{tag.count ?? 0} 个商品使用</p>
             </div>
             <PermissionGate permission="tag.manage">

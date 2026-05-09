@@ -17,12 +17,12 @@ export async function fetchProductById(id: string) {
   return res.data;
 }
 
-export async function createProduct(data: Omit<Product, "id">) {
+export async function createProduct(data: Omit<Product, "id"> & { tag_ids?: string[] }) {
   const res = await productApi.createProduct(data);
   return res.data;
 }
 
-export async function updateProduct(id: string, data: Partial<Product>) {
+export async function updateProduct(id: string, data: Partial<Product> & { tag_ids?: string[] }) {
   const res = await productApi.updateProduct(id, data);
   return res.data;
 }

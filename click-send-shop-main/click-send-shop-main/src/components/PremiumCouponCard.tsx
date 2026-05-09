@@ -21,6 +21,11 @@ interface PremiumCouponCardProps {
   onAction?: () => void;
 }
 
+/** 票券边缘半圆缺口：露底色，需与列表页背景一致（通常 bg-background） */
+function TicketEdgeNotch({ className }: { className: string }) {
+  return <div className={`absolute z-[2] rounded-full bg-background shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] ${className}`} />;
+}
+
 export default function PremiumCouponCard({
   eyebrow = "活动优惠券",
   title,
@@ -41,60 +46,120 @@ export default function PremiumCouponCard({
   onClick,
   onAction,
 }: PremiumCouponCardProps) {
-  const content = (
+  const amountLen = amount.length + amountPrefix.length;
+  const amountMainClass = compact
+    ? amountLen > 5
+      ? "text-2xl"
+      : "text-[1.65rem] leading-none"
+    : amountLen > 5
+      ? "text-4xl"
+      : "text-5xl";
+  const amountPrefixClass = compact ? (amountLen > 5 ? "text-sm" : "text-lg") : amountLen > 5 ? "text-xl" : "text-2xl";
+
+  const leftW = compact ? "w-[31%] min-w-[96px] max-w-[140px]" : "w-[32%] min-w-[118px] max-w-[200px]";
+  const stubW = compact ? "w-[68px] min-w-[68px]" : "w-[88px] min-w-[88px]";
+
+  const facetedBg = [
+    "linear-gradient(135deg, rgba(255,255,255,0.07) 0%, transparent 42%)",
+    "linear-gradient(225deg, rgba(0,0,0,0.12) 0%, transparent 45%)",
+    "repeating-linear-gradient(-19deg, transparent, transparent 11px, rgba(255,255,255,0.03) 11px, rgba(255,255,255,0.03) 12px)",
+  ].join(",");
+
+  const inner = (
     <div
-      className={`relative flex w-full overflow-hidden rounded-2xl border border-[#D6B36A]/40 bg-gradient-to-br from-[#7B1126] via-[#651020] to-[#3F0712] text-[#FFF2CF] shadow-[0_16px_34px_rgba(63,7,18,0.24)] ${
-        compact ? "min-h-[118px]" : "min-h-[150px]"
-      } ${disabled ? "grayscale opacity-55" : ""} ${selected ? "ring-2 ring-[#E2C382]" : ""} ${className}`}
+      className={`relative flex h-full min-h-0 w-full overflow-hidden rounded-xl border border-[#D6B36A]/42 bg-gradient-to-br from-[#7B1126] via-[#5C0D1C] to-[#3A0610] text-[#FFF2CF] shadow-[0_14px_32px_rgba(45,6,14,0.28)] ${
+        compact ? "min-h-[118px]" : "min-h-[152px]"
+      } ${disabled ? "opacity-[0.52] grayscale-[0.35]" : ""} ${selected ? "ring-2 ring-[#E2C382] ring-offset-2 ring-offset-background" : ""} ${className}`}
     >
-      <div className="pointer-events-none absolute inset-0 opacity-35 [background-image:linear-gradient(135deg,rgba(255,255,255,0.08)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.05)_50%,rgba(255,255,255,0.05)_75%,transparent_75%,transparent)] [background-size:28px_28px]" />
-      <div className="pointer-events-none absolute left-0 top-0 h-full w-1/2 bg-[radial-gradient(circle_at_20%_20%,rgba(226,195,130,0.18),transparent_34%)]" />
+      {/* 低多边形感叠加 */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.55]"
+        style={{ backgroundImage: facetedBg, backgroundBlendMode: "soft-light" }}
+      />
+      {/* 左侧金属光泽 */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-[34%] bg-[radial-gradient(circle_at_35%_28%,rgba(226,195,130,0.22),transparent_55%)]" />
 
-      <div className={`relative flex shrink-0 flex-col items-center justify-center border-r-2 border-dashed border-[#D6B36A]/45 px-3 text-center ${compact ? "w-[34%] min-w-[106px]" : "w-[34%] min-w-[126px]"}`}>
-        <div className="absolute -right-[13px] -top-3 h-6 w-6 rounded-full bg-background shadow-inner" />
-        <div className="absolute -bottom-3 -right-[13px] h-6 w-6 rounded-full bg-background shadow-inner" />
+      {/* 左：面额区 */}
+      <div className={`relative z-[1] flex shrink-0 flex-col items-center justify-center border-r border-[#A02B3F]/35 px-2 py-3 text-center ${leftW}`}>
+        {/* 与中间区分界的弧形金线 */}
+        <svg
+          className="pointer-events-none absolute -right-px top-0 z-[3] h-full w-[14px] text-[#E2C382]/90"
+          viewBox="0 0 14 200"
+          preserveAspectRatio="none"
+          aria-hidden
+        >
+          <path d="M 1 0 C 10 48 10 152 1 200" fill="none" stroke="currentColor" strokeWidth="1.15" vectorEffect="non-scaling-stroke" />
+        </svg>
 
-        <Gift className={`${compact ? "mb-1 h-7 w-7" : "mb-2 h-9 w-9"} text-[#E2C382] drop-shadow`} />
-        <div className="flex items-baseline justify-center text-[#E2C382] drop-shadow-sm">
-          {amountPrefix && <span className={`${compact ? "text-lg" : "text-2xl"} mr-1 font-bold`}>{amountPrefix}</span>}
-          <span className={`${compact ? "text-3xl" : "text-5xl"} font-black leading-none tracking-tight`}>
-            {amount}
-          </span>
+        <TicketEdgeNotch className="-right-[11px] -top-2 h-[18px] w-[18px]" />
+        <TicketEdgeNotch className="-right-[11px] -bottom-2 h-[18px] w-[18px]" />
+
+        <Gift className={`shrink-0 text-[#E2C382] drop-shadow ${compact ? "mb-1 h-7 w-7" : "mb-1.5 h-9 w-9"}`} />
+        <div className="flex min-w-0 max-w-full items-baseline justify-center gap-0.5 text-[#E2C382] drop-shadow-sm">
+          {amountPrefix ? (
+            <span className={`shrink-0 font-bold leading-none ${amountPrefixClass}`}>{amountPrefix}</span>
+          ) : null}
+          <span className={`min-w-0 break-all font-black tracking-tight ${amountMainClass}`}>{amount}</span>
         </div>
-        <div className={`${compact ? "mt-1 text-[10px]" : "mt-1.5 text-xs"} text-[#F7E8C1]/85`}>
+        <p
+          className={`mt-1 max-w-[100%] px-0.5 leading-snug text-[#F7E8C1]/88 ${
+            compact ? "text-[9px]" : "text-[11px]"
+          }`}
+        >
           {conditionText}
-        </div>
+        </p>
       </div>
 
-      <div className={`relative flex min-w-0 flex-1 flex-col justify-center ${compact ? "px-3 py-3" : "px-5 py-4"}`}>
-        {badge && (
-          <span className="mb-1 inline-flex w-fit rounded-full border border-[#E2C382]/30 bg-[#E2C382]/10 px-2 py-0.5 text-[10px] font-semibold text-[#E2C382]">
-            {badge}
+      {/* 中：文案（min-w-0 防止与右侧挤压重叠） */}
+      <div
+        className={`relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col justify-center overflow-hidden ${
+          compact ? "px-3 py-2.5 pr-2" : "px-4 py-4 pr-3"
+        }`}
+      >
+        {/* 齿孔竖线 + 上下圆缺口（正文区与存根之间） */}
+        <div className="pointer-events-none absolute right-0 top-0 z-[2] h-full w-3">
+          <div className="absolute left-1/2 top-2.5 bottom-2.5 w-px -translate-x-1/2 border-l border-dashed border-[#E2C382]/55" />
+          <TicketEdgeNotch className="left-1/2 top-0 h-2.5 w-2.5 -translate-x-1/2" />
+          <TicketEdgeNotch className="bottom-0 left-1/2 h-2.5 w-2.5 -translate-x-1/2" />
+        </div>
+
+        {badge ? (
+          <span className="mb-1 inline-flex max-w-full items-center rounded-full border border-[#E2C382]/32 bg-[#E2C382]/12 px-2 py-0.5 text-[10px] font-semibold leading-tight text-[#E2C382]">
+            <span className="truncate">{badge}</span>
           </span>
-        )}
-        <div className={`${compact ? "text-[11px]" : "text-xs"} text-[#F7E8C1]/65`}>{eyebrow}</div>
-        <div className={`${compact ? "mt-0.5 text-base" : "mt-1 text-xl"} truncate font-extrabold tracking-wide text-[#FFF5D6]`}>
+        ) : null}
+        <div className={`text-[#F7E8C1]/68 ${compact ? "text-[10px]" : "text-xs"}`}>{eyebrow}</div>
+        <div
+          className={`line-clamp-2 min-h-0 max-w-full break-words font-extrabold leading-snug tracking-wide text-[#FFF5D6] ${
+            compact ? "mt-0.5 text-sm" : "mt-1 text-lg sm:text-xl"
+          }`}
+        >
           {title}
         </div>
 
-        <div className={`${compact ? "mt-2 gap-1 text-[11px]" : "mt-3 gap-1.5 text-xs"} flex flex-col text-[#F7E8C1]/82`}>
-          <div className="flex min-w-0 items-center gap-1.5">
-            <Clock className="h-3.5 w-3.5 shrink-0 text-[#E2C382]" />
-            <span className="truncate">有效期至 {expireText}</span>
+        <div className={`mt-2 flex min-w-0 flex-col gap-1 text-[#F7E8C1]/85 ${compact ? "text-[10px]" : "text-xs"}`}>
+          <div className="flex min-w-0 items-start gap-1.5">
+            <Clock className={`mt-0.5 shrink-0 text-[#E2C382] ${compact ? "h-3 w-3" : "h-3.5 w-3.5"}`} />
+            <span className="min-w-0 leading-snug">
+              有效期至 <span className="break-all">{expireText}</span>
+            </span>
           </div>
-          <div className="flex min-w-0 items-center gap-1.5">
-            <ShoppingCart className="h-3.5 w-3.5 shrink-0 text-[#E2C382]" />
-            <span className="truncate">{scopeText}</span>
+          <div className="flex min-w-0 items-start gap-1.5">
+            <ShoppingCart className={`mt-0.5 shrink-0 text-[#E2C382] ${compact ? "h-3 w-3" : "h-3.5 w-3.5"}`} />
+            <span className="min-w-0 leading-snug break-words">{scopeText}</span>
           </div>
         </div>
       </div>
 
-      <div className={`relative flex shrink-0 items-center justify-center bg-[#5A0B19]/90 ${compact ? "w-[66px]" : "w-[82px]"}`}>
+      {/* 右：存根 + 撕边 */}
+      <div
+        className={`relative z-[1] flex shrink-0 flex-col items-center justify-center bg-[#4A0A17]/95 py-2 pl-1 ${stubW}`}
+      >
         <div
-          className="absolute bottom-0 right-0 top-0 w-2 translate-x-1"
+          className="pointer-events-none absolute bottom-0 right-0 top-0 w-2.5 translate-x-px"
           style={{
-            backgroundImage: "radial-gradient(circle at 8px 8px, transparent 4px, #5A0B19 5px)",
-            backgroundSize: "16px 16px",
+            backgroundImage: "radial-gradient(circle at 9px 8px, transparent 4px, #3A0610 5px)",
+            backgroundSize: "17px 15px",
             backgroundPosition: "100% 0",
           }}
         />
@@ -107,15 +172,19 @@ export default function PremiumCouponCard({
               e.stopPropagation();
               onAction?.();
             }}
-            className={`relative z-10 flex ${compact ? "w-10 py-3" : "w-12 py-5"} flex-col items-center justify-center rounded-full border border-[#D6B36A]/45 bg-gradient-to-b from-[#8C142B] to-[#4B0713] text-[#E2C382] shadow-[inset_0_2px_4px_rgba(255,255,255,0.13),0_8px_16px_rgba(0,0,0,0.18)] transition hover:brightness-110 active:scale-95 disabled:opacity-60`}
+            className={`relative z-10 flex flex-col items-center justify-center rounded-full border border-[#D6B36A]/55 bg-gradient-to-b from-[#8C142B] to-[#4B0713] text-[#E2C382] shadow-[inset_0_2px_4px_rgba(255,255,255,0.12),0_6px_14px_rgba(0,0,0,0.22)] transition hover:brightness-110 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-55 ${
+              compact ? "w-10 py-3" : "w-12 py-5"
+            }`}
           >
             {actionLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
             ) : (
               <>
-                <ChevronRight className="mb-1 h-4 w-4" />
+                <ChevronRight className={`mb-0.5 shrink-0 ${compact ? "h-3.5 w-3.5" : "h-4 w-4"}`} />
                 <span
-                  className={`${compact ? "text-sm" : "text-base"} font-black tracking-[0.18em]`}
+                  className={`max-h-[5.5rem] overflow-hidden text-center font-black leading-tight tracking-[0.14em] ${
+                    compact ? "text-xs" : "text-sm"
+                  }`}
                   style={{ writingMode: "vertical-rl", textOrientation: "upright" }}
                 >
                   {actionLabel}
@@ -124,10 +193,12 @@ export default function PremiumCouponCard({
             )}
           </button>
         ) : (
-          <div className="relative z-10 flex flex-col items-center gap-1 text-[#E2C382]">
-            {selected ? <CheckCircle2 className="h-5 w-5" /> : null}
+          <div className="relative z-10 flex max-h-full flex-col items-center justify-center gap-1 overflow-hidden text-[#E2C382]">
+            {selected ? <CheckCircle2 className={`shrink-0 ${compact ? "h-4 w-4" : "h-5 w-5"}`} /> : null}
             <span
-              className={`${compact ? "text-xs" : "text-sm"} font-black tracking-[0.18em]`}
+              className={`max-h-[5.5rem] overflow-hidden text-center font-black leading-tight tracking-[0.14em] ${
+                compact ? "text-[11px]" : "text-xs"
+              }`}
               style={{ writingMode: "vertical-rl", textOrientation: "upright" }}
             >
               {statusLabel || (selected ? "已选择" : "可使用")}
@@ -138,11 +209,11 @@ export default function PremiumCouponCard({
     </div>
   );
 
-  if (!onClick) return content;
+  if (!onClick) return inner;
 
   return (
-    <button type="button" onClick={onClick} disabled={disabled} className="block w-full text-left disabled:cursor-not-allowed">
-      {content}
+    <button type="button" onClick={onClick} disabled={disabled} className="block h-full w-full min-h-0 text-left disabled:cursor-not-allowed">
+      {inner}
     </button>
   );
 }

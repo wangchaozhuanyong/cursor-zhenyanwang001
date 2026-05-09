@@ -11,6 +11,7 @@ import {
   SquishButton,
 } from "@/modules/micro-interactions";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { productTagBadgeClass } from "@/utils/productTagBadge";
 
 interface Props {
   product: Product;
@@ -59,6 +60,14 @@ export default function ProductCard({ product, index = 0 }: Props) {
               新品
             </span>
           )}
+          {(product.tags || []).slice(0, 2).map((t) => (
+            <span
+              key={t.id}
+              className={`theme-rounded border px-2 py-0.5 text-[10px] font-semibold theme-shadow ${productTagBadgeClass(t.color)}`}
+            >
+              {t.name}
+            </span>
+          ))}
         </div>
 
         {/* Favorite button */}

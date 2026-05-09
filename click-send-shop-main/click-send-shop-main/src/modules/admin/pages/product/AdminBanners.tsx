@@ -6,6 +6,7 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import * as bannerService from "@/services/admin/bannerService";
 import * as uploadService from "@/services/uploadService";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_BANNER_LAYOUT } from "@/constants/imageUploadHints";
 
 export default function AdminBanners() {
   const [banners, setBanners] = useState<any[]>([]);
@@ -230,9 +231,6 @@ export default function AdminBanners() {
                 <>
                   <Image size={32} className="text-muted-foreground" />
                   <p className="mt-2 text-xs font-medium text-foreground">点击上传轮播图</p>
-                  <p className="mt-1 max-w-[240px] text-center text-[10px] leading-snug text-muted-foreground">
-                    比例约 2.34:1（如 1170×500 / 750×320）· JPG/PNG/WebP/GIF · 单张 ≤15MB
-                  </p>
                 </>
               )}
               <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
@@ -246,6 +244,9 @@ export default function AdminBanners() {
                 } catch (e) { toast.error(toastErrorMessage(e, "上传失败")); }
               }} />
             </label>
+            <p className="mt-2 text-[10px] leading-snug text-muted-foreground">
+              {IMAGE_UPLOAD_HINT_BANNER_LAYOUT} {IMAGE_UPLOAD_HINT_API}
+            </p>
             <input placeholder="Banner 标题" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
             <input placeholder="跳转链接（如 /categories）" value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
             <PermissionGate permission="banner.manage">

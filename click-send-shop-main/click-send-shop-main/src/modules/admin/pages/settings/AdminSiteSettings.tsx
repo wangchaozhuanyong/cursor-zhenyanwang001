@@ -11,6 +11,7 @@ import { uploadSingle } from "@/services/uploadService";
 import { refreshSiteInfo } from "@/hooks/useSiteInfo";
 import type { SiteSettings } from "@/types/admin";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_SITE_ASSET } from "@/constants/imageUploadHints";
 
 const EMPTY: SiteSettings = {
   siteName: "",
@@ -489,6 +490,11 @@ export default function AdminSiteSettings() {
                         </div>
                       </div>
                     </div>
+                    <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                      {field.key === "logoUrl" || field.key === "faviconUrl"
+                        ? IMAGE_UPLOAD_HINT_SITE_ASSET
+                        : IMAGE_UPLOAD_HINT_API}
+                    </p>
                     {field.hint && <p className="mt-1 text-[11px] text-muted-foreground">{field.hint}</p>}
                   </div>
                 );

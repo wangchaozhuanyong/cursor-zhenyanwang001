@@ -16,6 +16,11 @@ exports.update = asyncRoute(async (req, res) => {
   res.success(r.data, r.message);
 });
 
+exports.sort = asyncRoute(async (req, res) => {
+  const r = await svc.updateCategorySort(req.body.items, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
 exports.remove = asyncRoute(async (req, res) => {
   const r = await svc.deleteCategory(req.params.id, req.user?.id, req);
   res.success(r.data, r.message);

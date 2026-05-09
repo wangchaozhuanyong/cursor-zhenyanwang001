@@ -8,6 +8,7 @@ import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import * as uploadService from "@/services/uploadService";
 import * as userService from "@/services/userService";
 import SkinPickerDialog from "@/components/SkinPickerDialog";
+import { IMAGE_UPLOAD_HINT_AVATAR } from "@/constants/imageUploadHints";
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -98,6 +99,9 @@ export default function Settings() {
             </button>
             <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
           </div>
+          <p className="mt-3 max-w-xs px-2 text-center text-[10px] leading-snug text-muted-foreground">
+            {IMAGE_UPLOAD_HINT_AVATAR}
+          </p>
         </div>
 
         <div className="space-y-5">

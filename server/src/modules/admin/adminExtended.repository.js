@@ -62,12 +62,23 @@ async function restoreBanner(id) {
 }
 
 async function selectProductTags() {
-  const [rows] = await db.query('SELECT id, name FROM product_tags ORDER BY created_at DESC');
+  const [rows] = await db.query(`
+    SELECT pt.id, pt.name, pt.sort_order, pt.color,
+      (
+        SELECT COUNT(*)
+        FROM product_tag_assignments x
+        INNER JOIN products pr ON pr.id = x.product_id AND pr.deleted_at IS NULL
+        WHERE x.tag_id = pt.id
+      ) AS usage_count
+    FROM product_tags pt
+    ORDER BY pt.created_at DESC
+  `);
   return rows;
 }
 
-async function insertProductTag(id, name) {
-  await db.query('INSERT INTO product_tags (id, name) VALUES (?, ?)', [id, name]);
+async function insertProductTag(id, name, color) {
+  const c = color && String(color).trim() ? String(color).trim().slice(0, 20) : '金色';
+  await db.query('INSERT INTO product_tags (id, name, color) VALUES (?, ?, ?)', [id, name, c]);
 }
 
 async function deleteProductTag(id) {

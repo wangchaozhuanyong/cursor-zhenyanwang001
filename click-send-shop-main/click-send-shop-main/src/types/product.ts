@@ -15,6 +15,13 @@ export interface ProductVariant {
   is_default: boolean;
 }
 
+/** 后台「标签管理」关联到商品后，接口随商品返回 */
+export interface ProductCatalogTag {
+  id: string;
+  name: string;
+  color?: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -38,6 +45,7 @@ export interface Product {
   is_recommended: boolean;
   is_new: boolean;
   is_hot: boolean;
+  tags?: ProductCatalogTag[];
 }
 
 export interface ProductListParams {

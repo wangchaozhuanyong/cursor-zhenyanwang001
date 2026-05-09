@@ -42,6 +42,7 @@ const adminProductCreateBodySchema = z.object({
   is_new: z.boolean().optional(),
   is_hot: z.boolean().optional(),
   variants: z.array(variantInputSchema).max(30).optional(),
+  tag_ids: z.array(z.string().uuid()).max(30).optional(),
 });
 
 const adminProductUpdateBodySchema = z.object({
@@ -62,6 +63,7 @@ const adminProductUpdateBodySchema = z.object({
   is_new: z.boolean().optional(),
   is_hot: z.boolean().optional(),
   variants: z.array(variantInputSchema).max(30).optional(),
+  tag_ids: z.array(z.string().uuid()).max(30).optional(),
 }).refine((o) => Object.keys(o).length > 0, { message: '没有需要更新的字段' });
 
 const adminProductPatchStatusBodySchema = z.object({

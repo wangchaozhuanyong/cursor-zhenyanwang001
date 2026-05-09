@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useCouponStore } from "@/stores/useCouponStore";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import type { UserCoupon } from "@/types/coupon";
+import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 
 type DisplayStatus = "available" | "claimed" | "used" | "expired";
 
@@ -23,38 +24,24 @@ interface DisplayCoupon {
 }
 
 function toDisplayCoupon(uc: UserCoupon): DisplayCoupon {
-  const c = uc.coupon;
   const displayStatus: DisplayStatus =
     uc.status === "used" ? "used"
     : uc.status === "expired" ? "expired"
     : uc.claimed_at ? "claimed"
     : "available";
 
-  const amountPrefix = c.type === "percentage" || (c.type === "shipping" && c.value <= 0) ? "" : "RM";
-  const amount =
-    c.type === "percentage" ? `${c.value}%`
-    : c.type === "shipping" && c.value <= 0 ? "免运"
-    : String(c.value);
-  const conditionText =
-    c.type === "shipping"
-      ? c.min_amount > 0 ? `满 RM ${c.min_amount} 免/减运费` : "免/减运费"
-      : c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛可用";
-  const scopeText =
-    c.scope_type === "category" && c.category_names?.length
-      ? `适用范围：${c.category_names.join("、")}`
-      : "适用范围：全场商品";
-
+  const d = userCouponToPremiumDisplay(uc);
   return {
     id: uc.id,
-    title: c.title,
-    amountPrefix,
-    amount,
-    conditionText,
-    scopeText,
-    expire: c.end_date,
+    title: d.title,
+    amountPrefix: d.amountPrefix,
+    amount: d.amount,
+    conditionText: d.conditionText,
+    scopeText: d.scopeText,
+    expire: d.expireText,
     status: displayStatus,
-    tag: c.display_badge || c.description || undefined,
-    code: c.code,
+    tag: d.badge,
+    code: d.code,
   };
 }
 

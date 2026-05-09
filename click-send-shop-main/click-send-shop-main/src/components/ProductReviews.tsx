@@ -1,6 +1,7 @@
 import { Star, ThumbsUp, Camera, Loader2, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ProductReviewsViewModel } from "@/hooks/useProductReviews";
+import { IMAGE_UPLOAD_HINT_REVIEW } from "@/constants/imageUploadHints";
 
 interface ProductReviewsProps {
   vm: ProductReviewsViewModel;
@@ -97,6 +98,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
                   ))}
                 </div>
               )}
+              <p className="mt-2 text-[10px] leading-snug text-muted-foreground">{IMAGE_UPLOAD_HINT_REVIEW}</p>
               <div className="mt-3 flex items-center justify-between">
                 <button
                   type="button"

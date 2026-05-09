@@ -13,6 +13,7 @@ const { Router } = require('express');
 const multer = require('multer');
 const adminAuth = require('../../middleware/adminAuth');
 const requirePermission = adminAuth.requirePermission;
+const requireAnyPermission = adminAuth.requireAnyPermission;
 const { userQueryLimiter } = require('../../middleware/rateLimiters');
 const { paginationCap } = require('../../middleware/paginationCap');
 const { validate } = require('../../middleware/validate');
@@ -140,7 +141,7 @@ router.post('/upload', adminAuth, userUploadCtrl.uploadMiddleware, userUploadCtr
 router.post('/upload/multiple', adminAuth, userUploadCtrl.uploadMultiple, userUploadCtrl.uploadFiles);
 
 /* ── Product Tags ── */
-router.get('/product-tags', adminAuth, requirePermission('tag.manage'), productCtrl.listTags);
+router.get('/product-tags', adminAuth, requireAnyPermission(['tag.manage', 'product.manage']), productCtrl.listTags);
 router.post('/product-tags', adminAuth, requirePermission('tag.manage'), productCtrl.createTag);
 router.delete('/product-tags/:id', adminAuth, requirePermission('tag.manage'), productCtrl.removeTag);
 
@@ -214,6 +215,7 @@ router.put('/users/:userId/points', adminAuth, requirePermission('user.points'),
 /* ── Categories ── */
 router.get('/categories', adminAuth, requirePermission('category.manage'), categoryCtrl.list);
 router.post('/categories', adminAuth, requirePermission('category.manage'), categoryCtrl.create);
+router.put('/categories/sort', adminAuth, requirePermission('category.manage'), categoryCtrl.sort);
 router.put('/categories/:id', adminAuth, requirePermission('category.manage'), categoryCtrl.update);
 router.delete('/categories/:id', adminAuth, requirePermission('category.manage'), categoryCtrl.remove);
 

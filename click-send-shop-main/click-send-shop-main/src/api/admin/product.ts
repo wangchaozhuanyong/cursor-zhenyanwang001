@@ -10,11 +10,14 @@ export function getProductById(id: string) {
   return get<Product>(`/admin/products/${id}`);
 }
 
-export function createProduct(data: Omit<Product, "id">) {
+export function createProduct(data: Omit<Product, "id"> & { tag_ids?: string[] }) {
   return post<Product>("/admin/products", data);
 }
 
-export function updateProduct(id: string, data: Partial<Product> & { variants?: Product["variants"] }) {
+export function updateProduct(
+  id: string,
+  data: Partial<Product> & { variants?: Product["variants"]; tag_ids?: string[] },
+) {
   return put<Product>(`/admin/products/${id}`, data);
 }
 

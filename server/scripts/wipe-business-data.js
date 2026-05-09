@@ -58,6 +58,7 @@ const TRUNCATE_TABLES = [
   // reward_records 在 reward_transactions 依赖之后清空
   'reward_records',
   'coupons',
+  'product_tag_assignments',
   'products',
   'banners',
   'categories',

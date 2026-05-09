@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useGoBack } from "@/hooks/useGoBack";
 import { copyToClipboard } from "@/utils/clipboard";
+import { productTagBadgeClass } from "@/utils/productTagBadge";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -157,6 +158,14 @@ export default function ProductDetail() {
                     新品
                   </span>
                 )}
+                {(product.tags || []).map((t) => (
+                  <span
+                    key={t.id}
+                    className={`theme-rounded border px-2 py-1 text-[10px] font-semibold ${productTagBadgeClass(t.color)}`}
+                  >
+                    {t.name}
+                  </span>
+                ))}
                 <span className="text-xs text-muted-foreground">
                   库存: {product.stock} 件
                 </span>

@@ -1,5 +1,6 @@
 const { parseBool, formatProduct } = require('../../utils/helpers');
 const repo = require('./catalog.repository');
+const tagAssignmentRepo = require('./productTagAssignment.repository');
 
 const CACHE_TTL_MS = 60 * 1000;
 const cache = new Map();
@@ -94,8 +95,9 @@ async function getProducts(query) {
   const total = await repo.countActiveProducts(where, params);
   const offset = (page - 1) * pageSize;
   const rows = await repo.selectActiveProductsPage(where, params, orderBy, pageSize, offset);
+  const tagMap = await tagAssignmentRepo.selectTagsByProductIds(rows.map((r) => r.id));
   return {
-    list: rows.map(formatProduct),
+    list: rows.map((r) => ({ ...formatProduct(r), tags: tagMap.get(r.id) || [] })),
     total,
     page,
     pageSize,
@@ -105,7 +107,8 @@ async function getProducts(query) {
 async function getProductById(id) {
   const row = await repo.selectProductById(id);
   if (!row) return null;
-  return formatProduct(row);
+  const tagMap = await tagAssignmentRepo.selectTagsByProductIds([id]);
+  return { ...formatProduct(row), tags: tagMap.get(id) || [] };
 }
 
 async function getHomeProducts() {
@@ -144,10 +147,13 @@ async function loadHomeProducts() {
   const hotIdSet = new Set(hot.map((p) => p.id));
   const recommended = pickUnique(recommendedManual, fallbackByRecommend, limit, hotIdSet);
 
+  const allRows = [...hot, ...newArrivals, ...recommended];
+  const tagMap = await tagAssignmentRepo.selectTagsByProductIds(allRows.map((r) => r.id));
+  const fmt = (rows) => rows.map((r) => ({ ...formatProduct(r), tags: tagMap.get(r.id) || [] }));
   return {
-    hot: hot.map(formatProduct),
-    new_arrivals: newArrivals.map(formatProduct),
-    recommended: recommended.map(formatProduct),
+    hot: fmt(hot),
+    new_arrivals: fmt(newArrivals),
+    recommended: fmt(recommended),
   };
 }
 
@@ -156,7 +162,8 @@ async function getRelatedProducts(productId, limit) {
   const product = await repo.selectProductCategoryId(productId);
   if (!product) return [];
   const rows = await repo.selectRelatedByCategory(product.category_id, productId, lim);
-  return rows.map(formatProduct);
+  const tagMap = await tagAssignmentRepo.selectTagsByProductIds(rows.map((r) => r.id));
+  return rows.map((r) => ({ ...formatProduct(r), tags: tagMap.get(r.id) || [] }));
 }
 
 async function trackHomeEngagement(payload) {

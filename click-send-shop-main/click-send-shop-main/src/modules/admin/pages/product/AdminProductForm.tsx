@@ -3,12 +3,15 @@ import { ArrowLeft, Upload, ImagePlus, Loader2, Trash2, Plus } from "lucide-reac
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { fetchProductById, createProduct, updateProduct, deleteProduct } from "@/services/admin/productService";
+import { fetchProductById, createProduct, updateProduct, deleteProduct, fetchProductTags } from "@/services/admin/productService";
 import * as categoryService from "@/services/admin/categoryService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as uploadService from "@/services/uploadService";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_PRODUCT_LAYOUT } from "@/constants/imageUploadHints";
+import { productTagBadgeClass } from "@/utils/productTagBadge";
+import type { ProductTag } from "@/types/product";
 
 export default function AdminProductForm() {
   const navigate = useNavigate();
@@ -20,6 +23,7 @@ export default function AdminProductForm() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
+  const [allTags, setAllTags] = useState<ProductTag[]>([]);
   const [form, setForm] = useState({
     name: "",
     price: "",
@@ -36,6 +40,7 @@ export default function AdminProductForm() {
     is_hot: false,
     is_new: false,
     is_recommended: false,
+    tag_ids: [] as string[],
     variants: [
       { title: "", sku_code: "", price: "", stock: "", sort_order: 0, is_default: true },
     ] as Array<{
@@ -51,6 +56,10 @@ export default function AdminProductForm() {
 
   useEffect(() => {
     categoryService.fetchCategories().then(setCategories).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetchProductTags().then(setAllTags).catch(() => setAllTags([]));
   }, []);
 
   useEffect(() => {
@@ -98,6 +107,7 @@ export default function AdminProductForm() {
               is_hot: !!data.is_hot,
               is_new: !!data.is_new,
               is_recommended: !!data.is_recommended,
+              tag_ids: Array.isArray(data.tags) ? data.tags.map((t: { id: string }) => t.id) : [],
               variants: vlist,
             });
           }
@@ -172,6 +182,7 @@ export default function AdminProductForm() {
         is_new: form.is_new,
         is_recommended: form.is_recommended,
         variants: variantsPayload,
+        tag_ids: form.tag_ids,
       };
       if (isNew) {
         await createProduct(payload);
@@ -232,6 +243,9 @@ export default function AdminProductForm() {
         <div className="space-y-4 lg:col-span-2">
           <div className="rounded-xl border border-border bg-card p-6">
             <h3 className="mb-4 text-sm font-semibold text-foreground">商品图片</h3>
+            <p className="mb-4 text-[11px] leading-relaxed text-muted-foreground">
+              {IMAGE_UPLOAD_HINT_API} {IMAGE_UPLOAD_HINT_PRODUCT_LAYOUT}
+            </p>
             <div className="space-y-4">
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">封面图</label>
@@ -472,6 +486,41 @@ export default function AdminProductForm() {
             </div>
           </div>
 
+          <div className="rounded-xl border border-border bg-card p-6 space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">自定义标签</h3>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              标签在「标签管理」中维护；勾选后关联本商品，前台商品列表与详情页会与「热销 / 新品」徽章一并展示。
+            </p>
+            {allTags.length === 0 ? (
+              <p className="text-xs text-muted-foreground">暂无可用标签，请先到「标签管理」新建。</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {allTags.map((t) => {
+                  const on = form.tag_ids.includes(t.id);
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() =>
+                        setForm((f) => ({
+                          ...f,
+                          tag_ids: on ? f.tag_ids.filter((x) => x !== t.id) : [...f.tag_ids, t.id],
+                        }))
+                      }
+                      className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                        on
+                          ? `${productTagBadgeClass(t.color)} border-current`
+                          : "border-border bg-secondary text-muted-foreground hover:border-gold/40"
+                      }`}
+                    >
+                      {t.name}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           <div className="rounded-xl border border-border bg-card p-6 space-y-4">
             <h3 className="text-sm font-semibold text-foreground">商品描述</h3>
             <textarea
@@ -532,6 +581,21 @@ export default function AdminProductForm() {
               ) : (
                 <div className="mb-2 h-32 rounded-md bg-secondary" />
               )}
+              <div className="mb-1 flex flex-wrap gap-1">
+                {form.tag_ids.length > 0 &&
+                  form.tag_ids.map((tid) => {
+                    const meta = allTags.find((x) => x.id === tid);
+                    if (!meta) return null;
+                    return (
+                      <span
+                        key={tid}
+                        className={`rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${productTagBadgeClass(meta.color)}`}
+                      >
+                        {meta.name}
+                      </span>
+                    );
+                  })}
+              </div>
               <p className="text-sm font-medium text-foreground">{form.name || "商品名称"}</p>
               <p className="mt-1 text-sm font-bold text-gold">RM {form.price || "0.00"}</p>
             </div>

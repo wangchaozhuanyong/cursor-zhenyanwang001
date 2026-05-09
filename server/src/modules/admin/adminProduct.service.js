@@ -4,6 +4,7 @@ const { logAdminAction } = require('../../utils/adminAudit');
 const { rowsToCsv, parseCsv, parseBool } = require('../../utils/csv');
 const repo = require('./adminProduct.repository');
 const variantRepo = require('./adminProductVariant.repository');
+const tagAssignmentRepo = require('../product/productTagAssignment.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
 const {
   LIFECYCLE,
@@ -85,6 +86,12 @@ function normalizeVariantPayloadForDb(variants, genId, mainPrice, mainStock) {
   });
 }
 
+async function attachTagsToProducts(rows) {
+  if (!rows.length) return [];
+  const map = await tagAssignmentRepo.selectTagsByProductIds(rows.map((r) => r.id));
+  return rows.map((r) => ({ ...formatProduct(r), tags: map.get(r.id) || [] }));
+}
+
 async function syncProductPriceStockFromDefaultVariant(productId) {
   const rows = await variantRepo.selectVariantsByProductId(productId);
   const def = rows.find((r) => r.is_default) || rows[0];
@@ -103,9 +110,10 @@ async function listProducts(query) {
   const total = await repo.countProducts(where, params);
   const offset = (page - 1) * pageSize;
   const rows = await repo.selectProductsPage(where, params, pageSize, offset);
+  const list = await attachTagsToProducts(rows);
   return {
     kind: 'paginate',
-    list: rows.map(formatProduct),
+    list,
     total,
     page,
     pageSize,
@@ -116,10 +124,12 @@ async function getProductById(id) {
   const row = await repo.selectProductById(id);
   if (!row) throw new BusinessError(404, '商品不存在');
   const variants = await variantRepo.selectVariantsByProductId(id);
+  const tagMap = await tagAssignmentRepo.selectTagsByProductIds([id]);
   return {
     data: {
       ...formatProduct(row),
       variants: variants.map(formatVariantRow),
+      tags: tagMap.get(id) || [],
     },
   };
 }
@@ -130,6 +140,7 @@ async function createProduct(body, adminUserId, req) {
     points, category_id, stock, sort_order,
     description, is_recommended, is_new, is_hot,
     variants,
+    tag_ids: tagIdsBody,
   } = body;
 
   const lcResolved = lifecycleFromBody(body) ?? LIFECYCLE.ON_SHELF;
@@ -161,8 +172,10 @@ async function createProduct(body, adminUserId, req) {
     });
     await variantRepo.replaceProductVariants(id, variantRows);
     await syncProductPriceStockFromDefaultVariant(id);
+    await tagAssignmentRepo.replaceAssignments(id, Array.isArray(tagIdsBody) ? tagIdsBody : []);
     const row = await repo.selectProductById(id);
     const vrows = await variantRepo.selectVariantsByProductId(id);
+    const tagMap = await tagAssignmentRepo.selectTagsByProductIds([id]);
     await logAdminAction(adminUserId, '创建商品', name);
     await writeAuditLog({
       req,
@@ -175,7 +188,7 @@ async function createProduct(body, adminUserId, req) {
       result: 'success',
     });
     return {
-      data: { ...formatProduct(row), variants: vrows.map(formatVariantRow) },
+      data: { ...formatProduct(row), variants: vrows.map(formatVariantRow), tags: tagMap.get(id) || [] },
       message: '创建成功',
     };
   } catch (err) {
@@ -237,7 +250,10 @@ async function updateProduct(id, body, adminUserId, req) {
       }
     }
     const hasVariantUpdate = body.variants !== undefined;
-    if (fields.length === 0 && !hasVariantUpdate) throw new BusinessError(400, '没有需要更新的字段');
+    const hasTagUpdate = body.tag_ids !== undefined;
+    if (fields.length === 0 && !hasVariantUpdate && !hasTagUpdate) {
+      throw new BusinessError(400, '没有需要更新的字段');
+    }
 
     if (fields.length > 0) {
       await repo.updateProductDynamic(fields, values, id);
@@ -260,8 +276,12 @@ async function updateProduct(id, body, adminUserId, req) {
         Number(row.stock),
       );
     }
+    if (hasTagUpdate) {
+      await tagAssignmentRepo.replaceAssignments(id, Array.isArray(body.tag_ids) ? body.tag_ids : []);
+    }
     const row = await repo.selectProductById(id);
     const vrows = await variantRepo.selectVariantsByProductId(id);
+    const tagMap = await tagAssignmentRepo.selectTagsByProductIds([id]);
     await writeAuditLog({
       req,
       operatorId: adminUserId,
@@ -280,7 +300,7 @@ async function updateProduct(id, body, adminUserId, req) {
       result: 'success',
     });
     return {
-      data: { ...formatProduct(row), variants: vrows.map(formatVariantRow) },
+      data: { ...formatProduct(row), variants: vrows.map(formatVariantRow), tags: tagMap.get(id) || [] },
       message: '更新成功',
     };
   } catch (err) {
@@ -322,8 +342,9 @@ async function patchProductLifecycle(id, lifecycleStatus, adminUserId, req) {
     result: 'success',
   });
   const vrows = await variantRepo.selectVariantsByProductId(id);
+  const tagMap = await tagAssignmentRepo.selectTagsByProductIds([id]);
   return {
-    data: { ...formatProduct(row), variants: vrows.map(formatVariantRow) },
+    data: { ...formatProduct(row), variants: vrows.map(formatVariantRow), tags: tagMap.get(id) || [] },
     message: '状态已更新',
   };
 }

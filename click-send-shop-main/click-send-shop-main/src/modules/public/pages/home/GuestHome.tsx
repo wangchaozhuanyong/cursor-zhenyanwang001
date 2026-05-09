@@ -1,3 +1,5 @@
+import { useState } from "react";
+import type { ReactNode } from "react";
 import { Gem, Menu, ShieldCheck, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -6,6 +8,72 @@ import ProductCard from "@/components/ProductCard";
 import BannerCarousel from "@/components/BannerCarousel";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
 import type { Product } from "@/types/product";
+import type { FooterNavItem } from "@/types/content";
+
+function parseFooterNav(json?: string): FooterNavItem[] | null {
+  if (!json || !json.trim()) return null;
+  try {
+    const parsed = JSON.parse(json);
+    if (!Array.isArray(parsed)) return null;
+    const items = parsed.filter(
+      (it): it is FooterNavItem =>
+        it && typeof it.label === "string" && typeof it.path === "string",
+    );
+    return items.length > 0 ? items : null;
+  } catch {
+    return null;
+  }
+}
+
+function FooterLink({
+  item,
+  onNavigate,
+}: {
+  item: FooterNavItem;
+  onNavigate: (path: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onNavigate(item.path)}
+      className="block text-left text-[14px] font-medium text-[var(--theme-text-muted)] transition-colors hover:text-[var(--theme-price)]"
+    >
+      {item.label}
+    </button>
+  );
+}
+
+function AccordionItem({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div className="border-b border-[var(--theme-border)]/70">
+      <button
+        type="button"
+        onClick={() => setIsOpen((v) => !v)}
+        className="flex w-full items-center justify-between bg-transparent py-4 text-left"
+      >
+        <span className="text-[15px] font-semibold text-[var(--theme-text)]">{title}</span>
+        <svg
+          className={`h-4 w-4 text-[var(--theme-text-muted)] transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div className={`overflow-hidden transition-all duration-300 ${isOpen ? "max-h-64 pb-5 opacity-100" : "max-h-0 opacity-0"}`}>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function GuestHome() {
   // 首页标题策略：优先使用后台 SEO 标题（seoTitle），未配置时回退站点名
@@ -13,8 +81,33 @@ export default function GuestHome() {
   const navigate = useNavigate();
   const siteInfo = useSiteInfo();
   const siteName = siteInfo.siteName || "大马通";
+  const slogan = siteInfo.siteSlogan || "精选全球好物，品质生活";
+  const description = siteInfo.siteDescription || "精选全球好物，品质生活购物平台";
   const { banners } = useHomeBanners();
   const now = new Date().toISOString();
+  const customNav = parseFooterNav(siteInfo.footerNav);
+  const supportNav = customNav ? customNav.slice(0, 4) : [
+    { label: "首页", path: "/" },
+    { label: "全部分类", path: "/categories" },
+    { label: "购物车", path: "/cart" },
+    { label: "我的订单", path: "/orders" },
+  ];
+  const policyNav = customNav && customNav.length > 4 ? customNav.slice(4) : [
+    { label: "常见问题", path: "/help" },
+    { label: "关于我们", path: "/about" },
+  ];
+  if (siteInfo.privacyPolicyPath) policyNav.push({ label: "隐私政策", path: siteInfo.privacyPolicyPath });
+  else if (siteInfo.footerPolicyUrl) policyNav.push({ label: "隐私政策", path: siteInfo.footerPolicyUrl });
+  if (siteInfo.termsPath) policyNav.push({ label: "服务条款", path: siteInfo.termsPath });
+  else if (siteInfo.footerTermsUrl) policyNav.push({ label: "服务条款", path: siteInfo.footerTermsUrl });
+
+  const handleFooterNavigate = (path: string) => {
+    if (path.startsWith("http")) {
+      window.open(path, "_blank", "noopener,noreferrer");
+      return;
+    }
+    navigate(path);
+  };
   const products: Product[] = [
     { id: "g1", title: "曜石黑 机械腕表", subtitle: "经典隽永 瑞士机芯", description: "经典隽永 瑞士机芯", price: 12800, originalPrice: 13800, image: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&q=80&w=800", categoryId: "guest", stock: 99, sales: 88, tags: [], status: "active", createdAt: now, updatedAt: now },
     { id: "g2", title: "先锋 解构墨镜", subtitle: "抗UV 钛金属镜架", description: "抗UV 钛金属镜架", price: 2450, originalPrice: 2590, image: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&q=80&w=800", categoryId: "guest", stock: 99, sales: 66, tags: [], status: "active", createdAt: now, updatedAt: now },
@@ -50,6 +143,87 @@ export default function GuestHome() {
           <p className="mt-1 text-xs tracking-wider text-[var(--theme-text-muted)]">大家都在买的热门好物</p>
           <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">{products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}</div>
         </section>
+
+        <footer className="mt-10 rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-5 pb-8 pt-10 md:max-w-lg md:mx-auto">
+          <div className="mb-10 flex flex-col items-center text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-[var(--theme-text)]">
+              {siteName}
+              <span className="text-[var(--theme-price)]">.</span>
+            </h2>
+            <div className="mt-3 space-y-1">
+              <p className="text-[15px] font-semibold text-[var(--theme-text)]">{slogan}</p>
+              <p className="text-[13px] text-[var(--theme-text-muted)]">{description}</p>
+            </div>
+          </div>
+
+          <div className="mb-8 border-t border-[var(--theme-text)]/30 pt-2">
+            <AccordionItem title="服务支持">
+              <ul className="space-y-4 pl-1">
+                {supportNav.map((item, idx) => (
+                  <li key={`${item.label}-${idx}`}>
+                    <FooterLink item={item} onNavigate={handleFooterNavigate} />
+                  </li>
+                ))}
+              </ul>
+            </AccordionItem>
+
+            <AccordionItem title="政策与说明">
+              <ul className="space-y-4 pl-1">
+                {policyNav.map((item, idx) => (
+                  <li key={`${item.label}-${idx}`}>
+                    <FooterLink item={item} onNavigate={handleFooterNavigate} />
+                  </li>
+                ))}
+              </ul>
+            </AccordionItem>
+          </div>
+
+          <div className="mb-10">
+            <h4 className="mb-4 text-[15px] font-medium text-[var(--theme-text)]">联系我们</h4>
+            <div className="space-y-0">
+              {siteInfo.contactPhone && (
+                <div className="flex items-start justify-between border-b border-[var(--theme-border)]/40 py-3.5">
+                  <span className="shrink-0 text-[14px] font-medium text-[var(--theme-text-muted)]">客服电话</span>
+                  <span className="text-[14px] font-semibold tracking-wide text-[var(--theme-text)]">{siteInfo.contactPhone}</span>
+                </div>
+              )}
+              {siteInfo.contactEmail && (
+                <div className="flex items-start justify-between border-b border-[var(--theme-border)]/40 py-3.5">
+                  <span className="shrink-0 text-[14px] font-medium text-[var(--theme-text-muted)]">电子邮箱</span>
+                  <span className="text-[14px] font-semibold tracking-wide text-[var(--theme-text)]">{siteInfo.contactEmail}</span>
+                </div>
+              )}
+              {siteInfo.contactWhatsApp && (
+                <div className="flex items-start justify-between border-b border-[var(--theme-border)]/40 py-3.5">
+                  <span className="shrink-0 text-[14px] font-medium text-[var(--theme-text-muted)]">客服专线</span>
+                  <span className="text-[14px] font-semibold tracking-wide text-[var(--theme-text)]">{siteInfo.contactWhatsApp}</span>
+                </div>
+              )}
+              {siteInfo.businessHours && (
+                <div className="flex items-start justify-between border-b border-[var(--theme-border)]/40 py-3.5">
+                  <span className="shrink-0 text-[14px] font-medium text-[var(--theme-text-muted)]">服务时间</span>
+                  <span className="text-[14px] font-medium text-[var(--theme-text)]">{siteInfo.businessHours}</span>
+                </div>
+              )}
+              {siteInfo.address && (
+                <div className="flex items-start justify-between pt-3.5">
+                  <span className="shrink-0 text-[14px] font-medium text-[var(--theme-text-muted)]">公司地址</span>
+                  <span className="w-[200px] text-right text-[14px] font-medium leading-snug text-[var(--theme-text)]">{siteInfo.address}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center border-t border-[var(--theme-border)]/70 pt-8">
+            <div className="flex items-center gap-3 text-[12px] font-medium text-[var(--theme-text-muted)]">
+              <span>正品保障</span>
+              <span className="h-1 w-1 rounded-full bg-[var(--theme-border)]" />
+              <span>快速配送</span>
+              <span className="h-1 w-1 rounded-full bg-[var(--theme-border)]" />
+              <span>安心售后</span>
+            </div>
+          </div>
+        </footer>
       </main>
     </div>
   );

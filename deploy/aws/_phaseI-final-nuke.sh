@@ -6,7 +6,7 @@ hr(){ echo; echo "================ $* ================"; }
 healthcheck(){
   L=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3001/api/health/live --max-time 3)
   R=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3001/api/health/ready --max-time 3)
-  P=$(curl -s -o /dev/null -w '%{http_code}' http://13.214.165.214/ --max-time 5)
+  P=$(curl -s -o /dev/null -w '%{http_code}' https://flashcast.com.my/ --max-time 5)
   echo "  live=$L ready=$R public=$P"
   [[ "$R" == "200" && "$P" == "200" ]]
 }

@@ -86,7 +86,7 @@ echo ""
 echo "=== 6) Health checks ==="
 LIVE=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3001/api/health/live" --max-time 5 || echo 000)
 READY=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3001/api/health/ready" --max-time 5 || echo 000)
-PUB=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1/" -H "Host: 13.214.165.214" --max-time 5 || echo 000)
+PUB=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1/" -H "Host: flashcast.com.my" --max-time 5 || echo 000)
 echo "GET /api/health/live  -> $LIVE"
 echo "GET /api/health/ready -> $READY"
 echo "GET / (localhost nginx) -> $PUB"

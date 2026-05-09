@@ -47,9 +47,9 @@ echo '--- pm2 list ---'
 pm2 list
 echo
 echo '--- 公网 ---'
-curl -s -o /dev/null -w "  http://13.214.165.214/                  -> %{http_code}\n" http://13.214.165.214/ --max-time 5
-curl -s -o /dev/null -w "  http://13.214.165.214/api/health/live   -> %{http_code}\n" http://13.214.165.214/api/health/live --max-time 5
-curl -s -o /dev/null -w "  http://13.214.165.214/api/health/ready  -> %{http_code}\n" http://13.214.165.214/api/health/ready --max-time 5
+curl -s -o /dev/null -w "  https://flashcast.com.my/                  -> %{http_code}\n" https://flashcast.com.my/ --max-time 5
+curl -s -o /dev/null -w "  https://flashcast.com.my/api/health/live   -> %{http_code}\n" https://flashcast.com.my/api/health/live --max-time 5
+curl -s -o /dev/null -w "  https://flashcast.com.my/api/health/ready  -> %{http_code}\n" https://flashcast.com.my/api/health/ready --max-time 5
 echo
 echo '--- 端口 3001 ---'
 ss -ltnp 2>/dev/null | grep 3001

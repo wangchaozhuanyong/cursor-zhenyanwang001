@@ -157,8 +157,8 @@ for path in / /api/health/live; do
 done
 
 # 公网（带 Host 头模拟）
-PUB=$(curl -s -o /dev/null -w "%{http_code}" "http://13.214.165.214/" --max-time 5)
-echo "  http://13.214.165.214/ → $PUB"
+PUB=$(curl -s -o /dev/null -w "%{http_code}" "https://flashcast.com.my/" --max-time 5)
+echo "  https://flashcast.com.my/ → $PUB"
 
 echo
 echo "  PM2 当前 cwd:"

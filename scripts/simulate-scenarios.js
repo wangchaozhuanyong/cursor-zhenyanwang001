@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
 
-const BASE = process.env.BASE_URL || 'http://13.212.179.213';
+const BASE = process.env.BASE_URL || 'https://flashcast.com.my';
 const API = `${BASE}/api`;
 const ADMIN_PHONE = process.env.ADMIN_PHONE || '18800000001';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin123456';

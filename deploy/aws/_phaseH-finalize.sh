@@ -34,8 +34,8 @@ for p in /api/health/live /api/health/ready; do
   c=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3001$p --max-time 3)
   echo "  127.0.0.1:3001$p -> $c"
 done
-PUB=$(curl -s -o /dev/null -w '%{http_code}' http://13.214.165.214/ --max-time 5)
-echo "  public http://13.214.165.214/ -> $PUB"
+PUB=$(curl -s -o /dev/null -w '%{http_code}' https://flashcast.com.my/ --max-time 5)
+echo "  public https://flashcast.com.my/ -> $PUB"
 
 hr "H.6 AFTER: pm2 show script path"
 pm2 jlist | python3 -c "import sys,json; d=json.load(sys.stdin); [print(' ',a['name'],'script=',a['pm2_env']['pm_exec_path'],'cwd=',a['pm2_env']['pm_cwd']) for a in d]" 2>/dev/null || pm2 show gc-api | grep -E 'script|cwd|exec'

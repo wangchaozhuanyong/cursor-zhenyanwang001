@@ -4,13 +4,14 @@ set -euo pipefail
 ROOT_DIR="${1:-/var/www/click-send-shop}"
 FRONT_DIR="$ROOT_DIR/click-send-shop-main/click-send-shop-main"
 SERVER_DIR="$ROOT_DIR/server"
+export VITE_API_BASE_URL="${VITE_API_BASE_URL:-/api}"
 
 echo "[atomic-deploy] root: $ROOT_DIR"
 cd "$FRONT_DIR"
 
 rm -rf dist.__new dist.__old
 
-echo "[atomic-deploy] building frontend to dist.__new ..."
+echo "[atomic-deploy] building frontend to dist.__new (VITE_API_BASE_URL=$VITE_API_BASE_URL) ..."
 npm run build -- --outDir dist.__new
 
 if [ -d dist ]; then

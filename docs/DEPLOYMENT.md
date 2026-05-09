@@ -26,8 +26,12 @@
 1. **服务器**：安装 Node 20+、MySQL 8+（或使用 `docker compose up -d` 仅起库）。
 2. **环境变量**：复制 `server/.env.example` 为 `server/.env`，设置强随机 `JWT_SECRET`、数据库账号、`CORS_ORIGINS`（须包含用户访问前端的完整 Origin，如 `https://你的域名`）。
 3. **数据库**：执行 `npm run db:init`（在 `server` 目录），或导入已有备份。
-4. **前端构建**：在 `click-send-shop-main/click-send-shop-main` 执行 `VITE_API_BASE_URL=/api npm run build`。
-5. **启动（生产环境**唯一**方式）**：
+4. **一键标准部署（推荐）**：在服务器项目根（含 `.git` 的克隆目录）执行：
+   - `bash deploy/preflight.sh`（可选，单独排查环境）
+   - `bash deploy/production-deploy.sh`
+   - 脚本会：**默认导出 `VITE_API_BASE_URL=/api` 再构建前端**（与 Node 同源托管一致），执行迁移、`pm2 reload`、健康检查与 `deploy/verify-pm2.sh`。
+5. **仅手动构建前端时**：在 `click-send-shop-main/click-send-shop-main` 执行 `VITE_API_BASE_URL=/api npm run build`（切勿省略，否则易出现页面能打开但接口请求错域/404）。
+6. **PM2 进程（生产环境唯一方式）**：`deploy/production-deploy.sh` 已包含 `pm2 reload gc-api`。**首次**部署或机器上尚无进程时再执行：
 
    ```bash
    cd server
@@ -40,8 +44,8 @@
    - 入口文件 **必须** 为 `server/src/index.js`（`server/src/app.js` 仅导出 Express app，**不会** `listen`）。
    - `server/package.json` 中的 `start` / `start:prod` 仅供测试/排障使用，生产环境一律走 PM2。
 
-6. **HTTPS**：使用 Caddy / Nginx / 云负载均衡终止 TLS，反代到 `127.0.0.1:3001`（参考 `deploy/` 下示例）。
-7. **部署后验收（强制）**：
+7. **HTTPS**：使用 Caddy / Nginx / 云负载均衡终止 TLS，反代到 `127.0.0.1:3001`（参考 `deploy/` 下示例）。
+8. **部署后验收（强制）**：
 
    ```bash
    PM2_APP=gc-api HEALTH_PORT=3001 bash deploy/verify-pm2.sh
@@ -50,7 +54,29 @@
    - 校验 4 件事：`pm2 show` 入口路径、`3001` 端口由 node 监听、`/api/health/live` 200、`pm2-error.log` 近 200 行无关键错误。
    - 仓库内所有 `deploy/*.sh`、`scripts/deploy_ec2.sh`、`scripts/remote-deploy-gc-api.sh` 末尾均会自动执行该脚本，**任何方式**部署都必须以此通过为完成标志。
 
-8. **备份**：计划任务定期执行 `scripts/backup-mysql.ps1`，并将 `backups/` 拷到异地。
+9. **备份**：计划任务定期执行 `scripts/backup-mysql.ps1`，并将 `backups/` 拷到异地。
+
+## 部署总失败？优先核对这几条
+
+| 现象 | 常见原因 | 处理 |
+|------|----------|------|
+| 更新后前台能开，登录/数据全挂 | 前端构建未带 `VITE_API_BASE_URL=/api`（或分域 API 未写入正确完整 URL） | 使用 `deploy/production-deploy.sh`（已默认 `/api`），或手动构建前 `export VITE_API_BASE_URL=/api` |
+| `production-deploy.sh` 一开始就报 git 错 | 服务器目录不是 `git clone` 出来的、没有 `.git` | 改用 `git clone` 到 `/var/www/click-send-shop`，或 `SKIP_GIT=1 bash deploy/production-deploy.sh` 并确保已用 rsync/手工同步最新代码 |
+| `npm ci` / 依赖报错 | Node 版本低于 20、或锁文件与 package.json 不一致 | 升级 Node 20+；在 `server` 与前端目录分别重新 `npm ci` 或对齐锁文件后提交 |
+| 迁移失败 | 数据库账号权限、连接串、或 MySQL 未启动 | 看 `server/logs/pm2-error.log`；本地用 `.env` 连库试 `npm run migrate` |
+| `verify-pm2.sh` 不过 | `.env` 占位符未改、`JWT_SECRET` 过短、端口不是 3001、进程入口不是 `src/index.js` | 按脚本输出逐项修改后 `pm2 reload gc-api --update-env` |
+
+**无 git 的发布目录（仅 rsync）示例**：
+
+```bash
+SKIP_GIT=1 bash deploy/production-deploy.sh
+```
+
+**默认分支不是 `main` 时**：
+
+```bash
+GIT_BRANCH=master bash deploy/production-deploy.sh
+```
 
 ## 真实支付（Stripe）
 

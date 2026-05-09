@@ -8,19 +8,28 @@
 #   PROJECT_DIR     默认 /var/www/click-send-shop（标准目录，与宝塔 /www/wwwroot 无关）
 #   FRONTEND_SUB, HEALTH_PORT, HEALTH_PATH, PM2_APP
 #   PUBLIC_FRONTEND 默认 $PROJECT_DIR/public-frontend（若 Nginx 直读静态目录，会同步 dist）
+#   VITE_API_BASE_URL  默认 /api（同源部署）；API 分域时请设为完整前缀，如 https://api.xxx.com
+#   SKIP_GIT=1        跳过 git pull（适用于 rsync 同步、无 .git 的发布目录；须自行保证代码最新）
+#   GIT_BRANCH        默认 main（git fetch / reset 的目标分支）
 #
 set -euo pipefail
 
 echo "🚀 开始部署..."
 
 PROJECT_DIR="${PROJECT_DIR:-/var/www/click-send-shop}"
+export PROJECT_DIR
 FRONTEND_SUB="${FRONTEND_SUB:-click-send-shop-main/click-send-shop-main}"
+export FRONTEND_SUB
 FRONTEND_DIR="$PROJECT_DIR/$FRONTEND_SUB"
 BACKEND_DIR="$PROJECT_DIR/server"
 LOG_FILE="${LOG_FILE:-$PROJECT_DIR/deploy.log}"
 HEALTH_PORT="${HEALTH_PORT:-3001}"
 HEALTH_PATH="${HEALTH_PATH:-/api/health/live}"
 PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-$PROJECT_DIR/public-frontend}"
+# 前端构建：同源部署必须指向 /api，否则易出现「页面能开、接口全 404 / 跨域」
+export VITE_API_BASE_URL="${VITE_API_BASE_URL:-/api}"
+export SKIP_GIT="${SKIP_GIT:-0}"
+GIT_BRANCH="${GIT_BRANCH:-main}"
 
 npm_install_here() {
   if [[ -f package-lock.json ]]; then
@@ -34,19 +43,29 @@ cd "$PROJECT_DIR" || exit 1
 
 echo "📅 部署时间: $(date)" | tee -a "$LOG_FILE"
 
-echo "📦 拉取最新代码..." | tee -a "$LOG_FILE"
-git fetch origin main
-git reset --hard origin/main
+echo "🔎 部署前自检（preflight）..." | tee -a "$LOG_FILE"
+bash "$PROJECT_DIR/deploy/preflight.sh" | tee -a "$LOG_FILE"
 
-LOCAL_COMMIT=$(git rev-parse --short HEAD)
-REMOTE_COMMIT=$(git rev-parse --short origin/main)
+LOCAL_COMMIT=""
+if [[ "${SKIP_GIT:-0}" != "1" ]]; then
+  echo "📦 拉取最新代码（分支 $GIT_BRANCH）..." | tee -a "$LOG_FILE"
+  git fetch origin "$GIT_BRANCH"
+  git reset --hard "origin/$GIT_BRANCH"
 
-echo "🔖 本地版本: $LOCAL_COMMIT" | tee -a "$LOG_FILE"
-echo "🌐 远程版本: $REMOTE_COMMIT" | tee -a "$LOG_FILE"
+  LOCAL_COMMIT=$(git rev-parse --short HEAD)
+  REMOTE_COMMIT=$(git rev-parse --short "origin/$GIT_BRANCH")
 
-if [[ "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ]]; then
-  echo "❌ HEAD 与 origin/main 短哈希不一致（请检查 git 状态与 main 是否存在）" | tee -a "$LOG_FILE"
-  exit 1
+  echo "🔖 本地版本: $LOCAL_COMMIT" | tee -a "$LOG_FILE"
+  echo "🌐 远程版本: $REMOTE_COMMIT" | tee -a "$LOG_FILE"
+
+  if [[ "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ]]; then
+    echo "❌ HEAD 与 origin/$GIT_BRANCH 短哈希不一致（请检查 git 与远端分支）" | tee -a "$LOG_FILE"
+    exit 1
+  fi
+else
+  echo "⏭ SKIP_GIT=1，跳过 git fetch/reset（请确认已通过 rsync/手工同步到最新代码）" | tee -a "$LOG_FILE"
+  LOCAL_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+  echo "🔖 当前目录版本: $LOCAL_COMMIT" | tee -a "$LOG_FILE"
 fi
 
 if [[ -f "$PROJECT_DIR/package.json" ]]; then
@@ -99,6 +118,7 @@ fi
 
 cd "$FRONTEND_DIR" || exit 1
 npm_install_here
+echo "🎨 VITE_API_BASE_URL=$VITE_API_BASE_URL（若 API 不在同域 /api，请导出正确地址后重跑）" | tee -a "$LOG_FILE"
 npm run build
 
 if [[ -n "$ASSET_BACKUP" && -d "$ASSET_BACKUP" ]]; then

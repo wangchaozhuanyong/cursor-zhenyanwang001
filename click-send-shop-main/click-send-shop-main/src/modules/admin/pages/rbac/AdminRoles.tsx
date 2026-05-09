@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Shield, Plus, Trash2, Pencil, X } from "lucide-react";
 import PermissionGate from "@/components/admin/PermissionGate";
+import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import * as rbacService from "@/services/admin/rbacService";
 import type { RbacAdminUserRow, RbacRoleRow } from "@/services/admin/rbacService";
 import { toastErrorMessage } from "@/utils/errorMessage";
@@ -11,6 +12,7 @@ interface PermRow { id: number; code: string; name: string; sort_order: number }
 type Tab = "assign" | "manage" | "admins";
 
 export default function AdminRoles() {
+  const isSuperAdminViewer = useAdminPermissionStore((s) => s.isSuperAdmin);
   const [tab, setTab] = useState<Tab>("assign");
   const [roles, setRoles] = useState<RbacRoleRow[]>([]);
   const [perms, setPerms] = useState<PermRow[]>([]);
@@ -29,6 +31,7 @@ export default function AdminRoles() {
   const [adminForm, setAdminForm] = useState({ phone: "", password: "", nickname: "" });
   const [showResetModal, setShowResetModal] = useState<string | null>(null);
   const [resetPw, setResetPw] = useState("");
+  const [confirmDeleteAdmin, setConfirmDeleteAdmin] = useState<RbacAdminUserRow | null>(null);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -207,7 +210,7 @@ export default function AdminRoles() {
       {tab === "admins" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">管理管理员账号。仅超级管理员可创建/禁用/重置密码。</p>
+            <p className="text-sm text-muted-foreground">管理管理员账号。拥有「角色权限」权限即可创建/禁用/重置密码；删除与普通管理员管理规则同「账号管理」页（不可删除超级管理员）。</p>
             <PermissionGate permission="role.manage">
               <button onClick={() => { setAdminForm({ phone: "", password: "", nickname: "" }); setShowAdminModal(true); }} className="flex items-center gap-1 theme-rounded px-3 py-2 text-xs font-medium text-white" style={{ background: "var(--theme-gradient)" }}>
                 <Plus size={14} /> 新增管理员
@@ -229,7 +232,12 @@ export default function AdminRoles() {
                         {u.role === "disabled" ? "启用" : "禁用"}
                       </button>
                     )}
-                    <button onClick={() => { setShowResetModal(u.id); setResetPw(""); }} className="theme-rounded px-2 py-1 text-xs border border-[var(--theme-border)] hover:bg-[var(--theme-bg)]">重置密码</button>
+                    {(u.role !== "super_admin" || isSuperAdminViewer) && (
+                      <button onClick={() => { setShowResetModal(u.id); setResetPw(""); }} className="theme-rounded px-2 py-1 text-xs border border-[var(--theme-border)] hover:bg-[var(--theme-bg)]">重置密码</button>
+                    )}
+                    {u.role !== "super_admin" && (
+                      <button type="button" onClick={() => setConfirmDeleteAdmin(u)} className="theme-rounded px-2 py-1 text-xs border border-destructive/40 text-destructive hover:bg-destructive/10">删除</button>
+                    )}
                   </div>
                 </PermissionGate>
               </div>
@@ -263,6 +271,34 @@ export default function AdminRoles() {
             <h3 className="font-bold text-foreground">重置密码</h3>
             <input type="password" value={resetPw} onChange={(e) => setResetPw(e.target.value)} placeholder="输入新密码（至少6位）" className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" />
             <button onClick={async () => { if (resetPw.length < 6) { toast.error("密码至少6位"); return; } try { await rbacService.resetAdminPassword(showResetModal, resetPw); toast.success("密码已重置"); setShowResetModal(null); } catch (e) { toast.error(toastErrorMessage(e, "重置失败")); } }} disabled={resetPw.length < 6} className="w-full theme-rounded py-3 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--theme-gradient)" }}>确认重置</button>
+          </div>
+        </div>
+      )}
+
+      {confirmDeleteAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDeleteAdmin(null)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm theme-rounded bg-[var(--theme-surface)] p-6 theme-shadow space-y-4">
+            <h3 className="font-bold text-foreground">删除管理员</h3>
+            <p className="text-sm text-muted-foreground">确定删除「{confirmDeleteAdmin.nickname || confirmDeleteAdmin.phone}」({confirmDeleteAdmin.phone})？该账号将标记为已删除且无法登录后台。</p>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setConfirmDeleteAdmin(null)} className="flex-1 theme-rounded border border-[var(--theme-border)] py-2.5 text-sm">取消</button>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await rbacService.deleteAdminUser(confirmDeleteAdmin.id);
+                    toast.success("已删除");
+                    setConfirmDeleteAdmin(null);
+                    void reload();
+                  } catch (e) {
+                    toast.error(toastErrorMessage(e, "删除失败"));
+                  }
+                }}
+                className="flex-1 theme-rounded bg-destructive py-2.5 text-sm font-semibold text-destructive-foreground"
+              >
+                删除
+              </button>
+            </div>
           </div>
         </div>
       )}

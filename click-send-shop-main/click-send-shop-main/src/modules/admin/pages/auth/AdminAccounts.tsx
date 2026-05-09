@@ -3,6 +3,7 @@ import { Plus, Loader2, UserCog, Shield, Trash2, KeyRound, ToggleLeft, ToggleRig
 import Pagination from "@/components/admin/Pagination";
 import SearchBar from "@/components/SearchBar";
 import PermissionGate from "@/components/admin/PermissionGate";
+import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { usePagination } from "@/hooks/usePagination";
 import { toast } from "sonner";
 import * as rbacService from "@/services/admin/rbacService";
@@ -16,6 +17,7 @@ const ROLE_BADGE: Record<string, { cls: string; text: string }> = {
 };
 
 export default function AdminAccounts() {
+  const isSuperAdminViewer = useAdminPermissionStore((s) => s.isSuperAdmin);
   const [admins, setAdmins] = useState<RbacAdminUserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -104,6 +106,19 @@ export default function AdminAccounts() {
         </PermissionGate>
       </div>
 
+      <div className="theme-rounded border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-xs text-foreground/90 leading-relaxed">
+        <p className="font-medium text-amber-800 dark:text-amber-200/90">管理员与超级管理员</p>
+        <p className="mt-1 text-muted-foreground">
+          拥有「角色权限」权限的账号可在此新增、禁用、重置密码、删除<strong className="text-foreground/80">普通管理员</strong>（不可删除超级管理员）。
+          若数据库里<strong className="text-foreground/80">没有任何 super_admin</strong>，无法把别人设为超级管理员时，请 SSH 到服务器，在{" "}
+          <code className="rounded bg-muted px-1 py-0.5 text-[11px]">server</code>{" "}
+          目录执行：{" "}
+          <code className="rounded bg-muted px-1 py-0.5 text-[11px]">node scripts/set-admin-role.js 手机号 super_admin</code>
+          （详见该脚本文件顶部说明）；无可用账号时可执行{" "}
+          <code className="rounded bg-muted px-1 py-0.5 text-[11px]">node scripts/create-admin.js 手机号 密码 super</code>。
+        </p>
+      </div>
+
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[
           { label: "总管理员", value: admins.length },
@@ -143,9 +158,11 @@ export default function AdminAccounts() {
                         <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation min-h-[40px] theme-rounded border border-[var(--theme-border)] px-3 py-1.5 text-xs hover:bg-[var(--theme-bg)]">
                             {a.role === "disabled" ? <><ToggleRight size={12} className="mr-1 inline text-green-600" />启用</> : <><ToggleLeft size={12} className="mr-1 inline" />禁用</>}
                           </button>
+                          {(a.role !== "super_admin" || isSuperAdminViewer) && (
                           <button type="button" onClick={() => { setResetTarget(a); setNewPassword(""); }} className="touch-manipulation min-h-[40px] theme-rounded border border-[var(--theme-border)] px-3 py-1.5 text-xs hover:bg-[var(--theme-bg)]">
                             <KeyRound size={12} className="mr-1 inline" />重置密码
                           </button>
+                          )}
                           <button type="button" onClick={() => setConfirmDelete(a)} className="touch-manipulation min-h-[40px] theme-rounded border border-[var(--theme-border)] px-3 py-1.5 text-xs text-destructive hover:bg-[var(--theme-bg)]">
                             <Trash2 size={12} className="mr-1 inline" />删除
                           </button>
@@ -197,9 +214,11 @@ export default function AdminAccounts() {
                             <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title={a.role === "disabled" ? "启用" : "禁用"}>
                               {a.role === "disabled" ? <ToggleRight size={14} className="text-green-600" /> : <ToggleLeft size={14} />}
                             </button>
+                            {(a.role !== "super_admin" || isSuperAdminViewer) && (
                             <button type="button" onClick={() => { setResetTarget(a); setNewPassword(""); }} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title="重置密码">
                               <KeyRound size={14} />
                             </button>
+                            )}
                             <button type="button" onClick={() => setConfirmDelete(a)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:text-destructive hover:bg-[var(--theme-bg)]" title="删除">
                               <Trash2 size={14} />
                             </button>

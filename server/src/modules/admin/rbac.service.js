@@ -5,6 +5,14 @@ const { BusinessError } = require('../../errors/BusinessError');
 const { ALL_ADMIN_PERMISSION_CODES } = require('../../constants/adminPermissions');
 const repo = require('./rbac.repository');
 
+/** 账号管理：创建/禁用/重置/删除后台员工（不可删超级管理员、不可操作自己除外） */
+function assertCanManageAdminAccounts(actor) {
+  if (!actor?.id) throw new BusinessError(401, '未登录');
+  if (actor.isSuperAdmin) return;
+  if (Array.isArray(actor.permissions) && actor.permissions.includes('role.manage')) return;
+  throw new BusinessError(403, '需要「角色权限」权限（role.manage）或超级管理员身份');
+}
+
 async function getAccessContext(userId, legacyRole) {
   if (legacyRole === 'super_admin') {
     return {
@@ -143,7 +151,7 @@ async function deleteRole(roleId, actor, req) {
 }
 
 async function createAdminUser(body, actor, req) {
-  if (!actor?.isSuperAdmin) throw new BusinessError(403, '仅超级管理员可创建管理员');
+  assertCanManageAdminAccounts(actor);
   const { phone, password, nickname, roleIds } = body;
   if (!phone || !password) throw new BusinessError(400, '手机号和密码必填');
 
@@ -153,6 +161,12 @@ async function createAdminUser(body, actor, req) {
 
   if (Array.isArray(roleIds) && roleIds.length) {
     const ids = [...new Set(roleIds.map(Number).filter((n) => Number.isFinite(n) && n > 0))];
+    for (const rid of ids) {
+      const role = await repo.selectRoleById(rid);
+      if (role?.code === 'super_admin' && !actor.isSuperAdmin) {
+        throw new BusinessError(403, '仅超级管理员可为管理员分配「超级管理员」RBAC 角色');
+      }
+    }
     await repo.replaceUserRoles(id, ids);
   }
 
@@ -162,8 +176,11 @@ async function createAdminUser(body, actor, req) {
 }
 
 async function toggleAdminUser(userId, enabled, actor, req) {
-  if (!actor?.isSuperAdmin) throw new BusinessError(403, '仅超级管理员可禁用/启用管理员');
+  assertCanManageAdminAccounts(actor);
   if (userId === actor.id) throw new BusinessError(400, '不能禁用自己');
+  const target = await repo.selectAdminUserById(userId);
+  if (!target) throw new BusinessError(404, '管理员不存在');
+  if (target.role === 'super_admin' && !enabled) throw new BusinessError(400, '不能禁用超级管理员');
   await repo.updateAdminUserEnabled(userId, enabled);
 
   const { writeAuditLog } = require('../../utils/auditLog');
@@ -172,7 +189,11 @@ async function toggleAdminUser(userId, enabled, actor, req) {
 }
 
 async function resetAdminPassword(userId, body, actor, req) {
-  if (!actor?.isSuperAdmin) throw new BusinessError(403, '仅超级管理员可重置密码');
+  assertCanManageAdminAccounts(actor);
+  const targetPw = await repo.selectAdminUserById(userId);
+  if (targetPw?.role === 'super_admin' && !actor.isSuperAdmin) {
+    throw new BusinessError(403, '仅超级管理员可重置超级管理员密码');
+  }
   const { newPassword } = body;
   if (!newPassword || newPassword.length < 6) throw new BusinessError(400, '新密码至少6位');
   const hash = await bcrypt.hash(newPassword, 10);
@@ -184,7 +205,7 @@ async function resetAdminPassword(userId, body, actor, req) {
 }
 
 async function deleteAdminUser(userId, actor, req) {
-  if (!actor?.isSuperAdmin) throw new BusinessError(403, '仅超级管理员可删除管理员');
+  assertCanManageAdminAccounts(actor);
   if (userId === actor.id) throw new BusinessError(400, '不能删除自己');
   const target = await repo.selectAdminUserById(userId);
   if (!target) throw new BusinessError(404, '管理员不存在');

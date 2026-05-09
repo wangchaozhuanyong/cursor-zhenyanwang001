@@ -6,7 +6,7 @@ const { formatUserResponse } = require('../../utils/formatUserResponse');
 const userModule = require('../user');
 const { normalizeIntlPhone, buildPhoneLookupCandidates } = require('../../utils/phone');
 
-const adjustUserPointsFn = userModule.api?.adjustUserPoints;
+const adjustUserPointsFn = /** @type {any} */ (userModule).api?.adjustUserPoints;
 if (typeof adjustUserPointsFn !== 'function') {
   throw new Error('User 模块 API 未暴露 adjustUserPoints');
 }

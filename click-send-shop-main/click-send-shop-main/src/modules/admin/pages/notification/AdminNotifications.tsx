@@ -135,6 +135,18 @@ export default function AdminNotifications() {
     )));
   };
 
+  const updateTriggerCopy = (key: string, field: "title" | "content", value: string) => {
+    setTriggerRules((prev) => prev.map((rule) => (
+      rule.key === key ? { ...rule, [field]: value } : rule
+    )));
+  };
+
+  const triggerPlaceholderHint = (rule: notificationService.NotificationTriggerRule) => {
+    const ph = rule.placeholders;
+    if (!ph?.length) return "";
+    return `可用占位符：${ph.map((p) => `{${p}}`).join(" ")}`;
+  };
+
   const handleSaveTriggerRules = async () => {
     setSavingTriggers(true);
     try {
@@ -190,7 +202,7 @@ export default function AdminNotifications() {
                 <h2 className="text-sm font-bold text-foreground">自动触发通知设置</h2>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                控制订单、支付、售后等业务操作是否自动向客户端右上角通知中心推送消息。
+                控制订单、支付、售后等业务操作是否自动向客户端通知中心推送消息。可为每条规则单独填写标题与正文；留空则使用默认话术（见输入框占位提示）。
               </p>
             </div>
             <button
@@ -202,23 +214,46 @@ export default function AdminNotifications() {
               {savingTriggers ? "保存中..." : "保存规则"}
             </button>
           </div>
-          <div className="mt-4 grid gap-2 md:grid-cols-2">
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
             {triggerRules.map((rule) => (
-              <label
+              <div
                 key={rule.key}
-                className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-background/50 p-3"
+                className="rounded-xl border border-border bg-background/50 p-3"
               >
-                <input
-                  type="checkbox"
-                  checked={rule.enabled}
-                  onChange={() => toggleTriggerRule(rule.key)}
-                  className="mt-1 h-4 w-4 accent-gold"
-                />
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium text-foreground">{rule.label}</span>
-                  <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">{rule.description}</span>
-                </span>
-              </label>
+                <label className="flex cursor-pointer items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={rule.enabled}
+                    onChange={() => toggleTriggerRule(rule.key)}
+                    className="mt-1 h-4 w-4 shrink-0 accent-gold"
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-foreground">{rule.label}</span>
+                    <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">{rule.description}</span>
+                  </span>
+                </label>
+                <div className="mt-3 space-y-2 border-t border-border/70 pt-3">
+                  <input
+                    type="text"
+                    disabled={!rule.enabled}
+                    placeholder={rule.default_title ? `默认：${rule.default_title}` : "自定义标题（留空用默认）"}
+                    value={rule.title ?? ""}
+                    onChange={(e) => updateTriggerCopy(rule.key, "title", e.target.value)}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-gold disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  <textarea
+                    disabled={!rule.enabled}
+                    placeholder={rule.default_content ? `默认：${rule.default_content}` : "自定义正文（留空用默认）"}
+                    value={rule.content ?? ""}
+                    onChange={(e) => updateTriggerCopy(rule.key, "content", e.target.value)}
+                    rows={2}
+                    className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-gold disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  {triggerPlaceholderHint(rule) ? (
+                    <p className="text-[10px] leading-relaxed text-muted-foreground">{triggerPlaceholderHint(rule)}</p>
+                  ) : null}
+                </div>
+              </div>
             ))}
           </div>
         </section>

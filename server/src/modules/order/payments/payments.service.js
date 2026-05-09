@@ -10,10 +10,10 @@ const payRepo = require('./payments.repository');
 const manualProvider = require('./providers/manualProvider');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const { writeAuditLog } = require('../../../utils/auditLog');
-const { isNotificationTriggerEnabled } = require('../../admin/notificationTriggerApi');
+const { getResolvedTriggerCopy } = require('../../admin/notificationTriggerApi');
 const payDb = payRepo.getPool();
 
-const userApi = userModule.api || {};
+const userApi = /** @type {any} */ (userModule).api || {};
 
 function requireUserApi(name) {
   const fn = userApi[name];
@@ -224,7 +224,10 @@ async function createStripeCheckoutForOrder(userId, orderId, returnUrlHint, idem
     metadata: { phase: 'session_creating' },
   });
 
-  const stripe = require('stripe')(secretKey);
+  const createStripe = /** @type {(k: string) => import('stripe').Stripe} */ (
+    /** @type {unknown} */ (require('stripe'))
+  );
+  const stripe = createStripe(secretKey);
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
     payment_method_types: ['card'],
@@ -556,13 +559,14 @@ async function markOrderPaidByAdmin(req, orderId, body) {
       result: 'success',
     });
 
-    if (await isNotificationTriggerEnabled('stripe_payment_success')) {
+    const manualPayCopy = await getResolvedTriggerCopy('manual_order_mark_paid', { order_no: order.order_no });
+    if (manualPayCopy) {
       await orderRepo.insertNotification(payDb, {
         id: generateId(),
         userId: order.user_id,
         type: 'order',
-        title: '订单已确认支付',
-        content: `订单 ${order.order_no} 已标记为已支付，请留意发货进度`,
+        title: manualPayCopy.title,
+        content: manualPayCopy.content,
       });
     }
 

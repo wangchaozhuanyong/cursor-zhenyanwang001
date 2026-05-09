@@ -100,6 +100,7 @@ const uploadLimiter = rateLimit({
   message: { code: 429, message: '上传过于频繁，请稍后再试' },
 });
 app.use('/api/upload', uploadLimiter);
+app.use('/api/admin/upload', uploadLimiter);
 
 app.use(responseMiddleware);
 app.use('/api', routes);

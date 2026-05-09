@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { Outlet, useNavigate, useLocation, Navigate } from "react-router-dom";
+import { AdminOutletFallback } from "@/components/AppRouteFallback";
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
@@ -458,7 +460,9 @@ export default function AdminLayout() {
         </header>
 
         <main className="admin-mobile-main flex-1 p-3 sm:p-4 lg:p-6">
-          <Outlet />
+          <Suspense fallback={<AdminOutletFallback />}>
+            <Outlet />
+          </Suspense>
         </main>
 
         <nav

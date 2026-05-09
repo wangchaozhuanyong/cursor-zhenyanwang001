@@ -1,9 +1,9 @@
 ﻿/* eslint-disable @typescript-eslint/no-explicit-any */
-import { ArrowLeft, Upload, ImagePlus, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, ImagePlus, Loader2, Trash2, Plus } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { fetchProductById, createProduct, updateProduct } from "@/services/admin/productService";
+import { fetchProductById, createProduct, updateProduct, deleteProduct } from "@/services/admin/productService";
 import * as categoryService from "@/services/admin/categoryService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as uploadService from "@/services/uploadService";
@@ -18,6 +18,7 @@ export default function AdminProductForm() {
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [form, setForm] = useState({
     name: "",
@@ -31,10 +32,21 @@ export default function AdminProductForm() {
     description: "",
     cover_image: "",
     images: [] as string[],
-    status: "active" as string,
+    status: "active" as "draft" | "active" | "inactive",
     is_hot: false,
     is_new: false,
     is_recommended: false,
+    variants: [
+      { title: "", sku_code: "", price: "", stock: "", sort_order: 0, is_default: true },
+    ] as Array<{
+      id?: string;
+      title: string;
+      sku_code: string;
+      price: string;
+      stock: string;
+      sort_order: number;
+      is_default: boolean;
+    }>,
   });
 
   useEffect(() => {
@@ -47,6 +59,28 @@ export default function AdminProductForm() {
       fetchProductById(id)
         .then((data: any) => {
           if (data) {
+            const st = data.status === "draft" || data.status === "inactive" ? data.status : "active";
+            const vlist =
+              data.variants?.length ?
+                data.variants.map((v, i) => ({
+                  id: v.id,
+                  title: v.title || "",
+                  sku_code: (v.sku_code as string) || "",
+                  price: String(v.price ?? ""),
+                  stock: String(v.stock ?? ""),
+                  sort_order: v.sort_order ?? i,
+                  is_default: !!v.is_default,
+                })) :
+                [
+                  {
+                    title: "",
+                    sku_code: "",
+                    price: data.price?.toString() || "",
+                    stock: data.stock?.toString() || "",
+                    sort_order: 0,
+                    is_default: true,
+                  },
+                ];
             setForm({
               name: data.name || "",
               price: data.price?.toString() || "",
@@ -60,10 +94,11 @@ export default function AdminProductForm() {
               description: data.description || "",
               cover_image: data.cover_image || "",
               images: data.images || [],
-              status: data.status || "active",
+              status: st,
               is_hot: !!data.is_hot,
               is_new: !!data.is_new,
               is_recommended: !!data.is_recommended,
+              variants: vlist,
             });
           }
         })
@@ -78,7 +113,10 @@ export default function AdminProductForm() {
     try {
       const res = await uploadService.uploadSingle(file);
       const url = res.url || "";
-      if (!url) { toast.error("上传失败"); return; }
+      if (!url) {
+        toast.error("服务器未返回图片地址，请检查存储配置或稍后重试");
+        return;
+      }
       if (field === "cover") {
         setForm((f) => ({ ...f, cover_image: url }));
       } else {
@@ -92,20 +130,40 @@ export default function AdminProductForm() {
 
   const handleSave = async (publish = false) => {
     if (!form.name) { toast.error("请输入商品名称"); return; }
+    if (!form.variants.length) { toast.error("至少保留一条规格"); return; }
     setSaving(true);
     try {
       const opNum = parseFloat(form.original_price);
       const scNum = parseInt(form.sales_count, 10);
+      const mainPrice = parseFloat(form.price) || 0;
+      const mainStock = parseInt(form.stock, 10) || 0;
+      const variantsPayload = form.variants.map((v, i) => ({
+        id: v.id,
+        title: v.title,
+        sku_code: v.sku_code.trim() || null,
+        price: parseFloat(v.price) || 0,
+        stock: parseInt(v.stock, 10) || 0,
+        sort_order: v.sort_order ?? i,
+        is_default: v.is_default,
+      }));
+      const defIdx = variantsPayload.findIndex((x) => x.is_default);
+      if (defIdx >= 0) {
+        variantsPayload[defIdx] = {
+          ...variantsPayload[defIdx],
+          price: mainPrice,
+          stock: mainStock,
+        };
+      }
       const payload: any = {
         name: form.name,
-        price: parseFloat(form.price) || 0,
+        price: mainPrice,
         original_price:
           form.original_price === "" || !Number.isFinite(opNum) ? null : opNum,
         sales_count: Number.isFinite(scNum) ? scNum : 0,
-        stock: parseInt(form.stock) || 0,
-        points: parseInt(form.points) || 0,
+        stock: mainStock,
+        points: parseInt(form.points, 10) || 0,
         category_id: form.category_id || null,
-        sort_order: parseInt(form.sort_order) || 0,
+        sort_order: parseInt(form.sort_order, 10) || 0,
         description: form.description,
         cover_image: form.cover_image,
         images: form.images,
@@ -113,6 +171,7 @@ export default function AdminProductForm() {
         is_hot: form.is_hot,
         is_new: form.is_new,
         is_recommended: form.is_recommended,
+        variants: variantsPayload,
       };
       if (isNew) {
         await createProduct(payload);
@@ -126,6 +185,21 @@ export default function AdminProductForm() {
       toast.error(toastErrorMessage(e, "保存失败，请重试"));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (isNew || !id) return;
+    if (!window.confirm(`确定删除商品「${form.name || id}」？删除后可在「回收站」恢复。`)) return;
+    setDeleting(true);
+    try {
+      await deleteProduct(id);
+      toast.success("已删除");
+      navigate("/admin/products");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "删除失败"));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -252,6 +326,153 @@ export default function AdminProductForm() {
           </div>
 
           <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-foreground">规格 / SKU</h3>
+              <button
+                type="button"
+                onClick={() =>
+                  setForm((f) => ({
+                    ...f,
+                    variants: [
+                      ...f.variants,
+                      {
+                        title: "",
+                        sku_code: "",
+                        price: f.price || "0",
+                        stock: f.stock || "0",
+                        sort_order: f.variants.length,
+                        is_default: false,
+                      },
+                    ],
+                  }))
+                }
+                className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary"
+              >
+                <Plus size={14} /> 添加规格
+              </button>
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              默认规格与上方主售价、库存保持一致（保存时写入主档）。其它规格价格仅作后台记录，前台下单仍以主档为准。
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[520px] text-xs">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="pb-2 pr-2 w-10">默认</th>
+                    <th className="pb-2 pr-2">规格名</th>
+                    <th className="pb-2 pr-2">SKU</th>
+                    <th className="pb-2 pr-2">价格</th>
+                    <th className="pb-2 pr-2">库存</th>
+                    <th className="pb-2 w-10" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {form.variants.map((v, idx) => (
+                    <tr key={`${v.id || "n"}-${idx}`} className="border-b border-border/60">
+                      <td className="py-2 pr-2 align-middle">
+                        <input
+                          type="radio"
+                          name="default-variant"
+                          checked={v.is_default}
+                          onChange={() =>
+                            setForm((f) => ({
+                              ...f,
+                              variants: f.variants.map((row, j) => ({ ...row, is_default: j === idx })),
+                            }))
+                          }
+                          className="accent-gold"
+                        />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <input
+                          value={v.title}
+                          onChange={(e) => {
+                            const t = e.target.value;
+                            setForm((f) => {
+                              const nv = [...f.variants];
+                              nv[idx] = { ...nv[idx], title: t };
+                              return { ...f, variants: nv };
+                            });
+                          }}
+                          placeholder="如：标准版"
+                          className="w-full min-w-[96px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
+                        />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <input
+                          value={v.sku_code}
+                          onChange={(e) => {
+                            const t = e.target.value;
+                            setForm((f) => {
+                              const nv = [...f.variants];
+                              nv[idx] = { ...nv[idx], sku_code: t };
+                              return { ...f, variants: nv };
+                            });
+                          }}
+                          placeholder="可选"
+                          className="w-full min-w-[80px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
+                        />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <input
+                          type="number"
+                          value={v.is_default ? form.price : v.price}
+                          disabled={v.is_default}
+                          onChange={(e) => {
+                            if (v.is_default) return;
+                            const t = e.target.value;
+                            setForm((f) => {
+                              const nv = [...f.variants];
+                              nv[idx] = { ...nv[idx], price: t };
+                              return { ...f, variants: nv };
+                            });
+                          }}
+                          className="w-full min-w-[72px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none disabled:opacity-60"
+                        />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <input
+                          type="number"
+                          value={v.is_default ? form.stock : v.stock}
+                          disabled={v.is_default}
+                          onChange={(e) => {
+                            if (v.is_default) return;
+                            const t = e.target.value;
+                            setForm((f) => {
+                              const nv = [...f.variants];
+                              nv[idx] = { ...nv[idx], stock: t };
+                              return { ...f, variants: nv };
+                            });
+                          }}
+                          className="w-full min-w-[64px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none disabled:opacity-60"
+                        />
+                      </td>
+                      <td className="py-2 align-middle">
+                        <button
+                          type="button"
+                          disabled={form.variants.length <= 1}
+                          onClick={() => {
+                            setForm((f) => {
+                              if (f.variants.length <= 1) return f;
+                              const nv = f.variants.filter((_, j) => j !== idx);
+                              if (!nv.some((r) => r.is_default)) nv[0] = { ...nv[0], is_default: true };
+                              return { ...f, variants: nv };
+                            });
+                          }}
+                          className="text-destructive disabled:opacity-30"
+                          title="删除此行"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
             <h3 className="text-sm font-semibold text-foreground">商品描述</h3>
             <textarea
               rows={4}
@@ -266,8 +487,22 @@ export default function AdminProductForm() {
         <div className="space-y-4">
           <div className="rounded-xl border border-border bg-card p-6 space-y-3">
             <h3 className="text-sm font-semibold text-foreground">状态设置</h3>
+            <div className="rounded-lg border border-border p-3">
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">销售状态</label>
+              <select
+                value={form.status}
+                onChange={(e) =>
+                  setForm({ ...form, status: e.target.value as "draft" | "active" | "inactive" })
+                }
+                className="w-full rounded-lg bg-secondary px-3 py-2.5 text-sm text-foreground outline-none"
+              >
+                <option value="draft">草稿（前台不可见）</option>
+                <option value="active">上架</option>
+                <option value="inactive">下架</option>
+              </select>
+              <p className="mt-1 text-[10px] text-muted-foreground">草稿可用于先录入资料，确认后再上架。</p>
+            </div>
             {[
-              { label: "上架", desc: "商品在前台可见", key: "status", isStatus: true },
               { label: "热门", desc: "显示热门标签", key: "is_hot" },
               { label: "新品", desc: "显示新品标签", key: "is_new" },
               { label: "推荐", desc: "首页推荐展示", key: "is_recommended" },
@@ -280,13 +515,9 @@ export default function AdminProductForm() {
                 <input
                   type="checkbox"
                   className="accent-gold"
-                  checked={t.isStatus ? form.status === "active" : !!(form as any)[t.key]}
+                  checked={!!(form as any)[t.key]}
                   onChange={(e) => {
-                    if (t.isStatus) {
-                      setForm({ ...form, status: e.target.checked ? "active" : "inactive" });
-                    } else {
-                      setForm({ ...form, [t.key]: e.target.checked });
-                    }
+                    setForm({ ...form, [t.key]: e.target.checked });
                   }}
                 />
               </label>
@@ -311,6 +542,17 @@ export default function AdminProductForm() {
               {saving ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "保存"}
             </button>
             <button disabled={saving} onClick={() => handleSave(true)} className="w-full rounded-lg border border-gold bg-gold/10 px-6 py-3 text-sm font-semibold text-gold disabled:opacity-50">保存并上架</button>
+            {!isNew && (
+              <button
+                type="button"
+                disabled={deleting || saving}
+                onClick={handleDelete}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-destructive/40 px-6 py-3 text-sm font-semibold text-destructive disabled:opacity-50 hover:bg-destructive/10"
+              >
+                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 size={16} />}
+                删除商品
+              </button>
+            )}
             <button onClick={goBack} className="w-full rounded-lg border border-border px-6 py-3 text-sm text-muted-foreground">取消</button>
           </div>
         </div>

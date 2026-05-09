@@ -3,7 +3,15 @@ const { BusinessError } = require('../../errors/BusinessError');
 const { logAdminAction } = require('../../utils/adminAudit');
 const { rowsToCsv, parseCsv, parseBool } = require('../../utils/csv');
 const repo = require('./adminProduct.repository');
+const variantRepo = require('./adminProductVariant.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
+const {
+  LIFECYCLE,
+  lifecycleFromBody,
+  lifecycleFromFilter,
+  statusVarcharFromLifecycle,
+  normalizeLifecycleFromRow,
+} = require('../product/productLifecycle');
 
 function buildListWhere(query) {
   let where = 'WHERE deleted_at IS NULL';
@@ -18,10 +26,74 @@ function buildListWhere(query) {
     params.push(category_id);
   }
   if (status) {
-    where += ' AND status = ?';
-    params.push(status);
+    const lc = lifecycleFromFilter(status);
+    if (lc !== null) {
+      where += ' AND lifecycle_status = ?';
+      params.push(lc);
+    } else {
+      where += ' AND status = ?';
+      params.push(status);
+    }
   }
   return { where, params };
+}
+
+function formatVariantRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    sku_code: row.sku_code,
+    title: row.title || '',
+    price: parseFloat(row.price),
+    stock: row.stock,
+    sort_order: row.sort_order,
+    is_default: !!row.is_default,
+  };
+}
+
+function normalizeVariantPayloadForDb(variants, genId, mainPrice, mainStock) {
+  const price = Number(mainPrice) || 0;
+  const stock = Number.isFinite(Number(mainStock)) ? Number(mainStock) : 0;
+  if (!variants || variants.length === 0) {
+    return [{
+      id: genId(),
+      sku_code: null,
+      title: '',
+      price,
+      stock,
+      sort_order: 0,
+      is_default: 1,
+    }];
+  }
+  const rows = variants.map((v, i) => ({
+    id: v.id && typeof v.id === 'string' ? v.id : genId(),
+    sku_code: v.sku_code ?? null,
+    title: (v.title != null ? String(v.title) : '') || '',
+    price: Number(v.price),
+    stock: Number(v.stock),
+    sort_order: v.sort_order != null ? Number(v.sort_order) : i,
+    is_default: v.is_default ? 1 : 0,
+  }));
+  if (!rows.some((r) => r.is_default) && rows.length) rows[0].is_default = 1;
+  let seen = false;
+  return rows.map((r) => {
+    if (r.is_default && !seen) {
+      seen = true;
+      return { ...r, is_default: 1 };
+    }
+    return { ...r, is_default: 0 };
+  });
+}
+
+async function syncProductPriceStockFromDefaultVariant(productId) {
+  const rows = await variantRepo.selectVariantsByProductId(productId);
+  const def = rows.find((r) => r.is_default) || rows[0];
+  if (!def) return;
+  await repo.updateProductDynamic(
+    ['price = ?', 'stock = ?'],
+    [def.price, def.stock],
+    productId,
+  );
 }
 
 async function listProducts(query) {
@@ -43,18 +115,28 @@ async function listProducts(query) {
 async function getProductById(id) {
   const row = await repo.selectProductById(id);
   if (!row) throw new BusinessError(404, '商品不存在');
-  return { data: formatProduct(row) };
+  const variants = await variantRepo.selectVariantsByProductId(id);
+  return {
+    data: {
+      ...formatProduct(row),
+      variants: variants.map(formatVariantRow),
+    },
+  };
 }
 
 async function createProduct(body, adminUserId, req) {
   const {
     name, cover_image, images, price, original_price, sales_count,
-    points, category_id, stock, status, sort_order,
+    points, category_id, stock, sort_order,
     description, is_recommended, is_new, is_hot,
+    variants,
   } = body;
-  if (!name || !price) throw new BusinessError(400, '名称和价格必填');
+
+  const lcResolved = lifecycleFromBody(body) ?? LIFECYCLE.ON_SHELF;
+  const statusStr = statusVarcharFromLifecycle(lcResolved);
 
   const id = generateId();
+  const variantRows = normalizeVariantPayloadForDb(variants, generateId, price, stock);
   try {
     await repo.insertProduct({
       id,
@@ -69,14 +151,18 @@ async function createProduct(body, adminUserId, req) {
       points: points || 0,
       category_id: category_id || '',
       stock: stock || 0,
-      status: status || 'active',
+      status: statusStr,
+      lifecycle_status: lcResolved,
       sort_order: sort_order || 0,
       description: description || '',
       is_recommended: is_recommended ? 1 : 0,
       is_new: is_new ? 1 : 0,
       is_hot: is_hot ? 1 : 0,
     });
+    await variantRepo.replaceProductVariants(id, variantRows);
+    await syncProductPriceStockFromDefaultVariant(id);
     const row = await repo.selectProductById(id);
+    const vrows = await variantRepo.selectVariantsByProductId(id);
     await logAdminAction(adminUserId, '创建商品', name);
     await writeAuditLog({
       req,
@@ -85,10 +171,13 @@ async function createProduct(body, adminUserId, req) {
       objectType: 'product',
       objectId: id,
       summary: `创建商品 ${name}`,
-      after: { name, price, stock: stock || 0, status: status || 'active' },
+      after: { name, price, stock: stock || 0, lifecycle_status: lcResolved, status: statusStr },
       result: 'success',
     });
-    return { data: formatProduct(row), message: '创建成功' };
+    return {
+      data: { ...formatProduct(row), variants: vrows.map(formatVariantRow) },
+      message: '创建成功',
+    };
   } catch (err) {
     await writeAuditLog({
       req,
@@ -112,20 +201,26 @@ async function updateProduct(id, body, adminUserId, req) {
     price: parseFloat(beforeRow.price),
     stock: beforeRow.stock,
     status: beforeRow.status,
+    lifecycle_status: normalizeLifecycleFromRow(beforeRow),
   };
 
   try {
     const fields = [];
     const values = [];
     const allowedFields = ['name', 'cover_image', 'price', 'points', 'category_id', 'stock',
-      'status', 'sort_order', 'description', 'sales_count'];
+      'sort_order', 'description', 'sales_count'];
     for (const f of allowedFields) {
       if (body[f] !== undefined) {
         fields.push(`${f} = ?`);
         values.push(body[f]);
       }
     }
-    // original_price 单独处理：允许显式置空
+    if (body.lifecycle_status !== undefined || body.status !== undefined) {
+      const lc = lifecycleFromBody(body);
+      if (lc === null) throw new BusinessError(400, '状态无效');
+      fields.push('lifecycle_status = ?', 'status = ?');
+      values.push(lc, statusVarcharFromLifecycle(lc));
+    }
     if (body.original_price !== undefined) {
       const op = body.original_price;
       fields.push('original_price = ?');
@@ -141,10 +236,32 @@ async function updateProduct(id, body, adminUserId, req) {
         values.push(body[bool] ? 1 : 0);
       }
     }
-    if (fields.length === 0) throw new BusinessError(400, '没有需要更新的字段');
+    const hasVariantUpdate = body.variants !== undefined;
+    if (fields.length === 0 && !hasVariantUpdate) throw new BusinessError(400, '没有需要更新的字段');
 
-    await repo.updateProductDynamic(fields, values, id);
+    if (fields.length > 0) {
+      await repo.updateProductDynamic(fields, values, id);
+    }
+    if (hasVariantUpdate) {
+      const row = await repo.selectProductById(id);
+      const variantRows = normalizeVariantPayloadForDb(
+        body.variants,
+        generateId,
+        row.price,
+        row.stock,
+      );
+      await variantRepo.replaceProductVariants(id, variantRows);
+      await syncProductPriceStockFromDefaultVariant(id);
+    } else if (body.price !== undefined || body.stock !== undefined) {
+      const row = await repo.selectProductById(id);
+      await variantRepo.updateDefaultVariantPriceStock(
+        id,
+        Number(row.price),
+        Number(row.stock),
+      );
+    }
     const row = await repo.selectProductById(id);
+    const vrows = await variantRepo.selectVariantsByProductId(id);
     await writeAuditLog({
       req,
       operatorId: adminUserId,
@@ -158,10 +275,14 @@ async function updateProduct(id, body, adminUserId, req) {
         price: parseFloat(row.price),
         stock: row.stock,
         status: row.status,
+        lifecycle_status: normalizeLifecycleFromRow(row),
       },
       result: 'success',
     });
-    return { data: formatProduct(row), message: '更新成功' };
+    return {
+      data: { ...formatProduct(row), variants: vrows.map(formatVariantRow) },
+      message: '更新成功',
+    };
   } catch (err) {
     await writeAuditLog({
       req,
@@ -176,6 +297,35 @@ async function updateProduct(id, body, adminUserId, req) {
     });
     throw err;
   }
+}
+
+async function patchProductLifecycle(id, lifecycleStatus, adminUserId, req) {
+  const beforeRow = await repo.selectProductById(id);
+  if (!beforeRow) throw new BusinessError(404, '商品不存在');
+  const beforeLc = normalizeLifecycleFromRow(beforeRow);
+  const st = statusVarcharFromLifecycle(lifecycleStatus);
+  await repo.updateProductDynamic(
+    ['lifecycle_status = ?', 'status = ?'],
+    [lifecycleStatus, st],
+    id,
+  );
+  const row = await repo.selectProductById(id);
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'product.patch_status',
+    objectType: 'product',
+    objectId: id,
+    summary: `调整商品生命周期 ${row.name}`,
+    before: { lifecycle_status: beforeLc },
+    after: { lifecycle_status: lifecycleStatus, status: st },
+    result: 'success',
+  });
+  const vrows = await variantRepo.selectVariantsByProductId(id);
+  return {
+    data: { ...formatProduct(row), variants: vrows.map(formatVariantRow) },
+    message: '状态已更新',
+  };
 }
 
 async function deleteProduct(id, adminUserId, req) {
@@ -210,9 +360,16 @@ async function deleteProduct(id, adminUserId, req) {
 
 const EXPORT_HEADERS = [
   'id', 'name', 'price', 'original_price', 'sales_count', 'stock', 'category_id',
-  'cover_image', 'status', 'sort_order',
+  'cover_image', 'status', 'lifecycle_status', 'sort_order',
   'description', 'points', 'is_recommended', 'is_new', 'is_hot', 'images',
 ];
+
+function csvStatusToLifecycle(statusRaw) {
+  const t = String(statusRaw || 'active').trim().toLowerCase();
+  if (t === 'draft') return { lifecycle_status: 0, status: 'draft' };
+  if (t === 'inactive') return { lifecycle_status: 2, status: 'inactive' };
+  return { lifecycle_status: 1, status: 'active' };
+}
 
 async function exportProductsCsv(query) {
   const { where, params } = buildListWhere(query);
@@ -222,6 +379,7 @@ async function exportProductsCsv(query) {
     if (r.images == null) imagesStr = '';
     else if (typeof r.images === 'string') imagesStr = r.images;
     else imagesStr = JSON.stringify(r.images);
+    const lc = normalizeLifecycleFromRow(r);
     return {
       id: r.id,
       name: r.name,
@@ -231,7 +389,8 @@ async function exportProductsCsv(query) {
       stock: r.stock,
       category_id: r.category_id || '',
       cover_image: r.cover_image || '',
-      status: r.status || 'active',
+      status: statusVarcharFromLifecycle(lc),
+      lifecycle_status: lc,
       sort_order: r.sort_order ?? 0,
       description: (r.description || '').replace(/\r\n/g, '\n'),
       points: r.points ?? 0,
@@ -277,6 +436,8 @@ async function importProductsCsv(text, adminUserId) {
       ? parseInt(row.sales_count, 10)
       : 0;
 
+    const { lifecycle_status: lc, status: st } = csvStatusToLifecycle(row.status);
+
     const payload = {
       name,
       cover_image: (row.cover_image || '').trim(),
@@ -287,7 +448,8 @@ async function importProductsCsv(text, adminUserId) {
       points: Number.isFinite(points) ? points : 0,
       category_id: (row.category_id || '').trim(),
       stock: Number.isFinite(stock) ? stock : 0,
-      status: (row.status || 'active').trim() || 'active',
+      status: st,
+      lifecycle_status: lc,
       sort_order: Number.isFinite(sortOrder) ? sortOrder : 0,
       description: (row.description || '').trim(),
       is_recommended: parseBool(row.is_recommended),
@@ -317,12 +479,16 @@ async function importProductsCsv(text, adminUserId) {
           category_id: payload.category_id,
           stock: payload.stock,
           status: payload.status,
+          lifecycle_status: payload.lifecycle_status,
           sort_order: payload.sort_order,
           description: payload.description,
           is_recommended: payload.is_recommended ? 1 : 0,
           is_new: payload.is_new ? 1 : 0,
           is_hot: payload.is_hot ? 1 : 0,
         });
+        const variantRows = normalizeVariantPayloadForDb(null, generateId, payload.price, payload.stock);
+        await variantRepo.replaceProductVariants(id, variantRows);
+        await syncProductPriceStockFromDefaultVariant(id);
         created += 1;
       }
     } else {
@@ -339,12 +505,16 @@ async function importProductsCsv(text, adminUserId) {
         category_id: payload.category_id,
         stock: payload.stock,
         status: payload.status,
+        lifecycle_status: payload.lifecycle_status,
         sort_order: payload.sort_order,
         description: payload.description,
         is_recommended: payload.is_recommended ? 1 : 0,
         is_new: payload.is_new ? 1 : 0,
         is_hot: payload.is_hot ? 1 : 0,
       });
+      const variantRows = normalizeVariantPayloadForDb(null, generateId, payload.price, payload.stock);
+      await variantRepo.replaceProductVariants(newId, variantRows);
+      await syncProductPriceStockFromDefaultVariant(newId);
       created += 1;
     }
   }
@@ -358,18 +528,22 @@ async function importProductsCsv(text, adminUserId) {
 
 async function batchUpdateStatus(ids, status, adminUserId, req) {
   if (!Array.isArray(ids) || ids.length === 0) return { error: { code: 400, message: '请选择商品' } };
-  if (!['active', 'inactive'].includes(status)) return { error: { code: 400, message: '状态无效' } };
-  await repo.batchUpdateStatus(ids, status);
+  const lcMap = { active: 1, inactive: 2, draft: 0 };
+  const lc = lcMap[status];
+  if (lc === undefined) return { error: { code: 400, message: '状态无效' } };
+  const st = statusVarcharFromLifecycle(lc);
+  await repo.batchUpdateStatus(ids, st, lc);
+  const verb = { active: '上架', inactive: '下架', draft: '设为草稿' }[status];
   await writeAuditLog({
     req, operatorId: adminUserId,
     actionType: 'product.batch_status',
     objectType: 'product',
     objectId: ids.join(','),
-    summary: `批量${status === 'active' ? '上架' : '下架'} ${ids.length} 个商品`,
-    after: { status, count: ids.length },
+    summary: `批量${verb} ${ids.length} 个商品`,
+    after: { status: st, lifecycle_status: lc, count: ids.length },
     result: 'success',
   });
-  return { message: `已${status === 'active' ? '上架' : '下架'} ${ids.length} 个商品` };
+  return { message: `已${verb} ${ids.length} 个商品` };
 }
 
 module.exports = {
@@ -377,6 +551,7 @@ module.exports = {
   getProductById,
   createProduct,
   updateProduct,
+  patchProductLifecycle,
   deleteProduct,
   exportProductsCsv,
   importProductsCsv,

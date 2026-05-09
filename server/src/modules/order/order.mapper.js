@@ -11,6 +11,7 @@ function formatOrderItem(row) {
       points: row.points,
       category_id: '',
       stock: 0,
+      lifecycle_status: 1,
       status: 'active',
       sort_order: 0,
       description: '',

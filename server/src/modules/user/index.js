@@ -22,7 +22,7 @@ router.use('/upload', require('./upload.routes'));
 router.use('/theme', require('./theme.routes'));
 
 // Cross-module public API (do not import internal files directly from other modules)
-router.api = {
+/** @type {any} */ (router).api = {
   settleOrderPoints: pointsService.settleOrderPoints,
   reverseOrderPoints: pointsService.reverseOrderPoints,
   settleOrderRewards: rewardService.settleOrderRewards,

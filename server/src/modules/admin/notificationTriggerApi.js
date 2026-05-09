@@ -6,4 +6,5 @@ const notificationTriggerSettings = require('./notificationTriggerSettings.servi
 
 module.exports = {
   isNotificationTriggerEnabled: notificationTriggerSettings.isNotificationTriggerEnabled,
+  getResolvedTriggerCopy: notificationTriggerSettings.getResolvedTriggerCopy,
 };

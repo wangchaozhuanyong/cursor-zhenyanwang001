@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect } from "react";
-import { Plus, Eye, EyeOff, Pencil, Loader2, FolderTree, Tags, Download, Upload } from "lucide-react";
+import { useEffect, useLayoutEffect, useState } from "react";
+import { Plus, Eye, EyeOff, Pencil, Loader2, FolderTree, Tags, Download, Upload, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
@@ -24,6 +24,7 @@ export default function AdminProducts() {
   const applyProductStatus = useAdminProductsStore((s) => s.applyProductStatus);
   const applyStatusToIds = useAdminProductsStore((s) => s.applyStatusToIds);
   const replaceProducts = useAdminProductsStore((s) => s.replaceProducts);
+  const removeProductsByIds = useAdminProductsStore((s) => s.removeProductsByIds);
   const resetProductsStore = useAdminProductsStore((s) => s.reset);
 
   useLayoutEffect(() => {
@@ -36,16 +37,28 @@ export default function AdminProducts() {
 
   useEffect(() => () => resetProductsStore(), [resetProductsStore]);
 
-  const filteredProducts = products.filter((p) =>
-    !search || p.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const [statusFilter, setStatusFilter] = useState<ProductStatus | "">("");
+
+  const statusBadge = (p: Product) => {
+    if (p.status === "active") return { cls: "bg-green-500/10 text-green-600", text: "上架" };
+    if (p.status === "draft") return { cls: "bg-amber-500/10 text-amber-800 dark:text-amber-200", text: "草稿" };
+    return { cls: "bg-muted text-muted-foreground", text: "下架" };
+  };
+
+  const filteredProducts = products.filter((p) => {
+    const okName = !search || p.name?.toLowerCase().includes(search.toLowerCase());
+    const okStatus = !statusFilter || p.status === statusFilter;
+    return okName && okStatus;
+  });
   const { page, pageSize, setPage, setPageSize, paginatedData, total } = usePagination(filteredProducts, 10);
 
   const batchToggleStatus = async (status: string) => {
     try {
       await Promise.all(selected.map((id) => productService.updateProduct(id, { status })));
       applyStatusToIds(selected, status as ProductStatus);
-      toast.success(`已将 ${selected.length} 个商品${status === "active" ? "上架" : "下架"}`);
+      toast.success(
+        `已将 ${selected.length} 个商品${status === "active" ? "上架" : status === "draft" ? "设为草稿" : "下架"}`
+      );
     } catch (e) {
       toast.error(toastErrorMessage(e, "操作失败"));
     }
@@ -87,6 +100,17 @@ export default function AdminProducts() {
     }
   };
 
+  const handleDeleteProduct = async (id: string, name: string) => {
+    if (!window.confirm(`确定删除商品「${name}」？删除后可在「回收站」恢复。`)) return;
+    try {
+      await productService.deleteProduct(id);
+      removeProductsByIds([id]);
+      toast.success("已删除");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "删除失败"));
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -100,6 +124,17 @@ export default function AdminProducts() {
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="min-w-0 flex-1"><SearchBar placeholder="搜索商品名称..." value={search} onChange={(v) => { setSearch(v); setPage(1); }} /></div>
         <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value as ProductStatus | ""); setPage(1); }}
+            className="touch-manipulation min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-sm text-foreground outline-none"
+            aria-label="按状态筛选"
+          >
+            <option value="">全部状态</option>
+            <option value="draft">草稿</option>
+            <option value="active">上架</option>
+            <option value="inactive">下架</option>
+          </select>
           <button type="button" onClick={() => navigate("/admin/categories")} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded border border-[var(--theme-border)] px-4 py-2.5 text-sm text-foreground hover:bg-[var(--theme-bg)]"><FolderTree size={16} /> 分类</button>
           <button type="button" onClick={() => navigate("/admin/tags")} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded border border-[var(--theme-border)] px-4 py-2.5 text-sm text-foreground hover:bg-[var(--theme-bg)]"><Tags size={16} /> 标签</button>
           <PermissionGate permission="product.view">
@@ -124,6 +159,7 @@ export default function AdminProducts() {
             <span className="h-4 w-px bg-border" />
             <button type="button" onClick={() => batchToggleStatus("active")} className="touch-manipulation flex min-h-[40px] items-center gap-1 theme-rounded border border-[var(--theme-border)] px-3 py-2 text-xs text-foreground hover:bg-[var(--theme-bg)]"><Eye size={14} /> 批量上架</button>
             <button type="button" onClick={() => batchToggleStatus("inactive")} className="touch-manipulation flex min-h-[40px] items-center gap-1 theme-rounded border border-[var(--theme-border)] px-3 py-2 text-xs text-foreground hover:bg-[var(--theme-bg)]"><EyeOff size={14} /> 批量下架</button>
+            <button type="button" onClick={() => batchToggleStatus("draft")} className="touch-manipulation flex min-h-[40px] items-center gap-1 theme-rounded border border-[var(--theme-border)] px-3 py-2 text-xs text-foreground hover:bg-[var(--theme-bg)]">草稿</button>
           </div>
         </PermissionGate>
       )}
@@ -141,22 +177,31 @@ export default function AdminProducts() {
                 <p className="font-medium leading-snug text-foreground">{p.name}</p>
                 <p className="mt-1 text-sm text-muted-foreground">RM <span className="text-[var(--theme-price)]">{p.price}</span> · 库存 {p.stock === 0 ? <span className="text-destructive">缺货</span> : p.stock}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.status === "active" ? "bg-green-500/10 text-green-600" : "bg-muted text-muted-foreground"}`}>
-                    {p.status === "active" ? "上架" : "下架"}
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge(p).cls}`}>
+                    {statusBadge(p).text}
                   </span>
                   {p.is_hot && <span className="rounded bg-red-500/10 px-2 py-0.5 text-xs text-red-500">热门</span>}
                   {p.is_new && <span className="rounded bg-blue-500/10 px-2 py-0.5 text-xs text-blue-500">新品</span>}
                 </div>
-                <div className="mt-3 flex gap-2">
+                <div className="mt-3 flex flex-wrap gap-2">
                   <PermissionGate permission="product.manage">
-                    <button type="button" onClick={() => navigate(`/admin/products/${p.id}`)} className="touch-manipulation flex min-h-[44px] flex-1 items-center justify-center gap-1 theme-rounded border border-[var(--theme-border)] py-2 text-sm font-medium text-foreground active:bg-[var(--theme-bg)]">
+                    <button type="button" onClick={() => navigate(`/admin/products/${p.id}`)} className="touch-manipulation flex min-h-[44px] min-w-[calc(50%-4px)] flex-1 items-center justify-center gap-1 theme-rounded border border-[var(--theme-border)] py-2 text-sm font-medium text-foreground active:bg-[var(--theme-bg)]">
                       <Pencil size={16} /> 编辑
                     </button>
                   </PermissionGate>
                   <PermissionGate permission="product.manage">
-                    <button type="button" onClick={() => toggleSingleStatus(p.id)} className="touch-manipulation flex min-h-[44px] flex-1 items-center justify-center gap-1 theme-rounded border border-[var(--theme-border)] py-2 text-sm active:bg-[var(--theme-bg)]">
+                    <button type="button" onClick={() => toggleSingleStatus(p.id)} className="touch-manipulation flex min-h-[44px] min-w-[calc(50%-4px)] flex-1 items-center justify-center gap-1 theme-rounded border border-[var(--theme-border)] py-2 text-sm active:bg-[var(--theme-bg)]">
                       {p.status === "active" ? <EyeOff size={16} /> : <Eye size={16} />}
                       {p.status === "active" ? "下架" : "上架"}
+                    </button>
+                  </PermissionGate>
+                  <PermissionGate permission="product.manage">
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteProduct(p.id, p.name || p.id)}
+                      className="touch-manipulation flex min-h-[44px] w-full min-w-[calc(50%-4px)] flex-1 items-center justify-center gap-1 theme-rounded border border-destructive/30 py-2 text-sm text-destructive active:bg-destructive/10 sm:w-auto"
+                    >
+                      <Trash2 size={16} /> 删除
                     </button>
                   </PermissionGate>
                 </div>
@@ -193,8 +238,8 @@ export default function AdminProducts() {
                 <td className="px-4 py-3 text-foreground">RM {p.price}</td>
                 <td className="px-4 py-3 text-foreground">{p.stock === 0 ? <span className="text-destructive">缺货</span> : p.stock}</td>
                 <td className="px-4 py-3">
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${p.status === "active" ? "bg-green-500/10 text-green-500" : "bg-muted text-muted-foreground"}`}>
-                    {p.status === "active" ? "上架" : "下架"}
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusBadge(p).cls}`}>
+                    {statusBadge(p).text}
                   </span>
                 </td>
                 <td className="px-4 py-3">
@@ -213,6 +258,16 @@ export default function AdminProducts() {
                     <PermissionGate permission="product.manage">
                       <button type="button" onClick={() => toggleSingleStatus(p.id)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-2 text-muted-foreground hover:bg-[var(--theme-bg)]">
                         {p.status === "active" ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </PermissionGate>
+                    <PermissionGate permission="product.manage">
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteProduct(p.id, p.name || p.id)}
+                        className="touch-manipulation theme-rounded border border-destructive/30 p-2 text-destructive hover:bg-destructive/10"
+                        title="删除"
+                      >
+                        <Trash2 size={14} />
                       </button>
                     </PermissionGate>
                   </div>

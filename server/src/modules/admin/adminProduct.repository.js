@@ -30,19 +30,21 @@ async function insertProduct(params) {
   const {
     id, name, cover_image, imagesJson, price, original_price, sales_count,
     points, category_id, stock,
-    status, sort_order, description, is_recommended, is_new, is_hot,
+    status, lifecycle_status, sort_order, description, is_recommended, is_new, is_hot,
   } = params;
   await db.query(
     `INSERT INTO products (id, name, cover_image, images, price, original_price, sales_count,
       points, category_id, stock,
-      status, sort_order, description, is_recommended, is_new, is_hot)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      status, lifecycle_status, sort_order, description, is_recommended, is_new, is_hot)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id, name, cover_image, imagesJson, price,
       original_price ?? null,
       Number.isFinite(sales_count) ? sales_count : 0,
       points, category_id, stock,
-      status, sort_order, description, is_recommended, is_new, is_hot,
+      status,
+      lifecycle_status ?? 1,
+      sort_order, description, is_recommended, is_new, is_hot,
     ],
   );
 }
@@ -59,10 +61,13 @@ async function restoreProductById(id) {
   await db.query('UPDATE products SET deleted_at = NULL, deleted_by = NULL WHERE id = ?', [id]);
 }
 
-async function batchUpdateStatus(ids, status) {
+async function batchUpdateStatus(ids, status, lifecycleStatus) {
   if (!ids.length) return;
   const placeholders = ids.map(() => '?').join(',');
-  await db.query(`UPDATE products SET status = ? WHERE id IN (${placeholders})`, [status, ...ids]);
+  await db.query(
+    `UPDATE products SET status = ?, lifecycle_status = ? WHERE id IN (${placeholders})`,
+    [status, lifecycleStatus, ...ids],
+  );
 }
 
 module.exports = {

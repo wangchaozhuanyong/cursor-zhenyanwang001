@@ -1,10 +1,12 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { getActiveTheme, getThemeSkins } from "@/api/admin/theme";
 import type { ThemeConfig } from "@/types/theme";
 import { generateThemePalette } from "@/utils/themeContrast";
+import { normalizeMediaUrls } from "@/utils/mediaUrl";
 import { toast } from "sonner";
+import { toastErrorMessage } from "@/utils/errorMessage";
+import { THEME_REVISION_KEY } from "@/lib/themeRevision";
 
 type ThemeMode = "light" | "dark";
 
@@ -43,56 +45,109 @@ type ThemeContextValue = {
 
 const ThemeRuntimeContext = createContext<ThemeContextValue | null>(null);
 
+type LoadOpts = { silent?: boolean };
+
 export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   const [themeConfig, setThemeConfig] = useState<ThemeConfig>(DEFAULT_THEME_CONFIG);
   const [skins, setSkins] = useState<ThemeSkin[]>([]);
   const [skinId, setSkinIdState] = useState<string>("default");
 
-  useEffect(() => {
-    // 1) Prefer v2 skin endpoint
-    getThemeSkins()
-      .then((res) => {
-        const data = res?.data;
-        const remoteSkins = Array.isArray(data?.skins) ? data.skins : null;
-        const remoteDefaultId = typeof data?.defaultSkinId === "string" ? data.defaultSkinId : null;
+  const loadTheme = useCallback(async (opts?: LoadOpts) => {
+    const BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
-        if (!remoteSkins || remoteSkins.length === 0) throw new Error("empty skins");
-
-        setSkins(remoteSkins);
-
-        const saved = typeof window !== "undefined" ? localStorage.getItem(SKIN_STORAGE_KEY) : null;
-        const isManual = typeof window !== "undefined" && localStorage.getItem(SKIN_MANUAL_KEY) === "1";
-        const chosen =
-          (isManual && saved && remoteSkins.some((s) => s.id === saved) ? saved : null) ||
-          (remoteDefaultId && remoteSkins.some((s) => s.id === remoteDefaultId) ? remoteDefaultId : null) ||
-          remoteSkins[0]?.id ||
-          "default";
-
-        setSkinIdState(chosen);
-        const chosenSkin = remoteSkins.find((s) => s.id === chosen) || remoteSkins[0];
-        if (chosenSkin?.config) setThemeConfig((prev) => ({ ...prev, ...chosenSkin.config }));
-      })
-      .catch(() => {
-        // 2) Backward compatible: fallback to legacy /theme/active
-        getActiveTheme()
-          .then((res) => {
-            if (res?.data) {
-              const fallbackConfig = { ...DEFAULT_THEME_CONFIG, ...res.data };
-              setThemeConfig(fallbackConfig);
-              setSkins([{ id: "default", name: "默认皮肤", config: fallbackConfig }]);
-              setSkinIdState("default");
-            }
-          })
-          .catch(() => {
-            toast.error("皮肤加载失败，请稍后重试");
-          });
+    const readJson = async (path: string) => {
+      const res = await fetch(`${BASE}${path}`, {
+        cache: "no-store",
+        credentials: "same-origin",
+        headers: { Accept: "application/json" },
       });
+      if (!res.ok) throw new Error(`请求失败 (${res.status})`);
+      const body = (await res.json()) as {
+        code?: number;
+        message?: string;
+        data?: unknown;
+        traceId?: string;
+      };
+      if (typeof body.code === "number" && body.code !== 0) {
+        const msg = typeof body.message === "string" ? body.message : "加载失败";
+        const tid = typeof body.traceId === "string" ? body.traceId : "";
+        throw new Error(tid ? `${msg}（追踪ID：${tid}）` : msg);
+      }
+      return body;
+    };
+
+    try {
+      const body = await readJson("/theme/skins");
+      const raw = body.data as { defaultSkinId?: string; skins?: ThemeSkin[] } | undefined;
+      if (!raw || !Array.isArray(raw.skins) || raw.skins.length === 0) throw new Error("empty skins");
+
+      const data = normalizeMediaUrls(raw, BASE) as { defaultSkinId?: string; skins: ThemeSkin[] };
+      const remoteSkins = data.skins;
+      const remoteDefaultId = typeof data.defaultSkinId === "string" ? data.defaultSkinId : null;
+
+      setSkins(remoteSkins);
+
+      const saved = typeof window !== "undefined" ? localStorage.getItem(SKIN_STORAGE_KEY) : null;
+      const isManual = typeof window !== "undefined" && localStorage.getItem(SKIN_MANUAL_KEY) === "1";
+      let chosen =
+        (isManual && saved && remoteSkins.some((s) => s.id === saved) ? saved : null) ||
+        (remoteDefaultId && remoteSkins.some((s) => s.id === remoteDefaultId) ? remoteDefaultId : null) ||
+        remoteSkins[0]?.id ||
+        "default";
+      if (!remoteSkins.some((s) => s.id === chosen)) chosen = remoteSkins[0].id;
+
+      setSkinIdState(chosen);
+    } catch {
+      try {
+        const body = await readJson("/theme/active");
+        const rawCfg = body.data as Partial<ThemeConfig> | null | undefined;
+        const cfg = normalizeMediaUrls(rawCfg ?? {}, BASE) as Partial<ThemeConfig>;
+        const fallbackConfig = { ...DEFAULT_THEME_CONFIG, ...cfg };
+        setSkins([{ id: "default", name: "默认皮肤", config: fallbackConfig }]);
+        setSkinIdState("default");
+      } catch (e2) {
+        console.error("[ThemeRuntime]", e2);
+        if (!opts?.silent) toast.error(toastErrorMessage(e2, "皮肤加载失败，请稍后重试"));
+      }
+    }
   }, []);
+
+  useEffect(() => {
+    void loadTheme();
+  }, [loadTheme]);
+
+  useEffect(() => {
+    const onBump = () => void loadTheme({ silent: true });
+    window.addEventListener("app:theme-updated", onBump);
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === THEME_REVISION_KEY) onBump();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("app:theme-updated", onBump);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [loadTheme]);
+
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === "visible") void loadTheme({ silent: true });
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [loadTheme]);
+
+  useEffect(() => {
+    if (!skins.length) return;
+    const active = skins.find((s) => s.id === skinId);
+    if (active?.config) {
+      setThemeConfig({ ...DEFAULT_THEME_CONFIG, ...active.config });
+    }
+  }, [skinId, skins]);
 
   useEffect(() => {
     const root = document.documentElement;
     root.classList.remove("dark");
-    // keep last chosen skin id for recovery/debug; manual flag controls precedence
     if (typeof window !== "undefined") {
       localStorage.setItem(SKIN_STORAGE_KEY, skinId);
     }
@@ -102,12 +157,6 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       root.style.setProperty(key, value);
     });
   }, [themeConfig, skinId]);
-
-  useEffect(() => {
-    if (!skins.length) return;
-    const active = skins.find((s) => s.id === skinId);
-    if (active?.config) setThemeConfig((prev) => ({ ...prev, ...active.config }));
-  }, [skinId, skins]);
 
   const value = useMemo<ThemeContextValue>(() => ({
     theme: "light",
@@ -131,4 +180,3 @@ export function useThemeRuntime() {
   if (!ctx) throw new Error("useThemeRuntime must be used within ThemeRuntimeProvider");
   return ctx;
 }
-

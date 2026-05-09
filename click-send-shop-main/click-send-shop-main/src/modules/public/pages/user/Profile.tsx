@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useState, type ComponentPropsWithoutRef } from "react";
 import { ChevronRight, Gift, Heart, MapPin, Package, Palette, Settings, Star, Users, Ticket, Bell, HelpCircle, RotateCcw, Clock, Info, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "@/stores/useUserStore";
@@ -12,18 +12,27 @@ import * as inviteService from "@/services/inviteService";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import SkinPickerDialog from "@/components/SkinPickerDialog";
 import { supportsColorMix } from "@/utils/cssSupport";
+import { cn } from "@/lib/utils";
 
-function SkinButton() {
-  return (
-    <button
-      type="button"
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-text-on-surface)_6%,transparent)] text-[var(--theme-text-on-surface)] backdrop-blur transition-transform active:scale-90"
-      title="更换皮肤"
-    >
-      <Palette size={19} />
-    </button>
-  );
-}
+/** Radix DialogTrigger asChild 必须把 ref 与事件落到真实 button 上，否则弹层无法打开 */
+const SkinButton = forwardRef<HTMLButtonElement, ComponentPropsWithoutRef<"button">>(
+  function SkinButton({ className, type = "button", title = "更换皮肤", ...props }, ref) {
+    return (
+      <button
+        ref={ref}
+        type={type}
+        title={title}
+        className={cn(
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-text-on-surface)_6%,transparent)] text-[var(--theme-text-on-surface)] backdrop-blur transition-transform active:scale-90",
+          className,
+        )}
+        {...props}
+      >
+        <Palette size={19} />
+      </button>
+    );
+  },
+);
 
 function ProfileAvatar({
   src,

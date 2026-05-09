@@ -1,11 +1,4 @@
 import "express";
-import "express-serve-static-core";
-
-declare module "express-serve-static-core" {
-  interface IRouter {
-    api?: Record<string, any>;
-  }
-}
 
 declare global {
   namespace Express {

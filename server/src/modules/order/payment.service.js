@@ -2,7 +2,7 @@ const { generateId } = require('../../utils/helpers');
 const repo = require('./order.repository');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
 const paymentsService = require('./payments/payments.service');
-const { isNotificationTriggerEnabled } = require('../admin/notificationTriggerApi');
+const { getResolvedTriggerCopy } = require('../admin/notificationTriggerApi');
 
 const orderDb = repo.getPool();
 
@@ -103,13 +103,14 @@ async function handleStripeEvent(event) {
     console.error('[stripe webhook] increment sales_count failed:', err?.message || err);
   }
 
-  if (await isNotificationTriggerEnabled('stripe_payment_success')) {
+  const payCopy = await getResolvedTriggerCopy('stripe_payment_success', { order_no: order.order_no });
+  if (payCopy) {
     await repo.insertNotification(orderDb, {
       id: generateId(),
       userId: order.user_id,
       type: 'order',
-      title: '支付成功',
-      content: `订单 ${order.order_no} 已通过 Stripe 支付成功`,
+      title: payCopy.title,
+      content: payCopy.content,
     });
   }
   return { handled: true };

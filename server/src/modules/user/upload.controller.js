@@ -10,14 +10,14 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
-const allowedExts = /\.(jpg|jpeg|png|webp)$/i;
+const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const allowedExts = /\.(jpg|jpeg|png|webp|gif)$/i;
 
 const fileFilter = (_req, file, cb) => {
   if (allowedExts.test(path.extname(file.originalname)) && allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('只允许上传图片文件 (jpg, png, webp)'));
+    cb(new Error('只允许上传图片文件 (jpg, png, webp, gif)'));
   }
 };
 

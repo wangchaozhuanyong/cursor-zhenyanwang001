@@ -48,7 +48,12 @@
     "src/modules/cart/**/*.js",
     "src/modules/product/**/*.js",
     "src/modules/user/**/*.js",
-    "src/modules/health/**/*.js"
+    "src/modules/health/**/*.js",
+    "src/routes/index.js",
+    "src/app.js",
+    "src/index.js",
+    "src/db/migrateRunner.js",
+    "src/application/**/*.js"
   ],
-  "exclude": ["node_modules", "dist", "test", "scripts", "src/modules/**", "src/application/**", "src/db/**"]
+  "exclude": ["node_modules", "dist", "test", "scripts"]
 }

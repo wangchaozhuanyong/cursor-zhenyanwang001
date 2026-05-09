@@ -13,6 +13,7 @@ export default function AdminCategories() {
   const [formData, setFormData] = useState({ name: "", icon: "", sort: 0 });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [editIcon, setEditIcon] = useState("");
 
   useEffect(() => {
     categoryService.fetchCategories()
@@ -36,9 +37,10 @@ export default function AdminCategories() {
 
   const handleEditSave = (id: string) => {
     if (!editName.trim()) { toast.error("分类名称不能为空"); return; }
-    categoryService.updateCategory(id, { name: editName.trim() })
+    const iconVal = editIcon.trim();
+    categoryService.updateCategory(id, { name: editName.trim(), icon: iconVal })
       .then(() => {
-        setCategories(categories.map((c) => c.id === id ? { ...c, name: editName.trim() } : c));
+        setCategories(categories.map((c) => (c.id === id ? { ...c, name: editName.trim(), icon: iconVal } : c)));
         setEditingId(null);
         toast.success("分类已更新");
       })
@@ -105,7 +107,18 @@ export default function AdminCategories() {
         {categories.map((cat, i) => (
           <div key={cat.id} className={`flex items-center gap-4 px-4 py-3 ${i < categories.length - 1 ? "border-b border-border" : ""}`}>
             <GripVertical size={16} className="cursor-grab text-muted-foreground" />
-            <span className="text-xl">{cat.icon}</span>
+            {editingId === cat.id ? (
+              <input
+                value={editIcon}
+                onChange={(e) => setEditIcon(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleEditSave(cat.id); if (e.key === "Escape") setEditingId(null); }}
+                placeholder="图标"
+                title="Emoji 或简短符号"
+                className="w-14 shrink-0 rounded-lg bg-secondary px-2 py-1.5 text-center text-xl leading-none text-foreground outline-none"
+              />
+            ) : (
+              <span className="w-14 shrink-0 text-center text-xl">{cat.icon}</span>
+            )}
             {editingId === cat.id ? (
               <>
                 <div className="flex-1">
@@ -135,7 +148,11 @@ export default function AdminCategories() {
                 </div>
                 <span className="text-xs text-muted-foreground">排序: {cat.sort_order ?? cat.sort}</span>
                 <PermissionGate permission="category.manage">
-                  <button onClick={() => { setEditingId(cat.id); setEditName(cat.name); }} className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground">
+                  <button
+                    type="button"
+                    onClick={() => { setEditingId(cat.id); setEditName(cat.name); setEditIcon(cat.icon ?? ""); }}
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  >
                     <Pencil size={14} />
                   </button>
                 </PermissionGate>

@@ -36,6 +36,11 @@ module.exports = function errorHandler(err, req, res, _next) {
       .status(400)
       .json({ code: 400, message: '文件大小超出限制', data: null, traceId });
   }
+  if (err && err.code === 'LIMIT_UNEXPECTED_FILE') {
+    return res
+      .status(400)
+      .json({ code: 400, message: '上传字段名不正确（应为 file 或 files）', data: null, traceId });
+  }
   if (err && typeof err.message === 'string' && (err.message.includes('不支持的文件类型') || err.message.includes('只允许上传图片文件'))) {
     return res
       .status(400)

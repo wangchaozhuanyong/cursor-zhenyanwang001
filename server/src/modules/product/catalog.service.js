@@ -1,12 +1,38 @@
 const { parseBool, formatProduct } = require('../../utils/helpers');
 const repo = require('./catalog.repository');
 
+const CACHE_TTL_MS = 60 * 1000;
+const cache = new Map();
+const inFlight = new Map();
+
+function getCached(key, fallback, loader) {
+  const now = Date.now();
+  const hit = cache.get(key);
+  if (hit && now - hit.updatedAt < CACHE_TTL_MS) return hit.value;
+
+  if (!inFlight.has(key)) {
+    const task = loader()
+      .then((value) => {
+        cache.set(key, { value, updatedAt: Date.now() });
+      })
+      .catch((err) => {
+        console.warn(`[catalog] refresh ${key} failed: ${err?.message || err}`);
+      })
+      .finally(() => {
+        inFlight.delete(key);
+      });
+    inFlight.set(key, task);
+  }
+
+  return hit?.value ?? fallback;
+}
+
 async function getBanners() {
-  return repo.selectActiveBanners();
+  return getCached('banners', [], () => repo.selectActiveBanners());
 }
 
 async function getCategories() {
-  return repo.selectActiveCategories();
+  return getCached('categories', [], () => repo.selectActiveCategories());
 }
 
 async function getCategoryById(id) {
@@ -21,7 +47,7 @@ function buildProductListQuery(query) {
   const isNew = parseBool(query.is_new);
   const isRecommended = parseBool(query.is_recommended);
 
-  let where = 'WHERE status = "active" AND deleted_at IS NULL';
+  let where = 'WHERE lifecycle_status = 1 AND deleted_at IS NULL';
   const params = [];
 
   if (category_id && category_id !== 'all') {
@@ -83,6 +109,10 @@ async function getProductById(id) {
 }
 
 async function getHomeProducts() {
+  return getCached('homeProducts', { hot: [], new_arrivals: [], recommended: [] }, loadHomeProducts);
+}
+
+async function loadHomeProducts() {
   const limit = 8;
   const [hotManual, newArrivals, recommendedManual, fallbackBySales, fallbackByRecommend] = await Promise.all([
     repo.selectActiveProductsByFlag('is_hot', limit),

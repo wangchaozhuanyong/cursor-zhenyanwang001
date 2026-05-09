@@ -40,6 +40,11 @@ exports.update = asyncRoute(async (req, res) => {
   res.success(r.data, r.message);
 });
 
+exports.patchStatus = asyncRoute(async (req, res) => {
+  const r = await svc.patchProductLifecycle(req.params.id, req.body.lifecycle_status, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
 exports.remove = asyncRoute(async (req, res) => {
   const r = await svc.deleteProduct(req.params.id, req.user?.id, req);
   res.success(r.data, r.message);

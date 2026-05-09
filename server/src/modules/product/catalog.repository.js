@@ -1,17 +1,34 @@
 const db = require('../../config/db');
 
+const PUBLIC_QUERY_TIMEOUT_MS = 3000;
+
+function isTimeoutError(err) {
+  return err?.code === 'PROTOCOL_SEQUENCE_TIMEOUT' || /timeout/i.test(String(err?.message || ''));
+}
+
+async function publicRows(label, sql, params = []) {
+  try {
+    const [rows] = await db.query({ sql, timeout: PUBLIC_QUERY_TIMEOUT_MS }, params);
+    return rows;
+  } catch (err) {
+    if (!isTimeoutError(err)) throw err;
+    console.warn(`[catalog] ${label} query timeout; returning fallback []`);
+    return [];
+  }
+}
+
 async function selectActiveBanners() {
-  const [rows] = await db.query(
+  return publicRows(
+    'banners',
     'SELECT * FROM banners WHERE enabled = 1 AND deleted_at IS NULL ORDER BY sort_order ASC',
   );
-  return rows;
 }
 
 async function selectActiveCategories() {
-  const [rows] = await db.query(
+  return publicRows(
+    'categories',
     'SELECT id, name, icon, sort_order FROM categories WHERE is_active = 1 AND deleted_at IS NULL ORDER BY sort_order',
   );
-  return rows;
 }
 
 async function selectCategoryById(id) {
@@ -37,7 +54,7 @@ async function selectActiveProductsPage(where, params, orderBy, pageSize, offset
 
 async function selectProductById(id) {
   const [[row]] = await db.query(
-    'SELECT * FROM products WHERE id = ? AND status = "active" AND deleted_at IS NULL',
+    'SELECT * FROM products WHERE id = ? AND lifecycle_status = 1 AND deleted_at IS NULL',
     [id],
   );
   return row || null;
@@ -45,40 +62,40 @@ async function selectProductById(id) {
 
 async function selectHomeProductBlocks(limit) {
   const [hot] = await db.query(
-    'SELECT * FROM products WHERE status="active" AND deleted_at IS NULL AND is_hot=1 ORDER BY sort_order LIMIT ?',
+    'SELECT * FROM products WHERE lifecycle_status=1 AND deleted_at IS NULL AND is_hot=1 ORDER BY sort_order LIMIT ?',
     [limit],
   );
   const [nw] = await db.query(
-    'SELECT * FROM products WHERE status="active" AND deleted_at IS NULL AND is_new=1 ORDER BY sort_order LIMIT ?',
+    'SELECT * FROM products WHERE lifecycle_status=1 AND deleted_at IS NULL AND is_new=1 ORDER BY sort_order LIMIT ?',
     [limit],
   );
   const [rec] = await db.query(
-    'SELECT * FROM products WHERE status="active" AND deleted_at IS NULL AND is_recommended=1 ORDER BY sort_order LIMIT ?',
+    'SELECT * FROM products WHERE lifecycle_status=1 AND deleted_at IS NULL AND is_recommended=1 ORDER BY sort_order LIMIT ?',
     [limit],
   );
   return { hot, new_arrivals: nw, recommended: rec };
 }
 
 async function selectActiveProductsByFlag(flagField, limit) {
-  const [rows] = await db.query(
+  return publicRows(
+    `products:${flagField}`,
     `SELECT * FROM products
-     WHERE status="active" AND deleted_at IS NULL AND ${flagField}=1
+     WHERE lifecycle_status=1 AND deleted_at IS NULL AND ${flagField}=1
      ORDER BY sort_order ASC, created_at DESC
      LIMIT ?`,
     [limit],
   );
-  return rows;
 }
 
 async function selectActiveProductsFallback(orderBySql, limit) {
-  const [rows] = await db.query(
+  return publicRows(
+    `products:fallback:${orderBySql}`,
     `SELECT * FROM products
-     WHERE status="active" AND deleted_at IS NULL
+     WHERE lifecycle_status=1 AND deleted_at IS NULL
      ORDER BY ${orderBySql}
      LIMIT ?`,
     [limit],
   );
-  return rows;
 }
 
 async function selectProductCategoryId(productId) {
@@ -91,7 +108,7 @@ async function selectProductCategoryId(productId) {
 
 async function selectRelatedByCategory(categoryId, excludeProductId, limit) {
   const [rows] = await db.query(
-    'SELECT * FROM products WHERE status="active" AND deleted_at IS NULL AND category_id=? AND id!=? ORDER BY sort_order LIMIT ?',
+    'SELECT * FROM products WHERE lifecycle_status=1 AND deleted_at IS NULL AND category_id=? AND id!=? ORDER BY sort_order LIMIT ?',
     [categoryId, excludeProductId, limit],
   );
   return rows;

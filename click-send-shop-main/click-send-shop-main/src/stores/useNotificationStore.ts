@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Notification } from "@/types/notification";
 import * as notificationService from "@/services/notificationService";
+import { isLoggedIn } from "@/utils/token";
 
 interface NotificationState {
   notifications: Notification[];
@@ -22,6 +23,10 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   error: null,
 
   fetchUnreadCount: async () => {
+    if (!isLoggedIn()) {
+      set({ unreadCount: 0 });
+      return;
+    }
     try {
       const count = await notificationService.fetchUnreadCount();
       set({ unreadCount: count });

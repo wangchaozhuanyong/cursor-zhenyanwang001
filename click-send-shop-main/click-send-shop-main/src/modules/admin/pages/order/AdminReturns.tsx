@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { Eye, CheckCircle, XCircle, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Pagination from "@/components/admin/Pagination";
@@ -25,15 +25,26 @@ export default function AdminReturns() {
   const [pageSize, setPageSize] = useState(20);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [detail, setDetail] = useState<any | null>(null);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedSearch(searchInput.trim()), 400);
+    return () => window.clearTimeout(t);
+  }, [searchInput]);
+
+  /** 关键词变化时须先回到第 1 页，且要在 loadData 的 effect 之前完成，避免仍用旧 page 请求 */
+  useLayoutEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const params: Record<string, string> = { page: String(page), pageSize: String(pageSize) };
       if (filter !== "all") params.status = filter;
-      if (search.trim()) params.keyword = search.trim();
+      if (debouncedSearch) params.keyword = debouncedSearch;
       const p = await returnService.fetchReturnRequests(params as any);
       setReturns(p.list);
       setTotal(p.total);
@@ -42,14 +53,9 @@ export default function AdminReturns() {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, filter, search]);
+  }, [page, pageSize, filter, debouncedSearch]);
 
   useEffect(() => { void loadData(); }, [loadData]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => { setPage(1); void loadData(); }, 400);
-    return () => clearTimeout(timer);
-  }, [search, loadData]);
 
   const paginatedData = returns;
 
@@ -67,16 +73,16 @@ export default function AdminReturns() {
       .catch((e) => toast.error(toastErrorMessage(e, "操作失败")));
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
+    <div className="relative min-h-[280px] space-y-6" aria-busy={loading}>
+      {loading ? (
+        <div
+          className="absolute inset-0 z-10 flex justify-center bg-background/45 pt-24 backdrop-blur-[1px]"
+          aria-hidden
+        >
+          <Loader2 className="h-8 w-8 shrink-0 animate-spin text-gold" />
+        </div>
+      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-foreground">退款/售后管理</h1>
@@ -94,8 +100,8 @@ export default function AdminReturns() {
           <Search size={14} className="shrink-0 text-muted-foreground" />
           <input
             placeholder="搜索售后单号 / 订单号"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
         </div>

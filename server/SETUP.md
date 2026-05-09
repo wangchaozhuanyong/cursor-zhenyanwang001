@@ -52,3 +52,4 @@ npm run dev
 | `npm run admin:role` | 设置管理员角色 |
 | `npm run migrate:status` | 查看迁移状态 |
 | `npm run migrate:down` | 回滚最近一次迁移 |
+| `npm run seed:demo-orders` | 向数据库写入多状态演示订单（供后台「订单管理」联调，见 `scripts/seed-demo-orders.js`） |

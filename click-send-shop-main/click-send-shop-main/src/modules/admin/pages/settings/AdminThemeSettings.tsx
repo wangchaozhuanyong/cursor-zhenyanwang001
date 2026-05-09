@@ -21,6 +21,7 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchThemeSkins, saveSystemThemeSkins } from "@/services/admin/themeService";
 import type { ThemeConfig } from "@/types/theme";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { notifyGlobalThemeUpdated } from "@/lib/themeRevision";
 import { getThemeReadabilityReport } from "@/utils/themeContrast";
 import banner1 from "@/assets/banner1.jpg";
 import banner2 from "@/assets/banner2.jpg";
@@ -179,6 +180,7 @@ export default function AdminThemeSettings() {
       );
       await saveSystemThemeSkins({ defaultSkinId, skins: nextSkins });
       setSkins(nextSkins);
+      notifyGlobalThemeUpdated();
       toast.success("皮肤配置已保存");
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败，请稍后重试"));

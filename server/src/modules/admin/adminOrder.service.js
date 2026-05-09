@@ -13,7 +13,7 @@ const { BusinessError, NotFoundError, ValidationError } = require('../../errors'
 const { logAdminAction } = require('../../utils/adminAudit');
 const { rowsToCsv } = require('../../utils/csv');
 const userModule = require('../user');
-const { isNotificationTriggerEnabled } = require('./notificationTriggerSettings.service');
+const { getResolvedTriggerCopy } = require('./notificationTriggerSettings.service');
 const {
   assertFulfillmentTransition,
   assertPaymentTransition,
@@ -24,7 +24,7 @@ const repo = require('./adminOrder.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
 const { ORDER_STATUS, PAYMENT_STATUS, ORDER_STATUS_LIST } = require('../../constants/status');
 
-const userApi = userModule.api || {};
+const userApi = /** @type {any} */ (userModule).api || {};
 
 function requireUserApi(name) {
   const fn = userApi[name];
@@ -196,21 +196,15 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
       }
 
       if (fullOrder) {
-        const notifMessages = {
-          [ORDER_STATUS.PAID]: '您的订单已确认付款',
-          [ORDER_STATUS.SHIPPED]: '您的订单已发货，请注意查收',
-          [ORDER_STATUS.COMPLETED]: '订单已完成，感谢您的购买',
-          [ORDER_STATUS.CANCELLED]: '您的订单已取消',
-          [ORDER_STATUS.REFUNDING]: '您的退款申请正在处理中',
-          [ORDER_STATUS.REFUNDED]: '退款已到账',
-        };
-        const msg = notifMessages[status];
-        if (msg && await isNotificationTriggerEnabled(`order_status_${status}`)) {
+        const copy = await getResolvedTriggerCopy(`order_status_${status}`, {
+          order_no: fullOrder.order_no,
+        });
+        if (copy) {
           await repo.insertOrderNotification(conn, {
             id: generateId(),
             userId: fullOrder.user_id,
-            title: `订单${fullOrder.order_no}`,
-            content: msg,
+            title: copy.title,
+            content: copy.content,
           });
         }
       }
@@ -276,13 +270,18 @@ async function shipOrder(orderId, body, adminUserId, req) {
     const carrier = body.carrier || '';
     await repo.updateOrderShipped(orderId, trackingNo, carrier);
 
-    if (await isNotificationTriggerEnabled('order_ship')) {
+    const shipCopy = await getResolvedTriggerCopy('order_ship', {
+      order_no: order.order_no,
+      carrier: carrier || '暂无',
+      tracking_no: trackingNo || '',
+    });
+    if (shipCopy) {
       await requireUserApi('insertUserNotification')({
         id: generateId(),
         userId: order.user_id,
         type: 'order',
-        title: '订单已发货',
-        content: `您的订单 ${order.order_no} 已发货，物流：${carrier || '暂无'} ${trackingNo || ''}`,
+        title: shipCopy.title,
+        content: shipCopy.content,
       });
     }
 

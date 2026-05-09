@@ -79,8 +79,14 @@ function parseProductImages(images) {
   return [];
 }
 
+const {
+  normalizeLifecycleFromRow,
+  statusVarcharFromLifecycle,
+} = require('../modules/product/productLifecycle');
+
 function formatProduct(row) {
   if (!row) return null;
+  const lifecycleStatus = normalizeLifecycleFromRow(row);
   return {
     id: row.id,
     name: row.name,
@@ -92,7 +98,8 @@ function formatProduct(row) {
     points: row.points,
     category_id: row.category_id || '',
     stock: row.stock,
-    status: row.status,
+    lifecycle_status: lifecycleStatus,
+    status: statusVarcharFromLifecycle(lifecycleStatus),
     sort_order: row.sort_order,
     description: row.description || '',
     is_recommended: !!row.is_recommended,

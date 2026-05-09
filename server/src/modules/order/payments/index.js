@@ -9,7 +9,7 @@ const router = Router();
 router.use(require('./payments.webhook.routes'));
 router.use(require('./payments.routes'));
 
-router.api = {
+/** @type {any} */ (router).api = {
   payWithRewardWallet: paymentsService.payWithRewardWallet,
   createStripeCheckoutForOrder: paymentsService.createStripeCheckoutForOrder,
 };

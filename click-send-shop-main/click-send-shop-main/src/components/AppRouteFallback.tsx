@@ -46,6 +46,20 @@ function AdminFallback() {
   );
 }
 
+/** 仅主内容区占位：与 AdminLayout 中 `<main>` 同级，避免懒加载子路由时整站侧栏被根 Suspense 卸掉导致闪跳 */
+export function AdminOutletFallback() {
+  return (
+    <div className="space-y-6" aria-busy="true" aria-label="页面加载中">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-56 max-w-full" />
+        <Skeleton className="h-4 w-80 max-w-full" />
+      </div>
+      <Skeleton className="h-11 w-full max-w-md theme-rounded" />
+      <Skeleton className="h-[min(42vh,20rem)] w-full theme-rounded" />
+    </div>
+  );
+}
+
 export default function AppRouteFallback() {
   const { pathname } = useLocation();
   if (pathname.startsWith("/admin")) {

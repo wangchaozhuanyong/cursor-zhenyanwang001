@@ -16,7 +16,7 @@ async function getConnection() {
 async function selectProductsForUpdate(q, productIds) {
   if (!productIds.length) return [];
   const [rows] = await q.query(
-    `SELECT * FROM products WHERE id IN (${productIds.map(() => '?').join(',')}) AND status = 'active' FOR UPDATE`,
+    `SELECT * FROM products WHERE id IN (${productIds.map(() => '?').join(',')}) AND lifecycle_status = 1 FOR UPDATE`,
     productIds,
   );
   return rows;

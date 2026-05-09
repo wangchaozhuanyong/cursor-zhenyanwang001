@@ -41,6 +41,8 @@ const exportCtrl = require('./controller/adminExport.controller');
 const recycleBinCtrl = require('./controller/adminRecycleBin.controller');
 const adminPayCtrl = require('../order/payments/adminPayments.controller');
 const paySchemas = require('../order/payments/payments.schemas');
+const productSchemas = require('./schemas/adminProduct.schemas');
+const userUploadCtrl = require('../user/upload.controller');
 
 const uploadCsv = multer({
   storage: multer.memoryStorage(),
@@ -76,14 +78,66 @@ router.get('/dashboard/stats', adminAuth, requirePermission('dashboard.view'), d
 router.get('/dashboard/chart', adminAuth, requirePermission('dashboard.view'), dashboardCtrl.getChart);
 
 /* ── Products ── */
-router.get('/products/export', adminAuth, requirePermission('product.view'), productCtrl.exportCsv);
+router.get(
+  '/products/export',
+  adminAuth,
+  requirePermission('product.view'),
+  validate({ query: productSchemas.adminProductListQuerySchema }),
+  productCtrl.exportCsv,
+);
 router.post('/products/import', adminAuth, requirePermission('product.manage'), uploadCsv.single('file'), productCtrl.importCsv);
-router.get('/products', adminAuth, requirePermission('product.view'), productCtrl.list);
-router.get('/products/:id', adminAuth, requirePermission('product.view'), productCtrl.getById);
-router.post('/products', adminAuth, requirePermission('product.manage'), productCtrl.create);
-router.put('/products/:id', adminAuth, requirePermission('product.manage'), productCtrl.update);
-router.delete('/products/:id', adminAuth, requirePermission('product.manage'), productCtrl.remove);
-router.post('/products/batch-status', adminAuth, requirePermission('product.manage'), productCtrl.batchUpdateStatus);
+router.get(
+  '/products',
+  adminAuth,
+  requirePermission('product.view'),
+  validate({ query: productSchemas.adminProductListQuerySchema }),
+  productCtrl.list,
+);
+router.get(
+  '/products/:id',
+  adminAuth,
+  requirePermission('product.view'),
+  validate({ params: productSchemas.adminProductIdParamsSchema }),
+  productCtrl.getById,
+);
+router.post(
+  '/products',
+  adminAuth,
+  requirePermission('product.manage'),
+  validate({ body: productSchemas.adminProductCreateBodySchema }),
+  productCtrl.create,
+);
+router.put(
+  '/products/:id',
+  adminAuth,
+  requirePermission('product.manage'),
+  validate({ params: productSchemas.adminProductIdParamsSchema, body: productSchemas.adminProductUpdateBodySchema }),
+  productCtrl.update,
+);
+router.patch(
+  '/products/:id/status',
+  adminAuth,
+  requirePermission('product.manage'),
+  validate({ params: productSchemas.adminProductIdParamsSchema, body: productSchemas.adminProductPatchStatusBodySchema }),
+  productCtrl.patchStatus,
+);
+router.delete(
+  '/products/:id',
+  adminAuth,
+  requirePermission('product.manage'),
+  validate({ params: productSchemas.adminProductIdParamsSchema }),
+  productCtrl.remove,
+);
+router.post(
+  '/products/batch-status',
+  adminAuth,
+  requirePermission('product.manage'),
+  validate({ body: productSchemas.adminProductBatchStatusBodySchema }),
+  productCtrl.batchUpdateStatus,
+);
+/** 管理端图片上传：已登录管理员即可（避免仅 banner/settings 权限的角色无法传图） */
+router.post('/upload', adminAuth, userUploadCtrl.uploadMiddleware, userUploadCtrl.uploadFile);
+router.post('/upload/multiple', adminAuth, userUploadCtrl.uploadMultiple, userUploadCtrl.uploadFiles);
 
 /* ── Product Tags ── */
 router.get('/product-tags', adminAuth, requirePermission('tag.manage'), productCtrl.listTags);

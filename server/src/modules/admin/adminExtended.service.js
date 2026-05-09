@@ -3,10 +3,10 @@ const repo = require('./adminExtended.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
 const { assertReturnTransition } = require('../order/returnStateMachine');
 const { ORDER_STATUS, RETURN_STATUS } = require('../../constants/status');
-const { isNotificationTriggerEnabled } = require('./notificationTriggerSettings.service');
+const { getResolvedTriggerCopy } = require('./notificationTriggerSettings.service');
 const userModule = require('../user');
 
-const userApi = userModule.api || {};
+const userApi = /** @type {any} */ (userModule).api || {};
 
 function requireUserApi(name) {
   const fn = userApi[name];
@@ -178,14 +178,18 @@ async function approveReturn(id, body, adminUserId, req) {
         await repo.restoreUserCouponConn(conn, order.coupon_uc_id);
       }
 
-      if (await isNotificationTriggerEnabled('return_approved')) {
+      const retCopy = await getResolvedTriggerCopy('return_approved', {
+        order_no: order.order_no,
+        refund_amount: String(refund_amount ?? order.total_amount ?? ''),
+      });
+      if (retCopy) {
         await repo.insertNotificationConn(
           conn,
           generateId(),
           order.user_id,
           'order',
-          '退款已批准',
-          `您的订单 ${order.order_no} 退款已批准，退款金额 RM ${refund_amount || order.total_amount}`,
+          retCopy.title,
+          retCopy.content,
         );
       }
     }

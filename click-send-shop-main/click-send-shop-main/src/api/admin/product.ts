@@ -1,5 +1,5 @@
-import { get, post, put, del } from "../request";
-import type { Product, ProductListParams, ProductTag } from "@/types/product";
+import { get, post, put, patch, del } from "../request";
+import type { Product, ProductLifecycleStatus, ProductListParams, ProductTag } from "@/types/product";
 import type { PaginatedData } from "@/types/common";
 
 export function getProducts(params?: ProductListParams) {
@@ -14,8 +14,12 @@ export function createProduct(data: Omit<Product, "id">) {
   return post<Product>("/admin/products", data);
 }
 
-export function updateProduct(id: string, data: Partial<Product>) {
+export function updateProduct(id: string, data: Partial<Product> & { variants?: Product["variants"] }) {
   return put<Product>(`/admin/products/${id}`, data);
+}
+
+export function patchProductLifecycle(id: string, lifecycle_status: ProductLifecycleStatus) {
+  return patch<Product>(`/admin/products/${id}/status`, { lifecycle_status });
 }
 
 export function deleteProduct(id: string) {

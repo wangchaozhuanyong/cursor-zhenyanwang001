@@ -131,6 +131,32 @@ export default function AdminBanners() {
         </PermissionGate>
       </div>
 
+      <div className="rounded-xl border border-gold/25 bg-gold/[0.06] px-4 py-3 text-sm dark:bg-gold/10">
+        <p className="font-semibold text-foreground">轮播图上传规范（请按此准备素材）</p>
+        <ul className="mt-2 list-disc space-y-1.5 pl-5 text-[13px] leading-relaxed text-muted-foreground">
+          <li>
+            <span className="text-foreground/90">比例：</span>
+            与前台轮播区域一致，固定为约 <strong className="text-foreground">2.34 : 1</strong>（宽 ÷ 高）。
+            推荐导出尺寸示例：<strong className="text-foreground">1170 × 500 px</strong>、<strong className="text-foreground">750 × 320 px</strong>；
+            高清屏可用 <strong className="text-foreground">1500 × 640 px</strong> 等同比例大图。过小会糊，过大徒增体积。
+          </li>
+          <li>
+            <span className="text-foreground/90">裁切与构图：</span>
+            前台使用 <code className="rounded bg-secondary px-1 py-0.5 text-[11px]">object-cover</code> 居中填充，
+            四边可能被轻微裁切、圆角遮挡。请把标题、按钮、人脸等重要内容放在<strong className="text-foreground">安全区（尽量靠中、勿贴边）</strong>。
+          </li>
+          <li>
+            <span className="text-foreground/90">格式与体积：</span>
+            支持 <strong className="text-foreground">JPG、PNG、WebP、GIF</strong>；单张上传不超过 <strong className="text-foreground">15MB</strong>。
+            建议每张压缩到 <strong className="text-foreground">1MB 以内</strong>，利于手机流量与首屏速度。上传后服务端会转为 WebP 存储（动图 GIF 可能只保留静态帧）。
+          </li>
+          <li>
+            <span className="text-foreground/90">文案与对比度：</span>
+            避免细线、过小字号；浅色底 Banner 需与站点整体配色协调，保证在手机日光下仍可辨认。
+          </li>
+        </ul>
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-2xl border border-border bg-card p-4 text-center">
           <p className="text-2xl font-bold text-foreground">{banners.length}</p>
@@ -203,8 +229,10 @@ export default function AdminBanners() {
               {form.image ? <img src={form.image} alt="" className="h-full w-full object-cover" /> : (
                 <>
                   <Image size={32} className="text-muted-foreground" />
-                  <p className="mt-2 text-xs text-muted-foreground">点击上传图片</p>
-                  <p className="text-[10px] text-muted-foreground">建议尺寸 750×330px</p>
+                  <p className="mt-2 text-xs font-medium text-foreground">点击上传轮播图</p>
+                  <p className="mt-1 max-w-[240px] text-center text-[10px] leading-snug text-muted-foreground">
+                    比例约 2.34:1（如 1170×500 / 750×320）· JPG/PNG/WebP/GIF · 单张 ≤15MB
+                  </p>
                 </>
               )}
               <input type="file" accept="image/*" className="hidden" onChange={async (e) => {

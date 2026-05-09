@@ -10,9 +10,19 @@ async function ensureReviewSchema() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       UNIQUE KEY uk_review_user (review_id, user_id)
     )`);
-    await db.query(`ALTER TABLE product_reviews ADD COLUMN likes_count INT NOT NULL DEFAULT 0`);
+    const [[column]] = await db.query(
+      `SELECT COLUMN_NAME
+       FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE()
+         AND TABLE_NAME = 'product_reviews'
+         AND COLUMN_NAME = 'likes_count'
+       LIMIT 1`,
+    );
+    if (!column) {
+      await db.query(`ALTER TABLE product_reviews ADD COLUMN likes_count INT NOT NULL DEFAULT 0`);
+    }
   } catch (e) {
-    if (e.code !== 'ER_DUP_FIELDNAME') { /* ignore */ }
+    // Schema compatibility should not block the public review/product pages.
   }
 }
 

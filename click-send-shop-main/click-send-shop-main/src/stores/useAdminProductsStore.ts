@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Product, ProductStatus } from "@/types/product";
+import type { Product, ProductLifecycleStatus, ProductStatus } from "@/types/product";
 import * as productService from "@/services/admin/productService";
 
 const initialState = {
@@ -28,6 +28,8 @@ interface AdminProductsState {
   applyProductStatus: (id: string, status: ProductStatus) => void;
   applyStatusToIds: (ids: string[], status: ProductStatus) => void;
   replaceProducts: (list: Product[]) => void;
+  /** 软删除后从本地列表移除并清理多选 */
+  removeProductsByIds: (ids: string[]) => void;
   reset: () => void;
 }
 
@@ -68,19 +70,29 @@ export const useAdminProductsStore = create<AdminProductsState>((set, get) => ({
   clearSelected: () => set({ selected: [] }),
 
   applyProductStatus: (id, status) => {
+    const lifecycle_status = (status === "active" ? 1 : status === "draft" ? 0 : 2) as ProductLifecycleStatus;
     set((s) => ({
-      products: s.products.map((p) => (p.id === id ? { ...p, status } : p)),
+      products: s.products.map((p) => (p.id === id ? { ...p, status, lifecycle_status } : p)),
     }));
   },
 
   applyStatusToIds: (ids, status) => {
     const idSet = new Set(ids);
+    const lifecycle_status = (status === "active" ? 1 : status === "draft" ? 0 : 2) as ProductLifecycleStatus;
     set((s) => ({
-      products: s.products.map((p) => (idSet.has(p.id) ? { ...p, status } : p)),
+      products: s.products.map((p) => (idSet.has(p.id) ? { ...p, status, lifecycle_status } : p)),
       selected: [],
     }));
   },
 
   replaceProducts: (products) => set({ products }),
+
+  removeProductsByIds: (ids) => {
+    const idSet = new Set(ids);
+    set((s) => ({
+      products: s.products.filter((p) => !idSet.has(p.id)),
+      selected: s.selected.filter((id) => !idSet.has(id)),
+    }));
+  },
 
 }));

@@ -23,6 +23,30 @@ function stripImportMetaResolveGuard(): Plugin {
   };
 }
 
+/**
+ * Vite 8（Rolldown dev）在部分环境下会漏替换 @vite/client 里的内部占位符，
+ * 浏览器报 ReferenceError → 整页白屏。开发阶段对残留占位符做兜底替换。
+ */
+function replaceViteClientPlaceholders(): Plugin {
+  const replacements: Record<string, string> = {
+    __BUNDLED_DEV__: "false",
+    __SERVER_FORWARD_CONSOLE__: "false",
+  };
+
+  return {
+    name: "replace-vite-client-placeholders",
+    apply: "serve",
+    enforce: "post",
+    transform(code) {
+      let next = code;
+      for (const [placeholder, value] of Object.entries(replacements)) {
+        next = next.replaceAll(placeholder, value);
+      }
+      return next === code ? null : next;
+    },
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(() => ({
   server: {
@@ -44,6 +68,7 @@ export default defineConfig(() => ({
     },
   },
   plugins: [
+    replaceViteClientPlaceholders(),
     react(),
     legacy({
       targets: ["Chrome >= 64", "Safari >= 12", "iOS >= 12", "Android >= 7", "not IE 11"],

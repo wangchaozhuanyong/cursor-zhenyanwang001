@@ -38,6 +38,13 @@ export interface NotificationTriggerRule {
   label: string;
   description: string;
   enabled: boolean;
+  /** 自定义标题模板，空字符串表示使用 default_title */
+  title?: string;
+  /** 自定义正文模板，空字符串表示使用 default_content */
+  content?: string;
+  default_title?: string;
+  default_content?: string;
+  placeholders?: string[];
 }
 
 export function getNotificationTriggerSettings() {

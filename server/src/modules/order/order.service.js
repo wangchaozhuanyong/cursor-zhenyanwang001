@@ -11,8 +11,8 @@ const userModule = require('../user');
 const paymentsModule = require('./payments');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
 const orderDb = repo.getPool();
-const userApi = userModule.api || {};
-const paymentsApi = paymentsModule.api || {};
+const userApi = /** @type {any} */ (userModule).api || {};
+const paymentsApi = /** @type {any} */ (paymentsModule).api || {};
 
 function requireApiMethod(api, name) {
   if (typeof api[name] !== 'function') {

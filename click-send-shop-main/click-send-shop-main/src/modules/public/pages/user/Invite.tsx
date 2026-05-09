@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { QRCodeCanvas } from "qrcode.react";
 import * as inviteService from "@/services/inviteService";
 import type { InviteStats, InviteRecord } from "@/types/invite";
+import { copyToClipboard } from "@/utils/clipboard";
+import { drawRoundedRect } from "@/utils/canvas";
 
 export default function Invite() {
   const navigate = useNavigate();
@@ -27,12 +29,14 @@ export default function Invite() {
   const posterRef = useRef<HTMLDivElement>(null);
   const qrRef = useRef<HTMLCanvasElement>(null);
 
-  const copyLink = () => {
+  const copyLink = async () => {
     if (!inviteCode) { toast.error("邀请码加载中，请稍后"); return; }
-    navigator.clipboard.writeText(inviteLink).then(
-      () => toast.success("邀请链接已复制"),
-      () => toast.error("复制失败，请手动复制")
-    );
+    const copied = await copyToClipboard(inviteLink);
+    if (copied) {
+      toast.success("邀请链接已复制");
+    } else {
+      toast.error("复制失败，请手动复制");
+    }
   };
 
   const handleShare = async () => {
@@ -70,26 +74,33 @@ export default function Invite() {
       canvas.width = w;
       canvas.height = h;
       const ctx = canvas.getContext("2d")!;
+      const rootStyle = getComputedStyle(document.documentElement);
+      const cssVar = (name: string, fallback: string) => rootStyle.getPropertyValue(name).trim() || fallback;
+      const themeBg = cssVar("--theme-bg", "#1a1a1a");
+      const themeSurface = cssVar("--theme-surface", "#0a0a0a");
+      const themeText = cssVar("--theme-text", "#ffffff");
+      const themeMuted = cssVar("--theme-text-muted", "#999999");
+      const themePrice = cssVar("--theme-price", "#D4AF37");
 
       // Background gradient
       const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, "#1a1a1a");
-      grad.addColorStop(1, "#0a0a0a");
+      grad.addColorStop(0, themeBg);
+      grad.addColorStop(1, themeSurface);
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, w, h);
 
       // Gold accent line
-      ctx.fillStyle = "#D4AF37";
+      ctx.fillStyle = themePrice;
       ctx.fillRect(0, 0, w, 4);
 
       // Title
-      ctx.fillStyle = "#D4AF37";
+      ctx.fillStyle = themePrice;
       ctx.font = "bold 36px sans-serif";
       ctx.textAlign = "center";
       ctx.fillText("邀请好友 赚取奖励", w / 2, 80);
 
       // Subtitle
-      ctx.fillStyle = "#999";
+      ctx.fillStyle = themeMuted;
       ctx.font = "16px sans-serif";
       ctx.fillText("扫描下方二维码加入", w / 2, 120);
 
@@ -103,7 +114,7 @@ export default function Invite() {
         ctx.fillStyle = "#fff";
         const pad = 20;
         ctx.beginPath();
-        ctx.roundRect(qrX - pad, qrY - pad, qrSize + pad * 2, qrSize + pad * 2, 16);
+        drawRoundedRect(ctx, qrX - pad, qrY - pad, qrSize + pad * 2, qrSize + pad * 2, 16);
         ctx.fill();
         ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
       }
@@ -111,24 +122,24 @@ export default function Invite() {
       // Invite code section
       ctx.fillStyle = "rgba(212,175,55,0.15)";
       ctx.beginPath();
-      ctx.roundRect(100, 530, w - 200, 80, 12);
+      drawRoundedRect(ctx, 100, 530, w - 200, 80, 12);
       ctx.fill();
 
-      ctx.fillStyle = "#999";
+      ctx.fillStyle = themeMuted;
       ctx.font = "14px sans-serif";
       ctx.fillText("我的邀请码", w / 2, 560);
 
-      ctx.fillStyle = "#D4AF37";
+      ctx.fillStyle = themePrice;
       ctx.font = "bold 32px monospace";
       ctx.fillText(inviteCode, w / 2, 598);
 
       // Footer
-      ctx.fillStyle = "#666";
+      ctx.fillStyle = themeText;
       ctx.font = "13px sans-serif";
       ctx.fillText("每位好友消费，您都能获得积分返现", w / 2, 680);
 
       // Bottom gold line
-      ctx.fillStyle = "#D4AF37";
+      ctx.fillStyle = themePrice;
       ctx.fillRect(0, h - 4, w, 4);
 
       // Download
@@ -179,7 +190,7 @@ export default function Invite() {
         {/* QR Code */}
         <div className="mt-6 rounded-xl border border-border bg-card p-6 text-center" ref={posterRef}>
           <h3 className="mb-4 text-sm font-semibold text-foreground">邀请二维码</h3>
-          <div className="mx-auto inline-block rounded-xl bg-white p-4">
+          <div className="mx-auto inline-block rounded-xl border border-border bg-card p-4 shadow-sm">
             <QRCodeCanvas
               ref={qrRef}
               value={inviteLink}

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { User, Lock, Mail, Phone, Loader2 } from "lucide-react";
 import { toast } from "sonner";

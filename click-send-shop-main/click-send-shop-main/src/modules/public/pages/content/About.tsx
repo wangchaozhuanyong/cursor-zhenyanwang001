@@ -7,6 +7,7 @@ import * as contentService from "@/services/contentService";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { renderBrandTitle } from "@/utils/brand";
 import { useGoBack } from "@/hooks/useGoBack";
+import { copyToClipboard } from "@/utils/clipboard";
 
 export default function About() {
   const navigate = useNavigate();
@@ -157,14 +158,19 @@ export default function About() {
             .map((s) => (
               <button
                 key={s.label}
-                onClick={() => {
+                onClick={async () => {
                   if (s.url) {
                     window.open(s.url, "_blank");
                   } else if (s.label === "WeChat" && siteInfo.wechatId) {
-                    navigator.clipboard.writeText(siteInfo.wechatId);
-                    import("sonner").then(({ toast }) =>
-                      toast.success("微信号已复制"),
-                    );
+                    const [{ toast }, copied] = await Promise.all([
+                      import("sonner"),
+                      copyToClipboard(siteInfo.wechatId),
+                    ]);
+                    if (copied) {
+                      toast.success("微信号已复制");
+                    } else {
+                      toast.error("复制失败，请手动复制微信号");
+                    }
                   }
                 }}
                 className="rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-medium text-muted-foreground hover:border-gold/30 active:scale-95 transition-all"

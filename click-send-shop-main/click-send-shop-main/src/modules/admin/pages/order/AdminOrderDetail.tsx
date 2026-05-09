@@ -1,4 +1,5 @@
-﻿import { ArrowLeft, MessageSquare, Copy, Check, Loader2, Truck } from "lucide-react";
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+import { ArrowLeft, MessageSquare, Copy, Check, Loader2, Truck } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -6,6 +7,7 @@ import { useGoBack } from "@/hooks/useGoBack";
 import { fetchOrderById, updateOrderStatus, shipOrder } from "@/services/admin/orderService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { copyToClipboard } from "@/utils/clipboard";
 import {
   ORDER_STATUS,
   PAYMENT_STATUS,
@@ -77,9 +79,13 @@ export default function AdminOrderDetail() {
 
   const orderText = order ? `📦 订单号: ${order.order_no}\n👤 ${order.contact_name || ""} (${order.contact_phone || ""})\n📍 ${order.address || ""}\n---\n${items.map((it: any) => `✦ ${it.product?.name || it.name} x${it.qty} = RM ${((it.product?.price || it.price || 0) * it.qty).toFixed(2)}`).join("\n")}\n---\n💰 合计: RM ${parseFloat(order.total_amount || 0).toFixed(2)}` : "";
 
-  const handleCopyText = () => {
-    navigator.clipboard.writeText(orderText);
-    toast.success("订单文本已复制到剪贴板");
+  const handleCopyText = async () => {
+    const copied = await copyToClipboard(orderText);
+    if (copied) {
+      toast.success("订单文本已复制到剪贴板");
+    } else {
+      toast.error("复制失败，请手动复制订单文本");
+    }
   };
 
   const handleSendWhatsApp = () => {

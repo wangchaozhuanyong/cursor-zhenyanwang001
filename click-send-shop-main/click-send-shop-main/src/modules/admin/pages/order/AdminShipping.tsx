@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { Truck, Plus, Trash2, Edit2, MapPin, Loader2 } from "lucide-react";
 import { toast } from "sonner";

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { FileText, Edit2, Shield, Loader2 } from "lucide-react";
 import { toast } from "sonner";

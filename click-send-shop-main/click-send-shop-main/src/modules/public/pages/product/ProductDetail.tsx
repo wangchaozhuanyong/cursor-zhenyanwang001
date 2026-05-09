@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useGoBack } from "@/hooks/useGoBack";
+import { copyToClipboard } from "@/utils/clipboard";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -49,7 +50,7 @@ export default function ProductDetail() {
 
   useEffect(() => {
     if (product) addToHistory(product);
-  }, [product?.id]);
+  }, [product, addToHistory]);
 
   if (loading) {
     return (
@@ -101,16 +102,25 @@ export default function ProductDetail() {
     toast.success(isFavorite ? "已取消收藏" : "已收藏");
   };
 
-  const handleShare = () => {
+  const handleShare = async () => {
     if (navigator.share) {
-      navigator.share({
-        title: product.name,
-        text: `${product.name} - RM ${product.price}`,
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
+      try {
+        await navigator.share({
+          title: product.name,
+          text: `${product.name} - RM ${product.price}`,
+          url: window.location.href,
+        });
+        return;
+      } catch {
+        // User cancellation should not block the manual copy fallback.
+      }
+    }
+
+    const copied = await copyToClipboard(window.location.href);
+    if (copied) {
       toast.success("链接已复制");
+    } else {
+      toast.error("复制失败，请手动复制链接");
     }
   };
 

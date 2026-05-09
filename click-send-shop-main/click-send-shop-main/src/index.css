@@ -38,7 +38,7 @@
     --input: 0 0% 90%;
     --ring: 43 72% 52%;
 
-    --radius: 0.75rem;
+    --radius: var(--theme-radius);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -49,8 +49,8 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    --font-display: 'Playfair Display', serif;
-    --font-body: 'Inter', sans-serif;
+    --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;
 
     --theme-primary: #000000;
     --theme-primary-hover: #111111;
@@ -207,6 +207,11 @@
     background-image: linear-gradient(
       to bottom right,
       var(--theme-price),
+      #7f1d1d
+    );
+    background-image: linear-gradient(
+      to bottom right,
+      var(--theme-price),
       color-mix(in srgb, var(--theme-price) 72%, black)
     );
   }
@@ -280,6 +285,12 @@ html {
   background-image: linear-gradient(
     100deg,
     transparent 0%,
+    rgba(0, 0, 0, 0.05) 45%,
+    transparent 100%
+  );
+  background-image: linear-gradient(
+    100deg,
+    transparent 0%,
     color-mix(in srgb, var(--theme-text, hsl(var(--foreground))) 5%, transparent) 45%,
     transparent 100%
   );
@@ -315,5 +326,43 @@ html {
     .admin-mobile-main {
       padding-bottom: 0;
     }
+  }
+}
+
+/* Fallbacks for older Chromium/WebKit shells that reject modern CSS functions. */
+@supports not (background: color-mix(in srgb, black, white)) {
+  [class*="bg-[color-mix"] {
+    background-color: rgba(0, 0, 0, 0.06);
+  }
+
+  [class*="bg-[color-mix"][class*="theme-price"] {
+    background-color: rgba(220, 38, 38, 0.12);
+  }
+
+  [class*="bg-[color-mix"][class*="theme-bg"] {
+    background-color: var(--theme-surface);
+  }
+
+  [class*="border-[color-mix"] {
+    border-color: var(--theme-border);
+  }
+
+  [class*="text-[color-mix"] {
+    color: var(--theme-price-foreground);
+    opacity: 0.72;
+  }
+}
+
+@supports not (height: 100dvh) {
+  [class*="min-h-[100dvh]"] {
+    min-height: 100vh;
+  }
+
+  [class*="max-h-[100dvh]"] {
+    max-height: 100vh;
+  }
+
+  [class*="max-h-[min(88dvh,920px)]"] {
+    max-height: min(88vh, 920px);
   }
 }

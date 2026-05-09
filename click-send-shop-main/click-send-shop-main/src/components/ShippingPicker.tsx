@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useState } from "react";
 import { Truck, ChevronDown, ChevronUp } from "lucide-react";
 import { useShippingStore, calcShippingFee } from "@/stores/useShippingStore";
@@ -10,6 +11,25 @@ interface ShippingPickerProps {
 }
 
 export { calcShippingFee };
+
+function formatRegions(regions: unknown): string {
+  const raw = String(regions ?? "").trim();
+  if (!raw) return "全国配送";
+  if (raw === "[]") return "全国配送";
+  if (!raw.startsWith("[")) return raw;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      const labels = parsed
+        .map((it) => String(it ?? "").trim())
+        .filter(Boolean);
+      return labels.length ? labels.join(" / ") : "全国配送";
+    }
+  } catch {
+    // keep raw string fallback
+  }
+  return raw;
+}
 
 export default function ShippingPicker({ totalAmount, selectedId, onSelect }: ShippingPickerProps) {
   const [expanded, setExpanded] = useState(false);
@@ -39,7 +59,7 @@ export default function ShippingPicker({ totalAmount, selectedId, onSelect }: Sh
         <div className="flex items-center justify-between rounded-xl bg-secondary p-3">
           <div>
             <p className="text-sm font-medium text-foreground">{selected.name}</p>
-            <p className="text-xs text-muted-foreground">{selected.regions}</p>
+            <p className="text-xs text-muted-foreground">{formatRegions(selected.regions)}</p>
           </div>
           <div className="text-right">
             {currentFee === 0 ? (
@@ -69,7 +89,7 @@ export default function ShippingPicker({ totalAmount, selectedId, onSelect }: Sh
               >
                 <div>
                   <p className={`text-sm font-medium ${isActive ? "text-gold" : "text-foreground"}`}>{t.name}</p>
-                  <p className="text-xs text-muted-foreground">{t.regions}</p>
+                  <p className="text-xs text-muted-foreground">{formatRegions(t.regions)}</p>
                   {t.freeAbove > 0 && (
                     <p className="text-[10px] text-muted-foreground mt-0.5">
                       满 RM {t.freeAbove} 包邮 {fee === 0 && "✓"}

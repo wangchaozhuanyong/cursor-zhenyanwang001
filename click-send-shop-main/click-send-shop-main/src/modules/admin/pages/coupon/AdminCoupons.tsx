@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, ClipboardList, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";

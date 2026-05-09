@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Shield, Plus, Trash2, Pencil, X } from "lucide-react";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -30,7 +30,7 @@ export default function AdminRoles() {
   const [showResetModal, setShowResetModal] = useState<string | null>(null);
   const [resetPw, setResetPw] = useState("");
 
-  const reload = async () => {
+  const reload = useCallback(async () => {
     setLoading(true);
     try {
       const [r, a, p] = await Promise.all([rbacService.loadRbacRoles(), rbacService.loadRbacAdminUsers(), rbacService.loadRbacPermissions()]);
@@ -43,9 +43,9 @@ export default function AdminRoles() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedUserId]);
 
-  useEffect(() => { void reload(); }, []);
+  useEffect(() => { void reload(); }, [reload]);
 
   useEffect(() => {
     if (!selectedUserId) return;

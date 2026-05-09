@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useCallback, useEffect, useState } from "react";
 import { Eye, CheckCircle, XCircle, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Pagination from "@/components/admin/Pagination";
@@ -27,7 +28,7 @@ export default function AdminReturns() {
   const [search, setSearch] = useState("");
   const [detail, setDetail] = useState<any | null>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const params: Record<string, string> = { page: String(page), pageSize: String(pageSize) };
@@ -41,14 +42,14 @@ export default function AdminReturns() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, pageSize, filter, search]);
 
-  useEffect(() => { void loadData(); }, [page, pageSize, filter]);
+  useEffect(() => { void loadData(); }, [loadData]);
 
   useEffect(() => {
     const timer = setTimeout(() => { setPage(1); void loadData(); }, 400);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, loadData]);
 
   const paginatedData = returns;
 

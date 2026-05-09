@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ArrowLeft, Copy, MessageCircle, Phone, MapPin, CheckCircle2, ShieldCheck, Truck, RefreshCcw } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCartStore } from "@/stores/useCartStore";
@@ -21,6 +21,7 @@ import type { CheckoutPickerCoupon } from "@/types/coupon";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { ORDER_STATUS } from "@/constants/statusDictionary";
 import * as userShippingService from "@/services/userShippingService";
+import { copyToClipboard } from "@/utils/clipboard";
 
 function generateOrderText(order: Order) {
   const itemsText = order.items
@@ -112,6 +113,7 @@ export default function Checkout() {
   const [selectedCoupon, setSelectedCoupon] = useState<CheckoutPickerCoupon | null>(null);
   const [rewardBalance, setRewardBalance] = useState(0);
   const [payingWallet, setPayingWallet] = useState(false);
+  const [orderFinalizing, setOrderFinalizing] = useState(false);
   const [couponInitDone, setCouponInitDone] = useState(false);
   const [shippingId, setShippingId] = useState<number | null>(null);
   const [serverShippingFee, setServerShippingFee] = useState<number | null>(null);
@@ -181,7 +183,7 @@ export default function Checkout() {
   const finalTotal = Math.max(0, rawTotal - discountAmount + shippingFee);
   const preferredCouponId = searchParams.get("coupon_id");
 
-  const estimateCouponDiscount = (coupon: CheckoutPickerCoupon) => {
+  const estimateCouponDiscount = useCallback((coupon: CheckoutPickerCoupon) => {
     if (coupon.discountType === "percent") {
       return Math.min(rawTotal, Math.floor((rawTotal * coupon.discount) / 100));
     }
@@ -189,7 +191,7 @@ export default function Checkout() {
       return Math.min(shippingFee, coupon.discount > 0 ? coupon.discount : shippingFee);
     }
     return Math.min(rawTotal, coupon.discount);
-  };
+  }, [rawTotal, shippingFee]);
 
   useEffect(() => {
     if (couponInitDone) return;
@@ -216,7 +218,7 @@ export default function Checkout() {
       setSelectedCoupon(best);
     }
     setCouponInitDone(true);
-  }, [couponInitDone, pickerCouponsLoading, pickerCoupons, preferredCouponId, rawTotal, shippingFee, searchParams, setSearchParams]);
+  }, [couponInitDone, pickerCouponsLoading, pickerCoupons, preferredCouponId, rawTotal, shippingFee, searchParams, setSearchParams, estimateCouponDiscount]);
 
   useEffect(() => {
     if (!selectedCoupon) return;
@@ -228,8 +230,10 @@ export default function Checkout() {
     }
   }, [pickerCoupons, rawTotal, selectedCoupon, shippingFee]);
 
+  const selectedTemplateId = selectedTemplate?.id ?? null;
+
   useEffect(() => {
-    if (!selectedTemplate || rawTotal < 0) {
+    if (!selectedTemplateId || rawTotal < 0) {
       setServerShippingFee(null);
       setShippingQuoteError(null);
       return;
@@ -239,7 +243,7 @@ export default function Checkout() {
     setShippingQuoteError(null);
     userShippingService
       .quoteShipping({
-        shipping_template_id: selectedTemplate.id,
+        shipping_template_id: selectedTemplateId,
         raw_amount: rawTotal,
         estimated_weight_kg: weightKg,
       })
@@ -258,19 +262,19 @@ export default function Checkout() {
     return () => {
       cancelled = true;
     };
-  }, [selectedTemplate?.id, rawTotal, weightKg]);
+  }, [selectedTemplateId, rawTotal, weightKg]);
 
   useEffect(() => {
     return () => { clearBuyNow(); };
   }, [clearBuyNow]);
 
   useEffect(() => {
-    if (items.length === 0 && !submittedOrder) {
+    if (items.length === 0 && !submittedOrder && !orderFinalizing) {
       navigate("/cart", { replace: true });
     }
-  }, [items.length, submittedOrder, navigate]);
+  }, [items.length, submittedOrder, orderFinalizing, navigate]);
 
-  if (items.length === 0 && !submittedOrder) {
+  if (items.length === 0 && !submittedOrder && !orderFinalizing) {
     return null;
   }
 
@@ -303,6 +307,8 @@ export default function Checkout() {
         estimated_weight_kg: weightKg,
       });
       const orderedIds = payloadItems.map((i) => i.product_id);
+      setOrderFinalizing(true);
+      setSubmittedOrder(order);
       if (isBuyNow) {
         clearBuyNow();
       } else if (orderedIds.length >= cartItems.length) {
@@ -310,7 +316,6 @@ export default function Checkout() {
       } else {
         removeOrderedItems(orderedIds);
       }
-      setSubmittedOrder(order);
       if (paymentMethod === "online") {
         toast.success("订单已创建，请在下一步选择在线支付完成付款");
       } else if (paymentMethod === "reward_wallet") {
@@ -318,18 +323,24 @@ export default function Checkout() {
       }
       void loadCoupons();
       const text = generateOrderText(order);
-      navigator.clipboard.writeText(text).then(() => {
+      const copied = await copyToClipboard(text);
+      if (copied) {
         toast.success("订单内容已复制到剪贴板！");
-      });
+      }
     } catch (e) {
+      setOrderFinalizing(false);
       toast.error(e instanceof Error ? e.message : "提交订单失败");
     }
   };
 
-  const copyOrderText = () => {
+  const copyOrderText = async () => {
     if (!submittedOrder) return;
-    navigator.clipboard.writeText(generateOrderText(submittedOrder));
-    toast.success("已复制订单内容");
+    const copied = await copyToClipboard(generateOrderText(submittedOrder));
+    if (copied) {
+      toast.success("已复制订单内容");
+    } else {
+      toast.error("复制失败，请手动复制订单内容");
+    }
   };
 
   const openWhatsApp = () => {
@@ -675,7 +686,8 @@ function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onPayOnline, onPayR
               </button>
               <button
                 onClick={onWhatsApp}
-                className="flex w-full items-center justify-center gap-2.5 rounded-full bg-[hsl(142,70%,45%)] py-4 text-sm font-bold text-white shadow-lg shadow-[hsl(142,70%,45%)]/20 transition-all active:scale-[0.98]"
+                className="flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold text-[var(--theme-gradient-foreground)] theme-shadow transition-all active:scale-[0.98]"
+                style={{ background: "var(--theme-gradient)" }}
               >
                 <Phone size={18} /> 客服下单
               </button>
@@ -696,13 +708,14 @@ function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onPayOnline, onPayR
             <>
               <button
                 onClick={onWhatsApp}
-                className="flex w-full items-center justify-center gap-2.5 rounded-full bg-[hsl(142,70%,45%)] py-4 text-sm font-bold text-white shadow-lg shadow-[hsl(142,70%,45%)]/20 transition-all active:scale-[0.98]"
+                className="flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold text-[var(--theme-gradient-foreground)] theme-shadow transition-all active:scale-[0.98]"
+                style={{ background: "var(--theme-gradient)" }}
               >
                 <Phone size={18} /> 发送到 WhatsApp
               </button>
               <button
                 onClick={onWeChat}
-                className="flex w-full items-center justify-center gap-2.5 rounded-full bg-[hsl(120,60%,45%)] py-4 text-sm font-bold text-white shadow-lg shadow-[hsl(120,60%,45%)]/20 transition-all active:scale-[0.98]"
+                className="flex w-full items-center justify-center gap-2.5 rounded-full bg-[var(--theme-price)] py-4 text-sm font-bold text-[var(--theme-price-foreground)] theme-shadow transition-all active:scale-[0.98]"
               >
                 <MessageCircle size={18} /> 发送到微信
               </button>

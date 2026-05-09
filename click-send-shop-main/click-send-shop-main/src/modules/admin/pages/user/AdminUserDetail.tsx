@@ -1,4 +1,5 @@
-﻿import { ArrowLeft, Loader2 } from "lucide-react";
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";

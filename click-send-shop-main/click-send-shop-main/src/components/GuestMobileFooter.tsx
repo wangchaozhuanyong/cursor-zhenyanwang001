@@ -109,17 +109,17 @@ export default function GuestMobileFooter({
   return (
     <footer className="relative isolate z-0 mt-14 w-full max-w-lg md:mx-auto">
       {/* 独立卡片容器，与白底稿一致；留出底栏占位由页面根节点 pb 负责 */}
-      <div className="rounded-none border-x-0 border-t border-[var(--theme-border)] bg-[var(--theme-surface)] px-5 pb-10 pt-12 shadow-none sm:rounded-[1.75rem] sm:border sm:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.06)]">
+      <div className="rounded-none border-x-0 border-t border-[var(--theme-border)] bg-[var(--theme-surface)] px-5 pb-10 pt-12 shadow-none sm:rounded-[1.75rem] sm:border sm:theme-shadow">
         <div className="flex flex-col items-center px-1 text-center">
           <GuestFooterBrandMark siteName={siteName || "大马通"} />
           <div className="mt-4 space-y-1">
             <p className="text-[15px] font-semibold leading-snug text-[var(--theme-text)]">{slogan}</p>
-            <p className="text-[13px] leading-relaxed text-neutral-500">{description}</p>
+            <p className="text-[13px] leading-relaxed text-[var(--theme-text-muted)]">{description}</p>
           </div>
         </div>
 
         {/* 品牌与导航之间的分隔 */}
-        <div className="mx-auto mt-10 h-px w-full max-w-none bg-neutral-100" />
+        <div className="mx-auto mt-10 h-px w-full max-w-none bg-[var(--theme-border)]" />
 
         <div className="mt-0">
           <AccordionItem title="服务支持">

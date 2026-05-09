@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { Image, Plus, Trash2, GripVertical, Eye, EyeOff, ExternalLink, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Loader2, Star, TrendingDown, TrendingUp, Users } from "lucide-react";

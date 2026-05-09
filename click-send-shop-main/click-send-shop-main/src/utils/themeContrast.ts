@@ -276,6 +276,7 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     "--theme-text-muted-on-surface": surfaceMutedText,
     "--theme-text-subtle": rgbToCss(mixColors(parseColor(text), bg, 0.78)),
     "--theme-radius": adminConfig.radius,
+    "--radius": adminConfig.radius,
     "--theme-font": getFontFamily(adminConfig.fontFamily),
     "--font-display": getFontFamily(adminConfig.fontFamily),
     "--theme-image-ratio": adminConfig.imageRatio,

@@ -14,6 +14,7 @@ import { useHomeBanners } from "@/hooks/useHomeBanners";
 import * as productService from "@/services/productService";
 import type { UserCoupon } from "@/types/coupon";
 import type { Product } from "@/types/product";
+import { supportsColorMix } from "@/utils/cssSupport";
 
 function Header({ title, icon: Icon, subtitle }: { title: string; icon?: React.ElementType; subtitle?: string }) {
   return (
@@ -34,6 +35,7 @@ export default function MemberHome() {
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const { hotProducts, newProducts, recommendedProducts, loading: homeLoading, loadHomeData } = useProductStore();
   const siteInfo = useSiteInfo();
+  const inactiveDotColor = supportsColorMix() ? "color-mix(in srgb, #ffffff 45%, transparent)" : "rgba(255,255,255,0.45)";
   const couponLoading = useCouponStore((s) => s.loading);
   const coupons = useCouponStore((s) => s.coupons);
   const claimCoupon = useCouponStore((s) => s.claimCoupon);
@@ -261,7 +263,7 @@ export default function MemberHome() {
                   if (activeNew) navigate(`/product/${activeNew.id}`);
                   else navigate("/categories?is_new=1");
                 }}
-                className="rounded-full bg-white px-4 py-2 text-xs font-bold text-black"
+                className="rounded-full bg-[var(--theme-surface)] px-4 py-2 text-xs font-bold text-[var(--theme-text-on-surface)] shadow-[var(--theme-shadow)]"
               >
                 {heroCtaText}
               </button>
@@ -280,7 +282,7 @@ export default function MemberHome() {
                       backgroundColor:
                         idx === newArrivalIndex
                           ? "var(--theme-price)"
-                          : "color-mix(in srgb, #ffffff 45%, transparent)",
+                          : inactiveDotColor,
                     }}
                   />
                 ))}

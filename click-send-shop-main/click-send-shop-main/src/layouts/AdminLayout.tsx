@@ -271,15 +271,12 @@ export default function AdminLayout() {
   const [topSearch, setTopSearch] = useState("");
   const avatarRef = useRef<HTMLDivElement>(null);
 
-  const permissions = useAdminPermissionStore((s) => s.permissions);
-  const isSuperAdmin = useAdminPermissionStore((s) => s.isSuperAdmin);
-
   const can = useAdminPermissionStore((s) => s.can);
   const canAny = useAdminPermissionStore((s) => s.canAny);
 
   const navItems = useMemo(
     () => filterNav(navItemsRaw, can, canAny),
-    [permissions, isSuperAdmin, can, canAny],
+    [can, canAny],
   );
 
   useEffect(() => {

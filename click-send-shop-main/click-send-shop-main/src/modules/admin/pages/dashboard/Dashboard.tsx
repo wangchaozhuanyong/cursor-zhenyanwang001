@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useState } from "react";
 import { ShoppingCart, Users, DollarSign, Package, Loader2 } from "lucide-react";
 import StatsCard from "@/components/admin/StatsCard";

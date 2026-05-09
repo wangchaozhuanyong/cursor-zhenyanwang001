@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import type { Order } from "@/types/order";
+import { copyToClipboard } from "@/utils/clipboard";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { ORDER_STATUS, ORDER_STATUS_META, ORDER_STATUS_PROGRESS } from "@/constants/statusDictionary";
 
@@ -139,9 +140,13 @@ export default function OrderDetail() {
   const StatusIcon = statusIconMap[order.status] ?? Clock;
   const iconColor = statusColorMap[order.status] ?? "text-muted-foreground";
 
-  const copyOrderText = () => {
-    navigator.clipboard.writeText(generateOrderText(order));
-    toast.success("订单内容已复制");
+  const copyOrderText = async () => {
+    const copied = await copyToClipboard(generateOrderText(order));
+    if (copied) {
+      toast.success("订单内容已复制");
+    } else {
+      toast.error("复制失败，请手动复制订单内容");
+    }
   };
 
   const openWhatsApp = () => {
@@ -341,7 +346,8 @@ export default function OrderDetail() {
           {order.status === ORDER_STATUS.PENDING && order.payment_method === "whatsapp" && (
             <button
               onClick={openWhatsApp}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-[hsl(142,70%,45%)] py-3.5 text-sm font-bold text-white shadow-lg shadow-[hsl(142,70%,45%)]/20 transition-all active:scale-[0.98]"
+              className="flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold text-[var(--theme-gradient-foreground)] theme-shadow transition-all active:scale-[0.98]"
+              style={{ background: "var(--theme-gradient)" }}
             >
               <Phone size={16} /> 发送到 WhatsApp 联系客服
             </button>

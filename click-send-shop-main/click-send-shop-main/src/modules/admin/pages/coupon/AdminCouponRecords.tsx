@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import SearchBar from "@/components/SearchBar";

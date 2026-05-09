@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FAQS, FAQ_CATEGORIES, WHATSAPP_URL, WECHAT_ID, WORKING_HOURS } from "@/constants/help";
 import * as contentService from "@/services/contentService";
 import type { SiteInfo } from "@/types/content";
+import { copyToClipboard } from "@/utils/clipboard";
 
 const categoryIcons: Record<string, React.ElementType> = {
   "订单": Package,
@@ -66,16 +67,24 @@ export default function Help() {
           <div className="mt-4 flex gap-3">
             <button
               onClick={openWhatsApp}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[hsl(142,70%,45%)] py-3 text-sm font-bold text-white active:scale-[0.97] transition-transform"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-[var(--theme-gradient-foreground)] theme-shadow active:scale-[0.97] transition-transform"
+              style={{ background: "var(--theme-gradient)" }}
             >
               <MessageCircle size={16} /> WhatsApp
             </button>
             <button
-              onClick={() => {
-                navigator.clipboard.writeText(wechatId);
-                import("sonner").then(({ toast }) => toast.success("客服微信号已复制"));
+              onClick={async () => {
+                const [{ toast }, copied] = await Promise.all([
+                  import("sonner"),
+                  copyToClipboard(wechatId),
+                ]);
+                if (copied) {
+                  toast.success("客服微信号已复制");
+                } else {
+                  toast.error("复制失败，请手动复制微信号");
+                }
               }}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[hsl(29,100%,50%)] py-3 text-sm font-bold text-white active:scale-[0.97] transition-transform"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--theme-price)] py-3 text-sm font-bold text-[var(--theme-price-foreground)] theme-shadow active:scale-[0.97] transition-transform"
             >
               <Phone size={16} /> 微信客服
             </button>

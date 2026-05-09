@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { Loader2, RotateCcw, TrendingDown, TrendingUp, Users } from "lucide-react";
 import SearchBar from "@/components/SearchBar";

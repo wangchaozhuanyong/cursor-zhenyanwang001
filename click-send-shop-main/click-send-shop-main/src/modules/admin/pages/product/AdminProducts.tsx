@@ -216,12 +216,17 @@ export default function AdminProducts() {
       </div>
 
       <div className="hidden overflow-x-auto theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] md:block theme-shadow">
-        <table className="w-full min-w-[720px] text-sm">
+        <table className="w-full min-w-[900px] text-sm">
           <thead>
             <tr className="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70">
               <th className="px-4 py-3 text-left"><input type="checkbox" checked={selected.length === paginatedData.length && paginatedData.length > 0} onChange={() => togglePageSelection(paginatedData.map((x) => x.id))} className="accent-gold" /></th>
               {["商品", "售价", "库存", "状态", "标记", "排序", "操作"].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{h}</th>
+                <th
+                  key={h}
+                  className={`px-4 py-3 text-left text-xs font-semibold text-muted-foreground ${h === "操作" ? "sticky right-0 z-[1] bg-[var(--theme-bg)]/95 shadow-[-8px_0_12px_-8px_rgba(0,0,0,0.08)] backdrop-blur-sm dark:bg-[var(--theme-bg)]/90" : ""}`}
+                >
+                  {h}
+                </th>
               ))}
             </tr>
           </thead>
@@ -250,27 +255,27 @@ export default function AdminProducts() {
                   </div>
                 </td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">{p.sort_order}</td>
-                <td className="px-4 py-3">
-                  <div className="flex gap-1">
-                    <PermissionGate permission="product.manage">
-                      <button type="button" onClick={() => navigate(`/admin/products/${p.id}`)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-2 text-muted-foreground hover:bg-[var(--theme-bg)]"><Pencil size={14} /></button>
-                    </PermissionGate>
-                    <PermissionGate permission="product.manage">
-                      <button type="button" onClick={() => toggleSingleStatus(p.id)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-2 text-muted-foreground hover:bg-[var(--theme-bg)]">
+                <td className="sticky right-0 z-[1] bg-[var(--theme-surface)] px-4 py-3 shadow-[-8px_0_12px_-8px_rgba(0,0,0,0.12)] dark:shadow-[-8px_0_12px_-8px_rgba(0,0,0,0.4)]">
+                  <PermissionGate
+                    permission="product.manage"
+                    fallback={<span className="text-xs text-muted-foreground">仅可查看</span>}
+                  >
+                    <div className="flex flex-nowrap items-center justify-end gap-1">
+                      <button type="button" onClick={() => navigate(`/admin/products/${p.id}`)} className="touch-manipulation shrink-0 theme-rounded border border-[var(--theme-border)] p-2 text-muted-foreground hover:bg-[var(--theme-bg)]" title="编辑"><Pencil size={14} /></button>
+                      <button type="button" onClick={() => toggleSingleStatus(p.id)} className="touch-manipulation shrink-0 theme-rounded border border-[var(--theme-border)] p-2 text-muted-foreground hover:bg-[var(--theme-bg)]" title={p.status === "active" ? "下架" : "上架"}>
                         {p.status === "active" ? <EyeOff size={14} /> : <Eye size={14} />}
                       </button>
-                    </PermissionGate>
-                    <PermissionGate permission="product.manage">
                       <button
                         type="button"
                         onClick={() => handleDeleteProduct(p.id, p.name || p.id)}
-                        className="touch-manipulation theme-rounded border border-destructive/30 p-2 text-destructive hover:bg-destructive/10"
-                        title="删除"
+                        className="touch-manipulation flex shrink-0 items-center gap-1 theme-rounded border border-destructive/50 bg-destructive/10 px-2 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/20"
+                        title="删除商品"
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={14} aria-hidden />
+                        删除
                       </button>
-                    </PermissionGate>
-                  </div>
+                    </div>
+                  </PermissionGate>
                 </td>
               </tr>
             ))}

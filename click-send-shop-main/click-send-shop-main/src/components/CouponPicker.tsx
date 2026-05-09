@@ -1,28 +1,8 @@
 import { useState } from "react";
-import { Ticket, ChevronRight, Check, Clock, Gift, Zap, Crown, Sparkles, Loader2 } from "lucide-react";
+import { Ticket, ChevronRight, Check, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import PremiumCouponCard from "@/components/PremiumCouponCard";
 import type { CheckoutPickerCoupon } from "@/types/coupon";
-
-const couponGradients = {
-  gold: "",
-  ruby: "from-[hsl(350,75%,55%)] to-[hsl(340,70%,45%)]",
-  emerald: "from-[hsl(160,60%,42%)] to-[hsl(170,55%,35%)]",
-  sapphire: "from-[hsl(220,70%,55%)] to-[hsl(230,65%,45%)]",
-};
-
-const colors: Array<keyof typeof couponGradients> = ["gold", "ruby", "sapphire", "emerald"];
-const icons = [Gift, Sparkles, Crown, Zap];
-
-function stripeClassForCouponVariant(color: keyof typeof couponGradients) {
-  if (color === "gold") return "bg-theme-coupon-accent";
-  return `bg-gradient-to-br ${couponGradients[color]}`;
-}
-
-function styleForVariant(variantIndex: number) {
-  const color = colors[variantIndex % colors.length];
-  const Icon = icons[variantIndex % icons.length];
-  return { color, Icon };
-}
 
 interface CouponPickerProps {
   totalAmount: number;
@@ -46,12 +26,6 @@ export default function CouponPicker({
 
   const selected = coupons.find((c) => c.id === selectedCouponId) ?? null;
 
-  const getDiscountText = (c: CheckoutPickerCoupon) => {
-    if (c.discountType === "percent") return `${c.discount}%`;
-    if (c.discountType === "shipping") return c.discount > 0 ? `运费减 RM ${c.discount}` : "免运费";
-    return `RM ${c.discount}`;
-  };
-
   const getDiscountAmount = (c: CheckoutPickerCoupon) => {
     if (c.discountType === "percent") return Math.min(totalAmount, Math.floor((totalAmount * c.discount) / 100));
     if (c.discountType === "shipping") return Math.min(shippingFee, c.discount > 0 ? c.discount : shippingFee);
@@ -60,6 +34,15 @@ export default function CouponPicker({
 
   const isUsable = (c: CheckoutPickerCoupon) => totalAmount >= c.condition && (c.discountType !== "shipping" || shippingFee > 0);
   const usableCount = coupons.filter(isUsable).length;
+  const getAmountParts = (c: CheckoutPickerCoupon) => {
+    if (c.discountType === "percent") return { amountPrefix: "", amount: `${c.discount}%` };
+    if (c.discountType === "shipping" && c.discount <= 0) return { amountPrefix: "", amount: "免运" };
+    return { amountPrefix: "RM", amount: String(c.discount) };
+  };
+  const getConditionText = (c: CheckoutPickerCoupon) => {
+    if (c.discountType === "shipping") return c.condition > 0 ? `满 RM ${c.condition} 免/减运费` : "免/减运费";
+    return c.condition > 0 ? `满 RM ${c.condition} 可用` : "无门槛可用";
+  };
 
   return (
     <div className="rounded-2xl border border-border bg-card overflow-hidden">
@@ -119,52 +102,44 @@ export default function CouponPicker({
               {coupons.map((coupon) => {
                 const usable = isUsable(coupon);
                 const isSelected = selectedCouponId === coupon.id;
-                const { Icon, color: stripeColor } = styleForVariant(coupon.variantIndex);
-                const stripeFg = stripeColor === "gold" ? "text-[var(--theme-price-foreground)]" : "text-white";
-                const stripeFgMuted =
-                  stripeColor === "gold"
-                    ? "text-[color-mix(in_srgb,var(--theme-price-foreground)_72%,transparent)]"
-                    : "text-white/70";
+                const { amountPrefix, amount } = getAmountParts(coupon);
                 return (
-                  <motion.button
+                  <motion.div
                     key={coupon.id}
-                    type="button"
-                    disabled={!usable}
-                    onClick={() => {
-                      onSelect(coupon);
-                      setOpen(false);
-                    }}
                     whileTap={usable ? { scale: 0.98 } : undefined}
-                    className={`flex w-full items-center gap-3 rounded-xl border overflow-hidden transition-all ${
-                      isSelected ? "border-gold ring-1 ring-gold/30" : usable ? "border-border hover:border-gold/20" : "border-border opacity-35"
-                    }`}
+                    className="relative"
                   >
-                    <div className={`flex h-full w-20 flex-shrink-0 flex-col items-center justify-center py-3.5 ${stripeClassForCouponVariant(stripeColor)}`}>
-                      <Icon size={12} className={`mb-1 ${stripeFgMuted}`} />
-                      <span className={`text-base font-bold leading-none ${stripeFg}`}>{getDiscountText(coupon)}</span>
-                    </div>
-                    <div className="flex-1 text-left min-w-0 py-2">
-                      <p className="text-sm font-medium text-foreground">{coupon.title}</p>
-                      <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
-                        <Clock size={10} />
-                        {coupon.condition > 0 ? `满 RM ${coupon.condition}` : "无门槛"} · {coupon.expire}
-                        {!usable && (
-                          <span className="text-destructive">
-                            {totalAmount < coupon.condition ? ` · 还差 RM ${coupon.condition - totalAmount}` : " · 当前订单无运费可抵扣"}
-                          </span>
-                        )}
+                    <PremiumCouponCard
+                      compact
+                      title={coupon.title}
+                      amountPrefix={amountPrefix}
+                      amount={amount}
+                      conditionText={getConditionText(coupon)}
+                      expireText={coupon.expire}
+                      selected={isSelected}
+                      disabled={!usable}
+                      statusLabel={isSelected ? "已选择" : usable ? "点击使用" : "不可用"}
+                      onClick={() => {
+                        if (!usable) return;
+                        onSelect(coupon);
+                        setOpen(false);
+                      }}
+                    />
+                    {usable && (
+                      <div className="pointer-events-none absolute right-3 top-3 z-20">
+                        {isSelected ? (
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#E2C382]">
+                            <Check size={14} className="text-[#4A0A17]" />
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
+                    {!usable && (
+                      <p className="mt-1 px-2 text-[11px] text-destructive">
+                        {totalAmount < coupon.condition ? `还差 RM ${coupon.condition - totalAmount} 可用` : "当前订单无运费可抵扣"}
                       </p>
-                    </div>
-                    <div className="pr-4">
-                      {isSelected ? (
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gold">
-                          <Check size={14} className="text-[var(--theme-price-foreground)]" />
-                        </div>
-                      ) : usable ? (
-                        <div className="h-6 w-6 rounded-full border-2 border-border" />
-                      ) : null}
-                    </div>
-                  </motion.button>
+                    )}
+                  </motion.div>
                 );
               })}
 

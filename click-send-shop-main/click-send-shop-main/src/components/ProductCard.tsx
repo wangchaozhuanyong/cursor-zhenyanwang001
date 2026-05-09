@@ -85,9 +85,11 @@ export default function ProductCard({ product, index = 0 }: Props) {
         >
           {product.name}
         </h3>
-        <div className={`flex items-end gap-2 ${cardCenter ? "w-full justify-center" : "justify-between"}`}>
+        <div
+          className={`flex gap-2 ${cardCenter ? "w-full items-center justify-center" : "items-end justify-between"}`}
+        >
           <div className={`min-w-0 ${cardCenter ? "flex flex-col items-center" : "flex-1"}`}>
-            <div className="flex items-baseline gap-1.5">
+            <div className={`flex flex-wrap items-baseline gap-1.5 ${cardCenter ? "justify-center" : ""}`}>
               <span className="text-lg font-bold leading-none text-[var(--theme-price)]">
                 RM {product.price}
               </span>

@@ -1,10 +1,10 @@
 ﻿import { useState, useEffect, forwardRef } from "react";
-import { ArrowLeft, Ticket, Clock, CheckCircle2, Sparkles, Gift, Zap, Crown, Loader2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Ticket, Loader2 } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCouponStore } from "@/stores/useCouponStore";
+import PremiumCouponCard from "@/components/PremiumCouponCard";
 import type { UserCoupon } from "@/types/coupon";
 
 type DisplayStatus = "available" | "claimed" | "used" | "expired";
@@ -12,55 +12,17 @@ type DisplayStatus = "available" | "claimed" | "used" | "expired";
 interface DisplayCoupon {
   id: string;
   title: string;
-  discount: string;
-  condition: string;
+  amountPrefix: string;
+  amount: string;
+  conditionText: string;
+  scopeText: string;
   expire: string;
   status: DisplayStatus;
-  color: "gold" | "ruby" | "emerald" | "sapphire";
-  icon: React.ElementType;
   tag?: string;
   code: string;
 }
 
-const couponColors = {
-  gold: {
-    bg: "",
-    light: "bg-[color-mix(in_srgb,var(--theme-price)_14%,transparent)]",
-    text: "text-[var(--theme-price)]",
-    border: "border-[color-mix(in_srgb,var(--theme-price)_22%,transparent)]",
-    stamp: "bg-[var(--theme-price)] text-[var(--theme-price-foreground)]",
-  },
-  ruby: {
-    bg: "from-[hsl(350,75%,55%)] to-[hsl(340,70%,45%)]",
-    light: "bg-[hsl(350,75%,55%)]/10",
-    text: "text-[hsl(350,75%,55%)]",
-    border: "border-[hsl(350,75%,55%)]/20",
-    stamp: "bg-[hsl(350,75%,55%)] text-white",
-  },
-  emerald: {
-    bg: "from-[hsl(160,60%,42%)] to-[hsl(170,55%,35%)]",
-    light: "bg-[hsl(160,60%,42%)]/10",
-    text: "text-[hsl(160,60%,42%)]",
-    border: "border-[hsl(160,60%,42%)]/20",
-    stamp: "bg-[hsl(160,60%,42%)] text-white",
-  },
-  sapphire: {
-    bg: "from-[hsl(220,70%,55%)] to-[hsl(230,65%,45%)]",
-    light: "bg-[hsl(220,70%,55%)]/10",
-    text: "text-[hsl(220,70%,55%)]",
-    border: "border-[hsl(220,70%,55%)]/20",
-    stamp: "bg-[hsl(220,70%,55%)] text-white",
-  },
-};
-
-const COLOR_CYCLE: DisplayCoupon["color"][] = ["ruby", "gold", "sapphire", "emerald"];
-const ICON_MAP: Record<string, React.ElementType> = {
-  fixed: Gift,
-  percentage: Crown,
-  shipping: Zap,
-};
-
-function toDisplayCoupon(uc: UserCoupon, index: number): DisplayCoupon {
+function toDisplayCoupon(uc: UserCoupon): DisplayCoupon {
   const c = uc.coupon;
   const displayStatus: DisplayStatus =
     uc.status === "used" ? "used"
@@ -68,21 +30,30 @@ function toDisplayCoupon(uc: UserCoupon, index: number): DisplayCoupon {
     : uc.claimed_at ? "claimed"
     : "available";
 
-  const discount =
-    c.type === "percentage" ? `${c.value}% OFF` : `RM ${c.value}`;
-  const condition =
-    c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛";
+  const amountPrefix = c.type === "percentage" || (c.type === "shipping" && c.value <= 0) ? "" : "RM";
+  const amount =
+    c.type === "percentage" ? `${c.value}%`
+    : c.type === "shipping" && c.value <= 0 ? "免运"
+    : String(c.value);
+  const conditionText =
+    c.type === "shipping"
+      ? c.min_amount > 0 ? `满 RM ${c.min_amount} 免/减运费` : "免/减运费"
+      : c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛可用";
+  const scopeText =
+    c.scope_type === "category" && c.category_names?.length
+      ? `适用范围：${c.category_names.join("、")}`
+      : "适用范围：全场商品";
 
   return {
     id: uc.id,
     title: c.title,
-    discount,
-    condition,
+    amountPrefix,
+    amount,
+    conditionText,
+    scopeText,
     expire: c.end_date,
     status: displayStatus,
-    color: COLOR_CYCLE[index % COLOR_CYCLE.length],
-    icon: ICON_MAP[c.type] ?? Sparkles,
-    tag: c.description || undefined,
+    tag: c.display_badge || c.description || undefined,
     code: c.code,
   };
 }
@@ -90,7 +61,6 @@ function toDisplayCoupon(uc: UserCoupon, index: number): DisplayCoupon {
 type Tab = "available" | "mine";
 
 export default function Coupons() {
-  const navigate = useNavigate();
   const goBack = useGoBack();
   const { coupons: rawCoupons, loading, error, loadCoupons, claimCoupon } = useCouponStore();
   const [tab, setTab] = useState<Tab>("available");
@@ -100,7 +70,7 @@ export default function Coupons() {
     loadCoupons();
   }, [loadCoupons]);
 
-  const coupons = rawCoupons.map((uc, i) => toDisplayCoupon(uc, i));
+  const coupons = rawCoupons.map((uc) => toDisplayCoupon(uc));
 
   const available = coupons.filter((c) => c.status === "available");
   const mine = coupons.filter((c) => c.status !== "available");
@@ -251,17 +221,11 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
   ref,
 ) {
   const isDisabled = coupon.status === "used" || coupon.status === "expired";
-  const colors = couponColors[coupon.color];
-  const Icon = coupon.icon;
-  const leftStripeClass =
-    coupon.color === "gold"
-      ? "bg-theme-coupon-accent"
-      : `bg-gradient-to-br ${colors.bg}`;
-  const stripeFg = coupon.color === "gold" ? "text-[var(--theme-price-foreground)]" : "text-white";
-  const stripeFgMuted =
-    coupon.color === "gold"
-      ? "text-[color-mix(in_srgb,var(--theme-price-foreground)_72%,transparent)]"
-      : "text-white/70";
+  const statusLabel =
+    coupon.status === "claimed" ? "可使用"
+    : coupon.status === "used" ? "已使用"
+    : coupon.status === "expired" ? "已过期"
+    : undefined;
 
   return (
     <motion.div
@@ -271,84 +235,23 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -100 }}
       transition={{ delay: index * 0.06, type: "spring", stiffness: 300, damping: 30 }}
-      className={`relative overflow-hidden rounded-2xl ${isDisabled ? "opacity-50" : ""}`}
+      className="relative overflow-hidden rounded-2xl"
     >
-      {/* Tag */}
-      {coupon.tag && !isDisabled && (
-        <div className={`absolute right-0 top-0 z-10 rounded-bl-xl px-2.5 py-1 text-[10px] font-bold ${colors.stamp}`}>
-          {coupon.tag}
-        </div>
-      )}
-
-      <div className="flex items-stretch border border-border bg-card rounded-2xl overflow-hidden">
-        {/* Left: gradient discount area */}
-        <div className={`relative flex w-[110px] flex-shrink-0 flex-col items-center justify-center p-4 ${leftStripeClass}`}>
-          {/* Semicircle cutouts */}
-          <div className="absolute -right-2.5 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-background" />
-
-          <Icon size={16} className={`mb-1.5 ${stripeFgMuted}`} />
-          <span className={`text-2xl font-bold leading-none ${stripeFg}`}>
-            {coupon.discount}
-          </span>
-          <span className={`mt-1.5 text-[10px] text-center leading-tight ${stripeFgMuted}`}>{coupon.condition}</span>
-        </div>
-
-        {/* Right: info + action */}
-        <div className="flex flex-1 items-center justify-between px-4 py-4">
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-foreground">{coupon.title}</p>
-            <div className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <Clock size={11} />
-              <span>有效期至 {coupon.expire}</span>
-            </div>
-          </div>
-
-          <div className="flex-shrink-0 ml-3">
-            {coupon.status === "available" && (
-              <motion.button
-                onClick={onClaim}
-                disabled={claiming}
-                whileTap={{ scale: 0.9 }}
-                className={`relative overflow-hidden rounded-full px-5 py-2.5 text-xs font-bold transition-all ${colors.stamp} ${claiming ? "opacity-60" : "shadow-lg"}`}
-              >
-                {claiming ? (
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex items-center gap-1"
-                  >
-                    <Sparkles size={12} className="animate-spin" /> 领取中
-                  </motion.span>
-                ) : (
-                  "立即领取"
-                )}
-              </motion.button>
-            )}
-            {coupon.status === "claimed" && (
-              <div className="flex flex-col items-center gap-1">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-full ${colors.light}`}>
-                  <CheckCircle2 size={16} className={colors.text} />
-                </div>
-                <span className={`text-[10px] font-medium ${colors.text}`}>可用</span>
-              </div>
-            )}
-            {coupon.status === "used" && (
-              <div className="flex flex-col items-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-dashed border-muted-foreground/30 rotate-[-15deg]">
-                  <span className="text-[9px] font-bold text-muted-foreground">已用</span>
-                </div>
-              </div>
-            )}
-            {coupon.status === "expired" && (
-              <div className="flex flex-col items-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-dashed border-muted-foreground/30 rotate-[-15deg]">
-                  <span className="text-[9px] font-bold text-muted-foreground">过期</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <PremiumCouponCard
+        title={coupon.title}
+        amountPrefix={coupon.amountPrefix}
+        amount={coupon.amount}
+        conditionText={coupon.conditionText}
+        expireText={coupon.expire}
+        scopeText={coupon.scopeText}
+        badge={coupon.tag}
+        disabled={isDisabled}
+        actionLabel={coupon.status === "available" ? "立即领取" : undefined}
+        actionLoading={claiming}
+        actionDisabled={claiming}
+        statusLabel={statusLabel}
+        onAction={coupon.status === "available" ? onClaim : undefined}
+      />
     </motion.div>
   );
 });

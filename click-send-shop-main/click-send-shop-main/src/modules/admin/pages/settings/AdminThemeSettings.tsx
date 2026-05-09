@@ -161,6 +161,32 @@ export default function AdminThemeSettings() {
     );
   };
 
+  /** 与后端约定一致：当前选中皮肤的 config 以入参 cfg 为准写入 */
+  const persistSkins = async (
+    skinsList: ThemeSkin[],
+    defId: string,
+    selId: string,
+    cfg: ThemeConfig,
+    successMsg = "皮肤配置已保存",
+  ) => {
+    setSaving(true);
+    try {
+      const payload = {
+        defaultSkinId: defId,
+        skins: skinsList.map((s) => (s.id === selId ? { ...s, config: cfg } : s)),
+      };
+      await saveSystemThemeSkins(payload);
+      setSkins(payload.skins);
+      notifyGlobalThemeUpdated();
+      toast.success(successMsg);
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "保存失败，请稍后重试"));
+      throw e;
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const updateThemeConfig = <K extends keyof ThemeConfig>(field: K, value: ThemeConfig[K]) => {
     setThemeConfig((prev) => {
       const next = {
@@ -173,26 +199,23 @@ export default function AdminThemeSettings() {
   };
 
   const saveTheme = async () => {
-    setSaving(true);
     try {
-      const nextSkins = skins.map((s) =>
-        s.id === selectedSkinId ? { ...s, config: themeConfig } : s,
-      );
-      await saveSystemThemeSkins({ defaultSkinId, skins: nextSkins });
-      setSkins(nextSkins);
-      notifyGlobalThemeUpdated();
-      toast.success("皮肤配置已保存");
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "保存失败，请稍后重试"));
-    } finally {
-      setSaving(false);
+      await persistSkins(skins, defaultSkinId, selectedSkinId, themeConfig, "皮肤配置已保存");
+    } catch {
+      /* 错误已在 persistSkins 中提示 */
     }
   };
 
-  const resetToDefault = () => {
-    if (window.confirm("确定恢复默认主题配置？")) {
-      setThemeConfig(DEFAULT_THEME_CONFIG);
-      syncSelectedSkinConfig(DEFAULT_THEME_CONFIG);
+  const resetToDefault = async () => {
+    if (!window.confirm("确定恢复默认主题配置？将立即保存到服务器。")) return;
+    const nextCfg = { ...DEFAULT_THEME_CONFIG };
+    const nextSkins = skins.map((s) => (s.id === selectedSkinId ? { ...s, config: nextCfg } : s));
+    setThemeConfig(nextCfg);
+    setSkins(nextSkins);
+    try {
+      await persistSkins(nextSkins, defaultSkinId, selectedSkinId, nextCfg, "已恢复默认并保存");
+    } catch {
+      /* toast handled */
     }
   };
 
@@ -202,35 +225,53 @@ export default function AdminThemeSettings() {
     if (s?.config) setThemeConfig({ ...DEFAULT_THEME_CONFIG, ...s.config });
   };
 
-  const createNewSkin = () => {
-    // Keep it simple: append a new skin with default config.
+  const createNewSkin = async () => {
+    if (saving) return;
+    if (skins.length >= 8) {
+      toast.info("最多保留 8 个皮肤");
+      return;
+    }
     const nextIndex = skins.length + 1;
     const id =
       typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
         : `skin_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
+    const nextCfg = { ...DEFAULT_THEME_CONFIG };
     const next: ThemeSkin = {
       id,
       name: `皮肤 ${nextIndex}`,
-      config: { ...DEFAULT_THEME_CONFIG },
+      config: nextCfg,
     };
 
-    const nextSkins = [...skins, next].slice(0, 8); // UX: cap at 8 variants
+    const nextSkins = [...skins, next].slice(0, 8);
     setSkins(nextSkins);
     setSelectedSkinId(next.id);
-    setThemeConfig({ ...DEFAULT_THEME_CONFIG });
+    setThemeConfig(nextCfg);
+    try {
+      await persistSkins(nextSkins, defaultSkinId, next.id, nextCfg, "新皮肤已保存到服务器");
+    } catch {
+      /* toast handled */
+    }
   };
 
-  const renameSkin = (id: string) => {
+  const renameSkin = async (id: string) => {
+    if (saving) return;
     const target = skins.find((s) => s.id === id);
     if (!target) return;
     const nextName = window.prompt("请输入新的皮肤名称", target.name)?.trim();
     if (!nextName || nextName === target.name) return;
-    setSkins((prev) => prev.map((s) => (s.id === id ? { ...s, name: nextName } : s)));
+    const nextSkins = skins.map((s) => (s.id === id ? { ...s, name: nextName } : s));
+    setSkins(nextSkins);
+    try {
+      await persistSkins(nextSkins, defaultSkinId, selectedSkinId, themeConfig, "皮肤名称已保存");
+    } catch {
+      /* toast handled */
+    }
   };
 
-  const duplicateSkin = (id: string) => {
+  const duplicateSkin = async (id: string) => {
+    if (saving) return;
     if (skins.length >= 8) {
       toast.info("最多保留 8 个皮肤");
       return;
@@ -241,34 +282,61 @@ export default function AdminThemeSettings() {
       typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
         : `skin_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const copyCfg = { ...DEFAULT_THEME_CONFIG, ...src.config };
     const copy: ThemeSkin = {
       id: copyId,
       name: `${src.name} 副本`,
-      config: { ...src.config },
+      config: copyCfg,
     };
-    setSkins((prev) => [...prev, copy]);
+    const nextSkins = [...skins, copy];
+    setSkins(nextSkins);
     setSelectedSkinId(copyId);
-    setThemeConfig({ ...DEFAULT_THEME_CONFIG, ...copy.config });
+    setThemeConfig(copyCfg);
+    try {
+      await persistSkins(nextSkins, defaultSkinId, copyId, copyCfg, "已复制皮肤并保存");
+    } catch {
+      /* toast handled */
+    }
   };
 
-  const removeSkin = (id: string) => {
+  const removeSkin = async (id: string) => {
+    if (saving) return;
     if (skins.length <= 1) {
       toast.error("至少保留一个皮肤");
       return;
     }
     const target = skins.find((s) => s.id === id);
     if (!target) return;
-    if (!window.confirm(`确认删除皮肤「${target.name}」？`)) return;
+    if (!window.confirm(`确认删除皮肤「${target.name}」？删除后将立即写入服务器。`)) return;
 
     const nextSkins = skins.filter((s) => s.id !== id);
-    setSkins(nextSkins);
-
     const fallbackId = nextSkins[0].id;
-    if (defaultSkinId === id) setDefaultSkinId(fallbackId);
+    const nextDefault = defaultSkinId === id ? fallbackId : defaultSkinId;
     const nextSelected = selectedSkinId === id ? fallbackId : selectedSkinId;
-    setSelectedSkinId(nextSelected);
     const selectedCfg = nextSkins.find((s) => s.id === nextSelected)?.config ?? nextSkins[0].config;
-    setThemeConfig({ ...DEFAULT_THEME_CONFIG, ...selectedCfg });
+    const nextCfg = { ...DEFAULT_THEME_CONFIG, ...selectedCfg };
+
+    setSkins(nextSkins);
+    setDefaultSkinId(nextDefault);
+    setSelectedSkinId(nextSelected);
+    setThemeConfig(nextCfg);
+
+    try {
+      await persistSkins(nextSkins, nextDefault, nextSelected, nextCfg, "已删除皮肤并保存");
+    } catch {
+      /* toast handled */
+    }
+  };
+
+  const setDefaultSkin = async (id: string) => {
+    if (id === defaultSkinId || saving) return;
+    const prevDefault = defaultSkinId;
+    setDefaultSkinId(id);
+    try {
+      await persistSkins(skins, id, selectedSkinId, themeConfig, "已设为默认皮肤并保存");
+    } catch {
+      setDefaultSkinId(prevDefault);
+    }
   };
 
   if (loading) {
@@ -286,13 +354,14 @@ export default function AdminThemeSettings() {
           <h1 className="text-xl font-bold text-foreground">皮肤/视觉设置</h1>
             <p className="text-sm text-muted-foreground">单态皮肤配置：每个皮肤独立定义颜色、字体、倒角、卡片样式与图文布局。</p>
         </div>
-        <button
-          type="button"
-          onClick={resetToDefault}
-          className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary flex items-center gap-2"
-        >
-          <RotateCcw size={14} /> 恢复默认
-        </button>
+            <button
+              type="button"
+              onClick={() => void resetToDefault()}
+              disabled={saving}
+              className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary flex items-center gap-2 disabled:opacity-50"
+            >
+              <RotateCcw size={14} /> 恢复默认
+            </button>
       </div>
 
         <section className="rounded-xl border border-border bg-card p-4 space-y-3">
@@ -300,8 +369,8 @@ export default function AdminThemeSettings() {
             <div className="text-sm font-semibold text-foreground">皮肤集合</div>
             <button
               type="button"
-              onClick={createNewSkin}
-              disabled={skins.length >= 8}
+              onClick={() => void createNewSkin()}
+              disabled={skins.length >= 8 || saving}
               className="rounded-lg border border-border px-3 py-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed hover:bg-secondary flex items-center gap-2"
             >
               <Plus size={14} /> 新增皮肤
@@ -331,35 +400,38 @@ export default function AdminThemeSettings() {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setDefaultSkinId(s.id);
+                        void setDefaultSkin(s.id);
                       }}
-                      className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-secondary"
+                      disabled={saving}
+                      className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-secondary disabled:opacity-50"
                     >
                       设为默认
                     </button>
                   )}
                   <button
                     type="button"
-                    onClick={() => renameSkin(s.id)}
-                    className="rounded-md p-1 text-muted-foreground hover:bg-secondary"
+                    onClick={() => void renameSkin(s.id)}
+                    disabled={saving}
+                    className="rounded-md p-1 text-muted-foreground hover:bg-secondary disabled:opacity-50"
                     title="重命名"
                   >
                     <Pencil size={12} />
                   </button>
                   <button
                     type="button"
-                    onClick={() => duplicateSkin(s.id)}
-                    className="rounded-md p-1 text-muted-foreground hover:bg-secondary"
+                    onClick={() => void duplicateSkin(s.id)}
+                    disabled={saving}
+                    className="rounded-md p-1 text-muted-foreground hover:bg-secondary disabled:opacity-50"
                     title="复制"
                   >
                     <Copy size={12} />
                   </button>
                   <button
                     type="button"
-                    onClick={() => removeSkin(s.id)}
+                    onClick={() => void removeSkin(s.id)}
                     className="rounded-md p-1 text-muted-foreground hover:bg-secondary disabled:opacity-40"
                     title="删除"
-                    disabled={skins.length <= 1}
+                    disabled={skins.length <= 1 || saving}
                   >
                     <Trash2 size={12} />
                   </button>
@@ -368,7 +440,8 @@ export default function AdminThemeSettings() {
             })}
           </div>
           <p className="text-xs text-muted-foreground">
-            客户端将按“默认皮肤”展示；你在本页面编辑的内容只会影响当前选中的皮肤并在保存时写入后端。
+            客户端按「默认」皮肤展示。皮肤名称、默认皮肤、新增/复制/删除皮肤会在操作后立即写入数据库。
+            下方配色、字体、卡片与图片等选项修改后，需点击页面底部「保存皮肤配置」才会写入数据库。
           </p>
         </section>
 
@@ -617,8 +690,14 @@ export default function AdminThemeSettings() {
               <div className={`flex flex-col gap-2 ${themeConfig.cardTextAlign === "center" ? "items-center text-center" : "items-start text-left"}`}>
                 <h4 className="font-bold">视觉引擎商品卡片预览</h4>
                 <p style={{ color: palette["--theme-text-muted"] }}>无 absolute 脱流排版，纯文档流布局。</p>
-                <div className="flex w-full items-end justify-between gap-2">
-                  <div className="flex flex-col">
+                <div
+                  className={`flex w-full gap-2 ${
+                    themeConfig.cardTextAlign === "center" ? "items-center justify-center" : "items-end justify-between"
+                  }`}
+                >
+                  <div
+                    className={`flex flex-col ${themeConfig.cardTextAlign === "center" ? "items-center" : ""}`}
+                  >
                     <span className="line-through text-xs" style={{ color: palette["--theme-text-muted"] }}>¥1299</span>
                     <span className="text-lg font-bold" style={{ color: palette["--theme-price"] }}>¥999</span>
                   </div>
@@ -638,14 +717,17 @@ export default function AdminThemeSettings() {
         </section>
       </div>
 
-      <div className="sticky bottom-0 -mx-6 border-t border-border bg-background/95 px-6 py-4 backdrop-blur-md">
-        <div className="flex items-center justify-end">
+      <div className="sticky bottom-0 z-30 -mx-6 border-t border-border bg-background/95 px-6 py-4 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] backdrop-blur-md dark:shadow-[0_-4px_20px_rgba(0,0,0,0.3)]">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-muted-foreground">
+            保存当前选中皮肤的配色、字体、圆角、卡片与图片等设置（皮肤列表的改名/默认等已自动保存）。
+          </p>
           <PermissionGate permission="settings.manage">
             <button
               type="button"
-              onClick={saveTheme}
+              onClick={() => void saveTheme()}
               disabled={saving}
-              className="flex items-center gap-2 rounded-lg bg-gold px-5 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              className="flex shrink-0 items-center justify-center gap-2 rounded-lg bg-gold px-5 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={14} />}
               保存皮肤配置

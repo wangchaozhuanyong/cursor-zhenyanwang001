@@ -14,6 +14,7 @@
     "migrate": "node scripts/migrate-cli.js",
     "migrate:down": "node scripts/migrate-cli.js down",
     "migrate:status": "node scripts/migrate-cli.js status",
+    "wipe:business-data": "node scripts/wipe-business-data.js",
     "test": "node -r tsx/cjs --test test/health.test.js",
     "test:integration": "node -r tsx/cjs --test test/auth-flow.test.js test/payment-channels.test.js",
     "test:flow": "node -r tsx/cjs --test test/flow-smoke.test.js",

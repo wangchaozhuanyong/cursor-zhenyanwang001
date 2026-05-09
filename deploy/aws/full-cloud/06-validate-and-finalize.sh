@@ -20,7 +20,7 @@ if [[ -z "$SSH_KEY_PATH" || ! -f "$SSH_KEY_PATH" ]]; then
 fi
 
 log "Running remote health checks"
-ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "curl -fsS http://127.0.0.1:$APP_PORT/api/health/live >/dev/null && curl -fsS http://127.0.0.1:$APP_PORT/api/health/ready >/dev/null"
+ssh "${SSH_OPTS[@]}" -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "curl -fsS http://127.0.0.1:$APP_PORT/api/health/live >/dev/null && curl -fsS http://127.0.0.1:$APP_PORT/api/health/ready >/dev/null"
 
 log "Running public checks"
 HTTP_CODE="$(curl -s -o /dev/null -w '%{http_code}' "https://$FULL_DOMAIN/")"

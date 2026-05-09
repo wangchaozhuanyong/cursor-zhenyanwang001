@@ -48,7 +48,7 @@ CHANGE_BATCH="$(jq -n --arg name "$FULL_DOMAIN" --arg ip "$PUBLIC_IP" '{
 "${AWS_CMD[@]}" route53 change-resource-record-sets --hosted-zone-id "$HZ_ID" --change-batch "$CHANGE_BATCH" >/dev/null
 
 log "Configuring nginx and issuing certbot certificate on EC2"
-ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "\
+ssh "${SSH_OPTS[@]}" -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "\
 cat > /tmp/${PROJECT_TAG}.conf <<'NGINX'
 server {
   listen 80;

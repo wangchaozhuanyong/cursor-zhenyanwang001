@@ -19,16 +19,16 @@ fi
 
 log "Waiting for SSH on $PUBLIC_IP"
 for i in {1..30}; do
-  if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "echo ok" >/dev/null 2>&1; then
+  if ssh "${SSH_OPTS[@]}" -o ConnectTimeout=5 -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "echo ok" >/dev/null 2>&1; then
     break
   fi
   sleep 5
 done
 
 log "Bootstrapping packages"
-ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "sudo apt-get update && sudo apt-get install -y nginx git curl jq certbot python3-certbot-nginx"
-ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && sudo apt-get install -y nodejs build-essential && sudo npm install -g pm2"
-ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "sudo mkdir -p '$PROJECT_DIR' && sudo chown -R ubuntu:ubuntu '$PROJECT_DIR'"
+ssh "${SSH_OPTS[@]}" -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "sudo apt-get update && sudo apt-get install -y nginx git curl jq certbot python3-certbot-nginx"
+ssh "${SSH_OPTS[@]}" -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && sudo apt-get install -y nodejs build-essential && sudo npm install -g pm2"
+ssh "${SSH_OPTS[@]}" -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "sudo mkdir -p '$PROJECT_DIR' && sudo chown -R ubuntu:ubuntu '$PROJECT_DIR'"
 
 BOOTSTRAP_JSON="$(jq -n --arg publicIp "$PUBLIC_IP" --arg projectDir "$PROJECT_DIR" '{publicIp:$publicIp,projectDir:$projectDir,status:"ready"}')"
 write_state ec2-bootstrap.json "$BOOTSTRAP_JSON"

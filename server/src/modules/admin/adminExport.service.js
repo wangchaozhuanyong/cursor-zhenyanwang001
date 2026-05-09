@@ -87,13 +87,19 @@ async function createExportTask(type, params, adminUserId) {
   return { data: { id, fileName, status: EXPORT_TASK_STATUS.PENDING }, message: '导出任务已创建' };
 }
 
-async function listExportTasks() {
-  return repo.selectTasks(100);
+async function listExportTasks(requester = {}) {
+  const createdBy = requester.isSuperAdmin ? undefined : requester.id;
+  return repo.selectTasks(100, createdBy);
 }
 
-async function downloadExportFile(taskId) {
+async function downloadExportFile(taskId, requester = {}) {
   const task = await repo.selectTaskById(taskId);
   if (!task) return { error: { code: 404, message: '任务不存在' } };
+  const createdBy = task.created_by == null ? '' : String(task.created_by);
+  const requesterId = requester.id == null ? '' : String(requester.id);
+  if (!requester.isSuperAdmin && (!createdBy || createdBy !== requesterId)) {
+    return { error: { code: 403, message: '无权下载该导出文件' } };
+  }
   if (task.status !== EXPORT_TASK_STATUS.SUCCESS) return { error: { code: 400, message: '文件未就绪' } };
   if (!task.file_path || !fs.existsSync(task.file_path)) {
     return { error: { code: 404, message: '文件不存在' } };

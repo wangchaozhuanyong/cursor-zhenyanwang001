@@ -9,12 +9,12 @@ exports.create = asyncRoute(async (req, res) => {
   res.success(r.data, r.message);
 });
 
-exports.list = asyncRoute(async (_req, res) => {
-  res.success(await svc.listExportTasks());
+exports.list = asyncRoute(async (req, res) => {
+  res.success(await svc.listExportTasks(req.user));
 });
 
 exports.download = asyncRoute(async (req, res) => {
-  const r = await svc.downloadExportFile(req.params.id);
+  const r = await svc.downloadExportFile(req.params.id, req.user);
   if (r.error) return res.fail(r.error.code, r.error.message);
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader(

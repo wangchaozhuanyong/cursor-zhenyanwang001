@@ -54,7 +54,10 @@ module.exports = function errorHandler(err, req, res, _next) {
   }
 
   console.error(`[${traceId}]`, err && err.stack ? err.stack : err);
-  const code = Number(err?.statusCode || err?.status || 500);
-  const message = err?.message || '服务器内部错误';
+  const rawCode = Number(err?.statusCode || err?.status || 500);
+  const code = rawCode >= 400 && rawCode <= 599 ? rawCode : 500;
+  const message = code >= 500 && err?.expose !== true
+    ? '服务器内部错误'
+    : (err?.message || '请求失败');
   return res.status(code).json({ code, message, data: null, traceId });
 };

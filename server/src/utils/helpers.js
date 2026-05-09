@@ -2,6 +2,23 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+let ephemeralJwtSecret;
+
+function getJwtSecret() {
+  const configured = process.env.JWT_SECRET;
+  if (configured) return configured;
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET is required in production');
+  }
+
+  if (!ephemeralJwtSecret) {
+    ephemeralJwtSecret = crypto.randomBytes(64).toString('hex');
+    console.warn('[WARN] JWT_SECRET 未设置，当前非生产进程将使用临时随机密钥；重启后已签发 token 会失效');
+  }
+  return ephemeralJwtSecret;
+}
+
 function generateId() {
   return crypto.randomUUID();
 }
@@ -27,7 +44,7 @@ async function comparePassword(plain, hash) {
  * @param {number} [refreshVersion=0] 与 users.refresh_token_version 对齐；登出后递增可使旧 refresh 失效
  */
 function signToken(userId, refreshVersion = 0) {
-  const secret = process.env.JWT_SECRET || 'change_me';
+  const secret = getJwtSecret();
   const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
   const accessToken = jwt.sign({ userId }, secret, { expiresIn });
   const refreshToken = jwt.sign(
@@ -39,7 +56,7 @@ function signToken(userId, refreshVersion = 0) {
 }
 
 function verifyToken(token) {
-  return jwt.verify(token, process.env.JWT_SECRET || 'change_me');
+  return jwt.verify(token, getJwtSecret());
 }
 
 function parseBool(val) {

@@ -20,29 +20,41 @@ const app = express();
 const publicUrl = (process.env.PUBLIC_APP_URL || '').trim();
 const useHttpsSite = publicUrl.startsWith('https://');
 
+/** 在 Helmet 默认 CSP 上补充：首页演示图（Unsplash）、Cloudflare Web Analytics 信标 */
+const helmetCspDefaults = helmet.contentSecurityPolicy.getDefaultDirectives();
+const cspDirectives = {
+  ...helmetCspDefaults,
+  'img-src': [...helmetCspDefaults['img-src'], 'https://images.unsplash.com'],
+  'script-src': [...helmetCspDefaults['script-src'], 'https://static.cloudflareinsights.com'],
+  'connect-src': [
+    "'self'",
+    'https://cloudflareinsights.com',
+    'https://static.cloudflareinsights.com',
+  ],
+};
+if (!useHttpsSite) {
+  cspDirectives['upgrade-insecure-requests'] = null;
+}
+
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
-    ...(!useHttpsSite
-      ? {
-          contentSecurityPolicy: {
-            directives: {
-              upgradeInsecureRequests: null,
-            },
-          },
-          strictTransportSecurity: false,
-        }
-      : {}),
+    contentSecurityPolicy: { directives: cspDirectives },
+    ...(!useHttpsSite ? { strictTransportSecurity: false } : {}),
   }),
 );
 
 const isProduction = process.env.NODE_ENV === 'production';
-const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:4173,http://localhost:8080,http://localhost:8081,http://localhost:3000,http://127.0.0.1:3000').split(',');
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:4173,http://localhost:8080,http://localhost:8081,http://localhost:3000,http://127.0.0.1:3000')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const allowDevAnyOrigin = !isProduction && process.env.ALLOW_DEV_CORS_ANY_ORIGIN === '1';
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    if (isProduction) return callback(new Error('CORS not allowed'), false);
-    callback(null, true);
+    if (allowDevAnyOrigin) return callback(null, true);
+    callback(new Error('CORS not allowed'), false);
   },
   credentials: true,
 }));
@@ -71,6 +83,15 @@ const authLimiter = rateLimit({
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 app.use('/api/admin/auth/login', authLimiter);
+
+const authSensitiveLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { code: 429, message: '敏感操作过于频繁，请稍后再试' },
+});
+app.use('/api/auth/password-reset/request', authSensitiveLimiter);
+app.use('/api/auth/password-reset/confirm', authSensitiveLimiter);
+app.use('/api/auth/refresh', authSensitiveLimiter);
 
 const uploadLimiter = rateLimit({
   windowMs: 60 * 1000,

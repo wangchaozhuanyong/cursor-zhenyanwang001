@@ -27,7 +27,14 @@ async function selectTaskById(id) {
   return row || null;
 }
 
-async function selectTasks(limit = 50) {
+async function selectTasks(limit = 50, createdBy) {
+  if (createdBy) {
+    const [rows] = await db.query(
+      'SELECT * FROM export_tasks WHERE created_by = ? ORDER BY created_at DESC LIMIT ?',
+      [createdBy, limit],
+    );
+    return rows;
+  }
   const [rows] = await db.query('SELECT * FROM export_tasks ORDER BY created_at DESC LIMIT ?', [limit]);
   return rows;
 }

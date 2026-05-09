@@ -22,12 +22,20 @@ REPO_DIR_NAME="$(basename "$PROJECT_DIR")"
 REMOTE_PARENT="$(dirname "$PROJECT_DIR")"
 
 log "Cloning repository on EC2"
-ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "\
+ssh "${SSH_OPTS[@]}" -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "\
   mkdir -p '$REMOTE_PARENT' && cd '$REMOTE_PARENT' && \
   if [ ! -d '$PROJECT_DIR/.git' ]; then git clone --branch '$REPO_BRANCH' '$REPO_URL' '$REPO_DIR_NAME'; else cd '$PROJECT_DIR' && git fetch origin '$REPO_BRANCH' && git reset --hard 'origin/$REPO_BRANCH'; fi"
 
 log "Writing server .env on EC2"
-ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "cat > '$PROJECT_DIR/server/.env' <<'EOF'
+if [[ -z "${PUBLIC_APP_URL:-}" || "$PUBLIC_APP_URL" == *"__SET_PRODUCTION_ORIGIN__"* ]]; then
+  echo "[FATAL] PUBLIC_APP_URL is empty or placeholder. Refusing to overwrite server/.env."
+  exit 1
+fi
+if [[ -z "${CORS_ORIGINS:-}" || "$CORS_ORIGINS" == *"__SET_PRODUCTION_ORIGIN__"* ]]; then
+  echo "[FATAL] CORS_ORIGINS is empty or placeholder. Refusing to overwrite server/.env."
+  exit 1
+fi
+ssh "${SSH_OPTS[@]}" -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "cat > '$PROJECT_DIR/server/.env' <<'EOF'
 PORT=3001
 NODE_ENV=$NODE_ENV
 DB_HOST=$RDS_ENDPOINT
@@ -44,7 +52,7 @@ STRIPE_WEBHOOK_SECRET=$STRIPE_WEBHOOK_SECRET
 EOF"
 
 log "Running app deployment script"
-ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "cd '$PROJECT_DIR' && chmod +x deploy/deploy-wwwroot.sh && PROJECT_DIR='$PROJECT_DIR' PM2_APP='gc-api' bash deploy/deploy-wwwroot.sh"
+ssh "${SSH_OPTS[@]}" -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "cd '$PROJECT_DIR' && chmod +x deploy/deploy-wwwroot.sh && PROJECT_DIR='$PROJECT_DIR' PM2_APP='gc-api' bash deploy/deploy-wwwroot.sh"
 
 DEPLOY_JSON="$(jq -n --arg publicIp "$PUBLIC_IP" --arg branch "$REPO_BRANCH" --arg projectDir "$PROJECT_DIR" '{publicIp:$publicIp,branch:$branch,projectDir:$projectDir,status:"deployed"}')"
 write_state deploy.json "$DEPLOY_JSON"

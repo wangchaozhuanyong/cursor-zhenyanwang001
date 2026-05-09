@@ -36,7 +36,7 @@ log "Importing into RDS"
 gunzip -c "$BACKUP_GZ" | MYSQL_PWD="$RDS_MASTER_PASSWORD" mysql -h "$RDS_ENDPOINT" -P 3306 -u "$RDS_MASTER_USERNAME" "$RDS_DB_NAME"
 
 log "Running migration scripts on EC2"
-ssh -o StrictHostKeyChecking=no -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "cd '$PROJECT_DIR/server' && npm run migrate"
+ssh "${SSH_OPTS[@]}" -i "$SSH_KEY_PATH" "ubuntu@$PUBLIC_IP" "cd '$PROJECT_DIR/server' && npm run migrate"
 
 log "Validating row counts (sample)"
 SRC_USER_COUNT="$(MYSQL_PWD="$SOURCE_DB_PASSWORD" mysql -h "$SOURCE_DB_HOST" -P "$SOURCE_DB_PORT" -u "$SOURCE_DB_USER" -N -e "SELECT COUNT(*) FROM users" "$SOURCE_DB_NAME" 2>/dev/null || echo -1)"

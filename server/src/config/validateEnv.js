@@ -37,7 +37,7 @@ function validateEnv() {
       );
       process.exit(1);
     }
-    if (/your_jwt_secret_change_me/i.test(jwt) || jwt === 'change_me') {
+    if (hasPlaceholder(jwt) || /your_jwt_secret_change_me/i.test(jwt) || jwt === 'change_me') {
       console.error('[FATAL] 生产环境请勿使用 .env.example 中的示例 JWT_SECRET');
       process.exit(1);
     }
@@ -87,8 +87,10 @@ function validateEnv() {
       console.error('[FATAL] STRIPE_WEBHOOK_SECRET 无效或过短');
       process.exit(1);
     }
-  } else if (jwt && jwt.length < 64) {
-    console.warn('[WARN] JWT_SECRET 长度不足 64，仅用于开发环境；上线前须更换为 ≥64 位强随机值');
+  } else if (!jwt) {
+    console.warn('[WARN] JWT_SECRET 未设置；非生产环境会使用进程内临时随机密钥，重启后 token 会失效');
+  } else if (jwt.length < 64 || hasPlaceholder(jwt) || jwt === 'change_me') {
+    console.warn('[WARN] JWT_SECRET 不应使用短值或示例值；上线前须更换为 ≥64 位强随机值');
   }
 }
 

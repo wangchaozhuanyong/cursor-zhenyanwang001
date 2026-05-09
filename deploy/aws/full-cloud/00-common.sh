@@ -15,6 +15,7 @@ source "$ROOT_DIR/.env"
 set +a
 
 AWS_CMD=(aws --region "$AWS_REGION" --profile "$AWS_PROFILE")
+SSH_OPTS=(-o StrictHostKeyChecking=accept-new)
 
 require_cmd() {
   local c

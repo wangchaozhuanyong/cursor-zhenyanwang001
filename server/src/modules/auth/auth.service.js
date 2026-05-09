@@ -21,9 +21,16 @@ const {
   ConflictError,
   ValidationError,
 } = require('../../errors');
+const crypto = require('crypto');
 const repo = require('./auth.repository');
 const { formatUserResponse } = require('../../utils/formatUserResponse');
 const { normalizeIntlPhone, buildPhoneLookupCandidates } = require('../../utils/phone');
+
+const PASSWORD_RESET_TOKEN_TTL_MINUTES = 30;
+
+function hashResetToken(token) {
+  return crypto.createHash('sha256').update(String(token)).digest('hex');
+}
 
 async function register(body) {
   const { phone, countryCode, password, nickname, inviteCode } = body;
@@ -42,19 +49,29 @@ async function register(body) {
   const hash = await hashPassword(password);
   const code = generateInviteCode();
 
-  await repo.insertUser({
-    id,
-    phone: normalizedPhone,
-    passwordHash: hash,
-    nickname: nickname || '用户',
-    inviteCode: code,
-    parentInviteCode,
-  });
+  try {
+    await repo.insertUser({
+      id,
+      phone: normalizedPhone,
+      passwordHash: hash,
+      nickname: nickname || '用户',
+      inviteCode: code,
+      parentInviteCode,
+    });
+  } catch (err) {
+    if (err && (err.code === 'ER_DUP_ENTRY' || err.errno === 1062)) {
+      throw new ConflictError('该手机号已注册');
+    }
+    throw err;
+  }
 
-  /** 全库第一个注册用户自动成为管理员（与仅在建库时执行 extend3.sql 不同，避免「先 db:init 后注册」无管理员） */
-  const userCount = await repo.countUsers();
-  if (userCount === 1) {
-    await repo.setUserRole(id, 'admin');
+  const autoPromoteFirstUser = process.env.AUTO_PROMOTE_FIRST_USER_TO_ADMIN === '1';
+  if (autoPromoteFirstUser) {
+    /** 仅显式开启时允许首个注册用户成为管理员，避免公网新实例被抢注接管。 */
+    const userCount = await repo.countUsers();
+    if (userCount === 1) {
+      await repo.setUserRole(id, 'admin');
+    }
   }
 
   const token = signToken(id, 0);
@@ -66,24 +83,33 @@ async function login(body) {
   const countryCode = body.countryCode;
   const { password } = body;
 
-  const user = await repo.findUserByPhones(buildPhoneLookupCandidates(phone, countryCode));
-  if (!user) throw new AuthError('手机号或密码错误');
+  const lookupPhones = buildPhoneLookupCandidates(phone, countryCode);
+  const matchedUsers = await repo.findUsersByPhones(lookupPhones);
+  if (!matchedUsers.length) throw new AuthError('手机号或密码错误');
 
-  let hash = user.password_hash;
-  if (Buffer.isBuffer(hash)) hash = hash.toString('utf8');
-  else if (hash != null && typeof hash !== 'string') hash = String(hash);
-  if (typeof hash !== 'string' || !hash.trim()) {
-    throw new AuthError('账号异常，请使用找回密码或联系客服');
+  function coerceHash(hash) {
+    let h = hash;
+    if (Buffer.isBuffer(h)) h = h.toString('utf8');
+    else if (h != null && typeof h !== 'string') h = String(h);
+    return typeof h === 'string' && h.trim() ? h : '';
   }
 
-  let match = false;
+  let user = null;
   try {
-    match = await comparePassword(password, hash);
+    for (let i = 0; i < matchedUsers.length; i += 1) {
+      const cand = matchedUsers[i];
+      const stored = coerceHash(cand.password_hash);
+      if (!stored) continue;
+      if (await comparePassword(password, stored)) {
+        user = cand;
+        break;
+      }
+    }
   } catch (err) {
     console.error('[auth.login] bcrypt compare error', err);
     throw new AuthError('手机号或密码错误');
   }
-  if (!match) throw new AuthError('手机号或密码错误');
+  if (!user) throw new AuthError('手机号或密码错误');
 
   const uid = String(user.id ?? '');
   if (!uid) throw new AuthError('账号异常，请使用找回密码或联系客服');
@@ -168,6 +194,56 @@ async function changePassword(userId, body) {
   return { data: null, message: '密码已更新' };
 }
 
+async function requestPasswordReset(body) {
+  const { phone, countryCode } = body;
+  const lookupPhones = buildPhoneLookupCandidates(phone, countryCode);
+  const user = await repo.findUserByPhones(lookupPhones);
+  const generic = {
+    data: null,
+    message: '如果该手机号已注册，系统已生成密码重置指引，请按页面提示继续操作',
+  };
+
+  if (!user) return generic;
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const tokenHash = hashResetToken(token);
+  const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MINUTES * 60 * 1000);
+
+  await repo.deleteUnusedPasswordResetTokens(user.id);
+  await repo.insertPasswordResetToken({
+    id: generateId(),
+    userId: user.id,
+    tokenHash,
+    expiresAt,
+  });
+
+  const exposeToken =
+    process.env.NODE_ENV !== 'production'
+    && String(process.env.EXPOSE_PASSWORD_RESET_TOKEN || '').toLowerCase() === 'true';
+
+  return {
+    data: exposeToken ? { resetToken: token, expiresInMinutes: PASSWORD_RESET_TOKEN_TTL_MINUTES } : null,
+    message: exposeToken
+      ? '重置令牌已生成（仅开发环境显示）'
+      : generic.message,
+  };
+}
+
+async function resetPassword(body) {
+  const { token, newPassword } = body;
+  const tokenHash = hashResetToken(token);
+  const row = await repo.selectPasswordResetToken(tokenHash);
+  if (!row) throw new ValidationError('重置令牌无效或已过期');
+  if (row.used_at) throw new ValidationError('重置令牌已使用');
+  if (new Date(row.expires_at).getTime() <= Date.now()) throw new ValidationError('重置令牌已过期');
+
+  const hash = await hashPassword(newPassword);
+  await repo.updatePasswordHash(row.user_id, hash);
+  await repo.markPasswordResetTokenUsed(row.id);
+  await repo.incrementRefreshTokenVersion(row.user_id);
+  return { data: null, message: '密码已重置，请使用新密码登录' };
+}
+
 async function refresh(refreshToken) {
   if (!refreshToken) throw new ValidationError('refreshToken 不能为空');
 
@@ -210,6 +286,10 @@ async function findUserByPhones(phones) {
   return repo.findUserByPhones(phones);
 }
 
+async function findUsersByPhones(phones) {
+  return repo.findUsersByPhones(phones);
+}
+
 /** 使该用户 refresh 令牌失效（与 logout 内逻辑一致） */
 async function bumpRefreshTokenVersion(userId) {
   if (userId) await repo.incrementRefreshTokenVersion(userId);
@@ -219,18 +299,33 @@ async function updateLastLogin(userId) {
   await repo.updateLastLogin(userId);
 }
 
+/** 供管理端等域校验手机号是否已被其他用户占用 */
+async function findPhoneDuplicateForUser(userId, phone) {
+  return repo.findPhoneDuplicate(userId, phone);
+}
+
+/** 供管理端等域按兼容号码集合校验重复 */
+async function findPhoneDuplicateByPhonesForUser(userId, phones) {
+  return repo.findPhoneDuplicateByPhones(userId, phones);
+}
+
 module.exports = {
   register,
   login,
   getProfile,
   updateProfile,
   changePassword,
+  requestPasswordReset,
+  resetPassword,
   refresh,
   logout,
   findUserByPhone,
   findUserByPhones,
+  findUsersByPhones,
   bumpRefreshTokenVersion,
   updateLastLogin,
+  findPhoneDuplicateForUser,
+  findPhoneDuplicateByPhonesForUser,
 };
 
 // 兼容历史：保留具名导出 BusinessError 以防有外部 require 该模块时使用

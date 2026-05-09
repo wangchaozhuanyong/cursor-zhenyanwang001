@@ -7,9 +7,9 @@ const DEFAULT_ITEM_WEIGHT_KG = 0.5;
  */
 function computeShippingFee(tpl, rawAmount, estimatedWeightKg) {
   if (!tpl) return 0;
-  const freeAbove = parseFloat(tpl.free_above);
-  const baseFee = parseFloat(tpl.base_fee);
-  const extraPerKg = parseFloat(tpl.extra_per_kg);
+  const freeAbove = Number(tpl.free_above);
+  const baseFee = Number(tpl.base_fee);
+  const extraPerKg = Number(tpl.extra_per_kg);
   if (freeAbove > 0 && rawAmount >= freeAbove) return 0;
   const w = estimatedWeightKg != null && Number.isFinite(estimatedWeightKg) ? estimatedWeightKg : null;
   if (w == null || w <= 0) return baseFee;

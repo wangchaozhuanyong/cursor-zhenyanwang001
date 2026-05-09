@@ -22,6 +22,7 @@ const ALL_ADMIN_PERMISSION_CODES = [
   'invite.view',
   'referral.manage',
   'points.manage',
+  'payment.manage',
   'shipping.manage',
   'settings.manage',
   'content.manage',

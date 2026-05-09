@@ -11,6 +11,7 @@ import logoWebp from "@/assets/logo.webp";
 import * as inviteService from "@/services/inviteService";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import SkinPickerDialog from "@/components/SkinPickerDialog";
+import { supportsColorMix } from "@/utils/cssSupport";
 
 function SkinButton() {
   return (
@@ -46,14 +47,15 @@ function ProfileAvatar({
 
 /** 仅亮色模式：在 surface 上叠加极淡主色→价格色渐变，深色模式由 .dark 隐藏 */
 function ProfileHeaderLightWash() {
+  const background = supportsColorMix()
+    ? "linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 11%, var(--theme-surface)), color-mix(in srgb, var(--theme-price) 7%, var(--theme-surface)))"
+    : "linear-gradient(135deg, var(--theme-surface), var(--theme-bg))";
+
   return (
     <div
       aria-hidden
       className="pointer-events-none absolute inset-0 z-0 dark:hidden"
-      style={{
-        background:
-          "linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 11%, var(--theme-surface)), color-mix(in srgb, var(--theme-price) 7%, var(--theme-surface)))",
-      }}
+      style={{ background }}
     />
   );
 }

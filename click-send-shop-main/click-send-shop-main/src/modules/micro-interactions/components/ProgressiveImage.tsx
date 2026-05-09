@@ -51,7 +51,7 @@ export function ProgressiveImage({
         draggable={false}
         onLoad={() => setHiResLoaded(true)}
         className={cn(
-          "absolute inset-0 h-full w-full object-cover transition-opacity duration-[400ms] ease-out",
+          "absolute inset-0 h-full w-full object-cover transition-opacity ease-out duration-300",
           hiResLoaded ? "opacity-100" : "opacity-0",
           imgClassName,
         )}

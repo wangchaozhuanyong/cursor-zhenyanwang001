@@ -14,5 +14,5 @@ export function getAdminPointsRecords(params?: PointsListParams) {
 }
 
 export function adjustUserPoints(userId: string, amount: number, description: string) {
-  return put<void>(`/admin/users/${userId}/points`, { amount, description });
+  return put<void>(`/admin/users/${userId}/points`, { points: amount, reason: description });
 }

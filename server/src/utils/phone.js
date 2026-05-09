@@ -4,16 +4,29 @@ function toDigits(value) {
 
 function normalizeCountryCode(countryCode) {
   const digits = toDigits(countryCode).slice(0, 4);
-  return digits || '';
+  if (digits === '60' || digits === '86') return digits;
+  return '';
 }
 
+/**
+ * 将手机号规范为存储用 E.164（如 +60123456789、+8613800138000）。
+ *
+ * 修复常见问题：在马/中选择 +60 时，本地用户可能填写「60123456789」（已含 60）、
+ * 或「0123456789」。旧逻辑会把前者误存为 +6060123456789，与「123456789」注册出的
+ * +60123456789 判为不同号码，导致重复注册、登录匹配不到或 LIMIT 1 命中错误行。
+ */
 function normalizeIntlPhone(phone, countryCode) {
   const raw = String(phone || '').trim();
   const cc = normalizeCountryCode(countryCode);
   const digits = toDigits(raw);
 
   if (cc) {
-    const local = digits.replace(/^0+/, '') || digits;
+    let local = digits.replace(/^0+/, '') || digits;
+    /** 粘贴完整国家码且无 + 的场景：601xxxx / 86138xxxx */
+    if (local.startsWith(cc)) {
+      local = local.slice(cc.length);
+    }
+    local = local.replace(/^0+/, '') || local;
     return local ? `+${cc}${local}` : '';
   }
 
@@ -27,18 +40,59 @@ function normalizeIntlPhone(phone, countryCode) {
 function buildPhoneLookupCandidates(phone, countryCode) {
   const raw = String(phone || '').trim();
   const digits = toDigits(raw);
-  const normalized = normalizeIntlPhone(raw, countryCode);
+  const canonical = normalizeIntlPhone(raw, countryCode);
   const set = new Set();
+
+  /** 始终以当前规则下的规范号为主锚点，弱化「多格式并存」误判 */
+  if (canonical) {
+    set.add(canonical);
+    if (canonical.startsWith('+')) {
+      set.add(canonical.slice(1));
+      const canonDigits = toDigits(canonical);
+      if (canonDigits) set.add(canonDigits);
+    }
+  }
 
   if (raw) set.add(raw);
   if (digits) set.add(digits);
   if (raw.startsWith('+') && digits) set.add(`+${digits}`);
-  if (normalized) {
-    set.add(normalized);
-    if (normalized.startsWith('+')) set.add(normalized.slice(1));
+
+  /** 兼容历史库里未规范化的 Malaysian / China 写法 */
+  if (digits) {
+    const ccStr = countryCode != null && String(countryCode).trim() ? String(countryCode).trim() : '';
+    if (ccStr) {
+      const normalizedFallback = normalizeIntlPhone(digits, ccStr);
+      if (normalizedFallback) set.add(normalizedFallback);
+    }
+
+    if (digits.startsWith('0')) {
+      const noLeadingZero = digits.replace(/^0+/, '');
+      if (noLeadingZero) {
+        set.add(noLeadingZero);
+        set.add(`60${noLeadingZero}`);
+        set.add(`+60${noLeadingZero}`);
+        set.add(`86${noLeadingZero}`);
+        set.add(`+86${noLeadingZero}`);
+      }
+    } else {
+      set.add(`0${digits}`);
+      if (digits.startsWith('60') || digits.startsWith('86')) {
+        const local = digits.slice(2);
+        if (local) {
+          set.add(local);
+          set.add(`0${local}`);
+          set.add(`+${digits}`);
+        }
+      } else {
+        set.add(`60${digits}`);
+        set.add(`+60${digits}`);
+        set.add(`86${digits}`);
+        set.add(`+86${digits}`);
+      }
+    }
   }
 
-  return [...set];
+  return [...set].filter(Boolean);
 }
 
 module.exports = {

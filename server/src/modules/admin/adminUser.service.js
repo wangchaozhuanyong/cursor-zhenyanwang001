@@ -3,7 +3,13 @@ const { rowsToCsv } = require('../../utils/csv');
 const repo = require('./adminUser.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
 const { formatUserResponse } = require('../../utils/formatUserResponse');
-const pointsService = require('../user/points.service');
+const userModule = require('../user');
+const { normalizeIntlPhone, buildPhoneLookupCandidates } = require('../../utils/phone');
+
+const adjustUserPointsFn = userModule.api?.adjustUserPoints;
+if (typeof adjustUserPointsFn !== 'function') {
+  throw new Error('User 模块 API 未暴露 adjustUserPoints');
+}
 
 async function listUsers(query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
@@ -29,15 +35,24 @@ async function getUserById(userId) {
 async function updateUser(userId, body) {
   const fields = [];
   const values = [];
-  for (const f of ['nickname', 'phone', 'avatar', 'wechat', 'whatsapp']) {
+  for (const f of ['nickname', 'avatar', 'wechat', 'whatsapp']) {
     if (body[f] !== undefined) {
       fields.push(`${f} = ?`);
       values.push(body[f]);
     }
   }
-  if (body.points_balance !== undefined) {
-    fields.push('points_balance = ?');
-    values.push(body.points_balance);
+  if (body.phone !== undefined) {
+    const normalizedPhone = normalizeIntlPhone(body.phone, body.countryCode);
+    if (!normalizedPhone || !/^\+(60|86)\d+$/.test(normalizedPhone)) {
+      throw new BusinessError(400, '仅支持 +60 或 +86 手机号');
+    }
+    const dup = await repo.findPhoneDuplicateByPhones(
+      userId,
+      buildPhoneLookupCandidates(body.phone, body.countryCode),
+    );
+    if (dup) throw new BusinessError(409, '该手机号已被其他用户使用');
+    fields.push('phone = ?');
+    values.push(normalizedPhone);
   }
   if (fields.length === 0) throw new BusinessError(400, '没有需要更新的字段');
   await repo.updateUserDynamic(fields, values, userId);
@@ -45,7 +60,7 @@ async function updateUser(userId, body) {
 }
 
 async function updateSubordinate(userId, body) {
-  const { subordinateEnabled } = body;
+  const subordinateEnabled = body.subordinateEnabled ?? body.enabled;
   await repo.updateSubordinateEnabled(userId, !!subordinateEnabled);
   return { data: null, message: '更新成功' };
 }
@@ -70,8 +85,10 @@ async function adjustUserPoints(userId, body, adminUserId, req) {
 
   try {
     if (points === undefined) throw new BusinessError(400, '请输入积分数值');
-    await pointsService.adjustUserPoints(userId, Number(points), reason || '管理员调整', adminUserId);
-    const afterBal = beforeBal + Number(points);
+    const delta = Number(points);
+    if (!Number.isFinite(delta) || !delta) throw new BusinessError(400, '积分数值不正确');
+    await adjustUserPointsFn(userId, delta, reason || '管理员调整', adminUserId);
+    const afterBal = beforeBal + delta;
     await writeAuditLog({
       req,
       operatorId: adminUserId,

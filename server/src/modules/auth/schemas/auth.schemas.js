@@ -10,7 +10,10 @@ const phoneSchema = z
 const countryCodeSchema = z
   .string({ message: '国家代码不能为空' })
   .trim()
-  .regex(/^\+?[0-9]{1,4}$/, '国家代码格式不正确');
+  .refine((v) => {
+    const d = v.replace(/\D+/g, '');
+    return d === '60' || d === '86';
+  }, '仅支持 +60 或 +86');
 
 const passwordSchema = z
   .string({ message: '密码不能为空' })
@@ -65,6 +68,16 @@ const changePasswordBodySchema = z.object({
   newPassword: passwordSchema,
 });
 
+const requestPasswordResetBodySchema = z.object({
+  countryCode: countryCodeSchema.optional(),
+  phone: phoneSchema,
+});
+
+const resetPasswordBodySchema = z.object({
+  token: z.string({ message: '重置令牌不能为空' }).trim().min(16, '重置令牌无效').max(128, '重置令牌无效'),
+  newPassword: passwordSchema,
+});
+
 module.exports = {
   phoneSchema,
   passwordSchema,
@@ -73,4 +86,6 @@ module.exports = {
   refreshBodySchema,
   updateProfileBodySchema,
   changePasswordBodySchema,
+  requestPasswordResetBodySchema,
+  resetPasswordBodySchema,
 };

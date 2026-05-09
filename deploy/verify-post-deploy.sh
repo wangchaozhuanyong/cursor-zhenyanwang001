@@ -61,6 +61,17 @@ echo "📦 dist 最近文件："
 ls -lah "$DIST_DIR" | head -n 10
 
 echo
+echo "==== 2.1 前端资源一致性检查 ===="
+node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$DIST_DIR"
+PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-$PROJECT_DIR/public-frontend}"
+if [[ -d "$PUBLIC_FRONTEND" ]]; then
+  echo "📁 PUBLIC_FRONTEND=$PUBLIC_FRONTEND"
+  node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$PUBLIC_FRONTEND"
+else
+  echo "ℹ️ 未发现 public-frontend，跳过 Nginx 静态目录检查"
+fi
+
+echo
 echo "==== 3. PM2 进程检查 ===="
 pm2 list
 

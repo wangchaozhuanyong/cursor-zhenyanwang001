@@ -1,18 +1,24 @@
 const db = require('../../config/db');
 
 async function countUserCoupons(userId, status) {
-  let where = 'WHERE BINARY uc.user_id = BINARY ?';
+  let where = 'WHERE BINARY uc.user_id = BINARY ? AND c.deleted_at IS NULL';
   const params = [userId];
   if (status) {
     where += ' AND BINARY uc.status = BINARY ?';
     params.push(status);
   }
-  const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total FROM user_coupons uc ${where}`, params);
+  const [[{ total }]] = await db.query(
+    `SELECT COUNT(*) AS total
+     FROM user_coupons uc
+     JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
+     ${where}`,
+    params,
+  );
   return total;
 }
 
 async function selectUserCouponsPage(userId, status, pageSize, offset) {
-  let where = 'WHERE BINARY uc.user_id = BINARY ?';
+  let where = 'WHERE BINARY uc.user_id = BINARY ? AND c.deleted_at IS NULL';
   const params = [userId];
   if (status) {
     where += ' AND BINARY uc.status = BINARY ?';
@@ -59,7 +65,8 @@ async function selectAvailableCoupons() {
               WHERE BINARY cc.coupon_id = BINARY c.id
             ) AS category_names
      FROM coupons c
-     WHERE c.status = 'available' AND c.end_date >= CURDATE() AND c.start_date <= CURDATE()
+     WHERE c.deleted_at IS NULL
+       AND c.status = 'available' AND c.end_date >= CURDATE() AND c.start_date <= CURDATE()
      ORDER BY c.created_at DESC`,
   );
   return rows;
@@ -89,6 +96,7 @@ async function selectCouponByCodeOrId(code) {
             ) AS category_names
      FROM coupons c
      WHERE (BINARY c.code = BINARY ? OR BINARY c.id = BINARY ?)
+       AND c.deleted_at IS NULL
        AND c.status = 'available' AND c.end_date >= CURDATE() AND c.start_date <= CURDATE()`,
     [code, code],
   );

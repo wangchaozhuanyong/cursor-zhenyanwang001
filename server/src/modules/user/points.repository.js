@@ -1,5 +1,13 @@
 const db = require('../../config/db');
 
+function getPool() {
+  return db;
+}
+
+async function getConnection() {
+  return db.getConnection();
+}
+
 function buildRecordWhere(filters = {}, alias = '') {
   const col = (name) => (alias ? `${alias}.${name}` : name);
   const clauses = ['WHERE 1=1'];
@@ -167,10 +175,36 @@ async function insertLedgerRecord(conn, params) {
 }
 
 async function addUserPoints(userId, points) {
-  await db.query('UPDATE users SET points_balance = points_balance + ? WHERE id = ?', [points, userId]);
+  const amount = Math.max(Number(points) || 0, 0);
+  const conn = await getConnection();
+  try {
+    await conn.beginTransaction();
+    await ensureAccount(conn, userId);
+    await conn.query(
+      `UPDATE points_accounts
+       SET balance = balance + ?, total_earned = total_earned + ?
+       WHERE user_id = ?`,
+      [amount, amount, userId],
+    );
+    await conn.query(
+      `UPDATE users u
+       JOIN points_accounts pa ON pa.user_id = u.id
+       SET u.points_balance = pa.balance
+       WHERE u.id = ?`,
+      [userId],
+    );
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 }
 
 module.exports = {
+  getPool,
+  getConnection,
   buildRecordWhere,
   countRecords,
   selectRecordsPage,

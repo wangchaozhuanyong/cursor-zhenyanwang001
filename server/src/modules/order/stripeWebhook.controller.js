@@ -17,7 +17,8 @@ exports.handleWebhook = async (req, res) => {
 
   let stripe;
   try {
-    stripe = require('stripe')(secretKey);
+    const Stripe = require('stripe');
+    stripe = new Stripe(secretKey);
   } catch {
     return res.status(500).json({ code: 500, message: '请安装依赖: npm install stripe' });
   }

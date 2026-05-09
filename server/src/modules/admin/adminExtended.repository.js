@@ -1,4 +1,12 @@
 const db = require('../../config/db');
+
+function getPool() {
+  return db;
+}
+
+async function getConnection() {
+  return db.getConnection();
+}
 const { ORDER_STATUS, PAYMENT_STATUS, RETURN_STATUS } = require('../../constants/status');
 
 async function countReturnRequests(where, params) {
@@ -182,11 +190,37 @@ async function addProductStockConn(conn, productId, qty) {
   await q(conn).query('UPDATE products SET stock = stock + ? WHERE id = ?', [qty, productId]);
 }
 
-async function deductUserPointsConn(conn, userId, points) {
+async function ensurePointsAccountConn(conn, userId) {
   await q(conn).query(
-    'UPDATE users SET points_balance = GREATEST(0, points_balance - ?) WHERE id = ?',
-    [points, userId],
+    `INSERT IGNORE INTO points_accounts (user_id, balance, total_earned)
+     SELECT id, COALESCE(points_balance, 0), GREATEST(COALESCE(points_balance, 0), 0)
+     FROM users WHERE id = ?`,
+    [userId],
   );
+}
+
+async function syncUserPointsFromAccountConn(conn, userId) {
+  await q(conn).query(
+    `UPDATE users u
+     JOIN points_accounts pa ON pa.user_id = u.id
+     SET u.points_balance = pa.balance
+     WHERE u.id = ?`,
+    [userId],
+  );
+}
+
+async function deductUserPointsConn(conn, userId, points) {
+  const amount = Math.max(Number(points) || 0, 0);
+  await ensurePointsAccountConn(conn, userId);
+  await q(conn).query(
+    `UPDATE points_accounts
+     SET balance = GREATEST(0, balance - ?),
+         total_spent = total_spent + ?,
+         total_reversed = total_reversed + ?
+     WHERE user_id = ?`,
+    [amount, amount, amount, userId],
+  );
+  await syncUserPointsFromAccountConn(conn, userId);
 }
 
 async function insertPointsRecordConn(conn, id, userId, action, amount, description) {
@@ -208,6 +242,8 @@ async function insertNotificationConn(conn, id, userId, type, title, content) {
 }
 
 module.exports = {
+  getPool,
+  getConnection,
   countReturnRequests,
   selectReturnRequestsPage,
   updateReturnRequestByFields,

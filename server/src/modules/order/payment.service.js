@@ -1,9 +1,10 @@
-const db = require('../../config/db');
 const { generateId } = require('../../utils/helpers');
 const repo = require('./order.repository');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
-const { isNotificationTriggerEnabled } = require('../notification/triggerSettings.service');
-const paymentsService = require('../payments/payments.service');
+const paymentsService = require('./payments/payments.service');
+const { isNotificationTriggerEnabled } = require('../admin/notificationTriggerApi');
+
+const orderDb = repo.getPool();
 
 /**
  * 校验 Stripe PaymentIntent 与订单金额、币种一致（与 createStripeCheckoutSession 中 unit_amount 逻辑对齐）
@@ -43,7 +44,7 @@ async function handleStripeEvent(event) {
   const eventId = event.id || '';
   if (!orderId || !eventId) return { handled: true };
 
-  const accepted = await repo.insertWebhookEventIfAbsent(db, {
+  const accepted = await repo.insertWebhookEventIfAbsent(orderDb, {
     eventId,
     eventType: event.type,
     orderId,
@@ -52,7 +53,7 @@ async function handleStripeEvent(event) {
     return { handled: true, duplicate: true };
   }
 
-  const order = await repo.selectOrderById(db, orderId);
+  const order = await repo.selectOrderById(orderDb, orderId);
   if (!order) {
     console.error('[stripe webhook] order not found:', orderId);
     return { handled: true };
@@ -67,7 +68,7 @@ async function handleStripeEvent(event) {
   }
 
   const check = validatePaymentIntentAmount(order, pi);
-  if (!check.ok) {
+  if (check.ok === false) {
     console.error('[stripe webhook] payment validation failed:', check.reason, check.details || '');
     return { handled: true };
   }
@@ -75,7 +76,7 @@ async function handleStripeEvent(event) {
   const paidAt = Number.isFinite(Number(pi.created))
     ? new Date(Number(pi.created) * 1000)
     : new Date();
-  await repo.updateOrderPaid(db, orderId, {
+  await repo.updateOrderPaid(orderDb, orderId, {
     paymentTime: paidAt,
     paymentChannel: 'stripe',
     paymentTransactionNo: pi.id || '',
@@ -92,10 +93,10 @@ async function handleStripeEvent(event) {
   }
 
   try {
-    const itemRows = await repo.selectOrderItemQtyRows(db, orderId);
+    const itemRows = await repo.selectOrderItemQtyRows(orderDb, orderId);
     for (const it of itemRows) {
       if (it?.product_id && Number(it.qty) > 0) {
-        await repo.incrementProductSales(db, it.product_id, Number(it.qty));
+        await repo.incrementProductSales(orderDb, it.product_id, Number(it.qty));
       }
     }
   } catch (err) {
@@ -103,7 +104,7 @@ async function handleStripeEvent(event) {
   }
 
   if (await isNotificationTriggerEnabled('stripe_payment_success')) {
-    await repo.insertNotification(db, {
+    await repo.insertNotification(orderDb, {
       id: generateId(),
       userId: order.user_id,
       type: 'order',

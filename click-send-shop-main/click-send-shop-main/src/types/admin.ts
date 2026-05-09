@@ -16,6 +16,8 @@ export interface AdminUser {
 
 export interface AdminLoginParams {
   username: string;
+  phone?: string;
+  countryCode?: string;
   password: string;
 }
 

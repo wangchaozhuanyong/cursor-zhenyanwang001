@@ -1,5 +1,9 @@
 const db = require('../../config/db');
 
+async function getConnection() {
+  return db.getConnection();
+}
+
 async function selectByUser(userId) {
   const [rows] = await db.query(
     'SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC',
@@ -75,6 +79,7 @@ async function selectRowById(id) {
 }
 
 module.exports = {
+  getConnection,
   selectByUser,
   selectByIdAndUser,
   selectWithDefault,

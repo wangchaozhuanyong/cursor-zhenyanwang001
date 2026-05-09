@@ -1,4 +1,3 @@
-const db = require('../../config/db');
 const { generateId } = require('../../utils/helpers');
 const repo = require('./address.repository');
 
@@ -11,7 +10,7 @@ async function createAddress(userId, body) {
   if (!name || !phone || !address) return { error: { code: 400, message: '请填写完整地址信息' } };
 
   const id = generateId();
-  const conn = await db.getConnection();
+  const conn = await repo.getConnection();
   try {
     await conn.beginTransaction();
     if (isDefault) {
@@ -40,7 +39,7 @@ async function updateAddress(userId, id, body) {
   const existing = await repo.selectByIdAndUser(id, userId);
   if (!existing) return { error: { code: 404, message: '地址不存在' } };
 
-  const conn = await db.getConnection();
+  const conn = await repo.getConnection();
   try {
     await conn.beginTransaction();
     if (isDefault) {

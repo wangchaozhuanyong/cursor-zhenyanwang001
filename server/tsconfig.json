@@ -9,17 +9,17 @@
     "outDir": "dist",
 
     "allowJs": true,
-    "checkJs": false,
+    "checkJs": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
 
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "noUncheckedIndexedAccess": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "noUncheckedIndexedAccess": false,
     "noFallthroughCasesInSwitch": true,
-    "noImplicitReturns": true,
-    "useUnknownInCatchVariables": true,
+    "noImplicitReturns": false,
+    "useUnknownInCatchVariables": false,
 
     "skipLibCheck": true,
     "resolveJsonModule": true,
@@ -30,6 +30,25 @@
     "sourceMap": true,
     "removeComments": false
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "test", "scripts"]
+  "include": [
+    "src/types/**/*.d.ts",
+    "src/config/**/*.js",
+    "src/constants/**/*.js",
+    "src/errors/**/*.js",
+    "src/middleware/**/*.js",
+    "src/utils/**/*.js",
+    "src/modules/auth/**/*.js",
+    "src/modules/admin/controller/**/*.js",
+    "src/modules/admin/*.service.js",
+    "src/modules/admin/*.repository.js",
+    "src/modules/admin/admin.routes.js",
+    "src/modules/admin/index.js",
+    "src/modules/admin/notificationTriggerApi.js",
+    "src/modules/order/**/*.js",
+    "src/modules/cart/**/*.js",
+    "src/modules/product/**/*.js",
+    "src/modules/user/**/*.js",
+    "src/modules/health/**/*.js"
+  ],
+  "exclude": ["node_modules", "dist", "test", "scripts", "src/application/**", "src/db/**"]
 }

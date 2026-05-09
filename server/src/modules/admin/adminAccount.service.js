@@ -1,7 +1,7 @@
 const { BusinessError } = require('../../errors/BusinessError');
 const repo = require('./adminAccount.repository');
 const authApi = require('../auth/auth.api');
-const authRepo = require('../auth/auth.repository');
+const { normalizeIntlPhone, buildPhoneLookupCandidates } = require('../../utils/phone');
 
 async function getProfile(userId) {
   const user = await repo.selectAdminProfileById(userId);
@@ -37,10 +37,17 @@ async function updateProfile(userId, body) {
   if (phone !== undefined && phone !== null) {
     const p = String(phone).trim();
     if (p) {
-      const dup = await authRepo.findPhoneDuplicate(userId, p);
+      const normalizedPhone = normalizeIntlPhone(p, body.countryCode);
+      if (!normalizedPhone || !/^\+(60|86)\d+$/.test(normalizedPhone)) {
+        throw new BusinessError(400, '仅支持 +60 或 +86 手机号');
+      }
+      const dup = await authApi.findPhoneDuplicateByPhonesForUser(
+        userId,
+        buildPhoneLookupCandidates(p, body.countryCode),
+      );
       if (dup) throw new BusinessError(409, '该手机号已被其他用户使用');
       fields.push('phone = ?');
-      values.push(p);
+      values.push(normalizedPhone);
     }
   }
   if (email !== undefined && email !== null) {

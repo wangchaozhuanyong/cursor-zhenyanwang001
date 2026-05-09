@@ -8,7 +8,15 @@ const ADMIN_FLAG_KEY = "admin_authenticated";
 export async function adminLogin(
   params: AdminLoginParams,
 ): Promise<{ token: string; user: AdminUser }> {
-  const res = await accountApi.adminLogin(params);
+  const username = String(params.username || "").trim();
+  const payload: AdminLoginParams = {
+    username,
+    phone: username,
+    password: params.password,
+  };
+  if (params.countryCode) payload.countryCode = params.countryCode;
+
+  const res = await accountApi.adminLogin(payload);
   const d = res.data as Record<string, unknown>;
 
   // Backend returns { token: { accessToken, refreshToken }, userId }
@@ -25,7 +33,7 @@ export async function adminLogin(
 
   const user: AdminUser = {
     id: String(d.userId || ""),
-    username: params.username,
+    username,
     role: (d.role as AdminUser["role"]) || "admin",
     permissions,
     isSuperAdmin,

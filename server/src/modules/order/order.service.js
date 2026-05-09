@@ -1,4 +1,3 @@
-const db = require('../../config/db');
 const { generateId, generateOrderNo } = require('../../utils/helpers');
 const { computeShippingFee, estimateWeightFromItems } = require('../../utils/shippingFee');
 const {
@@ -8,10 +7,19 @@ const {
 const { formatOrderItem, formatOrder } = require('./order.mapper');
 const { canUserCancel } = require('./orderStateMachine');
 const repo = require('./order.repository');
-const rewardService = require('../user/reward.service');
-const paymentsService = require('../payments/payments.service');
-const pointsService = require('../user/points.service');
+const userModule = require('../user');
+const paymentsModule = require('./payments');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
+const orderDb = repo.getPool();
+const userApi = userModule.api || {};
+const paymentsApi = paymentsModule.api || {};
+
+function requireApiMethod(api, name) {
+  if (typeof api[name] !== 'function') {
+    throw new Error(`模块 API 未暴露方法: ${name}`);
+  }
+  return api[name];
+}
 
 function calculateCouponDiscount(coupon, rawAmount, shippingFee) {
   const type = coupon.type;
@@ -41,7 +49,7 @@ async function createOrder(userId, body) {
     estimated_weight_kg,
   } = body;
 
-  const conn = await db.getConnection();
+  const conn = await repo.getConnection();
   try {
     await conn.beginTransaction();
 
@@ -184,7 +192,7 @@ async function createOrder(userId, body) {
       points: oi.points,
       qty: oi.qty,
     }));
-    const orderRow = await repo.selectOrderById(db, orderId);
+    const orderRow = await repo.selectOrderById(orderDb, orderId);
     return { data: formatOrder(orderRow, formattedItems), message: '下单成功' };
   } catch (err) {
     try {
@@ -201,16 +209,16 @@ async function getOrders(userId, query) {
   const pageSize = Math.min(50, Math.max(1, parseInt(query.pageSize, 10) || 10));
   const { status } = query;
 
-  const total = await repo.countOrdersForUser(db, userId, status);
+  const total = await repo.countOrdersForUser(orderDb, userId, status);
   const offset = (page - 1) * pageSize;
-  const orders = await repo.selectOrdersPage(db, userId, status, pageSize, offset);
+  const orders = await repo.selectOrdersPage(orderDb, userId, status, pageSize, offset);
 
   if (!orders.length) {
     return { kind: 'paginate', list: [], total, page, pageSize };
   }
 
   const orderIds = orders.map((o) => o.id);
-  const allItems = await repo.selectOrderItemsByOrderIds(db, orderIds);
+  const allItems = await repo.selectOrderItemsByOrderIds(orderDb, orderIds);
 
   const itemMap = {};
   for (const oi of allItems) {
@@ -223,14 +231,14 @@ async function getOrders(userId, query) {
 }
 
 async function getOrderById(userId, orderId) {
-  const order = await repo.selectOrderByIdAndUser(db, orderId, userId);
+  const order = await repo.selectOrderByIdAndUser(orderDb, orderId, userId);
   if (!order) throw new NotFoundError('订单不存在');
-  const items = await repo.selectOrderItems(db, order.id);
+  const items = await repo.selectOrderItems(orderDb, order.id);
   return { data: formatOrder(order, items.map(formatOrderItem)) };
 }
 
 async function cancelOrder(userId, orderId) {
-  const conn = await db.getConnection();
+  const conn = await repo.getConnection();
   try {
     const order = await repo.selectOrderByIdAndUser(conn, orderId, userId);
     if (!order) throw new NotFoundError('订单不存在');
@@ -245,7 +253,7 @@ async function cancelOrder(userId, orderId) {
       await repo.restoreProductStock(conn, item.product_id, item.qty);
     }
 
-    await pointsService.reverseOrderPoints(conn, order, `订单取消回滚积分 ${order.order_no}`, {
+    await requireApiMethod(userApi, 'reverseOrderPoints')(conn, order, `订单取消回滚积分 ${order.order_no}`, {
       trigger: 'user_cancel_order',
     });
 
@@ -267,13 +275,13 @@ async function cancelOrder(userId, orderId) {
 
 async function payOrder(userId, orderId, body) {
   const channel = body?.channel || '';
-  const order = await repo.selectOrderByIdAndUser(db, orderId, userId);
+  const order = await repo.selectOrderByIdAndUser(orderDb, orderId, userId);
   if (!order) throw new NotFoundError('订单不存在');
   if (order.status !== ORDER_STATUS.PENDING || (order.payment_status || PAYMENT_STATUS.PENDING) !== PAYMENT_STATUS.PENDING) {
     throw new ValidationError('当前订单状态无法支付');
   }
   if (channel === 'reward_wallet') {
-    return paymentsService.payWithRewardWallet(userId, orderId);
+    return requireApiMethod(paymentsApi, 'payWithRewardWallet')(userId, orderId);
   }
   if (channel === 'mock') {
     throw new ValidationError('生产环境已禁用 mock 支付，请使用 Stripe Checkout 完成支付');
@@ -282,12 +290,12 @@ async function payOrder(userId, orderId, body) {
 }
 
 async function createStripeCheckoutSession(userId, orderId) {
-  const r = await paymentsService.createStripeCheckoutForOrder(userId, orderId, '', undefined);
+  const r = await requireApiMethod(paymentsApi, 'createStripeCheckoutForOrder')(userId, orderId, '', undefined);
   return { data: { url: r.data.url } };
 }
 
 async function confirmReceive(userId, orderId) {
-  const conn = await db.getConnection();
+  const conn = await repo.getConnection();
   try {
     const order = await repo.selectOrderByIdAndUser(conn, orderId, userId);
     if (!order) throw new NotFoundError('订单不存在');
@@ -297,8 +305,8 @@ async function confirmReceive(userId, orderId) {
 
     await repo.updateOrderStatus(conn, order.id, ORDER_STATUS.COMPLETED);
 
-    await pointsService.settleOrderPoints(conn, order, { trigger: 'user_confirm_receive' });
-    await rewardService.settleOrderRewards(conn, order, { trigger: 'user_confirm_receive' });
+    await requireApiMethod(userApi, 'settleOrderPoints')(conn, order, { trigger: 'user_confirm_receive' });
+    await requireApiMethod(userApi, 'settleOrderRewards')(conn, order, { trigger: 'user_confirm_receive' });
 
     await conn.commit();
     return { data: null, message: '已确认收货' };

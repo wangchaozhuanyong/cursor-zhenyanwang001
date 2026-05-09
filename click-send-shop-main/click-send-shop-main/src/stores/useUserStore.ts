@@ -89,7 +89,6 @@ export const useUserStore = create<UserState>()(
           await userService.updateProfile({
             nickname: s.nickname,
             avatar: s.avatar,
-            phone: s.phone,
             wechat: s.wechat,
             whatsapp: s.whatsapp,
           });

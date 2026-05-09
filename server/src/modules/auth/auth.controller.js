@@ -27,6 +27,16 @@ exports.changePassword = asyncRoute(async (req, res) => {
   res.success(result.data, result.message);
 });
 
+exports.requestPasswordReset = asyncRoute(async (req, res) => {
+  const result = await authService.requestPasswordReset(req.body);
+  res.success(result.data, result.message);
+});
+
+exports.resetPassword = asyncRoute(async (req, res) => {
+  const result = await authService.resetPassword(req.body);
+  res.success(result.data, result.message);
+});
+
 exports.refresh = asyncRoute(async (req, res) => {
   const result = await authService.refresh(req.body.refreshToken);
   res.success(result.data);

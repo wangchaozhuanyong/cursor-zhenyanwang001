@@ -18,28 +18,45 @@ function randomPhone() {
 }
 
 async function jfetch(url, options = {}) {
-  const res = await fetch(url, options);
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok || body.code !== 0) {
-    throw new Error(`${options.method || "GET"} ${url} -> ${body.message || res.status}`);
+  const maxRetries = 3;
+  for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
+    let res;
+    try {
+      res = await fetch(url, options);
+    } catch (err) {
+      if (attempt < maxRetries) {
+        await new Promise((r) => setTimeout(r, 1200 * attempt));
+        continue;
+      }
+      throw new Error(`${options.method || "GET"} ${url} -> network error: ${err instanceof Error ? err.message : String(err)}`);
+    }
+
+    const body = await res.json().catch(() => ({}));
+    if (res.ok && body.code === 0) return body.data;
+    const message = `${options.method || "GET"} ${url} -> ${body.message || res.status}`;
+    if ((res.status === 429 || /频繁|稍后再试/i.test(String(body.message || ""))) && attempt < maxRetries) {
+      await new Promise((r) => setTimeout(r, 1800 * attempt));
+      continue;
+    }
+    throw new Error(message);
   }
-  return body.data;
 }
 
 async function registerAndLogin(prefix) {
   const phone = randomPhone();
   const password = "ShotFlow123A";
+  const countryCode = "+60";
   await jfetch(`${API}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone, password, nickname: `${prefix}-${phone.slice(-4)}` }),
+    body: JSON.stringify({ phone, countryCode, password, nickname: `${prefix}-${phone.slice(-4)}` }),
   });
   const login = await jfetch(`${API}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone, password }),
+    body: JSON.stringify({ phone, countryCode, password }),
   });
-  return { phone, password, token: login.token?.accessToken || login.token };
+  return { phone, countryCode, password, token: login.token?.accessToken || login.token };
 }
 
 async function authGet(pathname, token) {
@@ -64,7 +81,44 @@ async function authPut(pathname, token, payload) {
 
 async function seedFlow() {
   const inviter = await registerAndLogin("截图邀请人");
-  const inviterProfile = await authGet("/auth/profile", inviter.token);
+  const inviterProfile = await authGet("/user/profile", inviter.token);
+  const inviteCode = inviterProfile?.invite_code || inviterProfile?.inviteCode || "";
+  if (!inviteCode) throw new Error("邀请人未返回邀请码，无法继续邀请链路");
+
+  const adminLogin = await jfetch(`${API}/admin/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone: ADMIN_PHONE, password: ADMIN_PASSWORD }),
+  });
+  const adminToken = typeof adminLogin.token === "string" ? adminLogin.token : adminLogin.token?.accessToken;
+
+  let products = await jfetch(`${API}/products?page=1&pageSize=20`);
+  let product = products.list?.[0];
+  if (!product) {
+    const created = await authPost("/admin/products", adminToken, {
+      name: `截图回归商品-${Date.now().toString().slice(-6)}`,
+      price: 99.9,
+      original_price: 129.9,
+      sales_count: 0,
+      stock: 50,
+      points: 10,
+      category_id: "",
+      sort_order: 0,
+      description: "自动化回归创建的测试商品",
+      cover_image: "",
+      images: [],
+      status: "active",
+      is_hot: false,
+      is_new: true,
+      is_recommended: true,
+    });
+    product = created;
+    products = await jfetch(`${API}/products?page=1&pageSize=20`);
+    if (!products.list?.length) {
+      throw new Error("自动创建商品后仍未出现在前台列表");
+    }
+  }
+
   const invitee = await registerAndLogin("截图被邀请人");
   await authPost("/addresses", invitee.token, {
     name: "截图测试收件人",
@@ -73,8 +127,6 @@ async function seedFlow() {
     isDefault: true,
   });
 
-  const products = await jfetch(`${API}/products?page=1&pageSize=20`);
-  const product = products.list?.[0];
   if (!product) throw new Error("没有可下单商品");
   await authPost("/cart", invitee.token, { productId: product.id, qty: 1 });
   const order = await authPost("/orders", invitee.token, {
@@ -85,13 +137,6 @@ async function seedFlow() {
     payment_method: "mock",
     note: "截图回归订单",
   });
-
-  const adminLogin = await jfetch(`${API}/admin/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone: ADMIN_PHONE, password: ADMIN_PASSWORD }),
-  });
-  const adminToken = typeof adminLogin.token === "string" ? adminLogin.token : adminLogin.token?.accessToken;
 
   await authPut(`/admin/orders/${order.id}/status`, adminToken, { status: "paid" });
   await authPut(`/admin/orders/${order.id}/status`, adminToken, { status: "shipped" });
@@ -136,7 +181,10 @@ async function loginAdmin(page, phone, password) {
 
 async function captureScreens(summary, outDir) {
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    ignoreHTTPSErrors: true,
+  });
   const page = await context.newPage();
 
   await page.goto(`${BASE}/`, { waitUntil: "networkidle" });

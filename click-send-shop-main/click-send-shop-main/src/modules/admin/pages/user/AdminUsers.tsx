@@ -3,7 +3,6 @@ import { Loader2, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
-import { usePagination } from "@/hooks/usePagination";
 import { toast } from "sonner";
 import * as userService from "@/services/admin/userService";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -13,9 +12,14 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 export default function AdminUsers() {
   const navigate = useNavigate();
   const users = useAdminUsersStore((s) => s.users);
+  const total = useAdminUsersStore((s) => s.total);
+  const page = useAdminUsersStore((s) => s.page);
+  const pageSize = useAdminUsersStore((s) => s.pageSize);
   const loading = useAdminUsersStore((s) => s.loading);
   const search = useAdminUsersStore((s) => s.search);
   const setSearch = useAdminUsersStore((s) => s.setSearch);
+  const setPage = useAdminUsersStore((s) => s.setPage);
+  const setPageSize = useAdminUsersStore((s) => s.setPageSize);
   const loadUsers = useAdminUsersStore((s) => s.loadUsers);
   const resetUsersStore = useAdminUsersStore((s) => s.reset);
 
@@ -29,12 +33,22 @@ export default function AdminUsers() {
 
   useEffect(() => () => resetUsersStore(), [resetUsersStore]);
 
-  const filteredUsers = users.filter((u) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return u.nickname?.toLowerCase().includes(q) || u.phone?.toLowerCase().includes(q);
-  });
-  const { page, pageSize, setPage, setPageSize, paginatedData, total } = usePagination(filteredUsers, 10);
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPage(1);
+    loadUsers({ page: 1, keyword: value }).catch((e) => toast.error(toastErrorMessage(e, "加载数据失败")));
+  };
+
+  const handlePageChange = (nextPage: number) => {
+    setPage(nextPage);
+    loadUsers({ page: nextPage }).catch((e) => toast.error(toastErrorMessage(e, "加载数据失败")));
+  };
+
+  const handlePageSizeChange = (nextPageSize: number) => {
+    setPageSize(nextPageSize);
+    setPage(1);
+    loadUsers({ page: 1, pageSize: nextPageSize }).catch((e) => toast.error(toastErrorMessage(e, "加载数据失败")));
+  };
 
   const handleExportCsv = async () => {
     try {
@@ -57,7 +71,7 @@ export default function AdminUsers() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="min-w-0 flex-1">
-          <SearchBar placeholder="搜索用户昵称 / 手机号..." value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
+          <SearchBar placeholder="搜索用户昵称 / 手机号..." value={search} onChange={handleSearchChange} />
         </div>
         <PermissionGate permission="user.view">
           <button type="button" onClick={handleExportCsv} className="touch-manipulation flex min-h-[44px] shrink-0 items-center gap-1.5 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2.5 text-sm text-foreground hover:bg-[var(--theme-bg)] sm:self-center">
@@ -68,7 +82,7 @@ export default function AdminUsers() {
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         {[
-          { label: "总用户数", value: String(users.length) },
+          { label: "匹配用户数", value: String(total) },
           { label: "今日新增", value: String(users.filter((u) => { const today = new Date().toISOString().slice(0, 10); return u.created_at?.slice(0, 10) === today; }).length) },
           { label: "有邀请码", value: String(users.filter((u) => u.parent_invite_code).length) },
         ].map((s) => (
@@ -81,7 +95,7 @@ export default function AdminUsers() {
 
       {/* 移动端：卡片 */}
       <div className="space-y-3 md:hidden">
-        {paginatedData.map((u) => (
+        {users.map((u) => (
           <div key={u.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
             <div className="flex items-start gap-3">
               {u.avatar ? (
@@ -107,10 +121,10 @@ export default function AdminUsers() {
             </div>
           </div>
         ))}
-        {paginatedData.length === 0 && (
+        {users.length === 0 && (
           <div className="py-12 text-center text-sm text-muted-foreground">暂无用户</div>
         )}
-        <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+        <Pagination total={total} page={page} pageSize={pageSize} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
       </div>
 
       {/* 桌面端：表格 */}
@@ -124,7 +138,7 @@ export default function AdminUsers() {
             </tr>
           </thead>
           <tbody>
-            {paginatedData.map((u) => (
+            {users.map((u) => (
               <tr key={u.id} className="border-b border-[var(--theme-border)] last:border-0 hover:bg-[var(--theme-bg)]">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
@@ -146,7 +160,7 @@ export default function AdminUsers() {
             ))}
           </tbody>
         </table>
-        <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+        <Pagination total={total} page={page} pageSize={pageSize} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
       </div>
     </div>
   );

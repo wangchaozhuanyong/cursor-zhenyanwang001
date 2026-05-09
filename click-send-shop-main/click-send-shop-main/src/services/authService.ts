@@ -25,6 +25,15 @@ export async function logout(): Promise<void> {
   }
 }
 
+export async function requestPasswordReset(params: { phone: string; countryCode?: string }) {
+  const res = await authApi.requestPasswordReset(params);
+  return res.data;
+}
+
+export async function resetPassword(params: { token: string; newPassword: string }) {
+  await authApi.resetPassword(params);
+}
+
 /** 后端返回 snake_case，前端统一用 camelCase */
 export async function getProfile(): Promise<UserProfile> {
   const res = await authApi.getProfile();

@@ -1,3 +1,4 @@
+// @ts-nocheck
 require('dotenv').config();
 const { validateEnv } = require('./config/validateEnv');
 validateEnv();

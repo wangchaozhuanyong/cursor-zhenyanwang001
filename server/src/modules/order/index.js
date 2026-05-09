@@ -7,6 +7,7 @@ const router = Router();
 
 router.use('/orders', require('./orders.routes'));
 router.use('/payment', require('./paymentPublic.routes'));
+router.use('/payments', require('./payments'));
 router.use('/returns', require('./returns.routes'));
 
 module.exports = router;

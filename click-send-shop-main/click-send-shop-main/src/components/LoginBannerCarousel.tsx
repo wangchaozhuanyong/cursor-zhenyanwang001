@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supportsColorMix } from "@/utils/cssSupport";
 
 interface LoginBanner {
   image: string;
@@ -44,6 +45,7 @@ export default function LoginBannerCarousel({ banners }: LoginBannerCarouselProp
   };
 
   if (banners.length === 0) return null;
+  const inactiveDotColor = supportsColorMix() ? "color-mix(in srgb, #ffffff 50%, transparent)" : "rgba(255,255,255,0.5)";
 
   const variants = {
     enter: (d: number) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0 }),
@@ -104,7 +106,7 @@ export default function LoginBannerCarousel({ banners }: LoginBannerCarouselProp
                   backgroundColor:
                     i === current
                       ? "var(--theme-price)"
-                      : "color-mix(in srgb, #ffffff 50%, transparent)",
+                      : inactiveDotColor,
                 }}
               />
             </button>

@@ -6,7 +6,7 @@ export function getShippingTemplates() {
 }
 
 export function quoteShipping(payload: {
-  shipping_template_id: string;
+  shipping_template_id: string | number;
   raw_amount: number;
   estimated_weight_kg?: number;
 }) {

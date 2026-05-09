@@ -1,4 +1,3 @@
-const db = require('../../config/db');
 const { generateId } = require('../../utils/helpers');
 const repo = require('./reward.repository');
 const { REWARD_STATUS } = require('../../constants/status');
@@ -157,7 +156,7 @@ async function withdraw(userId, body) {
     return { error: { code: 400, message: '提现金额必须大于0' } };
   }
 
-  const conn = await db.getConnection();
+  const conn = await repo.getConnection();
   try {
     await conn.beginTransaction();
     const available = await repo.sumAvailableForWithdraw(conn, userId);
@@ -188,6 +187,16 @@ async function getBalance(userId) {
   };
 }
 
+/** 事务内：返现钱包可用余额（与 reward_transactions 汇总一致） */
+async function sumRewardTransactionsBalance(conn, userId) {
+  return repo.sumUserRewardTransactions(conn, userId);
+}
+
+/** 事务内：写入返现流水（供订单域支付等与订单同事务） */
+async function insertRewardTransaction(conn, params) {
+  return repo.insertTransaction(conn, params);
+}
+
 module.exports = {
   settleOrderRewards,
   reverseOrderRewards,
@@ -196,4 +205,6 @@ module.exports = {
   getAdminRecords,
   withdraw,
   getBalance,
+  sumRewardTransactionsBalance,
+  insertRewardTransaction,
 };

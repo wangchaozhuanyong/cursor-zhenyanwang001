@@ -43,7 +43,9 @@ function getReqContext(req) {
 async function getOperatorMeta(userId) {
   if (!userId) return { name: '', role: '' };
   try {
-    const [[u]] = await db.query('SELECT nickname, role FROM users WHERE id = ? LIMIT 1', [userId]);
+    const [rowsRaw] = await db.query('SELECT nickname, role FROM users WHERE id = ? LIMIT 1', [userId]);
+    const rows = Array.isArray(rowsRaw) ? rowsRaw : [];
+    const u = /** @type {{ nickname?: string, role?: string }|undefined} */ (rows[0]);
     if (!u) return { name: '', role: '' };
     return { name: u.nickname || '', role: u.role || '' };
   } catch {

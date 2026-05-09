@@ -25,9 +25,21 @@ async function getUnreadCount(userId) {
   return { count };
 }
 
+/** 系统/运营侧写入一条用户通知（供管理端、订单发货等跨域调用） */
+async function insertUserNotification({ id, userId, type, title, content }) {
+  await repo.insertNotification({
+    id,
+    user_id: userId,
+    type,
+    title,
+    content,
+  });
+}
+
 module.exports = {
   getNotifications,
   markAsRead,
   markAllAsRead,
   getUnreadCount,
+  insertUserNotification,
 };

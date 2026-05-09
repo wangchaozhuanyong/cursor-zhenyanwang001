@@ -25,7 +25,7 @@ modules/<domain>/
 ├── *.service.js           # 业务规则与事务编排；不直接拼 SQL
 ├── *.repository.js        # 仅数据访问；不做业务判断
 ├── schemas/               # Zod 入参/查询/参数校验（按需）
-│   └── *.schemas.ts
+│   └── *.schemas.js
 └── index.js               # 把本模块路由挂到对应 /api/<前缀>
 ```
 
@@ -36,7 +36,7 @@ modules/<domain>/
   并保留 `BusinessError` 别名（向后兼容）。
 - **统一错误处理**：`server/src/middleware/errorHandler.js` 统一识别上述错误 + ZodError + Multer 错误，
   返回稳定的 `{ code, message, data, traceId }`。
-- **统一参数校验**：`server/src/middleware/validate.ts`（TS）支持 `body / query / params` 三段，
+- **统一参数校验**：`server/src/middleware/validate.js` 支持 `body / query / params` 三段，
   失败抛 `ValidationError`，由 errorHandler 输出 400。
 - **统一鉴权**：`server/src/middleware/auth.js`（用户）与 `adminAuth.js`（管理员 + RBAC `requirePermission`）。
 - **统一响应**：`server/src/middleware/response.js`（注入 `res.success / res.fail / res.paginate / req.traceId`）。
@@ -44,7 +44,7 @@ modules/<domain>/
 ## 渐进 TypeScript
 
 - 已加 `tsconfig.json` + `tsx` 加载器；启动脚本走 `node -r tsx/cjs ...`，新文件可直接写 `.ts`。
-- `npm run typecheck` 跑 `tsc --noEmit`。
+- `npm run typecheck` 跑 `tsc --noEmit`（当前入口为 `src/tsc-placeholder.ts`；业务仍以 `.js` 为准，避免与同名 `.js` 双份维护）。
 
 ## admin 子域文件结构
 

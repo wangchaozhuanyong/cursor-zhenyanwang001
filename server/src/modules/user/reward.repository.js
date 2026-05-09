@@ -1,4 +1,12 @@
 const db = require('../../config/db');
+
+function getPool() {
+  return db;
+}
+
+async function getConnection() {
+  return db.getConnection();
+}
 const { REWARD_STATUS } = require('../../constants/status');
 
 function buildRecordWhere(filters = {}, alias = '') {
@@ -267,6 +275,8 @@ async function insertWithdrawRecord(conn, id, userId, amount) {
 }
 
 module.exports = {
+  getPool,
+  getConnection,
   countRecords,
   countAdminRecords,
   selectAdminRecordsPage,

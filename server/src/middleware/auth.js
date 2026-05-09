@@ -6,7 +6,10 @@ module.exports = function authMiddleware(req, res, next) {
     return res.fail(401, '请先登录');
   }
   try {
-    const payload = verifyToken(header.split(' ')[1]);
+    const payload = /** @type {{ type?: string, userId?: string }} */ (verifyToken(header.split(' ')[1]));
+    if (payload.type === 'refresh') {
+      return res.fail(401, '登录已过期，请重新登录');
+    }
     req.user = { id: payload.userId };
     next();
   } catch {

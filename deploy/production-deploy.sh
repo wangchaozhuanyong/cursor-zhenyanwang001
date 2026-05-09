@@ -7,6 +7,7 @@
 # 环境变量：
 #   PROJECT_DIR     默认 /var/www/click-send-shop（标准目录，与宝塔 /www/wwwroot 无关）
 #   FRONTEND_SUB, HEALTH_PORT, HEALTH_PATH, PM2_APP
+#   PUBLIC_FRONTEND 默认 $PROJECT_DIR/public-frontend（若 Nginx 直读静态目录，会同步 dist）
 #
 set -euo pipefail
 
@@ -19,6 +20,7 @@ BACKEND_DIR="$PROJECT_DIR/server"
 LOG_FILE="${LOG_FILE:-$PROJECT_DIR/deploy.log}"
 HEALTH_PORT="${HEALTH_PORT:-3001}"
 HEALTH_PATH="${HEALTH_PATH:-/api/health/live}"
+PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-$PROJECT_DIR/public-frontend}"
 
 cd "$PROJECT_DIR" || exit 1
 
@@ -81,9 +83,35 @@ if [[ ! -d "$FRONTEND_DIR" ]]; then
   exit 1
 fi
 
+ASSET_BACKUP=""
+if [[ -d "$FRONTEND_DIR/dist/assets" ]]; then
+  ASSET_BACKUP="$(mktemp -d)"
+  cp -a "$FRONTEND_DIR/dist/assets/." "$ASSET_BACKUP/" 2>/dev/null || true
+fi
+
 cd "$FRONTEND_DIR" || exit 1
 npm install
 npm run build
+
+if [[ -n "$ASSET_BACKUP" && -d "$ASSET_BACKUP" ]]; then
+  echo "🧩 保留上一版 hashed assets，避免已打开页面刷新/懒加载时 chunk 404" | tee -a "$LOG_FILE"
+  mkdir -p "$FRONTEND_DIR/dist/assets"
+  cp -an "$ASSET_BACKUP/." "$FRONTEND_DIR/dist/assets/" 2>/dev/null || true
+  rm -rf "$ASSET_BACKUP"
+fi
+
+echo "🔎 校验前端 dist 资源引用一致性..." | tee -a "$LOG_FILE"
+node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$FRONTEND_DIR/dist" | tee -a "$LOG_FILE"
+
+echo "📤 同步 dist → $PUBLIC_FRONTEND（保持 Node dist 与 Nginx 静态目录一致）" | tee -a "$LOG_FILE"
+mkdir -p "$PUBLIC_FRONTEND"
+if command -v rsync >/dev/null 2>&1; then
+  rsync -a --delete "$FRONTEND_DIR/dist/" "$PUBLIC_FRONTEND/"
+else
+  rm -rf "${PUBLIC_FRONTEND:?}/"*
+  cp -a "$FRONTEND_DIR/dist/." "$PUBLIC_FRONTEND/"
+fi
+node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$PUBLIC_FRONTEND" | tee -a "$LOG_FILE"
 
 PM2_APP="${PM2_APP:-gc-api}"
 

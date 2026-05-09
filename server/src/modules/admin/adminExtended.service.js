@@ -1,12 +1,20 @@
-const db = require('../../config/db');
 const { generateId } = require('../../utils/helpers');
 const repo = require('./adminExtended.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
 const { assertReturnTransition } = require('../order/returnStateMachine');
 const { ORDER_STATUS, RETURN_STATUS } = require('../../constants/status');
-const { isNotificationTriggerEnabled } = require('../notification/triggerSettings.service');
-const rewardService = require('../user/reward.service');
-const pointsService = require('../user/points.service');
+const { isNotificationTriggerEnabled } = require('./notificationTriggerSettings.service');
+const userModule = require('../user');
+
+const userApi = userModule.api || {};
+
+function requireUserApi(name) {
+  const fn = userApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`User 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
 
 function buildReturnListWhere(query) {
   let where = 'WHERE 1=1';
@@ -128,7 +136,7 @@ async function getReturnById(id) {
 
 async function approveReturn(id, body, adminUserId, req) {
   const beforeSnapRow = await repo.selectReturnById(id);
-  const conn = await db.getConnection();
+  const conn = await repo.getConnection();
   try {
     await conn.beginTransaction();
     const { refund_amount, admin_remark } = body;
@@ -152,11 +160,11 @@ async function approveReturn(id, body, adminUserId, req) {
     const order = await repo.selectOrderByIdConn(conn, ret.order_id);
     if (order) {
       await repo.updateOrderStatusConn(conn, ORDER_STATUS.REFUNDED, order.id);
-      await pointsService.reverseOrderPoints(conn, order, '售后退款批准，积分回滚', {
+      await requireUserApi('reverseOrderPoints')(conn, order, '售后退款批准，积分回滚', {
         operatorId: adminUserId,
         trigger: 'return_approved',
       });
-      await rewardService.reverseOrderRewards(conn, order, '售后退款批准，返现冲正', {
+      await requireUserApi('reverseOrderRewards')(conn, order, '售后退款批准，返现冲正', {
         operatorId: adminUserId,
         trigger: 'return_approved',
       });

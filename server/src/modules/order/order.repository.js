@@ -2,7 +2,16 @@
  * 订单域数据访问（SQL 集中于此，便于审计与单测 mock）
  * @param {import('mysql2/promise').Pool|import('mysql2/promise').PoolConnection} q
  */
+const db = require('../../config/db');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
+
+function getPool() {
+  return db;
+}
+
+async function getConnection() {
+  return db.getConnection();
+}
 
 async function selectProductsForUpdate(q, productIds) {
   if (!productIds.length) return [];
@@ -90,8 +99,35 @@ async function deductProductStock(q, productId, qty) {
   return result.affectedRows;
 }
 
+async function ensurePointsAccount(q, userId) {
+  await q.query(
+    `INSERT IGNORE INTO points_accounts (user_id, balance, total_earned)
+     SELECT id, COALESCE(points_balance, 0), GREATEST(COALESCE(points_balance, 0), 0)
+     FROM users WHERE id = ?`,
+    [userId],
+  );
+}
+
+async function syncUserPointsFromAccount(q, userId) {
+  await q.query(
+    `UPDATE users u
+     JOIN points_accounts pa ON pa.user_id = u.id
+     SET u.points_balance = pa.balance
+     WHERE u.id = ?`,
+    [userId],
+  );
+}
+
 async function incrementUserPoints(q, userId, points) {
-  await q.query('UPDATE users SET points_balance = points_balance + ? WHERE id = ?', [points, userId]);
+  const amount = Math.max(Number(points) || 0, 0);
+  await ensurePointsAccount(q, userId);
+  await q.query(
+    `UPDATE points_accounts
+     SET balance = balance + ?, total_earned = total_earned + ?
+     WHERE user_id = ?`,
+    [amount, amount, userId],
+  );
+  await syncUserPointsFromAccount(q, userId);
 }
 
 async function insertPointsRecord(q, params) {
@@ -162,6 +198,14 @@ async function selectOrderByIdAndUserForUpdate(q, orderId, userId) {
   return row || null;
 }
 
+async function selectOrderByIdForUpdate(q, orderId) {
+  const [[row]] = await q.query(
+    'SELECT * FROM orders WHERE id = ? FOR UPDATE',
+    [orderId],
+  );
+  return row || null;
+}
+
 async function selectOrderItems(q, orderId) {
   const [rows] = await q.query('SELECT * FROM order_items WHERE order_id = ?', [orderId]);
   return rows;
@@ -188,7 +232,17 @@ async function incrementProductSales(q, productId, qty) {
 }
 
 async function decrementUserPoints(q, userId, points) {
-  await q.query('UPDATE users SET points_balance = GREATEST(0, points_balance - ?) WHERE id = ?', [points, userId]);
+  const amount = Math.max(Number(points) || 0, 0);
+  await ensurePointsAccount(q, userId);
+  await q.query(
+    `UPDATE points_accounts
+     SET balance = GREATEST(0, balance - ?),
+         total_spent = total_spent + ?,
+         total_reversed = total_reversed + ?
+     WHERE user_id = ?`,
+    [amount, amount, amount, userId],
+  );
+  await syncUserPointsFromAccount(q, userId);
 }
 
 async function restoreUserCouponById(q, ucId) {
@@ -265,6 +319,8 @@ async function insertRewardRecord(q, params) {
 }
 
 module.exports = {
+  getPool,
+  getConnection,
   selectProductsForUpdate,
   selectShippingTemplate,
   selectUserCouponForUpdate,
@@ -283,6 +339,7 @@ module.exports = {
   selectOrderItemsByOrderIds,
   selectOrderByIdAndUser,
   selectOrderByIdAndUserForUpdate,
+  selectOrderByIdForUpdate,
   selectOrderItems,
   updateOrderStatus,
   selectOrderItemQtyRows,

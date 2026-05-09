@@ -9,14 +9,14 @@ async function selectActiveBanners() {
 
 async function selectActiveCategories() {
   const [rows] = await db.query(
-    'SELECT id, name, icon, sort_order FROM categories WHERE is_active = 1 ORDER BY sort_order',
+    'SELECT id, name, icon, sort_order FROM categories WHERE is_active = 1 AND deleted_at IS NULL ORDER BY sort_order',
   );
   return rows;
 }
 
 async function selectCategoryById(id) {
   const [[row]] = await db.query(
-    'SELECT id, name, icon, sort_order FROM categories WHERE id = ?',
+    'SELECT id, name, icon, sort_order FROM categories WHERE id = ? AND deleted_at IS NULL',
     [id],
   );
   return row || null;
@@ -36,21 +36,24 @@ async function selectActiveProductsPage(where, params, orderBy, pageSize, offset
 }
 
 async function selectProductById(id) {
-  const [[row]] = await db.query('SELECT * FROM products WHERE id = ?', [id]);
+  const [[row]] = await db.query(
+    'SELECT * FROM products WHERE id = ? AND status = "active" AND deleted_at IS NULL',
+    [id],
+  );
   return row || null;
 }
 
 async function selectHomeProductBlocks(limit) {
   const [hot] = await db.query(
-    'SELECT * FROM products WHERE status="active" AND is_hot=1  ORDER BY sort_order LIMIT ?',
+    'SELECT * FROM products WHERE status="active" AND deleted_at IS NULL AND is_hot=1 ORDER BY sort_order LIMIT ?',
     [limit],
   );
   const [nw] = await db.query(
-    'SELECT * FROM products WHERE status="active" AND is_new=1  ORDER BY sort_order LIMIT ?',
+    'SELECT * FROM products WHERE status="active" AND deleted_at IS NULL AND is_new=1 ORDER BY sort_order LIMIT ?',
     [limit],
   );
   const [rec] = await db.query(
-    'SELECT * FROM products WHERE status="active" AND is_recommended=1 ORDER BY sort_order LIMIT ?',
+    'SELECT * FROM products WHERE status="active" AND deleted_at IS NULL AND is_recommended=1 ORDER BY sort_order LIMIT ?',
     [limit],
   );
   return { hot, new_arrivals: nw, recommended: rec };
@@ -59,7 +62,7 @@ async function selectHomeProductBlocks(limit) {
 async function selectActiveProductsByFlag(flagField, limit) {
   const [rows] = await db.query(
     `SELECT * FROM products
-     WHERE status="active" AND ${flagField}=1
+     WHERE status="active" AND deleted_at IS NULL AND ${flagField}=1
      ORDER BY sort_order ASC, created_at DESC
      LIMIT ?`,
     [limit],
@@ -70,7 +73,7 @@ async function selectActiveProductsByFlag(flagField, limit) {
 async function selectActiveProductsFallback(orderBySql, limit) {
   const [rows] = await db.query(
     `SELECT * FROM products
-     WHERE status="active"
+     WHERE status="active" AND deleted_at IS NULL
      ORDER BY ${orderBySql}
      LIMIT ?`,
     [limit],
@@ -79,13 +82,16 @@ async function selectActiveProductsFallback(orderBySql, limit) {
 }
 
 async function selectProductCategoryId(productId) {
-  const [[row]] = await db.query('SELECT category_id FROM products WHERE id = ?', [productId]);
+  const [[row]] = await db.query(
+    'SELECT category_id FROM products WHERE id = ? AND deleted_at IS NULL',
+    [productId],
+  );
   return row || null;
 }
 
 async function selectRelatedByCategory(categoryId, excludeProductId, limit) {
   const [rows] = await db.query(
-    'SELECT * FROM products WHERE status="active" AND category_id=? AND id!=? ORDER BY sort_order LIMIT ?',
+    'SELECT * FROM products WHERE status="active" AND deleted_at IS NULL AND category_id=? AND id!=? ORDER BY sort_order LIMIT ?',
     [categoryId, excludeProductId, limit],
   );
   return rows;

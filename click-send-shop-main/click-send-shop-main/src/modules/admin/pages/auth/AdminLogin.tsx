@@ -13,13 +13,14 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!account.trim() || !password.trim()) {
+    const normalizedAccount = account.trim();
+    if (!normalizedAccount || !password.trim()) {
       toast.error("请输入账号和密码");
       return;
     }
     setLoading(true);
     try {
-      await adminLogin({ username: account, password });
+      await adminLogin({ username: normalizedAccount, phone: normalizedAccount, password });
       toast.success("登录成功");
       navigate("/admin");
     } catch (e) {

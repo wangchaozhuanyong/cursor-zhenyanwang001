@@ -2,6 +2,9 @@
  * User 域：会员资料、收藏与浏览历史、地址与运费（读）、营销特权、站内通知、上传
  */
 const { Router } = require('express');
+const pointsService = require('./points.service');
+const rewardService = require('./reward.service');
+const notificationService = require('./notification.service');
 
 const router = Router();
 
@@ -16,5 +19,18 @@ router.use('/points', require('./points.routes'));
 router.use('/rewards', require('./rewards.routes'));
 router.use('/invite', require('./invite.routes'));
 router.use('/upload', require('./upload.routes'));
+router.use('/theme', require('./theme.routes'));
+
+// Cross-module public API (do not import internal files directly from other modules)
+router.api = {
+  settleOrderPoints: pointsService.settleOrderPoints,
+  reverseOrderPoints: pointsService.reverseOrderPoints,
+  settleOrderRewards: rewardService.settleOrderRewards,
+  reverseOrderRewards: rewardService.reverseOrderRewards,
+  sumRewardTransactionsBalance: rewardService.sumRewardTransactionsBalance,
+  insertRewardTransaction: rewardService.insertRewardTransaction,
+  adjustUserPoints: pointsService.adjustUserPoints,
+  insertUserNotification: notificationService.insertUserNotification,
+};
 
 module.exports = router;

@@ -2,7 +2,7 @@ const { generateId } = require('../../utils/helpers');
 const { BusinessError } = require('../../errors/BusinessError');
 const repo = require('./adminNotification.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
-const triggerSettings = require('../notification/triggerSettings.service');
+const triggerSettings = require('./notificationTriggerSettings.service');
 
 const NOTIFICATION_TEMPLATES = [
   { code: 'order_created', name: '下单成功', type: 'order', title: '订单已创建', content: '您的订单已创建成功，请留意后续发货通知。' },

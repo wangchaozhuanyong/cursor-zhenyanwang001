@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 1) 截断 pm2 error log（旧 FATAL 是历史，进程现已 online）
-# 2) 补 .env 缺失键 DB_PORT / PUBLIC_APP_URL
+# 2) 补 .env 缺失键 DB_PORT（不覆盖 PUBLIC_APP_URL）
 # 3) pm2 reload 让新 .env 生效
 # 4) 重跑 3 段验证
 set +e
@@ -17,9 +17,8 @@ echo "  done"
 echo
 echo '=== 2) 补 .env 缺失键 ==='
 grep -q '^DB_PORT='        $ENV_FILE || echo 'DB_PORT=3306'                          >> $ENV_FILE
-grep -q '^PUBLIC_APP_URL=' $ENV_FILE && \
-   sed -i 's#^PUBLIC_APP_URL=.*#PUBLIC_APP_URL=http://13.214.165.214#' $ENV_FILE || \
-   echo 'PUBLIC_APP_URL=http://13.214.165.214'   >> $ENV_FILE
+grep -q '^PUBLIC_APP_URL=' $ENV_FILE || \
+   echo '[WARN] PUBLIC_APP_URL missing. Please set your production domain manually before reload.'
 chmod 600 $ENV_FILE
 echo '  current critical env keys:'
 awk -F= '/^(NODE_ENV|PORT|JWT_SECRET|DB_HOST|DB_PORT|DB_USER|DB_PASSWORD|DB_NAME|CORS_ORIGINS|PUBLIC_APP_URL)=/{

@@ -6,31 +6,47 @@ const { writeAuditLog } = require('../../utils/auditLog');
 const rbacService = require('./rbac.service');
 const { buildPhoneLookupCandidates } = require('../../utils/phone');
 
+function normalizeLoginAccount(input) {
+  // Normalize full-width digits and spaces copied from IM tools/keyboards.
+  return String(input || '')
+    .replace(/[０-９]/g, (ch) => String(ch.charCodeAt(0) - 0xFEE0))
+    .replace(/\s+/g, '')
+    .trim();
+}
+
 async function login(body, req) {
-  const phone = body.phone || body.username;
+  const phone = normalizeLoginAccount(body.phone || body.username);
   const countryCode = body.countryCode;
-  const { password } = body;
+  const password = String(body.password || '');
   try {
     if (!phone || !password) throw new BusinessError(400, '手机号和密码不能为空');
 
-    const user = await authApi.findUserByPhones(buildPhoneLookupCandidates(phone, countryCode));
-    if (!user) throw new BusinessError(401, '手机号或密码错误');
+    const matchedUsers = await authApi.findUsersByPhones(buildPhoneLookupCandidates(phone, countryCode));
+    if (!matchedUsers.length) throw new BusinessError(401, '手机号或密码错误');
 
-    let hash = user.password_hash;
-    if (Buffer.isBuffer(hash)) hash = hash.toString('utf8');
-    else if (hash != null && typeof hash !== 'string') hash = String(hash);
-    if (typeof hash !== 'string' || !hash.trim()) {
-      throw new BusinessError(401, '手机号或密码错误');
+    function coerceHash(hash) {
+      let h = hash;
+      if (Buffer.isBuffer(h)) h = h.toString('utf8');
+      else if (h != null && typeof h !== 'string') h = String(h);
+      return typeof h === 'string' && h.trim() ? h : '';
     }
 
-    let match = false;
+    let user = null;
     try {
-      match = await comparePassword(password, hash);
+      for (let i = 0; i < matchedUsers.length; i += 1) {
+        const cand = matchedUsers[i];
+        const stored = coerceHash(cand.password_hash);
+        if (!stored) continue;
+        if (await comparePassword(password, stored)) {
+          user = cand;
+          break;
+        }
+      }
     } catch (e) {
       console.error('[adminAuth.login] bcrypt compare error', e);
-      match = false;
+      user = null;
     }
-    if (!match) throw new BusinessError(401, '手机号或密码错误');
+    if (!user) throw new BusinessError(401, '手机号或密码错误');
 
     if (user.role !== 'admin' && user.role !== 'super_admin') {
       throw new BusinessError(403, '该账号无管理员权限');

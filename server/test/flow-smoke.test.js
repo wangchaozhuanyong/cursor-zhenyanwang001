@@ -4,7 +4,7 @@
  */
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 require('./_dbCleanup.test');
-const { test, describe, before } = require('node:test');
+const { test, describe, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
 const { randomUUID } = require('crypto');
@@ -13,9 +13,12 @@ const db = require('../src/config/db');
 
 /** 避免与其它测试或同毫秒重复注册导致 Duplicate entry phone */
 const phone = `1${`${Date.now()}${process.pid}${Math.random().toString(36).slice(2, 9)}`.replace(/\D/g, '').slice(0, 10)}`;
+const countryCode = '+60';
+const storedPhone = `${countryCode}${phone.replace(/^0+/, '')}`;
 const password = 'SmokeTest12';
 let accessToken;
 let productId;
+let smokeProductId;
 let orderId;
 let shippingTemplateId;
 
@@ -23,13 +26,13 @@ describe('local flow smoke', () => {
   before(async () => {
     const reg = await request(app)
       .post('/api/auth/register')
-      .send({ phone, password, nickname: 'smoke' })
+      .send({ phone, countryCode, password, nickname: 'smoke' })
       .expect(200);
     assert.equal(reg.body.code, 0);
 
     const login = await request(app)
       .post('/api/auth/login')
-      .send({ phone, password })
+      .send({ phone, countryCode, password })
       .expect(200);
     assert.equal(login.body.code, 0);
     accessToken = login.body.data.token.accessToken;
@@ -39,8 +42,34 @@ describe('local flow smoke', () => {
       .query({ pageSize: 1 })
       .expect(200);
     assert.equal(products.body.code, 0);
-    assert.ok(products.body.data?.list?.length, 'seed 应有至少一个商品');
-    productId = products.body.data.list[0].id;
+    if (!products.body.data?.list?.length) {
+      smokeProductId = randomUUID();
+      await db.query(
+        `INSERT INTO products
+           (id, name, cover_image, images, price, points, stock, status, sort_order, description, is_recommended, is_new, is_hot)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          smokeProductId,
+          'smoke-product',
+          '',
+          JSON.stringify([]),
+          9.9,
+          1,
+          20,
+          'active',
+          0,
+          'smoke test product',
+          1,
+          1,
+          1,
+        ],
+      );
+    }
+    const productList = products.body.data?.list?.length
+      ? products.body.data.list
+      : (await request(app).get('/api/products').query({ pageSize: 1 }).expect(200)).body.data?.list;
+    assert.ok(productList?.length, 'seed 应有至少一个可见商品');
+    productId = productList[0].id;
 
     let shipping = await request(app)
       .get('/api/shipping')
@@ -76,7 +105,7 @@ describe('local flow smoke', () => {
       .expect(200);
     assert.equal(cart.body.code, 0);
 
-    const [[u]] = await db.query('SELECT id FROM users WHERE phone = ?', [phone]);
+    const [[u]] = await db.query('SELECT id FROM users WHERE phone = ?', [storedPhone]);
     await db.query('UPDATE users SET role = ? WHERE id = ?', ['admin', u.id]);
 
     const orderBody = {
@@ -99,7 +128,7 @@ describe('local flow smoke', () => {
   test('admin: dedicated login + list orders + update status pending -> paid', async () => {
     const adminLogin = await request(app)
       .post('/api/admin/auth/login')
-      .send({ phone, password })
+      .send({ phone, countryCode, password })
       .expect(200);
     assert.equal(adminLogin.body.code, 0);
     const adminToken =
@@ -174,5 +203,11 @@ describe('local flow smoke', () => {
     assert.equal(quote.body.code, 0);
     assert.equal(quote.body.data.shipping_template_id, shippingTemplateId);
     assert.ok(typeof quote.body.data.shipping_fee === 'number');
+  });
+
+  after(async () => {
+    if (smokeProductId) {
+      await db.query('DELETE FROM products WHERE id = ?', [smokeProductId]);
+    }
   });
 });

@@ -1,5 +1,4 @@
 const { generateId } = require('../../utils/helpers');
-const db = require('../../config/db');
 const { BusinessError } = require('../../errors/BusinessError');
 const repo = require('./points.repository');
 
@@ -63,7 +62,7 @@ async function changePoints(conn, params) {
 }
 
 async function runInTransaction(fn) {
-  const conn = await db.getConnection();
+  const conn = await repo.getConnection();
   try {
     await conn.beginTransaction();
     const result = await fn(conn);

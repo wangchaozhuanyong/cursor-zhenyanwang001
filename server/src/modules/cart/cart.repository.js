@@ -5,7 +5,7 @@ async function selectCartLinesWithProducts(userId) {
     `SELECT p.*, ci.qty
      FROM cart_items ci
      JOIN products p ON ci.product_id = p.id
-     WHERE ci.user_id = ?
+     WHERE ci.user_id = ? AND p.status = "active" AND p.deleted_at IS NULL
      ORDER BY ci.created_at DESC`,
     [userId],
   );
@@ -14,7 +14,7 @@ async function selectCartLinesWithProducts(userId) {
 
 async function selectActiveProductId(productId) {
   const [[row]] = await db.query(
-    'SELECT id FROM products WHERE id = ? AND status = "active"',
+    'SELECT id FROM products WHERE id = ? AND status = "active" AND deleted_at IS NULL',
     [productId],
   );
   return row || null;
@@ -33,7 +33,7 @@ async function selectCartLine(userId, productId) {
   const [[row]] = await db.query(
     `SELECT p.*, ci.qty
      FROM cart_items ci JOIN products p ON ci.product_id = p.id
-     WHERE ci.user_id = ? AND ci.product_id = ?`,
+     WHERE ci.user_id = ? AND ci.product_id = ? AND p.status = "active" AND p.deleted_at IS NULL`,
     [userId, productId],
   );
   return row || null;

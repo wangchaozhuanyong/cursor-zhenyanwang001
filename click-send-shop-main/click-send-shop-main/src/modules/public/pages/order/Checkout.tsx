@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ArrowLeft, Copy, MessageCircle, Phone, MapPin, CheckCircle2, ShieldCheck, Truck, RefreshCcw } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { flushSync } from "react-dom";
 import { useCartStore } from "@/stores/useCartStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import * as orderService from "@/services/orderService";
@@ -307,8 +308,10 @@ export default function Checkout() {
         estimated_weight_kg: weightKg,
       });
       const orderedIds = payloadItems.map((i) => i.product_id);
-      setOrderFinalizing(true);
-      setSubmittedOrder(order);
+      flushSync(() => {
+        setOrderFinalizing(true);
+        setSubmittedOrder(order);
+      });
       if (isBuyNow) {
         clearBuyNow();
       } else if (orderedIds.length >= cartItems.length) {

@@ -18,6 +18,14 @@ export function refreshToken(token: string) {
   return post<{ accessToken: string }>("/auth/refresh", { refreshToken: token });
 }
 
+export function requestPasswordReset(params: { phone: string; countryCode?: string }) {
+  return post<{ resetToken?: string; expiresInMinutes?: number } | null>("/auth/password-reset/request", params);
+}
+
+export function resetPassword(params: { token: string; newPassword: string }) {
+  return post<void>("/auth/password-reset/confirm", params);
+}
+
 export function getProfile() {
   return get<UserProfile>("/user/profile");
 }

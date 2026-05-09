@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Banner } from "@/types/banner";
+import { supportsColorMix } from "@/utils/cssSupport";
 
 interface BannerCarouselProps {
   banners: Banner[];
@@ -54,6 +55,7 @@ export default function BannerCarousel({ banners }: BannerCarouselProps) {
 
   const banner = banners[current];
   if (!banner) return null;
+  const inactiveDotColor = supportsColorMix() ? "color-mix(in srgb, #ffffff 50%, transparent)" : "rgba(255,255,255,0.5)";
 
   return (
     <div
@@ -113,7 +115,7 @@ export default function BannerCarousel({ banners }: BannerCarouselProps) {
               animate={{
                 width: i === current ? 16 : 6,
                 height: 6,
-                backgroundColor: i === current ? "var(--theme-price)" : "color-mix(in srgb, #ffffff 50%, transparent)",
+                backgroundColor: i === current ? "var(--theme-price)" : inactiveDotColor,
               }}
               transition={{ duration: 0.3 }}
             />

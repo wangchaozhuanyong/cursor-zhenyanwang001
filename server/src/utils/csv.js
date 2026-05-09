@@ -51,6 +51,7 @@ function parseCsv(text) {
   const rows = [];
   for (let i = 1; i < lines.length; i += 1) {
     const cells = parseCsvLine(lines[i]);
+    /** @type {Record<string, string>} */
     const row = {};
     headers.forEach((h, j) => {
       row[h] = cells[j] ?? '';

@@ -1,5 +1,5 @@
 /**
- * Runtime JS counterpart for AppError.ts.
+ * 业务错误基类：与 `errorHandler` 配合返回稳定 JSON。
  * Keeps CommonJS server startup working in production without ts-node.
  */
 class AppError extends Error {

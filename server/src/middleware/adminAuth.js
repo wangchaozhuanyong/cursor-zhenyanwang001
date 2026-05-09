@@ -9,7 +9,10 @@ async function adminAuthMiddleware(req, res, next) {
   }
   let payload;
   try {
-    payload = verifyToken(header.split(' ')[1]);
+    payload = /** @type {{ type?: string, userId?: string }} */ (verifyToken(header.split(' ')[1]));
+    if (payload.type === 'refresh') {
+      return res.fail(401, '登录已过期，请重新登录');
+    }
   } catch {
     return res.fail(401, '登录已过期，请重新登录');
   }

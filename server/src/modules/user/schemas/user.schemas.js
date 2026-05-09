@@ -9,16 +9,44 @@ const paginationQuerySchema = z.object({
 
 const addressIdParamSchema = z.object({ id: idParam });
 
-const addressBaseSchema = z.object({
-  receiver: z.string().trim().min(1, '请填写收件人').max(64),
+function normalizeAddressPayload(v) {
+  return {
+    name: v.name ?? v.receiver,
+    phone: v.phone,
+    address: v.address ?? v.detail,
+    isDefault: v.isDefault ?? v.is_default,
+  };
+}
+
+const addressCreateInputSchema = z.object({
+  name: z.string().trim().min(1, '请填写收件人').max(64).optional(),
+  receiver: z.string().trim().min(1, '请填写收件人').max(64).optional(),
   phone: z.string().trim().min(6, '收件人电话不正确').max(20),
-  region: z.string().trim().max(128).optional(),
-  detail: z.string().trim().min(1, '请填写详细地址').max(512),
+  address: z.string().trim().min(1, '请填写详细地址').max(512).optional(),
+  detail: z.string().trim().min(1, '请填写详细地址').max(512).optional(),
+  isDefault: z.coerce.boolean().optional(),
   is_default: z.coerce.boolean().optional(),
 });
 
-const createAddressBodySchema = addressBaseSchema;
-const updateAddressBodySchema = addressBaseSchema.partial();
+const createAddressBodySchema = addressCreateInputSchema
+  .refine((v) => Boolean(v.name || v.receiver), { message: '请填写收件人', path: ['name'] })
+  .refine((v) => Boolean(v.address || v.detail), { message: '请填写详细地址', path: ['address'] })
+  .transform(normalizeAddressPayload);
+
+const updateAddressBodySchema = addressCreateInputSchema
+  .partial()
+  .refine(
+    (v) =>
+      v.name !== undefined
+      || v.receiver !== undefined
+      || v.phone !== undefined
+      || v.address !== undefined
+      || v.detail !== undefined
+      || v.isDefault !== undefined
+      || v.is_default !== undefined,
+    { message: '没有需要更新的字段', path: [] },
+  )
+  .transform(normalizeAddressPayload);
 const productIdParamSchema = z.object({ productId: idParam });
 
 const addFavoriteBodySchema = z
@@ -69,7 +97,7 @@ const withdrawBodySchema = z
   }));
 
 const shippingQuoteBodySchema = z.object({
-  shipping_template_id: idParam,
+  shipping_template_id: z.coerce.string().trim().min(1),
   raw_amount: z.coerce.number().nonnegative('raw_amount 无效'),
   estimated_weight_kg: z.coerce.number().nonnegative().optional(),
 });

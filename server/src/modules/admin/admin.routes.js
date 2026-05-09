@@ -39,8 +39,8 @@ const settingsCtrl = require('./controller/adminSettings.controller');
 const themeCtrl = require('./controller/adminTheme.controller');
 const exportCtrl = require('./controller/adminExport.controller');
 const recycleBinCtrl = require('./controller/adminRecycleBin.controller');
-const adminPayCtrl = require('../payments/adminPayments.controller');
-const paySchemas = require('../payments/payments.schemas');
+const adminPayCtrl = require('../order/payments/adminPayments.controller');
+const paySchemas = require('../order/payments/payments.schemas');
 
 const uploadCsv = multer({
   storage: multer.memoryStorage(),

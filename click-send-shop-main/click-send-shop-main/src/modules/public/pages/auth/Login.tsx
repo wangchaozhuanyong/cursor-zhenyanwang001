@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Eye, EyeOff, Phone, Lock, User } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
+import * as authService from "@/services/authService";
 import { toast } from "sonner";
 import LoginBannerCarousel from "@/components/LoginBannerCarousel";
 import WeChatIcon from "@/components/icons/WeChatIcon";
@@ -23,8 +24,6 @@ const REMEMBER_COUNTRY_CODE_KEY = "login_remembered_country_code";
 const COUNTRY_CODE_OPTIONS = [
   { value: "+60", label: "🇲🇾 +60" },
   { value: "+86", label: "🇨🇳 +86" },
-  { value: "+65", label: "🇸🇬 +65" },
-  { value: "+1", label: "🇺🇸 +1" },
 ];
 
 type AuthMode = "login" | "register";
@@ -54,6 +53,11 @@ export default function Login() {
   const [inviteCode, setInviteCode] = useState(getLockedInviteCode());
   const [showPwd, setShowPwd] = useState(false);
   const [remember, setRemember] = useState(false);
+  const [showReset, setShowReset] = useState(false);
+  const [resetToken, setResetToken] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [devResetToken, setDevResetToken] = useState("");
   const hasLockedInviteCode = !!inviteCode;
 
   useEffect(() => {
@@ -63,7 +67,8 @@ export default function Login() {
       setRemember(true);
     }
     const savedCc = localStorage.getItem(REMEMBER_COUNTRY_CODE_KEY);
-    if (savedCc) setCountryCode(savedCc);
+    if (savedCc === "+60" || savedCc === "+86") setCountryCode(savedCc);
+    else setCountryCode("+60");
   }, []);
 
   useEffect(() => {
@@ -84,7 +89,11 @@ export default function Login() {
       toast.error("请选择国家代码");
       return;
     }
-    if (mode === "register" && !nickname) {
+    if (countryCode !== "+60" && countryCode !== "+86") {
+      toast.error("仅支持 +60 或 +86 手机号");
+      return;
+    }
+    if (mode === "register" && !hasLockedInviteCode && !nickname.trim()) {
       toast.error("请填写昵称");
       return;
     }
@@ -103,7 +112,7 @@ export default function Login() {
           phone,
           countryCode,
           password,
-          nickname,
+          nickname: nickname.trim() || undefined,
           inviteCode: inviteCode.trim() ? inviteCode.trim().toUpperCase() : undefined,
         });
         clearLockedInviteCode();
@@ -124,6 +133,48 @@ export default function Login() {
         if (vague) msg = "服务暂时不可用，请稍后再试";
       }
       toast.error(msg);
+    }
+  };
+
+  const handleRequestReset = async () => {
+    if (!phone.trim()) {
+      toast.error("请先填写手机号");
+      return;
+    }
+    setResetLoading(true);
+    setDevResetToken("");
+    try {
+      const data = await authService.requestPasswordReset({ phone, countryCode });
+      if (data?.resetToken) {
+        setResetToken(data.resetToken);
+        setDevResetToken(data.resetToken);
+      }
+      toast.success(data?.resetToken ? "重置令牌已生成" : "如账号存在，重置指引已生成");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "申请重置失败");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleConfirmReset = async () => {
+    if (!resetToken.trim() || !newPassword) {
+      toast.error("请填写重置令牌和新密码");
+      return;
+    }
+    setResetLoading(true);
+    try {
+      await authService.resetPassword({ token: resetToken.trim(), newPassword });
+      toast.success("密码已重置，请使用新密码登录");
+      setPassword(newPassword);
+      setShowReset(false);
+      setResetToken("");
+      setNewPassword("");
+      setDevResetToken("");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "重置密码失败");
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -263,9 +314,8 @@ export default function Login() {
                 <span className="text-xs text-muted-foreground">记住账号</span>
               </label>
               <button
-                onClick={() =>
-                  toast.info(`请联系客服重置密码：${supportContact}`)
-                }
+                type="button"
+                onClick={() => setShowReset(true)}
                 className="text-xs text-gold font-medium active:opacity-70"
               >
                 忘记密码？
@@ -330,6 +380,70 @@ export default function Login() {
             第三方快捷登录即将开放，请暂时使用手机号登录
           </p>
         </div>
+
+        {showReset && (
+          <div className="mb-6 rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">重置密码</h3>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  先用当前手机号申请重置令牌，再输入令牌和新密码完成重置。线上环境请根据客服发送的令牌操作。
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowReset(false)}
+                className="text-xs font-medium text-muted-foreground active:opacity-70"
+              >
+                关闭
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleRequestReset}
+              disabled={resetLoading}
+              className="w-full rounded-xl border border-gold/30 bg-gold/10 py-2.5 text-xs font-semibold text-gold disabled:opacity-60"
+            >
+              {resetLoading ? "处理中..." : "发送重置令牌"}
+            </button>
+
+            {devResetToken && (
+              <p className="mt-2 break-all rounded-xl bg-secondary p-2 text-[11px] leading-relaxed text-muted-foreground">
+                开发环境令牌：{devResetToken}
+              </p>
+            )}
+
+            <div className="mt-3 space-y-2">
+              <input
+                type="text"
+                placeholder="输入重置令牌"
+                value={resetToken}
+                onChange={(e) => setResetToken(e.target.value)}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
+              />
+              <input
+                type="password"
+                placeholder="新密码（至少 6 位）"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
+              />
+              <button
+                type="button"
+                onClick={handleConfirmReset}
+                disabled={resetLoading}
+                className="w-full rounded-xl bg-gold py-2.5 text-xs font-bold text-primary-foreground disabled:opacity-60"
+              >
+                确认重置密码
+              </button>
+            </div>
+
+            <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+              没收到令牌？请联系客服：{supportContact}
+            </p>
+          </div>
+        )}
 
         {/* ══════════════ Agreement ══════════════ */}
         <p className="text-center text-[11px] text-muted-foreground pb-8 pb-safe leading-relaxed">

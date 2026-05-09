@@ -77,9 +77,22 @@ fi
 
 if [[ -n "$FRONTEND_SUB" ]]; then
   echo "🎨 构建前端 ($FRONTEND_SUB)..." | tee -a "$LOG_FILE"
+  ASSET_BACKUP=""
+  if [[ -d "$PUBLIC_FRONTEND/assets" ]]; then
+    ASSET_BACKUP="$(mktemp -d)"
+    cp -a "$PUBLIC_FRONTEND/assets/." "$ASSET_BACKUP/" 2>/dev/null || true
+  fi
   cd "$PROJECT_DIR/$FRONTEND_SUB" || exit 1
   npm_install_here
   npm run build
+  if [[ -n "$ASSET_BACKUP" && -d "$ASSET_BACKUP" ]]; then
+    echo "🧩 保留上一版 hashed assets，避免已打开页面懒加载旧 chunk 404" | tee -a "$LOG_FILE"
+    mkdir -p "$PROJECT_DIR/$FRONTEND_SUB/dist/assets"
+    cp -an "$ASSET_BACKUP/." "$PROJECT_DIR/$FRONTEND_SUB/dist/assets/" 2>/dev/null || true
+    rm -rf "$ASSET_BACKUP"
+  fi
+  echo "🔎 校验前端 dist 资源引用一致性..." | tee -a "$LOG_FILE"
+  node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$PROJECT_DIR/$FRONTEND_SUB/dist" | tee -a "$LOG_FILE"
   cd "$PROJECT_DIR" || exit 1
 
   echo "📤 同步构建产物 → $PUBLIC_FRONTEND" | tee -a "$LOG_FILE"
@@ -90,6 +103,7 @@ if [[ -n "$FRONTEND_SUB" ]]; then
     rm -rf "${PUBLIC_FRONTEND:?}/"*
     cp -a "$PROJECT_DIR/$FRONTEND_SUB/dist/." "$PUBLIC_FRONTEND/"
   fi
+  node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$PUBLIC_FRONTEND" | tee -a "$LOG_FILE"
 else
   echo "⏭ 跳过前端构建（未找到 click-send-shop 或 click-send-shop-main/click-send-shop-main）" | tee -a "$LOG_FILE"
 fi

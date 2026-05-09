@@ -21,7 +21,7 @@ function buildProductListQuery(query) {
   const isNew = parseBool(query.is_new);
   const isRecommended = parseBool(query.is_recommended);
 
-  let where = 'WHERE status = "active"';
+  let where = 'WHERE status = "active" AND deleted_at IS NULL';
   const params = [];
 
   if (category_id && category_id !== 'all') {

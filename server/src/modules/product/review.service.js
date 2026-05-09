@@ -15,7 +15,7 @@ async function getProductReviews(req) {
   if (authHeader && authHeader.startsWith('Bearer ')) {
     try {
       const payload = verifyToken(authHeader.split(' ')[1]);
-      if (payload?.userId) {
+      if (typeof payload !== 'string' && payload?.userId) {
         const reviewIds = rows.map((r) => r.id);
         if (reviewIds.length > 0) {
           const likes = await repo.selectLikesForReviews(payload.userId, reviewIds);
@@ -86,7 +86,7 @@ async function createReview(userId, body) {
  *  - 与商品 join，便于前端跳转商品详情
  */
 async function getFeaturedReviews(limit = 6) {
-  const safeLimit = Math.min(20, Math.max(1, parseInt(limit, 10) || 6));
+  const safeLimit = Math.min(20, Math.max(1, parseInt(String(limit), 10) || 6));
   const featured = await repo.selectFeaturedReviews(safeLimit);
   let list = featured;
   if (list.length < safeLimit) {

@@ -254,6 +254,7 @@ async function refresh(refreshToken) {
     throw new AuthError('刷新令牌已过期');
   }
 
+  if (typeof payload === 'string') throw new AuthError('无效的刷新令牌');
   if (payload.type !== 'refresh') throw new AuthError('无效的刷新令牌');
 
   const user = await repo.selectRefreshVersion(payload.userId);

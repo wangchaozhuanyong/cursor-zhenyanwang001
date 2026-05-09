@@ -5,18 +5,15 @@
  *
  * 分层约定：
  * - 不直接拼 SQL，所有数据访问通过 `./adminOrder.repository`
- * - 事务由本层控制：`db.getConnection()` + `beginTransaction()`，
+ * - 事务由本层控制：`repo.getConnection()` + `beginTransaction()`，
  *   把 `conn` 传给 repository 的事务方法
  */
-const db = require('../../config/db');
 const { generateId } = require('../../utils/helpers');
 const { BusinessError, NotFoundError, ValidationError } = require('../../errors');
 const { logAdminAction } = require('../../utils/adminAudit');
 const { rowsToCsv } = require('../../utils/csv');
-const notificationRepo = require('../user/notification.repository');
-const { isNotificationTriggerEnabled } = require('../notification/triggerSettings.service');
-const rewardService = require('../user/reward.service');
-const pointsService = require('../user/points.service');
+const userModule = require('../user');
+const { isNotificationTriggerEnabled } = require('./notificationTriggerSettings.service');
 const {
   assertFulfillmentTransition,
   assertPaymentTransition,
@@ -26,6 +23,16 @@ const {
 const repo = require('./adminOrder.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
 const { ORDER_STATUS, PAYMENT_STATUS, ORDER_STATUS_LIST } = require('../../constants/status');
+
+const userApi = userModule.api || {};
+
+function requireUserApi(name) {
+  const fn = userApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`User 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
 
 function buildAdminOrderListWhere(query) {
   let where = 'WHERE 1=1';
@@ -93,7 +100,7 @@ async function listOrders(query) {
 async function getOrderById(orderId) {
   const order = await repo.selectOrderById(null, orderId);
   if (!order) throw new NotFoundError('订单不存在');
-  const items = await repo.selectOrderItemsWithProduct(db, order.id);
+  const items = await repo.selectOrderItemsWithProduct(repo.getPool(), order.id);
   attachItemsAndAmounts(order, items);
   return { data: order };
 }
@@ -124,7 +131,7 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
       assertPaymentTransition(prevPay, newPayment);
     }
 
-    const conn = await db.getConnection();
+    const conn = await repo.getConnection();
     try {
       await conn.beginTransaction();
       await repo.updateOrderStatusAndPayment(conn, orderId, status, newPayment);
@@ -157,7 +164,7 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
         for (const item of items) {
           await repo.restoreProductStock(conn, item.product_id, item.qty);
         }
-        await pointsService.reverseOrderPoints(conn, fullOrder, `订单取消回滚积分 ${fullOrder.order_no}`, {
+        await requireUserApi('reverseOrderPoints')(conn, fullOrder, `订单取消回滚积分 ${fullOrder.order_no}`, {
           operatorId: adminUserId,
           trigger: 'admin_order_cancelled',
         });
@@ -167,22 +174,22 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
       }
 
       if (status === ORDER_STATUS.COMPLETED && fullOrder) {
-        await pointsService.settleOrderPoints(conn, fullOrder, {
+        await requireUserApi('settleOrderPoints')(conn, fullOrder, {
           operatorId: adminUserId,
           trigger: 'admin_order_completed',
         });
-        await rewardService.settleOrderRewards(conn, fullOrder, {
+        await requireUserApi('settleOrderRewards')(conn, fullOrder, {
           operatorId: adminUserId,
           trigger: 'admin_order_completed',
         });
       }
 
       if ((status === ORDER_STATUS.CANCELLED || status === ORDER_STATUS.REFUNDED) && fullOrder) {
-        await pointsService.reverseOrderPoints(conn, fullOrder, `订单状态变更为 ${status}，积分回滚`, {
+        await requireUserApi('reverseOrderPoints')(conn, fullOrder, `订单状态变更为 ${status}，积分回滚`, {
           operatorId: adminUserId,
           trigger: `admin_order_${status}`,
         });
-        await rewardService.reverseOrderRewards(conn, fullOrder, `订单状态变更为 ${status}，返现冲正`, {
+        await requireUserApi('reverseOrderRewards')(conn, fullOrder, `订单状态变更为 ${status}，返现冲正`, {
           operatorId: adminUserId,
           trigger: `admin_order_${status}`,
         });
@@ -270,9 +277,9 @@ async function shipOrder(orderId, body, adminUserId, req) {
     await repo.updateOrderShipped(orderId, trackingNo, carrier);
 
     if (await isNotificationTriggerEnabled('order_ship')) {
-      await notificationRepo.insertNotification({
+      await requireUserApi('insertUserNotification')({
         id: generateId(),
-        user_id: order.user_id,
+        userId: order.user_id,
         type: 'order',
         title: '订单已发货',
         content: `您的订单 ${order.order_no} 已发货，物流：${carrier || '暂无'} ${trackingNo || ''}`,

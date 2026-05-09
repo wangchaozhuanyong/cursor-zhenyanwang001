@@ -19,7 +19,7 @@ async function countUsers(where, params) {
 async function selectUsersPage(where, params, pageSize, offset) {
   const [rows] = await db.query(
     `SELECT id, phone, nickname, avatar, invite_code, parent_invite_code,
-            points_balance, wechat, whatsapp, created_at
+            points_balance, subordinate_enabled, wechat, whatsapp, created_at
      FROM users ${where}
      ORDER BY created_at DESC LIMIT ? OFFSET ?`,
     [...params, pageSize, offset],
@@ -30,7 +30,7 @@ async function selectUsersPage(where, params, pageSize, offset) {
 async function selectUsersForExport(where, params) {
   const [rows] = await db.query(
     `SELECT id, phone, nickname, avatar, invite_code, parent_invite_code,
-            points_balance, wechat, whatsapp, created_at
+            points_balance, subordinate_enabled, wechat, whatsapp, created_at
      FROM users ${where}
      ORDER BY created_at DESC`,
     params,
@@ -41,7 +41,7 @@ async function selectUsersForExport(where, params) {
 async function selectUserSummaryById(userId) {
   const [[user]] = await db.query(
     `SELECT id, phone, nickname, avatar, invite_code, parent_invite_code,
-            points_balance, wechat, whatsapp, created_at
+            points_balance, subordinate_enabled, wechat, whatsapp, created_at
      FROM users WHERE id = ?`,
     [userId],
   );
@@ -68,20 +68,18 @@ async function updateUserDynamic(setFragments, values, userId) {
   await db.query(`UPDATE users SET ${setFragments.join(', ')} WHERE id = ?`, [...values, userId]);
 }
 
+async function findPhoneDuplicateByPhones(userId, phones) {
+  if (!Array.isArray(phones) || phones.length === 0) return null;
+  const placeholders = phones.map(() => '?').join(',');
+  const [[row]] = await db.query(
+    `SELECT id FROM users WHERE phone IN (${placeholders}) AND id != ? LIMIT 1`,
+    [...phones, userId],
+  );
+  return row || null;
+}
+
 async function updateSubordinateEnabled(userId, enabled) {
   await db.query('UPDATE users SET subordinate_enabled = ? WHERE id = ?', [enabled ? 1 : 0, userId]);
-}
-
-async function adjustPointsBalance(userId, delta) {
-  await db.query('UPDATE users SET points_balance = points_balance + ? WHERE id = ?', [delta, userId]);
-}
-
-async function insertPointsRecord(params) {
-  const { id, userId, action, amount, description } = params;
-  await db.query(
-    `INSERT INTO points_records (id, user_id, action, amount, description) VALUES (?,?,?,?,?)`,
-    [id, userId, action, amount, description],
-  );
 }
 
 module.exports = {
@@ -93,7 +91,6 @@ module.exports = {
   countOrdersByUserId,
   sumUserSpentExcludingCancelled,
   updateUserDynamic,
+  findPhoneDuplicateByPhones,
   updateSubordinateEnabled,
-  adjustPointsBalance,
-  insertPointsRecord,
 };

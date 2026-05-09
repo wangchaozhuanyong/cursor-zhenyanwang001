@@ -45,7 +45,7 @@ async function comparePassword(plain, hash) {
  */
 function signToken(userId, refreshVersion = 0) {
   const secret = getJwtSecret();
-  const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+  const expiresIn = /** @type {import('jsonwebtoken').SignOptions['expiresIn']} */ (process.env.JWT_EXPIRES_IN || '7d');
   const accessToken = jwt.sign({ userId }, secret, { expiresIn });
   const refreshToken = jwt.sign(
     { userId, type: 'refresh', rv: refreshVersion },

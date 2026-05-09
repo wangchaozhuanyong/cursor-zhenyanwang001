@@ -135,7 +135,16 @@ async function updateAdminUserEnabled(userId, enabled) {
 }
 
 async function softDeleteAdminUser(userId) {
-  await db.query(`UPDATE users SET role = 'disabled', deleted_at = NOW() WHERE id = ? AND role IN ('admin','disabled')`, [userId]);
+  try {
+    await db.query('DELETE FROM user_roles WHERE user_id = ?', [userId]);
+  } catch (_) {
+    /* RBAC 表不存在或非关键 */
+  }
+  const [res] = await db.query(
+    `UPDATE users SET role = 'disabled', deleted_at = NOW() WHERE id = ? AND role IN ('admin','disabled')`,
+    [userId],
+  );
+  return res.affectedRows ?? 0;
 }
 
 async function updatePasswordHash(userId, hash) {

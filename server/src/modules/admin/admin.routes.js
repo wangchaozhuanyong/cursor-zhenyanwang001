@@ -21,6 +21,7 @@ const { validate } = require('../../middleware/validate');
 const authCtrl = require('./controller/adminAuth.controller');
 const dashboardCtrl = require('./controller/adminDashboard.controller');
 const productCtrl = require('./controller/adminProduct.controller');
+const inventoryCtrl = require('./controller/adminInventory.controller');
 const orderCtrl = require('./controller/adminOrder.controller');
 const userCtrl = require('./controller/adminUser.controller');
 const categoryCtrl = require('./controller/adminCategory.controller');
@@ -73,6 +74,8 @@ router.post('/rbac/admin-users', adminAuth, requirePermission('role.manage'), rb
 router.put('/rbac/admin-users/:userId/toggle', adminAuth, requirePermission('role.manage'), rbacCtrl.toggleAdminUser);
 router.put('/rbac/admin-users/:userId/reset-password', adminAuth, requirePermission('role.manage'), rbacCtrl.resetAdminPassword);
 router.delete('/rbac/admin-users/:userId', adminAuth, requirePermission('role.manage'), rbacCtrl.removeAdminUser);
+/** 与 DELETE 等价：部分 CDN / 反代未放行 DELETE 时用 POST */
+router.post('/rbac/admin-users/:userId/delete', adminAuth, requirePermission('role.manage'), rbacCtrl.removeAdminUser);
 
 /* ── Dashboard ── */
 router.get('/dashboard/stats', adminAuth, requirePermission('dashboard.view'), dashboardCtrl.getStats);
@@ -144,6 +147,12 @@ router.post('/upload/multiple', adminAuth, userUploadCtrl.uploadMultiple, userUp
 router.get('/product-tags', adminAuth, requireAnyPermission(['tag.manage', 'product.manage']), productCtrl.listTags);
 router.post('/product-tags', adminAuth, requirePermission('tag.manage'), productCtrl.createTag);
 router.delete('/product-tags/:id', adminAuth, requirePermission('tag.manage'), productCtrl.removeTag);
+
+/* ── Inventory ── */
+router.get('/inventory/products', adminAuth, requirePermission('inventory.manage'), inventoryCtrl.listProducts);
+router.post('/inventory/products/:productId/adjust', adminAuth, requirePermission('inventory.manage'), inventoryCtrl.adjustStock);
+router.put('/inventory/products/:productId/warning-threshold', adminAuth, requirePermission('inventory.manage'), inventoryCtrl.updateWarningThreshold);
+router.get('/inventory/records', adminAuth, requirePermission('inventory.manage'), inventoryCtrl.listRecords);
 
 /* ── Payments（支付管理） ── */
 router.get('/payments/channels', adminAuth, requirePermission('payment.manage'), adminPayCtrl.listChannels);

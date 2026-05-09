@@ -71,5 +71,5 @@ export function resetAdminPassword(userId: string, newPassword: string) {
 }
 
 export function deleteAdminUser(userId: string) {
-  return del<null>(`/admin/rbac/admin-users/${userId}`);
+  return post<null>(`/admin/rbac/admin-users/${userId}/delete`, {});
 }

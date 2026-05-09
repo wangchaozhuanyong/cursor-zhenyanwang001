@@ -209,9 +209,16 @@ async function deleteAdminUser(userId, actor, req) {
   if (userId === actor.id) throw new BusinessError(400, '不能删除自己');
   const target = await repo.selectAdminUserById(userId);
   if (!target) throw new BusinessError(404, '管理员不存在');
-  if (target.role === 'super_admin') throw new BusinessError(400, '不能删除超级管理员');
+  const legacy = String(target.role || '').trim().toLowerCase();
+  if (legacy === 'super_admin') throw new BusinessError(400, '不能删除超级管理员');
 
-  await repo.softDeleteAdminUser(userId);
+  const n = await repo.softDeleteAdminUser(userId);
+  if (!n) {
+    throw new BusinessError(
+      400,
+      '删除未生效：仅支持删除「普通管理员」或「已禁用」后台账号。若该人员是前台会员，请到「用户管理」处理（当前版本会员账号无删除入口，可用脚本或数据库处理）。',
+    );
+  }
 
   const { writeAuditLog } = require('../../utils/auditLog');
   await writeAuditLog({ req, operatorId: actor.id, actionType: 'admin.delete_user', objectType: 'user', objectId: userId, summary: `软删除管理员 ${target.phone}`, result: 'success' });

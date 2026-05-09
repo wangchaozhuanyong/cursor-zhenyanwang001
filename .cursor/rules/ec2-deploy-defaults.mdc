@@ -9,7 +9,7 @@ alwaysApply: true
 
 - **EC2 公有 IPv4**：`13.212.179.213`
 - **SSH 私钥路径**：`E:\yamaxunmishi\aws-key.pem`（密钥目录为 `E:\yamaxunmishi`，文件名 `aws-key.pem`）
-- **常见 SSH 用户**：Amazon Linux 用 `ec2-user`；若为 Ubuntu 镜像则改为 `ubuntu`
+- **SSH 登录用户**：`ubuntu`（本机密钥对该实例校验通过；若为 Amazon Linux 可改 `ec2-user`）
 - **服务器项目根**（默认）：`/var/www/click-send-shop`
 
 协助用户部署时：优先使用上述默认值；若用户说明已更换 IP、路径或系统镜像，再更新本规则与脚本中的默认值。

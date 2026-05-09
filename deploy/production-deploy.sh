@@ -22,6 +22,14 @@ HEALTH_PORT="${HEALTH_PORT:-3001}"
 HEALTH_PATH="${HEALTH_PATH:-/api/health/live}"
 PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-$PROJECT_DIR/public-frontend}"
 
+npm_install_here() {
+  if [[ -f package-lock.json ]]; then
+    npm ci
+  else
+    npm install
+  fi
+}
+
 cd "$PROJECT_DIR" || exit 1
 
 echo "📅 部署时间: $(date)" | tee -a "$LOG_FILE"
@@ -43,12 +51,12 @@ fi
 
 if [[ -f "$PROJECT_DIR/package.json" ]]; then
   echo "📦 安装仓库根目录依赖（可选）..." | tee -a "$LOG_FILE"
-  npm install
+  npm_install_here
 fi
 
 echo "📦 安装后端依赖..." | tee -a "$LOG_FILE"
 cd "$BACKEND_DIR" || exit 1
-npm install
+npm_install_here
 
 echo "🧪 部署前数据库连通检查..." | tee -a "$LOG_FILE"
 if [[ ! -f "$BACKEND_DIR/.env" ]]; then
@@ -90,7 +98,7 @@ if [[ -d "$FRONTEND_DIR/dist/assets" ]]; then
 fi
 
 cd "$FRONTEND_DIR" || exit 1
-npm install
+npm_install_here
 npm run build
 
 if [[ -n "$ASSET_BACKUP" && -d "$ASSET_BACKUP" ]]; then

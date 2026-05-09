@@ -11,6 +11,7 @@ server/.env
 node_modules/
 **/dist/
 **/dist-ssr/
+public-frontend/
 *.log
 
 # GitHub Actions — 默认忽略，但允许提交我们的部署 workflow

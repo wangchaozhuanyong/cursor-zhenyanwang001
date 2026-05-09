@@ -1,21 +1,21 @@
 # 从 Windows 本机 SSH 到 EC2，拉代码并执行 deploy/production-deploy.sh
 #
-# 用法（二选一）：
-#   powershell -ExecutionPolicy Bypass -File deploy/deploy-from-windows.ps1 -Ec2Host "ec2-xxx.compute.amazonaws.com"
-#   $env:EC2_HOST="1.2.3.4"; powershell -ExecutionPolicy Bypass -File deploy/deploy-from-windows.ps1
+# 默认使用本仓库约定的 EC2 公网 IP 与密钥路径；可用参数或环境变量覆盖。
+#   powershell -ExecutionPolicy Bypass -File deploy/deploy-from-windows.ps1
+#   powershell -ExecutionPolicy Bypass -File deploy/deploy-from-windows.ps1 -Ec2Host "其它IP"
 #
 # 不要把 aws-key.pem 提交到 Git。
 
 [CmdletBinding()]
 param(
-    [string] $Ec2Host = $env:EC2_HOST,
+    [string] $Ec2Host = $(if ($env:EC2_HOST) { $env:EC2_HOST } else { "13.212.179.213" }),
     [string] $Ec2User = $(if ($env:EC2_USER) { $env:EC2_USER } else { "ec2-user" }),
     [string] $RemoteDir = $(if ($env:REMOTE_DIR) { $env:REMOTE_DIR } else { "/var/www/click-send-shop" }),
     [string] $KeyPath = $(if ($env:SSH_KEY_PATH) { $env:SSH_KEY_PATH } else { "E:\yamaxunmishi\aws-key.pem" })
 )
 
 if ([string]::IsNullOrWhiteSpace($Ec2Host)) {
-    Write-Error "缺少 EC2 地址。示例: -Ec2Host `"你的公网 DNS 或 IP`" 或先设置 `$env:EC2_HOST"
+    Write-Error "缺少 EC2 地址。请传 -Ec2Host 或设置 `$env:EC2_HOST"
     exit 1
 }
 
@@ -24,7 +24,8 @@ if (-not (Test-Path -LiteralPath $KeyPath)) {
     exit 1
 }
 
-$remote = "cd '$RemoteDir' && git pull origin main && bash deploy/production-deploy.sh"
+# PowerShell 5.x 对含 "&&" 的双引号串解析易出错，用 -f 单引号格式串
+$remote = ('cd ''{0}'' && git pull origin main && bash deploy/production-deploy.sh') -f $RemoteDir
 
 Write-Host ">>> SSH ${Ec2User}@${Ec2Host}" -ForegroundColor Cyan
 Write-Host ">>> $remote" -ForegroundColor DarkGray

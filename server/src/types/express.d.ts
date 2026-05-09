@@ -3,8 +3,7 @@ import "express-serve-static-core";
 
 declare module "express-serve-static-core" {
   interface IRouter {
-    /** Domain routers attach a small facade for cross-module calls */
-    api?: Record<string, unknown>;
+    api?: Record<string, any>;
   }
 }
 

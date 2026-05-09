@@ -50,5 +50,5 @@
     "src/modules/user/**/*.js",
     "src/modules/health/**/*.js"
   ],
-  "exclude": ["node_modules", "dist", "test", "scripts", "src/application/**", "src/db/**"]
+  "exclude": ["node_modules", "dist", "test", "scripts", "src/modules/**", "src/application/**", "src/db/**"]
 }

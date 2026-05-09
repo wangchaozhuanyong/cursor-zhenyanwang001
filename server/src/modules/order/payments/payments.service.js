@@ -224,8 +224,7 @@ async function createStripeCheckoutForOrder(userId, orderId, returnUrlHint, idem
     metadata: { phase: 'session_creating' },
   });
 
-  const Stripe = require('stripe');
-  const stripe = new Stripe(secretKey);
+  const stripe = require('stripe')(secretKey);
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
     payment_method_types: ['card'],

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { Gem, Menu, ShieldCheck, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -52,15 +52,16 @@ function AccordionItem({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="border-b border-[var(--theme-border)]/70">
+    <div className="border-b border-[var(--theme-border)]">
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
-        className="flex w-full items-center justify-between bg-transparent py-4 text-left"
+        className="flex w-full min-h-[3.25rem] items-center justify-between gap-3 bg-transparent py-3.5 text-left active:bg-[color-mix(in_srgb,var(--theme-text)_4%,transparent)]"
+        aria-expanded={isOpen}
       >
-        <span className="text-[15px] font-semibold text-[var(--theme-text)]">{title}</span>
+        <span className="text-[15px] font-medium text-[var(--theme-text)]">{title}</span>
         <svg
-          className={`h-4 w-4 text-[var(--theme-text-muted)] transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+          className={`h-4 w-4 shrink-0 text-[var(--theme-text-muted)] transition-transform duration-300 ease-out ${isOpen ? "rotate-180" : ""}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -68,8 +69,13 @@ function AccordionItem({
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-      <div className={`overflow-hidden transition-all duration-300 ${isOpen ? "max-h-64 pb-5 opacity-100" : "max-h-0 opacity-0"}`}>
-        {children}
+      {/* grid 0fr/1fr：展开高度随内容增长，避免 max-h 截断导致重叠 */}
+      <div
+        className={`grid transition-[grid-template-rows] duration-300 ease-out ${isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="pb-5 pl-0.5 pt-0">{children}</div>
+        </div>
       </div>
     </div>
   );
@@ -85,21 +91,41 @@ export default function GuestHome() {
   const description = siteInfo.siteDescription || "精选全球好物，品质生活购物平台";
   const { banners } = useHomeBanners();
   const now = new Date().toISOString();
-  const customNav = parseFooterNav(siteInfo.footerNav);
-  const supportNav = customNav ? customNav.slice(0, 4) : [
-    { label: "首页", path: "/" },
-    { label: "全部分类", path: "/categories" },
-    { label: "购物车", path: "/cart" },
-    { label: "我的订单", path: "/orders" },
-  ];
-  const policyNav = customNav && customNav.length > 4 ? customNav.slice(4) : [
-    { label: "常见问题", path: "/help" },
-    { label: "关于我们", path: "/about" },
-  ];
-  if (siteInfo.privacyPolicyPath) policyNav.push({ label: "隐私政策", path: siteInfo.privacyPolicyPath });
-  else if (siteInfo.footerPolicyUrl) policyNav.push({ label: "隐私政策", path: siteInfo.footerPolicyUrl });
-  if (siteInfo.termsPath) policyNav.push({ label: "服务条款", path: siteInfo.termsPath });
-  else if (siteInfo.footerTermsUrl) policyNav.push({ label: "服务条款", path: siteInfo.footerTermsUrl });
+  const customNav = useMemo(() => parseFooterNav(siteInfo.footerNav), [siteInfo.footerNav]);
+  const supportNav = useMemo(() => {
+    if (customNav?.length) return customNav.slice(0, 4);
+    return [
+      { label: "首页", path: "/" },
+      { label: "全部分类", path: "/categories" },
+      { label: "购物车", path: "/cart" },
+      { label: "我的订单", path: "/orders" },
+    ];
+  }, [customNav]);
+
+  const policyNav = useMemo(() => {
+    const base =
+      customNav && customNav.length > 4
+        ? customNav.slice(4)
+        : [
+            { label: "常见问题", path: "/help" },
+            { label: "关于我们", path: "/about" },
+          ];
+    const extra: FooterNavItem[] = [];
+    if (siteInfo.privacyPolicyPath)
+      extra.push({ label: "隐私政策", path: siteInfo.privacyPolicyPath });
+    else if (siteInfo.footerPolicyUrl)
+      extra.push({ label: "隐私政策", path: siteInfo.footerPolicyUrl });
+    if (siteInfo.termsPath) extra.push({ label: "服务条款", path: siteInfo.termsPath });
+    else if (siteInfo.footerTermsUrl)
+      extra.push({ label: "服务条款", path: siteInfo.footerTermsUrl });
+    return [...base, ...extra];
+  }, [
+    customNav,
+    siteInfo.footerPolicyUrl,
+    siteInfo.privacyPolicyPath,
+    siteInfo.termsPath,
+    siteInfo.footerTermsUrl,
+  ]);
 
   const handleFooterNavigate = (path: string) => {
     if (path.startsWith("http")) {
@@ -116,7 +142,7 @@ export default function GuestHome() {
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)] pb-24 text-[var(--theme-text)]">
+    <div className="min-h-screen bg-[var(--theme-bg)] pb-[calc(6.25rem+env(safe-area-inset-bottom,0px))] text-[var(--theme-text)]">
       <header className="fixed left-0 right-0 top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-14 w-full max-w-screen-xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
@@ -144,21 +170,29 @@ export default function GuestHome() {
           <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">{products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}</div>
         </section>
 
-        <footer className="mt-10 rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-5 pb-8 pt-10 md:max-w-lg md:mx-auto">
-          <div className="mb-10 flex flex-col items-center text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-[var(--theme-text)]">
-              {siteName}
-              <span className="text-[var(--theme-price)]">.</span>
+        <footer className="relative z-0 mt-12 w-full overflow-x-hidden border-t border-[var(--theme-border)] bg-[var(--theme-surface)] px-5 pb-4 pt-10 md:mx-auto md:max-w-lg">
+          {/* 品牌区：参考图居中 + 句号后红点 */}
+          <div className="flex flex-col items-center text-center">
+            <h2 className="flex items-end justify-center gap-1 text-3xl font-bold tracking-tight text-[var(--theme-text)]">
+              <span>{siteName}</span>
+              <span className="translate-y-px text-[var(--theme-text)]">.</span>
+              <span
+                className="mb-1 inline-block h-2 w-2 shrink-0 rounded-sm bg-red-600"
+                aria-hidden
+              />
             </h2>
-            <div className="mt-3 space-y-1">
-              <p className="text-[15px] font-semibold text-[var(--theme-text)]">{slogan}</p>
-              <p className="text-[13px] text-[var(--theme-text-muted)]">{description}</p>
+            <div className="mt-4 max-w-[20rem] space-y-1">
+              <p className="text-[15px] font-semibold leading-snug text-[var(--theme-text)]">{slogan}</p>
+              <p className="text-[13px] leading-relaxed text-[var(--theme-text-muted)]">{description}</p>
             </div>
           </div>
 
-          <div className="mb-8 border-t border-[var(--theme-text)]/30 pt-2">
+          <div className="mx-auto mt-10 max-w-md border-t border-[var(--theme-border)]" />
+
+          {/* 折叠导航 */}
+          <div className="mx-auto mt-0 max-w-md">
             <AccordionItem title="服务支持">
-              <ul className="space-y-4 pl-1">
+              <ul className="space-y-3.5">
                 {supportNav.map((item, idx) => (
                   <li key={`${item.label}-${idx}`}>
                     <FooterLink item={item} onNavigate={handleFooterNavigate} />
@@ -168,7 +202,7 @@ export default function GuestHome() {
             </AccordionItem>
 
             <AccordionItem title="政策与说明">
-              <ul className="space-y-4 pl-1">
+              <ul className="space-y-3.5">
                 {policyNav.map((item, idx) => (
                   <li key={`${item.label}-${idx}`}>
                     <FooterLink item={item} onNavigate={handleFooterNavigate} />
@@ -178,49 +212,50 @@ export default function GuestHome() {
             </AccordionItem>
           </div>
 
-          <div className="mb-10">
-            <h4 className="mb-4 text-[15px] font-medium text-[var(--theme-text)]">联系我们</h4>
-            <div className="space-y-0">
+          {/* 联系我们：左标签右内容，避免窄屏重叠 */}
+          <div className="mx-auto mt-10 max-w-md">
+            <h3 className="mb-4 text-left text-[15px] font-semibold text-[var(--theme-text)]">联系我们</h3>
+            <div className="flex flex-col">
               {siteInfo.contactPhone && (
-                <div className="flex items-start justify-between border-b border-[var(--theme-border)]/40 py-3.5">
-                  <span className="shrink-0 text-[14px] font-medium text-[var(--theme-text-muted)]">客服电话</span>
-                  <span className="text-[14px] font-semibold tracking-wide text-[var(--theme-text)]">{siteInfo.contactPhone}</span>
+                <div className="flex items-start justify-between gap-4 border-b border-[color-mix(in_srgb,var(--theme-border)_85%,transparent)] py-3.5">
+                  <span className="shrink-0 pt-0.5 text-[14px] font-medium text-[var(--theme-text-muted)]">客服电话</span>
+                  <span className="min-w-0 max-w-[58%] text-right text-[14px] font-semibold tracking-wide text-[var(--theme-text)] break-words">
+                    {siteInfo.contactPhone}
+                  </span>
                 </div>
               )}
               {siteInfo.contactEmail && (
-                <div className="flex items-start justify-between border-b border-[var(--theme-border)]/40 py-3.5">
-                  <span className="shrink-0 text-[14px] font-medium text-[var(--theme-text-muted)]">电子邮箱</span>
-                  <span className="text-[14px] font-semibold tracking-wide text-[var(--theme-text)]">{siteInfo.contactEmail}</span>
+                <div className="flex items-start justify-between gap-4 border-b border-[color-mix(in_srgb,var(--theme-border)_85%,transparent)] py-3.5">
+                  <span className="shrink-0 pt-0.5 text-[14px] font-medium text-[var(--theme-text-muted)]">电子邮箱</span>
+                  <span className="min-w-0 max-w-[58%] break-all text-right text-[14px] font-semibold text-[var(--theme-text)]">
+                    {siteInfo.contactEmail}
+                  </span>
                 </div>
               )}
               {siteInfo.contactWhatsApp && (
-                <div className="flex items-start justify-between border-b border-[var(--theme-border)]/40 py-3.5">
-                  <span className="shrink-0 text-[14px] font-medium text-[var(--theme-text-muted)]">客服专线</span>
-                  <span className="text-[14px] font-semibold tracking-wide text-[var(--theme-text)]">{siteInfo.contactWhatsApp}</span>
+                <div className="flex items-start justify-between gap-4 border-b border-[color-mix(in_srgb,var(--theme-border)_85%,transparent)] py-3.5">
+                  <span className="shrink-0 pt-0.5 text-[14px] font-medium text-[var(--theme-text-muted)]">客服专线</span>
+                  <span className="min-w-0 max-w-[58%] text-right text-[14px] font-semibold tracking-wide text-[var(--theme-text)] break-words">
+                    {siteInfo.contactWhatsApp}
+                  </span>
                 </div>
               )}
               {siteInfo.businessHours && (
-                <div className="flex items-start justify-between border-b border-[var(--theme-border)]/40 py-3.5">
-                  <span className="shrink-0 text-[14px] font-medium text-[var(--theme-text-muted)]">服务时间</span>
-                  <span className="text-[14px] font-medium text-[var(--theme-text)]">{siteInfo.businessHours}</span>
+                <div className="flex items-start justify-between gap-4 border-b border-[color-mix(in_srgb,var(--theme-border)_85%,transparent)] py-3.5">
+                  <span className="shrink-0 pt-0.5 text-[14px] font-medium text-[var(--theme-text-muted)]">服务时间</span>
+                  <span className="min-w-0 max-w-[62%] text-right text-[14px] font-medium leading-snug text-[var(--theme-text)]">
+                    {siteInfo.businessHours}
+                  </span>
                 </div>
               )}
               {siteInfo.address && (
-                <div className="flex items-start justify-between pt-3.5">
-                  <span className="shrink-0 text-[14px] font-medium text-[var(--theme-text-muted)]">公司地址</span>
-                  <span className="w-[200px] text-right text-[14px] font-medium leading-snug text-[var(--theme-text)]">{siteInfo.address}</span>
+                <div className="flex items-start justify-between gap-4 pt-3.5">
+                  <span className="shrink-0 pt-0.5 text-[14px] font-medium text-[var(--theme-text-muted)]">公司地址</span>
+                  <span className="min-w-0 max-w-[62%] text-right text-[14px] font-medium leading-snug text-[var(--theme-text)] break-words">
+                    {siteInfo.address}
+                  </span>
                 </div>
               )}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center border-t border-[var(--theme-border)]/70 pt-8">
-            <div className="flex items-center gap-3 text-[12px] font-medium text-[var(--theme-text-muted)]">
-              <span>正品保障</span>
-              <span className="h-1 w-1 rounded-full bg-[var(--theme-border)]" />
-              <span>快速配送</span>
-              <span className="h-1 w-1 rounded-full bg-[var(--theme-border)]" />
-              <span>安心售后</span>
             </div>
           </div>
         </footer>

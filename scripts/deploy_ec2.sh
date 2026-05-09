@@ -9,6 +9,15 @@ APP_NAME="${PM2_APP:-${APP_NAME:-gc-api}}"
 echo "[deploy] repo root: ${ROOT_DIR}"
 echo "[deploy] app name: ${APP_NAME}"
 
+if [[ "${LEGACY_DEPLOY_EC2:-0}" != "1" && -f "${ROOT_DIR}/deploy/ci-deploy.sh" ]]; then
+  echo "[deploy] Delegating to deploy/ci-deploy.sh (standard deploy chain with migrations and verification)."
+  PROJECT_DIR="${ROOT_DIR}" PM2_APP="${APP_NAME}" AUTO_ROLLBACK="${AUTO_ROLLBACK:-1}" \
+    bash "${ROOT_DIR}/deploy/ci-deploy.sh"
+  exit $?
+fi
+
+echo "[deploy] LEGACY_DEPLOY_EC2=1 enabled; running legacy upload deploy path."
+
 if ! command -v node >/dev/null 2>&1; then
   echo "[FATAL] node not found on server"
   exit 1

@@ -7,8 +7,7 @@ import * as contentService from "@/services/contentService";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { renderBrandTitle } from "@/utils/brand";
 import { useGoBack } from "@/hooks/useGoBack";
-import { copyToClipboard } from "@/utils/clipboard";
-import { toastPresetQuickSuccess } from "@/utils/toastPresets";
+import { SiteSocialLinks } from "@/components/SiteSocialLinks";
 
 export default function About() {
   const navigate = useNavigate();
@@ -135,51 +134,17 @@ export default function About() {
           </div>
         </motion.div>
 
-        {/* Social */}
-        <div className="mt-8 flex justify-center gap-4 pb-6 flex-wrap md:mt-10">
-          {[
-            {
-              label: "WhatsApp",
-              url:
-                siteInfo.whatsappUrl ||
-                (siteInfo.contactWhatsApp
-                  ? `https://wa.me/${siteInfo.contactWhatsApp.replace(/\D/g, "")}`
-                  : ""),
-              showWhenWechat: false,
-            },
-            { label: "WeChat", url: "", showWhenWechat: true },
-            { label: "Instagram", url: siteInfo.instagramUrl || "", showWhenWechat: false },
-            { label: "Facebook", url: siteInfo.facebookUrl || "", showWhenWechat: false },
-            { label: "TikTok", url: siteInfo.tiktokUrl || "", showWhenWechat: false },
-            { label: "小红书", url: siteInfo.xhsUrl || "", showWhenWechat: false },
-          ]
-            .filter((s) =>
-              s.label === "WeChat" ? Boolean(siteInfo.wechatId) : Boolean(s.url),
-            )
-            .map((s) => (
-              <button
-                key={s.label}
-                onClick={async () => {
-                  if (s.url) {
-                    window.open(s.url, "_blank");
-                  } else if (s.label === "WeChat" && siteInfo.wechatId) {
-                    const [{ toast }, copied] = await Promise.all([
-                      import("sonner"),
-                      copyToClipboard(siteInfo.wechatId),
-                    ]);
-                    if (copied) {
-                      toast.success("微信号已复制", toastPresetQuickSuccess);
-                    } else {
-                      toast.error("复制失败，请手动复制微信号");
-                    }
-                  }
-                }}
-                className="rounded-xl border border-border bg-card px-4 py-2.5 text-xs font-medium text-muted-foreground hover:border-gold/30 active:scale-95 transition-all"
-              >
-                {s.label}
-              </button>
-            ))}
-        </div>
+        <SiteSocialLinks
+          whatsappUrl={siteInfo.whatsappUrl}
+          contactWhatsApp={siteInfo.contactWhatsApp}
+          wechatId={siteInfo.wechatId}
+          instagramUrl={siteInfo.instagramUrl}
+          facebookUrl={siteInfo.facebookUrl}
+          tiktokUrl={siteInfo.tiktokUrl}
+          xhsUrl={siteInfo.xhsUrl}
+          tone="pill"
+          className="mt-8 pb-6 md:mt-10"
+        />
       </main>
     </div>
   );

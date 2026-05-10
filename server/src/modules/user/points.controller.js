@@ -14,6 +14,13 @@ exports.getBalance = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+exports.getClientConfig = async (req, res, next) => {
+  try {
+    const data = await pointsService.getClientPointsConfig();
+    res.success(data);
+  } catch (err) { next(err); }
+};
+
 exports.signIn = async (req, res, next) => {
   try {
     const result = await pointsService.signIn(req.user.id);

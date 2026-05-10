@@ -10,6 +10,12 @@ const productListQuerySchema = z.object({
   category_id: idParam.optional(),
   category: idParam.optional(),
   categoryId: idParam.optional(),
+  tag_id: idParam.optional(),
+  tag: idParam.optional(),
+  tagId: idParam.optional(),
+  is_hot: z.string().optional(),
+  is_new: z.string().optional(),
+  is_recommended: z.string().optional(),
   keyword: z.string().trim().max(64).optional(),
   sort: z
     .enum([

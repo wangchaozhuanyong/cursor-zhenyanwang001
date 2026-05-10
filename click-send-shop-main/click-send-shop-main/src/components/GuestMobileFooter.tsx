@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import type { FooterNavItem } from "@/types/content";
+import { SiteSocialLinks, hasAnySocialLink } from "@/components/SiteSocialLinks";
 
 /** 末尾红色句号的品牌呈现，与移动端参考稿一致（大马通<span class=text-red>·</span>） */
 export function GuestFooterBrandMark({ siteName }: { siteName: string }) {
@@ -81,6 +82,12 @@ type GuestMobileFooterProps = {
   contactWhatsApp?: string;
   businessHours?: string;
   address?: string;
+  whatsappUrl?: string;
+  wechatId?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  tiktokUrl?: string;
+  xhsUrl?: string;
   onNavigate: (path: string) => void;
 };
 
@@ -101,10 +108,26 @@ export default function GuestMobileFooter({
   contactWhatsApp,
   businessHours,
   address,
+  whatsappUrl,
+  wechatId,
+  instagramUrl,
+  facebookUrl,
+  tiktokUrl,
+  xhsUrl,
   onNavigate,
 }: GuestMobileFooterProps) {
   const hasContactBlock =
     !!(contactPhone || contactEmail || contactWhatsApp || businessHours || address);
+  const socialProps = {
+    whatsappUrl,
+    contactWhatsApp,
+    wechatId,
+    instagramUrl,
+    facebookUrl,
+    tiktokUrl,
+    xhsUrl,
+  };
+  const hasSocial = hasAnySocialLink(socialProps);
 
   return (
     <footer className="relative isolate z-0 mt-14 w-full max-w-lg md:mx-auto">
@@ -198,6 +221,13 @@ export default function GuestMobileFooter({
                 </div>
               )}
             </div>
+          </section>
+        )}
+
+        {hasSocial && (
+          <section className="mt-11">
+            <h3 className="mb-4 text-[15px] font-medium text-[var(--theme-text)]">关注我们</h3>
+            <SiteSocialLinks {...socialProps} tone="footer" className="justify-start sm:justify-center" />
           </section>
         )}
       </div>

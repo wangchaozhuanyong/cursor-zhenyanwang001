@@ -53,28 +53,42 @@ export default function HomeOpsBlocks() {
   return (
     <div className="space-y-3 px-4">
       {topAnnouncements.length > 0 && (
-        <section className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)]/80 px-3 py-2 shadow-[var(--theme-shadow)]">
-          <div className="flex items-start gap-2">
-            <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--theme-primary)]/10 text-[var(--theme-price)]">
-              <Bell size={14} />
-            </div>
-            <div className="min-w-0 flex-1 space-y-1">
-              {topAnnouncements.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => openTarget(navigate, item.link_url)}
-                  className="flex w-full items-center gap-2 text-left text-xs text-[var(--theme-text)]"
+        <section className="space-y-2">
+          {topAnnouncements.map((item) => {
+            const hasLink = Boolean(item.link_url?.trim());
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => openTarget(navigate, item.link_url)}
+                className={`flex w-full items-center gap-3 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)]/85 px-3 py-2.5 text-left shadow-[var(--theme-shadow)] transition-colors active:scale-[0.99] ${
+                  hasLink ? "cursor-pointer hover:bg-[var(--theme-surface)]" : "cursor-default"
+                }`}
+              >
+                <span
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_12%,transparent)] text-[var(--theme-price)]"
+                  aria-hidden
                 >
-                  <span className="min-w-0 flex-1 truncate">
-                    <strong className="font-semibold">{item.title || "公告"}</strong>
-                    {item.content ? <span className="text-[var(--theme-text-muted)]"> · {item.content}</span> : null}
+                  <Bell className="size-[18px] shrink-0" strokeWidth={2} />
+                </span>
+                <span className="min-w-0 flex-1 text-xs leading-snug text-[var(--theme-text)]">
+                  <span className="line-clamp-2">
+                    <strong className="font-semibold text-[var(--theme-text)]">{item.title || "公告"}</strong>
+                    {item.content ? (
+                      <span className="text-[var(--theme-text-muted)]"> · {item.content}</span>
+                    ) : null}
                   </span>
-                  {item.link_url ? <ChevronRight size={14} className="shrink-0 text-[var(--theme-text-muted)]" /> : null}
-                </button>
-              ))}
-            </div>
-          </div>
+                </span>
+                {hasLink ? (
+                  <span className="flex size-9 shrink-0 items-center justify-center text-[var(--theme-text-muted)]" aria-hidden>
+                    <ChevronRight className="size-[18px] shrink-0" strokeWidth={2} />
+                  </span>
+                ) : (
+                  <span className="size-9 shrink-0" aria-hidden />
+                )}
+              </button>
+            );
+          })}
         </section>
       )}
 

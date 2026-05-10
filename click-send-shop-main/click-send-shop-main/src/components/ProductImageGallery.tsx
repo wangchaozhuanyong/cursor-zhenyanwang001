@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Play } from "lucide-react";
 
 import { PRODUCT_BLUR_PLACEHOLDER } from "@/constants/productBlurPlaceholder";
+import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { ProgressiveImage } from "@/modules/micro-interactions";
 
 interface ProductImageGalleryProps {
@@ -56,20 +57,16 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
   if (media.length === 0) {
     return (
       <div className="relative">
-        <div
-          className="relative w-full overflow-hidden bg-secondary"
-          style={{ aspectRatio: "var(--theme-image-ratio)" }}
-        />
+        <div className="relative w-full overflow-hidden bg-secondary" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE} />
       </div>
     );
   }
 
   return (
     <div className="relative">
-      {/* Main image */}
       <div
         className="relative w-full overflow-hidden bg-secondary"
-        style={{ aspectRatio: "var(--theme-image-ratio)" }}
+        style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >

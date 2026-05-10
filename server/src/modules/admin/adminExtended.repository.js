@@ -63,7 +63,7 @@ async function restoreBanner(id) {
 
 async function selectProductTags() {
   const sqlWithColor = `
-    SELECT pt.id, pt.name, pt.sort_order, pt.color,
+    SELECT pt.id, pt.name, pt.sort_order, pt.color, pt.bg_color, pt.text_color, pt.enabled,
       (
         SELECT COUNT(*)
         FROM product_tag_assignments x
@@ -71,10 +71,12 @@ async function selectProductTags() {
         WHERE x.tag_id = pt.id
       ) AS usage_count
     FROM product_tags pt
-    ORDER BY pt.created_at DESC
+    WHERE pt.deleted_at IS NULL
+    ORDER BY pt.sort_order DESC, pt.created_at DESC
   `;
   const sqlLegacy = `
     SELECT pt.id, pt.name, pt.sort_order, '金色' AS color,
+      '#FEF3C7' AS bg_color, '#92400E' AS text_color, 1 AS enabled,
       (
         SELECT COUNT(*)
         FROM product_tag_assignments x
@@ -82,7 +84,7 @@ async function selectProductTags() {
         WHERE x.tag_id = pt.id
       ) AS usage_count
     FROM product_tags pt
-    ORDER BY pt.created_at DESC
+    ORDER BY pt.sort_order DESC, pt.created_at DESC
   `;
   try {
     const [rows] = await db.query(sqlWithColor);
@@ -97,22 +99,61 @@ async function selectProductTags() {
   }
 }
 
-async function insertProductTag(id, name, color) {
+async function insertProductTag(id, name, color, bgColor, textColor, sortOrder = 0, enabled = 1) {
   const c = color && String(color).trim() ? String(color).trim().slice(0, 20) : '金色';
+  const bg = bgColor && String(bgColor).trim() ? String(bgColor).trim().slice(0, 20) : '#FEF3C7';
+  const text = textColor && String(textColor).trim() ? String(textColor).trim().slice(0, 20) : '#92400E';
   try {
-    await db.query('INSERT INTO product_tags (id, name, color) VALUES (?, ?, ?)', [id, name, c]);
+    await db.query(
+      'INSERT INTO product_tags (id, name, color, bg_color, text_color, sort_order, enabled) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [id, name, c, bg, text, Number(sortOrder) || 0, enabled ? 1 : 0],
+    );
   } catch (e) {
     const msg = String(e && e.sqlMessage ? e.sqlMessage : e.message || e);
-    if (e && (e.code === 'ER_BAD_FIELD_ERROR' || /Unknown column.*color/i.test(msg))) {
-      await db.query('INSERT INTO product_tags (id, name) VALUES (?, ?)', [id, name]);
+    if (e && (e.code === 'ER_BAD_FIELD_ERROR' || /Unknown column/i.test(msg))) {
+      await db.query('INSERT INTO product_tags (id, name, sort_order) VALUES (?, ?, ?)', [id, name, Number(sortOrder) || 0]);
       return;
     }
     throw e;
   }
 }
 
+async function selectProductTagById(id) {
+  try {
+    const [[row]] = await db.query(
+      `SELECT id, name, sort_order, color, bg_color, text_color, enabled
+       FROM product_tags
+       WHERE id = ? AND deleted_at IS NULL`,
+      [id],
+    );
+    return row || null;
+  } catch (e) {
+    if (e.code !== 'ER_BAD_FIELD_ERROR') throw e;
+    const [[row]] = await db.query(
+      `SELECT id, name, sort_order, color,
+        '#FEF3C7' AS bg_color, '#92400E' AS text_color, 1 AS enabled
+       FROM product_tags
+       WHERE id = ?`,
+      [id],
+    );
+    return row || null;
+  }
+}
+
+async function updateProductTag(id, fields, values) {
+  await db.query(`UPDATE product_tags SET ${fields.join(', ')} WHERE id = ?`, [...values, id]);
+}
+
 async function deleteProductTag(id) {
-  await db.query('DELETE FROM product_tags WHERE id = ?', [id]);
+  try {
+    await db.query('UPDATE product_tags SET deleted_at = NOW(), enabled = 0 WHERE id = ?', [id]);
+  } catch (e) {
+    if (e.code === 'ER_BAD_FIELD_ERROR') {
+      await db.query('DELETE FROM product_tags WHERE id = ?', [id]);
+      return;
+    }
+    throw e;
+  }
 }
 
 async function selectReturnById(id) {
@@ -297,6 +338,8 @@ module.exports = {
   restoreBanner,
   selectProductTags,
   insertProductTag,
+  selectProductTagById,
+  updateProductTag,
   deleteProductTag,
   selectReturnById,
   selectShippingTemplatesRaw,

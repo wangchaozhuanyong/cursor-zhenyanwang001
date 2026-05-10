@@ -24,6 +24,7 @@ import type { Order } from "@/types/order";
 import { copyToClipboard } from "@/utils/clipboard";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { ORDER_STATUS, ORDER_STATUS_META, ORDER_STATUS_PROGRESS } from "@/constants/statusDictionary";
+import TrustInfo from "@/components/TrustInfo";
 
 const statusIconMap: Record<string, React.ElementType> = {
   pending: Clock,
@@ -354,6 +355,8 @@ export default function OrderDetail() {
             </div>
           )}
         </div>
+
+        <TrustInfo className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow" />
 
         {/* Actions */}
         <div className="space-y-3 pt-2">

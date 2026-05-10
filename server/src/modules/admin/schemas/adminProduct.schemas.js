@@ -77,6 +77,10 @@ const adminProductBatchStatusBodySchema = z.object({
   status: z.enum(['active', 'inactive', 'draft']),
 });
 
+const adminProductTagsBodySchema = z.object({
+  tag_ids: z.array(z.string().uuid()).max(30),
+});
+
 const adminProductIdParamsSchema = z.object({
   id: z.string().uuid(),
 });
@@ -87,6 +91,7 @@ module.exports = {
   adminProductUpdateBodySchema,
   adminProductPatchStatusBodySchema,
   adminProductBatchStatusBodySchema,
+  adminProductTagsBodySchema,
   adminProductIdParamsSchema,
   variantInputSchema,
 };

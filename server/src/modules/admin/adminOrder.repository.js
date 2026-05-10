@@ -83,8 +83,23 @@ async function selectOrderStateById(orderId) {
 
 async function updateOrderShipped(orderId, trackingNo, carrier) {
   await db.query(
-    'UPDATE orders SET status = ?, tracking_no = ?, carrier = ? WHERE id = ?',
+    `UPDATE orders
+       SET status = ?, tracking_no = ?, carrier = ?,
+           shipped_at = COALESCE(shipped_at, NOW())
+     WHERE id = ?`,
     [ORDER_STATUS.SHIPPED, trackingNo, carrier, orderId],
+  );
+}
+
+/**
+ * 进入「已发货」时记录首次发货时间（若已有则保留，便于多次更新运单号不改变计时起点）
+ * @param {import('mysql2/promise').PoolConnection} q
+ * @param {string} orderId
+ */
+async function touchOrderShippedAtIfNull(q, orderId) {
+  await q.query(
+    'UPDATE orders SET shipped_at = COALESCE(shipped_at, NOW()) WHERE id = ?',
+    [orderId],
   );
 }
 
@@ -294,6 +309,7 @@ module.exports = {
   selectOrderById,
   selectOrderStateById,
   updateOrderShipped,
+  touchOrderShippedAtIfNull,
 
   updateOrderStatusAndPayment,
   appendAdminRemark,

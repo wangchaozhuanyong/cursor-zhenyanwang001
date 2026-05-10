@@ -10,7 +10,7 @@ import * as uploadService from "@/services/uploadService";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_PRODUCT_LAYOUT } from "@/constants/imageUploadHints";
-import { productTagBadgeClass } from "@/utils/productTagBadge";
+import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { flattenCategories } from "@/utils/categoryTree";
 import type { ProductTag } from "@/types/product";
 
@@ -317,6 +317,14 @@ export default function AdminProductForm() {
                     <label className="block text-xs font-medium text-muted-foreground">详情视频（可选）</label>
                     <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
                       仅在商品详情页图集展示，商品卡不展示。支持 MP4 / WebM / MOV，单个视频最大 50MB；建议使用 H.264 MP4 以获得最佳兼容性。
+                      <span className="mt-0.5 block">
+                        画面比例请与「站点外观 → 商品图比例」一致（常见为 <strong className="font-medium text-foreground/80">1:1</strong>，如{" "}
+                        <strong className="font-medium text-foreground/80">1080×1080</strong> /{" "}
+                        <strong className="font-medium text-foreground/80">720×720</strong>；若为 3:4 则如 1080×1440）。码率约 5–8 Mbps，时长 1 分钟内更易压在 50MB 内。
+                        详情页图集主区域固定为当前主题的 <strong className="font-medium text-foreground/80">商品图比例</strong>，视频在区域内{" "}
+                        <strong className="font-medium text-foreground/80">object-contain</strong>
+                        ：与主题同比例导出时黑边最少、与图片切换不跳变；横屏或与主题不一致时可能出现上下或左右留黑。下方预览与前台使用同一比例变量。
+                      </span>
                     </p>
                   </div>
                   {form.video_url && (
@@ -348,12 +356,17 @@ export default function AdminProductForm() {
                   </label>
                 </div>
                 {form.video_url ? (
-                  <video
-                    src={form.video_url}
-                    className="mt-3 aspect-video w-full max-w-md rounded-lg bg-black object-contain"
-                    controls
-                    preload="metadata"
-                  />
+                  <div
+                    className="mt-3 w-full max-w-md overflow-hidden rounded-lg bg-black"
+                    style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
+                  >
+                    <video
+                      src={form.video_url}
+                      className="h-full w-full object-contain"
+                      controls
+                      preload="metadata"
+                    />
+                  </div>
                 ) : null}
               </div>
             </div>
@@ -588,11 +601,15 @@ export default function AdminProductForm() {
                           tag_ids: on ? f.tag_ids.filter((x) => x !== t.id) : [...f.tag_ids, t.id],
                         }))
                       }
-                      className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                    className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-transform active:scale-95 ${
                         on
-                          ? `${productTagBadgeClass(t.color)} border-current`
+                          ? "border-current"
                           : "border-border bg-secondary text-muted-foreground hover:border-gold/40"
                       }`}
+                    style={on ? {
+                      backgroundColor: t.bg_color || "#FEF3C7",
+                      color: t.text_color || "#92400E",
+                    } : undefined}
                     >
                       {t.name}
                     </button>
@@ -670,7 +687,12 @@ export default function AdminProductForm() {
                     return (
                       <span
                         key={tid}
-                        className={`rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${productTagBadgeClass(meta.color)}`}
+                        className="rounded-full border px-1.5 py-0.5 text-[10px] font-medium"
+                        style={{
+                          backgroundColor: meta.bg_color || "#FEF3C7",
+                          color: meta.text_color || "#92400E",
+                          borderColor: meta.bg_color || "#FEF3C7",
+                        }}
                       >
                         {meta.name}
                       </span>

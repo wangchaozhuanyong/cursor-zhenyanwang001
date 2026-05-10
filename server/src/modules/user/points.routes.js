@@ -8,6 +8,7 @@ const router = Router();
 
 router.get('/records', auth, validate({ query: pointsListQuerySchema }), ctrl.getRecords);
 router.get('/balance', auth, ctrl.getBalance);
+router.get('/config', auth, ctrl.getClientConfig);
 router.post('/sign-in', auth, ctrl.signIn);
 
 module.exports = router;

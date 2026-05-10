@@ -353,6 +353,34 @@ async function updateProduct(id, body, adminUserId, req) {
   }
 }
 
+async function updateProductTags(id, tagIds, adminUserId, req) {
+  const row = await repo.selectProductById(id);
+  if (!row) return { error: { code: 404, message: '商品不存在' } };
+  if (!Array.isArray(tagIds)) return { error: { code: 400, message: 'tag_ids 必须是数组' } };
+  await tagAssignmentRepo.replaceAssignments(id, tagIds);
+  const vrows = await variantRepo.selectVariantsByProductId(id);
+  const tagMap = await tagAssignmentRepo.selectTagsByProductIds([id]);
+  await repo.updateProductDynamic(
+    ['search_keywords = ?'],
+    [buildProductSearchKeywordsFromPayload(row, vrows, tagMap.get(id) || [])],
+    id,
+  );
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'product.tags.update',
+    objectType: 'product',
+    objectId: id,
+    summary: `更新商品标签 ${row.name}`,
+    after: { tag_ids: tagIds },
+    result: 'success',
+  });
+  return {
+    data: { product_id: id, tags: tagMap.get(id) || [] },
+    message: '商品标签已更新',
+  };
+}
+
 async function patchProductLifecycle(id, lifecycleStatus, adminUserId, req) {
   const beforeRow = await repo.selectProductById(id);
   if (!beforeRow) throw new BusinessError(404, '商品不存在');
@@ -612,6 +640,7 @@ module.exports = {
   getProductById,
   createProduct,
   updateProduct,
+  updateProductTags,
   patchProductLifecycle,
   deleteProduct,
   exportProductsCsv,

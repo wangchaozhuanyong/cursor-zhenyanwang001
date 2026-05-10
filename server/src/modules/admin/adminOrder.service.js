@@ -137,6 +137,9 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
     try {
       await conn.beginTransaction();
       await repo.updateOrderStatusAndPayment(conn, orderId, status, newPayment);
+      if (status === ORDER_STATUS.SHIPPED) {
+        await repo.touchOrderShippedAtIfNull(conn, orderId);
+      }
 
       if (remark) {
         await repo.appendAdminRemark(conn, orderId, remark);

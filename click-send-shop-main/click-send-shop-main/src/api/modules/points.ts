@@ -10,6 +10,20 @@ export function getPointsBalance() {
   return get<{ balance: number }>("/points/balance");
 }
 
+export type PointsClientConfig = {
+  signIn: {
+    points: number;
+    enabled: boolean;
+    usesDefault: boolean;
+    disabledReason?: string | null;
+  };
+  orderPointsHint: string;
+};
+
+export function getPointsConfig() {
+  return get<PointsClientConfig>("/points/config");
+}
+
 export function signIn() {
-  return post<PointsRecord>("/points/sign-in");
+  return post<{ points: number }>("/points/sign-in");
 }

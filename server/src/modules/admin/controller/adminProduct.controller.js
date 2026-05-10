@@ -69,7 +69,19 @@ exports.createTag = asyncRoute(async (req, res) => {
   res.success(r.data, r.message);
 });
 
+exports.updateTag = asyncRoute(async (req, res) => {
+  const r = await adminExtended.updateProductTag(req.params.id, req.body, req.user?.id, req);
+  if (r.error) return res.fail(r.error.code, r.error.message);
+  res.success(r.data, r.message);
+});
+
 exports.removeTag = asyncRoute(async (req, res) => {
   const r = await adminExtended.deleteProductTag(req.params.id, req.user?.id, req);
   res.success(null, r.message);
+});
+
+exports.updateProductTags = asyncRoute(async (req, res) => {
+  const r = await svc.updateProductTags(req.params.id, req.body.tag_ids, req.user?.id, req);
+  if (r.error) return res.fail(r.error.code, r.error.message);
+  res.success(r.data, r.message);
 });

@@ -370,6 +370,18 @@ async function createStripeCheckoutSession(userId, orderId) {
   return { data: { url: r.data.url } };
 }
 
+/**
+ * 将已发货订单标记完成并结算积分/返现（调用方须保证当前为 SHIPPED 且在事务内已加锁如需）
+ * @param {import('mysql2/promise').PoolConnection} conn
+ * @param {Record<string, unknown>} order
+ * @param {Record<string, unknown>} [options]
+ */
+async function completeShippedOrder(conn, order, options = {}) {
+  await repo.updateOrderStatus(conn, order.id, ORDER_STATUS.COMPLETED);
+  await requireApiMethod(userApi, 'settleOrderPoints')(conn, order, options);
+  await requireApiMethod(userApi, 'settleOrderRewards')(conn, order, options);
+}
+
 async function confirmReceive(userId, orderId) {
   const conn = await repo.getConnection();
   try {
@@ -379,10 +391,7 @@ async function confirmReceive(userId, orderId) {
 
     await conn.beginTransaction();
 
-    await repo.updateOrderStatus(conn, order.id, ORDER_STATUS.COMPLETED);
-
-    await requireApiMethod(userApi, 'settleOrderPoints')(conn, order, { trigger: 'user_confirm_receive' });
-    await requireApiMethod(userApi, 'settleOrderRewards')(conn, order, { trigger: 'user_confirm_receive' });
+    await completeShippedOrder(conn, order, { trigger: 'user_confirm_receive' });
 
     await conn.commit();
     return { data: null, message: '已确认收货' };
@@ -402,4 +411,5 @@ module.exports = {
   payOrder,
   createStripeCheckoutSession,
   confirmReceive,
+  completeShippedOrder,
 };

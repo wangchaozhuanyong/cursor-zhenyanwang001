@@ -9,6 +9,7 @@ import ProductCard from "@/components/ProductCard";
 import ProductReviews from "@/components/ProductReviews";
 import { useProductReviews } from "@/hooks/useProductReviews";
 import ProductImageGallery from "@/components/ProductImageGallery";
+import ProductTagList from "@/components/ProductTagList";
 import { SquishButton } from "@/modules/micro-interactions";
 import TrustInfo from "@/components/TrustInfo";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,7 +18,6 @@ import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useGoBack } from "@/hooks/useGoBack";
 import { copyToClipboard } from "@/utils/clipboard";
-import { productTagBadgeClass } from "@/utils/productTagBadge";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -180,14 +180,7 @@ export default function ProductDetail() {
                     {activeActivity.type === "flash_sale" ? "限时秒杀" : "满减活动"}
                   </span>
                 )}
-                {(product.tags || []).map((t) => (
-                  <span
-                    key={t.id}
-                    className={`theme-rounded border px-2 py-1 text-[10px] font-semibold ${productTagBadgeClass(t.color)}`}
-                  >
-                    {t.name}
-                  </span>
-                ))}
+                <ProductTagList tags={product.tags} max={6} size="md" />
                 <span className="text-xs text-muted-foreground">
                   库存: {product.stock} 件
                 </span>

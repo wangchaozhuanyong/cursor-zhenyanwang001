@@ -5,7 +5,7 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
  * 商品详情页 / Checkout / 购物车等转化关键节点的「信任三件套」
  *
  * 两种渲染模式：
- *  - variant="row"  紧凑单行（默认）— 适合 Checkout / 购物车等已有信息密度的位置
+ *  - variant="row"  紧凑多行（默认）— 每项含标题 + 后台短文案（最多 3 行），适合 Checkout / 购物车
  *  - variant="card" 主副文案的 3 栏卡片 — 适合商品详情页等需要强转化的位置
  *
  * 副文案优先取后台 site_settings 中的 paymentNotice / shippingNotice / supportText，
@@ -59,14 +59,15 @@ export default function TrustInfo({ className = "", variant = "row" }: Props) {
   }
 
   return (
-    <div
-      className={`flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground ${className}`}
-    >
+    <div className={`space-y-2.5 text-xs ${className}`}>
       {items.map((it) => (
-        <span key={it.title} className="inline-flex items-center gap-1.5">
-          <it.icon size={14} className="text-emerald-600" />
-          {it.label}
-        </span>
+        <div key={it.title} className="flex items-start gap-2">
+          <it.icon size={14} className="mt-0.5 flex-shrink-0 text-emerald-600" />
+          <div className="min-w-0">
+            <p className="font-medium text-foreground">{it.label}</p>
+            <p className="mt-0.5 line-clamp-3 text-[11px] leading-snug text-muted-foreground">{it.desc}</p>
+          </div>
+        </div>
       ))}
     </div>
   );

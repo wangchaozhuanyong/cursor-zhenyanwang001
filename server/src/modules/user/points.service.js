@@ -106,27 +106,65 @@ async function getBalance(userId) {
   return { balance };
 }
 
+async function resolveSignInAward() {
+  let points = 5;
+  let enabled = true;
+  let hasRule = false;
+  try {
+    const rule = await repo.selectSignInRule();
+    if (rule) {
+      hasRule = true;
+      points = toInt(rule.points);
+      enabled = !!rule.enabled;
+    }
+  } catch {
+    /* 表未迁移等异常时回退默认 */
+  }
+  return { points, enabled, hasRule };
+}
+
+async function getClientPointsConfig() {
+  const { points, enabled, hasRule } = await resolveSignInAward();
+  const p = toInt(points);
+  const configInvalid = hasRule && enabled && p < 1;
+  return {
+    signIn: {
+      points: hasRule ? p : 5,
+      /** 规则存在且启用且积分≥1 才可签到；未配置规则时与默认 5 分一致 */
+      enabled: hasRule ? enabled && !configInvalid : true,
+      usesDefault: !hasRule,
+      disabledReason: !hasRule
+        ? null
+        : !enabled
+          ? '签到功能已在后台关闭'
+          : configInvalid
+            ? '后台签到积分须至少为 1'
+            : null,
+    },
+    /** 订单积分来自商品「积分值」字段，支付完成后入账 */
+    orderPointsHint: '订单支付完成后，按商品所设积分累计发放',
+  };
+}
+
 async function signIn(userId) {
   const today = new Date().toISOString().slice(0, 10);
   const existing = await repo.findSignInToday(userId, today);
   if (existing) return { error: { code: 400, message: '今日已签到' } };
 
-  let points = 5;
-  try {
-    const rule = await repo.selectSignInRule();
-    if (rule && rule.enabled) points = rule.points;
-    else if (rule && !rule.enabled) return { error: { code: 400, message: '签到功能已暂停' } };
-  } catch { /* use default */ }
+  const { points, enabled, hasRule } = await resolveSignInAward();
+  if (hasRule && !enabled) return { error: { code: 400, message: '签到功能已暂停' } };
+  const grant = hasRule ? toInt(points) : 5;
+  if (grant < 1) return { error: { code: 400, message: '请在后台将每日签到积分设为至少 1' } };
 
   await runInTransaction((conn) => changePoints(conn, {
     userId,
-    amount: points,
+    amount: grant,
     action: 'sign_in',
     description: '每日签到',
     sourceType: 'sign_in',
     relatedRecordId: `sign_in:${userId}:${today}`,
   }));
-  return { data: { points }, message: '签到成功' };
+  return { data: { points: grant }, message: '签到成功' };
 }
 
 async function adjustUserPoints(userId, amount, reason, operatorId) {
@@ -184,5 +222,6 @@ module.exports = {
   getRecords,
   getAdminRecords,
   getBalance,
+  getClientPointsConfig,
   signIn,
 };

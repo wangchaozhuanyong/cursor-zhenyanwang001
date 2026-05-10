@@ -14,7 +14,19 @@ import { IMAGE_UPLOAD_HINT_AVATAR } from "@/constants/imageUploadHints";
 export default function Settings() {
   const navigate = useNavigate();
   const goBack = useGoBack();
-  const { nickname, phone, avatar, wechat, whatsapp, profileSaving, setNickname, setPhone, setWechat, setWhatsapp, saveProfile } = useUserStore();
+  const {
+    nickname,
+    phone,
+    avatar,
+    wechat,
+    whatsapp,
+    profileSaving,
+    setNickname,
+    setPhone,
+    setWechat,
+    setWhatsapp,
+    saveProfile,
+  } = useUserStore();
   const { skins, skinId } = useThemeRuntime();
   const currentSkinName = skins.find((s) => s.id === skinId)?.name || "默认皮肤";
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -30,9 +42,12 @@ export default function Settings() {
     try {
       const data = await uploadService.uploadSingle(file);
       useUserStore.setState({ avatar: data.url });
-      toast.success("头像已上传，点击保存生效", toastPresetQuickSuccess);
+      await useUserStore.getState().saveProfile();
+      toast.success("头像已保存", toastPresetQuickSuccess);
     } catch {
-      toast.error("头像上传失败");
+      toast.error("头像上传或保存失败，请重试");
+    } finally {
+      e.target.value = "";
     }
   };
 

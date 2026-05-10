@@ -36,13 +36,23 @@ export async function fetchProductTags(): Promise<ProductTag[]> {
   return unwrapList<ProductTag>(res.data);
 }
 
-export async function createProductTag(data: Pick<ProductTag, "name"> & Partial<Pick<ProductTag, "color" | "sort_order">>) {
+export async function createProductTag(data: Pick<ProductTag, "name"> & Partial<Pick<ProductTag, "color" | "bg_color" | "text_color" | "sort_order" | "enabled">>) {
   const res = await productApi.createProductTag(data as Omit<ProductTag, "id">);
+  return res.data;
+}
+
+export async function updateProductTag(id: string, data: Partial<Omit<ProductTag, "id">>) {
+  const res = await productApi.updateProductTag(id, data);
   return res.data;
 }
 
 export async function deleteProductTag(id: string) {
   await productApi.deleteProductTag(id);
+}
+
+export async function updateProductTags(id: string, tagIds: string[]) {
+  const res = await productApi.updateProductTags(id, tagIds);
+  return res.data;
 }
 
 export async function exportProductsCsv(params?: { keyword?: string; category_id?: string; status?: string }) {

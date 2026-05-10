@@ -174,7 +174,7 @@ export default function AdminNotifications() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-foreground">通知管理</h1>
-          <p className="text-sm text-muted-foreground">向用户推送通知和公告</p>
+          <p className="text-sm text-muted-foreground">向用户推送通知和公告（列表为数据库实时数据，无前端写死演示项）。</p>
         </div>
         <PermissionGate permission="notification.manage">
           <button onClick={() => setShowForm(true)} className="flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-primary-foreground active:scale-[0.98]">

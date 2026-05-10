@@ -1,5 +1,5 @@
 import { get, post } from "../request";
-import type { Product, ProductListParams, ProductReview } from "@/types/product";
+import type { Product, ProductListParams, ProductReview, ProductTag } from "@/types/product";
 import type { PaginatedData } from "@/types/common";
 
 export function getProducts(params?: ProductListParams) {
@@ -18,6 +18,10 @@ export function getHomeProducts() {
   return get<{ hot: Product[]; new_arrivals: Product[]; recommended: Product[] }>(
     "/products/home",
   );
+}
+
+export function getProductTags(limit = 12) {
+  return get<ProductTag[]>("/products/tags", { limit });
 }
 
 export function getProductReviews(productId: string, page = 1) {

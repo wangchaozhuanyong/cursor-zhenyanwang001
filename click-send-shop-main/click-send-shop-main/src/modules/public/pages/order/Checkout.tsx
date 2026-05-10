@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, Copy, MessageCircle, Phone, MapPin, CheckCircle2, ShieldCheck, Truck, RefreshCcw } from "lucide-react";
+import { ArrowLeft, Copy, MessageCircle, Phone, MapPin, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { flushSync } from "react-dom";
 import { useCartStore } from "@/stores/useCartStore";
@@ -24,6 +24,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { ORDER_STATUS } from "@/constants/statusDictionary";
 import * as userShippingService from "@/services/userShippingService";
 import { copyToClipboard } from "@/utils/clipboard";
+import TrustInfo from "@/components/TrustInfo";
 
 function generateOrderText(order: Order) {
   const itemsText = order.items
@@ -453,11 +454,7 @@ export default function Checkout() {
             onlineDisabledHint="商户暂未开通在线支付，请选择联系客服下单"
             rewardBalance={rewardBalance}
           />
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground">
-            <span className="flex items-center gap-1"><ShieldCheck size={12} /> SSL 安全加密</span>
-            <span className="flex items-center gap-1"><Truck size={12} /> 快速发货</span>
-            <span className="flex items-center gap-1"><RefreshCcw size={12} /> 7 天无忧退换</span>
-          </div>
+          <TrustInfo className="mt-3" />
         </div>
 
         {/* Coupon */}
@@ -532,11 +529,7 @@ export default function Checkout() {
               >
                 {submitting ? "提交中…" : "提交订单"}
               </button>
-              <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-                <span className="flex items-center gap-1"><ShieldCheck size={12} /> SSL 安全加密</span>
-                <span className="flex items-center gap-1"><Truck size={12} /> 快速发货</span>
-                <span className="flex items-center gap-1"><RefreshCcw size={12} /> 7 天无忧退换</span>
-              </div>
+              <TrustInfo className="mt-4" />
             </div>
           </aside>
         </div>
@@ -774,6 +767,8 @@ function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onPayOnline, onPayR
             </div>
           </div>
         </div>
+
+        <TrustInfo className="mt-6 rounded-2xl border border-border bg-card p-4" />
 
         <div className="mt-6 space-y-3">
           <button

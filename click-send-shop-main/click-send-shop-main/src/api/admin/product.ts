@@ -37,6 +37,14 @@ export function createProductTag(data: Omit<ProductTag, "id">) {
   return post<ProductTag>("/admin/product-tags", data);
 }
 
+export function updateProductTag(id: string, data: Partial<Omit<ProductTag, "id">>) {
+  return put<ProductTag>(`/admin/product-tags/${id}`, data);
+}
+
 export function deleteProductTag(id: string) {
   return del<void>(`/admin/product-tags/${id}`);
+}
+
+export function updateProductTags(id: string, tagIds: string[]) {
+  return put<{ product_id: string; tags: ProductTag[] }>(`/admin/products/${id}/tags`, { tag_ids: tagIds });
 }

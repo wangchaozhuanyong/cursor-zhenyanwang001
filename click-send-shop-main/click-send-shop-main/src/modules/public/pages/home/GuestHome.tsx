@@ -118,17 +118,11 @@ export default function GuestHome() {
     const extra: FooterNavItem[] = [];
     if (siteInfo.privacyPolicyPath)
       extra.push({ label: "隐私政策", path: siteInfo.privacyPolicyPath });
-    else if (siteInfo.footerPolicyUrl)
-      extra.push({ label: "隐私政策", path: siteInfo.footerPolicyUrl });
     if (siteInfo.termsPath) extra.push({ label: "服务条款", path: siteInfo.termsPath });
-    else if (siteInfo.footerTermsUrl)
-      extra.push({ label: "服务条款", path: siteInfo.footerTermsUrl });
 
     return dedupeFooterNav([...base, ...extra]);
   }, [
     customNav,
-    siteInfo.footerPolicyUrl,
-    siteInfo.footerTermsUrl,
     siteInfo.privacyPolicyPath,
     siteInfo.termsPath,
   ]);
@@ -265,6 +259,12 @@ export default function GuestHome() {
             contactWhatsApp={siteInfo.contactWhatsApp}
             businessHours={siteInfo.businessHours}
             address={siteInfo.address}
+            whatsappUrl={siteInfo.whatsappUrl}
+            wechatId={siteInfo.wechatId}
+            instagramUrl={siteInfo.instagramUrl}
+            facebookUrl={siteInfo.facebookUrl}
+            tiktokUrl={siteInfo.tiktokUrl}
+            xhsUrl={siteInfo.xhsUrl}
             onNavigate={handleFooterNavigate}
           />
         </div>

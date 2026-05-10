@@ -7,6 +7,7 @@ const app = require('./app');
 const { runPendingMigrations } = require('./db/migrateRunner');
 const { startCleanupScheduler } = require('./modules/admin/adminExport.service');
 const { startNotificationScheduler } = require('./modules/admin/adminNotification.service');
+const { startAutoConfirmReceiveScheduler } = require('./modules/order/orderAutoConfirm.service');
 const { getStorageHealthReport } = require('./utils/objectStorage');
 
 const PORT = process.env.PORT || 3000;
@@ -36,6 +37,7 @@ bootPromise
 
     startCleanupScheduler();
     startNotificationScheduler();
+    startAutoConfirmReceiveScheduler();
     app.listen(PORT, () => {
       console.log(`✅ Server running → http://localhost:${PORT}`);
     });

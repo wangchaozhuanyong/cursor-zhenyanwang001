@@ -29,7 +29,7 @@ async function selectProductsPage(where, params, pageSize, offset) {
        p.stock_warning_threshold,
        p.status,
        p.lifecycle_status,
-       p.updated_at,
+       p.created_at AS updated_at,
        c.name AS category_name,
        v.id AS default_variant_id,
        v.stock AS default_variant_stock
@@ -39,7 +39,6 @@ async function selectProductsPage(where, params, pageSize, offset) {
      ${where}
      ORDER BY
        CASE WHEN p.stock <= COALESCE(p.stock_warning_threshold, 5) THEN 0 ELSE 1 END,
-       p.updated_at DESC,
        p.created_at DESC
      LIMIT ? OFFSET ?`,
     [...params, pageSize, offset],

@@ -5,6 +5,9 @@ import { useProductStore } from "@/stores/useProductStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import { useCouponStore } from "@/stores/useCouponStore";
 import { useCartStore } from "@/stores/useCartStore";
+import { useFavoritesStore } from "@/stores/useFavoritesStore";
+import { useHistoryStore } from "@/stores/useHistoryStore";
+import { useOrderStore } from "@/stores/useOrderStore";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import logoWebp from "@/assets/logo.webp";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -20,7 +23,9 @@ import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import type { Product } from "@/types/product";
+import { buildPersonalizedRecommendations } from "@/utils/personalizedRecommendations";
 import { supportsColorMix } from "@/utils/cssSupport";
+import { isLoggedIn } from "@/utils/token";
 
 function Header({ title, icon: Icon, subtitle }: { title: string; icon?: React.ElementType; subtitle?: string }) {
   return (
@@ -46,6 +51,15 @@ export default function MemberHome() {
   const coupons = useCouponStore((s) => s.coupons);
   const claimCoupon = useCouponStore((s) => s.claimCoupon);
   const selectedCartCount = useCartStore((s) => s.getSelectedItems().length);
+  const cartItems = useCartStore((s) => s.items);
+  const loadCart = useCartStore((s) => s.loadCart);
+  const favoriteIds = useFavoritesStore((s) => s.favoriteIds);
+  const favoriteProducts = useFavoritesStore((s) => s.favoriteProducts);
+  const loadFavorites = useFavoritesStore((s) => s.loadFavorites);
+  const historyProducts = useHistoryStore((s) => s.history);
+  const loadHistory = useHistoryStore((s) => s.loadHistory);
+  const orders = useOrderStore((s) => s.orders);
+  const loadOrders = useOrderStore((s) => s.loadOrders);
   const [claimingCouponId, setClaimingCouponId] = useState<string | null>(null);
   const siteName = siteInfo.siteName || "大马通";
   const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
@@ -55,7 +69,13 @@ export default function MemberHome() {
     loadHomeData();
     useNotificationStore.getState().fetchUnreadCount();
     useCouponStore.getState().loadCoupons();
-  }, [loadHomeData]);
+    if (isLoggedIn()) {
+      loadHistory().catch(() => {});
+      loadFavorites().catch(() => {});
+      loadCart().catch(() => {});
+      loadOrders({ page: 1, pageSize: 20 }).catch(() => {});
+    }
+  }, [loadHomeData, loadHistory, loadFavorites, loadCart, loadOrders]);
 
   const newest = useMemo(() => newProducts.slice(0, 6), [newProducts]);
   const couponTop = useMemo(
@@ -101,19 +121,53 @@ export default function MemberHome() {
   const hotList = useMemo(() => hotProducts.slice(0, 16), [hotProducts]);
   const recList = useMemo(() => {
     const hotIds = new Set(hotList.map((p) => p.id));
-    return recommendedProducts.filter((p) => !hotIds.has(p.id)).slice(0, 16);
-  }, [recommendedProducts, hotList]);
+    return buildPersonalizedRecommendations({
+      candidates: [...recommendedProducts, ...newProducts],
+      fallbackProducts: [...recommendedProducts, ...newProducts, ...hotProducts],
+      historyProducts,
+      favoriteIds,
+      favoriteProducts,
+      cartItems,
+      orders,
+      limit: 24,
+    }).filter((p) => !hotIds.has(p.id)).slice(0, 16);
+  }, [recommendedProducts, newProducts, hotProducts, hotList, historyProducts, favoriteIds, favoriteProducts, cartItems, orders]);
   const hotBatches = useMemo(() => toBatches(hotList, HOT_BATCH_SIZE), [hotList]);
   const recBatches = useMemo(() => toBatches(recList, REC_BATCH_SIZE), [recList]);
   const hot = hotBatches.length > 0 ? hotBatches[hotBatchIndex % hotBatches.length] : [];
   const rec = recBatches.length > 0 ? recBatches[recBatchIndex % recBatches.length] : [];
   const activeNew = newest.length > 0 ? newest[newArrivalIndex] : null;
   const heroImage = (siteInfo.newArrivalHeroImage || "").trim();
-  const heroTitle = (siteInfo.newArrivalHeroTitle || "").trim() || activeNew?.name || "新品更新中";
+  const heroTitle = (siteInfo.newArrivalHeroTitle || "").trim() || "新品上市";
   const heroSubtitle =
     (siteInfo.newArrivalHeroSubtitle || "").trim() ||
-    (activeNew ? `RM ${activeNew.price}` : "每周精选新品上架，立即查看");
-  const heroCtaText = (siteInfo.newArrivalHeroCtaText || "").trim() || "立即抢购";
+    "每周精选新品上架，立即查看";
+  const heroCtaText = (siteInfo.newArrivalHeroCtaText || "").trim() || "前往新品上市";
+  const activeNewImage = resolveNewArrivalImage(activeNew, newArrivalIndex);
+
+  const trackNewArrivalClick = (target: "product" | "new_arrivals_page") => {
+    void productService.trackHomeEngagement({
+      module: "new_arrivals",
+      event: "click",
+      product_id: activeNew?.id,
+      session_id: trackingSessionId,
+      meta: { index: newArrivalIndex, target },
+    });
+  };
+
+  const goNewArrivalsPage = () => {
+    trackNewArrivalClick("new_arrivals_page");
+    navigate("/new-arrivals");
+  };
+
+  const goActiveNewProduct = () => {
+    if (!activeNew) {
+      goNewArrivalsPage();
+      return;
+    }
+    trackNewArrivalClick("product");
+    navigate(`/product/${activeNew.id}`);
+  };
 
   useEffect(() => {
     if (!activeNew?.id) return;
@@ -220,9 +274,9 @@ export default function MemberHome() {
           </div>
         </section>
         <section className="mt-section px-4">
-          <Header title="新品上市" icon={Zap} />
+          <Header title="新品上市" icon={Zap} subtitle="新品主图统一 1:1 展示，快速发现本周上新" />
           <div
-            className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-[var(--theme-border)] md:aspect-[21/9]"
+            className="relative overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow"
             onTouchStart={(e) => {
               touchStartXRef.current = e.touches[0]?.clientX ?? 0;
             }}
@@ -235,39 +289,69 @@ export default function MemberHome() {
               else setNewArrivalIndex((prev) => (prev - 1 + newest.length) % newest.length);
             }}
           >
-            <img
-              src={heroImage || resolveNewArrivalImage(activeNew, newArrivalIndex)}
-              className="h-full w-full object-cover opacity-90 transition-all duration-500"
-              alt={heroTitle}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
-              <div className="pr-3">
-                <h3 className="line-clamp-2 text-lg font-bold text-white md:text-2xl">
-                  {heroTitle}
-                </h3>
-                <p className="mt-1 text-sm font-semibold text-white/85">{heroSubtitle}</p>
-              </div>
+            {heroImage ? (
+              <img
+                src={heroImage}
+                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-15 blur-xl scale-110"
+                alt=""
+                aria-hidden
+              />
+            ) : null}
+            <div className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_18%,transparent)] blur-2xl" />
+            <div className="relative grid gap-4 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] md:items-center">
               <button
                 type="button"
-                onClick={() => {
-                  void productService.trackHomeEngagement({
-                    module: "new_arrivals",
-                    event: "click",
-                    product_id: activeNew?.id,
-                    session_id: trackingSessionId,
-                    meta: { index: newArrivalIndex, target: activeNew ? "product" : "list" },
-                  });
-                  if (activeNew) navigate(`/product/${activeNew.id}`);
-                  else navigate("/categories?is_new=1");
-                }}
-                className="rounded-full bg-[var(--theme-surface)] px-4 py-2 text-xs font-bold text-[var(--theme-text-on-surface)] shadow-[var(--theme-shadow)]"
+                onClick={goActiveNewProduct}
+                className="group relative aspect-square overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] shadow-none"
               >
-                {heroCtaText}
+                <img
+                  src={activeNewImage}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  alt={activeNew?.name || heroTitle}
+                />
+                <div className="absolute left-3 top-3 rounded-full bg-[var(--theme-price)] px-2.5 py-1 text-[10px] font-bold text-[var(--theme-price-foreground)] shadow">
+                  NEW
+                </div>
               </button>
+
+              <div className="min-w-0 pb-8 md:pb-0">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--theme-price)]">New Arrival</p>
+                <h3 className="mt-2 line-clamp-2 text-xl font-black text-[var(--theme-text-on-surface)] md:text-3xl">
+                  {heroTitle}
+                </h3>
+                <p className="mt-2 text-sm font-medium leading-relaxed text-[var(--theme-text-muted)]">{heroSubtitle}</p>
+
+                {activeNew ? (
+                  <button type="button" onClick={goActiveNewProduct} className="mt-4 block max-w-full text-left">
+                    <p className="line-clamp-2 text-base font-bold text-[var(--theme-text-on-surface)]">{activeNew.name}</p>
+                    <p className="mt-1 text-lg font-black text-[var(--theme-price)]">RM {activeNew.price}</p>
+                  </button>
+                ) : (
+                  <p className="mt-4 text-sm text-[var(--theme-text-muted)]">新品正在准备中，先看看全部商品。</p>
+                )}
+
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={goNewArrivalsPage}
+                    className="rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-bold text-[var(--theme-primary-foreground)] shadow-[var(--theme-shadow)]"
+                  >
+                    {heroCtaText}
+                  </button>
+                  {activeNew ? (
+                    <button
+                      type="button"
+                      onClick={goActiveNewProduct}
+                      className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-2 text-xs font-bold text-[var(--theme-text)]"
+                    >
+                      查看当前新品
+                    </button>
+                  ) : null}
+                </div>
+              </div>
             </div>
             {newest.length > 1 ? (
-              <div className="absolute bottom-4 right-4 flex gap-1.5">
+              <div className="absolute bottom-5 right-5 flex gap-1.5">
                 {newest.map((item, idx) => (
                   <button
                     key={item.id}

@@ -19,6 +19,11 @@ exports.getHomeProducts = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+exports.getProductTags = asyncRoute(async (req, res) => {
+  const data = await catalogService.getProductTags(req.query.limit);
+  res.success(data);
+});
+
 exports.getRelatedProducts = async (req, res, next) => {
   try {
     const list = await catalogService.getRelatedProducts(req.params.id, req.query.limit);

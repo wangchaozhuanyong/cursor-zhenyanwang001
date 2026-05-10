@@ -17,7 +17,7 @@ export const IMAGE_UPLOAD_HINT_BANNER_LAYOUT = "比例约 2.34:1（如 1170×500
 
 /** 商品封面 / 轮播的构图建议（接在通用说明后或单独一行） */
 export const IMAGE_UPLOAD_HINT_PRODUCT_LAYOUT =
-  "封面建议 1:1 或与商品卡比例接近；多张轮播时请尽量统一宽高比，前台更整齐。";
+  "封面与轮播图建议与「站点外观 → 商品图比例」一致（常见 1:1）；多张时请尽量统一同一宽高比，详情图集与商品卡展示更整齐。";
 
 /** 用户头像 */
 export const IMAGE_UPLOAD_HINT_AVATAR =

@@ -59,6 +59,19 @@ async function getCategoryById(id) {
   return repo.selectCategoryById(id);
 }
 
+async function getProductTags(limit) {
+  const rows = await repo.selectPublicProductTags(limit);
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    color: r.color || '金色',
+    bg_color: r.bg_color || '#FEF3C7',
+    text_color: r.text_color || '#92400E',
+    sort_order: Number(r.sort_order) || 0,
+    count: Number(r.count) || 0,
+  }));
+}
+
 function buildCategoryTree(rows) {
   const map = new Map();
   const roots = [];
@@ -106,6 +119,7 @@ function buildProductListQuery(query, categoryIds) {
   const pageSize = Math.min(50, Math.max(1, parseInt(query.pageSize, 10) || 10));
   const category_id = query.category_id || query.categoryId || query.category;
   const { keyword, sort } = query;
+  const tagId = query.tag_id || query.tagId || query.tag;
   const isHot = parseBool(query.is_hot);
   const isNew = parseBool(query.is_new);
   const isRecommended = parseBool(query.is_recommended);
@@ -121,6 +135,18 @@ function buildProductListQuery(query, categoryIds) {
       where += ' AND category_id = ?';
       params.push(category_id);
     }
+  }
+  if (tagId) {
+    where += ` AND EXISTS (
+      SELECT 1
+      FROM product_tag_assignments pta
+      INNER JOIN product_tags pt ON pt.id = pta.tag_id
+      WHERE pta.product_id = products.id
+        AND pta.tag_id = ?
+        AND pt.enabled = 1
+        AND pt.deleted_at IS NULL
+    )`;
+    params.push(tagId);
   }
   if (keyword) {
     const normalized = normalizeSearchKeyword(keyword);
@@ -327,6 +353,7 @@ module.exports = {
   getBanners,
   getCategories,
   getCategoryById,
+  getProductTags,
   getProducts,
   getProductById,
   getHomeProducts,

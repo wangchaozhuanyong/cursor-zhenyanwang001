@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
 import { usePointsStore } from "@/stores/usePointsStore";
-import { signIn } from "@/services/pointsService";
+import { fetchPointsConfig, signIn } from "@/services/pointsService";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 
@@ -14,6 +14,24 @@ export default function Points() {
   const { pointsBalance, loadProfile } = useUserStore();
   const { records, loading, loadingMore, error, hasMore, loadPointsData, loadMore } = usePointsStore();
   const [signingIn, setSigningIn] = useState(false);
+  const [pointsHint, setPointsHint] = useState<string>("");
+  const [signInAward, setSignInAward] = useState<{
+    points: number;
+    enabled: boolean;
+    disabledReason?: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    fetchPointsConfig()
+      .then((cfg) => {
+        setPointsHint(cfg.orderPointsHint || "");
+        setSignInAward(cfg.signIn);
+      })
+      .catch(() => {
+        setPointsHint("订单支付完成后，按商品所设积分累计发放");
+        setSignInAward(null);
+      });
+  }, []);
 
   const handleSignIn = async () => {
     setSigningIn(true);
@@ -49,14 +67,27 @@ export default function Points() {
           <Star size={36} className="mx-auto text-gold" />
           <p className="mt-3 text-xs text-primary-foreground/70">当前积分</p>
           <p className="mt-1 text-5xl font-bold text-gold">{pointsBalance}</p>
-          <p className="mt-3 text-xs text-primary-foreground/60">1 元 = 1 积分 · 消费即赠</p>
+          <p className="mt-3 px-2 text-xs leading-relaxed text-primary-foreground/60">
+            {pointsHint || "订单支付完成后，按商品所设积分累计发放"}
+          </p>
+          {signInAward && (
+            <p className="mt-1 text-[11px] text-primary-foreground/55">
+              {signInAward.enabled
+                ? `每日签到可获 ${signInAward.points} 积分（与后台规则一致）`
+                : (signInAward.disabledReason || "暂时无法签到")}
+            </p>
+          )}
           <button
             onClick={handleSignIn}
-            disabled={signingIn}
+            disabled={signingIn || (signInAward ? !signInAward.enabled : false)}
             className="mx-auto mt-4 flex items-center gap-2 rounded-full bg-gold px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg transition-all active:scale-95 disabled:opacity-60"
           >
             <CalendarCheck size={16} />
-            {signingIn ? "签到中..." : "每日签到"}
+            {signingIn
+              ? "签到中..."
+              : signInAward && !signInAward.enabled
+                ? "签到不可用"
+                : "每日签到"}
           </button>
         </div>
 

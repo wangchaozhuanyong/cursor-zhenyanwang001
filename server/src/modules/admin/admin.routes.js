@@ -122,6 +122,13 @@ router.put(
   validate({ params: productSchemas.adminProductIdParamsSchema, body: productSchemas.adminProductUpdateBodySchema }),
   productCtrl.update,
 );
+router.put(
+  '/products/:id/tags',
+  adminAuth,
+  requirePermission('product.manage'),
+  validate({ params: productSchemas.adminProductIdParamsSchema, body: productSchemas.adminProductTagsBodySchema }),
+  productCtrl.updateProductTags,
+);
 router.patch(
   '/products/:id/status',
   adminAuth,
@@ -150,6 +157,7 @@ router.post('/upload/multiple', adminAuth, userUploadCtrl.uploadMultiple, userUp
 /* ── Product Tags ── */
 router.get('/product-tags', adminAuth, requireAnyPermission(['tag.manage', 'product.manage']), productCtrl.listTags);
 router.post('/product-tags', adminAuth, requirePermission('tag.manage'), productCtrl.createTag);
+router.put('/product-tags/:id', adminAuth, requirePermission('tag.manage'), productCtrl.updateTag);
 router.delete('/product-tags/:id', adminAuth, requirePermission('tag.manage'), productCtrl.removeTag);
 
 /* ── Payments（支付管理） ── */

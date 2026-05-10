@@ -110,6 +110,26 @@ async function selectActiveProductsFallback(orderBySql, limit) {
   );
 }
 
+async function selectPublicProductTags(limit = 12) {
+  const lim = Math.min(50, Math.max(1, Number(limit) || 12));
+  const [rows] = await db.query(
+    `SELECT pt.id, pt.name, pt.color, pt.bg_color, pt.text_color, pt.sort_order,
+      COUNT(pta.product_id) AS count
+     FROM product_tags pt
+     INNER JOIN product_tag_assignments pta ON pta.tag_id = pt.id
+     INNER JOIN products p ON p.id = pta.product_id
+       AND p.lifecycle_status = 1
+       AND p.deleted_at IS NULL
+     WHERE pt.enabled = 1
+       AND pt.deleted_at IS NULL
+     GROUP BY pt.id, pt.name, pt.color, pt.bg_color, pt.text_color, pt.sort_order
+     ORDER BY pt.sort_order DESC, count DESC, pt.name ASC
+     LIMIT ?`,
+    [lim],
+  );
+  return rows;
+}
+
 async function selectProductCategoryId(productId) {
   const [[row]] = await db.query(
     'SELECT category_id FROM products WHERE id = ? AND deleted_at IS NULL',
@@ -151,6 +171,7 @@ module.exports = {
   selectHomeProductBlocks,
   selectActiveProductsByFlag,
   selectActiveProductsFallback,
+  selectPublicProductTags,
   selectProductCategoryId,
   selectRelatedByCategory,
   insertHomeEngagementEvent,

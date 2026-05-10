@@ -26,6 +26,7 @@ const actionLabels: Record<string, string> = {
   order_reverse: "订单回滚",
   refund: "退款扣回(旧)",
   sign_in: "每日签到",
+  daily_checkin: "每日签到",
   invite_reward: "邀请奖励",
   admin_add: "管理员增加",
   admin_deduct: "管理员扣减",
@@ -136,7 +137,14 @@ export default function AdminPointsRecords() {
     <div className="space-y-5">
       <div>
         <h1 className="text-xl font-bold text-foreground">积分明细</h1>
-        <p className="text-sm text-muted-foreground">查看积分发放、扣减、订单退款回滚和管理员调整流水</p>
+        <p className="text-sm text-muted-foreground">
+          查看积分发放、扣减、订单退款回滚和管理员调整流水。列表与统计均来自数据库实时查询，无内置演示数据。
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          若需清空联调/演示环境产生的流水，请在备份后使用 server 目录{" "}
+          <code className="rounded bg-muted px-1 py-0.5 text-[11px]">WIPE_CONFIRM=YES_I_UNDERSTAND node scripts/wipe-business-data.js</code>
+          （会一并清空订单等业务表）；生产环境请勿对单表随意 DELETE，以免积分余额与账本不一致。
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

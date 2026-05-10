@@ -1,17 +1,25 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { Plus, Trash2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Pencil } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
-import { fetchProductTags, createProductTag, deleteProductTag } from "@/services/admin/productService";
+import { fetchProductTags, createProductTag, updateProductTag, deleteProductTag } from "@/services/admin/productService";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { productTagBadgeClass } from "@/utils/productTagBadge";
+import type { ProductTag } from "@/types/product";
+
+const EMPTY_FORM = {
+  name: "",
+  bg_color: "#FEF3C7",
+  text_color: "#92400E",
+  sort_order: 0,
+  enabled: true,
+};
 
 export default function AdminProductTags() {
   const [showForm, setShowForm] = useState(false);
-  const [tags, setTags] = useState<any[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [tags, setTags] = useState<ProductTag[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newTag, setNewTag] = useState({ name: "", color: "红色" });
+  const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
   const loadTags = async () => {
@@ -27,17 +35,39 @@ export default function AdminProductTags() {
 
   useEffect(() => { loadTags(); }, []);
 
-  const handleAdd = async () => {
-    if (!newTag.name) { toast.error("请输入标签名称"); return; }
+  const resetForm = () => {
+    setForm(EMPTY_FORM);
+    setEditingId(null);
+    setShowForm(false);
+  };
+
+  const startEdit = (tag: ProductTag) => {
+    setEditingId(tag.id);
+    setForm({
+      name: tag.name,
+      bg_color: tag.bg_color || "#FEF3C7",
+      text_color: tag.text_color || "#92400E",
+      sort_order: Number(tag.sort_order) || 0,
+      enabled: tag.enabled !== false,
+    });
+    setShowForm(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.name.trim()) { toast.error("请输入标签名称"); return; }
     setSaving(true);
     try {
-      await createProductTag({ name: newTag.name, color: newTag.color });
-      toast.success("标签已创建");
-      setNewTag({ name: "", color: "红色" });
-      setShowForm(false);
+      if (editingId) {
+        await updateProductTag(editingId, form);
+        toast.success("标签已保存");
+      } else {
+        await createProductTag(form);
+        toast.success("标签已创建");
+      }
+      resetForm();
       loadTags();
     } catch (e) {
-      toast.error(toastErrorMessage(e, "创建标签失败"));
+      toast.error(toastErrorMessage(e, editingId ? "保存标签失败" : "创建标签失败"));
     } finally {
       setSaving(false);
     }
@@ -70,7 +100,14 @@ export default function AdminProductTags() {
         </div>
         <PermissionGate permission="tag.manage">
           <button
-            onClick={() => setShowForm(!showForm)}
+            onClick={() => {
+              if (showForm && !editingId) setShowForm(false);
+              else {
+                setEditingId(null);
+                setForm(EMPTY_FORM);
+                setShowForm(true);
+              }
+            }}
             className="flex items-center gap-1 rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"
           >
             <Plus size={16} /> 新增标签
@@ -83,23 +120,36 @@ export default function AdminProductTags() {
           <div className="flex flex-wrap items-end gap-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground">标签名称</label>
-              <input value={newTag.name} onChange={(e) => setNewTag({ ...newTag, name: e.target.value })} placeholder="输入标签名称" className="rounded-lg bg-secondary px-4 py-2.5 text-sm text-foreground outline-none" />
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="输入标签名称" className="rounded-lg bg-secondary px-4 py-2.5 text-sm text-foreground outline-none" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">颜色</label>
-              <select value={newTag.color} onChange={(e) => setNewTag({ ...newTag, color: e.target.value })} className="rounded-lg bg-secondary px-4 py-2.5 text-sm text-foreground outline-none">
-                <option>红色</option>
-                <option>绿色</option>
-                <option>蓝色</option>
-                <option>金色</option>
-              </select>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">背景色</label>
+              <input type="color" value={form.bg_color} onChange={(e) => setForm({ ...form, bg_color: e.target.value })} className="h-10 w-16 rounded-lg bg-secondary p-1" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">文字色</label>
+              <input type="color" value={form.text_color} onChange={(e) => setForm({ ...form, text_color: e.target.value })} className="h-10 w-16 rounded-lg bg-secondary p-1" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">排序权重</label>
+              <input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} className="w-24 rounded-lg bg-secondary px-3 py-2.5 text-sm text-foreground outline-none" />
+            </div>
+            <label className="flex items-center gap-2 rounded-lg border border-border px-3 py-2.5 text-xs text-muted-foreground">
+              <input type="checkbox" className="accent-gold" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />
+              启用
+            </label>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">预览</label>
+              <span className="inline-flex rounded-full px-3 py-1 text-xs font-bold" style={{ backgroundColor: form.bg_color, color: form.text_color }}>
+                {form.name || "标签"}
+              </span>
             </div>
             <PermissionGate permission="tag.manage">
-              <button disabled={saving} onClick={handleAdd} className="rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "添加"}
+              <button disabled={saving} onClick={handleSave} className="rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingId ? "保存" : "添加"}
               </button>
             </PermissionGate>
-            <button onClick={() => setShowForm(false)} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground">取消</button>
+            <button onClick={resetForm} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground">取消</button>
           </div>
         </div>
       )}
@@ -108,14 +158,27 @@ export default function AdminProductTags() {
         {tags.map((tag) => (
           <div key={tag.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
             <div>
-              <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${productTagBadgeClass(tag.color)}`}>{tag.name}</span>
+              <span
+                className="rounded-full border px-2.5 py-1 text-xs font-bold"
+                style={{ backgroundColor: tag.bg_color || "#FEF3C7", color: tag.text_color || "#92400E", borderColor: tag.bg_color || "#FEF3C7" }}
+              >
+                {tag.name}
+              </span>
               <p className="mt-2 text-[10px] text-muted-foreground">{tag.count ?? 0} 个商品使用</p>
+              <p className="mt-1 text-[10px] text-muted-foreground">排序 {tag.sort_order ?? 0} · {tag.enabled === false ? "停用" : "启用"}</p>
             </div>
-            <PermissionGate permission="tag.manage">
-              <button onClick={() => handleDelete(tag.id)} className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
-                <Trash2 size={14} />
-              </button>
-            </PermissionGate>
+            <div className="flex gap-1">
+              <PermissionGate permission="tag.manage">
+                <button onClick={() => startEdit(tag)} className="rounded-md p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground">
+                  <Pencil size={14} />
+                </button>
+              </PermissionGate>
+              <PermissionGate permission="tag.manage">
+                <button onClick={() => handleDelete(tag.id)} className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+                  <Trash2 size={14} />
+                </button>
+              </PermissionGate>
+            </div>
           </div>
         ))}
       </div>

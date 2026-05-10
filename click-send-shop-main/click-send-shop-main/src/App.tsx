@@ -22,6 +22,7 @@ const Login = lazy(() => import("@/modules/public/pages/auth/Login"));
 
 const Categories = lazy(() => import("@/modules/public/pages/product/Categories"));
 const ProductDetail = lazy(() => import("@/modules/public/pages/product/ProductDetail"));
+const NewArrivals = lazy(() => import("@/modules/public/pages/product/NewArrivals"));
 const Search = lazy(() => import("@/modules/public/pages/product/Search"));
 
 const Cart = lazy(() => import("@/modules/public/pages/cart/Cart"));
@@ -44,6 +45,7 @@ const Invite = lazy(() => import("@/modules/public/pages/user/Invite"));
 
 const Help = lazy(() => import("@/modules/public/pages/content/Help"));
 const About = lazy(() => import("@/modules/public/pages/content/About"));
+const ContentCmsPage = lazy(() => import("@/modules/public/pages/content/ContentCmsPage"));
 
 const NotFound = lazy(() => import("@/modules/public/pages/error/NotFound"));
 
@@ -211,6 +213,7 @@ const App = () => (
               <Route element={<FrontLayout />}>
               <Route path="/" element={<HomeRoute />} />
               <Route path="/categories" element={<Categories />} />
+              <Route path="/new-arrivals" element={<NewArrivals />} />
               <Route path="/search" element={<Search />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/favorites" element={<Favorites />} />
@@ -222,6 +225,7 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/help" element={<Help />} />
               <Route path="/about" element={<About />} />
+              <Route path="/content/:slug" element={<ContentCmsPage />} />
 
               {/* Protected pages (require login) */}
               <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />

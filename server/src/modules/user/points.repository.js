@@ -90,7 +90,12 @@ async function findSignInToday(userId, dateStr) {
 }
 
 async function selectSignInRule() {
-  const [[rule]] = await db.query("SELECT points, enabled FROM points_rules WHERE action = 'sign_in' LIMIT 1");
+  const [[rule]] = await db.query(
+    `SELECT points, enabled FROM points_rules
+     WHERE action IN ('sign_in', 'daily_checkin')
+     ORDER BY FIELD(action, 'sign_in', 'daily_checkin')
+     LIMIT 1`,
+  );
   return rule || null;
 }
 

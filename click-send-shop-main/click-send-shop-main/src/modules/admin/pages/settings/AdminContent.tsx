@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { FileText, Edit2, Shield, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -70,7 +71,10 @@ export default function AdminContent() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold text-foreground">内容管理</h1>
-        <p className="text-sm text-muted-foreground">编辑站点静态页面内容</p>
+        <p className="text-sm text-muted-foreground">
+          编辑站内政策与说明正文。前台路径格式为 <code className="rounded bg-secondary px-1 text-xs">/content/{"{slug}"}</code>
+          ，需与「站点设置 → 政策内部页路径」一致。
+        </p>
       </div>
 
       <div className="space-y-2">
@@ -83,7 +87,11 @@ export default function AdminContent() {
               <h4 className="font-medium text-foreground text-sm">{item.title}</h4>
               <p className="text-xs text-muted-foreground mt-0.5 truncate">{item.content || "暂无内容"}</p>
               <p className="text-[10px] text-muted-foreground mt-1">
-                路径: /{item.slug} · 更新于 {item.updatedAt ? new Date(item.updatedAt).toLocaleString("zh-CN") : "—"}
+                前台路径:{" "}
+                <Link to={`/content/${item.slug}`} className="text-gold underline-offset-2 hover:underline" target="_blank" rel="noreferrer">
+                  /content/{item.slug}
+                </Link>
+                · 更新于 {item.updatedAt ? new Date(item.updatedAt).toLocaleString("zh-CN") : "—"}
               </p>
             </div>
             <PermissionGate permission="content.manage">

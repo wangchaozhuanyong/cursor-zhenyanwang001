@@ -1,21 +1,31 @@
 ﻿import { useState, useEffect, useCallback, useRef } from "react";
-import { ArrowLeft, SlidersHorizontal } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, ChevronDown, SlidersHorizontal } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useProductStore } from "@/stores/useProductStore";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { ProductSortType } from "@/types/product";
-import { flattenCategories } from "@/utils/categoryTree";
+import * as productService from "@/services/productService";
+import type { ProductSortType, ProductTag } from "@/types/product";
+import type { Category } from "@/types/category";
+import {
+  findCategoryById,
+  findImmediateParentId,
+  findRootCategoryIdForActive,
+  isCategoryOrDescendantActive,
+} from "@/utils/categoryTree";
 
 export default function Categories() {
-  const navigate = useNavigate();
   const goBack = useGoBack();
   const [searchParams] = useSearchParams();
   const [activeCat, setActiveCat] = useState(searchParams.get("cat") || "all");
+  const [activeTagId, setActiveTagId] = useState(searchParams.get("tag_id") || "");
+  const [quickTags, setQuickTags] = useState<ProductTag[]>([]);
   const [sort, setSort] = useState<ProductSortType>("default");
   const [query, setQuery] = useState("");
+  const showNewOnly = searchParams.get("is_new") === "1" || searchParams.get("is_new") === "true";
+  const [expandedParentId, setExpandedParentId] = useState<string | null>(null);
 
   const {
     products,
@@ -31,31 +41,78 @@ export default function Categories() {
   }, [loadCategories]);
 
   useEffect(() => {
+    productService.fetchProductTags(12).then(setQuickTags).catch(() => setQuickTags([]));
+  }, []);
+
+  useEffect(() => {
     loadProducts({
       category_id: activeCat === "all" ? undefined : activeCat,
+      tag_id: activeTagId || undefined,
       keyword: query || undefined,
+      is_new: showNewOnly ? true : undefined,
       sort: sort === "default" ? undefined : sort,
       page: 1,
       pageSize: 50,
     });
-  }, [activeCat, sort, query, loadProducts]);
+  }, [activeCat, activeTagId, sort, query, showNewOnly, loadProducts]);
 
-  const handleCatChange = useCallback((id: string) => {
-    setActiveCat(id);
+  /** 深链 / 刷新：当前选中为子分类时自动展开父级 */
+  useEffect(() => {
+    const cat = searchParams.get("cat");
+    if (!cat || cat === "all" || categories.length === 0) return;
+    const parentId = findImmediateParentId(categories, cat);
+    if (parentId) setExpandedParentId(parentId);
+  }, [searchParams, categories]);
+
+  const handleSelectChild = useCallback((parentId: string, childId: string) => {
+    setActiveCat(childId);
+    setExpandedParentId(parentId);
+  }, []);
+
+  const handleRootCategoryClick = useCallback(
+    (cat: Category) => {
+      const children = cat.children?.filter(Boolean) ?? [];
+      if (children.length === 0) {
+        setActiveCat(cat.id);
+        setExpandedParentId(null);
+        return;
+      }
+      if (expandedParentId === cat.id) {
+        setExpandedParentId(null);
+        return;
+      }
+      setExpandedParentId(cat.id);
+      setActiveCat(cat.id);
+    },
+    [expandedParentId],
+  );
+
+  const handleSelectAll = useCallback(() => {
+    setActiveCat("all");
+    setActiveTagId("");
+    setExpandedParentId(null);
   }, []);
 
   const categoryBtnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
-  const flatCategories = flattenCategories(categories);
-  const categoryRow = [{ id: "all", name: "全部", icon: "", level: 0 }, ...flatCategories];
+  const rootRow: Array<{ kind: "all" } | { kind: "root"; node: Category }> = [
+    { kind: "all" },
+    ...categories.map((node) => ({ kind: "root" as const, node })),
+  ];
+
+  const expandedNode = expandedParentId ? findCategoryById(categories, expandedParentId) : null;
+  const subCategories = expandedNode?.children?.filter(Boolean) ?? [];
+
+  const scrollTabKey =
+    activeCat === "all" ? "all" : findRootCategoryIdForActive(categories, activeCat) ?? activeCat;
 
   useEffect(() => {
-    const btn = categoryBtnRefs.current.get(activeCat);
+    const btn = categoryBtnRefs.current.get(scrollTabKey);
     btn?.scrollIntoView({
       behavior: "smooth",
       inline: "center",
       block: "nearest",
     });
-  }, [activeCat, categories.length]);
+  }, [scrollTabKey, categories.length]);
 
   return (
     <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-20">
@@ -74,31 +131,130 @@ export default function Categories() {
       </header>
 
       <main className="mx-auto max-w-lg">
-        {/* Category tabs */}
+        {showNewOnly ? (
+          <div className="px-4 pt-4">
+            <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm font-semibold text-[var(--theme-text-on-surface)]">
+              正在筛选：新品上市
+            </div>
+          </div>
+        ) : null}
+
+        {quickTags.length > 0 ? (
+          <div className="border-b border-[var(--theme-border)] px-4 py-3">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--theme-text-muted)]">
+              热门标签
+            </p>
+            <div className="no-scrollbar flex gap-2 overflow-x-auto">
+              {quickTags.map((tag) => {
+                const active = activeTagId === tag.id;
+                return (
+                  <button
+                    key={tag.id}
+                    type="button"
+                    onClick={() => setActiveTagId(active ? "" : tag.id)}
+                    className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold transition-transform active:scale-95 ${
+                      active ? "ring-2 ring-[var(--theme-price)]/30" : ""
+                    }`}
+                    style={{
+                      backgroundColor: active ? tag.bg_color || "#FEF3C7" : "var(--theme-surface)",
+                      borderColor: tag.bg_color || "var(--theme-border)",
+                      color: active ? tag.text_color || "#92400E" : "var(--theme-text)",
+                    }}
+                  >
+                    {tag.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
+        {/* 仅顶层分类横向滚动；有子类的父级点击展开下方子类 */}
         <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 py-3 border-b border-[var(--theme-border)]">
           {loading && categories.length === 0
             ? Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-8 w-16 flex-shrink-0 rounded-full" />
               ))
-            : categoryRow.map((cat) => (
+            : rootRow.map((item) => {
+                if (item.kind === "all") {
+                  return (
+                    <button
+                      key="all"
+                      ref={(el) => {
+                        if (el) categoryBtnRefs.current.set("all", el);
+                        else categoryBtnRefs.current.delete("all");
+                      }}
+                      type="button"
+                      onClick={handleSelectAll}
+                      className={`flex-shrink-0 rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
+                        activeCat === "all"
+                          ? "bg-[var(--theme-primary)] text-white"
+                          : "bg-[var(--theme-surface)] text-[var(--theme-text)] border border-[var(--theme-border)]"
+                      }`}
+                    >
+                      全部
+                    </button>
+                  );
+                }
+                const { node } = item;
+                const hasChildren = (node.children?.length ?? 0) > 0;
+                const isActive = isCategoryOrDescendantActive(node, activeCat);
+                const isExpanded = expandedParentId === node.id;
+                return (
+                  <button
+                    key={node.id}
+                    ref={(el) => {
+                      if (el) categoryBtnRefs.current.set(node.id, el);
+                      else categoryBtnRefs.current.delete(node.id);
+                    }}
+                    type="button"
+                    onClick={() => handleRootCategoryClick(node)}
+                    className={`flex shrink-0 items-center gap-0.5 rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
+                      isActive
+                        ? "bg-[var(--theme-primary)] text-white"
+                        : "bg-[var(--theme-surface)] text-[var(--theme-text)] border border-[var(--theme-border)]"
+                    }`}
+                  >
+                    <span className="max-w-[9.5rem] truncate">
+                      {node.icon ? `${node.icon} ` : null}
+                      {node.name}
+                    </span>
+                    {hasChildren ? (
+                      <ChevronDown
+                        size={14}
+                        className={`shrink-0 opacity-80 transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                        aria-hidden
+                      />
+                    ) : null}
+                  </button>
+                );
+              })}
+        </div>
+
+        {subCategories.length > 0 ? (
+          <div className="border-b border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-text)_3%,var(--theme-bg))] px-4 py-3">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--theme-text-muted)]">
+              子分类
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {subCategories.map((child) => (
                 <button
-                  key={cat.id}
-                  ref={(el) => {
-                    if (el) categoryBtnRefs.current.set(cat.id, el);
-                    else categoryBtnRefs.current.delete(cat.id);
-                  }}
-                  onClick={() => handleCatChange(cat.id)}
-                  className={`flex-shrink-0 rounded-full px-4 py-1.5 text-xs font-medium transition-colors ${
-                    activeCat === cat.id
-                      ? "bg-[var(--theme-primary)] text-white"
-                      : "bg-[var(--theme-surface)] text-[var(--theme-text)] border border-[var(--theme-border)]"
+                  key={child.id}
+                  type="button"
+                  onClick={() => handleSelectChild(expandedNode.id, child.id)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                    activeCat === child.id
+                      ? "bg-[var(--theme-price)] text-[var(--theme-price-foreground)]"
+                      : "border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]"
                   }`}
                 >
-                  {cat.level > 0 && <span className="mr-1 text-[10px] opacity-60">{"—".repeat(cat.level)}</span>}
-                  {cat.icon} {cat.name}
+                  {child.icon ? `${child.icon} ` : null}
+                  {child.name}
                 </button>
               ))}
-        </div>
+            </div>
+          </div>
+        ) : null}
 
         {/* Sort */}
         <div className="flex items-center gap-2 px-4 pb-4 pt-3">
@@ -106,6 +262,7 @@ export default function Categories() {
           {(["default", "price-asc", "price-desc"] as const).map((s) => (
             <button
               key={s}
+              type="button"
               onClick={() => setSort(s)}
               className={`text-xs ${sort === s ? "font-semibold text-gold" : "text-muted-foreground"}`}
             >

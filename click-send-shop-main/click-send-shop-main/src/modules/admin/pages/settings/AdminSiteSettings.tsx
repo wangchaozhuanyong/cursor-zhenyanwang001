@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { Save, Loader2, Upload, X, Image as ImageIcon } from "lucide-react";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -39,8 +40,6 @@ const EMPTY: SiteSettings = {
   footerCompanyName: "",
   footerCopyright: "",
   footerIcpNo: "",
-  footerPolicyUrl: "",
-  footerTermsUrl: "",
   privacyPolicyPath: "/content/privacy-policy",
   termsPath: "/content/terms-of-service",
   refundPolicyPath: "/content/refund-policy",
@@ -48,6 +47,8 @@ const EMPTY: SiteSettings = {
   supportText: "",
   shippingNotice: "",
   paymentNotice: "",
+  autoConfirmReceiveEnabled: "0",
+  autoConfirmReceiveDays: "7",
   footerNav: "",
   newArrivalHeroImage: "",
   newArrivalHeroTitle: "",
@@ -112,12 +113,12 @@ const SECTIONS: Section[] = [
   {
     title: "首页新品运营主视觉",
     category: "brand",
-    desc: "用于首页「新品上市」大图区，优先使用这里的图文；商品图仍作为兜底与轮播素材。",
+    desc: "用于首页「新品上市」运营氛围层；商品主图仍保持 1:1 轮播展示。",
     fields: [
-      { key: "newArrivalHeroImage", label: "主视觉图片（推荐 1200×630）", type: "image" },
+      { key: "newArrivalHeroImage", label: "主视觉图片（推荐 1200×1200）", type: "image", hint: "作为首页新品模块背景/氛围图，不会覆盖轮播商品图" },
       { key: "newArrivalHeroTitle", label: "主视觉标题", placeholder: "新品限时上新，错过再等一季" },
       { key: "newArrivalHeroSubtitle", label: "主视觉副标题", placeholder: "每周精选，支持快速发货" },
-      { key: "newArrivalHeroCtaText", label: "按钮文案", placeholder: "立即抢购" },
+      { key: "newArrivalHeroCtaText", label: "按钮文案", placeholder: "前往新品上市" },
     ],
   },
   {
@@ -147,6 +148,7 @@ const SECTIONS: Section[] = [
   {
     title: "业务设置",
     category: "contact",
+    desc: "含货币与订单履约规则；自动确认以订单首次发货时间（管理端发货或手动改为已发货时写入）为起点。",
     fields: [
       {
         key: "currency",
@@ -158,6 +160,22 @@ const SECTIONS: Section[] = [
           { value: "USD", label: "USD ($)" },
           { value: "SGD", label: "SGD (S$)" },
         ],
+      },
+      {
+        key: "autoConfirmReceiveEnabled",
+        label: "发货后自动确认收货",
+        type: "select",
+        options: [
+          { value: "0", label: "关闭" },
+          { value: "1", label: "开启" },
+        ],
+        hint: "开启后，已发货订单超过下方天数仍未手动确认时，系统将自动变为「已完成」并结算积分与邀请返现（与买家点击确认收货一致）。服务端约每 15 分钟扫描一次，可用环境变量 AUTO_CONFIRM_RECEIVE_INTERVAL_MS 调整间隔。",
+      },
+      {
+        key: "autoConfirmReceiveDays",
+        label: "自动确认天数",
+        placeholder: "7",
+        hint: "填写 1–365 的整数；保存时会自动限制在范围内。仅对已有「发货时间」的订单生效。",
       },
     ],
   },
@@ -175,22 +193,20 @@ const SECTIONS: Section[] = [
   {
     title: "页脚信息",
     category: "content",
-    desc: "前端 Footer 组件读取",
+    desc: "未登录首页底部页脚（品牌区、公司名称、版权等）会读取此处。政策类正文请在侧栏「内容管理」编辑对应页面，勿再使用外链。",
     fields: [
       { key: "footerCompanyName", label: "公司名称", placeholder: "大马通" },
       { key: "footerCopyright", label: "版权信息", placeholder: "© 2026 大马通 版权所有" },
       { key: "footerIcpNo", label: "备案号 / 工商注册号", placeholder: "可选" },
-      { key: "footerPolicyUrl", label: "隐私政策外链", placeholder: "可选 - 优先使用站内 CMS 路径" },
-      { key: "footerTermsUrl", label: "服务条款外链", placeholder: "可选 - 优先使用站内 CMS 路径" },
     ],
   },
   {
     title: "政策内部页路径",
     category: "content",
-    desc: "对应 CMS 文章 slug，前端 Footer / Checkout 等位置直接跳转到内部 CMS 页面",
+    desc: "填写前台路由（一般为 /content/ + 内容管理里的 slug）。用户点击「隐私政策」「服务条款」等会进入站内页面展示你在内容管理里保存的正文。",
     fields: [
-      { key: "privacyPolicyPath", label: "隐私政策路径", placeholder: "/content/privacy-policy" },
-      { key: "termsPath", label: "用户协议路径", placeholder: "/content/terms-of-service" },
+      { key: "privacyPolicyPath", label: "隐私政策路径", placeholder: "/content/privacy-policy", hint: "与内容管理中该页的 slug 一致，例如 slug 为 privacy-policy" },
+      { key: "termsPath", label: "服务条款 / 用户协议路径", placeholder: "/content/terms-of-service", hint: "例如 slug terms-of-service" },
       { key: "refundPolicyPath", label: "退款政策路径", placeholder: "/content/refund-policy" },
       { key: "shippingPolicyPath", label: "配送政策路径", placeholder: "/content/shipping-policy" },
     ],
@@ -263,9 +279,22 @@ export default function AdminSiteSettings() {
       }
     }
 
+    const daysRaw = (settings.autoConfirmReceiveDays ?? "7").trim();
+    const daysNum = parseInt(daysRaw, 10);
+    if (!Number.isFinite(daysNum) || daysNum < 1 || daysNum > 365) {
+      toast.error("自动确认天数须为 1–365 之间的整数");
+      return;
+    }
+    const toSave = {
+      ...settings,
+      autoConfirmReceiveDays: String(daysNum),
+      footerPolicyUrl: "",
+      footerTermsUrl: "",
+    };
+
     setSaving(true);
     try {
-      await updateSiteSettings(settings);
+      await updateSiteSettings(toSave);
       await refreshSiteInfo();
       toast.success("设置已保存，前端缓存已刷新");
     } catch (e) {
@@ -349,7 +378,13 @@ export default function AdminSiteSettings() {
           <p className="font-medium text-foreground">字段生效提示（避免“设置后看起来没同步”）</p>
           <p className="mt-2">1) 标题规则：客户端内页 =「页面名 · 站点名称」，首页优先用「SEO 标题」。</p>
           <p className="mt-1">2) 浏览器标签图标：读取「Favicon」，首屏静态图标与运行时图标会统一更新。</p>
-          <p className="mt-1">3) 页脚内容：公司信息/联系方式/政策路径/footerNav 会实时驱动客户端页脚。</p>
+          <p className="mt-1">
+            3) 未登录首页底部「政策与说明」等：读取政策路径 +{" "}
+            <Link to="/admin/content" className="font-medium text-gold underline-offset-2 hover:underline">
+              内容管理
+            </Link>
+            中的正文；页脚公司名/版权等同站点设置。
+          </p>
           <p className="mt-1">4) 首屏静态 Title 仅是兜底，进入页面后会被运行时标题策略接管。</p>
         </div>
         {visibleSections.map((section) => (

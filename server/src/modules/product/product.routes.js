@@ -13,6 +13,7 @@ const router = Router();
 
 router.get('/home', ctrl.getHomeProducts);
 router.post('/home/events', ctrl.trackHomeEvent);
+router.get('/tags', ctrl.getProductTags);
 router.get('/', validate({ query: productListQuerySchema }), ctrl.getProducts);
 router.get('/:id/related', validate({ params: productIdParamSchema }), ctrl.getRelatedProducts);
 router.get('/:id', validate({ params: productIdParamSchema }), ctrl.getProductById);

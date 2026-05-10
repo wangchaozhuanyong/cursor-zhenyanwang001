@@ -62,6 +62,10 @@ export interface SiteSettings {
 
   /* 业务 */
   currency?: string;
+  /** 自动确认收货：'1' 开启 / '0' 关闭 */
+  autoConfirmReceiveEnabled?: string;
+  /** 发货后天数（1–365，字符串与 site_settings 一致） */
+  autoConfirmReceiveDays?: string;
 
   /* SEO */
   seoTitle?: string;

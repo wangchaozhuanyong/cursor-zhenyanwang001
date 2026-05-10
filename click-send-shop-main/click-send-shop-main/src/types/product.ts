@@ -20,6 +20,9 @@ export interface ProductCatalogTag {
   id: string;
   name: string;
   color?: string;
+  bg_color?: string;
+  text_color?: string;
+  sort_order?: number;
 }
 
 export interface ProductActiveActivity {
@@ -79,9 +82,10 @@ export interface ProductListParams {
   category_id?: string;
   keyword?: string;
   status?: ProductStatus;
-  is_recommended?: boolean;
-  is_new?: boolean;
-  is_hot?: boolean;
+  is_recommended?: boolean | number;
+  is_new?: boolean | number;
+  is_hot?: boolean | number;
+  tag_id?: string;
   sort?: ProductSortType;
   page?: number;
   pageSize?: number;
@@ -92,6 +96,9 @@ export interface ProductTag {
   name: string;
   sort_order: number;
   color?: string;
+  bg_color?: string;
+  text_color?: string;
+  enabled?: boolean;
   count?: number;
 }
 

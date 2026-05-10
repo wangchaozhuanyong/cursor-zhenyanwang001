@@ -96,6 +96,8 @@ export const useUserStore = create<UserState>()(
             wechat: s.wechat,
             whatsapp: s.whatsapp,
           });
+          // 以数据库为准回写，避免仅本地持久化、其它端看不到；并与接口 URL 规范化一致
+          await get().loadProfile();
         } finally {
           set({ profileSaving: false });
         }

@@ -9,6 +9,38 @@ const userModule = require('../user');
 
 const userApi = /** @type {any} */ (userModule).api || {};
 
+const COLOR_PRESETS = {
+  红色: { bg_color: '#FEE2E2', text_color: '#B91C1C' },
+  绿色: { bg_color: '#DCFCE7', text_color: '#15803D' },
+  蓝色: { bg_color: '#DBEAFE', text_color: '#1D4ED8' },
+  金色: { bg_color: '#FEF3C7', text_color: '#92400E' },
+};
+
+function normalizeTagVisual(body = {}) {
+  const preset = COLOR_PRESETS[body.color] || COLOR_PRESETS.金色;
+  return {
+    color: body.color || '金色',
+    bg_color: body.bg_color || preset.bg_color,
+    text_color: body.text_color || preset.text_color,
+    sort_order: Number.isFinite(Number(body.sort_order)) ? Number(body.sort_order) : 0,
+    enabled: body.enabled === false ? 0 : 1,
+  };
+}
+
+function formatTag(row) {
+  const preset = COLOR_PRESETS[row.color] || COLOR_PRESETS.金色;
+  return {
+    id: row.id,
+    name: row.name,
+    sort_order: Number(row.sort_order) || 0,
+    color: row.color || '金色',
+    bg_color: row.bg_color || preset.bg_color,
+    text_color: row.text_color || preset.text_color,
+    enabled: row.enabled !== undefined ? !!row.enabled : true,
+    count: Number(row.usage_count) || 0,
+  };
+}
+
 function requireUserApi(name) {
   const fn = userApi[name];
   if (typeof fn !== 'function') {
@@ -109,27 +141,45 @@ async function deleteBanner(id, adminUserId, req) {
 
 async function listProductTags() {
   const rows = await repo.selectProductTags();
-  return rows.map((r) => ({
-    id: r.id,
-    name: r.name,
-    sort_order: r.sort_order,
-    color: r.color || '金色',
-    count: Number(r.usage_count) || 0,
-  }));
+  return rows.map(formatTag);
 }
 
 async function createProductTag(body, adminUserId, req) {
-  const { name, color } = body;
+  const { name } = body;
   if (!name) return { error: { code: 400, message: '标签名称必填' } };
   try {
     const id = generateId();
-    await repo.insertProductTag(id, name, color);
+    const visual = normalizeTagVisual(body);
+    await repo.insertProductTag(id, name, visual.color, visual.bg_color, visual.text_color, visual.sort_order, visual.enabled);
     await writeAuditLog({ req, operatorId: adminUserId, actionType: 'tag.create', objectType: 'product_tag', objectId: id, summary: `创建标签 ${name}`, result: 'success' });
-    return { data: { id, name, color: color || '金色' }, message: '创建成功' };
+    const row = await repo.selectProductTagById(id);
+    return { data: formatTag(row || { id, name, ...visual }), message: '创建成功' };
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') return { error: { code: 400, message: '标签已存在' } };
     throw err;
   }
+}
+
+async function updateProductTag(id, body, adminUserId, req) {
+  const fields = [];
+  const values = [];
+  const visual = normalizeTagVisual(body);
+  if (body.name !== undefined) {
+    if (!body.name) return { error: { code: 400, message: '标签名称必填' } };
+    fields.push('name = ?');
+    values.push(body.name);
+  }
+  for (const [key, value] of Object.entries(visual)) {
+    if (body[key] !== undefined || (key === 'bg_color' && body.color !== undefined) || (key === 'text_color' && body.color !== undefined)) {
+      fields.push(`${key} = ?`);
+      values.push(value);
+    }
+  }
+  if (!fields.length) return { error: { code: 400, message: '没有需要更新的字段' } };
+  await repo.updateProductTag(id, fields, values);
+  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'tag.update', objectType: 'product_tag', objectId: id, summary: `更新标签 ${id}`, after: body, result: 'success' });
+  const row = await repo.selectProductTagById(id);
+  return { data: formatTag(row), message: '已保存' };
 }
 
 async function deleteProductTag(id, adminUserId, req) {
@@ -467,6 +517,7 @@ module.exports = {
   deleteBanner,
   listProductTags,
   createProductTag,
+  updateProductTag,
   deleteProductTag,
   getReturnById,
   approveReturn,

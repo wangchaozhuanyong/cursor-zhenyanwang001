@@ -176,26 +176,39 @@ function mobileBottomTab(pathname: string): "dash" | "products" | "orders" | "no
   return "more";
 }
 
-/** 必须定义在模块作用域：若在 AdminLayout 内定义，路由变化时组件类型会变，侧栏滚动区会整棵重挂载，滚动位置被重置到顶部 */
+/**
+ * 侧栏滚动策略：
+ * - inline：与整页同一文档流，由浏览器主滚动条带动（桌面端 lg+）
+ * - overlay：固定高度抽屉内自滚动（移动端全屏菜单，避免菜单溢出屏幕）
+ */
 function AdminSidebarNav({
   navItems,
   pathname,
   onNavigate,
   onLogout,
+  scrollMode,
 }: {
   navItems: NavItem[];
   pathname: string;
   onNavigate: (path: string) => void;
   onLogout: () => void;
+  scrollMode: "inline" | "overlay";
 }) {
+  const listClassName =
+    scrollMode === "overlay"
+      ? "min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-2 py-3"
+      : "space-y-0.5 px-2 py-3";
+
   return (
-    <nav className="flex h-full max-h-[100dvh] flex-1 flex-col touch-manipulation">
+    <nav
+      className={`flex touch-manipulation flex-col ${scrollMode === "overlay" ? "h-full max-h-[100dvh] min-h-0 flex-1" : ""}`}
+    >
       <div className="safe-area-pt flex shrink-0 items-center gap-2 border-b border-border px-5 py-4">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gold text-sm font-bold text-primary-foreground">A</div>
         <span className="font-display text-lg font-bold text-foreground">管理后台</span>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-2 py-3">
+      <div className={listClassName}>
         {navItems.map((item) => {
           const active = pathname === item.path || (item.path !== "/admin" && pathname.startsWith(item.path));
           const childActive = item.children?.some((c) => pathname === c.path || pathname.startsWith(c.path));
@@ -362,9 +375,10 @@ export default function AdminLayout() {
   const showNotifTab = can("notification.manage");
 
   return (
-    <div className="flex min-h-[100dvh] bg-background">
-      <aside className="hidden w-[260px] shrink-0 flex-col border-r border-border bg-card lg:flex lg:flex-col">
+    <div className="flex min-h-[100dvh] items-start bg-background">
+      <aside className="hidden w-[260px] shrink-0 border-r border-border bg-card lg:block">
         <AdminSidebarNav
+          scrollMode="inline"
           navItems={navItems}
           pathname={location.pathname}
           onNavigate={handleSidebarNavigate}
@@ -380,8 +394,9 @@ export default function AdminLayout() {
             className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
             onClick={() => setSidebarOpen(false)}
           />
-          <aside className="safe-area-pl absolute left-0 top-0 flex h-full w-[min(88vw,20rem)] max-w-sm flex-col bg-card shadow-2xl overflow-hidden">
+          <aside className="safe-area-pl absolute left-0 top-0 flex h-full w-[min(88vw,20rem)] max-w-sm flex-col overflow-hidden bg-card shadow-2xl">
             <AdminSidebarNav
+              scrollMode="overlay"
               navItems={navItems}
               pathname={location.pathname}
               onNavigate={handleSidebarNavigate}
@@ -391,7 +406,7 @@ export default function AdminLayout() {
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-[100dvh] min-w-0 flex-1 flex-col">
         <header className="safe-area-pt sticky top-0 z-30 flex flex-col border-b border-border bg-background/95 backdrop-blur-md">
           <div className="flex min-h-[48px] items-center gap-2 px-3 py-2 sm:px-4 lg:px-6">
             <button

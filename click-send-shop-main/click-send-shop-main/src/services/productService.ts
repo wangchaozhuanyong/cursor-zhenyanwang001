@@ -1,6 +1,6 @@
 import * as productApi from "@/api/modules/product";
 import * as categoryApi from "@/api/modules/category";
-import type { Product, ProductListParams } from "@/types/product";
+import type { Product, ProductListParams, ProductTag } from "@/types/product";
 import type { Category } from "@/types/category";
 import type { PaginatedData } from "@/types/common";
 
@@ -34,6 +34,11 @@ export async function fetchHomeProducts(): Promise<{
   recommended: Product[];
 }> {
   const res = await productApi.getHomeProducts();
+  return res.data;
+}
+
+export async function fetchProductTags(limit = 12): Promise<ProductTag[]> {
+  const res = await productApi.getProductTags(limit);
   return res.data;
 }
 

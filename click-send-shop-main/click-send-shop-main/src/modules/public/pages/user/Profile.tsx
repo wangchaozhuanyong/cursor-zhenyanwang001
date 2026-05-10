@@ -12,6 +12,7 @@ import logoWebp from "@/assets/logo.webp";
 import * as inviteService from "@/services/inviteService";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import SkinPickerDialog from "@/components/SkinPickerDialog";
+import { SiteSocialLinks, hasAnySocialLink } from "@/components/SiteSocialLinks";
 import { supportsColorMix } from "@/utils/cssSupport";
 import { cn } from "@/lib/utils";
 
@@ -103,6 +104,16 @@ export default function Profile() {
   const siteInfo = useSiteInfo();
   const logoSrc = siteInfo.logoUrl || logoWebp;
   const siteName = siteInfo.siteName || "大马通";
+  const socialProps = {
+    whatsappUrl: siteInfo.whatsappUrl,
+    contactWhatsApp: siteInfo.contactWhatsApp,
+    wechatId: siteInfo.wechatId,
+    instagramUrl: siteInfo.instagramUrl,
+    facebookUrl: siteInfo.facebookUrl,
+    tiktokUrl: siteInfo.tiktokUrl,
+    xhsUrl: siteInfo.xhsUrl,
+  };
+  const showSocial = hasAnySocialLink(socialProps);
   const { nickname, avatar, pointsBalance, inviteCode, subordinateEnabled, memberLevel, loadProfile } = useUserStore();
   const authStore = useAuthStore();
   const { orders, loadOrders } = useOrderStore();
@@ -231,6 +242,13 @@ export default function Profile() {
             <span className="flex-1 text-[var(--theme-text-on-surface)]">关于我们</span>
             <ChevronRight size={16} className="text-theme-muted" />
           </button>
+
+          {showSocial && (
+            <section className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
+              <p className="mb-3 text-xs font-medium text-[var(--theme-text-muted)]">关注我们</p>
+              <SiteSocialLinks {...socialProps} tone="profile" className="justify-start gap-2" />
+            </section>
+          )}
         </main>
       </div>
     );
@@ -365,6 +383,13 @@ export default function Profile() {
             ))}
           </div>
         </section>
+
+        {showSocial && (
+          <section className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
+            <p className="mb-3 text-xs font-medium text-muted-foreground">关注我们</p>
+            <SiteSocialLinks {...socialProps} tone="profile" className="justify-start gap-2" />
+          </section>
+        )}
 
         {/* Logout button */}
         <button

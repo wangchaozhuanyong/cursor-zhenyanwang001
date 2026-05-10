@@ -151,9 +151,9 @@ export default function PremiumCouponCard({
         </div>
       </div>
 
-      {/* 右：存根 + 撕边 */}
+      {/* 右：存根 + 撕边（对称 px，避免竖排按钮在区域内视觉偏右/偏左） */}
       <div
-        className={`relative z-[1] flex shrink-0 flex-col items-center justify-center bg-[#4A0A17]/95 py-2 pl-1 ${stubW}`}
+        className={`relative z-[1] flex shrink-0 flex-col items-center justify-center bg-[#4A0A17]/95 py-2 ${compact ? "px-1.5" : "px-2"} ${stubW}`}
       >
         <div
           className="pointer-events-none absolute bottom-0 right-0 top-0 w-2.5 translate-x-px"
@@ -172,31 +172,39 @@ export default function PremiumCouponCard({
               e.stopPropagation();
               onAction?.();
             }}
-            className={`relative z-10 flex flex-col items-center justify-center rounded-full border border-[#D6B36A]/55 bg-gradient-to-b from-[#8C142B] to-[#4B0713] text-[#E2C382] shadow-[inset_0_2px_4px_rgba(255,255,255,0.12),0_6px_14px_rgba(0,0,0,0.22)] transition hover:brightness-110 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-55 ${
-              compact ? "min-h-[4.5rem] w-10 px-1 py-3" : "min-h-[6rem] w-12 px-1.5 py-5"
+            className={`relative z-10 mx-auto flex shrink-0 items-center justify-center rounded-full border border-[#D6B36A]/55 bg-gradient-to-b from-[#8C142B] to-[#4B0713] text-[#E2C382] shadow-[inset_0_2px_4px_rgba(255,255,255,0.12),0_6px_14px_rgba(0,0,0,0.22)] transition hover:brightness-110 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-55 ${
+              compact ? "h-[4.75rem] w-10 py-3" : "h-[6.25rem] w-12 py-5"
             }`}
           >
             {actionLoading ? (
               <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
             ) : (
               <span
-                className={`max-h-[5.5rem] overflow-hidden text-center font-black leading-snug tracking-[0.14em] ${
+                className={`flex max-h-[5.5rem] items-center justify-center overflow-hidden font-black leading-none tracking-wide ${
                   compact ? "text-xs" : "text-sm"
                 }`}
-                style={{ writingMode: "vertical-rl", textOrientation: "upright" }}
+                style={{
+                  writingMode: "vertical-rl",
+                  textOrientation: "upright",
+                  textAlign: "center",
+                }}
               >
                 {actionLabel}
               </span>
             )}
           </button>
         ) : (
-          <div className="relative z-10 flex max-h-full flex-col items-center justify-center gap-1 overflow-hidden text-[#E2C382]">
+          <div className="relative z-10 mx-auto flex max-h-full shrink-0 flex-col items-center justify-center gap-1 overflow-hidden text-[#E2C382]">
             {selected ? <CheckCircle2 className={`shrink-0 ${compact ? "h-4 w-4" : "h-5 w-5"}`} /> : null}
             <span
-              className={`max-h-[5.5rem] overflow-hidden text-center font-black leading-tight tracking-[0.14em] ${
+              className={`flex max-h-[5.5rem] items-center justify-center overflow-hidden font-black leading-none tracking-wide ${
                 compact ? "text-[11px]" : "text-xs"
               }`}
-              style={{ writingMode: "vertical-rl", textOrientation: "upright" }}
+              style={{
+                writingMode: "vertical-rl",
+                textOrientation: "upright",
+                textAlign: "center",
+              }}
             >
               {statusLabel || (selected ? "已选择" : "可使用")}
             </span>

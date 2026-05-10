@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useState, type ComponentPropsWithoutRef } from "react";
-import { ChevronRight, Gift, Heart, MapPin, Package, Palette, Settings, Star, Users, Ticket, Bell, HelpCircle, RotateCcw, Clock, Info, LogOut } from "lucide-react";
+import { ChevronRight, Gift, Heart, MapPin, Package, Palette, Settings, Star, Users, Ticket, Bell, HelpCircle, RotateCcw, Clock, Info, LogOut, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "@/stores/useUserStore";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -102,7 +102,7 @@ export default function Profile() {
   const siteInfo = useSiteInfo();
   const logoSrc = siteInfo.logoUrl || logoWebp;
   const siteName = siteInfo.siteName || "大马通";
-  const { nickname, avatar, pointsBalance, inviteCode, subordinateEnabled, loadProfile } = useUserStore();
+  const { nickname, avatar, pointsBalance, inviteCode, subordinateEnabled, memberLevel, loadProfile } = useUserStore();
   const authStore = useAuthStore();
   const { orders, loadOrders } = useOrderStore();
   const favoriteCount = useFavoritesStore((s) => s.favoriteIds.length);
@@ -265,7 +265,8 @@ export default function Profile() {
     { icon: Ticket, label: "优惠券", path: "/coupons", show: true },
     { icon: Star, label: "积分中心", path: "/points", show: true, hint: `${pointsBalance} 分` },
     { icon: Users, label: "邀请好友", path: "/invite", show: true, hint: subCount > 0 ? `${subCount} 位分享用户` : undefined },
-    { icon: Gift, label: "返现记录", path: "/rewards", show: subordinateEnabled },
+    /** 返现入口与「邀请开关」无关：上级返现入账、钱包支付等所有用户都可能用到 */
+    { icon: Gift, label: "返现记录", path: "/rewards", show: true },
   ].filter((m) => m.show);
 
   const miscItems = [
@@ -294,6 +295,10 @@ export default function Profile() {
                 </p>
                 <h2 className="truncate text-xl font-black leading-tight text-[var(--theme-text-on-surface)]">{nickname || "会员用户"}</h2>
                 <p className="mt-1 text-xs text-[var(--theme-text-muted-on-surface)]">邀请码: {inviteCode || "暂无"}</p>
+                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--theme-price)_35%,transparent)] bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] px-2.5 py-1 text-[11px] font-bold text-[var(--theme-price)]">
+                  <Crown size={13} />
+                  {memberLevel?.name || "普通会员"}
+                </div>
               </div>
             </div>
 

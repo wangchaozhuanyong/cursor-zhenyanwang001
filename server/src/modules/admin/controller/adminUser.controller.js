@@ -18,6 +18,31 @@ exports.getById = asyncRoute(async (req, res) => {
   res.success(r.data);
 });
 
+exports.listTags = asyncRoute(async (_req, res) => {
+  const r = await svc.listUserTags();
+  res.success(r.data);
+});
+
+exports.createTag = asyncRoute(async (req, res) => {
+  const r = await svc.createUserTag(req.body, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
+exports.updateTag = asyncRoute(async (req, res) => {
+  const r = await svc.updateUserTag(req.params.tagId, req.body, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
+exports.deleteTag = asyncRoute(async (req, res) => {
+  const r = await svc.deleteUserTag(req.params.tagId, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
+exports.setTags = asyncRoute(async (req, res) => {
+  const r = await svc.setUserTags(req.params.id, req.body, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
 exports.update = asyncRoute(async (req, res) => {
   const r = await svc.updateUser(req.params.id, req.body);
   res.success(r.data, r.message);

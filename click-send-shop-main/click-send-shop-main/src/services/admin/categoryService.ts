@@ -7,7 +7,7 @@ export async function fetchCategories(): Promise<Category[]> {
   return unwrapList<Category>(res.data);
 }
 
-export async function createCategory(data: Omit<Category, "id">) {
+export async function createCategory(data: Partial<Category> & Pick<Category, "name">) {
   const res = await categoryApi.createCategory(data);
   return res.data;
 }
@@ -19,4 +19,8 @@ export async function updateCategory(id: string, data: Partial<Category>) {
 
 export async function deleteCategory(id: string) {
   await categoryApi.deleteCategory(id);
+}
+
+export async function updateCategorySort(items: Array<{ id: string; parent_id?: string | null; sort_order: number }>) {
+  await categoryApi.updateCategorySort(items);
 }

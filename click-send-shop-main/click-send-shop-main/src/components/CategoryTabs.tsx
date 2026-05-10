@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 
 interface CategoryTabsProps {
-  categories: { id: string; name: string; icon?: string }[];
+  categories: { id: string; name: string; icon?: string; level?: number }[];
   activeId: string;
   onChange: (id: string) => void;
 }
@@ -34,6 +34,7 @@ export default function CategoryTabs({ categories, activeId, onChange }: Categor
               : "bg-secondary text-muted-foreground"
           }`}
         >
+          {cat.level ? <span className="mr-1 text-[10px] opacity-60">{"—".repeat(cat.level)}</span> : null}
           {cat.icon && <span className="mr-1">{cat.icon}</span>}
           {cat.name}
         </button>

@@ -134,26 +134,32 @@ async function insertSettlementRecord(conn, params) {
     [orderId, userId, level, sourceType],
   );
   if (existing) return false;
-  const [result] = await conn.query(
-    `INSERT INTO reward_records
-       (id, user_id, order_id, order_no, order_amount, amount, rate, level, status, source_type, remark, metadata, approved_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW())`,
-    [
-      id,
-      userId,
-      orderId,
-      orderNo,
-      orderAmount,
-      amount,
-      rate,
-      level,
-      status,
-      sourceType,
-      remark || '',
-      metadata ? JSON.stringify(metadata) : null,
-    ],
-  );
-  return result.affectedRows > 0;
+  try {
+    const [result] = await conn.query(
+      `INSERT INTO reward_records
+         (id, user_id, order_id, order_no, order_amount, amount, rate, level, status, source_type, remark, metadata, approved_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW())`,
+      [
+        id,
+        userId,
+        orderId,
+        orderNo,
+        orderAmount,
+        amount,
+        rate,
+        level,
+        status,
+        sourceType,
+        remark || '',
+        metadata ? JSON.stringify(metadata) : null,
+      ],
+    );
+    return result.affectedRows > 0;
+  } catch (err) {
+    /* 与 uk_reward_settle_once 并发时：预检与 INSERT 之间另一事务可能已写入 */
+    if (err && (err.code === 'ER_DUP_ENTRY' || err.errno === 1062)) return false;
+    throw err;
+  }
 }
 
 async function insertTransaction(conn, params) {

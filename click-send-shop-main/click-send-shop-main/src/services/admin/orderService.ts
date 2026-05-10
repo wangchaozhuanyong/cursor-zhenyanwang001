@@ -24,6 +24,11 @@ export async function shipOrder(id: string, trackingNo: string, carrier: string)
   return res.data;
 }
 
+export async function refreshOrderLogistics(id: string) {
+  const res = await orderApi.refreshOrderLogistics(id);
+  return res.data;
+}
+
 export async function exportOrdersCsv(params?: { status?: string; paymentStatus?: string; keyword?: string }) {
   const qs = new URLSearchParams();
   if (params?.status) qs.set("status", params.status);

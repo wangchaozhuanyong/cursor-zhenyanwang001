@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import * as userService from "@/services/admin/userService";
+import type { UserTag } from "@/types/user";
 
 /** 管理端用户列表行（与后端 JSON 字段一致，多为 snake_case） */
 export interface AdminUserListItem {
@@ -10,8 +11,14 @@ export interface AdminUserListItem {
   invite_code?: string;
   parent_invite_code?: string;
   points_balance?: number;
+  member_level_id?: string;
+  member_level_name?: string;
+  member_level_description?: string;
+  member_level_min_spent?: number;
+  member_level_min_orders?: number;
   subordinate_enabled?: boolean | number;
   created_at?: string;
+  tags?: UserTag[];
 }
 
 const initialState = {
@@ -21,6 +28,7 @@ const initialState = {
   pageSize: 20,
   loading: true,
   search: "",
+  selectedTagId: "",
 };
 
 interface AdminUsersState {
@@ -30,10 +38,12 @@ interface AdminUsersState {
   pageSize: number;
   loading: boolean;
   search: string;
+  selectedTagId: string;
   setSearch: (v: string) => void;
+  setSelectedTagId: (v: string) => void;
   setPage: (v: number) => void;
   setPageSize: (v: number) => void;
-  loadUsers: (params?: { page?: number; pageSize?: number; keyword?: string }) => Promise<void>;
+  loadUsers: (params?: { page?: number; pageSize?: number; keyword?: string; tagId?: string }) => Promise<void>;
   reset: () => void;
 }
 
@@ -41,6 +51,7 @@ export const useAdminUsersStore = create<AdminUsersState>((set) => ({
   ...initialState,
 
   setSearch: (search) => set({ search }),
+  setSelectedTagId: (selectedTagId) => set({ selectedTagId }),
   setPage: (page) => set({ page }),
   setPageSize: (pageSize) => set({ pageSize }),
 
@@ -53,7 +64,8 @@ export const useAdminUsersStore = create<AdminUsersState>((set) => ({
       const page = params.page ?? state.page;
       const pageSize = params.pageSize ?? state.pageSize;
       const keyword = params.keyword ?? state.search;
-      const p = await userService.fetchUsers({ page, pageSize, keyword: keyword || undefined });
+      const tagId = params.tagId ?? state.selectedTagId;
+      const p = await userService.fetchUsers({ page, pageSize, keyword: keyword || undefined, tagId: tagId || undefined });
       set({
         users: p.list as AdminUserListItem[],
         total: p.total,

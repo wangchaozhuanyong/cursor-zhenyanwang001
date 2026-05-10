@@ -6,7 +6,10 @@ import { useProductStore } from "@/stores/useProductStore";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Clock, X } from "lucide-react";
+import { Clock, Search as SearchIcon, TrendingUp, X } from "lucide-react";
+import { flattenCategories } from "@/utils/categoryTree";
+import { fetchHotSearchTerms, fetchSearchSuggestions, trackSearchKeyword } from "@/services/searchService";
+import type { HotSearchTerm, SearchSuggestion } from "@/types/search";
 
 const HISTORY_KEY = "search_history";
 const MAX_HISTORY = 10;
@@ -28,7 +31,10 @@ export default function Search() {
   const [activeCat, setActiveCat] = useState("all");
   const [history, setHistory] = useState<string[]>(getHistory);
   const [showHistory, setShowHistory] = useState(true);
+  const [hotTerms, setHotTerms] = useState<HotSearchTerm[]>([]);
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const suggestDebounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const {
     products,
@@ -44,6 +50,12 @@ export default function Search() {
   }, [loadCategories]);
 
   useEffect(() => {
+    fetchHotSearchTerms(10)
+      .then(setHotTerms)
+      .catch(() => setHotTerms([]));
+  }, []);
+
+  useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setDebouncedQuery(query);
@@ -51,6 +63,23 @@ export default function Search() {
     }, 400);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [query]);
+
+  useEffect(() => {
+    if (suggestDebounceRef.current) clearTimeout(suggestDebounceRef.current);
+    const term = query.trim();
+    if (!term) {
+      setSuggestions([]);
+      return;
+    }
+    suggestDebounceRef.current = setTimeout(() => {
+      fetchSearchSuggestions(term, 8)
+        .then(setSuggestions)
+        .catch(() => setSuggestions([]));
+    }, 220);
+    return () => {
+      if (suggestDebounceRef.current) clearTimeout(suggestDebounceRef.current);
     };
   }, [query]);
 
@@ -71,6 +100,17 @@ export default function Search() {
     setHistory(newList);
   }, []);
 
+  const commitSearch = useCallback((term: string) => {
+    const trimmed = term.trim();
+    if (!trimmed) return;
+    setQuery(trimmed);
+    setDebouncedQuery(trimmed);
+    setShowHistory(false);
+    setSuggestions([]);
+    addToHistory(trimmed);
+    trackSearchKeyword(trimmed).catch(() => {});
+  }, [addToHistory]);
+
   const handleSearch = useCallback(
     (val: string) => {
       setQuery(val);
@@ -83,20 +123,15 @@ export default function Search() {
 
   const handleSubmit = useCallback(() => {
     if (query.trim()) {
-      addToHistory(query.trim());
-      setDebouncedQuery(query.trim());
-      setShowHistory(false);
+      commitSearch(query.trim());
     }
-  }, [query, addToHistory]);
+  }, [query, commitSearch]);
 
   const selectHistory = useCallback(
     (term: string) => {
-      setQuery(term);
-      setDebouncedQuery(term);
-      setShowHistory(false);
-      addToHistory(term);
+      commitSearch(term);
     },
-    [addToHistory],
+    [commitSearch],
   );
 
   const clearHistory = useCallback(() => {
@@ -108,9 +143,10 @@ export default function Search() {
     setActiveCat(id);
   }, []);
 
-  const allCategories = [{ id: "all", name: "全部" }, ...categories];
+  const allCategories = [{ id: "all", name: "全部", level: 0 }, ...flattenCategories(categories)];
 
-  const shouldShowHistory = showHistory && !debouncedQuery && history.length > 0;
+  const shouldShowDiscovery = showHistory && !debouncedQuery && !query.trim();
+  const shouldShowSuggestions = query.trim().length > 0 && suggestions.length > 0 && query.trim() !== debouncedQuery.trim();
 
   return (
     <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-20">
@@ -136,40 +172,83 @@ export default function Search() {
       </div>
 
       <main className="mx-auto max-w-lg px-4 py-6">
-        {shouldShowHistory && (
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                <Clock size={14} className="text-muted-foreground" /> 搜索历史
-              </h3>
+        {shouldShowDiscovery && (
+          <div className="mb-6 space-y-6">
+            {history.length > 0 && (
+              <section>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                    <Clock size={14} className="text-muted-foreground" /> 搜索历史
+                  </h3>
+                  <button
+                    onClick={clearHistory}
+                    className="text-xs text-muted-foreground hover:text-destructive"
+                  >
+                    清空
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {history.map((term) => (
+                    <button
+                      key={term}
+                      onClick={() => selectHistory(term)}
+                      className="flex items-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs text-[var(--theme-text)] transition-colors"
+                    >
+                      {term}
+                      <X
+                        size={12}
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const newList = history.filter((h) => h !== term);
+                          saveHistory(newList);
+                          setHistory(newList);
+                        }}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {hotTerms.length > 0 && (
+              <section>
+                <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                  <TrendingUp size={14} className="text-gold" /> 热门搜索
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {hotTerms.map((term) => (
+                    <button
+                      key={term.keyword}
+                      onClick={() => commitSearch(term.keyword)}
+                      className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs text-[var(--theme-text)]"
+                    >
+                      {term.keyword}
+                      <span className="ml-1 text-[10px] text-muted-foreground">{term.search_count}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        )}
+
+        {shouldShowSuggestions && (
+          <div className="mb-5 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)]">
+            {suggestions.map((item) => (
               <button
-                onClick={clearHistory}
-                className="text-xs text-muted-foreground hover:text-destructive"
+                key={`${item.source}-${item.keyword}`}
+                type="button"
+                onClick={() => commitSearch(item.keyword)}
+                className="flex w-full items-center gap-2 border-b border-[var(--theme-border)] px-4 py-3 text-left text-sm text-foreground last:border-0"
               >
-                清空
+                <SearchIcon size={14} className="text-muted-foreground" />
+                <span className="flex-1">{item.keyword}</span>
+                <span className="text-[10px] text-muted-foreground">
+                  {item.source === "term" ? "热搜" : "商品"}
+                </span>
               </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {history.map((term) => (
-                <button
-                  key={term}
-                  onClick={() => selectHistory(term)}
-                  className="flex items-center gap-1 rounded-full bg-[var(--theme-surface)] border border-[var(--theme-border)] px-3 py-1.5 text-xs text-[var(--theme-text)] transition-colors"
-                >
-                  {term}
-                  <X
-                    size={12}
-                    className="text-muted-foreground hover:text-destructive"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const newList = history.filter((h) => h !== term);
-                      saveHistory(newList);
-                      setHistory(newList);
-                    }}
-                  />
-                </button>
-              ))}
-            </div>
+            ))}
           </div>
         )}
 
@@ -179,7 +258,7 @@ export default function Search() {
           </div>
         )}
 
-        {!shouldShowHistory && (
+        {!shouldShowDiscovery && (
           <>
             <div className="grid grid-cols-2 gap-4">
               {loading

@@ -1,5 +1,5 @@
 ﻿/* eslint-disable @typescript-eslint/no-explicit-any */
-import { ArrowLeft, Upload, ImagePlus, Loader2, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, Upload, ImagePlus, Loader2, Trash2, Plus, Video } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_PRODUCT_LAYOUT } from "@/constants/imageUploadHints";
 import { productTagBadgeClass } from "@/utils/productTagBadge";
+import { flattenCategories } from "@/utils/categoryTree";
 import type { ProductTag } from "@/types/product";
 
 export default function AdminProductForm() {
@@ -35,6 +36,7 @@ export default function AdminProductForm() {
     sort_order: "",
     description: "",
     cover_image: "",
+    video_url: "",
     images: [] as string[],
     status: "active" as "draft" | "active" | "inactive",
     is_hot: false,
@@ -102,6 +104,7 @@ export default function AdminProductForm() {
               sort_order: data.sort_order?.toString() || "",
               description: data.description || "",
               cover_image: data.cover_image || "",
+              video_url: data.video_url || "",
               images: data.images || [],
               status: st,
               is_hot: !!data.is_hot,
@@ -135,6 +138,33 @@ export default function AdminProductForm() {
       toast.success("图片已上传");
     } catch (e) {
       toast.error(toastErrorMessage(e, "图片上传失败"));
+    }
+  };
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const allowed = ["video/mp4", "video/webm", "video/quicktime", "video/x-m4v"];
+    if (!allowed.includes(file.type)) {
+      toast.error("视频仅支持 MP4、WebM、MOV 格式");
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("视频大小不能超过 50MB");
+      return;
+    }
+    try {
+      const res = await uploadService.uploadSingle(file);
+      const url = res.url || "";
+      if (!url) {
+        toast.error("服务器未返回视频地址，请检查存储配置或稍后重试");
+        return;
+      }
+      setForm((f) => ({ ...f, video_url: url }));
+      toast.success("视频已上传");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "视频上传失败"));
     }
   };
 
@@ -176,6 +206,7 @@ export default function AdminProductForm() {
         sort_order: parseInt(form.sort_order, 10) || 0,
         description: form.description,
         cover_image: form.cover_image,
+        video_url: form.video_url.trim(),
         images: form.images,
         status: publish ? "active" : form.status,
         is_hot: form.is_hot,
@@ -221,6 +252,8 @@ export default function AdminProductForm() {
       </div>
     );
   }
+
+  const categoryOptions = flattenCategories(categories as any);
 
   return (
     <div className="space-y-6">
@@ -278,6 +311,51 @@ export default function AdminProductForm() {
                   )}
                 </div>
               </div>
+              <div className="rounded-xl border border-border bg-background/50 p-4">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground">详情视频（可选）</label>
+                    <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
+                      仅在商品详情页图集展示，商品卡不展示。支持 MP4 / WebM / MOV，单个视频最大 50MB；建议使用 H.264 MP4 以获得最佳兼容性。
+                    </p>
+                  </div>
+                  {form.video_url && (
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, video_url: "" }))}
+                      className="shrink-0 text-xs text-destructive hover:underline"
+                    >
+                      清除
+                    </button>
+                  )}
+                </div>
+                <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+                  <input
+                    value={form.video_url}
+                    onChange={(e) => setForm({ ...form, video_url: e.target.value })}
+                    placeholder="填写视频 URL，或点击右侧上传"
+                    className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                  />
+                  <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-3 text-sm font-medium text-foreground hover:border-gold/50 hover:bg-secondary">
+                    <Video size={16} />
+                    上传视频
+                    <input
+                      type="file"
+                      accept="video/mp4,video/webm,video/quicktime,video/x-m4v,.mp4,.webm,.mov,.m4v"
+                      className="hidden"
+                      onChange={handleVideoUpload}
+                    />
+                  </label>
+                </div>
+                {form.video_url ? (
+                  <video
+                    src={form.video_url}
+                    className="mt-3 aspect-video w-full max-w-md rounded-lg bg-black object-contain"
+                    controls
+                    preload="metadata"
+                  />
+                ) : null}
+              </div>
             </div>
           </div>
 
@@ -327,8 +405,11 @@ export default function AdminProductForm() {
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">分类</label>
                 <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none">
                   <option value="">选择分类</option>
-                  {categories.map((c: any) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
+                  {categoryOptions.map((c: any) => (
+                    <option key={c.id} value={c.id}>
+                      {"　".repeat(c.level)}
+                      {c.name}
+                    </option>
                   ))}
                 </select>
               </div>

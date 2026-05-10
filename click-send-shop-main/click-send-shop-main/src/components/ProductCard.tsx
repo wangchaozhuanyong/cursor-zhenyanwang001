@@ -50,6 +50,11 @@ export default function ProductCard({ product, index = 0 }: Props) {
           imgClassName="h-full w-full transition-all duration-300 ease-in-out group-hover:scale-105 [object-fit:var(--theme-image-fit,cover)]"
         />
         <div className="absolute left-2 top-2 flex gap-1">
+          {product.active_activity && (
+            <span className="theme-rounded bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white theme-shadow">
+              {product.active_activity.type === "flash_sale" ? "秒杀" : "满减"}
+            </span>
+          )}
           {product.is_hot && (
             <span className="theme-rounded bg-[var(--theme-price)] px-2 py-0.5 text-[10px] font-bold text-[var(--theme-price-foreground)] theme-shadow">
               热销
@@ -109,6 +114,14 @@ export default function ProductCard({ product, index = 0 }: Props) {
                   </span>
                 )}
             </div>
+            {product.active_activity && (
+              <div className={`mt-1 text-[10px] font-semibold text-red-600 ${cardCenter ? "text-center" : ""}`}>
+                {product.active_activity.title}
+                {product.active_activity.type === "full_reduction" && product.activity_promo_label ? (
+                  <span className="ml-1 opacity-90">· {product.activity_promo_label}</span>
+                ) : null}
+              </div>
+            )}
             <div className={`mt-1 flex flex-wrap items-center gap-2 text-[10px] text-[var(--theme-text-muted)] ${cardCenter ? "justify-center" : ""}`}>
               <span>+{product.points}积分</span>
               {typeof product.sales_count === "number" && product.sales_count > 0 && (

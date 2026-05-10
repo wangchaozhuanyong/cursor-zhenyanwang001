@@ -14,6 +14,7 @@ import {
   LogOut,
   Menu,
   Bell,
+  Megaphone,
   Search,
   ChevronDown,
   ChevronRight,
@@ -35,6 +36,7 @@ import {
   MessageSquareMore,
   Palette,
   CreditCard,
+  Crown,
 } from "lucide-react";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { isAdminAuthenticated, adminLogout, fetchAdminProfile } from "@/services/admin/accountService";
@@ -67,6 +69,7 @@ const navItemsRaw: NavItem[] = [
     permission: "product.view",
     children: [
       { icon: FolderTree, label: "分类管理", path: "/admin/categories", permission: "product.view" },
+      { icon: Package, label: "库存管理", path: "/admin/inventory", permission: "inventory.manage" },
       { icon: Tags, label: "标签管理", path: "/admin/tags", permission: "product.view" },
     ],
   },
@@ -85,7 +88,16 @@ const navItemsRaw: NavItem[] = [
   },
   { icon: RotateCcw, label: "售后管理", path: "/admin/returns", permission: "return.view" },
   { icon: MessageSquareMore, label: "评论管理", path: "/admin/reviews", permission: "review.manage" },
-  { icon: Users, label: "用户管理", path: "/admin/users", permission: "user.view" },
+  {
+    icon: Users,
+    label: "用户管理",
+    path: "/admin/users",
+    permission: "user.view",
+    children: [
+      { icon: Users, label: "用户列表", path: "/admin/users", permission: "user.view" },
+      { icon: Crown, label: "会员等级", path: "/admin/member-levels", permission: "member_level.manage" },
+    ],
+  },
   { icon: Link2, label: "邀请管理", path: "/admin/invites", permission: "invite.view" },
   { icon: Gift, label: "返现记录", path: "/admin/rewards", permission: "referral.manage" },
   { icon: Star, label: "积分明细", path: "/admin/points/records", permission: "points.manage" },
@@ -99,8 +111,10 @@ const navItemsRaw: NavItem[] = [
       { icon: ClipboardList, label: "领券记录", path: "/admin/coupons/records", permission: "coupon.view" },
     ],
   },
+  { icon: Megaphone, label: "活动管理", path: "/admin/marketing/activities", permission: "activity.manage" },
   { icon: Bell, label: "通知管理", path: "/admin/notifications", permission: "notification.manage" },
   { icon: Image, label: "Banner管理", path: "/admin/banners", permission: "banner.manage" },
+  { icon: Megaphone, label: "首页运营", path: "/admin/home-ops", permission: "home_ops.manage" },
   { icon: BarChart3, label: "数据报表", path: "/admin/reports", permission: "report.view" },
   { icon: FileText, label: "导出中心", path: "/admin/exports", permission: "report.export" },
   {

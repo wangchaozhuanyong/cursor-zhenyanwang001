@@ -40,6 +40,8 @@ function formatOrder(row, items) {
     payment_time: row.payment_time || null,
     payment_channel: row.payment_channel || '',
     payment_transaction_no: row.payment_transaction_no || '',
+    tracking_no: row.tracking_no || '',
+    carrier: row.carrier || '',
     note: row.note || '',
     created_at: row.created_at,
     contact_name: row.contact_name,

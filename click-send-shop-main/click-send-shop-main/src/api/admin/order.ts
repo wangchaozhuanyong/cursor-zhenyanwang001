@@ -1,4 +1,4 @@
-import { get, put } from "../request";
+import { get, post, put } from "../request";
 import type { Order, OrderListParams } from "@/types/order";
 import type { PaginatedData } from "@/types/common";
 
@@ -16,4 +16,8 @@ export function updateOrderStatus(id: string, status: string, remark?: string) {
 
 export function shipOrder(id: string, trackingNo: string, carrier: string) {
   return put<Order>(`/admin/orders/${id}/ship`, { trackingNo, carrier });
+}
+
+export function refreshOrderLogistics(id: string) {
+  return post<Pick<Order, "logistics_provider" | "logistics_timeline">>(`/admin/orders/${id}/logistics/refresh`);
 }

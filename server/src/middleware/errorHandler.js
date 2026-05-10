@@ -14,7 +14,7 @@ const { ZodError } = require('zod');
 const { AppError } = require('../errors');
 
 /**
- * @param {Error & { statusCode?: number; status?: number; code?: any; expose?: boolean; details?: any }} err
+ * @param {Error & { statusCode?: number; status?: number; code?: any; errno?: number; sqlState?: string; sqlMessage?: string; expose?: boolean; details?: any }} err
  * @param {import('express').Request & { traceId?: string }} req
  * @param {import('express').Response} res
  * @param {import('express').NextFunction} _next

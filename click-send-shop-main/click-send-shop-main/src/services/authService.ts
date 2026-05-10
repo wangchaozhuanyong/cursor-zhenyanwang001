@@ -1,6 +1,13 @@
 import * as authApi from "@/api/modules/auth";
 import { setTokens, clearTokens, isLoggedIn } from "@/utils/token";
-import type { LoginParams, RegisterParams, LoginResult } from "@/types/auth";
+import type {
+  LoginParams,
+  RegisterParams,
+  LoginResult,
+  OtpSendParams,
+  OtpLoginParams,
+  OAuthExchangeParams,
+} from "@/types/auth";
 import type { UserProfile } from "@/types/user";
 
 export async function login(params: LoginParams): Promise<LoginResult> {
@@ -34,10 +41,30 @@ export async function resetPassword(params: { token: string; newPassword: string
   await authApi.resetPassword(params);
 }
 
+export async function sendOtp(params: OtpSendParams) {
+  const res = await authApi.sendOtp(params);
+  return res.data;
+}
+
+export async function loginWithOtp(params: OtpLoginParams): Promise<LoginResult> {
+  const res = await authApi.loginWithOtp(params);
+  const { accessToken, refreshToken } = res.data.token;
+  setTokens(accessToken, refreshToken);
+  return res.data;
+}
+
+export async function exchangeOAuthTicket(params: OAuthExchangeParams): Promise<LoginResult> {
+  const res = await authApi.exchangeOAuthTicket(params);
+  const { accessToken, refreshToken } = res.data.token;
+  setTokens(accessToken, refreshToken);
+  return res.data;
+}
+
 /** 后端返回 snake_case，前端统一用 camelCase */
 export async function getProfile(): Promise<UserProfile> {
   const res = await authApi.getProfile();
   const d = res.data as Record<string, unknown>;
+  const memberLevelId = (d.member_level_id ?? d.memberLevelId ?? "") as string;
   return {
     id: (d.id ?? d.userId ?? "") as string,
     nickname: (d.nickname ?? "") as string,
@@ -49,6 +76,15 @@ export async function getProfile(): Promise<UserProfile> {
     parentInviteCode: (d.parentInviteCode ?? d.parent_invite_code ?? "") as string,
     pointsBalance: Number(d.pointsBalance ?? d.points_balance ?? 0),
     subordinateEnabled: Boolean(d.subordinateEnabled ?? d.subordinate_enabled ?? false),
+    memberLevel: memberLevelId
+      ? {
+        id: memberLevelId,
+        name: (d.member_level_name ?? d.memberLevelName ?? "会员") as string,
+        description: (d.member_level_description ?? d.memberLevelDescription ?? "") as string,
+        min_spent: Number(d.member_level_min_spent ?? d.memberLevelMinSpent ?? 0),
+        min_orders: Number(d.member_level_min_orders ?? d.memberLevelMinOrders ?? 0),
+      }
+      : null,
   };
 }
 

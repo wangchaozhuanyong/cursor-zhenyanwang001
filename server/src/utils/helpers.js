@@ -91,6 +91,7 @@ function formatProduct(row) {
     id: row.id,
     name: row.name,
     cover_image: row.cover_image,
+    video_url: row.video_url || '',
     images: parseProductImages(row.images),
     price: parseFloat(row.price),
     original_price: row.original_price != null ? parseFloat(row.original_price) : null,

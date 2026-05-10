@@ -6,7 +6,7 @@ import { useCartStore } from "@/stores/useCartStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useHistoryStore } from "@/stores/useHistoryStore";
 import { useOrderStore } from "@/stores/useOrderStore";
-import type { LoginParams, RegisterParams } from "@/types/auth";
+import type { LoginParams, RegisterParams, OtpLoginParams, OAuthExchangeParams } from "@/types/auth";
 import type { CartItem } from "@/types/cart";
 import { registerAuthExpiredHandler } from "@/lib/authSessionBridge";
 
@@ -17,6 +17,8 @@ interface AuthState {
 
   login: (params: LoginParams) => Promise<void>;
   register: (params: RegisterParams) => Promise<void>;
+  loginWithOtp: (params: OtpLoginParams) => Promise<void>;
+  completeOAuthLogin: (params: OAuthExchangeParams) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
@@ -59,6 +61,42 @@ export const useAuthStore = create<AuthState>()(
           set({
             loading: false,
             error: e instanceof Error ? e.message : "注册失败",
+          });
+          throw e;
+        }
+      },
+
+      loginWithOtp: async (params) => {
+        const localCartSnapshot: CartItem[] = [...useCartStore.getState().items];
+        set({ loading: true, error: null });
+        try {
+          await authService.loginWithOtp(params);
+          set({ isAuthenticated: true });
+          await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
+          await useUserStore.getState().loadProfile();
+          set({ loading: false });
+        } catch (e) {
+          set({
+            loading: false,
+            error: e instanceof Error ? e.message : "登录失败",
+          });
+          throw e;
+        }
+      },
+
+      completeOAuthLogin: async (params) => {
+        const localCartSnapshot: CartItem[] = [...useCartStore.getState().items];
+        set({ loading: true, error: null });
+        try {
+          await authService.exchangeOAuthTicket(params);
+          set({ isAuthenticated: true });
+          await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
+          await useUserStore.getState().loadProfile();
+          set({ loading: false });
+        } catch (e) {
+          set({
+            loading: false,
+            error: e instanceof Error ? e.message : "登录失败",
           });
           throw e;
         }

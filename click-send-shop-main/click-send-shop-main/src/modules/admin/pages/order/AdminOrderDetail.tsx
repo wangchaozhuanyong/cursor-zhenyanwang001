@@ -1,10 +1,10 @@
 ﻿/* eslint-disable @typescript-eslint/no-explicit-any */
-import { ArrowLeft, MessageSquare, Copy, Check, Loader2, Truck } from "lucide-react";
+import { ArrowLeft, MessageSquare, Copy, Check, Loader2, Truck, RefreshCw, MapPin } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useGoBack } from "@/hooks/useGoBack";
-import { fetchOrderById, updateOrderStatus, shipOrder } from "@/services/admin/orderService";
+import { fetchOrderById, updateOrderStatus, shipOrder, refreshOrderLogistics } from "@/services/admin/orderService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { copyToClipboard } from "@/utils/clipboard";
@@ -32,6 +32,7 @@ export default function AdminOrderDetail() {
   const [showShipForm, setShowShipForm] = useState(false);
   const [trackingNo, setTrackingNo] = useState("");
   const [carrier, setCarrier] = useState("J&T Express");
+  const [refreshingLogistics, setRefreshingLogistics] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -69,7 +70,22 @@ export default function AdminOrderDetail() {
     }
   };
 
+  const handleRefreshLogistics = async () => {
+    if (!id) return;
+    setRefreshingLogistics(true);
+    try {
+      const data = await refreshOrderLogistics(id);
+      setOrder((prev: any) => prev ? { ...prev, ...data } : prev);
+      toast.success("物流轨迹已刷新");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "刷新物流失败"));
+    } finally {
+      setRefreshingLogistics(false);
+    }
+  };
+
   const items = order?.items || [];
+  const logisticsTimeline = order?.logistics_timeline || [];
   const isCancelled = order?.status === ORDER_STATUS.CANCELLED;
   const isRefund = order?.status === ORDER_STATUS.REFUNDING || order?.status === ORDER_STATUS.REFUNDED;
   const currentStatusIdx = allStatuses.indexOf(order?.status as (typeof allStatuses)[number]);
@@ -231,7 +247,60 @@ export default function AdminOrderDetail() {
                   <span className="text-muted-foreground">快递单号</span>
                   <span className="font-mono text-foreground">{order.tracking_no}</span>
                 </div>
+                {order.logistics_provider?.tracking_url && (
+                  <a
+                    href={order.logistics_provider.tracking_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block text-right text-xs text-[var(--theme-price)] underline"
+                  >
+                    打开承运商官网查询
+                  </a>
+                )}
               </>
+            )}
+          </div>
+
+          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 space-y-4 theme-shadow">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold text-foreground">物流轨迹</h3>
+              {order.tracking_no && (
+                <PermissionGate permission="order.ship">
+                  <button
+                    type="button"
+                    onClick={handleRefreshLogistics}
+                    disabled={refreshingLogistics}
+                    className="flex items-center gap-1 rounded-lg border border-[var(--theme-border)] px-2.5 py-1.5 text-xs text-foreground hover:bg-[var(--theme-bg)] disabled:opacity-50"
+                  >
+                    <RefreshCw size={12} className={refreshingLogistics ? "animate-spin" : ""} />
+                    刷新
+                  </button>
+                </PermissionGate>
+              )}
+            </div>
+            {logisticsTimeline.length > 0 ? (
+              <div className="space-y-4">
+                {logisticsTimeline.map((track: any, idx: number) => (
+                  <div key={track.id || idx} className="relative pl-5">
+                    <span className="absolute left-0 top-1.5 h-2.5 w-2.5 rounded-full bg-[var(--theme-price)]" />
+                    {idx < logisticsTimeline.length - 1 && <span className="absolute left-1 top-4 h-full w-px bg-[var(--theme-border)]" />}
+                    <p className="text-sm font-medium text-foreground">{track.title}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{track.description}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                      <span>{new Date(track.event_time).toLocaleString("en-MY")}</span>
+                      {track.location && (
+                        <span className="inline-flex items-center gap-1">
+                          <MapPin size={11} /> {track.location}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {order.tracking_no ? "暂无轨迹，请点击刷新获取。" : "发货并填写运单号后可查看物流轨迹。"}
+              </p>
             )}
           </div>
 

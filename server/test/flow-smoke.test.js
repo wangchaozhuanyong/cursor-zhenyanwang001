@@ -39,10 +39,14 @@ describe('local flow smoke', () => {
 
     const products = await request(app)
       .get('/api/products')
-      .query({ pageSize: 1 })
+      .query({ pageSize: 50 })
       .expect(200);
     assert.equal(products.body.code, 0);
-    if (!products.body.data?.list?.length) {
+    const productList = products.body.data?.list || [];
+    const inStock = productList.find((p) => Number(p?.stock) > 0);
+    if (inStock) {
+      productId = inStock.id;
+    } else {
       smokeProductId = randomUUID();
       await db.query(
         `INSERT INTO products
@@ -64,12 +68,8 @@ describe('local flow smoke', () => {
           1,
         ],
       );
+      productId = smokeProductId;
     }
-    const productList = products.body.data?.list?.length
-      ? products.body.data.list
-      : (await request(app).get('/api/products').query({ pageSize: 1 }).expect(200)).body.data?.list;
-    assert.ok(productList?.length, 'seed 应有至少一个可见商品');
-    productId = productList[0].id;
 
     let shipping = await request(app)
       .get('/api/shipping')
@@ -160,6 +160,49 @@ describe('local flow smoke', () => {
     assert.equal(userOrder.body.data.payment_status, 'paid');
   });
 
+  test('logistics: ship + admin refresh returns timeline on user order detail', async () => {
+    const adminLogin = await request(app)
+      .post('/api/admin/auth/login')
+      .send({ phone, countryCode, password })
+      .expect(200);
+    assert.equal(adminLogin.body.code, 0);
+    const adminToken =
+      typeof adminLogin.body.data.token === 'string'
+        ? adminLogin.body.data.token
+        : adminLogin.body.data.token.accessToken;
+
+    const ship = await request(app)
+      .put(`/api/admin/orders/${orderId}/ship`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ trackingNo: 'MYTRACK-SMOKE-001', carrier: 'J&T Express' })
+      .expect(200);
+    assert.equal(ship.body.code, 0);
+
+    const refresh = await request(app)
+      .post(`/api/admin/orders/${orderId}/logistics/refresh`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({})
+      .expect(200);
+    assert.equal(refresh.body.code, 0);
+    assert.ok(Array.isArray(refresh.body.data.logistics_timeline));
+    assert.ok(
+      refresh.body.data.logistics_timeline.length > 0,
+      '刷新后应有物流轨迹节点',
+    );
+    assert.ok(refresh.body.data.logistics_provider?.tracking_url);
+
+    const userOrder = await request(app)
+      .get(`/api/orders/${orderId}`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .expect(200);
+    assert.equal(userOrder.body.code, 0);
+    assert.ok(
+      Array.isArray(userOrder.body.data.logistics_timeline)
+        && userOrder.body.data.logistics_timeline.length > 0,
+      '用户订单详情应带上物流时间线',
+    );
+  });
+
   test('cart: DELETE /api/cart clears cart (static route before /:productId)', async () => {
     await request(app)
       .post('/api/cart')
@@ -205,8 +248,25 @@ describe('local flow smoke', () => {
     assert.ok(typeof quote.body.data.shipping_fee === 'number');
   });
 
+  test('search: hot / suggest / track respond successfully', async () => {
+    const hot = await request(app).get('/api/search/hot').expect(200);
+    assert.equal(hot.body.code, 0);
+    assert.ok(Array.isArray(hot.body.data));
+
+    const sug = await request(app).get('/api/search/suggest').query({ keyword: 'a' }).expect(200);
+    assert.equal(sug.body.code, 0);
+    assert.ok(Array.isArray(sug.body.data));
+
+    const tr = await request(app)
+      .post('/api/search/track')
+      .send({ keyword: 'flow-smoke', source: 'test' })
+      .expect(200);
+    assert.equal(tr.body.code, 0);
+  });
+
   after(async () => {
     if (smokeProductId) {
+      await db.query('DELETE FROM inventory_stock_records WHERE product_id = ?', [smokeProductId]).catch(() => {});
       await db.query('DELETE FROM products WHERE id = ?', [smokeProductId]);
     }
   });

@@ -84,9 +84,9 @@ export default function Rewards() {
         <div className="rounded-xl bg-primary p-6 text-center">
           <Gift size={32} className="mx-auto text-gold" />
           <p className="mt-2 text-xs text-primary-foreground/70">可提现余额</p>
-          <p className="text-4xl font-bold text-gold">RM {balance}</p>
+          <p className="text-4xl font-bold text-gold">RM {Number(balance).toFixed(2)}</p>
           {pendingAmount > 0 && (
-            <p className="mt-1 text-xs text-primary-foreground/50">待审核：RM {pendingAmount}</p>
+            <p className="mt-1 text-xs text-primary-foreground/50">待审核：RM {Number(pendingAmount).toFixed(2)}</p>
           )}
           <button
             onClick={handleWithdraw}

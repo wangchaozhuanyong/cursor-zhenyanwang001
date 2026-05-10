@@ -1,5 +1,6 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Play } from "lucide-react";
 
 import { PRODUCT_BLUR_PLACEHOLDER } from "@/constants/productBlurPlaceholder";
 import { ProgressiveImage } from "@/modules/micro-interactions";
@@ -7,12 +8,27 @@ import { ProgressiveImage } from "@/modules/micro-interactions";
 interface ProductImageGalleryProps {
   images: string[];
   name: string;
+  videoUrl?: string;
 }
 
-export default function ProductImageGallery({ images, name }: ProductImageGalleryProps) {
+type GalleryItem = {
+  type: "image" | "video";
+  url: string;
+};
+
+export default function ProductImageGallery({ images, name, videoUrl }: ProductImageGalleryProps) {
+  const media: GalleryItem[] = [
+    ...(videoUrl ? [{ type: "video" as const, url: videoUrl }] : []),
+    ...images.map((url) => ({ type: "image" as const, url })),
+  ];
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
   const [touchStart, setTouchStart] = useState(0);
+  const currentItem = media[current];
+
+  useEffect(() => {
+    if (current >= media.length) setCurrent(Math.max(0, media.length - 1));
+  }, [current, media.length]);
 
   const goTo = useCallback(
     (index: number) => {
@@ -26,7 +42,7 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
   const handleTouchEnd = (e: React.TouchEvent) => {
     const diff = touchStart - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 50) {
-      if (diff > 0 && current < images.length - 1) goTo(current + 1);
+      if (diff > 0 && current < media.length - 1) goTo(current + 1);
       else if (diff < 0 && current > 0) goTo(current - 1);
     }
   };
@@ -37,7 +53,7 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
     exit: (d: number) => ({ x: d > 0 ? "-100%" : "100%", opacity: 0 }),
   };
 
-  if (images.length === 0) {
+  if (media.length === 0) {
     return (
       <div className="relative">
         <div
@@ -59,7 +75,7 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
       >
         <AnimatePresence initial={false} custom={direction} mode="popLayout">
           <motion.div
-            key={current}
+            key={`${currentItem.type}-${currentItem.url}`}
             className="absolute inset-0 h-full w-full"
             custom={direction}
             variants={variants}
@@ -68,28 +84,39 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
             exit="exit"
             transition={{ duration: 0.3, ease: "easeInOut" }}
           >
-            <ProgressiveImage
-              src={images[current]}
-              blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
-              alt={`${name} ${current + 1}`}
-              className="h-full w-full bg-transparent"
-              imgClassName="h-full w-full [object-fit:var(--theme-image-fit,cover)]"
-              {...(current === 0 ? { fetchPriority: "high" as const } : {})}
-            />
+            {currentItem.type === "video" ? (
+              <video
+                src={currentItem.url}
+                className="h-full w-full bg-black object-contain"
+                controls
+                playsInline
+                preload="metadata"
+                aria-label={`${name} 视频`}
+              />
+            ) : (
+              <ProgressiveImage
+                src={currentItem.url}
+                blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
+                alt={`${name} ${current + 1}`}
+                className="h-full w-full bg-transparent"
+                imgClassName="h-full w-full [object-fit:var(--theme-image-fit,cover)]"
+                {...(current === 0 ? { fetchPriority: "high" as const } : {})}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
 
         {/* Counter — 叠在图上：用主题表面色与边框，避免固定 foreground/background */}
         <div className="absolute bottom-3 right-3 rounded-full border border-[color-mix(in_srgb,var(--theme-border)_60%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_88%,transparent)] px-2.5 py-1 text-[11px] font-medium text-[var(--theme-text-on-surface)] shadow-sm backdrop-blur-sm">
-          {current + 1} / {images.length}
+          {current + 1} / {media.length}
         </div>
       </div>
 
       {/* Thumbnails */}
       <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 py-3">
-        {images.map((img, i) => (
+        {media.map((item, i) => (
           <button
-            key={i}
+            key={`${item.type}-${item.url}-${i}`}
             type="button"
             onClick={() => goTo(i)}
             className={`flex-shrink-0 overflow-hidden rounded-lg transition-all ${
@@ -98,13 +125,20 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
                 : "opacity-50 hover:opacity-80"
             }`}
           >
-            <ProgressiveImage
-              src={img}
-              blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
-              alt={`${name} thumb ${i + 1}`}
-              className="h-14 w-14 bg-transparent"
-              imgClassName="h-full w-full [object-fit:var(--theme-image-fit,cover)]"
-            />
+            {item.type === "video" ? (
+              <span className="relative flex h-14 w-14 items-center justify-center bg-black text-white">
+                <Play size={18} fill="currentColor" />
+                <span className="absolute bottom-0.5 rounded bg-black/60 px-1 text-[9px]">视频</span>
+              </span>
+            ) : (
+              <ProgressiveImage
+                src={item.url}
+                blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
+                alt={`${name} thumb ${i + 1}`}
+                className="h-14 w-14 bg-transparent"
+                imgClassName="h-full w-full [object-fit:var(--theme-image-fit,cover)]"
+              />
+            )}
           </button>
         ))}
       </div>

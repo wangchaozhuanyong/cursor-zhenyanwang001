@@ -5,6 +5,7 @@ import * as userService from "@/services/userService";
 import * as addressService from "@/services/addressService";
 import { isLoggedIn } from "@/utils/token";
 import type { Address } from "@/types/address";
+import type { MemberLevel } from "@/types/user";
 
 export type { Address };
 
@@ -17,6 +18,7 @@ interface UserState {
   inviteCode: string;
   parentInviteCode: string;
   pointsBalance: number;
+  memberLevel: MemberLevel | null;
   addresses: Address[];
   addressLoading: boolean;
   subordinateEnabled: boolean;
@@ -55,6 +57,7 @@ export const useUserStore = create<UserState>()(
       inviteCode: "",
       parentInviteCode: "",
       pointsBalance: 0,
+      memberLevel: null,
       addresses: [],
       addressLoading: false,
       subordinateEnabled: false,
@@ -74,6 +77,7 @@ export const useUserStore = create<UserState>()(
             inviteCode: profile.inviteCode || "",
             parentInviteCode: profile.parentInviteCode || "",
             pointsBalance: profile.pointsBalance ?? 0,
+            memberLevel: profile.memberLevel ?? null,
             subordinateEnabled: profile.subordinateEnabled ?? false,
             profileLoading: false,
           });
@@ -107,6 +111,7 @@ export const useUserStore = create<UserState>()(
           inviteCode: "",
           parentInviteCode: "",
           pointsBalance: 0,
+          memberLevel: null,
           addresses: [],
           subordinateEnabled: false,
         }),
@@ -184,6 +189,7 @@ export const useUserStore = create<UserState>()(
         inviteCode: s.inviteCode,
         parentInviteCode: s.parentInviteCode,
         pointsBalance: s.pointsBalance,
+        memberLevel: s.memberLevel,
         addresses: s.addresses,
         subordinateEnabled: s.subordinateEnabled,
       }),

@@ -1,14 +1,39 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Gem, Menu, ShieldCheck, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import ProductCard from "@/components/ProductCard";
+import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import BannerCarousel from "@/components/BannerCarousel";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
+import { useProductStore } from "@/stores/useProductStore";
 import GuestMobileFooter from "@/components/GuestMobileFooter";
+import HomeOpsBlocks from "./HomeOpsBlocks";
 import type { Product } from "@/types/product";
 import type { FooterNavItem } from "@/types/content";
+
+const GUEST_HOME_GRID_MAX = 8;
+
+/** 访客首页：热门 → 新品 → 推荐，去重后取前若干条 */
+function mergeHomeProductsForGuest(
+  hot: Product[],
+  newArrivals: Product[],
+  recommended: Product[],
+  max: number,
+): Product[] {
+  const seen = new Set<string>();
+  const out: Product[] = [];
+  for (const list of [hot, newArrivals, recommended]) {
+    for (const p of list) {
+      if (!p?.id || seen.has(p.id)) continue;
+      seen.add(p.id);
+      out.push(p);
+      if (out.length >= max) return out;
+    }
+  }
+  return out;
+}
 
 function parseFooterNav(json?: string): FooterNavItem[] | null {
   if (!json || !json.trim()) return null;
@@ -44,7 +69,29 @@ export default function GuestHome() {
   const description =
     siteInfo.siteDescription || "精选全球好物，品质生活购物平台";
   const { banners } = useHomeBanners();
-  const now = new Date().toISOString();
+  const {
+    hotProducts,
+    newProducts,
+    recommendedProducts,
+    loading: homeLoading,
+    error: homeError,
+    loadHomeData,
+  } = useProductStore();
+
+  useEffect(() => {
+    loadHomeData();
+  }, [loadHomeData]);
+
+  const gridProducts = useMemo(
+    () =>
+      mergeHomeProductsForGuest(
+        hotProducts,
+        newProducts,
+        recommendedProducts,
+        GUEST_HOME_GRID_MAX,
+      ),
+    [hotProducts, newProducts, recommendedProducts],
+  );
 
   const customNav = useMemo(() => parseFooterNav(siteInfo.footerNav), [siteInfo.footerNav]);
 
@@ -92,13 +139,6 @@ export default function GuestHome() {
     navigate(path);
   };
 
-  const products: Product[] = [
-    { id: "g1", title: "曜石黑 机械腕表", subtitle: "经典隽永 瑞士机芯", description: "经典隽永 瑞士机芯", price: 12800, originalPrice: 13800, image: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&q=80&w=800", categoryId: "guest", stock: 99, sales: 88, tags: [], status: "active", createdAt: now, updatedAt: now },
-    { id: "g2", title: "先锋 解构墨镜", subtitle: "抗UV 钛金属镜架", description: "抗UV 钛金属镜架", price: 2450, originalPrice: 2590, image: "https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&q=80&w=800", categoryId: "guest", stock: 99, sales: 66, tags: [], status: "active", createdAt: now, updatedAt: now },
-    { id: "g3", title: "陨石 降噪耳机", subtitle: "空间音频 沉浸体验", description: "空间音频 沉浸体验", price: 3299, originalPrice: 3599, image: "https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?auto=format&fit=crop&q=80&w=800", categoryId: "guest", stock: 99, sales: 77, tags: [], status: "active", createdAt: now, updatedAt: now },
-    { id: "g4", title: "暗物质 胶囊香水", subtitle: "木质冷香 留香持久", description: "木质冷香 留香持久", price: 890, originalPrice: 990, image: "https://images.unsplash.com/photo-1602928321679-560bb453f190?auto=format&fit=crop&q=80&w=600", categoryId: "guest", stock: 99, sales: 52, tags: [], status: "active", createdAt: now, updatedAt: now },
-  ];
-
   /**
    * 底栏占位：避免页脚内容与 BottomNav / 安全区域重叠；
    * 页脚卡在主内容末尾，整块可滚动读完。
@@ -131,6 +171,9 @@ export default function GuestHome() {
 
       <main className="mx-auto max-w-screen-xl px-4 pt-[4.5rem]">
         <BannerCarousel banners={banners} />
+        <div className="-mx-4 mt-3">
+          <HomeOpsBlocks />
+        </div>
         <div className="mt-1 flex items-center justify-between px-2 py-5 text-[11px] text-[var(--theme-text-muted)] md:text-sm">
           <span className="flex items-center gap-1.5">
             <ShieldCheck size={16} className="text-[var(--theme-price)]" />
@@ -152,11 +195,56 @@ export default function GuestHome() {
             全网爆款
           </h2>
           <p className="mt-1 text-xs tracking-wider text-[var(--theme-text-muted)]">大家都在买的热门好物</p>
-          <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
-            {products.map((p, i) => (
-              <ProductCard key={p.id} product={p} index={i} />
-            ))}
-          </div>
+          {homeError && (
+            <div className="mt-4 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-center text-sm text-[var(--theme-text-muted)]">
+              <p>{homeError}</p>
+              <button
+                type="button"
+                onClick={() => loadHomeData()}
+                className="mt-3 rounded-full bg-[var(--theme-primary)] px-5 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]"
+              >
+                重试
+              </button>
+            </div>
+          )}
+          {homeLoading && !homeError && (
+            <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+              {Array.from({ length: GUEST_HOME_GRID_MAX }).map((_, i) => (
+                <ProductCardSkeleton key={i} />
+              ))}
+            </div>
+          )}
+          {!homeLoading && !homeError && gridProducts.length === 0 && (
+            <div className="mt-6 rounded-xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)]/60 px-4 py-10 text-center">
+              <p className="text-sm text-[var(--theme-text)]">暂无推荐商品</p>
+              <p className="mt-2 text-xs text-[var(--theme-text-muted)]">
+                请浏览分类或登录后查看；商家上架商品后此处将自动展示。
+              </p>
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => navigate("/categories")}
+                  className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-2 text-xs font-semibold text-[var(--theme-text)]"
+                >
+                  全部分类
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/login", { state: { from: "/" } })}
+                  className="rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]"
+                >
+                  登录 / 注册
+                </button>
+              </div>
+            </div>
+          )}
+          {!homeLoading && !homeError && gridProducts.length > 0 && (
+            <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+              {gridProducts.map((p, i) => (
+                <ProductCard key={p.id} product={p} index={i} />
+              ))}
+            </div>
+          )}
         </section>
 
         {/* 负外边距铺满屏宽，与参考稿边缘对齐；不与 fixed 顶栏 z-index 争层 */}

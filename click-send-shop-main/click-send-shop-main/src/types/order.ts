@@ -41,6 +41,25 @@ export interface Order {
   address: string;
   tracking_no?: string;
   carrier?: string;
+  logistics_provider?: {
+    carrier: string;
+    carrier_code: string;
+    tracking_no: string;
+    tracking_url: string;
+  } | null;
+  logistics_timeline?: {
+    id: string;
+    order_id: string;
+    tracking_no: string;
+    carrier: string;
+    carrier_code: string;
+    status: string;
+    title: string;
+    description: string;
+    location: string;
+    event_time: string;
+    source: string;
+  }[];
   /** 下单/支付方式：whatsapp | online | reward_wallet */
   payment_method?: string;
 }

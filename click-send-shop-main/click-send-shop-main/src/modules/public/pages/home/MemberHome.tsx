@@ -11,6 +11,7 @@ import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import BannerCarousel from "@/components/BannerCarousel";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
+import HomeOpsBlocks from "./HomeOpsBlocks";
 import * as productService from "@/services/productService";
 import type { UserCoupon } from "@/types/coupon";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
@@ -147,6 +148,9 @@ export default function MemberHome() {
       <main className="mx-auto max-w-screen-xl pt-5">
         <section className="px-4">
           <BannerCarousel banners={banners} />
+        </section>
+        <section className="mt-3">
+          <HomeOpsBlocks />
         </section>
         <section className="px-4">
           <Header title="权益券包" icon={Ticket} />

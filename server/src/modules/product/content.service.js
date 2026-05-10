@@ -1,4 +1,5 @@
 const contentRepo = require('./content.repository');
+const homeOpsService = require('../admin/adminHomeOps.service');
 
 /**
  * 公开站点信息字段（供前端无鉴权读取）
@@ -50,3 +51,5 @@ exports.getContentPageBySlug = async (slug) => {
   const [[page]] = await contentRepo.getContentPageBySlug(slug);
   return page || null;
 };
+
+exports.getPublicHomeOps = async () => homeOpsService.getPublicHomeOps();

@@ -3,12 +3,14 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { fetchUserById, adjustUserPoints } from "@/services/admin/userService";
+import { fetchUserById, adjustUserPoints, fetchUserTags, setUserTags } from "@/services/admin/userService";
 import { fetchAdminPointsRecords } from "@/services/admin/pointsService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import type { PointsRecord } from "@/types/points";
+import type { UserTag } from "@/types/user";
+import { productTagBadgeClass } from "@/utils/productTagBadge";
 
 export default function AdminUserDetail() {
   const navigate = useNavigate();
@@ -17,6 +19,8 @@ export default function AdminUserDetail() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [pointsRecords, setPointsRecords] = useState<PointsRecord[]>([]);
+  const [allTags, setAllTags] = useState<UserTag[]>([]);
+  const [tagSaving, setTagSaving] = useState(false);
   const [recordsLoading, setRecordsLoading] = useState(false);
   const [pointsInput, setPointsInput] = useState("");
   const [reason, setReason] = useState("");
@@ -36,8 +40,11 @@ export default function AdminUserDetail() {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    Promise.all([fetchUserById(id), loadUserPointsRecords(id)])
-      .then(([data]) => setUser(data))
+    Promise.all([fetchUserById(id), loadUserPointsRecords(id), fetchUserTags()])
+      .then(([data, , tags]) => {
+        setUser(data);
+        setAllTags(tags);
+      })
       .catch((e) => toast.error(toastErrorMessage(e, "加载用户详情失败")))
       .finally(() => setLoading(false));
   }, [id]);
@@ -57,6 +64,22 @@ export default function AdminUserDetail() {
     }
   };
 
+  const handleToggleTag = async (tagId: string) => {
+    const currentTags = Array.isArray(user?.tags) ? user.tags as UserTag[] : [];
+    const currentIds = currentTags.map((tag) => tag.id);
+    const nextIds = currentIds.includes(tagId) ? currentIds.filter((id) => id !== tagId) : [...currentIds, tagId];
+    setTagSaving(true);
+    try {
+      const nextTags = await setUserTags(id!, nextIds);
+      setUser((u: any) => u ? { ...u, tags: nextTags } : u);
+      toast.success("用户标签已更新");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "更新标签失败"));
+    } finally {
+      setTagSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -73,6 +96,9 @@ export default function AdminUserDetail() {
       </div>
     );
   }
+
+  const userTags = Array.isArray(user.tags) ? user.tags as UserTag[] : [];
+  const userTagIds = new Set(userTags.map((tag) => tag.id));
 
   return (
     <div className="space-y-6">
@@ -100,6 +126,9 @@ export default function AdminUserDetail() {
             </div>
           </div>
           {[
+            { label: "会员等级", value: user.member_level_name || "普通会员" },
+            { label: "累计消费", value: `RM ${Number(user.totalSpent || 0).toFixed(2)}` },
+            { label: "累计已支付订单", value: `${user.orderCount || 0} 笔` },
             { label: "手机号", value: user.phone || "—" },
             { label: "WhatsApp", value: user.whatsapp || "—" },
             { label: "微信", value: user.wechat || "—" },
@@ -112,6 +141,41 @@ export default function AdminUserDetail() {
               <span className="text-foreground">{r.value}</span>
             </div>
           ))}
+          <div className="border-t border-[var(--theme-border)] pt-4">
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground">用户标签</h3>
+              {tagSaving && <Loader2 className="h-4 w-4 animate-spin text-[var(--theme-price)]" />}
+            </div>
+            <div className="mb-3 flex flex-wrap gap-2">
+              {userTags.length ? userTags.map((tag) => (
+                <span key={tag.id} className={`rounded-full border px-2.5 py-1 text-xs font-medium ${productTagBadgeClass(tag.color)}`}>
+                  {tag.name}
+                </span>
+              )) : <span className="text-xs text-muted-foreground">暂无标签</span>}
+            </div>
+            <PermissionGate
+              permission="user.update"
+              fallback={<p className="text-xs text-muted-foreground">你仅有查看权限，无法调整标签。</p>}
+            >
+              <div className="flex flex-wrap gap-2">
+                {allTags.map((tag) => {
+                  const active = userTagIds.has(tag.id);
+                  return (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      disabled={tagSaving}
+                      onClick={() => handleToggleTag(tag.id)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium ${active ? productTagBadgeClass(tag.color) : "border-[var(--theme-border)] bg-secondary text-muted-foreground"} disabled:opacity-60`}
+                    >
+                      {active ? "✓ " : ""}{tag.name}
+                    </button>
+                  );
+                })}
+                {allTags.length === 0 && <span className="text-xs text-muted-foreground">请先在用户列表创建标签</span>}
+              </div>
+            </PermissionGate>
+          </div>
         </div>
 
         <div className="space-y-4">

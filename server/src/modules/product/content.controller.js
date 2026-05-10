@@ -7,6 +7,13 @@ exports.siteInfo = async (_req, res, next) => {
   } catch (err) { next(err); }
 };
 
+exports.homeOps = async (_req, res, next) => {
+  try {
+    const data = await contentService.getPublicHomeOps();
+    res.success(data);
+  } catch (err) { next(err); }
+};
+
 exports.pageBySlug = async (req, res, next) => {
   try {
     const page = await contentService.getContentPageBySlug(req.params.slug);

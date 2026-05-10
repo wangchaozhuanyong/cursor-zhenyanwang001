@@ -10,6 +10,7 @@ import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import type { Category } from "@/types/category";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
+import { flattenCategories } from "@/utils/categoryTree";
 
 const couponTypes = [
   { value: "fixed", label: "满减券" },
@@ -112,6 +113,8 @@ export default function AdminCouponForm() {
     );
   }
 
+  const categoryOptions = flattenCategories(categories);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -200,7 +203,7 @@ export default function AdminCouponForm() {
             <div>
               <label className="mb-2 block text-xs font-medium text-muted-foreground">适用分类（多选）</label>
               <div className="grid gap-2 rounded-lg border border-border bg-secondary/40 p-3 sm:grid-cols-2">
-                {categories.map((cat) => {
+                {categoryOptions.map((cat) => {
                   const checked = form.category_ids.includes(cat.id);
                   return (
                     <label key={cat.id} className="flex items-center gap-2 text-sm text-foreground">
@@ -215,7 +218,10 @@ export default function AdminCouponForm() {
                           }
                         }}
                       />
-                      {cat.name}
+                      <span>
+                        {"　".repeat(cat.level)}
+                        {cat.name}
+                      </span>
                     </label>
                   );
                 })}

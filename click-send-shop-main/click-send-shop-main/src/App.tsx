@@ -57,6 +57,7 @@ const Dashboard = lazy(() => import("@/modules/admin/pages/dashboard/Dashboard")
 const AdminProducts = lazy(() => import("@/modules/admin/pages/product/AdminProducts"));
 const AdminProductForm = lazy(() => import("@/modules/admin/pages/product/AdminProductForm"));
 const AdminCategories = lazy(() => import("@/modules/admin/pages/product/AdminCategories"));
+const AdminInventory = lazy(() => import("@/modules/admin/pages/product/AdminInventory"));
 const AdminProductTags = lazy(() => import("@/modules/admin/pages/product/AdminProductTags"));
 const AdminBanners = lazy(() => import("@/modules/admin/pages/product/AdminBanners"));
 
@@ -67,6 +68,7 @@ const AdminShipping = lazy(() => import("@/modules/admin/pages/order/AdminShippi
 
 const AdminUsers = lazy(() => import("@/modules/admin/pages/user/AdminUsers"));
 const AdminUserDetail = lazy(() => import("@/modules/admin/pages/user/AdminUserDetail"));
+const AdminMemberLevels = lazy(() => import("@/modules/admin/pages/user/AdminMemberLevels"));
 const AdminInvites = lazy(() => import("@/modules/admin/pages/user/AdminInvites"));
 const AdminRewardRecords = lazy(() => import("@/modules/admin/pages/user/AdminRewardRecords"));
 const AdminPointsRecords = lazy(() => import("@/modules/admin/pages/user/AdminPointsRecords"));
@@ -74,6 +76,7 @@ const AdminPointsRecords = lazy(() => import("@/modules/admin/pages/user/AdminPo
 const AdminCoupons = lazy(() => import("@/modules/admin/pages/coupon/AdminCoupons"));
 const AdminCouponForm = lazy(() => import("@/modules/admin/pages/coupon/AdminCouponForm"));
 const AdminCouponRecords = lazy(() => import("@/modules/admin/pages/coupon/AdminCouponRecords"));
+const AdminActivities = lazy(() => import("@/modules/admin/pages/marketing/AdminActivities"));
 
 const AdminReviews = lazy(() => import("@/modules/admin/pages/review/AdminReviews"));
 const AdminNotifications = lazy(() => import("@/modules/admin/pages/notification/AdminNotifications"));
@@ -84,6 +87,7 @@ const AdminExportCenter = lazy(() => import("@/modules/admin/pages/report/AdminE
 const AdminSiteSettings = lazy(() => import("@/modules/admin/pages/settings/AdminSiteSettings"));
 const AdminThemeSettings = lazy(() => import("@/modules/admin/pages/settings/AdminThemeSettings"));
 const AdminContent = lazy(() => import("@/modules/admin/pages/settings/AdminContent"));
+const AdminHomeOps = lazy(() => import("@/modules/admin/pages/settings/AdminHomeOps"));
 
 const AdminRoles = lazy(() => import("@/modules/admin/pages/rbac/AdminRoles"));
 
@@ -161,9 +165,12 @@ function AdminTitleSync() {
     const routeTitleMap: Array<{ test: (path: string) => boolean; title: string }> = [
       { test: (p) => p === "/admin" || p === "/admin/", title: "管理后台" },
       { test: (p) => p.startsWith("/admin/settings/site"), title: "站点设置" },
+      { test: (p) => p.startsWith("/admin/home-ops"), title: "首页运营配置" },
       { test: (p) => p.startsWith("/admin/banners"), title: "Banner管理" },
       { test: (p) => p.startsWith("/admin/coupons"), title: "优惠券管理" },
+      { test: (p) => p.startsWith("/admin/marketing/activities"), title: "活动管理" },
       { test: (p) => p.startsWith("/admin/users"), title: "用户管理" },
+      { test: (p) => p.startsWith("/admin/member-levels"), title: "会员等级" },
       { test: (p) => p.startsWith("/admin/orders"), title: "订单管理" },
       { test: (p) => p.startsWith("/admin/products"), title: "商品管理" },
     ];
@@ -238,6 +245,7 @@ const App = () => (
                 <Route path="products" element={<AdminProducts />} />
                 <Route path="products/:id" element={<AdminProductForm />} />
                 <Route path="categories" element={<AdminCategories />} />
+                <Route path="inventory" element={<AdminInventory />} />
                 <Route path="tags" element={<AdminProductTags />} />
                 <Route path="orders" element={<AdminOrders />} />
                 <Route path="orders/:id" element={<AdminOrderDetail />} />
@@ -247,6 +255,7 @@ const App = () => (
                 <Route path="payments/reconciliations" element={<AdminPaymentReconciliations />} />
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="users/:id" element={<AdminUserDetail />} />
+                <Route path="member-levels" element={<AdminMemberLevels />} />
                 <Route path="invites" element={<AdminInvites />} />
                 <Route path="rewards" element={<AdminRewardRecords />} />
                 <Route path="points/records" element={<AdminPointsRecords />} />
@@ -254,12 +263,14 @@ const App = () => (
                 <Route path="settings/referral" element={<Navigate to="/admin/rewards" replace />} />
                 <Route path="settings/site" element={<AdminSiteSettings />} />
                 <Route path="settings/theme" element={<AdminThemeSettings />} />
+                <Route path="home-ops" element={<AdminHomeOps />} />
                 <Route path="settings/shipping" element={<AdminShipping />} />
                 <Route path="settings/roles" element={<AdminRoles />} />
                 <Route path="coupons" element={<AdminCoupons />} />
                 {/* 静态路径须先于 :id，避免 /coupons/records 被当成 id=records */}
                 <Route path="coupons/records" element={<AdminCouponRecords />} />
                 <Route path="coupons/:id" element={<AdminCouponForm />} />
+                <Route path="marketing/activities" element={<AdminActivities />} />
                 <Route path="reviews" element={<AdminReviews />} />
                 <Route path="returns" element={<AdminReturns />} />
                 <Route path="notifications" element={<AdminNotifications />} />

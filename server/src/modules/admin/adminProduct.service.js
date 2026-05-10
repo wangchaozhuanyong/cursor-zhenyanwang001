@@ -2,6 +2,7 @@ const { generateId, formatProduct } = require('../../utils/helpers');
 const { BusinessError } = require('../../errors/BusinessError');
 const { logAdminAction } = require('../../utils/adminAudit');
 const { rowsToCsv, parseCsv, parseBool } = require('../../utils/csv');
+const { buildSearchKeywords, normalizeSearchKeyword } = require('../../utils/searchKeywords');
 const repo = require('./adminProduct.repository');
 const variantRepo = require('./adminProductVariant.repository');
 const tagAssignmentRepo = require('../product/productTagAssignment.repository');
@@ -19,8 +20,10 @@ function buildListWhere(query) {
   const params = [];
   const { keyword, category_id, status } = query;
   if (keyword) {
-    where += ' AND name LIKE ?';
-    params.push(`%${keyword}%`);
+    const normalized = normalizeSearchKeyword(keyword);
+    const expanded = buildSearchKeywords(normalized);
+    where += ' AND (name LIKE ? OR description LIKE ? OR search_keywords LIKE ? OR search_keywords LIKE ?)';
+    params.push(`%${normalized}%`, `%${normalized}%`, `%${normalized}%`, `%${expanded}%`);
   }
   if (category_id) {
     where += ' AND category_id = ?';
@@ -50,6 +53,16 @@ function formatVariantRow(row) {
     sort_order: row.sort_order,
     is_default: !!row.is_default,
   };
+}
+
+function buildProductSearchKeywordsFromPayload(payload, variants = [], tags = []) {
+  return buildSearchKeywords(
+    payload.name,
+    payload.description,
+    payload.category_id,
+    variants.flatMap((v) => [v.title, v.sku_code]),
+    tags.map((t) => t.name),
+  );
 }
 
 function normalizeVariantPayloadForDb(variants, genId, mainPrice, mainStock) {
@@ -141,7 +154,7 @@ async function getProductById(id) {
 
 async function createProduct(body, adminUserId, req) {
   const {
-    name, cover_image, images, price, original_price, sales_count,
+    name, cover_image, video_url, images, price, original_price, sales_count,
     points, category_id, stock, sort_order,
     description, is_recommended, is_new, is_hot,
     variants,
@@ -158,6 +171,7 @@ async function createProduct(body, adminUserId, req) {
       id,
       name,
       cover_image: cover_image || '',
+      video_url: video_url || '',
       imagesJson: JSON.stringify(images || []),
       price,
       original_price: original_price === '' || original_price == null
@@ -171,6 +185,11 @@ async function createProduct(body, adminUserId, req) {
       lifecycle_status: lcResolved,
       sort_order: sort_order || 0,
       description: description || '',
+      search_keywords: buildProductSearchKeywordsFromPayload(
+        { name, description, category_id },
+        variantRows,
+        [],
+      ),
       is_recommended: is_recommended ? 1 : 0,
       is_new: is_new ? 1 : 0,
       is_hot: is_hot ? 1 : 0,
@@ -181,6 +200,11 @@ async function createProduct(body, adminUserId, req) {
     const row = await repo.selectProductById(id);
     const vrows = await variantRepo.selectVariantsByProductId(id);
     const tagMap = await tagAssignmentRepo.selectTagsByProductIds([id]);
+    await repo.updateProductDynamic(
+      ['search_keywords = ?'],
+      [buildProductSearchKeywordsFromPayload(row, vrows, tagMap.get(id) || [])],
+      id,
+    );
     await logAdminAction(adminUserId, '创建商品', name);
     await writeAuditLog({
       req,
@@ -225,7 +249,7 @@ async function updateProduct(id, body, adminUserId, req) {
   try {
     const fields = [];
     const values = [];
-    const allowedFields = ['name', 'cover_image', 'price', 'points', 'category_id', 'stock',
+    const allowedFields = ['name', 'cover_image', 'video_url', 'price', 'points', 'category_id', 'stock',
       'sort_order', 'description', 'sales_count'];
     for (const f of allowedFields) {
       if (body[f] !== undefined) {
@@ -287,6 +311,11 @@ async function updateProduct(id, body, adminUserId, req) {
     const row = await repo.selectProductById(id);
     const vrows = await variantRepo.selectVariantsByProductId(id);
     const tagMap = await tagAssignmentRepo.selectTagsByProductIds([id]);
+    await repo.updateProductDynamic(
+      ['search_keywords = ?'],
+      [buildProductSearchKeywordsFromPayload(row, vrows, tagMap.get(id) || [])],
+      id,
+    );
     await writeAuditLog({
       req,
       operatorId: adminUserId,
@@ -386,7 +415,7 @@ async function deleteProduct(id, adminUserId, req) {
 
 const EXPORT_HEADERS = [
   'id', 'name', 'price', 'original_price', 'sales_count', 'stock', 'category_id',
-  'cover_image', 'status', 'lifecycle_status', 'sort_order',
+  'cover_image', 'video_url', 'status', 'lifecycle_status', 'sort_order',
   'description', 'points', 'is_recommended', 'is_new', 'is_hot', 'images',
 ];
 
@@ -415,6 +444,7 @@ async function exportProductsCsv(query) {
       stock: r.stock,
       category_id: r.category_id || '',
       cover_image: r.cover_image || '',
+      video_url: r.video_url || '',
       status: statusVarcharFromLifecycle(lc),
       lifecycle_status: lc,
       sort_order: r.sort_order ?? 0,
@@ -467,6 +497,7 @@ async function importProductsCsv(text, adminUserId) {
     const payload = {
       name,
       cover_image: (row.cover_image || '').trim(),
+      video_url: (row.video_url || '').trim(),
       images: JSON.parse(imagesJson),
       price,
       original_price: Number.isFinite(originalPriceRaw) ? originalPriceRaw : null,
@@ -497,6 +528,7 @@ async function importProductsCsv(text, adminUserId) {
           id,
           name: payload.name,
           cover_image: payload.cover_image,
+          video_url: payload.video_url,
           imagesJson,
           price: payload.price,
           original_price: payload.original_price,
@@ -508,6 +540,7 @@ async function importProductsCsv(text, adminUserId) {
           lifecycle_status: payload.lifecycle_status,
           sort_order: payload.sort_order,
           description: payload.description,
+          search_keywords: buildProductSearchKeywordsFromPayload(payload),
           is_recommended: payload.is_recommended ? 1 : 0,
           is_new: payload.is_new ? 1 : 0,
           is_hot: payload.is_hot ? 1 : 0,
@@ -523,6 +556,7 @@ async function importProductsCsv(text, adminUserId) {
         id: newId,
         name: payload.name,
         cover_image: payload.cover_image,
+        video_url: payload.video_url,
         imagesJson,
         price: payload.price,
         original_price: payload.original_price,
@@ -534,6 +568,7 @@ async function importProductsCsv(text, adminUserId) {
         lifecycle_status: payload.lifecycle_status,
         sort_order: payload.sort_order,
         description: payload.description,
+        search_keywords: buildProductSearchKeywordsFromPayload(payload),
         is_recommended: payload.is_recommended ? 1 : 0,
         is_new: payload.is_new ? 1 : 0,
         is_hot: payload.is_hot ? 1 : 0,

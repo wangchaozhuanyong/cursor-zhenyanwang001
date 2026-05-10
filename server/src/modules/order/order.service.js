@@ -10,6 +10,7 @@ const repo = require('./order.repository');
 const userModule = require('../user');
 const paymentsModule = require('./payments');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
+const logisticsService = require('../logistics/logistics.service');
 const orderDb = repo.getPool();
 const userApi = /** @type {any} */ (userModule).api || {};
 const paymentsApi = /** @type {any} */ (paymentsModule).api || {};
@@ -36,6 +37,33 @@ function calculateCouponDiscount(coupon, rawAmount, shippingFee) {
   return 0;
 }
 
+/** 同一满减活动下，活动商品小计达到门槛后减免一次（按活动 ID 聚合） */
+function computeFullReductionDiscount(orderItems, activityByProductId) {
+  const byActivity = new Map();
+  for (const oi of orderItems) {
+    const act = activityByProductId.get(oi.productId);
+    if (!act || act.type !== 'full_reduction') continue;
+    const aid = act.activity_id;
+    const line = oi.price * oi.qty;
+    const cur = byActivity.get(aid) || {
+      subtotal: 0,
+      threshold: act.threshold_amount,
+      discount: act.discount_amount,
+    };
+    cur.subtotal += line;
+    byActivity.set(aid, cur);
+  }
+  let sum = 0;
+  for (const [, g] of byActivity) {
+    const th = g.threshold != null && g.threshold !== '' ? Number(g.threshold) : 0;
+    const disc = g.discount != null && g.discount !== '' ? Number(g.discount) : 0;
+    if (th > 0 && disc > 0 && g.subtotal >= th) {
+      sum += Math.min(disc, g.subtotal);
+    }
+  }
+  return sum;
+}
+
 /**
  * 创建订单。形状校验已由 routes 层 zod schema 完成；
  * 这里仅做业务规则（库存、优惠券资格、积分扣减、邀请奖励）与事务编排。
@@ -56,6 +84,11 @@ async function createOrder(userId, body) {
     const productIds = items.map((i) => i.product_id);
     const products = await repo.selectProductsForUpdate(conn, productIds);
     const productMap = Object.fromEntries(products.map((p) => [p.id, p]));
+    const activityRows = await repo.selectActiveActivityItemsForUpdate(conn, productIds);
+    const activityMap = new Map();
+    for (const row of activityRows) {
+      if (!activityMap.has(row.product_id)) activityMap.set(row.product_id, row);
+    }
 
     for (const item of items) {
       const p = productMap[item.product_id];
@@ -67,13 +100,31 @@ async function createOrder(userId, body) {
         await conn.rollback();
         throw new ValidationError(`商品「${p.name}」库存不足，剩余 ${p.stock} 件`);
       }
+      const activity = activityMap.get(item.product_id);
+      if (activity) {
+        const remaining = Number(activity.activity_stock || 0) - Number(activity.sold_count || 0);
+        const limitPerUser = Number(activity.limit_per_user || 0);
+        if (remaining < item.qty) {
+          await conn.rollback();
+          throw new ValidationError(`活动商品「${p.name}」库存不足，剩余 ${remaining} 件`);
+        }
+        if (limitPerUser > 0 && item.qty > limitPerUser) {
+          await conn.rollback();
+          throw new ValidationError(`活动商品「${p.name}」每单限购 ${limitPerUser} 件`);
+        }
+      }
     }
 
     let rawAmount = 0;
     let totalPoints = 0;
     const orderItems = items.map((item) => {
       const p = productMap[item.product_id];
-      const price = parseFloat(p.price);
+      const activity = activityMap.get(item.product_id);
+      const price = activity && activity.type === 'full_reduction'
+        ? parseFloat(p.price)
+        : activity
+          ? parseFloat(activity.activity_price)
+          : parseFloat(p.price);
       rawAmount += price * item.qty;
       totalPoints += p.points * item.qty;
       return {
@@ -83,8 +134,13 @@ async function createOrder(userId, body) {
         price,
         points: p.points,
         qty: item.qty,
+        activityId: activity?.activity_id || null,
+        activityTitle: activity?.title || null,
       };
     });
+
+    const fullReductionDiscount = computeFullReductionDiscount(orderItems, activityMap);
+    const goodsAmountAfterFullReduction = Math.max(0, rawAmount - fullReductionDiscount);
 
     let shippingFee = 0;
     if (shipping_template_id) {
@@ -97,7 +153,7 @@ async function createOrder(userId, body) {
       }
     }
 
-    let discountAmount = 0;
+    let discountAmount = fullReductionDiscount;
     let usedCouponUcId = null;
     let usedCouponTitle = coupon_title;
     if (coupon_id) {
@@ -107,7 +163,7 @@ async function createOrder(userId, body) {
         throw new ValidationError('优惠券不存在、已使用或不可用');
       }
       const minAmount = parseFloat(uc.min_amount);
-      if (rawAmount < minAmount) {
+      if (goodsAmountAfterFullReduction < minAmount) {
         await conn.rollback();
         throw new ValidationError(`订单金额未满 RM ${minAmount}，无法使用该优惠券`);
       }
@@ -122,11 +178,12 @@ async function createOrder(userId, body) {
           }
         }
       }
-      discountAmount = calculateCouponDiscount(uc, rawAmount, shippingFee);
-      if (discountAmount <= 0) {
+      const couponDiscount = calculateCouponDiscount(uc, goodsAmountAfterFullReduction, shippingFee);
+      if (couponDiscount <= 0) {
         await conn.rollback();
         throw new ValidationError(uc.type === 'shipping' ? '当前订单无可抵扣运费，无法使用该运费券' : '该优惠券当前不可抵扣');
       }
+      discountAmount += couponDiscount;
       await repo.updateUserCouponUsed(conn, uc.uc_id);
       usedCouponUcId = uc.uc_id;
       usedCouponTitle = uc.title || coupon_title;
@@ -172,7 +229,20 @@ async function createOrder(userId, body) {
     }
 
     for (const oi of orderItems) {
-      const affected = await repo.deductProductStock(conn, oi.productId, oi.qty);
+      if (oi.activityId) {
+        const n = await repo.incrementActivitySold(conn, oi.activityId, oi.productId, oi.qty);
+        if (!n) {
+          await conn.rollback();
+          throw new ValidationError(`活动商品「${oi.name}」库存不足`);
+        }
+      }
+      const affected = await repo.deductProductStock(conn, oi.productId, oi.qty, {
+        refType: 'order',
+        refId: orderId,
+        reason: oi.activityId
+          ? `订单 ${orderNo} 活动「${oi.activityTitle || oi.activityId}」下单扣减库存`
+          : `订单 ${orderNo} 下单扣减库存`,
+      });
       if (affected === 0) {
         await conn.rollback();
         throw new ValidationError(`商品「${oi.name}」库存不足`);
@@ -234,7 +304,9 @@ async function getOrderById(userId, orderId) {
   const order = await repo.selectOrderByIdAndUser(orderDb, orderId, userId);
   if (!order) throw new NotFoundError('订单不存在');
   const items = await repo.selectOrderItems(orderDb, order.id);
-  return { data: formatOrder(order, items.map(formatOrderItem)) };
+  const data = formatOrder(order, items.map(formatOrderItem));
+  await logisticsService.attachTracking(data);
+  return { data };
 }
 
 async function cancelOrder(userId, orderId) {
@@ -250,7 +322,11 @@ async function cancelOrder(userId, orderId) {
 
     const lineItems = await repo.selectOrderItemQtyRows(conn, order.id);
     for (const item of lineItems) {
-      await repo.restoreProductStock(conn, item.product_id, item.qty);
+      await repo.restoreProductStock(conn, item.product_id, item.qty, {
+        refType: 'order',
+        refId: order.id,
+        reason: `订单 ${order.order_no} 取消释放库存`,
+      });
     }
 
     await requireApiMethod(userApi, 'reverseOrderPoints')(conn, order, `订单取消回滚积分 ${order.order_no}`, {

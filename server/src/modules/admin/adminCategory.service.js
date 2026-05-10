@@ -46,6 +46,25 @@ async function getDepth(parentId) {
   return depth;
 }
 
+async function getSubtreeHeight(categoryId) {
+  const rows = await repo.selectAllCategoriesOrdered();
+  const children = new Map();
+  rows.forEach((row) => {
+    const key = row.parent_id || '';
+    const list = children.get(key) || [];
+    list.push(row.id);
+    children.set(key, list);
+  });
+
+  const walk = (id) => {
+    const childIds = children.get(id) || [];
+    if (!childIds.length) return 1;
+    return 1 + Math.max(...childIds.map(walk));
+  };
+
+  return rows.some((row) => row.id === categoryId) ? walk(categoryId) : 1;
+}
+
 async function assertParentAllowed(parentId, selfId) {
   if (!parentId) return;
   if (parentId === selfId) throw new BusinessError(400, '父分类不能选择自己');
@@ -56,6 +75,13 @@ async function assertParentAllowed(parentId, selfId) {
   }
   const depth = await getDepth(parentId);
   if (depth > MAX_CATEGORY_DEPTH) throw new BusinessError(400, `最多支持 ${MAX_CATEGORY_DEPTH} 级分类`);
+  const selfExists = selfId ? await repo.selectCategoryById(selfId) : null;
+  if (selfExists) {
+    const height = await getSubtreeHeight(selfId);
+    if (depth + height - 1 > MAX_CATEGORY_DEPTH) {
+      throw new BusinessError(400, `移动后会超过 ${MAX_CATEGORY_DEPTH} 级分类`);
+    }
+  }
 }
 
 async function listCategories() {

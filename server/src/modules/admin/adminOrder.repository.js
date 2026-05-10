@@ -9,6 +9,7 @@
  */
 const db = require('../../config/db');
 const { ORDER_STATUS } = require('../../constants/status');
+const { generateId } = require('../../utils/helpers');
 
 function getPool() {
   return db;
@@ -153,8 +154,41 @@ async function bumpProductSalesCount(q, productId, qty) {
   );
 }
 
-async function restoreProductStock(q, productId, qty) {
-  await q.query('UPDATE products SET stock = stock + ? WHERE id = ?', [qty, productId]);
+async function restoreProductStock(q, productId, qty, meta = {}) {
+  const [[beforeRow]] = await q.query(
+    `SELECT p.stock, v.id AS default_variant_id
+     FROM products p
+     LEFT JOIN product_variants v ON v.product_id = p.id AND v.is_default = 1
+     WHERE p.id = ?
+     FOR UPDATE`,
+    [productId],
+  );
+  const beforeStock = Number(beforeRow?.stock ?? 0);
+  const afterStock = beforeStock + qty;
+  await q.query('UPDATE products SET stock = ? WHERE id = ?', [afterStock, productId]);
+  await q.query(
+    'UPDATE product_variants SET stock = ? WHERE product_id = ? AND is_default = 1',
+    [afterStock, productId],
+  );
+  await q.query(
+    `INSERT INTO inventory_stock_records
+       (id, product_id, variant_id, change_type, quantity_delta, before_stock,
+        after_stock, reason, ref_type, ref_id, operator_id)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      generateId(),
+      productId,
+      beforeRow?.default_variant_id || null,
+      'order_release',
+      qty,
+      beforeStock,
+      afterStock,
+      meta.reason || '管理员取消订单释放库存',
+      meta.refType || 'order',
+      meta.refId || '',
+      meta.operatorId || null,
+    ],
+  );
 }
 
 async function ensurePointsAccount(q, userId) {

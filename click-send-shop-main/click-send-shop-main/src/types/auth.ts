@@ -21,4 +21,21 @@ export interface AuthToken {
 export interface LoginResult {
   token: AuthToken;
   userId: string;
+  role?: string;
+}
+
+export interface OtpSendParams {
+  phone: string;
+  countryCode: string;
+}
+
+export interface OtpLoginParams {
+  phone: string;
+  countryCode: string;
+  code: string;
+}
+
+export interface OAuthExchangeParams {
+  provider: "google" | "facebook";
+  code: string;
 }

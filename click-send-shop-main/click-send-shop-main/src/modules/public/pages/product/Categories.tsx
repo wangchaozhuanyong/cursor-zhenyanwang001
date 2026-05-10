@@ -7,6 +7,7 @@ import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ProductSortType } from "@/types/product";
+import { flattenCategories } from "@/utils/categoryTree";
 
 export default function Categories() {
   const navigate = useNavigate();
@@ -44,7 +45,8 @@ export default function Categories() {
   }, []);
 
   const categoryBtnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
-  const categoryRow = [{ id: "all", name: "全部", icon: "" }, ...categories];
+  const flatCategories = flattenCategories(categories);
+  const categoryRow = [{ id: "all", name: "全部", icon: "", level: 0 }, ...flatCategories];
 
   useEffect(() => {
     const btn = categoryBtnRefs.current.get(activeCat);
@@ -92,6 +94,7 @@ export default function Categories() {
                       : "bg-[var(--theme-surface)] text-[var(--theme-text)] border border-[var(--theme-border)]"
                   }`}
                 >
+                  {cat.level > 0 && <span className="mr-1 text-[10px] opacity-60">{"—".repeat(cat.level)}</span>}
                   {cat.icon} {cat.name}
                 </button>
               ))}

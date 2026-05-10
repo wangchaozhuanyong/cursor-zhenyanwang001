@@ -83,7 +83,9 @@ async function request<T>(
   const isAdminEndpoint = endpoint.startsWith("/admin/");
   const isAuthLoginOrRegister =
     endpoint.startsWith("/auth/login")
-    || endpoint.startsWith("/auth/register");
+    || endpoint.startsWith("/auth/register")
+    || endpoint.startsWith("/auth/otp/login")
+    || endpoint.startsWith("/auth/oauth/exchange");
   const token = isAdminEndpoint ? getAdminAccessToken() : getAccessToken();
 
   const headers: HeadersInit = {

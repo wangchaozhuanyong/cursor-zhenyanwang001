@@ -1,6 +1,9 @@
 const authService = require('./auth.service');
 const authApiService = require('./services/auth.api.service');
+const oauthService = require('./services/oauth.service');
+const otpService = require('./services/otp.service');
 const { asyncRoute } = require('../../middleware/asyncRoute');
+const { ValidationError } = require('../../errors');
 
 exports.register = asyncRoute(async (req, res) => {
   const result = await authApiService.register(req.body);
@@ -44,5 +47,40 @@ exports.refresh = asyncRoute(async (req, res) => {
 
 exports.logout = asyncRoute(async (req, res) => {
   const result = await authService.logout(req.user?.id);
+  res.success(result.data, result.message);
+});
+
+exports.oauthStart = asyncRoute(async (req, res, next) => {
+  try {
+    const url = await oauthService.startOAuth(req.params.provider, req.query.redirect);
+    res.redirect(302, url);
+  } catch (e) {
+    if (e instanceof ValidationError) {
+      return res.redirect(302, oauthService.redirectLoginWithOAuthError(e.message));
+    }
+    next(e);
+  }
+});
+
+exports.oauthCallback = asyncRoute(async (req, res) => {
+  const url = await oauthService.handleOAuthCallback(req.params.provider, req.query);
+  res.redirect(302, url);
+});
+
+exports.oauthExchange = asyncRoute(async (req, res) => {
+  const result = await oauthService.exchangeTicket(req.body);
+  res.success(result.data, result.message);
+});
+
+exports.otpSend = asyncRoute(async (req, res) => {
+  const result = await otpService.sendOtp(req.body, {
+    ip: req.ip,
+    userAgent: req.get('user-agent'),
+  });
+  res.success(result.data, result.message);
+});
+
+exports.otpLogin = asyncRoute(async (req, res) => {
+  const result = await otpService.loginWithOtp(req.body);
   res.success(result.data, result.message);
 });

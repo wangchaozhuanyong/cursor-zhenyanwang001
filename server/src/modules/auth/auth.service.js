@@ -111,19 +111,32 @@ async function login(body) {
   }
   if (!user) throw new AuthError('手机号或密码错误');
 
-  const uid = String(user.id ?? '');
+  return buildLoginResult(user);
+}
+
+function buildLoginResult(userRow) {
+  const uid = String(userRow.id ?? '');
   if (!uid) throw new AuthError('账号异常，请使用找回密码或联系客服');
 
-  const rv = Number.isFinite(Number(user.refresh_token_version)) ? Number(user.refresh_token_version) : 0;
+  const rv = Number.isFinite(Number(userRow.refresh_token_version))
+    ? Number(userRow.refresh_token_version)
+    : 0;
   const token = signToken(uid, rv);
   return {
     data: {
       token,
       userId: uid,
-      role: String(user.role || 'user'),
+      role: String(userRow.role || 'user'),
     },
     message: '登录成功',
   };
+}
+
+async function issueLoginForUserId(userId) {
+  const row = await repo.selectRefreshVersion(userId);
+  if (!row) throw new AuthError('用户不存在');
+  await repo.updateLastLogin(userId);
+  return buildLoginResult(row);
 }
 
 async function getProfile(userId) {
@@ -313,6 +326,8 @@ async function findPhoneDuplicateByPhonesForUser(userId, phones) {
 module.exports = {
   register,
   login,
+  buildLoginResult,
+  issueLoginForUserId,
   getProfile,
   updateProfile,
   changePassword,

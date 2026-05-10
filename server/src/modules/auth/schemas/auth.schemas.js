@@ -78,6 +78,33 @@ const resetPasswordBodySchema = z.object({
   newPassword: passwordSchema,
 });
 
+const oauthProviderParamSchema = z.object({
+  provider: z.enum(['google', 'facebook']),
+});
+
+const oauthStartQuerySchema = z.object({
+  redirect: z.string().trim().max(512).optional(),
+});
+
+const oauthExchangeBodySchema = z.object({
+  provider: z.enum(['google', 'facebook']),
+  code: z.string({ message: '登录凭证无效' }).trim().min(16, '登录凭证无效').max(128, '登录凭证无效'),
+});
+
+const otpSendBodySchema = z.object({
+  countryCode: countryCodeSchema,
+  phone: phoneSchema,
+});
+
+const otpLoginBodySchema = z.object({
+  countryCode: countryCodeSchema,
+  phone: phoneSchema,
+  code: z
+    .string({ message: '验证码不能为空' })
+    .trim()
+    .regex(/^\d{6}$/, '验证码须为 6 位数字'),
+});
+
 module.exports = {
   phoneSchema,
   passwordSchema,
@@ -88,4 +115,9 @@ module.exports = {
   changePasswordBodySchema,
   requestPasswordResetBodySchema,
   resetPasswordBodySchema,
+  oauthProviderParamSchema,
+  oauthStartQuerySchema,
+  oauthExchangeBodySchema,
+  otpSendBodySchema,
+  otpLoginBodySchema,
 };

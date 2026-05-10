@@ -73,7 +73,7 @@ async function doUpload<T>(url: string, formData: FormData): Promise<T> {
   if (!res.ok) {
     let message = `上传失败（HTTP ${res.status}）`;
     if (res.status === 413) {
-      message = "文件过大被网关拒绝（413）。若已部署 Nginx，请在 server 中设置 client_max_body_size（建议 25m）后重载 Nginx";
+      message = "文件过大被网关拒绝（413）。视频最大 50MB；若已部署 Nginx，请在 server 中设置 client_max_body_size（建议 60m）后重载 Nginx";
     }
     const ct = (res.headers.get("content-type") || "").toLowerCase();
     try {

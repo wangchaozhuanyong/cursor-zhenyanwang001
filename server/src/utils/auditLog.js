@@ -22,12 +22,13 @@ function truncateJson(obj) {
  * @param {import('express').Request} [req]
  */
 function getReqContext(req) {
-  if (!req) {
+  if (!req || typeof req !== 'object') {
     return { ip: '', userAgent: '', path: '', method: '' };
   }
-  const xf = req.headers['x-forwarded-for'];
+  const headers = req.headers && typeof req.headers === 'object' ? req.headers : {};
+  const xf = headers['x-forwarded-for'];
   const ipRaw = req.ip || (typeof xf === 'string' ? xf.split(',')[0].trim() : '') || req.socket?.remoteAddress || '';
-  const ua = String(req.headers['user-agent'] || '').slice(0, 500);
+  const ua = String(headers['user-agent'] || '').slice(0, 500);
   return {
     ip: String(ipRaw).slice(0, 45),
     userAgent: ua,

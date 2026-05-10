@@ -38,7 +38,7 @@ async function insertUser(params) {
   await db.query(
     `INSERT INTO users (id, phone, password_hash, nickname, invite_code, parent_invite_code)
      VALUES (?, ?, ?, ?, ?, ?)`,
-    [id, phone, passwordHash, nickname, inviteCode, parentInviteCode],
+    [id, phone ?? null, passwordHash ?? null, nickname, inviteCode, parentInviteCode],
   );
 }
 
@@ -68,13 +68,34 @@ async function selectUserIdByInviteCode(inviteCode) {
 }
 
 async function selectProfileFields(userId) {
-  const [[row]] = await db.query(
-    `SELECT id, phone, nickname, avatar, invite_code, parent_invite_code,
-            points_balance, subordinate_enabled, role, wechat, whatsapp, created_at
-     FROM users WHERE id = ?`,
-    [userId],
-  );
-  return row || null;
+  const withMemberLevel = `
+    SELECT u.id, u.phone, u.nickname, u.avatar, u.invite_code, u.parent_invite_code,
+            u.points_balance, u.subordinate_enabled, u.role, u.wechat, u.whatsapp, u.created_at,
+            ml.id AS member_level_id,
+            ml.name AS member_level_name,
+            ml.description AS member_level_description,
+            ml.min_spent AS member_level_min_spent,
+            ml.min_orders AS member_level_min_orders
+     FROM users u
+     LEFT JOIN member_levels ml ON ml.id = u.member_level_id
+     WHERE u.id = ?`;
+  try {
+    const [[row]] = await db.query(withMemberLevel, [userId]);
+    return row || null;
+  } catch (err) {
+    const code = err?.code;
+    const msg = String(err?.message || '');
+    if (code === 'ER_NO_SUCH_TABLE' || code === 'ER_BAD_FIELD_ERROR' || msg.includes('member_levels') || msg.includes('member_level_id')) {
+      const [[row]] = await db.query(
+        `SELECT id, phone, nickname, avatar, invite_code, parent_invite_code,
+                points_balance, subordinate_enabled, role, wechat, whatsapp, created_at
+         FROM users WHERE id = ?`,
+        [userId],
+      );
+      return row || null;
+    }
+    throw err;
+  }
 }
 
 async function findPhoneDuplicate(userId, phone) {
@@ -106,7 +127,10 @@ async function updatePasswordHash(userId, hash) {
 }
 
 async function selectRefreshVersion(userId) {
-  const [[row]] = await db.query('SELECT id, refresh_token_version FROM users WHERE id = ?', [userId]);
+  const [[row]] = await db.query(
+    'SELECT id, refresh_token_version, role FROM users WHERE id = ?',
+    [userId],
+  );
   return row || null;
 }
 
@@ -165,6 +189,167 @@ async function markPasswordResetTokenUsed(id) {
   await db.query('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = ?', [id]);
 }
 
+/** ─── OAuth / OTP（迁移 037_auth_oauth_otp）─── */
+
+async function selectOauthAccount(provider, providerUserId) {
+  const [[row]] = await db.query(
+    `SELECT oa.*, u.id AS user_row_id, u.refresh_token_version, u.role, u.password_hash
+     FROM oauth_accounts oa
+     JOIN users u ON BINARY u.id = BINARY oa.user_id
+     WHERE oa.provider = ? AND oa.provider_user_id = ?
+     LIMIT 1`,
+    [provider, providerUserId],
+  );
+  return row || null;
+}
+
+async function insertOauthAccount(params) {
+  const {
+    id, userId, provider, providerUserId, email, displayName, avatarUrl,
+  } = params;
+  await db.query(
+    `INSERT INTO oauth_accounts (id, user_id, provider, provider_user_id, email, display_name, avatar_url)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [id, userId, provider, providerUserId, email || null, displayName || null, avatarUrl || null],
+  );
+}
+
+async function updateOauthAccountProfile(userId, provider, fields) {
+  const fragments = [];
+  const values = [];
+  if (fields.email !== undefined) {
+    fragments.push('email = ?');
+    values.push(fields.email || null);
+  }
+  if (fields.displayName !== undefined) {
+    fragments.push('display_name = ?');
+    values.push(fields.displayName || null);
+  }
+  if (fields.avatarUrl !== undefined) {
+    fragments.push('avatar_url = ?');
+    values.push(fields.avatarUrl || null);
+  }
+  if (!fragments.length) return;
+  values.push(userId, provider);
+  await db.query(
+    `UPDATE oauth_accounts SET ${fragments.join(', ')} WHERE BINARY user_id = BINARY ? AND provider = ?`,
+    values,
+  );
+}
+
+async function insertOauthState(params) {
+  const { id, stateHash, provider, redirectAfter, expiresAt } = params;
+  await db.query(
+    `INSERT INTO oauth_states (id, state_hash, provider, redirect_after, expires_at)
+     VALUES (?, ?, ?, ?, ?)`,
+    [id, stateHash, provider, redirectAfter, expiresAt],
+  );
+}
+
+async function selectOauthStateByHash(stateHash) {
+  const [[row]] = await db.query(
+    `SELECT id, state_hash, provider, redirect_after, expires_at, consumed_at
+     FROM oauth_states WHERE BINARY state_hash = BINARY ? LIMIT 1`,
+    [stateHash],
+  );
+  return row || null;
+}
+
+async function markOauthStateConsumed(id) {
+  await db.query('UPDATE oauth_states SET consumed_at = NOW() WHERE id = ?', [id]);
+}
+
+async function insertAuthLoginTicket(params) {
+  const { id, codeHash, provider, userId, expiresAt } = params;
+  await db.query(
+    `INSERT INTO auth_login_tickets (id, code_hash, provider, user_id, expires_at)
+     VALUES (?, ?, ?, ?, ?)`,
+    [id, codeHash, provider, userId, expiresAt],
+  );
+}
+
+async function selectAuthLoginTicketByHash(codeHash) {
+  const [[row]] = await db.query(
+    `SELECT alt.id, alt.user_id, alt.provider, alt.expires_at, alt.consumed_at,
+            u.refresh_token_version, u.role
+     FROM auth_login_tickets alt
+     JOIN users u ON BINARY u.id = BINARY alt.user_id
+     WHERE BINARY alt.code_hash = BINARY ?
+       AND alt.consumed_at IS NULL AND alt.expires_at > NOW()
+     LIMIT 1`,
+    [codeHash],
+  );
+  return row || null;
+}
+
+async function markAuthLoginTicketConsumed(id) {
+  await db.query('UPDATE auth_login_tickets SET consumed_at = NOW() WHERE id = ?', [id]);
+}
+
+async function tryConsumeAuthLoginTicket(id) {
+  const [r] = await db.query(
+    `UPDATE auth_login_tickets SET consumed_at = NOW()
+     WHERE id = ? AND consumed_at IS NULL AND expires_at > NOW()`,
+    [id],
+  );
+  return (r.affectedRows || 0) === 1;
+}
+
+async function countOtpSendsSince(phoneE164, since) {
+  const [[row]] = await db.query(
+    `SELECT COUNT(*) AS c FROM otp_send_logs
+     WHERE phone_e164 = ? AND created_at >= ? AND send_status = 'sent'`,
+    [phoneE164, since],
+  );
+  return Number(row?.c) || 0;
+}
+
+async function selectLatestOtpSend(phoneE164, purpose) {
+  const [[row]] = await db.query(
+    `SELECT id, code_hash, expires_at, consumed_at, created_at, send_status
+     FROM otp_send_logs
+     WHERE phone_e164 = ? AND purpose = ?
+     ORDER BY created_at DESC LIMIT 1`,
+    [phoneE164, purpose],
+  );
+  return row || null;
+}
+
+async function insertOtpSendLog(params) {
+  const {
+    id, phoneE164, purpose, codeHash, ip, uaHash, sendStatus, errorMessage, expiresAt,
+  } = params;
+  await db.query(
+    `INSERT INTO otp_send_logs (id, phone_e164, purpose, code_hash, ip, ua_hash, send_status, error_message, expires_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id, phoneE164, purpose, codeHash, ip || null, uaHash || null,
+      sendStatus, errorMessage || null, expiresAt,
+    ],
+  );
+}
+
+async function selectOtpLogForVerify(phoneE164, purpose, codeHash) {
+  const [[row]] = await db.query(
+    `SELECT id, expires_at, consumed_at, send_status
+     FROM otp_send_logs
+     WHERE phone_e164 = ? AND purpose = ? AND BINARY code_hash = BINARY ?
+       AND consumed_at IS NULL AND expires_at > NOW()
+     ORDER BY created_at DESC LIMIT 1`,
+    [phoneE164, purpose, codeHash],
+  );
+  return row || null;
+}
+
+async function tryConsumeOtpRow(id) {
+  const [r] = await db.query(
+    `UPDATE otp_send_logs SET consumed_at = NOW()
+     WHERE id = ? AND consumed_at IS NULL AND expires_at > NOW()`,
+    [id],
+  );
+  return (r.affectedRows || 0) === 1;
+}
+
 module.exports = {
   findUserIdByPhone,
   findUserIdByPhones,
@@ -189,4 +374,19 @@ module.exports = {
   insertPasswordResetToken,
   selectPasswordResetToken,
   markPasswordResetTokenUsed,
+  selectOauthAccount,
+  insertOauthAccount,
+  updateOauthAccountProfile,
+  insertOauthState,
+  selectOauthStateByHash,
+  markOauthStateConsumed,
+  insertAuthLoginTicket,
+  selectAuthLoginTicketByHash,
+  markAuthLoginTicketConsumed,
+  tryConsumeAuthLoginTicket,
+  countOtpSendsSince,
+  selectLatestOtpSend,
+  insertOtpSendLog,
+  selectOtpLogForVerify,
+  tryConsumeOtpRow,
 };

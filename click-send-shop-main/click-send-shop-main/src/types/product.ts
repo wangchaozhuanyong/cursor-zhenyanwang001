@@ -22,19 +22,46 @@ export interface ProductCatalogTag {
   color?: string;
 }
 
+export interface ProductActiveActivity {
+  id: string;
+  type: "flash_sale" | "full_reduction";
+  title: string;
+  description?: string;
+  start_at: string;
+  end_at: string;
+  activity_price: number;
+  limit_per_user: number;
+  activity_stock: number;
+  sold_count: number;
+  remaining_stock: number;
+  threshold_amount?: number | null;
+  discount_amount?: number | null;
+  status: "active";
+  status_label: string;
+}
+
 export interface Product {
   id: string;
   name: string;
   cover_image: string;
+  /** 商品详情页视频 URL。商品卡不展示，仅详情页图集使用 */
+  video_url?: string;
   images: string[];
   price: number;
+  /** 活动价/实际展示成交价；有 active_activity 时与 price 一致 */
+  effective_price?: number;
+  activity_price?: number;
+  active_activity?: ProductActiveActivity | null;
   /** 划线原价（可选）。前端在 > price 时才以删除线渲染 */
   original_price?: number | null;
+  /** 满减活动文案（如「满100减10」），由目录接口在 type=full_reduction 时附带 */
+  activity_promo_label?: string | null;
   /** 累计销量（订单付款后由后端自动累加） */
   sales_count?: number;
   points: number;
   category_id: string;
   stock: number;
+  stock_warning_threshold?: number;
   /** 0 草稿 · 1 上架 · 2 下架 */
   lifecycle_status?: ProductLifecycleStatus;
   status: ProductStatus;

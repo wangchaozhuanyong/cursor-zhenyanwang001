@@ -20,6 +20,7 @@ const {
   paymentStatusAfterFulfillmentChange,
   canShip,
 } = require('../order/orderStateMachine');
+const logisticsService = require('../logistics/logistics.service');
 const repo = require('./adminOrder.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
 const { ORDER_STATUS, PAYMENT_STATUS, ORDER_STATUS_LIST } = require('../../constants/status');
@@ -102,6 +103,7 @@ async function getOrderById(orderId) {
   if (!order) throw new NotFoundError('订单不存在');
   const items = await repo.selectOrderItemsWithProduct(repo.getPool(), order.id);
   attachItemsAndAmounts(order, items);
+  await logisticsService.attachTracking(order);
   return { data: order };
 }
 
@@ -162,7 +164,12 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
       if (status === ORDER_STATUS.CANCELLED && fullOrder) {
         const items = await repo.selectOrderItemPairs(conn, fullOrder.id);
         for (const item of items) {
-          await repo.restoreProductStock(conn, item.product_id, item.qty);
+          await repo.restoreProductStock(conn, item.product_id, item.qty, {
+            refType: 'order',
+            refId: fullOrder.id,
+            operatorId: adminUserId,
+            reason: `管理员取消订单 ${fullOrder.order_no} 释放库存`,
+          });
         }
         await requireUserApi('reverseOrderPoints')(conn, fullOrder, `订单取消回滚积分 ${fullOrder.order_no}`, {
           operatorId: adminUserId,
@@ -269,6 +276,7 @@ async function shipOrder(orderId, body, adminUserId, req) {
     const trackingNo = body.trackingNo || body.tracking_no || '';
     const carrier = body.carrier || '';
     await repo.updateOrderShipped(orderId, trackingNo, carrier);
+    await logisticsService.refreshOrderTrackingQuietly(orderId);
 
     const shipCopy = await getResolvedTriggerCopy('order_ship', {
       order_no: order.order_no,

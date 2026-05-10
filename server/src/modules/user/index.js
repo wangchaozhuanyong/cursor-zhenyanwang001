@@ -5,6 +5,7 @@ const { Router } = require('express');
 const pointsService = require('./points.service');
 const rewardService = require('./reward.service');
 const notificationService = require('./notification.service');
+const memberLevelService = require('./memberLevel.service');
 
 const router = Router();
 
@@ -31,6 +32,8 @@ router.use('/theme', require('./theme.routes'));
   insertRewardTransaction: rewardService.insertRewardTransaction,
   adjustUserPoints: pointsService.adjustUserPoints,
   insertUserNotification: notificationService.insertUserNotification,
+  refreshUserMemberLevel: memberLevelService.refreshUserMemberLevel,
+  getUserMemberLevel: memberLevelService.getUserMemberLevel,
 };
 
 module.exports = router;

@@ -1,5 +1,12 @@
 import { post, get } from "../request";
-import type { LoginParams, RegisterParams, LoginResult } from "@/types/auth";
+import type {
+  LoginParams,
+  RegisterParams,
+  LoginResult,
+  OtpSendParams,
+  OtpLoginParams,
+  OAuthExchangeParams,
+} from "@/types/auth";
 import type { UserProfile } from "@/types/user";
 
 export function login(params: LoginParams) {
@@ -28,4 +35,16 @@ export function resetPassword(params: { token: string; newPassword: string }) {
 
 export function getProfile() {
   return get<UserProfile>("/user/profile");
+}
+
+export function sendOtp(params: OtpSendParams) {
+  return post<{ devOtp?: string; expiresInSeconds?: number } | null>("/auth/otp/send", params);
+}
+
+export function loginWithOtp(params: OtpLoginParams) {
+  return post<LoginResult>("/auth/otp/login", params);
+}
+
+export function exchangeOAuthTicket(params: OAuthExchangeParams) {
+  return post<LoginResult>("/auth/oauth/exchange", params);
 }

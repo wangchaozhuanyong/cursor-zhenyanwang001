@@ -3,8 +3,15 @@ const repo = require('./order.repository');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
 const paymentsService = require('./payments/payments.service');
 const { getResolvedTriggerCopy } = require('../admin/notificationTriggerApi');
+const userModule = require('../user');
 
 const orderDb = repo.getPool();
+const userApi = /** @type {any} */ (userModule).api || {};
+
+async function refreshMemberLevel(q, userId) {
+  if (typeof userApi.refreshUserMemberLevel !== 'function') return;
+  await userApi.refreshUserMemberLevel(q, userId);
+}
 
 /**
  * 校验 Stripe PaymentIntent 与订单金额、币种一致（与 createStripeCheckoutSession 中 unit_amount 逻辑对齐）
@@ -81,6 +88,7 @@ async function handleStripeEvent(event) {
     paymentChannel: 'stripe',
     paymentTransactionNo: pi.id || '',
   });
+  await refreshMemberLevel(orderDb, order.user_id);
 
   try {
     await paymentsService.recordStripeCapture(orderId, pi.id || '', eventId, {

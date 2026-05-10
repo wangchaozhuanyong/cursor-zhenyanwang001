@@ -8,9 +8,25 @@ const {
   refreshBodySchema,
   requestPasswordResetBodySchema,
   resetPasswordBodySchema,
+  oauthProviderParamSchema,
+  oauthStartQuerySchema,
+  oauthExchangeBodySchema,
+  otpSendBodySchema,
+  otpLoginBodySchema,
 } = require('./schemas/auth.schemas');
 
 const router = Router();
+
+router.get(
+  '/oauth/:provider/start',
+  validate({ params: oauthProviderParamSchema, query: oauthStartQuerySchema }),
+  ctrl.oauthStart,
+);
+router.get(
+  '/oauth/:provider/callback',
+  validate({ params: oauthProviderParamSchema }),
+  ctrl.oauthCallback,
+);
 
 router.post('/register', validate({ body: registerBodySchema }), ctrl.register);
 router.post('/login', validate({ body: loginBodySchema }), ctrl.login);
@@ -18,5 +34,9 @@ router.post('/password-reset/request', validate({ body: requestPasswordResetBody
 router.post('/password-reset/confirm', validate({ body: resetPasswordBodySchema }), ctrl.resetPassword);
 router.post('/refresh', validate({ body: refreshBodySchema }), ctrl.refresh);
 router.post('/logout', auth, ctrl.logout);
+
+router.post('/oauth/exchange', validate({ body: oauthExchangeBodySchema }), ctrl.oauthExchange);
+router.post('/otp/send', validate({ body: otpSendBodySchema }), ctrl.otpSend);
+router.post('/otp/login', validate({ body: otpLoginBodySchema }), ctrl.otpLogin);
 
 module.exports = router;

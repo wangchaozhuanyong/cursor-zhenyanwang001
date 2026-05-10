@@ -27,6 +27,7 @@ const adminProductListQuerySchema = z.object({
 const adminProductCreateBodySchema = z.object({
   name: z.string().min(1).max(255),
   cover_image: z.string().max(500).optional(),
+  video_url: z.string().max(2000).optional(),
   images: z.array(z.string().max(2000)).max(20).optional().default([]),
   price: z.coerce.number().nonnegative(),
   original_price: z.union([z.coerce.number(), z.null()]).optional(),
@@ -48,6 +49,7 @@ const adminProductCreateBodySchema = z.object({
 const adminProductUpdateBodySchema = z.object({
   name: z.string().min(1).max(255).optional(),
   cover_image: z.string().max(500).optional(),
+  video_url: z.string().max(2000).optional(),
   images: z.array(z.string().max(2000)).max(20).optional(),
   price: z.coerce.number().nonnegative().optional(),
   original_price: z.union([z.coerce.number(), z.null()]).optional(),

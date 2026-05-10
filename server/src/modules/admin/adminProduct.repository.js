@@ -28,23 +28,24 @@ async function selectProductById(id) {
 
 async function insertProduct(params) {
   const {
-    id, name, cover_image, imagesJson, price, original_price, sales_count,
+    id, name, cover_image, video_url, imagesJson, price, original_price, sales_count,
     points, category_id, stock,
-    status, lifecycle_status, sort_order, description, is_recommended, is_new, is_hot,
+    status, lifecycle_status, sort_order, description, search_keywords,
+    is_recommended, is_new, is_hot,
   } = params;
   await db.query(
-    `INSERT INTO products (id, name, cover_image, images, price, original_price, sales_count,
+    `INSERT INTO products (id, name, cover_image, video_url, images, price, original_price, sales_count,
       points, category_id, stock,
-      status, lifecycle_status, sort_order, description, is_recommended, is_new, is_hot)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      status, lifecycle_status, sort_order, description, search_keywords, is_recommended, is_new, is_hot)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
-      id, name, cover_image, imagesJson, price,
+      id, name, cover_image, video_url || '', imagesJson, price,
       original_price ?? null,
       Number.isFinite(sales_count) ? sales_count : 0,
       points, category_id, stock,
       status,
       lifecycle_status ?? 1,
-      sort_order, description, is_recommended, is_new, is_hot,
+      sort_order, description, search_keywords || '', is_recommended, is_new, is_hot,
     ],
   );
 }

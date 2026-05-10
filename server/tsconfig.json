@@ -49,6 +49,7 @@
     "src/modules/product/**/*.js",
     "src/modules/user/**/*.js",
     "src/modules/health/**/*.js",
+    "src/queues/**/*.js",
     "src/routes/index.js",
     "src/app.js",
     "src/index.js",

@@ -93,6 +93,17 @@ const authSensitiveLimiter = rateLimit({
 app.use('/api/auth/password-reset/request', authSensitiveLimiter);
 app.use('/api/auth/password-reset/confirm', authSensitiveLimiter);
 app.use('/api/auth/refresh', authSensitiveLimiter);
+app.use('/api/auth/otp/send', authSensitiveLimiter);
+app.use('/api/auth/otp/login', authLimiter);
+app.use('/api/auth/oauth/exchange', authSensitiveLimiter);
+
+const oauthStartLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 40,
+  message: { code: 429, message: 'OAuth 请求过于频繁，请稍后再试' },
+});
+app.use('/api/auth/oauth/google/start', oauthStartLimiter);
+app.use('/api/auth/oauth/facebook/start', oauthStartLimiter);
 
 const uploadLimiter = rateLimit({
   windowMs: 60 * 1000,

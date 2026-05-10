@@ -41,6 +41,11 @@ const themeCtrl = require('./controller/adminTheme.controller');
 const exportCtrl = require('./controller/adminExport.controller');
 const recycleBinCtrl = require('./controller/adminRecycleBin.controller');
 const adminPayCtrl = require('../order/payments/adminPayments.controller');
+const logisticsCtrl = require('../logistics/logistics.controller');
+const inventoryCtrl = require('./controller/adminInventory.controller');
+const activityCtrl = require('./controller/adminActivity.controller');
+const homeOpsCtrl = require('./controller/adminHomeOps.controller');
+const memberLevelCtrl = require('./controller/adminMemberLevel.controller');
 const paySchemas = require('../order/payments/payments.schemas');
 const productSchemas = require('./schemas/adminProduct.schemas');
 const userUploadCtrl = require('../user/upload.controller');
@@ -205,6 +210,47 @@ router.get('/orders', adminAuth, requirePermission('order.view'), orderCtrl.list
 router.get('/orders/:id', adminAuth, requirePermission('order.view'), orderCtrl.getById);
 router.put('/orders/:id/status', adminAuth, requirePermission('order.update'), orderCtrl.updateStatus);
 router.put('/orders/:id/ship', adminAuth, requirePermission('order.ship'), orderCtrl.ship);
+router.post('/orders/:id/logistics/refresh', adminAuth, requirePermission('order.ship'), logisticsCtrl.refreshOrderTracking);
+
+/* ── Inventory（须将 /records 置于 /products/:id 之前，避免 id=records） ── */
+router.get('/inventory/records', adminAuth, requirePermission('inventory.manage'), inventoryCtrl.listRecords);
+router.get('/inventory/products', adminAuth, requirePermission('inventory.manage'), inventoryCtrl.listProducts);
+router.post(
+  '/inventory/products/:productId/adjust',
+  adminAuth,
+  requirePermission('inventory.manage'),
+  inventoryCtrl.adjustStock,
+);
+router.put(
+  '/inventory/products/:productId/warning-threshold',
+  adminAuth,
+  requirePermission('inventory.manage'),
+  inventoryCtrl.updateWarningThreshold,
+);
+
+/* ── Marketing activities ── */
+router.get('/activities', adminAuth, requirePermission('activity.manage'), activityCtrl.list);
+router.post('/activities', adminAuth, requirePermission('activity.manage'), activityCtrl.create);
+router.get('/activities/:id', adminAuth, requirePermission('activity.manage'), activityCtrl.getById);
+router.put('/activities/:id', adminAuth, requirePermission('activity.manage'), activityCtrl.update);
+router.patch('/activities/:id/status', adminAuth, requirePermission('activity.manage'), activityCtrl.updateStatus);
+router.delete('/activities/:id', adminAuth, requirePermission('activity.manage'), activityCtrl.remove);
+
+/* ── Home ops（首页导航 / 公告） ── */
+router.get('/home-ops/nav-items', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.listNavItems);
+router.post('/home-ops/nav-items', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.createNavItem);
+router.put('/home-ops/nav-items/:id', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.updateNavItem);
+router.delete('/home-ops/nav-items/:id', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.deleteNavItem);
+router.get('/home-ops/announcements', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.listAnnouncements);
+router.post('/home-ops/announcements', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.createAnnouncement);
+router.put('/home-ops/announcements/:id', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.updateAnnouncement);
+router.delete('/home-ops/announcements/:id', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.deleteAnnouncement);
+
+/* ── Member levels ── */
+router.get('/member-levels', adminAuth, requirePermission('member_level.manage'), memberLevelCtrl.list);
+router.post('/member-levels', adminAuth, requirePermission('member_level.manage'), memberLevelCtrl.create);
+router.put('/member-levels/:id', adminAuth, requirePermission('member_level.manage'), memberLevelCtrl.update);
+router.delete('/member-levels/:id', adminAuth, requirePermission('member_level.manage'), memberLevelCtrl.remove);
 
 /* ── Users ── */
 router.get('/users/export', adminAuth, requirePermission('user.view'), userCtrl.exportCsv);

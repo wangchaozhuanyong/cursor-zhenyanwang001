@@ -81,7 +81,9 @@ async function selectWeeklyOrdersBreakdown() {
 async function selectCategoryProductCounts() {
   const [rows] = await db.query(
     `SELECT c.name, COUNT(p.id) AS value
-     FROM categories c LEFT JOIN products p ON p.category_id = c.id
+     FROM categories c
+     LEFT JOIN products p ON p.category_id = c.id AND p.deleted_at IS NULL
+     WHERE c.deleted_at IS NULL
      GROUP BY c.id, c.name ORDER BY value DESC LIMIT 6`,
   );
   return rows;

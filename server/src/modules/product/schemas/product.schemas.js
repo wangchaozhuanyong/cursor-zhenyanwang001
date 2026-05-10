@@ -7,15 +7,19 @@ const productIdParamSchema = z.object({ id: idParam });
 const productListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(20),
+  category_id: idParam.optional(),
   category: idParam.optional(),
   categoryId: idParam.optional(),
   keyword: z.string().trim().max(64).optional(),
   sort: z
     .enum([
+      'default',
       'newest',
       'sales',
       'price_asc',
       'price_desc',
+      'price-asc',
+      'price-desc',
       'recommended',
     ])
     .optional(),

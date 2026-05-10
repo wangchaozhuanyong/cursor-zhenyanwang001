@@ -131,6 +131,11 @@ async function payWithRewardWallet(userId, orderId) {
       paymentTransactionNo: txNo,
       paymentMethod: 'reward_wallet',
     });
+    try {
+      await requireUserApi('refreshUserMemberLevel')(conn, userId);
+    } catch (e) {
+      console.error('[payWithRewardWallet] refreshUserMemberLevel failed (payment still committed if later steps ok):', e?.message || e);
+    }
 
     const itemRows = await orderRepo.selectOrderItemQtyRows(conn, lockedOrder.id);
     for (const it of itemRows) {
@@ -510,6 +515,7 @@ async function markOrderPaidByAdmin(req, orderId, body) {
       paymentTransactionNo: txNo,
       paymentMethod: 'manual',
     });
+    await requireUserApi('refreshUserMemberLevel')(conn, order.user_id);
 
     const itemRows = await orderRepo.selectOrderItemQtyRows(conn, order.id);
     for (const it of itemRows) {

@@ -4,6 +4,7 @@
  */
 const db = require('../../config/db');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
+const { generateId } = require('../../utils/helpers');
 
 function getPool() {
   return db;
@@ -20,6 +21,47 @@ async function selectProductsForUpdate(q, productIds) {
     productIds,
   );
   return rows;
+}
+
+async function selectActiveActivityItemsForUpdate(q, productIds) {
+  if (!productIds.length) return [];
+  const [rows] = await q.query(
+    `SELECT
+       ap.product_id,
+       ap.activity_id,
+       ap.activity_price,
+       ap.limit_per_user,
+       ap.activity_stock,
+       ap.sold_count,
+       a.title,
+       a.type,
+       a.threshold_amount,
+       a.discount_amount,
+       a.start_at,
+       a.end_at
+     FROM marketing_activity_products ap
+     JOIN marketing_activities a ON a.id = ap.activity_id
+     WHERE ap.product_id IN (${productIds.map(() => '?').join(',')})
+       AND a.deleted_at IS NULL
+       AND a.disabled = 0
+       AND NOW() BETWEEN a.start_at AND a.end_at
+       AND ap.activity_price > 0
+       AND ap.activity_stock > ap.sold_count
+     ORDER BY ap.product_id ASC, ap.activity_price ASC, a.sort_order ASC, a.start_at DESC
+     FOR UPDATE`,
+    productIds,
+  );
+  return rows;
+}
+
+async function incrementActivitySold(q, activityId, productId, qty) {
+  const [result] = await q.query(
+    `UPDATE marketing_activity_products
+     SET sold_count = sold_count + ?
+     WHERE activity_id = ? AND product_id = ? AND activity_stock >= sold_count + ?`,
+    [qty, activityId, productId, qty],
+  );
+  return result.affectedRows;
 }
 
 async function selectShippingTemplate(q, id) {
@@ -91,11 +133,46 @@ async function insertOrderItem(q, params) {
 }
 
 /** @returns {Promise<number>} affectedRows */
-async function deductProductStock(q, productId, qty) {
+async function deductProductStock(q, productId, qty, meta = {}) {
+  const [[beforeRow]] = await q.query(
+    `SELECT p.stock, v.id AS default_variant_id
+     FROM products p
+     LEFT JOIN product_variants v ON v.product_id = p.id AND v.is_default = 1
+     WHERE p.id = ?
+     FOR UPDATE`,
+    [productId],
+  );
+  const beforeStock = Number(beforeRow?.stock ?? 0);
   const [result] = await q.query(
     'UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?',
     [qty, productId, qty],
   );
+  if (result.affectedRows > 0) {
+    const afterStock = beforeStock - qty;
+    await q.query(
+      'UPDATE product_variants SET stock = ? WHERE product_id = ? AND is_default = 1',
+      [afterStock, productId],
+    );
+    await q.query(
+      `INSERT INTO inventory_stock_records
+         (id, product_id, variant_id, change_type, quantity_delta, before_stock,
+          after_stock, reason, ref_type, ref_id, operator_id)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+      [
+        generateId(),
+        productId,
+        beforeRow?.default_variant_id || null,
+        'order_deduct',
+        -qty,
+        beforeStock,
+        afterStock,
+        meta.reason || '订单下单扣减库存',
+        meta.refType || 'order',
+        meta.refId || '',
+        meta.operatorId || null,
+      ],
+    );
+  }
   return result.affectedRows;
 }
 
@@ -220,8 +297,41 @@ async function selectOrderItemQtyRows(q, orderId) {
   return rows;
 }
 
-async function restoreProductStock(q, productId, qty) {
-  await q.query('UPDATE products SET stock = stock + ? WHERE id = ?', [qty, productId]);
+async function restoreProductStock(q, productId, qty, meta = {}) {
+  const [[beforeRow]] = await q.query(
+    `SELECT p.stock, v.id AS default_variant_id
+     FROM products p
+     LEFT JOIN product_variants v ON v.product_id = p.id AND v.is_default = 1
+     WHERE p.id = ?
+     FOR UPDATE`,
+    [productId],
+  );
+  const beforeStock = Number(beforeRow?.stock ?? 0);
+  const afterStock = beforeStock + qty;
+  await q.query('UPDATE products SET stock = ? WHERE id = ?', [afterStock, productId]);
+  await q.query(
+    'UPDATE product_variants SET stock = ? WHERE product_id = ? AND is_default = 1',
+    [afterStock, productId],
+  );
+  await q.query(
+    `INSERT INTO inventory_stock_records
+       (id, product_id, variant_id, change_type, quantity_delta, before_stock,
+        after_stock, reason, ref_type, ref_id, operator_id)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      generateId(),
+      productId,
+      beforeRow?.default_variant_id || null,
+      'order_release',
+      qty,
+      beforeStock,
+      afterStock,
+      meta.reason || '订单取消释放库存',
+      meta.refType || 'order',
+      meta.refId || '',
+      meta.operatorId || null,
+    ],
+  );
 }
 
 async function incrementProductSales(q, productId, qty) {
@@ -322,6 +432,8 @@ module.exports = {
   getPool,
   getConnection,
   selectProductsForUpdate,
+  selectActiveActivityItemsForUpdate,
+  incrementActivitySold,
   selectShippingTemplate,
   selectUserCouponForUpdate,
   selectCouponCategoryIds,

@@ -53,6 +53,15 @@ export default function ProductDetail() {
     if (product) addToHistory(product);
   }, [product, addToHistory]);
 
+  useEffect(() => {
+    if (!product) return;
+    const active = product.active_activity;
+    const remaining = active ? Math.max(0, active.remaining_stock ?? 0) : product.stock;
+    const limit = active?.limit_per_user && active.limit_per_user > 0 ? active.limit_per_user : product.stock;
+    const max = Math.max(1, Math.min(product.stock, remaining, limit));
+    setQty((prev) => Math.min(prev, max));
+  }, [product]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background pb-28 md:pb-0">
@@ -87,6 +96,13 @@ export default function ProductDetail() {
       </div>
     );
   }
+
+  const activeActivity = product.active_activity;
+  const activityRemaining = activeActivity ? Math.max(0, activeActivity.remaining_stock ?? 0) : product.stock;
+  const activityLimit = activeActivity?.limit_per_user && activeActivity.limit_per_user > 0
+    ? activeActivity.limit_per_user
+    : product.stock;
+  const maxQty = Math.max(1, Math.min(product.stock, activityRemaining, activityLimit));
 
   const handleAddToCart = () => {
     addItem(product, qty);
@@ -139,7 +155,7 @@ export default function ProductDetail() {
           {/* 左：图集 */}
           <div className="md:sticky md:top-20 md:self-start">
             <div className="md:overflow-hidden md:theme-rounded md:border md:border-[var(--theme-border)]">
-              <ProductImageGallery images={product.images} name={product.name} />
+              <ProductImageGallery images={product.images} name={product.name} videoUrl={product.video_url} />
             </div>
           </div>
 
@@ -156,6 +172,11 @@ export default function ProductDetail() {
                 {product.is_new && (
                   <span className="theme-rounded bg-[var(--theme-primary)] px-2 py-1 text-[10px] font-bold text-[var(--theme-primary-foreground)]">
                     新品
+                  </span>
+                )}
+                {activeActivity && (
+                  <span className="theme-rounded bg-red-600 px-2 py-1 text-[10px] font-bold text-white">
+                    {activeActivity.type === "flash_sale" ? "限时秒杀" : "满减活动"}
                   </span>
                 )}
                 {(product.tags || []).map((t) => (
@@ -177,6 +198,25 @@ export default function ProductDetail() {
 
             {/* 价格 */}
             <div className="px-4 pt-3 md:px-0 md:pt-5">
+              {activeActivity && (
+                <div className="mb-3 theme-rounded border border-red-500/25 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-200">
+                  <div className="font-bold">{activeActivity.title}</div>
+                  {activeActivity.type === "full_reduction"
+                    && activeActivity.threshold_amount != null
+                    && activeActivity.discount_amount != null
+                    && activeActivity.threshold_amount > 0
+                    && activeActivity.discount_amount > 0 && (
+                    <div className="mt-1 text-xs font-semibold">
+                      满 RM {activeActivity.threshold_amount} 减 RM {activeActivity.discount_amount}（购物车中本活动商品合计达标后减免一次）
+                    </div>
+                  )}
+                  <div className="mt-1 text-xs opacity-85">
+                    活动库存剩余 {activeActivity.remaining_stock} 件
+                    {activeActivity.limit_per_user > 0 ? ` · 每单限购 ${activeActivity.limit_per_user} 件` : ""}
+                    {" · "}截止 {new Date(activeActivity.end_at).toLocaleString("zh-CN")}
+                  </div>
+                </div>
+              )}
               <div className="flex flex-wrap items-baseline gap-2">
                 <span className="text-3xl font-bold text-[var(--theme-price)] md:text-4xl">
                   RM {product.price}
@@ -221,7 +261,7 @@ export default function ProductDetail() {
                 <SquishButton
                   type="button"
                   aria-label="增加数量"
-                  onClick={() => setQty(Math.min(product.stock, qty + 1))}
+                  onClick={() => setQty(Math.min(maxQty, qty + 1))}
                   className="flex h-9 w-9 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] touch-target shadow-none !p-0"
                 >
                   <Plus size={16} className="text-foreground" />

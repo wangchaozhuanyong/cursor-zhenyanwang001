@@ -14,6 +14,8 @@ import {
   Loader2,
   XCircle,
   CreditCard,
+  MapPin,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -139,6 +141,7 @@ export default function OrderDetail() {
   const label = ORDER_STATUS_META[order.status]?.label ?? order.status;
   const StatusIcon = statusIconMap[order.status] ?? Clock;
   const iconColor = statusColorMap[order.status] ?? "text-muted-foreground";
+  const logisticsTimeline = order.logistics_timeline || [];
 
   const copyOrderText = async () => {
     const copied = await copyToClipboard(generateOrderText(order));
@@ -232,6 +235,36 @@ export default function OrderDetail() {
                 <span className="text-muted-foreground">运单号</span>
                 <span className="text-foreground font-mono font-medium">{order.tracking_no}</span>
               </div>
+              {order.logistics_provider?.tracking_url && (
+                <a
+                  href={order.logistics_provider.tracking_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-[var(--theme-price)]"
+                >
+                  前往承运商官网查询 <ExternalLink size={12} />
+                </a>
+              )}
+              {logisticsTimeline.length > 0 && (
+                <div className="mt-4 space-y-4 border-t border-[var(--theme-border)] pt-4">
+                  {logisticsTimeline.map((track, idx) => (
+                    <div key={track.id || idx} className="relative pl-5">
+                      <span className="absolute left-0 top-1.5 h-2.5 w-2.5 rounded-full bg-[var(--theme-price)]" />
+                      {idx < logisticsTimeline.length - 1 && <span className="absolute left-1 top-4 h-full w-px bg-[var(--theme-border)]" />}
+                      <p className="text-sm font-medium text-foreground">{track.title}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{track.description}</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                        <span>{new Date(track.event_time).toLocaleString("en-MY")}</span>
+                        {track.location && (
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin size={11} /> {track.location}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

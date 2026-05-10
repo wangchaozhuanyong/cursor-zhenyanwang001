@@ -47,17 +47,27 @@ const createReconciliationBodySchema = z.object({
   notes: z.string().trim().max(512).optional(),
 });
 
-const webhookManualBodySchema = z.object({
-  order_id: z.string().trim().min(1),
+const webhookProviderBodySchema = z.object({
+  order_id: z.string().trim().min(1).optional(),
+  payment_order_id: z.string().trim().min(1).optional(),
+  event_id: z.string().trim().max(191).optional(),
+  transaction_id: z.string().trim().max(191).optional(),
+  reference: z.string().trim().max(191).optional(),
+  status: z.string().trim().max(64).optional(),
+  payment_status: z.string().trim().max(64).optional(),
+  amount: z.union([z.string(), z.number()]).optional(),
+  currency: z.string().trim().max(8).optional(),
+  channel_code: z.string().trim().max(64).optional(),
   secret: z.string().trim().optional(),
-});
+  signature: z.string().trim().optional(),
+}).passthrough();
 
 const adminChannelIdParamSchema = z.object({ id: z.string().trim().min(1) });
 const adminOrderIdParamSchema = z.object({ orderId: z.string().trim().min(1) });
 const adminEventIdParamSchema = z.object({ eventId: z.string().trim().min(1) });
 
 const webhookProviderParamSchema = z.object({
-  provider: z.enum(['manual']),
+  provider: z.enum(['manual', 'malaysia-local', 'malaysia_local']),
 });
 
 module.exports = {
@@ -68,7 +78,7 @@ module.exports = {
   updateChannelBodySchema,
   listAdminQuerySchema,
   createReconciliationBodySchema,
-  webhookManualBodySchema,
+  webhookManualBodySchema: webhookProviderBodySchema,
   adminChannelIdParamSchema,
   adminOrderIdParamSchema,
   adminEventIdParamSchema,

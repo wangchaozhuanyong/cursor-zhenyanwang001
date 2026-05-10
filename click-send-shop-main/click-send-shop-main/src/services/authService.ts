@@ -53,6 +53,11 @@ export async function loginWithOtp(params: OtpLoginParams): Promise<LoginResult>
   return res.data;
 }
 
+export async function getAuthFeatures() {
+  const res = await authApi.getAuthFeatures();
+  return res.data;
+}
+
 export async function exchangeOAuthTicket(params: OAuthExchangeParams): Promise<LoginResult> {
   const res = await authApi.exchangeOAuthTicket(params);
   const { accessToken, refreshToken } = res.data.token;

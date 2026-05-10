@@ -3,6 +3,7 @@ import type {
   LoginParams,
   RegisterParams,
   LoginResult,
+  AuthFeatures,
   OtpSendParams,
   OtpLoginParams,
   OAuthExchangeParams,
@@ -43,6 +44,10 @@ export function sendOtp(params: OtpSendParams) {
 
 export function loginWithOtp(params: OtpLoginParams) {
   return post<LoginResult>("/auth/otp/login", params);
+}
+
+export function getAuthFeatures() {
+  return get<AuthFeatures>("/auth/features");
 }
 
 export function exchangeOAuthTicket(params: OAuthExchangeParams) {

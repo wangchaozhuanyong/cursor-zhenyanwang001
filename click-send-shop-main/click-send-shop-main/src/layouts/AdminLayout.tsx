@@ -73,7 +73,16 @@ const navItemsRaw: NavItem[] = [
       { icon: Tags, label: "标签管理", path: "/admin/tags", permission: "product.view" },
     ],
   },
-  { icon: ShoppingCart, label: "订单管理", path: "/admin/orders", permission: "order.view" },
+  {
+    icon: ShoppingCart,
+    label: "订单管理",
+    path: "/admin/orders",
+    permission: "order.view",
+    children: [
+      { icon: ShoppingCart, label: "订单列表", path: "/admin/orders", permission: "order.view" },
+      { icon: ClipboardList, label: "未完成结算", path: "/admin/orders/unfinished", permission: "order.view" },
+    ],
+  },
   {
     icon: CreditCard,
     label: "支付管理",
@@ -231,7 +240,9 @@ function AdminSidebarNav({
               {item.children && isExpanded && (
                 <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-3">
                   {item.children.map((child) => {
-                    const cActive = pathname === child.path || pathname.startsWith(child.path);
+                    const cActive = child.path === item.path
+                      ? pathname === child.path
+                      : pathname === child.path || pathname.startsWith(child.path);
                     return (
                       <button
                         type="button"

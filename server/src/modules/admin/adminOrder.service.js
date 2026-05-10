@@ -22,8 +22,10 @@ const {
 } = require('../order/orderStateMachine');
 const logisticsService = require('../logistics/logistics.service');
 const repo = require('./adminOrder.repository');
+const checkoutAbandonmentRepo = require('../order/checkoutAbandonment.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
 const { ORDER_STATUS, PAYMENT_STATUS, ORDER_STATUS_LIST } = require('../../constants/status');
+const myinvoisService = require('../myinvois/myinvois.service');
 
 const userApi = /** @type {any} */ (userModule).api || {};
 
@@ -137,6 +139,11 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
     try {
       await conn.beginTransaction();
       await repo.updateOrderStatusAndPayment(conn, orderId, status, newPayment);
+      if (newPayment === PAYMENT_STATUS.PAID) {
+        await checkoutAbandonmentRepo.markPaidByOrderId(conn, orderId);
+      } else if (status === ORDER_STATUS.CANCELLED) {
+        await checkoutAbandonmentRepo.markClosedByOrderId(conn, orderId);
+      }
       if (status === ORDER_STATUS.SHIPPED) {
         await repo.touchOrderShippedAtIfNull(conn, orderId);
       }
@@ -239,6 +246,20 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
       after: { status, payment_status: newPayment },
       result: 'success',
     });
+    if (newPayment === PAYMENT_STATUS.PAID && prevPay !== PAYMENT_STATUS.PAID) {
+      try {
+        await myinvoisService.enqueueOrderInvoiceIfEnabled(orderId, 'admin_order_status_paid');
+      } catch (e) {
+        console.error('[MyInvois] enqueue invoice after order status update failed:', e?.message || e);
+      }
+    }
+    if (status === ORDER_STATUS.REFUNDED) {
+      try {
+        await myinvoisService.enqueueRefundCreditNoteIfEnabled({ orderId }, 'admin_order_refunded');
+      } catch (e) {
+        console.error('[MyInvois] enqueue credit note after order refund failed:', e?.message || e);
+      }
+    }
     return { data: null, message: '状态已更新' };
   } catch (err) {
     await writeAuditLog({
@@ -328,6 +349,7 @@ async function shipOrder(orderId, body, adminUserId, req) {
 
 const ORDER_EXPORT_HEADERS = [
   'id', 'order_no', 'user_id', 'status', 'payment_status', 'total_amount', 'raw_amount', 'discount_amount', 'shipping_fee',
+  'tax_mode', 'tax_rate', 'tax_label', 'taxable_amount', 'tax_amount', 'tax_exclusive_amount',
   'total_points', 'contact_name', 'contact_phone', 'address', 'payment_method', 'coupon_title',
   'shipping_name', 'tracking_no', 'carrier', 'note', 'created_at',
 ];
@@ -345,6 +367,12 @@ async function exportOrdersCsv(query) {
     raw_amount: o.raw_amount,
     discount_amount: o.discount_amount,
     shipping_fee: o.shipping_fee,
+    tax_mode: o.tax_mode ?? '',
+    tax_rate: o.tax_rate ?? '',
+    tax_label: o.tax_label ?? '',
+    taxable_amount: o.taxable_amount ?? '',
+    tax_amount: o.tax_amount ?? '',
+    tax_exclusive_amount: o.tax_exclusive_amount ?? '',
     total_points: o.total_points,
     contact_name: o.contact_name || '',
     contact_phone: o.contact_phone || '',

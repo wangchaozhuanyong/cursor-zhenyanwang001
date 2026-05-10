@@ -8,6 +8,7 @@ const cart = require('../modules/cart');
 const order = require('../modules/order');
 const admin = require('../modules/admin');
 const search = require('../modules/search');
+const myinvois = require('../modules/myinvois');
 
 const router = Router();
 
@@ -18,6 +19,7 @@ router.use(product);
 router.use(search);
 router.use(cart);
 router.use(order);
+router.use(myinvois);
 router.use(admin);
 
 module.exports = router;

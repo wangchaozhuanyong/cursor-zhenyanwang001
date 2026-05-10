@@ -1,8 +1,9 @@
 ﻿import { useRef, useState } from "react";
-import { ArrowLeft, Camera, Lock, Palette, ChevronRight } from "lucide-react";
+import { ArrowLeft, Camera, Lock, Palette, ChevronRight, Download, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -35,6 +36,10 @@ export default function Settings() {
   const [newPwd, setNewPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
   const [pwdSaving, setPwdSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [showCancelForm, setShowCancelForm] = useState(false);
+  const [cancelConfirmText, setCancelConfirmText] = useState("");
+  const [cancelSaving, setCancelSaving] = useState(false);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -76,6 +81,45 @@ export default function Settings() {
       toast.error(e instanceof Error ? e.message : "密码修改失败");
     } finally {
       setPwdSaving(false);
+    }
+  };
+
+  const handleExportData = async () => {
+    setExporting(true);
+    try {
+      const data = await userService.exportAccountData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `account-data-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast.success("账号数据已导出", toastPresetQuickSuccess);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "导出失败，请重试");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleCancelAccount = async () => {
+    if (cancelConfirmText.trim() !== "注销账号") {
+      toast.error("请输入“注销账号”确认操作");
+      return;
+    }
+    setCancelSaving(true);
+    try {
+      await userService.cancelAccount(cancelConfirmText.trim());
+      toast.success("账号已注销", toastPresetQuickSuccess);
+      await useAuthStore.getState().logout();
+      navigate("/login", { replace: true });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "注销失败，请重试");
+    } finally {
+      setCancelSaving(false);
     }
   };
 
@@ -199,6 +243,61 @@ export default function Settings() {
                 className="w-full rounded-full bg-primary py-3 text-sm font-semibold text-primary-foreground disabled:opacity-60"
               >
                 {pwdSaving ? "修改中…" : "确认修改密码"}
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-6 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
+          <button
+            type="button"
+            onClick={handleExportData}
+            disabled={exporting}
+            className="flex w-full items-center justify-between disabled:opacity-60"
+          >
+            <div className="flex items-center gap-3">
+              <Download size={18} className="text-gold" />
+              <div className="text-left">
+                <div className="text-sm font-medium text-foreground">导出账号数据</div>
+                <div className="mt-0.5 text-xs text-muted-foreground">包含个人资料、地址、订单与积分记录</div>
+              </div>
+            </div>
+            <span className="text-xs text-muted-foreground">{exporting ? "导出中…" : "JSON"}</span>
+          </button>
+        </div>
+
+        <div className="mt-6 theme-rounded border border-destructive/30 bg-[var(--theme-surface)] p-4 theme-shadow">
+          <button
+            type="button"
+            onClick={() => setShowCancelForm(!showCancelForm)}
+            className="flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <Trash2 size={18} className="text-destructive" />
+              <div className="text-left">
+                <div className="text-sm font-medium text-destructive">注销账号</div>
+                <div className="mt-0.5 text-xs text-muted-foreground">注销后无法再登录，收货信息将被匿名化</div>
+              </div>
+            </div>
+            <ArrowLeft size={14} className={`text-muted-foreground transition-transform ${showCancelForm ? "rotate-90" : "-rotate-90"}`} />
+          </button>
+          {showCancelForm && (
+            <div className="mt-4 space-y-3">
+              <p className="text-xs leading-5 text-muted-foreground">
+                此操作会软删账号、清空地址，并脱敏历史订单中的收货姓名、电话、地址和备注。请先导出需要保留的数据。
+              </p>
+              <input
+                value={cancelConfirmText}
+                onChange={(e) => setCancelConfirmText(e.target.value)}
+                placeholder="输入“注销账号”确认"
+                className="w-full rounded-xl bg-secondary px-4 py-3.5 text-sm text-foreground outline-none ring-gold focus:ring-2 placeholder:text-muted-foreground"
+              />
+              <button
+                onClick={handleCancelAccount}
+                disabled={cancelSaving}
+                className="w-full rounded-full bg-destructive py-3 text-sm font-semibold text-destructive-foreground disabled:opacity-60"
+              >
+                {cancelSaving ? "注销中…" : "确认注销账号"}
               </button>
             </div>
           )}

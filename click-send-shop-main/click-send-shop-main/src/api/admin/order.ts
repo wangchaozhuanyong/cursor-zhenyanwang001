@@ -1,5 +1,5 @@
 import { get, post, put } from "../request";
-import type { Order, OrderListParams } from "@/types/order";
+import type { CheckoutAbandonment, CheckoutAbandonmentStatus, Order, OrderListParams } from "@/types/order";
 import type { PaginatedData } from "@/types/common";
 
 export function getOrders(params?: OrderListParams) {
@@ -20,4 +20,13 @@ export function shipOrder(id: string, trackingNo: string, carrier: string) {
 
 export function refreshOrderLogistics(id: string) {
   return post<Pick<Order, "logistics_provider" | "logistics_timeline">>(`/admin/orders/${id}/logistics/refresh`);
+}
+
+export function getCheckoutAbandonments(params?: {
+  status?: CheckoutAbandonmentStatus | "";
+  keyword?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  return get<PaginatedData<CheckoutAbandonment>>("/admin/checkout-abandonments", params as Record<string, string | number>);
 }

@@ -13,6 +13,7 @@ import {
 } from "@/modules/micro-interactions";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import ProductTagList from "@/components/ProductTagList";
+import { trackAddToCart } from "@/utils/tracking";
 
 interface Props {
   product: Product;
@@ -129,6 +130,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
             onClick={(e) => {
               e.stopPropagation();
               addItem(product);
+              trackAddToCart(product, 1);
               toast.success("已加入购物车", toastPresetQuickSuccess);
             }}
             className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)] transition-all active:scale-90 touch-target hover:opacity-90 shadow-none !p-0"

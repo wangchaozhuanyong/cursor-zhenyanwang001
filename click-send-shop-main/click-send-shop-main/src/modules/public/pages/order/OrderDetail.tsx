@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useOrderStore } from "@/stores/useOrderStore";
-import * as orderService from "@/services/orderService";
 import * as paymentService from "@/services/paymentService";
 import PageHeader from "@/components/PageHeader";
 import {
@@ -25,6 +24,9 @@ import { copyToClipboard } from "@/utils/clipboard";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { ORDER_STATUS, ORDER_STATUS_META, ORDER_STATUS_PROGRESS } from "@/constants/statusDictionary";
 import TrustInfo from "@/components/TrustInfo";
+import { OrderSstLines } from "@/components/OrderSstLines";
+import { trackPurchase } from "@/utils/tracking";
+import type { PublicPaymentChannel } from "@/services/paymentService";
 
 const statusIconMap: Record<string, React.ElementType> = {
   pending: Clock,
@@ -52,19 +54,46 @@ function generateOrderText(order: Order) {
   const itemsText = order.items
     .map((item, i) => `${i + 1}. ${item.product.name} x ${item.qty} — RM ${item.product.price * item.qty}`)
     .join("\n");
-  return `📋 订单编号：${order.order_no}
-━━━━━━━━━━━━
-商品清单：
-${itemsText}
-━━━━━━━━━━━━
-💰 总金额：RM ${order.total_amount}
-⭐ 总积分：${order.total_points}
-👤 姓名：${order.contact_name}
-📱 电话：${order.contact_phone}
-📍 地址：${order.address || "未填写"}
-📝 备注：${order.note || "无"}
-━━━━━━━━━━━━
-下单时间：${new Date(order.created_at).toLocaleString("zh-CN")}`;
+  const lines = [
+    `📋 订单编号：${order.order_no}`,
+    "━━━━━━━━━━━━",
+    "商品清单：",
+    itemsText,
+    "━━━━━━━━━━━━",
+    `💰 ${order.tax_mode === "inclusive" ? "商品总额（含税）" : "商品总额"}：RM ${order.raw_amount}`,
+  ];
+  if ((order.discount_amount ?? 0) > 0) {
+    lines.push(`🎫 优惠券（${order.coupon_title}）：-RM ${order.discount_amount}`);
+  }
+  if (
+    order.tax_mode === "inclusive"
+    && order.taxable_amount != null
+    && order.tax_amount != null
+    && order.tax_rate != null
+  ) {
+    const tl = order.tax_label || "SST";
+    lines.push(`📋 应税商品金额（含税）：RM ${order.taxable_amount}`);
+    if (order.tax_exclusive_amount != null) {
+      lines.push(`📋 商品不含税净额：RM ${order.tax_exclusive_amount}`);
+    }
+    lines.push(`📋 ${tl}（${order.tax_rate}%）：RM ${order.tax_amount}`);
+  }
+  if ((order.shipping_fee ?? 0) > 0) {
+    lines.push(`🚚 运费（${order.shipping_name || "标准"}，不计税）：RM ${order.shipping_fee}`);
+  } else {
+    lines.push("🚚 运费：包邮（不计税）");
+  }
+  lines.push(
+    `💰 应付金额：RM ${order.total_amount}`,
+    `⭐ 总积分：${order.total_points}`,
+    `👤 姓名：${order.contact_name}`,
+    `📱 电话：${order.contact_phone}`,
+    `📍 地址：${order.address || "未填写"}`,
+    `📝 备注：${order.note || "无"}`,
+    "━━━━━━━━━━━━",
+    `下单时间：${new Date(order.created_at).toLocaleString("zh-CN")}`,
+  );
+  return lines.join("\n");
 }
 
 export default function OrderDetail() {
@@ -74,6 +103,8 @@ export default function OrderDetail() {
   const { currentOrder: order, loading, error, loadOrderDetail, cancelOrder, confirmReceive } = useOrderStore();
   const [stripeRedirecting, setStripeRedirecting] = useState(false);
   const [stripeCheckoutReady, setStripeCheckoutReady] = useState(false);
+  const [paymentChannels, setPaymentChannels] = useState<PublicPaymentChannel[]>([]);
+  const [selectedPaymentChannelCode, setSelectedPaymentChannelCode] = useState("");
 
   useDocumentTitle(order ? `订单 ${order.order_no}` : "订单详情");
 
@@ -83,10 +114,16 @@ export default function OrderDetail() {
 
   useEffect(() => {
     let cancelled = false;
-    paymentService
-      .getPaymentConfig()
-      .then((config) => {
-        if (!cancelled) setStripeCheckoutReady(!!config.stripeCheckoutReady);
+    Promise.all([
+      paymentService.getPaymentConfig().catch(() => null),
+      paymentService.getPaymentChannels().catch(() => [] as PublicPaymentChannel[]),
+    ])
+      .then(([config, channels]) => {
+        if (cancelled) return;
+        const onlineChannels = channels.filter((channel) => channel.provider !== "internal");
+        setStripeCheckoutReady(!!config?.stripeCheckoutReady);
+        setPaymentChannels(onlineChannels);
+        setSelectedPaymentChannelCode((current) => current || onlineChannels[0]?.code || (config?.stripeCheckoutReady ? "stripe_checkout" : ""));
       })
       .catch(() => {
         if (!cancelled) setStripeCheckoutReady(false);
@@ -108,6 +145,13 @@ export default function OrderDetail() {
     }
     setSearchParams({}, { replace: true });
   }, [searchParams, id, loadOrderDetail, setSearchParams]);
+
+  useEffect(() => {
+    if (!order) return;
+    if (order.status === ORDER_STATUS.PAID || order.payment_status === "paid") {
+      trackPurchase(order);
+    }
+  }, [order]);
 
   if (loading) {
     return (
@@ -169,14 +213,23 @@ export default function OrderDetail() {
     }
   };
 
-  const handlePayStripe = async () => {
+  const handlePayOnline = async () => {
     if (!order || order.payment_method !== "online") return;
     setStripeRedirecting(true);
     try {
-      const { url } = await orderService.createStripeCheckoutSession(order.id);
-      window.location.href = url;
+      const intent = await paymentService.createPaymentIntent({
+        orderId: order.id,
+        channelCode: selectedPaymentChannelCode || "stripe_checkout",
+        returnUrl: `${window.location.origin}/orders/${order.id}`,
+      });
+      if (intent.redirect_url) {
+        window.location.href = intent.redirect_url;
+        return;
+      }
+      toast.success(intent.client_instructions || "支付单已创建，请等待支付网关确认");
+      await loadOrderDetail(order.id);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "无法打开 Stripe 支付");
+      toast.error(e instanceof Error ? e.message : "无法打开在线支付");
       setStripeRedirecting(false);
     }
   };
@@ -309,7 +362,9 @@ export default function OrderDetail() {
         {/* Summary */}
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">商品总额</span>
+            <span className="text-muted-foreground">
+              {order.tax_mode === "inclusive" ? "商品总额（含税）" : "商品总额"}
+            </span>
             <span className="font-medium text-foreground">RM {order.raw_amount ?? order.total_amount}</span>
           </div>
           {(order.discount_amount ?? 0) > 0 && (
@@ -318,8 +373,11 @@ export default function OrderDetail() {
               <span className="font-medium text-destructive">-RM {order.discount_amount}</span>
             </div>
           )}
+          <OrderSstLines order={order} />
           <div className="mt-2 flex justify-between text-sm">
-            <span className="text-muted-foreground">运费（{order.shipping_name || "标准"}）</span>
+            <span className="text-muted-foreground">
+              运费（{order.shipping_name || "标准"}）{order.tax_mode === "inclusive" ? "，不计税" : ""}
+            </span>
             <span className={`font-medium ${(order.shipping_fee ?? 0) === 0 ? "text-emerald-600" : "text-foreground"}`}>
               {(order.shipping_fee ?? 0) === 0 ? "包邮" : `RM ${order.shipping_fee}`}
             </span>
@@ -362,18 +420,31 @@ export default function OrderDetail() {
         <div className="space-y-3 pt-2">
           {order.status === ORDER_STATUS.PENDING && order.payment_method === "online" && (
             <>
-              {stripeCheckoutReady && (
+              {(stripeCheckoutReady || paymentChannels.length > 0) && (
+                <>
+                {paymentChannels.length > 0 && (
+                  <select
+                    value={selectedPaymentChannelCode}
+                    onChange={(e) => setSelectedPaymentChannelCode(e.target.value)}
+                    className="w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm text-[var(--theme-text)] outline-none"
+                  >
+                    {paymentChannels.map((channel) => (
+                      <option key={channel.code} value={channel.code}>{channel.name}</option>
+                    ))}
+                  </select>
+                )}
                 <button
                   type="button"
-                  onClick={handlePayStripe}
+                  onClick={handlePayOnline}
                   disabled={stripeRedirecting}
                   className="flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-bold text-white theme-shadow transition-all active:scale-[0.98] disabled:opacity-60"
                   style={{ background: "var(--theme-gradient)" }}
                 >
                   <CreditCard size={18} /> {stripeRedirecting ? "跳转中…" : "立即支付"}
                 </button>
+                </>
               )}
-              {!stripeCheckoutReady && (
+              {!stripeCheckoutReady && paymentChannels.length === 0 && (
                 <p className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-xs text-muted-foreground">
                   当前环境未配置在线支付，请联系客服完成付款。
                 </p>

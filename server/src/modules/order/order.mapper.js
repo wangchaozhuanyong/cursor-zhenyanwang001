@@ -34,6 +34,14 @@ function formatOrder(row, items) {
     shipping_fee: parseFloat(row.shipping_fee),
     shipping_name: row.shipping_name,
     total_amount: parseFloat(row.total_amount),
+    tax_mode: row.tax_mode || null,
+    tax_rate: row.tax_rate != null && row.tax_rate !== '' ? parseFloat(row.tax_rate) : null,
+    tax_label: row.tax_label || null,
+    taxable_amount: row.taxable_amount != null && row.taxable_amount !== '' ? parseFloat(row.taxable_amount) : null,
+    tax_amount: row.tax_amount != null && row.tax_amount !== '' ? parseFloat(row.tax_amount) : null,
+    tax_exclusive_amount: row.tax_exclusive_amount != null && row.tax_exclusive_amount !== ''
+      ? parseFloat(row.tax_exclusive_amount)
+      : null,
     total_points: row.total_points,
     status: row.status,
     payment_status: row.payment_status || PAYMENT_STATUS.PENDING,

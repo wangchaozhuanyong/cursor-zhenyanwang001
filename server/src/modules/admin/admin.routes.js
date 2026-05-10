@@ -22,6 +22,7 @@ const authCtrl = require('./controller/adminAuth.controller');
 const dashboardCtrl = require('./controller/adminDashboard.controller');
 const productCtrl = require('./controller/adminProduct.controller');
 const orderCtrl = require('./controller/adminOrder.controller');
+const checkoutAbandonmentCtrl = require('./controller/adminCheckoutAbandonment.controller');
 const userCtrl = require('./controller/adminUser.controller');
 const categoryCtrl = require('./controller/adminCategory.controller');
 const couponCtrl = require('./controller/adminCoupon.controller');
@@ -214,6 +215,7 @@ router.post(
 
 /* ── Orders ── */
 router.get('/orders/export', adminAuth, requirePermission('order.view'), orderCtrl.exportCsv);
+router.get('/checkout-abandonments', adminAuth, requirePermission('order.view'), checkoutAbandonmentCtrl.list);
 router.get('/orders', adminAuth, requirePermission('order.view'), orderCtrl.list);
 router.get('/orders/:id', adminAuth, requirePermission('order.view'), orderCtrl.getById);
 router.put('/orders/:id/status', adminAuth, requirePermission('order.update'), orderCtrl.updateStatus);

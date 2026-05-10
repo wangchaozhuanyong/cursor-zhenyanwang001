@@ -11,6 +11,8 @@ import { PRODUCT_BLUR_PLACEHOLDER } from "@/constants/productBlurPlaceholder";
 import { ProgressiveImage, SquishButton } from "@/modules/micro-interactions";
 import { toast } from "sonner";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { parseSstEnabled } from "@/utils/sstTax";
 
 export default function Cart() {
   useDocumentTitle("购物车");
@@ -33,6 +35,9 @@ export default function Cart() {
     totalItemsSelected,
   } = useCartStore();
   const selection = useCartStore((s) => s.selection);
+  const siteInfo = useSiteInfo();
+  const sstCartNote = (siteInfo.sstCustomerNote || "").trim();
+  const showSstCartHint = parseSstEnabled(siteInfo.sstEnabled);
 
   const selectedCount = items.filter((i) => selection[i.product.id] !== false).length;
   const allSelected = items.length > 0 && selectedCount === items.length;
@@ -251,9 +256,14 @@ export default function Cart() {
                     <span>{totalItemsSelected()} 件</span>
                   </div>
                   <div className="flex justify-between text-muted-foreground">
-                    <span>商品小计</span>
+                    <span>{showSstCartHint ? "商品小计（含税）" : "商品小计"}</span>
                     <span>RM {totalAmountSelected()}</span>
                   </div>
+                  {showSstCartHint ? (
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      {sstCartNote || "商品价格已含 SST，运费不计税。"}
+                    </p>
+                  ) : null}
                   <div className="flex justify-between text-muted-foreground">
                     <span>可获积分</span>
                     <span>+{totalPointsSelected()}</span>

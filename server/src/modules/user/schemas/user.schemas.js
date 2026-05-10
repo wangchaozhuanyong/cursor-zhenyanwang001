@@ -102,6 +102,10 @@ const shippingQuoteBodySchema = z.object({
   estimated_weight_kg: z.coerce.number().nonnegative().optional(),
 });
 
+const cancelAccountBodySchema = z.object({
+  confirmText: z.string().trim().min(1, '请输入确认文字'),
+});
+
 module.exports = {
   paginationQuerySchema,
   addressIdParamSchema,
@@ -116,4 +120,5 @@ module.exports = {
   claimCouponBodySchema,
   withdrawBodySchema,
   shippingQuoteBodySchema,
+  cancelAccountBodySchema,
 };

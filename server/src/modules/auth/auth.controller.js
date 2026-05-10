@@ -15,6 +15,12 @@ exports.login = asyncRoute(async (req, res) => {
   res.success(result.data, result.message);
 });
 
+exports.features = asyncRoute(async (req, res) => {
+  res.success({
+    smsOtpLoginEnabled: otpService.isOtpLoginAvailable(),
+  });
+});
+
 exports.getProfile = asyncRoute(async (req, res) => {
   const result = await authService.getProfile(req.user.id);
   res.success(result.data);

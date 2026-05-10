@@ -21,6 +21,7 @@ const OTP_PURPOSE_LOGIN = 'login';
 const OTP_TTL_MS = 5 * 60 * 1000;
 const OTP_RESEND_INTERVAL_MS = 60 * 1000;
 const OTP_MAX_PER_HOUR = 5;
+const OTP_MAX_PER_IP_PER_HOUR = Number(process.env.OTP_MAX_PER_IP_PER_HOUR || 30);
 
 function hashOtp(code) {
   return crypto.createHash('sha256').update(String(code).trim(), 'utf8').digest('hex');
@@ -47,6 +48,11 @@ async function sendOtp(body, reqMeta) {
   const recent = await repo.countOtpSendsSince(normalizedPhone, hourAgo);
   if (recent >= OTP_MAX_PER_HOUR) {
     throw new RateLimitError('验证码发送次数过多，请一小时后再试');
+  }
+
+  const recentByIp = await repo.countOtpRequestsByIpSince(reqMeta.ip || null, hourAgo);
+  if (recentByIp >= OTP_MAX_PER_IP_PER_HOUR) {
+    throw new RateLimitError('验证码请求过于频繁，请一小时后再试');
   }
 
   const latest = await repo.selectLatestOtpSend(normalizedPhone, OTP_PURPOSE_LOGIN);
@@ -160,6 +166,7 @@ async function loginWithOtp(body) {
 }
 
 module.exports = {
+  isOtpLoginAvailable: smsOtp.isLoginOtpAvailable,
   sendOtp,
   loginWithOtp,
   OTP_PURPOSE_LOGIN,

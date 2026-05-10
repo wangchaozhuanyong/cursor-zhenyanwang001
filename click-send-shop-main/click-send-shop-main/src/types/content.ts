@@ -38,6 +38,10 @@ export interface SiteInfo {
 
   /* ─ 业务 ─ */
   currency?: string;
+  sstEnabled?: string;
+  sstRatePercent?: string;
+  sstLabel?: string;
+  sstCustomerNote?: string;
 
   /* ─ SEO ─ */
   seoTitle?: string;
@@ -71,6 +75,12 @@ export interface SiteInfo {
   newArrivalHeroTitle?: string;
   newArrivalHeroSubtitle?: string;
   newArrivalHeroCtaText?: string;
+
+  /* ─ Cookie 同意后的分析 / 广告追踪 ─ */
+  ga4Enabled?: string;
+  ga4MeasurementId?: string;
+  metaPixelEnabled?: string;
+  metaPixelId?: string;
 }
 
 /** 页脚导航条目（footerNav JSON 解析后的形态） */

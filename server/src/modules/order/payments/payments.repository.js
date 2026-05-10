@@ -96,6 +96,11 @@ async function selectPaymentOrderByIdForAdmin(q, id) {
   return row || null;
 }
 
+async function selectPaymentOrderByIdForUpdate(q, id) {
+  const [[row]] = await q.query('SELECT * FROM payment_orders WHERE id = ? FOR UPDATE', [id]);
+  return row || null;
+}
+
 async function updatePaymentOrderPaid(q, id, params) {
   const { payment_transaction_no, payment_time, metadata } = params;
   await q.query(
@@ -104,6 +109,23 @@ async function updatePaymentOrderPaid(q, id, params) {
     [
       payment_transaction_no || '',
       payment_time || new Date(),
+      metadata ? JSON.stringify(metadata) : null,
+      id,
+    ],
+  );
+}
+
+async function updatePaymentOrderFailed(q, id, params = {}) {
+  const { payment_transaction_no, metadata } = params;
+  await q.query(
+    `UPDATE payment_orders
+     SET status = 'failed',
+         payment_transaction_no = COALESCE(NULLIF(?, ''), payment_transaction_no),
+         metadata = COALESCE(?, metadata),
+         updated_at = NOW()
+     WHERE id = ?`,
+    [
+      payment_transaction_no || '',
       metadata ? JSON.stringify(metadata) : null,
       id,
     ],
@@ -265,6 +287,24 @@ async function selectLatestPendingStripePaymentOrderIdByOrderId(q, orderId) {
   return row?.id || null;
 }
 
+async function selectLatestPendingPaymentOrderId(q, { orderId, provider, channelCode }) {
+  const params = [orderId];
+  let where = "WHERE order_id = ? AND status = 'pending'";
+  if (provider) {
+    where += ' AND provider = ?';
+    params.push(provider);
+  }
+  if (channelCode) {
+    where += ' AND channel_code = ?';
+    params.push(channelCode);
+  }
+  const [[row]] = await q.query(
+    `SELECT id FROM payment_orders ${where} ORDER BY created_at DESC LIMIT 1`,
+    params,
+  );
+  return row?.id || null;
+}
+
 async function selectPaymentEventById(q, eventId) {
   const [[row]] = await q.query('SELECT * FROM payment_events WHERE id = ? LIMIT 1', [eventId]);
   return row || null;
@@ -281,7 +321,9 @@ module.exports = {
   selectPaymentOrderByIdempotency,
   selectPaymentOrderByIdAndUser,
   selectPaymentOrderByIdForAdmin,
+  selectPaymentOrderByIdForUpdate,
   updatePaymentOrderPaid,
+  updatePaymentOrderFailed,
   updatePaymentOrderMetadata,
   insertPaymentEvent,
   insertPaymentFee,
@@ -291,5 +333,6 @@ module.exports = {
   listPaymentEventsAdmin,
   aggregatePaidByDay,
   selectLatestPendingStripePaymentOrderIdByOrderId,
+  selectLatestPendingPaymentOrderId,
   selectPaymentEventById,
 };

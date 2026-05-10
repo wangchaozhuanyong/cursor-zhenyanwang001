@@ -49,11 +49,19 @@ const EMPTY: SiteSettings = {
   paymentNotice: "",
   autoConfirmReceiveEnabled: "0",
   autoConfirmReceiveDays: "7",
+  sstEnabled: "0",
+  sstRatePercent: "6",
+  sstLabel: "SST",
+  sstCustomerNote: "商品价格已含 SST，运费不计税。",
   footerNav: "",
   newArrivalHeroImage: "",
   newArrivalHeroTitle: "",
   newArrivalHeroSubtitle: "",
   newArrivalHeroCtaText: "",
+  ga4Enabled: "0",
+  ga4MeasurementId: "",
+  metaPixelEnabled: "0",
+  metaPixelId: "",
 };
 
 const DEFAULT_FOOTER_NAV_JSON = JSON.stringify(
@@ -82,7 +90,7 @@ type Field = {
 type Section = {
   title: string;
   desc?: string;
-  category: "brand" | "contact" | "seo" | "content";
+  category: "brand" | "contact" | "seo" | "content" | "analytics";
   fields: Field[];
 };
 
@@ -94,6 +102,7 @@ const CATEGORY_LABELS: Record<SectionCategory, string> = {
   contact: "联系与业务",
   seo: "SEO 与分享",
   content: "页脚与内容",
+  analytics: "Cookie 与埋点",
 };
 
 const SECTIONS: Section[] = [
@@ -177,6 +186,34 @@ const SECTIONS: Section[] = [
         placeholder: "7",
         hint: "填写 1–365 的整数；保存时会自动限制在范围内。仅对已有「发货时间」的订单生效。",
       },
+      {
+        key: "sstEnabled",
+        label: "展示 SST / 含税拆分",
+        type: "select",
+        options: [
+          { value: "0", label: "关闭" },
+          { value: "1", label: "开启" },
+        ],
+        hint: "开启后新订单会按含税价拆分税额（仅对商品优惠后的商品金额计税，运费不计税），并在前台/后台展示。历史订单无税务快照则不显示税行。",
+      },
+      {
+        key: "sstRatePercent",
+        label: "SST 税率（%）",
+        placeholder: "6",
+        hint: "含税反算：税额 = 应税含税商品金额 × 税率 ÷ (100 + 税率)。常见 6%。",
+      },
+      {
+        key: "sstLabel",
+        label: "税种名称",
+        placeholder: "SST",
+      },
+      {
+        key: "sstCustomerNote",
+        label: "前台说明文案",
+        type: "textarea",
+        rows: 2,
+        placeholder: "商品价格已含 SST，运费不计税。",
+      },
     ],
   },
   {
@@ -188,6 +225,35 @@ const SECTIONS: Section[] = [
       { key: "seoDescription", label: "SEO 描述", type: "textarea", rows: 2, placeholder: "150 字以内，提升搜索点击率" },
       { key: "seoKeywords", label: "SEO 关键词", placeholder: "用英文逗号分隔, 例: shop,malaysia,gift" },
       { key: "ogImageUrl", label: "分享卡片图（OG Image，推荐 1200×630）", type: "image" },
+    ],
+  },
+  {
+    title: "Cookie 同意与分析 / 广告埋点",
+    category: "analytics",
+    desc: "配置后前端仍会等待用户同意：拒绝分析/广告 Cookie 时不会加载对应第三方脚本，也不会发送事件。",
+    fields: [
+      {
+        key: "ga4Enabled",
+        label: "GA4 分析",
+        type: "select",
+        options: [
+          { value: "0", label: "关闭" },
+          { value: "1", label: "开启" },
+        ],
+        hint: "开启并填写 Measurement ID 后，用户同意「分析 Cookie」才会加载 gtag.js。",
+      },
+      { key: "ga4MeasurementId", label: "GA4 Measurement ID", placeholder: "G-XXXXXXXXXX" },
+      {
+        key: "metaPixelEnabled",
+        label: "Meta Pixel 广告",
+        type: "select",
+        options: [
+          { value: "0", label: "关闭" },
+          { value: "1", label: "开启" },
+        ],
+        hint: "开启并填写 Pixel ID 后，用户同意「广告 Cookie」才会加载 Meta Pixel。",
+      },
+      { key: "metaPixelId", label: "Meta Pixel ID", placeholder: "123456789012345" },
     ],
   },
   {
@@ -285,9 +351,16 @@ export default function AdminSiteSettings() {
       toast.error("自动确认天数须为 1–365 之间的整数");
       return;
     }
+    const sstRateRaw = (settings.sstRatePercent ?? "0").trim();
+    const sstRateNum = parseFloat(sstRateRaw);
+    if (settings.sstEnabled === "1" && (!Number.isFinite(sstRateNum) || sstRateNum < 0 || sstRateNum > 100)) {
+      toast.error("SST 税率须为 0–100 之间的数字");
+      return;
+    }
     const toSave = {
       ...settings,
       autoConfirmReceiveDays: String(daysNum),
+      sstRatePercent: Number.isFinite(sstRateNum) ? String(Math.min(100, Math.max(0, sstRateNum))) : "0",
       footerPolicyUrl: "",
       footerTermsUrl: "",
     };

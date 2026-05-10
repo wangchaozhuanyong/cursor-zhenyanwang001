@@ -1,9 +1,11 @@
 const { generateId } = require('../../utils/helpers');
 const repo = require('./order.repository');
+const checkoutAbandonmentRepo = require('./checkoutAbandonment.repository');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
 const paymentsService = require('./payments/payments.service');
 const { getResolvedTriggerCopy } = require('../admin/notificationTriggerApi');
 const userModule = require('../user');
+const myinvoisService = require('../myinvois/myinvois.service');
 
 const orderDb = repo.getPool();
 const userApi = /** @type {any} */ (userModule).api || {};
@@ -88,6 +90,7 @@ async function handleStripeEvent(event) {
     paymentChannel: 'stripe',
     paymentTransactionNo: pi.id || '',
   });
+  await checkoutAbandonmentRepo.markPaidByOrderId(orderDb, orderId);
   await refreshMemberLevel(orderDb, order.user_id);
 
   try {
@@ -120,6 +123,11 @@ async function handleStripeEvent(event) {
       title: payCopy.title,
       content: payCopy.content,
     });
+  }
+  try {
+    await myinvoisService.enqueueOrderInvoiceIfEnabled(orderId, 'stripe_payment_success');
+  } catch (err) {
+    console.error('[MyInvois] enqueue invoice after Stripe payment failed:', err?.message || err);
   }
   return { handled: true };
 }

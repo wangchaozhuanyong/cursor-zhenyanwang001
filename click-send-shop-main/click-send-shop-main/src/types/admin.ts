@@ -66,6 +66,11 @@ export interface SiteSettings {
   autoConfirmReceiveEnabled?: string;
   /** 发货后天数（1–365，字符串与 site_settings 一致） */
   autoConfirmReceiveDays?: string;
+  /** SST：'1' 开启 */
+  sstEnabled?: string;
+  sstRatePercent?: string;
+  sstLabel?: string;
+  sstCustomerNote?: string;
 
   /* SEO */
   seoTitle?: string;
@@ -99,6 +104,12 @@ export interface SiteSettings {
   newArrivalHeroTitle?: string;
   newArrivalHeroSubtitle?: string;
   newArrivalHeroCtaText?: string;
+
+  /* 分析 / 广告埋点配置：脚本仍受 Cookie 同意状态控制 */
+  ga4Enabled?: string;
+  ga4MeasurementId?: string;
+  metaPixelEnabled?: string;
+  metaPixelId?: string;
 
   /* 允许任意扩展键（运营后期新增字段无需先发版） */
   [key: string]: string | undefined;

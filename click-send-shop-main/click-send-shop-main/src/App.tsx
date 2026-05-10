@@ -5,6 +5,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { RouterLoadingBridge, TopProgressBar } from "@/components/ui/top-progress-bar";
 import AppRouteFallback from "@/components/AppRouteFallback";
+import CookieConsentBanner from "@/components/CookieConsentBanner";
+import TrackingManager from "@/components/TrackingManager";
 
 import AdminLayout from "./layouts/AdminLayout";
 import FrontLayout from "./layouts/FrontLayout";
@@ -64,6 +66,7 @@ const AdminProductTags = lazy(() => import("@/modules/admin/pages/product/AdminP
 const AdminBanners = lazy(() => import("@/modules/admin/pages/product/AdminBanners"));
 
 const AdminOrders = lazy(() => import("@/modules/admin/pages/order/AdminOrders"));
+const AdminCheckoutAbandonments = lazy(() => import("@/modules/admin/pages/order/AdminCheckoutAbandonments"));
 const AdminOrderDetail = lazy(() => import("@/modules/admin/pages/order/AdminOrderDetail"));
 const AdminReturns = lazy(() => import("@/modules/admin/pages/order/AdminReturns"));
 const AdminShipping = lazy(() => import("@/modules/admin/pages/order/AdminShipping"));
@@ -173,6 +176,7 @@ function AdminTitleSync() {
       { test: (p) => p.startsWith("/admin/marketing/activities"), title: "活动管理" },
       { test: (p) => p.startsWith("/admin/users"), title: "用户管理" },
       { test: (p) => p.startsWith("/admin/member-levels"), title: "会员等级" },
+      { test: (p) => p.startsWith("/admin/orders/unfinished"), title: "未完成结算" },
       { test: (p) => p.startsWith("/admin/orders"), title: "订单管理" },
       { test: (p) => p.startsWith("/admin/products"), title: "商品管理" },
     ];
@@ -207,6 +211,7 @@ const App = () => (
           <SiteIdentitySync />
           <ReferralInviteSync />
           <AdminTitleSync />
+          <TrackingManager />
           <Suspense fallback={<AppRouteFallback />}>
             <Routes>
               {/* Pages with bottom nav */}
@@ -252,6 +257,7 @@ const App = () => (
                 <Route path="inventory" element={<AdminInventory />} />
                 <Route path="tags" element={<AdminProductTags />} />
                 <Route path="orders" element={<AdminOrders />} />
+                <Route path="orders/unfinished" element={<AdminCheckoutAbandonments />} />
                 <Route path="orders/:id" element={<AdminOrderDetail />} />
                 <Route path="payments/channels" element={<AdminPaymentChannels />} />
                 <Route path="payments/orders" element={<AdminPaymentOrders />} />
@@ -291,6 +297,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
+          <CookieConsentBanner />
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

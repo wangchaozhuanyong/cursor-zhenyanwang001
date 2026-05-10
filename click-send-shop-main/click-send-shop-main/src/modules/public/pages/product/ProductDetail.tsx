@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Heart, Minus, Plus, Share2, ShoppingCart } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
@@ -18,6 +18,9 @@ import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useGoBack } from "@/hooks/useGoBack";
 import { copyToClipboard } from "@/utils/clipboard";
+import { trackAddToCart, trackProductView } from "@/utils/tracking";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { parseSstEnabled } from "@/utils/sstTax";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -26,6 +29,7 @@ export default function ProductDetail() {
   const addItem = useCartStore((s) => s.addItem);
   const totalItems = useCartStore((s) => s.totalItems());
   const [qty, setQty] = useState(1);
+  const trackedProductIdRef = useRef<string | null>(null);
 
   const {
     currentProduct: product,
@@ -40,6 +44,9 @@ export default function ProductDetail() {
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
 
   const reviewsVm = useProductReviews(id ?? "");
+  const siteInfo = useSiteInfo();
+  const sstNote = (siteInfo.sstCustomerNote || "").trim();
+  const showSstHint = parseSstEnabled(siteInfo.sstEnabled);
 
   useDocumentTitle(product?.name);
 
@@ -53,6 +60,12 @@ export default function ProductDetail() {
   useEffect(() => {
     if (product) addToHistory(product);
   }, [product, addToHistory]);
+
+  useEffect(() => {
+    if (!product || trackedProductIdRef.current === product.id) return;
+    trackedProductIdRef.current = product.id;
+    trackProductView(product);
+  }, [product]);
 
   useEffect(() => {
     if (!product) return;
@@ -107,6 +120,7 @@ export default function ProductDetail() {
 
   const handleAddToCart = () => {
     addItem(product, qty);
+    trackAddToCart(product, qty);
     toast.success(`已加入购物车 x${qty}`, toastPresetQuickSuccess);
   };
 
@@ -233,6 +247,11 @@ export default function ProductDetail() {
               {typeof product.sales_count === "number" && product.sales_count > 0 && (
                 <p className="mt-1 text-xs text-muted-foreground">
                   已售 {product.sales_count.toLocaleString()} 件
+                </p>
+              )}
+              {showSstHint && (
+                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                  {sstNote || "商品价格已含 SST，运费不计税。"}
                 </p>
               )}
             </div>

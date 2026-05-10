@@ -4,6 +4,7 @@ const auth = require('../../middleware/auth');
 const { validate } = require('../../middleware/validate');
 const {
   createOrderBodySchema,
+  checkoutAbandonmentBodySchema,
   listOrdersQuerySchema,
   orderIdParamSchema,
   payOrderBodySchema,
@@ -14,6 +15,7 @@ const router = Router();
 router.use(auth);
 
 router.get('/', validate({ query: listOrdersQuerySchema }), ctrl.getOrders);
+router.post('/checkout-abandonments', validate({ body: checkoutAbandonmentBodySchema }), ctrl.recordCheckoutAbandonment);
 router.post('/', validate({ body: createOrderBodySchema }), ctrl.createOrder);
 
 router.get('/:id', validate({ params: orderIdParamSchema }), ctrl.getOrderById);

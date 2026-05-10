@@ -8,6 +8,8 @@ const { runPendingMigrations } = require('./db/migrateRunner');
 const { startCleanupScheduler } = require('./modules/admin/adminExport.service');
 const { startNotificationScheduler } = require('./modules/admin/adminNotification.service');
 const { startAutoConfirmReceiveScheduler } = require('./modules/order/orderAutoConfirm.service');
+const { startPaymentTimeoutScheduler } = require('./modules/order/orderPaymentTimeout.service');
+const { startMyInvoisRetryScheduler } = require('./modules/myinvois/myinvois.service');
 const { getStorageHealthReport } = require('./utils/objectStorage');
 
 const PORT = process.env.PORT || 3000;
@@ -38,6 +40,8 @@ bootPromise
     startCleanupScheduler();
     startNotificationScheduler();
     startAutoConfirmReceiveScheduler();
+    startPaymentTimeoutScheduler();
+    startMyInvoisRetryScheduler();
     app.listen(PORT, () => {
       console.log(`✅ Server running → http://localhost:${PORT}`);
     });

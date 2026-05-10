@@ -64,6 +64,16 @@ async function incrementActivitySold(q, activityId, productId, qty) {
   return result.affectedRows;
 }
 
+async function decrementActivitySold(q, activityId, productId, qty) {
+  const [result] = await q.query(
+    `UPDATE marketing_activity_products
+     SET sold_count = GREATEST(0, sold_count - ?)
+     WHERE activity_id = ? AND product_id = ?`,
+    [qty, activityId, productId],
+  );
+  return result.affectedRows;
+}
+
 async function selectShippingTemplate(q, id) {
   const [[row]] = await q.query('SELECT * FROM shipping_templates WHERE id = ? AND enabled = 1', [id]);
   return row || null;
@@ -99,18 +109,27 @@ async function insertOrder(q, params) {
     id, userId, orderNo, rawAmount, discountAmount, couponTitle,
     shippingFee, shippingName, totalAmount, totalPoints,
     note, contactName, contactPhone, address, paymentMethod,
+    taxMode, taxRate, taxLabel, taxableAmount, taxAmount, taxExclusiveAmount,
   } = params;
   await q.query(
     `INSERT INTO orders
        (id, user_id, order_no, raw_amount, discount_amount, coupon_title,
-        shipping_fee, shipping_name, total_amount, total_points, status, payment_status,
+        shipping_fee, shipping_name, total_amount,
+        tax_mode, tax_rate, tax_label, taxable_amount, tax_amount, tax_exclusive_amount,
+        total_points, status, payment_status,
         note, contact_name, contact_phone, address, payment_method)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id, userId, orderNo, rawAmount, discountAmount, couponTitle || '',
       shippingFee,
       shippingName || '',
       totalAmount,
+      taxMode ?? null,
+      taxRate ?? null,
+      taxLabel ?? null,
+      taxableAmount ?? null,
+      taxAmount ?? null,
+      taxExclusiveAmount ?? null,
       totalPoints,
       ORDER_STATUS.PENDING,
       PAYMENT_STATUS.PENDING,
@@ -124,11 +143,34 @@ async function updateOrderCouponUcId(q, orderId, ucId) {
 }
 
 async function insertOrderItem(q, params) {
-  const { id, orderId, productId, productName, productImage, price, points, qty } = params;
+  const {
+    id,
+    orderId,
+    productId,
+    productName,
+    productImage,
+    price,
+    points,
+    qty,
+    activityId,
+    activityTitle,
+  } = params;
   await q.query(
-    `INSERT INTO order_items (id, order_id, product_id, product_name, product_image, price, points, qty)
-     VALUES (?,?,?,?,?,?,?,?)`,
-    [id, orderId, productId, productName, productImage, price, points, qty],
+    `INSERT INTO order_items
+       (id, order_id, product_id, product_name, product_image, price, points, qty, activity_id, activity_title)
+     VALUES (?,?,?,?,?,?,?,?,?,?)`,
+    [
+      id,
+      orderId,
+      productId,
+      productName,
+      productImage,
+      price,
+      points,
+      qty,
+      activityId || null,
+      activityTitle || null,
+    ],
   );
 }
 
@@ -292,8 +334,20 @@ async function updateOrderStatus(q, orderId, status) {
   await q.query('UPDATE orders SET status = ? WHERE id = ?', [status, orderId]);
 }
 
+async function updateOrderCancelled(q, orderId, reason = '') {
+  await q.query(
+    `UPDATE orders
+     SET status = ?, cancel_reason = ?, cancelled_at = NOW()
+     WHERE id = ?`,
+    [ORDER_STATUS.CANCELLED, reason || '', orderId],
+  );
+}
+
 async function selectOrderItemQtyRows(q, orderId) {
-  const [rows] = await q.query('SELECT product_id, qty FROM order_items WHERE order_id = ?', [orderId]);
+  const [rows] = await q.query(
+    'SELECT product_id, qty, activity_id, activity_title FROM order_items WHERE order_id = ?',
+    [orderId],
+  );
   return rows;
 }
 
@@ -434,6 +488,7 @@ module.exports = {
   selectProductsForUpdate,
   selectActiveActivityItemsForUpdate,
   incrementActivitySold,
+  decrementActivitySold,
   selectShippingTemplate,
   selectUserCouponForUpdate,
   selectCouponCategoryIds,
@@ -454,6 +509,7 @@ module.exports = {
   selectOrderByIdForUpdate,
   selectOrderItems,
   updateOrderStatus,
+  updateOrderCancelled,
   selectOrderItemQtyRows,
   restoreProductStock,
   incrementProductSales,

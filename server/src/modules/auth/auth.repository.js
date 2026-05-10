@@ -22,14 +22,17 @@ async function ensurePasswordResetTokenTable() {
 }
 
 async function findUserIdByPhone(phone) {
-  const [[row]] = await db.query('SELECT id FROM users WHERE phone = ?', [phone]);
+  const [[row]] = await db.query('SELECT id FROM users WHERE phone = ? AND deleted_at IS NULL', [phone]);
   return row || null;
 }
 
 async function findUserIdByPhones(phones) {
   if (!Array.isArray(phones) || phones.length === 0) return null;
   const placeholders = phones.map(() => '?').join(',');
-  const [[row]] = await db.query(`SELECT id FROM users WHERE phone IN (${placeholders}) LIMIT 1`, phones);
+  const [[row]] = await db.query(
+    `SELECT id FROM users WHERE phone IN (${placeholders}) AND deleted_at IS NULL LIMIT 1`,
+    phones,
+  );
   return row || null;
 }
 
@@ -43,14 +46,17 @@ async function insertUser(params) {
 }
 
 async function findUserByPhone(phone) {
-  const [[row]] = await db.query('SELECT * FROM users WHERE phone = ?', [phone]);
+  const [[row]] = await db.query('SELECT * FROM users WHERE phone = ? AND deleted_at IS NULL', [phone]);
   return row || null;
 }
 
 async function findUserByPhones(phones) {
   if (!Array.isArray(phones) || phones.length === 0) return null;
   const placeholders = phones.map(() => '?').join(',');
-  const [[row]] = await db.query(`SELECT * FROM users WHERE phone IN (${placeholders}) LIMIT 1`, phones);
+  const [[row]] = await db.query(
+    `SELECT * FROM users WHERE phone IN (${placeholders}) AND deleted_at IS NULL LIMIT 1`,
+    phones,
+  );
   return row || null;
 }
 
@@ -58,12 +64,18 @@ async function findUserByPhones(phones) {
 async function findUsersByPhones(phones) {
   if (!Array.isArray(phones) || phones.length === 0) return [];
   const placeholders = phones.map(() => '?').join(',');
-  const [rows] = await db.query(`SELECT * FROM users WHERE phone IN (${placeholders}) ORDER BY created_at DESC`, phones);
+  const [rows] = await db.query(
+    `SELECT * FROM users WHERE phone IN (${placeholders}) AND deleted_at IS NULL ORDER BY created_at DESC`,
+    phones,
+  );
   return Array.isArray(rows) ? rows : [];
 }
 
 async function selectUserIdByInviteCode(inviteCode) {
-  const [[row]] = await db.query('SELECT id FROM users WHERE invite_code = ? LIMIT 1', [inviteCode]);
+  const [[row]] = await db.query(
+    'SELECT id FROM users WHERE invite_code = ? AND deleted_at IS NULL LIMIT 1',
+    [inviteCode],
+  );
   return row || null;
 }
 
@@ -78,7 +90,7 @@ async function selectProfileFields(userId) {
             ml.min_orders AS member_level_min_orders
      FROM users u
      LEFT JOIN member_levels ml ON ml.id = u.member_level_id
-     WHERE u.id = ?`;
+     WHERE u.id = ? AND u.deleted_at IS NULL`;
   try {
     const [[row]] = await db.query(withMemberLevel, [userId]);
     return row || null;
@@ -89,7 +101,7 @@ async function selectProfileFields(userId) {
       const [[row]] = await db.query(
         `SELECT id, phone, nickname, avatar, invite_code, parent_invite_code,
                 points_balance, subordinate_enabled, role, wechat, whatsapp, created_at
-         FROM users WHERE id = ?`,
+         FROM users WHERE id = ? AND deleted_at IS NULL`,
         [userId],
       );
       return row || null;
@@ -99,7 +111,7 @@ async function selectProfileFields(userId) {
 }
 
 async function findPhoneDuplicate(userId, phone) {
-  const [[row]] = await db.query('SELECT id FROM users WHERE phone = ? AND id != ?', [phone, userId]);
+  const [[row]] = await db.query('SELECT id FROM users WHERE phone = ? AND id != ? AND deleted_at IS NULL', [phone, userId]);
   return row || null;
 }
 
@@ -107,7 +119,7 @@ async function findPhoneDuplicateByPhones(userId, phones) {
   if (!Array.isArray(phones) || phones.length === 0) return null;
   const placeholders = phones.map(() => '?').join(',');
   const [[row]] = await db.query(
-    `SELECT id FROM users WHERE phone IN (${placeholders}) AND id != ? LIMIT 1`,
+    `SELECT id FROM users WHERE phone IN (${placeholders}) AND id != ? AND deleted_at IS NULL LIMIT 1`,
     [...phones, userId],
   );
   return row || null;
@@ -118,7 +130,7 @@ async function updateUserProfile(userId, setFragments, values) {
 }
 
 async function selectPasswordHash(userId) {
-  const [[row]] = await db.query('SELECT password_hash FROM users WHERE id = ?', [userId]);
+  const [[row]] = await db.query('SELECT password_hash FROM users WHERE id = ? AND deleted_at IS NULL', [userId]);
   return row || null;
 }
 
@@ -128,7 +140,7 @@ async function updatePasswordHash(userId, hash) {
 
 async function selectRefreshVersion(userId) {
   const [[row]] = await db.query(
-    'SELECT id, refresh_token_version, role FROM users WHERE id = ?',
+    'SELECT id, refresh_token_version, role FROM users WHERE id = ? AND deleted_at IS NULL',
     [userId],
   );
   return row || null;
@@ -140,7 +152,7 @@ async function incrementRefreshTokenVersion(userId) {
 
 /** 中间件等场景：校验用户是否存在及角色 */
 async function selectIdAndRoleByUserId(userId) {
-  const [[row]] = await db.query('SELECT id, role FROM users WHERE id = ?', [userId]);
+  const [[row]] = await db.query('SELECT id, role FROM users WHERE id = ? AND deleted_at IS NULL', [userId]);
   return row || null;
 }
 
@@ -197,6 +209,7 @@ async function selectOauthAccount(provider, providerUserId) {
      FROM oauth_accounts oa
      JOIN users u ON BINARY u.id = BINARY oa.user_id
      WHERE oa.provider = ? AND oa.provider_user_id = ?
+       AND u.deleted_at IS NULL
      LIMIT 1`,
     [provider, providerUserId],
   );
@@ -275,6 +288,7 @@ async function selectAuthLoginTicketByHash(codeHash) {
      FROM auth_login_tickets alt
      JOIN users u ON BINARY u.id = BINARY alt.user_id
      WHERE BINARY alt.code_hash = BINARY ?
+       AND u.deleted_at IS NULL
        AND alt.consumed_at IS NULL AND alt.expires_at > NOW()
      LIMIT 1`,
     [codeHash],
@@ -300,6 +314,16 @@ async function countOtpSendsSince(phoneE164, since) {
     `SELECT COUNT(*) AS c FROM otp_send_logs
      WHERE phone_e164 = ? AND created_at >= ? AND send_status = 'sent'`,
     [phoneE164, since],
+  );
+  return Number(row?.c) || 0;
+}
+
+async function countOtpRequestsByIpSince(ip, since) {
+  if (!ip) return 0;
+  const [[row]] = await db.query(
+    `SELECT COUNT(*) AS c FROM otp_send_logs
+     WHERE ip = ? AND created_at >= ?`,
+    [ip, since],
   );
   return Number(row?.c) || 0;
 }
@@ -385,6 +409,7 @@ module.exports = {
   markAuthLoginTicketConsumed,
   tryConsumeAuthLoginTicket,
   countOtpSendsSince,
+  countOtpRequestsByIpSince,
   selectLatestOtpSend,
   insertOtpSendLog,
   selectOtpLogForVerify,

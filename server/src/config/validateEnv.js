@@ -87,10 +87,19 @@ function validateEnv() {
       console.error('[FATAL] STRIPE_WEBHOOK_SECRET 无效或过短');
       process.exit(1);
     }
+
+    if (process.env.MYINVOIS_SUBMIT_ENABLED === '1' && process.env.MYINVOIS_ENABLED !== '1') {
+      console.error('[FATAL] MYINVOIS_SUBMIT_ENABLED=1 时必须同时设置 MYINVOIS_ENABLED=1');
+      process.exit(1);
+    }
   } else if (!jwt) {
     console.warn('[WARN] JWT_SECRET 未设置；非生产环境会使用进程内临时随机密钥，重启后 token 会失效');
   } else if (jwt.length < 64 || hasPlaceholder(jwt) || jwt === 'change_me') {
     console.warn('[WARN] JWT_SECRET 不应使用短值或示例值；上线前须更换为 ≥64 位强随机值');
+  }
+
+  if (process.env.MYINVOIS_ENABLED !== '1' && process.env.MYINVOIS_SUBMIT_ENABLED === '1') {
+    console.warn('[WARN] MYINVOIS_SUBMIT_ENABLED=1 但 MYINVOIS_ENABLED 未开启，MyInvois 提交不会运行');
   }
 }
 

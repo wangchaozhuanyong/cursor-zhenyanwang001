@@ -16,6 +16,8 @@
 - 进程守护：`deploy/systemd/README.md`（PM2 + `pm2 startup systemd`）
 - 路径迁移：`scripts/migrate-from-baota-path.sh`（在服务器执行）
 
+SEO 关键页（`/product/:id`、`/categories`）需要按 Nginx 示例反代到 Node，由后端读取 Vite `dist/index.html` 并注入公开商品/分类与 `site_settings` SEO 字段；不要让这些路径直接 `try_files` 回静态 `index.html`。
+
 历史兼容（仍指向旧 `/www/wwwroot/...` 未改环境变量时）：
 
 - `deploy/baota-simple-deploy.sh` → `production-deploy.sh`

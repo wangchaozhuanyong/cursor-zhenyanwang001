@@ -26,6 +26,7 @@ const ALL_ADMIN_PERMISSION_CODES = [
   'referral.manage',
   'points.manage',
   'payment.manage',
+  'myinvois.manage',
   'shipping.manage',
   'settings.manage',
   'content.manage',

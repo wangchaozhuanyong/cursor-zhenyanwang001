@@ -9,6 +9,8 @@ const rateLimit = require('express-rate-limit');
 const responseMiddleware = require('./middleware/response');
 const errorHandler = require('./middleware/errorHandler');
 const routes = require('./routes');
+const seoRoutes = require('./modules/seo/seo.routes');
+const { registerSeoPrerender } = require('./modules/product/seoPrerender');
 const stripeWebhook = require('./modules/order/stripeWebhook.controller');
 
 const app = express();
@@ -76,6 +78,7 @@ app.post(
 // 与 multer 视频上限 50MB、Nginx client_max_body_size 对齐；multipart 由 multer 解析，此条主要避免大 JSON 意外 413
 app.use(express.json({ limit: '60mb' }));
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+app.use(seoRoutes);
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -97,6 +100,7 @@ app.use('/api/auth/refresh', authSensitiveLimiter);
 app.use('/api/auth/otp/send', authSensitiveLimiter);
 app.use('/api/auth/otp/login', authLimiter);
 app.use('/api/auth/oauth/exchange', authSensitiveLimiter);
+app.use('/api/user/account/cancel', authSensitiveLimiter);
 
 const oauthStartLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -140,6 +144,9 @@ if (serveSpa) {
       maxAge: '30d',
     }),
   );
+
+  // 公开商品/分类路由返回带 meta 与正文摘要的 HTML 壳，缓解 SPA 首屏无法被爬虫读取。
+  registerSeoPrerender(app, { frontendDist });
 
   // HTML entry should always revalidate to avoid stale chunk references.
   app.use(

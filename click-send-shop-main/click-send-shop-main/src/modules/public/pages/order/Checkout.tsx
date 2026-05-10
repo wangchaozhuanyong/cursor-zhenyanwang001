@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ArrowLeft, Copy, MessageCircle, Phone, MapPin, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { flushSync } from "react-dom";
@@ -25,6 +25,15 @@ import { ORDER_STATUS } from "@/constants/statusDictionary";
 import * as userShippingService from "@/services/userShippingService";
 import { copyToClipboard } from "@/utils/clipboard";
 import TrustInfo from "@/components/TrustInfo";
+import type { PublicPaymentChannel } from "@/services/paymentService";
+import { trackBeginCheckout, trackPurchase } from "@/utils/tracking";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
+import {
+  goodsTaxableInclusivePreview,
+  parseSstFromSiteInfo,
+  splitInclusiveTax,
+} from "@/utils/sstTax";
+import { OrderSstLines } from "@/components/OrderSstLines";
 
 function generateOrderText(order: Order) {
   const itemsText = order.items
@@ -37,15 +46,28 @@ function generateOrderText(order: Order) {
     `商品清单：`,
     itemsText,
     `━━━━━━━━━━━━`,
-    `💰 商品总额：RM ${order.raw_amount}`,
+    `💰 ${order.tax_mode === "inclusive" ? "商品总额（含税）" : "商品总额"}：RM ${order.raw_amount}`,
   ];
   if (order.discount_amount > 0) {
     lines.push(`🎫 优惠券（${order.coupon_title}）：-RM ${order.discount_amount}`);
   }
+  if (
+    order.tax_mode === "inclusive"
+    && order.taxable_amount != null
+    && order.tax_amount != null
+    && order.tax_rate != null
+  ) {
+    const tl = order.tax_label || "SST";
+    lines.push(`📋 应税商品金额（含税）：RM ${order.taxable_amount}`);
+    if (order.tax_exclusive_amount != null) {
+      lines.push(`📋 商品不含税净额：RM ${order.tax_exclusive_amount}`);
+    }
+    lines.push(`📋 ${tl}（${order.tax_rate}%）：RM ${order.tax_amount}`);
+  }
   if (order.shipping_fee > 0) {
-    lines.push(`🚚 运费（${order.shipping_name}）：RM ${order.shipping_fee}`);
+    lines.push(`🚚 运费（${order.shipping_name}，不计税）：RM ${order.shipping_fee}`);
   } else {
-    lines.push(`🚚 运费：包邮`);
+    lines.push(`🚚 运费：包邮（不计税）`);
   }
   lines.push(
     `💰 应付金额：RM ${order.total_amount}`,
@@ -111,9 +133,12 @@ export default function Checkout() {
   }, [getDefaultAddress]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("online");
   const [stripeReady, setStripeReady] = useState(true);
+  const [paymentChannels, setPaymentChannels] = useState<PublicPaymentChannel[]>([]);
+  const [selectedPaymentChannelCode, setSelectedPaymentChannelCode] = useState("");
   const [paymentConfigLoaded, setPaymentConfigLoaded] = useState(false);
   const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null);
   const [selectedCoupon, setSelectedCoupon] = useState<CheckoutPickerCoupon | null>(null);
+  const siteInfo = useSiteInfo();
   const [rewardBalance, setRewardBalance] = useState(0);
   const [payingWallet, setPayingWallet] = useState(false);
   const [orderFinalizing, setOrderFinalizing] = useState(false);
@@ -122,19 +147,27 @@ export default function Checkout() {
   const [serverShippingFee, setServerShippingFee] = useState<number | null>(null);
   const [shippingQuoteLoading, setShippingQuoteLoading] = useState(false);
   const [shippingQuoteError, setShippingQuoteError] = useState<string | null>(null);
+  const [checkoutAbandonmentId, setCheckoutAbandonmentId] = useState<string | null>(null);
+  const checkoutSnapshotTimerRef = useRef<number | null>(null);
+  const beginCheckoutTrackedRef = useRef("");
 
   useEffect(() => { useShippingStore.getState().loadTemplates(); }, []);
 
   useEffect(() => {
     let cancelled = false;
-    paymentService
-      .getPaymentConfig()
-      .then((config) => {
+    Promise.all([
+      paymentService.getPaymentConfig().catch(() => null),
+      paymentService.getPaymentChannels().catch(() => [] as PublicPaymentChannel[]),
+    ])
+      .then(([config, channels]) => {
         if (cancelled) return;
-        const ready = !!config.stripeCheckoutReady;
+        const ready = !!config?.stripeCheckoutReady;
+        const onlineChannels = channels.filter((channel) => channel.provider !== "internal");
         setStripeReady(ready);
+        setPaymentChannels(onlineChannels);
+        setSelectedPaymentChannelCode((current) => current || onlineChannels[0]?.code || (ready ? "stripe_checkout" : ""));
         setPaymentConfigLoaded(true);
-        if (!ready) {
+        if (!ready && onlineChannels.length === 0) {
           setPaymentMethod("whatsapp");
         }
       })
@@ -185,6 +218,41 @@ export default function Checkout() {
     : 0;
   const finalTotal = Math.max(0, rawTotal - discountAmount + shippingFee);
   const preferredCouponId = searchParams.get("coupon_id");
+
+  const sstCfg = parseSstFromSiteInfo(siteInfo);
+  const goodsTaxablePreview = goodsTaxableInclusivePreview(
+    rawTotal,
+    discountAmount,
+    selectedCoupon?.discountType ?? null,
+  );
+  const sstPreview =
+    sstCfg.enabled && sstCfg.ratePercent > 0 && goodsTaxablePreview > 0
+      ? (() => {
+          const sp = splitInclusiveTax(goodsTaxablePreview, sstCfg.ratePercent);
+          return {
+            label: sstCfg.label,
+            ratePercent: sstCfg.ratePercent,
+            taxable: goodsTaxablePreview,
+            taxAmount: sp.taxAmount,
+            exclusiveAmount: sp.exclusiveAmount,
+          };
+        })()
+      : null;
+
+  useEffect(() => {
+    if (items.length === 0 || submittedOrder) return;
+    const key = items.map((item) => `${item.product.id}:${item.qty}`).join("|");
+    if (!key || beginCheckoutTrackedRef.current === key) return;
+    beginCheckoutTrackedRef.current = key;
+    trackBeginCheckout(items, rawTotal);
+  }, [items, rawTotal, submittedOrder]);
+
+  useEffect(() => {
+    if (!submittedOrder) return;
+    if (submittedOrder.status === ORDER_STATUS.PAID || submittedOrder.payment_status === "paid") {
+      trackPurchase(submittedOrder);
+    }
+  }, [submittedOrder]);
 
   const estimateCouponDiscount = useCallback((coupon: CheckoutPickerCoupon) => {
     if (coupon.discountType === "percent") {
@@ -272,6 +340,42 @@ export default function Checkout() {
   }, [clearBuyNow]);
 
   useEffect(() => {
+    if (items.length === 0 || submittedOrder || orderFinalizing) return;
+    if (checkoutSnapshotTimerRef.current) {
+      window.clearTimeout(checkoutSnapshotTimerRef.current);
+    }
+    checkoutSnapshotTimerRef.current = window.setTimeout(() => {
+      void orderService.recordCheckoutAbandonment({
+        checkout_abandonment_id: checkoutAbandonmentId || undefined,
+        items: items.map((item) => ({
+          product_id: item.product.id,
+          name: item.product.name,
+          image: item.product.cover_image,
+          qty: item.qty,
+          price: item.product.price,
+        })),
+        raw_amount: rawTotal,
+        discount_amount: discountAmount,
+        shipping_fee: shippingFee,
+        total_amount: finalTotal,
+        payment_method: paymentMethod,
+        contact_name: name,
+        contact_phone: phone,
+      }).then((snapshot) => {
+        if (snapshot?.id && snapshot.id !== checkoutAbandonmentId) {
+          setCheckoutAbandonmentId(snapshot.id);
+        }
+      }).catch(() => {});
+    }, 800);
+
+    return () => {
+      if (checkoutSnapshotTimerRef.current) {
+        window.clearTimeout(checkoutSnapshotTimerRef.current);
+      }
+    };
+  }, [items, rawTotal, discountAmount, shippingFee, finalTotal, paymentMethod, name, phone, checkoutAbandonmentId, submittedOrder, orderFinalizing]);
+
+  useEffect(() => {
     if (items.length === 0 && !submittedOrder && !orderFinalizing) {
       navigate("/cart", { replace: true });
     }
@@ -308,6 +412,7 @@ export default function Checkout() {
         shipping_name: selectedTemplate?.name ?? "",
         payment_method: paymentMethod,
         estimated_weight_kg: weightKg,
+        checkout_abandonment_id: checkoutAbandonmentId || undefined,
       });
       const orderedIds = payloadItems.map((i) => i.product_id);
       flushSync(() => {
@@ -362,9 +467,18 @@ export default function Checkout() {
   const payOnlineNow = async () => {
     if (!submittedOrder) return;
     try {
-      const session = await orderService.createStripeCheckoutSession(submittedOrder.id);
-      if (!session?.url) throw new Error("未获取到支付链接");
-      window.location.href = session.url;
+      const channelCode = selectedPaymentChannelCode || "stripe_checkout";
+      const intent = await paymentService.createPaymentIntent({
+        orderId: submittedOrder.id,
+        channelCode,
+        returnUrl: `${window.location.origin}/orders/${submittedOrder.id}`,
+      });
+      if (intent.redirect_url) {
+        window.location.href = intent.redirect_url;
+        return;
+      }
+      toast.success(intent.client_instructions || "支付单已创建，请等待支付网关确认");
+      navigate(`/orders/${submittedOrder.id}`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "在线支付发起失败");
     }
@@ -377,6 +491,9 @@ export default function Checkout() {
       await orderService.payOrder(submittedOrder.id, "reward_wallet");
       const latest = await orderService.fetchOrderById(submittedOrder.id);
       setSubmittedOrder(latest);
+      if (latest.status === ORDER_STATUS.PAID || latest.payment_status === "paid") {
+        trackPurchase(latest);
+      }
       const balanceData = await rewardWalletService.fetchRewardBalance();
       setRewardBalance(Number(balanceData.balance || 0));
       toast.success("返现钱包支付成功");
@@ -450,9 +567,12 @@ export default function Checkout() {
           <PaymentMethodPicker
             value={paymentMethod}
             onChange={setPaymentMethod}
-            onlineDisabled={paymentConfigLoaded && !stripeReady}
+            onlineDisabled={paymentConfigLoaded && paymentChannels.length === 0 && !stripeReady}
             onlineDisabledHint="商户暂未开通在线支付，请选择联系客服下单"
             rewardBalance={rewardBalance}
+            onlineChannels={paymentChannels}
+            selectedOnlineChannelCode={selectedPaymentChannelCode}
+            onOnlineChannelChange={setSelectedPaymentChannelCode}
           />
           <TrustInfo className="mt-3" />
         </div>
@@ -506,6 +626,9 @@ export default function Checkout() {
             shippingFee={shippingFee}
             totalPoints={totalPoints()}
             finalTotal={finalTotal}
+            sstPreview={sstPreview}
+            sstShowInCatalog={sstCfg.enabled}
+            sstCustomerNote={sstCfg.customerNote}
           />
         </div>
           </div>
@@ -520,6 +643,9 @@ export default function Checkout() {
                 shippingFee={shippingFee}
                 totalPoints={totalPoints()}
                 finalTotal={finalTotal}
+                sstPreview={sstPreview}
+                sstShowInCatalog={sstCfg.enabled}
+                sstCustomerNote={sstCfg.customerNote}
               />
               <button
                 onClick={handleSubmit}
@@ -563,17 +689,35 @@ function SummaryRows({
   shippingFee,
   totalPoints,
   finalTotal,
+  sstPreview,
+  sstShowInCatalog,
+  sstCustomerNote,
 }: {
   rawTotal: number;
   discountAmount: number;
   shippingFee: number;
   totalPoints: number;
   finalTotal: number;
+  sstPreview: {
+    label: string;
+    ratePercent: number;
+    taxable: number;
+    taxAmount: number;
+    exclusiveAmount: number;
+  } | null;
+  sstShowInCatalog: boolean;
+  sstCustomerNote: string;
 }) {
+  const rateStr = sstPreview
+    ? (Number.isInteger(sstPreview.ratePercent) ? String(sstPreview.ratePercent) : String(sstPreview.ratePercent))
+    : "";
   return (
     <div>
+      {sstShowInCatalog && sstCustomerNote ? (
+        <p className="mb-3 text-[11px] leading-relaxed text-muted-foreground">{sstCustomerNote}</p>
+      ) : null}
       <div className="flex justify-between text-sm">
-        <span className="text-muted-foreground">商品总额</span>
+        <span className="text-muted-foreground">{sstShowInCatalog ? "商品总额（含税）" : "商品总额"}</span>
         <span className="font-medium text-foreground">RM {rawTotal}</span>
       </div>
       {discountAmount > 0 && (
@@ -582,8 +726,26 @@ function SummaryRows({
           <span className="font-medium text-destructive">-RM {discountAmount}</span>
         </div>
       )}
+      {sstPreview ? (
+        <>
+          <div className="mt-2 flex justify-between text-sm">
+            <span className="text-muted-foreground">应税商品金额（含税）</span>
+            <span className="font-medium text-foreground">RM {sstPreview.taxable}</span>
+          </div>
+          <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+            <span>其中商品不含税净额</span>
+            <span>RM {sstPreview.exclusiveAmount}</span>
+          </div>
+          <div className="mt-1 flex justify-between text-sm">
+            <span className="text-muted-foreground">
+              含 {sstPreview.label}（{rateStr}%）
+            </span>
+            <span className="font-medium text-foreground">RM {sstPreview.taxAmount}</span>
+          </div>
+        </>
+      ) : null}
       <div className="mt-2 flex justify-between text-sm">
-        <span className="text-muted-foreground">运费</span>
+        <span className="text-muted-foreground">运费{sstShowInCatalog ? "（不计税）" : ""}</span>
         <span
           className={`font-medium ${
             shippingFee === 0 ? "text-emerald-600" : "text-foreground"
@@ -742,7 +904,9 @@ function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onPayOnline, onPayR
           ))}
           <div className="mt-4 border-t border-border pt-4 space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">商品总额</span>
+              <span className="text-muted-foreground">
+                {order.tax_mode === "inclusive" ? "商品总额（含税）" : "商品总额"}
+              </span>
               <span className="font-medium text-foreground">RM {order.raw_amount}</span>
             </div>
             {order.discount_amount > 0 && (
@@ -751,8 +915,11 @@ function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onPayOnline, onPayR
                 <span className="font-medium text-destructive">-RM {order.discount_amount}</span>
               </div>
             )}
+            <OrderSstLines order={order} />
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">运费（{order.shipping_name || "标准"}）</span>
+              <span className="text-muted-foreground">
+                运费（{order.shipping_name || "标准"}）{order.tax_mode === "inclusive" ? "，不计税" : ""}
+              </span>
               <span className={`font-medium ${order.shipping_fee === 0 ? "text-emerald-600" : "text-foreground"}`}>
                 {order.shipping_fee === 0 ? "包邮" : `RM ${order.shipping_fee}`}
               </span>

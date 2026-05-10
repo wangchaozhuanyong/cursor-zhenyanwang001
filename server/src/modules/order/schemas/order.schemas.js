@@ -23,6 +23,27 @@ const createOrderBodySchema = z.object({
     .enum(['online', 'reward_wallet', 'whatsapp', 'offline', 'manual', 'mock', 'cash', 'bank_transfer'])
     .optional(),
   estimated_weight_kg: z.coerce.number().nonnegative().optional(),
+  checkout_abandonment_id: idParam.optional(),
+});
+
+const checkoutAbandonmentItemSchema = z.object({
+  product_id: idParam,
+  name: z.string().trim().max(120).optional(),
+  image: z.string().trim().max(512).optional(),
+  qty: z.coerce.number().int().min(1).max(9999),
+  price: z.coerce.number().nonnegative().optional(),
+});
+
+const checkoutAbandonmentBodySchema = z.object({
+  checkout_abandonment_id: idParam.optional(),
+  items: z.array(checkoutAbandonmentItemSchema).min(1),
+  raw_amount: z.coerce.number().nonnegative().optional(),
+  discount_amount: z.coerce.number().nonnegative().optional(),
+  shipping_fee: z.coerce.number().nonnegative().optional(),
+  total_amount: z.coerce.number().nonnegative().optional(),
+  payment_method: z.string().trim().max(32).optional(),
+  contact_name: z.string().trim().max(64).optional(),
+  contact_phone: z.string().trim().max(32).optional(),
 });
 
 const listOrdersQuerySchema = z.object({
@@ -56,6 +77,7 @@ const listReturnsQuerySchema = z.object({
 module.exports = {
   orderIdParamSchema,
   createOrderBodySchema,
+  checkoutAbandonmentBodySchema,
   listOrdersQuerySchema,
   payOrderBodySchema,
   createReturnBodySchema,

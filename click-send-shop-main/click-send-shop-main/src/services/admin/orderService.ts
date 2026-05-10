@@ -1,5 +1,5 @@
 import * as orderApi from "@/api/admin/order";
-import type { Order, OrderListParams } from "@/types/order";
+import type { CheckoutAbandonment, CheckoutAbandonmentStatus, Order, OrderListParams } from "@/types/order";
 import type { PaginatedData } from "@/types/common";
 import { downloadAdminCsv } from "@/utils/adminCsvDownload";
 import { unwrapPaginated } from "@/services/responseNormalize";
@@ -27,6 +27,16 @@ export async function shipOrder(id: string, trackingNo: string, carrier: string)
 export async function refreshOrderLogistics(id: string) {
   const res = await orderApi.refreshOrderLogistics(id);
   return res.data;
+}
+
+export async function fetchCheckoutAbandonments(params?: {
+  status?: CheckoutAbandonmentStatus | "";
+  keyword?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<PaginatedData<CheckoutAbandonment>> {
+  const res = await orderApi.getCheckoutAbandonments(params);
+  return unwrapPaginated<CheckoutAbandonment>(res.data);
 }
 
 export async function exportOrdersCsv(params?: { status?: string; paymentStatus?: string; keyword?: string }) {

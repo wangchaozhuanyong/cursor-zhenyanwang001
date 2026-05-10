@@ -15,6 +15,8 @@ import {
   getOrderStatusLabel,
   getPaymentStatusLabel,
 } from "@/constants/statusDictionary";
+import { OrderSstLines } from "@/components/OrderSstLines";
+import type { Order } from "@/types/order";
 
 function canShipByState(order: { status?: string; payment_status?: string }) {
   return order.status === ORDER_STATUS.PAID
@@ -93,7 +95,39 @@ export default function AdminOrderDetail() {
   const nextStatus = canAdvance ? allStatuses[currentStatusIdx + 1] : null;
   const showShip = order && canShipByState(order);
 
-  const orderText = order ? `📦 订单号: ${order.order_no}\n👤 ${order.contact_name || ""} (${order.contact_phone || ""})\n📍 ${order.address || ""}\n---\n${items.map((it: any) => `✦ ${it.product?.name || it.name} x${it.qty} = RM ${((it.product?.price || it.price || 0) * it.qty).toFixed(2)}`).join("\n")}\n---\n💰 合计: RM ${parseFloat(order.total_amount || 0).toFixed(2)}` : "";
+  const orderText = order
+    ? (() => {
+        const lines = [
+          `📦 订单号: ${order.order_no}`,
+          `👤 ${order.contact_name || ""} (${order.contact_phone || ""})`,
+          `📍 ${order.address || ""}`,
+          "---",
+          ...items.map((it: any) => `✦ ${it.product?.name || it.name} x${it.qty} = RM ${((it.product?.price || it.price || 0) * it.qty).toFixed(2)}`),
+          "---",
+          `💰 ${order.tax_mode === "inclusive" ? "商品总额（含税）" : "商品合计"}: RM ${parseFloat(order.raw_amount || order.total_amount || 0).toFixed(2)}`,
+        ];
+        if (parseFloat(order.discount_amount || 0) > 0) {
+          lines.push(`🎫 优惠: -RM ${parseFloat(order.discount_amount).toFixed(2)}`);
+        }
+        if (
+          order.tax_mode === "inclusive"
+          && order.taxable_amount != null
+          && order.tax_amount != null
+          && order.tax_rate != null
+        ) {
+          const tl = order.tax_label || "SST";
+          lines.push(`📋 应税商品（含税）: RM ${parseFloat(order.taxable_amount).toFixed(2)}`);
+          if (order.tax_exclusive_amount != null) {
+            lines.push(`📋 商品不含税净额: RM ${parseFloat(order.tax_exclusive_amount).toFixed(2)}`);
+          }
+          lines.push(`📋 ${tl}（${order.tax_rate}%）: RM ${parseFloat(order.tax_amount).toFixed(2)}`);
+        }
+        const ship = parseFloat(order.shipping_fee || 0);
+        lines.push(ship > 0 ? `🚚 运费（不计税）: RM ${ship.toFixed(2)}` : "🚚 运费: 包邮（不计税）");
+        lines.push(`💰 应付: RM ${parseFloat(order.total_amount || 0).toFixed(2)}`);
+        return lines.join("\n");
+      })()
+    : "";
 
   const handleCopyText = async () => {
     const copied = await copyToClipboard(orderText);
@@ -388,7 +422,9 @@ export default function AdminOrderDetail() {
           </div>
           <div className="mt-4 space-y-2 border-t border-border pt-4">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">商品合计</span>
+              <span className="text-muted-foreground">
+                {order.tax_mode === "inclusive" ? "商品合计（含税）" : "商品合计"}
+              </span>
               <span className="text-foreground">RM {parseFloat(order.raw_amount || order.total_amount || 0).toFixed(2)}</span>
             </div>
             {parseFloat(order.discount_amount || 0) > 0 && (
@@ -397,8 +433,9 @@ export default function AdminOrderDetail() {
                 <span className="text-destructive">-RM {parseFloat(order.discount_amount).toFixed(2)}</span>
               </div>
             )}
+            <OrderSstLines order={order as Order} />
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">运费</span>
+              <span className="text-muted-foreground">运费{order.tax_mode === "inclusive" ? "（不计税）" : ""}</span>
               <span className="text-foreground">{parseFloat(order.shipping_fee || 0) === 0 ? "包邮" : `RM ${parseFloat(order.shipping_fee).toFixed(2)}`}</span>
             </div>
             <div className="flex justify-between text-sm font-bold border-t border-[var(--theme-border)] pt-2">

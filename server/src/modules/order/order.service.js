@@ -9,6 +9,8 @@ const { canUserCancel } = require('./orderStateMachine');
 const repo = require('./order.repository');
 const userModule = require('../user');
 const paymentsModule = require('./payments');
+const checkoutAbandonmentRepo = require('./checkoutAbandonment.repository');
+const sstTax = require('./sstTax');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
 const logisticsService = require('../logistics/logistics.service');
 const orderDb = repo.getPool();
@@ -156,6 +158,8 @@ async function createOrder(userId, body) {
     let discountAmount = fullReductionDiscount;
     let usedCouponUcId = null;
     let usedCouponTitle = coupon_title;
+    let couponType = null;
+    let couponDiscountValue = 0;
     if (coupon_id) {
       const uc = await repo.selectUserCouponForUpdate(conn, coupon_id, userId);
       if (!uc) {
@@ -183,11 +187,18 @@ async function createOrder(userId, body) {
         await conn.rollback();
         throw new ValidationError(uc.type === 'shipping' ? '当前订单无可抵扣运费，无法使用该运费券' : '该优惠券当前不可抵扣');
       }
-      discountAmount += couponDiscount;
+      couponType = uc.type;
+      couponDiscountValue = couponDiscount;
+      discountAmount += couponDiscountValue;
       await repo.updateUserCouponUsed(conn, uc.uc_id);
       usedCouponUcId = uc.uc_id;
       usedCouponTitle = uc.title || coupon_title;
     }
+
+    const nonShippingGoodsCoupon = couponType === 'shipping' ? 0 : couponDiscountValue;
+    const goodsInclusiveTaxable = Math.max(0, rawAmount - fullReductionDiscount - nonShippingGoodsCoupon);
+    const sstSettings = await sstTax.loadSstSettingsFromDb(orderDb);
+    const taxSnap = sstTax.buildOrderTaxSnapshot(sstSettings, goodsInclusiveTaxable);
 
     const totalAmount = Math.max(0, rawAmount - discountAmount + shippingFee);
     const orderId = generateId();
@@ -209,10 +220,22 @@ async function createOrder(userId, body) {
       contactPhone: contact_phone,
       address,
       paymentMethod: payment_method,
+      taxMode: taxSnap.tax_mode,
+      taxRate: taxSnap.tax_rate,
+      taxLabel: taxSnap.tax_label,
+      taxableAmount: taxSnap.taxable_amount,
+      taxAmount: taxSnap.tax_amount,
+      taxExclusiveAmount: taxSnap.tax_exclusive_amount,
     });
 
     if (usedCouponUcId) {
       await repo.updateOrderCouponUcId(conn, orderId, usedCouponUcId);
+    }
+    if (body.checkout_abandonment_id) {
+      await checkoutAbandonmentRepo.markOrdered(conn, body.checkout_abandonment_id, userId, {
+        orderId,
+        orderNo,
+      });
     }
 
     for (const oi of orderItems) {
@@ -225,6 +248,8 @@ async function createOrder(userId, body) {
         price: oi.price,
         points: oi.points,
         qty: oi.qty,
+        activityId: oi.activityId,
+        activityTitle: oi.activityTitle,
       });
     }
 
@@ -309,35 +334,53 @@ async function getOrderById(userId, orderId) {
   return { data };
 }
 
+async function cancelPendingOrderInTransaction(conn, order, options = {}) {
+  const trigger = options.trigger || 'order_cancel';
+  const cancelReason = options.cancelReason || `订单 ${order.order_no} 取消`;
+  const stockReason = options.stockReason || `订单 ${order.order_no} 取消释放库存`;
+  const pointReason = options.pointReason || `订单取消回滚积分 ${order.order_no}`;
+
+  await repo.updateOrderCancelled(conn, order.id, cancelReason);
+  await checkoutAbandonmentRepo.markClosedByOrderId(conn, order.id);
+
+  const lineItems = await repo.selectOrderItemQtyRows(conn, order.id);
+  for (const item of lineItems) {
+    await repo.restoreProductStock(conn, item.product_id, item.qty, {
+      refType: 'order',
+      refId: order.id,
+      reason: stockReason,
+    });
+    if (item.activity_id) {
+      await repo.decrementActivitySold(conn, item.activity_id, item.product_id, item.qty);
+    }
+  }
+
+  await requireApiMethod(userApi, 'reverseOrderPoints')(conn, order, pointReason, {
+    trigger,
+  });
+
+  if (order.coupon_uc_id) {
+    await repo.restoreUserCouponById(conn, order.coupon_uc_id);
+  } else if (order.coupon_title) {
+    await repo.restoreUserCouponHeuristic(conn, order.user_id, order.created_at);
+  }
+}
+
 async function cancelOrder(userId, orderId) {
   const conn = await repo.getConnection();
   try {
-    const order = await repo.selectOrderByIdAndUser(conn, orderId, userId);
+    await conn.beginTransaction();
+
+    const order = await repo.selectOrderByIdAndUserForUpdate(conn, orderId, userId);
     if (!order) throw new NotFoundError('订单不存在');
     if (!canUserCancel(order)) throw new ValidationError('当前订单状态无法取消（仅未付款的待处理订单可取消）');
 
-    await conn.beginTransaction();
-
-    await repo.updateOrderStatus(conn, order.id, ORDER_STATUS.CANCELLED);
-
-    const lineItems = await repo.selectOrderItemQtyRows(conn, order.id);
-    for (const item of lineItems) {
-      await repo.restoreProductStock(conn, item.product_id, item.qty, {
-        refType: 'order',
-        refId: order.id,
-        reason: `订单 ${order.order_no} 取消释放库存`,
-      });
-    }
-
-    await requireApiMethod(userApi, 'reverseOrderPoints')(conn, order, `订单取消回滚积分 ${order.order_no}`, {
+    await cancelPendingOrderInTransaction(conn, order, {
       trigger: 'user_cancel_order',
+      cancelReason: `用户取消订单 ${order.order_no}`,
+      stockReason: `订单 ${order.order_no} 取消释放库存`,
+      pointReason: `订单取消回滚积分 ${order.order_no}`,
     });
-
-    if (order.coupon_uc_id) {
-      await repo.restoreUserCouponById(conn, order.coupon_uc_id);
-    } else if (order.coupon_title) {
-      await repo.restoreUserCouponHeuristic(conn, userId, order.created_at);
-    }
 
     await conn.commit();
     return { data: null, message: '订单已取消' };
@@ -412,4 +455,5 @@ module.exports = {
   createStripeCheckoutSession,
   confirmReceive,
   completeShippedOrder,
+  cancelPendingOrderInTransaction,
 };

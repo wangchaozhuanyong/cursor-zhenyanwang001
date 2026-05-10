@@ -6,12 +6,13 @@ const homeOpsService = require('../admin/adminHomeOps.service');
  *  - 基础品牌：siteName / siteDescription / siteSlogan / logoUrl / faviconUrl / brandColor
  *  - 联系方式：contactPhone / contactEmail / contactWhatsApp / whatsappUrl / wechatId / address / businessHours
  *  - 社交：instagramUrl / facebookUrl / tiktokUrl / xhsUrl
- *  - 业务：currency
+ *  - 业务：currency / sstEnabled / sstRatePercent / sstLabel / sstCustomerNote
  *  - SEO：seoTitle / seoDescription / seoKeywords / ogImageUrl
  *  - 页脚：footerCompanyName / footerCopyright / footerIcpNo / footerPolicyUrl / footerTermsUrl
  *  - 政策路径：privacyPolicyPath / termsPath / refundPolicyPath / shippingPolicyPath
  *  - 购物说明：supportText / shippingNotice / paymentNotice
  *  - 自定义页脚导航（JSON 字符串）：footerNav
+ *  - 追踪配置：ga4Enabled / ga4MeasurementId / metaPixelEnabled / metaPixelId
  */
 const PUBLIC_SITE_KEYS = [
   // 基础品牌
@@ -23,6 +24,10 @@ const PUBLIC_SITE_KEYS = [
   'instagramUrl', 'facebookUrl', 'tiktokUrl', 'xhsUrl',
   // 业务
   'currency',
+  'sstEnabled',
+  'sstRatePercent',
+  'sstLabel',
+  'sstCustomerNote',
   // SEO
   'seoTitle', 'seoDescription', 'seoKeywords', 'ogImageUrl',
   // 页脚
@@ -36,6 +41,8 @@ const PUBLIC_SITE_KEYS = [
   'footerNav',
   // 首页新品运营主视觉
   'newArrivalHeroImage', 'newArrivalHeroTitle', 'newArrivalHeroSubtitle', 'newArrivalHeroCtaText',
+  // Cookie 同意后才会由前端读取并加载的分析/广告追踪配置
+  'ga4Enabled', 'ga4MeasurementId', 'metaPixelEnabled', 'metaPixelId',
 ];
 
 exports.PUBLIC_SITE_KEYS = PUBLIC_SITE_KEYS;

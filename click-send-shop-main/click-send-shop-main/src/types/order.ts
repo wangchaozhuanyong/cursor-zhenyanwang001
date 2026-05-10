@@ -27,6 +27,13 @@ export interface Order {
   shipping_fee: number;
   shipping_name: string;
   total_amount: number;
+  /** SST 快照；历史订单可能为空 */
+  tax_mode?: string | null;
+  tax_rate?: number | null;
+  tax_label?: string | null;
+  taxable_amount?: number | null;
+  tax_amount?: number | null;
+  tax_exclusive_amount?: number | null;
   total_points: number;
   status: OrderStatus;
   /** 支付状态（与履约 status 分离）；旧数据可能缺省，按 pending 展示 */
@@ -77,6 +84,8 @@ export interface SubmitOrderParams {
   payment_method?: string;
   /** 与前端运费估算一致：总重量 kg（按件数 × 默认单件重量） */
   estimated_weight_kg?: number;
+  /** 结算页快照 ID，用于将未完成结算与正式订单关联 */
+  checkout_abandonment_id?: string;
 }
 
 export interface OrderListParams {
@@ -87,4 +96,45 @@ export interface OrderListParams {
   keyword?: string;
   page?: number;
   pageSize?: number;
+}
+
+export type CheckoutAbandonmentStatus = "open" | "ordered" | "paid" | "closed";
+
+export interface CheckoutAbandonmentItem {
+  product_id: string;
+  name?: string;
+  image?: string;
+  qty: number;
+  price?: number;
+}
+
+export interface CheckoutAbandonment {
+  id: string;
+  user_id: string;
+  status: CheckoutAbandonmentStatus;
+  order_id?: string | null;
+  order_no?: string;
+  items_count: number;
+  items_summary: CheckoutAbandonmentItem[];
+  raw_amount: number;
+  discount_amount: number;
+  shipping_fee: number;
+  total_amount: number;
+  payment_method: string;
+  contact_name: string;
+  contact_phone_masked: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CheckoutAbandonmentPayload {
+  checkout_abandonment_id?: string;
+  items: CheckoutAbandonmentItem[];
+  raw_amount?: number;
+  discount_amount?: number;
+  shipping_fee?: number;
+  total_amount?: number;
+  payment_method?: string;
+  contact_name?: string;
+  contact_phone?: string;
 }

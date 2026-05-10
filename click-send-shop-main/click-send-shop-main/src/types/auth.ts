@@ -35,6 +35,10 @@ export interface OtpLoginParams {
   code: string;
 }
 
+export interface AuthFeatures {
+  smsOtpLoginEnabled: boolean;
+}
+
 export interface OAuthExchangeParams {
   provider: "google" | "facebook";
   code: string;

@@ -6,6 +6,7 @@ const { assertReturnTransition } = require('../order/returnStateMachine');
 const { ORDER_STATUS, RETURN_STATUS } = require('../../constants/status');
 const { getResolvedTriggerCopy } = require('./notificationTriggerSettings.service');
 const userModule = require('../user');
+const myinvoisService = require('../myinvois/myinvois.service');
 
 const userApi = /** @type {any} */ (userModule).api || {};
 
@@ -267,6 +268,14 @@ async function approveReturn(id, body, adminUserId, req) {
       after: { status: RETURN_STATUS.APPROVED, refund_amount: refund_amount ?? null },
       result: 'success',
     });
+    try {
+      await myinvoisService.enqueueRefundCreditNoteIfEnabled({
+        returnId: id,
+        refundAmount: refund_amount,
+      }, 'return_approved');
+    } catch (e) {
+      console.error('[MyInvois] enqueue credit note after return approval failed:', e?.message || e);
+    }
     return { message: '已批准' };
   } catch (err) {
     await conn.rollback();

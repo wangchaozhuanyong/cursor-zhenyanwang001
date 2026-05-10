@@ -1,9 +1,15 @@
 const orderService = require('./order.service');
 const orderApiService = require('./services/order.api.service');
+const checkoutAbandonmentService = require('./checkoutAbandonment.service');
 const { asyncRoute } = require('../../middleware/asyncRoute');
 
 exports.createOrder = asyncRoute(async (req, res) => {
   const result = await orderApiService.createOrder(req.user.id, req.body);
+  res.success(result.data, result.message);
+});
+
+exports.recordCheckoutAbandonment = asyncRoute(async (req, res) => {
+  const result = await checkoutAbandonmentService.recordCheckoutSnapshot(req.user.id, req.body);
   res.success(result.data, result.message);
 });
 

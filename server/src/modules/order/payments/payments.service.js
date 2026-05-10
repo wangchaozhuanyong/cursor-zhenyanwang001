@@ -5,12 +5,15 @@ const {
   ValidationError,
 } = require('../../../errors');
 const orderRepo = require('../order.repository');
+const checkoutAbandonmentRepo = require('../checkoutAbandonment.repository');
 const userModule = require('../../user');
 const payRepo = require('./payments.repository');
 const manualProvider = require('./providers/manualProvider');
+const malaysiaLocalProvider = require('./providers/malaysiaLocalProvider');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { getResolvedTriggerCopy } = require('../../admin/notificationTriggerApi');
+const myinvoisService = require('../../myinvois/myinvois.service');
 const payDb = payRepo.getPool();
 
 const userApi = /** @type {any} */ (userModule).api || {};
@@ -26,6 +29,16 @@ function requireUserApi(name) {
 function toMoney(v) {
   const n = parseFloat(v);
   return Number.isFinite(n) ? n : 0;
+}
+
+function parseJson(value, fallback = {}) {
+  if (!value) return fallback;
+  if (typeof value === 'object') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
 }
 
 async function listChannelsForUser(countryCode, currency) {
@@ -131,6 +144,7 @@ async function payWithRewardWallet(userId, orderId) {
       paymentTransactionNo: txNo,
       paymentMethod: 'reward_wallet',
     });
+    await checkoutAbandonmentRepo.markPaidByOrderId(conn, lockedOrder.id);
     try {
       await requireUserApi('refreshUserMemberLevel')(conn, userId);
     } catch (e) {
@@ -174,6 +188,11 @@ async function payWithRewardWallet(userId, orderId) {
     });
 
     await conn.commit();
+    try {
+      await myinvoisService.enqueueOrderInvoiceIfEnabled(lockedOrder.id, 'reward_wallet_paid');
+    } catch (e) {
+      console.error('[MyInvois] enqueue invoice after reward wallet payment failed:', e?.message || e);
+    }
     return { data: { payment_order_id: paymentOrderId }, message: '返现钱包支付成功' };
   } catch (err) {
     await conn.rollback();
@@ -343,7 +362,109 @@ async function createIntent(userId, body) {
     };
   }
 
+  if (channel.provider === 'malaysia_local') {
+    const order = await orderRepo.selectOrderByIdAndUser(payDb, orderId, userId);
+    if (!order) throw new NotFoundError('订单不存在');
+    if (order.status !== ORDER_STATUS.PENDING || (order.payment_status || PAYMENT_STATUS.PENDING) !== PAYMENT_STATUS.PENDING) {
+      throw new ValidationError('当前订单状态无法创建支付单');
+    }
+    if (order.payment_method !== 'online') {
+      throw new ValidationError('该订单非在线支付');
+    }
+    const amount = toMoney(order.total_amount);
+    if (amount <= 0) throw new ValidationError('订单金额异常，无法发起支付');
+    const paymentOrderId = generateId();
+    const intent = await malaysiaLocalProvider.createIntent({
+      channel,
+      order,
+      paymentOrderId,
+      returnUrl,
+    });
+    await payRepo.insertPaymentOrder(payDb, {
+      id: paymentOrderId,
+      user_id: userId,
+      order_id: order.id,
+      order_no: order.order_no,
+      channel_id: channel.id,
+      channel_code: channel.code,
+      provider: 'malaysia_local',
+      amount,
+      currency: channel.currency || 'MYR',
+      status: 'pending',
+      idempotency_key: idempotencyKey || `malaysia_local:${channel.code}:${order.id}:${paymentOrderId}`,
+      payment_transaction_no: '',
+      payment_time: null,
+      metadata: {
+        channel_config: { environment: channel.environment },
+        gateway: intent.raw,
+        url: intent.redirectUrl,
+        return_url: returnUrl || '',
+      },
+    });
+    return {
+      data: {
+        payment_order_id: paymentOrderId,
+        status: 'pending',
+        redirect_url: intent.redirectUrl,
+        client_instructions: intent.redirectUrl
+          ? '请跳转至本地支付网关完成付款'
+          : '支付单已创建，等待本地支付网关回调确认',
+      },
+      message: intent.redirectUrl ? '请跳转支付' : '已创建本地支付单',
+    };
+  }
+
   throw new ValidationError('暂不支持的支付渠道');
+}
+
+async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionNo, payloadSummary) {
+  if (order.status !== ORDER_STATUS.PENDING || (order.payment_status || PAYMENT_STATUS.PENDING) !== PAYMENT_STATUS.PENDING) {
+    return { skipped: true, reason: 'order_not_pending' };
+  }
+  await orderRepo.updateOrderPaid(conn, order.id, {
+    paymentTime: new Date(),
+    paymentChannel: paymentOrder.channel_code,
+    paymentTransactionNo: transactionNo,
+    paymentMethod: 'online',
+  });
+  await checkoutAbandonmentRepo.markPaidByOrderId(conn, order.id);
+  try {
+    await requireUserApi('refreshUserMemberLevel')(conn, order.user_id);
+  } catch (e) {
+    console.error('[markOrderPaidFromProvider] refreshUserMemberLevel failed:', e?.message || e);
+  }
+  const itemRows = await orderRepo.selectOrderItemQtyRows(conn, order.id);
+  for (const it of itemRows) {
+    if (it?.product_id && Number(it.qty) > 0) {
+      await orderRepo.incrementProductSales(conn, it.product_id, Number(it.qty));
+    }
+  }
+  await payRepo.updatePaymentOrderPaid(conn, paymentOrder.id, {
+    payment_transaction_no: transactionNo,
+    payment_time: new Date(),
+    metadata: payloadSummary,
+  });
+
+  const channel = await payRepo.selectChannelByCode(conn, paymentOrder.channel_code);
+  const cfg = parseJson(channel?.config_json);
+  const gross = toMoney(paymentOrder.amount);
+  const rate = toMoney(cfg.fee_rate_percent);
+  const fixed = toMoney(cfg.fee_fixed);
+  const feeAmount = Math.max(0, (gross * rate) / 100 + fixed);
+  const net = Math.max(0, gross - feeAmount);
+  try {
+    await payRepo.insertPaymentFee(conn, {
+      id: generateId(),
+      payment_order_id: paymentOrder.id,
+      fee_rate_percent: rate,
+      fee_fixed: fixed,
+      fee_amount: feeAmount,
+      net_amount: net,
+    });
+  } catch (e) {
+    if (e?.code !== 'ER_DUP_ENTRY') throw e;
+  }
+  return { ok: true };
 }
 
 async function getIntent(userId, paymentOrderId) {
@@ -553,6 +674,11 @@ async function markOrderPaidByAdmin(req, orderId, body) {
     });
 
     await conn.commit();
+    try {
+      await myinvoisService.enqueueOrderInvoiceIfEnabled(order.id, 'admin_mark_paid');
+    } catch (e) {
+      console.error('[MyInvois] enqueue invoice after admin mark-paid failed:', e?.message || e);
+    }
 
     await writeAuditLog({
       req,
@@ -673,6 +799,140 @@ async function handleManualWebhook(provider, body, headerSecret) {
   return { data: { received: true }, message: '事件已记录（需管理端确认收款后才会改订单状态）' };
 }
 
+async function handleMalaysiaLocalWebhook(provider, body, headers = {}) {
+  if (!['malaysia-local', 'malaysia_local'].includes(provider)) {
+    throw new NotFoundError('未知 provider');
+  }
+  const expectedSecret = (process.env.PAYMENT_MALAYSIA_WEBHOOK_SECRET || '').trim();
+  const headerSecret = headers['x-webhook-secret'];
+  const headerSignature = headers['x-payment-signature'] || headers['x-signature'];
+  if (!expectedSecret) {
+    throw new BusinessError(503, '未配置 PAYMENT_MALAYSIA_WEBHOOK_SECRET');
+  }
+  if (headerSecret) {
+    if (String(headerSecret) !== expectedSecret) throw new ValidationError('Webhook 密钥无效');
+  } else {
+    const verified = malaysiaLocalProvider.verifySignature({
+      body,
+      headerSignature,
+      secret: expectedSecret,
+    });
+    if (!verified.ok) throw new ValidationError(`Webhook 签名无效: ${verified.reason}`);
+  }
+
+  const eventId = String(body.event_id || body.transaction_id || body.reference || `my_${Date.now()}`);
+  const normalizedStatus = malaysiaLocalProvider.normalizeWebhookStatus(body.status || body.payment_status);
+  const txNo = String(body.transaction_id || body.payment_transaction_no || body.reference || eventId);
+  const conn = await payRepo.getConnection();
+  try {
+    await conn.beginTransaction();
+    let paymentOrderId = body.payment_order_id || '';
+    if (!paymentOrderId && body.order_id) {
+      paymentOrderId = await payRepo.selectLatestPendingPaymentOrderId(conn, {
+        orderId: body.order_id,
+        provider: 'malaysia_local',
+        channelCode: body.channel_code || '',
+      });
+    }
+    if (!paymentOrderId) throw new ValidationError('payment_order_id 或可匹配的 order_id 必填');
+
+    const paymentOrder = await payRepo.selectPaymentOrderByIdForUpdate(conn, paymentOrderId);
+    if (!paymentOrder) throw new NotFoundError('支付单不存在');
+    if (paymentOrder.provider !== 'malaysia_local') throw new ValidationError('支付单 provider 不匹配');
+    const order = await orderRepo.selectOrderByIdForUpdate(conn, paymentOrder.order_id);
+    if (!order) throw new NotFoundError('订单不存在');
+
+    const webhookAmount = body.amount === undefined ? null : toMoney(body.amount);
+    const webhookCurrency = String(body.currency || paymentOrder.currency || 'MYR').toUpperCase();
+    const expectedAmount = toMoney(paymentOrder.amount);
+    const amountOk = webhookAmount === null || Math.abs(webhookAmount - expectedAmount) < 0.01;
+    const currencyOk = webhookCurrency === String(paymentOrder.currency || 'MYR').toUpperCase();
+
+    const payloadSummary = {
+      provider: 'malaysia_local',
+      event_id: eventId,
+      status: normalizedStatus,
+      raw_status: body.status || body.payment_status || '',
+      channel_code: paymentOrder.channel_code,
+      amount: webhookAmount,
+      currency: webhookCurrency,
+    };
+
+    if (!amountOk || !currencyOk) {
+      await payRepo.insertPaymentEvent(conn, {
+        id: generateId(),
+        payment_order_id: paymentOrder.id,
+        order_id: order.id,
+        provider: 'malaysia_local',
+        provider_event_id: eventId,
+        event_type: `malaysia_local.${normalizedStatus}`,
+        verify_status: 'failed',
+        processing_result: 'rejected',
+        payload_json: payloadSummary,
+        error_message: '金额或币种不匹配',
+      });
+      await conn.commit();
+      throw new ValidationError('Webhook 金额或币种不匹配');
+    }
+
+    let processingResult = 'logged';
+    let shouldQueueMyInvoisInvoice = false;
+    if (normalizedStatus === 'paid') {
+      if (paymentOrder.status !== 'paid') {
+        await markOrderPaidFromProvider(conn, order, paymentOrder, txNo, payloadSummary);
+        shouldQueueMyInvoisInvoice = true;
+      }
+      processingResult = 'success';
+    } else if (normalizedStatus === 'failed') {
+      await payRepo.updatePaymentOrderFailed(conn, paymentOrder.id, {
+        payment_transaction_no: txNo,
+        metadata: payloadSummary,
+      });
+      processingResult = 'failed';
+    }
+
+    try {
+      await payRepo.insertPaymentEvent(conn, {
+        id: generateId(),
+        payment_order_id: paymentOrder.id,
+        order_id: order.id,
+        provider: 'malaysia_local',
+        provider_event_id: eventId,
+        event_type: `malaysia_local.${normalizedStatus}`,
+        verify_status: 'success',
+        processing_result: processingResult,
+        payload_json: payloadSummary,
+        error_message: '',
+      });
+    } catch (e) {
+      if (e?.code !== 'ER_DUP_ENTRY') throw e;
+    }
+
+    await conn.commit();
+    if (shouldQueueMyInvoisInvoice) {
+      try {
+        await myinvoisService.enqueueOrderInvoiceIfEnabled(order.id, 'malaysia_local_paid');
+      } catch (e) {
+        console.error('[MyInvois] enqueue invoice after local payment failed:', e?.message || e);
+      }
+    }
+    return {
+      data: {
+        received: true,
+        payment_order_id: paymentOrder.id,
+        order_id: order.id,
+        status: normalizedStatus,
+      },
+      message: '马来本地支付事件已处理',
+    };
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
 module.exports = {
   listChannelsForUser,
   listChannelsAdmin,
@@ -689,4 +949,5 @@ module.exports = {
   listReconciliations,
   createReconciliation,
   handleManualWebhook,
+  handleMalaysiaLocalWebhook,
 };

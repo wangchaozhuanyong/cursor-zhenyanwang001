@@ -63,6 +63,7 @@ export default function Login() {
   const [otpCode, setOtpCode] = useState("");
   const [otpSending, setOtpSending] = useState(false);
   const [otpCooldown, setOtpCooldown] = useState(0);
+  const [smsOtpLoginEnabled, setSmsOtpLoginEnabled] = useState(true);
   const hasLockedInviteCode = !!inviteCode;
 
   useEffect(() => {
@@ -90,6 +91,24 @@ export default function Login() {
     }, 1000);
     return () => window.clearInterval(t);
   }, [otpCooldown]);
+
+  useEffect(() => {
+    let cancelled = false;
+    authService
+      .getAuthFeatures()
+      .then((features) => {
+        if (cancelled) return;
+        const enabled = features.smsOtpLoginEnabled !== false;
+        setSmsOtpLoginEnabled(enabled);
+        if (!enabled) setCredentialMode("password");
+      })
+      .catch(() => {
+        if (!cancelled) setSmsOtpLoginEnabled(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -135,6 +154,10 @@ export default function Login() {
   };
 
   const handleSendOtp = async () => {
+    if (!smsOtpLoginEnabled) {
+      toast.error("当前未开启短信验证码登录");
+      return;
+    }
     if (!phone.trim()) {
       toast.error("请填写手机号");
       return;
@@ -165,6 +188,10 @@ export default function Login() {
       return;
     }
     if (mode === "login" && credentialMode === "otp") {
+      if (!smsOtpLoginEnabled) {
+        toast.error("当前未开启短信验证码登录");
+        return;
+      }
       if (!otpCode.trim() || !/^\d{6}$/.test(otpCode.trim())) {
         toast.error("请填写 6 位验证码");
         return;
@@ -331,7 +358,7 @@ export default function Login() {
           </div>
         </div>
 
-        {mode === "login" && (
+        {mode === "login" && smsOtpLoginEnabled && (
           <div className="mb-4 flex rounded-2xl bg-secondary p-1">
             {(["password", "otp"] as CredentialMode[]).map((c) => (
               <button

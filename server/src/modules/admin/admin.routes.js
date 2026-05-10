@@ -21,7 +21,6 @@ const { validate } = require('../../middleware/validate');
 const authCtrl = require('./controller/adminAuth.controller');
 const dashboardCtrl = require('./controller/adminDashboard.controller');
 const productCtrl = require('./controller/adminProduct.controller');
-const inventoryCtrl = require('./controller/adminInventory.controller');
 const orderCtrl = require('./controller/adminOrder.controller');
 const userCtrl = require('./controller/adminUser.controller');
 const categoryCtrl = require('./controller/adminCategory.controller');
@@ -147,12 +146,6 @@ router.post('/upload/multiple', adminAuth, userUploadCtrl.uploadMultiple, userUp
 router.get('/product-tags', adminAuth, requireAnyPermission(['tag.manage', 'product.manage']), productCtrl.listTags);
 router.post('/product-tags', adminAuth, requirePermission('tag.manage'), productCtrl.createTag);
 router.delete('/product-tags/:id', adminAuth, requirePermission('tag.manage'), productCtrl.removeTag);
-
-/* ── Inventory ── */
-router.get('/inventory/products', adminAuth, requirePermission('inventory.manage'), inventoryCtrl.listProducts);
-router.post('/inventory/products/:productId/adjust', adminAuth, requirePermission('inventory.manage'), inventoryCtrl.adjustStock);
-router.put('/inventory/products/:productId/warning-threshold', adminAuth, requirePermission('inventory.manage'), inventoryCtrl.updateWarningThreshold);
-router.get('/inventory/records', adminAuth, requirePermission('inventory.manage'), inventoryCtrl.listRecords);
 
 /* ── Payments（支付管理） ── */
 router.get('/payments/channels', adminAuth, requirePermission('payment.manage'), adminPayCtrl.listChannels);

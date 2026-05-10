@@ -2,6 +2,34 @@
 
 本文档汇总仓库内已提供的工程能力与上线前需你在外部完成的事项。
 
+## 推荐发布流程（把「改代码 → Git → 服务器」跑顺）
+
+按下面顺序做，多数「推上去才报错」可以避免：
+
+1. **本机（Windows）推送前**（需 Node 20+）：在仓库根执行  
+   `powershell -ExecutionPolicy Bypass -File scripts/verify-before-push.ps1`  
+   通过后再 `git commit` / `push`。若本机已配好 `server/.env` 且 MySQL 可用，可加 `-WithDbTests` 跑 `npm run test:all`。
+2. **GitHub**：`push` 到 `main` 会触发 **CI**（`.github/workflows/ci.yml`：前端 build + 服务端 typecheck，无需数据库）。**自动上架**依赖 **Deploy** workflow，须先配好 Secrets（见下表）。
+3. **服务器**：代码目录必须是 **`git clone` 的标准路径**（默认 `/var/www/click-send-shop`），且存在 **`server/.env`**（生产 **禁止** `DB_USER=root`，脚本会拦截）。**唯一推荐上架入口**：`bash deploy/ci-deploy.sh`（与 GitHub Actions SSH 里调用的一致）；内部会执行 `production-deploy.sh`（迁移、前端带 `VITE_API_BASE_URL=/api` 构建、PM2、健康检查）。你在服务器上改的 **`server/ecosystem.config.cjs`** 在每次 `git reset` 前会自动 **stash / 恢复**，避免被覆盖。
+4. **不要用多种脚本混着来**：日常只记一条——本机校验 → push →（CI 绿）→ 服务器 `ci-deploy.sh` 或 Actions 自动 SSH。需要「仅快进拉代码、不动硬重置」时可用 `deploy/prod-update-safe.sh`（与 `production-deploy.sh` 略有差异，见脚本注释）。
+
+### GitHub Actions 自动部署 Secrets（Repository secrets）
+
+| Secret | 必填 | 说明 |
+|--------|------|------|
+| `DEPLOY_HOST` | 是 | 服务器 IP 或域名（SSH） |
+| `DEPLOY_USER` | 是 | SSH 登录用户，如 `ubuntu` |
+| `DEPLOY_SSH_KEY` | 是 | 私钥全文（含 `BEGIN`/`END` 行） |
+| `DEPLOY_PROJECT_DIR` | 是 | 服务器上 **git 仓库根目录**，如 `/var/www/click-send-shop` |
+| `DEPLOY_PORT` | 否 | SSH 端口，默认 22 |
+| `DEPLOY_PM2_APP` | 否 | PM2 进程名，默认 `gc-api` |
+
+未配置时 Deploy 工作流会在第一步 **明确报错**，而不再是 SSH 步骤里含糊失败。
+
+### 为什么以前经常一出问题就是一串
+
+常见根因：未带 `VITE_API_BASE_URL=/api` 构建前端、数据库迁移未跑、`.env` 或 JWT 不合规、GitHub **未配置 Deploy Secrets**、服务器目录不是 clone / 缺 `.git`、在服务器上改了 `ecosystem` 又被旧版 `reset --hard` 抹掉。上述流程与脚本已尽量在入口拦一层。
+
 ## 已内置能力
 
 | 能力 | 说明 |
@@ -19,7 +47,7 @@
 | 去宝塔化 | `docs/de-baota/README.md`（标准路径 `/var/www/click-send-shop`、系统 Nginx、certbot） |
 | 数据库备份脚本 | `scripts/backup-mysql.ps1`（Windows）、`scripts/backup-mysql.sh`（Linux/macOS） |
 | 反向代理示例 | `deploy/Caddyfile.example`、`deploy/nginx.example.conf` |
-| CI | `.github/workflows/ci.yml`（前端 tsc + vitest + build；服务端加载 app） |
+| CI | `.github/workflows/ci.yml`（前端 typecheck + build；服务端 typecheck） |
 
 ## 推荐上线步骤（简版）
 
@@ -60,6 +88,7 @@
 
 | 现象 | 常见原因 | 处理 |
 |------|----------|------|
+| 管理后台上传图片/Banner/**商品图**报 **413**、响应里是 `nginx/...` HTML | **Nginx 默认 `client_max_body_size` 仅 1m**，请求体在进 Node 前就被网关拒绝（与后端「单张 15MB」无关） | **推荐**：将 `deploy/nginx/conf.d-upload-body-global.conf` 安装为 `/etc/nginx/conf.d/90-upload-body-size.conf`（对**所有**站点生效），再 `sudo nginx -t && sudo systemctl reload nginx`。或在各 **`server { ... }`** 内写 `client_max_body_size 60m;`（需 ≥ 后端视频 50MB），模板见 `deploy/nginx/site.prod.example.conf` |
 | 更新后前台能开，登录/数据全挂 | 前端构建未带 `VITE_API_BASE_URL=/api`（或分域 API 未写入正确完整 URL） | 使用 `deploy/production-deploy.sh`（已默认 `/api`），或手动构建前 `export VITE_API_BASE_URL=/api` |
 | `production-deploy.sh` 一开始就报 git 错 | 服务器目录不是 `git clone` 出来的、没有 `.git` | 改用 `git clone` 到 `/var/www/click-send-shop`，或 `SKIP_GIT=1 bash deploy/production-deploy.sh` 并确保已用 rsync/手工同步最新代码 |
 | `npm ci` / 依赖报错 | Node 版本低于 20、或锁文件与 package.json 不一致 | 升级 Node 20+；在 `server` 与前端目录分别重新 `npm ci` 或对齐锁文件后提交 |

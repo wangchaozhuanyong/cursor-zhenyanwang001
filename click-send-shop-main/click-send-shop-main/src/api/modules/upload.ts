@@ -71,11 +71,16 @@ async function doUpload<T>(url: string, formData: FormData): Promise<T> {
   }
 
   if (!res.ok) {
-    let message = `上传失败（HTTP ${res.status}）`;
-    if (res.status === 413) {
-      message = "文件过大被网关拒绝（413）。视频最大 50MB；若已部署 Nginx，请在 server 中设置 client_max_body_size（建议 60m）后重载 Nginx";
-    }
     const ct = (res.headers.get("content-type") || "").toLowerCase();
+    const gateway413 =
+      "上传被网关拒绝（413）：反向代理（多为 Nginx）默认只允许约 1MB 请求体。请在 http{} 或 server{} 内设置 client_max_body_size 60m;，或将仓库内 deploy/nginx/conf.d-upload-body-global.conf 安装为 /etc/nginx/conf.d/90-upload-body-size.conf，然后 sudo nginx -t && sudo systemctl reload nginx。后端单图上限 15MB、视频 50MB。";
+
+    // 网关 413 常返回 HTML，不要把整页源码拼进提示里
+    if (res.status === 413 && !ct.includes("application/json")) {
+      throw new Error(gateway413);
+    }
+
+    let message = res.status === 413 ? gateway413 : `上传失败（HTTP ${res.status}）`;
     try {
       if (ct.includes("application/json")) {
         const body = (await res.json()) as Record<string, unknown>;

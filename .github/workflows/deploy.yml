@@ -15,8 +15,28 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  check-secrets:
+    name: Validate deploy secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure DEPLOY_* secrets are non-empty
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PROJECT_DIR: ${{ secrets.DEPLOY_PROJECT_DIR }}
+        run: |
+          set -euo pipefail
+          fail() { echo "::error::$1"; exit 1; }
+          [ -n "${DEPLOY_HOST:-}" ] || fail "DEPLOY_HOST 为空，请在仓库 Settings → Secrets → Actions 配置（见 docs/DEPLOYMENT.md）"
+          [ -n "${DEPLOY_USER:-}" ] || fail "DEPLOY_USER 为空"
+          [ -n "${DEPLOY_SSH_KEY:-}" ] || fail "DEPLOY_SSH_KEY 为空"
+          [ -n "${DEPLOY_PROJECT_DIR:-}" ] || fail "DEPLOY_PROJECT_DIR 为空"
+          echo "OK: deploy secrets are present."
+
   deploy:
     name: SSH deploy → ci-deploy.sh
+    needs: check-secrets
     runs-on: ubuntu-latest
     timeout-minutes: 25
 

@@ -73,7 +73,8 @@ app.post(
   stripeWebhook.handleWebhook,
 );
 
-app.use(express.json({ limit: '10mb' }));
+// 与 multer 视频上限 50MB、Nginx client_max_body_size 对齐；multipart 由 multer 解析，此条主要避免大 JSON 意外 413
+app.use(express.json({ limit: '60mb' }));
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 const authLimiter = rateLimit({

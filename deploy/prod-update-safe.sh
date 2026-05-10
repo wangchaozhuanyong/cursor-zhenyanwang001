@@ -84,13 +84,22 @@ pm2 status
 
 echo ""
 echo "=== 6) Health checks ==="
-LIVE=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3001/api/health/live" --max-time 5 || echo 000)
-READY=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:3001/api/health/ready" --max-time 5 || echo 000)
-PUB=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1/" -H "Host: flashcast.com.my" --max-time 5 || echo 000)
+HP="${HEALTH_PORT:-3001}"
+LIVE=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${HP}/api/health/live" --max-time 5 || echo 000)
+READY=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${HP}/api/health/ready" --max-time 5 || echo 000)
 echo "GET /api/health/live  -> $LIVE"
 echo "GET /api/health/ready -> $READY"
-echo "GET / (localhost nginx) -> $PUB"
-curl -s "http://127.0.0.1:3001/api/health/ready" --max-time 5 | head -c 300
+if [[ -n "${VERIFY_PUBLIC_HOST:-}" ]]; then
+  PUB=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1/" -H "Host: ${VERIFY_PUBLIC_HOST}" --max-time 5 || echo 000)
+  echo "GET / (nginx, Host: ${VERIFY_PUBLIC_HOST}) -> $PUB"
+  if [[ "${VERIFY_PUBLIC_STRICT:-0}" == "1" && "$PUB" != "200" ]]; then
+    echo "VERIFY_PUBLIC_STRICT=1 且公网 vhost 检测非 200，视为失败"
+    exit 1
+  fi
+else
+  echo "（可选）设置 VERIFY_PUBLIC_HOST=你的域名 可顺带检测本机 Nginx vhost"
+fi
+curl -s "http://127.0.0.1:${HP}/api/health/ready" --max-time 5 | head -c 300
 echo
 
 if [[ "$LIVE" == "200" && "$READY" == "200" ]]; then

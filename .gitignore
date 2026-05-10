@@ -17,6 +17,7 @@ public-frontend/
 # GitHub Actions — 忽略目录内未显式放行的文件（勿用 trailing / 忽略目录，否则无法 ! 恢复子文件）
 .github/workflows/*
 !.github/workflows/deploy.yml
+!.github/workflows/ci.yml
 
 # 部署状态文件（last_good_head / history.log 等）
 .deploy-state/

@@ -49,11 +49,27 @@ bash "$PROJECT_DIR/deploy/preflight.sh" | tee -a "$LOG_FILE"
 LOCAL_COMMIT=""
 if [[ "${SKIP_GIT:-0}" != "1" ]]; then
   echo "📦 拉取最新代码（分支 $GIT_BRANCH）..." | tee -a "$LOG_FILE"
-  git fetch origin "$GIT_BRANCH"
-  git reset --hard "origin/$GIT_BRANCH"
+  # 服务器上常改 server/ecosystem.config.cjs（端口/实例数）；reset --hard 会抹掉，先 stash 再恢复
+  STASH_ECOSYSTEM=0
+  if [[ -f "$BACKEND_DIR/ecosystem.config.cjs" ]] \
+    && ! git -C "$PROJECT_DIR" diff --quiet "server/ecosystem.config.cjs" 2>/dev/null; then
+    echo "📎 暂存本地改动的 server/ecosystem.config.cjs（避免被 reset 覆盖）..." | tee -a "$LOG_FILE"
+    if git -C "$PROJECT_DIR" stash push -m "deploy-ecosystem-$(date +%s)" -- "server/ecosystem.config.cjs"; then
+      STASH_ECOSYSTEM=1
+    fi
+  fi
+  git -C "$PROJECT_DIR" fetch origin "$GIT_BRANCH"
+  git -C "$PROJECT_DIR" reset --hard "origin/$GIT_BRANCH"
+  if [[ "$STASH_ECOSYSTEM" == "1" ]]; then
+    echo "📎 恢复 server/ecosystem.config.cjs..." | tee -a "$LOG_FILE"
+    if ! git -C "$PROJECT_DIR" stash pop; then
+      echo "❌ stash pop 冲突：请手工处理 server/ecosystem.config.cjs 后重试部署" | tee -a "$LOG_FILE"
+      exit 1
+    fi
+  fi
 
-  LOCAL_COMMIT=$(git rev-parse --short HEAD)
-  REMOTE_COMMIT=$(git rev-parse --short "origin/$GIT_BRANCH")
+  LOCAL_COMMIT=$(git -C "$PROJECT_DIR" rev-parse --short HEAD)
+  REMOTE_COMMIT=$(git -C "$PROJECT_DIR" rev-parse --short "origin/$GIT_BRANCH")
 
   echo "🔖 本地版本: $LOCAL_COMMIT" | tee -a "$LOG_FILE"
   echo "🌐 远程版本: $REMOTE_COMMIT" | tee -a "$LOG_FILE"
@@ -64,7 +80,7 @@ if [[ "${SKIP_GIT:-0}" != "1" ]]; then
   fi
 else
   echo "⏭ SKIP_GIT=1，跳过 git fetch/reset（请确认已通过 rsync/手工同步到最新代码）" | tee -a "$LOG_FILE"
-  LOCAL_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+  LOCAL_COMMIT=$(git -C "$PROJECT_DIR" rev-parse --short HEAD 2>/dev/null || echo "unknown")
   echo "🔖 当前目录版本: $LOCAL_COMMIT" | tee -a "$LOG_FILE"
 fi
 

@@ -1,13 +1,16 @@
-# SSH to EC2: git pull + production-deploy.sh
+# SSH to server: same entry as GitHub Actions — bash deploy/ci-deploy.sh
+# (production-deploy + verify-pm2, deploy state / optional rollback hooks)
 # Run from repo root:
 #   powershell -ExecutionPolicy Bypass -File deploy/deploy-from-windows.ps1
+# Optional env: EC2_HOST, EC2_USER, REMOTE_DIR, SSH_KEY_PATH, PM2_APP
 
 [CmdletBinding()]
 param(
     [string] $Ec2Host,
     [string] $Ec2User,
     [string] $RemoteDir,
-    [string] $KeyPath
+    [string] $KeyPath,
+    [string] $Pm2App
 )
 
 if (-not $Ec2Host) {
@@ -26,6 +29,10 @@ if (-not $KeyPath) {
     if ($env:SSH_KEY_PATH) { $KeyPath = $env:SSH_KEY_PATH }
     else { $KeyPath = 'E:\yamaxunmishi\aws-key.pem' }
 }
+if (-not $Pm2App) {
+    if ($env:PM2_APP) { $Pm2App = $env:PM2_APP }
+    else { $Pm2App = 'gc-api' }
+}
 
 if ([string]::IsNullOrWhiteSpace($Ec2Host)) {
     Write-Error 'Ec2Host is required.'
@@ -37,7 +44,8 @@ if (-not (Test-Path -LiteralPath $KeyPath)) {
     exit 1
 }
 
-$remote = ('cd ''{0}'' && git pull origin main && bash deploy/production-deploy.sh') -f $RemoteDir
+# Server resets to origin/main inside production-deploy.sh; ensure latest is pushed to GitHub first.
+$remote = "export PROJECT_DIR='{0}' PM2_APP='{1}' && cd '{0}' && bash deploy/ci-deploy.sh" -f $RemoteDir, $Pm2App
 $sshTarget = $Ec2User + '@' + $Ec2Host
 
 Write-Host ('>>> SSH ' + $sshTarget) -ForegroundColor Cyan

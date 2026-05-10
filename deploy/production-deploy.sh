@@ -11,6 +11,7 @@
 #   VITE_API_BASE_URL  默认 /api（同源部署）；API 分域时请设为完整前缀，如 https://api.xxx.com
 #   SKIP_GIT=1        跳过 git pull（适用于 rsync 同步、无 .git 的发布目录；须自行保证代码最新）
 #   GIT_BRANCH        默认 main（git fetch / reset 的目标分支）
+#   FRONTEND_BUILD_HEAP_MB  vite build 时 Node V8 堆上限（MB），默认 3072；小内存机若仍 OOM 可试 4096 或给机器加 swap
 #
 set -euo pipefail
 
@@ -135,7 +136,9 @@ fi
 cd "$FRONTEND_DIR" || exit 1
 npm_install_here
 echo "🎨 VITE_API_BASE_URL=$VITE_API_BASE_URL（若 API 不在同域 /api，请导出正确地址后重跑）" | tee -a "$LOG_FILE"
-npm run build
+_fe_heap="${FRONTEND_BUILD_HEAP_MB:-3072}"
+echo "ℹ️  vite build：Node --max-old-space-size=${_fe_heap}MB（避免默认堆过小 OOM）；可调环境变量 FRONTEND_BUILD_HEAP_MB" | tee -a "$LOG_FILE"
+NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--max-old-space-size=${_fe_heap}" npm run build
 
 if [[ -n "$ASSET_BACKUP" && -d "$ASSET_BACKUP" ]]; then
   echo "🧩 保留上一版 hashed assets，避免已打开页面刷新/懒加载时 chunk 404" | tee -a "$LOG_FILE"

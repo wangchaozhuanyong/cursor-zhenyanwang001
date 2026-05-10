@@ -91,6 +91,7 @@
 | 管理后台上传图片/Banner/**商品图**报 **413**、响应里是 `nginx/...` HTML | **Nginx 默认 `client_max_body_size` 仅 1m**，请求体在进 Node 前就被网关拒绝（与后端「单张 15MB」无关） | **推荐**：将 `deploy/nginx/conf.d-upload-body-global.conf` 安装为 `/etc/nginx/conf.d/90-upload-body-size.conf`（对**所有**站点生效），再 `sudo nginx -t && sudo systemctl reload nginx`。或在各 **`server { ... }`** 内写 `client_max_body_size 60m;`（需 ≥ 后端视频 50MB），模板见 `deploy/nginx/site.prod.example.conf` |
 | 更新后前台能开，登录/数据全挂 | 前端构建未带 `VITE_API_BASE_URL=/api`（或分域 API 未写入正确完整 URL） | 使用 `deploy/production-deploy.sh`（已默认 `/api`），或手动构建前 `export VITE_API_BASE_URL=/api` |
 | `production-deploy.sh` 一开始就报 git 错 | 服务器目录不是 `git clone` 出来的、没有 `.git` | 改用 `git clone` 到 `/var/www/click-send-shop`，或 `SKIP_GIT=1 bash deploy/production-deploy.sh` 并确保已用 rsync/手工同步最新代码 |
+| `vite build` / `npm run build` 退出 **134**、日志有 **heap out of memory** | 机器内存小，Node 默认堆约 512MB，不够完成前端打包 | `production-deploy.sh` 已对 `vite build` 设置 `--max-old-space-size`（默认 3072MB，可用 **`FRONTEND_BUILD_HEAP_MB`** 调整）；仍失败时请给 VPS **加 swap** 或升配内存 |
 | `npm ci` / 依赖报错 | Node 版本低于 20、或锁文件与 package.json 不一致 | 升级 Node 20+；在 `server` 与前端目录分别重新 `npm ci` 或对齐锁文件后提交 |
 | 迁移失败 | 数据库账号权限、连接串、或 MySQL 未启动 | 看 `server/logs/pm2-error.log`；本地用 `.env` 连库试 `npm run migrate` |
 | `verify-pm2.sh` 不过 | `.env` 占位符未改、`JWT_SECRET` 过短、端口不是 3001、进程入口不是 `src/index.js` | 按脚本输出逐项修改后 `pm2 reload gc-api --update-env` |

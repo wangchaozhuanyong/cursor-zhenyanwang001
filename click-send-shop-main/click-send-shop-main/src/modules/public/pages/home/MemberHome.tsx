@@ -6,6 +6,7 @@ import { useNotificationStore } from "@/stores/useNotificationStore";
 import { useCouponStore } from "@/stores/useCouponStore";
 import { useCartStore } from "@/stores/useCartStore";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import logoWebp from "@/assets/logo.webp";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
@@ -17,6 +18,7 @@ import type { UserCoupon } from "@/types/coupon";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import { toast } from "sonner";
+import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import type { Product } from "@/types/product";
 import { supportsColorMix } from "@/utils/cssSupport";
 
@@ -46,6 +48,7 @@ export default function MemberHome() {
   const selectedCartCount = useCartStore((s) => s.getSelectedItems().length);
   const [claimingCouponId, setClaimingCouponId] = useState<string | null>(null);
   const siteName = siteInfo.siteName || "大马通";
+  const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
   const { banners } = useHomeBanners();
 
   useEffect(() => {
@@ -130,9 +133,15 @@ export default function MemberHome() {
       <header className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-14 w-full max-w-screen-xl items-center gap-3 px-4">
           <div className="flex shrink-0 cursor-pointer items-center gap-2" onClick={() => navigate("/")}>
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--theme-text-on-surface)]">
-              <span className="text-sm font-black text-[var(--theme-bg)]">{siteName.slice(0, 1)}</span>
-            </div>
+            <img
+              src={logoSrc}
+              alt={siteName}
+              width={28}
+              height={28}
+              className="h-7 w-7 shrink-0 rounded-md object-contain"
+              loading="eager"
+              decoding="async"
+            />
             <span className="hidden text-lg font-bold tracking-widest text-[var(--theme-text-on-surface)] sm:block">{siteName}</span>
           </div>
           <div className="relative flex-1">
@@ -196,7 +205,7 @@ export default function MemberHome() {
                         try {
                           setClaimingCouponId(c.id);
                           await claimCoupon(display.code);
-                          toast.success("领取成功！已添加到我的优惠券");
+                          toast.success("领取成功！已添加到我的优惠券", toastPresetQuickSuccess);
                         } catch (e) {
                           toast.error(e instanceof Error ? e.message : "领取失败");
                         } finally {

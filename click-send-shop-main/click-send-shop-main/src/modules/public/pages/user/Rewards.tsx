@@ -5,6 +5,7 @@ import { useGoBack } from "@/hooks/useGoBack";
 import * as rewardService from "@/services/rewardService";
 import type { RewardTransaction } from "@/types/reward";
 import { toast } from "sonner";
+import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 
 export default function Rewards() {
   const navigate = useNavigate();
@@ -60,7 +61,7 @@ export default function Rewards() {
     setWithdrawing(true);
     try {
       await rewardService.requestWithdraw(balance);
-      toast.success("提现申请已提交");
+      toast.success("提现申请已提交", toastPresetQuickSuccess);
       loadData();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "提现失败");

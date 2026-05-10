@@ -18,6 +18,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
+import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { motion } from "framer-motion";
 import type { Order } from "@/types/order";
 import { copyToClipboard } from "@/utils/clipboard";
@@ -146,7 +147,7 @@ export default function OrderDetail() {
   const copyOrderText = async () => {
     const copied = await copyToClipboard(generateOrderText(order));
     if (copied) {
-      toast.success("订单内容已复制");
+      toast.success("订单内容已复制", toastPresetQuickSuccess);
     } else {
       toast.error("复制失败，请手动复制订单内容");
     }

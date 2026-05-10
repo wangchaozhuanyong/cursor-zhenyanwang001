@@ -8,37 +8,51 @@ const CACHE_TTL_MS = 60 * 1000;
 const cache = new Map();
 const inFlight = new Map();
 
-function getCached(key, fallback, loader) {
+/**
+ * 异步缓存：缓存未命中时等待 loader，避免旧实现「先返回 fallback、后台再写入」导致
+ * 首请求永远拿到空数组（会员端轮播长期落在本地 fallback）。
+ */
+async function getCached(key, loader) {
   const now = Date.now();
   const hit = cache.get(key);
   if (hit && now - hit.updatedAt < CACHE_TTL_MS) return hit.value;
 
-  if (!inFlight.has(key)) {
-    const task = loader()
-      .then((value) => {
-        cache.set(key, { value, updatedAt: Date.now() });
-      })
-      .catch((err) => {
-        console.warn(`[catalog] refresh ${key} failed: ${err?.message || err}`);
-      })
-      .finally(() => {
-        inFlight.delete(key);
-      });
-    inFlight.set(key, task);
-  }
+  if (inFlight.has(key)) return inFlight.get(key);
 
-  return hit?.value ?? fallback;
+  const p = (async () => {
+    try {
+      const value = await loader();
+      cache.set(key, { value, updatedAt: Date.now() });
+      return value;
+    } catch (err) {
+      console.warn(`[catalog] refresh ${key} failed: ${err?.message || err}`);
+      throw err;
+    } finally {
+      inFlight.delete(key);
+    }
+  })();
+
+  inFlight.set(key, p);
+  return p;
 }
 
 async function getBanners() {
-  return getCached('banners', [], () => repo.selectActiveBanners());
+  try {
+    return await getCached('banners', () => repo.selectActiveBanners());
+  } catch {
+    return [];
+  }
 }
 
 async function getCategories() {
-  return getCached('categories', [], async () => {
-    const rows = await repo.selectActiveCategories();
-    return buildCategoryTree(rows);
-  });
+  try {
+    return await getCached('categories', async () => {
+      const rows = await repo.selectActiveCategories();
+      return buildCategoryTree(rows);
+    });
+  } catch {
+    return [];
+  }
 }
 
 async function getCategoryById(id) {
@@ -223,7 +237,11 @@ async function getProductById(id) {
 }
 
 async function getHomeProducts() {
-  return getCached('homeProducts', { hot: [], new_arrivals: [], recommended: [] }, loadHomeProducts);
+  try {
+    return await getCached('homeProducts', loadHomeProducts);
+  } catch {
+    return { hot: [], new_arrivals: [], recommended: [] };
+  }
 }
 
 async function loadHomeProducts() {

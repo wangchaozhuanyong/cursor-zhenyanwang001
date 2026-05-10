@@ -3,6 +3,7 @@ import { CalendarClock, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import Pagination from "@/components/admin/Pagination";
 import PermissionGate from "@/components/admin/PermissionGate";
+import SegmentedDateTimeInput from "@/components/admin/SegmentedDateTimeInput";
 import SearchBar from "@/components/SearchBar";
 import * as activityService from "@/services/admin/activityService";
 import * as productService from "@/services/admin/productService";
@@ -321,8 +322,26 @@ export default function AdminActivities() {
             <div className="grid gap-4 md:grid-cols-2">
               <label className="text-sm">活动名称<input value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2" /></label>
               <label className="text-sm">活动类型<select value={form.type} onChange={(e) => setForm((p) => ({ ...p, type: e.target.value as ActivityType }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2"><option value="flash_sale">限时秒杀</option><option value="full_reduction">满减活动</option></select></label>
-              <label className="text-sm">开始时间<input type="datetime-local" value={form.start_at} onChange={(e) => setForm((p) => ({ ...p, start_at: e.target.value }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2" /></label>
-              <label className="text-sm">结束时间<input type="datetime-local" value={form.end_at} onChange={(e) => setForm((p) => ({ ...p, end_at: e.target.value }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2" /></label>
+              <label className="text-sm">
+                开始时间
+                <div className="mt-1">
+                  <SegmentedDateTimeInput
+                    value={form.start_at}
+                    onChange={(v) => setForm((p) => ({ ...p, start_at: v }))}
+                    className="w-full [&>div]:theme-rounded [&>div]:border-[var(--theme-border)] [&>div]:bg-[var(--theme-bg)]"
+                  />
+                </div>
+              </label>
+              <label className="text-sm">
+                结束时间
+                <div className="mt-1">
+                  <SegmentedDateTimeInput
+                    value={form.end_at}
+                    onChange={(v) => setForm((p) => ({ ...p, end_at: v }))}
+                    className="w-full [&>div]:theme-rounded [&>div]:border-[var(--theme-border)] [&>div]:bg-[var(--theme-bg)]"
+                  />
+                </div>
+              </label>
               {form.type === "full_reduction" && (
                 <>
                   <label className="text-sm">满减门槛 RM<input type="number" value={form.threshold_amount ?? ""} onChange={(e) => setForm((p) => ({ ...p, threshold_amount: Number(e.target.value) }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2" /></label>

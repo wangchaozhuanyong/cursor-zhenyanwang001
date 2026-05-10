@@ -10,6 +10,7 @@ import { FAQS, FAQ_CATEGORIES, WHATSAPP_URL, WECHAT_ID, WORKING_HOURS } from "@/
 import * as contentService from "@/services/contentService";
 import type { SiteInfo } from "@/types/content";
 import { copyToClipboard } from "@/utils/clipboard";
+import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 
 const categoryIcons: Record<string, React.ElementType> = {
   "订单": Package,
@@ -79,7 +80,7 @@ export default function Help() {
                   copyToClipboard(wechatId),
                 ]);
                 if (copied) {
-                  toast.success("客服微信号已复制");
+                  toast.success("客服微信号已复制", toastPresetQuickSuccess);
                 } else {
                   toast.error("复制失败，请手动复制微信号");
                 }

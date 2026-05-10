@@ -5,6 +5,7 @@ import { useGoBack } from "@/hooks/useGoBack";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import * as returnService from "@/services/returnService";
 import type { ReturnRequest, ReturnStatus } from "@/types/return";
 import { ORDER_STATUS, RETURN_STATUS, RETURN_STATUS_META } from "@/constants/statusDictionary";
@@ -56,7 +57,7 @@ export default function Returns() {
         description: reason,
       });
       setReturns((prev) => [newReturn, ...prev]);
-      toast.success("退换货申请已提交");
+      toast.success("退换货申请已提交", toastPresetQuickSuccess);
       setShowForm(false);
       setSelectedOrder("");
       setReason("");

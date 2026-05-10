@@ -1,4 +1,4 @@
-import { CheckCircle2, ChevronRight, Clock, Gift, Loader2, ShoppingCart } from "lucide-react";
+import { CheckCircle2, Clock, Gift, Loader2, ShoppingCart } from "lucide-react";
 
 interface PremiumCouponCardProps {
   eyebrow?: string;
@@ -173,23 +173,20 @@ export default function PremiumCouponCard({
               onAction?.();
             }}
             className={`relative z-10 flex flex-col items-center justify-center rounded-full border border-[#D6B36A]/55 bg-gradient-to-b from-[#8C142B] to-[#4B0713] text-[#E2C382] shadow-[inset_0_2px_4px_rgba(255,255,255,0.12),0_6px_14px_rgba(0,0,0,0.22)] transition hover:brightness-110 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-55 ${
-              compact ? "w-10 py-3" : "w-12 py-5"
+              compact ? "min-h-[4.5rem] w-10 px-1 py-3" : "min-h-[6rem] w-12 px-1.5 py-5"
             }`}
           >
             {actionLoading ? (
               <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
             ) : (
-              <>
-                <ChevronRight className={`mb-0.5 shrink-0 ${compact ? "h-3.5 w-3.5" : "h-4 w-4"}`} />
-                <span
-                  className={`max-h-[5.5rem] overflow-hidden text-center font-black leading-tight tracking-[0.14em] ${
-                    compact ? "text-xs" : "text-sm"
-                  }`}
-                  style={{ writingMode: "vertical-rl", textOrientation: "upright" }}
-                >
-                  {actionLabel}
-                </span>
-              </>
+              <span
+                className={`max-h-[5.5rem] overflow-hidden text-center font-black leading-snug tracking-[0.14em] ${
+                  compact ? "text-xs" : "text-sm"
+                }`}
+                style={{ writingMode: "vertical-rl", textOrientation: "upright" }}
+              >
+                {actionLabel}
+              </span>
             )}
           </button>
         ) : (

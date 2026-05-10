@@ -7,6 +7,7 @@ import { isLoggedIn } from "@/utils/token";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { toast } from "sonner";
+import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import logoWebp from "@/assets/logo.webp";
 import * as inviteService from "@/services/inviteService";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
@@ -118,7 +119,7 @@ export default function Profile() {
 
   const handleLogout = async () => {
     await authStore.logout();
-    toast.success("已退出登录");
+    toast.success("已退出登录", toastPresetQuickSuccess);
     navigate("/login");
   };
   const goLogin = () => navigate("/login", { state: { from: "/profile" } });
@@ -195,19 +196,6 @@ export default function Profile() {
           </section>
 
           <section className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-black text-[var(--theme-text-on-surface)]">会员中心能力</h3>
-                <p className="mt-1 text-xs text-theme-muted">订单、积分、优惠券都在这里统一管理</p>
-              </div>
-              <button
-                type="button"
-                onClick={goLogin}
-                className="rounded-full bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] px-3 py-1.5 text-xs font-bold text-[var(--theme-price)]"
-              >
-                去登录
-              </button>
-            </div>
             <div className="grid grid-cols-2 gap-2.5">
               {guestPreviewItems.map((item) => (
                 <button
@@ -286,16 +274,13 @@ export default function Profile() {
           <div className="pointer-events-none absolute -right-16 top-0 z-[1] h-40 w-40 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] blur-2xl" />
           <div className="pointer-events-none absolute -bottom-20 left-4 z-[1] h-36 w-36 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_10%,transparent)] blur-2xl" />
 
-          <div className="relative z-10 flex items-start justify-between gap-4">
+          <div className="relative z-10 flex items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-4">
               <ProfileAvatar src={avatar || logoSrc} fallback={logoWebp} alt={nickname || siteName} />
-              <div className="min-w-0">
-                <p className="mb-2 inline-flex rounded-full bg-[color-mix(in_srgb,var(--theme-price)_14%,transparent)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--theme-price)]">
-                  VIP Account
-                </p>
+              <div className="min-w-0 flex flex-col justify-center gap-1.5">
                 <h2 className="truncate text-xl font-black leading-tight text-[var(--theme-text-on-surface)]">{nickname || "会员用户"}</h2>
-                <p className="mt-1 text-xs text-[var(--theme-text-muted-on-surface)]">邀请码: {inviteCode || "暂无"}</p>
-                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--theme-price)_35%,transparent)] bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] px-2.5 py-1 text-[11px] font-bold text-[var(--theme-price)]">
+                <p className="text-xs text-[var(--theme-text-muted-on-surface)]">邀请码: {inviteCode || "暂无"}</p>
+                <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--theme-price)_35%,transparent)] bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] px-2.5 py-1 text-[11px] font-bold text-[var(--theme-price)]">
                   <Crown size={13} />
                   {memberLevel?.name || "普通会员"}
                 </div>

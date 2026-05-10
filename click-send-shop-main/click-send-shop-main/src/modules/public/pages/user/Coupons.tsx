@@ -2,6 +2,7 @@
 import { ArrowLeft, Ticket, Loader2 } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toast } from "sonner";
+import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCouponStore } from "@/stores/useCouponStore";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
@@ -67,7 +68,7 @@ export default function Coupons() {
     setClaimingId(coupon.id);
     try {
       await claimCoupon(coupon.code);
-      toast.success("领取成功！已添加到我的优惠券");
+      toast.success("领取成功！已添加到我的优惠券", toastPresetQuickSuccess);
       loadCoupons();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "领取失败");

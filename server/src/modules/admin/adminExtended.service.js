@@ -1,5 +1,6 @@
 const { generateId, parseProductImages } = require('../../utils/helpers');
 const repo = require('./adminExtended.repository');
+const catalogService = require('../product/catalog.service');
 const { writeAuditLog } = require('../../utils/auditLog');
 const { assertReturnTransition } = require('../order/returnStateMachine');
 const { ORDER_STATUS, RETURN_STATUS } = require('../../constants/status');
@@ -76,6 +77,7 @@ async function createBanner(body, adminUserId, req) {
   const id = generateId();
   await repo.insertBanner({ id, title, image, link, sort_order, enabled: enabled !== false ? 1 : 0, publish_status: publish_status || 'published', last_modified_by: adminUserId });
   const row = await repo.selectBannerById(id);
+  catalogService.clearCatalogCache();
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'banner.create', objectType: 'banner', objectId: id, summary: `创建Banner ${title || id}`, after: { title, image }, result: 'success' });
   return { data: row, message: '创建成功' };
 }
@@ -93,12 +95,14 @@ async function updateBanner(id, body, adminUserId, req) {
   setFragments.push('last_modified_at = NOW()');
   if (setFragments.length === 0) return { error: { code: 400, message: '没有需要更新的字段' } };
   await repo.updateBannerByFields(setFragments, values, id);
+  catalogService.clearCatalogCache();
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'banner.update', objectType: 'banner', objectId: id, summary: `更新Banner ${id}`, after: body, result: 'success' });
   return { message: '更新成功' };
 }
 
 async function deleteBanner(id, adminUserId, req) {
   await repo.deleteBanner(id, adminUserId);
+  catalogService.clearCatalogCache();
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'banner.delete', objectType: 'banner', objectId: id, summary: `删除Banner ${id}`, result: 'success' });
   return { message: '已删除' };
 }

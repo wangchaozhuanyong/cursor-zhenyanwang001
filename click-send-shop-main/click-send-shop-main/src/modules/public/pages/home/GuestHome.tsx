@@ -1,8 +1,9 @@
 import { useEffect, useMemo } from "react";
-import { Gem, Menu, ShieldCheck, Sparkles } from "lucide-react";
+import { Gem, ShieldCheck, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import logoWebp from "@/assets/logo.webp";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import BannerCarousel from "@/components/BannerCarousel";
@@ -65,6 +66,7 @@ export default function GuestHome() {
   const navigate = useNavigate();
   const siteInfo = useSiteInfo();
   const siteName = siteInfo.siteName || "大马通";
+  const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
   const slogan = siteInfo.siteSlogan || "精选全球好物，品质生活";
   const description =
     siteInfo.siteDescription || "精选全球好物，品质生活购物平台";
@@ -150,19 +152,22 @@ export default function GuestHome() {
     <div className={`min-h-screen bg-[var(--theme-bg)] ${bottomNavSafe} text-[var(--theme-text)]`}>
       <header className="fixed left-0 right-0 top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-14 w-full max-w-screen-xl items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <Menu className="h-5 w-5 md:hidden" />
-            <div className="flex cursor-pointer items-center gap-2" onClick={() => navigate("/welcome")}>
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--theme-text-on-surface)]">
-                <span className="text-sm font-black text-[var(--theme-bg)]">{siteName.slice(0, 1)}</span>
-              </div>
-              <h1 className="text-lg font-bold tracking-widest text-[var(--theme-text-on-surface)]">{siteName}</h1>
-            </div>
+          <div className="flex min-w-0 cursor-pointer items-center gap-2" onClick={() => navigate("/welcome")}>
+            <img
+              src={logoSrc}
+              alt={siteName}
+              width={28}
+              height={28}
+              className="h-7 w-7 shrink-0 rounded-md object-contain"
+              loading="eager"
+              decoding="async"
+            />
+            <h1 className="min-w-0 truncate text-lg font-bold tracking-widest text-[var(--theme-text-on-surface)]">{siteName}</h1>
           </div>
           <button
             type="button"
             onClick={() => navigate("/login", { state: { from: "/welcome" } })}
-            className="rounded-full bg-[var(--theme-primary)] px-4 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]"
+            className="shrink-0 rounded-full bg-[var(--theme-primary)] px-4 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]"
           >
             登录 / 注册
           </button>

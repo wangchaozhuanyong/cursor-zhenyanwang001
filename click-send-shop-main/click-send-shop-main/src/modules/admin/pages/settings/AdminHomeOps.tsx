@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Bell, ExternalLink, Grid3X3, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
+import SegmentedDateTimeInput from "@/components/admin/SegmentedDateTimeInput";
 import * as homeOpsService from "@/services/admin/homeOpsService";
 import type { HomeAnnouncement, HomeNavItem } from "@/types/content";
 import { toastErrorMessage } from "@/utils/errorMessage";
@@ -130,21 +131,47 @@ export default function AdminHomeOps() {
           </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-[1fr_1fr_1.4fr_100px_100px_auto]">
-          <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" placeholder="图标 URL / Emoji" value={navForm.icon_url} onChange={(e) => setNavForm({ ...navForm, icon_url: e.target.value })} />
-          <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" placeholder="标题" value={navForm.title} onChange={(e) => setNavForm({ ...navForm, title: e.target.value })} />
-          <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" placeholder="跳转链接，如 /categories 或 https://..." value={navForm.link_url} onChange={(e) => setNavForm({ ...navForm, link_url: e.target.value })} />
-          <input type="number" className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" placeholder="排序" value={navForm.sort_order} onChange={(e) => setNavForm({ ...navForm, sort_order: Number(e.target.value) || 0 })} />
-          <label className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground">
-            <input type="checkbox" checked={navForm.enabled} onChange={(e) => setNavForm({ ...navForm, enabled: e.target.checked })} />
-            启用
+        <div className="grid gap-3 md:grid-cols-[1fr_1fr_1.4fr_minmax(7rem,1fr)_auto_auto]">
+          <label className="flex min-w-0 flex-col gap-1">
+            <span className="text-[11px] font-medium text-muted-foreground">图标</span>
+            <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" placeholder="URL、站内路径或 Emoji" value={navForm.icon_url} onChange={(e) => setNavForm({ ...navForm, icon_url: e.target.value })} />
           </label>
-          <PermissionGate permission="home_ops.manage">
-            <button type="button" disabled={saving} onClick={() => void saveNav()} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gold px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingNavId ? <Pencil size={16} /> : <Plus size={16} />}
-              {editingNavId ? "保存" : "新增"}
-            </button>
-          </PermissionGate>
+          <label className="flex min-w-0 flex-col gap-1">
+            <span className="text-[11px] font-medium text-muted-foreground">标题</span>
+            <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" placeholder="前台展示名称" value={navForm.title} onChange={(e) => setNavForm({ ...navForm, title: e.target.value })} />
+          </label>
+          <label className="flex min-w-0 flex-col gap-1">
+            <span className="text-[11px] font-medium text-muted-foreground">点击跳转</span>
+            <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" placeholder="/categories 或 https://..." value={navForm.link_url} onChange={(e) => setNavForm({ ...navForm, link_url: e.target.value })} />
+          </label>
+          <label className="flex min-w-0 flex-col gap-1">
+            <span className="text-[11px] font-medium text-muted-foreground">排序</span>
+            <input
+              type="number"
+              title="排序：数字越小越靠前（如 0 会排在 1 前面）"
+              className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
+              placeholder="如 0"
+              value={navForm.sort_order}
+              onChange={(e) => setNavForm({ ...navForm, sort_order: Number(e.target.value) || 0 })}
+            />
+            <span className="text-[10px] leading-tight text-muted-foreground">数字越小越靠前</span>
+          </label>
+          <label className="flex cursor-pointer flex-col justify-end gap-1 pb-0.5">
+            <span className="text-[11px] font-medium text-muted-foreground">状态</span>
+            <span className="flex min-h-[42px] items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-foreground">
+              <input type="checkbox" className="accent-gold" checked={navForm.enabled} onChange={(e) => setNavForm({ ...navForm, enabled: e.target.checked })} />
+              启用后前台可见
+            </span>
+          </label>
+          <div className="flex flex-col justify-end gap-1">
+            <span className="text-[11px] font-medium text-muted-foreground opacity-0 select-none">操作</span>
+            <PermissionGate permission="home_ops.manage">
+              <button type="button" disabled={saving} onClick={() => void saveNav()} className="inline-flex h-[42px] items-center justify-center gap-2 rounded-xl bg-gold px-4 text-sm font-bold text-primary-foreground disabled:opacity-50">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingNavId ? <Pencil size={16} /> : <Plus size={16} />}
+                {editingNavId ? "保存" : "新增"}
+              </button>
+            </PermissionGate>
+          </div>
         </div>
 
         <div className="mt-4 space-y-2">
@@ -184,19 +211,58 @@ export default function AdminHomeOps() {
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
-          <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" placeholder="公告标题" value={announcementForm.title} onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })} />
-          <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" placeholder="跳转链接" value={announcementForm.link_url} onChange={(e) => setAnnouncementForm({ ...announcementForm, link_url: e.target.value })} />
-          <textarea rows={3} className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold md:col-span-2" placeholder="公告内容" value={announcementForm.content} onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })} />
-          <input type="datetime-local" className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" value={announcementForm.start_at} onChange={(e) => setAnnouncementForm({ ...announcementForm, start_at: e.target.value })} />
-          <input type="datetime-local" className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" value={announcementForm.end_at} onChange={(e) => setAnnouncementForm({ ...announcementForm, end_at: e.target.value })} />
-          <input type="number" className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" placeholder="排序" value={announcementForm.sort_order} onChange={(e) => setAnnouncementForm({ ...announcementForm, sort_order: Number(e.target.value) || 0 })} />
-          <div className="flex gap-3">
-            <label className="flex flex-1 items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-muted-foreground">
-              <input type="checkbox" checked={announcementForm.enabled} onChange={(e) => setAnnouncementForm({ ...announcementForm, enabled: e.target.checked })} />
-              启用
+          <label className="flex flex-col gap-1">
+            <span className="text-[11px] font-medium text-muted-foreground">公告标题</span>
+            <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" placeholder="滚动条旁或弹层展示的短标题" value={announcementForm.title} onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })} />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[11px] font-medium text-muted-foreground">点击跳转链接（可选）</span>
+            <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" placeholder="用户点击公告后打开，如 /products 或 https://…" value={announcementForm.link_url} onChange={(e) => setAnnouncementForm({ ...announcementForm, link_url: e.target.value })} />
+          </label>
+          <label className="flex flex-col gap-1 md:col-span-2">
+            <span className="text-[11px] font-medium text-muted-foreground">公告正文</span>
+            <textarea rows={3} className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" placeholder="详细说明、活动规则等，将展示在前台公告区域" value={announcementForm.content} onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })} />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[11px] font-medium text-muted-foreground">展示开始时间</span>
+            <span className="text-[10px] text-muted-foreground">留空表示立即开始</span>
+            <SegmentedDateTimeInput
+              value={announcementForm.start_at}
+              onChange={(v) => setAnnouncementForm({ ...announcementForm, start_at: v })}
+              className="w-full [&>div]:rounded-xl [&>div]:border-border [&>div]:bg-background"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[11px] font-medium text-muted-foreground">展示结束时间</span>
+            <span className="text-[10px] text-muted-foreground">留空表示长期有效</span>
+            <SegmentedDateTimeInput
+              value={announcementForm.end_at}
+              onChange={(v) => setAnnouncementForm({ ...announcementForm, end_at: v })}
+              className="w-full [&>div]:rounded-xl [&>div]:border-border [&>div]:bg-background"
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[11px] font-medium text-muted-foreground">排序</span>
+            <input
+              type="number"
+              title="排序：数字越小越靠前；多条公告时决定先后顺序"
+              className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
+              placeholder="如 0"
+              value={announcementForm.sort_order}
+              onChange={(e) => setAnnouncementForm({ ...announcementForm, sort_order: Number(e.target.value) || 0 })}
+            />
+            <span className="text-[10px] leading-tight text-muted-foreground">多条公告时数字越小越靠前（与「0」是否为默认无关，只是排序权重）</span>
+          </label>
+          <div className="flex flex-col justify-end gap-2 md:flex-row md:items-end md:justify-end">
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground">
+              <input type="checkbox" className="accent-gold" checked={announcementForm.enabled} onChange={(e) => setAnnouncementForm({ ...announcementForm, enabled: e.target.checked })} />
+              <span>
+                <span className="font-medium">启用</span>
+                <span className="mt-0.5 block text-[10px] text-muted-foreground">关闭后前台不展示该条</span>
+              </span>
             </label>
             <PermissionGate permission="home_ops.manage">
-              <button type="button" disabled={saving} onClick={() => void saveAnnouncement()} className="inline-flex min-w-24 items-center justify-center gap-2 rounded-xl bg-gold px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50">
+              <button type="button" disabled={saving} onClick={() => void saveAnnouncement()} className="inline-flex min-h-[42px] min-w-[5.5rem] items-center justify-center gap-2 rounded-xl bg-gold px-4 text-sm font-bold text-primary-foreground disabled:opacity-50">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingAnnouncementId ? <Pencil size={16} /> : <Plus size={16} />}
                 {editingAnnouncementId ? "保存" : "新增"}
               </button>

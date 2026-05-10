@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
 import { toast } from "sonner";
+import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import * as uploadService from "@/services/uploadService";
 import * as userService from "@/services/userService";
@@ -29,7 +30,7 @@ export default function Settings() {
     try {
       const data = await uploadService.uploadSingle(file);
       useUserStore.setState({ avatar: data.url });
-      toast.success("头像已上传，点击保存生效");
+      toast.success("头像已上传，点击保存生效", toastPresetQuickSuccess);
     } catch {
       toast.error("头像上传失败");
     }
@@ -38,7 +39,7 @@ export default function Settings() {
   const handleSave = async () => {
     try {
       await saveProfile();
-      toast.success("资料已保存");
+      toast.success("资料已保存", toastPresetQuickSuccess);
     } catch {
       toast.error("保存失败，请重试");
     }
@@ -51,7 +52,7 @@ export default function Settings() {
     setPwdSaving(true);
     try {
       await userService.changePassword(oldPwd, newPwd);
-      toast.success("密码修改成功");
+      toast.success("密码修改成功", toastPresetQuickSuccess);
       setShowPwdForm(false);
       setOldPwd("");
       setNewPwd("");

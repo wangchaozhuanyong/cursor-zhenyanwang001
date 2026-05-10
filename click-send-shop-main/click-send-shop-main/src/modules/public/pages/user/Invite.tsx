@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
 import { toast } from "sonner";
+import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { QRCodeCanvas } from "qrcode.react";
 import * as inviteService from "@/services/inviteService";
 import type { InviteStats, InviteRecord } from "@/types/invite";
@@ -33,7 +34,7 @@ export default function Invite() {
     if (!inviteCode) { toast.error("邀请码加载中，请稍后"); return; }
     const copied = await copyToClipboard(inviteLink);
     if (copied) {
-      toast.success("邀请链接已复制");
+      toast.success("邀请链接已复制", toastPresetQuickSuccess);
     } else {
       toast.error("复制失败，请手动复制");
     }
@@ -63,7 +64,7 @@ export default function Invite() {
     a.href = url;
     a.download = `invite-${inviteCode}.png`;
     a.click();
-    toast.success("二维码已下载");
+    toast.success("二维码已下载", toastPresetQuickSuccess);
   }, [inviteCode]);
 
   const downloadPoster = useCallback(async () => {
@@ -148,7 +149,7 @@ export default function Invite() {
       a.href = url;
       a.download = `invite-poster-${inviteCode}.png`;
       a.click();
-      toast.success("海报已下载");
+      toast.success("海报已下载", toastPresetQuickSuccess);
     } catch {
       toast.error("海报生成失败");
     }

@@ -16,6 +16,7 @@ const STMTS = [
   wechat VARCHAR(100) DEFAULT '',
   whatsapp VARCHAR(100) DEFAULT '',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  deleted_at DATETIME DEFAULT NULL,
   UNIQUE KEY uk_users_phone (phone),
   UNIQUE KEY uk_users_invite (invite_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,

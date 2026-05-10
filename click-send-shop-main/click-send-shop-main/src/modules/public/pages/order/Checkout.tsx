@@ -11,6 +11,7 @@ import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
 import { useCouponStore } from "@/stores/useCouponStore";
 import { toast } from "sonner";
+import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import type { Order } from "@/types/order";
 import { motion } from "framer-motion";
 import PaymentMethodPicker, { type PaymentMethod } from "@/components/PaymentMethodPicker";
@@ -328,7 +329,7 @@ export default function Checkout() {
       const text = generateOrderText(order);
       const copied = await copyToClipboard(text);
       if (copied) {
-        toast.success("订单内容已复制到剪贴板！");
+        toast.success("订单内容已复制到剪贴板！", toastPresetQuickSuccess);
       }
     } catch (e) {
       setOrderFinalizing(false);
@@ -340,7 +341,7 @@ export default function Checkout() {
     if (!submittedOrder) return;
     const copied = await copyToClipboard(generateOrderText(submittedOrder));
     if (copied) {
-      toast.success("已复制订单内容");
+      toast.success("已复制订单内容", toastPresetQuickSuccess);
     } else {
       toast.error("复制失败，请手动复制订单内容");
     }

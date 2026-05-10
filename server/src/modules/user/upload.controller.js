@@ -42,7 +42,7 @@ async function writeImageFromFile(file) {
   const webpBuffer = await sharp(file.buffer)
     .rotate()
     .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
-    .webp({ quality: 82 })
+    .webp({ quality: 82, effort: 3 })
     .toBuffer();
 
   if (isS3StorageEnabled()) {

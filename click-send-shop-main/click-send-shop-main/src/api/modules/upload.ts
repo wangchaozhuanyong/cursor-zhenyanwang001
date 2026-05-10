@@ -9,6 +9,68 @@ import {
 import { normalizeMediaUrls } from "@/utils/mediaUrl";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
+const IMAGE_MAX_SIZE = 15 * 1024 * 1024;
+const CLIENT_IMAGE_TARGET_MAX_EDGE = 1600;
+const CLIENT_IMAGE_WEBP_QUALITY = 0.82;
+const CLIENT_IMAGE_OPTIMIZE_MIN_SIZE = 512 * 1024;
+
+function isOptimizableImage(file: File) {
+  return file.type.startsWith("image/") && file.type !== "image/gif" && file.type !== "image/svg+xml";
+}
+
+function blobToImage(blob: Blob): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("图片读取失败，请换一张图片重试"));
+    };
+    img.src = url;
+  });
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob | null> {
+  return new Promise((resolve) => canvas.toBlob(resolve, type, quality));
+}
+
+async function optimizeImageBeforeUpload(file: File): Promise<File> {
+  if (!isOptimizableImage(file)) return file;
+  if (typeof window === "undefined" || typeof document === "undefined") return file;
+
+  const image = await blobToImage(file);
+  const sourceWidth = image.naturalWidth || image.width;
+  const sourceHeight = image.naturalHeight || image.height;
+  if (!sourceWidth || !sourceHeight) return file;
+
+  const scale = Math.min(1, CLIENT_IMAGE_TARGET_MAX_EDGE / sourceWidth, CLIENT_IMAGE_TARGET_MAX_EDGE / sourceHeight);
+  if (scale === 1 && file.size < CLIENT_IMAGE_OPTIMIZE_MIN_SIZE) return file;
+
+  const width = Math.max(1, Math.round(sourceWidth * scale));
+  const height = Math.max(1, Math.round(sourceHeight * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return file;
+
+  ctx.drawImage(image, 0, 0, width, height);
+  const webpBlob = await canvasToBlob(canvas, "image/webp", CLIENT_IMAGE_WEBP_QUALITY);
+  if (!webpBlob) return file;
+
+  // If browser-side conversion does not reduce bytes and did not resize, avoid changing the file needlessly.
+  if (scale === 1 && webpBlob.size >= file.size * 0.95) return file;
+
+  const optimizedName = file.name.replace(/\.[^.]+$/, "") || "upload";
+  return new File([webpBlob], `${optimizedName}.webp`, {
+    type: "image/webp",
+    lastModified: Date.now(),
+  });
+}
 
 async function refreshAndRetry(url: string, formData: FormData): Promise<Response> {
   const rt = getRefreshToken();
@@ -118,15 +180,25 @@ async function doUpload<T>(url: string, formData: FormData): Promise<T> {
 }
 
 export async function uploadFile(file: File): Promise<{ url: string; filename: string }> {
+  const uploadFile = await optimizeImageBeforeUpload(file);
+  if (uploadFile.type.startsWith("image/") && uploadFile.size > IMAGE_MAX_SIZE) {
+    throw new Error("图片大小不能超过 15MB，请压缩后再上传");
+  }
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", uploadFile);
   const path = inAdminContext() ? `${BASE_URL}/admin/upload` : `${BASE_URL}/upload`;
   return doUpload<{ url: string; filename: string }>(path, formData);
 }
 
 export async function uploadFiles(files: File[]): Promise<{ url: string; filename: string }[]> {
   const formData = new FormData();
-  files.forEach((f) => formData.append("files", f));
+  for (const rawFile of files) {
+    const file = await optimizeImageBeforeUpload(rawFile);
+    if (file.type.startsWith("image/") && file.size > IMAGE_MAX_SIZE) {
+      throw new Error("图片大小不能超过 15MB，请压缩后再上传");
+    }
+    formData.append("files", file);
+  }
   const path = inAdminContext() ? `${BASE_URL}/admin/upload/multiple` : `${BASE_URL}/upload/multiple`;
   return doUpload<{ url: string; filename: string }[]>(path, formData);
 }
@@ -135,7 +207,8 @@ export async function uploadAdminSiteAsset(
   key: "logoUrl" | "faviconUrl",
   file: File,
 ): Promise<{ key: string; url: string }> {
+  const uploadFile = await optimizeImageBeforeUpload(file);
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", uploadFile);
   return doUpload<{ key: string; url: string }>(`${BASE_URL}/admin/settings/assets/${key}`, formData);
 }

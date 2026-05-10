@@ -11,6 +11,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
+      /* 顶栏展示，避免与前台/后台底栏 Tab 抢触控区域；顶距尊重刘海安全区 */
+      position="top-center"
+      offset={{ top: "max(0.75rem, env(safe-area-inset-top))" }}
+      mobileOffset={{ top: "max(0.75rem, env(safe-area-inset-top))" }}
       toastOptions={{
         classNames: {
           toast:

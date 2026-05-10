@@ -36,6 +36,7 @@ export type SegmentedDateInputProps = {
 
 /**
  * 替代原生 `type="date"`：年最多 4 位、月/日各 2 位，满位自动跳到下一段；值始终为 `YYYY-MM-DD` 或空字符串。
+ * 若需日期+时间，请使用 `SegmentedDateTimeInput`（`YYYY-MM-DDTHH:mm`）。
  */
 export default function SegmentedDateInput({
   value,

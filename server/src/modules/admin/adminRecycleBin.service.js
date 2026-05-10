@@ -1,4 +1,5 @@
 const repo = require('./adminRecycleBin.repository');
+const catalogService = require('../product/catalog.service');
 const { writeAuditLog } = require('../../utils/auditLog');
 
 async function listRecycleBin(query) {
@@ -13,6 +14,7 @@ async function restoreItem(type, id, adminUserId, req) {
   if (!repo.TABLE_CONFIGS[type]) return { error: { code: 400, message: '不支持的类型' } };
   const ok = await repo.restoreItem(type, id);
   if (!ok) return { error: { code: 400, message: '恢复失败' } };
+  if (type === 'banners') catalogService.clearCatalogCache();
   await writeAuditLog({
     req, operatorId: adminUserId,
     actionType: 'recycle_bin.restore',
@@ -27,6 +29,7 @@ async function permanentDelete(type, id, adminUserId, req) {
   if (!repo.TABLE_CONFIGS[type]) return { error: { code: 400, message: '不支持的类型' } };
   const ok = await repo.permanentDeleteItem(type, id);
   if (!ok) return { error: { code: 400, message: '删除失败' } };
+  if (type === 'banners') catalogService.clearCatalogCache();
   await writeAuditLog({
     req, operatorId: adminUserId,
     actionType: 'recycle_bin.permanent_delete',

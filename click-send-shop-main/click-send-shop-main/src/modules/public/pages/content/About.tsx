@@ -8,6 +8,7 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { renderBrandTitle } from "@/utils/brand";
 import { useGoBack } from "@/hooks/useGoBack";
 import { copyToClipboard } from "@/utils/clipboard";
+import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 
 export default function About() {
   const navigate = useNavigate();
@@ -167,7 +168,7 @@ export default function About() {
                       copyToClipboard(siteInfo.wechatId),
                     ]);
                     if (copied) {
-                      toast.success("微信号已复制");
+                      toast.success("微信号已复制", toastPresetQuickSuccess);
                     } else {
                       toast.error("复制失败，请手动复制微信号");
                     }

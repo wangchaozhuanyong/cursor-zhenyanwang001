@@ -6,6 +6,7 @@ import { useUserStore } from "@/stores/useUserStore";
 import { usePointsStore } from "@/stores/usePointsStore";
 import { signIn } from "@/services/pointsService";
 import { toast } from "sonner";
+import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 
 export default function Points() {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ export default function Points() {
     setSigningIn(true);
     try {
       const pts = await signIn();
-      toast.success(`签到成功，获得 ${pts} 积分！`);
+      toast.success(`签到成功，获得 ${pts} 积分！`, toastPresetQuickSuccess);
       loadProfile();
       loadPointsData();
     } catch (e) {

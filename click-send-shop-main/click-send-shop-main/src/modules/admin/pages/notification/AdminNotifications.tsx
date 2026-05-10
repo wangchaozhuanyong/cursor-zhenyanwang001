@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Bell, Plus, Trash2, Loader2, Send, Settings } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
+import SegmentedDateTimeInput from "@/components/admin/SegmentedDateTimeInput";
 import Pagination from "@/components/admin/Pagination";
 import * as notificationService from "@/services/admin/notificationService";
 import type { Notification } from "@/types/notification";
@@ -433,11 +434,10 @@ export default function AdminNotifications() {
               onChange={(e) => setFormData({ ...formData, link_url: e.target.value })}
               className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold"
             />
-            <input
-              type="datetime-local"
+            <SegmentedDateTimeInput
               value={formData.scheduled_at}
-              onChange={(e) => setFormData({ ...formData, scheduled_at: e.target.value })}
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none"
+              onChange={(v) => setFormData({ ...formData, scheduled_at: v })}
+              className="w-full [&>div]:rounded-xl [&>div]:border-border [&>div]:bg-background [&>div]:px-4 [&>div]:py-3"
             />
             <p className="text-[11px] text-muted-foreground">留空=立即发送；填写后到时间自动对用户可见。</p>
             <PermissionGate permission="notification.manage">

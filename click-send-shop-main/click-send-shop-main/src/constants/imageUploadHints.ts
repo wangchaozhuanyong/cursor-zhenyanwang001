@@ -6,7 +6,7 @@
 
 /** 商品图、Banner（除站点资源）、OG 图、用户头像、评价图等走 `/api/upload` 或管理端 `/api/admin/upload` */
 export const IMAGE_UPLOAD_HINT_API =
-  "格式：JPG、PNG、WebP、GIF；单张不超过 15MB。上传后服务器会转为 WebP，最长边不超过 1600px（超出等比缩小，小图不放大）。";
+  "格式：JPG、PNG、WebP、GIF；单张不超过 15MB。JPG/PNG/WebP 会先在浏览器端压缩到最长边 1600px 再上传，服务器最终转为 WebP。";
 
 /** Logo / Favicon 专用接口 */
 export const IMAGE_UPLOAD_HINT_SITE_ASSET =

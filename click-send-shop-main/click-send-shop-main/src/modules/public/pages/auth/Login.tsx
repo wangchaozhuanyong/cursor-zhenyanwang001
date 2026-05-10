@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
 import * as authService from "@/services/authService";
 import { toast } from "sonner";
+import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import LoginBannerCarousel from "@/components/LoginBannerCarousel";
 import logoWebp from "@/assets/logo.webp";
 import { ApiError } from "@/types/common";
@@ -149,7 +150,7 @@ export default function Login() {
       if (data?.devOtp) {
         toast.message(`开发环境验证码：${data.devOtp}`, { duration: 12_000 });
       }
-      toast.success("验证码已发送", { position: "top-center" });
+      toast.success("验证码已发送", { ...toastPresetQuickSuccess, position: "top-center" });
       setOtpCooldown(60);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "发送失败");
@@ -246,7 +247,7 @@ export default function Login() {
         setResetToken(data.resetToken);
         setDevResetToken(data.resetToken);
       }
-      toast.success(data?.resetToken ? "重置令牌已生成" : "如账号存在，重置指引已生成");
+      toast.success(data?.resetToken ? "重置令牌已生成" : "如账号存在，重置指引已生成", toastPresetQuickSuccess);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "申请重置失败");
     } finally {
@@ -262,7 +263,7 @@ export default function Login() {
     setResetLoading(true);
     try {
       await authService.resetPassword({ token: resetToken.trim(), newPassword });
-      toast.success("密码已重置，请使用新密码登录");
+      toast.success("密码已重置，请使用新密码登录", toastPresetQuickSuccess);
       setPassword(newPassword);
       setShowReset(false);
       setResetToken("");

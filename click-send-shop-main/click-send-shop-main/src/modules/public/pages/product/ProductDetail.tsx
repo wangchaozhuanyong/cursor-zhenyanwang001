@@ -13,6 +13,7 @@ import { SquishButton } from "@/modules/micro-interactions";
 import TrustInfo from "@/components/TrustInfo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useGoBack } from "@/hooks/useGoBack";
 import { copyToClipboard } from "@/utils/clipboard";
@@ -106,7 +107,7 @@ export default function ProductDetail() {
 
   const handleAddToCart = () => {
     addItem(product, qty);
-    toast.success(`已加入购物车 x${qty}`);
+    toast.success(`已加入购物车 x${qty}`, toastPresetQuickSuccess);
   };
 
   const handleBuyNow = () => {
@@ -116,7 +117,7 @@ export default function ProductDetail() {
 
   const handleFavorite = () => {
     toggleFavorite(product.id);
-    toast.success(isFavorite ? "已取消收藏" : "已收藏");
+    toast.success(isFavorite ? "已取消收藏" : "已收藏", toastPresetQuickSuccess);
   };
 
   const handleShare = async () => {
@@ -135,7 +136,7 @@ export default function ProductDetail() {
 
     const copied = await copyToClipboard(window.location.href);
     if (copied) {
-      toast.success("链接已复制");
+      toast.success("链接已复制", toastPresetQuickSuccess);
     } else {
       toast.error("复制失败，请手动复制链接");
     }

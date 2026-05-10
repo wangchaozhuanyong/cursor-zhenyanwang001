@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore, type Address } from "@/stores/useUserStore";
 import { toast } from "sonner";
+import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function AddressManage() {
@@ -40,10 +41,10 @@ export default function AddressManage() {
     try {
       if (editId) {
         await updateAddress(editId, form);
-        toast.success("地址已更新");
+        toast.success("地址已更新", toastPresetQuickSuccess);
       } else {
         await addAddress(form);
-        toast.success("地址已添加");
+        toast.success("地址已添加", toastPresetQuickSuccess);
       }
       setOpen(false);
     } catch (e) {
@@ -111,7 +112,7 @@ export default function AddressManage() {
                   </button>
                   <div className="flex gap-3">
                     <button onClick={() => openEdit(addr)} className="text-xs text-muted-foreground">编辑</button>
-                    <button onClick={async () => { try { await removeAddress(addr.id); toast.success("已删除"); } catch { toast.error("删除失败"); } }} className="text-xs text-destructive">
+                    <button onClick={async () => { try { await removeAddress(addr.id); toast.success("已删除", toastPresetQuickSuccess); } catch { toast.error("删除失败"); } }} className="text-xs text-destructive">
                       <Trash2 size={14} />
                     </button>
                   </div>

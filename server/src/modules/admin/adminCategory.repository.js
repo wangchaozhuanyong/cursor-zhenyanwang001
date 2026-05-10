@@ -15,7 +15,7 @@ async function selectAllCategoriesOrdered() {
       c.parent_id IS NOT NULL,
       c.parent_id ASC,
       c.sort_order ASC,
-      c.created_at ASC
+      c.id ASC
   `);
   return rows;
 }

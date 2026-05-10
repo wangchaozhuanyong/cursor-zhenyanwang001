@@ -29,11 +29,24 @@ async function getStats() {
     repo.selectRecentOrders(5),
   ]);
 
-  const salesTrend = salesTrendRaw.map((r) => ({
-    ...r,
-    sales: parseFloat(r.sales),
-    date: String(r.date).slice(5),
-  }));
+  const salesTrend = salesTrendRaw.map((r) => {
+    const d = r.date;
+    let label = '';
+    if (d instanceof Date) {
+      const y = d.getUTCFullYear();
+      const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(d.getUTCDate()).padStart(2, '0');
+      label = `${m}-${day}`;
+    } else if (d != null) {
+      const s = String(d);
+      label = s.length >= 10 ? s.slice(5, 10) : s;
+    }
+    return {
+      ...r,
+      sales: parseFloat(r.sales),
+      date: label,
+    };
+  });
 
   return {
     totalOrders,

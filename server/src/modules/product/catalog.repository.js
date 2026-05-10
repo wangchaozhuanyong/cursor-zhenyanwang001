@@ -30,7 +30,7 @@ async function selectActiveCategories() {
     `SELECT id, parent_id, name, icon, icon_url, sort_order, is_visible, is_active
      FROM categories
      WHERE is_active = 1 AND is_visible = 1 AND deleted_at IS NULL
-     ORDER BY parent_id IS NOT NULL, parent_id ASC, sort_order ASC, created_at ASC`,
+     ORDER BY parent_id IS NOT NULL, parent_id ASC, sort_order ASC, id ASC`,
   );
 }
 

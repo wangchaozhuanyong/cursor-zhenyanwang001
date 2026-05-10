@@ -137,8 +137,11 @@ cd "$FRONTEND_DIR" || exit 1
 npm_install_here
 echo "🎨 VITE_API_BASE_URL=$VITE_API_BASE_URL（若 API 不在同域 /api，请导出正确地址后重跑）" | tee -a "$LOG_FILE"
 _fe_heap="${FRONTEND_BUILD_HEAP_MB:-3072}"
-echo "ℹ️  vite build：Node --max-old-space-size=${_fe_heap}MB（避免默认堆过小 OOM）；可调环境变量 FRONTEND_BUILD_HEAP_MB" | tee -a "$LOG_FILE"
-NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--max-old-space-size=${_fe_heap}" npm run build
+echo "ℹ️  vite build：heap 上限 ${_fe_heap}MB（FRONTEND_BUILD_HEAP_MB）；直接 node 调 vite，避免 npm 子进程未继承 NODE_OPTIONS 仍 ~512MB OOM" | tee -a "$LOG_FILE"
+(
+  export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--max-old-space-size=${_fe_heap}"
+  node ./node_modules/vite/bin/vite.js build
+)
 
 if [[ -n "$ASSET_BACKUP" && -d "$ASSET_BACKUP" ]]; then
   echo "🧩 保留上一版 hashed assets，避免已打开页面刷新/懒加载时 chunk 404" | tee -a "$LOG_FILE"

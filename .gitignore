@@ -14,8 +14,8 @@ node_modules/
 public-frontend/
 *.log
 
-# GitHub Actions — 默认忽略，但允许提交我们的部署 workflow
-.github/workflows/
+# GitHub Actions — 忽略目录内未显式放行的文件（勿用 trailing / 忽略目录，否则无法 ! 恢复子文件）
+.github/workflows/*
 !.github/workflows/deploy.yml
 
 # 部署状态文件（last_good_head / history.log 等）

@@ -1,0 +1,71 @@
+name: Deploy gc-api (CI/CD)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      auto_rollback:
+        description: "失败时自动回滚到上一已知良好版本 (1=开)"
+        required: false
+        default: "0"
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: SSH deploy → ci-deploy.sh
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    env:
+      AUTO_ROLLBACK: ${{ github.event.inputs.auto_rollback || '0' }}
+
+    steps:
+      - name: Show context
+        run: |
+          echo "ref=${{ github.ref }} sha=${{ github.sha }}"
+          echo "AUTO_ROLLBACK=${AUTO_ROLLBACK}"
+
+      - name: Deploy via SSH (ci-deploy.sh)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          command_timeout: 20m
+          script_stop: true
+          envs: AUTO_ROLLBACK
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.DEPLOY_PROJECT_DIR }}"
+            export PROJECT_DIR="${{ secrets.DEPLOY_PROJECT_DIR }}"
+            export PM2_APP="${{ secrets.DEPLOY_PM2_APP || 'gc-api' }}"
+            export AUTO_ROLLBACK="${AUTO_ROLLBACK:-0}"
+            bash deploy/ci-deploy.sh
+
+      - name: On failure, fetch remote logs (best-effort)
+        if: failure()
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          script_stop: false
+          script: |
+            set +e
+            cd "${{ secrets.DEPLOY_PROJECT_DIR }}"
+            echo "----- pm2 list -----"
+            pm2 list || true
+            echo "----- pm2 show ${{ secrets.DEPLOY_PM2_APP || 'gc-api' }} -----"
+            pm2 show "${{ secrets.DEPLOY_PM2_APP || 'gc-api' }}" || true
+            echo "----- pm2 logs (last 200) -----"
+            pm2 logs "${{ secrets.DEPLOY_PM2_APP || 'gc-api' }}" --lines 200 --nostream || true
+            echo "----- tail deploy.log -----"
+            tail -n 200 "${{ secrets.DEPLOY_PROJECT_DIR }}/deploy.log" || true
+            echo "----- .deploy-state/history.log -----"
+            tail -n 50 "${{ secrets.DEPLOY_PROJECT_DIR }}/.deploy-state/history.log" || true

@@ -5,7 +5,7 @@ const repo = require('./myinvois.repository');
 const client = require('./myinvois.client');
 
 const PROFILE_ID = 'default';
-const db = repo.getPool();
+const pool = repo.getPool();
 
 function isEnvEnabled() {
   return process.env.MYINVOIS_ENABLED === '1';
@@ -53,7 +53,7 @@ function formatProfile(row) {
 }
 
 async function getStatusAdmin() {
-  const profile = await repo.selectProfile(db);
+  const profile = await repo.selectProfile(pool);
   const formatted = formatProfile(profile);
   return {
     data: {
@@ -67,8 +67,8 @@ async function getStatusAdmin() {
 }
 
 async function updateProfileAdmin(req, body) {
-  await repo.upsertProfile(db, PROFILE_ID, body);
-  await repo.insertEvent(db, {
+  await repo.upsertProfile(pool, PROFILE_ID, body);
+  await repo.insertEvent(pool, {
     id: generateId(),
     eventType: 'profile.updated',
     status: body.enabled ? 'enabled' : 'disabled',
@@ -160,10 +160,10 @@ function buildCreditNotePayload(profile, snapshot, refundAmount) {
 }
 
 async function enqueueOrderInvoiceIfEnabled(orderId, trigger = 'order_paid') {
-  const profile = await getActiveProfileOrNull(db);
+  const profile = await getActiveProfileOrNull(pool);
   if (!profile) return { skipped: true, reason: 'myinvois_disabled' };
 
-  const snapshot = await repo.selectOrderSnapshot(db, orderId);
+  const snapshot = await repo.selectOrderSnapshot(pool, orderId);
   if (!snapshot) return { skipped: true, reason: 'order_not_found' };
   const paymentStatus = snapshot.order.payment_status || PAYMENT_STATUS.PENDING;
   if (paymentStatus !== PAYMENT_STATUS.PAID && paymentStatus !== PAYMENT_STATUS.PARTIALLY_REFUNDED) {
@@ -171,7 +171,7 @@ async function enqueueOrderInvoiceIfEnabled(orderId, trigger = 'order_paid') {
   }
 
   const payload = buildInvoicePayload(profile, snapshot);
-  const inserted = await repo.insertDocumentIfAbsent(db, {
+  const inserted = await repo.insertDocumentIfAbsent(pool, {
     id: generateId(),
     profileId: profile.id,
     documentType: 'invoice',
@@ -184,7 +184,7 @@ async function enqueueOrderInvoiceIfEnabled(orderId, trigger = 'order_paid') {
     amount: toMoney(snapshot.order.total_amount),
     payload,
   });
-  await repo.insertEvent(db, {
+  await repo.insertEvent(pool, {
     id: generateId(),
     eventType: inserted ? 'document.queued' : 'document.duplicate',
     status: inserted ? 'queued' : 'skipped',
@@ -194,24 +194,24 @@ async function enqueueOrderInvoiceIfEnabled(orderId, trigger = 'order_paid') {
 }
 
 async function enqueueRefundCreditNoteIfEnabled(input, trigger = 'refund_approved') {
-  const profile = await getActiveProfileOrNull(db);
+  const profile = await getActiveProfileOrNull(pool);
   if (!profile) return { skipped: true, reason: 'myinvois_disabled' };
 
   let snapshot;
   let sourceType = 'order';
   let sourceId = input.orderId;
   if (input.returnId) {
-    snapshot = await repo.selectReturnSnapshot(db, input.returnId);
+    snapshot = await repo.selectReturnSnapshot(pool, input.returnId);
     sourceType = 'return';
     sourceId = input.returnId;
   } else if (input.orderId) {
-    snapshot = await repo.selectOrderSnapshot(db, input.orderId);
+    snapshot = await repo.selectOrderSnapshot(pool, input.orderId);
   }
   if (!snapshot) return { skipped: true, reason: 'source_not_found' };
 
   const refundAmount = toMoney(input.refundAmount ?? snapshot.returnRequest?.refund_amount ?? snapshot.order.total_amount);
   const payload = buildCreditNotePayload(profile, snapshot, refundAmount);
-  const inserted = await repo.insertDocumentIfAbsent(db, {
+  const inserted = await repo.insertDocumentIfAbsent(pool, {
     id: generateId(),
     profileId: profile.id,
     documentType: 'credit_note',
@@ -224,7 +224,7 @@ async function enqueueRefundCreditNoteIfEnabled(input, trigger = 'refund_approve
     amount: refundAmount,
     payload,
   });
-  await repo.insertEvent(db, {
+  await repo.insertEvent(pool, {
     id: generateId(),
     eventType: inserted ? 'document.queued' : 'document.duplicate',
     status: inserted ? 'queued' : 'skipped',
@@ -244,14 +244,14 @@ async function listDocumentsAdmin(query) {
     orderId: query.orderId || '',
   };
   const [total, list] = await Promise.all([
-    repo.countDocuments(db, filters),
-    repo.listDocuments(db, filters),
+    repo.countDocuments(pool, filters),
+    repo.listDocuments(pool, filters),
   ]);
   return { list, total, page, pageSize };
 }
 
 async function getDocumentAdmin(id) {
-  const row = await repo.selectDocumentById(db, id);
+  const row = await repo.selectDocumentById(pool, id);
   if (!row) throw new NotFoundError('MyInvois 文档不存在');
   return {
     data: {
@@ -264,10 +264,10 @@ async function getDocumentAdmin(id) {
 }
 
 async function retryDocumentAdmin(id) {
-  const row = await repo.selectDocumentById(db, id);
+  const row = await repo.selectDocumentById(pool, id);
   if (!row) throw new NotFoundError('MyInvois 文档不存在');
-  await repo.resetDocumentForRetry(db, id);
-  await repo.insertEvent(db, {
+  await repo.resetDocumentForRetry(pool, id);
+  await repo.insertEvent(pool, {
     id: generateId(),
     documentId: id,
     eventType: 'document.retry_requested',
@@ -277,7 +277,7 @@ async function retryDocumentAdmin(id) {
 }
 
 async function submitDocumentAdmin(id) {
-  const row = await repo.selectDocumentById(db, id);
+  const row = await repo.selectDocumentById(pool, id);
   if (!row) throw new NotFoundError('MyInvois 文档不存在');
   await processDocument(row);
   return { message: '已处理 MyInvois 文档' };
@@ -285,7 +285,7 @@ async function submitDocumentAdmin(id) {
 
 async function processPendingBatch(limit = 20) {
   if (!isEnvEnabled()) return { processed: 0, skipped: true };
-  const rows = await repo.selectDueDocuments(db, Math.min(100, Math.max(1, Number(limit) || 20)));
+  const rows = await repo.selectDueDocuments(pool, Math.min(100, Math.max(1, Number(limit) || 20)));
   let processed = 0;
   for (const row of rows) {
     await processDocument(row);
@@ -295,13 +295,13 @@ async function processPendingBatch(limit = 20) {
 }
 
 async function processDocument(row) {
-  const profile = await repo.selectActiveProfile(db);
+  const profile = await repo.selectActiveProfile(pool);
   if (!profile) throw new ValidationError('MyInvois 未启用或未配置 profile');
   const payload = parseJson(row.payload_json, {});
   try {
     if (process.env.MYINVOIS_SUBMIT_ENABLED !== '1') {
-      await repo.markDocumentReady(db, row.id, '等待法务/会计完成 sandbox 验收后开启 MYINVOIS_SUBMIT_ENABLED');
-      await repo.insertEvent(db, {
+      await repo.markDocumentReady(pool, row.id, '等待法务/会计完成 sandbox 验收后开启 MYINVOIS_SUBMIT_ENABLED');
+      await repo.insertEvent(pool, {
         id: generateId(),
         documentId: row.id,
         eventType: 'document.ready',
@@ -310,8 +310,8 @@ async function processDocument(row) {
       return;
     }
     const result = await client.submitDocument(profile, payload);
-    await repo.markDocumentSubmitted(db, row.id, result);
-    await repo.insertEvent(db, {
+    await repo.markDocumentSubmitted(pool, row.id, result);
+    await repo.insertEvent(pool, {
       id: generateId(),
       documentId: row.id,
       eventType: 'document.submitted',
@@ -320,8 +320,8 @@ async function processDocument(row) {
     });
   } catch (err) {
     const retryDelay = Math.min(24 * 60, 2 ** Math.min(Number(row.retry_count || 0), 8));
-    await repo.markDocumentFailed(db, row.id, err.message || String(err), retryDelay);
-    await repo.insertEvent(db, {
+    await repo.markDocumentFailed(pool, row.id, err.message || String(err), retryDelay);
+    await repo.insertEvent(pool, {
       id: generateId(),
       documentId: row.id,
       eventType: 'document.submit_failed',
@@ -334,9 +334,9 @@ async function processDocument(row) {
 async function createReconciliationAdmin(req, body) {
   const reconcileDate = body.reconcile_date;
   if (!reconcileDate) throw new ValidationError('reconcile_date 必填');
-  const agg = await repo.aggregateDocumentsByDate(db, reconcileDate, body.document_type || '');
+  const agg = await repo.aggregateDocumentsByDate(pool, reconcileDate, body.document_type || '');
   const id = generateId();
-  await repo.insertReconciliation(db, {
+  await repo.insertReconciliation(pool, {
     id,
     reconcileDate,
     documentType: body.document_type || '',

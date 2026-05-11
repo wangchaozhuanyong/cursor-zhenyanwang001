@@ -1,40 +1,25 @@
 const paymentService = require('./payment.service');
+const stripeWebhookService = require('./stripeWebhook.service');
 
 /**
  * Stripe Webhook：需在 Stripe Dashboard 配置 endpoint，且本路由必须在 express.json 之前挂载 raw body。
  * 环境变量：STRIPE_SECRET_KEY、STRIPE_WEBHOOK_SECRET
  */
 exports.handleWebhook = async (req, res) => {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  const secretKey = process.env.STRIPE_SECRET_KEY;
+  const parsed = stripeWebhookService.verifyAndParseStripeEvent(req);
 
-  if (!webhookSecret || !secretKey) {
-    return res.status(503).json({
-      code: 503,
-      message: 'Stripe 未配置：请设置 STRIPE_SECRET_KEY 与 STRIPE_WEBHOOK_SECRET',
-    });
+  if (parsed.type === 'missing_config') {
+    return res.status(503).json({ code: 503, message: parsed.message });
   }
-
-  let stripe;
-  try {
-    const createStripe = /** @type {(k: string) => import('stripe').Stripe} */ (
-      /** @type {unknown} */ (require('stripe'))
-    );
-    stripe = createStripe(secretKey);
-  } catch {
-    return res.status(500).json({ code: 500, message: '请安装依赖: npm install stripe' });
+  if (parsed.type === 'stripe_load_failed') {
+    return res.status(500).json({ code: 500, message: parsed.message });
   }
-
-  const sig = req.headers['stripe-signature'];
-  let event;
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-  } catch (err) {
-    return res.status(400).send(`Webhook signature verification failed: ${err.message}`);
+  if (parsed.type === 'bad_signature') {
+    return res.status(400).send(`Webhook signature verification failed: ${parsed.message}`);
   }
 
   try {
-    await paymentService.handleStripeEvent(event);
+    await paymentService.handleStripeEvent(parsed.event);
   } catch (e) {
     console.error('[stripe webhook]', e);
     return res.status(500).json({ code: 500, message: '处理订单失败' });

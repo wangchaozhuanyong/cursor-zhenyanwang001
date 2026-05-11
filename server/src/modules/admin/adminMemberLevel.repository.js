@@ -4,6 +4,10 @@ function getPool() {
   return db;
 }
 
+async function getConnection() {
+  return db.getConnection();
+}
+
 async function selectLevels(q) {
   const [rows] = await q.query(
     `SELECT id, name, description, min_spent, min_orders, sort_order, enabled, is_default, created_at, updated_at
@@ -67,6 +71,7 @@ async function reassignUsersToLevel(q, fromLevelId, toLevelId) {
 
 module.exports = {
   getPool,
+  getConnection,
   selectLevels,
   selectLevelById,
   countUsersByLevel,

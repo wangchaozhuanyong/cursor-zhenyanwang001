@@ -77,8 +77,65 @@ async function selectAuditLogsPage(where, params, orderSql, limit, offset) {
   return rows.map(mapRow);
 }
 
+async function selectOperatorDisplayByUserId(userId) {
+  const [[row]] = await db.query(
+    'SELECT nickname, role FROM users WHERE id = ? LIMIT 1',
+    [userId],
+  );
+  return row || null;
+}
+
+/**
+ * @param {{
+ *   id: string;
+ *   operatorId: string|null;
+ *   operatorName: string;
+ *   operatorRole: string;
+ *   actionType: string;
+ *   objectType: string;
+ *   objectId: string|null;
+ *   summary: string;
+ *   beforeStr: string|null;
+ *   afterStr: string|null;
+ *   ip: string;
+ *   userAgent: string;
+ *   path: string;
+ *   method: string;
+ *   result: string;
+ *   errorMessage: string;
+ * }} p
+ */
+async function insertAuditLogRow(p) {
+  await db.query(
+    `INSERT INTO audit_logs (
+      id, operator_id, operator_name, operator_role, action_type, object_type, object_id,
+      summary, before_json, after_json, ip, user_agent, request_path, request_method, result, error_message
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      p.id,
+      p.operatorId,
+      p.operatorName,
+      p.operatorRole,
+      p.actionType,
+      p.objectType,
+      p.objectId,
+      p.summary,
+      p.beforeStr,
+      p.afterStr,
+      p.ip,
+      p.userAgent,
+      p.path,
+      p.method,
+      p.result,
+      p.errorMessage,
+    ],
+  );
+}
+
 module.exports = {
   buildWhere,
   countAuditLogs,
   selectAuditLogsPage,
+  selectOperatorDisplayByUserId,
+  insertAuditLogRow,
 };

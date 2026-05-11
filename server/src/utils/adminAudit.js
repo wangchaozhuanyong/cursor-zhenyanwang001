@@ -1,4 +1,4 @@
-const db = require('../config/db');
+const adminLogRepo = require('../modules/admin/adminLog.repository');
 const { generateId } = require('./helpers');
 
 const UUID_RE =
@@ -9,16 +9,13 @@ async function logAdminAction(actor, action, detail) {
   try {
     const actorStr = actor != null ? String(actor) : '';
     const isUserId = UUID_RE.test(actorStr);
-    await db.query(
-      'INSERT INTO admin_logs (id, admin_id, operator, action, detail) VALUES (?,?,?,?,?)',
-      [
-        generateId(),
-        isUserId ? actorStr : null,
-        isUserId ? '' : actorStr,
-        action,
-        detail || '',
-      ],
-    );
+    await adminLogRepo.insertAdminLogRow({
+      id: generateId(),
+      adminId: isUserId ? actorStr : null,
+      operator: isUserId ? '' : actorStr,
+      action,
+      detail: detail || '',
+    });
   } catch {
     /* best-effort */
   }

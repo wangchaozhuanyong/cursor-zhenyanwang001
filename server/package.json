@@ -8,6 +8,7 @@
     "dev": "nodemon --exec \"node -r tsx/cjs\" src/index.js",
     "dev:local": "cross-env DB_PASSWORD= nodemon --exec \"node -r tsx/cjs\" src/index.js",
     "typecheck": "tsc --noEmit",
+    "check:service-layer": "node scripts/check-service-layer.js",
     "db:init": "node scripts/apply-sql.js",
     "admin:create": "node scripts/create-admin.js",
     "admin:role": "node scripts/set-admin-role.js",

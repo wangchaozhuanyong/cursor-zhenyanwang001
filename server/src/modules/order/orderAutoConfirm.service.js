@@ -1,9 +1,9 @@
 /**
  * 站点设置「发货后 N 天自动确认收货」：定时扫描已发货订单并置为已完成（结算积分/返现）。
  */
-const db = require('../../config/db');
 const { ORDER_STATUS } = require('../../constants/status');
 const orderRepo = require('./order.repository');
+const siteSettingsRepo = require('./siteSettings.repository');
 const { completeShippedOrder } = require('./order.service');
 
 let schedulerTimer = null;
@@ -21,10 +21,10 @@ function parseDays(raw) {
 }
 
 async function loadAutoConfirmSettings() {
-  const [rows] = await db.query(
-    `SELECT setting_key, setting_value FROM site_settings
-     WHERE setting_key IN ('autoConfirmReceiveEnabled', 'autoConfirmReceiveDays')`,
-  );
+  const rows = await siteSettingsRepo.selectSiteSettingsByKeys([
+    'autoConfirmReceiveEnabled',
+    'autoConfirmReceiveDays',
+  ]);
   const map = Object.fromEntries(rows.map((r) => [r.setting_key, r.setting_value]));
   return {
     enabled: parseEnabled(map.autoConfirmReceiveEnabled),
@@ -33,16 +33,8 @@ async function loadAutoConfirmSettings() {
 }
 
 async function selectDueShippedOrderIds(days, limit = 80) {
-  const [rows] = await db.query(
-    `SELECT id FROM orders
-     WHERE status = ?
-       AND shipped_at IS NOT NULL
-       AND shipped_at <= DATE_SUB(NOW(), INTERVAL ? DAY)
-     ORDER BY shipped_at ASC
-     LIMIT ?`,
-    [ORDER_STATUS.SHIPPED, days, limit],
-  );
-  return rows.map((r) => r.id);
+  const pool = orderRepo.getPool();
+  return orderRepo.selectDueShippedOrderIds(pool, days, limit, ORDER_STATUS.SHIPPED);
 }
 
 async function autoConfirmOneOrder(orderId) {

@@ -1,9 +1,9 @@
 /**
  * 未支付订单超时自动关单：释放下单时预扣的库存、活动销量与优惠券。
  */
-const db = require('../../config/db');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
 const orderRepo = require('./order.repository');
+const siteSettingsRepo = require('./siteSettings.repository');
 const { cancelPendingOrderInTransaction } = require('./order.service');
 
 let schedulerTimer = null;
@@ -21,10 +21,10 @@ function parseMinutes(raw, fallback = 30) {
 }
 
 async function loadPaymentTimeoutSettings() {
-  const [rows] = await db.query(
-    `SELECT setting_key, setting_value FROM site_settings
-     WHERE setting_key IN ('orderPaymentTimeoutEnabled', 'orderPaymentTimeoutMinutes')`,
-  );
+  const rows = await siteSettingsRepo.selectSiteSettingsByKeys([
+    'orderPaymentTimeoutEnabled',
+    'orderPaymentTimeoutMinutes',
+  ]);
   const map = Object.fromEntries(rows.map((r) => [r.setting_key, r.setting_value]));
   return {
     enabled: parseEnabled(
@@ -39,16 +39,14 @@ async function loadPaymentTimeoutSettings() {
 }
 
 async function selectExpiredPendingOrderIds(minutes, limit = 80) {
-  const [rows] = await db.query(
-    `SELECT id FROM orders
-     WHERE status = ?
-       AND (payment_status IS NULL OR payment_status = ?)
-       AND created_at <= DATE_SUB(NOW(), INTERVAL ? MINUTE)
-     ORDER BY created_at ASC
-     LIMIT ?`,
-    [ORDER_STATUS.PENDING, PAYMENT_STATUS.PENDING, minutes, limit],
+  const pool = orderRepo.getPool();
+  return orderRepo.selectExpiredPendingOrderIds(
+    pool,
+    minutes,
+    limit,
+    ORDER_STATUS.PENDING,
+    PAYMENT_STATUS.PENDING,
   );
-  return rows.map((r) => r.id);
 }
 
 function isTimedOutByCreatedAt(order, minutes) {

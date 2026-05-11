@@ -1,4 +1,4 @@
-const db = require('../config/db');
+const auditLogRepo = require('../modules/admin/auditLog.repository');
 const { generateId } = require('./helpers');
 
 const MAX_JSON_CHARS = 8000;
@@ -44,9 +44,7 @@ function getReqContext(req) {
 async function getOperatorMeta(userId) {
   if (!userId) return { name: '', role: '' };
   try {
-    const [rowsRaw] = await db.query('SELECT nickname, role FROM users WHERE id = ? LIMIT 1', [userId]);
-    const rows = Array.isArray(rowsRaw) ? rowsRaw : [];
-    const u = /** @type {{ nickname?: string, role?: string }|undefined} */ (rows[0]);
+    const u = await auditLogRepo.selectOperatorDisplayByUserId(userId);
     if (!u) return { name: '', role: '' };
     return { name: u.nickname || '', role: u.role || '' };
   } catch {
@@ -101,30 +99,24 @@ async function writeAuditLog(params) {
     const beforeStr = before !== undefined ? truncateJson(before) : null;
     const afterStr = after !== undefined ? truncateJson(after) : null;
 
-    await db.query(
-      `INSERT INTO audit_logs (
-        id, operator_id, operator_name, operator_role, action_type, object_type, object_id,
-        summary, before_json, after_json, ip, user_agent, request_path, request_method, result, error_message
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [
-        id,
-        operatorId || null,
-        String(name).slice(0, 100),
-        String(role).slice(0, 50),
-        String(actionType).slice(0, 80),
-        String(objectType || '').slice(0, 80),
-        objectId || null,
-        String(summary || '').slice(0, 500),
-        beforeStr,
-        afterStr,
-        ctx.ip,
-        ctx.userAgent,
-        ctx.path,
-        ctx.method,
-        result === 'failure' ? 'failure' : 'success',
-        String(errorMessage || '').slice(0, 500),
-      ],
-    );
+    await auditLogRepo.insertAuditLogRow({
+      id,
+      operatorId: operatorId || null,
+      operatorName: String(name).slice(0, 100),
+      operatorRole: String(role).slice(0, 50),
+      actionType: String(actionType).slice(0, 80),
+      objectType: String(objectType || '').slice(0, 80),
+      objectId: objectId || null,
+      summary: String(summary || '').slice(0, 500),
+      beforeStr,
+      afterStr,
+      ip: ctx.ip,
+      userAgent: ctx.userAgent,
+      path: ctx.path,
+      method: ctx.method,
+      result: result === 'failure' ? 'failure' : 'success',
+      errorMessage: String(errorMessage || '').slice(0, 500),
+    });
   } catch (e) {
     console.error('[audit_logs] write failed:', e.message);
   }

@@ -20,14 +20,11 @@ function clampRate(raw) {
 }
 
 /**
- * @param {import('mysql2/promise').Pool|import('mysql2/promise').PoolConnection} db
+ * 由 repository 读取 site_settings 行后，在此解析为 SST 配置（无 SQL）。
+ * @param {Array<{ setting_key: string, setting_value: string }>} rows
  */
-async function loadSstSettingsFromDb(db) {
-  const [rows] = await db.query(
-    `SELECT setting_key, setting_value FROM site_settings
-     WHERE setting_key IN ('sstEnabled', 'sstRatePercent', 'sstLabel')`,
-  );
-  const map = Object.fromEntries(rows.map((r) => [r.setting_key, r.setting_value]));
+function parseSstSettingsFromSiteSettingsRows(rows) {
+  const map = Object.fromEntries((rows || []).map((r) => [r.setting_key, r.setting_value]));
   return {
     enabled: parseEnabled(map.sstEnabled),
     ratePercent: clampRate(map.sstRatePercent),
@@ -74,7 +71,7 @@ function buildOrderTaxSnapshot(settings, goodsInclusiveTaxable) {
 }
 
 module.exports = {
-  loadSstSettingsFromDb,
+  parseSstSettingsFromSiteSettingsRows,
   splitInclusiveTax,
   buildOrderTaxSnapshot,
   round2,

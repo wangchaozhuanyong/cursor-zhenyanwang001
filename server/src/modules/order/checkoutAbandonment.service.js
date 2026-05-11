@@ -1,5 +1,4 @@
 const repo = require('./checkoutAbandonment.repository');
-const db = require('../../config/db');
 const { generateId } = require('../../utils/helpers');
 const { maskPhone } = require('../../utils/formatUserResponse');
 
@@ -45,17 +44,18 @@ async function recordCheckoutSnapshot(userId, body) {
     return { data: null, message: '无结算商品，未记录快照' };
   }
 
+  const pool = repo.getPool();
   const requestedId = String(body.checkout_abandonment_id || '').trim();
   if (requestedId) {
-    const affected = await repo.updateOpenSnapshot(db, requestedId, userId, params);
-    const existing = await repo.selectSnapshotForUser(db, requestedId, userId);
+    const affected = await repo.updateOpenSnapshot(pool, requestedId, userId, params);
+    const existing = await repo.selectSnapshotForUser(pool, requestedId, userId);
     if (affected > 0 || existing) {
       return { data: { id: requestedId, status: existing?.status || 'open' } };
     }
   }
 
   const id = generateId();
-  await repo.insertSnapshot(db, { ...params, id });
+  await repo.insertSnapshot(pool, { ...params, id });
   return { data: { id, status: 'open' } };
 }
 

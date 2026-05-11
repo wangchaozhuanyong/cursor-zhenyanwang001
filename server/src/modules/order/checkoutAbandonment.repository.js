@@ -1,6 +1,10 @@
 const db = require('../../config/db');
 const { generateId } = require('../../utils/helpers');
 
+function getPool() {
+  return db;
+}
+
 function toJson(value) {
   return JSON.stringify(value || []);
 }
@@ -107,6 +111,7 @@ async function selectAdminPage(where, params, pageSize, offset) {
 }
 
 module.exports = {
+  getPool,
   insertSnapshot,
   updateOpenSnapshot,
   selectSnapshotForUser,

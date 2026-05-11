@@ -13,7 +13,16 @@ async function selectAdminLogsPage(pageSize, offset) {
   return rows;
 }
 
+async function insertAdminLogRow(params) {
+  const { id, adminId, operator, action, detail } = params;
+  await db.query(
+    'INSERT INTO admin_logs (id, admin_id, operator, action, detail) VALUES (?,?,?,?,?)',
+    [id, adminId, operator, action, detail],
+  );
+}
+
 module.exports = {
   countAdminLogs,
   selectAdminLogsPage,
+  insertAdminLogRow,
 };

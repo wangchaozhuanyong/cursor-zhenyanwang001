@@ -4,7 +4,7 @@ const { writeAuditLog } = require('../../utils/auditLog');
 const repo = require('./adminMemberLevel.repository');
 const memberLevelService = require('../user/memberLevel.service');
 
-const db = repo.getPool();
+const pool = repo.getPool();
 
 function toNumber(value, fieldName) {
   const n = Number(value ?? 0);
@@ -27,13 +27,13 @@ function normalizeInput(body) {
 }
 
 async function listLevels() {
-  const rows = await repo.selectLevels(db);
+  const rows = await repo.selectLevels(pool);
   return rows.map(memberLevelService.normalizeLevel);
 }
 
 async function createLevel(req, body) {
   const input = normalizeInput(body);
-  const conn = await db.getConnection();
+  const conn = await repo.getConnection();
   try {
     await conn.beginTransaction();
     if (input.isDefault) await repo.clearDefault(conn);
@@ -62,9 +62,9 @@ async function createLevel(req, body) {
 
 async function updateLevel(req, id, body) {
   const input = normalizeInput(body);
-  const before = await repo.selectLevelById(db, id);
+  const before = await repo.selectLevelById(pool, id);
   if (!before) throw new NotFoundError('会员等级不存在');
-  const conn = await db.getConnection();
+  const conn = await repo.getConnection();
   try {
     await conn.beginTransaction();
     if (input.isDefault) await repo.clearDefault(conn);
@@ -93,15 +93,15 @@ async function updateLevel(req, id, body) {
 }
 
 async function deleteLevel(req, id) {
-  const level = await repo.selectLevelById(db, id);
+  const level = await repo.selectLevelById(pool, id);
   if (!level) throw new NotFoundError('会员等级不存在');
   if (level.is_default) throw new ValidationError('默认等级不能删除');
 
-  const fallbackLevels = await repo.selectLevels(db);
+  const fallbackLevels = await repo.selectLevels(pool);
   const fallback = fallbackLevels.find((item) => item.is_default && item.id !== id);
   if (!fallback) throw new ValidationError('请先设置一个默认等级');
 
-  const conn = await db.getConnection();
+  const conn = await repo.getConnection();
   try {
     await conn.beginTransaction();
     const userCount = await repo.countUsersByLevel(conn, id);

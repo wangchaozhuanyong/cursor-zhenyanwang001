@@ -1,6 +1,6 @@
 const repo = require('./memberLevel.repository');
 
-const db = repo.getPool();
+const pool = repo.getPool();
 
 function normalizeLevel(row) {
   if (!row) return null;
@@ -40,9 +40,9 @@ function pickBestLevel(levels, stats) {
 async function getUserMemberLevel(userId) {
   try {
     const [current, stats, defaultLevel] = await Promise.all([
-      repo.selectUserCurrentLevel(db, userId),
-      repo.selectUserPaidStats(db, userId),
-      repo.selectDefaultLevel(db),
+      repo.selectUserCurrentLevel(pool, userId),
+      repo.selectUserPaidStats(pool, userId),
+      repo.selectDefaultLevel(pool),
     ]);
     return {
       level: normalizeLevel(current || defaultLevel),

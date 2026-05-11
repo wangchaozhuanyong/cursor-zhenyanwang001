@@ -1,6 +1,6 @@
-const db = require('../../config/db');
+const seoRepo = require('./seo.repository');
 
-const SITEMAP_MAX_URLS = 50000;
+const { SITEMAP_MAX_URLS } = seoRepo;
 
 const STATIC_PUBLIC_PATHS = [
   '/',
@@ -49,64 +49,24 @@ function buildUrl(baseUrl, path) {
 
 async function selectProductsForSitemap() {
   try {
-    const [rows] = await db.query(
-      `SELECT id, COALESCE(updated_at, created_at) AS lastmod
-       FROM products
-       WHERE lifecycle_status = 1 AND deleted_at IS NULL
-       ORDER BY sort_order ASC, created_at DESC
-       LIMIT ?`,
-      [SITEMAP_MAX_URLS],
-    );
-    return rows;
+    return await seoRepo.selectProductsForSitemapWithUpdatedAt();
   } catch (err) {
     if (err?.code !== 'ER_BAD_FIELD_ERROR') throw err;
-    const [rows] = await db.query(
-      `SELECT id, created_at AS lastmod
-       FROM products
-       WHERE lifecycle_status = 1 AND deleted_at IS NULL
-       ORDER BY sort_order ASC, created_at DESC
-       LIMIT ?`,
-      [SITEMAP_MAX_URLS],
-    );
-    return rows;
+    return seoRepo.selectProductsForSitemapFallback();
   }
 }
 
 async function selectCategoriesForSitemap() {
   try {
-    const [rows] = await db.query(
-      `SELECT id, updated_at AS lastmod
-       FROM categories
-       WHERE is_active = 1 AND is_visible = 1 AND deleted_at IS NULL
-       ORDER BY parent_id IS NOT NULL, parent_id ASC, sort_order ASC, id ASC
-       LIMIT ?`,
-      [SITEMAP_MAX_URLS],
-    );
-    return rows;
+    return await seoRepo.selectCategoriesForSitemapWithUpdatedAt();
   } catch (err) {
     if (err?.code !== 'ER_BAD_FIELD_ERROR') throw err;
-    const [rows] = await db.query(
-      `SELECT id, NULL AS lastmod
-       FROM categories
-       WHERE is_active = 1 AND deleted_at IS NULL
-       ORDER BY sort_order ASC, id ASC
-       LIMIT ?`,
-      [SITEMAP_MAX_URLS],
-    );
-    return rows;
+    return seoRepo.selectCategoriesForSitemapFallback();
   }
 }
 
 async function selectContentPagesForSitemap() {
-  const [rows] = await db.query(
-    `SELECT slug, last_modified_at AS lastmod
-     FROM content_pages
-     WHERE publish_status = 'published' AND deleted_at IS NULL
-     ORDER BY slug ASC
-     LIMIT ?`,
-    [SITEMAP_MAX_URLS],
-  );
-  return rows;
+  return seoRepo.selectContentPagesForSitemap();
 }
 
 function renderUrl({ loc, lastmod, changefreq, priority }) {

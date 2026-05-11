@@ -482,6 +482,32 @@ async function insertRewardRecord(q, params) {
   );
 }
 
+async function selectExpiredPendingOrderIds(q, minutes, limit, pendingStatus, pendingPaymentStatus) {
+  const [rows] = await q.query(
+    `SELECT id FROM orders
+     WHERE status = ?
+       AND (payment_status IS NULL OR payment_status = ?)
+       AND created_at <= DATE_SUB(NOW(), INTERVAL ? MINUTE)
+     ORDER BY created_at ASC
+     LIMIT ?`,
+    [pendingStatus, pendingPaymentStatus, minutes, limit],
+  );
+  return rows.map((r) => r.id);
+}
+
+async function selectDueShippedOrderIds(q, days, limit, shippedStatus) {
+  const [rows] = await q.query(
+    `SELECT id FROM orders
+     WHERE status = ?
+       AND shipped_at IS NOT NULL
+       AND shipped_at <= DATE_SUB(NOW(), INTERVAL ? DAY)
+     ORDER BY shipped_at ASC
+     LIMIT ?`,
+    [shippedStatus, days, limit],
+  );
+  return rows.map((r) => r.id);
+}
+
 module.exports = {
   getPool,
   getConnection,
@@ -523,4 +549,6 @@ module.exports = {
   selectUserIdByInviteCode,
   selectReferralRulesEnabled,
   insertRewardRecord,
+  selectExpiredPendingOrderIds,
+  selectDueShippedOrderIds,
 };

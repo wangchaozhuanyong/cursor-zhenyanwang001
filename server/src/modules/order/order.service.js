@@ -10,6 +10,7 @@ const repo = require('./order.repository');
 const userModule = require('../user');
 const paymentsModule = require('./payments');
 const checkoutAbandonmentRepo = require('./checkoutAbandonment.repository');
+const siteSettingsRepo = require('./siteSettings.repository');
 const sstTax = require('./sstTax');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
 const logisticsService = require('../logistics/logistics.service');
@@ -197,7 +198,12 @@ async function createOrder(userId, body) {
 
     const nonShippingGoodsCoupon = couponType === 'shipping' ? 0 : couponDiscountValue;
     const goodsInclusiveTaxable = Math.max(0, rawAmount - fullReductionDiscount - nonShippingGoodsCoupon);
-    const sstSettings = await sstTax.loadSstSettingsFromDb(orderDb);
+    const sstRows = await siteSettingsRepo.selectSiteSettingsByKeys([
+      'sstEnabled',
+      'sstRatePercent',
+      'sstLabel',
+    ]);
+    const sstSettings = sstTax.parseSstSettingsFromSiteSettingsRows(sstRows);
     const taxSnap = sstTax.buildOrderTaxSnapshot(sstSettings, goodsInclusiveTaxable);
 
     const totalAmount = Math.max(0, rawAmount - discountAmount + shippingFee);

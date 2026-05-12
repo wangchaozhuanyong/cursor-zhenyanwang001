@@ -101,10 +101,10 @@ export default function GuestHome() {
   const supportNav = useMemo(() => {
     if (customNav?.length) return dedupeFooterNav(customNav.slice(0, 4));
     return dedupeFooterNav([
-      { label: "棣栭〉", path: "/" },
-      { label: "鍏ㄩ儴鍒嗙被", path: "/categories" },
-      { label: "璐墿杞?, path: "/cart" },
-      { label: "鎴戠殑璁㈠崟", path: "/orders" },
+      { label: "首页", path: "/" },
+      { label: "全部分类", path: "/categories" },
+      { label: "购物车", path: "/cart" },
+      { label: "我的订单", path: "/orders" },
     ]);
   }, [customNav]);
 
@@ -113,8 +113,8 @@ export default function GuestHome() {
       customNav && customNav.length > 4
         ? customNav.slice(4)
         : [
-            { label: "甯歌闂", path: "/help" },
-            { label: "鍏充簬鎴戜滑", path: "/about" },
+            { label: "常见问题", path: "/help" },
+            { label: "关于我们", path: "/about" },
           ];
     const extra: FooterNavItem[] = [];
     if (siteInfo.privacyPolicyPath)

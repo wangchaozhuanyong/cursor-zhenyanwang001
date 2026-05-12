@@ -24,6 +24,31 @@ const app = express();
 const publicUrl = (process.env.PUBLIC_APP_URL || '').trim();
 const useHttpsSite = publicUrl.startsWith('https://');
 
+function getStorageAllowedOrigins() {
+  const origins = new Set();
+  const driver = (process.env.STORAGE_DRIVER || '').trim().toLowerCase();
+  if (driver !== 's3') return [];
+
+  const bucket = (process.env.STORAGE_S3_BUCKET || '').trim();
+  const region = (process.env.STORAGE_S3_REGION || '').trim();
+  const endpoint = (process.env.STORAGE_S3_ENDPOINT || '').trim();
+
+  if (bucket && region) {
+    origins.add(`https://${bucket}.s3.${region}.amazonaws.com`);
+  }
+
+  if (endpoint) {
+    try {
+      const normalized = endpoint.startsWith('http') ? endpoint : `https://${endpoint}`;
+      origins.add(new URL(normalized).origin);
+    } catch {
+      // ignore invalid endpoint
+    }
+  }
+
+  return Array.from(origins);
+}
+
 function getInlineScriptHashesFromHtml(htmlPath) {
   try {
     if (!htmlPath || !fs.existsSync(htmlPath)) return [];
@@ -58,9 +83,10 @@ const viteInlineScriptHashes = getInlineScriptHashesFromHtml(frontendIndexHtml);
 
 /** 在 Helmet 默认 CSP 上补充：首页演示图（Unsplash）、Cloudflare Web Analytics 信标 */
 const helmetCspDefaults = helmet.contentSecurityPolicy.getDefaultDirectives();
+const storageAllowedOrigins = getStorageAllowedOrigins();
 const cspDirectives = {
   ...helmetCspDefaults,
-  'img-src': [...helmetCspDefaults['img-src'], 'https://images.unsplash.com'],
+  'img-src': [...helmetCspDefaults['img-src'], 'https://images.unsplash.com', ...storageAllowedOrigins],
   'script-src': [
     ...helmetCspDefaults['script-src'],
     'data:',

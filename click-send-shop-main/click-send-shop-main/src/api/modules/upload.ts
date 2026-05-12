@@ -40,35 +40,38 @@ function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number):
 async function optimizeImageBeforeUpload(file: File): Promise<File> {
   if (!isOptimizableImage(file)) return file;
   if (typeof window === "undefined" || typeof document === "undefined") return file;
+  try {
+    const image = await blobToImage(file);
+    const sourceWidth = image.naturalWidth || image.width;
+    const sourceHeight = image.naturalHeight || image.height;
+    if (!sourceWidth || !sourceHeight) return file;
 
-  const image = await blobToImage(file);
-  const sourceWidth = image.naturalWidth || image.width;
-  const sourceHeight = image.naturalHeight || image.height;
-  if (!sourceWidth || !sourceHeight) return file;
+    const scale = Math.min(1, CLIENT_IMAGE_TARGET_MAX_EDGE / sourceWidth, CLIENT_IMAGE_TARGET_MAX_EDGE / sourceHeight);
+    if (scale === 1 && file.size < CLIENT_IMAGE_OPTIMIZE_MIN_SIZE) return file;
 
-  const scale = Math.min(1, CLIENT_IMAGE_TARGET_MAX_EDGE / sourceWidth, CLIENT_IMAGE_TARGET_MAX_EDGE / sourceHeight);
-  if (scale === 1 && file.size < CLIENT_IMAGE_OPTIMIZE_MIN_SIZE) return file;
+    const width = Math.max(1, Math.round(sourceWidth * scale));
+    const height = Math.max(1, Math.round(sourceHeight * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
 
-  const width = Math.max(1, Math.round(sourceWidth * scale));
-  const height = Math.max(1, Math.round(sourceHeight * scale));
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return file;
+    ctx.drawImage(image, 0, 0, width, height);
+    const webpBlob = await canvasToBlob(canvas, "image/webp", CLIENT_IMAGE_WEBP_QUALITY);
+    if (!webpBlob) return file;
 
-  ctx.drawImage(image, 0, 0, width, height);
-  const webpBlob = await canvasToBlob(canvas, "image/webp", CLIENT_IMAGE_WEBP_QUALITY);
-  if (!webpBlob) return file;
+    // If browser-side conversion does not reduce bytes and did not resize, avoid changing the file needlessly.
+    if (scale === 1 && webpBlob.size >= file.size * 0.95) return file;
 
-  // If browser-side conversion does not reduce bytes and did not resize, avoid changing the file needlessly.
-  if (scale === 1 && webpBlob.size >= file.size * 0.95) return file;
-
-  const optimizedName = file.name.replace(/\.[^.]+$/, "") || "upload";
-  return new File([webpBlob], `${optimizedName}.webp`, {
-    type: "image/webp",
-    lastModified: Date.now(),
-  });
+    const optimizedName = file.name.replace(/\.[^.]+$/, "") || "upload";
+    return new File([webpBlob], `${optimizedName}.webp`, {
+      type: "image/webp",
+      lastModified: Date.now(),
+    });
+  } catch {
+    return file;
+  }
 }
 
 async function refreshAndRetry(url: string, formData: FormData): Promise<Response> {

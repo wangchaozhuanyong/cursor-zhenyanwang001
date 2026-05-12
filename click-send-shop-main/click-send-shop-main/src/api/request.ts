@@ -70,6 +70,8 @@ async function request<T>(
     || endpoint.startsWith("/auth/register")
     || endpoint.startsWith("/auth/otp/login")
     || endpoint.startsWith("/auth/oauth/exchange");
+  const isAuthLogout = endpoint.startsWith("/auth/logout");
+  const isAccountCancel = endpoint.startsWith("/user/account/cancel");
   const token = isAdminEndpoint ? getAdminAccessToken() : getAccessToken();
 
   const headers: HeadersInit = {
@@ -103,7 +105,12 @@ async function request<T>(
     } catch {
       clearTokens();
       notifyAuthExpired();
-      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+      if (
+        typeof window !== "undefined"
+        && !isAuthLogout
+        && !isAccountCancel
+        && !window.location.pathname.startsWith("/login")
+      ) {
         window.location.href = "/login";
       }
       throw new ApiError(401, "登录已过期，请重新登录");

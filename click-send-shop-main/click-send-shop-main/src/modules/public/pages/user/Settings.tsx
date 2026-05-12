@@ -1,5 +1,5 @@
 ﻿import { useRef, useState } from "react";
-import { ArrowLeft, Camera, Lock, Palette, ChevronRight, Download, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, Lock, Palette, ChevronRight, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
@@ -36,7 +36,6 @@ export default function Settings() {
   const [newPwd, setNewPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
   const [pwdSaving, setPwdSaving] = useState(false);
-  const [exporting, setExporting] = useState(false);
   const [showCancelForm, setShowCancelForm] = useState(false);
   const [cancelConfirmText, setCancelConfirmText] = useState("");
   const [cancelSaving, setCancelSaving] = useState(false);
@@ -84,27 +83,6 @@ export default function Settings() {
     }
   };
 
-  const handleExportData = async () => {
-    setExporting(true);
-    try {
-      const data = await userService.exportAccountData();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `account-data-${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-      toast.success("账号数据已导出", toastPresetQuickSuccess);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "导出失败，请重试");
-    } finally {
-      setExporting(false);
-    }
-  };
-
   const handleCancelAccount = async () => {
     if (cancelConfirmText.trim() !== "注销账号") {
       toast.error("请输入“注销账号”确认操作");
@@ -115,7 +93,7 @@ export default function Settings() {
       await userService.cancelAccount(cancelConfirmText.trim());
       toast.success("账号已注销", toastPresetQuickSuccess);
       await useAuthStore.getState().logout();
-      navigate("/login", { replace: true });
+      navigate("/", { replace: true });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "注销失败，请重试");
     } finally {
@@ -246,24 +224,6 @@ export default function Settings() {
               </button>
             </div>
           )}
-        </div>
-
-        <div className="mt-6 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
-          <button
-            type="button"
-            onClick={handleExportData}
-            disabled={exporting}
-            className="flex w-full items-center justify-between disabled:opacity-60"
-          >
-            <div className="flex items-center gap-3">
-              <Download size={18} className="text-gold" />
-              <div className="text-left">
-                <div className="text-sm font-medium text-foreground">导出账号数据</div>
-                <div className="mt-0.5 text-xs text-muted-foreground">包含个人资料、地址、订单与积分记录</div>
-              </div>
-            </div>
-            <span className="text-xs text-muted-foreground">{exporting ? "导出中…" : "JSON"}</span>
-          </button>
         </div>
 
         <div className="mt-6 theme-rounded border border-destructive/30 bg-[var(--theme-surface)] p-4 theme-shadow">

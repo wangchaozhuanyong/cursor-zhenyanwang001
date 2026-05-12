@@ -326,6 +326,7 @@ export default function AdminCategories() {
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground">图标 URL</label>
+              <p className="mb-1 text-[11px] text-muted-foreground">建议 128×128 正方形（PNG/WebP/SVG 均可），透明背景更佳。</p>
               <div className="flex gap-2">
                 <input
                   placeholder="可粘贴 URL 或上传"
@@ -428,7 +429,7 @@ export default function AdminCategories() {
                         <input
                           value={editData.icon_url}
                           onChange={(e) => setEditData({ ...editData, icon_url: e.target.value })}
-                          placeholder="图标 URL"
+                          placeholder="图标 URL（建议 128×128 正方形）"
                           className="min-w-0 flex-1 rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none"
                         />
                         <label className="flex cursor-pointer items-center rounded-lg border border-border px-2 text-muted-foreground hover:text-foreground">

@@ -49,12 +49,3 @@ export interface UpdateProfileParams {
   wechat?: string;
   whatsapp?: string;
 }
-
-export interface UserDataExport {
-  exported_at: string;
-  scope: Record<string, string>;
-  profile: Record<string, unknown>;
-  addresses: Record<string, unknown>[];
-  orders: Array<Record<string, unknown> & { items?: Record<string, unknown>[] }>;
-  points_records: Record<string, unknown>[];
-}

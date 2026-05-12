@@ -4,7 +4,7 @@ import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore, type Address } from "@/stores/useUserStore";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MALAYSIA_STATES } from "@/types/address";
 import { formatAddressForDisplay } from "@/services/addressService";
 
@@ -175,6 +175,7 @@ export default function AddressManage() {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>{editId ? "编辑地址" : "新增地址"}</DialogTitle>
+            <DialogDescription>用于结账收货，请确保州、城市与邮编填写正确。</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 pt-2">
             <input

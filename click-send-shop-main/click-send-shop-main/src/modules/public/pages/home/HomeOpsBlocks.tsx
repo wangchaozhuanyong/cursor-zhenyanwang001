@@ -22,9 +22,21 @@ function openHomeNavTarget(navigate: ReturnType<typeof useNavigate>, item: HomeN
   openTarget(navigate, item.link_url || "");
 }
 
+function looksLikeMojibake(value: string): boolean {
+  if (!value) return false;
+  return /�|锟|鈥|銆|鍟|鐧|璇|绠|閫/.test(value);
+}
+
+function normalizeText(value: string | undefined, fallback = ""): string {
+  const text = (value || "").trim();
+  if (!text) return fallback;
+  if (looksLikeMojibake(text)) return fallback;
+  return text;
+}
+
 function IconView({ value }: { value: string }) {
   const v = value.trim();
-  if (!v) return <span className="text-sm font-bold text-[var(--theme-text-on-surface)]">•</span>;
+  if (!v) return <span className="text-sm font-bold text-[var(--theme-text-on-surface)]">—</span>;
   if (v.startsWith("http") || v.startsWith("/")) {
     return <img src={v} alt="" className="h-full w-full object-cover" />;
   }
@@ -64,6 +76,8 @@ export default function HomeOpsBlocks() {
         <section className="space-y-2">
           {topAnnouncements.map((item) => {
             const hasLink = Boolean(item.link_url?.trim());
+            const title = normalizeText(item.title, "公告");
+            const content = normalizeText(item.content);
             return (
               <button
                 key={item.id}
@@ -81,10 +95,8 @@ export default function HomeOpsBlocks() {
                 </span>
                 <span className="min-w-0 flex-1 text-xs leading-snug text-[var(--theme-text)]">
                   <span className="line-clamp-2">
-                    <strong className="font-semibold text-[var(--theme-text)]">{item.title || "公告"}</strong>
-                    {item.content ? (
-                      <span className="text-[var(--theme-text-muted)]"> · {item.content}</span>
-                    ) : null}
+                    <strong className="font-semibold text-[var(--theme-text)]">{title}</strong>
+                    {content ? <span className="text-[var(--theme-text-muted)]"> · {content}</span> : null}
                   </span>
                 </span>
                 {hasLink ? (
@@ -112,7 +124,9 @@ export default function HomeOpsBlocks() {
               <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl bg-[var(--theme-bg)] text-[var(--theme-price)] ring-1 ring-[var(--theme-border)]">
                 <IconView value={item.icon_url} />
               </span>
-              <span className="line-clamp-2 text-xs font-medium leading-tight text-[var(--theme-text)]">{item.title}</span>
+              <span className="line-clamp-2 text-xs font-medium leading-tight text-[var(--theme-text)]">
+                {normalizeText(item.title, "分类")}
+              </span>
             </button>
           ))}
         </section>

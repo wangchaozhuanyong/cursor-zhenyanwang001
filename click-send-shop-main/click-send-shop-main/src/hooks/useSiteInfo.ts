@@ -19,7 +19,6 @@ const FALLBACK: SiteInfo = {
   footerCopyright: `© ${new Date().getFullYear()} 大马通 版权所有`,
 };
 
-/* ── 模块级缓存（多组件共享一次请求）── */
 let cachedInfo: SiteInfo | null = null;
 let inflight: Promise<SiteInfo> | null = null;
 const subscribers = new Set<(info: SiteInfo) => void>();
@@ -75,18 +74,12 @@ async function loadOnce(): Promise<SiteInfo> {
   return inflight;
 }
 
-/** 强制刷新（管理后台保存设置后可调用） */
 export function refreshSiteInfo() {
   cachedInfo = null;
   inflight = null;
   return loadOnce();
 }
 
-/**
- * 站点公开信息 hook
- *  - 首次调用触发请求，之后跨组件共享缓存
- *  - 接口失败/未配置时返回前端兜底值
- */
 export function useSiteInfo(): SiteInfo {
   const [info, setInfo] = useState<SiteInfo>(cachedInfo ?? FALLBACK);
 

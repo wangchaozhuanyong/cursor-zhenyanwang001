@@ -304,11 +304,17 @@ export default function MemberHome() {
                 onClick={goActiveNewProduct}
                 className="group relative aspect-square overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] shadow-none"
               >
-                <img
-                  src={activeNewImage}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  alt={activeNew?.name || heroTitle}
-                />
+                {activeNewImage ? (
+                  <img
+                    src={activeNewImage}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    alt={activeNew?.name || heroTitle}
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-xs text-[var(--theme-text-muted)]">
+                    暂无新品图片
+                  </div>
+                )}
                 <div className="absolute left-3 top-3 rounded-full bg-[var(--theme-price)] px-2.5 py-1 text-[10px] font-bold text-[var(--theme-price-foreground)] shadow">
                   NEW
                 </div>
@@ -427,15 +433,13 @@ export default function MemberHome() {
 }
 
 function resolveNewArrivalImage(product: Product | null, fallbackIndex: number): string {
-  if (!product) {
-    return `https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=800`;
-  }
+  if (!product) return "";
   const images = Array.isArray(product.images) ? product.images.filter(Boolean) : [];
   if (images.length > 0) {
     return images[fallbackIndex % images.length];
   }
   if (product.cover_image) return product.cover_image;
-  return `https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=800`;
+  return "";
 }
 
 function toBatches<T>(list: T[], size: number): T[][] {
@@ -446,4 +450,3 @@ function toBatches<T>(list: T[], size: number): T[][] {
   }
   return out;
 }
-

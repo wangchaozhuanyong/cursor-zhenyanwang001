@@ -14,7 +14,7 @@ const CLIENT_IMAGE_WEBP_QUALITY = 0.82;
 const CLIENT_IMAGE_OPTIMIZE_MIN_SIZE = 512 * 1024;
 
 function isOptimizableImage(file: File) {
-  return file.type.startsWith("image/") && file.type !== "image/gif" && file.type !== "image/svg+xml";
+  return ["image/jpeg", "image/png", "image/webp"].includes(file.type);
 }
 
 function blobToImage(blob: Blob): Promise<HTMLImageElement> {
@@ -27,7 +27,7 @@ function blobToImage(blob: Blob): Promise<HTMLImageElement> {
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error("图片读取失败，请换一张图片重试"));
+      reject(new Error("图片读取失败，请换一张图片重试（建议 JPG/PNG/WebP）"));
     };
     img.src = url;
   });

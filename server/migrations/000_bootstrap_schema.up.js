@@ -203,8 +203,10 @@ const STMTS = [
   id VARCHAR(36) NOT NULL PRIMARY KEY,
   user_id VARCHAR(36) NOT NULL,
   product_id VARCHAR(36) NOT NULL,
+  viewed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_bh_user (user_id)
+  INDEX idx_bh_user (user_id),
+  INDEX idx_bh_user_viewed (user_id, viewed_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
   `CREATE TABLE IF NOT EXISTS favorites (

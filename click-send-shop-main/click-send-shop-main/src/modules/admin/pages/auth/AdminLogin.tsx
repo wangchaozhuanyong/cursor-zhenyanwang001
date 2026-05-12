@@ -33,9 +33,7 @@ export default function AdminLogin() {
   return (
     <div className="safe-area-pt safe-area-pb flex min-h-[100dvh] items-center justify-center bg-background px-4 py-6">
       <div className="w-full max-w-md">
-        {/* Card */}
         <div className="rounded-2xl border border-border bg-card p-6 shadow-lg sm:p-8">
-          {/* Logo & Title */}
           <div className="mb-8 text-center">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gold text-2xl font-bold text-primary-foreground shadow-md">
               A
@@ -44,9 +42,7 @@ export default function AdminLogin() {
             <p className="mt-1 text-sm text-muted-foreground">请使用管理员账号登录</p>
           </div>
 
-          {/* Form */}
           <div className="space-y-4">
-            {/* Account */}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted-foreground">管理员账号</label>
               <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2.5 focus-within:border-gold/50 focus-within:ring-1 focus-within:ring-gold/20">
@@ -62,7 +58,6 @@ export default function AdminLogin() {
               </div>
             </div>
 
-            {/* Password */}
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted-foreground">密码</label>
               <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2.5 focus-within:border-gold/50 focus-within:ring-1 focus-within:ring-gold/20">
@@ -81,7 +76,6 @@ export default function AdminLogin() {
               </div>
             </div>
 
-            {/* Login button */}
             <button
               type="button"
               onClick={handleLogin}
@@ -92,10 +86,9 @@ export default function AdminLogin() {
             </button>
           </div>
 
-          {/* Footer */}
           <div className="mt-6 text-center">
             <button onClick={() => navigate("/")} className="text-xs text-muted-foreground hover:text-foreground">
-              ← 返回前台
+              返回前台
             </button>
           </div>
         </div>

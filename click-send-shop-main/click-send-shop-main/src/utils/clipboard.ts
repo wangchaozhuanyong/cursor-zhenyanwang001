@@ -34,7 +34,9 @@ export async function copyToClipboard(text: string): Promise<boolean> {
     copied = false;
   }
 
-  document.body.removeChild(textarea);
+  if (textarea.parentNode === document.body) {
+    document.body.removeChild(textarea);
+  }
 
   if (selectedRange && selection) {
     selection.removeAllRanges();

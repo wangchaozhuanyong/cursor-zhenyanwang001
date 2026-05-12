@@ -34,6 +34,8 @@ import {
   splitInclusiveTax,
 } from "@/utils/sstTax";
 import { OrderSstLines } from "@/components/OrderSstLines";
+import type { Address } from "@/types/address";
+import { formatAddressForDisplay } from "@/services/addressService";
 
 function generateOrderText(order: Order) {
   const itemsText = order.items
@@ -109,6 +111,7 @@ export default function Checkout() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [note, setNote] = useState("");
   const [addressLoaded, setAddressLoaded] = useState(false);
 
@@ -120,9 +123,10 @@ export default function Checkout() {
     if (!addressLoaded) return;
     const addr = getDefaultAddress();
     if (addr) {
-      setName((prev) => prev || addr.name);
+      setName((prev) => prev || addr.recipient_name);
       setPhone((prev) => prev || addr.phone);
-      setAddress((prev) => prev || addr.address);
+      setAddress((prev) => prev || formatAddressForDisplay(addr));
+      setSelectedAddress(addr);
     }
   }, [addressLoaded, getDefaultAddress]);
 
@@ -130,9 +134,10 @@ export default function Checkout() {
     const handler = () => {
       const addr = getDefaultAddress();
       if (addr) {
-        setName(addr.name);
+        setName(addr.recipient_name);
         setPhone(addr.phone);
-        setAddress(addr.address);
+        setAddress(formatAddressForDisplay(addr));
+        setSelectedAddress(addr);
       }
     };
     window.addEventListener("focus", handler);
@@ -415,6 +420,10 @@ export default function Checkout() {
       toast.error("请填写姓名和电话");
       return;
     }
+    if (!address.trim()) {
+      toast.error("请填写收货地址");
+      return;
+    }
     if (!selectedTemplate) {
       toast.error("运费规则未加载完成，无法提交订单");
       return;
@@ -437,7 +446,18 @@ export default function Checkout() {
         items: payloadItems,
         contact_name: name,
         contact_phone: phone,
-        address,
+        address: selectedAddress
+          ? {
+              recipient_name: selectedAddress.recipient_name,
+              phone: selectedAddress.phone,
+              line1: selectedAddress.line1,
+              line2: selectedAddress.line2 || "",
+              city: selectedAddress.city,
+              state: selectedAddress.state,
+              postcode: selectedAddress.postcode,
+              country: "MY",
+            }
+          : address,
         note,
         coupon_id: selectedCoupon?.id,
         coupon_title: selectedCoupon?.title ?? "",
@@ -647,7 +667,7 @@ export default function Checkout() {
               className="w-full rounded-xl bg-secondary px-4 py-3.5 text-sm text-foreground outline-none ring-gold focus:ring-2 placeholder:text-muted-foreground" />
             <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="电话 *" type="tel"
               className="w-full rounded-xl bg-secondary px-4 py-3.5 text-sm text-foreground outline-none ring-gold focus:ring-2 placeholder:text-muted-foreground" />
-            <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="收货地址"
+            <input value={address} onChange={(e) => { setAddress(e.target.value); setSelectedAddress(null); }} placeholder="收货地址"
               className="w-full rounded-xl bg-secondary px-4 py-3.5 text-sm text-foreground outline-none ring-gold focus:ring-2 placeholder:text-muted-foreground" />
             <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="备注（可选）" rows={2}
               className="w-full rounded-xl bg-secondary px-4 py-3.5 text-sm text-foreground outline-none ring-gold focus:ring-2 placeholder:text-muted-foreground" />

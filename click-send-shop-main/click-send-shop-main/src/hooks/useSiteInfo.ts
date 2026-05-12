@@ -17,6 +17,12 @@ const FALLBACK: SiteInfo = {
   currency: "RM",
   footerCompanyName: "大马通",
   footerCopyright: `© ${new Date().getFullYear()} 大马通 版权所有`,
+  newArrivalHeroTitle: "新品优选",
+  newArrivalHeroSubtitle: "精选人气新品，限时好价",
+  newArrivalHeroCtaText: "立即选购",
+  supportText: "官方客服在线，售后无忧",
+  shippingNotice: "全站商品支持配送，具体以结算页说明为准",
+  paymentNotice: "下单后请按页面提示完成支付",
 };
 
 let cachedInfo: SiteInfo | null = null;
@@ -25,7 +31,7 @@ const subscribers = new Set<(info: SiteInfo) => void>();
 
 function looksLikeMojibake(value: string): boolean {
   if (!value) return false;
-  return /�|锟|鈥|銆|鍟|鐧|璇|绠|閫/.test(value);
+  return /�|锟|鈥|銆|鍟|鐧|璇|绠|閫|鎴|鏄|鐨|鍙|娴|鏂/.test(value);
 }
 
 function sanitizeSiteInfo(data: SiteInfo): SiteInfo {
@@ -37,6 +43,12 @@ function sanitizeSiteInfo(data: SiteInfo): SiteInfo {
     "footerCompanyName",
     "businessHours",
     "footerCopyright",
+    "newArrivalHeroTitle",
+    "newArrivalHeroSubtitle",
+    "newArrivalHeroCtaText",
+    "supportText",
+    "shippingNotice",
+    "paymentNotice",
   ];
   for (const key of fallbackTextKeys) {
     const value = next[key];

@@ -3,6 +3,7 @@ const fs = require('fs');
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const crypto = require('crypto');
 const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
@@ -23,12 +24,48 @@ const app = express();
 const publicUrl = (process.env.PUBLIC_APP_URL || '').trim();
 const useHttpsSite = publicUrl.startsWith('https://');
 
+function getInlineScriptHashesFromHtml(htmlPath) {
+  try {
+    if (!htmlPath || !fs.existsSync(htmlPath)) return [];
+    const html = fs.readFileSync(htmlPath, 'utf8');
+    const hashes = [];
+    const re = /<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
+    let match;
+    while ((match = re.exec(html))) {
+      const content = match[1];
+      if (!content || !content.trim()) continue;
+      const digest = crypto.createHash('sha256').update(content, 'utf8').digest('base64');
+      hashes.push(`'sha256-${digest}'`);
+    }
+    return hashes;
+  } catch {
+    return [];
+  }
+}
+
+/** 生产环境：托管 Vite 构建产物（与 API 同源，前端请求 /api 无需跨域） */
+const defaultFrontendDist = path.join(
+  __dirname,
+  '..',
+  '..',
+  'click-send-shop-main',
+  'click-send-shop-main',
+  'dist',
+);
+const frontendDist = process.env.FRONTEND_DIST || defaultFrontendDist;
+const frontendIndexHtml = path.join(frontendDist, 'index.html');
+const viteInlineScriptHashes = getInlineScriptHashesFromHtml(frontendIndexHtml);
+
 /** 在 Helmet 默认 CSP 上补充：首页演示图（Unsplash）、Cloudflare Web Analytics 信标 */
 const helmetCspDefaults = helmet.contentSecurityPolicy.getDefaultDirectives();
 const cspDirectives = {
   ...helmetCspDefaults,
   'img-src': [...helmetCspDefaults['img-src'], 'https://images.unsplash.com'],
-  'script-src': [...helmetCspDefaults['script-src'], 'https://static.cloudflareinsights.com'],
+  'script-src': [
+    ...helmetCspDefaults['script-src'],
+    'https://static.cloudflareinsights.com',
+    ...viteInlineScriptHashes,
+  ],
   'connect-src': [
     "'self'",
     'https://cloudflareinsights.com',
@@ -132,16 +169,6 @@ app.use('/api/admin/upload', uploadLimiter);
 app.use(responseMiddleware);
 app.use('/api', routes);
 
-/** 生产环境：托管 Vite 构建产物（与 API 同源，前端请求 /api 无需跨域） */
-const defaultFrontendDist = path.join(
-  __dirname,
-  '..',
-  '..',
-  'click-send-shop-main',
-  'click-send-shop-main',
-  'dist',
-);
-const frontendDist = process.env.FRONTEND_DIST || defaultFrontendDist;
 /** dist 存在且未设置 SERVE_SPA=0 时托管前端（仅跑 API 时可在 .env 写 SERVE_SPA=0） */
 const serveSpa = fs.existsSync(frontendDist) && process.env.SERVE_SPA !== '0';
 if (serveSpa) {

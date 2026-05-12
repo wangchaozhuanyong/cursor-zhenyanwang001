@@ -63,6 +63,7 @@ const cspDirectives = {
   'img-src': [...helmetCspDefaults['img-src'], 'https://images.unsplash.com'],
   'script-src': [
     ...helmetCspDefaults['script-src'],
+    'data:',
     'https://static.cloudflareinsights.com',
     ...viteInlineScriptHashes,
   ],

@@ -112,7 +112,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
                   type="button"
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="rounded-full bg-gold px-5 py-2 text-xs font-bold text-primary-foreground active:scale-95 transition-transform disabled:opacity-60"
+                  className="squish-gold-cta rounded-full px-5 py-2 text-xs font-bold active:scale-95 transition-transform disabled:opacity-60"
                 >
                   {submitting ? "提交中…" : "提交评价"}
                 </button>

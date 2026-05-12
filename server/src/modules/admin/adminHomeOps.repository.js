@@ -1,6 +1,6 @@
 const db = require('../../config/db');
 
-const navFields = 'id, icon_url, title, link_url, sort_order, enabled, created_at, updated_at';
+const navFields = 'id, icon_url, title, link_url, target_type, target_category_id, sort_order, enabled, created_at, updated_at';
 const announcementFields = 'id, title, content, link_url, sort_order, enabled, start_at, end_at, created_at, updated_at';
 
 async function selectNavItems({ publicOnly = false } = {}) {
@@ -13,9 +13,18 @@ async function selectNavItems({ publicOnly = false } = {}) {
 
 async function insertNavItem(item) {
   await db.query(
-    `INSERT INTO home_nav_items (id, icon_url, title, link_url, sort_order, enabled)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [item.id, item.iconUrl, item.title, item.linkUrl, item.sortOrder, item.enabled ? 1 : 0],
+    `INSERT INTO home_nav_items (id, icon_url, title, link_url, target_type, target_category_id, sort_order, enabled)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      item.id,
+      item.iconUrl,
+      item.title,
+      item.linkUrl,
+      item.targetType || 'url',
+      item.targetCategoryId || null,
+      item.sortOrder,
+      item.enabled ? 1 : 0,
+    ],
   );
 }
 

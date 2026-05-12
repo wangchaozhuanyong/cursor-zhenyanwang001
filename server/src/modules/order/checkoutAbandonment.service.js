@@ -54,6 +54,15 @@ async function recordCheckoutSnapshot(userId, body) {
     }
   }
 
+  const latestOpenId = await repo.selectLatestOpenIdForUser(pool, userId);
+  if (latestOpenId) {
+    const affected = await repo.updateOpenSnapshot(pool, latestOpenId, userId, params);
+    if (affected > 0) {
+      const existing = await repo.selectSnapshotForUser(pool, latestOpenId, userId);
+      return { data: { id: latestOpenId, status: existing?.status || 'open' } };
+    }
+  }
+
   const id = generateId();
   await repo.insertSnapshot(pool, { ...params, id });
   return { data: { id, status: 'open' } };

@@ -246,6 +246,36 @@
   }
 }
 
+/**
+ * SquishButton / 主 CTA：防止 tailwind-merge 把调用方 className 里的 text-foreground、text-muted-foreground
+ * 合并掉组件上的主色前景色，从而出现「主色底 + 正文色字」不可读。
+ * 由 SquishButton 的 variant 挂载对应 class，勿单独用于任意元素。
+ */
+@layer components {
+  .squish-solid-cta {
+    background-color: var(--theme-primary) !important;
+    color: var(--theme-primary-foreground) !important;
+  }
+  .squish-outline-cta {
+    background-color: transparent !important;
+    color: var(--theme-primary) !important;
+    border: 2px solid var(--theme-primary);
+    box-shadow: none;
+  }
+  .squish-outline-cta:hover:not(:disabled):not([data-disabled]) {
+    background-color: var(--theme-primary) !important;
+    color: var(--theme-primary-foreground) !important;
+  }
+  .squish-gold-cta {
+    background-color: var(--theme-price, hsl(var(--gold))) !important;
+    color: var(--theme-price-foreground) !important;
+  }
+  /* 仅去掉主按钮阴影；背景由 className 决定（透明 / surface），勿用 !important 盖掉 surface */
+  .squish-ghost {
+    box-shadow: none;
+  }
+}
+
 /* Hide scrollbar */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

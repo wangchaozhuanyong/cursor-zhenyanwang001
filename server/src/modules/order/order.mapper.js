@@ -54,6 +54,7 @@ function formatOrder(row, items) {
     created_at: row.created_at,
     contact_name: row.contact_name,
     contact_phone: row.contact_phone,
+    shipping_phone: row.shipping_phone || row.contact_phone,
     address: row.address,
     payment_method: row.payment_method || 'whatsapp',
   };

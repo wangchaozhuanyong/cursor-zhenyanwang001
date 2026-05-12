@@ -30,8 +30,9 @@ export default function BottomNav() {
             <SquishButton
               key={tab.path}
               type="button"
+              variant="ghost"
               onClick={() => navigate(tab.path)}
-              className="relative flex flex-col items-center gap-1 rounded-none bg-transparent px-5 py-3 touch-target shadow-none !min-h-0"
+              className="relative flex flex-col items-center gap-1 rounded-none bg-transparent px-5 py-3 touch-target !min-h-0"
             >
               <div className="relative">
                 <tab.icon

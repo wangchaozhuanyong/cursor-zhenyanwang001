@@ -100,6 +100,10 @@ export default function AdminCheckoutAbandonments() {
       <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
         <h1 className="text-lg font-semibold text-foreground">未完成结算</h1>
         <p className="mt-1 text-sm text-muted-foreground">仅做站内记录和后台查看，不触发邮件、短信或自动外呼。</p>
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          同一用户、同一次停留在结算页的过程，只会维护<strong>一条</strong>「进行中」快照：内容随填写与勾选变化而更新；下单成功后该条变为「已下单未支付」，其余误入的「仅进入结算」空壳会自动关闭。
+          若仍看到两条时间接近的旧数据，多为升级前产生的重复快照，可忽略或后续数据清理。
+        </p>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

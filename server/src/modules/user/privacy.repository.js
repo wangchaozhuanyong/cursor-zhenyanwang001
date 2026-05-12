@@ -90,7 +90,7 @@ async function anonymizeUser(conn, userId, anonymizedPhone, anonymizedInviteCode
          whatsapp = '',
          invite_code = ?,
          parent_invite_code = '',
-         role = 'disabled',
+         role = 'user_disabled',
          refresh_token_version = refresh_token_version + 1,
          deleted_at = NOW()
      WHERE id = ? AND deleted_at IS NULL`,

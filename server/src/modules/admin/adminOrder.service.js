@@ -26,6 +26,7 @@ const checkoutAbandonmentRepo = require('../order/checkoutAbandonment.repository
 const { writeAuditLog } = require('../../utils/auditLog');
 const { ORDER_STATUS, PAYMENT_STATUS, ORDER_STATUS_LIST } = require('../../constants/status');
 const myinvoisService = require('../myinvois/myinvois.service');
+const { UserStatsService } = require('../user/userStats.service');
 
 const userApi = /** @type {any} */ (userModule).api || {};
 
@@ -172,6 +173,9 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
       }
 
       if (status === ORDER_STATUS.CANCELLED && fullOrder) {
+        if (beforeSnap.status !== ORDER_STATUS.CANCELLED) {
+          await UserStatsService.syncStatsAfterOrderCancelled(fullOrder.user_id, fullOrder.id, conn);
+        }
         const items = await repo.selectOrderItemPairs(conn, fullOrder.id);
         for (const item of items) {
           await repo.restoreProductStock(conn, item.product_id, item.qty, {
@@ -350,7 +354,7 @@ async function shipOrder(orderId, body, adminUserId, req) {
 const ORDER_EXPORT_HEADERS = [
   'id', 'order_no', 'user_id', 'status', 'payment_status', 'total_amount', 'raw_amount', 'discount_amount', 'shipping_fee',
   'tax_mode', 'tax_rate', 'tax_label', 'taxable_amount', 'tax_amount', 'tax_exclusive_amount',
-  'total_points', 'contact_name', 'contact_phone', 'address', 'payment_method', 'coupon_title',
+  'total_points', 'contact_name', 'contact_phone', 'shipping_phone', 'address', 'payment_method', 'coupon_title',
   'shipping_name', 'tracking_no', 'carrier', 'note', 'created_at',
 ];
 
@@ -376,6 +380,7 @@ async function exportOrdersCsv(query) {
     total_points: o.total_points,
     contact_name: o.contact_name || '',
     contact_phone: o.contact_phone || '',
+    shipping_phone: o.shipping_phone || o.contact_phone || '',
     address: (o.address || '').replace(/\r\n/g, ' ').replace(/,/g, '，'),
     payment_method: o.payment_method || '',
     coupon_title: o.coupon_title || '',

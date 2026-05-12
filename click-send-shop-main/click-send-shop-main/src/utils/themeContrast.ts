@@ -249,9 +249,21 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
   const surfaceText = getReadableTextColor(surfaceCss, text);
   const mutedText = getMutedTextColor(bg, text);
   const surfaceMutedText = getMutedTextColor(surface, surfaceText);
-  const primaryText = getReadableTextColor(primaryCss);
+  let primaryText = getReadableTextColor(primaryCss);
+  if (getContrastRatio(primaryCss, primaryText) < 4.5) {
+    primaryText =
+      getContrastRatio(primaryCss, rgbToCss(WHITE)) >= getContrastRatio(primaryCss, rgbToCss(BLACK))
+        ? rgbToCss(WHITE)
+        : rgbToCss(BLACK);
+  }
   const secondaryText = getReadableTextColor(secondaryCss);
-  const priceText = getReadableTextColor(priceCss);
+  let priceText = getReadableTextColor(priceCss);
+  if (getContrastRatio(priceCss, priceText) < 4.5) {
+    priceText =
+      getContrastRatio(priceCss, rgbToCss(WHITE)) >= getContrastRatio(priceCss, rgbToCss(BLACK))
+        ? rgbToCss(WHITE)
+        : rgbToCss(BLACK);
+  }
   const mutedBg = mixColors(bg, parseColor(text), isDarkBg ? 0.1 : 0.06);
   const accentBg = mixColors(bg, price, isDarkBg ? 0.28 : 0.14);
   const borderCss = rgbToCss(border);

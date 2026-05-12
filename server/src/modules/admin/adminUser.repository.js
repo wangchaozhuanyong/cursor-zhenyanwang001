@@ -24,20 +24,37 @@ async function countUsers(where, params) {
   return total;
 }
 
-async function selectUsersPage(where, params, pageSize, offset) {
+/**
+ * @param {string} where
+ * @param {any[]} params
+ * @param {number} pageSize
+ * @param {number} offset
+ * @param {{ sortSql?: string }=} options
+ */
+async function selectUsersPage(where, params, pageSize, offset, options = {}) {
   const aliasedWhere = where.replace(/users\./g, 'u.');
+  const sortSql = options.sortSql || 'u.created_at DESC';
   const [rows] = await db.query(
     `SELECT u.id, u.phone, u.nickname, u.avatar, u.invite_code, u.parent_invite_code,
             u.points_balance, u.subordinate_enabled, u.wechat, u.whatsapp, u.created_at,
+            COALESCE(us.total_spent, 0) AS total_spent,
+            COALESCE(us.valid_order_count, 0) AS valid_order_count,
+            COALESCE(us.average_order_value, 0) AS average_order_value,
+            us.first_purchase_at,
+            us.last_purchase_at,
+            COALESCE(us.cancelled_order_count, 0) AS cancelled_order_count,
+            COALESCE(us.refund_count, 0) AS refund_count,
+            COALESCE(us.refund_rate, 0) AS refund_rate,
             ml.id AS member_level_id,
             ml.name AS member_level_name,
             ml.description AS member_level_description,
             ml.min_spent AS member_level_min_spent,
             ml.min_orders AS member_level_min_orders
      FROM users u
+     LEFT JOIN user_statistics us ON us.user_id = u.id
      LEFT JOIN member_levels ml ON ml.id = u.member_level_id
      ${aliasedWhere}
-     ORDER BY u.created_at DESC LIMIT ? OFFSET ?`,
+     ORDER BY ${sortSql} LIMIT ? OFFSET ?`,
     [...params, pageSize, offset],
   );
   return rows;
@@ -190,6 +207,13 @@ async function updateSubordinateEnabled(userId, enabled) {
   await db.query('UPDATE users SET subordinate_enabled = ? WHERE id = ?', [enabled ? 1 : 0, userId]);
 }
 
+async function updateUserPasswordHash(userId, passwordHash) {
+  await db.query(
+    'UPDATE users SET password_hash = ?, refresh_token_version = refresh_token_version + 1 WHERE id = ? AND deleted_at IS NULL',
+    [passwordHash, userId],
+  );
+}
+
 module.exports = {
   getConnection,
   buildUserListWhere,
@@ -209,4 +233,5 @@ module.exports = {
   selectExistingTagIds,
   replaceUserTagAssignments,
   updateSubordinateEnabled,
+  updateUserPasswordHash,
 };

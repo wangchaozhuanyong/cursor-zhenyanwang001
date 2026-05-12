@@ -265,6 +265,12 @@ router.delete('/member-levels/:id', adminAuth, requirePermission('member_level.m
 /* ── Users ── */
 router.get('/users/export', adminAuth, requirePermission('user.view'), userCtrl.exportCsv);
 router.get('/users', adminAuth, requirePermission('user.view'), userQueryLimiter, paginationCap({ max: 100, mode: 'clamp' }), userCtrl.list);
+router.get('/user-tags', adminAuth, requirePermission('user.view'), userQueryLimiter, userCtrl.listTags);
+router.post('/user-tags', adminAuth, requirePermission('user.update'), userCtrl.createTag);
+router.put('/user-tags/:tagId', adminAuth, requirePermission('user.update'), userCtrl.updateTag);
+router.delete('/user-tags/:tagId', adminAuth, requirePermission('user.update'), userCtrl.deleteTag);
+router.put('/users/:id/tags', adminAuth, requirePermission('user.update'), userCtrl.setTags);
+router.post('/users/:id/reset-password', adminAuth, requirePermission('user.update'), userCtrl.resetPassword);
 router.get('/users/:id', adminAuth, requirePermission('user.view'), userQueryLimiter, userCtrl.getById);
 router.put('/users/:id', adminAuth, requirePermission('user.update'), userCtrl.update);
 router.put('/users/:id/subordinate', adminAuth, requirePermission('user.update'), userCtrl.updateSubordinate);

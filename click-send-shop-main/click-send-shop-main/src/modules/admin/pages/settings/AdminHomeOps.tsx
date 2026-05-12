@@ -1,19 +1,31 @@
-import { useEffect, useState } from "react";
-import { Bell, ExternalLink, Grid3X3, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Bell, ExternalLink, Grid3X3, Loader2, Pencil, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { uploadFile } from "@/api/modules/upload";
 import PermissionGate from "@/components/admin/PermissionGate";
 import SegmentedDateTimeInput from "@/components/admin/SegmentedDateTimeInput";
+import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_HOME_NAV_ICON } from "@/constants/imageUploadHints";
 import * as homeOpsService from "@/services/admin/homeOpsService";
 import type { HomeAnnouncement, HomeNavItem } from "@/types/content";
+import * as categoryService from "@/services/admin/categoryService";
+import type { Category } from "@/types/category";
 import { toastErrorMessage } from "@/utils/errorMessage";
 
-type NavForm = Pick<HomeNavItem, "icon_url" | "title" | "link_url" | "sort_order" | "enabled">;
+type NavForm = Pick<HomeNavItem, "icon_url" | "title" | "link_url" | "sort_order" | "enabled" | "target_type" | "target_category_id">;
 type AnnouncementForm = Pick<HomeAnnouncement, "title" | "content" | "link_url" | "sort_order" | "enabled"> & {
   start_at: string;
   end_at: string;
 };
 
-const emptyNavForm: NavForm = { icon_url: "", title: "", link_url: "", sort_order: 0, enabled: true };
+const emptyNavForm: NavForm = {
+  icon_url: "",
+  title: "",
+  link_url: "",
+  target_type: "url",
+  target_category_id: null,
+  sort_order: 0,
+  enabled: true,
+};
 const emptyAnnouncementForm: AnnouncementForm = {
   title: "",
   content: "",
@@ -32,25 +44,39 @@ function toLocalInputValue(value?: string | null) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function flattenCategories(nodes: Category[], level = 0): Array<{ id: string; label: string }> {
+  const out: Array<{ id: string; label: string }> = [];
+  for (const n of nodes) {
+    out.push({ id: n.id, label: `${"—".repeat(level)}${level > 0 ? " " : ""}${n.icon ? `${n.icon} ` : ""}${n.name}` });
+    if (n.children?.length) out.push(...flattenCategories(n.children.filter(Boolean), level + 1));
+  }
+  return out;
+}
+
 export default function AdminHomeOps() {
   const [navItems, setNavItems] = useState<HomeNavItem[]>([]);
   const [announcements, setAnnouncements] = useState<HomeAnnouncement[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingNavId, setEditingNavId] = useState<string | null>(null);
   const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
   const [navForm, setNavForm] = useState<NavForm>(emptyNavForm);
   const [announcementForm, setAnnouncementForm] = useState<AnnouncementForm>(emptyAnnouncementForm);
+  const [navIconUploading, setNavIconUploading] = useState(false);
+  const navIconFileRef = useRef<HTMLInputElement>(null);
 
   const reload = async () => {
     setLoading(true);
     try {
-      const [nav, ann] = await Promise.all([
+      const [nav, ann, cats] = await Promise.all([
         homeOpsService.fetchHomeNavItems(),
         homeOpsService.fetchHomeAnnouncements(),
+        categoryService.fetchCategories().catch(() => []),
       ]);
       setNavItems(nav);
       setAnnouncements(ann);
+      setCategories(cats);
     } catch (e) {
       toast.error(toastErrorMessage(e, "加载首页运营配置失败"));
     } finally {
@@ -62,15 +88,39 @@ export default function AdminHomeOps() {
     void reload();
   }, []);
 
+  const onNavIconFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setNavIconUploading(true);
+    try {
+      const { url } = await uploadFile(file);
+      setNavForm((prev) => ({ ...prev, icon_url: url }));
+      toast.success("图标已上传，保存导航后生效");
+    } catch (err) {
+      toast.error(toastErrorMessage(err, "图标上传失败"));
+    } finally {
+      setNavIconUploading(false);
+    }
+  };
+
   const saveNav = async () => {
     if (!navForm.title.trim()) {
       toast.error("请填写导航标题");
       return;
     }
+    if (navForm.target_type === "category" && !String(navForm.target_category_id || "").trim()) {
+      toast.error("请选择要跳转的分类");
+      return;
+    }
     setSaving(true);
     try {
-      if (editingNavId) await homeOpsService.updateHomeNavItem(editingNavId, navForm);
-      else await homeOpsService.createHomeNavItem(navForm);
+      const payload: NavForm = { ...navForm };
+      if (payload.target_type === "category" && payload.target_category_id) {
+        payload.link_url = `/categories?cat=${payload.target_category_id}`;
+      }
+      if (editingNavId) await homeOpsService.updateHomeNavItem(editingNavId, payload);
+      else await homeOpsService.createHomeNavItem(payload);
       toast.success(editingNavId ? "金刚区导航已更新" : "金刚区导航已创建");
       setEditingNavId(null);
       setNavForm(emptyNavForm);
@@ -115,6 +165,9 @@ export default function AdminHomeOps() {
     );
   }
 
+  const categoryOptions = flattenCategories(categories);
+  const categoryNameMap = new Map(categoryOptions.map((c) => [c.id, c.label.replace(/^—+\s*/, "")]));
+
   return (
     <div className="space-y-6">
       <div>
@@ -127,14 +180,45 @@ export default function AdminHomeOps() {
           <Grid3X3 size={18} className="text-gold" />
           <div>
             <h2 className="font-semibold text-foreground">金刚区导航</h2>
-            <p className="text-xs text-muted-foreground">图标支持 URL、站内上传路径或 Emoji，排序越小越靠前</p>
+            <p className="text-xs text-muted-foreground">图标支持本地上传、URL、站内路径或 Emoji；排序越小越靠前</p>
           </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-[1fr_1fr_1.4fr_minmax(7rem,1fr)_auto_auto]">
-          <label className="flex min-w-0 flex-col gap-1">
+        <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_1fr_1.4fr_minmax(7rem,1fr)_auto_auto]">
+          <label className="flex min-w-0 flex-col gap-1 md:col-span-1">
             <span className="text-[11px] font-medium text-muted-foreground">图标</span>
-            <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" placeholder="URL、站内路径或 Emoji" value={navForm.icon_url} onChange={(e) => setNavForm({ ...navForm, icon_url: e.target.value })} />
+            <div className="flex flex-wrap items-stretch gap-2">
+              <input
+                className="min-w-0 flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
+                placeholder="上传后自动填入，或可填 URL / 路径 / Emoji"
+                value={navForm.icon_url}
+                onChange={(e) => setNavForm({ ...navForm, icon_url: e.target.value })}
+              />
+              <input
+                ref={navIconFileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="sr-only"
+                onChange={(ev) => void onNavIconFileChange(ev)}
+              />
+              <button
+                type="button"
+                disabled={saving || navIconUploading}
+                onClick={() => navIconFileRef.current?.click()}
+                className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-border bg-secondary px-3 py-2 text-xs font-medium text-foreground hover:bg-secondary/80 disabled:opacity-50"
+              >
+                {navIconUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                上传图片
+              </button>
+              <div className="flex shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-background/50 px-1 py-1" title="当前图标预览">
+                <IconPreview value={navForm.icon_url} />
+              </div>
+            </div>
+            <p className="text-[10px] leading-relaxed text-muted-foreground">
+              <span className="font-medium text-foreground/80">规格说明：</span>
+              {IMAGE_UPLOAD_HINT_HOME_NAV_ICON}
+              <span className="mt-0.5 block">{IMAGE_UPLOAD_HINT_API}</span>
+            </p>
           </label>
           <label className="flex min-w-0 flex-col gap-1">
             <span className="text-[11px] font-medium text-muted-foreground">标题</span>
@@ -142,7 +226,52 @@ export default function AdminHomeOps() {
           </label>
           <label className="flex min-w-0 flex-col gap-1">
             <span className="text-[11px] font-medium text-muted-foreground">点击跳转</span>
-            <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" placeholder="/categories 或 https://..." value={navForm.link_url} onChange={(e) => setNavForm({ ...navForm, link_url: e.target.value })} />
+            <select
+              className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
+              value={navForm.target_type || "url"}
+              onChange={(e) => {
+                const next = e.target.value === "category" ? "category" : "url";
+                setNavForm((prev) => ({
+                  ...prev,
+                  target_type: next,
+                  target_category_id: next === "category" ? prev.target_category_id : null,
+                }));
+              }}
+            >
+              <option value="url">站内路径 / 外链</option>
+              <option value="category">指定分类（产品分类页）</option>
+            </select>
+            {navForm.target_type === "category" ? (
+              <select
+                className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
+                value={navForm.target_category_id || ""}
+                onChange={(e) => {
+                  const id = e.target.value || null;
+                  setNavForm((prev) => ({
+                    ...prev,
+                    target_category_id: id,
+                    link_url: id ? `/categories?cat=${id}` : prev.link_url,
+                  }));
+                }}
+              >
+                <option value="">请选择分类…</option>
+                {categoryOptions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
+                placeholder="/categories 或 https://..."
+                value={navForm.link_url}
+                onChange={(e) => setNavForm({ ...navForm, link_url: e.target.value })}
+              />
+            )}
+            <p className="text-[10px] leading-tight text-muted-foreground">
+              {navForm.target_type === "category" ? "将自动跳转到 /categories 并选中该分类" : "支持 /path 或 https://…"}
+            </p>
           </label>
           <label className="flex min-w-0 flex-col gap-1">
             <span className="text-[11px] font-medium text-muted-foreground">排序</span>
@@ -181,14 +310,33 @@ export default function AdminHomeOps() {
               <div className="min-w-0 flex-1">
                 <div className="font-medium text-foreground">{item.title}</div>
                 <div className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
-                  <ExternalLink size={11} /> {item.link_url || "无跳转链接"} · 排序 {item.sort_order}
+                  <ExternalLink size={11} />
+                  {item.target_type === "category" && item.target_category_id
+                    ? `分类：${categoryNameMap.get(item.target_category_id) || item.target_category_id}`
+                    : (item.link_url || "无跳转链接")}
+                  · 排序 {item.sort_order}
                 </div>
               </div>
               <span className={`rounded-full px-2 py-1 text-xs ${item.enabled ? "bg-emerald-500/10 text-emerald-600" : "bg-secondary text-muted-foreground"}`}>
                 {item.enabled ? "启用" : "禁用"}
               </span>
               <PermissionGate permission="home_ops.manage">
-                <button type="button" className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-gold" onClick={() => { setEditingNavId(item.id); setNavForm({ icon_url: item.icon_url, title: item.title, link_url: item.link_url, sort_order: item.sort_order, enabled: item.enabled }); }}>
+                <button
+                  type="button"
+                  className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-gold"
+                  onClick={() => {
+                    setEditingNavId(item.id);
+                    setNavForm({
+                      icon_url: item.icon_url,
+                      title: item.title,
+                      link_url: item.link_url,
+                      target_type: item.target_type || "url",
+                      target_category_id: item.target_category_id ?? null,
+                      sort_order: item.sort_order,
+                      enabled: item.enabled,
+                    });
+                  }}
+                >
                   <Pencil size={15} />
                 </button>
                 <button type="button" className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-destructive" onClick={() => void homeOpsService.deleteHomeNavItem(item.id).then(reload).then(() => toast.success("已删除")).catch((e) => toast.error(toastErrorMessage(e, "删除失败")))}>

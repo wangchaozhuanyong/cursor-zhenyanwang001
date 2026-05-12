@@ -66,8 +66,10 @@ function buildProductSearchKeywordsFromPayload(payload, variants = [], tags = []
 }
 
 function normalizeVariantPayloadForDb(variants, genId, mainPrice, mainStock) {
-  const price = Number(mainPrice) || 0;
-  const stock = Number.isFinite(Number(mainStock)) ? Number(mainStock) : 0;
+  const mainP = Number(mainPrice);
+  const price = Number.isFinite(mainP) ? mainP : 0;
+  const mainS = Number(mainStock);
+  const stock = Number.isFinite(mainS) ? mainS : 0;
   if (!variants || variants.length === 0) {
     return [{
       id: genId(),
@@ -79,15 +81,20 @@ function normalizeVariantPayloadForDb(variants, genId, mainPrice, mainStock) {
       is_default: 1,
     }];
   }
-  const rows = variants.map((v, i) => ({
-    id: v.id && typeof v.id === 'string' ? v.id : genId(),
-    sku_code: v.sku_code ?? null,
-    title: (v.title != null ? String(v.title) : '') || '',
-    price: Number(v.price),
-    stock: Number(v.stock),
-    sort_order: v.sort_order != null ? Number(v.sort_order) : i,
-    is_default: v.is_default ? 1 : 0,
-  }));
+  const rows = variants.map((v, i) => {
+    const vp = Number(v.price);
+    const vs = Number(v.stock);
+    const vo = Number(v.sort_order);
+    return {
+      id: v.id && typeof v.id === 'string' ? v.id : genId(),
+      sku_code: v.sku_code ?? null,
+      title: (v.title != null ? String(v.title) : '') || '',
+      price: Number.isFinite(vp) ? vp : price,
+      stock: Number.isFinite(vs) ? vs : stock,
+      sort_order: Number.isFinite(vo) ? vo : i,
+      is_default: v.is_default ? 1 : 0,
+    };
+  });
   if (!rows.some((r) => r.is_default) && rows.length) rows[0].is_default = 1;
   let seen = false;
   return rows.map((r) => {

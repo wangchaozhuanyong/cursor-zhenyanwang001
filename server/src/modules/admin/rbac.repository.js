@@ -107,7 +107,11 @@ async function listAdminUsers() {
   const [rows] = await db.query(
     `SELECT id, phone, nickname, email, role, created_at, last_login_at
      FROM users
-     WHERE role IN ('admin', 'super_admin', 'disabled')
+     WHERE role IN ('admin', 'super_admin')
+        OR (
+          role = 'disabled'
+          AND EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = users.id)
+        )
      ORDER BY created_at DESC`,
   );
   return rows;
@@ -115,7 +119,16 @@ async function listAdminUsers() {
 
 async function selectAdminUserById(userId) {
   const [[row]] = await db.query(
-    `SELECT id, phone, nickname, email, role, created_at, last_login_at FROM users WHERE id = ? AND role IN ('admin','super_admin','disabled')`,
+    `SELECT id, phone, nickname, email, role, created_at, last_login_at
+     FROM users
+     WHERE id = ?
+       AND (
+         role IN ('admin','super_admin')
+         OR (
+           role = 'disabled'
+           AND EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = users.id)
+         )
+       )`,
     [userId],
   );
   return row || null;
@@ -135,11 +148,9 @@ async function updateAdminUserEnabled(userId, enabled) {
 }
 
 async function softDeleteAdminUser(userId) {
-  try {
-    await db.query('DELETE FROM user_roles WHERE user_id = ?', [userId]);
-  } catch (_) {
-    /* RBAC 表不存在或非关键 */
-  }
+  // 注意：普通用户注销也会被置为 role='disabled'。
+  // 为避免把已注销的普通用户误展示为“后台管理员账号”，这里保留 user_roles 作为“曾为管理员”的判定依据。
+  // 同时也保留 RBAC 关联以便审计与必要的回滚排查。
   const [res] = await db.query(
     `UPDATE users SET role = 'disabled', deleted_at = NOW() WHERE id = ? AND role IN ('admin','disabled')`,
     [userId],

@@ -117,8 +117,8 @@ async function insertOrder(q, params) {
         shipping_fee, shipping_name, total_amount,
         tax_mode, tax_rate, tax_label, taxable_amount, tax_amount, tax_exclusive_amount,
         total_points, status, payment_status,
-        note, contact_name, contact_phone, address, payment_method)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        note, contact_name, contact_phone, shipping_phone, address, payment_method)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id, userId, orderNo, rawAmount, discountAmount, couponTitle || '',
       shippingFee,
@@ -133,7 +133,7 @@ async function insertOrder(q, params) {
       totalPoints,
       ORDER_STATUS.PENDING,
       PAYMENT_STATUS.PENDING,
-      note || '', contactName, contactPhone, address || '', paymentMethod || 'whatsapp',
+      note || '', contactName, contactPhone, contactPhone, address || '', paymentMethod || 'whatsapp',
     ],
   );
 }

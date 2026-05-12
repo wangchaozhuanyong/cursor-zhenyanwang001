@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { ArrowLeft, Copy, MessageCircle, Phone, MapPin, CheckCircle2, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Copy, MessageCircle, Phone, MapPin, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { flushSync } from "react-dom";
 import { useCartStore } from "@/stores/useCartStore";
@@ -83,6 +83,13 @@ function generateOrderText(order: Order) {
   return lines.join("\n");
 }
 
+function submitCtaLabel(method: PaymentMethod, submitting: boolean) {
+  if (submitting) return "提交中…";
+  if (method === "online") return "提交订单并去支付";
+  if (method === "reward_wallet") return "提交订单并使用钱包";
+  return "提交订单";
+}
+
 export default function Checkout() {
   useDocumentTitle("结算");
   const navigate = useNavigate();
@@ -137,6 +144,12 @@ export default function Checkout() {
   const [selectedPaymentChannelCode, setSelectedPaymentChannelCode] = useState("");
   const [paymentConfigLoaded, setPaymentConfigLoaded] = useState(false);
   const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null);
+  /** 在线支付自动发起失败时展示，子页「重新支付」成功后由 payOnlineNow 清空 */
+  const [postSubmitOnlineError, setPostSubmitOnlineError] = useState<string | null>(null);
+  /** 无 redirect_url 时的网关说明 */
+  const [postSubmitOnlineNote, setPostSubmitOnlineNote] = useState<string | null>(null);
+  /** 钱包自动扣款失败（多为余额不足） */
+  const [postSubmitWalletError, setPostSubmitWalletError] = useState<string | null>(null);
   const [selectedCoupon, setSelectedCoupon] = useState<CheckoutPickerCoupon | null>(null);
   const siteInfo = useSiteInfo();
   const [rewardBalance, setRewardBalance] = useState(0);
@@ -148,6 +161,8 @@ export default function Checkout() {
   const [shippingQuoteLoading, setShippingQuoteLoading] = useState(false);
   const [shippingQuoteError, setShippingQuoteError] = useState<string | null>(null);
   const [checkoutAbandonmentId, setCheckoutAbandonmentId] = useState<string | null>(null);
+  /** 与 state 同步；快照 API 返回 ID 后立即写入，避免防抖内连续请求在 setState 前仍不带 id 而插入多条「仅进入结算」 */
+  const checkoutAbandonmentIdRef = useRef<string | null>(null);
   const checkoutSnapshotTimerRef = useRef<number | null>(null);
   const beginCheckoutTrackedRef = useRef("");
 
@@ -340,13 +355,17 @@ export default function Checkout() {
   }, [clearBuyNow]);
 
   useEffect(() => {
+    checkoutAbandonmentIdRef.current = checkoutAbandonmentId;
+  }, [checkoutAbandonmentId]);
+
+  useEffect(() => {
     if (items.length === 0 || submittedOrder || orderFinalizing) return;
     if (checkoutSnapshotTimerRef.current) {
       window.clearTimeout(checkoutSnapshotTimerRef.current);
     }
     checkoutSnapshotTimerRef.current = window.setTimeout(() => {
       void orderService.recordCheckoutAbandonment({
-        checkout_abandonment_id: checkoutAbandonmentId || undefined,
+        checkout_abandonment_id: checkoutAbandonmentIdRef.current || undefined,
         items: items.map((item) => ({
           product_id: item.product.id,
           name: item.product.name,
@@ -362,8 +381,9 @@ export default function Checkout() {
         contact_name: name,
         contact_phone: phone,
       }).then((snapshot) => {
-        if (snapshot?.id && snapshot.id !== checkoutAbandonmentId) {
-          setCheckoutAbandonmentId(snapshot.id);
+        if (snapshot?.id) {
+          checkoutAbandonmentIdRef.current = snapshot.id;
+          setCheckoutAbandonmentId((prev) => (prev === snapshot.id ? prev : snapshot.id));
         }
       }).catch(() => {});
     }, 800);
@@ -373,7 +393,9 @@ export default function Checkout() {
         window.clearTimeout(checkoutSnapshotTimerRef.current);
       }
     };
-  }, [items, rawTotal, discountAmount, shippingFee, finalTotal, paymentMethod, name, phone, checkoutAbandonmentId, submittedOrder, orderFinalizing]);
+    // 故意不依赖 checkoutAbandonmentId：避免仅因拿到快照 ID 就重置防抖；ID 一律读 ref
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- checkoutAbandonmentId 由 ref 提供
+  }, [items, rawTotal, discountAmount, shippingFee, finalTotal, paymentMethod, name, phone, submittedOrder, orderFinalizing]);
 
   useEffect(() => {
     if (items.length === 0 && !submittedOrder && !orderFinalizing) {
@@ -398,6 +420,9 @@ export default function Checkout() {
       toast.error("运费规则校验失败，请稍后重试");
       return;
     }
+    setPostSubmitOnlineError(null);
+    setPostSubmitOnlineNote(null);
+    setPostSubmitWalletError(null);
     try {
       const payloadItems = items.map((i) => ({ product_id: i.product.id, qty: i.qty }));
       const order = await submitOrder({
@@ -412,7 +437,7 @@ export default function Checkout() {
         shipping_name: selectedTemplate?.name ?? "",
         payment_method: paymentMethod,
         estimated_weight_kg: weightKg,
-        checkout_abandonment_id: checkoutAbandonmentId || undefined,
+        checkout_abandonment_id: checkoutAbandonmentIdRef.current || checkoutAbandonmentId || undefined,
       });
       const orderedIds = payloadItems.map((i) => i.product_id);
       flushSync(() => {
@@ -426,12 +451,65 @@ export default function Checkout() {
       } else {
         removeOrderedItems(orderedIds);
       }
-      if (paymentMethod === "online") {
-        toast.success("订单已创建，请在下一步选择在线支付完成付款");
-      } else if (paymentMethod === "reward_wallet") {
-        toast.success("订单已创建，可继续使用返现钱包支付");
-      }
       void loadCoupons();
+
+      const pending = order.status === ORDER_STATUS.PENDING;
+
+      if (pending && order.payment_method === "online") {
+        const channelCode = selectedPaymentChannelCode || paymentChannels[0]?.code || "stripe_checkout";
+        try {
+          const intent = await paymentService.createPaymentIntent({
+            orderId: order.id,
+            channelCode,
+            returnUrl: `${window.location.origin}/orders/${order.id}`,
+          });
+          if (intent.redirect_url) {
+            window.location.assign(intent.redirect_url);
+            return;
+          }
+          setPostSubmitOnlineNote(
+            intent.client_instructions || "未获取到跳转链接，请点击下方「继续支付」或前往「订单详情」完成付款。",
+          );
+          toast.success("订单已创建");
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "在线支付发起失败";
+          setPostSubmitOnlineError(msg);
+          toast.error(msg);
+        }
+        return;
+      }
+
+      if (pending && order.payment_method === "reward_wallet") {
+        try {
+          await orderService.payOrder(order.id, "reward_wallet");
+          const latest = await orderService.fetchOrderById(order.id);
+          flushSync(() => {
+            setSubmittedOrder(latest);
+          });
+          const balanceData = await rewardWalletService.fetchRewardBalance();
+          setRewardBalance(Number(balanceData.balance || 0));
+          if (latest.status === ORDER_STATUS.PAID || latest.payment_status === "paid") {
+            trackPurchase(latest);
+          }
+          toast.success("返现钱包支付成功");
+          const text = generateOrderText(latest);
+          const copied = await copyToClipboard(text);
+          if (copied) {
+            toast.success("订单内容已复制到剪贴板！", toastPresetQuickSuccess);
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "返现钱包支付失败";
+          setPostSubmitWalletError(msg);
+          toast.error(msg);
+        }
+        return;
+      }
+
+      if (order.payment_method === "whatsapp") {
+        toast.success("订单已提交，请通过下方方式联系客服完成付款");
+      } else {
+        toast.success("订单已提交");
+      }
       const text = generateOrderText(order);
       const copied = await copyToClipboard(text);
       if (copied) {
@@ -466,26 +544,33 @@ export default function Checkout() {
 
   const payOnlineNow = async () => {
     if (!submittedOrder) return;
+    setPostSubmitOnlineError(null);
+    setPostSubmitOnlineNote(null);
     try {
-      const channelCode = selectedPaymentChannelCode || "stripe_checkout";
+      const channelCode = selectedPaymentChannelCode || paymentChannels[0]?.code || "stripe_checkout";
       const intent = await paymentService.createPaymentIntent({
         orderId: submittedOrder.id,
         channelCode,
         returnUrl: `${window.location.origin}/orders/${submittedOrder.id}`,
       });
       if (intent.redirect_url) {
-        window.location.href = intent.redirect_url;
+        window.location.assign(intent.redirect_url);
         return;
       }
-      toast.success(intent.client_instructions || "支付单已创建，请等待支付网关确认");
-      navigate(`/orders/${submittedOrder.id}`);
+      setPostSubmitOnlineNote(
+        intent.client_instructions || "请前往订单详情查看支付状态或稍后在「我的订单」中继续付款。",
+      );
+      toast.message(intent.client_instructions || "支付单已创建");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "在线支付发起失败");
+      const msg = e instanceof Error ? e.message : "在线支付发起失败";
+      setPostSubmitOnlineError(msg);
+      toast.error(msg);
     }
   };
 
   const payByRewardWallet = async () => {
     if (!submittedOrder) return;
+    setPostSubmitWalletError(null);
     setPayingWallet(true);
     try {
       await orderService.payOrder(submittedOrder.id, "reward_wallet");
@@ -498,7 +583,9 @@ export default function Checkout() {
       setRewardBalance(Number(balanceData.balance || 0));
       toast.success("返现钱包支付成功");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "返现钱包支付失败");
+      const msg = e instanceof Error ? e.message : "返现钱包支付失败";
+      setPostSubmitWalletError(msg);
+      toast.error(msg);
     } finally {
       setPayingWallet(false);
     }
@@ -508,6 +595,9 @@ export default function Checkout() {
     return (
       <OrderSuccess
         order={submittedOrder}
+        postSubmitOnlineError={postSubmitOnlineError}
+        postSubmitOnlineNote={postSubmitOnlineNote}
+        postSubmitWalletError={postSubmitWalletError}
         onCopy={copyOrderText}
         onWhatsApp={openWhatsApp}
         onWeChat={openWeChat}
@@ -653,7 +743,7 @@ export default function Checkout() {
                 className="mt-5 w-full rounded-full py-3.5 text-sm font-bold text-white theme-shadow transition-all hover:opacity-95 disabled:opacity-60"
                 style={{ background: "var(--theme-gradient)" }}
               >
-                {submitting ? "提交中…" : "提交订单"}
+                {submitCtaLabel(paymentMethod, submitting)}
               </button>
               <TrustInfo className="mt-4" />
             </div>
@@ -674,7 +764,7 @@ export default function Checkout() {
             className="rounded-full px-8 py-3.5 text-sm font-bold text-white theme-shadow transition-all active:scale-[0.97] disabled:opacity-60"
             style={{ background: "var(--theme-gradient)" }}
           >
-            {submitting ? "提交中…" : "提交订单"}
+            {submitCtaLabel(paymentMethod, submitting)}
           </button>
         </div>
       </div>
@@ -767,8 +857,26 @@ function SummaryRows({
 }
 
 /* ───── Order Success Page ───── */
-function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onPayOnline, onPayRewardWallet, rewardBalance, payingWallet, onHome, onViewOrders, onViewOrderDetail }: {
+function OrderSuccess({
+  order,
+  postSubmitOnlineError,
+  postSubmitOnlineNote,
+  postSubmitWalletError,
+  onCopy,
+  onWhatsApp,
+  onWeChat,
+  onPayOnline,
+  onPayRewardWallet,
+  rewardBalance,
+  payingWallet,
+  onHome,
+  onViewOrders,
+  onViewOrderDetail,
+}: {
   order: Order;
+  postSubmitOnlineError: string | null;
+  postSubmitOnlineNote: string | null;
+  postSubmitWalletError: string | null;
   onCopy: () => void;
   onWhatsApp: () => void;
   onWeChat: () => void;
@@ -780,11 +888,61 @@ function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onPayOnline, onPayR
   onViewOrders: () => void;
   onViewOrderDetail: () => void;
 }) {
+  const [alternatePayOpen, setAlternatePayOpen] = useState(false);
+  const [moreWaysOpen, setMoreWaysOpen] = useState(false);
+
   const isOnlinePaid = order.payment_method === "online" && order.status === ORDER_STATUS.PAID;
   const isRewardWalletPaid = order.payment_method === "reward_wallet" && order.status === ORDER_STATUS.PAID;
   const isPaid = isOnlinePaid || isRewardWalletPaid;
-  const canChoosePayment = order.status === ORDER_STATUS.PENDING;
+  const isPending = order.status === ORDER_STATUS.PENDING;
   const isWhatsappOrder = order.payment_method === "whatsapp";
+  const isOnlinePending = isPending && order.payment_method === "online";
+  const isWalletPending = isPending && order.payment_method === "reward_wallet";
+  const isWhatsappPending = isPending && isWhatsappOrder;
+
+  const headerTitle = isPaid
+    ? "支付成功"
+    : isOnlinePending
+      ? "请完成支付"
+      : isWalletPending && postSubmitWalletError
+        ? "待付款"
+        : "订单已提交";
+
+  const mainHeading = isPaid
+    ? "支付成功！"
+    : isOnlinePending
+      ? "请完成支付"
+      : isWalletPending && postSubmitWalletError
+        ? "钱包余额不足"
+        : isWalletPending
+          ? "请完成支付"
+          : "订单提交成功！";
+
+  const helperText = (() => {
+    if (isPaid) {
+      return "支付已完成，我们会尽快为您安排发货，可在「我的订单」实时查看进度。";
+    }
+    if (isOnlinePending) {
+      return "已按结算页所选渠道发起支付。若未自动跳转，请点击下方「继续支付」或「重新支付」；也可在订单详情中继续付款。";
+    }
+    if (isWalletPending && postSubmitWalletError) {
+      return `${postSubmitWalletError} 建议改用在线支付完成付款，或联系客服协助。`;
+    }
+    if (isWalletPending) {
+      return `返现钱包可用 RM ${rewardBalance.toFixed(2)}。请点击下方完成钱包扣款，或改用在线支付。`;
+    }
+    if (isWhatsappPending) {
+      return "请将订单内容发送给客服完成对接。如需在线支付或钱包，可展开「更多方式」。";
+    }
+    if (isPending) {
+      return "订单待付款，可在订单详情中继续付款。";
+    }
+    if (isWhatsappOrder) {
+      return "感谢您的下单。";
+    }
+    return "";
+  })();
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 bg-background/95 px-4 py-3 backdrop-blur-md">
@@ -792,9 +950,7 @@ function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onPayOnline, onPayR
           <button onClick={onHome} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
-          <h1 className="text-base font-semibold text-foreground">
-            {isPaid ? "支付成功" : "订单已提交"}
-          </h1>
+          <h1 className="text-base font-semibold text-foreground">{headerTitle}</h1>
         </div>
       </header>
 
@@ -809,63 +965,125 @@ function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onPayOnline, onPayR
           >
             <CheckCircle2 size={40} className="text-gold" />
           </motion.div>
-          <h2 className="font-display text-2xl font-bold text-foreground">
-            {isPaid ? "支付成功！" : "订单提交成功！"}
-          </h2>
+          <h2 className="font-display text-2xl font-bold text-foreground">{mainHeading}</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             订单编号: <span className="font-mono font-semibold text-foreground">{order.order_no}</span>
           </p>
-          <div className="mt-5 rounded-xl bg-secondary p-4">
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              {isPaid && "支付已完成，我们会尽快为您安排发货，可在「我的订单」实时查看进度。"}
-              {!isOnlinePaid && order.payment_method === "online" && "支付正在处理中，结果将自动同步到您的订单。"}
-              {canChoosePayment && "请选择支付方式：在线支付 / 返现钱包 / 客服下单。"}
-              {!canChoosePayment && isWhatsappOrder && "📋 订单内容已自动复制到剪贴板，请选择下方方式发送给客服完成对接。"}
+          {postSubmitOnlineError && isOnlinePending && (
+            <p className="mt-4 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-left text-xs text-destructive">
+              {postSubmitOnlineError}
             </p>
+          )}
+          {postSubmitOnlineNote && isOnlinePending && !postSubmitOnlineError && (
+            <p className="mt-4 rounded-lg border border-border bg-muted/40 px-3 py-2 text-left text-xs text-muted-foreground">
+              {postSubmitOnlineNote}
+            </p>
+          )}
+          <div className="mt-5 rounded-xl bg-secondary p-4">
+            <p className="text-xs leading-relaxed text-muted-foreground">{helperText}</p>
           </div>
         </div>
 
         {/* Action buttons */}
         <div className="mt-6 space-y-3">
-          {/* 在线支付：主 CTA = 查看订单 */}
-          {canChoosePayment && (
+          {isOnlinePending && (
             <>
               <button
+                type="button"
                 onClick={onPayOnline}
                 className="flex w-full items-center justify-center gap-2.5 rounded-full bg-gold py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98]"
               >
-                在线支付
+                {postSubmitOnlineError ? "重新支付" : "继续支付"}
               </button>
               <button
-                onClick={onPayRewardWallet}
-                disabled={payingWallet}
-                className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-[var(--theme-price)] py-4 text-sm font-bold text-[var(--theme-price)] transition-all active:scale-[0.98] disabled:opacity-60"
+                type="button"
+                onClick={onViewOrderDetail}
+                className="w-full rounded-full border-2 border-border py-3 text-center text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
               >
-                {payingWallet ? "支付中…" : `返现钱包支付（可用 RM ${rewardBalance.toFixed(2)}）`}
+                订单详情里继续付款
               </button>
               <button
+                type="button"
+                onClick={() => setAlternatePayOpen((o) => !o)}
+                className="flex w-full items-center justify-center gap-2 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                更换支付方式
+                {alternatePayOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+              {alternatePayOpen && (
+                <div className="space-y-2 rounded-xl border border-border bg-card p-3">
+                  <p className="px-1 text-center text-[11px] text-muted-foreground">以下为备选，与结算页选择不一致时请谨慎操作</p>
+                  <button
+                    type="button"
+                    onClick={onPayRewardWallet}
+                    disabled={payingWallet}
+                    className="flex w-full items-center justify-center gap-2 rounded-full border-2 border-[var(--theme-price)] py-3 text-sm font-semibold text-[var(--theme-price)] transition-all disabled:opacity-60"
+                  >
+                    {payingWallet ? "支付中…" : `尝试返现钱包（可用 RM ${rewardBalance.toFixed(2)}）`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onWhatsApp}
+                    className="flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-[var(--theme-gradient-foreground)] theme-shadow"
+                    style={{ background: "var(--theme-gradient)" }}
+                  >
+                    <Phone size={16} /> 联系客服下单
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {isWalletPending && postSubmitWalletError && (
+            <>
+              <button
+                type="button"
+                onClick={onPayOnline}
+                className="flex w-full items-center justify-center gap-2.5 rounded-full bg-gold py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98]"
+              >
+                改用在线支付
+              </button>
+              <button
+                type="button"
                 onClick={onWhatsApp}
-                className="flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold text-[var(--theme-gradient-foreground)] theme-shadow transition-all active:scale-[0.98]"
-                style={{ background: "var(--theme-gradient)" }}
+                className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
               >
-                <Phone size={18} /> 客服下单
+                <Phone size={18} /> 联系客服
+              </button>
+              <button
+                type="button"
+                onClick={onViewOrderDetail}
+                className="w-full rounded-full py-3 text-center text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                查看订单详情
               </button>
             </>
           )}
 
-          {!canChoosePayment && !isWhatsappOrder && (
-            <button
-              onClick={onViewOrderDetail}
-              className="flex w-full items-center justify-center gap-2.5 rounded-full bg-gold py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98]"
-            >
-              查看订单详情
-            </button>
-          )}
-
-          {/* 仅客服下单时显示 WhatsApp / 微信 主 CTA */}
-          {!canChoosePayment && isWhatsappOrder && (
+          {isWalletPending && !postSubmitWalletError && (
             <>
               <button
+                type="button"
+                onClick={onPayRewardWallet}
+                disabled={payingWallet}
+                className="flex w-full items-center justify-center gap-2.5 rounded-full bg-gold py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98] disabled:opacity-60"
+              >
+                {payingWallet ? "支付中…" : `使用返现钱包支付（可用 RM ${rewardBalance.toFixed(2)}）`}
+              </button>
+              <button
+                type="button"
+                onClick={onPayOnline}
+                className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
+              >
+                改用在线支付
+              </button>
+            </>
+          )}
+
+          {isWhatsappPending && (
+            <>
+              <button
+                type="button"
                 onClick={onWhatsApp}
                 className="flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold text-[var(--theme-gradient-foreground)] theme-shadow transition-all active:scale-[0.98]"
                 style={{ background: "var(--theme-gradient)" }}
@@ -873,20 +1091,87 @@ function OrderSuccess({ order, onCopy, onWhatsApp, onWeChat, onPayOnline, onPayR
                 <Phone size={18} /> 发送到 WhatsApp
               </button>
               <button
+                type="button"
                 onClick={onWeChat}
                 className="flex w-full items-center justify-center gap-2.5 rounded-full bg-[var(--theme-price)] py-4 text-sm font-bold text-[var(--theme-price-foreground)] theme-shadow transition-all active:scale-[0.98]"
               >
                 <MessageCircle size={18} /> 发送到微信
               </button>
+              <button
+                type="button"
+                onClick={onCopy}
+                className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
+              >
+                <Copy size={18} /> 复制订单内容
+              </button>
+              <button
+                type="button"
+                onClick={() => setMoreWaysOpen((o) => !o)}
+                className="flex w-full items-center justify-center gap-2 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                更多方式
+                {moreWaysOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+              {moreWaysOpen && (
+                <div className="space-y-2 rounded-xl border border-border bg-card p-3">
+                  <button
+                    type="button"
+                    onClick={onPayOnline}
+                    className="flex w-full items-center justify-center rounded-full border border-border py-3 text-sm font-semibold text-foreground hover:bg-secondary"
+                  >
+                    在线支付
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onPayRewardWallet}
+                    disabled={payingWallet}
+                    className="flex w-full items-center justify-center rounded-full border border-border py-3 text-sm font-semibold text-foreground hover:bg-secondary disabled:opacity-60"
+                  >
+                    {payingWallet ? "支付中…" : `返现钱包（可用 RM ${rewardBalance.toFixed(2)}）`}
+                  </button>
+                </div>
+              )}
             </>
           )}
 
-          <button
-            onClick={onCopy}
-            className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
-          >
-            <Copy size={18} /> 复制订单内容
-          </button>
+          {isPending && !isOnlinePending && !isWalletPending && !isWhatsappPending && (
+            <>
+              <button
+                type="button"
+                onClick={onPayOnline}
+                className="flex w-full items-center justify-center gap-2.5 rounded-full bg-gold py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98]"
+              >
+                继续支付
+              </button>
+              <button
+                type="button"
+                onClick={onViewOrderDetail}
+                className="w-full rounded-full border-2 border-border py-3 text-center text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
+              >
+                查看订单详情
+              </button>
+            </>
+          )}
+
+          {!isPending && (
+            <button
+              type="button"
+              onClick={onViewOrderDetail}
+              className="flex w-full items-center justify-center gap-2.5 rounded-full bg-gold py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98]"
+            >
+              查看订单详情
+            </button>
+          )}
+
+          {!isWhatsappPending && (
+            <button
+              type="button"
+              onClick={onCopy}
+              className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
+            >
+              <Copy size={18} /> 复制订单内容
+            </button>
+          )}
         </div>
 
         {/* Order detail */}

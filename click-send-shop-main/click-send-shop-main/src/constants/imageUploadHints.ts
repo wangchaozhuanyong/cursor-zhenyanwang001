@@ -12,6 +12,10 @@ export const IMAGE_UPLOAD_HINT_API =
 export const IMAGE_UPLOAD_HINT_SITE_ASSET =
   "格式：JPG、PNG、WebP、GIF；单张不超过 5MB。上传后转 WebP：Logo 最长边不超过 512px，Favicon 最长边不超过 64px（均等比缩小）。";
 
+/** 首页金刚区导航图标（前台约 44×44px 圆角方形容器，object-cover 裁切） */
+export const IMAGE_UPLOAD_HINT_HOME_NAV_ICON =
+  "建议正方形源图：常规屏用 128×128px，高清屏用 192×192px（上传后仍可能被压缩为 WebP、最长边不超过 1600px）。也可填图片 URL、站内路径（如 /uploads/…）或 Emoji。";
+
 /** 首页轮播构图建议（与通用技术限制并用） */
 export const IMAGE_UPLOAD_HINT_BANNER_LAYOUT = "比例约 2.34:1（如 1170×500 / 750×320）更贴合轮播展示。";
 

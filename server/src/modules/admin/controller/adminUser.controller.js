@@ -57,3 +57,8 @@ exports.adjustPoints = asyncRoute(async (req, res) => {
   const r = await svc.adjustUserPoints(req.params.userId, req.body, req.user?.id, req);
   res.success(r.data, r.message);
 });
+
+exports.resetPassword = asyncRoute(async (req, res) => {
+  const r = await svc.resetUserPassword(req.params.id, req.user?.id, req);
+  res.success(r.data, r.message);
+});

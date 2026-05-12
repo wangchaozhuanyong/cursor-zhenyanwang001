@@ -67,12 +67,31 @@ async function selectSnapshotForUser(q, id, userId) {
 
 async function markOrdered(q, id, userId, order) {
   if (!id) return;
-  await q.query(
+  const [result] = await q.query(
     `UPDATE checkout_abandonments
        SET status = 'ordered', order_id = ?, order_no = ?
      WHERE id = ? AND user_id = ? AND status = 'open'`,
     [order.orderId, order.orderNo || '', id, userId],
   );
+  if (result.affectedRows > 0) {
+    await q.query(
+      `UPDATE checkout_abandonments
+         SET status = 'closed'
+       WHERE user_id = ? AND status = 'open' AND id != ?`,
+      [userId, id],
+    );
+  }
+}
+
+async function selectLatestOpenIdForUser(q, userId) {
+  const [[row]] = await q.query(
+    `SELECT id FROM checkout_abandonments
+      WHERE user_id = ? AND status = 'open'
+      ORDER BY updated_at DESC
+      LIMIT 1`,
+    [userId],
+  );
+  return row?.id || null;
 }
 
 async function markPaidByOrderId(q, orderId) {
@@ -115,6 +134,7 @@ module.exports = {
   insertSnapshot,
   updateOpenSnapshot,
   selectSnapshotForUser,
+  selectLatestOpenIdForUser,
   markOrdered,
   markPaidByOrderId,
   markClosedByOrderId,

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
+/**
+ * 联调脚本：写入分类、商品、优惠券/轮播/通知等；使用已有管理员账号上传图片。
+ * 不在 users 表注册「模拟」会员，也不批量 mock 下单，避免污染后台「用户管理」「订单管理」列表。
+ */
 const crypto = require('crypto');
 
 const BASE = process.env.BASE_URL || 'https://flashcast.com.my';
@@ -10,14 +11,9 @@ const API = `${BASE}/api`;
 const ADMIN_PHONE = process.env.ADMIN_PHONE || '18800000001';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin123456';
 const PRODUCT_COUNT = Number(process.env.PRODUCT_COUNT || 50);
-const USER_COUNT = Number(process.env.USER_COUNT || 10);
 
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function randomPhone() {
-  return `1${Date.now().toString().slice(-7)}${randInt(100, 999)}`.slice(0, 11);
 }
 
 async function jfetch(url, options = {}) {
@@ -53,14 +49,6 @@ async function userLogin(phone, password) {
     body: JSON.stringify({ phone, password }),
   });
   return data.token?.accessToken || data.token;
-}
-
-async function userRegister(phone, password, nickname) {
-  await jfetch(`${API}/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone, password, nickname }),
-  });
 }
 
 function makePngBuffer(seed) {
@@ -237,50 +225,6 @@ async function createCampaignData(adminToken, imagePool) {
   return { couponCount: couponIds.length, bannerCount: 6 };
 }
 
-async function simulateOrders(products) {
-  const results = [];
-  let sourceProducts = products;
-  if (!sourceProducts || sourceProducts.length === 0) {
-    const list = await jfetch(`${API}/products?page=1&pageSize=50`);
-    sourceProducts = list.list || [];
-  }
-  if (!sourceProducts.length) {
-    throw new Error('无可下单商品，无法模拟订单流程');
-  }
-  const phone = randomPhone();
-  const password = `SimUser${randInt(1000, 9999)}A`;
-  await userRegister(phone, password, '模拟下单用户');
-  const token = await userLogin(phone, password);
-  for (let i = 1; i <= USER_COUNT; i += 1) {
-    const p = sourceProducts[i % sourceProducts.length];
-    await jfetch(`${API}/cart`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ productId: p.id, qty: randInt(1, 3) }),
-    });
-    const order = await jfetch(`${API}/orders`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        items: [{ product_id: p.id, qty: 1 }],
-        contact_name: `模拟用户${i}`,
-        contact_phone: phone,
-        address: `马来西亚测试地址 ${i} 号`,
-        payment_method: 'mock',
-        note: '自动化联调订单',
-      }),
-    });
-    results.push(order.id);
-  }
-  return results;
-}
-
 async function main() {
   console.log(`Base URL: ${BASE}`);
   console.log('1) 管理员登录...');
@@ -301,16 +245,11 @@ async function main() {
   console.log('5) 创建活动数据（优惠券/轮播/通知/站点设置）...');
   const campaign = await createCampaignData(adminToken, imagePool);
 
-  console.log(`6) 模拟 ${USER_COUNT} 个用户下单流程...`);
-  const orderIds = await simulateOrders(products);
-
   console.log('==== 完成 ====');
   console.log(`商品: ${products.length}`);
   console.log(`优惠券: ${campaign.couponCount}`);
   console.log(`轮播: ${campaign.bannerCount}`);
-  console.log(`订单: ${orderIds.length}`);
   console.log('示例商品ID:', products.slice(0, 3).map((x) => x.id).join(', '));
-  console.log('示例订单ID:', orderIds.slice(0, 3).join(', '));
 }
 
 main().catch((err) => {

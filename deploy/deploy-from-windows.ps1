@@ -15,7 +15,7 @@ param(
 
 if (-not $Ec2Host) {
     if ($env:EC2_HOST) { $Ec2Host = $env:EC2_HOST }
-    else { $Ec2Host = '13.212.179.213' }
+    else { $Ec2Host = '' }
 }
 if (-not $Ec2User) {
     if ($env:EC2_USER) { $Ec2User = $env:EC2_USER }
@@ -27,7 +27,7 @@ if (-not $RemoteDir) {
 }
 if (-not $KeyPath) {
     if ($env:SSH_KEY_PATH) { $KeyPath = $env:SSH_KEY_PATH }
-    else { $KeyPath = 'E:\yamaxunmishi\aws-key.pem' }
+    else { $KeyPath = '' }
 }
 if (-not $Pm2App) {
     if ($env:PM2_APP) { $Pm2App = $env:PM2_APP }
@@ -35,7 +35,12 @@ if (-not $Pm2App) {
 }
 
 if ([string]::IsNullOrWhiteSpace($Ec2Host)) {
-    Write-Error 'Ec2Host is required.'
+    Write-Error "EC2 host is required. Provide -Ec2Host or set env:EC2_HOST."
+    exit 1
+}
+
+if ([string]::IsNullOrWhiteSpace($KeyPath)) {
+    Write-Error "SSH key path is required. Provide -KeyPath or set env:SSH_KEY_PATH."
     exit 1
 }
 

@@ -45,6 +45,8 @@ export interface Order {
   created_at: string;
   contact_name: string;
   contact_phone: string;
+  /** 管理端：收货联系电话（兼容旧订单可为空，后端会回退到 contact_phone） */
+  shipping_phone?: string;
   address: string;
   tracking_no?: string;
   carrier?: string;

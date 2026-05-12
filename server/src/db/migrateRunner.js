@@ -38,7 +38,16 @@ function createQuery(pool) {
  */
 async function runPendingMigrations() {
   await ensureTable();
-  const applied = await getAppliedNames();
+  // 防并发：同一数据库可能被多个进程/测试 worker 同时触发迁移。
+  // 使用 MySQL advisory lock 串行化迁移窗口，避免重复插入 schema_migrations。
+  const lockConn = await db.getConnection();
+  let locked = false;
+  try {
+    const [[row]] = await lockConn.query("SELECT GET_LOCK('click_send_shop_schema_migrations', 30) AS ok");
+    locked = Number(row?.ok) === 1;
+    if (!locked) throw new Error('获取迁移锁失败（GET_LOCK timeout）');
+
+    const applied = await getAppliedNames();
   if (!fs.existsSync(MIGRATIONS_DIR)) {
     fs.mkdirSync(MIGRATIONS_DIR, { recursive: true });
     return;
@@ -82,6 +91,12 @@ async function runPendingMigrations() {
     } finally {
       conn.release();
     }
+  }
+  } finally {
+    try {
+      if (locked) await lockConn.query("SELECT RELEASE_LOCK('click_send_shop_schema_migrations')");
+    } catch { /* ignore */ }
+    lockConn.release();
   }
 }
 

@@ -73,7 +73,11 @@ function loadMetaPixel(pixelId: string) {
   if (!pixelId || metaLoadedFor === pixelId) return;
   if (!window.fbq) {
     const fbq = function fbqShim(...args: unknown[]) {
-      fbq.callMethod ? fbq.callMethod(...args) : fbq.queue.push(args);
+      if (fbq.callMethod) {
+        fbq.callMethod(...args);
+      } else {
+        fbq.queue.push(args);
+      }
     } as Window["fbq"] & { queue: unknown[]; loaded: boolean; version: string; callMethod?: (...args: unknown[]) => void };
     fbq.queue = [];
     fbq.loaded = true;

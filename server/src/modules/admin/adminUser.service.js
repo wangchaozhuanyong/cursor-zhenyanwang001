@@ -6,6 +6,8 @@ const { formatUserResponse } = require('../../utils/formatUserResponse');
 const userModule = require('../user');
 const { normalizeIntlPhone, buildPhoneLookupCandidates } = require('../../utils/phone');
 const { generateId } = require('../../utils/helpers');
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 
 const adjustUserPointsFn = /** @type {any} */ (userModule).api?.adjustUserPoints;
 if (typeof adjustUserPointsFn !== 'function') {
@@ -16,10 +18,26 @@ async function listUsers(query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const pageSize = Math.min(50, Math.max(1, parseInt(query.pageSize, 10) || 20));
   const { keyword, tagId } = query;
+  const sortByRaw = String(query.sortBy || query.sort_by || '').trim();
+  const sortDirRaw = String(query.sortDir || query.sort_dir || '').trim().toLowerCase();
+  const sortDir = sortDirRaw === 'asc' ? 'ASC' : 'DESC';
+
+  /** @type {Record<string, string>} */
+  const sortKeyToSql = {
+    created_at: 'u.created_at',
+    total_spent: 'COALESCE(us.total_spent, 0)',
+    valid_order_count: 'COALESCE(us.valid_order_count, 0)',
+    average_order_value: 'COALESCE(us.average_order_value, 0)',
+    last_purchase_at: 'us.last_purchase_at',
+    first_purchase_at: 'us.first_purchase_at',
+    refund_rate: 'COALESCE(us.refund_rate, 0)',
+  };
+  const sortExpr = sortKeyToSql[sortByRaw] || 'u.created_at';
+  const sortSql = `${sortExpr} ${sortDir}, u.created_at DESC`;
   const { where, params } = repo.buildUserListWhere(keyword, tagId);
   const total = await repo.countUsers(where, params);
   const offset = (page - 1) * pageSize;
-  const list = await repo.selectUsersPage(where, params, pageSize, offset);
+  const list = await repo.selectUsersPage(where, params, pageSize, offset, { sortSql });
   const tagsByUserId = await repo.selectTagsForUserIds(list.map((u) => u.id));
   return {
     kind: 'paginate',
@@ -253,6 +271,50 @@ async function adjustUserPoints(userId, body, adminUserId, req) {
   }
 }
 
+function generateTempPassword8() {
+  // 8 chars, avoid ambiguous chars 0/O/1/I
+  const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const bytes = crypto.randomBytes(8);
+  let out = '';
+  for (let i = 0; i < 8; i += 1) {
+    out += alphabet[bytes[i] % alphabet.length];
+  }
+  return out;
+}
+
+async function resetUserPassword(userId, adminUserId, req) {
+  const user = await repo.selectUserSummaryById(userId);
+  if (!user) {
+    await writeAuditLog({
+      req,
+      operatorId: adminUserId,
+      actionType: 'user.reset_password',
+      objectType: 'user',
+      objectId: userId,
+      summary: '重置密码失败',
+      result: 'failure',
+      errorMessage: '用户不存在',
+    });
+    throw new BusinessError(404, '用户不存在');
+  }
+
+  const plain = generateTempPassword8();
+  const hash = await bcrypt.hash(plain, 10);
+  await repo.updateUserPasswordHash(userId, hash);
+
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'user.reset_password',
+    objectType: 'user',
+    objectId: userId,
+    summary: `客服重置用户密码 ${user.phone || userId}`,
+    result: 'success',
+  });
+
+  return { data: { password: plain }, message: '密码已重置' };
+}
+
 const USER_EXPORT_HEADERS = [
   'id', 'phone', 'nickname', 'member_level', 'invite_code', 'parent_invite_code', 'points_balance', 'wechat', 'whatsapp', 'tags', 'created_at',
 ];
@@ -290,5 +352,6 @@ module.exports = {
   updateUser,
   updateSubordinate,
   adjustUserPoints,
+  resetUserPassword,
   exportUsersCsv,
 };

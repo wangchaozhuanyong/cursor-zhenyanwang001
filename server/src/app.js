@@ -48,6 +48,17 @@ app.use(
 );
 
 const isProduction = process.env.NODE_ENV === 'production';
+
+/** 反向代理（Nginx / ALB）后须开启，否则限流与 req.ip 可能不准确。生产默认 1 跳；显式 TRUST_PROXY=0 关闭。 */
+const trustProxyRaw = (process.env.TRUST_PROXY ?? '').trim();
+if (trustProxyRaw === '0' || trustProxyRaw.toLowerCase() === 'false') {
+  // leave Express default (false)
+} else if (isProduction) {
+  app.set('trust proxy', trustProxyRaw === '' ? 1 : (Number(trustProxyRaw) || trustProxyRaw));
+} else if (trustProxyRaw) {
+  app.set('trust proxy', Number(trustProxyRaw) || trustProxyRaw);
+}
+
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:4173,http://localhost:8080,http://localhost:8081,http://localhost:3000,http://127.0.0.1:3000')
   .split(',')
   .map((origin) => origin.trim())

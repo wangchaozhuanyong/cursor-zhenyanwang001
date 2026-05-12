@@ -43,7 +43,11 @@ bootPromise
     startPaymentTimeoutScheduler();
     startMyInvoisRetryScheduler();
     app.listen(PORT, () => {
-      console.log(`✅ Server running → http://localhost:${PORT}`);
+      if (process.env.NODE_ENV === 'production') {
+        console.log(`✅ Server listening (production), PORT=${PORT}`);
+      } else {
+        console.log(`✅ Server running → http://localhost:${PORT}`);
+      }
     });
   })
   .catch((err) => {

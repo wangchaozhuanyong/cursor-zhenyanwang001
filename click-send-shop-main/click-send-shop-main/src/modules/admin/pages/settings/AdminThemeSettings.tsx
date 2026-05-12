@@ -36,7 +36,7 @@ const PREVIEW_FALLBACK_DATA_URI = `data:image/svg+xml;utf8,${encodeURIComponent(
     </defs>
     <rect width="1200" height="675" fill="url(#g)"/>
     <text x="50%" y="48%" fill="#ffffff" font-size="42" font-family="Arial, sans-serif" text-anchor="middle">Preview Image</text>
-    <text x="50%" y="56%" fill="#d1d5db" font-size="24" font-family="Arial, sans-serif" text-anchor="middle">Theme settings mock banner</text>
+    <text x="50%" y="56%" fill="#d1d5db" font-size="24" font-family="Arial, sans-serif" text-anchor="middle">主题横幅预览</text>
   </svg>`,
 )}`;
 

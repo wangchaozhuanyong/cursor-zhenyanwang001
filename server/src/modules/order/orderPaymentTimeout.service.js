@@ -5,6 +5,7 @@ const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
 const orderRepo = require('./order.repository');
 const siteSettingsRepo = require('./siteSettings.repository');
 const { cancelPendingOrderInTransaction } = require('./order.service');
+const { UserStatsService } = require('../user/userStats.service');
 
 let schedulerTimer = null;
 
@@ -76,6 +77,7 @@ async function autoCancelOneOrder(orderId, minutes) {
       stockReason: `订单 ${order.order_no} 未支付超时释放库存`,
       pointReason: `订单未支付超时回滚积分 ${order.order_no}`,
     });
+    await UserStatsService.syncStatsAfterOrderCancelled(order.user_id, order.id, conn);
     await conn.commit();
     return true;
   } catch (err) {

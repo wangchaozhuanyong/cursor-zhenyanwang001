@@ -14,6 +14,7 @@ const siteSettingsRepo = require('./siteSettings.repository');
 const sstTax = require('./sstTax');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
 const logisticsService = require('../logistics/logistics.service');
+const { UserStatsService } = require('../user/userStats.service');
 const orderDb = repo.getPool();
 const userApi = /** @type {any} */ (userModule).api || {};
 const paymentsApi = /** @type {any} */ (paymentsModule).api || {};
@@ -387,6 +388,7 @@ async function cancelOrder(userId, orderId) {
       stockReason: `订单 ${order.order_no} 取消释放库存`,
       pointReason: `订单取消回滚积分 ${order.order_no}`,
     });
+    await UserStatsService.syncStatsAfterOrderCancelled(order.user_id, order.id, conn);
 
     await conn.commit();
     return { data: null, message: '订单已取消' };

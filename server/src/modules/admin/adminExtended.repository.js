@@ -211,7 +211,7 @@ async function selectContentPages() {
 /** 内容页更新前审计快照（仅 id / title / slug / content 长度） */
 async function selectContentPageAuditSnapshotById(id) {
   const [[row]] = await db.query(
-    'SELECT id, title, slug, CHAR_LENGTH(IFNULL(content,"")) AS content_len FROM content_pages WHERE id = ?',
+    'SELECT id, title, slug, CHAR_LENGTH(IFNULL(body,"")) AS content_len FROM content_pages WHERE id = ?',
     [id],
   );
   return row || null;

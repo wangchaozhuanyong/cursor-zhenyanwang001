@@ -14,6 +14,14 @@ function openTarget(navigate: ReturnType<typeof useNavigate>, url: string) {
   navigate(target.startsWith("/") ? target : `/${target}`);
 }
 
+function openHomeNavTarget(navigate: ReturnType<typeof useNavigate>, item: HomeNavItem) {
+  if (item.target_type === "category" && item.target_category_id) {
+    navigate(`/categories?cat=${item.target_category_id}`);
+    return;
+  }
+  openTarget(navigate, item.link_url || "");
+}
+
 function IconView({ value }: { value: string }) {
   const v = value.trim();
   if (!v) return <span className="text-sm font-bold text-[var(--theme-text-on-surface)]">•</span>;
@@ -98,7 +106,7 @@ export default function HomeOpsBlocks() {
             <button
               key={item.id}
               type="button"
-              onClick={() => openTarget(navigate, item.link_url)}
+              onClick={() => openHomeNavTarget(navigate, item)}
               className="flex min-w-0 flex-col items-center gap-1.5 rounded-xl px-1 py-2 text-center transition-colors hover:bg-[var(--theme-bg)]/60 active:scale-[0.98]"
             >
               <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl bg-[var(--theme-bg)] text-[var(--theme-price)] ring-1 ring-[var(--theme-border)]">

@@ -52,5 +52,4 @@ npm run dev
 | `npm run admin:role` | 设置管理员角色 |
 | `npm run migrate:status` | 查看迁移状态 |
 | `npm run migrate:down` | 回滚最近一次迁移 |
-| `npm run seed:demo-orders` | 向数据库写入多状态演示订单（供后台「订单管理」联调，见 `scripts/seed-demo-orders.js`） |
 | `npm run seed:demo-products` | 空库时写入 4 个上架演示商品 + 必要时创建「演示分类」（`search_keywords=[demo-seed-product]`）。已有上架商品时默认跳过；刷新：`SEED_DEMO_PRODUCTS_REFRESH=1 npm run seed:demo-products` |

@@ -63,8 +63,9 @@ export default function Cart() {
         <div className="mx-auto flex w-full max-w-screen-xl items-center gap-3 px-4 py-3 md:px-6">
           <SquishButton
             type="button"
+            variant="ghost"
             onClick={goBack}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-transparent hover:bg-[var(--theme-bg)] touch-target shadow-none !p-0"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-transparent hover:bg-[var(--theme-bg)] touch-target !p-0"
             aria-label="返回"
           >
             <ArrowLeft size={20} className="text-foreground" />
@@ -128,8 +129,9 @@ export default function Cart() {
                 <div className="hidden items-center justify-between border-b border-[var(--theme-border)] py-3 md:flex">
                   <SquishButton
                     type="button"
+                    variant="ghost"
                     onClick={() => setSelectAll(!allSelected)}
-                    className="flex items-center gap-2 rounded-none bg-transparent text-sm text-muted-foreground hover:text-foreground shadow-none !min-h-0 !px-0 !py-0"
+                    className="flex items-center gap-2 rounded-none bg-transparent text-sm text-muted-foreground hover:text-foreground !min-h-0 !px-0 !py-0"
                   >
                     <span
                       className={`flex h-5 w-5 items-center justify-center rounded border-2 ${
@@ -161,8 +163,9 @@ export default function Cart() {
                     >
                       <SquishButton
                         type="button"
+                        variant="ghost"
                         onClick={() => toggleSelect(item.product.id)}
-                        className={`mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md border-2 shadow-none !p-0 transition-colors ${
+                        className={`mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md border-2 !p-0 transition-colors ${
                           isSelected(item.product.id)
                             ? "border-gold bg-gold text-primary-foreground"
                             : "border-muted-foreground/40 bg-background"
@@ -204,8 +207,9 @@ export default function Cart() {
                           <div className="flex items-center gap-3">
                             <SquishButton
                               type="button"
+                              variant="ghost"
                               onClick={() => removeItem(item.product.id)}
-                              className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent hover:bg-[var(--theme-bg)] touch-target shadow-none !p-0"
+                              className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent hover:bg-[var(--theme-bg)] touch-target !p-0"
                               aria-label="删除"
                             >
                               <Trash2 size={15} className="text-muted-foreground" />
@@ -213,10 +217,11 @@ export default function Cart() {
                             <div className="flex items-center gap-1 rounded-full border border-[var(--theme-border)]">
                               <SquishButton
                                 type="button"
+                                variant="ghost"
                                 onClick={() =>
                                   updateQty(item.product.id, item.qty - 1)
                                 }
-                                className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] touch-target shadow-none !p-0"
+                                className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] touch-target !p-0"
                                 aria-label="减少数量"
                               >
                                 <Minus size={14} className="text-foreground" />
@@ -226,10 +231,11 @@ export default function Cart() {
                               </span>
                               <SquishButton
                                 type="button"
+                                variant="ghost"
                                 onClick={() =>
                                   updateQty(item.product.id, item.qty + 1)
                                 }
-                                className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] touch-target shadow-none !p-0"
+                                className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] touch-target !p-0"
                                 aria-label="增加数量"
                               >
                                 <Plus size={14} className="text-foreground" />
@@ -278,9 +284,10 @@ export default function Cart() {
                 </div>
                 <SquishButton
                   type="button"
+                  variant="gold"
                   onClick={handleCheckout}
                   disabled={totalItemsSelected() === 0}
-                  className="mt-5 w-full rounded-full bg-gold py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
+                  className="mt-5 w-full rounded-full py-3.5 text-sm font-bold shadow-lg shadow-gold/20 transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
                 >
                   去结算
                 </SquishButton>
@@ -298,8 +305,9 @@ export default function Cart() {
           <div className="mx-auto flex max-w-lg flex-col gap-2 px-4 py-2.5">
             <SquishButton
               type="button"
+              variant="ghost"
               onClick={() => setSelectAll(!allSelected)}
-              className="flex items-center gap-2 self-start rounded-none bg-transparent text-xs text-muted-foreground shadow-none !min-h-0 !px-0 !py-0"
+              className="flex items-center gap-2 self-start rounded-none bg-transparent text-xs text-muted-foreground !min-h-0 !px-0 !py-0"
             >
               <span
                 className={`flex h-5 w-5 items-center justify-center rounded border-2 ${
@@ -329,9 +337,10 @@ export default function Cart() {
               </div>
               <SquishButton
                 type="button"
+                variant="gold"
                 onClick={handleCheckout}
                 disabled={totalItemsSelected() === 0}
-                className="rounded-full bg-gold px-8 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
+                className="rounded-full px-8 py-3.5 text-sm font-bold shadow-lg shadow-gold/20 transition-all disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
               >
                 去结算
               </SquishButton>

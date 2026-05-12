@@ -3,6 +3,7 @@ import { CalendarClock, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import Pagination from "@/components/admin/Pagination";
 import PermissionGate from "@/components/admin/PermissionGate";
+import ProductSearchSelect from "@/components/admin/ProductSearchSelect";
 import SegmentedDateTimeInput from "@/components/admin/SegmentedDateTimeInput";
 import SearchBar from "@/components/SearchBar";
 import * as activityService from "@/services/admin/activityService";
@@ -65,6 +66,14 @@ export default function AdminActivities() {
   const [form, setForm] = useState<ActivityPayload>(emptyForm);
 
   const productMap = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
+
+  const upsertProduct = (p?: Product | null) => {
+    if (!p?.id) return;
+    setProducts((prev) => {
+      if (prev.some((x) => x.id === p.id)) return prev;
+      return [p, ...prev];
+    });
+  };
 
   const loadActivities = async (nextPage = page) => {
     setLoading(true);
@@ -359,15 +368,55 @@ export default function AdminActivities() {
               <div className="space-y-2">
                 {form.items.map((it, idx) => (
                   <div key={`${it.product_id}-${idx}`} className="grid gap-2 theme-rounded border border-[var(--theme-border)] p-3 md:grid-cols-[2fr_repeat(3,1fr)_auto]">
-                    <select value={it.product_id} onChange={(e) => updateItem(idx, { product_id: e.target.value })} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-sm">
-                      {products.map((p) => <option key={p.id} value={p.id}>{p.name} · RM {p.price} · 库存 {p.stock}</option>)}
-                    </select>
-                    <input type="number" min={0} step="0.01" value={it.activity_price} onChange={(e) => updateItem(idx, { activity_price: Number(e.target.value) })} placeholder="活动价" className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-sm" />
-                    <input type="number" min={0} value={it.limit_per_user} onChange={(e) => updateItem(idx, { limit_per_user: Number(e.target.value) })} placeholder="限购数量" className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-sm" />
-                    <input type="number" min={0} value={it.activity_stock} onChange={(e) => updateItem(idx, { activity_stock: Number(e.target.value) })} placeholder="活动库存" className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-sm" />
+                    <ProductSearchSelect
+                      value={it.product_id}
+                      selectedLabel={
+                        it.product_name
+                          ? `${it.product_name} · RM ${it.product_price ?? "—"} · 库存 ${it.product_stock ?? "—"}`
+                          : undefined
+                      }
+                      initialOptions={products}
+                      onSelect={(p) => {
+                        upsertProduct(p);
+                        updateItem(idx, { product_id: p.id, product_name: p.name, product_price: p.price, product_stock: p.stock });
+                      }}
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={it.activity_price}
+                      onChange={(e) => updateItem(idx, { activity_price: Number(e.target.value) })}
+                      placeholder="活动价（RM）"
+                      className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-sm"
+                      title="活动价：该活动期间商品对用户展示/成交的价格（RM）"
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      value={it.limit_per_user}
+                      onChange={(e) => updateItem(idx, { limit_per_user: Number(e.target.value) })}
+                      placeholder="每人限购（件）"
+                      className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-sm"
+                      title="限购数量：单个用户在本活动内最多可购买的数量（0 表示不限制）"
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      value={it.activity_stock}
+                      onChange={(e) => updateItem(idx, { activity_stock: Number(e.target.value) })}
+                      placeholder="活动库存（件）"
+                      className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-sm"
+                      title="活动库存：本次活动可售卖的库存上限（会随销量扣减）"
+                    />
                     <button type="button" onClick={() => removeItem(idx)} className="theme-rounded border border-destructive/40 px-3 py-2 text-xs text-destructive">移除</button>
                   </div>
                 ))}
+                {form.items.length > 0 && (
+                  <div className="px-1 text-xs text-muted-foreground">
+                    提示：下拉框支持关键词搜索（商品名称 / ID）；“每人限购”填 0 表示不限购。
+                  </div>
+                )}
                 {form.items.length === 0 && <div className="theme-rounded border border-dashed border-[var(--theme-border)] py-8 text-center text-sm text-muted-foreground">请添加活动商品</div>}
               </div>
             </div>

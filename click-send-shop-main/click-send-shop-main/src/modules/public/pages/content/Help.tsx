@@ -6,7 +6,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
 import { motion, AnimatePresence } from "framer-motion";
-import { FAQS, FAQ_CATEGORIES, WHATSAPP_URL, WECHAT_ID, WORKING_HOURS } from "@/constants/help";
+import { FAQS, FAQ_CATEGORIES, WORKING_HOURS } from "@/constants/help";
 import * as contentService from "@/services/contentService";
 import type { SiteInfo } from "@/types/content";
 import { copyToClipboard } from "@/utils/clipboard";
@@ -33,13 +33,16 @@ export default function Help() {
 
   const filtered = activeCategory ? FAQS.filter((f) => f.category === activeCategory) : FAQS;
 
-  const whatsappUrl = siteInfo.whatsappUrl || (siteInfo.contactWhatsApp
-    ? `https://wa.me/${siteInfo.contactWhatsApp.replace(/\D/g, "")}?text=你好，我需要帮助`
-    : WHATSAPP_URL);
-  const wechatId = siteInfo.wechatId || WECHAT_ID;
+  const whatsappUrl =
+    (siteInfo.whatsappUrl || "").trim()
+    || (siteInfo.contactWhatsApp
+      ? `https://wa.me/${siteInfo.contactWhatsApp.replace(/\D/g, "")}?text=你好，我需要帮助`
+      : "");
+  const wechatId = (siteInfo.wechatId || "").trim();
 
   const openWhatsApp = () => {
-    window.open(whatsappUrl, "_blank");
+    if (!whatsappUrl) return;
+    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -66,29 +69,33 @@ export default function Help() {
             </div>
           </div>
           <div className="mt-4 flex gap-3">
-            <button
-              onClick={openWhatsApp}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-[var(--theme-gradient-foreground)] theme-shadow active:scale-[0.97] transition-transform"
-              style={{ background: "var(--theme-gradient)" }}
-            >
-              <MessageCircle size={16} /> WhatsApp
-            </button>
-            <button
-              onClick={async () => {
-                const [{ toast }, copied] = await Promise.all([
-                  import("sonner"),
-                  copyToClipboard(wechatId),
-                ]);
-                if (copied) {
-                  toast.success("客服微信号已复制", toastPresetQuickSuccess);
-                } else {
-                  toast.error("复制失败，请手动复制微信号");
-                }
-              }}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--theme-price)] py-3 text-sm font-bold text-[var(--theme-price-foreground)] theme-shadow active:scale-[0.97] transition-transform"
-            >
-              <Phone size={16} /> 微信客服
-            </button>
+            {whatsappUrl && (
+              <button
+                onClick={openWhatsApp}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-[var(--theme-gradient-foreground)] theme-shadow active:scale-[0.97] transition-transform"
+                style={{ background: "var(--theme-gradient)" }}
+              >
+                <MessageCircle size={16} /> WhatsApp
+              </button>
+            )}
+            {wechatId && (
+              <button
+                onClick={async () => {
+                  const [{ toast }, copied] = await Promise.all([
+                    import("sonner"),
+                    copyToClipboard(wechatId),
+                  ]);
+                  if (copied) {
+                    toast.success("客服微信号已复制", toastPresetQuickSuccess);
+                  } else {
+                    toast.error("复制失败，请手动复制微信号");
+                  }
+                }}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--theme-price)] py-3 text-sm font-bold text-[var(--theme-price-foreground)] theme-shadow active:scale-[0.97] transition-transform"
+              >
+                <Phone size={16} /> 微信客服
+              </button>
+            )}
           </div>
           <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-primary-foreground/50">
             <Clock size={12} /> 工作时间: {WORKING_HOURS}

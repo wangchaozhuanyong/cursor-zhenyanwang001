@@ -10,6 +10,13 @@ exports.getSiteSettingsByKeys = (keys) => {
 
 exports.getContentPageBySlug = (slug) =>
   db.query(
-    'SELECT id, title, slug, content, updated_at FROM content_pages WHERE slug = ?',
+    `SELECT
+       id,
+       title,
+       slug,
+       body AS content,
+       last_modified_at AS updated_at
+     FROM content_pages
+     WHERE slug = ? AND deleted_at IS NULL`,
     [slug]
   );

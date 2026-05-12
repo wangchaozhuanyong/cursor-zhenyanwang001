@@ -17,6 +17,19 @@ function validateEnv() {
     placeholderMarkers.some((m) => s.includes(m));
 
   if (isProd) {
+    if (process.env.AUTO_PROMOTE_FIRST_USER_TO_ADMIN === '1') {
+      console.error(
+        '[FATAL] 生产环境禁止 AUTO_PROMOTE_FIRST_USER_TO_ADMIN=1（首个注册用户会成为管理员）；请改为 0 并使用 npm run admin:create',
+      );
+      process.exit(1);
+    }
+
+    const exposeOtp = String(process.env.EXPOSE_OTP_CODE || '').toLowerCase();
+    if (exposeOtp === 'true' || exposeOtp === '1') {
+      console.error('[FATAL] 生产环境禁止 EXPOSE_OTP_CODE（验证码不得回显给客户端）');
+      process.exit(1);
+    }
+
     if (storageDriver === 's3') {
       const requiredS3 = [
         'STORAGE_S3_BUCKET',
@@ -58,6 +71,18 @@ function validateEnv() {
       process.exit(1);
     }
 
+    const corsOrigins = cors.split(',').map((s) => s.trim()).filter(Boolean);
+    const hasLocalOrigin = corsOrigins.some((o) => {
+      const lower = o.toLowerCase();
+      return lower.includes('localhost') || lower.includes('127.0.0.1');
+    });
+    if (hasLocalOrigin) {
+      console.error(
+        '[FATAL] 生产环境 CORS_ORIGINS 不得包含 localhost / 127.0.0.1；请仅保留真实用户访问的 https Origin',
+      );
+      process.exit(1);
+    }
+
     const pub = process.env.PUBLIC_APP_URL || '';
     if (!pub.trim()) {
       console.error(
@@ -67,6 +92,11 @@ function validateEnv() {
     }
     if (!pub.startsWith('https://')) {
       console.error('[FATAL] 生产环境 PUBLIC_APP_URL 须以 https:// 开头');
+      process.exit(1);
+    }
+    const pubLower = pub.toLowerCase();
+    if (pubLower.includes('localhost') || pubLower.includes('127.0.0.1')) {
+      console.error('[FATAL] 生产环境 PUBLIC_APP_URL 不得为 localhost / 127.0.0.1');
       process.exit(1);
     }
     if (hasPlaceholder(pub)) {

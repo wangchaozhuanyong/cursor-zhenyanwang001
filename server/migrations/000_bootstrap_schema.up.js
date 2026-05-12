@@ -39,6 +39,7 @@ const STMTS = [
   note TEXT,
   contact_name VARCHAR(100) NOT NULL DEFAULT '',
   contact_phone VARCHAR(20) NOT NULL DEFAULT '',
+  shipping_phone VARCHAR(32) NOT NULL DEFAULT '' COMMENT '收货联系电话（用于后台履约/客服）',
   address TEXT,
   payment_method VARCHAR(32) NOT NULL DEFAULT 'whatsapp',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

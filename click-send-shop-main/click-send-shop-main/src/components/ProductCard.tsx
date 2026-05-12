@@ -73,13 +73,14 @@ export default function ProductCard({ product, index = 0 }: Props) {
         {/* Favorite button */}
         <SquishButton
           type="button"
+          variant="ghost"
           aria-label={isFavorite ? "取消收藏" : "收藏"}
           onClick={(e) => {
             e.stopPropagation();
             toggleFavorite(product.id);
             toast.success(isFavorite ? "已取消收藏" : "已收藏", toastPresetQuickSuccess);
           }}
-          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/90 backdrop-blur-sm transition-all active:scale-90 shadow-none !p-0"
+          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/90 backdrop-blur-sm transition-all active:scale-90 !p-0"
         >
           <Heart
             size={16}
@@ -126,6 +127,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
           </div>
           <SquishButton
             type="button"
+            variant="solid"
             aria-label="加入购物车"
             onClick={(e) => {
               e.stopPropagation();
@@ -133,7 +135,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
               trackAddToCart(product, 1);
               toast.success("已加入购物车", toastPresetQuickSuccess);
             }}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)] transition-all active:scale-90 touch-target hover:opacity-90 shadow-none !p-0"
+            className="flex h-9 w-9 items-center justify-center rounded-full transition-all active:scale-90 touch-target hover:opacity-90 !p-0"
           >
             <ShoppingCart size={15} />
           </SquishButton>

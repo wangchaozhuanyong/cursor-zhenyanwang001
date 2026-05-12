@@ -14,6 +14,7 @@ const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { getResolvedTriggerCopy } = require('../../admin/notificationTriggerApi');
 const myinvoisService = require('../../myinvois/myinvois.service');
+const { UserStatsService } = require('../../user/userStats.service');
 const payDb = payRepo.getPool();
 
 const userApi = /** @type {any} */ (userModule).api || {};
@@ -144,6 +145,7 @@ async function payWithRewardWallet(userId, orderId) {
       paymentTransactionNo: txNo,
       paymentMethod: 'reward_wallet',
     });
+    await UserStatsService.syncStatsAfterOrderPaid(userId, payableAmount, lockedOrder.id, conn);
     await checkoutAbandonmentRepo.markPaidByOrderId(conn, lockedOrder.id);
     try {
       await requireUserApi('refreshUserMemberLevel')(conn, userId);
@@ -427,6 +429,7 @@ async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionN
     paymentTransactionNo: transactionNo,
     paymentMethod: 'online',
   });
+  await UserStatsService.syncStatsAfterOrderPaid(order.user_id, toMoney(order.total_amount), order.id, conn);
   await checkoutAbandonmentRepo.markPaidByOrderId(conn, order.id);
   try {
     await requireUserApi('refreshUserMemberLevel')(conn, order.user_id);

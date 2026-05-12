@@ -94,6 +94,8 @@ export interface HomeNavItem {
   icon_url: string;
   title: string;
   link_url: string;
+  target_type?: "url" | "category";
+  target_category_id?: string | null;
   sort_order: number;
   enabled: boolean;
   created_at?: string;

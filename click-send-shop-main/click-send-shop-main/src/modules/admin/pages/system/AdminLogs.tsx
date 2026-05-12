@@ -6,6 +6,7 @@ import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { fetchAuditLogs } from "@/services/admin/logService";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import type { AuditLogRow } from "@/services/admin/logService";
+import { buildAuditChangeSummary, zhActionType, zhObjectType } from "@/utils/auditLogI18n";
 
 export default function AdminLogs() {
   const can = useAdminPermissionStore((s) => s.can);
@@ -160,8 +161,8 @@ export default function AdminLogs() {
                 </div>
                 <p className="mt-2 text-sm font-medium text-foreground">{row.operator_name || "—"}</p>
                 <p className="text-xs text-muted-foreground">{row.operator_role || ""}</p>
-                <p className="mt-2 font-mono text-xs text-foreground">{row.action_type}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{row.object_type}{row.object_id ? ` · ${row.object_id}` : ""}</p>
+                <p className="mt-2 text-xs font-semibold text-foreground">{zhActionType(row.action_type)}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{zhObjectType(row.object_type)}{row.object_id ? ` · ${row.object_id}` : ""}</p>
                 <p className="mt-2 line-clamp-3 text-xs text-foreground">{row.summary}</p>
                 <button type="button" onClick={() => setDetail(row)} className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1 theme-rounded border border-[var(--theme-border)] py-2 text-sm text-[var(--theme-price)]">
                   详情 <ChevronRight size={16} />
@@ -204,9 +205,9 @@ export default function AdminLogs() {
                         <div className="font-medium text-foreground">{row.operator_name || "—"}</div>
                         <div className="text-muted-foreground">{row.operator_role || ""}</div>
                       </td>
-                      <td className="px-3 py-2 text-xs font-mono text-foreground">{row.action_type}</td>
+                      <td className="px-3 py-2 text-xs font-semibold text-foreground">{zhActionType(row.action_type)}</td>
                       <td className="px-3 py-2 text-xs">
-                        <span className="text-muted-foreground">{row.object_type}</span>
+                        <span className="text-muted-foreground">{zhObjectType(row.object_type)}</span>
                         {row.object_id && <div className="font-mono text-[10px] truncate max-w-[120px]">{row.object_id}</div>}
                       </td>
                       <td className="px-3 py-2 text-xs text-foreground max-w-[200px] truncate">{row.summary}</td>
@@ -247,13 +248,33 @@ export default function AdminLogs() {
           >
             <h3 className="text-sm font-bold text-foreground mb-3">审计详情</h3>
             <dl className="space-y-2 text-xs">
-              <div className="flex justify-between gap-2"><dt className="text-muted-foreground">动作</dt><dd className="font-mono text-right">{detail.action_type}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-muted-foreground">动作</dt><dd className="text-right font-semibold">{zhActionType(detail.action_type)}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-muted-foreground">对象</dt><dd className="text-right">{zhObjectType(detail.object_type)}{detail.object_id ? ` · ${detail.object_id}` : ""}</dd></div>
               <div className="flex justify-between gap-2"><dt className="text-muted-foreground">路径</dt><dd className="text-right break-all">{detail.request_method} {detail.request_path}</dd></div>
               <div className="flex justify-between gap-2"><dt className="text-muted-foreground">IP</dt><dd>{detail.ip || "—"}</dd></div>
               <div className="flex justify-between gap-2"><dt className="text-muted-foreground">UA</dt><dd className="text-right break-all max-w-[70%]">{detail.user_agent || "—"}</dd></div>
               {detail.result === "failure" && detail.error_message && (
                 <div className="rounded-lg bg-destructive/10 p-2 text-destructive">{detail.error_message}</div>
               )}
+              {(() => {
+                const changes = buildAuditChangeSummary(detail.before_json, detail.after_json);
+                if (!changes.length) return null;
+                return (
+                  <div className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)]/40 p-2">
+                    <dt className="text-muted-foreground mb-1">变更摘要</dt>
+                    <div className="space-y-1 text-[11px]">
+                      {changes.map((c) => (
+                        <div key={c.key} className="flex flex-wrap items-baseline justify-between gap-2">
+                          <span className="text-muted-foreground">{c.label}</span>
+                          <span className="font-mono text-foreground break-all text-right">
+                            {c.fromText} → {c.toText}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
               <div>
                 <dt className="text-muted-foreground mb-1">变更前</dt>
                 <pre className="max-h-40 overflow-auto rounded-lg bg-secondary p-2 text-[10px]">{detail.before_json != null ? JSON.stringify(detail.before_json, null, 2) : "—"}</pre>

@@ -78,6 +78,7 @@ export default defineConfig(() => ({
     stripImportMetaResolveGuard(),
   ],
   build: {
+    sourcemap: false,
     cssTarget: ["chrome64", "safari12"],
     rollupOptions: {
       output: {

@@ -22,7 +22,7 @@ async function login(body, req) {
     if (!phone || !password) throw new BusinessError(400, '手机号和密码不能为空');
 
     const matchedUsers = await authApi.findUsersByPhones(buildPhoneLookupCandidates(phone, countryCode));
-    if (!matchedUsers.length) throw new BusinessError(401, '手机号或密码错误');
+    if (!matchedUsers.length) throw new BusinessError(401, '账号未注册');
 
     function coerceHash(hash) {
       let h = hash;
@@ -46,7 +46,7 @@ async function login(body, req) {
       console.error('[adminAuth.login] bcrypt compare error', e);
       user = null;
     }
-    if (!user) throw new BusinessError(401, '手机号或密码错误');
+    if (!user) throw new BusinessError(401, '密码错误');
 
     if (user.role !== 'admin' && user.role !== 'super_admin') {
       throw new BusinessError(403, '该账号无管理员权限');

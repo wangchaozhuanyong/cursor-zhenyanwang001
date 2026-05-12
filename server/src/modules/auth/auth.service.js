@@ -85,7 +85,7 @@ async function login(body) {
 
   const lookupPhones = buildPhoneLookupCandidates(phone, countryCode);
   const matchedUsers = await repo.findUsersByPhones(lookupPhones);
-  if (!matchedUsers.length) throw new AuthError('手机号或密码错误');
+  if (!matchedUsers.length) throw new AuthError('账号未注册，请先注册');
 
   function coerceHash(hash) {
     let h = hash;
@@ -107,9 +107,9 @@ async function login(body) {
     }
   } catch (err) {
     console.error('[auth.login] bcrypt compare error', err);
-    throw new AuthError('手机号或密码错误');
+    throw new AuthError('登录失败，请稍后重试');
   }
-  if (!user) throw new AuthError('手机号或密码错误');
+  if (!user) throw new AuthError('密码错误，请重试');
 
   return buildLoginResult(user);
 }

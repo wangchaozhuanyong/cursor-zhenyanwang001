@@ -66,11 +66,11 @@ export default function GuestHome() {
   useDocumentTitle(undefined);
   const navigate = useNavigate();
   const siteInfo = useSiteInfo();
-  const siteName = siteInfo.siteName || "澶ч┈閫?;
+  const siteName = siteInfo.siteName || "FlashCast";
   const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
-  const slogan = siteInfo.siteSlogan || "绮鹃€夊叏鐞冨ソ鐗╋紝鍝佽川鐢熸椿";
+  const slogan = siteInfo.siteSlogan || "精选全球好物，品质生活";
   const description =
-    siteInfo.siteDescription || "绮鹃€夊叏鐞冨ソ鐗╋紝鍝佽川鐢熸椿璐墿骞冲彴";
+    siteInfo.siteDescription || "精选全球好物，品质生活购物平台";
   const { banners } = useHomeBanners();
   const {
     hotProducts,

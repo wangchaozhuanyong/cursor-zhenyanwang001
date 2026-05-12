@@ -24,6 +24,31 @@ let cachedInfo: SiteInfo | null = null;
 let inflight: Promise<SiteInfo> | null = null;
 const subscribers = new Set<(info: SiteInfo) => void>();
 
+function looksLikeMojibake(value: string): boolean {
+  if (!value) return false;
+  return /�|锟|鈥|銆|鍟|鐧|璇|绠|閫/.test(value);
+}
+
+function sanitizeSiteInfo(data: SiteInfo): SiteInfo {
+  const next = { ...data };
+  const fallbackTextKeys: Array<keyof SiteInfo> = [
+    "siteName",
+    "siteDescription",
+    "siteSlogan",
+    "footerCompanyName",
+    "businessHours",
+    "footerCopyright",
+  ];
+  for (const key of fallbackTextKeys) {
+    const value = next[key];
+    const fallbackValue = FALLBACK[key];
+    if (typeof value === "string" && typeof fallbackValue === "string" && looksLikeMojibake(value)) {
+      next[key] = fallbackValue as SiteInfo[typeof key];
+    }
+  }
+  return next;
+}
+
 function notifyAll(info: SiteInfo) {
   subscribers.forEach((cb) => cb(info));
 }
@@ -34,7 +59,7 @@ async function loadOnce(): Promise<SiteInfo> {
   inflight = contentService
     .fetchSiteInfo()
     .then((data) => {
-      const merged: SiteInfo = { ...FALLBACK, ...(data ?? {}) };
+      const merged: SiteInfo = sanitizeSiteInfo({ ...FALLBACK, ...(data ?? {}) });
       cachedInfo = merged;
       notifyAll(merged);
       return merged;

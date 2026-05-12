@@ -4,14 +4,21 @@ const oauthService = require('./services/oauth.service');
 const otpService = require('./services/otp.service');
 const { asyncRoute } = require('../../middleware/asyncRoute');
 const { ValidationError } = require('../../errors');
+const {
+  setAuthCookies,
+  clearAuthCookies,
+  getRefreshTokenFromRequest,
+} = require('../../utils/authCookies');
 
 exports.register = asyncRoute(async (req, res) => {
   const result = await authApiService.register(req.body);
+  setAuthCookies(req, res, result.data.token);
   res.success(result.data, result.message);
 });
 
 exports.login = asyncRoute(async (req, res) => {
   const result = await authApiService.login(req.body);
+  setAuthCookies(req, res, result.data.token);
   res.success(result.data, result.message);
 });
 
@@ -47,12 +54,20 @@ exports.resetPassword = asyncRoute(async (req, res) => {
 });
 
 exports.refresh = asyncRoute(async (req, res) => {
-  const result = await authService.refresh(req.body.refreshToken);
+  const refreshToken = req.body.refreshToken || getRefreshTokenFromRequest(req);
+  const result = await authService.refresh(refreshToken);
+  if (result.data?.accessToken) {
+    setAuthCookies(req, res, {
+      accessToken: result.data.accessToken,
+      refreshToken,
+    });
+  }
   res.success(result.data);
 });
 
 exports.logout = asyncRoute(async (req, res) => {
   const result = await authService.logout(req.user?.id);
+  clearAuthCookies(req, res);
   res.success(result.data, result.message);
 });
 
@@ -75,6 +90,7 @@ exports.oauthCallback = asyncRoute(async (req, res) => {
 
 exports.oauthExchange = asyncRoute(async (req, res) => {
   const result = await oauthService.exchangeTicket(req.body);
+  setAuthCookies(req, res, result.data.token);
   res.success(result.data, result.message);
 });
 
@@ -88,5 +104,6 @@ exports.otpSend = asyncRoute(async (req, res) => {
 
 exports.otpLogin = asyncRoute(async (req, res) => {
   const result = await otpService.loginWithOtp(req.body);
+  setAuthCookies(req, res, result.data.token);
   res.success(result.data, result.message);
 });

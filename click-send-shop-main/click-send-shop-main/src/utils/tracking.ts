@@ -248,3 +248,39 @@ export function trackPurchase(order: Order) {
     value,
   }, { eventID: eventId });
 }
+
+export function trackPaymentFailed(order: Order | { id: string; order_no?: string; total_amount?: number }) {
+  trackGa("payment_failed", {
+    transaction_id: order.order_no || order.id,
+    currency: "MYR",
+    value: Number(order.total_amount) || 0,
+  });
+}
+
+export function trackRefundRequested(params: {
+  order_id: string;
+  order_no?: string;
+  order_item_id?: string;
+  value?: number;
+}) {
+  trackGa("refund_requested", {
+    transaction_id: params.order_no || params.order_id,
+    order_item_id: params.order_item_id,
+    currency: "MYR",
+    value: Number(params.value) || 0,
+  });
+}
+
+export function trackShippingCreated(order: Order) {
+  trackGa("shipping_created", {
+    transaction_id: order.order_no || order.id,
+    shipping_provider: order.carrier || undefined,
+  });
+}
+
+export function trackShippingDelivered(order: Order) {
+  trackGa("shipping_delivered", {
+    transaction_id: order.order_no || order.id,
+    shipping_provider: order.carrier || undefined,
+  });
+}

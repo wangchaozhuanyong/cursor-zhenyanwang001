@@ -428,6 +428,8 @@ async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionN
     paymentChannel: paymentOrder.channel_code,
     paymentTransactionNo: transactionNo,
     paymentMethod: 'online',
+    paymentProvider: paymentOrder.provider,
+    providerPaymentId: transactionNo,
   });
   await UserStatsService.syncStatsAfterOrderPaid(order.user_id, toMoney(order.total_amount), order.id, conn);
   await checkoutAbandonmentRepo.markPaidByOrderId(conn, order.id);
@@ -637,8 +639,10 @@ async function markOrderPaidByAdmin(req, orderId, body) {
       paymentTime: new Date(),
       paymentChannel: 'manual',
       paymentTransactionNo: txNo,
-      paymentMethod: 'manual',
-    });
+    paymentMethod: 'manual',
+    paymentProvider: 'manual',
+    providerPaymentId: txNo,
+  });
     await requireUserApi('refreshUserMemberLevel')(conn, order.user_id);
 
     const itemRows = await orderRepo.selectOrderItemQtyRows(conn, order.id);
@@ -709,6 +713,86 @@ async function markOrderPaidByAdmin(req, orderId, body) {
   } catch (e) {
     await conn.rollback();
     throw e;
+  } finally {
+    conn.release();
+  }
+}
+
+async function recordRefundByAdmin(req, orderId, body) {
+  const amount = toMoney(body.amount);
+  if (amount <= 0) throw new ValidationError('退款金额必须大于 0');
+  const conn = await payRepo.getConnection();
+  let order = null;
+  try {
+    await conn.beginTransaction();
+    order = await orderRepo.selectOrderByIdForUpdate(conn, orderId);
+    if (!order) throw new NotFoundError('订单不存在');
+    if (!['paid', 'partially_refunded'].includes(order.payment_status || '')) {
+      throw new ValidationError('仅已付款订单可以记录退款');
+    }
+    const total = toMoney(order.total_amount);
+    if (amount > total) throw new ValidationError('退款金额不能超过订单实付金额');
+
+    const isFullRefund = amount >= total - 0.01;
+    const paymentStatus = isFullRefund ? PAYMENT_STATUS.REFUNDED : PAYMENT_STATUS.PARTIALLY_REFUNDED;
+    const orderStatus = isFullRefund ? ORDER_STATUS.REFUNDED : ORDER_STATUS.REFUNDING;
+    const refundStatus = isFullRefund ? 'refunded' : 'partially_refunded';
+    await orderRepo.updateOrderRefundState(conn, order.id, {
+      paymentStatus,
+      orderStatus,
+      refundStatus,
+    });
+
+    const eventId = body.refund_reference || `refund_${order.id}_${Date.now()}`;
+    await payRepo.insertPaymentEvent(conn, {
+      id: generateId(),
+      payment_order_id: null,
+      order_id: order.id,
+      provider: order.payment_provider || order.payment_channel || 'manual',
+      provider_event_id: eventId,
+      event_type: body.mode === 'provider' ? 'refund.provider_recorded' : 'refund.manual_recorded',
+      verify_status: body.mode === 'provider' ? 'success' : 'manual',
+      processing_result: isFullRefund ? 'refunded' : 'partially_refunded',
+      payload_json: {
+        amount,
+        currency: 'MYR',
+        reason: body.reason || '',
+        refund_reference: body.refund_reference || '',
+        mode: body.mode || 'manual',
+      },
+      error_message: '',
+    });
+    await conn.commit();
+
+    await writeAuditLog({
+      req,
+      operatorId: req.user?.id,
+      actionType: 'payment.refund_record',
+      objectType: 'order',
+      objectId: order.id,
+      summary: `记录退款 RM ${amount.toFixed(2)} (${isFullRefund ? '全额' : '部分'})`,
+      after: { amount, paymentStatus, refundStatus, reason: body.reason || '' },
+      result: 'success',
+    });
+    try {
+      await myinvoisService.enqueueRefundCreditNoteIfEnabled({ orderId: order.id }, 'payment_refund_recorded');
+    } catch (e) {
+      console.error('[MyInvois] enqueue credit note after refund record failed:', e?.message || e);
+    }
+    return { data: { order_id: order.id, payment_status: paymentStatus, refund_status: refundStatus }, message: '退款记录已保存' };
+  } catch (err) {
+    await conn.rollback();
+    await writeAuditLog({
+      req,
+      operatorId: req.user?.id,
+      actionType: 'payment.refund_record',
+      objectType: 'order',
+      objectId: orderId,
+      summary: '记录退款失败',
+      result: 'failure',
+      errorMessage: err.message || String(err),
+    }).catch(() => {});
+    throw err;
   } finally {
     conn.release();
   }
@@ -948,6 +1032,7 @@ module.exports = {
   listPaymentOrdersAdmin,
   listPaymentEventsAdmin,
   markOrderPaidByAdmin,
+  recordRefundByAdmin,
   replayEvent,
   listReconciliations,
   createReconciliation,

@@ -1,6 +1,5 @@
 import {
   getAccessToken,
-  getRefreshToken,
   setAccessToken,
   clearTokens,
   getAdminAccessToken,
@@ -73,13 +72,13 @@ async function optimizeImageBeforeUpload(file: File): Promise<File> {
 }
 
 async function refreshAndRetry(url: string, formData: FormData): Promise<Response> {
-  const rt = getRefreshToken();
+  const rt = "cookie";
   if (!rt) { clearTokens(); throw new Error("登录已过期，请重新登录"); }
 
   const refreshRes = await fetch(`${BASE_URL}/auth/refresh`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken: rt }),
+    credentials: "include",
   });
   if (!refreshRes.ok) { clearTokens(); throw new Error("登录已过期，请重新登录"); }
 
@@ -91,6 +90,7 @@ async function refreshAndRetry(url: string, formData: FormData): Promise<Respons
     method: "POST",
     headers: newToken ? { Authorization: `Bearer ${newToken}` } : {},
     body: formData,
+    credentials: "include",
   });
 }
 
@@ -113,6 +113,7 @@ async function doUpload<T>(url: string, formData: FormData): Promise<T> {
     method: "POST",
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
+    credentials: "include",
   });
 
   if (res.status === 401 && !adminMode) {

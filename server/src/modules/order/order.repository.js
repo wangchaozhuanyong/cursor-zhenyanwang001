@@ -23,6 +23,34 @@ async function selectProductsForUpdate(q, productIds) {
   return rows;
 }
 
+async function selectVariantsForUpdate(q, variantIds) {
+  const ids = [...new Set((variantIds || []).filter(Boolean))];
+  if (!ids.length) return [];
+  const [rows] = await q.query(
+    `SELECT v.*, p.name AS product_name, p.cover_image, p.points, p.category_id, p.lifecycle_status
+     FROM product_variants v
+     JOIN products p ON p.id = v.product_id
+     WHERE v.id IN (${ids.map(() => '?').join(',')}) AND p.lifecycle_status = 1
+     FOR UPDATE`,
+    ids,
+  );
+  return rows;
+}
+
+async function selectDefaultVariantsForProducts(q, productIds) {
+  const ids = [...new Set((productIds || []).filter(Boolean))];
+  if (!ids.length) return [];
+  const [rows] = await q.query(
+    `SELECT v.*, p.name AS product_name, p.cover_image, p.points, p.category_id, p.lifecycle_status
+     FROM product_variants v
+     JOIN products p ON p.id = v.product_id
+     WHERE v.product_id IN (${ids.map(() => '?').join(',')}) AND v.is_default = 1 AND p.lifecycle_status = 1
+     FOR UPDATE`,
+    ids,
+  );
+  return rows;
+}
+
 async function selectActiveActivityItemsForUpdate(q, productIds) {
   if (!productIds.length) return [];
   const [rows] = await q.query(
@@ -110,6 +138,7 @@ async function insertOrder(q, params) {
     shippingFee, shippingName, totalAmount, totalPoints,
     note, contactName, contactPhone, address, paymentMethod,
     taxMode, taxRate, taxLabel, taxableAmount, taxAmount, taxExclusiveAmount,
+    addressLine1, addressLine2, addressCity, addressState, addressPostcode, addressCountry,
   } = params;
   await q.query(
     `INSERT INTO orders
@@ -117,8 +146,10 @@ async function insertOrder(q, params) {
         shipping_fee, shipping_name, total_amount,
         tax_mode, tax_rate, tax_label, taxable_amount, tax_amount, tax_exclusive_amount,
         total_points, status, payment_status,
-        note, contact_name, contact_phone, shipping_phone, address, payment_method)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        note, contact_name, contact_phone, shipping_phone, address,
+        address_line1, address_line2, address_city, address_state, address_postcode, address_country,
+        payment_method)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id, userId, orderNo, rawAmount, discountAmount, couponTitle || '',
       shippingFee,
@@ -133,7 +164,10 @@ async function insertOrder(q, params) {
       totalPoints,
       ORDER_STATUS.PENDING,
       PAYMENT_STATUS.PENDING,
-      note || '', contactName, contactPhone, contactPhone, address || '', paymentMethod || 'whatsapp',
+      note || '', contactName, contactPhone, contactPhone, address || '',
+      addressLine1 || '', addressLine2 || '', addressCity || '', addressState || '',
+      addressPostcode || '', addressCountry || 'MY',
+      paymentMethod || 'whatsapp',
     ],
   );
 }
@@ -147,6 +181,9 @@ async function insertOrderItem(q, params) {
     id,
     orderId,
     productId,
+    variantId,
+    skuCode,
+    variantName,
     productName,
     productImage,
     price,
@@ -157,21 +194,71 @@ async function insertOrderItem(q, params) {
   } = params;
   await q.query(
     `INSERT INTO order_items
-       (id, order_id, product_id, product_name, product_image, price, points, qty, activity_id, activity_title)
-     VALUES (?,?,?,?,?,?,?,?,?,?)`,
+       (id, order_id, product_id, variant_id, sku_code, variant_name,
+        product_name, product_image, price, points, qty, subtotal, activity_id, activity_title)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id,
       orderId,
       productId,
+      variantId || null,
+      skuCode || '',
+      variantName || '',
       productName,
       productImage,
       price,
       points,
       qty,
+      Number(price) * Number(qty),
       activityId || null,
       activityTitle || null,
     ],
   );
+}
+
+async function deductVariantStock(q, variantId, qty, meta = {}) {
+  const [[beforeRow]] = await q.query(
+    `SELECT v.stock, v.product_id
+     FROM product_variants v
+     WHERE v.id = ?
+     FOR UPDATE`,
+    [variantId],
+  );
+  if (!beforeRow) return 0;
+  const beforeStock = Number(beforeRow.stock || 0);
+  const [result] = await q.query(
+    'UPDATE product_variants SET stock = stock - ? WHERE id = ? AND stock >= ?',
+    [qty, variantId, qty],
+  );
+  if (result.affectedRows > 0) {
+    const afterStock = beforeStock - qty;
+    await q.query(
+      `UPDATE products p
+       SET p.stock = COALESCE((SELECT SUM(v.stock) FROM product_variants v WHERE v.product_id = p.id), p.stock)
+       WHERE p.id = ?`,
+      [beforeRow.product_id],
+    );
+    await q.query(
+      `INSERT INTO inventory_stock_records
+         (id, product_id, variant_id, change_type, quantity_delta, before_stock,
+          after_stock, reason, ref_type, ref_id, operator_id)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+      [
+        generateId(),
+        beforeRow.product_id,
+        variantId,
+        'order_deduct',
+        -qty,
+        beforeStock,
+        afterStock,
+        meta.reason || '订单下单扣减 SKU 库存',
+        meta.refType || 'order',
+        meta.refId || '',
+        meta.operatorId || null,
+      ],
+    );
+  }
+  return result.affectedRows;
 }
 
 /** @returns {Promise<number>} affectedRows */
@@ -423,10 +510,19 @@ async function restoreUserCouponHeuristic(q, userId, createdAt) {
 }
 
 async function updateOrderPaid(q, orderId, params = {}) {
-  const { paymentTime, paymentChannel, paymentTransactionNo, paymentMethod } = params;
+  const {
+    paymentTime,
+    paymentChannel,
+    paymentTransactionNo,
+    paymentMethod,
+    paymentProvider,
+    providerPaymentId,
+  } = params;
   await q.query(
     `UPDATE orders
-       SET status = ?, payment_status = ?, payment_time = ?, payment_channel = ?, payment_transaction_no = ?, payment_method = ?
+       SET status = ?, payment_status = ?, payment_time = ?, payment_channel = ?,
+           payment_transaction_no = ?, payment_method = ?,
+           payment_provider = ?, provider_payment_id = ?, paid_at = ?
      WHERE id = ?`,
     [
       ORDER_STATUS.PAID,
@@ -435,6 +531,24 @@ async function updateOrderPaid(q, orderId, params = {}) {
       paymentChannel || 'stripe',
       paymentTransactionNo || '',
       paymentMethod || 'online',
+      paymentProvider || paymentChannel || 'stripe',
+      providerPaymentId || paymentTransactionNo || '',
+      paymentTime || new Date(),
+      orderId,
+    ],
+  );
+}
+
+async function updateOrderRefundState(q, orderId, params = {}) {
+  const { paymentStatus, orderStatus, refundStatus } = params;
+  await q.query(
+    `UPDATE orders
+     SET payment_status = ?, status = ?, refund_status = ?
+     WHERE id = ?`,
+    [
+      paymentStatus,
+      orderStatus,
+      refundStatus,
       orderId,
     ],
   );
@@ -512,6 +626,8 @@ module.exports = {
   getPool,
   getConnection,
   selectProductsForUpdate,
+  selectVariantsForUpdate,
+  selectDefaultVariantsForProducts,
   selectActiveActivityItemsForUpdate,
   incrementActivitySold,
   decrementActivitySold,
@@ -522,6 +638,7 @@ module.exports = {
   insertOrder,
   updateOrderCouponUcId,
   insertOrderItem,
+  deductVariantStock,
   deductProductStock,
   incrementUserPoints,
   insertPointsRecord,
@@ -543,6 +660,7 @@ module.exports = {
   restoreUserCouponById,
   restoreUserCouponHeuristic,
   updateOrderPaid,
+  updateOrderRefundState,
   insertWebhookEventIfAbsent,
   insertNotification,
   selectUserInviteCode,

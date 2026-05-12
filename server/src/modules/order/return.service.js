@@ -30,12 +30,20 @@ async function getReturnById(userId, returnId) {
 }
 
 async function createReturn(userId, body) {
-  const { order_id, type, reason, description, images } = body;
+  const { order_id, order_item_id, quantity, type, reason, description, images } = body;
   if (!order_id || !reason) throw new BusinessError(400, '请提供订单ID和退换原因');
 
   const order = await repo.selectOrderForReturn(order_id, userId);
   if (!order) throw new BusinessError(404, '订单不存在');
-  const activeCount = await repo.countActiveReturnRequests(order_id, userId);
+  let orderItem = null;
+  if (order_item_id) {
+    orderItem = await repo.selectOrderItemForReturn(order_id, order_item_id);
+    if (!orderItem) throw new BusinessError(404, '订单商品行不存在');
+    if ((quantity || 1) > Number(orderItem.qty || 0)) {
+      throw new BusinessError(400, '售后数量不能超过购买数量');
+    }
+  }
+  const activeCount = await repo.countActiveReturnRequests(order_id, userId, order_item_id);
   if (activeCount > 0) {
     throw new BusinessError(409, '该订单已有未关闭的退换货申请，请勿重复提交');
   }
@@ -49,6 +57,11 @@ async function createReturn(userId, body) {
     userId,
     orderId: order_id,
     orderNo: order.order_no,
+    orderItemId: order_item_id || null,
+    productId: orderItem?.product_id || null,
+    variantId: orderItem?.variant_id || null,
+    skuCode: orderItem?.sku_code || '',
+    quantity: quantity || 1,
     type: type || 'refund',
     reason,
     description: description || '',

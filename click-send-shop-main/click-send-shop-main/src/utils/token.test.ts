@@ -22,14 +22,16 @@ describe("token namespace isolation", () => {
 
     expect(isLoggedIn()).toBe(true);
     expect(isAdminLoggedIn()).toBe(true);
-    expect(getRefreshToken()).toBe("user-r");
-    expect(getAdminAccessToken()).toBe("admin-a");
-    expect(getAdminRefreshToken()).toBe("admin-r");
+    expect(getRefreshToken()).toBeNull();
+    expect(getAdminAccessToken()).toBeNull();
+    expect(getAdminRefreshToken()).toBeNull();
+    expect(localStorage.getItem("user_access_token")).toBeNull();
+    expect(localStorage.getItem("admin_access_token")).toBeNull();
 
     clearTokens();
     expect(isLoggedIn()).toBe(false);
     expect(isAdminLoggedIn()).toBe(true);
-    expect(getAdminAccessToken()).toBe("admin-a");
+    expect(getAdminAccessToken()).toBeNull();
   });
 
   test("admin logout does not clear user token", () => {
@@ -39,6 +41,6 @@ describe("token namespace isolation", () => {
     clearAdminTokens();
     expect(isAdminLoggedIn()).toBe(false);
     expect(isLoggedIn()).toBe(true);
-    expect(getRefreshToken()).toBe("user-r");
+    expect(getRefreshToken()).toBeNull();
   });
 });

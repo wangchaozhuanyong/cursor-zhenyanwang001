@@ -68,6 +68,46 @@ function computeFullReductionDiscount(orderItems, activityByProductId) {
   return sum;
 }
 
+function normalizeMalaysiaAddress(address, contactName, contactPhone) {
+  if (address && typeof address === 'object') {
+    const line1 = String(address.line1 || '').trim();
+    const city = String(address.city || '').trim();
+    const state = String(address.state || '').trim();
+    const postcode = String(address.postcode || '').trim();
+    if (!line1 || !city || !state || !postcode) {
+      throw new ValidationError('请填写完整的马来西亚收货地址：地址、城市、州属和邮编');
+    }
+    return {
+      text: [
+        address.recipient_name || contactName,
+        address.phone || contactPhone,
+        line1,
+        address.line2,
+        city,
+        state,
+        postcode,
+        'MY',
+      ].filter(Boolean).join(', '),
+      line1,
+      line2: String(address.line2 || '').trim(),
+      city,
+      state,
+      postcode,
+      country: 'MY',
+    };
+  }
+  const text = String(address || '').trim();
+  return {
+    text,
+    line1: text,
+    line2: '',
+    city: '',
+    state: '',
+    postcode: '',
+    country: 'MY',
+  };
+}
+
 /**
  * 创建订单。形状校验已由 routes 层 zod schema 完成；
  * 这里仅做业务规则（库存、优惠券资格、积分扣减、邀请奖励）与事务编排。
@@ -88,6 +128,11 @@ async function createOrder(userId, body) {
     const productIds = items.map((i) => i.product_id);
     const products = await repo.selectProductsForUpdate(conn, productIds);
     const productMap = Object.fromEntries(products.map((p) => [p.id, p]));
+    const requestedVariantIds = items.map((i) => i.variant_id).filter(Boolean);
+    const requestedVariants = await repo.selectVariantsForUpdate(conn, requestedVariantIds);
+    const defaultVariants = await repo.selectDefaultVariantsForProducts(conn, productIds);
+    const variantById = new Map(requestedVariants.map((v) => [v.id, v]));
+    const defaultVariantByProductId = new Map(defaultVariants.map((v) => [v.product_id, v]));
     const activityRows = await repo.selectActiveActivityItemsForUpdate(conn, productIds);
     const activityMap = new Map();
     for (const row of activityRows) {
@@ -103,6 +148,17 @@ async function createOrder(userId, body) {
       if (p.stock < item.qty) {
         await conn.rollback();
         throw new ValidationError(`商品「${p.name}」库存不足，剩余 ${p.stock} 件`);
+      }
+      const variant = item.variant_id
+        ? variantById.get(item.variant_id)
+        : defaultVariantByProductId.get(item.product_id);
+      if (!variant || variant.product_id !== item.product_id) {
+        await conn.rollback();
+        throw new ValidationError(`商品「${p.name}」请选择有效规格`);
+      }
+      if (Number(variant.stock || 0) < item.qty) {
+        await conn.rollback();
+        throw new ValidationError(`SKU「${variant.title || variant.sku_code || p.name}」库存不足，剩余 ${variant.stock} 件`);
       }
       const activity = activityMap.get(item.product_id);
       if (activity) {
@@ -123,16 +179,22 @@ async function createOrder(userId, body) {
     let totalPoints = 0;
     const orderItems = items.map((item) => {
       const p = productMap[item.product_id];
+      const variant = item.variant_id
+        ? variantById.get(item.variant_id)
+        : defaultVariantByProductId.get(item.product_id);
       const activity = activityMap.get(item.product_id);
       const price = activity && activity.type === 'full_reduction'
-        ? parseFloat(p.price)
+        ? parseFloat(variant?.price ?? p.price)
         : activity
           ? parseFloat(activity.activity_price)
-          : parseFloat(p.price);
+          : parseFloat(variant?.price ?? p.price);
       rawAmount += price * item.qty;
       totalPoints += p.points * item.qty;
       return {
         productId: p.id,
+        variantId: variant?.id || null,
+        skuCode: variant?.sku_code || '',
+        variantName: variant?.title || '',
         name: p.name,
         image: p.cover_image,
         price,
@@ -210,6 +272,7 @@ async function createOrder(userId, body) {
     const totalAmount = Math.max(0, rawAmount - discountAmount + shippingFee);
     const orderId = generateId();
     const orderNo = generateOrderNo();
+    const normalizedAddress = normalizeMalaysiaAddress(address, contact_name, contact_phone);
 
     await repo.insertOrder(conn, {
       id: orderId,
@@ -225,7 +288,13 @@ async function createOrder(userId, body) {
       note,
       contactName: contact_name,
       contactPhone: contact_phone,
-      address,
+      address: normalizedAddress.text,
+      addressLine1: normalizedAddress.line1,
+      addressLine2: normalizedAddress.line2,
+      addressCity: normalizedAddress.city,
+      addressState: normalizedAddress.state,
+      addressPostcode: normalizedAddress.postcode,
+      addressCountry: normalizedAddress.country,
       paymentMethod: payment_method,
       taxMode: taxSnap.tax_mode,
       taxRate: taxSnap.tax_rate,
@@ -250,6 +319,9 @@ async function createOrder(userId, body) {
         id: generateId(),
         orderId,
         productId: oi.productId,
+        variantId: oi.variantId,
+        skuCode: oi.skuCode,
+        variantName: oi.variantName,
         productName: oi.name,
         productImage: oi.image,
         price: oi.price,
@@ -267,6 +339,20 @@ async function createOrder(userId, body) {
           await conn.rollback();
           throw new ValidationError(`活动商品「${oi.name}」库存不足`);
         }
+      }
+      if (oi.variantId) {
+        const affected = await repo.deductVariantStock(conn, oi.variantId, oi.qty, {
+          refType: 'order',
+          refId: orderId,
+          reason: oi.activityId
+            ? `订单 ${orderNo} 活动「${oi.activityTitle || oi.activityId}」下单扣减 SKU 库存`
+            : `订单 ${orderNo} 下单扣减 SKU 库存`,
+        });
+        if (affected === 0) {
+          await conn.rollback();
+          throw new ValidationError(`SKU「${oi.variantName || oi.skuCode || oi.name}」库存不足`);
+        }
+        continue;
       }
       const affected = await repo.deductProductStock(conn, oi.productId, oi.qty, {
         refType: 'order',
@@ -288,11 +374,15 @@ async function createOrder(userId, body) {
 
     const formattedItems = orderItems.map((oi) => formatOrderItem({
       product_id: oi.productId,
+      variant_id: oi.variantId,
+      sku_code: oi.skuCode,
+      variant_name: oi.variantName,
       product_name: oi.name,
       product_image: oi.image,
       price: oi.price,
       points: oi.points,
       qty: oi.qty,
+      subtotal: oi.price * oi.qty,
     }));
     const orderRow = await repo.selectOrderById(orderDb, orderId);
     return { data: formatOrder(orderRow, formattedItems), message: '下单成功' };

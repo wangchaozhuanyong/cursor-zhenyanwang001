@@ -41,7 +41,7 @@ const loginBodySchema = z
   });
 
 const refreshBodySchema = z.object({
-  refreshToken: z.string({ message: 'refreshToken 不能为空' }).min(1, 'refreshToken 不能为空'),
+  refreshToken: z.string().min(1, 'refreshToken 不能为空').optional(),
 });
 
 const updateProfileBodySchema = z

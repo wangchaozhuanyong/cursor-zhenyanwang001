@@ -1,13 +1,14 @@
 const { verifyToken } = require('../utils/helpers');
 const authRepo = require('../modules/auth/auth.repository');
+const { getAccessTokenFromRequest } = require('../utils/authCookies');
 
 module.exports = async function authMiddleware(req, res, next) {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith('Bearer ')) {
+  const token = getAccessTokenFromRequest(req);
+  if (!token) {
     return res.fail(401, '请先登录');
   }
   try {
-    const payload = /** @type {{ type?: string, userId?: string }} */ (verifyToken(header.split(' ')[1]));
+    const payload = /** @type {{ type?: string, userId?: string }} */ (verifyToken(token));
     if (payload.type === 'refresh') {
       return res.fail(401, '登录已过期，请重新登录');
     }

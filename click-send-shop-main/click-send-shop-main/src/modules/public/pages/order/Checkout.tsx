@@ -368,6 +368,9 @@ export default function Checkout() {
         checkout_abandonment_id: checkoutAbandonmentIdRef.current || undefined,
         items: items.map((item) => ({
           product_id: item.product.id,
+          variant_id: item.variant_id,
+          sku_code: item.sku_code,
+          variant_name: item.variant_name,
           name: item.product.name,
           image: item.product.cover_image,
           qty: item.qty,
@@ -424,7 +427,12 @@ export default function Checkout() {
     setPostSubmitOnlineNote(null);
     setPostSubmitWalletError(null);
     try {
-      const payloadItems = items.map((i) => ({ product_id: i.product.id, qty: i.qty }));
+      const payloadItems = items.map((i) => ({
+        product_id: i.product.id,
+        variant_id: i.variant_id,
+        sku_code: i.sku_code,
+        qty: i.qty,
+      }));
       const order = await submitOrder({
         items: payloadItems,
         contact_name: name,
@@ -697,10 +705,13 @@ export default function Checkout() {
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
           <h3 className="mb-3 text-sm font-semibold text-foreground">商品清单</h3>
           {items.map((item) => (
-            <div key={item.product.id} className="flex items-center gap-3 border-b border-[var(--theme-border)] py-3 last:border-0">
+            <div key={`${item.product.id}:${item.variant_id || ""}`} className="flex items-center gap-3 border-b border-[var(--theme-border)] py-3 last:border-0">
               <img src={item.product.cover_image} alt={item.product.name} className="h-14 w-14 rounded-lg object-cover" />
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-medium text-foreground truncate">{item.product.name}</p>
+                {item.variant_name && (
+                  <p className="text-xs text-muted-foreground truncate">规格：{item.variant_name}</p>
+                )}
                 <p className="text-xs text-muted-foreground">x{item.qty}</p>
               </div>
               <span className="text-sm font-bold text-[var(--theme-price)] flex-shrink-0">RM {item.product.price * item.qty}</span>

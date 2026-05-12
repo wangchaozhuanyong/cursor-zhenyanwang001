@@ -30,6 +30,11 @@ exports.markOrderPaid = asyncRoute(async (req, res) => {
   res.success(null, result.message);
 });
 
+exports.recordRefund = asyncRoute(async (req, res) => {
+  const result = await paymentsService.recordRefundByAdmin(req, req.params.orderId, req.body);
+  res.success(result.data, result.message);
+});
+
 exports.replayEvent = asyncRoute(async (req, res) => {
   const result = await paymentsService.replayEvent(req, req.params.eventId);
   res.success(result.data, result.message);

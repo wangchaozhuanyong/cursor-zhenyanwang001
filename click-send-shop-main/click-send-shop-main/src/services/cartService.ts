@@ -6,18 +6,18 @@ export async function fetchCart() {
   return res.data;
 }
 
-export async function addToCart(productId: string, qty: number) {
-  const res = await cartApi.addToCart(productId, qty);
+export async function addToCart(productId: string, qty: number, variantId = "", skuCode = "") {
+  const res = await cartApi.addToCart(productId, qty, variantId, skuCode);
   return res.data;
 }
 
-export async function updateCartItemQty(productId: string, qty: number) {
-  const res = await cartApi.updateCartItem(productId, qty);
+export async function updateCartItemQty(productId: string, qty: number, variantId = "") {
+  const res = await cartApi.updateCartItem(productId, qty, variantId);
   return res.data;
 }
 
-export async function removeFromCart(productId: string) {
-  await cartApi.removeCartItem(productId);
+export async function removeFromCart(productId: string, variantId = "") {
+  await cartApi.removeCartItem(productId, variantId);
 }
 
 export async function clearCart() {

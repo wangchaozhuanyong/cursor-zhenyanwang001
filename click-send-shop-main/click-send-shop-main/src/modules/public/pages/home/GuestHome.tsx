@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+﻿import { useEffect, useMemo } from "react";
 import { Gem, ShieldCheck, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -13,10 +13,11 @@ import GuestMobileFooter from "@/components/GuestMobileFooter";
 import HomeOpsBlocks from "./HomeOpsBlocks";
 import type { Product } from "@/types/product";
 import type { FooterNavItem } from "@/types/content";
+import { ROUTES } from "@/constants/routes";
 
 const GUEST_HOME_GRID_MAX = 8;
 
-/** 访客首页：热门 → 新品 → 推荐，去重后取前若干条 */
+/** 璁垮棣栭〉锛氱儹闂?鈫?鏂板搧 鈫?鎺ㄨ崘锛屽幓閲嶅悗鍙栧墠鑻ュ共鏉?*/
 function mergeHomeProductsForGuest(
   hot: Product[],
   newArrivals: Product[],
@@ -65,11 +66,11 @@ export default function GuestHome() {
   useDocumentTitle(undefined);
   const navigate = useNavigate();
   const siteInfo = useSiteInfo();
-  const siteName = siteInfo.siteName || "大马通";
+  const siteName = siteInfo.siteName || "澶ч┈閫?;
   const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
-  const slogan = siteInfo.siteSlogan || "精选全球好物，品质生活";
+  const slogan = siteInfo.siteSlogan || "绮鹃€夊叏鐞冨ソ鐗╋紝鍝佽川鐢熸椿";
   const description =
-    siteInfo.siteDescription || "精选全球好物，品质生活购物平台";
+    siteInfo.siteDescription || "绮鹃€夊叏鐞冨ソ鐗╋紝鍝佽川鐢熸椿璐墿骞冲彴";
   const { banners } = useHomeBanners();
   const {
     hotProducts,
@@ -100,10 +101,10 @@ export default function GuestHome() {
   const supportNav = useMemo(() => {
     if (customNav?.length) return dedupeFooterNav(customNav.slice(0, 4));
     return dedupeFooterNav([
-      { label: "首页", path: "/" },
-      { label: "全部分类", path: "/categories" },
-      { label: "购物车", path: "/cart" },
-      { label: "我的订单", path: "/orders" },
+      { label: "棣栭〉", path: "/" },
+      { label: "鍏ㄩ儴鍒嗙被", path: "/categories" },
+      { label: "璐墿杞?, path: "/cart" },
+      { label: "鎴戠殑璁㈠崟", path: "/orders" },
     ]);
   }, [customNav]);
 
@@ -112,19 +113,24 @@ export default function GuestHome() {
       customNav && customNav.length > 4
         ? customNav.slice(4)
         : [
-            { label: "常见问题", path: "/help" },
-            { label: "关于我们", path: "/about" },
+            { label: "甯歌闂", path: "/help" },
+            { label: "鍏充簬鎴戜滑", path: "/about" },
           ];
     const extra: FooterNavItem[] = [];
     if (siteInfo.privacyPolicyPath)
       extra.push({ label: "隐私政策", path: siteInfo.privacyPolicyPath });
     if (siteInfo.termsPath) extra.push({ label: "服务条款", path: siteInfo.termsPath });
+    if (siteInfo.refundPolicyPath) extra.push({ label: "退货退款", path: siteInfo.refundPolicyPath });
+    if (siteInfo.shippingPolicyPath) extra.push({ label: "配送政策", path: siteInfo.shippingPolicyPath });
+    extra.push({ label: "联系我们", path: "/content/contact-us" });
 
     return dedupeFooterNav([...base, ...extra]);
   }, [
     customNav,
     siteInfo.privacyPolicyPath,
     siteInfo.termsPath,
+    siteInfo.refundPolicyPath,
+    siteInfo.shippingPolicyPath,
   ]);
 
   const handleFooterNavigate = (path: string) => {
@@ -136,9 +142,7 @@ export default function GuestHome() {
   };
 
   /**
-   * 底栏占位：避免页脚内容与 BottomNav / 安全区域重叠；
-   * 页脚卡在主内容末尾，整块可滚动读完。
-   */
+   * 搴曟爮鍗犱綅锛氶伩鍏嶉〉鑴氬唴瀹逛笌 BottomNav / 瀹夊叏鍖哄煙閲嶅彔锛?   * 椤佃剼鍗″湪涓诲唴瀹规湯灏撅紝鏁村潡鍙粴鍔ㄨ瀹屻€?   */
   const bottomNavSafe =
     "pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))]";
 
@@ -146,7 +150,7 @@ export default function GuestHome() {
     <div className={`min-h-screen bg-[var(--theme-bg)] ${bottomNavSafe} text-[var(--theme-text)]`}>
       <header className="fixed left-0 right-0 top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/90 backdrop-blur-xl">
         <div className="mx-auto flex h-14 w-full max-w-screen-xl items-center justify-between px-4">
-          <div className="flex min-w-0 cursor-pointer items-center gap-2" onClick={() => navigate("/welcome")}>
+          <div className="flex min-w-0 cursor-pointer items-center gap-2" onClick={() => navigate(ROUTES.HOME)}>
             <img
               src={logoSrc}
               alt={siteName}
@@ -160,10 +164,10 @@ export default function GuestHome() {
           </div>
           <button
             type="button"
-            onClick={() => navigate("/login", { state: { from: "/welcome" } })}
+            onClick={() => navigate(ROUTES.LOGIN, { state: { from: ROUTES.HOME } })}
             className="shrink-0 rounded-full bg-[var(--theme-primary)] px-4 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]"
           >
-            登录 / 注册
+            鐧诲綍 / 娉ㄥ唽
           </button>
         </div>
       </header>
@@ -176,24 +180,23 @@ export default function GuestHome() {
         <div className="mt-1 flex items-center justify-between px-2 py-5 text-[11px] text-[var(--theme-text-muted)] md:text-sm">
           <span className="flex items-center gap-1.5">
             <ShieldCheck size={16} className="text-[var(--theme-price)]" />
-            正品保障
+            姝ｅ搧淇濋殰
           </span>
           <span className="flex items-center gap-1.5">
             <Gem size={16} className="text-[var(--theme-price)]" />
-            快速配送
-          </span>
+            蹇€熼厤閫?          </span>
           <span className="flex items-center gap-1.5">
             <Sparkles size={16} className="text-[var(--theme-price)]" />
-            安心售后
+            瀹夊績鍞悗
           </span>
         </div>
 
         <section className="mt-4">
           <h2 className="flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text)]">
             <Sparkles className="h-5 w-5 text-[var(--theme-price)]" />
-            全网爆款
+            鍏ㄧ綉鐖嗘
           </h2>
-          <p className="mt-1 text-xs tracking-wider text-[var(--theme-text-muted)]">大家都在买的热门好物</p>
+          <p className="mt-1 text-xs tracking-wider text-[var(--theme-text-muted)]">澶у閮藉湪涔扮殑鐑棬濂界墿</p>
           {homeError && (
             <div className="mt-4 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-center text-sm text-[var(--theme-text-muted)]">
               <p>{homeError}</p>
@@ -202,7 +205,7 @@ export default function GuestHome() {
                 onClick={() => loadHomeData()}
                 className="mt-3 rounded-full bg-[var(--theme-primary)] px-5 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]"
               >
-                重试
+                閲嶈瘯
               </button>
             </div>
           )}
@@ -215,24 +218,23 @@ export default function GuestHome() {
           )}
           {!homeLoading && !homeError && gridProducts.length === 0 && (
             <div className="mt-6 rounded-xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)]/60 px-4 py-10 text-center">
-              <p className="text-sm text-[var(--theme-text)]">暂无推荐商品</p>
+              <p className="text-sm text-[var(--theme-text)]">鏆傛棤鎺ㄨ崘鍟嗗搧</p>
               <p className="mt-2 text-xs text-[var(--theme-text-muted)]">
-                请浏览分类或登录后查看；商家上架商品后此处将自动展示。
-              </p>
+                璇锋祻瑙堝垎绫绘垨鐧诲綍鍚庢煡鐪嬶紱鍟嗗涓婃灦鍟嗗搧鍚庢澶勫皢鑷姩灞曠ず銆?              </p>
               <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
                   onClick={() => navigate("/categories")}
                   className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-2 text-xs font-semibold text-[var(--theme-text)]"
                 >
-                  全部分类
+                  鍏ㄩ儴鍒嗙被
                 </button>
                 <button
                   type="button"
                   onClick={() => navigate("/login", { state: { from: "/" } })}
                   className="rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]"
                 >
-                  登录 / 注册
+                  鐧诲綍 / 娉ㄥ唽
                 </button>
               </div>
             </div>
@@ -246,7 +248,7 @@ export default function GuestHome() {
           )}
         </section>
 
-        {/* 负外边距铺满屏宽，与参考稿边缘对齐；不与 fixed 顶栏 z-index 争层 */}
+        {/* 璐熷杈硅窛閾烘弧灞忓锛屼笌鍙傝€冪杈圭紭瀵归綈锛涗笉涓?fixed 椤舵爮 z-index 浜夊眰 */}
         <div className="-mx-4 mt-14">
           <GuestMobileFooter
             siteName={siteName}

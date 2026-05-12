@@ -74,10 +74,19 @@ export interface Order {
 }
 
 export interface SubmitOrderParams {
-  items: { product_id: string; qty: number }[];
+  items: { product_id: string; variant_id?: string; sku_code?: string; qty: number }[];
   contact_name: string;
   contact_phone: string;
-  address: string;
+  address: string | {
+    recipient_name?: string;
+    phone?: string;
+    line1: string;
+    line2?: string;
+    city: string;
+    state: string;
+    postcode: string;
+    country: "MY";
+  };
   note?: string;
   coupon_id?: string;
   coupon_title?: string;

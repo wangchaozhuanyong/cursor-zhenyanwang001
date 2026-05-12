@@ -14,8 +14,8 @@ async function insertSnapshot(q, params) {
   await q.query(
     `INSERT INTO checkout_abandonments
        (id, user_id, status, items_count, items_summary, raw_amount, discount_amount,
-        shipping_fee, total_amount, payment_method, contact_name, contact_phone_masked)
-     VALUES (?, ?, 'open', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        shipping_fee, total_amount, payment_method, contact_name, contact_phone_masked, next_reminder_at)
+     VALUES (?, ?, 'open', ?, ?, ?, ?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))`,
     [
       id,
       params.userId,
@@ -38,7 +38,8 @@ async function updateOpenSnapshot(q, id, userId, params) {
     `UPDATE checkout_abandonments
        SET items_count = ?, items_summary = ?, raw_amount = ?,
            discount_amount = ?, shipping_fee = ?, total_amount = ?,
-           payment_method = ?, contact_name = ?, contact_phone_masked = ?
+           payment_method = ?, contact_name = ?, contact_phone_masked = ?,
+           next_reminder_at = CASE WHEN reminder_count = 0 THEN DATE_ADD(NOW(), INTERVAL 1 HOUR) ELSE next_reminder_at END
      WHERE id = ? AND user_id = ? AND status = 'open'`,
     [
       params.itemsCount,
@@ -129,6 +130,35 @@ async function selectAdminPage(where, params, pageSize, offset) {
   return rows;
 }
 
+async function selectDueReminders(limit = 100) {
+  const [rows] = await db.query(
+    `SELECT * FROM checkout_abandonments
+     WHERE status = 'open'
+       AND next_reminder_at IS NOT NULL
+       AND next_reminder_at <= NOW()
+       AND reminder_count < 2
+     ORDER BY next_reminder_at ASC
+     LIMIT ?`,
+    [limit],
+  );
+  return rows;
+}
+
+async function markReminderSent(id, channel) {
+  await db.query(
+    `UPDATE checkout_abandonments
+     SET reminder_count = reminder_count + 1,
+         last_reminded_at = NOW(),
+         next_reminder_at = CASE
+           WHEN reminder_count = 0 THEN DATE_ADD(NOW(), INTERVAL 23 HOUR)
+           ELSE NULL
+         END,
+         reminder_channel = ?
+     WHERE id = ? AND status = 'open' AND reminder_count < 2`,
+    [channel || '', id],
+  );
+}
+
 module.exports = {
   getPool,
   insertSnapshot,
@@ -140,4 +170,6 @@ module.exports = {
   markClosedByOrderId,
   countAdmin,
   selectAdminPage,
+  selectDueReminders,
+  markReminderSent,
 };

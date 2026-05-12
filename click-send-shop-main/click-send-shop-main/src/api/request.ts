@@ -2,7 +2,6 @@ import type { ApiResponse } from "@/types/common";
 import { ApiError } from "@/types/common";
 import {
   getAccessToken,
-  getRefreshToken,
   setAccessToken,
   clearTokens,
   getAdminAccessToken,
@@ -23,39 +22,26 @@ function extractResponseMessage(body: Record<string, unknown>, status: number): 
     (body.data as Record<string, unknown> | undefined)?.error,
   ];
   const message = candidates.find((v) => typeof v === "string" && v.trim());
-  return typeof message === "string" ? message : `请求失败 (${status})`;
+  return typeof message === "string" ? message : `Request failed (${status})`;
 }
-
-/* ─── query-string 工具 ─── */
 
 export function toQueryString(params?: Record<string, unknown>): string {
   if (!params) return "";
-  const entries = Object.entries(params).filter(
-    ([, v]) => v !== undefined && v !== null && v !== "",
-  );
+  const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "");
   if (entries.length === 0) return "";
   return "?" + new URLSearchParams(entries.map(([k, v]) => [k, String(v)])).toString();
 }
-
-/* ─── token 自动刷新队列 ─── */
 
 let refreshing: Promise<string> | null = null;
 
 async function tryRefreshToken(): Promise<string> {
   const loadingToken = startGlobalLoadingDeferred();
-  const rt = getRefreshToken();
-  if (!rt) {
-    stopGlobalLoading(loadingToken);
-    clearTokens();
-    throw new ApiError(401, "登录已过期，请重新登录");
-  }
-
   let res: Response;
   try {
     res = await fetch(`${BASE_URL}/auth/refresh`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken: rt }),
+      credentials: "include",
     });
   } finally {
     stopGlobalLoading(loadingToken);
@@ -67,12 +53,10 @@ async function tryRefreshToken(): Promise<string> {
   }
 
   const body = (await res.json()) as ApiResponse<{ accessToken: string }>;
-  const newToken = body.data.accessToken;
+  const newToken = body.data.accessToken || "";
   setAccessToken(newToken);
   return newToken;
 }
-
-/* ─── 核心请求函数 ─── */
 
 async function request<T>(
   endpoint: string,
@@ -96,7 +80,11 @@ async function request<T>(
 
   let res: Response;
   try {
-    res = await fetch(`${BASE_URL}${endpoint}`, { ...options, headers });
+    res = await fetch(`${BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+      credentials: "include",
+    });
   } catch (err) {
     throw new ApiError(0, "网络连接失败，请检查网络设置", err);
   } finally {
@@ -109,7 +97,7 @@ async function request<T>(
       const newToken = await refreshing;
       const retryHeaders: HeadersInit = {
         ...headers,
-        Authorization: `Bearer ${newToken}`,
+        ...(newToken ? { Authorization: `Bearer ${newToken}` } : {}),
       };
       return request<T>(endpoint, { ...options, headers: retryHeaders }, false);
     } catch {
@@ -143,8 +131,6 @@ async function request<T>(
   const payload = (await res.json()) as T;
   return normalizeMediaUrls(payload, BASE_URL);
 }
-
-/* ─── HTTP 方法封装 ─── */
 
 export function get<T>(endpoint: string, params?: Record<string, unknown>) {
   return request<ApiResponse<T>>(`${endpoint}${toQueryString(params)}`);

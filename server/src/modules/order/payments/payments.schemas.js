@@ -21,6 +21,13 @@ const markPaidBodySchema = z.object({
   channel_code: z.string().trim().max(64).optional(),
 });
 
+const refundBodySchema = z.object({
+  amount: z.coerce.number().positive('退款金额必须大于 0'),
+  reason: z.string().trim().max(512).optional(),
+  refund_reference: z.string().trim().max(128).optional(),
+  mode: z.enum(['manual', 'provider']).default('manual'),
+});
+
 const updateChannelBodySchema = z.object({
   name: z.string().trim().max(128).optional(),
   enabled: z.coerce.boolean().optional(),
@@ -75,6 +82,7 @@ module.exports = {
   createIntentBodySchema,
   paymentOrderIdParamSchema,
   markPaidBodySchema,
+  refundBodySchema,
   updateChannelBodySchema,
   listAdminQuerySchema,
   createReconciliationBodySchema,

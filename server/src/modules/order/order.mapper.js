@@ -19,6 +19,11 @@ function formatOrderItem(row) {
       is_new: false,
       is_hot: false,
     },
+    variant_id: row.variant_id || '',
+    sku_code: row.sku_code || '',
+    variant_name: row.variant_name || '',
+    unit_price: parseFloat(row.price),
+    subtotal: row.subtotal != null ? parseFloat(row.subtotal) : parseFloat(row.price) * Number(row.qty || 0),
     qty: row.qty,
   };
 }

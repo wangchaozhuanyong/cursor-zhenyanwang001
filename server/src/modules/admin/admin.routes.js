@@ -192,6 +192,13 @@ router.post(
   adminPayCtrl.markOrderPaid,
 );
 router.post(
+  '/payments/orders/:orderId/refund',
+  adminAuth,
+  requirePermission('payment.manage'),
+  validate({ params: paySchemas.adminOrderIdParamSchema, body: paySchemas.refundBodySchema }),
+  adminPayCtrl.recordRefund,
+);
+router.post(
   '/payments/events/:eventId/replay',
   adminAuth,
   requirePermission('payment.manage'),
@@ -215,6 +222,8 @@ router.post(
 
 /* ── Orders ── */
 router.get('/orders/export', adminAuth, requirePermission('order.view'), orderCtrl.exportCsv);
+router.get('/checkout-abandonments/reminders/due', adminAuth, requirePermission('order.view'), checkoutAbandonmentCtrl.listDueReminders);
+router.post('/checkout-abandonments/:id/reminders/sent', adminAuth, requirePermission('order.update'), checkoutAbandonmentCtrl.markReminderSent);
 router.get('/checkout-abandonments', adminAuth, requirePermission('order.view'), checkoutAbandonmentCtrl.list);
 router.get('/orders', adminAuth, requirePermission('order.view'), orderCtrl.list);
 router.get('/orders/:id', adminAuth, requirePermission('order.view'), orderCtrl.getById);

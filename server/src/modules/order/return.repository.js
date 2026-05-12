@@ -41,24 +41,43 @@ async function selectOrderForReturn(orderId, userId) {
   return row || null;
 }
 
-async function countActiveReturnRequests(orderId, userId) {
+async function selectOrderItemForReturn(orderId, orderItemId) {
+  const [[row]] = await db.query(
+    `SELECT id, order_id, product_id, variant_id, sku_code, qty
+     FROM order_items
+     WHERE id = ? AND order_id = ?`,
+    [orderItemId, orderId],
+  );
+  return row || null;
+}
+
+async function countActiveReturnRequests(orderId, userId, orderItemId) {
+  const itemClause = orderItemId ? ' AND order_item_id = ?' : '';
+  const params = orderItemId ? [orderId, userId, orderItemId] : [orderId, userId];
   const [rows] = await db.query(
     `SELECT COUNT(*) AS total
      FROM return_requests
-     WHERE order_id = ? AND user_id = ? AND status IN ('pending', 'approved', 'processing')`,
-    [orderId, userId],
+      WHERE order_id = ? AND user_id = ?${itemClause}
+        AND status IN ('pending', 'approved', 'processing', 'requested', 'needs_evidence', 'return_in_transit', 'received')`,
+    params,
   );
   return Number(rows?.[0]?.total || 0);
 }
 
 async function insertReturnRequest(params) {
   const {
-    id, userId, orderId, orderNo, type, reason, description, imagesJson, status,
+    id, userId, orderId, orderNo, orderItemId, productId, variantId, skuCode,
+    quantity, type, reason, description, imagesJson, status,
   } = params;
   await db.query(
-    `INSERT INTO return_requests (id, user_id, order_id, order_no, type, reason, description, images, status)
-     VALUES (?,?,?,?,?,?,?,?,?)`,
-    [id, userId, orderId, orderNo, type, reason, description, imagesJson, status],
+    `INSERT INTO return_requests
+       (id, user_id, order_id, order_no, order_item_id, product_id, variant_id, sku_code,
+        quantity, type, reason, description, images, status)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      id, userId, orderId, orderNo, orderItemId || null, productId || null, variantId || null,
+      skuCode || '', quantity || 1, type, reason, description, imagesJson, status,
+    ],
   );
 }
 
@@ -72,6 +91,7 @@ module.exports = {
   selectReturnRequestsPage,
   selectReturnByIdAndUser,
   selectOrderForReturn,
+  selectOrderItemForReturn,
   countActiveReturnRequests,
   insertReturnRequest,
   selectReturnById,

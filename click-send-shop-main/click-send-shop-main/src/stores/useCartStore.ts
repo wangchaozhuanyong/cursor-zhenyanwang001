@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 
 import { toast } from "@/components/ui/sonner";
 import { isLoggedIn } from "@/utils/token";
-import type { Product } from "@/types/product";
+import type { Product, ProductVariant } from "@/types/product";
 import type { CartItem } from "@/types/cart";
 import * as cartService from "@/services/cartService";
 
@@ -12,6 +12,14 @@ export const LOCAL_ONLY_CART_PRODUCT_PREFIX = "demo-micro-interactions:" as cons
 
 function isLocalOnlyCartProductId(productId: string) {
   return productId.startsWith(LOCAL_ONLY_CART_PRODUCT_PREFIX);
+}
+
+export function cartLineKey(productId: string, variantId = "") {
+  return variantId ? `${productId}::${variantId}` : productId;
+}
+
+function getCartItemKey(item: CartItem) {
+  return cartLineKey(item.product.id, item.variant_id);
 }
 
 /**
@@ -33,8 +41,8 @@ function mergeCartWithLocalOnlyPreserve(
   serverItems: CartItem[],
   preservedLocalOnly: CartItem[],
 ): CartItem[] {
-  const ids = new Set(serverItems.map((i) => i.product.id));
-  const extra = preservedLocalOnly.filter((i) => !ids.has(i.product.id));
+  const ids = new Set(serverItems.map(getCartItemKey));
+  const extra = preservedLocalOnly.filter((i) => !ids.has(getCartItemKey(i)));
   return [...serverItems, ...extra];
 }
 
@@ -43,12 +51,13 @@ function mergeSelection(
   items: CartItem[],
 ): Record<string, boolean> {
   const next = { ...prev };
-  const ids = new Set(items.map((i) => i.product.id));
+  const ids = new Set(items.map(getCartItemKey));
   for (const k of Object.keys(next)) {
     if (!ids.has(k)) delete next[k];
   }
   for (const i of items) {
-    if (next[i.product.id] === undefined) next[i.product.id] = true;
+    const key = getCartItemKey(i);
+    if (next[key] === undefined) next[key] = true;
   }
   return next;
 }
@@ -64,19 +73,19 @@ interface CartState {
   loadCart: () => Promise<void>;
   /** 登录/注册后：把登录前本地有、服务端尚无的行写入服务端，再拉齐 */
   mergeLocalThenSync: (localBeforeAuth: CartItem[]) => Promise<void>;
-  addItem: (product: Product, qty?: number) => void;
+  addItem: (product: Product, qty?: number, variant?: ProductVariant | null) => void;
   /** 与 `addItem` 等价，便于业务层统一「加入购物车」语义 */
-  addToCart: (product: Product, qty?: number) => void;
-  removeItem: (productId: string) => void;
-  updateQty: (productId: string, qty: number) => void;
+  addToCart: (product: Product, qty?: number, variant?: ProductVariant | null) => void;
+  removeItem: (productId: string, variantId?: string) => void;
+  updateQty: (productId: string, qty: number, variantId?: string) => void;
   clearCart: () => void;
   /** 下单成功后仅移除已结算行（与后端删除 cart_items 一致） */
   removeOrderedItems: (productIds: string[]) => void;
-  setBuyNow: (product: Product, qty: number) => void;
+  setBuyNow: (product: Product, qty: number, variant?: ProductVariant | null) => void;
   clearBuyNow: () => void;
 
-  isSelected: (productId: string) => boolean;
-  toggleSelect: (productId: string) => void;
+  isSelected: (productId: string, variantId?: string) => boolean;
+  toggleSelect: (productId: string, variantId?: string) => void;
   setSelectAll: (value: boolean) => void;
   getSelectedItems: () => CartItem[];
 
@@ -127,17 +136,17 @@ export const useCartStore = create<CartState>()(
         if (!isLoggedIn()) return;
         try {
           await get().loadCart();
-          const serverIds = new Set(get().items.map((i) => i.product.id));
+          const serverIds = new Set(get().items.map(getCartItemKey));
           const toAdd = localBeforeAuth.filter(
-            ({ product, qty }) =>
-              !isLocalOnlyCartProductId(product.id) &&
-              qty > 0 &&
-              !serverIds.has(product.id),
+            (item) =>
+              !isLocalOnlyCartProductId(item.product.id) &&
+              item.qty > 0 &&
+              !serverIds.has(getCartItemKey(item)),
           );
           if (toAdd.length) {
             await Promise.allSettled(
-              toAdd.map(({ product, qty }) =>
-                cartService.addToCart(product.id, qty),
+              toAdd.map(({ product, qty, variant_id, sku_code }) =>
+                cartService.addToCart(product.id, qty, variant_id, sku_code),
               ),
             );
           }
@@ -147,26 +156,33 @@ export const useCartStore = create<CartState>()(
         }
       },
 
-      addItem: (product, qty = 1) => {
+      addItem: (product, qty = 1, variant = null) => {
+        const lineKey = cartLineKey(product.id, variant?.id);
+        const lineItem: CartItem = {
+          product,
+          variant_id: variant?.id,
+          sku_code: variant?.sku_code ?? undefined,
+          variant_name: variant?.title,
+          unit_price: variant?.price ?? product.price,
+          qty,
+        };
         const beforeSnapshot = {
           items: get().items,
           selection: get().selection,
         };
         set((state) => {
-          const existing = state.items.find(
-            (i) => i.product.id === product.id,
-          );
+          const existing = state.items.find((i) => getCartItemKey(i) === lineKey);
           let newItems: CartItem[];
           if (existing) {
             newItems = state.items.map((i) =>
-              i.product.id === product.id
+              getCartItemKey(i) === lineKey
                 ? { ...i, qty: i.qty + qty }
                 : i,
             );
           } else {
-            newItems = [...state.items, { product, qty }];
+            newItems = [...state.items, lineItem];
           }
-          const sel = { ...state.selection, [product.id]: true };
+          const sel = { ...state.selection, [lineKey]: true };
           return { items: newItems, selection: mergeSelection(sel, newItems) };
         });
         if (isLoggedIn()) {
@@ -177,7 +193,7 @@ export const useCartStore = create<CartState>()(
               toast.error("网络波动，请重试");
             });
           } else {
-            cartService.addToCart(product.id, qty).catch(() => {
+            cartService.addToCart(product.id, qty, variant?.id, variant?.sku_code ?? "").catch(() => {
               set(beforeSnapshot);
               toast.error("网络波动，请重试");
             });
@@ -185,44 +201,46 @@ export const useCartStore = create<CartState>()(
         }
       },
 
-      addToCart: (product, qty = 1) => {
-        get().addItem(product, qty);
+      addToCart: (product, qty = 1, variant = null) => {
+        get().addItem(product, qty, variant);
       },
 
-      removeItem: (productId) => {
+      removeItem: (productId, variantId = "") => {
+        const lineKey = cartLineKey(productId, variantId);
         const beforeSnapshot = {
           items: get().items,
           selection: get().selection,
         };
         set((state) => {
-          const items = state.items.filter((i) => i.product.id !== productId);
-          const { [productId]: _, ...rest } = state.selection;
+          const items = state.items.filter((i) => getCartItemKey(i) !== lineKey);
+          const { [lineKey]: _, ...rest } = state.selection;
           return { items, selection: mergeSelection(rest, items) };
         });
         if (isLoggedIn() && !isLocalOnlyCartProductId(productId)) {
-          cartService.removeFromCart(productId).catch(() => {
+          cartService.removeFromCart(productId, variantId).catch(() => {
             set(beforeSnapshot);
             toast.error("网络波动，请重试");
           });
         }
       },
 
-      updateQty: (productId, qty) => {
+      updateQty: (productId, qty, variantId = "") => {
         if (qty <= 0) {
-          get().removeItem(productId);
+          get().removeItem(productId, variantId);
           return;
         }
+        const lineKey = cartLineKey(productId, variantId);
         const beforeSnapshot = {
           items: get().items,
           selection: get().selection,
         };
         set((state) => ({
           items: state.items.map((i) =>
-            i.product.id === productId ? { ...i, qty } : i,
+            getCartItemKey(i) === lineKey ? { ...i, qty } : i,
           ),
         }));
         if (isLoggedIn() && !isLocalOnlyCartProductId(productId)) {
-          cartService.updateCartItemQty(productId, qty).catch(() => {
+          cartService.updateCartItemQty(productId, qty, variantId).catch(() => {
             set(beforeSnapshot);
             toast.error("网络波动，请重试");
           });
@@ -261,29 +279,40 @@ export const useCartStore = create<CartState>()(
         }
       },
 
-      setBuyNow: (product, qty) => set({ buyNowItem: { product, qty } }),
+      setBuyNow: (product, qty, variant = null) => set({
+        buyNowItem: {
+          product,
+          variant_id: variant?.id,
+          sku_code: variant?.sku_code ?? undefined,
+          variant_name: variant?.title,
+          unit_price: variant?.price ?? product.price,
+          qty,
+        },
+      }),
       clearBuyNow: () => set({ buyNowItem: null }),
 
-      isSelected: (productId) => get().selection[productId] !== false,
+      isSelected: (productId, variantId = "") =>
+        get().selection[cartLineKey(productId, variantId)] !== false,
 
-      toggleSelect: (productId) =>
+      toggleSelect: (productId, variantId = "") =>
         set((s) => {
-          const on = s.selection[productId] !== false;
+          const key = cartLineKey(productId, variantId);
+          const on = s.selection[key] !== false;
           return {
-            selection: { ...s.selection, [productId]: !on },
+            selection: { ...s.selection, [key]: !on },
           };
         }),
 
       setSelectAll: (value) =>
         set((s) => {
           const next: Record<string, boolean> = {};
-          for (const i of s.items) next[i.product.id] = value;
+          for (const i of s.items) next[getCartItemKey(i)] = value;
           return { selection: next };
         }),
 
       getSelectedItems: () => {
         const { items, selection } = get();
-        return items.filter((i) => selection[i.product.id] !== false);
+        return items.filter((i) => selection[getCartItemKey(i)] !== false);
       },
 
       totalAmount: () =>

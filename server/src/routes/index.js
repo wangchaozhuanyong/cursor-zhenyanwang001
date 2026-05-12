@@ -9,6 +9,7 @@ const order = require('../modules/order');
 const admin = require('../modules/admin');
 const search = require('../modules/search');
 const myinvois = require('../modules/myinvois');
+const privacy = require('../modules/privacy');
 const seoRoutes = require('../modules/seo/seo.routes');
 
 const router = Router();
@@ -18,6 +19,7 @@ router.use(auth);
 router.use(user);
 router.use(product);
 router.use(search);
+router.use(privacy);
 router.use(cart);
 router.use(order);
 router.use(myinvois);

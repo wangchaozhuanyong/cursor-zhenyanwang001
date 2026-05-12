@@ -2,7 +2,7 @@
 import { ArrowLeft, Minus, Plus, Trash2, ShoppingBag, Loader2, Check } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
-import { useCartStore } from "@/stores/useCartStore";
+import { cartLineKey, useCartStore } from "@/stores/useCartStore";
 import { isLoggedIn } from "@/utils/token";
 import EmptyState from "@/components/EmptyState";
 import TrustInfo from "@/components/TrustInfo";
@@ -39,7 +39,7 @@ export default function Cart() {
   const sstCartNote = (siteInfo.sstCustomerNote || "").trim();
   const showSstCartHint = parseSstEnabled(siteInfo.sstEnabled);
 
-  const selectedCount = items.filter((i) => selection[i.product.id] !== false).length;
+  const selectedCount = items.filter((i) => selection[cartLineKey(i.product.id, i.variant_id)] !== false).length;
   const allSelected = items.length > 0 && selectedCount === items.length;
   const someSelected = selectedCount > 0;
 
@@ -156,7 +156,7 @@ export default function Cart() {
                 <AnimatePresence>
                   {items.map((item) => (
                     <motion.div
-                      key={item.product.id}
+                      key={cartLineKey(item.product.id, item.variant_id)}
                       layout
                       exit={{ opacity: 0, x: -100 }}
                       className="flex gap-3 border-b border-[var(--theme-border)] py-4 last:border-b-0"
@@ -164,15 +164,15 @@ export default function Cart() {
                       <SquishButton
                         type="button"
                         variant="ghost"
-                        onClick={() => toggleSelect(item.product.id)}
+                        onClick={() => toggleSelect(item.product.id, item.variant_id)}
                         className={`mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md border-2 !p-0 transition-colors ${
-                          isSelected(item.product.id)
+                          isSelected(item.product.id, item.variant_id)
                             ? "border-gold bg-gold text-primary-foreground"
                             : "border-muted-foreground/40 bg-background"
                         }`}
-                        aria-label={isSelected(item.product.id) ? "取消勾选" : "勾选结算"}
+                        aria-label={isSelected(item.product.id, item.variant_id) ? "取消勾选" : "勾选结算"}
                       >
-                        {isSelected(item.product.id) && <Check size={14} strokeWidth={3} />}
+                        {isSelected(item.product.id, item.variant_id) && <Check size={14} strokeWidth={3} />}
                       </SquishButton>
                       <button
                         type="button"
@@ -197,7 +197,7 @@ export default function Cart() {
                             {item.product.name}
                           </h3>
                           <p className="mt-1 text-[11px] text-muted-foreground">
-                            +{item.product.points}积分
+                            {item.variant_name ? `规格：${item.variant_name}` : `+${item.product.points}积分`}
                           </p>
                         </div>
                         <div className="flex items-center justify-between">
@@ -208,7 +208,7 @@ export default function Cart() {
                             <SquishButton
                               type="button"
                               variant="ghost"
-                              onClick={() => removeItem(item.product.id)}
+                              onClick={() => removeItem(item.product.id, item.variant_id)}
                               className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent hover:bg-[var(--theme-bg)] touch-target !p-0"
                               aria-label="删除"
                             >
@@ -219,7 +219,7 @@ export default function Cart() {
                                 type="button"
                                 variant="ghost"
                                 onClick={() =>
-                                  updateQty(item.product.id, item.qty - 1)
+                                  updateQty(item.product.id, item.qty - 1, item.variant_id)
                                 }
                                 className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] touch-target !p-0"
                                 aria-label="减少数量"
@@ -233,7 +233,7 @@ export default function Cart() {
                                 type="button"
                                 variant="ghost"
                                 onClick={() =>
-                                  updateQty(item.product.id, item.qty + 1)
+                                  updateQty(item.product.id, item.qty + 1, item.variant_id)
                                 }
                                 className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] touch-target !p-0"
                                 aria-label="增加数量"

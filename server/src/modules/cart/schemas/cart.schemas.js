@@ -6,6 +6,8 @@ const productIdParamSchema = z.object({
 
 const addToCartBodySchema = z.object({
   productId: z.string().trim().min(1, '商品ID不能为空'),
+  variant_id: z.string().trim().optional().default(''),
+  sku_code: z.string().trim().optional().default(''),
   qty: z.coerce.number().int().min(1, '数量至少为 1').max(9999).default(1),
 });
 

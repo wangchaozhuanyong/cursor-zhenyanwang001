@@ -9,6 +9,7 @@ export interface StoredTrackingConsent {
 }
 
 const STORAGE_KEY = "cookie-tracking-consent:v1";
+const ANON_KEY = "privacy-anonymous-id:v1";
 
 export const DEFAULT_TRACKING_CONSENT: TrackingConsentPreferences = {
   analytics: false,
@@ -51,8 +52,33 @@ export function saveTrackingConsent(preferences: Partial<TrackingConsentPreferen
     },
   };
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(consent));
+  recordConsentOnServer(consent).catch(() => {});
   listeners.forEach((listener) => listener(consent));
   window.dispatchEvent(new CustomEvent("tracking-consent-change", { detail: consent }));
+}
+
+function getAnonymousId() {
+  let id = window.localStorage.getItem(ANON_KEY);
+  if (!id) {
+    id = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    window.localStorage.setItem(ANON_KEY, id);
+  }
+  return id;
+}
+
+async function recordConsentOnServer(consent: StoredTrackingConsent) {
+  const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "/api";
+  await fetch(`${baseUrl}/privacy/consents`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      anonymous_id: getAnonymousId(),
+      consent_version: `v${consent.version}`,
+      analytics_allowed: consent.preferences.analytics,
+      ads_allowed: consent.preferences.ads,
+    }),
+  });
 }
 
 export function subscribeTrackingConsent(listener: (consent: StoredTrackingConsent | null) => void) {

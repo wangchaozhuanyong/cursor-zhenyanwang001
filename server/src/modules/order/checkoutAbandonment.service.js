@@ -115,7 +115,26 @@ async function listAdminCheckoutAbandonments(query) {
   return { kind: 'paginate', list, total, page, pageSize };
 }
 
+async function listDueCheckoutReminders(limit = 100) {
+  const rows = await repo.selectDueReminders(Math.min(200, Math.max(1, Number(limit) || 100)));
+  return rows.map((row) => ({
+    ...row,
+    items_summary: parseItemsSummary(row.items_summary),
+    raw_amount: money(row.raw_amount),
+    discount_amount: money(row.discount_amount),
+    shipping_fee: money(row.shipping_fee),
+    total_amount: money(row.total_amount),
+  }));
+}
+
+async function markCheckoutReminderSent(id, channel = 'manual') {
+  await repo.markReminderSent(id, channel);
+  return { data: null };
+}
+
 module.exports = {
   recordCheckoutSnapshot,
   listAdminCheckoutAbandonments,
+  listDueCheckoutReminders,
+  markCheckoutReminderSent,
 };

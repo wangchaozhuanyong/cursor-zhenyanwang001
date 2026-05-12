@@ -1,10 +1,21 @@
 const db = require('../../config/db');
 
+const cartLineSelect = `
+  SELECT p.*,
+         ci.qty,
+         ci.variant_id,
+         ci.sku_code,
+         COALESCE(pv.title, '') AS variant_name,
+         COALESCE(pv.price, p.price) AS price,
+         COALESCE(pv.stock, p.stock) AS stock
+  FROM cart_items ci
+  JOIN products p ON ci.product_id = p.id
+  LEFT JOIN product_variants pv ON ci.variant_id <> '' AND pv.id = ci.variant_id
+`;
+
 async function selectCartLinesWithProducts(userId) {
   const [rows] = await db.query(
-    `SELECT p.*, ci.qty
-     FROM cart_items ci
-     JOIN products p ON ci.product_id = p.id
+    `${cartLineSelect}
      WHERE ci.user_id = ? AND p.lifecycle_status = 1 AND p.deleted_at IS NULL
      ORDER BY ci.created_at DESC`,
     [userId],
@@ -20,37 +31,48 @@ async function selectActiveProductId(productId) {
   return row || null;
 }
 
-async function upsertCartItem(id, userId, productId, qty) {
-  await db.query(
-    `INSERT INTO cart_items (id, user_id, product_id, qty)
-     VALUES (?, ?, ?, ?)
-     ON DUPLICATE KEY UPDATE qty = qty + VALUES(qty), updated_at = NOW()`,
-    [id, userId, productId, qty],
-  );
-}
-
-async function selectCartLine(userId, productId) {
+async function selectActiveVariant(productId, variantId) {
+  if (!variantId) return null;
   const [[row]] = await db.query(
-    `SELECT p.*, ci.qty
-     FROM cart_items ci JOIN products p ON ci.product_id = p.id
-     WHERE ci.user_id = ? AND ci.product_id = ? AND p.lifecycle_status = 1 AND p.deleted_at IS NULL`,
-    [userId, productId],
+    `SELECT id, product_id, sku_code, title, price, stock
+     FROM product_variants
+     WHERE id = ? AND product_id = ?`,
+    [variantId, productId],
   );
   return row || null;
 }
 
-async function updateCartItemQty(userId, productId, qty) {
+async function upsertCartItem(id, userId, productId, qty, variantId = '', skuCode = '') {
+  await db.query(
+    `INSERT INTO cart_items (id, user_id, product_id, variant_id, sku_code, qty)
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE qty = qty + VALUES(qty), updated_at = NOW()`,
+    [id, userId, productId, variantId || '', skuCode || '', qty],
+  );
+}
+
+async function selectCartLine(userId, productId, variantId = '') {
+  const [[row]] = await db.query(
+    `${cartLineSelect}
+     WHERE ci.user_id = ? AND ci.product_id = ? AND ci.variant_id = ?
+       AND p.lifecycle_status = 1 AND p.deleted_at IS NULL`,
+    [userId, productId, variantId || ''],
+  );
+  return row || null;
+}
+
+async function updateCartItemQty(userId, productId, qty, variantId = '') {
   const [result] = await db.query(
-    'UPDATE cart_items SET qty = ?, updated_at = NOW() WHERE user_id = ? AND product_id = ?',
-    [qty, userId, productId],
+    'UPDATE cart_items SET qty = ?, updated_at = NOW() WHERE user_id = ? AND product_id = ? AND variant_id = ?',
+    [qty, userId, productId, variantId || ''],
   );
   return result.affectedRows;
 }
 
-async function deleteCartItem(userId, productId) {
+async function deleteCartItem(userId, productId, variantId = '') {
   await db.query(
-    'DELETE FROM cart_items WHERE user_id = ? AND product_id = ?',
-    [userId, productId],
+    'DELETE FROM cart_items WHERE user_id = ? AND product_id = ? AND variant_id = ?',
+    [userId, productId, variantId || ''],
   );
 }
 
@@ -61,6 +83,7 @@ async function deleteAllCartItems(userId) {
 module.exports = {
   selectCartLinesWithProducts,
   selectActiveProductId,
+  selectActiveVariant,
   upsertCartItem,
   selectCartLine,
   updateCartItemQty,

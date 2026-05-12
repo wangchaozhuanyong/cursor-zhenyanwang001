@@ -29,6 +29,7 @@ export default function ProductDetail() {
   const addItem = useCartStore((s) => s.addItem);
   const totalItems = useCartStore((s) => s.totalItems());
   const [qty, setQty] = useState(1);
+  const [selectedVariantId, setSelectedVariantId] = useState<string>("");
   const trackedProductIdRef = useRef<string | null>(null);
 
   const {
@@ -54,6 +55,7 @@ export default function ProductDetail() {
     if (id) {
       loadProductDetail(id);
       setQty(1);
+      setSelectedVariantId("");
     }
   }, [id, loadProductDetail]);
 
@@ -112,20 +114,39 @@ export default function ProductDetail() {
   }
 
   const activeActivity = product.active_activity;
+  const availableVariants = (product.variants ?? []).filter((v) => v.id);
+  const selectedVariant = availableVariants.length
+    ? availableVariants.find((v) => v.id === selectedVariantId)
+      ?? availableVariants.find((v) => v.is_default)
+      ?? availableVariants[0]
+    : null;
+  const productForCart = selectedVariant
+    ? { ...product, price: selectedVariant.price, stock: selectedVariant.stock }
+    : product;
+  const displayPrice = selectedVariant?.price ?? product.price;
+  const displayStock = selectedVariant?.stock ?? product.stock;
   const activityRemaining = activeActivity ? Math.max(0, activeActivity.remaining_stock ?? 0) : product.stock;
   const activityLimit = activeActivity?.limit_per_user && activeActivity.limit_per_user > 0
     ? activeActivity.limit_per_user
     : product.stock;
-  const maxQty = Math.max(1, Math.min(product.stock, activityRemaining, activityLimit));
+  const maxQty = Math.max(1, Math.min(displayStock, activityRemaining, activityLimit));
 
   const handleAddToCart = () => {
-    addItem(product, qty);
-    trackAddToCart(product, qty);
+    if (availableVariants.length && !selectedVariant) {
+      toast.error("请选择商品规格");
+      return;
+    }
+    addItem(productForCart, qty, selectedVariant);
+    trackAddToCart(productForCart, qty);
     toast.success(`已加入购物车 x${qty}`, toastPresetQuickSuccess);
   };
 
   const handleBuyNow = () => {
-    useCartStore.getState().setBuyNow(product, qty);
+    if (availableVariants.length && !selectedVariant) {
+      toast.error("请选择商品规格");
+      return;
+    }
+    useCartStore.getState().setBuyNow(productForCart, qty, selectedVariant);
     navigate("/checkout");
   };
 
@@ -196,7 +217,7 @@ export default function ProductDetail() {
                 )}
                 <ProductTagList tags={product.tags} max={6} size="md" />
                 <span className="text-xs text-muted-foreground">
-                  库存: {product.stock} 件
+                  库存: {displayStock} 件
                 </span>
               </div>
               <h1 className="mt-3 font-display text-xl font-semibold leading-snug text-foreground md:text-3xl md:leading-tight">
@@ -227,7 +248,7 @@ export default function ProductDetail() {
               )}
               <div className="flex flex-wrap items-baseline gap-2">
                 <span className="text-3xl font-bold text-[var(--theme-price)] md:text-4xl">
-                  RM {product.price}
+                  RM {displayPrice}
                 </span>
                 {typeof product.original_price === "number"
                   && product.original_price > product.price && (
@@ -256,6 +277,42 @@ export default function ProductDetail() {
               )}
             </div>
 
+            {availableVariants.length > 0 && (
+              <div className="mt-4 border-t border-[var(--theme-border)] px-4 py-4 md:mt-6 md:theme-rounded md:border md:bg-[var(--theme-surface)] md:px-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <span className="text-sm font-medium text-foreground">规格</span>
+                  {selectedVariant?.sku_code && (
+                    <span className="text-xs text-muted-foreground">SKU：{selectedVariant.sku_code}</span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {availableVariants.map((variant) => {
+                    const active = selectedVariant?.id === variant.id;
+                    const disabled = variant.stock <= 0;
+                    return (
+                      <button
+                        key={variant.id}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => {
+                          setSelectedVariantId(variant.id);
+                          setQty((prev) => Math.min(prev, Math.max(1, variant.stock)));
+                        }}
+                        className={`min-h-16 rounded-lg border px-3 py-2 text-left text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
+                          active
+                            ? "border-[var(--theme-price)] bg-[var(--theme-price)]/10 text-foreground"
+                            : "border-[var(--theme-border)] bg-background text-muted-foreground hover:border-[var(--theme-price)]/60"
+                        }`}
+                      >
+                        <span className="block truncate font-semibold">{variant.title || variant.sku_code || "默认规格"}</span>
+                        <span className="mt-1 block">RM {variant.price}</span>
+                        <span className="mt-0.5 block">库存 {variant.stock}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             {/* 数量 */}
             <div className="mt-4 flex items-center justify-between border-t border-[var(--theme-border)] px-4 py-4 md:mt-6 md:theme-rounded md:border md:bg-[var(--theme-surface)] md:px-5">
               <span className="text-sm font-medium text-foreground">数量</span>

@@ -1,17 +1,17 @@
-/**
- * Cart Service
- *
- * 分层约定：
- * - 入参由 routes 层 zod 校验后到达 service，无需重复校验形状
- * - 业务规则（商品是否存在、库存等）抛 AppError 子类
- * - 不直接拼 SQL：所有数据访问通过 `./cart.repository`
- */
 const { generateId, formatProduct } = require('../../utils/helpers');
-const { NotFoundError } = require('../../errors');
+const { NotFoundError, ValidationError } = require('../../errors');
 const repo = require('./cart.repository');
 
 function formatCartItem(row) {
-  return { product: formatProduct(row), qty: row.qty };
+  return {
+    product: formatProduct(row),
+    variant_id: row.variant_id || undefined,
+    sku_code: row.sku_code || undefined,
+    variant_name: row.variant_name || undefined,
+    unit_price: Number(row.price || 0),
+    subtotal: Number(row.price || 0) * Number(row.qty || 0),
+    qty: row.qty,
+  };
 }
 
 async function getCart(userId) {
@@ -20,28 +20,33 @@ async function getCart(userId) {
 }
 
 async function addToCart(userId, body) {
-  const { productId, qty } = body;
+  const { productId, qty, variant_id: variantId } = body;
 
   const product = await repo.selectActiveProductId(productId);
   if (!product) throw new NotFoundError('商品不存在或已下架');
 
-  await repo.upsertCartItem(generateId(), userId, productId, qty);
+  const variant = await repo.selectActiveVariant(productId, variantId);
+  if (variantId && !variant) throw new ValidationError('商品规格不存在');
+  if (variant && Number(variant.stock || 0) < qty) throw new ValidationError('规格库存不足');
 
-  const row = await repo.selectCartLine(userId, productId);
+  const skuCode = variant?.sku_code || body.sku_code || '';
+  await repo.upsertCartItem(generateId(), userId, productId, qty, variant?.id || '', skuCode);
+
+  const row = await repo.selectCartLine(userId, productId, variant?.id || '');
   return { data: formatCartItem(row) };
 }
 
-async function updateCartItem(userId, productId, body) {
+async function updateCartItem(userId, productId, body, variantId = '') {
   const { qty } = body;
-  const affected = await repo.updateCartItemQty(userId, productId, qty);
+  const affected = await repo.updateCartItemQty(userId, productId, qty, variantId);
   if (affected === 0) throw new NotFoundError('购物车中没有该商品');
 
-  const row = await repo.selectCartLine(userId, productId);
+  const row = await repo.selectCartLine(userId, productId, variantId);
   return { data: formatCartItem(row) };
 }
 
-async function removeCartItem(userId, productId) {
-  await repo.deleteCartItem(userId, productId);
+async function removeCartItem(userId, productId, variantId = '') {
+  await repo.deleteCartItem(userId, productId, variantId);
   return { message: '已移除' };
 }
 

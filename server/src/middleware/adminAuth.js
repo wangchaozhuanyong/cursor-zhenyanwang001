@@ -1,15 +1,16 @@
 const { verifyToken } = require('../utils/helpers');
 const authRepo = require('../modules/auth/auth.repository');
 const rbacService = require('../modules/admin/rbac.service');
+const { getAccessTokenFromRequest } = require('../utils/authCookies');
 
 async function adminAuthMiddleware(req, res, next) {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith('Bearer ')) {
+  const token = getAccessTokenFromRequest(req, 'admin');
+  if (!token) {
     return res.fail(401, '请先登录');
   }
   let payload;
   try {
-    payload = /** @type {{ type?: string, userId?: string }} */ (verifyToken(header.split(' ')[1]));
+    payload = /** @type {{ type?: string, userId?: string }} */ (verifyToken(token));
     if (payload.type === 'refresh') {
       return res.fail(401, '登录已过期，请重新登录');
     }

@@ -40,9 +40,11 @@ async function attachTracking(order) {
   try {
     order.logistics_timeline = await listTracks(order.id);
   } catch {
-    // 未跑迁移或 DB 异常时仍返回订单主体，避免订单详情整页失败
     order.logistics_timeline = [];
   }
+  order.tracking_notice = order.tracking_no
+    ? '物流信息以承运商官网为准；当前未接入真实承运商轨迹 API。'
+    : '';
   return order;
 }
 
@@ -65,8 +67,9 @@ async function refreshOrderTracking(orderId) {
         tracking_url: carrier.url || '',
       },
       logistics_timeline: await listTracks(order.id),
+      tracking_notice: '物流信息以承运商官网为准；当前未接入真实承运商轨迹 API。',
     },
-    message: '物流轨迹已刷新',
+    message: events.length ? '物流轨迹已刷新' : '未接入真实物流 API，请以承运商官网为准',
   };
 }
 

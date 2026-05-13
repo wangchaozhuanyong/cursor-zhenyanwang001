@@ -1029,6 +1029,32 @@ function OrderSuccess({
           </div>
         </div>
 
+        <div className="mt-4 rounded-2xl border border-border bg-card p-4">
+          <h3 className="mb-3 text-sm font-semibold text-foreground">关键信息</h3>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">支付方式</span>
+              <span className="font-medium text-foreground">
+                {order.payment_method === "online"
+                  ? "在线支付"
+                  : order.payment_method === "reward_wallet"
+                    ? "返现钱包"
+                    : "联系客服"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">应付金额</span>
+              <span className="font-semibold text-[var(--theme-price)]">RM {order.total_amount}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">下单时间</span>
+              <span className="font-medium text-foreground">
+                {new Date(order.created_at).toLocaleString("zh-CN")}
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* Action buttons */}
         <div className="mt-6 space-y-3">
           <p className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">下一步操作</p>

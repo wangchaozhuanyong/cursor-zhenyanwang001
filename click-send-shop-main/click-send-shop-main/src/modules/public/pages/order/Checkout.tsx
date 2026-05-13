@@ -659,7 +659,7 @@ export default function Checkout() {
         {/* Contact info */}
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground">联系信息</h3>
+            <h3 className="text-sm font-semibold text-foreground">1. 收货信息</h3>
             <button onClick={() => navigate("/address")} className="flex items-center gap-1 rounded-full bg-[var(--theme-bg)] px-3 py-1.5 text-xs font-medium text-[var(--theme-price)]">
               <MapPin size={12} /> 选择地址
             </button>
@@ -679,7 +679,7 @@ export default function Checkout() {
         {/* Payment method */}
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground">支付方式</h3>
+            <h3 className="text-sm font-semibold text-foreground">2. 支付方式</h3>
             <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
               <ShieldCheck size={12} className="text-emerald-600" /> 安全支付
             </span>
@@ -697,6 +697,9 @@ export default function Checkout() {
           <TrustInfo className="mt-3" />
         </div>
 
+        <div className="px-1">
+          <p className="mb-2 text-sm font-semibold text-foreground">3. 优惠券</p>
+        </div>
         {/* Coupon */}
         <CouponPicker
           totalAmount={rawTotal}
@@ -707,6 +710,9 @@ export default function Checkout() {
           loading={pickerCouponsLoading}
         />
 
+        <div className="px-1">
+          <p className="mb-2 text-sm font-semibold text-foreground">4. 配送方式</p>
+        </div>
         {/* Shipping */}
         <ShippingPicker
           totalAmount={rawTotal}
@@ -725,7 +731,7 @@ export default function Checkout() {
         )}
 
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">商品清单</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">5. 确认商品</h3>
           {items.map((item) => (
             <div key={`${item.product.id}:${item.variant_id || ""}`} className="flex items-center gap-3 border-b border-[var(--theme-border)] py-3 last:border-0">
               <img src={item.product.cover_image} alt={item.product.name} className="h-14 w-14 rounded-lg object-cover" />

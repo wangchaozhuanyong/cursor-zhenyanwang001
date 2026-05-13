@@ -81,6 +81,11 @@ export default function Cart() {
       </header>
 
       <main className="mx-auto w-full max-w-screen-xl px-4 md:px-6 md:py-8">
+        {items.length > 0 && (
+          <div className="mb-3 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-xs text-[var(--theme-text-muted)]">
+            结算流程：地址 → 配送 → 支付 → 优惠券 → 确认
+          </div>
+        )}
         {/* 桌面端：左商品列表 / 右结算摘要 */}
         <div className="md:grid md:grid-cols-[1fr_360px] md:gap-8">
           <div>
@@ -257,6 +262,16 @@ export default function Cart() {
               <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
                 <h3 className="mb-4 text-base font-semibold text-foreground">结算摘要</h3>
                 <div className="space-y-2.5 text-sm">
+                  <div className="flex items-center justify-between rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-xs">
+                    <span className="text-muted-foreground">下单前可先领券，结算页自动匹配最优优惠</span>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/coupons")}
+                      className="font-semibold text-[var(--theme-price)]"
+                    >
+                      去领券
+                    </button>
+                  </div>
                   <div className="flex justify-between text-muted-foreground">
                     <span>已选商品</span>
                     <span>{totalItemsSelected()} 件</span>

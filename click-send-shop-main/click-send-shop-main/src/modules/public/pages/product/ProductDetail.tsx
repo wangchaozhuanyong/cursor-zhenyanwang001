@@ -130,6 +130,7 @@ export default function ProductDetail() {
     ? activeActivity.limit_per_user
     : product.stock;
   const maxQty = Math.max(1, Math.min(displayStock, activityRemaining, activityLimit));
+  const detailSections = buildDetailSections(product.description);
 
   const handleAddToCart = () => {
     if (availableVariants.length && !selectedVariant) {
@@ -396,12 +397,28 @@ export default function ProductDetail() {
               <TrustInfo variant="card" />
             </div>
 
+            {/* 服务保障 */}
+            <div className="mt-6 grid grid-cols-2 gap-2 px-4 md:px-0">
+              <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-xs text-[var(--theme-text-muted)]">
+                <p className="font-semibold text-[var(--theme-text)]">配送保障</p>
+                <p className="mt-1">本地仓发货，支持物流追踪</p>
+              </div>
+              <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-xs text-[var(--theme-text-muted)]">
+                <p className="font-semibold text-[var(--theme-text)]">售后保障</p>
+                <p className="mt-1">7 天内可申请售后服务</p>
+              </div>
+            </div>
+
             {/* 描述 */}
             <div className="mt-8 border-t border-[var(--theme-border)] px-4 pt-6 md:mt-10 md:theme-rounded md:border md:bg-[var(--theme-surface)]/40 md:p-6">
               <h3 className="mb-3 text-sm font-semibold text-foreground md:mb-4">商品详情</h3>
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                {product.description}
-              </p>
+              <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
+                {detailSections.map((section, idx) => (
+                  <div key={`${section.slice(0, 12)}-${idx}`} className="rounded-lg border border-[var(--theme-border)]/60 bg-[var(--theme-surface)]/50 p-3">
+                    {section}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -446,6 +463,16 @@ export default function ProductDetail() {
       </div>
     </div>
   );
+}
+
+function buildDetailSections(description: string): string[] {
+  const raw = (description || "").trim();
+  if (!raw) return ["暂无详情描述"];
+  const parts = raw
+    .split(/\n+|[；;。]/g)
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return parts.length > 0 ? parts : [raw];
 }
 
 /** 详情页统一 Header（移动 / 桌面共用，桌面端容器宽） */

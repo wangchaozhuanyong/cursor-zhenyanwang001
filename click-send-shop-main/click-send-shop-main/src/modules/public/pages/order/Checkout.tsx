@@ -982,6 +982,9 @@ function OrderSuccess({
     return "";
   })();
   const statusBadge = isPaid ? "已支付" : isPending ? "待支付" : "处理中";
+  const primaryActionClass = isPaid
+    ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
+    : "bg-gold text-primary-foreground shadow-lg shadow-gold/20";
 
   return (
     <div className="min-h-screen bg-background">
@@ -1063,7 +1066,7 @@ function OrderSuccess({
               <button
                 type="button"
                 onClick={onPayOnline}
-                className="flex w-full items-center justify-center gap-2.5 rounded-full bg-gold py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98]"
+                className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
               >
                 {postSubmitOnlineError ? "重新支付" : "继续支付"}
               </button>
@@ -1111,7 +1114,7 @@ function OrderSuccess({
               <button
                 type="button"
                 onClick={onPayOnline}
-                className="flex w-full items-center justify-center gap-2.5 rounded-full bg-gold py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98]"
+                className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
               >
                 改用在线支付
               </button>
@@ -1138,7 +1141,7 @@ function OrderSuccess({
                 type="button"
                 onClick={onPayRewardWallet}
                 disabled={payingWallet}
-                className="flex w-full items-center justify-center gap-2.5 rounded-full bg-gold py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98] disabled:opacity-60"
+                className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] disabled:opacity-60 ${primaryActionClass}`}
               >
                 {payingWallet ? "支付中…" : `使用返现钱包支付（可用 RM ${rewardBalance.toFixed(2)}）`}
               </button>
@@ -1211,7 +1214,7 @@ function OrderSuccess({
               <button
                 type="button"
                 onClick={onPayOnline}
-                className="flex w-full items-center justify-center gap-2.5 rounded-full bg-gold py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98]"
+                className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
               >
                 继续支付
               </button>
@@ -1229,7 +1232,7 @@ function OrderSuccess({
             <button
               type="button"
               onClick={onViewOrderDetail}
-              className="flex w-full items-center justify-center gap-2.5 rounded-full bg-gold py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98]"
+              className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
             >
               查看订单详情
             </button>

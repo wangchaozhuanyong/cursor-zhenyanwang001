@@ -25,6 +25,7 @@ import { ORDER_STATUS } from "@/constants/statusDictionary";
 import * as userShippingService from "@/services/userShippingService";
 import { copyToClipboard } from "@/utils/clipboard";
 import TrustInfo from "@/components/TrustInfo";
+import CheckoutStepBar from "@/components/CheckoutStepBar";
 import type { PublicPaymentChannel } from "@/services/paymentService";
 import { trackBeginCheckout, trackPurchase } from "@/utils/tracking";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
@@ -652,6 +653,7 @@ export default function Checkout() {
       </header>
 
       <main className="mx-auto w-full max-w-screen-xl px-4 py-4 md:px-6 md:py-6">
+        <CheckoutStepBar className="mb-4" />
         <div className="md:grid md:grid-cols-[1fr_380px] md:items-start md:gap-8">
           <div className="space-y-4">
         {/* Contact info */}

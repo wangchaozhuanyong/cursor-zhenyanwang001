@@ -981,6 +981,7 @@ function OrderSuccess({
     }
     return "";
   })();
+  const statusBadge = isPaid ? "已支付" : isPending ? "待支付" : "处理中";
 
   return (
     <div className="min-h-screen bg-background">
@@ -1005,6 +1006,11 @@ function OrderSuccess({
             <CheckCircle2 size={40} className="text-gold" />
           </motion.div>
           <h2 className="font-display text-2xl font-bold text-foreground">{mainHeading}</h2>
+          <div className="mt-3">
+            <span className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-1 text-xs font-semibold text-[var(--theme-text)]">
+              状态：{statusBadge}
+            </span>
+          </div>
           <p className="mt-2 text-sm text-muted-foreground">
             订单编号: <span className="font-mono font-semibold text-foreground">{order.order_no}</span>
           </p>
@@ -1025,6 +1031,7 @@ function OrderSuccess({
 
         {/* Action buttons */}
         <div className="mt-6 space-y-3">
+          <p className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">下一步操作</p>
           {isOnlinePending && (
             <>
               <button

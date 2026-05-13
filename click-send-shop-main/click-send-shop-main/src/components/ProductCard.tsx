@@ -1,4 +1,5 @@
-import { Heart, ShoppingCart } from "lucide-react";
+﻿import { Heart, ShoppingCart } from "lucide-react";
+import type { MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCartStore } from "@/stores/useCartStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
@@ -7,10 +8,7 @@ import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import Reveal from "@/components/Reveal";
 import { PRODUCT_BLUR_PLACEHOLDER } from "@/constants/productBlurPlaceholder";
-import {
-  ProgressiveImage,
-  SquishButton,
-} from "@/modules/micro-interactions";
+import { ProgressiveImage, SquishButton } from "@/modules/micro-interactions";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import ProductTagList from "@/components/ProductTagList";
 import { trackAddToCart } from "@/utils/tracking";
@@ -33,6 +31,56 @@ export default function ProductCard({ product, index = 0 }: Props) {
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const { themeConfig } = useThemeRuntime();
   const cardCenter = themeConfig.cardTextAlign === "center";
+  const cardVariant = themeConfig.productCardVariant ?? "standard";
+
+  const onAddToCart = (event?: MouseEvent) => {
+    event?.stopPropagation();
+    addItem(product);
+    trackAddToCart(product, 1);
+    toast.success("已加入购物车", toastPresetQuickSuccess);
+  };
+
+  if (cardVariant === "compact") {
+    return (
+      <Reveal
+        index={index}
+        className="theme-product-card group cursor-pointer overflow-hidden theme-rounded"
+        onClick={() => navigate(`/product/${product.id}`)}
+      >
+        <div className="flex gap-3 p-3">
+          <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)]">
+            <ProgressiveImage
+              src={product.cover_image}
+              blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
+              alt={product.name}
+              className="h-full w-full bg-transparent"
+              imgClassName="h-full w-full [object-fit:var(--theme-image-fit,cover)]"
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h3 className="line-clamp-2 text-sm font-semibold text-[var(--theme-text)]">{product.name}</h3>
+            <p className="mt-1 text-xs text-[var(--theme-text-muted)]">
+              库存 {Math.max(0, Number(product.stock) || 0)} · 销量 {formatSales(Math.max(0, Number(product.sales_count) || 0))}
+            </p>
+            <div className="mt-3 flex items-center justify-between">
+              <span className="text-base font-bold text-[var(--theme-price)]">RM {product.price}</span>
+              <SquishButton
+                type="button"
+                variant="solid"
+                aria-label="加入购物车"
+                onClick={onAddToCart}
+                className="flex h-8 w-8 items-center justify-center rounded-full !p-0"
+              >
+                <ShoppingCart size={14} />
+              </SquishButton>
+            </div>
+          </div>
+        </div>
+      </Reveal>
+    );
+  }
+
+  const isPremium = cardVariant === "premium";
 
   return (
     <Reveal
@@ -41,7 +89,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
     >
       <div
         className="relative overflow-hidden bg-[var(--theme-bg)]"
-        style={{ aspectRatio: "var(--theme-image-ratio)" }}
+        style={{ aspectRatio: isPremium ? "1 / 1" : "var(--theme-image-ratio)" }}
         onClick={() => navigate(`/product/${product.id}`)}
       >
         <ProgressiveImage
@@ -70,7 +118,6 @@ export default function ProductCard({ product, index = 0 }: Props) {
           <ProductTagList tags={product.tags} max={2} />
         </div>
 
-        {/* Favorite button */}
         <SquishButton
           type="button"
           variant="ghost"
@@ -88,7 +135,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
           />
         </SquishButton>
       </div>
-      <div className={`flex flex-col gap-2 p-3 ${cardCenter ? "items-center text-center" : ""}`}>
+      <div className={`flex flex-col gap-2 p-3 ${isPremium ? "gap-2.5 p-3.5" : ""} ${cardCenter ? "items-center text-center" : ""}`}>
         <h3
           className="line-clamp-2 text-[13px] font-medium leading-tight text-[var(--theme-text)]"
           onClick={() => navigate(`/product/${product.id}`)}
@@ -100,7 +147,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
         >
           <div className={`min-w-0 ${cardCenter ? "flex flex-col items-center" : "flex-1"}`}>
             <div className={`flex flex-wrap items-baseline gap-1.5 ${cardCenter ? "justify-center" : ""}`}>
-              <span className="text-lg font-bold leading-none text-[var(--theme-price)]">
+              <span className={`${isPremium ? "text-xl" : "text-lg"} font-bold leading-none text-[var(--theme-price)]`}>
                 RM {product.price}
               </span>
               {typeof product.original_price === "number"
@@ -119,7 +166,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
               </div>
             )}
             <div className={`mt-1 flex flex-wrap items-center gap-2 text-[10px] text-[var(--theme-text-muted)] ${cardCenter ? "justify-center" : ""}`}>
-              <span>+{product.points}积分</span>
+              <span>+{product.points} 积分</span>
               {typeof product.sales_count === "number" && product.sales_count > 0 && (
                 <span>已售 {formatSales(product.sales_count)}</span>
               )}
@@ -129,12 +176,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
             type="button"
             variant="solid"
             aria-label="加入购物车"
-            onClick={(e) => {
-              e.stopPropagation();
-              addItem(product);
-              trackAddToCart(product, 1);
-              toast.success("已加入购物车", toastPresetQuickSuccess);
-            }}
+            onClick={onAddToCart}
             className="flex h-9 w-9 items-center justify-center rounded-full transition-all active:scale-90 touch-target hover:opacity-90 !p-0"
           >
             <ShoppingCart size={15} />

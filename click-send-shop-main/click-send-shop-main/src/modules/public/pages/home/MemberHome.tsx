@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState, useRef } from "react";
-import { Bell, ChevronRight, Flame, RefreshCw, Search, Star, Ticket, Zap } from "lucide-react";
+import { Bell, ChevronRight, Flame, Gift, Heart, RefreshCw, Search, ShoppingCart, Star, Ticket, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
@@ -140,9 +140,18 @@ export default function MemberHome() {
   const heroTitle = (siteInfo.newArrivalHeroTitle || "").trim() || "新品上市";
   const heroSubtitle =
     (siteInfo.newArrivalHeroSubtitle || "").trim() ||
-    "姣忓懆绮鹃€夋柊鍝佷笂鏋讹紝绔嬪嵆鏌ョ湅";
-  const heroCtaText = (siteInfo.newArrivalHeroCtaText || "").trim() || "鍓嶅線新品上市";
+    "每周精选新品上架，立即查看";
+  const heroCtaText = (siteInfo.newArrivalHeroCtaText || "").trim() || "前往新品上市";
   const activeNewImage = resolveNewArrivalImage(activeNew, newArrivalIndex);
+  const memberAssets = useMemo(
+    () => [
+      { label: "积分", value: "—", icon: Gift },
+      { label: "优惠券", value: `${couponTop.length}`, icon: Ticket },
+      { label: "收藏", value: `${favoriteIds.length}`, icon: Heart },
+      { label: "购物车", value: `${cartItems.length}`, icon: ShoppingCart },
+    ],
+    [couponTop.length, favoriteIds.length, cartItems.length],
+  );
 
   const trackNewArrivalClick = (target: "product" | "new_arrivals_page") => {
     void productService.trackHomeEngagement({
@@ -213,6 +222,25 @@ export default function MemberHome() {
         </section>
         <section className="mt-3">
           <HomeOpsBlocks />
+        </section>
+        <section className="px-4 mt-3">
+          <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-sm font-semibold text-[var(--theme-text-on-surface)]">会员权益</p>
+              <button type="button" onClick={() => navigate("/profile")} className="text-xs text-[var(--theme-primary)]">
+                查看详情
+              </button>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {memberAssets.map((asset) => (
+                <div key={asset.label} className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] p-2 text-center">
+                  <asset.icon size={14} className="mx-auto text-[var(--theme-primary)]" />
+                  <p className="mt-1 text-xs font-semibold text-[var(--theme-text)]">{asset.value}</p>
+                  <p className="text-[10px] text-[var(--theme-text-muted)]">{asset.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
         <section className="px-4">
           <Header title="权益券包" icon={Ticket} />
@@ -332,7 +360,7 @@ export default function MemberHome() {
                     <p className="mt-1 text-lg font-black text-[var(--theme-price)]">RM {activeNew.price}</p>
                   </button>
                 ) : (
-                  <p className="mt-4 text-sm text-[var(--theme-text-muted)]">鏂板搧新品正在准备中，先看看全部商品。</p>
+                  <p className="mt-4 text-sm text-[var(--theme-text-muted)]">新品正在准备中，先看看全部商品。</p>
                 )}
 
                 <div className="mt-5 flex flex-wrap gap-2">

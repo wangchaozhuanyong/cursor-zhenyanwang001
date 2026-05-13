@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo } from "react";
-import { Gem, ShieldCheck, Sparkles } from "lucide-react";
+import { Gem, LayoutGrid, PackageCheck, ShieldCheck, Sparkles, Ticket, Truck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
@@ -68,7 +68,7 @@ export default function GuestHome() {
   const siteName = siteInfo.siteName || "FlashCast";
   const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
   const slogan = siteInfo.siteSlogan || "精选全球好物，品质生活";
-  const description = siteInfo.siteDescription || "精选全球好物，品质生活璐墿骞冲彴";
+  const description = siteInfo.siteDescription || "精选全球好物，品质生活购物平台";
   const { banners } = useHomeBanners();
   const {
     hotProducts,
@@ -138,6 +138,12 @@ export default function GuestHome() {
   };
 
   const bottomNavSafe = "pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))]";
+  const quickEntries = [
+    { label: "新品", icon: Sparkles, path: "/new-arrivals" },
+    { label: "热销", icon: PackageCheck, path: "/categories?sort=sales_desc" },
+    { label: "优惠券", icon: Ticket, path: "/coupons" },
+    { label: "全部分类", icon: LayoutGrid, path: "/categories" },
+  ];
 
   return (
     <div className={`min-h-screen bg-[var(--theme-bg)] ${bottomNavSafe} text-[var(--theme-text)]`}>
@@ -167,21 +173,35 @@ export default function GuestHome() {
 
       <main className="mx-auto max-w-screen-xl px-4 pt-[4.5rem]">
         <BannerCarousel banners={banners} />
+        <section className="mt-3 grid grid-cols-4 gap-2">
+          {quickEntries.map((entry) => (
+            <button
+              key={entry.label}
+              type="button"
+              onClick={() => navigate(entry.path)}
+              className="flex flex-col items-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-3 text-[11px] text-[var(--theme-text)]"
+            >
+              <entry.icon size={16} className="text-[var(--theme-primary)]" />
+              <span>{entry.label}</span>
+            </button>
+          ))}
+        </section>
         <div className="-mx-4 mt-3">
           <HomeOpsBlocks />
         </div>
-        <div className="mt-1 flex items-center justify-between px-2 py-5 text-[11px] text-[var(--theme-text-muted)] md:text-sm">
-          <span className="flex items-center gap-1.5">
+        <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-[var(--theme-text-muted)] md:text-sm">
+          <div className="flex items-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-2">
             <ShieldCheck size={16} className="text-[var(--theme-price)]" />
             正品保障
-          </span>
-          <span className="flex items-center gap-1.5">
+          </div>
+          <div className="flex items-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-2">
+            <Truck size={16} className="text-[var(--theme-price)]" />
+            快速配送
+          </div>
+          <div className="flex items-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-2">
             <Gem size={16} className="text-[var(--theme-price)]" />
-            快速配送          </span>
-          <span className="flex items-center gap-1.5">
-            <Sparkles size={16} className="text-[var(--theme-price)]" />
             安心售后
-          </span>
+          </div>
         </div>
 
         <section className="mt-4">

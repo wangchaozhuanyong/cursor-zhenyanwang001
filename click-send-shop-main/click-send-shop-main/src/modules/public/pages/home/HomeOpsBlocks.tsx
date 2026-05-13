@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Bell, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { fetchHomeOps } from "@/services/contentService";
@@ -24,7 +24,7 @@ function openHomeNavTarget(navigate: ReturnType<typeof useNavigate>, item: HomeN
 
 function looksLikeMojibake(value: string): boolean {
   if (!value) return false;
-  return /�|锟|鈥|銆|鍟|鐧|璇|绠|閫/.test(value);
+  return value.includes("�") || value.includes("锟");
 }
 
 function normalizeText(value: string | undefined, fallback = ""): string {
@@ -35,12 +35,12 @@ function normalizeText(value: string | undefined, fallback = ""): string {
 }
 
 function IconView({ value }: { value: string }) {
-  const v = value.trim();
-  if (!v) return <span className="text-sm font-bold text-[var(--theme-text-on-surface)]">—</span>;
-  if (v.startsWith("http") || v.startsWith("/")) {
-    return <img src={v} alt="" className="h-full w-full object-cover" />;
+  const iconValue = value.trim();
+  if (!iconValue) return <span className="text-sm font-bold text-[var(--theme-text-on-surface)]">·</span>;
+  if (iconValue.startsWith("http") || iconValue.startsWith("/")) {
+    return <img src={iconValue} alt="" className="h-full w-full object-cover" />;
   }
-  return <span className="text-lg leading-none">{v.slice(0, 2)}</span>;
+  return <span className="text-lg leading-none">{iconValue.slice(0, 2)}</span>;
 }
 
 export default function HomeOpsBlocks() {
@@ -83,7 +83,7 @@ export default function HomeOpsBlocks() {
                 key={item.id}
                 type="button"
                 onClick={() => openTarget(navigate, item.link_url)}
-                className={`flex w-full items-center gap-3 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)]/85 px-3 py-2.5 text-left shadow-[var(--theme-shadow)] transition-colors active:scale-[0.99] ${
+                className={`flex w-full items-center gap-3 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2.5 text-left shadow-[var(--theme-shadow)] transition-colors active:scale-[0.99] ${
                   hasLink ? "cursor-pointer hover:bg-[var(--theme-surface)]" : "cursor-default"
                 }`}
               >
@@ -113,13 +113,13 @@ export default function HomeOpsBlocks() {
       )}
 
       {navItems.length > 0 && (
-        <section className="grid grid-cols-4 gap-3 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)]/70 p-3 shadow-[var(--theme-shadow)] sm:grid-cols-6 md:grid-cols-8">
+        <section className="grid grid-cols-4 gap-2">
           {navItems.slice(0, 12).map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => openHomeNavTarget(navigate, item)}
-              className="flex min-w-0 flex-col items-center gap-1.5 rounded-xl px-1 py-2 text-center transition-colors hover:bg-[var(--theme-bg)]/60 active:scale-[0.98]"
+              className="flex min-w-0 flex-col items-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-1 py-2 text-center transition-colors hover:bg-[var(--theme-bg)]/60 active:scale-[0.98]"
             >
               <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl bg-[var(--theme-bg)] text-[var(--theme-price)] ring-1 ring-[var(--theme-border)]">
                 <IconView value={item.icon_url} />

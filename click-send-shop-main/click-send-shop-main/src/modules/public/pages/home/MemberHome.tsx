@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+﻿import { useEffect, useMemo, useState, useRef } from "react";
 import { Bell, ChevronRight, Flame, RefreshCw, Search, Star, Ticket, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
@@ -40,8 +40,7 @@ function Header({ title, icon: Icon, subtitle }: { title: string; icon?: React.E
 }
 
 export default function MemberHome() {
-  // 首页标题策略：优先使用后台 SEO 标题（seoTitle），未配置时回退站点名
-  useDocumentTitle(undefined);
+  // 棣栭〉鏍囬绛栫暐锛氫紭鍏堜娇鐢ㄥ悗鍙?SEO 鏍囬锛坰eoTitle锛夛紝鏈厤缃椂鍥為€€绔欑偣鍚?  useDocumentTitle(undefined);
   const navigate = useNavigate();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const { hotProducts, newProducts, recommendedProducts, loading: homeLoading, loadHomeData } = useProductStore();
@@ -141,8 +140,8 @@ export default function MemberHome() {
   const heroTitle = (siteInfo.newArrivalHeroTitle || "").trim() || "新品上市";
   const heroSubtitle =
     (siteInfo.newArrivalHeroSubtitle || "").trim() ||
-    "每周精选新品上架，立即查看";
-  const heroCtaText = (siteInfo.newArrivalHeroCtaText || "").trim() || "前往新品上市";
+    "姣忓懆绮鹃€夋柊鍝佷笂鏋讹紝绔嬪嵆鏌ョ湅";
+  const heroCtaText = (siteInfo.newArrivalHeroCtaText || "").trim() || "鍓嶅線新品上市";
   const activeNewImage = resolveNewArrivalImage(activeNew, newArrivalIndex);
 
   const trackNewArrivalClick = (target: "product" | "new_arrivals_page") => {
@@ -333,7 +332,7 @@ export default function MemberHome() {
                     <p className="mt-1 text-lg font-black text-[var(--theme-price)]">RM {activeNew.price}</p>
                   </button>
                 ) : (
-                  <p className="mt-4 text-sm text-[var(--theme-text-muted)]">新品正在准备中，先看看全部商品。</p>
+                  <p className="mt-4 text-sm text-[var(--theme-text-muted)]">鏂板搧新品正在准备中，先看看全部商品。</p>
                 )}
 
                 <div className="mt-5 flex flex-wrap gap-2">
@@ -391,8 +390,7 @@ export default function MemberHome() {
                 className="flex items-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs text-[var(--theme-text-muted)]"
               >
                 <RefreshCw size={12} />
-                换一批
-              </button>
+                换一批              </button>
             ) : null}
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -417,8 +415,7 @@ export default function MemberHome() {
                 className="flex items-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs text-[var(--theme-text-muted)]"
               >
                 <RefreshCw size={12} />
-                换一批
-              </button>
+                换一批              </button>
             ) : null}
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -450,3 +447,7 @@ function toBatches<T>(list: T[], size: number): T[][] {
   }
   return out;
 }
+
+
+
+

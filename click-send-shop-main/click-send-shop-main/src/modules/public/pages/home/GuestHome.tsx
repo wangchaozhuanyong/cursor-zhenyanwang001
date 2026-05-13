@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+﻿import { useEffect, useMemo } from "react";
 import { Gem, ShieldCheck, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -68,7 +68,7 @@ export default function GuestHome() {
   const siteName = siteInfo.siteName || "FlashCast";
   const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
   const slogan = siteInfo.siteSlogan || "精选全球好物，品质生活";
-  const description = siteInfo.siteDescription || "精选全球好物，品质生活购物平台";
+  const description = siteInfo.siteDescription || "精选全球好物，品质生活璐墿骞冲彴";
   const { banners } = useHomeBanners();
   const {
     hotProducts,
@@ -117,7 +117,7 @@ export default function GuestHome() {
     const extra: FooterNavItem[] = [];
     if (siteInfo.privacyPolicyPath) extra.push({ label: "隐私政策", path: siteInfo.privacyPolicyPath });
     if (siteInfo.termsPath) extra.push({ label: "服务条款", path: siteInfo.termsPath });
-    if (siteInfo.refundPolicyPath) extra.push({ label: "退货退款", path: siteInfo.refundPolicyPath });
+    if (siteInfo.refundPolicyPath) extra.push({ label: "退款政策", path: siteInfo.refundPolicyPath });
     if (siteInfo.shippingPolicyPath) extra.push({ label: "配送政策", path: siteInfo.shippingPolicyPath });
     extra.push({ label: "联系我们", path: "/content/contact-us" });
     return dedupeFooterNav([...base, ...extra]);
@@ -177,8 +177,7 @@ export default function GuestHome() {
           </span>
           <span className="flex items-center gap-1.5">
             <Gem size={16} className="text-[var(--theme-price)]" />
-            快速配送
-          </span>
+            快速配送          </span>
           <span className="flex items-center gap-1.5">
             <Sparkles size={16} className="text-[var(--theme-price)]" />
             安心售后
@@ -214,8 +213,7 @@ export default function GuestHome() {
             <div className="mt-6 rounded-xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)]/60 px-4 py-10 text-center">
               <p className="text-sm text-[var(--theme-text)]">暂无推荐商品</p>
               <p className="mt-2 text-xs text-[var(--theme-text-muted)]">
-                请先浏览分类或登录查看；商家上架商品后，这里会自动展示。
-              </p>
+                请先浏览分类或登录查看；商家上架商品后，这里会自动展示。              </p>
               <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
@@ -268,3 +266,6 @@ export default function GuestHome() {
     </div>
   );
 }
+
+
+

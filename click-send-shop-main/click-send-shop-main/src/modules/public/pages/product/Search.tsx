@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+﻿import { useState, useEffect, useCallback, useRef } from "react";
 import PageHeader from "@/components/PageHeader";
 import SearchBar from "@/components/SearchBar";
 import CategoryTabs from "@/components/CategoryTabs";
@@ -276,3 +276,5 @@ export default function Search() {
     </div>
   );
 }
+
+

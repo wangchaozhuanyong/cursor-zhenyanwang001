@@ -1,10 +1,12 @@
 ﻿import { useState, useEffect, useCallback, useRef } from "react";
-import { ArrowLeft, ChevronDown, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, ChevronDown } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useProductStore } from "@/stores/useProductStore";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
+import ProductFilterDrawer from "@/components/ProductFilterDrawer";
+import ProductSortBar from "@/components/ProductSortBar";
 import { Skeleton } from "@/components/ui/skeleton";
 import * as productService from "@/services/productService";
 import type { ProductSortType, ProductTag } from "@/types/product";
@@ -93,6 +95,12 @@ export default function Categories() {
     setExpandedParentId(null);
   }, []);
 
+  const clearFilters = useCallback(() => {
+    setActiveTagId("");
+    setSort("default");
+    setQuery("");
+  }, []);
+
   const categoryBtnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const rootRow: Array<{ kind: "all" } | { kind: "root"; node: Category }> = [
     { kind: "all" },
@@ -135,36 +143,6 @@ export default function Categories() {
           <div className="px-4 pt-4">
             <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm font-semibold text-[var(--theme-text-on-surface)]">
               正在筛选：新品上市
-            </div>
-          </div>
-        ) : null}
-
-        {quickTags.length > 0 ? (
-          <div className="border-b border-[var(--theme-border)] px-4 py-3">
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--theme-text-muted)]">
-              热门标签
-            </p>
-            <div className="no-scrollbar flex gap-2 overflow-x-auto">
-              {quickTags.map((tag) => {
-                const active = activeTagId === tag.id;
-                return (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    onClick={() => setActiveTagId(active ? "" : tag.id)}
-                    className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold transition-transform active:scale-95 ${
-                      active ? "ring-2 ring-[var(--theme-price)]/30" : ""
-                    }`}
-                    style={{
-                      backgroundColor: active ? tag.bg_color || "#FEF3C7" : "var(--theme-surface)",
-                      borderColor: tag.bg_color || "var(--theme-border)",
-                      color: active ? tag.text_color || "#92400E" : "var(--theme-text)",
-                    }}
-                  >
-                    {tag.name}
-                  </button>
-                );
-              })}
             </div>
           </div>
         ) : null}
@@ -256,19 +234,39 @@ export default function Categories() {
           </div>
         ) : null}
 
-        {/* Sort */}
-        <div className="flex items-center gap-2 px-4 pb-4 pt-3">
-          <SlidersHorizontal size={14} className="text-muted-foreground" />
-          {(["default", "price-asc", "price-desc"] as const).map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setSort(s)}
-              className={`text-xs ${sort === s ? "font-semibold text-gold" : "text-muted-foreground"}`}
-            >
-              {s === "default" ? "综合" : s === "price-asc" ? "价格↑" : "价格↓"}
-            </button>
-          ))}
+        <div className="flex items-center gap-3 px-4 pb-4 pt-3">
+          <ProductSortBar value={sort} onChange={setSort} />
+          <ProductFilterDrawer activeTagCount={activeTagId ? 1 : 0} onReset={clearFilters}>
+            {quickTags.length > 0 ? (
+              <div>
+                <p className="mb-2 text-xs font-semibold text-[var(--theme-text)]">热门标签</p>
+                <div className="flex flex-wrap gap-2">
+                  {quickTags.map((tag) => {
+                    const active = activeTagId === tag.id;
+                    return (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => setActiveTagId(active ? "" : tag.id)}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-bold transition-transform active:scale-95 ${
+                          active ? "ring-2 ring-[var(--theme-price)]/30" : ""
+                        }`}
+                        style={{
+                          backgroundColor: active ? tag.bg_color || "#FEF3C7" : "var(--theme-surface)",
+                          borderColor: tag.bg_color || "var(--theme-border)",
+                          color: active ? tag.text_color || "#92400E" : "var(--theme-text)",
+                        }}
+                      >
+                        {tag.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-[var(--theme-text-muted)]">暂无可用筛选标签</p>
+            )}
+          </ProductFilterDrawer>
         </div>
 
         {/* Error */}

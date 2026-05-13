@@ -33,6 +33,15 @@ const DEFAULT_THEME_CONFIG: ThemeConfig = {
   bgColor: "#F9FAFB",
   surfaceColor: "#FFFFFF",
   borderColor: "auto",
+  buttonStyle: "rounded",
+  navStyle: "clean",
+  homeLayout: "classic",
+  productCardVariant: "standard",
+  badgeStyle: "soft",
+  priceStyle: "normal",
+  motionLevel: "soft",
+  density: "comfortable",
+  adminThemeMode: "fixed",
 };
 
 type ThemeContextValue = {
@@ -46,6 +55,10 @@ type ThemeContextValue = {
 const ThemeRuntimeContext = createContext<ThemeContextValue | null>(null);
 
 type LoadOpts = { silent?: boolean };
+
+function isAdminScope() {
+  return typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
+}
 
 export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   const [themeConfig, setThemeConfig] = useState<ThemeConfig>(DEFAULT_THEME_CONFIG);
@@ -152,11 +165,39 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(SKIN_STORAGE_KEY, skinId);
     }
 
+    const shouldUseAdminFixedTheme =
+      isAdminScope() && (themeConfig.adminThemeMode ?? "fixed") === "fixed";
+    root.setAttribute("data-admin-fixed-theme", shouldUseAdminFixedTheme ? "1" : "0");
+
     const palette = generateThemePalette(themeConfig);
-    Object.entries(palette).forEach(([key, value]) => {
-      root.style.setProperty(key, value);
-    });
+    if (shouldUseAdminFixedTheme) {
+      Object.keys(palette).forEach((key) => {
+        root.style.removeProperty(key);
+      });
+    } else {
+      Object.entries(palette).forEach(([key, value]) => {
+        root.style.setProperty(key, value);
+      });
+    }
   }, [themeConfig, skinId]);
+
+  useEffect(() => {
+    const syncScope = () => {
+      const shouldUseAdminFixedTheme =
+        isAdminScope() && (themeConfig.adminThemeMode ?? "fixed") === "fixed";
+      const root = document.documentElement;
+      root.setAttribute("data-admin-fixed-theme", shouldUseAdminFixedTheme ? "1" : "0");
+      const palette = generateThemePalette(themeConfig);
+      if (shouldUseAdminFixedTheme) {
+        Object.keys(palette).forEach((key) => root.style.removeProperty(key));
+      } else {
+        Object.entries(palette).forEach(([key, value]) => root.style.setProperty(key, value));
+      }
+    };
+    syncScope();
+    window.addEventListener("app:scope-changed", syncScope);
+    return () => window.removeEventListener("app:scope-changed", syncScope);
+  }, [themeConfig.adminThemeMode]);
 
   const value = useMemo<ThemeContextValue>(() => ({
     theme: "light",

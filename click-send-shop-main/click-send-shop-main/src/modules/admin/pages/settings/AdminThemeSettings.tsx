@@ -54,6 +54,15 @@ const DEFAULT_THEME_CONFIG: ThemeConfig = {
   bgColor: "#F9FAFB",
   surfaceColor: "#FFFFFF",
   borderColor: "auto",
+  buttonStyle: "rounded",
+  navStyle: "clean",
+  homeLayout: "classic",
+  productCardVariant: "standard",
+  badgeStyle: "soft",
+  priceStyle: "normal",
+  motionLevel: "soft",
+  density: "comfortable",
+  adminThemeMode: "fixed",
 };
 
 type ThemeSkin = {
@@ -738,4 +747,3 @@ export default function AdminThemeSettings() {
     </div>
   );
 }
-

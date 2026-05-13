@@ -188,6 +188,17 @@ function AdminTitleSync() {
   return null;
 }
 
+function AppScopeSync() {
+  const location = useLocation();
+  useEffect(() => {
+    const isAdmin = location.pathname.startsWith("/admin");
+    const scope = isAdmin ? "admin" : "store";
+    document.documentElement.setAttribute("data-app-scope", scope);
+    window.dispatchEvent(new CustomEvent("app:scope-changed", { detail: { scope } }));
+  }, [location.pathname]);
+  return null;
+}
+
 function HomeRoute() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const hasToken = isLoggedIn();
@@ -210,6 +221,7 @@ const App = () => (
           <AuthTokenSync />
           <SiteIdentitySync />
           <ReferralInviteSync />
+          <AppScopeSync />
           <AdminTitleSync />
           <TrackingManager />
           <Suspense fallback={<AppRouteFallback />}>

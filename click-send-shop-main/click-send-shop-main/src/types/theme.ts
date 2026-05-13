@@ -21,5 +21,13 @@ export type ThemeConfig = {
   bgColor: string;
   surfaceColor: string;
   borderColor: string;
+  buttonStyle?: "pill" | "rounded" | "square";
+  navStyle?: "clean" | "floating" | "glass";
+  homeLayout?: "classic" | "magazine" | "deal";
+  productCardVariant?: "standard" | "premium" | "compact";
+  badgeStyle?: "solid" | "soft" | "outline";
+  priceStyle?: "normal" | "bold" | "luxury";
+  motionLevel?: "none" | "soft" | "rich";
+  density?: "comfortable" | "compact";
+  adminThemeMode?: "fixed" | "follow_store";
 };
-

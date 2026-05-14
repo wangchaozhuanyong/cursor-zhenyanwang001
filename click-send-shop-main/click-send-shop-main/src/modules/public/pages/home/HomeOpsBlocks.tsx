@@ -113,7 +113,7 @@ export default function HomeOpsBlocks() {
       )}
 
       {navItems.length > 0 && (
-        <section className="grid grid-cols-4 gap-2">
+        <section className="grid grid-cols-4 gap-2 sm:grid-cols-5">
           {navItems.slice(0, 12).map((item) => (
             <button
               key={item.id}
@@ -124,7 +124,7 @@ export default function HomeOpsBlocks() {
               <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl bg-[var(--theme-bg)] text-[var(--theme-price)] ring-1 ring-[var(--theme-border)]">
                 <IconView value={item.icon_url} />
               </span>
-              <span className="line-clamp-2 text-xs font-medium leading-tight text-[var(--theme-text)]">
+              <span className="w-full truncate px-1 text-xs font-medium leading-tight text-[var(--theme-text)]">
                 {normalizeText(item.title, "分类")}
               </span>
             </button>

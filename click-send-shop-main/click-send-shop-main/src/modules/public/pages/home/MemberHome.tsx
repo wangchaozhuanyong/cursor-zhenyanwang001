@@ -262,7 +262,7 @@ export default function MemberHome() {
             </button>
           ))}
         </section>
-        <section className="mt-3">
+        <section className="-mx-4 mt-3">
           <HomeOpsBlocks />
         </section>
         <section

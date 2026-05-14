@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Heart, Minus, Plus, Share2, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Heart, Minus, Plus, Share2, ShoppingCart, ShieldCheck, Truck, WalletCards } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useCartStore } from "@/stores/useCartStore";
@@ -271,6 +271,20 @@ export default function ProductDetail() {
                   已售 {product.sales_count.toLocaleString()} 件
                 </p>
               )}
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2.5 py-2 text-center">
+                  <Truck size={14} className="mx-auto text-[var(--theme-primary)]" />
+                  <p className="mt-1 text-[10px] text-[var(--theme-text-muted)]">本地配送</p>
+                </div>
+                <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2.5 py-2 text-center">
+                  <WalletCards size={14} className="mx-auto text-[var(--theme-primary)]" />
+                  <p className="mt-1 text-[10px] text-[var(--theme-text-muted)]">安全支付</p>
+                </div>
+                <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2.5 py-2 text-center">
+                  <ShieldCheck size={14} className="mx-auto text-[var(--theme-primary)]" />
+                  <p className="mt-1 text-[10px] text-[var(--theme-text-muted)]">售后保障</p>
+                </div>
+              </div>
               {showSstHint && (
                 <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
                   {sstNote || "商品价格已含 SST，运费不计税。"}

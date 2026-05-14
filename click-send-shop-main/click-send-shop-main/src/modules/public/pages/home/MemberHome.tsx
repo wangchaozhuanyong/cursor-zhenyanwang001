@@ -249,19 +249,25 @@ export default function MemberHome() {
         <section className="mt-3">
           <HomeOpsBlocks />
         </section>
-        <section className="mt-3 rounded-2xl border border-[var(--theme-border)] bg-gradient-to-r from-[#fce7b2] via-[#fae8be] to-[#f8e1a0] p-4">
+        <section
+          className="mt-3 rounded-2xl border border-[var(--theme-border)] p-4"
+          style={{
+            background:
+              "linear-gradient(90deg, color-mix(in srgb, var(--theme-price) 22%, white), color-mix(in srgb, var(--theme-price) 16%, white) 55%, color-mix(in srgb, var(--theme-price) 25%, white))",
+          }}
+        >
           <div className="flex items-center gap-3">
             <div className="rounded-xl bg-white/70 p-2 text-[var(--theme-price)]">
               <Ticket size={22} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xl font-extrabold text-[#8a5200]">新用户礼包</p>
-              <p className="line-clamp-1 text-sm text-[#8a5200]/85">注册即可领取优惠券，最高立减 RM80</p>
+              <p className="text-xl font-extrabold text-[var(--theme-text-on-surface)]">新用户礼包</p>
+              <p className="line-clamp-1 text-sm text-[var(--theme-text-muted-on-surface)]">注册即可领取优惠券，最高立减 RM80</p>
             </div>
             <button
               type="button"
               onClick={() => navigate("/coupons")}
-              className="rounded-full bg-[#7a4a00] px-4 py-2 text-xs font-bold text-white"
+              className="rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-bold text-[var(--theme-primary-foreground)]"
             >
               立即领取
             </button>

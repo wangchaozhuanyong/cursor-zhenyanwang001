@@ -32,15 +32,15 @@ import * as inviteService from "@/services/inviteService";
 function BlockTitle({ title, rightLabel, onRightClick }: { title: string; rightLabel?: string; onRightClick?: () => void }) {
   return (
     <div className="mb-3 flex items-center justify-between">
-      <h3 className="text-xl font-black text-[var(--theme-text-on-surface)]">{title}</h3>
+      <h3 className="text-lg font-bold text-[var(--theme-text-on-surface)]">{title}</h3>
       {rightLabel ? (
         <button
           type="button"
           onClick={onRightClick}
-          className="inline-flex items-center gap-1 text-sm text-[var(--theme-text-muted)]"
+          className="inline-flex items-center gap-1 text-xs text-[var(--theme-text-muted)]"
         >
           {rightLabel}
-          <ChevronRight size={15} />
+          <ChevronRight size={14} />
         </button>
       ) : null}
     </div>
@@ -84,7 +84,7 @@ export default function Profile() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <img src={logoSrc} alt={siteName} className="h-10 w-10 rounded-xl object-cover" />
-              <p className="text-2xl font-black text-[var(--theme-text-on-surface)]">{siteName}</p>
+              <p className="text-xl font-bold text-[var(--theme-text-on-surface)]">{siteName}</p>
             </div>
             <SkinPickerDialog
               trigger={
@@ -95,13 +95,13 @@ export default function Profile() {
             />
           </div>
           <div className="mt-5 rounded-2xl bg-[color-mix(in_srgb,var(--theme-price)_14%,white)] p-4">
-            <p className="text-lg font-bold text-[var(--theme-text-on-surface)]">登录后查看会员权益</p>
-            <p className="mt-1 text-sm text-[var(--theme-text-muted)]">订单、积分、优惠券、收藏都在这里管理</p>
+            <p className="text-base font-semibold text-[var(--theme-text-on-surface)]">登录后查看会员权益</p>
+            <p className="mt-1 text-xs text-[var(--theme-text-muted)]">订单、积分、优惠券、收藏都在这里管理</p>
             <div className="mt-4 grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => navigate("/login")} className="rounded-xl bg-[var(--theme-primary)] py-2.5 text-sm font-bold text-[var(--theme-primary-foreground)]">
+              <button type="button" onClick={() => navigate("/login")} className="rounded-xl bg-[var(--theme-primary)] py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)]">
                 登录
               </button>
-              <button type="button" onClick={() => navigate("/login")} className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] py-2.5 text-sm font-bold text-[var(--theme-text)]">
+              <button type="button" onClick={() => navigate("/login")} className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] py-2.5 text-sm font-semibold text-[var(--theme-text)]">
                 注册
               </button>
             </div>
@@ -118,27 +118,40 @@ export default function Profile() {
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <img src={logoSrc} alt={siteName} className="h-9 w-9 rounded-lg object-contain" />
-              <p className="text-2xl font-black text-[var(--theme-price)]">{siteName}</p>
+              <p className="text-xl font-bold text-[var(--theme-price)]">{siteName}</p>
             </div>
             <div className="flex items-center gap-2">
               <button type="button" className="relative rounded-full border border-[var(--theme-border)] p-2.5" onClick={() => navigate("/notifications")}>
                 <MessageCircle size={18} />
                 <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
               </button>
+              <SkinPickerDialog
+                trigger={
+                  <button type="button" className="rounded-full border border-[var(--theme-border)] p-2.5" aria-label="皮肤切换">
+                    <Palette size={18} />
+                  </button>
+                }
+              />
               <button type="button" className="rounded-full border border-[var(--theme-border)] p-2.5" onClick={() => navigate("/settings")}>
                 <Settings size={18} />
               </button>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-[#e9c989] bg-gradient-to-r from-[#f9ebc8] to-[#e8c175] p-4">
+          <div
+            className="rounded-3xl border border-[var(--theme-border)] p-4"
+            style={{
+              background:
+                "linear-gradient(90deg, color-mix(in srgb, var(--theme-price) 20%, white), color-mix(in srgb, var(--theme-price) 14%, white), color-mix(in srgb, var(--theme-price) 26%, white))",
+            }}
+          >
             <div className="flex items-center gap-3">
               <img src={avatar || logoSrc} alt={userName} className="h-[86px] w-[86px] rounded-full border-2 border-white object-cover" />
               <div className="min-w-0 flex-1">
-                <p className="text-3xl font-black text-[#3a2a15]">{userName}</p>
-                <p className="mt-1 text-lg text-[#6f4b1e]">邀请码：{code}</p>
-                <button type="button" onClick={() => navigate("/settings")} className="mt-2 rounded-full bg-[#7a4a00] px-4 py-1.5 text-sm font-bold text-white">
-                  切换皮肤
+                <p className="text-2xl font-bold text-[var(--theme-text-on-surface)]">{userName}</p>
+                <p className="mt-1 text-sm text-[var(--theme-text-muted-on-surface)]">邀请码：{code}</p>
+                <button type="button" onClick={() => navigate("/settings")} className="mt-2 rounded-full bg-[var(--theme-primary)] px-4 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]">
+                  个人设置
                 </button>
               </div>
             </div>
@@ -149,23 +162,23 @@ export default function Profile() {
           <div className="grid grid-cols-4 divide-x divide-[var(--theme-border)]">
             <button type="button" onClick={() => navigate("/points")} className="space-y-1 px-1 text-center">
               <Gift className="mx-auto text-[var(--theme-price)]" size={22} />
-              <p className="text-lg">积分</p>
-              <p className="text-3xl font-black">{pointsBalance}</p>
+              <p className="text-sm">积分</p>
+              <p className="text-2xl font-bold">{pointsBalance}</p>
             </button>
             <button type="button" onClick={() => navigate("/coupons")} className="space-y-1 px-1 text-center">
               <Ticket className="mx-auto text-[var(--theme-price)]" size={22} />
-              <p className="text-lg">优惠券</p>
-              <p className="text-3xl font-black">12</p>
+              <p className="text-sm">优惠券</p>
+              <p className="text-2xl font-bold">12</p>
             </button>
             <button type="button" onClick={() => navigate("/favorites")} className="space-y-1 px-1 text-center">
               <Heart className="mx-auto text-[var(--theme-price)]" size={22} />
-              <p className="text-lg">收藏</p>
-              <p className="text-3xl font-black">{favoriteCount}</p>
+              <p className="text-sm">收藏</p>
+              <p className="text-2xl font-bold">{favoriteCount}</p>
             </button>
             <button type="button" onClick={() => navigate("/rewards")} className="space-y-1 px-1 text-center">
               <Wallet className="mx-auto text-[var(--theme-price)]" size={22} />
-              <p className="text-lg">返现</p>
-              <p className="text-3xl font-black">RM 0</p>
+              <p className="text-sm">返现</p>
+              <p className="text-2xl font-bold">RM 0</p>
             </button>
           </div>
         </section>
@@ -182,8 +195,8 @@ export default function Profile() {
             ].map((item) => (
               <button key={item.label} type="button" onClick={() => navigate(item.path)} className="relative rounded-xl p-2">
                 {item.value > 0 ? <span className="absolute left-8 top-0 min-w-[1.1rem] rounded-full bg-red-500 px-1 text-[10px] text-white">{item.value}</span> : null}
-                <item.icon size={23} className="mx-auto text-[var(--theme-price)]" />
-                <p className="mt-1 text-sm">{item.label}</p>
+                <item.icon size={22} className="mx-auto text-[var(--theme-price)]" />
+                <p className="mt-1 text-xs">{item.label}</p>
               </button>
             ))}
           </div>
@@ -206,19 +219,25 @@ export default function Profile() {
                 <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,white)] text-[var(--theme-price)]">
                   <item.icon size={20} />
                 </span>
-                <p className="text-sm">{item.label}</p>
+                <p className="text-xs">{item.label}</p>
               </button>
             ))}
           </div>
         </section>
 
-        <section className="rounded-[1.45rem] border border-[#e9c989] bg-gradient-to-r from-[#f8e8bf] to-[#f0d08d] p-4">
+        <section
+          className="rounded-[1.45rem] border border-[var(--theme-border)] p-4"
+          style={{
+            background:
+              "linear-gradient(90deg, color-mix(in srgb, var(--theme-price) 18%, white), color-mix(in srgb, var(--theme-price) 12%, white), color-mix(in srgb, var(--theme-price) 24%, white))",
+          }}
+        >
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-3xl font-black text-[#3a2a15]">邀请好友得奖励</p>
-              <p className="mt-1 line-clamp-1 text-sm text-[#6f4b1e]">已邀请 {inviteCount} 位好友，继续邀请可获得积分和优惠券</p>
+              <p className="text-xl font-bold text-[var(--theme-text-on-surface)]">邀请好友得奖励</p>
+              <p className="mt-1 line-clamp-1 text-xs text-[var(--theme-text-muted-on-surface)]">已邀请 {inviteCount} 位好友，继续邀请可获得积分和优惠券</p>
             </div>
-            <button type="button" onClick={() => navigate("/invite")} className="shrink-0 rounded-full bg-[#7a4a00] px-4 py-2 text-sm font-bold text-white">
+            <button type="button" onClick={() => navigate("/invite")} className="shrink-0 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]">
               立即邀请
             </button>
           </div>
@@ -226,15 +245,15 @@ export default function Profile() {
 
         <section className="grid grid-cols-3 gap-2 rounded-[1.45rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
           <div className="text-center">
-            <p className="font-bold">正品保障</p>
+            <p className="text-sm font-semibold">正品保障</p>
             <p className="text-xs text-[var(--theme-text-muted)]">100%正品保证</p>
           </div>
           <div className="text-center">
-            <p className="font-bold">本地配送</p>
+            <p className="text-sm font-semibold">本地配送</p>
             <p className="text-xs text-[var(--theme-text-muted)]">快速发货</p>
           </div>
           <div className="text-center">
-            <p className="font-bold">安全支付</p>
+            <p className="text-sm font-semibold">安全支付</p>
             <p className="text-xs text-[var(--theme-text-muted)]">多重加密保护</p>
           </div>
         </section>

@@ -165,8 +165,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(SKIN_STORAGE_KEY, skinId);
     }
 
-    const shouldUseAdminFixedTheme =
-      isAdminScope() && (themeConfig.adminThemeMode ?? "fixed") === "fixed";
+    const shouldUseAdminFixedTheme = isAdminScope();
     root.setAttribute("data-admin-fixed-theme", shouldUseAdminFixedTheme ? "1" : "0");
 
     const palette = generateThemePalette(themeConfig);
@@ -183,8 +182,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const syncScope = () => {
-      const shouldUseAdminFixedTheme =
-        isAdminScope() && (themeConfig.adminThemeMode ?? "fixed") === "fixed";
+      const shouldUseAdminFixedTheme = isAdminScope();
       const root = document.documentElement;
       root.setAttribute("data-admin-fixed-theme", shouldUseAdminFixedTheme ? "1" : "0");
       const palette = generateThemePalette(themeConfig);
@@ -197,7 +195,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
     syncScope();
     window.addEventListener("app:scope-changed", syncScope);
     return () => window.removeEventListener("app:scope-changed", syncScope);
-  }, [themeConfig.adminThemeMode]);
+  }, [themeConfig]);
 
   const value = useMemo<ThemeContextValue>(() => ({
     theme: "light",

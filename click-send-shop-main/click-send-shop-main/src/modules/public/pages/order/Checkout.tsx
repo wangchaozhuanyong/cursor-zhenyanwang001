@@ -595,11 +595,11 @@ export default function Checkout() {
         return;
       }
       setPostSubmitOnlineNote(
-        intent.client_instructions || "璇峰墠寰€璁㈠崟璇︽儏鏌ョ湅鏀粯鐘舵€佹垨绋嶅悗鍦ㄣ€屾垜鐨勮鍗曘€嶄腑缁х画浠樻銆?,
+        intent.client_instructions || "请前往订单详情查看支付状态，或稍后在“我的订单”中继续付款。",
       );
-      toast.message(intent.client_instructions || "鏀粯鍗曞凡鍒涘缓");
+      toast.message(intent.client_instructions || "支付单已创建");
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "鍦ㄧ嚎鏀粯鍙戣捣澶辫触";
+      const msg = e instanceof Error ? e.message : "在线支付发起失败";
       setPostSubmitOnlineError(msg);
       toast.error(msg);
     }
@@ -618,7 +618,7 @@ export default function Checkout() {
       }
       const balanceData = await rewardWalletService.fetchRewardBalance();
       setRewardBalance(Number(balanceData.balance || 0));
-      toast.success("杩旂幇閽卞寘鏀粯鎴愬姛");
+      toast.success("返现钱包支付成功");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "杩旂幇閽卞寘鏀粯澶辫触";
       setPostSubmitWalletError(msg);
@@ -653,10 +653,10 @@ export default function Checkout() {
     <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-28 md:pb-0">
       <header className="sticky top-0 z-40 bg-[var(--theme-surface)]/95 px-4 py-3 backdrop-blur-md md:px-6 border-b border-[var(--theme-border)]">
         <div className="mx-auto flex w-full max-w-screen-xl items-center gap-3">
-          <button onClick={goBack} aria-label="杩斿洖璐墿杞? className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target">
+          <button onClick={goBack} aria-label="返回购物车" className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
-          <h1 className="flex-1 text-base font-semibold text-foreground md:text-xl">纭璁㈠崟</h1>
+          <h1 className="flex-1 text-base font-semibold text-foreground md:text-xl">确认订单</h1>
           <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} />
         </div>
       </header>
@@ -664,17 +664,17 @@ export default function Checkout() {
       <main className="mx-auto w-full max-w-screen-xl px-4 py-4 md:px-6 md:py-6">
         <CheckoutStepBar className="mb-4" />
         <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
-          <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">1) 濉啓鏀惰揣淇℃伅</div>
-          <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">2) 閫夋嫨鏀粯鏂瑰紡</div>
-          <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">3) 閰嶉€佷笌浼樻儬</div>
-          <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">4) 纭骞舵彁浜?/div>
+          <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">1) 填写收货信息</div>
+          <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">2) 选择支付方式</div>
+          <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">3) 配送与优惠</div>
+          <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">4) 确认并提交</div>
         </div>
         <div className="md:grid md:grid-cols-[1fr_380px] md:items-start md:gap-8">
           <div className="space-y-4">
         {/* Contact info */}
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground">1. 鏀惰揣淇℃伅</h3>
+            <h3 className="text-sm font-semibold text-foreground">1. 收货信息</h3>
             <button onClick={() => navigate("/address")} className="flex items-center gap-1 rounded-full bg-[var(--theme-bg)] px-3 py-1.5 text-xs font-medium text-[var(--theme-price)]">
               <MapPin size={12} /> 閫夋嫨鍦板潃
             </button>
@@ -713,7 +713,7 @@ export default function Checkout() {
         </div>
 
         <div className="px-1">
-          <p className="mb-2 text-sm font-semibold text-foreground">3. 浼樻儬鍒?/p>
+          <p className="mb-2 text-sm font-semibold text-foreground">3. 优惠券</p>
         </div>
         {/* Coupon */}
         <CouponPicker
@@ -726,7 +726,7 @@ export default function Checkout() {
         />
 
         <div className="px-1">
-          <p className="mb-2 text-sm font-semibold text-foreground">4. 閰嶉€佹柟寮?/p>
+          <p className="mb-2 text-sm font-semibold text-foreground">4. 配送方式</p>
         </div>
         {/* Shipping */}
         <ShippingPicker
@@ -741,7 +741,7 @@ export default function Checkout() {
         )}
         {(shippingRulesError || shippingQuoteError) && (
           <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-xs text-destructive">
-            杩愯垂瑙勫垯鑾峰彇澶辫触锛歿shippingQuoteError || shippingRulesError}
+            运费规则获取失败：{shippingQuoteError || shippingRulesError}
           </div>
         )}
 
@@ -753,7 +753,7 @@ export default function Checkout() {
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-medium text-foreground truncate">{item.product.name}</p>
                 {item.variant_name && (
-                  <p className="text-xs text-muted-foreground truncate">瑙勬牸锛歿item.variant_name}</p>
+                  <p className="text-xs text-muted-foreground truncate">规格：{item.variant_name}</p>
                 )}
                 <p className="text-xs text-muted-foreground">x{item.qty}</p>
               </div>
@@ -866,7 +866,7 @@ function SummaryRows({
       </div>
       {discountAmount > 0 && (
         <div className="mt-2 flex justify-between text-sm">
-          <span className="text-muted-foreground">浼樻儬鍒告姷鎵?/span>
+          <span className="text-muted-foreground">优惠券抵扣</span>
           <span className="font-medium text-destructive">-RM {discountAmount}</span>
         </div>
       )}
@@ -877,18 +877,19 @@ function SummaryRows({
             <span className="font-medium text-foreground">RM {sstPreview.taxable}</span>
           </div>
           <div className="mt-1 flex justify-between text-xs text-muted-foreground">
-            <span>鍏朵腑鍟嗗搧涓嶅惈绋庡噣棰?/span>
+            <span>其中商品不含税净额</span>
             <span>RM {sstPreview.exclusiveAmount}</span>
           </div>
           <div className="mt-1 flex justify-between text-sm">
             <span className="text-muted-foreground">
-              鍚?{sstPreview.label}锛坽rateStr}%锛?            </span>
+              含 {sstPreview.label}（{rateStr}%）
+            </span>
             <span className="font-medium text-foreground">RM {sstPreview.taxAmount}</span>
           </div>
         </>
       ) : null}
       <div className="mt-2 flex justify-between text-sm">
-        <span className="text-muted-foreground">杩愯垂{sstShowInCatalog ? "锛堜笉璁＄◣锛? : ""}</span>
+        <span className="text-muted-foreground">运费{sstShowInCatalog ? "（不计税）" : ""}</span>
         <span
           className={`font-medium ${
             shippingFee === 0 ? "text-emerald-600" : "text-foreground"
@@ -954,48 +955,48 @@ function OrderSuccess({
   const isWhatsappPending = isPending && isWhatsappOrder;
 
   const headerTitle = isPaid
-    ? "鏀粯鎴愬姛"
+    ? "支付成功"
     : isOnlinePending
-      ? "璇峰畬鎴愭敮浠?
+      ? "请完成支付"
       : isWalletPending && postSubmitWalletError
-        ? "寰呬粯娆?
-        : "璁㈠崟宸叉彁浜?;
+        ? "待付款"
+        : "订单已提交";
 
   const mainHeading = isPaid
-    ? "鏀粯鎴愬姛锛?
+    ? "支付成功！"
     : isOnlinePending
-      ? "璇峰畬鎴愭敮浠?
+      ? "请完成支付"
       : isWalletPending && postSubmitWalletError
-        ? "閽卞寘浣欓涓嶈冻"
+        ? "钱包余额不足"
         : isWalletPending
-          ? "璇峰畬鎴愭敮浠?
-          : "璁㈠崟鎻愪氦鎴愬姛锛?;
+          ? "请完成支付"
+          : "订单提交成功！";
 
   const helperText = (() => {
     if (isPaid) {
-      return "鏀粯宸插畬鎴愶紝鎴戜滑浼氬敖蹇负鎮ㄥ畨鎺掑彂璐э紝鍙湪銆屾垜鐨勮鍗曘€嶅疄鏃舵煡鐪嬭繘搴︺€?;
+      return "支付已完成，我们会尽快为您安排发货，可在“我的订单”中实时查看进度。";
     }
     if (isOnlinePending) {
-      return "宸叉寜缁撶畻椤垫墍閫夋笭閬撳彂璧锋敮浠樸€傝嫢鏈嚜鍔ㄨ烦杞紝璇风偣鍑讳笅鏂广€岀户缁敮浠樸€嶆垨銆岄噸鏂版敮浠樸€嶏紱涔熷彲鍦ㄨ鍗曡鎯呬腑缁х画浠樻銆?;
+      return "已按结算页所选渠道发起支付。若未自动跳转，请点击下方“继续支付”或“重新支付”；也可在订单详情中继续付款。";
     }
     if (isWalletPending && postSubmitWalletError) {
-      return `${postSubmitWalletError} 寤鸿鏀圭敤鍦ㄧ嚎鏀粯瀹屾垚浠樻锛屾垨鑱旂郴瀹㈡湇鍗忓姪銆俙;
+      return `${postSubmitWalletError} 建议改用在线支付完成付款，或联系人工客服协助。`;
     }
     if (isWalletPending) {
-      return `杩旂幇閽卞寘鍙敤 RM ${rewardBalance.toFixed(2)}銆傝鐐瑰嚮涓嬫柟瀹屾垚閽卞寘鎵ｆ锛屾垨鏀圭敤鍦ㄧ嚎鏀粯銆俙;
+      return `返现钱包可用 RM ${rewardBalance.toFixed(2)}。请点击下方完成钱包扣款，或改用在线支付。`;
     }
     if (isWhatsappPending) {
-      return "璇峰皢璁㈠崟鍐呭鍙戦€佺粰瀹㈡湇瀹屾垚瀵规帴銆傚闇€鍦ㄧ嚎鏀粯鎴栭挶鍖咃紝鍙睍寮€銆屾洿澶氭柟寮忋€嶃€?;
+      return "请将订单内容发送给客服完成对接。如需在线支付或钱包支付，可展开“更多方式”。";
     }
     if (isPending) {
-      return "璁㈠崟寰呬粯娆撅紝鍙湪璁㈠崟璇︽儏涓户缁粯娆俱€?;
+      return "订单待付款，可在订单详情中继续付款。";
     }
     if (isWhatsappOrder) {
-      return "鎰熻阿鎮ㄧ殑涓嬪崟銆?;
+      return "感谢您的下单。";
     }
     return "";
   })();
-  const statusBadge = isPaid ? "宸叉敮浠? : isPending ? "寰呮敮浠? : "澶勭悊涓?;
+  const statusBadge = isPaid ? "已支付" : isPending ? "待支付" : "处理中";
   const primaryActionClass = isPaid
     ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
     : "bg-gold text-primary-foreground shadow-lg shadow-gold/20";
@@ -1074,7 +1075,7 @@ function OrderSuccess({
 
         {/* Action buttons */}
         <div className="mt-6 space-y-3">
-          <p className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">涓嬩竴姝ユ搷浣?/p>
+          <p className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">下一步操作</p>
           {isOnlinePending && (
             <>
               <button
@@ -1089,25 +1090,26 @@ function OrderSuccess({
                 onClick={onViewOrderDetail}
                 className="w-full rounded-full border-2 border-border py-3 text-center text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
               >
-                璁㈠崟璇︽儏閲岀户缁粯娆?              </button>
+                在订单详情里继续付款
+              </button>
               <button
                 type="button"
                 onClick={() => setAlternatePayOpen((o) => !o)}
                 className="flex w-full items-center justify-center gap-2 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
               >
-                鏇存崲鏀粯鏂瑰紡
+                更换支付方式
                 {alternatePayOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
               {alternatePayOpen && (
                 <div className="space-y-2 rounded-xl border border-border bg-card p-3">
-                  <p className="px-1 text-center text-[11px] text-muted-foreground">浠ヤ笅涓哄閫夛紝涓庣粨绠楅〉閫夋嫨涓嶄竴鑷存椂璇疯皑鎱庢搷浣?/p>
+                  <p className="px-1 text-center text-[11px] text-muted-foreground">以下为备选支付方式，与结算页不一致时请谨慎操作</p>
                   <button
                     type="button"
                     onClick={onPayRewardWallet}
                     disabled={payingWallet}
                     className="flex w-full items-center justify-center gap-2 rounded-full border-2 border-[var(--theme-price)] py-3 text-sm font-semibold text-[var(--theme-price)] transition-all disabled:opacity-60"
                   >
-                    {payingWallet ? "鏀粯涓€? : `灏濊瘯杩旂幇閽卞寘锛堝彲鐢?RM ${rewardBalance.toFixed(2)}锛塦}
+                    {payingWallet ? "支付中…" : `尝试返现钱包（可用 RM ${rewardBalance.toFixed(2)}）`}
                   </button>
                   <button
                     type="button"
@@ -1115,7 +1117,7 @@ function OrderSuccess({
                     className="flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-[var(--theme-gradient-foreground)] theme-shadow"
                     style={{ background: "var(--theme-gradient)" }}
                   >
-                    <Phone size={16} /> 鑱旂郴瀹㈡湇涓嬪崟
+                    <Phone size={16} /> 联系客服下单
                   </button>
                 </div>
               )}
@@ -1129,21 +1131,21 @@ function OrderSuccess({
                 onClick={onPayOnline}
                 className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
               >
-                鏀圭敤鍦ㄧ嚎鏀粯
+                改用在线支付
               </button>
               <button
                 type="button"
                 onClick={onWhatsApp}
                 className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
               >
-                <Phone size={18} /> 鑱旂郴瀹㈡湇
+                <Phone size={18} /> 联系客服
               </button>
               <button
                 type="button"
                 onClick={onViewOrderDetail}
                 className="w-full rounded-full py-3 text-center text-sm font-medium text-muted-foreground hover:text-foreground"
               >
-                鏌ョ湅璁㈠崟璇︽儏
+                查看订单详情
               </button>
             </>
           )}
@@ -1156,14 +1158,14 @@ function OrderSuccess({
                 disabled={payingWallet}
                 className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] disabled:opacity-60 ${primaryActionClass}`}
               >
-                {payingWallet ? "鏀粯涓€? : `浣跨敤杩旂幇閽卞寘鏀粯锛堝彲鐢?RM ${rewardBalance.toFixed(2)}锛塦}
+                {payingWallet ? "支付中…" : `使用返现钱包支付（可用 RM ${rewardBalance.toFixed(2)}）`}
               </button>
               <button
                 type="button"
                 onClick={onPayOnline}
                 className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
               >
-                鏀圭敤鍦ㄧ嚎鏀粯
+                改用在线支付
               </button>
             </>
           )}
@@ -1190,14 +1192,14 @@ function OrderSuccess({
                 onClick={onCopy}
                 className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
               >
-                <Copy size={18} /> 澶嶅埗璁㈠崟鍐呭
+                <Copy size={18} /> 复制订单内容
               </button>
               <button
                 type="button"
                 onClick={() => setMoreWaysOpen((o) => !o)}
                 className="flex w-full items-center justify-center gap-2 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
               >
-                鏇村鏂瑰紡
+                更多方式
                 {moreWaysOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
               {moreWaysOpen && (
@@ -1207,7 +1209,7 @@ function OrderSuccess({
                     onClick={onPayOnline}
                     className="flex w-full items-center justify-center rounded-full border border-border py-3 text-sm font-semibold text-foreground hover:bg-secondary"
                   >
-                    鍦ㄧ嚎鏀粯
+                    在线支付
                   </button>
                   <button
                     type="button"
@@ -1215,7 +1217,7 @@ function OrderSuccess({
                     disabled={payingWallet}
                     className="flex w-full items-center justify-center rounded-full border border-border py-3 text-sm font-semibold text-foreground hover:bg-secondary disabled:opacity-60"
                   >
-                    {payingWallet ? "鏀粯涓€? : `杩旂幇閽卞寘锛堝彲鐢?RM ${rewardBalance.toFixed(2)}锛塦}
+                    {payingWallet ? "支付中…" : `返现钱包（可用 RM ${rewardBalance.toFixed(2)}）`}
                   </button>
                 </div>
               )}
@@ -1229,14 +1231,14 @@ function OrderSuccess({
                 onClick={onPayOnline}
                 className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
               >
-                缁х画鏀粯
+                继续支付
               </button>
               <button
                 type="button"
                 onClick={onViewOrderDetail}
                 className="w-full rounded-full border-2 border-border py-3 text-center text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
               >
-                鏌ョ湅璁㈠崟璇︽儏
+                查看订单详情
               </button>
             </>
           )}
@@ -1264,7 +1266,7 @@ function OrderSuccess({
 
         {/* Order detail */}
         <div className="mt-6 rounded-2xl border border-border bg-card p-5">
-          <h3 className="mb-4 text-sm font-semibold text-foreground">璁㈠崟璇︽儏</h3>
+          <h3 className="mb-4 text-sm font-semibold text-foreground">订单详情</h3>
           {order.items.map((item) => (
             <div key={item.product.id} className="flex items-center gap-3 border-b border-border py-3 last:border-0">
               <img src={item.product.cover_image} alt={item.product.name} className="h-14 w-14 rounded-lg object-cover" />
@@ -1278,31 +1280,31 @@ function OrderSuccess({
           <div className="mt-4 border-t border-border pt-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">
-                {order.tax_mode === "inclusive" ? "鍟嗗搧鎬婚锛堝惈绋庯級" : "鍟嗗搧鎬婚"}
+                {order.tax_mode === "inclusive" ? "商品总额（含税）" : "商品总额"}
               </span>
               <span className="font-medium text-foreground">RM {order.raw_amount}</span>
             </div>
             {order.discount_amount > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">浼樻儬鍒革紙{order.coupon_title}锛?/span>
+                <span className="text-muted-foreground">优惠券（{order.coupon_title}）</span>
                 <span className="font-medium text-destructive">-RM {order.discount_amount}</span>
               </div>
             )}
             <OrderSstLines order={order} />
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">
-                杩愯垂锛坽order.shipping_name || "鏍囧噯"}锛墈order.tax_mode === "inclusive" ? "锛屼笉璁＄◣" : ""}
+                运费（{order.shipping_name || "标准"}{order.tax_mode === "inclusive" ? "，不计税" : ""}）
               </span>
               <span className={`font-medium ${order.shipping_fee === 0 ? "text-emerald-600" : "text-foreground"}`}>
-                {order.shipping_fee === 0 ? "鍖呴偖" : `RM ${order.shipping_fee}`}
+                {order.shipping_fee === 0 ? "包邮" : `RM ${order.shipping_fee}`}
               </span>
             </div>
             <div className="flex justify-between text-sm border-t border-border pt-2">
-              <span className="text-foreground font-medium">搴斾粯閲戦</span>
+              <span className="text-foreground font-medium">应付金额</span>
               <span className="text-lg font-bold text-gold">RM {order.total_amount}</span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">鑾峰緱绉垎</span>
+              <span className="text-muted-foreground">获得积分</span>
               <span className="font-medium text-foreground">+{order.total_points}</span>
             </div>
           </div>
@@ -1315,13 +1317,14 @@ function OrderSuccess({
             onClick={onViewOrders}
             className="w-full rounded-full border-2 border-border py-4 text-center text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
           >
-            鏌ョ湅鎴戠殑璁㈠崟
+            查看我的订单
           </button>
           <button
             onClick={onHome}
             className="w-full rounded-full py-3 text-center text-sm font-medium text-muted-foreground transition-all hover:text-foreground"
           >
-            缁х画閫?          </button>
+            继续逛逛
+          </button>
         </div>
       </motion.main>
     </div>

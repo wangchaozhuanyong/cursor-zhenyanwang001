@@ -1,400 +1,248 @@
-import { forwardRef, useEffect, useState, type ComponentPropsWithoutRef } from "react";
-import { ChevronRight, Gift, Heart, MapPin, Package, Palette, Settings, Star, Users, Ticket, Bell, HelpCircle, RotateCcw, Clock, Info, LogOut, Crown } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Bell,
+  ChevronRight,
+  CircleHelp,
+  Clock3,
+  Gift,
+  Heart,
+  LogOut,
+  MapPin,
+  MessageCircle,
+  Package,
+  Palette,
+  Settings,
+  Ticket,
+  Truck,
+  Wallet,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useUserStore } from "@/stores/useUserStore";
-import { useAuthStore } from "@/stores/useAuthStore";
+import logoWebp from "@/assets/logo.webp";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { isLoggedIn } from "@/utils/token";
-import { useOrderStore } from "@/stores/useOrderStore";
-import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
-import logoWebp from "@/assets/logo.webp";
-import * as inviteService from "@/services/inviteService";
-import { useSiteInfo } from "@/hooks/useSiteInfo";
 import SkinPickerDialog from "@/components/SkinPickerDialog";
-import { SiteSocialLinks, hasAnySocialLink } from "@/components/SiteSocialLinks";
-import { supportsColorMix } from "@/utils/cssSupport";
-import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { useFavoritesStore } from "@/stores/useFavoritesStore";
+import { useOrderStore } from "@/stores/useOrderStore";
+import { useUserStore } from "@/stores/useUserStore";
+import * as inviteService from "@/services/inviteService";
 
-/** Radix DialogTrigger asChild 必须把 ref 与事件落到真实 button 上，否则弹层无法打开 */
-const SkinButton = forwardRef<HTMLButtonElement, ComponentPropsWithoutRef<"button">>(
-  function SkinButton({ className, type = "button", title = "更换皮肤", ...props }, ref) {
-    return (
-      <button
-        ref={ref}
-        type={type}
-        title={title}
-        className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-text-on-surface)_6%,transparent)] text-[var(--theme-text-on-surface)] backdrop-blur transition-transform active:scale-90",
-          className,
-        )}
-        {...props}
-      >
-        <Palette size={19} />
-      </button>
-    );
-  },
-);
-
-function ProfileAvatar({
-  src,
-  fallback,
-  alt,
-}: {
-  src?: string;
-  fallback: string;
-  alt: string;
-}) {
+function BlockTitle({ title, rightLabel, onRightClick }: { title: string; rightLabel?: string; onRightClick?: () => void }) {
   return (
-    <div className="relative flex h-[4.25rem] w-[4.25rem] shrink-0 items-center justify-center rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-bg)] p-1.5 shadow-sm">
-      <img
-        src={src || fallback}
-        alt={alt}
-        className="h-full w-full rounded-2xl object-contain"
-      />
+    <div className="mb-3 flex items-center justify-between">
+      <h3 className="text-xl font-black text-[var(--theme-text-on-surface)]">{title}</h3>
+      {rightLabel ? (
+        <button
+          type="button"
+          onClick={onRightClick}
+          className="inline-flex items-center gap-1 text-sm text-[var(--theme-text-muted)]"
+        >
+          {rightLabel}
+          <ChevronRight size={15} />
+        </button>
+      ) : null}
     </div>
-  );
-}
-
-/** 仅亮色模式：在 surface 上叠加极淡主色→价格色渐变，深色模式由 .dark 隐藏 */
-function ProfileHeaderLightWash() {
-  const background = supportsColorMix()
-    ? "linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 11%, var(--theme-surface)), color-mix(in srgb, var(--theme-price) 7%, var(--theme-surface)))"
-    : "linear-gradient(135deg, var(--theme-surface), var(--theme-bg))";
-
-  return (
-    <div
-      aria-hidden
-      className="pointer-events-none absolute inset-0 z-0 dark:hidden"
-      style={{ background }}
-    />
-  );
-}
-
-function StatChip({
-  value,
-  label,
-  onClick,
-  accent = false,
-}: {
-  value: string | number;
-  label: string;
-  onClick: () => void;
-  accent?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-2xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-text-on-surface)_5%,transparent)] px-2 py-3 text-center text-[var(--theme-text-on-surface)] backdrop-blur transition-transform active:scale-95"
-    >
-      <p
-        className="text-lg font-black leading-none"
-        style={accent ? { color: "var(--theme-price)" } : undefined}
-      >
-        {value}
-      </p>
-      <p className="mt-1 text-[10px] font-medium text-[var(--theme-text-muted-on-surface)]">{label}</p>
-    </button>
   );
 }
 
 export default function Profile() {
   const navigate = useNavigate();
   const siteInfo = useSiteInfo();
+  const siteName = siteInfo.siteName || "真烟网";
   const logoSrc = siteInfo.logoUrl || logoWebp;
-  const siteName = siteInfo.siteName || "大马通";
-  const socialProps = {
-    whatsappUrl: siteInfo.whatsappUrl,
-    contactWhatsApp: siteInfo.contactWhatsApp,
-    wechatId: siteInfo.wechatId,
-    instagramUrl: siteInfo.instagramUrl,
-    facebookUrl: siteInfo.facebookUrl,
-    tiktokUrl: siteInfo.tiktokUrl,
-    xhsUrl: siteInfo.xhsUrl,
-  };
-  const showSocial = hasAnySocialLink(socialProps);
-  const { nickname, avatar, pointsBalance, inviteCode, subordinateEnabled, memberLevel, loadProfile } = useUserStore();
   const authStore = useAuthStore();
+  const { nickname, avatar, pointsBalance, inviteCode, loadProfile } = useUserStore();
   const { orders, loadOrders } = useOrderStore();
   const favoriteCount = useFavoritesStore((s) => s.favoriteIds.length);
-  const [subCount, setSubCount] = useState(0);
+  const [inviteCount, setInviteCount] = useState(0);
 
   useEffect(() => {
-    if (isLoggedIn() && authStore.isAuthenticated) {
-      loadProfile();
-      loadOrders();
-      inviteService.fetchInviteStats().then((s) => setSubCount(s.directCount)).catch(() => {});
-    }
-  }, [authStore.isAuthenticated, loadProfile, loadOrders]);
+    if (!isLoggedIn()) return;
+    loadProfile().catch(() => {});
+    loadOrders().catch(() => {});
+    inviteService.fetchInviteStats().then((s) => setInviteCount(s.directCount || 0)).catch(() => {});
+  }, [loadOrders, loadProfile]);
 
   const handleLogout = async () => {
     await authStore.logout();
     toast.success("已退出登录", toastPresetQuickSuccess);
     navigate("/login");
   };
-  const goLogin = () => navigate("/login", { state: { from: "/profile" } });
-  const guestBenefits = [
-    { icon: Package, label: "订单追踪", desc: "实时查看状态" },
-    { icon: Star, label: "积分抵扣", desc: "消费累计积分" },
-    { icon: Ticket, label: "专属优惠", desc: "会员专享好券" },
-  ];
-  const guestPreviewItems = [
-    { icon: Package, label: "我的订单" },
-    { icon: Ticket, label: "优惠券" },
-    { icon: Star, label: "积分中心" },
-    { icon: Heart, label: "收藏商品" },
-  ];
 
-  /** 未登录：与 ProtectedRoute 一致以 token 为准，避免持久化状态与 token 不一致 */
+  const userName = nickname?.trim() || "会员用户";
+  const code = inviteCode?.trim() || "暂无";
+  const orderPending = useMemo(() => orders.filter((o) => o.status === "pending_payment").length, [orders]);
+  const orderShipping = useMemo(() => orders.filter((o) => o.status === "paid" || o.status === "pending_shipment").length, [orders]);
+  const orderReceiving = useMemo(() => orders.filter((o) => o.status === "shipped").length, [orders]);
+
   if (!isLoggedIn()) {
     return (
-      <div className="min-h-screen bg-[var(--theme-bg)] pb-20 text-[var(--theme-text)]">
-        <div className="px-4 pb-4 pt-[max(env(safe-area-inset-top),1rem)]">
-          <section className="theme-rounded relative mx-auto max-w-lg overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow text-[var(--theme-text-on-surface)]">
-            <ProfileHeaderLightWash />
-            <div className="pointer-events-none absolute -right-12 -top-14 z-[1] h-36 w-36 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_14%,transparent)] blur-2xl" />
-            <div className="pointer-events-none absolute -bottom-16 -left-10 z-[1] h-32 w-32 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_10%,transparent)] blur-2xl" />
-
-            <div className="relative z-10 flex items-start justify-between gap-4">
-              <div className="flex min-w-0 items-center gap-4">
-                <ProfileAvatar src={logoSrc} fallback={logoWebp} alt={siteName} />
-                <div className="min-w-0">
-                  <p className="mb-2 inline-flex rounded-full bg-[color-mix(in_srgb,var(--theme-price)_14%,transparent)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--theme-price)]">
-                    Member Access
-                  </p>
-                  <h2 className="text-xl font-black leading-tight text-[var(--theme-text-on-surface)]">登录{siteName}</h2>
-                  <p className="mt-1 max-w-[12rem] text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">管理订单、积分、优惠券与会员权益</p>
-                </div>
-              </div>
-              <SkinPickerDialog trigger={<SkinButton />} />
+      <div className="min-h-screen bg-[var(--theme-bg)] px-4 pb-24 pt-[max(env(safe-area-inset-top),1rem)] text-[var(--theme-text)]">
+        <section className="mx-auto max-w-lg rounded-[1.6rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img src={logoSrc} alt={siteName} className="h-10 w-10 rounded-xl object-cover" />
+              <p className="text-2xl font-black text-[var(--theme-text-on-surface)]">{siteName}</p>
             </div>
-
-            <div className="relative z-10 mt-6 grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={goLogin}
-                className="rounded-2xl bg-[var(--theme-primary)] py-3.5 text-sm font-black text-[var(--theme-primary-foreground)] shadow-lg shadow-black/10 transition-transform active:scale-[0.98]"
-              >
+            <SkinPickerDialog
+              trigger={
+                <button type="button" className="rounded-full border border-[var(--theme-border)] p-2">
+                  <Palette size={18} />
+                </button>
+              }
+            />
+          </div>
+          <div className="mt-5 rounded-2xl bg-[color-mix(in_srgb,var(--theme-price)_14%,white)] p-4">
+            <p className="text-lg font-bold text-[var(--theme-text-on-surface)]">登录后查看会员权益</p>
+            <p className="mt-1 text-sm text-[var(--theme-text-muted)]">订单、积分、优惠券、收藏都在这里管理</p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => navigate("/login")} className="rounded-xl bg-[var(--theme-primary)] py-2.5 text-sm font-bold text-[var(--theme-primary-foreground)]">
                 登录
               </button>
-              <button
-                type="button"
-                onClick={goLogin}
-                className="rounded-2xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-bg)_40%,var(--theme-surface))] py-3.5 text-sm font-bold text-[var(--theme-text-on-surface)] transition-transform active:scale-[0.98]"
-              >
+              <button type="button" onClick={() => navigate("/login")} className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] py-2.5 text-sm font-bold text-[var(--theme-text)]">
                 注册
               </button>
             </div>
-          </section>
-        </div>
-        <main className="mx-auto max-w-lg space-y-4 px-4 py-1">
-          <section className="grid grid-cols-3 gap-2.5">
-            {guestBenefits.map((item) => (
-              <button
-                key={item.label}
-                type="button"
-                onClick={goLogin}
-                className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-3 text-center theme-shadow transition-transform active:scale-[0.97]"
-              >
-                <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)]">
-                  <item.icon size={18} className="text-[var(--theme-price)]" />
-                </div>
-                <p className="text-xs font-bold text-[var(--theme-text-on-surface)]">{item.label}</p>
-                <p className="mt-1 text-[10px] text-theme-muted">{item.desc}</p>
-              </button>
-            ))}
-          </section>
-
-          <section className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
-            <div className="grid grid-cols-2 gap-2.5">
-              {guestPreviewItems.map((item) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={goLogin}
-                  className="flex items-center gap-3 rounded-2xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-bg)_58%,var(--theme-surface))] px-3 py-3 text-left transition-transform active:scale-[0.98]"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,transparent)]">
-                    <item.icon size={17} className="text-[var(--theme-price)]" />
-                  </div>
-                  <span className="text-sm font-semibold text-[var(--theme-text-on-surface)]">{item.label}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <button
-            type="button"
-            onClick={() => navigate("/help")}
-            className="theme-rounded flex w-full items-center gap-3 border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-4 text-left text-sm theme-shadow"
-          >
-            <HelpCircle size={18} className="text-[var(--theme-price)]" />
-            <span className="flex-1 text-[var(--theme-text-on-surface)]">帮助中心</span>
-            <ChevronRight size={16} className="text-theme-muted" />
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/about")}
-            className="theme-rounded flex w-full items-center gap-3 border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-4 text-left text-sm theme-shadow"
-          >
-            <Info size={18} className="text-[var(--theme-price)]" />
-            <span className="flex-1 text-[var(--theme-text-on-surface)]">关于我们</span>
-            <ChevronRight size={16} className="text-theme-muted" />
-          </button>
-
-          {showSocial && (
-            <section className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
-              <p className="mb-3 text-xs font-medium text-[var(--theme-text-muted)]">关注我们</p>
-              <SiteSocialLinks {...socialProps} tone="profile" className="justify-start gap-2" />
-            </section>
-          )}
-        </main>
+          </div>
+        </section>
       </div>
     );
   }
 
-  /* ─────────────────────────────────────────────────────────────────
-   *  菜单分级（专业电商优先级）
-   *   一级（QuickGrid）：核心购物链路 — 订单 / 收藏 / 地址 / 退换货
-   *   二级（Benefits）：会员权益 — 优惠券 / 积分 / 邀请 / 返现
-   *   三级（Misc）：系统/帮助 — 浏览历史 / 通知 / 设置 / 帮助 / 关于
-   * ───────────────────────────────────────────────────────────────── */
-  const quickItems = [
-    { icon: Package, label: "全部订单", path: "/orders", desc: `${orders.length} 笔` },
-    { icon: Heart, label: "我的收藏", path: "/favorites", desc: favoriteCount > 0 ? `${favoriteCount} 件` : "去收藏" },
-    { icon: MapPin, label: "收货地址", path: "/address", desc: "管理" },
-    { icon: RotateCcw, label: "退换/售后", path: "/returns", desc: "查询" },
-  ];
-
-  const benefitItems = [
-    { icon: Ticket, label: "优惠券", path: "/coupons", show: true },
-    { icon: Star, label: "积分中心", path: "/points", show: true, hint: `${pointsBalance} 分` },
-    { icon: Users, label: "邀请好友", path: "/invite", show: true, hint: subCount > 0 ? `${subCount} 位分享用户` : undefined },
-    /** 返现入口与「邀请开关」无关：上级返现入账、钱包支付等所有用户都可能用到 */
-    { icon: Gift, label: "返现记录", path: "/rewards", show: true },
-  ].filter((m) => m.show);
-
-  const miscItems = [
-    { icon: Clock, label: "浏览历史", path: "/history" },
-    { icon: Bell, label: "消息通知", path: "/notifications" },
-    { icon: Settings, label: "个人资料", path: "/settings" },
-    { icon: HelpCircle, label: "帮助中心", path: "/help" },
-    { icon: Info, label: "关于我们", path: "/about" },
-  ];
-
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)] pb-20 text-[var(--theme-text)]">
-      {/* Profile header */}
-      <div className="px-4 pb-5 pt-[max(env(safe-area-inset-top),1rem)]">
-        <section className="theme-rounded relative mx-auto max-w-lg overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow text-[var(--theme-text-on-surface)]">
-          <ProfileHeaderLightWash />
-          <div className="pointer-events-none absolute -right-16 top-0 z-[1] h-40 w-40 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] blur-2xl" />
-          <div className="pointer-events-none absolute -bottom-20 left-4 z-[1] h-36 w-36 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_10%,transparent)] blur-2xl" />
+    <div className="min-h-screen bg-[var(--theme-bg)] px-4 pb-24 pt-[max(env(safe-area-inset-top),1rem)] text-[var(--theme-text)]">
+      <main className="mx-auto max-w-lg space-y-4">
+        <section className="rounded-[1.7rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <img src={logoSrc} alt={siteName} className="h-9 w-9 rounded-lg object-contain" />
+              <p className="text-2xl font-black text-[var(--theme-price)]">{siteName}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button type="button" className="relative rounded-full border border-[var(--theme-border)] p-2.5" onClick={() => navigate("/notifications")}>
+                <MessageCircle size={18} />
+                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
+              </button>
+              <button type="button" className="rounded-full border border-[var(--theme-border)] p-2.5" onClick={() => navigate("/settings")}>
+                <Settings size={18} />
+              </button>
+            </div>
+          </div>
 
-          <div className="relative z-10 flex items-center justify-between gap-4">
-            <div className="flex min-w-0 items-center gap-4">
-              <ProfileAvatar src={avatar || logoSrc} fallback={logoWebp} alt={nickname || siteName} />
-              <div className="min-w-0 flex flex-col justify-center gap-1.5">
-                <h2 className="truncate text-xl font-black leading-tight text-[var(--theme-text-on-surface)]">{nickname || "会员用户"}</h2>
-                <p className="text-xs text-[var(--theme-text-muted-on-surface)]">邀请码: {inviteCode || "暂无"}</p>
-                <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--theme-price)_35%,transparent)] bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] px-2.5 py-1 text-[11px] font-bold text-[var(--theme-price)]">
-                  <Crown size={13} />
-                  {memberLevel?.name || "普通会员"}
-                </div>
+          <div className="rounded-3xl border border-[#e9c989] bg-gradient-to-r from-[#f9ebc8] to-[#e8c175] p-4">
+            <div className="flex items-center gap-3">
+              <img src={avatar || logoSrc} alt={userName} className="h-[86px] w-[86px] rounded-full border-2 border-white object-cover" />
+              <div className="min-w-0 flex-1">
+                <p className="text-3xl font-black text-[#3a2a15]">{userName}</p>
+                <p className="mt-1 text-lg text-[#6f4b1e]">邀请码：{code}</p>
+                <button type="button" onClick={() => navigate("/settings")} className="mt-2 rounded-full bg-[#7a4a00] px-4 py-1.5 text-sm font-bold text-white">
+                  切换皮肤
+                </button>
               </div>
             </div>
-
-            <SkinPickerDialog trigger={<SkinButton />} />
-          </div>
-
-          {/* Stats: 订单/收藏 优先，积分/下级 次之 */}
-          <div className={`relative z-10 mt-6 grid gap-2.5 ${subordinateEnabled ? "grid-cols-4" : "grid-cols-3"}`}>
-            <StatChip value={orders.length} label="订单" onClick={() => navigate("/orders")} />
-            <StatChip value={favoriteCount} label="收藏" onClick={() => navigate("/favorites")} />
-            <StatChip value={pointsBalance} label="积分" onClick={() => navigate("/points")} accent />
-            {subordinateEnabled && (
-              <StatChip value={subCount} label="分享用户" onClick={() => navigate("/invite")} />
-            )}
           </div>
         </section>
-      </div>
 
-      <main className="mx-auto max-w-lg px-4 py-4 space-y-4">
-        {/* 一级 - 核心购物入口（九宫格） */}
-        <section>
-          <h3 className="mb-2 px-1 text-xs font-medium text-muted-foreground">交易与履约</h3>
-          <div className="grid grid-cols-4 gap-2 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow">
-            {quickItems.map((item) => (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className="flex flex-col items-center gap-1.5 rounded-lg p-2 transition-colors hover:bg-secondary active:scale-[0.97]"
-              >
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)]">
-                  <item.icon size={20} className="text-[var(--theme-price)]" />
-                </div>
-                <span className="text-[12px] font-medium text-foreground">{item.label}</span>
-                <span className="text-[10px] text-muted-foreground">{item.desc}</span>
+        <section className="rounded-[1.45rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
+          <div className="grid grid-cols-4 divide-x divide-[var(--theme-border)]">
+            <button type="button" onClick={() => navigate("/points")} className="space-y-1 px-1 text-center">
+              <Gift className="mx-auto text-[var(--theme-price)]" size={22} />
+              <p className="text-lg">积分</p>
+              <p className="text-3xl font-black">{pointsBalance}</p>
+            </button>
+            <button type="button" onClick={() => navigate("/coupons")} className="space-y-1 px-1 text-center">
+              <Ticket className="mx-auto text-[var(--theme-price)]" size={22} />
+              <p className="text-lg">优惠券</p>
+              <p className="text-3xl font-black">12</p>
+            </button>
+            <button type="button" onClick={() => navigate("/favorites")} className="space-y-1 px-1 text-center">
+              <Heart className="mx-auto text-[var(--theme-price)]" size={22} />
+              <p className="text-lg">收藏</p>
+              <p className="text-3xl font-black">{favoriteCount}</p>
+            </button>
+            <button type="button" onClick={() => navigate("/rewards")} className="space-y-1 px-1 text-center">
+              <Wallet className="mx-auto text-[var(--theme-price)]" size={22} />
+              <p className="text-lg">返现</p>
+              <p className="text-3xl font-black">RM 0</p>
+            </button>
+          </div>
+        </section>
+
+        <section className="rounded-[1.45rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
+          <BlockTitle title="我的订单" rightLabel="查看全部" onRightClick={() => navigate("/orders")} />
+          <div className="grid grid-cols-5 gap-2 text-center">
+            {[
+              { label: "待付款", icon: Wallet, value: orderPending, path: "/orders" },
+              { label: "待发货", icon: Package, value: orderShipping, path: "/orders" },
+              { label: "待收货", icon: Truck, value: orderReceiving, path: "/orders" },
+              { label: "待评价", icon: MessageCircle, value: 0, path: "/orders" },
+              { label: "售后/退款", icon: CircleHelp, value: 0, path: "/returns" },
+            ].map((item) => (
+              <button key={item.label} type="button" onClick={() => navigate(item.path)} className="relative rounded-xl p-2">
+                {item.value > 0 ? <span className="absolute left-8 top-0 min-w-[1.1rem] rounded-full bg-red-500 px-1 text-[10px] text-white">{item.value}</span> : null}
+                <item.icon size={23} className="mx-auto text-[var(--theme-price)]" />
+                <p className="mt-1 text-sm">{item.label}</p>
               </button>
             ))}
           </div>
         </section>
 
-        {/* 二级 - 会员权益 */}
-        <section>
-          <h3 className="mb-2 px-1 text-xs font-medium text-muted-foreground">权益资产</h3>
-          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow">
-            {benefitItems.map((item, i) => (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-secondary ${
-                  i < benefitItems.length - 1 ? "border-b border-border" : ""
-                }`}
-              >
-                <item.icon size={18} className="text-[var(--theme-price)]" />
-                <span className="flex-1 text-sm text-foreground">{item.label}</span>
-                {item.hint && (
-                  <span className="text-xs text-muted-foreground">{item.hint}</span>
-                )}
-                <ChevronRight size={16} className="text-muted-foreground" />
+        <section className="rounded-[1.45rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
+          <BlockTitle title="常用服务" />
+          <div className="grid grid-cols-4 gap-3">
+            {[
+              { label: "收货地址", icon: MapPin, path: "/address" },
+              { label: "浏览记录", icon: Clock3, path: "/history" },
+              { label: "积分商城", icon: Gift, path: "/points" },
+              { label: "邀请有礼", icon: Gift, path: "/invite" },
+              { label: "在线客服", icon: Bell, path: "/notifications" },
+              { label: "帮助中心", icon: CircleHelp, path: "/help" },
+              { label: "账户设置", icon: Settings, path: "/settings" },
+              { label: "我的收藏", icon: Heart, path: "/favorites" },
+            ].map((item) => (
+              <button key={item.label} type="button" onClick={() => navigate(item.path)} className="space-y-1.5 rounded-xl p-1 text-center">
+                <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,white)] text-[var(--theme-price)]">
+                  <item.icon size={20} />
+                </span>
+                <p className="text-sm">{item.label}</p>
               </button>
             ))}
           </div>
         </section>
 
-        {/* 三级 - 系统 / 帮助 */}
-        <section>
-          <h3 className="mb-2 px-1 text-xs font-medium text-muted-foreground">账户与帮助</h3>
-          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow">
-            {miscItems.map((item, i) => (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-secondary ${
-                  i < miscItems.length - 1 ? "border-b border-border" : ""
-                }`}
-              >
-                <item.icon size={18} className="text-muted-foreground" />
-                <span className="flex-1 text-sm text-foreground">{item.label}</span>
-                <ChevronRight size={16} className="text-muted-foreground" />
-              </button>
-            ))}
+        <section className="rounded-[1.45rem] border border-[#e9c989] bg-gradient-to-r from-[#f8e8bf] to-[#f0d08d] p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-3xl font-black text-[#3a2a15]">邀请好友得奖励</p>
+              <p className="mt-1 line-clamp-1 text-sm text-[#6f4b1e]">已邀请 {inviteCount} 位好友，继续邀请可获得积分和优惠券</p>
+            </div>
+            <button type="button" onClick={() => navigate("/invite")} className="shrink-0 rounded-full bg-[#7a4a00] px-4 py-2 text-sm font-bold text-white">
+              立即邀请
+            </button>
           </div>
         </section>
 
-        {showSocial && (
-          <section className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
-            <p className="mb-3 text-xs font-medium text-muted-foreground">关注我们</p>
-            <SiteSocialLinks {...socialProps} tone="profile" className="justify-start gap-2" />
-          </section>
-        )}
+        <section className="grid grid-cols-3 gap-2 rounded-[1.45rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
+          <div className="text-center">
+            <p className="font-bold">正品保障</p>
+            <p className="text-xs text-[var(--theme-text-muted)]">100%正品保证</p>
+          </div>
+          <div className="text-center">
+            <p className="font-bold">本地配送</p>
+            <p className="text-xs text-[var(--theme-text-muted)]">快速发货</p>
+          </div>
+          <div className="text-center">
+            <p className="font-bold">安全支付</p>
+            <p className="text-xs text-[var(--theme-text-muted)]">多重加密保护</p>
+          </div>
+        </section>
 
-        {/* Logout button */}
         <button
+          type="button"
           onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/20 bg-card py-3.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/5 active:scale-[0.98]"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-red-300 bg-white py-3.5 text-sm font-semibold text-red-600"
         >
           <LogOut size={16} />
           退出登录

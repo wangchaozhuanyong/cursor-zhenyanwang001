@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState, useRef } from "react";
-import { Bell, ChevronRight, Flame, Gift, Heart, RefreshCw, Search, ShoppingCart, Star, Ticket, Zap } from "lucide-react";
+import { Bell, Flame, Gift, Heart, LayoutGrid, RefreshCw, Search, ShoppingCart, Sparkles, Star, Ticket, Truck, Zap, ShieldCheck, Wallet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
@@ -40,7 +40,7 @@ function Header({ title, icon: Icon, subtitle }: { title: string; icon?: React.E
 }
 
 export default function MemberHome() {
-  // 棣栭〉鏍囬绛栫暐锛氫紭鍏堜娇鐢ㄥ悗鍙?SEO 鏍囬锛坰eoTitle锛夛紝鏈厤缃椂鍥為€€绔欑偣鍚?  useDocumentTitle(undefined);
+  useDocumentTitle(undefined);
   const navigate = useNavigate();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const { hotProducts, newProducts, recommendedProducts, loading: homeLoading, loadHomeData } = useProductStore();
@@ -152,6 +152,17 @@ export default function MemberHome() {
     ],
     [couponTop.length, favoriteIds.length, cartItems.length],
   );
+  const quickEntries = useMemo(
+    () => [
+      { label: "新品上线", icon: Sparkles, path: "/new-arrivals" },
+      { label: "时尚配饰", icon: Gift, path: "/categories" },
+      { label: "户外生活", icon: Truck, path: "/categories" },
+      { label: "数码配件", icon: Zap, path: "/categories" },
+      { label: "进口优选", icon: Star, path: "/categories?sort=sales_desc" },
+      { label: "全部分类", icon: LayoutGrid, path: "/categories" },
+    ],
+    [],
+  );
 
   const trackNewArrivalClick = (target: "product" | "new_arrivals_page") => {
     void productService.trackHomeEngagement({
@@ -216,33 +227,65 @@ export default function MemberHome() {
           </button>
         </div>
       </header>
-      <main className="mx-auto max-w-screen-xl pt-5">
-        <section className="px-4">
+      <main className="mx-auto max-w-screen-xl px-4 pt-4">
+        <section>
           <BannerCarousel banners={banners} />
+        </section>
+        <section className="mt-3 grid grid-cols-3 gap-2 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
+          {quickEntries.map((entry) => (
+            <button
+              key={entry.label}
+              type="button"
+              onClick={() => navigate(entry.path)}
+              className="flex flex-col items-center gap-2 rounded-xl p-1 text-center"
+            >
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_14%,white)] text-[var(--theme-price)]">
+                <entry.icon size={18} />
+              </span>
+              <span className="text-xs text-[var(--theme-text)]">{entry.label}</span>
+            </button>
+          ))}
         </section>
         <section className="mt-3">
           <HomeOpsBlocks />
         </section>
-        <section className="px-4 mt-3">
-          <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-sm font-semibold text-[var(--theme-text-on-surface)]">会员权益</p>
-              <button type="button" onClick={() => navigate("/profile")} className="text-xs text-[var(--theme-primary)]">
-                查看详情
-              </button>
+        <section className="mt-3 rounded-2xl border border-[var(--theme-border)] bg-gradient-to-r from-[#fce7b2] via-[#fae8be] to-[#f8e1a0] p-4">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-white/70 p-2 text-[var(--theme-price)]">
+              <Ticket size={22} />
             </div>
-            <div className="grid grid-cols-4 gap-2">
-              {memberAssets.map((asset) => (
-                <div key={asset.label} className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] p-2 text-center">
-                  <asset.icon size={14} className="mx-auto text-[var(--theme-primary)]" />
-                  <p className="mt-1 text-xs font-semibold text-[var(--theme-text)]">{asset.value}</p>
-                  <p className="text-[10px] text-[var(--theme-text-muted)]">{asset.label}</p>
-                </div>
-              ))}
+            <div className="min-w-0 flex-1">
+              <p className="text-xl font-extrabold text-[#8a5200]">新用户礼包</p>
+              <p className="line-clamp-1 text-sm text-[#8a5200]/85">注册即可领取优惠券，最高立减 RM80</p>
             </div>
+            <button
+              type="button"
+              onClick={() => navigate("/coupons")}
+              className="rounded-full bg-[#7a4a00] px-4 py-2 text-xs font-bold text-white"
+            >
+              立即领取
+            </button>
           </div>
         </section>
-        <section className="px-4">
+        <section className="mt-3 grid grid-cols-4 gap-2 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
+          <div className="flex items-center gap-1.5 text-xs text-[var(--theme-text)]">
+            <ShieldCheck size={14} className="text-[var(--theme-price)]" />
+            正品保障
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-[var(--theme-text)]">
+            <Truck size={14} className="text-[var(--theme-price)]" />
+            本地配送
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-[var(--theme-text)]">
+            <Wallet size={14} className="text-[var(--theme-price)]" />
+            安全支付
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-[var(--theme-text)]">
+            <Heart size={14} className="text-[var(--theme-price)]" />
+            售后无忧
+          </div>
+        </section>
+        <section className="mt-section">
           <Header title="权益券包" icon={Ticket} />
           <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">
             {(couponLoading ? Array.from({ length: 4 }) : couponTop).map((c: UserCoupon | number, i) => {
@@ -300,8 +343,8 @@ export default function MemberHome() {
             })}
           </div>
         </section>
-        <section className="mt-section px-4">
-          <Header title="新品上市" icon={Zap} subtitle="新品主图统一 1:1 展示，快速发现本周上新" />
+        <section className="mt-section">
+          <Header title="新品上市" icon={Zap} subtitle="每周精选上新，发现最新好物" />
           <div
             className="relative overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow"
             onTouchStart={(e) => {
@@ -405,7 +448,7 @@ export default function MemberHome() {
             ) : null}
           </div>
         </section>
-        <section className="mt-section px-4">
+        <section className="mt-section">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text-on-surface)]">
               <Flame className="h-5 w-5 text-[var(--theme-price)]" />
@@ -427,7 +470,7 @@ export default function MemberHome() {
               : hot.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
           </div>
         </section>
-        <section className="mt-section px-4">
+        <section className="mt-section">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text-on-surface)]">

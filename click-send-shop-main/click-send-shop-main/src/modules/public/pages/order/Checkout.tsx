@@ -654,6 +654,12 @@ export default function Checkout() {
 
       <main className="mx-auto w-full max-w-screen-xl px-4 py-4 md:px-6 md:py-6">
         <CheckoutStepBar className="mb-4" />
+        <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
+          <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">1) 填写收货信息</div>
+          <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">2) 选择支付方式</div>
+          <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">3) 配送与优惠</div>
+          <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">4) 确认并提交</div>
+        </div>
         <div className="md:grid md:grid-cols-[1fr_380px] md:items-start md:gap-8">
           <div className="space-y-4">
         {/* Contact info */}

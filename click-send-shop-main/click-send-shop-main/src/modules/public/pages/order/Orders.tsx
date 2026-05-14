@@ -57,7 +57,7 @@ export default function Orders() {
 
   return (
     <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-6">
-      <header className="sticky top-0 z-40 bg-[var(--theme-surface)]/95 backdrop-blur-md border-b border-[var(--theme-border)]">
+      <header className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
           <button
             onClick={goBack}
@@ -67,17 +67,16 @@ export default function Orders() {
           </button>
           <h1 className="text-base font-semibold text-foreground">我的订单</h1>
         </div>
-
-        <div className="mx-auto max-w-lg overflow-x-auto px-4 pb-2">
-          <div className="flex gap-1">
+        <div className="mx-auto max-w-lg overflow-x-auto px-4 pb-3">
+          <div className="flex gap-1.5 rounded-xl bg-[var(--theme-bg)] p-1">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => switchTab(tab.key)}
-                className={`flex-shrink-0 rounded-full px-4 py-2 text-xs font-medium transition-all ${
+                className={`flex-shrink-0 rounded-lg px-3 py-2 text-xs font-medium transition-all ${
                   filterStatus === tab.key
-                    ? "bg-[var(--theme-price)] text-white"
-                    : "bg-[var(--theme-surface)] text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]"
+                    ? "bg-[var(--theme-surface)] text-[var(--theme-primary)] shadow-[var(--theme-shadow)]"
+                    : "text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]"
                 }`}
               >
                 {tab.label}
@@ -133,7 +132,7 @@ export default function Orders() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03 }}
                   onClick={() => navigate(`/orders/${order.id}`)}
-                  className="cursor-pointer theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 transition-colors active:bg-[var(--theme-bg)] theme-shadow"
+                  className="cursor-pointer rounded-2xl bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)] transition-colors active:bg-[var(--theme-bg)]"
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-medium text-muted-foreground font-mono">

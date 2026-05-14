@@ -14,6 +14,7 @@ import HomeOpsBlocks from "./HomeOpsBlocks";
 import type { Product } from "@/types/product";
 import type { FooterNavItem } from "@/types/content";
 import { ROUTES } from "@/constants/routes";
+import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 
 const GUEST_HOME_GRID_MAX = 8;
 
@@ -70,6 +71,7 @@ export default function GuestHome() {
   const slogan = siteInfo.siteSlogan || "精选全球好物，品质生活";
   const description = siteInfo.siteDescription || "精选全球好物，品质生活购物平台";
   const { banners } = useHomeBanners();
+  const { themeConfig } = useThemeRuntime();
   const {
     hotProducts,
     newProducts,
@@ -144,10 +146,26 @@ export default function GuestHome() {
     { label: "优惠券", icon: Ticket, path: "/coupons" },
     { label: "全部分类", icon: LayoutGrid, path: "/categories" },
   ];
+  const headerClass =
+    themeConfig.headerStyle === "dark"
+      ? "bg-[color-mix(in_srgb,var(--theme-primary)_88%,black)] text-[var(--theme-primary-foreground)] border-transparent"
+      : themeConfig.headerStyle === "transparent"
+        ? "bg-transparent border-transparent"
+        : themeConfig.headerStyle === "premium"
+          ? "bg-[color-mix(in_srgb,var(--theme-secondary)_16%,var(--theme-surface))] border-[var(--theme-border)]"
+          : "bg-[var(--theme-bg)]/90 border-[var(--theme-border)]";
+  const categoryIconClass =
+    themeConfig.categoryIconStyle === "solid"
+      ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
+      : themeConfig.categoryIconStyle === "outline"
+        ? "bg-transparent text-[var(--theme-primary)] ring-1 ring-[var(--theme-border)]"
+        : themeConfig.categoryIconStyle === "circle"
+          ? "bg-[var(--theme-surface)] text-[var(--theme-primary)] ring-1 ring-[var(--theme-border)]"
+          : "bg-[color-mix(in_srgb,var(--theme-secondary)_14%,white)] text-[var(--theme-secondary)]";
 
   return (
-    <div className={`min-h-screen bg-[var(--theme-bg)] ${bottomNavSafe} text-[var(--theme-text)]`}>
-      <header className="fixed left-0 right-0 top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/90 backdrop-blur-xl">
+    <div className={`min-h-screen bg-[var(--theme-bg)] ${bottomNavSafe} text-[var(--theme-text)]`} data-theme-home-layout={themeConfig.homeLayout}>
+      <header className={`fixed left-0 right-0 top-0 z-40 border-b backdrop-blur-xl ${headerClass}`}>
         <div className="mx-auto flex h-14 w-full max-w-screen-xl items-center justify-between px-4">
           <div className="flex min-w-0 cursor-pointer items-center gap-2" onClick={() => navigate(ROUTES.HOME)}>
             <img
@@ -181,7 +199,9 @@ export default function GuestHome() {
               onClick={() => navigate(entry.path)}
               className="flex flex-col items-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-3 text-[11px] text-[var(--theme-text)]"
             >
-              <entry.icon size={16} className="text-[var(--theme-primary)]" />
+              <span className={`flex h-8 w-8 items-center justify-center rounded-full ${categoryIconClass}`}>
+                <entry.icon size={16} />
+              </span>
               <span>{entry.label}</span>
             </button>
           ))}

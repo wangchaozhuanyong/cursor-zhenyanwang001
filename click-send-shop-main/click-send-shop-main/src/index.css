@@ -67,6 +67,7 @@
     --theme-text: #000000;
     --theme-text-on-surface: #000000;
     --theme-text-muted: rgba(0, 0, 0, 0.58);
+    --theme-muted: rgba(0, 0, 0, 0.58);
     --theme-text-muted-on-surface: rgba(0, 0, 0, 0.58);
     --theme-text-subtle: rgba(0, 0, 0, 0.38);
     --theme-radius: 8px;
@@ -165,6 +166,57 @@
 }
 
 @layer utilities {
+  .store-page {
+    background: var(--theme-bg);
+    color: var(--theme-text);
+  }
+  .store-section {
+    background: transparent;
+    color: var(--theme-text);
+  }
+  .store-card {
+    background: var(--theme-surface);
+    border: 1px solid var(--theme-border);
+    border-radius: var(--theme-radius);
+    color: var(--theme-text);
+  }
+  .store-button {
+    border-radius: var(--theme-radius);
+    transition: all 0.2s ease;
+  }
+  .store-button-primary {
+    background: var(--theme-primary);
+    color: var(--theme-primary-foreground);
+  }
+  .store-button-secondary {
+    background: var(--theme-secondary);
+    color: var(--theme-secondary-foreground);
+  }
+  .store-badge {
+    border-radius: 999px;
+    font-size: 10px;
+    line-height: 1;
+  }
+  .store-price {
+    color: var(--theme-price);
+    font-weight: 700;
+  }
+  .store-muted {
+    color: var(--theme-muted);
+  }
+  .store-bottom-safe {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+  .store-floating-nav-space {
+    padding-bottom: calc(86px + env(safe-area-inset-bottom));
+  }
+  .z-header { z-index: 40; }
+  .z-bottom-nav { z-index: 50; }
+  .z-checkout-bar { z-index: 55; }
+  .z-drawer { z-index: 70; }
+  .z-modal { z-index: 80; }
+  .z-toast { z-index: 90; }
+
   .theme-rounded {
     border-radius: var(--theme-radius);
   }

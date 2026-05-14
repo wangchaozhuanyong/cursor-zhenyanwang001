@@ -1,0 +1,67 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowUploadOnlyToScopedPrefix",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:AbortMultipartUpload"
+      ],
+      "Resource": "arn:aws:s3:::<YOUR_BUCKET>/uploads/raw/*",
+      "Condition": {
+        "StringEquals": {
+          "s3:x-amz-server-side-encryption": "AES256"
+        }
+      }
+    },
+    {
+      "Sid": "AllowReadForSanitizerWorker",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject"
+      ],
+      "Resource": "arn:aws:s3:::<YOUR_BUCKET>/uploads/raw/*"
+    },
+    {
+      "Sid": "AllowWritePublicSanitizedAssets",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject"
+      ],
+      "Resource": "arn:aws:s3:::<YOUR_BUCKET>/uploads/public/*",
+      "Condition": {
+        "StringEquals": {
+          "s3:x-amz-server-side-encryption": "AES256"
+        }
+      }
+    },
+    {
+      "Sid": "DenyAnyDeleteIfNotOpsRole",
+      "Effect": "Deny",
+      "Action": [
+        "s3:DeleteObject",
+        "s3:DeleteObjectVersion"
+      ],
+      "Resource": "arn:aws:s3:::<YOUR_BUCKET>/uploads/*",
+      "Condition": {
+        "StringNotLike": {
+          "aws:PrincipalArn": "arn:aws:iam::<ACCOUNT_ID>:role/<OPS_ROLE_NAME>"
+        }
+      }
+    },
+    {
+      "Sid": "DenyListBucketByDefault",
+      "Effect": "Deny",
+      "Action": [
+        "s3:ListBucket"
+      ],
+      "Resource": "arn:aws:s3:::<YOUR_BUCKET>",
+      "Condition": {
+        "StringNotLike": {
+          "aws:PrincipalArn": "arn:aws:iam::<ACCOUNT_ID>:role/<OPS_ROLE_NAME>"
+        }
+      }
+    }
+  ]
+}

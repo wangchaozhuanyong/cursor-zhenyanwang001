@@ -1,19 +1,11 @@
-const { DEFAULT_THEME_CONFIG } = require('../src/modules/theme/theme.default');
+const { DEFAULT_SKIN_ID, THEME_PRESETS } = require('../src/modules/user/theme.presets');
 
 module.exports = {
   async up(query) {
-    // Store multiple theme skins in one site_settings row.
-    // - theme_skins.defaultSkinId: which skin is applied for new/anonymous users
-    // - theme_skins.skins: array of { id, name, config }
     const skinPayload = {
-      defaultSkinId: 'default',
-      skins: [
-        {
-          id: 'default',
-          name: '默认皮肤',
-          config: DEFAULT_THEME_CONFIG,
-        },
-      ],
+      defaultSkinId: DEFAULT_SKIN_ID,
+      activeSkinId: DEFAULT_SKIN_ID,
+      skins: THEME_PRESETS,
     };
 
     await query(
@@ -24,4 +16,3 @@ module.exports = {
     );
   },
 };
-

@@ -176,14 +176,32 @@ function getFontFamily(fontFamily: string) {
 }
 
 function getShadowVariables(style: string, isDark: boolean) {
-  if (style === "flat") return { "--theme-shadow": "none", "--theme-shadow-hover": "none" };
-  if (style === "brutalism") {
-    const color = isDark ? "rgba(255,255,255,0.9)" : "#000000";
-    return { "--theme-shadow": `4px 4px 0px ${color}`, "--theme-shadow-hover": `6px 6px 0px ${color}` };
+  if (style === "none") return { "--theme-shadow": "none", "--theme-shadow-hover": "none" };
+  if (style === "subtle") {
+    return {
+      "--theme-shadow": `0 4px 14px -8px ${isDark ? "rgba(0,0,0,0.72)" : "rgba(15,23,42,0.12)"}`,
+      "--theme-shadow-hover": `0 8px 20px -10px ${isDark ? "rgba(0,0,0,0.82)" : "rgba(15,23,42,0.16)"}`,
+    };
+  }
+  if (style === "medium") {
+    return {
+      "--theme-shadow": `0 10px 28px -10px ${isDark ? "rgba(0,0,0,0.82)" : "rgba(15,23,42,0.22)"}`,
+      "--theme-shadow-hover": `0 16px 34px -12px ${isDark ? "rgba(0,0,0,0.92)" : "rgba(15,23,42,0.3)"}`,
+    };
+  }
+  if (style === "glow") {
+    return {
+      "--theme-shadow": isDark
+        ? "0 0 0 1px rgba(232,204,122,0.32), 0 0 26px rgba(232,204,122,0.18)"
+        : "0 0 0 1px rgba(23,19,14,0.12), 0 14px 32px -12px rgba(23,19,14,0.24)",
+      "--theme-shadow-hover": isDark
+        ? "0 0 0 1px rgba(232,204,122,0.52), 0 0 34px rgba(232,204,122,0.24)"
+        : "0 0 0 1px rgba(23,19,14,0.18), 0 20px 36px -12px rgba(23,19,14,0.28)",
+    };
   }
   return {
-    "--theme-shadow": `0 10px 30px -10px ${isDark ? "rgba(0,0,0,0.8)" : "rgba(0,0,0,0.06)"}`,
-    "--theme-shadow-hover": `0 20px 40px -10px ${isDark ? "rgba(0,0,0,0.95)" : "rgba(0,0,0,0.12)"}`,
+    "--theme-shadow": `0 8px 24px -10px ${isDark ? "rgba(0,0,0,0.8)" : "rgba(15,23,42,0.16)"}`,
+    "--theme-shadow-hover": `0 14px 30px -12px ${isDark ? "rgba(0,0,0,0.9)" : "rgba(15,23,42,0.22)"}`,
   };
 }
 
@@ -231,7 +249,11 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
   const surface = parseColor(adminConfig.surfaceColor, bg);
   const primary = parseColor(adminConfig.primaryColor, BLACK);
   const secondary = parseColor(adminConfig.secondaryColor, primary);
+  const accent = parseColor(adminConfig.accentColor, secondary);
   const price = parseColor(adminConfig.priceColor, { r: 220, g: 38, b: 38 });
+  const success = parseColor(adminConfig.successColor, { r: 47, g: 133, b: 90 });
+  const warning = parseColor(adminConfig.warningColor, { r: 217, g: 119, b: 6 });
+  const danger = parseColor(adminConfig.dangerColor, price);
   const isDarkBg = isDarkColor(bg);
   const border =
     adminConfig.borderColor && adminConfig.borderColor !== "auto" && adminConfig.borderColor.trim() !== ""
@@ -245,9 +267,11 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
   const primaryCss = rgbToCss(primary);
   const secondaryCss = rgbToCss(secondary);
   const priceCss = rgbToCss(price);
-  const text = getReadableTextColor(bgCss);
+  const text = getReadableTextColor(bgCss, adminConfig.textColor);
   const surfaceText = getReadableTextColor(surfaceCss, text);
-  const mutedText = getMutedTextColor(bg, text);
+  const mutedText = adminConfig.mutedTextColor && adminConfig.mutedTextColor !== "auto"
+    ? rgbToCss(parseColor(adminConfig.mutedTextColor))
+    : getMutedTextColor(bg, text);
   const surfaceMutedText = getMutedTextColor(surface, surfaceText);
   let primaryText = getReadableTextColor(primaryCss);
   if (getContrastRatio(primaryCss, primaryText) < 4.5) {
@@ -265,7 +289,7 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
         : rgbToCss(BLACK);
   }
   const mutedBg = mixColors(bg, parseColor(text), isDarkBg ? 0.1 : 0.06);
-  const accentBg = mixColors(bg, price, isDarkBg ? 0.28 : 0.14);
+  const accentBg = mixColors(bg, accent, isDarkBg ? 0.28 : 0.14);
   const borderCss = rgbToCss(border);
   const shadows = getShadowVariables(adminConfig.shadowStyle, isDarkBg);
 
@@ -275,8 +299,12 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     "--theme-primary-foreground": primaryText,
     "--theme-secondary": secondaryCss,
     "--theme-secondary-foreground": secondaryText,
+    "--theme-accent": rgbToCss(accent),
     "--theme-price": priceCss,
     "--theme-price-foreground": priceText,
+    "--theme-success": rgbToCss(success),
+    "--theme-warning": rgbToCss(warning),
+    "--theme-danger": rgbToCss(danger),
     "--theme-gradient": `linear-gradient(135deg, ${primaryCss}, ${secondaryCss})`,
     "--theme-gradient-foreground": getReadableTextColor(mixColors(primary, secondary, 0.5)),
     "--theme-bg": bgCss,
@@ -285,11 +313,15 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     "--theme-text": text,
     "--theme-text-on-surface": surfaceText,
     "--theme-text-muted": mutedText,
+    "--theme-muted": mutedText,
     "--theme-text-muted-on-surface": surfaceMutedText,
     "--theme-text-subtle": rgbToCss(mixColors(parseColor(text), bg, 0.78)),
     "--theme-radius": adminConfig.radius,
+    "--theme-button-radius": adminConfig.buttonStyle === "pill" ? "999px" : adminConfig.buttonStyle === "square" ? "8px" : adminConfig.radius,
+    "--theme-card-radius": adminConfig.radius,
     "--radius": adminConfig.radius,
     "--theme-font": getFontFamily(adminConfig.fontFamily),
+    "--theme-font-family": getFontFamily(adminConfig.fontFamily),
     "--font-display": getFontFamily(adminConfig.fontFamily),
     "--theme-image-ratio": adminConfig.imageRatio,
     "--theme-image-fit": adminConfig.imageFit,
@@ -302,6 +334,11 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     "--theme-price-style": adminConfig.priceStyle || "normal",
     "--theme-motion-level": adminConfig.motionLevel || "soft",
     "--theme-density": adminConfig.density || "comfortable",
+    "--theme-header-style": (adminConfig as any).headerStyle || "clean",
+    "--theme-banner-style": (adminConfig as any).bannerStyle || "clean",
+    "--theme-coupon-style": (adminConfig as any).couponStyle || "ticket",
+    "--theme-member-card-style": (adminConfig as any).memberCardStyle || "light",
+    "--theme-category-icon-style": (adminConfig as any).categoryIconStyle || "circle",
     "--theme-admin-mode": adminConfig.adminThemeMode || "fixed",
     ...getCardShellVariables(adminConfig.cardStyle, surfaceCss, borderCss, shadows["--theme-shadow"], shadows["--theme-shadow-hover"]),
 

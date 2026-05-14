@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Bell,
   Camera,
@@ -32,13 +32,18 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import { useUserStore } from "@/stores/useUserStore";
 import * as inviteService from "@/services/inviteService";
 import * as uploadService from "@/services/uploadService";
+import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 
-function BlockTitle({ title, rightLabel, onRightClick }: { title: string; rightLabel?: string; onRightClick?: () => void }) {
+const CARD_CLASS = "rounded-2xl bg-[var(--theme-surface)] shadow-[var(--theme-shadow)]";
+const SECTION_PADDING = "p-4";
+const ICON_SIZE = 18;
+
+function SectionTitle({ title, rightLabel, onRightClick }: { title: string; rightLabel?: string; onRightClick?: () => void }) {
   return (
     <div className="mb-3 flex items-center justify-between">
-      <h3 className="text-lg font-bold text-[var(--theme-text-on-surface)]">{title}</h3>
+      <h3 className="text-base font-semibold tracking-tight text-[var(--theme-text)]">{title}</h3>
       {rightLabel ? (
-        <button type="button" onClick={onRightClick} className="inline-flex items-center gap-1 text-xs text-[var(--theme-text-muted)]">
+        <button type="button" onClick={onRightClick} className="inline-flex items-center gap-1 text-xs text-[var(--theme-muted)]">
           {rightLabel}
           <ChevronRight size={14} />
         </button>
@@ -55,6 +60,7 @@ function ProfileHeroCard({
   code,
   onAvatarClick,
   skinTrigger,
+  memberCardStyle,
 }: {
   logoSrc: string;
   avatar?: string;
@@ -63,36 +69,39 @@ function ProfileHeroCard({
   code: string;
   onAvatarClick: () => void;
   skinTrigger: ReactNode;
+  memberCardStyle: "light" | "gold" | "blackGold" | "fresh";
 }) {
+  const heroStyle =
+    memberCardStyle === "blackGold"
+      ? "bg-[linear-gradient(120deg,#15120f,#2a2218)] text-[#f7efd9]"
+      : memberCardStyle === "gold"
+        ? "bg-[linear-gradient(120deg,#f5ead1,#ead6aa)]"
+        : memberCardStyle === "fresh"
+          ? "bg-[linear-gradient(120deg,#e9f7f4,#d8efe9)]"
+          : "bg-[var(--theme-bg)]";
   return (
-    <div
-      className="relative overflow-hidden rounded-3xl border border-[var(--theme-border)] px-4 py-3"
-      style={{
-        background:
-          "linear-gradient(110deg, color-mix(in srgb, var(--theme-price) 20%, white), color-mix(in srgb, var(--theme-price) 12%, white) 45%, color-mix(in srgb, var(--theme-price) 24%, white))",
-      }}
-    >
-      <div className="pointer-events-none absolute -right-6 -top-8 h-36 w-36 rounded-full bg-white/25 blur-2xl" />
-      <div className="pointer-events-none absolute -bottom-8 right-6 h-24 w-24 rounded-full bg-black/5 blur-2xl" />
-      <div className="relative flex items-center gap-3">
-        <button type="button" onClick={onAvatarClick} className="relative shrink-0" aria-label="更换头像">
-          <img src={avatar || logoSrc} alt={userName} className="h-[84px] w-[84px] rounded-full border-2 border-white object-cover" />
-          <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]">
-            <Camera size={12} />
-          </span>
-        </button>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="truncate text-[26px] font-semibold leading-tight text-[var(--theme-text-on-surface)]">{userName}</p>
-            <span className="shrink-0 rounded-full bg-[#9f6f24] px-2.5 py-1 text-[10px] font-semibold text-white">{memberLevelName}</span>
-          </div>
-          <div className="mt-1 flex items-center justify-between gap-2">
-            <p className="text-base text-[var(--theme-text-muted-on-surface)]">邀请码: {code}</p>
-            {skinTrigger}
+    <section className={`${CARD_CLASS} ${SECTION_PADDING} ${heroStyle}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <button type="button" onClick={onAvatarClick} className="relative shrink-0" aria-label="更换头像">
+            <img src={avatar || logoSrc} alt={userName} className="h-16 w-16 rounded-full object-cover ring-1 ring-[var(--theme-border)]" />
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]">
+              <Camera size={11} />
+            </span>
+          </button>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="truncate text-xl font-semibold leading-tight text-[var(--theme-text)]">{userName}</p>
+              <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-secondary)_20%,white)] px-2 py-0.5 text-[10px] font-semibold text-[var(--theme-secondary)]">
+                {memberLevelName}
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-[var(--theme-muted)]">邀请码: {code}</p>
           </div>
         </div>
+        <div className="shrink-0">{skinTrigger}</div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -108,6 +117,7 @@ export default function Profile() {
   const favoriteCount = useFavoritesStore((s) => s.favoriteIds.length);
   const [inviteCount, setInviteCount] = useState(0);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const { themeConfig } = useThemeRuntime();
 
   useEffect(() => {
     if (!isLoggedIn()) return;
@@ -147,31 +157,21 @@ export default function Profile() {
 
   if (!isLoggedIn()) {
     return (
-      <div className="min-h-screen bg-[var(--theme-bg)] px-4 pb-24 pt-[max(env(safe-area-inset-top),1rem)] text-[var(--theme-text)]">
-        <section className="mx-auto max-w-lg rounded-[1.6rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5">
+      <div className="store-page min-h-screen px-4 pb-24 pt-[max(env(safe-area-inset-top),1rem)] text-[var(--theme-text)]">
+        <section className={`${CARD_CLASS} mx-auto max-w-lg ${SECTION_PADDING}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src={logoSrc} alt={siteName} className="h-10 w-10 rounded-xl object-cover" />
-              <p className="text-xl font-bold text-[var(--theme-text-on-surface)]">{siteName}</p>
+              <img src={logoSrc} alt={siteName} className="h-9 w-9 rounded-lg object-cover" />
+              <p className="text-lg font-semibold">{siteName}</p>
             </div>
-            <SkinPickerDialog
-              trigger={
-                <button type="button" className="rounded-full border border-[var(--theme-border)] p-2">
-                  <Palette size={18} />
-                </button>
-              }
-            />
+            <SkinPickerDialog trigger={<button type="button" className="rounded-full bg-[var(--theme-bg)] p-2 text-[var(--theme-muted)]"><Palette size={16} /></button>} />
           </div>
-          <div className="mt-5 rounded-2xl bg-[color-mix(in_srgb,var(--theme-price)_14%,white)] p-4">
-            <p className="text-base font-semibold text-[var(--theme-text-on-surface)]">登录后查看会员权益</p>
-            <p className="mt-1 text-xs text-[var(--theme-text-muted)]">订单、积分、优惠券、收藏都在这里管理</p>
+          <div className="mt-4 rounded-xl bg-[var(--theme-bg)] p-4">
+            <p className="text-base font-semibold">登录后查看会员权益</p>
+            <p className="mt-1 text-xs text-[var(--theme-muted)]">订单、积分、优惠券、收藏都在这里管理</p>
             <div className="mt-4 grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => navigate("/login")} className="rounded-xl bg-[var(--theme-primary)] py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)]">
-                登录
-              </button>
-              <button type="button" onClick={() => navigate("/login")} className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] py-2.5 text-sm font-semibold text-[var(--theme-text)]">
-                注册
-              </button>
+              <button type="button" onClick={() => navigate("/login")} className="rounded-xl bg-[var(--theme-primary)] py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)]">登录</button>
+              <button type="button" onClick={() => navigate("/login")} className="rounded-xl bg-[var(--theme-surface)] py-2.5 text-sm font-semibold text-[var(--theme-text)] ring-1 ring-[var(--theme-border)]">注册</button>
             </div>
           </div>
         </section>
@@ -179,22 +179,30 @@ export default function Profile() {
     );
   }
 
+  const assetItems = [
+    { label: "积分", value: String(pointsBalance), icon: Gift, path: "/points" },
+    { label: "优惠券", value: "12", icon: Ticket, path: "/coupons" },
+    { label: "收藏", value: String(favoriteCount), icon: Heart, path: "/favorites" },
+    { label: "返现", value: "RM 0", icon: Wallet, path: "/rewards" },
+  ];
+
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)] px-4 pb-24 pt-[max(env(safe-area-inset-top),1rem)] text-[var(--theme-text)]">
-      <main className="mx-auto max-w-lg rounded-[1.9rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 shadow-[var(--theme-shadow)] space-y-3">
-        <section className="px-0.5">
+    <div className="store-page min-h-screen px-4 pb-24 pt-[max(env(safe-area-inset-top),1rem)] text-[var(--theme-text)]">
+      <main className="mx-auto max-w-lg space-y-3">
+        <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <img src={logoSrc} alt={siteName} className="h-9 w-9 rounded-lg object-contain" />
-              <p className="text-xl font-bold text-[var(--theme-price)]">{siteName}</p>
+              <img src={logoSrc} alt={siteName} className="h-8 w-8 rounded-lg object-contain" />
+              <p className="text-lg font-semibold text-[var(--theme-text)]">{siteName}</p>
             </div>
             <div className="flex items-center gap-2">
               <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} />
-              <button type="button" className="rounded-full border border-[var(--theme-border)] p-2.5" onClick={() => navigate("/settings")}>
-                <Settings size={18} />
+              <button type="button" className="rounded-full bg-[var(--theme-bg)] p-2 text-[var(--theme-muted)]" onClick={() => navigate("/settings")}>
+                <Settings size={16} />
               </button>
             </div>
           </div>
+
           <ProfileHeroCard
             logoSrc={logoSrc}
             avatar={avatar}
@@ -205,43 +213,31 @@ export default function Profile() {
             skinTrigger={
               <SkinPickerDialog
                 trigger={
-                  <button type="button" className="shrink-0 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]">
+                  <button type="button" className="rounded-full bg-[var(--theme-bg)] px-3 py-1.5 text-xs font-medium text-[var(--theme-muted)] ring-1 ring-[var(--theme-border)]">
                     切换皮肤
                   </button>
                 }
               />
             }
+            memberCardStyle={themeConfig.memberCardStyle}
           />
           <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
         </section>
 
-        <section className="rounded-[1.45rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
-          <div className="grid grid-cols-4 divide-x divide-[var(--theme-border)]">
-            <button type="button" onClick={() => navigate("/points")} className="space-y-1 px-1 text-center">
-              <Gift className="mx-auto text-[var(--theme-price)]" size={22} />
-              <p className="text-xs">积分</p>
-              <p className="text-2xl font-bold">{pointsBalance}</p>
-            </button>
-            <button type="button" onClick={() => navigate("/coupons")} className="space-y-1 px-1 text-center">
-              <Ticket className="mx-auto text-[var(--theme-price)]" size={22} />
-              <p className="text-xs">优惠券</p>
-              <p className="text-2xl font-bold">12</p>
-            </button>
-            <button type="button" onClick={() => navigate("/favorites")} className="space-y-1 px-1 text-center">
-              <Heart className="mx-auto text-[var(--theme-price)]" size={22} />
-              <p className="text-xs">收藏</p>
-              <p className="text-2xl font-bold">{favoriteCount}</p>
-            </button>
-            <button type="button" onClick={() => navigate("/rewards")} className="space-y-1 px-1 text-center">
-              <Wallet className="mx-auto text-[var(--theme-price)]" size={22} />
-              <p className="text-xs">返现</p>
-              <p className="text-2xl font-bold">RM 0</p>
-            </button>
+        <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
+          <div className="grid grid-cols-4 gap-2">
+            {assetItems.map((item) => (
+              <button key={item.label} type="button" onClick={() => navigate(item.path)} className="rounded-xl bg-[var(--theme-bg)] px-2 py-3 text-center">
+                <item.icon className="mx-auto mb-1.5 text-[var(--theme-secondary)]" size={ICON_SIZE} />
+                <p className="text-[11px] text-[var(--theme-muted)]">{item.label}</p>
+                <p className="mt-1 text-[28px] font-semibold leading-none tracking-tight text-[var(--theme-text)]">{item.value}</p>
+              </button>
+            ))}
           </div>
         </section>
 
-        <section className="rounded-[1.45rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
-          <BlockTitle title="我的订单" rightLabel="查看全部" onRightClick={() => navigate("/orders")} />
+        <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
+          <SectionTitle title="我的订单" rightLabel="查看全部" onRightClick={() => navigate("/orders")} />
           <div className="grid grid-cols-5 gap-2 text-center">
             {[
               { label: "待付款", icon: Wallet, value: orderPending, path: "/orders" },
@@ -250,18 +246,18 @@ export default function Profile() {
               { label: "待评价", icon: MessageCircle, value: 0, path: "/orders" },
               { label: "售后/退款", icon: CircleHelp, value: 0, path: "/returns" },
             ].map((item) => (
-              <button key={item.label} type="button" onClick={() => navigate(item.path)} className="relative rounded-xl p-2">
-                {item.value > 0 ? <span className="absolute left-8 top-0 min-w-[1.1rem] rounded-full bg-red-500 px-1 text-[10px] text-white">{item.value}</span> : null}
-                <item.icon size={22} className="mx-auto text-[var(--theme-price)]" />
+              <button key={item.label} type="button" onClick={() => navigate(item.path)} className="relative rounded-xl px-1 py-2">
+                {item.value > 0 ? <span className="absolute left-7 top-0 min-w-[1rem] rounded-full bg-[var(--theme-danger)] px-1 text-[10px] text-white">{item.value}</span> : null}
+                <item.icon size={ICON_SIZE} className="mx-auto text-[var(--theme-secondary)]" />
                 <p className="mt-1 text-xs">{item.label}</p>
               </button>
             ))}
           </div>
         </section>
 
-        <section className="rounded-[1.45rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
-          <BlockTitle title="常用服务" />
-          <div className="grid grid-cols-4 gap-3">
+        <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
+          <SectionTitle title="常用服务" />
+          <div className="grid grid-cols-4 gap-2">
             {[
               { label: "收货地址", icon: MapPin, path: "/address" },
               { label: "浏览记录", icon: Clock3, path: "/history" },
@@ -272,54 +268,35 @@ export default function Profile() {
               { label: "账户设置", icon: Settings, path: "/settings" },
               { label: "我的收藏", icon: Heart, path: "/favorites" },
             ].map((item) => (
-              <button key={item.label} type="button" onClick={() => navigate(item.path)} className="space-y-1.5 rounded-xl p-1 text-center">
-                <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,white)] text-[var(--theme-price)]">
-                  <item.icon size={20} />
+              <button key={item.label} type="button" onClick={() => navigate(item.path)} className="space-y-1 rounded-xl bg-[var(--theme-bg)] px-1 py-2 text-center">
+                <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-secondary)_12%,white)] text-[var(--theme-secondary)]">
+                  <item.icon size={16} />
                 </span>
-                <p className="text-xs">{item.label}</p>
+                <p className="text-[11px]">{item.label}</p>
               </button>
             ))}
           </div>
         </section>
 
-        <section
-          className="rounded-[1.45rem] border border-[var(--theme-border)] p-4"
-          style={{
-            background:
-              "linear-gradient(90deg, color-mix(in srgb, var(--theme-price) 18%, white), color-mix(in srgb, var(--theme-price) 12%, white), color-mix(in srgb, var(--theme-price) 24%, white))",
-          }}
-        >
+        <section className={`${CARD_CLASS} ${SECTION_PADDING}`} style={{ background: "linear-gradient(90deg,color-mix(in_srgb,var(--theme-secondary)_16%,white),var(--theme-surface))" }}>
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xl font-bold text-[var(--theme-text-on-surface)]">邀请好友得奖励</p>
-              <p className="mt-1 line-clamp-1 text-xs text-[var(--theme-text-muted-on-surface)]">已邀请 {inviteCount} 位好友，继续邀请可获得积分和优惠券</p>
+              <p className="text-base font-semibold">邀请好友得奖励</p>
+              <p className="mt-1 line-clamp-1 text-xs text-[var(--theme-muted)]">已邀请 {inviteCount} 位好友，继续邀请可获得积分和优惠券</p>
             </div>
-            <button type="button" onClick={() => navigate("/invite")} className="shrink-0 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]">
-              立即邀请
-            </button>
+            <button type="button" onClick={() => navigate("/invite")} className="shrink-0 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]">立即邀请</button>
           </div>
         </section>
 
-        <section className="grid grid-cols-3 gap-2 rounded-[1.45rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
-          <div className="text-center">
-            <p className="text-sm font-semibold">正品保障</p>
-            <p className="text-xs text-[var(--theme-text-muted)]">100%正品保证</p>
-          </div>
-          <div className="text-center">
-            <p className="text-sm font-semibold">本地配送</p>
-            <p className="text-xs text-[var(--theme-text-muted)]">快速发货</p>
-          </div>
-          <div className="text-center">
-            <p className="text-sm font-semibold">安全支付</p>
-            <p className="text-xs text-[var(--theme-text-muted)]">多重加密保护</p>
+        <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div><p className="text-sm font-semibold">正品保障</p><p className="text-xs text-[var(--theme-muted)]">100%正品保证</p></div>
+            <div><p className="text-sm font-semibold">本地配送</p><p className="text-xs text-[var(--theme-muted)]">快速发货</p></div>
+            <div><p className="text-sm font-semibold">安全支付</p><p className="text-xs text-[var(--theme-muted)]">多重加密保护</p></div>
           </div>
         </section>
 
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border border-red-300 bg-white py-3.5 text-sm font-semibold text-red-600"
-        >
+        <button type="button" onClick={handleLogout} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[color-mix(in_srgb,var(--theme-danger)_12%,white)] py-3 text-sm font-semibold text-[var(--theme-danger)]">
           <LogOut size={16} />
           退出登录
         </button>

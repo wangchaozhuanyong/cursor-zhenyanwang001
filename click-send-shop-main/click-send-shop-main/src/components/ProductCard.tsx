@@ -12,6 +12,9 @@ import { ProgressiveImage, SquishButton } from "@/modules/micro-interactions";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import ProductTagList from "@/components/ProductTagList";
 import { trackAddToCart } from "@/utils/tracking";
+import StoreBadge from "@/components/ui/StoreBadge";
+import StorePrice from "@/components/ui/StorePrice";
+import StoreButton from "@/components/ui/StoreButton";
 
 interface Props {
   product: Product;
@@ -63,14 +66,8 @@ export default function ProductCard({ product, index = 0 }: Props) {
               库存 {Math.max(0, Number(product.stock) || 0)} · 销量 {formatSales(Math.max(0, Number(product.sales_count) || 0))}
             </p>
             <div className="mt-3 flex items-center justify-between">
-              <span className="text-base font-bold text-[var(--theme-price)]">RM {product.price}</span>
-              <SquishButton
-                type="button"
-                variant="solid"
-                aria-label="加入购物车"
-                onClick={onAddToCart}
-                className="flex h-8 w-8 items-center justify-center rounded-full !p-0"
-              >
+              <StorePrice price={product.price} size="sm" />
+              <SquishButton type="button" variant="solid" aria-label="加入购物车" onClick={onAddToCart} className="flex h-8 w-8 items-center justify-center rounded-full !p-0">
                 <ShoppingCart size={14} />
               </SquishButton>
             </div>
@@ -100,21 +97,9 @@ export default function ProductCard({ product, index = 0 }: Props) {
           imgClassName="h-full w-full transition-all duration-300 ease-in-out group-hover:scale-105 [object-fit:var(--theme-image-fit,cover)]"
         />
         <div className="absolute left-2 top-2 flex gap-1">
-          {product.active_activity && (
-            <span className="theme-rounded bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white theme-shadow">
-              {product.active_activity.type === "flash_sale" ? "秒杀" : "满减"}
-            </span>
-          )}
-          {product.is_hot && (
-            <span className="theme-rounded bg-[var(--theme-price)] px-2 py-0.5 text-[10px] font-bold text-[var(--theme-price-foreground)] theme-shadow">
-              热销
-            </span>
-          )}
-          {product.is_new && (
-            <span className="theme-rounded bg-[var(--theme-primary)] px-2 py-0.5 text-[10px] font-bold text-[var(--theme-primary-foreground)] theme-shadow">
-              新品
-            </span>
-          )}
+          {product.active_activity && <StoreBadge type="sale">{product.active_activity.type === "flash_sale" ? "秒杀" : "满减"}</StoreBadge>}
+          {product.is_hot && <StoreBadge type="hot">热销</StoreBadge>}
+          {product.is_new && <StoreBadge type="new">新品</StoreBadge>}
           <ProductTagList tags={product.tags} max={2} />
         </div>
 
@@ -146,19 +131,14 @@ export default function ProductCard({ product, index = 0 }: Props) {
           className={`flex gap-2 ${cardCenter ? "w-full items-center justify-center" : "items-end justify-between"}`}
         >
           <div className={`min-w-0 ${cardCenter ? "flex flex-col items-center" : "flex-1"}`}>
-            <div className={`flex flex-wrap items-baseline gap-1.5 ${cardCenter ? "justify-center" : ""}`}>
-              <span className={`${isPremium ? "text-xl" : "text-lg"} font-bold leading-none text-[var(--theme-price)]`}>
-                RM {product.price}
-              </span>
-              {typeof product.original_price === "number"
-                && product.original_price > product.price && (
-                  <span className="text-[11px] text-[var(--theme-text-muted)] line-through">
-                    RM {product.original_price}
-                  </span>
-                )}
-            </div>
+            <StorePrice
+              price={product.price}
+              originalPrice={product.original_price}
+              size={cardVariant === "deal" ? "lg" : isPremium ? "lg" : "md"}
+              className={cardCenter ? "justify-center" : ""}
+            />
             {product.active_activity && (
-              <div className={`mt-1 text-[10px] font-semibold text-red-600 ${cardCenter ? "text-center" : ""}`}>
+              <div className={`mt-1 text-[10px] font-semibold text-[var(--theme-danger)] ${cardCenter ? "text-center" : ""}`}>
                 {product.active_activity.title}
                 {product.active_activity.type === "full_reduction" && product.activity_promo_label ? (
                   <span className="ml-1 opacity-90">· {product.activity_promo_label}</span>
@@ -172,15 +152,15 @@ export default function ProductCard({ product, index = 0 }: Props) {
               )}
             </div>
           </div>
-          <SquishButton
-            type="button"
-            variant="solid"
+          <StoreButton
             aria-label="加入购物车"
             onClick={onAddToCart}
-            className="flex h-9 w-9 items-center justify-center rounded-full transition-all active:scale-90 touch-target hover:opacity-90 !p-0"
+            size="sm"
+            variant={cardVariant === "deal" ? "price" : "primary"}
+            className="h-9 w-9 !p-0"
           >
             <ShoppingCart size={15} />
-          </SquishButton>
+          </StoreButton>
         </div>
       </div>
     </Reveal>

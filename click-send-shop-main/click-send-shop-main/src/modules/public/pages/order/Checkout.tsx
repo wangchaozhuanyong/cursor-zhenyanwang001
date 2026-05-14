@@ -806,7 +806,7 @@ export default function Checkout() {
       </main>
 
       {/* 绉诲姩绔細搴曢儴鍥哄畾鎻愪氦鏍?*/}
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-[55] border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3.5">
           <div>
             <p className="text-xs text-muted-foreground">鍚堣</p>

@@ -27,6 +27,7 @@ import type { Product } from "@/types/product";
 import { buildPersonalizedRecommendations } from "@/utils/personalizedRecommendations";
 import { supportsColorMix } from "@/utils/cssSupport";
 import { isLoggedIn } from "@/utils/token";
+import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 
 function Header({ title, icon: Icon, subtitle }: { title: string; icon?: React.ElementType; subtitle?: string }) {
   return (
@@ -64,6 +65,23 @@ export default function MemberHome() {
   const siteName = siteInfo.siteName || "大马通";
   const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
   const { banners } = useHomeBanners();
+  const { themeConfig } = useThemeRuntime();
+  const headerClass =
+    themeConfig.headerStyle === "dark"
+      ? "bg-[color-mix(in_srgb,var(--theme-primary)_88%,black)] text-[var(--theme-primary-foreground)] border-transparent"
+      : themeConfig.headerStyle === "transparent"
+        ? "bg-transparent border-transparent"
+        : themeConfig.headerStyle === "premium"
+          ? "bg-[color-mix(in_srgb,var(--theme-secondary)_16%,var(--theme-surface))] border-[var(--theme-border)]"
+          : "bg-[var(--theme-bg)]/90 border-[var(--theme-border)]";
+  const categoryIconClass =
+    themeConfig.categoryIconStyle === "solid"
+      ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
+      : themeConfig.categoryIconStyle === "outline"
+        ? "bg-transparent text-[var(--theme-primary)] ring-1 ring-[var(--theme-border)]"
+        : themeConfig.categoryIconStyle === "circle"
+          ? "bg-[var(--theme-surface)] text-[var(--theme-primary)] ring-1 ring-[var(--theme-border)]"
+          : "bg-[color-mix(in_srgb,var(--theme-secondary)_14%,white)] text-[var(--theme-secondary)]";
 
   useEffect(() => {
     loadHomeData();
@@ -203,8 +221,8 @@ export default function MemberHome() {
   }, [activeNew?.id, newArrivalIndex, trackingSessionId]);
 
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)] pb-24 text-[var(--theme-text)]">
-      <header className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/90 backdrop-blur-xl">
+    <div className="min-h-screen bg-[var(--theme-bg)] pb-24 text-[var(--theme-text)]" data-theme-home-layout={themeConfig.homeLayout}>
+      <header className={`sticky top-0 z-40 border-b backdrop-blur-xl ${headerClass}`}>
         <div className="mx-auto flex h-14 w-full max-w-screen-xl items-center gap-3 px-4">
           <div className="flex shrink-0 cursor-pointer items-center gap-2" onClick={() => navigate("/")}>
             <img
@@ -237,7 +255,7 @@ export default function MemberHome() {
               onClick={() => navigate(entry.path)}
               className="flex flex-col items-center gap-2 rounded-xl p-1 text-center"
             >
-              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_14%,white)] text-[var(--theme-price)]">
+              <span className={`flex h-11 w-11 items-center justify-center rounded-full ${categoryIconClass}`}>
                 <entry.icon size={18} />
               </span>
               <span className="text-xs text-[var(--theme-text)]">{entry.label}</span>

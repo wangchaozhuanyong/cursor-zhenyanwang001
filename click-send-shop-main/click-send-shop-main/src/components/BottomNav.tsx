@@ -27,7 +27,7 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-[70] border-t border-[var(--theme-border)] bg-[var(--theme-bg)]/95 backdrop-blur-md pb-safe"
+      className="fixed bottom-0 left-0 right-0 z-[50] border-t border-[var(--theme-border)] bg-[var(--theme-bg)]/95 backdrop-blur-md pb-safe"
       style={{
         paddingBottom: "max(env(safe-area-inset-bottom), 0.5rem)",
       }}
@@ -54,7 +54,7 @@ export default function BottomNav() {
                     <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      className="absolute -right-2.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--theme-price)] px-1 text-[10px] font-bold text-[var(--theme-price-foreground)]"
+                      className="absolute -right-2.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--theme-danger)] px-1 text-[10px] font-bold text-white"
                     >
                       {totalItems > 99 ? "99+" : totalItems}
                     </motion.span>

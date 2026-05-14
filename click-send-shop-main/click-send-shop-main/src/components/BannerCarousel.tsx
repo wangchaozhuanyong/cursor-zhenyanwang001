@@ -106,18 +106,20 @@ export default function BannerCarousel({ banners }: BannerCarouselProps) {
 
       <div className="absolute inset-0 flex items-end justify-between p-5">
         <AnimatePresence mode="wait">
-          <motion.div
-            key={current}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.3 }}
-            className="max-w-[70%]"
-          >
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/75">精选推荐</p>
-            <p className="mt-1 font-display text-2xl font-bold leading-tight text-white">{banner.title || "品质好物，安心下单"}</p>
-            <p className="mt-1 text-xs text-white/80">本地配送 · 会员优惠 · 售后保障</p>
-          </motion.div>
+          {String(banner.title || "").trim() ? (
+            <motion.div
+              key={current}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3 }}
+              className="max-w-[70%]"
+            >
+              <p className="font-display text-2xl font-bold leading-tight text-white">{banner.title}</p>
+            </motion.div>
+          ) : (
+            <div />
+          )}
         </AnimatePresence>
 
         {bannerLink ? (

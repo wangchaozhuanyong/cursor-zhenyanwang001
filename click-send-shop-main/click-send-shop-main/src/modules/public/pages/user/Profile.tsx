@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Bell,
+  Camera,
   ChevronRight,
   CircleHelp,
   Clock3,
@@ -30,17 +31,14 @@ import { useNotificationStore } from "@/stores/useNotificationStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useUserStore } from "@/stores/useUserStore";
 import * as inviteService from "@/services/inviteService";
+import * as uploadService from "@/services/uploadService";
 
 function BlockTitle({ title, rightLabel, onRightClick }: { title: string; rightLabel?: string; onRightClick?: () => void }) {
   return (
     <div className="mb-3 flex items-center justify-between">
       <h3 className="text-lg font-bold text-[var(--theme-text-on-surface)]">{title}</h3>
       {rightLabel ? (
-        <button
-          type="button"
-          onClick={onRightClick}
-          className="inline-flex items-center gap-1 text-xs text-[var(--theme-text-muted)]"
-        >
+        <button type="button" onClick={onRightClick} className="inline-flex items-center gap-1 text-xs text-[var(--theme-text-muted)]">
           {rightLabel}
           <ChevronRight size={14} />
         </button>
@@ -53,18 +51,22 @@ function ProfileHeroCard({
   logoSrc,
   avatar,
   userName,
+  memberLevelName,
   code,
-  onSettings,
+  onAvatarClick,
+  skinTrigger,
 }: {
   logoSrc: string;
   avatar?: string;
   userName: string;
+  memberLevelName: string;
   code: string;
-  onSettings: () => void;
+  onAvatarClick: () => void;
+  skinTrigger: ReactNode;
 }) {
   return (
     <div
-      className="relative overflow-hidden rounded-3xl border border-[var(--theme-border)] p-4"
+      className="relative overflow-hidden rounded-3xl border border-[var(--theme-border)] px-4 py-3"
       style={{
         background:
           "linear-gradient(110deg, color-mix(in srgb, var(--theme-price) 20%, white), color-mix(in srgb, var(--theme-price) 12%, white) 45%, color-mix(in srgb, var(--theme-price) 24%, white))",
@@ -73,18 +75,20 @@ function ProfileHeroCard({
       <div className="pointer-events-none absolute -right-6 -top-8 h-36 w-36 rounded-full bg-white/25 blur-2xl" />
       <div className="pointer-events-none absolute -bottom-8 right-6 h-24 w-24 rounded-full bg-black/5 blur-2xl" />
       <div className="relative flex items-center gap-3">
-        <img src={avatar || logoSrc} alt={userName} className="h-[86px] w-[86px] rounded-full border-2 border-white object-cover" />
+        <button type="button" onClick={onAvatarClick} className="relative shrink-0" aria-label="更换头像">
+          <img src={avatar || logoSrc} alt={userName} className="h-[84px] w-[84px] rounded-full border-2 border-white object-cover" />
+          <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]">
+            <Camera size={12} />
+          </span>
+        </button>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="text-[30px] font-semibold leading-none text-[var(--theme-text-on-surface)]">真烟网会员</p>
-            <span className="rounded-full bg-[#9f6f24] px-2.5 py-1 text-[10px] font-semibold text-white">尊享会员</span>
+            <p className="truncate text-[26px] font-semibold leading-tight text-[var(--theme-text-on-surface)]">{userName}</p>
+            <span className="shrink-0 rounded-full bg-[#9f6f24] px-2.5 py-1 text-[10px] font-semibold text-white">{memberLevelName}</span>
           </div>
-          <p className="mt-1 text-2xl font-bold text-[var(--theme-text-on-surface)]">{userName}</p>
           <div className="mt-1 flex items-center justify-between gap-2">
-            <p className="text-sm text-[var(--theme-text-muted-on-surface)]">邀请码: {code}</p>
-            <button type="button" onClick={onSettings} className="shrink-0 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]">
-              切换皮肤
-            </button>
+            <p className="text-base text-[var(--theme-text-muted-on-surface)]">邀请码: {code}</p>
+            {skinTrigger}
           </div>
         </div>
       </div>
@@ -98,11 +102,12 @@ export default function Profile() {
   const siteName = siteInfo.siteName || "真烟网";
   const logoSrc = siteInfo.logoUrl || logoWebp;
   const authStore = useAuthStore();
-  const { nickname, avatar, pointsBalance, inviteCode, loadProfile } = useUserStore();
+  const { nickname, avatar, pointsBalance, inviteCode, memberLevel, loadProfile } = useUserStore();
   const { orders, loadOrders } = useOrderStore();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const favoriteCount = useFavoritesStore((s) => s.favoriteIds.length);
   const [inviteCount, setInviteCount] = useState(0);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!isLoggedIn()) return;
@@ -118,7 +123,23 @@ export default function Profile() {
     navigate("/login");
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const data = await uploadService.uploadSingle(file);
+      useUserStore.setState({ avatar: data.url });
+      await useUserStore.getState().saveProfile();
+      toast.success("头像已更新", toastPresetQuickSuccess);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "头像上传失败");
+    } finally {
+      e.target.value = "";
+    }
+  };
+
   const userName = nickname?.trim() || "会员用户";
+  const memberLevelName = memberLevel?.name?.trim() || "普通会员";
   const code = inviteCode?.trim() || "暂无";
   const orderPending = useMemo(() => orders.filter((o) => o.status === "pending_payment").length, [orders]);
   const orderShipping = useMemo(() => orders.filter((o) => o.status === "paid" || o.status === "pending_shipment").length, [orders]);
@@ -161,7 +182,7 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-[var(--theme-bg)] px-4 pb-24 pt-[max(env(safe-area-inset-top),1rem)] text-[var(--theme-text)]">
       <main className="mx-auto max-w-lg rounded-[1.9rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 shadow-[var(--theme-shadow)] space-y-3">
-        <section className="p-1">
+        <section className="px-0.5">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <img src={logoSrc} alt={siteName} className="h-9 w-9 rounded-lg object-contain" />
@@ -174,7 +195,24 @@ export default function Profile() {
               </button>
             </div>
           </div>
-          <ProfileHeroCard logoSrc={logoSrc} avatar={avatar} userName={userName} code={code} onSettings={() => navigate("/settings")} />
+          <ProfileHeroCard
+            logoSrc={logoSrc}
+            avatar={avatar}
+            userName={userName}
+            memberLevelName={memberLevelName}
+            code={code}
+            onAvatarClick={() => avatarInputRef.current?.click()}
+            skinTrigger={
+              <SkinPickerDialog
+                trigger={
+                  <button type="button" className="shrink-0 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]">
+                    切换皮肤
+                  </button>
+                }
+              />
+            }
+          />
+          <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
         </section>
 
         <section className="rounded-[1.45rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">

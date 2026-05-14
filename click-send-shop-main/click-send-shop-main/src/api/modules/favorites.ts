@@ -1,4 +1,4 @@
-import { get, post, del } from "../request";
+﻿import { get, post, del } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
 import type { Product } from "@/types/product";
 
@@ -20,3 +20,4 @@ export function removeFavorite(productId: string) {
 export function checkFavorite(productId: string) {
   return get<{ isFavorited: boolean }>(`/favorites/${productId}/check`);
 }
+

@@ -1,4 +1,4 @@
-import { get, post, put } from "../request";
+﻿import { get, post, put } from "@/api/request";
 import type { UserProfile, UpdateProfileParams } from "@/types/user";
 
 export function getProfile() {
@@ -16,3 +16,4 @@ export function changePassword(oldPassword: string, newPassword: string) {
 export function cancelAccount(confirmText: string) {
   return post<void>("/user/account/cancel", { confirmText });
 }
+

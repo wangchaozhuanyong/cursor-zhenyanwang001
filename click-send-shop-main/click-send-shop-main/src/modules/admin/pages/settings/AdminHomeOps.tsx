@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Bell, ExternalLink, Grid3X3, Loader2, Pencil, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { uploadFile } from "@/api/modules/upload";
+import * as uploadService from "@/services/uploadService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import SegmentedDateTimeInput from "@/components/admin/SegmentedDateTimeInput";
 import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_HOME_NAV_ICON } from "@/constants/imageUploadHints";
@@ -10,6 +10,7 @@ import type { HomeAnnouncement, HomeNavItem } from "@/types/content";
 import * as categoryService from "@/services/admin/categoryService";
 import type { Category } from "@/types/category";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { compressImageBeforeUpload } from "@/utils/imageCompress";
 
 type NavForm = Pick<HomeNavItem, "icon_url" | "title" | "link_url" | "sort_order" | "enabled" | "target_type" | "target_category_id">;
 type AnnouncementForm = Pick<HomeAnnouncement, "title" | "content" | "link_url" | "sort_order" | "enabled"> & {
@@ -94,7 +95,8 @@ export default function AdminHomeOps() {
     if (!file) return;
     setNavIconUploading(true);
     try {
-      const { url } = await uploadFile(file);
+      const compressed = await compressImageBeforeUpload(file).catch(() => ({ file, compressed: false }));
+      const { url } = await uploadService.uploadSingleWithProgress(compressed.file, { mode: "image", timeoutMs: 45000 });
       setNavForm((prev) => ({ ...prev, icon_url: url }));
       toast.success("图标已上传，保存导航后生效");
     } catch (err) {

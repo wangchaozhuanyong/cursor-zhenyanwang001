@@ -1,4 +1,4 @@
-import { get, post, put } from "../request";
+﻿import { get, post, put } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
 import type {
   PaymentChannelRow,
@@ -50,3 +50,4 @@ export function postAdminPaymentReconciliation(body: {
 }) {
   return post<{ id: string }>("/admin/payments/reconciliations", body);
 }
+

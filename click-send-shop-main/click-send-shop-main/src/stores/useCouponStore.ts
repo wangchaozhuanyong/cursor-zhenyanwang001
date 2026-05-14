@@ -6,7 +6,6 @@ interface CouponState {
   coupons: UserCoupon[];
   loading: boolean;
   error: string | null;
-
   loadCoupons: () => Promise<void>;
   claimCoupon: (code: string) => Promise<void>;
   clearError: () => void;
@@ -24,8 +23,8 @@ export const useCouponStore = create<CouponState>((set, get) => ({
         couponService.fetchUserCoupons(),
         couponService.fetchAvailableCoupons(0),
       ]);
-      const claimedIds = new Set(userData.list.map((c) => c.coupon?.id));
-      const unclaimed = available.filter((c) => !claimedIds.has(c.coupon?.id));
+      const claimedIds = new Set(userData.list.map((item) => item.coupon?.id));
+      const unclaimed = available.filter((item) => !claimedIds.has(item.coupon?.id));
       set({ coupons: [...unclaimed, ...userData.list], loading: false });
     } catch (err) {
       set({

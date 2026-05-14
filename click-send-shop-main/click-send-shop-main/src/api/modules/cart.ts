@@ -1,4 +1,4 @@
-import { get, post, put, del } from "../request";
+﻿import { get, post, put, del } from "@/api/request";
 import type { CartItem } from "@/types/cart";
 
 export function getCart() {
@@ -22,3 +22,4 @@ export function removeCartItem(productId: string, variantId = "") {
 export function clearCart() {
   return del<void>("/cart");
 }
+

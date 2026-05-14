@@ -1,4 +1,4 @@
-import { get, post, put, del } from "../request";
+﻿import { get, post, put, del } from "@/api/request";
 import type { Category } from "@/types/category";
 
 export function getCategories() {
@@ -20,3 +20,4 @@ export function updateCategorySort(items: Array<{ id: string; parent_id?: string
 export function deleteCategory(id: string) {
   return del<void>(`/admin/categories/${id}`);
 }
+

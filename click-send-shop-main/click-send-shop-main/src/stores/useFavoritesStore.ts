@@ -26,7 +26,7 @@ interface FavoritesStore {
   favoriteProducts: FavoriteProduct[];
   loading: boolean;
   isFavorite: (id: string) => boolean;
-  toggleFavorite: (id: string) => void;
+  toggleFavorite: (product: FavoriteProduct) => void;
   loadFavorites: () => Promise<void>;
 }
 
@@ -39,7 +39,8 @@ export const useFavoritesStore = create<FavoritesStore>()(
 
       isFavorite: (id) => get().favoriteIds.includes(id),
 
-      toggleFavorite: (id) => {
+      toggleFavorite: (product) => {
+        const id = product.id;
         const has = get().favoriteIds.includes(id);
         const prev = { favoriteIds: get().favoriteIds, favoriteProducts: get().favoriteProducts };
         set((s) => ({
@@ -48,7 +49,9 @@ export const useFavoritesStore = create<FavoritesStore>()(
             : [...s.favoriteIds, id],
           favoriteProducts: has
             ? s.favoriteProducts.filter((p) => p.id !== id)
-            : s.favoriteProducts,
+            : s.favoriteProducts.some((p) => p.id === id)
+              ? s.favoriteProducts
+              : [product, ...s.favoriteProducts],
         }));
         if (isLoggedIn()) {
           const apiCall = has ? favoritesService.removeFavoriteProduct(id) : favoritesService.addFavoriteProduct(id);

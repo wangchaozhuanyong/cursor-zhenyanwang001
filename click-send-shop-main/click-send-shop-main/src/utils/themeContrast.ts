@@ -159,7 +159,10 @@ export function getMutedTextColor(background: string | RGB, baseText?: string) {
 }
 
 function getFontFamily(fontFamily: string) {
-  switch (fontFamily) {
+  const raw = (fontFamily || "").trim();
+  if (!raw) return "system-ui, -apple-system, sans-serif";
+  const token = raw.toLowerCase();
+  switch (token) {
     case "inter": return "'Inter', sans-serif";
     case "space": return "'Space Grotesk', sans-serif";
     case "playfair": return "'Playfair Display', serif";
@@ -170,8 +173,11 @@ function getFontFamily(fontFamily: string) {
     case "jetbrains": return "'JetBrains Mono', monospace";
     case "fraunces": return "'Fraunces', serif";
     case "system":
-    default:
       return "system-ui, -apple-system, sans-serif";
+    default:
+      return raw.includes(",") || raw.includes("'") || raw.includes("\"")
+        ? raw
+        : "system-ui, -apple-system, sans-serif";
   }
 }
 
@@ -334,11 +340,11 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     "--theme-price-style": adminConfig.priceStyle || "normal",
     "--theme-motion-level": adminConfig.motionLevel || "soft",
     "--theme-density": adminConfig.density || "comfortable",
-    "--theme-header-style": (adminConfig as any).headerStyle || "clean",
-    "--theme-banner-style": (adminConfig as any).bannerStyle || "clean",
-    "--theme-coupon-style": (adminConfig as any).couponStyle || "ticket",
-    "--theme-member-card-style": (adminConfig as any).memberCardStyle || "light",
-    "--theme-category-icon-style": (adminConfig as any).categoryIconStyle || "circle",
+    "--theme-header-style": adminConfig.headerStyle || "clean",
+    "--theme-banner-style": adminConfig.bannerStyle || "clean",
+    "--theme-coupon-style": adminConfig.couponStyle || "ticket",
+    "--theme-member-card-style": adminConfig.memberCardStyle || "light",
+    "--theme-category-icon-style": adminConfig.categoryIconStyle || "circle",
     "--theme-admin-mode": adminConfig.adminThemeMode || "fixed",
     ...getCardShellVariables(adminConfig.cardStyle, surfaceCss, borderCss, shadows["--theme-shadow"], shadows["--theme-shadow-hover"]),
 

@@ -1,4 +1,4 @@
-import { get, post, put, patch, del } from "../request";
+﻿import { get, post, put, patch, del } from "@/api/request";
 import type { Product, ProductLifecycleStatus, ProductListParams, ProductTag } from "@/types/product";
 import type { PaginatedData } from "@/types/common";
 
@@ -48,3 +48,4 @@ export function deleteProductTag(id: string) {
 export function updateProductTags(id: string, tagIds: string[]) {
   return put<{ product_id: string; tags: ProductTag[] }>(`/admin/products/${id}/tags`, { tag_ids: tagIds });
 }
+

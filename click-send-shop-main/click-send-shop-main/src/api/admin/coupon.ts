@@ -1,4 +1,4 @@
-import { get, post, put, del } from "../request";
+﻿import { get, post, put, del } from "@/api/request";
 import type { Coupon } from "@/types/coupon";
 import type { PaginatedData, PaginationParams } from "@/types/common";
 
@@ -31,3 +31,4 @@ export function getAllCouponRecords(params?: PaginationParams) {
     params as Record<string, string>,
   );
 }
+

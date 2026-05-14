@@ -1,4 +1,4 @@
-import { get, put } from "../request";
+﻿import { get, put } from "@/api/request";
 import type { ContentPage } from "@/types/admin";
 
 export function getContentPages() {
@@ -8,3 +8,4 @@ export function getContentPages() {
 export function updateContentPage(id: string, data: Partial<ContentPage>) {
   return put<ContentPage>(`/admin/content/${id}`, data);
 }
+

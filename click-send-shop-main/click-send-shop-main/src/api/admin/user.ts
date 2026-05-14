@@ -1,4 +1,4 @@
-import { del, get, post, put } from "../request";
+﻿import { del, get, post, put } from "@/api/request";
 import type { MemberLevel, UserProfile, UserTag } from "@/types/user";
 import type { PaginatedData, PaginationParams } from "@/types/common";
 
@@ -59,3 +59,4 @@ export function updateMemberLevel(id: string, data: MemberLevelPayload) {
 export function deleteMemberLevel(id: string) {
   return del<void>(`/admin/member-levels/${id}`);
 }
+

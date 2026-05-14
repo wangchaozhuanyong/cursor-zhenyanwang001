@@ -1,4 +1,4 @@
-import { get, post, put, del } from "../request";
+﻿import { get, post, put, del } from "@/api/request";
 import type { Address, CreateAddressParams, UpdateAddressParams } from "@/types/address";
 
 export function getAddresses() {
@@ -20,3 +20,4 @@ export function deleteAddress(id: string) {
 export function setDefaultAddress(id: string) {
   return put<void>(`/addresses/${id}/default`);
 }
+

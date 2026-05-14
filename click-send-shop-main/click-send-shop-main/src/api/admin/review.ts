@@ -1,4 +1,4 @@
-import { get, put, del, post } from "../request";
+﻿import { get, put, del, post } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
 
 export interface AdminReview {
@@ -72,3 +72,4 @@ export function batchHideReviews(ids: string[]) {
 export function batchDeleteReviews(ids: string[]) {
   return post<void>("/admin/reviews/batch-delete", { ids });
 }
+

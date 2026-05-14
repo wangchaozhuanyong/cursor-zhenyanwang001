@@ -18,9 +18,9 @@ export async function fetchThemeSkins() {
 
 export async function saveSystemThemeSkins(data: {
   defaultSkinId: string;
+  activeSkinId: string;
   skins: Array<{ id: string; name: string; config: ThemeConfig }>;
 }) {
   const res = await themeApi.updateSystemThemeSkins(data);
   return res.data;
 }
-

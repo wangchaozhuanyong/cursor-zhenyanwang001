@@ -1,4 +1,4 @@
-import { get } from "../request";
+﻿import { get } from "@/api/request";
 import type { ContentPage, HomeOpsConfig, SiteInfo } from "@/types/content";
 export type { ContentPage, HomeOpsConfig, SiteInfo };
 
@@ -13,3 +13,4 @@ export function getSiteInfo() {
 export function getHomeOps() {
   return get<HomeOpsConfig>("/content/home-ops");
 }
+

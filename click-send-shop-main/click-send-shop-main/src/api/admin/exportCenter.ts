@@ -1,4 +1,4 @@
-import { get, post } from "../request";
+﻿import { get, post } from "@/api/request";
 
 export interface ExportTask {
   id: string;
@@ -24,3 +24,4 @@ export function getExportDownloadUrl(taskId: string) {
   const base = import.meta.env.VITE_API_BASE_URL ?? "/api";
   return `${base}/admin/exports/${taskId}/download`;
 }
+

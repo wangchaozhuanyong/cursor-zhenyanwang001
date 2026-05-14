@@ -66,6 +66,10 @@ export default function MemberHome() {
   const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
   const { banners } = useHomeBanners();
   const { themeConfig } = useThemeRuntime();
+  const homeLayout = themeConfig.homeLayout ?? "classic";
+  const isPremiumLayout = homeLayout === "premium";
+  const isDealLayout = homeLayout === "deal";
+  const isMagazineLayout = homeLayout === "magazine";
   const headerClass =
     themeConfig.headerStyle === "dark"
       ? "bg-[color-mix(in_srgb,var(--theme-primary)_88%,black)] text-[var(--theme-primary-foreground)] border-transparent"
@@ -221,7 +225,7 @@ export default function MemberHome() {
   }, [activeNew?.id, newArrivalIndex, trackingSessionId]);
 
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)] pb-24 text-[var(--theme-text)]" data-theme-home-layout={themeConfig.homeLayout}>
+    <div className={`min-h-screen pb-24 text-[var(--theme-text)] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_90%,black)]" : "bg-[var(--theme-bg)]"}`} data-theme-home-layout={themeConfig.homeLayout}>
       <header className={`sticky top-0 z-40 border-b backdrop-blur-xl ${headerClass}`}>
         <div className="mx-auto flex h-14 w-full max-w-screen-xl items-center gap-3 px-4">
           <div className="flex shrink-0 cursor-pointer items-center gap-2" onClick={() => navigate("/")}>
@@ -245,7 +249,9 @@ export default function MemberHome() {
       </header>
       <main className="mx-auto max-w-screen-xl px-4 pt-4">
         <section>
-          <BannerCarousel banners={banners} />
+          <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
+            <BannerCarousel banners={banners} themeConfigOverride={themeConfig} />
+          </div>
         </section>
         <section className="mt-3 grid grid-cols-3 gap-2 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
           {quickEntries.map((entry) => (
@@ -266,7 +272,7 @@ export default function MemberHome() {
           <HomeOpsBlocks />
         </section>
         <section
-          className="mt-3 rounded-2xl border border-[var(--theme-border)] p-4"
+          className={`mt-3 rounded-2xl border border-[var(--theme-border)] p-4 ${isDealLayout ? "ring-1 ring-[var(--theme-warning)]/35" : ""}`}
           style={{
             background:
               "linear-gradient(90deg, color-mix(in srgb, var(--theme-price) 22%, white), color-mix(in srgb, var(--theme-price) 16%, white) 55%, color-mix(in srgb, var(--theme-price) 25%, white))",
@@ -277,8 +283,8 @@ export default function MemberHome() {
               <Ticket size={22} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xl font-extrabold text-[var(--theme-text-on-surface)]">新用户礼包</p>
-              <p className="line-clamp-1 text-sm text-[var(--theme-text-muted-on-surface)]">注册即可领取优惠券，最高立减 RM80</p>
+              <p className="text-xl font-extrabold text-[var(--theme-text-on-surface)]">会员专属礼包</p>
+              <p className="line-clamp-1 text-sm text-[var(--theme-text-muted-on-surface)]">今日会员权益已更新，专属优惠券可立即领取</p>
             </div>
             <button
               type="button"

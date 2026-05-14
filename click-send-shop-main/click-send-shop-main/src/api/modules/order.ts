@@ -1,4 +1,4 @@
-import { get, post } from "../request";
+﻿import { get, post } from "@/api/request";
 import type { Order, SubmitOrderParams, OrderListParams, CheckoutAbandonmentPayload } from "@/types/order";
 import type { PaginatedData } from "@/types/common";
 
@@ -26,7 +26,7 @@ export function confirmReceive(id: string) {
   return post<void>(`/orders/${id}/confirm`);
 }
 
-/** Stripe Checkout：返回跳转 URL */
+/** Stripe Checkout锛氳繑鍥炶烦杞?URL */
 export function createStripeCheckoutSession(id: string) {
   return post<{ url: string }>(`/orders/${id}/stripe-checkout`);
 }
@@ -34,3 +34,4 @@ export function createStripeCheckoutSession(id: string) {
 export function payOrder(id: string, channel: string) {
   return post<void>(`/orders/${id}/pay`, { channel });
 }
+

@@ -1,4 +1,4 @@
-import { get, post, put } from "../request";
+﻿import { get, post, put } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
 import type { InventoryChangeType, InventoryProduct, InventoryStockRecord } from "@/types/inventory";
 
@@ -23,3 +23,4 @@ export function updateInventoryWarningThreshold(productId: string, stock_warning
 export function getInventoryRecords(params?: { page?: number; pageSize?: number; product_id?: string; change_type?: string }) {
   return get<PaginatedData<InventoryStockRecord>>("/admin/inventory/records", params as Record<string, unknown>);
 }
+

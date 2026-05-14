@@ -1,4 +1,4 @@
-import { get, post, put, del } from "../request";
+﻿import { get, post, put, del } from "@/api/request";
 import type { Notification } from "@/types/notification";
 import type { PaginatedData } from "@/types/common";
 
@@ -38,9 +38,9 @@ export interface NotificationTriggerRule {
   label: string;
   description: string;
   enabled: boolean;
-  /** 自定义标题模板，空字符串表示使用 default_title */
+  /** 鑷畾涔夋爣棰樻ā鏉匡紝绌哄瓧绗︿覆琛ㄧず浣跨敤 default_title */
   title?: string;
-  /** 自定义正文模板，空字符串表示使用 default_content */
+  /** 鑷畾涔夋鏂囨ā鏉匡紝绌哄瓧绗︿覆琛ㄧず浣跨敤 default_content */
   content?: string;
   default_title?: string;
   default_content?: string;
@@ -58,3 +58,4 @@ export function updateNotificationTriggerSettings(rules: NotificationTriggerRule
 export function deleteNotification(id: string) {
   return del<void>(`/admin/notifications/${id}`);
 }
+

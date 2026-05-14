@@ -85,11 +85,14 @@ async function handleStripeEvent(event) {
   const paidAt = Number.isFinite(Number(pi.created))
     ? new Date(Number(pi.created) * 1000)
     : new Date();
-  await repo.updateOrderPaid(orderDb, orderId, {
+  const paidUpdated = await repo.updateOrderPaid(orderDb, orderId, {
     paymentTime: paidAt,
     paymentChannel: 'stripe',
     paymentTransactionNo: pi.id || '',
   });
+  if (!paidUpdated) {
+    return { handled: true, duplicate: true };
+  }
   await checkoutAbandonmentRepo.markPaidByOrderId(orderDb, orderId);
   await refreshMemberLevel(orderDb, order.user_id);
 

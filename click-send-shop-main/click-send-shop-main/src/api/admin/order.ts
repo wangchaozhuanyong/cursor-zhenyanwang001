@@ -1,4 +1,4 @@
-import { get, post, put } from "../request";
+﻿import { get, post, put } from "@/api/request";
 import type { CheckoutAbandonment, CheckoutAbandonmentStatus, Order, OrderListParams } from "@/types/order";
 import type { PaginatedData } from "@/types/common";
 
@@ -30,3 +30,4 @@ export function getCheckoutAbandonments(params?: {
 }) {
   return get<PaginatedData<CheckoutAbandonment>>("/admin/checkout-abandonments", params as Record<string, string | number>);
 }
+

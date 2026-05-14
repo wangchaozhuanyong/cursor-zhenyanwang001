@@ -14,6 +14,9 @@ function normalizeItems(items) {
     .slice(0, 10)
     .map((item) => ({
       product_id: String(item.product_id || '').slice(0, 64),
+      variant_id: String(item.variant_id || '').slice(0, 64),
+      sku_code: String(item.sku_code || '').slice(0, 64),
+      variant_name: String(item.variant_name || '').slice(0, 120),
       name: String(item.name || '').slice(0, 120),
       image: String(item.image || '').slice(0, 512),
       qty: Math.max(1, Number.parseInt(item.qty, 10) || 1),

@@ -18,20 +18,21 @@ export default function BottomNav() {
   const totalItems = useCartStore((s) => s.totalItems());
   const { themeConfig } = useThemeRuntime();
   const navStyle = themeConfig.navStyle ?? "clean";
-  const navShellClass =
-    navStyle === "floating"
-      ? "mx-auto mb-2 max-w-lg rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)]/95 shadow-[var(--theme-shadow)]"
-      : navStyle === "glass"
-        ? "mx-auto max-w-lg rounded-none border border-transparent bg-[color-mix(in_srgb,var(--theme-surface)_70%,transparent)] backdrop-blur-xl"
-        : "mx-auto max-w-lg";
+  const isFloating = navStyle === "floating";
+  const isGlass = navStyle === "glass";
+  const outerClass = isFloating
+    ? "fixed bottom-0 left-0 right-0 z-bottom-nav bg-transparent pb-safe"
+    : isGlass
+      ? "fixed bottom-0 left-0 right-0 z-bottom-nav border-t border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_58%,transparent)] backdrop-blur-xl pb-safe"
+      : "fixed bottom-0 left-0 right-0 z-bottom-nav border-t border-[var(--theme-border)] bg-[var(--theme-bg)]/95 backdrop-blur-md pb-safe";
+  const navShellClass = isFloating
+    ? "mx-auto mb-2 max-w-lg rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)]/96 shadow-[var(--theme-shadow)]"
+    : isGlass
+      ? "mx-auto max-w-lg"
+      : "mx-auto max-w-lg";
 
   return (
-    <nav
-      className="fixed bottom-0 left-0 right-0 z-[50] border-t border-[var(--theme-border)] bg-[var(--theme-bg)]/95 backdrop-blur-md pb-safe"
-      style={{
-        paddingBottom: "max(env(safe-area-inset-bottom), 0.5rem)",
-      }}
-    >
+    <nav className={outerClass} style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.5rem)" }}>
       <div className={navShellClass}>
         <div className="flex items-center justify-around">
           {tabs.map((tab) => {

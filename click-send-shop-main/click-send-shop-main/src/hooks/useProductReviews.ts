@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import * as reviewService from "@/services/reviewService";
 import type { Review } from "@/types/review";
+import { isLoggedIn } from "@/utils/token";
 
 export function timeAgoReview(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -87,6 +88,10 @@ export function useProductReviews(productId: string) {
   };
 
   const handleSubmit = async () => {
+    if (!isLoggedIn()) {
+      toast.error("请先登录，购买并确认收货后可评价");
+      return;
+    }
     if (!productId) return;
     if (rating === 0) {
       toast.error("请选择评分");
@@ -136,6 +141,7 @@ export function useProductReviews(productId: string) {
     handleImageUpload,
     handleSubmit,
     timeAgo: timeAgoReview,
+    canReview: isLoggedIn(),
   };
 }
 

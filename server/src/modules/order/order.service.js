@@ -367,8 +367,11 @@ async function createOrder(userId, body) {
       }
     }
 
-    const orderedIds = items.map((i) => i.product_id);
-    await repo.deleteCartItemsForProducts(conn, userId, orderedIds);
+    await repo.deleteCartItemsForLines(
+      conn,
+      userId,
+      items.map((i) => ({ product_id: i.product_id, variant_id: i.variant_id || '' })),
+    );
 
     await conn.commit();
 
@@ -442,11 +445,19 @@ async function cancelPendingOrderInTransaction(conn, order, options = {}) {
 
   const lineItems = await repo.selectOrderItemQtyRows(conn, order.id);
   for (const item of lineItems) {
-    await repo.restoreProductStock(conn, item.product_id, item.qty, {
-      refType: 'order',
-      refId: order.id,
-      reason: stockReason,
-    });
+    if (item.variant_id) {
+      await repo.restoreVariantStock(conn, item.variant_id, item.qty, {
+        refType: 'order',
+        refId: order.id,
+        reason: stockReason,
+      });
+    } else {
+      await repo.restoreProductStock(conn, item.product_id, item.qty, {
+        refType: 'order',
+        refId: order.id,
+        reason: stockReason,
+      });
+    }
     if (item.activity_id) {
       await repo.decrementActivitySold(conn, item.activity_id, item.product_id, item.qty);
     }

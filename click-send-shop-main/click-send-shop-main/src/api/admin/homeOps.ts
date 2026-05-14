@@ -1,4 +1,4 @@
-import { del, get, post, put } from "../request";
+﻿import { del, get, post, put } from "@/api/request";
 import type { HomeAnnouncement, HomeNavItem } from "@/types/content";
 
 export function getHomeNavItems() {
@@ -32,3 +32,4 @@ export function updateHomeAnnouncement(id: string, data: Partial<HomeAnnouncemen
 export function deleteHomeAnnouncement(id: string) {
   return del<void>(`/admin/home-ops/announcements/${id}`);
 }
+

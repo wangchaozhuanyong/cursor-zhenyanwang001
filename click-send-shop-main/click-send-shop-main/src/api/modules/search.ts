@@ -1,4 +1,4 @@
-import { get, post } from "../request";
+﻿import { get, post } from "@/api/request";
 import type { HotSearchTerm, SearchSuggestion } from "@/types/search";
 
 export function getHotSearchTerms(limit = 10) {
@@ -12,3 +12,4 @@ export function getSearchSuggestions(keyword: string, limit = 8) {
 export function trackSearchKeyword(keyword: string, result_count?: number) {
   return post<null>("/search/track", { keyword, result_count });
 }
+

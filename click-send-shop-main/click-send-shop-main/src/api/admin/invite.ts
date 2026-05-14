@@ -1,4 +1,4 @@
-import { get, put } from "../request";
+﻿import { get, put } from "@/api/request";
 import type { InviteRecord, ReferralRule } from "@/types/invite";
 import type { PaginatedData, PaginationParams } from "@/types/common";
 
@@ -13,3 +13,4 @@ export function getReferralRules() {
 export function updateReferralRule(id: string, data: Partial<ReferralRule>) {
   return put<ReferralRule>(`/admin/referral-rules/${id}`, data);
 }
+

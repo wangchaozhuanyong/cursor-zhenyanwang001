@@ -156,10 +156,50 @@ async function selectFullOrder(q, orderId) {
 
 async function selectOrderItemPairs(q, orderId) {
   const [rows] = await q.query(
-    'SELECT product_id, qty FROM order_items WHERE order_id = ?',
+    'SELECT product_id, variant_id, qty FROM order_items WHERE order_id = ?',
     [orderId],
   );
   return rows || [];
+}
+
+async function restoreVariantStock(q, variantId, qty, meta = {}) {
+  const [[beforeRow]] = await q.query(
+    `SELECT v.stock, v.product_id
+     FROM product_variants v
+     WHERE v.id = ?
+     FOR UPDATE`,
+    [variantId],
+  );
+  if (!beforeRow) return 0;
+  const beforeStock = Number(beforeRow.stock || 0);
+  const afterStock = beforeStock + Number(qty || 0);
+  await q.query('UPDATE product_variants SET stock = ? WHERE id = ?', [afterStock, variantId]);
+  await q.query(
+    `UPDATE products p
+     SET p.stock = COALESCE((SELECT SUM(v.stock) FROM product_variants v WHERE v.product_id = p.id), p.stock)
+     WHERE p.id = ?`,
+    [beforeRow.product_id],
+  );
+  await q.query(
+    `INSERT INTO inventory_stock_records
+       (id, product_id, variant_id, change_type, quantity_delta, before_stock,
+        after_stock, reason, ref_type, ref_id, operator_id)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      generateId(),
+      beforeRow.product_id,
+      variantId,
+      'order_release',
+      qty,
+      beforeStock,
+      afterStock,
+      meta.reason || '管理员取消订单释放 SKU 库存',
+      meta.refType || 'order',
+      meta.refId || '',
+      meta.operatorId || null,
+    ],
+  );
+  return 1;
 }
 
 async function bumpProductSalesCount(q, productId, qty) {
@@ -316,6 +356,7 @@ module.exports = {
   selectFullOrder,
   selectOrderItemPairs,
   bumpProductSalesCount,
+  restoreVariantStock,
   restoreProductStock,
   decrementUserPoints,
   restoreUserCouponById,

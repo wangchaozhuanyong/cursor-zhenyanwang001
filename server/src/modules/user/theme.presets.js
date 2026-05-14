@@ -47,7 +47,7 @@ const THEME_PRESETS = [
   {
     id: 'promo_orange_red',
     name: '活动促销',
-    config: { ...CLASSIC_GOLD_BLACK_CONFIG, skinName: '活动促销', bgColor: '#FFF6F0', primaryColor: '#E63B22', secondaryColor: '#FF8A00', accentColor: '#FFE0C2', priceColor: '#E60012', textColor: '#24130E', mutedTextColor: '#8C5A48', borderColor: '#FFD8C8', successColor: '#16A34A', warningColor: '#F59E0B', dangerColor: '#E60012', radius: '14px', shadowStyle: 'medium', badgeStyle: 'solid', productCardVariant: 'deal', homeLayout: 'deal', bannerStyle: 'deal', couponStyle: 'deal', categoryIconStyle: 'solid', motionLevel: 'rich', density: 'compact' },
+    config: { ...CLASSIC_GOLD_BLACK_CONFIG, skinName: '活动促销', bgColor: '#FFF6F0', primaryColor: '#E63B22', secondaryColor: '#FF8A00', accentColor: '#FFE0C2', priceColor: '#E60012', textColor: '#24130E', mutedTextColor: '#8C5A48', borderColor: '#FFD8C8', successColor: '#16A34A', warningColor: '#F59E0B', dangerColor: '#E60012', radius: '14px', shadowStyle: 'medium', badgeStyle: 'solid', productCardVariant: 'deal', homeLayout: 'deal', bannerStyle: 'deal', couponStyle: 'deal', memberCardStyle: 'gold', categoryIconStyle: 'solid', motionLevel: 'rich', density: 'compact' },
   },
   {
     id: 'dark_black_gold',

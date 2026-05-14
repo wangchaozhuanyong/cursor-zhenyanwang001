@@ -127,7 +127,9 @@ async function request<T>(
     let body: Record<string, unknown> = {};
     try {
       body = (await res.json()) as Record<string, unknown>;
-    } catch { /* empty */ }
+    } catch {
+      // ignore
+    }
     throw new ApiError(res.status, extractResponseMessage(body, res.status), {
       ...body,
       status: res.status,

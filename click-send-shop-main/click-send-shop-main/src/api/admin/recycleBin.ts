@@ -1,4 +1,4 @@
-import { get, put, post } from "../request";
+﻿import { get, put, post } from "@/api/request";
 
 export interface RecycleBinItem {
   id: string;
@@ -23,3 +23,4 @@ export function restoreItem(id: string, type: string) {
 export function permanentDeleteItem(id: string, type: string) {
   return post<void>(`/admin/recycle-bin/${id}/permanent-delete`, { type });
 }
+

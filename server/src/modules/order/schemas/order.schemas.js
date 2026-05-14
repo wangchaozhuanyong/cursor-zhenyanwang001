@@ -47,6 +47,9 @@ const createOrderBodySchema = z.object({
 
 const checkoutAbandonmentItemSchema = z.object({
   product_id: idParam,
+  variant_id: idParam.optional(),
+  sku_code: z.string().trim().max(64).optional(),
+  variant_name: z.string().trim().max(120).optional(),
   name: z.string().trim().max(120).optional(),
   image: z.string().trim().max(512).optional(),
   qty: z.coerce.number().int().min(1).max(9999),

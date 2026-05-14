@@ -1,4 +1,4 @@
-import { get } from "../request";
+﻿import { get } from "@/api/request";
 import type { ReportData } from "@/types/admin";
 
 type ApiRange = "week" | "month" | "quarter" | "year";
@@ -30,3 +30,4 @@ export function exportUserReportCsv(range: ApiRange) {
 export function exportProductReportCsv() {
   return `/admin/reports/products/export`;
 }
+

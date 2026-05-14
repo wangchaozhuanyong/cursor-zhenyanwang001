@@ -178,12 +178,21 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
         }
         const items = await repo.selectOrderItemPairs(conn, fullOrder.id);
         for (const item of items) {
-          await repo.restoreProductStock(conn, item.product_id, item.qty, {
-            refType: 'order',
-            refId: fullOrder.id,
-            operatorId: adminUserId,
-            reason: `管理员取消订单 ${fullOrder.order_no} 释放库存`,
-          });
+          if (item.variant_id) {
+            await repo.restoreVariantStock(conn, item.variant_id, item.qty, {
+              refType: 'order',
+              refId: fullOrder.id,
+              operatorId: adminUserId,
+              reason: `管理员取消订单 ${fullOrder.order_no} 释放 SKU 库存`,
+            });
+          } else {
+            await repo.restoreProductStock(conn, item.product_id, item.qty, {
+              refType: 'order',
+              refId: fullOrder.id,
+              operatorId: adminUserId,
+              reason: `管理员取消订单 ${fullOrder.order_no} 释放库存`,
+            });
+          }
         }
         await requireUserApi('reverseOrderPoints')(conn, fullOrder, `订单取消回滚积分 ${fullOrder.order_no}`, {
           operatorId: adminUserId,

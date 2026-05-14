@@ -139,12 +139,15 @@ async function payWithRewardWallet(userId, orderId) {
     });
 
     const txNo = `RW-${Date.now()}`;
-    await orderRepo.updateOrderPaid(conn, lockedOrder.id, {
+    const paidUpdated = await orderRepo.updateOrderPaid(conn, lockedOrder.id, {
       paymentTime: new Date(),
       paymentChannel: 'reward_wallet',
       paymentTransactionNo: txNo,
       paymentMethod: 'reward_wallet',
     });
+    if (!paidUpdated) {
+      throw new ValidationError('订单状态已变化，请刷新后重试');
+    }
     await UserStatsService.syncStatsAfterOrderPaid(userId, payableAmount, lockedOrder.id, conn);
     await checkoutAbandonmentRepo.markPaidByOrderId(conn, lockedOrder.id);
     try {
@@ -423,7 +426,7 @@ async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionN
   if (order.status !== ORDER_STATUS.PENDING || (order.payment_status || PAYMENT_STATUS.PENDING) !== PAYMENT_STATUS.PENDING) {
     return { skipped: true, reason: 'order_not_pending' };
   }
-  await orderRepo.updateOrderPaid(conn, order.id, {
+  const paidUpdated = await orderRepo.updateOrderPaid(conn, order.id, {
     paymentTime: new Date(),
     paymentChannel: paymentOrder.channel_code,
     paymentTransactionNo: transactionNo,
@@ -431,6 +434,9 @@ async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionN
     paymentProvider: paymentOrder.provider,
     providerPaymentId: transactionNo,
   });
+  if (!paidUpdated) {
+    return { skipped: true, reason: 'already_paid' };
+  }
   await UserStatsService.syncStatsAfterOrderPaid(order.user_id, toMoney(order.total_amount), order.id, conn);
   await checkoutAbandonmentRepo.markPaidByOrderId(conn, order.id);
   try {
@@ -635,7 +641,7 @@ async function markOrderPaidByAdmin(req, orderId, body) {
     });
 
     const txNo = `ADM-${Date.now()}`;
-    await orderRepo.updateOrderPaid(conn, order.id, {
+    const paidUpdated = await orderRepo.updateOrderPaid(conn, order.id, {
       paymentTime: new Date(),
       paymentChannel: 'manual',
       paymentTransactionNo: txNo,
@@ -643,6 +649,9 @@ async function markOrderPaidByAdmin(req, orderId, body) {
     paymentProvider: 'manual',
     providerPaymentId: txNo,
   });
+    if (!paidUpdated) {
+      throw new ValidationError('订单状态已变化，请刷新后重试');
+    }
     await requireUserApi('refreshUserMemberLevel')(conn, order.user_id);
 
     const itemRows = await orderRepo.selectOrderItemQtyRows(conn, order.id);

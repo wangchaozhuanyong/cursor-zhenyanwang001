@@ -1,4 +1,4 @@
-import { get, put } from "../request";
+﻿import { get, put } from "@/api/request";
 import type { AdminPointsRecordsResponse, PointsListParams, PointsRule } from "@/types/points";
 
 export function getPointsRules() {
@@ -16,3 +16,4 @@ export function getAdminPointsRecords(params?: PointsListParams) {
 export function adjustUserPoints(userId: string, amount: number, description: string) {
   return put<void>(`/admin/users/${userId}/points`, { points: amount, reason: description });
 }
+

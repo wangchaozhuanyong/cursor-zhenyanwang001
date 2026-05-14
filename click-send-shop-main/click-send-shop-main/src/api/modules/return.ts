@@ -1,4 +1,4 @@
-import { get, post } from "../request";
+﻿import { get, post } from "@/api/request";
 import type { ReturnRequest, CreateReturnParams, ReturnListParams } from "@/types/return";
 import type { PaginatedData } from "@/types/common";
 
@@ -13,3 +13,4 @@ export function getReturnById(id: string) {
 export function createReturnRequest(params: CreateReturnParams) {
   return post<ReturnRequest>("/returns", params);
 }
+

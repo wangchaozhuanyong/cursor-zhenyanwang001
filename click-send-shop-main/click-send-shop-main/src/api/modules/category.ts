@@ -1,4 +1,4 @@
-import { get } from "../request";
+﻿import { get } from "@/api/request";
 import type { Category } from "@/types/category";
 
 export function getCategories() {
@@ -8,3 +8,4 @@ export function getCategories() {
 export function getCategoryById(id: string) {
   return get<Category>(`/categories/${id}`);
 }
+

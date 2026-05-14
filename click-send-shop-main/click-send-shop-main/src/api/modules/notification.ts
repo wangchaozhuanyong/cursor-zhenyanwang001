@@ -1,4 +1,4 @@
-import { get, post } from "../request";
+﻿import { get, post } from "@/api/request";
 import type { Notification, NotificationListParams } from "@/types/notification";
 import type { PaginatedData } from "@/types/common";
 
@@ -17,3 +17,4 @@ export function markAllAsRead() {
 export function getUnreadCount() {
   return get<{ count: number }>("/notifications/unread-count");
 }
+

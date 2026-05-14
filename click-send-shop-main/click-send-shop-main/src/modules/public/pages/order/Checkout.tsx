@@ -2,7 +2,7 @@
 import { ArrowLeft, ChevronDown, ChevronUp, Copy, MessageCircle, Phone, MapPin, CheckCircle2, ShieldCheck } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { flushSync } from "react-dom";
-import { useCartStore } from "@/stores/useCartStore";
+import { getCartLinePrice, useCartStore } from "@/stores/useCartStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import * as orderService from "@/services/orderService";
@@ -42,7 +42,7 @@ import { formatAddressForDisplay } from "@/services/addressService";
 
 function generateOrderText(order: Order) {
   const itemsText = order.items
-    .map((item, i) => `${i + 1}. ${item.product.name} x ${item.qty} - RM ${item.product.price * item.qty}`)
+    .map((item, i) => `${i + 1}. ${item.product.name} x ${item.qty} - RM ${getCartLinePrice(item)}`)
     .join("\n");
 
   const lines = [
@@ -96,7 +96,7 @@ function submitCtaLabel(method: PaymentMethod, submitting: boolean) {
 }
 
 export default function Checkout() {
-  useDocumentTitle("缁撶畻");
+  useDocumentTitle("结算");
   const navigate = useNavigate();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
@@ -107,7 +107,7 @@ export default function Checkout() {
   const { items: cartItems, buyNowItem, clearCart, clearBuyNow } = useCartStore();
   const isBuyNow = !!buyNowItem;
   const items = isBuyNow ? [buyNowItem] : getSelectedItems();
-  const totalAmount = () => items.reduce((s, i) => s + i.product.price * i.qty, 0);
+  const totalAmount = () => items.reduce((s, i) => s + getCartLinePrice(i), 0);
   const totalPoints = () => items.reduce((s, i) => s + i.product.points * i.qty, 0);
   const { submitOrder, submitting } = useOrderStore();
   const { getDefaultAddress, loadAddresses } = useUserStore();
@@ -158,11 +158,11 @@ export default function Checkout() {
   const [selectedPaymentChannelCode, setSelectedPaymentChannelCode] = useState("");
   const [paymentConfigLoaded, setPaymentConfigLoaded] = useState(false);
   const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null);
-  /** 鍦ㄧ嚎鏀粯鑷姩鍙戣捣澶辫触鏃跺睍绀猴紝瀛愰〉銆岄噸鏂版敮浠樸€嶆垚鍔熷悗鐢?payOnlineNow 娓呯┖ */
+  /** 在线支付自动发起失败时展示，子页“重新支付”成功后由 payOnlineNow 清空 */
   const [postSubmitOnlineError, setPostSubmitOnlineError] = useState<string | null>(null);
-  /** 鏃?redirect_url 鏃剁殑缃戝叧璇存槑 */
+  /** 无 redirect_url 时的网关说明 */
   const [postSubmitOnlineNote, setPostSubmitOnlineNote] = useState<string | null>(null);
-  /** 閽卞寘鑷姩鎵ｆ澶辫触锛堝涓轰綑棰濅笉瓒筹級 */
+  /** 钱包自动扣款失败（多为余额不足） */
   const [postSubmitWalletError, setPostSubmitWalletError] = useState<string | null>(null);
   const [selectedCoupon, setSelectedCoupon] = useState<CheckoutPickerCoupon | null>(null);
   const siteInfo = useSiteInfo();
@@ -175,7 +175,7 @@ export default function Checkout() {
   const [shippingQuoteLoading, setShippingQuoteLoading] = useState(false);
   const [shippingQuoteError, setShippingQuoteError] = useState<string | null>(null);
   const [checkoutAbandonmentId, setCheckoutAbandonmentId] = useState<string | null>(null);
-  /** 涓?state 鍚屾锛涘揩鐓?API 杩斿洖 ID 鍚庣珛鍗冲啓鍏ワ紝閬垮厤闃叉姈鍐呰繛缁姹傚湪 setState 鍓嶄粛涓嶅甫 id 鑰屾彃鍏ュ鏉°€屼粎杩涘叆缁撶畻銆?*/
+  /** 与 state 同步：快照 API 返回 ID 后立即写入，避免防抖请求在 setState 前无 id 而重复插入。*/
   const checkoutAbandonmentIdRef = useRef<string | null>(null);
   const checkoutSnapshotTimerRef = useRef<number | null>(null);
   const beginCheckoutTrackedRef = useRef("");
@@ -354,7 +354,7 @@ export default function Checkout() {
       .catch((e) => {
         if (cancelled) return;
         setServerShippingFee(null);
-        setShippingQuoteError(e instanceof Error ? e.message : "杩愯垂瑙勫垯鍔犺浇澶辫触");
+        setShippingQuoteError(e instanceof Error ? e.message : "运费规则加载失败");
       })
       .finally(() => {
         if (!cancelled) setShippingQuoteLoading(false);
@@ -388,7 +388,7 @@ export default function Checkout() {
           name: item.product.name,
           image: item.product.cover_image,
           qty: item.qty,
-          price: item.product.price,
+          price: item.unit_price ?? item.product.price,
         })),
         raw_amount: rawTotal,
         discount_amount: discountAmount,
@@ -410,8 +410,8 @@ export default function Checkout() {
         window.clearTimeout(checkoutSnapshotTimerRef.current);
       }
     };
-    // 鏁呮剰涓嶄緷璧?checkoutAbandonmentId锛氶伩鍏嶄粎鍥犳嬁鍒板揩鐓?ID 灏遍噸缃槻鎶栵紱ID 涓€寰嬭 ref
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- checkoutAbandonmentId 鐢?ref 鎻愪緵
+    // 故意不依赖 checkoutAbandonmentId：避免仅因拿到快照 ID 就重置防抖；ID 一律读 ref
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- checkoutAbandonmentId 由 ref 提供
   }, [items, rawTotal, discountAmount, shippingFee, finalTotal, paymentMethod, name, phone, submittedOrder, orderFinalizing]);
 
   useEffect(() => {
@@ -426,19 +426,19 @@ export default function Checkout() {
 
   const handleSubmit = async () => {
     if (!name.trim() || !phone.trim()) {
-      toast.error("璇峰～鍐欏鍚嶅拰鐢佃瘽");
+      toast.error("请填写姓名和电话");
       return;
     }
     if (!address.trim()) {
-      toast.error("璇峰～鍐欐敹璐у湴鍧€");
+      toast.error("请填写收货地址");
       return;
     }
     if (!selectedTemplate) {
-      toast.error("杩愯垂瑙勫垯鏈姞杞藉畬鎴愶紝鏃犳硶鎻愪氦璁㈠崟");
+      toast.error("运费规则未加载完成，无法提交订单");
       return;
     }
     if (shippingRulesError || shippingQuoteError) {
-      toast.error("杩愯垂瑙勫垯鏍￠獙澶辫触锛岃绋嶅悗閲嶈瘯");
+      toast.error("运费规则校验失败，请稍后重试");
       return;
     }
     setPostSubmitOnlineError(null);
@@ -476,17 +476,17 @@ export default function Checkout() {
         estimated_weight_kg: weightKg,
         checkout_abandonment_id: checkoutAbandonmentIdRef.current || checkoutAbandonmentId || undefined,
       });
-      const orderedIds = payloadItems.map((i) => i.product_id);
+      const orderedLines = payloadItems.map((i) => ({ product_id: i.product_id, variant_id: i.variant_id }));
       flushSync(() => {
         setOrderFinalizing(true);
         setSubmittedOrder(order);
       });
       if (isBuyNow) {
         clearBuyNow();
-      } else if (orderedIds.length >= cartItems.length) {
+      } else if (orderedLines.length >= cartItems.length) {
         clearCart();
       } else {
-        removeOrderedItems(orderedIds);
+        removeOrderedItems(orderedLines);
       }
       void loadCoupons();
 
@@ -509,7 +509,7 @@ export default function Checkout() {
           );
           toast.success("订单已创建");
         } catch (err) {
-          const msg = err instanceof Error ? err.message : "鍦ㄧ嚎鏀粯鍙戣捣澶辫触";
+          const msg = err instanceof Error ? err.message : "在线支付发起失败";
           setPostSubmitOnlineError(msg);
           toast.error(msg);
         }
@@ -528,14 +528,14 @@ export default function Checkout() {
           if (latest.status === ORDER_STATUS.PAID || latest.payment_status === "paid") {
             trackPurchase(latest);
           }
-          toast.success("杩旂幇閽卞寘鏀粯鎴愬姛");
+          toast.success("返现钱包支付成功");
           const text = generateOrderText(latest);
           const copied = await copyToClipboard(text);
           if (copied) {
-            toast.success("璁㈠崟鍐呭宸插鍒跺埌鍓创鏉匡紒", toastPresetQuickSuccess);
+            toast.success("订单内容已复制到剪贴板！", toastPresetQuickSuccess);
           }
         } catch (err) {
-          const msg = err instanceof Error ? err.message : "杩旂幇閽卞寘鏀粯澶辫触";
+          const msg = err instanceof Error ? err.message : "返现钱包支付失败";
           setPostSubmitWalletError(msg);
           toast.error(msg);
         }
@@ -543,18 +543,18 @@ export default function Checkout() {
       }
 
       if (order.payment_method === "whatsapp") {
-        toast.success("璁㈠崟宸叉彁浜わ紝璇烽€氳繃涓嬫柟鏂瑰紡鑱旂郴瀹㈡湇瀹屾垚浠樻");
+        toast.success("订单已提交，请通过下方方式联系客服完成付款");
       } else {
         toast.success("订单已提交");
       }
       const text = generateOrderText(order);
       const copied = await copyToClipboard(text);
       if (copied) {
-        toast.success("璁㈠崟鍐呭宸插鍒跺埌鍓创鏉匡紒", toastPresetQuickSuccess);
+        toast.success("订单内容已复制到剪贴板！", toastPresetQuickSuccess);
       }
     } catch (e) {
       setOrderFinalizing(false);
-      toast.error(e instanceof Error ? e.message : "鎻愪氦璁㈠崟澶辫触");
+      toast.error(e instanceof Error ? e.message : "提交订单失败");
     }
   };
 
@@ -564,7 +564,7 @@ export default function Checkout() {
     if (copied) {
       toast.success("已复制订单内容", toastPresetQuickSuccess);
     } else {
-      toast.error("澶嶅埗澶辫触锛岃鎵嬪姩澶嶅埗璁㈠崟鍐呭");
+      toast.error("复制失败，请手动复制订单内容");
     }
   };
 
@@ -575,7 +575,7 @@ export default function Checkout() {
   };
 
   const openWeChat = () => {
-    toast.info("璇锋墦寮€寰俊锛岀矘璐磋鍗曞唴瀹瑰彂閫佺粰瀹㈡湇");
+    toast.info("请打开微信，粘贴订单内容发送给客服");
     copyOrderText();
   };
 
@@ -620,7 +620,7 @@ export default function Checkout() {
       setRewardBalance(Number(balanceData.balance || 0));
       toast.success("返现钱包支付成功");
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "杩旂幇閽卞寘鏀粯澶辫触";
+      const msg = e instanceof Error ? e.message : "返现钱包支付失败";
       setPostSubmitWalletError(msg);
       toast.error(msg);
     } finally {
@@ -676,17 +676,17 @@ export default function Checkout() {
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-foreground">1. 收货信息</h3>
             <button onClick={() => navigate("/address")} className="flex items-center gap-1 rounded-full bg-[var(--theme-bg)] px-3 py-1.5 text-xs font-medium text-[var(--theme-price)]">
-              <MapPin size={12} /> 閫夋嫨鍦板潃
+              <MapPin size={12} /> 选择地址
             </button>
           </div>
           <div className="space-y-3">
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="濮撳悕 *"
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="姓名 *"
               className="w-full rounded-xl bg-secondary px-4 py-3.5 text-sm text-foreground outline-none ring-gold focus:ring-2 placeholder:text-muted-foreground" />
             <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="鐢佃瘽 *" type="tel"
               className="w-full rounded-xl bg-secondary px-4 py-3.5 text-sm text-foreground outline-none ring-gold focus:ring-2 placeholder:text-muted-foreground" />
-            <input value={address} onChange={(e) => { setAddress(e.target.value); setSelectedAddress(null); }} placeholder="鏀惰揣鍦板潃"
+            <input value={address} onChange={(e) => { setAddress(e.target.value); setSelectedAddress(null); }} placeholder="收货地址"
               className="w-full rounded-xl bg-secondary px-4 py-3.5 text-sm text-foreground outline-none ring-gold focus:ring-2 placeholder:text-muted-foreground" />
-            <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="澶囨敞锛堝彲閫夛級" rows={2}
+            <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="备注（可选）" rows={2}
               className="w-full rounded-xl bg-secondary px-4 py-3.5 text-sm text-foreground outline-none ring-gold focus:ring-2 placeholder:text-muted-foreground" />
           </div>
         </div>
@@ -694,16 +694,16 @@ export default function Checkout() {
         {/* Payment method */}
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground">2. 鏀粯鏂瑰紡</h3>
+            <h3 className="text-sm font-semibold text-foreground">2. 支付方式</h3>
             <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-              <ShieldCheck size={12} className="text-emerald-600" /> 瀹夊叏鏀粯
+              <ShieldCheck size={12} className="text-emerald-600" /> 安全支付
             </span>
           </div>
           <PaymentMethodPicker
             value={paymentMethod}
             onChange={setPaymentMethod}
             onlineDisabled={paymentConfigLoaded && paymentChannels.length === 0 && !stripeReady}
-            onlineDisabledHint="鍟嗘埛鏆傛湭寮€閫氬湪绾挎敮浠橈紝璇烽€夋嫨鑱旂郴瀹㈡湇涓嬪崟"
+            onlineDisabledHint="商户暂未开通在线支付，请选择联系客服下单"
             rewardBalance={rewardBalance}
             onlineChannels={paymentChannels}
             selectedOnlineChannelCode={selectedPaymentChannelCode}
@@ -736,7 +736,7 @@ export default function Checkout() {
         />
         {(shippingRulesLoading || shippingQuoteLoading) && (
           <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-xs text-muted-foreground">
-            姝ｅ湪鍚屾鏈嶅姟绔繍璐硅鍒?..
+            正在同步服务端运费规则...
           </div>
         )}
         {(shippingRulesError || shippingQuoteError) && (
@@ -746,7 +746,7 @@ export default function Checkout() {
         )}
 
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">5. 纭鍟嗗搧</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">5. 确认商品</h3>
           {items.map((item) => (
             <div key={`${item.product.id}:${item.variant_id || ""}`} className="flex items-center gap-3 border-b border-[var(--theme-border)] py-3 last:border-0">
               <img src={item.product.cover_image} alt={item.product.name} className="h-14 w-14 rounded-lg object-cover" />
@@ -757,12 +757,12 @@ export default function Checkout() {
                 )}
                 <p className="text-xs text-muted-foreground">x{item.qty}</p>
               </div>
-              <span className="text-sm font-bold text-[var(--theme-price)] flex-shrink-0">RM {item.product.price * item.qty}</span>
+              <span className="text-sm font-bold text-[var(--theme-price)] flex-shrink-0">RM {getCartLinePrice(item)}</span>
             </div>
           ))}
         </div>
 
-        {/* 绉诲姩绔細鎽樿鍐呰仈鍦ㄤ富娴佷笂 */}
+        {/* 移动端：摘要内联在主流上 */}
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 md:hidden theme-shadow">
           <SummaryRows
             rawTotal={rawTotal}
@@ -777,10 +777,10 @@ export default function Checkout() {
         </div>
           </div>
 
-          {/* 妗岄潰绔細鍙充晶绮樻€х粨绠楁憳瑕?*/}
+          {/* 桌面端：右侧粘性结算摘要 */}
           <aside className="mt-6 hidden self-start md:sticky md:top-20 md:mt-0 md:block">
             <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
-              <h3 className="mb-4 text-base font-semibold text-foreground">璁㈠崟鎽樿</h3>
+              <h3 className="mb-4 text-base font-semibold text-foreground">订单摘要</h3>
               <SummaryRows
                 rawTotal={rawTotal}
                 discountAmount={discountAmount}
@@ -805,11 +805,11 @@ export default function Checkout() {
         </div>
       </main>
 
-      {/* 绉诲姩绔細搴曢儴鍥哄畾鎻愪氦鏍?*/}
+      {/* 移动端：底部固定提交栏 */}
       <div className="fixed bottom-0 left-0 right-0 z-[55] border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3.5">
           <div>
-            <p className="text-xs text-muted-foreground">鍚堣</p>
+            <p className="text-xs text-muted-foreground">合计</p>
             <p className="text-xl font-bold text-[var(--theme-price)]">RM {finalTotal}</p>
           </div>
           <button
@@ -826,7 +826,7 @@ export default function Checkout() {
   );
 }
 
-/** 缁撶畻鎽樿琛岋紙绉诲姩 + 妗岄潰鍏辩敤锛?*/
+/** 结算摘要行（移动 + 桌面共用） */
 function SummaryRows({
   rawTotal,
   discountAmount,
@@ -861,7 +861,7 @@ function SummaryRows({
         <p className="mb-3 text-[11px] leading-relaxed text-muted-foreground">{sstCustomerNote}</p>
       ) : null}
       <div className="flex justify-between text-sm">
-        <span className="text-muted-foreground">{sstShowInCatalog ? "鍟嗗搧鎬婚锛堝惈绋庯級" : "鍟嗗搧鎬婚"}</span>
+        <span className="text-muted-foreground">{sstShowInCatalog ? "商品总额（含税）" : "商品总额"}</span>
         <span className="font-medium text-foreground">RM {rawTotal}</span>
       </div>
       {discountAmount > 0 && (
@@ -873,7 +873,7 @@ function SummaryRows({
       {sstPreview ? (
         <>
           <div className="mt-2 flex justify-between text-sm">
-            <span className="text-muted-foreground">搴旂◣鍟嗗搧閲戦锛堝惈绋庯級</span>
+            <span className="text-muted-foreground">应税商品金额（含税）</span>
             <span className="font-medium text-foreground">RM {sstPreview.taxable}</span>
           </div>
           <div className="mt-1 flex justify-between text-xs text-muted-foreground">
@@ -899,18 +899,18 @@ function SummaryRows({
         </span>
       </div>
       <div className="mt-2 flex justify-between text-sm">
-        <span className="text-muted-foreground">鍙幏绉垎</span>
+        <span className="text-muted-foreground">可获积分</span>
         <span className="font-medium text-foreground">{totalPoints}</span>
       </div>
       <div className="mt-3 flex items-baseline justify-between border-t border-[var(--theme-border)] pt-3">
-        <span className="text-sm font-medium text-foreground">搴斾粯閲戦</span>
+        <span className="text-sm font-medium text-foreground">应付金额</span>
         <span className="text-2xl font-bold text-[var(--theme-price)]">RM {finalTotal}</span>
       </div>
     </div>
   );
 }
 
-/* 鈹€鈹€鈹€鈹€鈹€ Order Success Page 鈹€鈹€鈹€鈹€鈹€ */
+/* ----- Order Success Page ----- */
 function OrderSuccess({
   order,
   postSubmitOnlineError,
@@ -1026,11 +1026,11 @@ function OrderSuccess({
           <h2 className="font-display text-2xl font-bold text-foreground">{mainHeading}</h2>
           <div className="mt-3">
             <span className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-1 text-xs font-semibold text-[var(--theme-text)]">
-              鐘舵€侊細{statusBadge}
+              状态：{statusBadge}
             </span>
           </div>
           <p className="mt-2 text-sm text-muted-foreground">
-            璁㈠崟缂栧彿: <span className="font-mono font-semibold text-foreground">{order.order_no}</span>
+            订单编号: <span className="font-mono font-semibold text-foreground">{order.order_no}</span>
           </p>
           {postSubmitOnlineError && isOnlinePending && (
             <p className="mt-4 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-left text-xs text-destructive">
@@ -1048,24 +1048,24 @@ function OrderSuccess({
         </div>
 
         <div className="mt-4 rounded-2xl border border-border bg-card p-4">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">鍏抽敭淇℃伅</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">关键信息</h3>
           <div className="space-y-2 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">鏀粯鏂瑰紡</span>
+              <span className="text-muted-foreground">支付方式</span>
               <span className="font-medium text-foreground">
                 {order.payment_method === "online"
-                  ? "鍦ㄧ嚎鏀粯"
+                  ? "在线支付"
                   : order.payment_method === "reward_wallet"
-                    ? "杩旂幇閽卞寘"
-                    : "鑱旂郴瀹㈡湇"}
+                    ? "返现钱包"
+                    : "联系客服"}
               </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">搴斾粯閲戦</span>
+              <span className="text-muted-foreground">应付金额</span>
               <span className="font-semibold text-[var(--theme-price)]">RM {order.total_amount}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">涓嬪崟鏃堕棿</span>
+              <span className="text-muted-foreground">下单时间</span>
               <span className="font-medium text-foreground">
                 {new Date(order.created_at).toLocaleString("zh-CN")}
               </span>
@@ -1083,7 +1083,7 @@ function OrderSuccess({
                 onClick={onPayOnline}
                 className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
               >
-                {postSubmitOnlineError ? "閲嶆柊鏀粯" : "缁х画鏀粯"}
+                {postSubmitOnlineError ? "重新支付" : "继续支付"}
               </button>
               <button
                 type="button"
@@ -1178,14 +1178,14 @@ function OrderSuccess({
                 className="flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold text-[var(--theme-gradient-foreground)] theme-shadow transition-all active:scale-[0.98]"
                 style={{ background: "var(--theme-gradient)" }}
               >
-                <Phone size={18} /> 鍙戦€佸埌 WhatsApp
+                <Phone size={18} /> 发送到 WhatsApp
               </button>
               <button
                 type="button"
                 onClick={onWeChat}
                 className="flex w-full items-center justify-center gap-2.5 rounded-full bg-[var(--theme-price)] py-4 text-sm font-bold text-[var(--theme-price-foreground)] theme-shadow transition-all active:scale-[0.98]"
               >
-                <MessageCircle size={18} /> 鍙戦€佸埌寰俊
+                <MessageCircle size={18} /> 发送到微信
               </button>
               <button
                 type="button"
@@ -1249,7 +1249,7 @@ function OrderSuccess({
               onClick={onViewOrderDetail}
               className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
             >
-              鏌ョ湅璁㈠崟璇︽儏
+              查看订单详情
             </button>
           )}
 
@@ -1259,7 +1259,7 @@ function OrderSuccess({
               onClick={onCopy}
               className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
             >
-              <Copy size={18} /> 澶嶅埗璁㈠崟鍐呭
+              <Copy size={18} /> 复制订单内容
             </button>
           )}
         </div>
@@ -1274,7 +1274,7 @@ function OrderSuccess({
                 <p className="text-[13px] font-medium text-foreground truncate">{item.product.name}</p>
                 <p className="text-xs text-muted-foreground">x{item.qty}</p>
               </div>
-              <span className="text-sm font-bold text-gold flex-shrink-0">RM {item.product.price * item.qty}</span>
+              <span className="text-sm font-bold text-gold flex-shrink-0">RM {getCartLinePrice(item)}</span>
             </div>
           ))}
           <div className="mt-4 border-t border-border pt-4 space-y-2">
@@ -1330,3 +1330,5 @@ function OrderSuccess({
     </div>
   );
 }
+
+

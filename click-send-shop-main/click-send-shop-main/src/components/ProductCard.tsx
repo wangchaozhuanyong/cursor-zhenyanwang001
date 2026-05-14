@@ -109,7 +109,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
           aria-label={isFavorite ? "取消收藏" : "收藏"}
           onClick={(e) => {
             e.stopPropagation();
-            toggleFavorite(product.id);
+            toggleFavorite(product);
             toast.success(isFavorite ? "已取消收藏" : "已收藏", toastPresetQuickSuccess);
           }}
           className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/90 backdrop-blur-sm transition-all active:scale-90 !p-0"

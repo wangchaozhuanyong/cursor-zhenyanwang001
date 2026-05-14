@@ -352,6 +352,23 @@ async function deleteCartItemsForProducts(q, userId, productIds) {
   );
 }
 
+async function deleteCartItemsForLines(q, userId, lines) {
+  const normalized = (lines || []).filter((line) => line && line.product_id);
+  if (!normalized.length) return;
+  const sql = `
+    DELETE FROM cart_items
+    WHERE user_id = ?
+      AND (
+        ${normalized.map(() => '(product_id = ? AND IFNULL(variant_id, \'\') = ?)').join(' OR ')}
+      )
+  `;
+  const params = [userId];
+  for (const line of normalized) {
+    params.push(line.product_id, line.variant_id || '');
+  }
+  await q.query(sql, params);
+}
+
 async function selectOrderById(q, orderId) {
   const [[row]] = await q.query('SELECT * FROM orders WHERE id = ?', [orderId]);
   return row || null;
@@ -432,10 +449,50 @@ async function updateOrderCancelled(q, orderId, reason = '') {
 
 async function selectOrderItemQtyRows(q, orderId) {
   const [rows] = await q.query(
-    'SELECT product_id, qty, activity_id, activity_title FROM order_items WHERE order_id = ?',
+    'SELECT product_id, variant_id, qty, activity_id, activity_title FROM order_items WHERE order_id = ?',
     [orderId],
   );
   return rows;
+}
+
+async function restoreVariantStock(q, variantId, qty, meta = {}) {
+  const [[beforeRow]] = await q.query(
+    `SELECT v.stock, v.product_id
+     FROM product_variants v
+     WHERE v.id = ?
+     FOR UPDATE`,
+    [variantId],
+  );
+  if (!beforeRow) return 0;
+  const beforeStock = Number(beforeRow.stock || 0);
+  const afterStock = beforeStock + Number(qty || 0);
+  await q.query('UPDATE product_variants SET stock = ? WHERE id = ?', [afterStock, variantId]);
+  await q.query(
+    `UPDATE products p
+     SET p.stock = COALESCE((SELECT SUM(v.stock) FROM product_variants v WHERE v.product_id = p.id), p.stock)
+     WHERE p.id = ?`,
+    [beforeRow.product_id],
+  );
+  await q.query(
+    `INSERT INTO inventory_stock_records
+       (id, product_id, variant_id, change_type, quantity_delta, before_stock,
+        after_stock, reason, ref_type, ref_id, operator_id)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      generateId(),
+      beforeRow.product_id,
+      variantId,
+      'order_release',
+      qty,
+      beforeStock,
+      afterStock,
+      meta.reason || '订单取消释放 SKU 库存',
+      meta.refType || 'order',
+      meta.refId || '',
+      meta.operatorId || null,
+    ],
+  );
+  return 1;
 }
 
 async function restoreProductStock(q, productId, qty, meta = {}) {
@@ -518,12 +575,14 @@ async function updateOrderPaid(q, orderId, params = {}) {
     paymentProvider,
     providerPaymentId,
   } = params;
-  await q.query(
+  const [result] = await q.query(
     `UPDATE orders
        SET status = ?, payment_status = ?, payment_time = ?, payment_channel = ?,
            payment_transaction_no = ?, payment_method = ?,
            payment_provider = ?, provider_payment_id = ?, paid_at = ?
-     WHERE id = ?`,
+     WHERE id = ?
+       AND status = ?
+       AND (payment_status IS NULL OR payment_status = ?)`,
     [
       ORDER_STATUS.PAID,
       PAYMENT_STATUS.PAID,
@@ -535,8 +594,11 @@ async function updateOrderPaid(q, orderId, params = {}) {
       providerPaymentId || paymentTransactionNo || '',
       paymentTime || new Date(),
       orderId,
+      ORDER_STATUS.PENDING,
+      PAYMENT_STATUS.PENDING,
     ],
   );
+  return result.affectedRows;
 }
 
 async function updateOrderRefundState(q, orderId, params = {}) {
@@ -643,6 +705,7 @@ module.exports = {
   incrementUserPoints,
   insertPointsRecord,
   deleteCartItemsForProducts,
+  deleteCartItemsForLines,
   selectOrderById,
   countOrdersForUser,
   selectOrdersPage,
@@ -654,6 +717,7 @@ module.exports = {
   updateOrderStatus,
   updateOrderCancelled,
   selectOrderItemQtyRows,
+  restoreVariantStock,
   restoreProductStock,
   incrementProductSales,
   decrementUserPoints,

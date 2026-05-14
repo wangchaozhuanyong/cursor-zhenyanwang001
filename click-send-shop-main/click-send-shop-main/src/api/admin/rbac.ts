@@ -1,4 +1,4 @@
-import { get, put, post, del } from "../request";
+﻿import { get, put, post, del } from "@/api/request";
 
 export interface RbacRoleRow {
   id: number;
@@ -73,3 +73,4 @@ export function resetAdminPassword(userId: string, newPassword: string) {
 export function deleteAdminUser(userId: string) {
   return post<null>(`/admin/rbac/admin-users/${userId}/delete`, {});
 }
+

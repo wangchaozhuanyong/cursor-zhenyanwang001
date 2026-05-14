@@ -1,4 +1,8 @@
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { NodeHttpHandler } = require('@smithy/node-http-handler');
+
+let cachedClient = null;
+let cachedClientKey = '';
 
 function normalizeBaseUrl(url) {
   return String(url || '').trim().replace(/\/+$/, '');
@@ -55,24 +59,46 @@ async function uploadBufferToS3({ key, body, contentType = 'application/octet-st
   const conf = getS3Config();
   assertS3Config(conf);
   const storageKey = buildStorageKey(key);
-  const client = new S3Client({
+  const clientKey = JSON.stringify({
+    endpoint: conf.endpoint || '',
     region: conf.region,
-    endpoint: conf.endpoint || undefined,
+    bucket: conf.bucket,
+    accessKeyId: conf.accessKeyId,
     forcePathStyle: conf.forcePathStyle,
-    credentials: {
-      accessKeyId: conf.accessKeyId,
-      secretAccessKey: conf.secretAccessKey,
-    },
   });
-  await client.send(
-    new PutObjectCommand({
-      Bucket: conf.bucket,
-      Key: storageKey,
-      Body: body,
-      ContentType: contentType,
-      CacheControl: cacheControl,
-    }),
-  );
+  if (!cachedClient || cachedClientKey !== clientKey) {
+    cachedClient = new S3Client({
+      region: conf.region,
+      endpoint: conf.endpoint || undefined,
+      forcePathStyle: conf.forcePathStyle,
+      credentials: {
+        accessKeyId: conf.accessKeyId,
+        secretAccessKey: conf.secretAccessKey,
+      },
+      requestHandler: new NodeHttpHandler({
+        connectionTimeout: 10_000,
+        requestTimeout: 45_000,
+      }),
+    });
+    cachedClientKey = clientKey;
+  }
+  try {
+    await cachedClient.send(
+      new PutObjectCommand({
+        Bucket: conf.bucket,
+        Key: storageKey,
+        Body: body,
+        ContentType: contentType,
+        CacheControl: cacheControl,
+      }),
+    );
+  } catch (error) {
+    const code = String(error?.name || error?.code || '');
+    if (code.includes('Timeout') || code.includes('Abort') || code.includes('ECONNRESET')) {
+      throw new Error('S3 上传超时，请检查对象存储网络或配置');
+    }
+    throw error;
+  }
   return {
     key: storageKey,
     url: getPublicUrlByKey(storageKey),

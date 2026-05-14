@@ -7,6 +7,7 @@ import { fetchProductById, createProduct, updateProduct, deleteProduct, fetchPro
 import * as categoryService from "@/services/admin/categoryService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as uploadService from "@/services/uploadService";
+import { compressImageBeforeUpload } from "@/utils/imageCompress";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_PRODUCT_LAYOUT } from "@/constants/imageUploadHints";
@@ -25,6 +26,9 @@ export default function AdminProductForm() {
   const [deleting, setDeleting] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [allTags, setAllTags] = useState<ProductTag[]>([]);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [form, setForm] = useState({
     name: "",
     price: "",
@@ -120,11 +124,42 @@ export default function AdminProductForm() {
     }
   }, [id, isNew]);
 
+  const validateImageBeforeUpload = (file: File) => {
+    const type = file.type.toLowerCase();
+    const allowed = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+    if (!allowed.includes(type)) {
+      throw new Error("仅支持 JPG、PNG、WebP 图片");
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      throw new Error("图片大小不能超过 15MB");
+    }
+    if (type === "image/gif") {
+      toast.warning("GIF 上传后可能转为静态图");
+    }
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "cover" | "gallery") => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
+    if (field === "cover" && uploadingCover) return;
+    if (field === "gallery" && uploadingGallery) return;
     try {
-      const res = await uploadService.uploadSingle(file);
+      validateImageBeforeUpload(file);
+      if (field === "cover") setUploadingCover(true);
+      else setUploadingGallery(true);
+      setUploadProgress(0);
+      const compressed = await compressImageBeforeUpload(file, {
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.82,
+        outputType: "image/webp",
+      }).catch(() => ({ file, compressed: false }));
+      const res = await uploadService.uploadSingleWithProgress(compressed.file, {
+        mode: "image",
+        timeoutMs: 45_000,
+        onProgress: (percent) => setUploadProgress(percent),
+      });
       const url = res.url || "";
       if (!url) {
         toast.error("服务器未返回图片地址，请检查存储配置或稍后重试");
@@ -138,6 +173,10 @@ export default function AdminProductForm() {
       toast.success("图片已上传");
     } catch (e) {
       toast.error(toastErrorMessage(e, "图片上传失败"));
+    } finally {
+      setUploadProgress(null);
+      setUploadingCover(false);
+      setUploadingGallery(false);
     }
   };
 
@@ -169,6 +208,10 @@ export default function AdminProductForm() {
   };
 
   const handleSave = async (publish = false) => {
+    if (uploadingCover || uploadingGallery) {
+      toast.error("图片仍在上传中，请等待上传完成后再保存商品。");
+      return;
+    }
     if (!form.name) { toast.error("请输入商品名称"); return; }
     if (!form.variants.length) { toast.error("至少保留一条规格"); return; }
     setSaving(true);
@@ -282,7 +325,7 @@ export default function AdminProductForm() {
             <div className="space-y-4">
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">封面图</label>
-                <label className="flex h-40 w-40 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-border hover:border-gold/50 overflow-hidden">
+                <label className={`relative flex h-40 w-40 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border ${uploadingCover ? "cursor-not-allowed opacity-80" : "cursor-pointer hover:border-gold/50"}`}>
                   {form.cover_image ? (
                     <img src={form.cover_image} alt="" className="h-full w-full object-cover" />
                   ) : (
@@ -291,7 +334,14 @@ export default function AdminProductForm() {
                       <span className="mt-1 block text-xs text-muted-foreground">上传封面</span>
                     </div>
                   )}
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, "cover")} />
+                  {uploadingCover ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/45 text-white">
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <span className="mt-2 text-xs">图片上传中...</span>
+                      {uploadProgress !== null ? <span className="text-[11px]">{uploadProgress}%</span> : null}
+                    </div>
+                  ) : null}
+                  <input disabled={uploadingCover} type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, "cover")} />
                 </label>
               </div>
               <div>
@@ -303,10 +353,17 @@ export default function AdminProductForm() {
                       <button onClick={() => setForm((f) => ({ ...f, images: f.images.filter((_, idx) => idx !== i) }))} className="absolute top-0 right-0 bg-destructive text-white rounded-bl px-1 text-xs">×</button>
                     </div>
                   ))}
+                  {uploadingGallery && (
+                    <div className="flex h-24 w-24 flex-col items-center justify-center rounded-lg border border-border bg-secondary/60 text-xs text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="mt-1">上传中...</span>
+                      {uploadProgress !== null ? <span className="text-[10px]">{uploadProgress}%</span> : null}
+                    </div>
+                  )}
                   {form.images.length < 6 && (
-                    <label className="flex h-24 w-24 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-border hover:border-gold/50">
+                    <label className={`flex h-24 w-24 items-center justify-center rounded-lg border-2 border-dashed border-border ${uploadingGallery ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:border-gold/50"}`}>
                       <ImagePlus size={18} className="text-muted-foreground" />
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, "gallery")} />
+                      <input disabled={uploadingGallery} type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, "gallery")} />
                     </label>
                   )}
                 </div>

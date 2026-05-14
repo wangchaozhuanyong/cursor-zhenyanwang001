@@ -1,4 +1,4 @@
-import { get, post } from "../request";
+﻿import { get, post } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
 import type { Review, FeaturedReview } from "@/types/review";
 export type { Review, FeaturedReview };
@@ -25,3 +25,4 @@ export function createReview(params: {
 export function toggleReviewLike(reviewId: string) {
   return post<{ liked: boolean; likes_count: number }>(`/reviews/${reviewId}/like`);
 }
+

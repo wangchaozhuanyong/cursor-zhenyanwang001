@@ -140,6 +140,10 @@ export default function GuestHome() {
   };
 
   const bottomNavSafe = "pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))]";
+  const homeLayout = themeConfig.homeLayout ?? "classic";
+  const isPremiumLayout = homeLayout === "premium";
+  const isDealLayout = homeLayout === "deal";
+  const isMagazineLayout = homeLayout === "magazine";
   const quickEntries = [
     { label: "新品", icon: Sparkles, path: "/new-arrivals" },
     { label: "热销", icon: PackageCheck, path: "/categories?sort=sales_desc" },
@@ -189,8 +193,11 @@ export default function GuestHome() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-screen-xl px-4 pt-[4.5rem]">
-        <BannerCarousel banners={banners} />
+      <main className={`mx-auto max-w-screen-xl px-4 pt-[4.5rem] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_88%,black)]" : ""}`}>
+        <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
+          <BannerCarousel banners={banners} themeConfigOverride={themeConfig} />
+        </div>
+        {isDealLayout && <div className="-mx-4 mt-3"><HomeOpsBlocks /></div>}
         <section className="mt-3 grid grid-cols-4 gap-2">
           {quickEntries.map((entry) => (
             <button
@@ -206,9 +213,7 @@ export default function GuestHome() {
             </button>
           ))}
         </section>
-        <div className="-mx-4 mt-3">
-          <HomeOpsBlocks />
-        </div>
+        {!isDealLayout && <div className="-mx-4 mt-3"><HomeOpsBlocks /></div>}
         <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-[var(--theme-text-muted)] md:text-sm">
           <div className="flex items-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-2">
             <ShieldCheck size={16} className="text-[var(--theme-price)]" />

@@ -1,4 +1,5 @@
 const { generateId, verifyToken, parseProductImages } = require('../../utils/helpers');
+const { getAccessTokenFromRequest } = require('../../utils/authCookies');
 const repo = require('./review.repository');
 
 async function getProductReviews(req) {
@@ -11,10 +12,10 @@ async function getProductReviews(req) {
   const rows = await repo.selectReviewsPage(productId, pageSize, offset);
 
   let likedSet = new Set();
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
+  const token = getAccessTokenFromRequest(req);
+  if (token) {
     try {
-      const payload = verifyToken(authHeader.split(' ')[1]);
+      const payload = verifyToken(token);
       if (typeof payload !== 'string' && payload?.userId) {
         const reviewIds = rows.map((r) => r.id);
         if (reviewIds.length > 0) {

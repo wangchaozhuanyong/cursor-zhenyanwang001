@@ -1,4 +1,4 @@
-import { get, put } from "../request";
+﻿import { get, put } from "@/api/request";
 import type { SiteSettings } from "@/types/admin";
 
 export function getSiteSettings() {
@@ -8,3 +8,4 @@ export function getSiteSettings() {
 export function updateSiteSettings(data: Partial<SiteSettings>) {
   return put<SiteSettings>("/admin/settings", data);
 }
+

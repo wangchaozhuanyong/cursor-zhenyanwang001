@@ -1,4 +1,4 @@
-import { get, post } from "../request";
+﻿import { get, post } from "@/api/request";
 
 export interface PaymentConfig {
   mockPayment: boolean;
@@ -45,3 +45,4 @@ export function createPaymentIntent(body: {
 }) {
   return post<PaymentIntent>("/payments/intents", body);
 }
+

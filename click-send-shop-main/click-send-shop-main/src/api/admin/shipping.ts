@@ -1,4 +1,4 @@
-import { get, post, put, del } from "../request";
+﻿import { get, post, put, del } from "@/api/request";
 import type { ShippingTemplate, ShippingGlobalSettings } from "@/types/shipping";
 
 export function getShippingTemplates() {
@@ -24,3 +24,4 @@ export function getGlobalSettings() {
 export function updateGlobalSettings(data: ShippingGlobalSettings) {
   return put<ShippingGlobalSettings>("/admin/shipping/settings", data);
 }
+

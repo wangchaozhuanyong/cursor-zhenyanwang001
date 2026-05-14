@@ -1,4 +1,4 @@
-import { get } from "../request";
+﻿import { get } from "@/api/request";
 import type { DashboardStats } from "@/types/admin";
 
 export function getDashboardStats() {
@@ -8,3 +8,4 @@ export function getDashboardStats() {
 export function getDashboardChartData(range: "week" | "month" | "year") {
   return get<{ labels: string[]; values: number[] }>("/admin/dashboard/chart", { range });
 }
+

@@ -22,6 +22,11 @@ function getCartItemKey(item: CartItem) {
   return cartLineKey(item.product.id, item.variant_id);
 }
 
+export function getCartLinePrice(item: CartItem) {
+  const unitPrice = item.unit_price ?? item.product.price;
+  return Number(unitPrice || 0) * Number(item.qty || 0);
+}
+
 /**
  * 登录态下演示用：可对「本地沙箱 SKU」注入异步同步（延时 / 模拟失败）。
  * 传 `null` 清除。真实商品不受影响。
@@ -80,7 +85,7 @@ interface CartState {
   updateQty: (productId: string, qty: number, variantId?: string) => void;
   clearCart: () => void;
   /** 下单成功后仅移除已结算行（与后端删除 cart_items 一致） */
-  removeOrderedItems: (productIds: string[]) => void;
+  removeOrderedItems: (lines: Array<{ product_id: string; variant_id?: string }>) => void;
   setBuyNow: (product: Product, qty: number, variant?: ProductVariant | null) => void;
   clearBuyNow: () => void;
 
@@ -259,20 +264,20 @@ export const useCartStore = create<CartState>()(
         }
       },
 
-      removeOrderedItems: (productIds) => {
-        const setIds = new Set(productIds);
+      removeOrderedItems: (lines) => {
+        const lineKeySet = new Set(lines.map((line) => cartLineKey(line.product_id, line.variant_id)));
         set((state) => {
-          const items = state.items.filter((i) => !setIds.has(i.product.id));
+          const items = state.items.filter((i) => !lineKeySet.has(getCartItemKey(i)));
           const sel = { ...state.selection };
-          for (const id of productIds) delete sel[id];
+          for (const key of lineKeySet) delete sel[key];
           return { items, selection: mergeSelection(sel, items) };
         });
         if (isLoggedIn()) {
-          const serverIds = productIds.filter(
-            (id) => !isLocalOnlyCartProductId(id),
+          const serverLines = lines.filter(
+            (line) => !isLocalOnlyCartProductId(line.product_id),
           );
-          if (serverIds.length) {
-            Promise.all(serverIds.map((id) => cartService.removeFromCart(id))).catch(() => {
+          if (serverLines.length) {
+            Promise.all(serverLines.map((line) => cartService.removeFromCart(line.product_id, line.variant_id || ""))).catch(() => {
               get().loadCart();
             });
           }
@@ -316,7 +321,7 @@ export const useCartStore = create<CartState>()(
       },
 
       totalAmount: () =>
-        get().items.reduce((sum, i) => sum + i.product.price * i.qty, 0),
+        get().items.reduce((sum, i) => sum + getCartLinePrice(i), 0),
       totalPoints: () =>
         get().items.reduce((sum, i) => sum + i.product.points * i.qty, 0),
       totalItems: () =>
@@ -325,7 +330,7 @@ export const useCartStore = create<CartState>()(
       totalAmountSelected: () =>
         get()
           .getSelectedItems()
-          .reduce((sum, i) => sum + i.product.price * i.qty, 0),
+          .reduce((sum, i) => sum + getCartLinePrice(i), 0),
       totalPointsSelected: () =>
         get()
           .getSelectedItems()

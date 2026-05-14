@@ -14,6 +14,7 @@ type ThemeMode = "light" | "dark";
 
 const SKIN_STORAGE_KEY = "theme_skin_id";
 const SKIN_MANUAL_KEY = "theme_skin_manual";
+const LAST_ACTIVE_SKIN_KEY = "theme_last_active_skin";
 
 type ThemeContextValue = {
   theme: ThemeMode;
@@ -79,9 +80,17 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
 
       const saved = typeof window !== "undefined" ? localStorage.getItem(SKIN_STORAGE_KEY) : null;
       const isManual = typeof window !== "undefined" && localStorage.getItem(SKIN_MANUAL_KEY) === "1";
-      const chosen = isManual && saved && normalized.skins.some((s) => s.id === saved)
-        ? saved
-        : normalized.activeSkinId || normalized.defaultSkinId || DEFAULT_SKIN_ID;
+      const currentActive = normalized.activeSkinId || normalized.defaultSkinId || DEFAULT_SKIN_ID;
+      const lastActive = typeof window !== "undefined" ? localStorage.getItem(LAST_ACTIVE_SKIN_KEY) : null;
+      const activeChangedByAdmin = !!lastActive && currentActive !== lastActive;
+      if (typeof window !== "undefined") {
+        localStorage.setItem(LAST_ACTIVE_SKIN_KEY, currentActive);
+      }
+      const canUseManual = isManual && !activeChangedByAdmin && saved && normalized.skins.some((s) => s.id === saved);
+      if (isManual && activeChangedByAdmin && typeof window !== "undefined") {
+        localStorage.removeItem(SKIN_MANUAL_KEY);
+      }
+      const chosen = canUseManual ? saved! : currentActive;
       setSkinIdState(chosen);
       const active = normalized.skins.find((s) => s.id === chosen) ?? normalized.skins[0];
       setThemeConfig(normalizeThemeConfig(active?.config));

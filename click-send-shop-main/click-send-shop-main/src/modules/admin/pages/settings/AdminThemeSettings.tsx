@@ -2,25 +2,28 @@ import { useEffect, useMemo, useState } from "react";
 import { Copy, Loader2, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
-import StoreButton from "@/components/ui/StoreButton";
+import ThemePreviewScope from "@/components/admin/ThemePreviewScope";
+import BannerCarousel from "@/components/BannerCarousel";
+import PremiumCouponCard from "@/components/PremiumCouponCard";
+import ProductCard from "@/components/ProductCard";
 import StoreBadge from "@/components/ui/StoreBadge";
+import StoreButton from "@/components/ui/StoreButton";
 import StorePrice from "@/components/ui/StorePrice";
+import banner1Image from "@/assets/banner1.jpg";
+import { DEFAULT_SKIN_ID, THEME_PRESETS } from "@/constants/themePresets";
+import { notifyGlobalThemeUpdated } from "@/lib/themeRevision";
 import { fetchThemeSkins, saveSystemThemeSkins } from "@/services/admin/themeService";
+import type { Banner } from "@/types/banner";
+import type { Product } from "@/types/product";
 import type { ThemeConfig, ThemeSkin } from "@/types/theme";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { notifyGlobalThemeUpdated } from "@/lib/themeRevision";
-import { getThemeReadabilityReport } from "@/utils/themeContrast";
-import { DEFAULT_SKIN_ID, THEME_PRESETS } from "@/constants/themePresets";
 import { normalizeThemeConfig, normalizeThemeSkinsPayload } from "@/utils/themeConfig";
-import BannerCarousel from "@/components/BannerCarousel";
-import ProductCard from "@/components/ProductCard";
-import PremiumCouponCard from "@/components/PremiumCouponCard";
-import banner1Image from "@/assets/banner1.jpg";
+import { getThemeReadabilityReport } from "@/utils/themeContrast";
 
 type ConfigTab = "colors" | "base" | "nav" | "card" | "marketing" | "advanced";
 type PreviewTab = "home" | "product" | "member" | "components";
 
-const presetMap = new Map(THEME_PRESETS.map((s) => [s.id, s]));
+const presetMap = new Map(THEME_PRESETS.map((skin) => [skin.id, skin]));
 
 const enumOptions = {
   shadowStyle: ["none", "subtle", "soft", "medium", "glow"] as const,
@@ -43,6 +46,28 @@ const enumOptions = {
   density: ["comfortable", "compact"] as const,
   adminThemeMode: ["fixed", "follow_store"] as const,
 };
+
+const previewBanner: Banner = {
+  id: "preview-banner",
+  title: "首页预览 Banner",
+  image: banner1Image,
+  link: "/products",
+};
+
+const previewProduct = {
+  id: "preview-product",
+  name: "商品卡预览",
+  price: 88,
+  original_price: 108,
+  points: 20,
+  stock: 30,
+  sales_count: 128,
+  cover_image: banner1Image,
+  images: [banner1Image],
+  tags: [],
+  is_hot: true,
+  is_new: true,
+} as unknown as Product;
 
 function ColorInput({
   label,
@@ -74,19 +99,15 @@ function SelectRow<T extends string>({
   label: string;
   value: T;
   options: readonly T[];
-  onChange: (v: T) => void;
+  onChange: (value: T) => void;
 }) {
   return (
     <label className="space-y-1">
       <span className="text-xs text-muted-foreground">{label}</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value as T)}
-        className="h-9 w-full rounded-lg border border-border bg-background px-2 text-xs"
-      >
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
+      <select value={value} onChange={(e) => onChange(e.target.value as T)} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-xs">
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
           </option>
         ))}
       </select>
@@ -99,13 +120,14 @@ export default function AdminThemeSettings() {
   const [saving, setSaving] = useState(false);
   const [skins, setSkins] = useState<ThemeSkin[]>([]);
   const [defaultSkinId, setDefaultSkinId] = useState(DEFAULT_SKIN_ID);
+  const [activeSkinId, setActiveSkinId] = useState(DEFAULT_SKIN_ID);
   const [selectedSkinId, setSelectedSkinId] = useState(DEFAULT_SKIN_ID);
   const [themeConfig, setThemeConfig] = useState<ThemeConfig>(normalizeThemeConfig(THEME_PRESETS[0]?.config));
   const [configTab, setConfigTab] = useState<ConfigTab>("colors");
   const [previewTab, setPreviewTab] = useState<PreviewTab>("home");
   const [dirty, setDirty] = useState(false);
 
-  const selectedSkin = useMemo(() => skins.find((s) => s.id === selectedSkinId), [skins, selectedSkinId]);
+  const selectedSkin = useMemo(() => skins.find((skin) => skin.id === selectedSkinId), [skins, selectedSkinId]);
   const readability = useMemo(() => getThemeReadabilityReport(themeConfig), [themeConfig]);
 
   useEffect(() => {
@@ -119,26 +141,32 @@ export default function AdminThemeSettings() {
         });
         setSkins(normalized.skins);
         setDefaultSkinId(normalized.defaultSkinId);
+        setActiveSkinId(normalized.activeSkinId);
         setSelectedSkinId(normalized.activeSkinId);
-        const skin = normalized.skins.find((s) => s.id === normalized.activeSkinId) || normalized.skins[0];
-        setThemeConfig(normalizeThemeConfig(skin?.config));
+        const current = normalized.skins.find((skin) => skin.id === normalized.activeSkinId) || normalized.skins[0];
+        setThemeConfig(normalizeThemeConfig(current?.config));
       })
-      .catch((e) => toast.error(toastErrorMessage(e, "加载皮肤配置失败")))
+      .catch((error) => toast.error(toastErrorMessage(error, "加载皮肤配置失败")))
       .finally(() => setLoading(false));
   }, []);
 
-  const persist = async (nextSkins: ThemeSkin[], nextDefault: string, successMsg: string) => {
+  const persist = async (nextSkins: ThemeSkin[], nextDefaultSkinId: string, nextActiveSkinId: string, message: string) => {
     setSaving(true);
     try {
-      await saveSystemThemeSkins({ defaultSkinId: nextDefault, skins: nextSkins });
+      await saveSystemThemeSkins({
+        defaultSkinId: nextDefaultSkinId,
+        activeSkinId: nextActiveSkinId,
+        skins: nextSkins,
+      });
       setSkins(nextSkins);
-      setDefaultSkinId(nextDefault);
+      setDefaultSkinId(nextDefaultSkinId);
+      setActiveSkinId(nextActiveSkinId);
       notifyGlobalThemeUpdated();
       setDirty(false);
-      toast.success(successMsg);
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "保存失败"));
-      throw e;
+      toast.success(message);
+    } catch (error) {
+      toast.error(toastErrorMessage(error, "保存失败"));
+      throw error;
     } finally {
       setSaving(false);
     }
@@ -147,14 +175,14 @@ export default function AdminThemeSettings() {
   const updateConfig = <K extends keyof ThemeConfig>(field: K, value: ThemeConfig[K]) => {
     const next = normalizeThemeConfig({ ...themeConfig, [field]: value });
     setThemeConfig(next);
-    setSkins((prev) => prev.map((s) => (s.id === selectedSkinId ? { ...s, config: next } : s)));
+    setSkins((prev) => prev.map((skin) => (skin.id === selectedSkinId ? { ...skin, config: next } : skin)));
     setDirty(true);
   };
 
   const onSelectSkin = (id: string) => {
     if (dirty && !window.confirm("当前有未保存修改，确定切换皮肤吗？")) return;
     setSelectedSkinId(id);
-    const target = skins.find((s) => s.id === id);
+    const target = skins.find((skin) => skin.id === id);
     setThemeConfig(normalizeThemeConfig(target?.config));
     setDirty(false);
   };
@@ -162,62 +190,78 @@ export default function AdminThemeSettings() {
   const onApplyPreset = (presetId: string) => {
     const preset = presetMap.get(presetId);
     if (!preset) return;
-    const next = normalizeThemeConfig(preset.config);
-    setThemeConfig(next);
-    setSkins((prev) => prev.map((s) => (s.id === selectedSkinId ? { ...s, config: next } : s)));
+    const nextConfig = normalizeThemeConfig(preset.config);
+    setThemeConfig(nextConfig);
+    setSkins((prev) => prev.map((skin) => (skin.id === selectedSkinId ? { ...skin, config: nextConfig } : skin)));
     setDirty(true);
     toast.success("已载入预设，请点击“保存皮肤配置”生效");
   };
 
-  const onAddSkin = async () => {
+  const onAddSkin = () => {
     if (skins.length >= 20) return toast.info("最多保留 20 套皮肤");
-    const id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `skin_${Date.now()}`;
-    const nextSkin: ThemeSkin = { id, name: `自定义皮肤 ${skins.length + 1}`, config: normalizeThemeConfig(themeConfig) };
-    const next = [...skins, nextSkin];
-    setSkins(next);
-    setSelectedSkinId(id);
-    setThemeConfig(nextSkin.config);
+    const newId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `skin_${Date.now()}`;
+    const newSkin: ThemeSkin = {
+      id: newId,
+      name: `自定义皮肤 ${skins.length + 1}`,
+      config: normalizeThemeConfig(themeConfig),
+    };
+    setSkins((prev) => [...prev, newSkin]);
+    setSelectedSkinId(newId);
+    setThemeConfig(newSkin.config);
     setDirty(true);
   };
 
-  const onCopySkin = async (id: string) => {
-    const src = skins.find((s) => s.id === id);
-    if (!src) return;
-    const copyId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `skin_${Date.now()}`;
-    const copy: ThemeSkin = { ...src, id: copyId, name: `${src.name} 副本` };
-    setSkins((prev) => [...prev, copy]);
-    setSelectedSkinId(copyId);
-    setThemeConfig(copy.config);
+  const onCopySkin = (id: string) => {
+    const source = skins.find((skin) => skin.id === id);
+    if (!source) return;
+    const newId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `skin_${Date.now()}`;
+    const clone: ThemeSkin = { ...source, id: newId, name: `${source.name} 副本` };
+    setSkins((prev) => [...prev, clone]);
+    setSelectedSkinId(newId);
+    setThemeConfig(clone.config);
     setDirty(true);
   };
 
   const onDeleteSkin = async (id: string) => {
-    if (THEME_PRESETS.some((s) => s.id === id)) return toast.info("系统预设不允许删除，可复制后修改");
+    if (THEME_PRESETS.some((preset) => preset.id === id)) return toast.info("系统预设不允许删除，可复制后修改");
     if (skins.length <= 1) return toast.error("至少保留一套皮肤");
-    const next = skins.filter((s) => s.id !== id);
-    const fallback = next[0]?.id || DEFAULT_SKIN_ID;
-    setSkins(next);
-    setSelectedSkinId((prev) => (prev === id ? fallback : prev));
-    setDefaultSkinId((prev) => (prev === id ? fallback : prev));
-    setThemeConfig(normalizeThemeConfig(next.find((s) => s.id === fallback)?.config));
-    await persist(next, defaultSkinId === id ? fallback : defaultSkinId, "已删除皮肤");
+
+    const nextSkins = skins.filter((skin) => skin.id !== id);
+    const fallbackId = nextSkins[0]?.id || DEFAULT_SKIN_ID;
+    const nextDefaultSkinId = defaultSkinId === id ? fallbackId : defaultSkinId;
+    const nextActiveSkinId = activeSkinId === id ? fallbackId : activeSkinId;
+    const nextSelectedSkinId = selectedSkinId === id ? fallbackId : selectedSkinId;
+
+    setSkins(nextSkins);
+    setDefaultSkinId(nextDefaultSkinId);
+    setActiveSkinId(nextActiveSkinId);
+    setSelectedSkinId(nextSelectedSkinId);
+    const target = nextSkins.find((skin) => skin.id === nextSelectedSkinId) || nextSkins[0];
+    setThemeConfig(normalizeThemeConfig(target?.config));
+
+    await persist(nextSkins, nextDefaultSkinId, nextActiveSkinId, "已删除皮肤");
   };
 
   const onSetDefault = async (id: string) => {
     if (id === defaultSkinId) return;
-    await persist(skins, id, "已设置默认皮肤");
+    await persist(skins, id, activeSkinId, "已设为默认皮肤");
+  };
+
+  const onApplyCurrent = async (id: string) => {
+    if (id === activeSkinId) return;
+    await persist(skins, defaultSkinId, id, "已应用为当前前台皮肤");
   };
 
   const onSave = async () => {
-    await persist(skins, defaultSkinId, "皮肤配置已保存");
+    await persist(skins, defaultSkinId, activeSkinId, "皮肤配置已保存");
   };
 
-  const onResetCurrent = async () => {
+  const onResetCurrent = () => {
     if (!selectedSkin) return;
-    const preset = presetMap.get(selectedSkin.id);
-    const next = normalizeThemeConfig(preset?.config || THEME_PRESETS[0].config);
-    setThemeConfig(next);
-    setSkins((prev) => prev.map((s) => (s.id === selectedSkinId ? { ...s, config: next } : s)));
+    const preset = presetMap.get(selectedSkin.id) || THEME_PRESETS[0];
+    const nextConfig = normalizeThemeConfig(preset.config);
+    setThemeConfig(nextConfig);
+    setSkins((prev) => prev.map((skin) => (skin.id === selectedSkinId ? { ...skin, config: nextConfig } : skin)));
     setDirty(true);
   };
 
@@ -234,7 +278,7 @@ export default function AdminThemeSettings() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-bold">商城皮肤系统 V2.1</h1>
-          <p className="text-sm text-muted-foreground">后台固定灰白主题；右侧预览仅用于查看当前编辑皮肤效果。</p>
+          <p className="text-sm text-muted-foreground">后台保持固定管理台主题，右侧仅预览当前编辑皮肤，不污染后台 UI。</p>
         </div>
         <StoreButton variant="ghost" size="sm" onClick={onResetCurrent} disabled={saving}>
           <RotateCcw size={14} />
@@ -256,9 +300,18 @@ export default function AdminThemeSettings() {
                 <button type="button" className="w-full text-left text-sm font-medium" onClick={() => onSelectSkin(skin.id)}>
                   {skin.name}
                 </button>
-                <div className="mt-2 flex items-center gap-1">
-                  {skin.id === defaultSkinId ? <StoreBadge type="success">默认</StoreBadge> : <button onClick={() => void onSetDefault(skin.id)} className="rounded border border-border px-1.5 py-0.5 text-[10px]">设为默认</button>}
-                  <button onClick={() => void onCopySkin(skin.id)} className="rounded border border-border p-1"><Copy size={12} /></button>
+                <div className="mt-2 flex flex-wrap items-center gap-1">
+                  {skin.id === defaultSkinId ? (
+                    <StoreBadge type="success">默认</StoreBadge>
+                  ) : (
+                    <button onClick={() => void onSetDefault(skin.id)} className="rounded border border-border px-1.5 py-0.5 text-[10px]">设为默认</button>
+                  )}
+                  {skin.id === activeSkinId ? (
+                    <StoreBadge type="coupon">当前生效</StoreBadge>
+                  ) : (
+                    <button onClick={() => void onApplyCurrent(skin.id)} className="rounded border border-border px-1.5 py-0.5 text-[10px]">应用当前</button>
+                  )}
+                  <button onClick={() => onCopySkin(skin.id)} className="rounded border border-border p-1"><Copy size={12} /></button>
                   <button onClick={() => void onDeleteSkin(skin.id)} className="rounded border border-border p-1"><Trash2 size={12} /></button>
                 </div>
               </div>
@@ -278,9 +331,9 @@ export default function AdminThemeSettings() {
           <div className="mb-4 rounded-lg border border-border p-3">
             <p className="mb-2 text-xs text-muted-foreground">一键载入预设（不会自动保存）</p>
             <div className="flex flex-wrap gap-2">
-              {THEME_PRESETS.map((p) => (
-                <button key={p.id} onClick={() => onApplyPreset(p.id)} className="rounded-md border border-border px-2 py-1 text-xs hover:bg-secondary">
-                  载入{p.name}
+              {THEME_PRESETS.map((preset) => (
+                <button key={preset.id} onClick={() => onApplyPreset(preset.id)} className="rounded-md border border-border px-2 py-1 text-xs hover:bg-secondary">
+                  载入{preset.name}
                 </button>
               ))}
             </div>
@@ -294,8 +347,8 @@ export default function AdminThemeSettings() {
               <ColorInput label="辅色" value={themeConfig.secondaryColor} onChange={(v) => updateConfig("secondaryColor", v)} />
               <ColorInput label="强调色" value={themeConfig.accentColor} onChange={(v) => updateConfig("accentColor", v)} />
               <ColorInput label="价格色" value={themeConfig.priceColor} onChange={(v) => updateConfig("priceColor", v)} />
-              <ColorInput label="主文字" value={themeConfig.textColor} onChange={(v) => updateConfig("textColor", v)} />
-              <ColorInput label="次文字" value={themeConfig.mutedTextColor} onChange={(v) => updateConfig("mutedTextColor", v)} />
+              <ColorInput label="正文色" value={themeConfig.textColor} onChange={(v) => updateConfig("textColor", v)} />
+              <ColorInput label="次文字色" value={themeConfig.mutedTextColor} onChange={(v) => updateConfig("mutedTextColor", v)} />
               <ColorInput label="边框色" value={themeConfig.borderColor} onChange={(v) => updateConfig("borderColor", v)} />
               <ColorInput label="成功色" value={themeConfig.successColor} onChange={(v) => updateConfig("successColor", v)} />
               <ColorInput label="警告色" value={themeConfig.warningColor} onChange={(v) => updateConfig("warningColor", v)} />
@@ -324,7 +377,7 @@ export default function AdminThemeSettings() {
           {configTab === "card" && (
             <div className="grid gap-3 md:grid-cols-2">
               <SelectRow label="商品卡变体" value={themeConfig.productCardVariant} options={enumOptions.productCardVariant} onChange={(v) => updateConfig("productCardVariant", v)} />
-              <SelectRow label="卡片样式" value={themeConfig.cardStyle} options={enumOptions.cardStyle} onChange={(v) => updateConfig("cardStyle", v)} />
+              <SelectRow label="卡片风格" value={themeConfig.cardStyle} options={enumOptions.cardStyle} onChange={(v) => updateConfig("cardStyle", v)} />
               <SelectRow label="文字对齐" value={themeConfig.cardTextAlign} options={enumOptions.cardTextAlign} onChange={(v) => updateConfig("cardTextAlign", v)} />
               <SelectRow label="图片比例" value={themeConfig.imageRatio} options={enumOptions.imageRatio} onChange={(v) => updateConfig("imageRatio", v)} />
               <SelectRow label="图片填充" value={themeConfig.imageFit} options={enumOptions.imageFit} onChange={(v) => updateConfig("imageFit", v)} />
@@ -346,7 +399,7 @@ export default function AdminThemeSettings() {
           {configTab === "advanced" && (
             <div className="grid gap-3 md:grid-cols-2">
               <SelectRow label="后台主题模式" value={themeConfig.adminThemeMode} options={enumOptions.adminThemeMode} onChange={(v) => updateConfig("adminThemeMode", v)} />
-              <p className="col-span-2 text-xs text-muted-foreground">建议后台保持 fixed，避免活动皮肤或深色皮肤影响后台可读性。</p>
+              <p className="col-span-2 text-xs text-muted-foreground">建议后台保持 fixed，避免活动/深色皮肤影响后台可读性。</p>
             </div>
           )}
         </section>
@@ -362,10 +415,13 @@ export default function AdminThemeSettings() {
           <div className={`mb-3 rounded-md border p-2 text-xs ${readability.pass ? "border-emerald-300 bg-emerald-50" : "border-amber-300 bg-amber-50"}`}>
             {readability.pass ? "可读性检测通过" : "可读性检测有警告，请检查文字与背景对比度"}
           </div>
-          <div className="space-y-3 rounded-xl border border-border bg-background p-3">
+
+          <ThemePreviewScope config={themeConfig} className="space-y-3 rounded-xl border border-border bg-background p-3">
             {previewTab === "home" && (
               <>
-                <div className="rounded-lg border border-border p-2"><BannerCarousel banners={[{ id: "1", title: "首页预览 Banner", image: banner1Image, link: "/products" } as any]} /></div>
+                <div className="rounded-lg border border-border p-2">
+                  <BannerCarousel banners={[previewBanner]} themeConfigOverride={themeConfig} />
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="store-card p-3"><p className="text-sm font-semibold">新人礼包</p><StorePrice price={99} originalPrice={129} /></div>
                   <div className="store-card p-3"><p className="text-sm font-semibold">热门推荐</p><StoreBadge type="hot">热销</StoreBadge></div>
@@ -374,14 +430,17 @@ export default function AdminThemeSettings() {
             )}
             {previewTab === "product" && (
               <div className="grid grid-cols-1 gap-2">
-                <ProductCard product={{ id: "p1", name: "商品卡预览", price: 88, original_price: 108, points: 20, stock: 50, sales_count: 128, cover_image: "", tags: [], is_hot: true, is_new: true } as any} />
+                <ProductCard product={previewProduct} />
               </div>
             )}
             {previewTab === "member" && (
               <div className="space-y-2">
                 <div className="store-card p-3"><p className="text-sm font-semibold">会员中心预览</p><p className="text-xs store-muted">等级 / 资产 / 订单入口</p></div>
                 <div className="grid grid-cols-4 gap-2">
-                  <div className="store-card p-2 text-center text-xs">积分</div><div className="store-card p-2 text-center text-xs">优惠券</div><div className="store-card p-2 text-center text-xs">收藏</div><div className="store-card p-2 text-center text-xs">返现</div>
+                  <div className="store-card p-2 text-center text-xs">积分</div>
+                  <div className="store-card p-2 text-center text-xs">优惠券</div>
+                  <div className="store-card p-2 text-center text-xs">收藏</div>
+                  <div className="store-card p-2 text-center text-xs">返现</div>
                 </div>
               </div>
             )}
@@ -401,7 +460,7 @@ export default function AdminThemeSettings() {
                 <PremiumCouponCard compact title="组件预览券" amount="20" conditionText="满 RM100 可用" expireText="2026-12-31" actionLabel="领取" />
               </div>
             )}
-          </div>
+          </ThemePreviewScope>
         </section>
       </div>
 

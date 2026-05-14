@@ -1,4 +1,4 @@
-import { get, post, put, del } from "../request";
+﻿import { get, post, put, del } from "@/api/request";
 import type { Banner } from "@/types/banner";
 
 export function getBanners() {
@@ -16,3 +16,4 @@ export function updateBanner(id: string, data: Partial<Banner>) {
 export function deleteBanner(id: string) {
   return del<void>(`/admin/banners/${id}`);
 }
+

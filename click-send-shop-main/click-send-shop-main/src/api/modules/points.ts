@@ -1,4 +1,4 @@
-import { get, post } from "../request";
+﻿import { get, post } from "@/api/request";
 import type { PointsRecord, PointsListParams } from "@/types/points";
 import type { PaginatedData } from "@/types/common";
 
@@ -27,3 +27,4 @@ export function getPointsConfig() {
 export function signIn() {
   return post<{ points: number }>("/points/sign-in");
 }
+

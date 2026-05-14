@@ -1,4 +1,4 @@
-import { get, post, del } from "../request";
+﻿import { get, post, del } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
 import type { HistoryItem } from "@/types/history";
 
@@ -16,3 +16,4 @@ export function addHistory(product_id: string) {
 export function clearHistory() {
   return del<void>("/history");
 }
+

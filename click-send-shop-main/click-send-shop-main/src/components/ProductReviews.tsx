@@ -1,5 +1,6 @@
 import { Star, ThumbsUp, Camera, Loader2, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import type { ProductReviewsViewModel } from "@/hooks/useProductReviews";
 import { IMAGE_UPLOAD_HINT_REVIEW } from "@/constants/imageUploadHints";
 
@@ -7,7 +8,6 @@ interface ProductReviewsProps {
   vm: ProductReviewsViewModel;
 }
 
-/** 纯展示：数据与操作来自 ProductDetail → useProductReviews → reviewService */
 export default function ProductReviews({ vm }: ProductReviewsProps) {
   const {
     reviews,
@@ -28,6 +28,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
     handleImageUpload,
     handleSubmit,
     timeAgo,
+    canReview,
   } = vm;
 
   return (
@@ -39,10 +40,17 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
         </div>
         <button
           type="button"
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            if (!canReview) {
+              toast.error("请先登录，购买并确认收货后可评价");
+              window.location.href = "/login";
+              return;
+            }
+            setShowForm(!showForm);
+          }}
           className="rounded-full bg-gold/10 px-3 py-1.5 text-xs font-medium text-gold active:scale-95 transition-transform"
         >
-          写评价
+          {canReview ? "写评价" : "登录后评价"}
         </button>
       </div>
 
@@ -67,7 +75,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
             className="overflow-hidden"
           >
             <div className="mt-4 rounded-2xl border border-border bg-card p-4">
-              <p className="text-xs font-medium text-foreground mb-2">您的评分</p>
+              <p className="mb-2 text-xs font-medium text-foreground">您的评分</p>
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <button key={s} type="button" onClick={() => setRating(s)} className="touch-target p-0.5">
@@ -80,10 +88,10 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={3}
-                className="mt-3 w-full rounded-xl border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 resize-none"
+                className="mt-3 w-full resize-none rounded-xl border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
               />
               {reviewImages.length > 0 && (
-                <div className="mt-3 flex gap-2 flex-wrap">
+                <div className="mt-3 flex flex-wrap gap-2">
                   {reviewImages.map((url, idx) => (
                     <div key={`${idx}-${url.slice(-12)}`} className="relative h-16 w-16">
                       <img src={url} alt="" className="h-full w-full rounded-lg object-cover" />
@@ -128,9 +136,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
             <Loader2 size={18} className="animate-spin text-muted-foreground" />
           </div>
         ) : reviews.length === 0 ? (
-          <div className="rounded-xl bg-secondary p-6 text-center text-sm text-muted-foreground">
-            暂无评价，快来抢沙发吧！
-          </div>
+          <div className="rounded-xl bg-secondary p-6 text-center text-sm text-muted-foreground">暂无评价，快来抢沙发吧！</div>
         ) : (
           reviews.map((review, i) => (
             <motion.div
@@ -155,7 +161,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
               </div>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{review.content}</p>
               {review.images && review.images.length > 0 && (
-                <div className="mt-2 flex gap-2 flex-wrap">
+                <div className="mt-2 flex flex-wrap gap-2">
                   {review.images.map((img: string, idx: number) => (
                     <img key={idx} src={img} alt="" className="h-16 w-16 rounded-lg object-cover" />
                   ))}
@@ -164,9 +170,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
               <button
                 type="button"
                 onClick={() => handleLike(review.id)}
-                className={`mt-2 flex items-center gap-1 text-xs transition-colors ${
-                  likedIds.has(review.id) ? "text-gold" : "text-muted-foreground"
-                }`}
+                className={`mt-2 flex items-center gap-1 text-xs transition-colors ${likedIds.has(review.id) ? "text-gold" : "text-muted-foreground"}`}
               >
                 <ThumbsUp size={13} className={likedIds.has(review.id) ? "fill-gold" : ""} />
                 {review.likes_count || 0}

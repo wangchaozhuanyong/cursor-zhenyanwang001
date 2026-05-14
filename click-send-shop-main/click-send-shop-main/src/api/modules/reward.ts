@@ -1,4 +1,4 @@
-import { get, post } from "../request";
+﻿import { get, post } from "@/api/request";
 import type { RewardRecord, RewardTransaction, WithdrawRequest, RewardListParams } from "@/types/reward";
 import type { PaginatedData } from "@/types/common";
 
@@ -21,3 +21,4 @@ export function requestWithdraw(
 ) {
   return post<WithdrawRequest>("/rewards/withdraw", { amount, method, account });
 }
+

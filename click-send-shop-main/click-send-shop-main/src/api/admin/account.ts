@@ -1,4 +1,4 @@
-import { get, put, post } from "../request";
+﻿import { get, put, post } from "@/api/request";
 import type { AdminUser, AdminLoginParams } from "@/types/admin";
 
 export function adminLogin(params: AdminLoginParams) {
@@ -20,3 +20,4 @@ export function updateAdminProfile(data: Partial<AdminUser>) {
 export function changeAdminPassword(oldPassword: string, newPassword: string) {
   return put<void>("/admin/account/password", { oldPassword, newPassword });
 }
+

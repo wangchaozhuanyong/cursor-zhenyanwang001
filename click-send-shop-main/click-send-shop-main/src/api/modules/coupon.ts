@@ -1,4 +1,4 @@
-import { get, post } from "../request";
+﻿import { get, post } from "@/api/request";
 import type { UserCoupon, CouponListParams } from "@/types/coupon";
 import type { PaginatedData } from "@/types/common";
 
@@ -15,3 +15,4 @@ export function getAvailableCoupons(orderAmount: number) {
     orderAmount: String(orderAmount),
   });
 }
+

@@ -89,6 +89,7 @@
     --theme-motion-level: soft;
     --theme-density: comfortable;
     --theme-admin-mode: fixed;
+    --store-bottom-nav-height: 72px;
   }
 
   .dark {

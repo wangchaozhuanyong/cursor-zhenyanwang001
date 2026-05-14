@@ -1,4 +1,4 @@
-import { get, post, put, patch, del } from "../request";
+﻿import { get, post, put, patch, del } from "@/api/request";
 import type { ActivityPayload, ActivityStatus, ActivityType, MarketingActivity } from "@/types/activity";
 import type { PaginatedData, PaginationParams } from "@/types/common";
 
@@ -31,3 +31,4 @@ export function setActivityDisabled(id: string, disabled: boolean) {
 export function deleteActivity(id: string) {
   return del<void>(`/admin/activities/${id}`);
 }
+

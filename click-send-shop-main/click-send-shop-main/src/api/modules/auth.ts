@@ -1,4 +1,4 @@
-import { post, get } from "../request";
+﻿import { post, get } from "@/api/request";
 import type {
   LoginParams,
   RegisterParams,
@@ -53,3 +53,4 @@ export function getAuthFeatures() {
 export function exchangeOAuthTicket(params: OAuthExchangeParams) {
   return post<LoginResult>("/auth/oauth/exchange", params);
 }
+

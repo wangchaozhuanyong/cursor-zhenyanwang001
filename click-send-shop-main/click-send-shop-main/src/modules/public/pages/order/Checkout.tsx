@@ -562,7 +562,7 @@ export default function Checkout() {
     if (!submittedOrder) return;
     const copied = await copyToClipboard(generateOrderText(submittedOrder));
     if (copied) {
-      toast.success("宸插鍒惰鍗曞唴瀹?, toastPresetQuickSuccess);
+      toast.success("已复制订单内容", toastPresetQuickSuccess);
     } else {
       toast.error("澶嶅埗澶辫触锛岃鎵嬪姩澶嶅埗璁㈠崟鍐呭");
     }

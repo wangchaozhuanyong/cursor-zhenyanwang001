@@ -323,7 +323,20 @@ export default function Search() {
                   ))}
             </div>
             {!loading && products.length === 0 && (
-              <div className="py-20 text-center text-sm text-muted-foreground">没有找到相关商品</div>
+              <div className="py-20 text-center text-sm text-muted-foreground">
+                <p>没有找到相关商品</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery("");
+                    setDebouncedQuery("");
+                    setShowHistory(true);
+                  }}
+                  className="mt-3 rounded-full border border-[var(--theme-border)] px-4 py-1.5 text-xs text-[var(--theme-text)]"
+                >
+                  清空搜索重新查看
+                </button>
+              </div>
             )}
           </>
         )}

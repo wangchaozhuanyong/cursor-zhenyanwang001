@@ -5,6 +5,7 @@ import { useProductStore } from "@/stores/useProductStore";
 import { useCartStore } from "@/stores/useCartStore";
 import { useHistoryStore } from "@/stores/useHistoryStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
+import { useNotificationStore } from "@/stores/useNotificationStore";
 import ProductCard from "@/components/ProductCard";
 import ProductReviews from "@/components/ProductReviews";
 import { useProductReviews } from "@/hooks/useProductReviews";
@@ -21,6 +22,7 @@ import { copyToClipboard } from "@/utils/clipboard";
 import { trackAddToCart, trackProductView } from "@/utils/tracking";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { parseSstEnabled } from "@/utils/sstTax";
+import NotificationIconButton from "@/components/NotificationIconButton";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -31,6 +33,8 @@ export default function ProductDetail() {
   const [qty, setQty] = useState(1);
   const [selectedVariantId, setSelectedVariantId] = useState<string>("");
   const trackedProductIdRef = useRef<string | null>(null);
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
 
   const {
     currentProduct: product,
@@ -70,6 +74,10 @@ export default function ProductDetail() {
   }, [product]);
 
   useEffect(() => {
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
+
+  useEffect(() => {
     if (!product) return;
     const active = product.active_activity;
     const remaining = active ? Math.max(0, active.remaining_stock ?? 0) : product.stock;
@@ -81,7 +89,7 @@ export default function ProductDetail() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background pb-28 md:pb-0">
-        <DetailHeader goBack={goBack} totalItems={totalItems} />
+        <DetailHeader goBack={goBack} totalItems={totalItems} unreadCount={unreadCount} />
         <div className="mx-auto w-full max-w-screen-xl px-0 md:px-6">
           <div className="md:grid md:grid-cols-2 md:gap-10 md:py-10">
             <Skeleton className="w-full md:rounded-2xl" style={{ aspectRatio: "var(--theme-image-ratio)" }} />
@@ -99,7 +107,7 @@ export default function ProductDetail() {
   if (error || !product) {
     return (
       <div className="min-h-screen bg-background">
-        <DetailHeader goBack={goBack} totalItems={totalItems} />
+        <DetailHeader goBack={goBack} totalItems={totalItems} unreadCount={unreadCount} />
         <div className="p-8 text-center text-muted-foreground">
           <p>{error ?? "商品不存在"}</p>
           <button
@@ -183,6 +191,7 @@ export default function ProductDetail() {
       <DetailHeader
         goBack={goBack}
         totalItems={totalItems}
+        unreadCount={unreadCount}
         onShare={handleShare}
       />
 
@@ -493,10 +502,12 @@ function buildDetailSections(description: string): string[] {
 function DetailHeader({
   goBack,
   totalItems,
+  unreadCount,
   onShare,
 }: {
   goBack: () => void;
   totalItems: number;
+  unreadCount: number;
   onShare?: () => void;
 }) {
   const navigate = useNavigate();
@@ -539,6 +550,7 @@ function DetailHeader({
               </span>
             )}
           </SquishButton>
+          <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} />
         </div>
       </div>
     </header>

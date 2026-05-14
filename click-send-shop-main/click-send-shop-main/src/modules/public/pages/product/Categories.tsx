@@ -1,8 +1,10 @@
 ﻿import { useState, useEffect, useCallback, useRef } from "react";
 import { ArrowLeft, ChevronDown } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useProductStore } from "@/stores/useProductStore";
+import { useNotificationStore } from "@/stores/useNotificationStore";
+import NotificationIconButton from "@/components/NotificationIconButton";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import ProductFilterDrawer from "@/components/ProductFilterDrawer";
@@ -21,6 +23,9 @@ import {
 
 export default function Categories() {
   const goBack = useGoBack();
+  const navigate = useNavigate();
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
   const [searchParams] = useSearchParams();
   const [activeCat, setActiveCat] = useState(searchParams.get("cat") || "all");
   const [activeTagId, setActiveTagId] = useState(searchParams.get("tag_id") || "");
@@ -42,6 +47,10 @@ export default function Categories() {
   useEffect(() => {
     loadCategories();
   }, [loadCategories]);
+
+  useEffect(() => {
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
 
   useEffect(() => {
     productService.fetchProductTags(12).then(setQuickTags).catch(() => setQuickTags([]));
@@ -136,6 +145,7 @@ export default function Categories() {
             placeholder="搜索商品..."
             className="flex-1 rounded-full bg-[var(--theme-bg)] border border-[var(--theme-border)] px-4 py-2 text-sm text-[var(--theme-text)] outline-none placeholder:text-[var(--theme-text-muted)]"
           />
+          <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} />
         </div>
       </header>
 

@@ -202,7 +202,7 @@ export default function AdminProductForm() {
         sales_count: Number.isFinite(scNum) ? scNum : 0,
         stock: mainStock,
         points: parseInt(form.points, 10) || 0,
-        category_id: form.category_id || null,
+        category_id: form.category_id || "",
         sort_order: parseInt(form.sort_order, 10) || 0,
         description: form.description,
         cover_image: form.cover_image,

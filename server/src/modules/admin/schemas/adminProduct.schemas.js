@@ -33,7 +33,7 @@ const adminProductCreateBodySchema = z.object({
   original_price: z.union([z.coerce.number(), z.null()]).optional(),
   sales_count: z.coerce.number().int().nonnegative().optional(),
   points: z.coerce.number().int().nonnegative().optional(),
-  category_id: z.union([z.string().max(36), z.literal('')]).optional(),
+  category_id: z.union([z.string().max(36), z.literal(''), z.null()]).optional(),
   stock: z.coerce.number().int().nonnegative().optional(),
   status: z.enum(['draft', 'active', 'inactive']).optional(),
   lifecycle_status: lifecycleStatusSchema.optional(),

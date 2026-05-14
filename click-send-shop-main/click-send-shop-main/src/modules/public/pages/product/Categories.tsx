@@ -123,6 +123,14 @@ export default function Categories() {
   const scrollTabKey =
     activeCat === "all" ? "all" : findRootCategoryIdForActive(categories, activeCat) ?? activeCat;
 
+  const renderCategoryMark = (category: Category) => {
+    if (category.icon_url) {
+      return <img src={category.icon_url} alt="" className="mr-1 inline-block h-4 w-4 rounded object-cover align-text-bottom" />;
+    }
+    if (category.icon) return <span className="mr-1">{category.icon}</span>;
+    return null;
+  };
+
   useEffect(() => {
     const btn = categoryBtnRefs.current.get(scrollTabKey);
     btn?.scrollIntoView({
@@ -205,7 +213,7 @@ export default function Categories() {
                     }`}
                   >
                     <span className="max-w-[9.5rem] truncate">
-                      {node.icon ? `${node.icon} ` : null}
+                      {renderCategoryMark(node)}
                       {node.name}
                     </span>
                     {hasChildren ? (
@@ -237,7 +245,7 @@ export default function Categories() {
                       : "border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]"
                   }`}
                 >
-                  {child.icon ? `${child.icon} ` : null}
+                  {renderCategoryMark(child)}
                   {child.name}
                 </button>
               ))}

@@ -19,6 +19,14 @@ export default function CategorySideTree({
   onRootClick,
   onChildClick,
 }: CategorySideTreeProps) {
+  const renderCategoryMark = (category: Category) => {
+    if (category.icon_url) {
+      return <img src={category.icon_url} alt="" className="mr-1 inline-block h-4 w-4 rounded object-cover align-text-bottom" />;
+    }
+    if (category.icon) return <span className="mr-1">{category.icon}</span>;
+    return null;
+  };
+
   return (
     <aside className="hidden md:block md:w-64 lg:w-72">
       <div className="sticky top-20 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
@@ -52,7 +60,7 @@ export default function CategorySideTree({
                   }`}
                 >
                   <span className="truncate">
-                    {category.icon ? `${category.icon} ` : ""}
+                    {renderCategoryMark(category)}
                     {category.name}
                   </span>
                   {hasChildren ? (
@@ -73,7 +81,7 @@ export default function CategorySideTree({
                             : "text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg)]"
                         }`}
                       >
-                        {child.icon ? `${child.icon} ` : ""}
+                        {renderCategoryMark(child)}
                         {child.name}
                       </button>
                     ))}

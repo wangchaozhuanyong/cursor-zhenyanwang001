@@ -79,8 +79,8 @@ export default function BannerCarousel({ banners }: BannerCarouselProps) {
 
   return (
     <div
-      className="relative overflow-hidden rounded-[1.35rem] theme-shadow"
-      style={{ aspectRatio: "2.34 / 1" }}
+      className="relative overflow-hidden theme-shadow"
+      style={{ aspectRatio: "2.34 / 1", borderRadius: "var(--theme-radius)" }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -101,9 +101,6 @@ export default function BannerCarousel({ banners }: BannerCarouselProps) {
         />
       </AnimatePresence>
 
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-transparent" />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-
       <div className="absolute inset-0 flex items-end justify-between p-5">
         <AnimatePresence mode="wait">
           {String(banner.title || "").trim() ? (
@@ -115,7 +112,9 @@ export default function BannerCarousel({ banners }: BannerCarouselProps) {
               transition={{ duration: 0.3 }}
               className="max-w-[70%]"
             >
-              <p className="font-display text-2xl font-bold leading-tight text-white">{banner.title}</p>
+              <p className="font-display text-2xl font-bold leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">
+                {banner.title}
+              </p>
             </motion.div>
           ) : (
             <div />

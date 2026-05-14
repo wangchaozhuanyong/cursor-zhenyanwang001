@@ -15,6 +15,7 @@ import { normalizeThemeConfig, normalizeThemeSkinsPayload } from "@/utils/themeC
 import BannerCarousel from "@/components/BannerCarousel";
 import ProductCard from "@/components/ProductCard";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
+import banner1Image from "@/assets/banner1.jpg";
 
 type ConfigTab = "colors" | "base" | "nav" | "card" | "marketing" | "advanced";
 type PreviewTab = "home" | "product" | "member" | "components";
@@ -364,7 +365,7 @@ export default function AdminThemeSettings() {
           <div className="space-y-3 rounded-xl border border-border bg-background p-3">
             {previewTab === "home" && (
               <>
-                <div className="rounded-lg border border-border p-2"><BannerCarousel banners={[{ id: "1", title: "首页预览 Banner", image: "/assets/banner1.jpg", link: "/products" } as any]} /></div>
+                <div className="rounded-lg border border-border p-2"><BannerCarousel banners={[{ id: "1", title: "首页预览 Banner", image: banner1Image, link: "/products" } as any]} /></div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="store-card p-3"><p className="text-sm font-semibold">新人礼包</p><StorePrice price={99} originalPrice={129} /></div>
                   <div className="store-card p-3"><p className="text-sm font-semibold">热门推荐</p><StoreBadge type="hot">热销</StoreBadge></div>

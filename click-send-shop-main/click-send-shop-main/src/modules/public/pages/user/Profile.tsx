@@ -23,8 +23,10 @@ import { isLoggedIn } from "@/utils/token";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import SkinPickerDialog from "@/components/SkinPickerDialog";
+import NotificationIconButton from "@/components/NotificationIconButton";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
+import { useNotificationStore } from "@/stores/useNotificationStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useUserStore } from "@/stores/useUserStore";
 import * as inviteService from "@/services/inviteService";
@@ -98,6 +100,7 @@ export default function Profile() {
   const authStore = useAuthStore();
   const { nickname, avatar, pointsBalance, inviteCode, loadProfile } = useUserStore();
   const { orders, loadOrders } = useOrderStore();
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
   const favoriteCount = useFavoritesStore((s) => s.favoriteIds.length);
   const [inviteCount, setInviteCount] = useState(0);
 
@@ -105,6 +108,7 @@ export default function Profile() {
     if (!isLoggedIn()) return;
     loadProfile().catch(() => {});
     loadOrders().catch(() => {});
+    useNotificationStore.getState().fetchUnreadCount();
     inviteService.fetchInviteStats().then((s) => setInviteCount(s.directCount || 0)).catch(() => {});
   }, [loadOrders, loadProfile]);
 
@@ -164,10 +168,7 @@ export default function Profile() {
               <p className="text-xl font-bold text-[var(--theme-price)]">{siteName}</p>
             </div>
             <div className="flex items-center gap-2">
-              <button type="button" className="relative rounded-full border border-[var(--theme-border)] p-2.5" onClick={() => navigate("/notifications")}>
-                <MessageCircle size={18} />
-                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
-              </button>
+              <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} />
               <button type="button" className="rounded-full border border-[var(--theme-border)] p-2.5" onClick={() => navigate("/settings")}>
                 <Settings size={18} />
               </button>

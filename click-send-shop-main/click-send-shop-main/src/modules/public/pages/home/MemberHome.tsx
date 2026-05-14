@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState, useRef } from "react";
-import { Bell, Flame, Gift, Heart, LayoutGrid, RefreshCw, Search, ShoppingCart, Sparkles, Star, Ticket, Truck, Zap, ShieldCheck, Wallet } from "lucide-react";
+import { Flame, Gift, Heart, LayoutGrid, RefreshCw, Search, ShoppingCart, Sparkles, Star, Ticket, Truck, Zap, ShieldCheck, Wallet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
@@ -19,6 +19,7 @@ import HomeOpsBlocks from "./HomeOpsBlocks";
 import * as productService from "@/services/productService";
 import type { UserCoupon } from "@/types/coupon";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
+import NotificationIconButton from "@/components/NotificationIconButton";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
@@ -221,10 +222,7 @@ export default function MemberHome() {
             <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center"><Search className="h-4 w-4 text-[var(--theme-text-muted)]" /></div>
             <input type="text" placeholder="搜索商品或品牌..." onFocus={() => navigate("/search")} className="w-full rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] py-1.5 pl-9 pr-4 text-sm text-[var(--theme-text)] focus:border-[var(--theme-price)] focus:outline-none" />
           </div>
-          <button type="button" className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50" onClick={() => navigate("/notifications")}>
-            <Bell size={16} className="text-[var(--theme-text)]" />
-            {unreadCount > 0 && <span className="absolute right-1 top-1 h-2 w-2 rounded-full border border-[var(--theme-bg)] bg-[var(--theme-price)]" />}
-          </button>
+          <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} />
         </div>
       </header>
       <main className="mx-auto max-w-screen-xl px-4 pt-4">

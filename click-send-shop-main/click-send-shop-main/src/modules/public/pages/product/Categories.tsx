@@ -7,6 +7,7 @@ import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import ProductFilterDrawer from "@/components/ProductFilterDrawer";
 import ProductSortBar from "@/components/ProductSortBar";
+import CategorySideTree from "@/components/CategorySideTree";
 import { Skeleton } from "@/components/ui/skeleton";
 import * as productService from "@/services/productService";
 import type { ProductSortType, ProductTag } from "@/types/product";
@@ -138,9 +139,9 @@ export default function Categories() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg">
+      <main className="mx-auto max-w-screen-xl">
         {showNewOnly ? (
-          <div className="px-4 pt-4">
+          <div className="px-4 pt-4 md:px-6">
             <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm font-semibold text-[var(--theme-text-on-surface)]">
               正在筛选：新品上市
             </div>
@@ -148,7 +149,7 @@ export default function Categories() {
         ) : null}
 
         {/* 仅顶层分类横向滚动；有子类的父级点击展开下方子类 */}
-        <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 py-3 border-b border-[var(--theme-border)]">
+        <div className="no-scrollbar flex gap-2 overflow-x-auto border-b border-[var(--theme-border)] px-4 py-3 md:hidden">
           {loading && categories.length === 0
             ? Array.from({ length: 6 }).map((_, i) => (
                 <Skeleton key={i} className="h-8 w-16 flex-shrink-0 rounded-full" />
@@ -234,60 +235,75 @@ export default function Categories() {
           </div>
         ) : null}
 
-        <div className="flex items-center gap-3 px-4 pb-4 pt-3">
-          <ProductSortBar value={sort} onChange={setSort} />
-          <ProductFilterDrawer activeTagCount={activeTagId ? 1 : 0} onReset={clearFilters}>
-            {quickTags.length > 0 ? (
-              <div>
-                <p className="mb-2 text-xs font-semibold text-[var(--theme-text)]">热门标签</p>
-                <div className="flex flex-wrap gap-2">
-                  {quickTags.map((tag) => {
-                    const active = activeTagId === tag.id;
-                    return (
-                      <button
-                        key={tag.id}
-                        type="button"
-                        onClick={() => setActiveTagId(active ? "" : tag.id)}
-                        className={`rounded-full border px-3 py-1.5 text-xs font-bold transition-transform active:scale-95 ${
-                          active ? "ring-2 ring-[var(--theme-price)]/30" : ""
-                        }`}
-                        style={{
-                          backgroundColor: active ? tag.bg_color || "#FEF3C7" : "var(--theme-surface)",
-                          borderColor: tag.bg_color || "var(--theme-border)",
-                          color: active ? tag.text_color || "#92400E" : "var(--theme-text)",
-                        }}
-                      >
-                        {tag.name}
-                      </button>
-                    );
-                  })}
-                </div>
+        <div className="px-4 pb-6 pt-3 md:px-6">
+          <div className="md:grid md:grid-cols-[260px,1fr] md:gap-6 lg:grid-cols-[288px,1fr]">
+            <CategorySideTree
+              categories={categories}
+              activeCat={activeCat}
+              expandedParentId={expandedParentId}
+              onSelectAll={handleSelectAll}
+              onRootClick={handleRootCategoryClick}
+              onChildClick={handleSelectChild}
+            />
+
+            <section>
+              <div className="mb-3 flex items-center gap-3">
+                <ProductSortBar value={sort} onChange={setSort} />
+                <ProductFilterDrawer activeTagCount={activeTagId ? 1 : 0} onReset={clearFilters}>
+                  {quickTags.length > 0 ? (
+                    <div>
+                      <p className="mb-2 text-xs font-semibold text-[var(--theme-text)]">热门标签</p>
+                      <div className="flex flex-wrap gap-2">
+                        {quickTags.map((tag) => {
+                          const active = activeTagId === tag.id;
+                          return (
+                            <button
+                              key={tag.id}
+                              type="button"
+                              onClick={() => setActiveTagId(active ? "" : tag.id)}
+                              className={`rounded-full border px-3 py-1.5 text-xs font-bold transition-transform active:scale-95 ${
+                                active ? "ring-2 ring-[var(--theme-price)]/30" : ""
+                              }`}
+                              style={{
+                                backgroundColor: active ? tag.bg_color || "#FEF3C7" : "var(--theme-surface)",
+                                borderColor: tag.bg_color || "var(--theme-border)",
+                                color: active ? tag.text_color || "#92400E" : "var(--theme-text)",
+                              }}
+                            >
+                              {tag.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[var(--theme-text-muted)]">暂无可用筛选标签</p>
+                  )}
+                </ProductFilterDrawer>
               </div>
-            ) : (
-              <p className="text-sm text-[var(--theme-text-muted)]">暂无可用筛选标签</p>
-            )}
-          </ProductFilterDrawer>
-        </div>
 
-        {/* Error */}
-        {error && (
-          <div className="mx-4 mb-3 rounded-xl bg-destructive/10 p-3 text-center text-sm text-destructive">
-            {error}
+              {/* Error */}
+              {error && (
+                <div className="mb-3 rounded-xl bg-destructive/10 p-3 text-center text-sm text-destructive">
+                  {error}
+                </div>
+              )}
+
+              {/* Products */}
+              <div className="grid grid-cols-2 gap-4 pt-1 md:grid-cols-3 lg:grid-cols-4">
+                {loading
+                  ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
+                  : products.map((p, i) => (
+                      <ProductCard key={p.id} product={p} index={i} />
+                    ))}
+                {!loading && products.length === 0 && (
+                  <div className="col-span-2 py-20 text-center text-muted-foreground md:col-span-3 lg:col-span-4">
+                    暂无商品
+                  </div>
+                )}
+              </div>
+            </section>
           </div>
-        )}
-
-        {/* Products */}
-        <div className="grid grid-cols-2 gap-4 px-4 pb-6 pt-1">
-          {loading
-            ? Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)
-            : products.map((p, i) => (
-                <ProductCard key={p.id} product={p} index={i} />
-              ))}
-          {!loading && products.length === 0 && (
-            <div className="col-span-2 py-20 text-center text-muted-foreground">
-              暂无商品
-            </div>
-          )}
         </div>
       </main>
     </div>

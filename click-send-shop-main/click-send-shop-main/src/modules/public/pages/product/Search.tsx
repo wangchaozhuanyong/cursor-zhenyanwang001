@@ -150,8 +150,8 @@ export default function Search() {
 
   return (
     <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-20">
-      <div className="sticky top-0 z-40 bg-[var(--theme-surface)]/95 px-4 py-3 backdrop-blur-md border-b border-[var(--theme-border)]">
-        <div className="mx-auto max-w-lg space-y-3">
+      <div className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 px-4 py-3 backdrop-blur-md md:px-6">
+        <div className="mx-auto max-w-screen-xl space-y-3">
           <SearchBar
             value={query}
             onChange={handleSearch}
@@ -171,9 +171,64 @@ export default function Search() {
         </div>
       </div>
 
-      <main className="mx-auto max-w-lg px-4 py-6">
+      <main className="mx-auto max-w-screen-xl px-4 py-6 md:px-6">
+        <div className="md:grid md:grid-cols-[280px,1fr] md:gap-6 lg:grid-cols-[320px,1fr]">
+          <aside className="hidden md:block">
+            {(history.length > 0 || hotTerms.length > 0) && (
+              <div className="sticky top-24 space-y-4 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
+                {history.length > 0 && (
+                  <section>
+                    <div className="mb-3 flex items-center justify-between">
+                      <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                        <Clock size={14} className="text-muted-foreground" /> 搜索历史
+                      </h3>
+                      <button
+                        onClick={clearHistory}
+                        className="text-xs text-muted-foreground hover:text-destructive"
+                      >
+                        清空
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {history.map((term) => (
+                        <button
+                          key={`desk-${term}`}
+                          onClick={() => selectHistory(term)}
+                          className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-1.5 text-xs text-[var(--theme-text)]"
+                        >
+                          {term}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {hotTerms.length > 0 && (
+                  <section>
+                    <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                      <TrendingUp size={14} className="text-gold" /> 热门搜索
+                    </h3>
+                    <div className="space-y-2">
+                      {hotTerms.slice(0, 8).map((term, idx) => (
+                        <button
+                          key={`desk-hot-${term.keyword}`}
+                          onClick={() => commitSearch(term.keyword)}
+                          className="flex w-full items-center justify-between rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-left text-xs text-[var(--theme-text)]"
+                        >
+                          <span className="truncate">{idx + 1}. {term.keyword}</span>
+                          <span className="text-[10px] text-muted-foreground">{term.search_count}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                )}
+              </div>
+            )}
+          </aside>
+
+          <section>
         {shouldShowDiscovery && (
-          <div className="mb-6 space-y-6">
+          <div className="mb-6 space-y-6 md:hidden">
             {history.length > 0 && (
               <section>
                 <div className="mb-3 flex items-center justify-between">
@@ -260,7 +315,7 @@ export default function Search() {
 
         {!shouldShowDiscovery && (
           <>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
               {loading
                 ? Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)
                 : products.map((product) => (
@@ -272,6 +327,8 @@ export default function Search() {
             )}
           </>
         )}
+          </section>
+        </div>
       </main>
     </div>
   );

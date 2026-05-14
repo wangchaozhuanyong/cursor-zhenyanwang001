@@ -33,6 +33,7 @@ import { useUserStore } from "@/stores/useUserStore";
 import * as inviteService from "@/services/inviteService";
 import * as uploadService from "@/services/uploadService";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { getMutedTextColor, getReadableTextColor } from "@/utils/themeContrast";
 
 const CARD_CLASS = "rounded-2xl bg-[var(--theme-surface)] shadow-[var(--theme-shadow)]";
 const SECTION_PADDING = "p-4";
@@ -73,14 +74,40 @@ function ProfileHeroCard({
 }) {
   const heroStyle =
     memberCardStyle === "blackGold"
-      ? "bg-[linear-gradient(120deg,#15120f,#2a2218)] text-[#f7efd9]"
+      ? "bg-[linear-gradient(120deg,#15120f,#2a2218)]"
       : memberCardStyle === "gold"
         ? "bg-[linear-gradient(120deg,#f5ead1,#ead6aa)]"
         : memberCardStyle === "fresh"
           ? "bg-[linear-gradient(120deg,#e9f7f4,#d8efe9)]"
           : "bg-[var(--theme-bg)]";
+
+  const heroBg =
+    memberCardStyle === "blackGold"
+      ? "#1b160f"
+      : memberCardStyle === "gold"
+        ? "#f1dfbd"
+        : memberCardStyle === "fresh"
+          ? "#e1f3ec"
+          : "var(--theme-bg)";
+
+  const heroText = getReadableTextColor(heroBg, undefined, 4.5);
+  const heroMuted = getMutedTextColor(heroBg, heroText);
+  const badgeBg = `color-mix(in srgb, ${heroText} 14%, transparent)`;
+  const switchBg = `color-mix(in srgb, ${heroText} 10%, white)`;
+  const switchBorder = `color-mix(in srgb, ${heroText} 20%, transparent)`;
+
   return (
-    <section className={`${CARD_CLASS} ${SECTION_PADDING} ${heroStyle}`}>
+    <section
+      className={`${CARD_CLASS} ${SECTION_PADDING} ${heroStyle}`}
+      style={{
+        color: heroText,
+        ["--hero-text" as string]: heroText,
+        ["--hero-muted" as string]: heroMuted,
+        ["--hero-badge-bg" as string]: badgeBg,
+        ["--hero-switch-bg" as string]: switchBg,
+        ["--hero-switch-border" as string]: switchBorder,
+      }}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <button type="button" onClick={onAvatarClick} className="relative shrink-0" aria-label="更换头像">
@@ -91,15 +118,15 @@ function ProfileHeroCard({
           </button>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <p className="truncate text-xl font-semibold leading-tight text-[var(--theme-text)]">{userName}</p>
-              <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-secondary)_20%,white)] px-2 py-0.5 text-[10px] font-semibold text-[var(--theme-secondary)]">
+              <p className="truncate text-xl font-semibold leading-tight text-[var(--hero-text)]">{userName}</p>
+              <span className="rounded-full bg-[var(--hero-badge-bg)] px-2 py-0.5 text-[10px] font-semibold text-[var(--hero-text)]">
                 {memberLevelName}
               </span>
             </div>
-            <p className="mt-1 text-sm text-[var(--theme-muted)]">邀请码: {code}</p>
+            <p className="mt-1 text-sm text-[var(--hero-muted)]">邀请码: {code}</p>
           </div>
         </div>
-        <div className="shrink-0">{skinTrigger}</div>
+        <div className="shrink-0 [&_button]:border [&_button]:border-[var(--hero-switch-border)] [&_button]:bg-[var(--hero-switch-bg)] [&_button]:text-[var(--hero-text)]">{skinTrigger}</div>
       </div>
     </section>
   );

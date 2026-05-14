@@ -73,13 +73,18 @@ function ProfileHeroCard({
       <div className="relative flex items-center gap-3">
         <img src={avatar || logoSrc} alt={userName} className="h-[86px] w-[86px] rounded-full border-2 border-white object-cover" />
         <div className="min-w-0 flex-1">
-          <div className="mb-1 inline-flex rounded-full bg-white/60 px-2 py-0.5 text-[10px] font-semibold text-[var(--theme-text-on-surface)]">尊享会员</div>
-          <p className="text-2xl font-bold text-[var(--theme-text-on-surface)]">{userName}</p>
-          <p className="mt-1 text-sm text-[var(--theme-text-muted-on-surface)]">邀请码：{code}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-[30px] font-semibold leading-none text-[var(--theme-text-on-surface)]">真烟网会员</p>
+            <span className="rounded-full bg-[#9f6f24] px-2.5 py-1 text-[10px] font-semibold text-white">尊享会员</span>
+          </div>
+          <p className="mt-1 text-2xl font-bold text-[var(--theme-text-on-surface)]">{userName}</p>
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <p className="text-sm text-[var(--theme-text-muted-on-surface)]">邀请码: {code}</p>
+            <button type="button" onClick={onSettings} className="shrink-0 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]">
+              切换皮肤
+            </button>
+          </div>
         </div>
-        <button type="button" onClick={onSettings} className="shrink-0 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]">
-          切换皮肤
-        </button>
       </div>
     </div>
   );
@@ -152,7 +157,7 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-[var(--theme-bg)] px-4 pb-24 pt-[max(env(safe-area-inset-top),1rem)] text-[var(--theme-text)]">
       <main className="mx-auto max-w-lg rounded-[1.9rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 shadow-[var(--theme-shadow)] space-y-3">
-        <section className="rounded-[1.5rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
+        <section className="p-1">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <img src={logoSrc} alt={siteName} className="h-9 w-9 rounded-lg object-contain" />
@@ -163,13 +168,6 @@ export default function Profile() {
                 <MessageCircle size={18} />
                 <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
               </button>
-              <SkinPickerDialog
-                trigger={
-                  <button type="button" className="rounded-full border border-[var(--theme-border)] p-2.5" aria-label="皮肤切换">
-                    <Palette size={18} />
-                  </button>
-                }
-              />
               <button type="button" className="rounded-full border border-[var(--theme-border)] p-2.5" onClick={() => navigate("/settings")}>
                 <Settings size={18} />
               </button>

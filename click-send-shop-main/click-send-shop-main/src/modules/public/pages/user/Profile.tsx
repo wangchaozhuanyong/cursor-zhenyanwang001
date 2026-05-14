@@ -47,6 +47,44 @@ function BlockTitle({ title, rightLabel, onRightClick }: { title: string; rightL
   );
 }
 
+function ProfileHeroCard({
+  logoSrc,
+  avatar,
+  userName,
+  code,
+  onSettings,
+}: {
+  logoSrc: string;
+  avatar?: string;
+  userName: string;
+  code: string;
+  onSettings: () => void;
+}) {
+  return (
+    <div
+      className="relative overflow-hidden rounded-3xl border border-[var(--theme-border)] p-4"
+      style={{
+        background:
+          "linear-gradient(110deg, color-mix(in srgb, var(--theme-price) 20%, white), color-mix(in srgb, var(--theme-price) 12%, white) 45%, color-mix(in srgb, var(--theme-price) 24%, white))",
+      }}
+    >
+      <div className="pointer-events-none absolute -right-6 -top-8 h-36 w-36 rounded-full bg-white/25 blur-2xl" />
+      <div className="pointer-events-none absolute -bottom-8 right-6 h-24 w-24 rounded-full bg-black/5 blur-2xl" />
+      <div className="relative flex items-center gap-3">
+        <img src={avatar || logoSrc} alt={userName} className="h-[86px] w-[86px] rounded-full border-2 border-white object-cover" />
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 inline-flex rounded-full bg-white/60 px-2 py-0.5 text-[10px] font-semibold text-[var(--theme-text-on-surface)]">尊享会员</div>
+          <p className="text-2xl font-bold text-[var(--theme-text-on-surface)]">{userName}</p>
+          <p className="mt-1 text-sm text-[var(--theme-text-muted-on-surface)]">邀请码：{code}</p>
+        </div>
+        <button type="button" onClick={onSettings} className="shrink-0 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]">
+          切换皮肤
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Profile() {
   const navigate = useNavigate();
   const siteInfo = useSiteInfo();
@@ -113,8 +151,8 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-[var(--theme-bg)] px-4 pb-24 pt-[max(env(safe-area-inset-top),1rem)] text-[var(--theme-text)]">
-      <main className="mx-auto max-w-lg space-y-4">
-        <section className="rounded-[1.7rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
+      <main className="mx-auto max-w-lg rounded-[1.9rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 shadow-[var(--theme-shadow)] space-y-3">
+        <section className="rounded-[1.5rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <img src={logoSrc} alt={siteName} className="h-9 w-9 rounded-lg object-contain" />
@@ -137,47 +175,29 @@ export default function Profile() {
               </button>
             </div>
           </div>
-
-          <div
-            className="rounded-3xl border border-[var(--theme-border)] p-4"
-            style={{
-              background:
-                "linear-gradient(90deg, color-mix(in srgb, var(--theme-price) 20%, white), color-mix(in srgb, var(--theme-price) 14%, white), color-mix(in srgb, var(--theme-price) 26%, white))",
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <img src={avatar || logoSrc} alt={userName} className="h-[86px] w-[86px] rounded-full border-2 border-white object-cover" />
-              <div className="min-w-0 flex-1">
-                <p className="text-2xl font-bold text-[var(--theme-text-on-surface)]">{userName}</p>
-                <p className="mt-1 text-sm text-[var(--theme-text-muted-on-surface)]">邀请码：{code}</p>
-                <button type="button" onClick={() => navigate("/settings")} className="mt-2 rounded-full bg-[var(--theme-primary)] px-4 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]">
-                  个人设置
-                </button>
-              </div>
-            </div>
-          </div>
+          <ProfileHeroCard logoSrc={logoSrc} avatar={avatar} userName={userName} code={code} onSettings={() => navigate("/settings")} />
         </section>
 
         <section className="rounded-[1.45rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
           <div className="grid grid-cols-4 divide-x divide-[var(--theme-border)]">
             <button type="button" onClick={() => navigate("/points")} className="space-y-1 px-1 text-center">
               <Gift className="mx-auto text-[var(--theme-price)]" size={22} />
-              <p className="text-sm">积分</p>
+              <p className="text-xs">积分</p>
               <p className="text-2xl font-bold">{pointsBalance}</p>
             </button>
             <button type="button" onClick={() => navigate("/coupons")} className="space-y-1 px-1 text-center">
               <Ticket className="mx-auto text-[var(--theme-price)]" size={22} />
-              <p className="text-sm">优惠券</p>
+              <p className="text-xs">优惠券</p>
               <p className="text-2xl font-bold">12</p>
             </button>
             <button type="button" onClick={() => navigate("/favorites")} className="space-y-1 px-1 text-center">
               <Heart className="mx-auto text-[var(--theme-price)]" size={22} />
-              <p className="text-sm">收藏</p>
+              <p className="text-xs">收藏</p>
               <p className="text-2xl font-bold">{favoriteCount}</p>
             </button>
             <button type="button" onClick={() => navigate("/rewards")} className="space-y-1 px-1 text-center">
               <Wallet className="mx-auto text-[var(--theme-price)]" size={22} />
-              <p className="text-sm">返现</p>
+              <p className="text-xs">返现</p>
               <p className="text-2xl font-bold">RM 0</p>
             </button>
           </div>

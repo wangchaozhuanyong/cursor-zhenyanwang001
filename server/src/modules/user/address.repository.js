@@ -6,7 +6,7 @@ async function getConnection() {
 
 async function selectByUser(userId) {
   const [rows] = await db.query(
-    'SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC',
+    'SELECT * FROM addresses WHERE user_id = ? ORDER BY is_default DESC, id DESC',
     [userId],
   );
   return rows;
@@ -34,7 +34,7 @@ async function deleteById(id) {
 
 async function selectLatestRemainingId(userId) {
   const [remaining] = await db.query(
-    'SELECT id FROM addresses WHERE user_id = ? ORDER BY created_at DESC LIMIT 1',
+    'SELECT id FROM addresses WHERE user_id = ? ORDER BY id DESC LIMIT 1',
     [userId],
   );
   return remaining.length > 0 ? remaining[0].id : null;
@@ -93,3 +93,4 @@ module.exports = {
   updateAddressDynamic,
   selectRowById,
 };
+

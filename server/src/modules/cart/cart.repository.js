@@ -25,7 +25,19 @@ async function selectCartLinesWithProducts(userId) {
 
 async function selectActiveProductId(productId) {
   const [[row]] = await db.query(
-    'SELECT id FROM products WHERE id = ? AND lifecycle_status = 1 AND deleted_at IS NULL',
+    'SELECT id, name, stock FROM products WHERE id = ? AND lifecycle_status = 1 AND deleted_at IS NULL',
+    [productId],
+  );
+  return row || null;
+}
+
+async function selectDefaultVariant(productId) {
+  const [[row]] = await db.query(
+    `SELECT id, product_id, sku_code, title, price, stock
+     FROM product_variants
+     WHERE product_id = ?
+     ORDER BY is_default DESC, sort_order ASC, id ASC
+     LIMIT 1`,
     [productId],
   );
   return row || null;
@@ -83,6 +95,7 @@ async function deleteAllCartItems(userId) {
 module.exports = {
   selectCartLinesWithProducts,
   selectActiveProductId,
+  selectDefaultVariant,
   selectActiveVariant,
   upsertCartItem,
   selectCartLine,

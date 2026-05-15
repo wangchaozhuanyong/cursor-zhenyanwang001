@@ -82,9 +82,12 @@ export default function ProductDetail() {
   useEffect(() => {
     if (!product) return;
     const active = product.active_activity;
-    const remaining = active ? Math.max(0, active.remaining_stock ?? 0) : product.stock;
-    const limit = active?.limit_per_user && active.limit_per_user > 0 ? active.limit_per_user : product.stock;
-    const max = Math.max(0, Math.min(product.stock, remaining, limit));
+    const variants = (product.variants ?? []).filter((v) => v.id);
+    const defaultVariant = variants.find((v) => v.is_default) ?? variants[0] ?? product.default_variant ?? null;
+    const baseStock = variants.length === 1 ? Number(defaultVariant?.stock || 0) : Number(product.stock || 0);
+    const remaining = active ? Math.max(0, active.remaining_stock ?? 0) : baseStock;
+    const limit = active?.limit_per_user && active.limit_per_user > 0 ? active.limit_per_user : baseStock;
+    const max = Math.max(0, Math.min(baseStock, remaining, limit));
     setQty((prev) => (max <= 0 ? 0 : Math.max(1, Math.min(prev, max))));
   }, [product]);
 
@@ -126,19 +129,23 @@ export default function ProductDetail() {
   const activeActivity = product.active_activity;
   const availableVariants = (product.variants ?? []).filter((v) => v.id);
   const selectedVariant = availableVariants.length
-    ? availableVariants.find((v) => v.id === selectedVariantId)
-      ?? availableVariants.find((v) => v.is_default)
-      ?? availableVariants[0]
+    ? selectedVariantId
+      ? availableVariants.find((v) => v.id === selectedVariantId) ?? null
+      : availableVariants.length === 1
+        ? availableVariants[0]
+        : null
     : null;
+  const hasMultipleVariants = availableVariants.length > 1;
+  const defaultVariant = product.default_variant ?? availableVariants.find((v) => v.is_default) ?? availableVariants[0] ?? null;
   const productForCart = selectedVariant
     ? { ...product, price: selectedVariant.price, stock: selectedVariant.stock }
     : product;
   const displayPrice = selectedVariant?.price ?? product.price;
-  const displayStock = selectedVariant?.stock ?? product.stock;
-  const activityRemaining = activeActivity ? Math.max(0, activeActivity.remaining_stock ?? 0) : product.stock;
+  const displayStock = selectedVariant?.stock ?? (hasMultipleVariants ? product.stock : defaultVariant?.stock ?? product.stock);
+  const activityRemaining = activeActivity ? Math.max(0, activeActivity.remaining_stock ?? 0) : displayStock;
   const activityLimit = activeActivity?.limit_per_user && activeActivity.limit_per_user > 0
     ? activeActivity.limit_per_user
-    : product.stock;
+    : displayStock;
   const maxQty = Math.max(0, Math.min(displayStock, activityRemaining, activityLimit));
   const soldOut = maxQty <= 0;
   const detailSections = buildDetailSections(product.description);
@@ -149,18 +156,18 @@ export default function ProductDetail() {
       toast.error("库存不足");
       return;
     }
-    if (availableVariants.length && !selectedVariant) {
+    if (availableVariants.length > 1 && !selectedVariant) {
       toast.error("请选择商品规格");
       return;
     }
     try {
-      await addItem(productForCart, qty, selectedVariant);
+      await addItem(productForCart, qty, selectedVariant ?? defaultVariant);
       trackAddToCart(productForCart, qty);
       void trackEvent({
         event_type: "add_to_cart",
         module: "product_detail",
         product_id: product.id,
-        variant_id: selectedVariant?.id,
+        variant_id: selectedVariant?.id ?? defaultVariant?.id,
         quantity: qty,
         amount: Number(displayPrice || 0) * Number(qty || 0),
       });
@@ -175,16 +182,16 @@ export default function ProductDetail() {
       toast.error("库存不足");
       return;
     }
-    if (availableVariants.length && !selectedVariant) {
+    if (availableVariants.length > 1 && !selectedVariant) {
       toast.error("请选择商品规格");
       return;
     }
-    useCartStore.getState().setBuyNow(productForCart, qty, selectedVariant);
+    useCartStore.getState().setBuyNow(productForCart, qty, selectedVariant ?? defaultVariant);
     void trackEvent({
       event_type: "checkout_start",
       module: "product_detail",
       product_id: product.id,
-      variant_id: selectedVariant?.id,
+      variant_id: selectedVariant?.id ?? defaultVariant?.id,
       quantity: qty,
       amount: Number(displayPrice || 0) * Number(qty || 0),
     });

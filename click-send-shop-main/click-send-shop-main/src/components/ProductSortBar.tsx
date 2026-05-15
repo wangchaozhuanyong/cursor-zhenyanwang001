@@ -8,6 +8,7 @@ type SortItem = {
 
 const sortItems: SortItem[] = [
   { value: "default", label: "综合" },
+  { value: "sales", label: "热销" },
   { value: "newest", label: "最新" },
   { value: "price-asc", label: "价格↑" },
   { value: "price-desc", label: "价格↓" },
@@ -20,16 +21,16 @@ interface ProductSortBarProps {
 
 export default function ProductSortBar({ value, onChange }: ProductSortBarProps) {
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
-      <SlidersHorizontal size={14} className="text-muted-foreground" />
+    <div className="no-scrollbar flex min-w-0 items-center gap-2 overflow-x-auto rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
+      <SlidersHorizontal size={14} className="shrink-0 text-muted-foreground" />
       {sortItems.map((item) => (
         <button
           key={item.value}
           type="button"
           onClick={() => onChange(item.value)}
-          className={`rounded-full px-2.5 py-1 text-xs transition-colors ${
+          className={`shrink-0 rounded-full px-2.5 py-1 text-xs transition-colors ${
             value === item.value
-              ? "bg-[var(--theme-primary)] text-white"
+              ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
               : "text-muted-foreground hover:text-foreground"
           }`}
         >

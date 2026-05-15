@@ -1,20 +1,14 @@
 import { useEffect, useState } from "react";
-import { Search, SlidersHorizontal, Sparkles } from "lucide-react";
+import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
+import ProductSortBar from "@/components/ProductSortBar";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useProductStore } from "@/stores/useProductStore";
 import type { ProductSortType } from "@/types/product";
-
-const sortOptions: Array<{ value: ProductSortType; label: string }> = [
-  { value: "newest", label: "最新" },
-  { value: "default", label: "综合" },
-  { value: "price-asc", label: "价格↑" },
-  { value: "price-desc", label: "价格↓" },
-];
 
 export default function NewArrivals() {
   useDocumentTitle("新品上市");
@@ -23,9 +17,10 @@ export default function NewArrivals() {
   const { products, loading, error, loadProducts } = useProductStore();
   const [sort, setSort] = useState<ProductSortType>("newest");
 
-  const heroTitle = (siteInfo.newArrivalHeroTitle || "").trim() || "新品上市";
-  const heroSubtitle = (siteInfo.newArrivalHeroSubtitle || "").trim() || "最新上架好物，按 1:1 商品图统一浏览";
+  const heroTitle = (siteInfo.newArrivalHeroTitle || "").trim();
+  const heroSubtitle = (siteInfo.newArrivalHeroSubtitle || "").trim();
   const heroImage = (siteInfo.newArrivalHeroImage || "").trim();
+  const showHero = Boolean(heroImage || heroTitle || heroSubtitle);
 
   useEffect(() => {
     loadProducts({
@@ -53,42 +48,19 @@ export default function NewArrivals() {
       />
 
       <main className="mx-auto max-w-lg px-4 py-4">
-        <section className="relative overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
-          {heroImage ? (
-            <img
-              src={heroImage}
-              alt=""
-              aria-hidden
-              className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-15 blur-xl scale-110"
-            />
-          ) : null}
-          <div className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_18%,transparent)] blur-2xl" />
-          <div className="relative">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_14%,transparent)] px-3 py-1 text-[11px] font-bold text-[var(--theme-price)]">
-              <Sparkles size={13} />
-              New Arrival
+        {showHero ? (
+          <section className="relative flex h-[100px] items-center overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 theme-shadow">
+            {heroImage ? <img src={heroImage} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" /> : null}
+            {heroImage ? <div className="absolute inset-0 bg-black/25" /> : null}
+            <div className="relative min-w-0">
+              {heroTitle ? <h1 className="truncate text-lg font-black text-white">{heroTitle}</h1> : null}
+              {heroSubtitle ? <p className="mt-1 truncate text-xs font-medium text-white/85">{heroSubtitle}</p> : null}
             </div>
-            <h1 className="mt-3 text-2xl font-black text-[var(--theme-text-on-surface)]">{heroTitle}</h1>
-            <p className="mt-2 text-sm leading-relaxed text-[var(--theme-text-muted)]">{heroSubtitle}</p>
-          </div>
-        </section>
+          </section>
+        ) : null}
 
-        <section className="mt-4 flex items-center gap-2">
-          <SlidersHorizontal size={14} className="text-muted-foreground" />
-          {sortOptions.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => setSort(option.value)}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
-                sort === option.value
-                  ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
-                  : "border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text-muted)]"
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
+        <section className={showHero ? "mt-4" : ""}>
+          <ProductSortBar value={sort} onChange={setSort} />
         </section>
 
         {error ? (

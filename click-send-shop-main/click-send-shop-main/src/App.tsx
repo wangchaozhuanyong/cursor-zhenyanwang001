@@ -16,6 +16,8 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { isLoggedIn } from "@/utils/token";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { syncLockedInviteCodeBySearch } from "@/utils/inviteReferral";
+import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { StoreOutletFallback } from "@/components/AppRouteFallback";
 
 /* ---------- Public（前台）页面，按业务域组织 ---------- */
 const MemberHome = lazy(() => import("@/modules/public/pages/home/MemberHome"));
@@ -224,6 +226,8 @@ function AppScopeSync() {
 
 function HomeRoute() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { themeReady } = useThemeRuntime();
+  if (!themeReady) return <StoreOutletFallback />;
   const hasToken = isLoggedIn();
   return hasToken || isAuthenticated ? <MemberHome /> : <GuestHome />;
 }

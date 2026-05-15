@@ -18,6 +18,7 @@ interface PremiumCouponCardProps {
   disabled?: boolean;
   selected?: boolean;
   compact?: boolean;
+  homeCompact?: boolean;
   className?: string;
   onClick?: () => void;
   onAction?: () => void;
@@ -38,6 +39,7 @@ export default function PremiumCouponCard({
   disabled = false,
   selected = false,
   compact = false,
+  homeCompact = false,
   className = "",
   onClick,
   onAction,
@@ -54,12 +56,13 @@ export default function PremiumCouponCard({
     minimal: "bg-[var(--theme-surface)]",
   };
 
-  const amountSize = compact ? "text-2xl" : "text-3xl";
+  const dense = compact || homeCompact;
+  const amountSize = homeCompact ? "text-xl sm:text-2xl" : compact ? "text-2xl" : "text-3xl";
   const wrapper = (
     <div
-      className={`relative flex w-full items-stretch gap-2 rounded-xl border border-[var(--theme-border)] p-3 text-[var(--theme-text)] ${styleMap[couponStyle]} ${disabled ? "opacity-60" : ""} ${selected ? "ring-2 ring-[var(--theme-secondary)]" : ""} ${className}`}
+      className={`relative flex w-full items-stretch gap-2 rounded-xl border border-[var(--theme-border)] ${homeCompact ? "p-2.5" : "p-3"} text-[var(--theme-text)] ${styleMap[couponStyle]} ${disabled ? "opacity-60" : ""} ${selected ? "ring-2 ring-[var(--theme-secondary)]" : ""} ${className}`}
     >
-      <div className="flex w-[32%] shrink-0 flex-col justify-center rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 text-center">
+      <div className={`flex ${homeCompact ? "w-[29%]" : "w-[32%]"} shrink-0 flex-col justify-center rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 text-center`}>
         <p className="text-xs text-[var(--theme-muted)]">{amountPrefix}</p>
         <p className={`${amountSize} font-black leading-none text-[var(--theme-price)]`}>{amount}</p>
         <p className="mt-1 text-[10px] text-[var(--theme-muted)]">{conditionText}</p>
@@ -70,21 +73,21 @@ export default function PremiumCouponCard({
           <p className="text-[11px] text-[var(--theme-muted)]">{eyebrow}</p>
           {badge ? <StoreBadge type="coupon">{badge}</StoreBadge> : null}
         </div>
-        <p className="line-clamp-2 text-sm font-bold">{title}</p>
-        <p className="mt-2 text-xs text-[var(--theme-muted)]">有效期至：{expireText}</p>
+        <p className={`${homeCompact ? "line-clamp-1" : "line-clamp-2"} text-sm font-bold`}>{title}</p>
+        <p className={`${homeCompact ? "mt-1 truncate" : "mt-2"} text-xs text-[var(--theme-muted)]`}>有效期至：{expireText}</p>
         <p className="mt-1 line-clamp-1 text-xs text-[var(--theme-muted)]">{scopeText}</p>
       </div>
       {actionLabel ? (
-        <div className="flex w-[48px] shrink-0 items-center justify-center">
+        <div className={`flex ${homeCompact ? "w-[44px]" : "w-[48px]"} shrink-0 items-center justify-center`}>
           <StoreButton
-            size={compact ? "sm" : "md"}
+            size={dense ? "sm" : "md"}
             variant={couponStyle === "deal" ? "danger" : "primary"}
             disabled={actionDisabled || actionLoading || disabled}
             onClick={(e) => {
               e.stopPropagation();
               onAction?.();
             }}
-            className="h-full min-h-[96px] w-full px-0 text-xs leading-tight [writing-mode:vertical-rl]"
+            className={`${homeCompact ? "min-h-[72px]" : "min-h-[96px]"} h-full w-full px-0 text-xs leading-tight [writing-mode:vertical-rl]`}
           >
             {actionLoading ? <Loader2 size={14} className="animate-spin" /> : actionLabel}
           </StoreButton>

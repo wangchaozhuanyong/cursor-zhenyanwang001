@@ -240,14 +240,29 @@ function attachActivity(product, activity) {
 
 async function formatRowsWithTagsAndActivities(rows) {
   const ids = rows.map((r) => r.id);
-  const [tagMap, activityMap] = await Promise.all([
+  const [tagMap, activityMap, defaultVariants] = await Promise.all([
     tagAssignmentRepo.selectTagsByProductIds(ids),
     activityRepo.selectActiveActivitiesByProductIds(ids).catch((e) => {
       console.warn(`[catalog] activity lookup failed: ${e?.message || e}`);
       return new Map();
     }),
+    repo.selectDefaultVariantsByProductIds(ids),
   ]);
-  return rows.map((r) => attachActivity({ ...formatProduct(r), tags: tagMap.get(r.id) || [] }, activityMap.get(r.id)));
+  const defaultVariantMap = new Map(defaultVariants.map((v) => [v.product_id, formatVariant(v)]));
+  return rows.map((r) => attachActivity({ ...formatProduct(r), tags: tagMap.get(r.id) || [], default_variant: defaultVariantMap.get(r.id) || null }, activityMap.get(r.id)));
+}
+
+function formatVariant(row) {
+  return {
+    id: row.id,
+    product_id: row.product_id,
+    sku_code: row.sku_code || '',
+    title: row.title || '',
+    price: Number(row.price || 0),
+    stock: Number(row.stock || 0),
+    sort_order: Number(row.sort_order || 0),
+    is_default: !!row.is_default,
+  };
 }
 
 async function getProducts(query) {
@@ -280,7 +295,8 @@ async function getProductById(id) {
   const row = await repo.selectProductById(id);
   if (!row) return null;
   const [item] = await formatRowsWithTagsAndActivities([row]);
-  return item;
+  const variants = await repo.selectProductVariants(id);
+  return { ...item, variants: variants.map(formatVariant) };
 }
 
 async function getHomeProducts() {
@@ -324,12 +340,17 @@ async function loadHomeProducts() {
   const recommended = pickUnique(recommendedManual, fallbackByRecommend, limit, hotIdSet);
 
   const allRows = [...hot, ...newArrivals, ...recommended];
-  const tagMap = await tagAssignmentRepo.selectTagsByProductIds(allRows.map((r) => r.id));
-  const activityMap = await activityRepo.selectActiveActivitiesByProductIds(allRows.map((r) => r.id)).catch((e) => {
+  const allIds = allRows.map((r) => r.id);
+  const [tagMap, defaultVariants] = await Promise.all([
+    tagAssignmentRepo.selectTagsByProductIds(allIds),
+    repo.selectDefaultVariantsByProductIds(allIds),
+  ]);
+  const defaultVariantMap = new Map(defaultVariants.map((v) => [v.product_id, formatVariant(v)]));
+  const activityMap = await activityRepo.selectActiveActivitiesByProductIds(allIds).catch((e) => {
     console.warn(`[catalog] activity lookup failed: ${e?.message || e}`);
     return new Map();
   });
-  const fmt = (rows) => rows.map((r) => attachActivity({ ...formatProduct(r), tags: tagMap.get(r.id) || [] }, activityMap.get(r.id)));
+  const fmt = (rows) => rows.map((r) => attachActivity({ ...formatProduct(r), tags: tagMap.get(r.id) || [], default_variant: defaultVariantMap.get(r.id) || null }, activityMap.get(r.id)));
   return {
     hot: fmt(hot),
     new_arrivals: fmt(newArrivals),

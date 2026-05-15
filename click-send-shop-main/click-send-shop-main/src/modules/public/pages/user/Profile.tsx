@@ -69,7 +69,6 @@ function ProfileHeroCard({
   memberLevelName,
   code,
   onAvatarClick,
-  skinTrigger,
   memberCardStyle,
 }: {
   logoSrc: string;
@@ -78,7 +77,6 @@ function ProfileHeroCard({
   memberLevelName: string;
   code: string;
   onAvatarClick: () => void;
-  skinTrigger: ReactNode;
   memberCardStyle: "light" | "gold" | "blackGold" | "fresh";
 }) {
   const heroStyle =
@@ -110,7 +108,6 @@ function ProfileHeroCard({
             <p className={`mt-1 text-sm ${mutedClass}`}>邀请码：{code}</p>
           </div>
         </div>
-        <div className="shrink-0">{skinTrigger}</div>
       </div>
     </section>
   );
@@ -228,7 +225,6 @@ export default function Profile() {
                 memberLevelName={memberLevelName}
                 code={code}
                 onAvatarClick={() => avatarInputRef.current?.click()}
-                skinTrigger={<button type="button" className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs font-medium">切换皮肤</button>}
                 memberCardStyle={themeConfig.memberCardStyle}
               />
               <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
@@ -238,17 +234,24 @@ export default function Profile() {
 
         <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
           <SectionTitle title="我的资产" />
-          <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)]">
+          <div className="grid grid-cols-2 gap-2">
             {assetItems.map((item, idx) => (
               <button
                 key={item.label}
                 type="button"
                 onClick={() => gateNavigate(navigate, item.path, true)}
-                className={`min-h-[84px] px-3 py-3 text-left ${idx % 2 === 0 ? "border-r border-[var(--theme-border)]" : ""} ${idx < 2 ? "border-b border-[var(--theme-border)]" : ""}`}
+                className={`${idx === 3 ? "col-span-2" : ""} min-h-[92px] rounded-2xl bg-[var(--theme-bg)] px-3 py-3 text-left`}
               >
-                <div className="flex items-center gap-2 text-[var(--theme-text-muted-on-surface)]"><item.icon size={15} /> <span className="text-xs">{item.label}</span></div>
-                <p className="mt-1 text-lg font-semibold text-[var(--theme-text-on-surface)]">{item.value}</p>
-                <p className="mt-0.5 text-[11px] text-[var(--theme-text-muted-on-surface)]">{item.hint}</p>
+                <div className="flex items-start gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-secondary)_12%,var(--theme-surface))] text-[var(--theme-secondary)]">
+                    <item.icon size={16} />
+                  </span>
+                  <span className="min-w-0">
+                    <p className="truncate text-lg font-semibold text-[var(--theme-text-on-surface)]">{item.value}</p>
+                    <p className="mt-0.5 text-xs font-medium">{item.label}</p>
+                    <p className="mt-0.5 truncate text-[11px] text-[var(--theme-text-muted-on-surface)]">{item.hint}</p>
+                  </span>
+                </div>
               </button>
             ))}
           </div>

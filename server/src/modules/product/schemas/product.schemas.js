@@ -16,6 +16,10 @@ const productListQuerySchema = z.object({
   is_hot: z.string().optional(),
   is_new: z.string().optional(),
   is_recommended: z.string().optional(),
+  min_price: z.coerce.number().min(0).optional(),
+  max_price: z.coerce.number().min(0).optional(),
+  in_stock: z.string().optional(),
+  include_descendants: z.string().optional(),
   keyword: z.string().trim().max(64).optional(),
   sort: z
     .enum([

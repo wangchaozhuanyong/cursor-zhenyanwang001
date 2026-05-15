@@ -65,12 +65,41 @@ async function selectActiveProductsPage(where, params, orderBy, pageSize, offset
   return rows;
 }
 
+async function selectDefaultVariantsByProductIds(productIds) {
+  const ids = [...new Set((productIds || []).filter(Boolean))];
+  if (!ids.length) return [];
+  const [rows] = await db.query(
+    `SELECT id, product_id, sku_code, title, price, stock, sort_order, is_default
+     FROM product_variants
+     WHERE product_id IN (${ids.map(() => '?').join(',')})
+     ORDER BY is_default DESC, sort_order ASC, id ASC`,
+    ids,
+  );
+  const seen = new Set();
+  return rows.filter((row) => {
+    if (seen.has(row.product_id)) return false;
+    seen.add(row.product_id);
+    return true;
+  });
+}
+
 async function selectProductById(id) {
   const [[row]] = await db.query(
     'SELECT * FROM products WHERE id = ? AND lifecycle_status = 1 AND deleted_at IS NULL',
     [id],
   );
   return row || null;
+}
+
+async function selectProductVariants(productId) {
+  const [rows] = await db.query(
+    `SELECT id, product_id, sku_code, title, price, stock, sort_order, is_default
+     FROM product_variants
+     WHERE product_id = ?
+     ORDER BY is_default DESC, sort_order ASC, id ASC`,
+    [productId],
+  );
+  return rows;
 }
 
 async function selectHomeProductBlocks(limit) {
@@ -168,7 +197,9 @@ module.exports = {
   selectVisibleCategoryIds,
   countActiveProducts,
   selectActiveProductsPage,
+  selectDefaultVariantsByProductIds,
   selectProductById,
+  selectProductVariants,
   selectHomeProductBlocks,
   selectActiveProductsByFlag,
   selectActiveProductsFallback,

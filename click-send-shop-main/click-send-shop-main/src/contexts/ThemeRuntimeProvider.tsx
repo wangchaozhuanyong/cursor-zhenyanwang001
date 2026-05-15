@@ -15,6 +15,7 @@ type ThemeMode = "light" | "dark";
 const SKIN_STORAGE_KEY = "theme_skin_id";
 const SKIN_MANUAL_KEY = "theme_skin_manual";
 const LAST_ACTIVE_SKIN_KEY = "theme_last_active_skin";
+const SKINS_CACHE_KEY = "theme_cached_skins";
 
 type ThemeContextValue = {
   theme: ThemeMode;
@@ -23,6 +24,7 @@ type ThemeContextValue = {
   switchableSkins: ThemeSkin[];
   setSkinId: (id: string) => void;
   themeConfig: ThemeConfig;
+  themeReady: boolean;
 };
 
 const ThemeRuntimeContext = createContext<ThemeContextValue | null>(null);
@@ -48,9 +50,11 @@ function applyThemeDataAttributes(root: HTMLElement, config: ThemeConfig) {
 }
 
 export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
-  const [skins, setSkins] = useState<ThemeSkin[]>(THEME_PRESETS);
-  const [skinId, setSkinIdState] = useState<string>(DEFAULT_SKIN_ID);
-  const [themeConfig, setThemeConfig] = useState<ThemeConfig>(normalizeThemeConfig(THEME_PRESETS[0]?.config));
+  const initial = getInitialThemeState();
+  const [skins, setSkins] = useState<ThemeSkin[]>(initial.skins);
+  const [skinId, setSkinIdState] = useState<string>(initial.skinId);
+  const [themeConfig, setThemeConfig] = useState<ThemeConfig>(initial.themeConfig);
+  const [themeReady, setThemeReady] = useState(initial.ready);
 
   const switchableSkins = useMemo(
     () => skins.filter((skin) => skin.clientEnabled !== false),
@@ -83,6 +87,9 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       };
       const normalized = normalizeThemeSkinsPayload(raw);
       setSkins(normalized.skins);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(SKINS_CACHE_KEY, JSON.stringify(normalized.skins));
+      }
 
       const saved = typeof window !== "undefined" ? localStorage.getItem(SKIN_STORAGE_KEY) : null;
       const isManual = typeof window !== "undefined" && localStorage.getItem(SKIN_MANUAL_KEY) === "1";
@@ -100,6 +107,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       setSkinIdState(chosen);
       const active = normalized.skins.find((s) => s.id === chosen) ?? normalized.skins[0];
       setThemeConfig(normalizeThemeConfig(active?.config));
+      setThemeReady(true);
     } catch (error) {
       const fallback = normalizeThemeSkinsPayload({
         defaultSkinId: DEFAULT_SKIN_ID,
@@ -109,6 +117,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       setSkins(fallback.skins);
       setSkinIdState(DEFAULT_SKIN_ID);
       setThemeConfig(normalizeThemeConfig(fallback.skins.find((s) => s.id === DEFAULT_SKIN_ID)?.config));
+      setThemeReady(true);
       toast.error(toastErrorMessage(error, "皮肤加载失败，已回退默认皮肤"));
     }
   }, []);
@@ -175,11 +184,54 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
         }
       },
       themeConfig,
+      themeReady,
     }),
-    [skinId, skins, switchableSkins, themeConfig],
+    [skinId, skins, switchableSkins, themeConfig, themeReady],
   );
 
   return <ThemeRuntimeContext.Provider value={value}>{children}</ThemeRuntimeContext.Provider>;
+}
+
+function getInitialThemeState() {
+  if (typeof window === "undefined") {
+    return {
+      skins: THEME_PRESETS,
+      skinId: DEFAULT_SKIN_ID,
+      themeConfig: normalizeThemeConfig(THEME_PRESETS[0]?.config),
+      ready: false,
+    };
+  }
+  const cachedSkins = readCachedSkins();
+  const saved = localStorage.getItem(SKIN_STORAGE_KEY) || localStorage.getItem(LAST_ACTIVE_SKIN_KEY) || "";
+  const sourceSkins = cachedSkins.length > 0 ? cachedSkins : THEME_PRESETS;
+  const active = sourceSkins.find((skin) => skin.id === saved) ?? (cachedSkins.length > 0 ? sourceSkins[0] : null);
+
+  if (active) {
+    return {
+      skins: sourceSkins,
+      skinId: active.id,
+      themeConfig: normalizeThemeConfig(active.config),
+      ready: true,
+    };
+  }
+
+  return {
+    skins: THEME_PRESETS,
+    skinId: DEFAULT_SKIN_ID,
+    themeConfig: normalizeThemeConfig(THEME_PRESETS[0]?.config),
+    ready: false,
+  };
+}
+
+function readCachedSkins(): ThemeSkin[] {
+  try {
+    const raw = localStorage.getItem(SKINS_CACHE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
 export function useThemeRuntime() {

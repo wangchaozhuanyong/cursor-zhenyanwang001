@@ -16,6 +16,7 @@ import type { ProductSortType, ProductTag } from "@/types/product";
 import type { Category } from "@/types/category";
 import { findCategoryById, findImmediateParentId, findRootCategoryIdForActive, isCategoryOrDescendantActive } from "@/utils/categoryTree";
 import { trackEvent } from "@/services/analyticsService";
+import { toast } from "sonner";
 
 export default function Categories() {
   const goBack = useGoBack();
@@ -27,7 +28,7 @@ export default function Categories() {
   const [activeCat, setActiveCat] = useState(searchParams.get("cat") || "all");
   const [activeTagId, setActiveTagId] = useState(searchParams.get("tag_id") || "");
   const [quickTags, setQuickTags] = useState<ProductTag[]>([]);
-  const [sort, setSort] = useState<ProductSortType>((searchParams.get("sort") as ProductSortType) || "default");
+  const [sort, setSort] = useState<ProductSortType>(normalizeSort(searchParams.get("sort")));
   const [query, setQuery] = useState(searchParams.get("keyword") || "");
   const [debouncedQuery, setDebouncedQuery] = useState(searchParams.get("keyword") || "");
   const [minPrice, setMinPrice] = useState(searchParams.get("min_price") || "");
@@ -64,6 +65,9 @@ export default function Categories() {
   }, [activeCat, activeTagId, debouncedQuery, inStock, isHot, isNew, isRecommended, maxPrice, minPrice, setSearchParams, sort]);
 
   useEffect(() => {
+    const min = minPrice ? Number(minPrice) : undefined;
+    const max = maxPrice ? Number(maxPrice) : undefined;
+    if (min !== undefined && max !== undefined && min > max) return;
     syncQuery();
     loadProducts({
       category_id: activeCat === "all" ? undefined : activeCat,
@@ -73,8 +77,8 @@ export default function Categories() {
       is_hot: isHot ? true : undefined,
       is_recommended: isRecommended ? true : undefined,
       in_stock: inStock ? true : undefined,
-      min_price: minPrice ? Number(minPrice) : undefined,
-      max_price: maxPrice ? Number(maxPrice) : undefined,
+      min_price: min,
+      max_price: max,
       sort: sort === "default" ? undefined : sort,
       include_descendants: true,
       page: 1,
@@ -170,7 +174,19 @@ export default function Categories() {
             <section>
               <div className="mb-3 flex items-center gap-3">
                 <ProductSortBar value={sort} onChange={setSort} />
-                <ProductFilterDrawer activeFilterCount={activeFilterCount} onReset={clearFilters} onConfirm={() => {}}>
+                <ProductFilterDrawer
+                  activeFilterCount={activeFilterCount}
+                  onReset={clearFilters}
+                  onConfirm={() => {
+                    const min = minPrice ? Number(minPrice) : undefined;
+                    const max = maxPrice ? Number(maxPrice) : undefined;
+                    if (min !== undefined && max !== undefined && min > max) {
+                      toast.error("最低价不能大于最高价");
+                      return false;
+                    }
+                    syncQuery();
+                  }}
+                >
                   <div className="space-y-3 text-sm">
                     <div>
                       <p className="mb-1 text-xs font-semibold">价格区间</p>
@@ -206,4 +222,9 @@ export default function Categories() {
       </main>
     </div>
   );
+}
+
+function normalizeSort(value: string | null): ProductSortType {
+  if (value === "sales" || value === "newest" || value === "price-asc" || value === "price-desc") return value;
+  return "default";
 }

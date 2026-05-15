@@ -147,7 +147,6 @@ const navItemsRaw: NavItem[] = [
       { icon: FileText, label: "导出中心", path: "/admin/exports", permission: "report.export" }
     ],
   },
-  { icon: FileText, label: "导出中心", path: "/admin/exports", permission: "report.export" },
   {
     icon: Settings,
     label: "系统设置",

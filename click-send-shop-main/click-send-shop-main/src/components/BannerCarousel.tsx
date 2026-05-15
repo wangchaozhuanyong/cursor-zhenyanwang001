@@ -6,6 +6,7 @@ import type { ThemeConfig } from "@/types/theme";
 
 interface BannerCarouselProps {
   banners: Banner[];
+  loading?: boolean;
   themeConfigOverride?: ThemeConfig;
 }
 
@@ -15,7 +16,7 @@ function resolveBannerLink(link: string): string {
   return value;
 }
 
-export default function BannerCarousel({ banners }: BannerCarouselProps) {
+export default function BannerCarousel({ banners, loading = false, themeConfigOverride }: BannerCarouselProps) {
   const [current, setCurrent] = useState(0);
   const navigate = useNavigate();
 
@@ -48,7 +49,18 @@ export default function BannerCarousel({ banners }: BannerCarouselProps) {
     }
   };
 
-  if (banners.length === 0) return null;
+  if (banners.length === 0) {
+    if (!loading) return null;
+    return (
+      <div
+        className="relative overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-surface)]"
+        style={{ aspectRatio: "2.34 / 1", borderRadius: "var(--theme-radius)" }}
+        aria-busy="true"
+      >
+        <div className="absolute inset-0 animate-pulse bg-[linear-gradient(90deg,var(--theme-surface),var(--theme-bg),var(--theme-surface))]" />
+      </div>
+    );
+  }
 
   const banner = banners[current];
   if (!banner) return null;
@@ -67,6 +79,7 @@ export default function BannerCarousel({ banners }: BannerCarouselProps) {
   return (
     <div
       className={`relative overflow-hidden theme-shadow ${bannerLink ? "cursor-pointer" : ""}`}
+      data-banner-style={themeConfigOverride?.bannerStyle}
       style={{ aspectRatio: "2.34 / 1", borderRadius: "var(--theme-radius)" }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}

@@ -3,7 +3,7 @@ export type ProductStatus = "draft" | "active" | "inactive";
 /** 与后端一致：0 草稿 · 1 上架 · 2 下架 */
 export type ProductLifecycleStatus = 0 | 1 | 2;
 
-export type ProductSortType = "default" | "price-asc" | "price-desc" | "newest";
+export type ProductSortType = "default" | "sales" | "newest" | "price-asc" | "price-desc";
 
 export interface ProductVariant {
   id: string;
@@ -71,6 +71,7 @@ export interface Product {
   sort_order: number;
   /** 管理端：SKU / 规格（ storefront 仍以 SPU 主价格库存为准） */
   variants?: ProductVariant[];
+  default_variant?: ProductVariant | null;
   description: string;
   is_recommended: boolean;
   is_new: boolean;

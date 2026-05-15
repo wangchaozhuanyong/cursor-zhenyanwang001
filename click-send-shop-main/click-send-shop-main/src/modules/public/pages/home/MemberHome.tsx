@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState, useRef } from "react";
-import { Flame, Gift, Heart, RefreshCw, Search, ShoppingCart, Star, Ticket, Truck, ShieldCheck, Wallet } from "lucide-react";
+import { Flame, Gift, Heart, RefreshCw, Search, ShoppingCart, Star, Ticket, Truck, ShieldCheck, Wallet, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
@@ -25,7 +25,6 @@ import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import type { Product } from "@/types/product";
 import { buildPersonalizedRecommendations } from "@/utils/personalizedRecommendations";
-import { supportsColorMix } from "@/utils/cssSupport";
 import { isLoggedIn } from "@/utils/token";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 
@@ -47,7 +46,6 @@ export default function MemberHome() {
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const { hotProducts, newProducts, recommendedProducts, loading: homeLoading, loadHomeData } = useProductStore();
   const siteInfo = useSiteInfo();
-  const inactiveDotColor = supportsColorMix() ? "color-mix(in srgb, #ffffff 45%, transparent)" : "rgba(255,255,255,0.45)";
   const couponLoading = useCouponStore((s) => s.loading);
   const coupons = useCouponStore((s) => s.coupons);
   const claimCoupon = useCouponStore((s) => s.claimCoupon);
@@ -64,7 +62,7 @@ export default function MemberHome() {
   const [claimingCouponId, setClaimingCouponId] = useState<string | null>(null);
   const siteName = siteInfo.siteName || "大马通";
   const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
-  const { banners } = useHomeBanners();
+  const { banners, loading: bannersLoading } = useHomeBanners();
   const { themeConfig } = useThemeRuntime();
   const homeLayout = themeConfig.homeLayout ?? "classic";
   const isPremiumLayout = homeLayout === "premium";
@@ -104,7 +102,6 @@ export default function MemberHome() {
   const [newArrivalIndex, setNewArrivalIndex] = useState(0);
   const [hotBatchIndex, setHotBatchIndex] = useState(0);
   const [recBatchIndex, setRecBatchIndex] = useState(0);
-  const touchStartXRef = useRef(0);
   const exposedProductIdsRef = useRef<Set<string>>(new Set());
   const HOT_BATCH_SIZE = 4;
   const REC_BATCH_SIZE = 4;
@@ -151,21 +148,8 @@ export default function MemberHome() {
   const hot = hotBatches.length > 0 ? hotBatches[hotBatchIndex % hotBatches.length] : [];
   const rec = recBatches.length > 0 ? recBatches[recBatchIndex % recBatches.length] : [];
   const activeNew = newest.length > 0 ? newest[newArrivalIndex] : null;
-  const heroImage = (siteInfo.newArrivalHeroImage || "").trim();
   const heroTitle = (siteInfo.newArrivalHeroTitle || "").trim();
   const heroSubtitle = (siteInfo.newArrivalHeroSubtitle || "").trim();
-  const heroCtaText = (siteInfo.newArrivalHeroCtaText || "").trim();
-  const activeNewImage = resolveNewArrivalImage(activeNew, newArrivalIndex);
-  const memberAssets = useMemo(
-    () => [
-      { label: "积分", value: "—", icon: Gift },
-      { label: "优惠券", value: `${couponTop.length}`, icon: Ticket },
-      { label: "收藏", value: `${favoriteIds.length}`, icon: Heart },
-      { label: "购物车", value: `${cartItems.length}`, icon: ShoppingCart },
-    ],
-    [couponTop.length, favoriteIds.length, cartItems.length],
-  );
-
   const trackNewArrivalClick = (target: "product" | "new_arrivals_page") => {
     void productService.trackHomeEngagement({
       module: "new_arrivals",
@@ -179,15 +163,6 @@ export default function MemberHome() {
   const goNewArrivalsPage = () => {
     trackNewArrivalClick("new_arrivals_page");
     navigate("/new-arrivals");
-  };
-
-  const goActiveNewProduct = () => {
-    if (!activeNew) {
-      goNewArrivalsPage();
-      return;
-    }
-    trackNewArrivalClick("product");
-    navigate(`/product/${activeNew.id}`);
   };
 
   useEffect(() => {
@@ -229,7 +204,7 @@ export default function MemberHome() {
       <main className="mx-auto max-w-screen-xl px-4 pt-4">
         <section>
           <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
-            <BannerCarousel banners={banners} themeConfigOverride={themeConfig} />
+            <BannerCarousel banners={banners} loading={bannersLoading} themeConfigOverride={themeConfig} />
           </div>
         </section>
         <section className="-mx-4 mt-3">
@@ -261,7 +236,7 @@ export default function MemberHome() {
                 return (
                   <div
                     key={i}
-                    className="snap-center h-[168px] w-[min(88vw,560px)] shrink-0 animate-pulse rounded-xl bg-[var(--theme-surface)]/70 ring-1 ring-[var(--theme-border)]"
+                    className="snap-center h-[118px] w-[min(88vw,560px)] shrink-0 animate-pulse rounded-xl bg-[var(--theme-surface)]/70 ring-1 ring-[var(--theme-border)]"
                   />
                 );
               }
@@ -271,10 +246,11 @@ export default function MemberHome() {
               return (
                 <div
                   key={c.id}
-                  className="snap-center h-[168px] w-[min(88vw,560px)] shrink-0"
+                  className="snap-center h-[118px] w-[min(88vw,560px)] shrink-0"
                 >
                   <PremiumCouponCard
                     compact
+                    homeCompact
                     className="min-h-0 shadow-lg"
                     title={display.title}
                     amountPrefix={display.amountPrefix}
@@ -317,108 +293,58 @@ export default function MemberHome() {
           ) : null}
         </section>
         <section className="mt-section">
-          <div
-            className="relative overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow"
-            onTouchStart={(e) => {
-              touchStartXRef.current = e.touches[0]?.clientX ?? 0;
-            }}
-            onTouchEnd={(e) => {
-              if (newest.length <= 1) return;
-              const endX = e.changedTouches[0]?.clientX ?? touchStartXRef.current;
-              const diff = touchStartXRef.current - endX;
-              if (Math.abs(diff) < 40) return;
-              if (diff > 0) setNewArrivalIndex((prev) => (prev + 1) % newest.length);
-              else setNewArrivalIndex((prev) => (prev - 1 + newest.length) % newest.length);
-            }}
-          >
-            {heroImage ? (
-              <img
-                src={heroImage}
-                className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-15 blur-xl scale-110"
-                alt=""
-                aria-hidden
-              />
-            ) : null}
-            <div className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_18%,transparent)] blur-2xl" />
-            <div className="relative grid gap-4 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] md:items-center">
-              <button
-                type="button"
-                onClick={goActiveNewProduct}
-                className="group relative aspect-square overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] shadow-none"
-              >
-                {activeNewImage ? (
-                  <img
-                    src={activeNewImage}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    alt={activeNew?.name || "新品商品"}
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-xs text-[var(--theme-text-muted)]">
-                    暂无新品图片
-                  </div>
-                )}
-              </button>
-
-              <div className="min-w-0 pb-8 md:pb-0">
-                {heroTitle ? (
-                  <h3 className="line-clamp-2 text-xl font-black text-[var(--theme-text-on-surface)] md:text-3xl">{heroTitle}</h3>
-                ) : null}
-                {heroSubtitle ? (
-                  <p className="mt-2 text-sm font-medium leading-relaxed text-[var(--theme-text-muted)]">{heroSubtitle}</p>
-                ) : null}
-
-                {activeNew ? (
-                  <button type="button" onClick={goActiveNewProduct} className="mt-4 block max-w-full text-left">
-                    <p className="line-clamp-2 text-base font-bold text-[var(--theme-text-on-surface)]">{activeNew.name}</p>
-                    <p className="mt-1 text-lg font-black text-[var(--theme-price)]">RM {activeNew.price}</p>
-                  </button>
-                ) : (
-                  <p className="mt-4 text-sm text-[var(--theme-text-muted)]">新品正在准备中，先看看全部商品。</p>
-                )}
-
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {heroCtaText ? (
-                    <button
-                      type="button"
-                      onClick={goNewArrivalsPage}
-                      className="rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-bold text-[var(--theme-primary-foreground)] shadow-[var(--theme-shadow)]"
-                    >
-                      {heroCtaText}
-                    </button>
-                  ) : null}
-                  {activeNew ? (
-                    <button
-                      type="button"
-                      onClick={goActiveNewProduct}
-                      className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-2 text-xs font-bold text-[var(--theme-text)]"
-                    >
-                      查看当前新品
-                    </button>
-                  ) : null}
-                </div>
-              </div>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-bold tracking-widest text-[var(--theme-text-on-surface)]">新品上市</h2>
+            <button type="button" onClick={goNewArrivalsPage} className="flex items-center gap-1 text-xs font-semibold text-[var(--theme-text-muted)]">
+              查看更多
+              <ChevronRight size={14} />
+            </button>
+          </div>
+          {heroTitle || heroSubtitle ? (
+            <div className="mb-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
+              {heroTitle ? <p className="truncate text-sm font-semibold text-[var(--theme-text-on-surface)]">{heroTitle}</p> : null}
+              {heroSubtitle ? <p className="mt-0.5 truncate text-xs text-[var(--theme-text-muted)]">{heroSubtitle}</p> : null}
             </div>
-            {newest.length > 1 ? (
-              <div className="absolute bottom-5 right-5 flex gap-1.5">
-                {newest.map((item, idx) => (
+          ) : null}
+          {newest.length > 0 ? (
+            <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1">
+              {newest.map((item, idx) => {
+                const image = resolveNewArrivalImage(item, idx);
+                return (
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => setNewArrivalIndex(idx)}
-                    aria-label={`查看新品 ${idx + 1}`}
-                    className="h-2.5 rounded-full transition-all"
-                    style={{
-                      width: idx === newArrivalIndex ? 18 : 8,
-                      backgroundColor:
-                        idx === newArrivalIndex
-                          ? "var(--theme-price)"
-                          : inactiveDotColor,
+                    onClick={() => {
+                      setNewArrivalIndex(idx);
+                      void productService.trackHomeEngagement({
+                        module: "new_arrivals",
+                        event: "click",
+                        product_id: item.id,
+                        session_id: trackingSessionId,
+                        meta: { index: idx, target: "product" },
+                      });
+                      navigate(`/product/${item.id}`);
                     }}
-                  />
-                ))}
-              </div>
-            ) : null}
-          </div>
+                    className="flex h-[124px] w-[260px] shrink-0 snap-start gap-3 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-left theme-shadow"
+                  >
+                    <div className="relative h-[96px] w-[96px] shrink-0 overflow-hidden rounded-xl bg-[var(--theme-bg)]">
+                      {image ? <img src={image} alt={item.name} className="h-full w-full object-cover" /> : null}
+                      <span className="absolute left-1.5 top-1.5 rounded-full bg-[var(--theme-primary)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--theme-primary-foreground)]">新品</span>
+                    </div>
+                    <div className="min-w-0 flex flex-1 flex-col justify-center">
+                      <p className="line-clamp-2 text-sm font-semibold text-[var(--theme-text-on-surface)]">{item.name}</p>
+                      <p className="mt-2 text-base font-black text-[var(--theme-price)]">RM {item.price}</p>
+                      <span className="mt-1 text-[11px] text-[var(--theme-text-muted)]">查看商品</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-6 text-center text-sm text-[var(--theme-text-muted)]">
+              暂无新品上市
+            </div>
+          )}
         </section>
         <section className="mt-section">
           <div className="mb-4 flex items-center justify-between">

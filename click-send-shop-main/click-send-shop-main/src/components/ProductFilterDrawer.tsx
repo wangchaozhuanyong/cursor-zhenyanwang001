@@ -5,7 +5,7 @@ import { Filter } from "lucide-react";
 interface ProductFilterDrawerProps {
   activeFilterCount: number;
   onReset: () => void;
-  onConfirm?: () => void;
+  onConfirm?: () => boolean | void;
   children: ReactNode;
 }
 
@@ -27,7 +27,17 @@ export default function ProductFilterDrawer({ activeFilterCount, onReset, onConf
           {children}
           <div className="grid grid-cols-2 gap-2">
             <button type="button" onClick={onReset} className="w-full rounded-xl border border-[var(--theme-border)] px-3 py-2 text-sm text-[var(--theme-text)] hover:bg-[var(--theme-bg)]">清空筛选</button>
-            <button type="button" onClick={() => { onConfirm?.(); setOpen(false); }} className="w-full rounded-xl bg-[var(--theme-primary)] px-3 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]">确认筛选</button>
+            <button
+              type="button"
+              onClick={() => {
+                const ok = onConfirm?.();
+                if (ok === false) return;
+                setOpen(false);
+              }}
+              className="w-full rounded-xl bg-[var(--theme-primary)] px-3 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]"
+            >
+              确认筛选
+            </button>
           </div>
         </div>
       </DialogContent>

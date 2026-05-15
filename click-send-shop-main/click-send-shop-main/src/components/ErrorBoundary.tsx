@@ -3,6 +3,7 @@ import { AlertTriangle, Home, RefreshCw } from "lucide-react";
 
 interface Props {
   children: ReactNode;
+  resetKey?: string;
 }
 
 interface State {
@@ -26,6 +27,12 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(err: Error, info: ErrorInfo) {
     console.error("[ErrorBoundary]", err, info.componentStack);
+  }
+
+  componentDidUpdate(prevProps: Props) {
+    if (this.props.resetKey !== prevProps.resetKey && this.state.hasError) {
+      this.setState({ hasError: false, message: "", isChunkLoadError: false });
+    }
   }
 
   render() {

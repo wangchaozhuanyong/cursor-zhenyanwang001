@@ -13,14 +13,14 @@ export function getThemeSkins() {
   return get<{
     defaultSkinId: string;
     activeSkinId: string;
-    skins: Array<{ id: string; name: string; config: ThemeConfig }>;
+    skins: Array<{ id: string; name: string; clientEnabled?: boolean; config: ThemeConfig }>;
   }>("/theme/skins");
 }
 
 export function updateSystemThemeSkins(data: {
   defaultSkinId: string;
   activeSkinId: string;
-  skins: Array<{ id: string; name: string; config: ThemeConfig }>;
+  skins: Array<{ id: string; name: string; clientEnabled?: boolean; config: ThemeConfig }>;
 }) {
   return put("/admin/system/theme/skins", data);
 }

@@ -156,6 +156,7 @@ export function normalizeThemeSkin(skin: Partial<ThemeSkin> & { id: string; name
   return {
     id: skin.id,
     name: skin.name,
+    clientEnabled: skin.clientEnabled !== false,
     config: normalizeThemeConfig(skin.config),
   };
 }

@@ -1,46 +1,47 @@
-import * as reportApi from "@/api/admin/report";
+﻿import * as reportApi from "@/api/admin/report";
+import type { ReportQuery } from "@/api/admin/report";
 
-type ApiRange = "week" | "month" | "quarter" | "year";
-
-export async function fetchSalesReport(range: ApiRange) {
-  const res = await reportApi.getSalesReport(range);
+export async function fetchReportOverview(params?: ReportQuery) {
+  const res = await reportApi.getReportOverview(params);
   return res.data;
 }
-
-export async function fetchUserReport(range: ApiRange) {
-  const res = await reportApi.getUserReport(range);
+export async function fetchSalesDailyReport(params?: ReportQuery) {
+  const res = await reportApi.getSalesDaily(params);
   return res.data;
 }
-
-export async function fetchProductReport() {
-  const res = await reportApi.getProductReport();
+export async function fetchSalesMonthlyReport(params?: ReportQuery) {
+  const res = await reportApi.getSalesMonthly(params);
   return res.data;
 }
-
-export async function fetchHomeEngagementReport(range: ApiRange) {
-  const res = await reportApi.getHomeEngagementReport(range);
+export async function fetchProductAnalysisReport(params?: ReportQuery) {
+  const res = await reportApi.getProductsAnalysis(params);
   return res.data;
 }
-
-const rangeMap: Record<string, ApiRange> = {
-  "7d": "week",
-  "30d": "month",
-  "90d": "quarter",
-};
-
-/** 并行拉取三类报表，供 Page 只做展示与赋值 */
-export async function loadAdminReportsBundle(dateRangeKey: string) {
-  const apiRange = rangeMap[dateRangeKey] ?? "month";
-  const [homeRes, salesRes, userRes, productRes] = await Promise.allSettled([
-    fetchHomeEngagementReport(apiRange),
-    fetchSalesReport(apiRange),
-    fetchUserReport(apiRange),
-    fetchProductReport(),
-  ]);
-  return {
-    home: homeRes.status === "fulfilled" ? homeRes.value : undefined,
-    sales: salesRes.status === "fulfilled" ? salesRes.value : undefined,
-    users: userRes.status === "fulfilled" ? userRes.value : undefined,
-    products: productRes.status === "fulfilled" ? productRes.value : undefined,
-  };
+export async function fetchCategoryAnalysisReport(params?: ReportQuery) {
+  const res = await reportApi.getCategoriesAnalysis(params);
+  return res.data;
+}
+export async function fetchOrderAnalysisReport(params?: ReportQuery) {
+  const res = await reportApi.getOrdersAnalysis(params);
+  return res.data;
+}
+export async function fetchCustomerAnalysisReport(params?: ReportQuery) {
+  const res = await reportApi.getCustomersAnalysis(params);
+  return res.data;
+}
+export async function fetchActivityAnalysisReport(params?: ReportQuery) {
+  const res = await reportApi.getActivitiesAnalysis(params);
+  return res.data;
+}
+export async function fetchCouponAnalysisReport(params?: ReportQuery) {
+  const res = await reportApi.getCouponsAnalysis(params);
+  return res.data;
+}
+export async function fetchInventoryAnalysisReport(params?: ReportQuery) {
+  const res = await reportApi.getInventoryAnalysis(params);
+  return res.data;
+}
+export async function fetchSearchAnalysisReport(params?: ReportQuery) {
+  const res = await reportApi.getSearchAnalysis(params);
+  return res.data;
 }

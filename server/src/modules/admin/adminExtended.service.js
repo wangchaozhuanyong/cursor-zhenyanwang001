@@ -8,6 +8,7 @@ const { getResolvedTriggerCopy } = require('./notificationTriggerSettings.servic
 const userModule = require('../user');
 const myinvoisService = require('../myinvois/myinvois.service');
 const { UserStatsService } = require('../user/userStats.service');
+const { normalizeKnownMojibakeText } = require('../../utils/textNormalize');
 
 const userApi = /** @type {any} */ (userModule).api || {};
 
@@ -342,8 +343,8 @@ async function listShippingTemplates() {
   const rows = await repo.selectShippingTemplatesRaw();
   return rows.map((r) => ({
     id: r.id,
-    name: r.name,
-    regions: r.regions,
+    name: normalizeKnownMojibakeText(r.name),
+    regions: normalizeKnownMojibakeText(r.regions),
     baseFee: parseFloat(r.base_fee),
     freeAbove: parseFloat(r.free_above),
     extraPerKg: parseFloat(r.extra_per_kg),

@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import * as contentService from "@/services/contentService";
 import type { SiteInfo } from "@/types/content";
 
 const FALLBACK: SiteInfo = {
-  siteName: "大马通",
+  siteName: "大马严选",
   siteDescription: "精选全球好物，品质生活购物平台",
   siteSlogan: "精选全球好物，品质生活",
   brandColor: "#caa45c",
@@ -15,8 +15,8 @@ const FALLBACK: SiteInfo = {
   address: "Kuala Lumpur, Malaysia",
   businessHours: "周一至周日 09:00 - 22:00",
   currency: "RM",
-  footerCompanyName: "大马通",
-  footerCopyright: `© ${new Date().getFullYear()} 大马通 版权所有`,
+  footerCompanyName: "大马严选",
+  footerCopyright: `© ${new Date().getFullYear()} 大马严选 版权所有`,
   newArrivalHeroTitle: "新品优选",
   newArrivalHeroSubtitle: "精选人气新品，限时好价",
   newArrivalHeroCtaText: "立即选购",

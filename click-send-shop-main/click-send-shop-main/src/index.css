@@ -308,30 +308,6 @@
   }
 }
 
-:root[data-admin-fixed-theme="1"] {
-  --theme-primary: #0f172a;
-  --theme-primary-hover: #1e293b;
-  --theme-primary-foreground: #ffffff;
-  --theme-secondary: #334155;
-  --theme-secondary-foreground: #ffffff;
-  --theme-price: #0ea5e9;
-  --theme-price-foreground: #ffffff;
-  --theme-gradient: linear-gradient(135deg, #0f172a, #334155);
-  --theme-gradient-foreground: #ffffff;
-  --theme-bg: #f8fafc;
-  --theme-surface: #ffffff;
-  --theme-border: #dbe3ee;
-  --theme-text: #0f172a;
-  --theme-text-on-surface: #0f172a;
-  --theme-text-muted: rgba(15, 23, 42, 0.62);
-  --theme-text-muted-on-surface: rgba(15, 23, 42, 0.62);
-  --theme-text-subtle: rgba(15, 23, 42, 0.44);
-  --theme-card-shell-bg: #ffffff;
-  --theme-card-shell-border: 1px solid #dbe3ee;
-  --theme-card-shell-shadow: 0 10px 30px -10px rgba(2, 6, 23, 0.08);
-  --theme-card-shell-shadow-hover: 0 18px 40px -12px rgba(2, 6, 23, 0.14);
-}
-
 /**
  * SquishButton / 主 CTA：防止 tailwind-merge 把调用方 className 里的 text-foreground、text-muted-foreground
  * 合并掉组件上的主色前景色，从而出现「主色底 + 正文色字」不可读。

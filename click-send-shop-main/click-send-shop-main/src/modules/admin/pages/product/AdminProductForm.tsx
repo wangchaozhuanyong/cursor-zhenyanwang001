@@ -243,7 +243,6 @@ export default function AdminProductForm() {
         original_price:
           form.original_price === "" || !Number.isFinite(opNum) ? null : opNum,
         sales_count: Number.isFinite(scNum) ? scNum : 0,
-        stock: mainStock,
         points: parseInt(form.points, 10) || 0,
         category_id: form.category_id || "",
         sort_order: parseInt(form.sort_order, 10) || 0,
@@ -259,6 +258,7 @@ export default function AdminProductForm() {
         tag_ids: form.tag_ids,
       };
       if (isNew) {
+        payload.stock = mainStock;
         await createProduct(payload);
         toast.success("商品创建成功");
       } else {
@@ -449,7 +449,8 @@ export default function AdminProductForm() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">库存</label>
-                <input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder="0" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                <input type="number" disabled={!isNew} value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder="0" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground disabled:opacity-70" />
+                {!isNew ? <p className="mt-1 text-[10px] text-muted-foreground">编辑商品时不直接改库存，请到库存中心按 SKU 调整。</p> : null}
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">积分值</label>
@@ -517,7 +518,7 @@ export default function AdminProductForm() {
               </button>
             </div>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              默认规格与上方主售价、库存保持一致（保存时写入主档）。其它规格价格仅作后台记录，前台下单仍以主档为准。
+              库存统一在库存中心按 SKU 调整；此处仅维护规格信息与价格。
             </p>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[520px] text-xs">
@@ -599,16 +600,7 @@ export default function AdminProductForm() {
                         <input
                           type="number"
                           value={v.is_default ? form.stock : v.stock}
-                          disabled={v.is_default}
-                          onChange={(e) => {
-                            if (v.is_default) return;
-                            const t = e.target.value;
-                            setForm((f) => {
-                              const nv = [...f.variants];
-                              nv[idx] = { ...nv[idx], stock: t };
-                              return { ...f, variants: nv };
-                            });
-                          }}
+                          disabled
                           className="w-full min-w-[64px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none disabled:opacity-60"
                         />
                       </td>

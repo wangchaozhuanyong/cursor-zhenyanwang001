@@ -1,4 +1,4 @@
-const multer = require('multer');
+﻿const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs');
@@ -19,8 +19,8 @@ const allowedVideoExts = /\.(mp4|webm|mov|m4v)$/i;
 
 function badRequest(message) {
   const err = new Error(message);
-  err.statusCode = 400;
-  err.expose = true;
+  /** @type {any} */ (err).statusCode = 400;
+  /** @type {any} */ (err).expose = true;
   return err;
 }
 
@@ -40,23 +40,29 @@ const fileFilter = (_req, file, cb) => {
   if (isImageFile(file) || isVideoFile(file)) {
     cb(null, true);
   } else {
-    cb(badRequest('只允许上传图片或视频文件（图片：JPG/PNG/WebP/GIF；视频：MP4/WebM/MOV）'));
+    cb(badRequest('仅支持图片或视频文件上传'));
   }
 };
 
-async function writeImageFromFile(file) {
+function getImagePreset(mode) {
+  if (mode === 'banner') return { width: 2400, height: 2400, quality: 90 };
+  return { width: 1600, height: 1600, quality: 82 };
+}
+
+async function writeImageFromFile(file, mode = 'image') {
   if (file.size > IMAGE_MAX_SIZE) throw badRequest('图片大小不能超过 15MB');
   const traceId = crypto.randomUUID();
   const startedAt = Date.now();
   const filename = `${crypto.randomBytes(16).toString('hex')}.webp`;
 
+  const preset = getImagePreset(mode);
   const sharpStartedAt = Date.now();
   let webpBuffer = null;
   try {
     webpBuffer = await sharp(file.buffer)
       .rotate()
-      .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: 82, effort: 3 })
+      .resize({ width: preset.width, height: preset.height, fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: preset.quality, effort: 3 })
       .toBuffer();
   } catch (_error) {
     throw badRequest('图片文件无法解析，请更换图片后重试');
@@ -72,13 +78,13 @@ async function writeImageFromFile(file) {
       cacheControl: 'public, max-age=31536000, immutable',
     });
     const s3Cost = Date.now() - s3StartedAt;
-    console.info(`[upload] traceId=${traceId} type=${file.mimetype} original=${formatMB(file.size)} optimized=${formatMB(webpBuffer.length)} sharp=${sharpCost}ms s3=${s3Cost}ms total=${Date.now() - startedAt}ms`);
+    console.info(`[upload] traceId=${traceId} mode=${mode} type=${file.mimetype} original=${formatMB(file.size)} optimized=${formatMB(webpBuffer.length)} sharp=${sharpCost}ms s3=${s3Cost}ms total=${Date.now() - startedAt}ms`);
     return { filename, url: uploaded.url };
   }
 
   const outPath = path.join(uploadDir, filename);
   await fs.promises.writeFile(outPath, webpBuffer);
-  console.info(`[upload] traceId=${traceId} type=${file.mimetype} original=${formatMB(file.size)} optimized=${formatMB(webpBuffer.length)} sharp=${sharpCost}ms s3=0ms total=${Date.now() - startedAt}ms`);
+  console.info(`[upload] traceId=${traceId} mode=${mode} type=${file.mimetype} original=${formatMB(file.size)} optimized=${formatMB(webpBuffer.length)} sharp=${sharpCost}ms s3=0ms total=${Date.now() - startedAt}ms`);
   return { filename, url: `/uploads/${filename}` };
 }
 
@@ -109,9 +115,9 @@ async function writeVideoFromFile(file) {
   return { filename, url: `/uploads/${filename}` };
 }
 
-async function writeMediaFromFile(file) {
+async function writeMediaFromFile(file, mode = 'auto') {
   if (isVideoFile(file)) return writeVideoFromFile(file);
-  return writeImageFromFile(file);
+  return writeImageFromFile(file, mode === 'banner' ? 'banner' : 'image');
 }
 
 const upload = multer({
@@ -126,7 +132,8 @@ exports.uploadMultiple = upload.array('files', 10);
 exports.uploadFile = async (req, res) => {
   if (!req.file || !req.file.buffer) return res.fail(400, '请选择要上传的文件');
   try {
-    const { url, filename } = await writeMediaFromFile(req.file);
+    const mode = String(req.body?.mode || req.query?.mode || 'auto').toLowerCase();
+    const { url, filename } = await writeMediaFromFile(req.file, mode);
     return res.success({ url, filename });
   } catch (error) {
     const statusCode = Number(error?.statusCode || 500);
@@ -137,6 +144,7 @@ exports.uploadFile = async (req, res) => {
 exports.uploadFiles = async (req, res) => {
   if (!req.files || !req.files.length) return res.fail(400, '请选择要上传的文件');
   try {
+    const mode = String(req.body?.mode || req.query?.mode || 'auto').toLowerCase();
     const queue = [...req.files];
     const result = [];
     const workers = Array.from({ length: Math.min(UPLOAD_CONCURRENCY, queue.length) }).map(async () => {
@@ -144,7 +152,7 @@ exports.uploadFiles = async (req, res) => {
         const next = queue.shift();
         if (!next) break;
         // eslint-disable-next-line no-await-in-loop
-        const uploaded = await writeMediaFromFile(next);
+        const uploaded = await writeMediaFromFile(next, mode);
         result.push(uploaded);
       }
     });

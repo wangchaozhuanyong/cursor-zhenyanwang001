@@ -80,12 +80,16 @@ export interface Product {
 
 export interface ProductListParams {
   category_id?: string;
+  include_descendants?: boolean | number;
   keyword?: string;
   status?: ProductStatus;
   is_recommended?: boolean | number;
   is_new?: boolean | number;
   is_hot?: boolean | number;
   tag_id?: string;
+  min_price?: number;
+  max_price?: number;
+  in_stock?: boolean | number;
   sort?: ProductSortType;
   page?: number;
   pageSize?: number;

@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState, useRef } from "react";
-import { Flame, Gift, Heart, LayoutGrid, RefreshCw, Search, ShoppingCart, Sparkles, Star, Ticket, Truck, Zap, ShieldCheck, Wallet } from "lucide-react";
+import { Flame, Gift, Heart, RefreshCw, Search, ShoppingCart, Star, Ticket, Truck, ShieldCheck, Wallet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
@@ -78,14 +78,6 @@ export default function MemberHome() {
         : themeConfig.headerStyle === "premium"
           ? "bg-[color-mix(in_srgb,var(--theme-secondary)_16%,var(--theme-surface))] border-[var(--theme-border)]"
           : "bg-[var(--theme-bg)]/90 border-[var(--theme-border)]";
-  const categoryIconClass =
-    themeConfig.categoryIconStyle === "solid"
-      ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
-      : themeConfig.categoryIconStyle === "outline"
-        ? "bg-transparent text-[var(--theme-primary)] ring-1 ring-[var(--theme-border)]"
-        : themeConfig.categoryIconStyle === "circle"
-          ? "bg-[var(--theme-surface)] text-[var(--theme-primary)] ring-1 ring-[var(--theme-border)]"
-          : "bg-[color-mix(in_srgb,var(--theme-secondary)_14%,white)] text-[var(--theme-secondary)]";
 
   useEffect(() => {
     loadHomeData();
@@ -160,11 +152,9 @@ export default function MemberHome() {
   const rec = recBatches.length > 0 ? recBatches[recBatchIndex % recBatches.length] : [];
   const activeNew = newest.length > 0 ? newest[newArrivalIndex] : null;
   const heroImage = (siteInfo.newArrivalHeroImage || "").trim();
-  const heroTitle = (siteInfo.newArrivalHeroTitle || "").trim() || "新品上市";
-  const heroSubtitle =
-    (siteInfo.newArrivalHeroSubtitle || "").trim() ||
-    "每周精选新品上架，立即查看";
-  const heroCtaText = (siteInfo.newArrivalHeroCtaText || "").trim() || "前往新品上市";
+  const heroTitle = (siteInfo.newArrivalHeroTitle || "").trim();
+  const heroSubtitle = (siteInfo.newArrivalHeroSubtitle || "").trim();
+  const heroCtaText = (siteInfo.newArrivalHeroCtaText || "").trim();
   const activeNewImage = resolveNewArrivalImage(activeNew, newArrivalIndex);
   const memberAssets = useMemo(
     () => [
@@ -174,17 +164,6 @@ export default function MemberHome() {
       { label: "购物车", value: `${cartItems.length}`, icon: ShoppingCart },
     ],
     [couponTop.length, favoriteIds.length, cartItems.length],
-  );
-  const quickEntries = useMemo(
-    () => [
-      { label: "新品上线", icon: Sparkles, path: "/new-arrivals" },
-      { label: "时尚配饰", icon: Gift, path: "/categories" },
-      { label: "户外生活", icon: Truck, path: "/categories" },
-      { label: "数码配件", icon: Zap, path: "/categories" },
-      { label: "进口优选", icon: Star, path: "/categories?sort=sales_desc" },
-      { label: "全部分类", icon: LayoutGrid, path: "/categories" },
-    ],
-    [],
   );
 
   const trackNewArrivalClick = (target: "product" | "new_arrivals_page") => {
@@ -253,47 +232,8 @@ export default function MemberHome() {
             <BannerCarousel banners={banners} themeConfigOverride={themeConfig} />
           </div>
         </section>
-        <section className="mt-3 grid grid-cols-3 gap-2 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
-          {quickEntries.map((entry) => (
-            <button
-              key={entry.label}
-              type="button"
-              onClick={() => navigate(entry.path)}
-              className="flex flex-col items-center gap-2 rounded-xl p-1 text-center"
-            >
-              <span className={`flex h-11 w-11 items-center justify-center rounded-full ${categoryIconClass}`}>
-                <entry.icon size={18} />
-              </span>
-              <span className="text-xs text-[var(--theme-text)]">{entry.label}</span>
-            </button>
-          ))}
-        </section>
         <section className="-mx-4 mt-3">
           <HomeOpsBlocks />
-        </section>
-        <section
-          className={`mt-3 rounded-2xl border border-[var(--theme-border)] p-4 ${isDealLayout ? "ring-1 ring-[var(--theme-warning)]/35" : ""}`}
-          style={{
-            background:
-              "linear-gradient(90deg, color-mix(in srgb, var(--theme-price) 22%, white), color-mix(in srgb, var(--theme-price) 16%, white) 55%, color-mix(in srgb, var(--theme-price) 25%, white))",
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-white/70 p-2 text-[var(--theme-price)]">
-              <Ticket size={22} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xl font-extrabold text-[var(--theme-text-on-surface)]">会员专属礼包</p>
-              <p className="line-clamp-1 text-sm text-[var(--theme-text-muted-on-surface)]">今日会员权益已更新，专属优惠券可立即领取</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate("/coupons")}
-              className="rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-bold text-[var(--theme-primary-foreground)]"
-            >
-              立即领取
-            </button>
-          </div>
         </section>
         <section className="mt-3 grid grid-cols-4 gap-2 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
           <div className="flex items-center gap-1.5 text-xs text-[var(--theme-text)]">
@@ -314,14 +254,14 @@ export default function MemberHome() {
           </div>
         </section>
         <section className="mt-section">
-          <Header title="权益券包" icon={Ticket} />
-          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">
+          <Header title="会员专属礼包" icon={Ticket} />
+          <div className="-mx-4 flex items-start snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">
             {(couponLoading ? Array.from({ length: 4 }) : couponTop).map((c: UserCoupon | number, i) => {
               if (couponLoading || typeof c === "number") {
                 return (
                   <div
                     key={i}
-                    className="snap-center h-[136px] w-[min(88vw,560px)] shrink-0 animate-pulse rounded-xl bg-[var(--theme-surface)]/70 ring-1 ring-[var(--theme-border)]"
+                    className="snap-center h-[168px] w-[min(88vw,560px)] shrink-0 animate-pulse rounded-xl bg-[var(--theme-surface)]/70 ring-1 ring-[var(--theme-border)]"
                   />
                 );
               }
@@ -331,11 +271,11 @@ export default function MemberHome() {
               return (
                 <div
                   key={c.id}
-                  className="snap-center h-[136px] w-[min(88vw,560px)] shrink-0"
+                  className="snap-center h-[168px] w-[min(88vw,560px)] shrink-0"
                 >
                   <PremiumCouponCard
                     compact
-                    className="h-full min-h-0 shadow-lg"
+                    className="min-h-0 shadow-lg"
                     title={display.title}
                     amountPrefix={display.amountPrefix}
                     amount={display.amount}
@@ -370,9 +310,13 @@ export default function MemberHome() {
               );
             })}
           </div>
+          {!couponLoading && couponTop.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)]/60 px-4 py-8 text-center text-sm text-[var(--theme-text-muted)]">
+              暂无可用会员礼包
+            </div>
+          ) : null}
         </section>
         <section className="mt-section">
-          <Header title="新品上市" icon={Zap} subtitle="每周精选上新，发现最新好物" />
           <div
             className="relative overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow"
             onTouchStart={(e) => {
@@ -406,24 +350,22 @@ export default function MemberHome() {
                   <img
                     src={activeNewImage}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    alt={activeNew?.name || heroTitle}
+                    alt={activeNew?.name || "新品商品"}
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-xs text-[var(--theme-text-muted)]">
                     暂无新品图片
                   </div>
                 )}
-                <div className="absolute left-3 top-3 rounded-full bg-[var(--theme-price)] px-2.5 py-1 text-[10px] font-bold text-[var(--theme-price-foreground)] shadow">
-                  NEW
-                </div>
               </button>
 
               <div className="min-w-0 pb-8 md:pb-0">
-                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--theme-price)]">New Arrival</p>
-                <h3 className="mt-2 line-clamp-2 text-xl font-black text-[var(--theme-text-on-surface)] md:text-3xl">
-                  {heroTitle}
-                </h3>
-                <p className="mt-2 text-sm font-medium leading-relaxed text-[var(--theme-text-muted)]">{heroSubtitle}</p>
+                {heroTitle ? (
+                  <h3 className="line-clamp-2 text-xl font-black text-[var(--theme-text-on-surface)] md:text-3xl">{heroTitle}</h3>
+                ) : null}
+                {heroSubtitle ? (
+                  <p className="mt-2 text-sm font-medium leading-relaxed text-[var(--theme-text-muted)]">{heroSubtitle}</p>
+                ) : null}
 
                 {activeNew ? (
                   <button type="button" onClick={goActiveNewProduct} className="mt-4 block max-w-full text-left">
@@ -435,13 +377,15 @@ export default function MemberHome() {
                 )}
 
                 <div className="mt-5 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={goNewArrivalsPage}
-                    className="rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-bold text-[var(--theme-primary-foreground)] shadow-[var(--theme-shadow)]"
-                  >
-                    {heroCtaText}
-                  </button>
+                  {heroCtaText ? (
+                    <button
+                      type="button"
+                      onClick={goNewArrivalsPage}
+                      className="rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-bold text-[var(--theme-primary-foreground)] shadow-[var(--theme-shadow)]"
+                    >
+                      {heroCtaText}
+                    </button>
+                  ) : null}
                   {activeNew ? (
                     <button
                       type="button"
@@ -505,7 +449,6 @@ export default function MemberHome() {
                 <Star className="h-5 w-5 text-[var(--theme-price)]" />
                 猜你喜欢
               </h2>
-              <p className="mt-1 text-xs tracking-wider text-[var(--theme-text-muted)]">根据你的浏览与偏好推荐</p>
             </div>
             {recBatches.length > 1 ? (
               <button

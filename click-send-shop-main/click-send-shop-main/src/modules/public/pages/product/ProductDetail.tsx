@@ -23,6 +23,7 @@ import { trackAddToCart, trackProductView } from "@/utils/tracking";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { parseSstEnabled } from "@/utils/sstTax";
 import NotificationIconButton from "@/components/NotificationIconButton";
+import { trackEvent } from "@/services/analyticsService";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -71,6 +72,7 @@ export default function ProductDetail() {
     if (!product || trackedProductIdRef.current === product.id) return;
     trackedProductIdRef.current = product.id;
     trackProductView(product);
+    void trackEvent({ event_type: "product_view", module: "product_detail", product_id: product.id });
   }, [product]);
 
   useEffect(() => {
@@ -82,8 +84,8 @@ export default function ProductDetail() {
     const active = product.active_activity;
     const remaining = active ? Math.max(0, active.remaining_stock ?? 0) : product.stock;
     const limit = active?.limit_per_user && active.limit_per_user > 0 ? active.limit_per_user : product.stock;
-    const max = Math.max(1, Math.min(product.stock, remaining, limit));
-    setQty((prev) => Math.min(prev, max));
+    const max = Math.max(0, Math.min(product.stock, remaining, limit));
+    setQty((prev) => (max <= 0 ? 0 : Math.max(1, Math.min(prev, max))));
   }, [product]);
 
   if (loading) {
@@ -137,31 +139,66 @@ export default function ProductDetail() {
   const activityLimit = activeActivity?.limit_per_user && activeActivity.limit_per_user > 0
     ? activeActivity.limit_per_user
     : product.stock;
-  const maxQty = Math.max(1, Math.min(displayStock, activityRemaining, activityLimit));
+  const maxQty = Math.max(0, Math.min(displayStock, activityRemaining, activityLimit));
+  const soldOut = maxQty <= 0;
   const detailSections = buildDetailSections(product.description);
+  const galleryImages = Array.from(new Set([...(Array.isArray(product.images) && product.images.length ? product.images : []), ...(product.cover_image ? [product.cover_image] : [])].filter((url): url is string => typeof url === "string" && url.trim().length > 0)));
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
+    if (soldOut) {
+      toast.error("库存不足");
+      return;
+    }
     if (availableVariants.length && !selectedVariant) {
       toast.error("请选择商品规格");
       return;
     }
-    addItem(productForCart, qty, selectedVariant);
-    trackAddToCart(productForCart, qty);
-    toast.success(`已加入购物车 x${qty}`, toastPresetQuickSuccess);
+    try {
+      await addItem(productForCart, qty, selectedVariant);
+      trackAddToCart(productForCart, qty);
+      void trackEvent({
+        event_type: "add_to_cart",
+        module: "product_detail",
+        product_id: product.id,
+        variant_id: selectedVariant?.id,
+        quantity: qty,
+        amount: Number(displayPrice || 0) * Number(qty || 0),
+      });
+      toast.success(`已加入购物车 x${qty}`, toastPresetQuickSuccess);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "加入购物车失败");
+    }
   };
 
   const handleBuyNow = () => {
+    if (soldOut) {
+      toast.error("库存不足");
+      return;
+    }
     if (availableVariants.length && !selectedVariant) {
       toast.error("请选择商品规格");
       return;
     }
     useCartStore.getState().setBuyNow(productForCart, qty, selectedVariant);
+    void trackEvent({
+      event_type: "checkout_start",
+      module: "product_detail",
+      product_id: product.id,
+      variant_id: selectedVariant?.id,
+      quantity: qty,
+      amount: Number(displayPrice || 0) * Number(qty || 0),
+    });
     navigate("/checkout");
   };
 
-  const handleFavorite = () => {
-    toggleFavorite(product);
-    toast.success(isFavorite ? "已取消收藏" : "已收藏", toastPresetQuickSuccess);
+  const handleFavorite = async () => {
+    try {
+      const favorited = await toggleFavorite(product);
+      void trackEvent({ event_type: "favorite", module: "product_detail", product_id: product.id, quantity: favorited ? 1 : 0 });
+      toast.success(favorited ? "已收藏" : "已取消收藏", toastPresetQuickSuccess);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "收藏操作失败");
+    }
   };
 
   const handleShare = async () => {
@@ -201,7 +238,7 @@ export default function ProductDetail() {
           {/* 左：图集 */}
           <div className="md:sticky md:top-20 md:self-start">
             <div className="md:overflow-hidden md:theme-rounded md:border md:border-[var(--theme-border)]">
-              <ProductImageGallery images={product.images} name={product.name} videoUrl={product.video_url} />
+              <ProductImageGallery images={galleryImages} name={product.name} videoUrl={product.video_url} />
             </div>
           </div>
 
@@ -227,7 +264,7 @@ export default function ProductDetail() {
                 )}
                 <ProductTagList tags={product.tags} max={6} size="md" />
                 <span className="text-xs text-muted-foreground">
-                  库存: {displayStock} 件
+                  库存: {Math.max(0, displayStock)} 件
                 </span>
               </div>
               <h1 className="mt-3 font-display text-xl font-semibold leading-snug text-foreground md:text-3xl md:leading-tight">
@@ -318,9 +355,9 @@ export default function ProductDetail() {
                         key={variant.id}
                         type="button"
                         disabled={disabled}
-                        onClick={() => {
+                  onClick={() => {
                           setSelectedVariantId(variant.id);
-                          setQty((prev) => Math.min(prev, Math.max(1, variant.stock)));
+                          setQty((prev) => (variant.stock > 0 ? Math.max(1, Math.min(prev, variant.stock)) : 0));
                         }}
                         className={`min-h-16 rounded-lg border px-3 py-2 text-left text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
                           active
@@ -346,6 +383,7 @@ export default function ProductDetail() {
                   variant="ghost"
                   aria-label="减少数量"
                   onClick={() => setQty(Math.max(1, qty - 1))}
+                  disabled={soldOut}
                   className="flex h-9 w-9 items-center justify-center rounded-full active:bg-[var(--theme-bg)] touch-target !p-0"
                 >
                   <Minus size={16} className="text-foreground" />
@@ -357,7 +395,8 @@ export default function ProductDetail() {
                   type="button"
                   variant="ghost"
                   aria-label="增加数量"
-                  onClick={() => setQty(Math.min(maxQty, qty + 1))}
+                  onClick={() => setQty(Math.min(maxQty, Math.max(1, qty + 1)))}
+                  disabled={soldOut}
                   className="flex h-9 w-9 items-center justify-center rounded-full active:bg-[var(--theme-bg)] touch-target !p-0"
                 >
                   <Plus size={16} className="text-foreground" />
@@ -371,17 +410,19 @@ export default function ProductDetail() {
                 type="button"
                 variant="outline"
                 onClick={handleAddToCart}
+                disabled={soldOut}
                 className="flex-1 rounded-full py-3.5 text-sm font-semibold transition-all !min-h-0"
               >
-                加入购物车
+                {soldOut ? "已售罄" : "加入购物车"}
               </SquishButton>
               <SquishButton
                 type="button"
                 variant="gold"
                 onClick={handleBuyNow}
+                disabled={soldOut}
                 className="flex-1 rounded-full py-3.5 text-sm font-semibold transition-all hover:opacity-95 shadow-lg shadow-gold/20 !min-h-0"
               >
-                立即购买
+                {soldOut ? "已售罄" : "立即购买"}
               </SquishButton>
               <SquishButton
                 type="button"
@@ -470,17 +511,19 @@ export default function ProductDetail() {
             type="button"
             variant="outline"
             onClick={handleAddToCart}
+            disabled={soldOut}
             className="flex-1 rounded-full py-3.5 text-sm font-semibold transition-all !min-h-0"
           >
-            加入购物车
+            {soldOut ? "已售罄" : "加入购物车"}
           </SquishButton>
           <SquishButton
             type="button"
             variant="gold"
             onClick={handleBuyNow}
+            disabled={soldOut}
             className="flex-1 rounded-full py-3.5 text-sm font-semibold transition-all shadow-lg shadow-gold/20 !min-h-0"
           >
-            立即购买
+            {soldOut ? "已售罄" : "立即购买"}
           </SquishButton>
         </div>
       </div>
@@ -556,3 +599,5 @@ function DetailHeader({
     </header>
   );
 }
+
+

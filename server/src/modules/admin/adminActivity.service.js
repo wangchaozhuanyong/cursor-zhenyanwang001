@@ -6,20 +6,9 @@ const repo = require('./adminActivity.repository');
 
 function bumpCatalogCache() {
   try {
-    if (typeof catalogService.clearCatalogCache === 'function') {
-      catalogService.clearCatalogCache();
-    }
+    if (typeof catalogService.clearCatalogCache === 'function') catalogService.clearCatalogCache();
   } catch (e) {
     console.warn(`[adminActivity] clear catalog cache: ${e?.message || e}`);
-  }
-}
-
-function assertFullReductionRules(type, threshold, discount) {
-  if (type !== 'full_reduction') return;
-  const th = threshold != null && threshold !== '' ? Number(threshold) : NaN;
-  const disc = discount != null && discount !== '' ? Number(discount) : NaN;
-  if (!Number.isFinite(th) || !Number.isFinite(disc) || th <= 0 || disc <= 0) {
-    throw new BusinessError(400, '满减活动需设置满额门槛与减免金额，且均须大于 0');
   }
 }
 
@@ -29,29 +18,61 @@ function toNumber(v, fallback = 0) {
 }
 
 function computeStatus(row) {
-  if (Number(row.disabled) === 1) return 'disabled';
+  if (Number(row.disabled) === 1 || row.status === 'disabled') return 'disabled';
   const now = Date.now();
   const start = new Date(row.start_at).getTime();
   const end = new Date(row.end_at).getTime();
-  if (Number.isFinite(start) && now < start) return 'not_started';
+  if (row.status === 'draft') return 'draft';
+  if (Number.isFinite(start) && now < start) return 'scheduled';
   if (Number.isFinite(end) && now > end) return 'ended';
   return 'active';
 }
 
 function statusLabel(status) {
   return {
-    not_started: '未开始',
+    draft: '草稿',
+    scheduled: '未开始',
     active: '进行中',
     ended: '已结束',
-    disabled: '禁用',
+    disabled: '已禁用',
   }[status] || status;
+}
+
+function assertPublishRules(payload) {
+  if (!payload.title) throw new BusinessError(400, '活动名称必填');
+  if (!payload.start_at || !payload.end_at) throw new BusinessError(400, '开始时间和结束时间必填');
+  if (new Date(payload.end_at).getTime() <= new Date(payload.start_at).getTime()) {
+    throw new BusinessError(400, '结束时间必须晚于开始时间');
+  }
+  if (payload.type === 'flash_sale') {
+    if (!payload.items.length) throw new BusinessError(400, '秒杀活动必须选择商品');
+    const invalid = payload.items.find((it) => Number(it.activity_price) <= 0 || Number(it.activity_stock) < 0 || Number(it.limit_per_user) < 0);
+    if (invalid) throw new BusinessError(400, '秒杀活动存在不合法商品配置（活动价/活动库存/限购）');
+  }
+  if (payload.type === 'full_reduction') {
+    const rules = payload?.activity_config?.full_reduction_rules;
+    if (Array.isArray(rules) && rules.length > 0) {
+      for (const r of rules) {
+        const th = Number(r.threshold_amount || 0);
+        const disc = Number(r.discount_amount || 0);
+        if (th <= 0) throw new BusinessError(400, '满减门槛必须大于 0');
+        if (disc <= 0) throw new BusinessError(400, '满减金额必须大于 0');
+        if (disc > th) throw new BusinessError(400, '满减金额不能大于满减门槛');
+      }
+    } else {
+      const th = Number(payload.threshold_amount || 0);
+      const disc = Number(payload.discount_amount || 0);
+      if (th <= 0) throw new BusinessError(400, '满减门槛必须大于 0');
+      if (disc <= 0) throw new BusinessError(400, '满减金额必须大于 0');
+      if (disc > th) throw new BusinessError(400, '满减金额不能大于满减门槛');
+    }
+  }
 }
 
 function normalizeItem(item, index) {
   const productId = String(item.product_id || '').trim();
   if (!productId) throw new BusinessError(400, '活动商品不能为空');
   const activityPrice = toNumber(item.activity_price, 0);
-  if (activityPrice <= 0) throw new BusinessError(400, '活动价必须大于 0');
   const stock = Math.max(0, Math.floor(toNumber(item.activity_stock, 0)));
   const limit = Math.max(0, Math.floor(toNumber(item.limit_per_user, 0)));
   return {
@@ -65,36 +86,47 @@ function normalizeItem(item, index) {
   };
 }
 
+function normalizeScopes(body = {}) {
+  const scopeType = ['all', 'category', 'product', 'member_level', 'user_tag', 'new_user', 'old_user'].includes(String(body.scope_type || 'product'))
+    ? String(body.scope_type)
+    : 'product';
+  const scopeIds = Array.isArray(body.scope_ids) ? body.scope_ids.map((x) => String(x || '').trim()).filter(Boolean) : [];
+  const scopes = scopeIds.map((scopeId) => ({ id: generateId(), scope_type: scopeType, scope_id: scopeId }));
+  return { scopeType, scopes };
+}
+
 function normalizePayload(body, partial = false) {
   const out = {};
   if (!partial || body.type !== undefined) {
-    out.type = body.type === 'full_reduction' ? 'full_reduction' : 'flash_sale';
+    const supported = ['flash_sale', 'full_reduction', 'coupon_activity', 'new_user_gift', 'member_activity', 'points_bonus', 'cashback_activity'];
+    out.type = supported.includes(String(body.type)) ? String(body.type) : 'flash_sale';
   }
   if (!partial || body.title !== undefined) {
     const title = String(body.title || '').trim();
     if (!title) throw new BusinessError(400, '活动名称必填');
     out.title = title;
   }
+  if (body.subtitle !== undefined || !partial) out.subtitle = String(body.subtitle || '').trim();
+  if (body.cover_image !== undefined || !partial) out.cover_image = String(body.cover_image || '').trim();
   if (!partial || body.start_at !== undefined) out.start_at = String(body.start_at || '').replace('T', ' ');
   if (!partial || body.end_at !== undefined) out.end_at = String(body.end_at || '').replace('T', ' ');
-  if (out.start_at && out.end_at && new Date(out.end_at).getTime() <= new Date(out.start_at).getTime()) {
-    throw new BusinessError(400, '结束时间必须晚于开始时间');
-  }
   if (body.description !== undefined || !partial) out.description = String(body.description || '').trim();
   if (body.disabled !== undefined || !partial) out.disabled = !!body.disabled;
-  if (body.threshold_amount !== undefined || !partial) {
-    const n = body.threshold_amount === '' || body.threshold_amount == null ? null : toNumber(body.threshold_amount, 0);
-    out.threshold_amount = n != null ? Math.max(0, n) : null;
-  }
-  if (body.discount_amount !== undefined || !partial) {
-    const n = body.discount_amount === '' || body.discount_amount == null ? null : toNumber(body.discount_amount, 0);
-    out.discount_amount = n != null ? Math.max(0, n) : null;
-  }
   if (body.sort_order !== undefined || !partial) out.sort_order = Math.floor(toNumber(body.sort_order, 0));
+  if (body.threshold_amount !== undefined || !partial) out.threshold_amount = body.threshold_amount === '' || body.threshold_amount == null ? null : toNumber(body.threshold_amount, 0);
+  if (body.discount_amount !== undefined || !partial) out.discount_amount = body.discount_amount === '' || body.discount_amount == null ? null : toNumber(body.discount_amount, 0);
+  if (body.allow_coupon_stack !== undefined || !partial) out.allow_coupon_stack = !!body.allow_coupon_stack;
+  if (body.allow_points_stack !== undefined || !partial) out.allow_points_stack = !!body.allow_points_stack;
+  if (body.allow_reward !== undefined || !partial) out.allow_reward = !!body.allow_reward;
+  if (body.publish_at !== undefined || !partial) out.publish_at = body.publish_at ? String(body.publish_at).replace('T', ' ') : null;
+  if (body.internal_note !== undefined || !partial) out.internal_note = String(body.internal_note || '').trim();
+  if (body.activity_config !== undefined || !partial) out.activity_config = body.activity_config || null;
+  if (body.display_positions !== undefined || !partial) out.display_positions = Array.isArray(body.display_positions) ? body.display_positions : [];
+  if (body.status !== undefined || !partial) out.status = String(body.status || 'draft');
   return out;
 }
 
-function formatActivity(row, items = undefined) {
+function formatActivity(row, items = undefined, scopes = undefined) {
   const status = computeStatus(row);
   const out = {
     ...row,
@@ -104,6 +136,11 @@ function formatActivity(row, items = undefined) {
     product_count: Number(row.product_count || 0),
     activity_stock_total: Number(row.activity_stock_total || 0),
     sold_count_total: Number(row.sold_count_total || 0),
+    allow_coupon_stack: !!row.allow_coupon_stack,
+    allow_points_stack: !!row.allow_points_stack,
+    allow_reward: !!row.allow_reward,
+    display_positions: row.display_positions ? JSON.parse(row.display_positions) : [],
+    activity_config: row.activity_config ? JSON.parse(row.activity_config) : null,
     status,
     status_label: statusLabel(status),
   };
@@ -118,7 +155,34 @@ function formatActivity(row, items = undefined) {
       product_stock: it.product_stock != null ? Number(it.product_stock) : null,
     }));
   }
+  if (scopes) {
+    out.scopes = scopes;
+    out.scope_ids = scopes.map((s) => s.scope_id);
+  }
   return out;
+}
+
+async function validateProductsForFlashSale(items, startAt, endAt, excludeActivityId = null) {
+  if (!items.length) return;
+  const productIds = [...new Set(items.map((it) => it.product_id))];
+  const products = await repo.selectProductStocksByIds(productIds);
+  const productMap = new Map(products.map((p) => [p.id, p]));
+  for (const item of items) {
+    const product = productMap.get(item.product_id);
+    if (!product) throw new BusinessError(400, `商品 ${item.product_id} 不存在`);
+    if (Number(product.lifecycle_status) !== 1) throw new BusinessError(400, `商品「${product.name}」未上架，不可参与秒杀`);
+    if (item.activity_stock > Number(product.stock || 0)) {
+      throw new BusinessError(400, `商品「${product.name}」活动库存不能超过真实库存`);
+    }
+    if (item.activity_price > Number(product.price || 0)) {
+      throw new BusinessError(400, `商品「${product.name}」活动价不能高于原价`);
+    }
+  }
+  const conflicts = await repo.selectConflictingActivities({ productIds, startAt, endAt, excludeActivityId });
+  if (conflicts.length) {
+    const first = conflicts[0];
+    throw new BusinessError(400, `商品 ${first.product_id} 与活动「${first.title}」时间冲突`);
+  }
 }
 
 async function listActivities(query) {
@@ -135,17 +199,24 @@ async function getActivity(id) {
   const row = await repo.selectActivityById(id);
   if (!row) throw new BusinessError(404, '活动不存在');
   const items = await repo.selectActivityItems(id);
-  return { data: formatActivity(row, items) };
+  const scopes = await repo.selectActivityScopes(id);
+  return { data: formatActivity(row, items, scopes) };
 }
 
 async function createActivity(body, adminUserId, req) {
   const payload = normalizePayload(body);
-  assertFullReductionRules(payload.type, payload.threshold_amount, payload.discount_amount);
   const items = Array.isArray(body.items) ? body.items.map(normalizeItem) : [];
-  if (items.length === 0) throw new BusinessError(400, '至少配置一个活动商品');
+  const { scopeType, scopes } = normalizeScopes(body);
+  const targetStatus = body.status === 'active' || body.status === 'scheduled' ? body.status : 'draft';
+  const finalPayload = { ...payload, items, scope_type: scopeType, status: targetStatus };
+  if (targetStatus !== 'draft') {
+    assertPublishRules(finalPayload);
+    await validateProductsForFlashSale(items, payload.start_at, payload.end_at);
+  }
   const id = generateId();
-  await repo.insertActivity({ ...payload, id, adminUserId });
-  await repo.replaceActivityItems(id, items);
+  await repo.insertActivity({ ...finalPayload, id, adminUserId });
+  if (items.length) await repo.replaceActivityItems(id, items);
+  await repo.replaceActivityScopes(id, scopes);
   bumpCatalogCache();
   await writeAuditLog({
     req,
@@ -154,7 +225,7 @@ async function createActivity(body, adminUserId, req) {
     objectType: 'marketing_activity',
     objectId: id,
     summary: `创建活动 ${payload.title}`,
-    after: { ...payload, items },
+    after: { ...finalPayload, scopes },
     result: 'success',
   });
   return getActivity(id);
@@ -164,20 +235,37 @@ async function updateActivity(id, body, adminUserId, req) {
   const existing = await repo.selectActivityById(id);
   if (!existing) throw new BusinessError(404, '活动不存在');
   const payload = normalizePayload(body, true);
-  const mergedType = payload.type !== undefined ? payload.type : existing.type;
-  const mergedTh = payload.threshold_amount !== undefined ? payload.threshold_amount : existing.threshold_amount;
-  const mergedDisc = payload.discount_amount !== undefined ? payload.discount_amount : existing.discount_amount;
-  assertFullReductionRules(mergedType, mergedTh, mergedDisc);
   const fragments = [];
   const values = [];
+  const items = Array.isArray(body.items) ? body.items.map(normalizeItem) : null;
+  const scopesNormalized = body.scope_type !== undefined || body.scope_ids !== undefined ? normalizeScopes(body) : null;
+  const merged = {
+    ...existing,
+    ...payload,
+    items: items ?? await repo.selectActivityItems(id),
+    scope_type: scopesNormalized?.scopeType || existing.scope_type,
+  };
+  if (payload.status && payload.status !== 'draft') {
+    assertPublishRules(merged);
+    if (merged.type === 'flash_sale') {
+      await validateProductsForFlashSale(merged.items, merged.start_at, merged.end_at, id);
+    }
+  }
   for (const [key, value] of Object.entries(payload)) {
-    fragments.push(`${key} = ?`);
-    values.push(key === 'disabled' ? (value ? 1 : 0) : value);
+    if (key === 'display_positions' || key === 'activity_config') {
+      fragments.push(`${key} = ?`);
+      values.push(value ? JSON.stringify(value) : null);
+    } else if (key === 'disabled' || key === 'allow_coupon_stack' || key === 'allow_points_stack' || key === 'allow_reward') {
+      fragments.push(`${key} = ?`);
+      values.push(value ? 1 : 0);
+    } else {
+      fragments.push(`${key} = ?`);
+      values.push(value);
+    }
   }
   if (fragments.length) await repo.updateActivityDynamic(id, fragments, values, adminUserId);
-  if (Array.isArray(body.items)) {
-    await repo.replaceActivityItems(id, body.items.map(normalizeItem));
-  }
+  if (items) await repo.replaceActivityItems(id, items);
+  if (scopesNormalized) await repo.replaceActivityScopes(id, scopesNormalized.scopes);
   bumpCatalogCache();
   await writeAuditLog({
     req,
@@ -226,6 +314,21 @@ async function deleteActivity(id, adminUserId, req) {
   return { data: null, message: '已删除' };
 }
 
+async function validateActivityBeforePublish(body, id = null) {
+  const payload = normalizePayload(body, !!id);
+  const items = Array.isArray(body.items) ? body.items.map(normalizeItem) : [];
+  const merged = { ...payload, items };
+  assertPublishRules(merged);
+  if ((payload.type || body.type) === 'flash_sale') {
+    await validateProductsForFlashSale(items, payload.start_at || body.start_at, payload.end_at || body.end_at, id);
+  }
+  return { data: { ok: true } };
+}
+
+async function searchActivityProducts(query) {
+  return repo.searchActivityProducts(query);
+}
+
 module.exports = {
   listActivities,
   getActivity,
@@ -233,4 +336,6 @@ module.exports = {
   updateActivity,
   updateActivityStatus,
   deleteActivity,
+  validateActivityBeforePublish,
+  searchActivityProducts,
 };

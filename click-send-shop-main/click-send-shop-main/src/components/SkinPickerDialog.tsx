@@ -20,7 +20,7 @@ export default function SkinPickerDialog({
   title?: string;
   className?: string;
 }) {
-  const { skins, skinId, setSkinId } = useThemeRuntime();
+  const { switchableSkins, skinId, setSkinId } = useThemeRuntime();
 
   return (
     <Dialog>
@@ -35,10 +35,10 @@ export default function SkinPickerDialog({
         </DialogHeader>
 
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          {skins.length === 0 ? (
+          {switchableSkins.length === 0 ? (
             <div className="col-span-full text-sm text-muted-foreground">皮肤加载中...</div>
           ) : (
-            skins.map((skin) => {
+            switchableSkins.map((skin) => {
               const primary = skin.config.primaryColor;
               const secondary = skin.config.secondaryColor;
               const gradient = `linear-gradient(135deg, ${primary}, ${secondary})`;

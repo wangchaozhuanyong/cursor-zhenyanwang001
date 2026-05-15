@@ -1,33 +1,52 @@
 ﻿import { get } from "@/api/request";
-import type { ReportData } from "@/types/admin";
 
-type ApiRange = "week" | "month" | "quarter" | "year";
+export type ReportQuery = {
+  date_from?: string;
+  date_to?: string;
+  granularity?: "day" | "week" | "month";
+  compare?: "previous_period" | "previous_week" | "previous_month" | "";
+  category_id?: string;
+  product_id?: string;
+  activity_id?: string;
+  coupon_id?: string;
+  payment_status?: string;
+  order_status?: string;
+  user_type?: string;
+  page?: number;
+  pageSize?: number;
+  sort?: string;
+};
 
-export function getSalesReport(range: ApiRange) {
-  return get<ReportData>("/admin/reports/sales", { range });
+export function getReportOverview(params?: ReportQuery) {
+  return get<Record<string, unknown>>("/admin/reports/overview", params as Record<string, unknown>);
 }
-
-export function getUserReport(range: ApiRange) {
-  return get<ReportData>("/admin/reports/users", { range });
+export function getSalesDaily(params?: ReportQuery) {
+  return get<Record<string, unknown>>("/admin/reports/sales/daily", params as Record<string, unknown>);
 }
-
-export function getProductReport() {
-  return get<ReportData>("/admin/reports/products");
+export function getSalesMonthly(params?: ReportQuery) {
+  return get<Record<string, unknown>>("/admin/reports/sales/monthly", params as Record<string, unknown>);
 }
-
-export function getHomeEngagementReport(range: ApiRange) {
-  return get<ReportData>("/admin/reports/home-engagement", { range });
+export function getProductsAnalysis(params?: ReportQuery) {
+  return get<Record<string, unknown>>("/admin/reports/products/analysis", params as Record<string, unknown>);
 }
-
-export function exportSalesReportCsv(range: ApiRange) {
-  return `/admin/reports/sales/export?range=${range}`;
+export function getCategoriesAnalysis(params?: ReportQuery) {
+  return get<Record<string, unknown>>("/admin/reports/categories/analysis", params as Record<string, unknown>);
 }
-
-export function exportUserReportCsv(range: ApiRange) {
-  return `/admin/reports/users/export?range=${range}`;
+export function getOrdersAnalysis(params?: ReportQuery) {
+  return get<Record<string, unknown>>("/admin/reports/orders/analysis", params as Record<string, unknown>);
 }
-
-export function exportProductReportCsv() {
-  return `/admin/reports/products/export`;
+export function getCustomersAnalysis(params?: ReportQuery) {
+  return get<Record<string, unknown>>("/admin/reports/customers/analysis", params as Record<string, unknown>);
 }
-
+export function getActivitiesAnalysis(params?: ReportQuery) {
+  return get<Record<string, unknown>>("/admin/reports/activities/analysis", params as Record<string, unknown>);
+}
+export function getCouponsAnalysis(params?: ReportQuery) {
+  return get<Record<string, unknown>>("/admin/reports/coupons/analysis", params as Record<string, unknown>);
+}
+export function getInventoryAnalysis(params?: ReportQuery) {
+  return get<Record<string, unknown>>("/admin/reports/inventory/analysis", params as Record<string, unknown>);
+}
+export function getSearchAnalysis(params?: ReportQuery) {
+  return get<Record<string, unknown>>("/admin/reports/search/analysis", params as Record<string, unknown>);
+}

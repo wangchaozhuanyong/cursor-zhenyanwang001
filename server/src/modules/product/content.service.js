@@ -43,6 +43,7 @@ const PUBLIC_SITE_KEYS = [
   'newArrivalHeroImage', 'newArrivalHeroTitle', 'newArrivalHeroSubtitle', 'newArrivalHeroCtaText',
   // Cookie 同意后才会由前端读取并加载的分析/广告追踪配置
   'ga4Enabled', 'ga4MeasurementId', 'metaPixelEnabled', 'metaPixelId',
+  'helpCenterConfig',
 ];
 
 exports.PUBLIC_SITE_KEYS = PUBLIC_SITE_KEYS;

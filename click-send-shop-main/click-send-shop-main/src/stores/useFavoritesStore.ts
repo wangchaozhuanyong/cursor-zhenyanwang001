@@ -1,8 +1,7 @@
-import { create } from "zustand";
+﻿import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { isLoggedIn } from "@/utils/token";
 import * as favoritesService from "@/services/favoritesService";
-import { toast } from "sonner";
 
 export interface FavoriteProduct {
   id: string;
@@ -26,7 +25,7 @@ interface FavoritesStore {
   favoriteProducts: FavoriteProduct[];
   loading: boolean;
   isFavorite: (id: string) => boolean;
-  toggleFavorite: (product: FavoriteProduct) => void;
+  toggleFavorite: (product: FavoriteProduct) => Promise<boolean>;
   loadFavorites: () => Promise<void>;
 }
 
@@ -39,7 +38,7 @@ export const useFavoritesStore = create<FavoritesStore>()(
 
       isFavorite: (id) => get().favoriteIds.includes(id),
 
-      toggleFavorite: (product) => {
+      toggleFavorite: async (product) => {
         const id = product.id;
         const has = get().favoriteIds.includes(id);
         const prev = { favoriteIds: get().favoriteIds, favoriteProducts: get().favoriteProducts };
@@ -54,12 +53,15 @@ export const useFavoritesStore = create<FavoritesStore>()(
               : [product, ...s.favoriteProducts],
         }));
         if (isLoggedIn()) {
-          const apiCall = has ? favoritesService.removeFavoriteProduct(id) : favoritesService.addFavoriteProduct(id);
-          apiCall.catch(() => {
+          try {
+            if (has) await favoritesService.removeFavoriteProduct(id);
+            else await favoritesService.addFavoriteProduct(id);
+          } catch {
             set(prev);
-            toast.error("操作失败，请重试");
-          });
+            throw new Error("收藏操作失败，请重试");
+          }
         }
+        return !has;
       },
 
       loadFavorites: async () => {

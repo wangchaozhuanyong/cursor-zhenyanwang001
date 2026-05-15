@@ -30,3 +30,13 @@ exports.remove = asyncRoute(async (req, res) => {
   const r = await svc.deleteActivity(req.params.id, req.user?.id, req);
   res.success(r.data, r.message);
 });
+
+exports.validateBeforePublish = asyncRoute(async (req, res) => {
+  const r = await svc.validateActivityBeforePublish(req.body, req.params.id || null);
+  res.success(r.data);
+});
+
+exports.searchProducts = asyncRoute(async (req, res) => {
+  const r = await svc.searchActivityProducts(req.query);
+  res.paginate(r.list, r.total, r.page, r.pageSize);
+});

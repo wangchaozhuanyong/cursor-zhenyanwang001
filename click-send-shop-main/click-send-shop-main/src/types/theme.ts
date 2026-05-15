@@ -66,5 +66,6 @@ export type ThemeConfig = {
 export type ThemeSkin = {
   id: string;
   name: string;
+  clientEnabled?: boolean;
   config: ThemeConfig;
 };

@@ -1,6 +1,7 @@
 const db = require('../../config/db');
 
 const PUBLIC_QUERY_TIMEOUT_MS = 3000;
+const ACTIVE_PRODUCT_WHERE = "(lifecycle_status = 1 OR (lifecycle_status IS NULL AND status = 'active')) AND deleted_at IS NULL";
 
 function isTimeoutError(err) {
   return err?.code === 'PROTOCOL_SEQUENCE_TIMEOUT' || /timeout/i.test(String(err?.message || ''));
@@ -74,15 +75,15 @@ async function selectProductById(id) {
 
 async function selectHomeProductBlocks(limit) {
   const [hot] = await db.query(
-    'SELECT * FROM products WHERE lifecycle_status=1 AND deleted_at IS NULL AND is_hot=1 ORDER BY sort_order LIMIT ?',
+    `SELECT * FROM products WHERE ${ACTIVE_PRODUCT_WHERE} AND is_hot=1 ORDER BY sort_order LIMIT ?`,
     [limit],
   );
   const [nw] = await db.query(
-    'SELECT * FROM products WHERE lifecycle_status=1 AND deleted_at IS NULL AND is_new=1 ORDER BY sort_order LIMIT ?',
+    `SELECT * FROM products WHERE ${ACTIVE_PRODUCT_WHERE} AND is_new=1 ORDER BY sort_order LIMIT ?`,
     [limit],
   );
   const [rec] = await db.query(
-    'SELECT * FROM products WHERE lifecycle_status=1 AND deleted_at IS NULL AND is_recommended=1 ORDER BY sort_order LIMIT ?',
+    `SELECT * FROM products WHERE ${ACTIVE_PRODUCT_WHERE} AND is_recommended=1 ORDER BY sort_order LIMIT ?`,
     [limit],
   );
   return { hot, new_arrivals: nw, recommended: rec };
@@ -92,7 +93,7 @@ async function selectActiveProductsByFlag(flagField, limit) {
   return publicRows(
     `products:${flagField}`,
     `SELECT * FROM products
-     WHERE lifecycle_status=1 AND deleted_at IS NULL AND ${flagField}=1
+     WHERE ${ACTIVE_PRODUCT_WHERE} AND ${flagField}=1
      ORDER BY sort_order ASC, created_at DESC
      LIMIT ?`,
     [limit],
@@ -103,7 +104,7 @@ async function selectActiveProductsFallback(orderBySql, limit) {
   return publicRows(
     `products:fallback:${orderBySql}`,
     `SELECT * FROM products
-     WHERE lifecycle_status=1 AND deleted_at IS NULL
+     WHERE ${ACTIVE_PRODUCT_WHERE}
      ORDER BY ${orderBySql}
      LIMIT ?`,
     [limit],
@@ -114,11 +115,11 @@ async function selectPublicProductTags(limit = 12) {
   const lim = Math.min(50, Math.max(1, Number(limit) || 12));
   const [rows] = await db.query(
     `SELECT pt.id, pt.name, pt.color, pt.bg_color, pt.text_color, pt.sort_order,
-      COUNT(pta.product_id) AS count
+      COUNT(p.id) AS count
      FROM product_tags pt
-     INNER JOIN product_tag_assignments pta ON pta.tag_id = pt.id
-     INNER JOIN products p ON p.id = pta.product_id
-       AND p.lifecycle_status = 1
+     LEFT JOIN product_tag_assignments pta ON pta.tag_id = pt.id
+     LEFT JOIN products p ON p.id = pta.product_id
+       AND (p.lifecycle_status = 1 OR (p.lifecycle_status IS NULL AND p.status = 'active'))
        AND p.deleted_at IS NULL
      WHERE pt.enabled = 1
        AND pt.deleted_at IS NULL

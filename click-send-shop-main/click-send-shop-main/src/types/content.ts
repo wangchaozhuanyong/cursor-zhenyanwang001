@@ -81,6 +81,30 @@ export interface SiteInfo {
   ga4MeasurementId?: string;
   metaPixelEnabled?: string;
   metaPixelId?: string;
+  helpCenterConfig?: string;
+}
+
+export interface HelpCenterCategory {
+  id: string;
+  name: string;
+  sortOrder: number;
+  enabled: boolean;
+}
+
+export interface HelpCenterFaq {
+  id: string;
+  categoryId: string;
+  question: string;
+  answer: string;
+  sortOrder: number;
+  enabled: boolean;
+}
+
+export interface HelpCenterConfig {
+  workingHours: string;
+  contactNote?: string;
+  categories: HelpCenterCategory[];
+  faqs: HelpCenterFaq[];
 }
 
 /** 页脚导航条目（footerNav JSON 解析后的形态） */

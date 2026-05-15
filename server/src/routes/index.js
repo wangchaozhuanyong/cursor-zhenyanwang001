@@ -10,6 +10,7 @@ const admin = require('../modules/admin');
 const search = require('../modules/search');
 const myinvois = require('../modules/myinvois');
 const privacy = require('../modules/privacy');
+const analytics = require('../modules/analytics');
 const seoRoutes = require('../modules/seo/seo.routes');
 
 const router = Router();
@@ -23,6 +24,7 @@ router.use(privacy);
 router.use(cart);
 router.use(order);
 router.use(myinvois);
+router.use(analytics);
 router.use(admin);
 /** 与根路径 SEO 同源逻辑，便于统一走 /api 前缀（爬虫仍可使用 /robots.txt） */
 router.use('/seo', seoRoutes);

@@ -3,6 +3,7 @@ import * as categoryApi from "@/api/modules/category";
 import type { Product, ProductListParams, ProductTag } from "@/types/product";
 import type { Category } from "@/types/category";
 import type { PaginatedData } from "@/types/common";
+import { ApiError } from "@/types/common";
 
 export async function fetchProducts(
   params?: ProductListParams
@@ -15,8 +16,9 @@ export async function fetchProductById(id: string): Promise<Product | null> {
   try {
     const res = await productApi.getProductById(id);
     return res.data;
-  } catch {
-    return null;
+  } catch (error) {
+    if (error instanceof ApiError && error.code === 404) return null;
+    throw error;
   }
 }
 

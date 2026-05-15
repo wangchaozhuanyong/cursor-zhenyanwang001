@@ -16,6 +16,15 @@ export interface Coupon {
   display_badge?: string;
   category_ids?: string[];
   category_names?: string[];
+  total_quantity?: number;
+  per_user_limit?: number;
+  new_user_only?: boolean;
+  member_only?: boolean;
+  auto_issue?: boolean;
+  usable_scope_type?: "all" | "category" | "product";
+  usable_product_ids?: string[];
+  usable_category_ids?: string[];
+  stackable_with_activity?: boolean;
 }
 
 export interface UserCoupon {

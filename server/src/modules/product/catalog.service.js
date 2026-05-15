@@ -123,6 +123,9 @@ function buildProductListQuery(query, categoryIds) {
   const isHot = parseBool(query.is_hot);
   const isNew = parseBool(query.is_new);
   const isRecommended = parseBool(query.is_recommended);
+  const inStock = parseBool(query.in_stock);
+  const minPrice = Number(query.min_price);
+  const maxPrice = Number(query.max_price);
 
   let where = 'WHERE lifecycle_status = 1 AND deleted_at IS NULL';
   const params = [];
@@ -172,6 +175,17 @@ function buildProductListQuery(query, categoryIds) {
   if (isRecommended !== undefined) {
     where += ' AND is_recommended = ?';
     params.push(isRecommended ? 1 : 0);
+  }
+  if (inStock !== undefined) {
+    where += inStock ? ' AND stock > 0' : '';
+  }
+  if (Number.isFinite(minPrice) && minPrice >= 0) {
+    where += ' AND price >= ?';
+    params.push(minPrice);
+  }
+  if (Number.isFinite(maxPrice) && maxPrice >= 0) {
+    where += ' AND price <= ?';
+    params.push(maxPrice);
   }
 
   let orderBy;
@@ -239,9 +253,16 @@ async function formatRowsWithTagsAndActivities(rows) {
 async function getProducts(query) {
   let categoryIds = null;
   const categoryId = query.category_id || query.categoryId || query.category;
+  const includeDescendants = query.include_descendants === undefined
+    ? true
+    : parseBool(query.include_descendants) !== false;
   if (categoryId && categoryId !== 'all') {
-    const categoryRows = await repo.selectVisibleCategoryIds();
-    categoryIds = collectDescendantCategoryIds(categoryRows, categoryId);
+    if (includeDescendants) {
+      const categoryRows = await repo.selectVisibleCategoryIds();
+      categoryIds = collectDescendantCategoryIds(categoryRows, categoryId);
+    } else {
+      categoryIds = [categoryId];
+    }
   }
   const { page, pageSize, where, params, orderBy } = buildProductListQuery(query, categoryIds);
   const total = await repo.countActiveProducts(where, params);

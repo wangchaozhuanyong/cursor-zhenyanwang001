@@ -16,6 +16,15 @@ function formatCouponRow(row) {
   r.category_names = typeof r.category_names === 'string' && r.category_names
     ? r.category_names.split(',').filter(Boolean)
     : [];
+  r.total_quantity = Number(r.total_quantity || 0);
+  r.per_user_limit = Number(r.per_user_limit || 1);
+  r.new_user_only = !!r.new_user_only;
+  r.member_only = !!r.member_only;
+  r.auto_issue = !!r.auto_issue;
+  r.stackable_with_activity = r.stackable_with_activity !== 0;
+  r.usable_scope_type = r.usable_scope_type || 'all';
+  try { r.usable_product_ids = r.usable_product_ids ? JSON.parse(r.usable_product_ids) : []; } catch { r.usable_product_ids = []; }
+  try { r.usable_category_ids = r.usable_category_ids ? JSON.parse(r.usable_category_ids) : []; } catch { r.usable_category_ids = []; }
   return r;
 }
 
@@ -30,7 +39,11 @@ async function listCoupons(query) {
 }
 
 async function createCoupon(body, adminUserId, req) {
-  const { code, title, type, value, min_amount, start_date, end_date, description, scope_type, display_badge, category_ids } = body;
+  const {
+    code, title, type, value, min_amount, start_date, end_date, description, scope_type, display_badge, category_ids,
+    total_quantity, per_user_limit, new_user_only, member_only, auto_issue,
+    usable_scope_type, usable_product_ids, usable_category_ids, stackable_with_activity,
+  } = body;
   if (!code || !title) throw new BusinessError(400, '编码和标题必填');
   const id = generateId();
   const scopeType = scope_type === 'category' ? 'category' : 'all';
@@ -48,6 +61,15 @@ async function createCoupon(body, adminUserId, req) {
     description: description || '',
     scope_type: scopeType,
     display_badge: display_badge || '',
+    total_quantity: Number(total_quantity || 0),
+    per_user_limit: Math.max(1, Number(per_user_limit || 1)),
+    new_user_only: !!new_user_only,
+    member_only: !!member_only,
+    auto_issue: !!auto_issue,
+    usable_scope_type: usable_scope_type || 'all',
+    usable_product_ids: Array.isArray(usable_product_ids) ? usable_product_ids : [],
+    usable_category_ids: Array.isArray(usable_category_ids) ? usable_category_ids : [],
+    stackable_with_activity: stackable_with_activity !== false,
   });
   if (scopeType === 'category') {
     for (const categoryId of normalizedCategoryIds) {
@@ -62,11 +84,25 @@ async function createCoupon(body, adminUserId, req) {
 async function updateCoupon(id, body, adminUserId, req) {
   const fragments = [];
   const values = [];
-  for (const f of ['code', 'title', 'type', 'description', 'start_date', 'end_date', 'scope_type', 'display_badge']) {
+  for (const f of ['code', 'title', 'type', 'description', 'start_date', 'end_date', 'scope_type', 'display_badge', 'total_quantity', 'per_user_limit', 'usable_scope_type']) {
     if (body[f] !== undefined) {
       fragments.push(`${f} = ?`);
       values.push(body[f]);
     }
+  }
+  for (const boolField of ['new_user_only', 'member_only', 'auto_issue', 'stackable_with_activity']) {
+    if (body[boolField] !== undefined) {
+      fragments.push(`${boolField} = ?`);
+      values.push(body[boolField] ? 1 : 0);
+    }
+  }
+  if (body.usable_product_ids !== undefined) {
+    fragments.push('usable_product_ids = ?');
+    values.push(Array.isArray(body.usable_product_ids) ? JSON.stringify(body.usable_product_ids) : null);
+  }
+  if (body.usable_category_ids !== undefined) {
+    fragments.push('usable_category_ids = ?');
+    values.push(Array.isArray(body.usable_category_ids) ? JSON.stringify(body.usable_category_ids) : null);
   }
   if (body.value !== undefined) {
     fragments.push('value = ?');

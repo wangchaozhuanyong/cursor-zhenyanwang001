@@ -5,6 +5,7 @@ const { rowsToCsv, parseCsv, parseBool } = require('../../utils/csv');
 const { buildSearchKeywords, normalizeSearchKeyword } = require('../../utils/searchKeywords');
 const repo = require('./adminProduct.repository');
 const variantRepo = require('./adminProductVariant.repository');
+const inventoryRepo = require('./adminInventory.repository');
 const tagAssignmentRepo = require('../product/productTagAssignment.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
 const {
@@ -121,9 +122,10 @@ async function syncProductPriceStockFromDefaultVariant(productId) {
   const rows = await variantRepo.selectVariantsByProductId(productId);
   const def = rows.find((r) => r.is_default) || rows[0];
   if (!def) return;
+  const totalStock = rows.reduce((sum, r) => sum + Number(r.stock || 0), 0);
   await repo.updateProductDynamic(
     ['price = ?', 'stock = ?'],
-    [def.price, def.stock],
+    [def.price, totalStock],
     productId,
   );
 }
@@ -201,8 +203,42 @@ async function createProduct(body, adminUserId, req) {
       is_new: is_new ? 1 : 0,
       is_hot: is_hot ? 1 : 0,
     });
-    await variantRepo.replaceProductVariants(id, variantRows);
+    await variantRepo.upsertProductVariants(id, variantRows);
     await syncProductPriceStockFromDefaultVariant(id);
+    if (Number(stock || 0) > 0) {
+      const defaultVariant = variantRows.find((v) => v.is_default) || variantRows[0];
+      const conn = await inventoryRepo.getConnection();
+      try {
+        await conn.beginTransaction();
+        await inventoryRepo.insertStockRecord(conn, {
+          id: generateId(),
+          productId: id,
+          variantId: defaultVariant?.id || null,
+          changeType: 'in',
+          quantityDelta: Number(stock || 0),
+          beforeStock: 0,
+          afterStock: Number(stock || 0),
+          reason: '初始库存',
+          refType: 'admin',
+          refId: '',
+          operatorId: adminUserId,
+          productNameSnapshot: name,
+          variantNameSnapshot: defaultVariant?.title || '',
+          skuCodeSnapshot: defaultVariant?.sku_code || '',
+          orderNoSnapshot: '',
+          sourceNo: '',
+          remark: '',
+          costPrice: null,
+          createdByType: 'admin',
+        });
+        await conn.commit();
+      } catch (e) {
+        await conn.rollback();
+        throw e;
+      } finally {
+        conn.release();
+      }
+    }
     await tagAssignmentRepo.replaceAssignments(id, Array.isArray(tagIdsBody) ? tagIdsBody : []);
     const row = await repo.selectProductById(id);
     const vrows = await variantRepo.selectVariantsByProductId(id);
@@ -256,7 +292,7 @@ async function updateProduct(id, body, adminUserId, req) {
   try {
     const fields = [];
     const values = [];
-    const allowedFields = ['name', 'cover_image', 'video_url', 'price', 'points', 'category_id', 'stock',
+    const allowedFields = ['name', 'cover_image', 'video_url', 'price', 'points', 'category_id',
       'sort_order', 'description', 'sales_count'];
     for (const f of allowedFields) {
       if (body[f] !== undefined) {
@@ -302,14 +338,14 @@ async function updateProduct(id, body, adminUserId, req) {
         row.price,
         row.stock,
       );
-      await variantRepo.replaceProductVariants(id, variantRows);
+      await variantRepo.upsertProductVariants(id, variantRows);
       await syncProductPriceStockFromDefaultVariant(id);
-    } else if (body.price !== undefined || body.stock !== undefined) {
+    } else if (body.price !== undefined) {
       const row = await repo.selectProductById(id);
       await variantRepo.updateDefaultVariantPriceStock(
         id,
         Number(row.price),
-        Number(row.stock),
+        Number((await variantRepo.selectVariantsByProductId(id)).find((x) => x.is_default)?.stock || 0),
       );
     }
     if (hasTagUpdate) {
@@ -581,7 +617,7 @@ async function importProductsCsv(text, adminUserId) {
           is_hot: payload.is_hot ? 1 : 0,
         });
         const variantRows = normalizeVariantPayloadForDb(null, generateId, payload.price, payload.stock);
-        await variantRepo.replaceProductVariants(id, variantRows);
+        await variantRepo.upsertProductVariants(id, variantRows);
         await syncProductPriceStockFromDefaultVariant(id);
         created += 1;
       }
@@ -609,7 +645,7 @@ async function importProductsCsv(text, adminUserId) {
         is_hot: payload.is_hot ? 1 : 0,
       });
       const variantRows = normalizeVariantPayloadForDb(null, generateId, payload.price, payload.stock);
-      await variantRepo.replaceProductVariants(newId, variantRows);
+      await variantRepo.upsertProductVariants(newId, variantRows);
       await syncProductPriceStockFromDefaultVariant(newId);
       created += 1;
     }

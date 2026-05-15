@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useLayoutEffect } from "react";
+﻿import { lazy, Suspense, useEffect, useLayoutEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -17,7 +17,7 @@ import { isLoggedIn } from "@/utils/token";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { syncLockedInviteCodeBySearch } from "@/utils/inviteReferral";
 
-/* ───────── Public（前台）页面，按业务域 ───────── */
+/* ---------- Public（前台）页面，按业务域组织 ---------- */
 const MemberHome = lazy(() => import("@/modules/public/pages/home/MemberHome"));
 const GuestHome = lazy(() => import("@/modules/public/pages/home/GuestHome"));
 const Login = lazy(() => import("@/modules/public/pages/auth/Login"));
@@ -52,7 +52,7 @@ const ContentCmsPage = lazy(() => import("@/modules/public/pages/content/Content
 
 const NotFound = lazy(() => import("@/modules/public/pages/error/NotFound"));
 
-/* ───────── Admin（后台）页面，按业务域 ───────── */
+/* ---------- Admin（后台）页面，按业务域组织 ---------- */
 const AdminLogin = lazy(() => import("@/modules/admin/pages/auth/AdminLogin"));
 const AdminAccount = lazy(() => import("@/modules/admin/pages/auth/AdminAccount"));
 const AdminAccounts = lazy(() => import("@/modules/admin/pages/auth/AdminAccounts"));
@@ -76,18 +76,31 @@ const AdminUsers = lazy(() => import("@/modules/admin/pages/user/AdminUsers"));
 const AdminUserDetail = lazy(() => import("@/modules/admin/pages/user/AdminUserDetail"));
 const AdminMemberLevels = lazy(() => import("@/modules/admin/pages/user/AdminMemberLevels"));
 const AdminInvites = lazy(() => import("@/modules/admin/pages/user/AdminInvites"));
-const AdminRewardRecords = lazy(() => import("@/modules/admin/pages/user/AdminRewardRecords"));
-const AdminPointsRecords = lazy(() => import("@/modules/admin/pages/user/AdminPointsRecords"));
 
 const AdminCoupons = lazy(() => import("@/modules/admin/pages/coupon/AdminCoupons"));
 const AdminCouponForm = lazy(() => import("@/modules/admin/pages/coupon/AdminCouponForm"));
 const AdminCouponRecords = lazy(() => import("@/modules/admin/pages/coupon/AdminCouponRecords"));
 const AdminActivities = lazy(() => import("@/modules/admin/pages/marketing/AdminActivities"));
+const AdminMarketingDashboard = lazy(() => import("@/modules/admin/pages/marketing/AdminMarketingDashboard"));
+const AdminActivityForm = lazy(() => import("@/modules/admin/pages/marketing/AdminActivityForm"));
+const AdminMarketingPoints = lazy(() => import("@/modules/admin/pages/marketing/AdminMarketingPoints"));
+const AdminMarketingRewards = lazy(() => import("@/modules/admin/pages/marketing/AdminMarketingRewards"));
 
 const AdminReviews = lazy(() => import("@/modules/admin/pages/review/AdminReviews"));
 const AdminNotifications = lazy(() => import("@/modules/admin/pages/notification/AdminNotifications"));
 
 const AdminReports = lazy(() => import("@/modules/admin/pages/report/AdminReports"));
+const AdminReportOverview = lazy(() => import("@/modules/admin/pages/report/AdminReportOverview"));
+const AdminSalesDailyReport = lazy(() => import("@/modules/admin/pages/report/AdminSalesDailyReport"));
+const AdminSalesMonthlyReport = lazy(() => import("@/modules/admin/pages/report/AdminSalesMonthlyReport"));
+const AdminProductAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminProductAnalysisReport"));
+const AdminCategoryAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminCategoryAnalysisReport"));
+const AdminOrderAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminOrderAnalysisReport"));
+const AdminCustomerAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminCustomerAnalysisReport"));
+const AdminActivityAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminActivityAnalysisReport"));
+const AdminCouponAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminCouponAnalysisReport"));
+const AdminInventoryAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminInventoryAnalysisReport"));
+const AdminSearchAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminSearchAnalysisReport"));
 const AdminExportCenter = lazy(() => import("@/modules/admin/pages/report/AdminExportCenter"));
 
 const AdminSiteSettings = lazy(() => import("@/modules/admin/pages/settings/AdminSiteSettings"));
@@ -173,17 +186,26 @@ function AdminTitleSync() {
       { test: (p) => p.startsWith("/admin/settings/site"), title: "站点设置" },
       { test: (p) => p.startsWith("/admin/home-ops"), title: "首页运营配置" },
       { test: (p) => p.startsWith("/admin/banners"), title: "Banner管理" },
-      { test: (p) => p.startsWith("/admin/coupons"), title: "优惠券管理" },
-      { test: (p) => p.startsWith("/admin/marketing/activities"), title: "活动管理" },
+      { test: (p) => p === "/admin/marketing", title: "活动管理 / 活动总览" },
+      { test: (p) => p.startsWith("/admin/marketing/activities/new"), title: "活动管理 / 新建活动" },
+      { test: (p) => /^\/admin\/marketing\/activities\/[^/]+\/edit/.test(p), title: "活动管理 / 编辑活动" },
+      { test: (p) => p.startsWith("/admin/marketing/activities"), title: "活动管理 / 营销活动" },
+      { test: (p) => p.startsWith("/admin/marketing/coupons/records"), title: "活动管理 / 领券记录" },
+      { test: (p) => p.startsWith("/admin/marketing/coupons"), title: "活动管理 / 优惠券管理" },
+      { test: (p) => p.startsWith("/admin/marketing/points"), title: "活动管理 / 积分管理" },
+      { test: (p) => p.startsWith("/admin/marketing/rewards"), title: "活动管理 / 返现管理" },
+      { test: (p) => p.startsWith("/admin/marketing/invites"), title: "活动管理 / 邀请奖励" },
       { test: (p) => p.startsWith("/admin/users"), title: "用户管理" },
       { test: (p) => p.startsWith("/admin/member-levels"), title: "会员等级" },
       { test: (p) => p.startsWith("/admin/orders/unfinished"), title: "未完成结算" },
       { test: (p) => p.startsWith("/admin/orders"), title: "订单管理" },
       { test: (p) => p.startsWith("/admin/products"), title: "商品管理" },
+      { test: (p) => p.startsWith("/admin/reports"), title: "数据中心" },
+      { test: (p) => p.startsWith("/admin/exports"), title: "导出中心" },
     ];
     const match = routeTitleMap.find((item) => item.test(location.pathname));
     const pageTitle = match?.title || "管理后台";
-    document.title = `${pageTitle} · ${siteName || seoTitle || "大马通"}`;
+    document.title = `${pageTitle} | ${siteName || seoTitle || "大马通"}`;
   }, [location.pathname, siteInfo.siteName, siteInfo.seoTitle]);
 
   return null;
@@ -206,17 +228,13 @@ function HomeRoute() {
   return hasToken || isAuthenticated ? <MemberHome /> : <GuestHome />;
 }
 
-const App = () => (
-  <ErrorBoundary>
+function AppRoutes() {
+  const location = useLocation();
+  return (
+    <ErrorBoundary resetKey={location.pathname}>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Sonner />
-        <BrowserRouter
-          future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true,
-          }}
-        >
           <TopProgressBar />
           <RouterLoadingBridge />
           <AuthTokenSync />
@@ -258,7 +276,7 @@ const App = () => (
               <Route path="/coupons" element={<ProtectedRoute><Coupons /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               <Route path="/returns" element={<ProtectedRoute><Returns /></ProtectedRoute>} />
-              {/* 与购物车/收藏一致：未登录可读本地持久化的浏览记录 */}
+              {/* 与购物车/收藏一致：未登录可读取本地持久化浏览记录 */}
               <Route path="/history" element={<History />} />
 
               {/* Admin routes */}
@@ -280,27 +298,48 @@ const App = () => (
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="users/:id" element={<AdminUserDetail />} />
                 <Route path="member-levels" element={<AdminMemberLevels />} />
-                <Route path="invites" element={<AdminInvites />} />
-                <Route path="rewards" element={<AdminRewardRecords />} />
-                <Route path="points/records" element={<AdminPointsRecords />} />
-                <Route path="settings/points" element={<Navigate to="/admin/points/records" replace />} />
-                <Route path="settings/referral" element={<Navigate to="/admin/rewards" replace />} />
+                <Route path="invites" element={<Navigate to="/admin/marketing/invites" replace />} />
+                <Route path="rewards" element={<Navigate to="/admin/marketing/rewards" replace />} />
+                <Route path="points/records" element={<Navigate to="/admin/marketing/points" replace />} />
+                <Route path="settings/points" element={<Navigate to="/admin/marketing/points" replace />} />
+                <Route path="settings/referral" element={<Navigate to="/admin/marketing/rewards" replace />} />
                 <Route path="settings/site" element={<AdminSiteSettings />} />
                 <Route path="settings/theme" element={<AdminThemeSettings />} />
                 <Route path="home-ops" element={<AdminHomeOps />} />
                 <Route path="settings/shipping" element={<AdminShipping />} />
                 <Route path="settings/roles" element={<AdminRoles />} />
-                <Route path="coupons" element={<AdminCoupons />} />
-                {/* 静态路径须先于 :id，避免 /coupons/records 被当成 id=records */}
-                <Route path="coupons/records" element={<AdminCouponRecords />} />
-                <Route path="coupons/:id" element={<AdminCouponForm />} />
+                <Route path="coupons" element={<Navigate to="/admin/marketing/coupons" replace />} />
+                <Route path="coupons/new" element={<Navigate to="/admin/marketing/coupons/new" replace />} />
+                <Route path="coupons/records" element={<Navigate to="/admin/marketing/coupons/records" replace />} />
+                <Route path="coupons/:id" element={<Navigate to="/admin/marketing/coupons" replace />} />
+                <Route path="marketing" element={<AdminMarketingDashboard />} />
                 <Route path="marketing/activities" element={<AdminActivities />} />
+                <Route path="marketing/activities/new" element={<AdminActivityForm />} />
+                <Route path="marketing/activities/:id/edit" element={<AdminActivityForm />} />
+                <Route path="marketing/coupons" element={<AdminCoupons />} />
+                <Route path="marketing/coupons/new" element={<AdminCouponForm />} />
+                <Route path="marketing/coupons/:id" element={<AdminCouponForm />} />
+                <Route path="marketing/coupons/records" element={<AdminCouponRecords />} />
+                <Route path="marketing/points" element={<AdminMarketingPoints />} />
+                <Route path="marketing/rewards" element={<AdminMarketingRewards />} />
+                <Route path="marketing/invites" element={<AdminInvites />} />
                 <Route path="reviews" element={<AdminReviews />} />
                 <Route path="returns" element={<AdminReturns />} />
                 <Route path="notifications" element={<AdminNotifications />} />
                 <Route path="account" element={<AdminAccount />} />
                 <Route path="banners" element={<AdminBanners />} />
                 <Route path="reports" element={<AdminReports />} />
+                <Route path="reports/overview" element={<AdminReportOverview />} />
+                <Route path="reports/daily" element={<AdminSalesDailyReport />} />
+                <Route path="reports/monthly" element={<AdminSalesMonthlyReport />} />
+                <Route path="reports/products" element={<AdminProductAnalysisReport />} />
+                <Route path="reports/categories" element={<AdminCategoryAnalysisReport />} />
+                <Route path="reports/orders" element={<AdminOrderAnalysisReport />} />
+                <Route path="reports/customers" element={<AdminCustomerAnalysisReport />} />
+                <Route path="reports/activities" element={<AdminActivityAnalysisReport />} />
+                <Route path="reports/coupons" element={<AdminCouponAnalysisReport />} />
+                <Route path="reports/inventory" element={<AdminInventoryAnalysisReport />} />
+                <Route path="reports/search" element={<AdminSearchAnalysisReport />} />
                 <Route path="accounts" element={<AdminAccounts />} />
                 <Route path="recycle-bin" element={<AdminRecycleBin />} />
                 <Route path="exports" element={<AdminExportCenter />} />
@@ -312,10 +351,24 @@ const App = () => (
             </Routes>
           </Suspense>
           <CookieConsentBanner />
-        </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
-  </ErrorBoundary>
+    </ErrorBoundary>
+  );
+}
+
+const App = () => (
+  <BrowserRouter
+    future={{
+      v7_startTransition: true,
+      v7_relativeSplatPath: true,
+    }}
+  >
+    <AppRoutes />
+  </BrowserRouter>
 );
 
 export default App;
+
+
+

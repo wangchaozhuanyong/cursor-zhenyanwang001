@@ -110,6 +110,7 @@ export interface SiteSettings {
   ga4MeasurementId?: string;
   metaPixelEnabled?: string;
   metaPixelId?: string;
+  helpCenterConfig?: string;
 
   /* 允许任意扩展键（运营后期新增字段无需先发版） */
   [key: string]: string | undefined;

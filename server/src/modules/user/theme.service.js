@@ -119,12 +119,21 @@ function normalizeThemeSkinsPayload(rawPayload) {
   const payload = rawPayload && typeof rawPayload === 'object' ? rawPayload : {};
   const incoming = Array.isArray(payload.skins) ? payload.skins : [];
   const merged = new Map();
-  THEME_PRESETS.forEach((skin) => merged.set(skin.id, { ...skin, config: normalizeThemeConfig(skin.config) }));
+  THEME_PRESETS.forEach((skin) => merged.set(skin.id, {
+    ...skin,
+    clientEnabled: skin.clientEnabled !== false,
+    config: normalizeThemeConfig(skin.config),
+  }));
   incoming.forEach((skin) => {
     if (!skin || typeof skin !== 'object') return;
     const id = String(skin.id || '').trim() || `skin_${Math.random().toString(16).slice(2, 10)}`;
     const name = String(skin.name || '自定义皮肤').trim();
-    merged.set(id, { id, name, config: normalizeThemeConfig(skin.config) });
+    merged.set(id, {
+      id,
+      name,
+      clientEnabled: skin.clientEnabled !== false,
+      config: normalizeThemeConfig(skin.config),
+    });
   });
   const skins = Array.from(merged.values());
   const has = (id) => !!id && skins.some((s) => s.id === id);

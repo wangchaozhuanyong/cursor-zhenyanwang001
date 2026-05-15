@@ -20,7 +20,7 @@ const couponTypes = [
 
 export default function AdminCouponForm() {
   const navigate = useNavigate();
-  const goBack = useGoBack("/admin/coupons");
+  const goBack = useGoBack("/admin/marketing/coupons");
   const { id } = useParams();
   const isNew = id === "new";
   const [loading, setLoading] = useState(!isNew);
@@ -38,6 +38,13 @@ export default function AdminCouponForm() {
     scope_type: "all" as "all" | "category",
     category_ids: [] as string[],
     display_badge: "",
+    total_quantity: "",
+    per_user_limit: "1",
+    new_user_only: false,
+    member_only: false,
+    auto_issue: false,
+    usable_scope_type: "all" as "all" | "category" | "product",
+    stackable_with_activity: true,
   });
 
   useEffect(() => {
@@ -60,6 +67,13 @@ export default function AdminCouponForm() {
               scope_type: coupon.scope_type || "all",
               category_ids: Array.isArray(coupon.category_ids) ? coupon.category_ids : [],
               display_badge: coupon.display_badge || "",
+              total_quantity: coupon.total_quantity?.toString() || "0",
+              per_user_limit: coupon.per_user_limit?.toString() || "1",
+              new_user_only: !!coupon.new_user_only,
+              member_only: !!coupon.member_only,
+              auto_issue: !!coupon.auto_issue,
+              usable_scope_type: coupon.usable_scope_type || "all",
+              stackable_with_activity: coupon.stackable_with_activity !== false,
             });
           }
         })
@@ -89,6 +103,13 @@ export default function AdminCouponForm() {
         scope_type: form.scope_type,
         category_ids: form.scope_type === "category" ? form.category_ids : [],
         display_badge: form.display_badge,
+        total_quantity: parseInt(form.total_quantity, 10) || 0,
+        per_user_limit: Math.max(1, parseInt(form.per_user_limit, 10) || 1),
+        new_user_only: form.new_user_only,
+        member_only: form.member_only,
+        auto_issue: form.auto_issue,
+        usable_scope_type: form.usable_scope_type,
+        stackable_with_activity: form.stackable_with_activity,
       };
       if (isNew) {
         await createCoupon(payload);
@@ -97,7 +118,7 @@ export default function AdminCouponForm() {
         await updateCoupon(id!, payload);
         toast.success("优惠券更新成功");
       }
-      navigate("/admin/coupons");
+      navigate("/admin/marketing/coupons");
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败，请重试"));
     } finally {
@@ -147,6 +168,16 @@ export default function AdminCouponForm() {
               <input value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} placeholder={form.type === "percentage" ? "10 = 10% off" : "10"} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">发放总量</label>
+              <input value={form.total_quantity} onChange={(e) => setForm({ ...form, total_quantity: e.target.value })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">每人限领</label>
+              <input value={form.per_user_limit} onChange={(e) => setForm({ ...form, per_user_limit: e.target.value })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none" />
+            </div>
+          </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-muted-foreground">最低消费金额 (RM)</label>
             <input value={form.min_amount} onChange={(e) => setForm({ ...form, min_amount: e.target.value })} placeholder="0 = 无门槛" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
@@ -172,6 +203,12 @@ export default function AdminCouponForm() {
                 onChange={(v) => setForm({ ...form, end_date: v })}
               />
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="flex items-center gap-2 text-sm text-foreground"><input type="checkbox" checked={form.new_user_only} onChange={(e) => setForm({ ...form, new_user_only: e.target.checked })} />仅新人可领</label>
+            <label className="flex items-center gap-2 text-sm text-foreground"><input type="checkbox" checked={form.member_only} onChange={(e) => setForm({ ...form, member_only: e.target.checked })} />仅会员可领</label>
+            <label className="flex items-center gap-2 text-sm text-foreground"><input type="checkbox" checked={form.auto_issue} onChange={(e) => setForm({ ...form, auto_issue: e.target.checked })} />自动发放</label>
+            <label className="flex items-center gap-2 text-sm text-foreground"><input type="checkbox" checked={form.stackable_with_activity} onChange={(e) => setForm({ ...form, stackable_with_activity: e.target.checked })} />可与活动叠加</label>
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-muted-foreground">描述（可选）</label>
@@ -242,3 +279,4 @@ export default function AdminCouponForm() {
     </div>
   );
 }
+

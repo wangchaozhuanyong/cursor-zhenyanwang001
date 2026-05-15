@@ -22,6 +22,64 @@ import { getThemeReadabilityReport } from "@/utils/themeContrast";
 
 type ConfigTab = "colors" | "base" | "nav" | "card" | "marketing" | "advanced";
 type PreviewTab = "home" | "product" | "member" | "components";
+const configTabLabels: Record<ConfigTab, string> = {
+  colors: "配色",
+  base: "基础",
+  nav: "导航",
+  card: "卡片",
+  marketing: "营销",
+  advanced: "高级",
+};
+const previewTabLabels: Record<PreviewTab, string> = {
+  home: "首页",
+  product: "商品",
+  member: "会员",
+  components: "组件",
+};
+const enumValueLabels: Record<string, string> = {
+  none: "无",
+  subtle: "轻微",
+  soft: "柔和",
+  medium: "中等",
+  glow: "发光",
+  pill: "胶囊",
+  rounded: "圆角",
+  square: "方角",
+  clean: "简洁",
+  floating: "悬浮",
+  glass: "玻璃",
+  solid: "实心",
+  outline: "描边",
+  normal: "常规",
+  bold: "加粗",
+  luxury: "高级",
+  standard: "标准",
+  premium: "高级",
+  deal: "促销",
+  compact: "紧凑",
+  bordered: "描边",
+  seamless: "无缝",
+  elevated: "悬浮",
+  minimal: "极简",
+  left: "左对齐",
+  center: "居中",
+  cover: "裁切铺满",
+  contain: "完整显示",
+  classic: "经典",
+  magazine: "杂志",
+  transparent: "透明",
+  dark: "深色",
+  ticket: "券样式",
+  light: "浅色",
+  gold: "金色",
+  blackGold: "黑金",
+  fresh: "清新",
+  circle: "圆形",
+  rich: "丰富",
+  comfortable: "舒适",
+  follow_store: "跟随前台",
+  fixed: "固定",
+};
 
 const presetMap = new Map(THEME_PRESETS.map((skin) => [skin.id, skin]));
 
@@ -101,13 +159,14 @@ function SelectRow<T extends string>({
   options: readonly T[];
   onChange: (value: T) => void;
 }) {
+  const toLabel = (option: string) => enumValueLabels[option] || option;
   return (
     <label className="space-y-1">
       <span className="text-xs text-muted-foreground">{label}</span>
       <select value={value} onChange={(e) => onChange(e.target.value as T)} className="h-9 w-full rounded-lg border border-border bg-background px-2 text-xs">
         {options.map((option) => (
           <option key={option} value={option}>
-            {option}
+            {toLabel(option)}
           </option>
         ))}
       </select>
@@ -203,6 +262,7 @@ export default function AdminThemeSettings() {
     const newSkin: ThemeSkin = {
       id: newId,
       name: `自定义皮肤 ${skins.length + 1}`,
+      clientEnabled: true,
       config: normalizeThemeConfig(themeConfig),
     };
     setSkins((prev) => [...prev, newSkin]);
@@ -215,7 +275,7 @@ export default function AdminThemeSettings() {
     const source = skins.find((skin) => skin.id === id);
     if (!source) return;
     const newId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `skin_${Date.now()}`;
-    const clone: ThemeSkin = { ...source, id: newId, name: `${source.name} 副本` };
+    const clone: ThemeSkin = { ...source, id: newId, name: `${source.name} 副本`, clientEnabled: source.clientEnabled !== false };
     setSkins((prev) => [...prev, clone]);
     setSelectedSkinId(newId);
     setThemeConfig(clone.config);
@@ -250,6 +310,11 @@ export default function AdminThemeSettings() {
   const onApplyCurrent = async (id: string) => {
     if (id === activeSkinId) return;
     await persist(skins, defaultSkinId, id, "已应用为当前前台皮肤");
+  };
+
+  const onToggleClientEnabled = (id: string, checked: boolean) => {
+    setSkins((prev) => prev.map((skin) => (skin.id === id ? { ...skin, clientEnabled: checked } : skin)));
+    setDirty(true);
   };
 
   const onSave = async () => {
@@ -311,6 +376,14 @@ export default function AdminThemeSettings() {
                   ) : (
                     <button onClick={() => void onApplyCurrent(skin.id)} className="rounded border border-border px-1.5 py-0.5 text-[10px]">应用当前</button>
                   )}
+                  <label className="inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-[10px]">
+                    <input
+                      type="checkbox"
+                      checked={skin.clientEnabled !== false}
+                      onChange={(e) => onToggleClientEnabled(skin.id, e.target.checked)}
+                    />
+                    前台可切换
+                  </label>
                   <button onClick={() => onCopySkin(skin.id)} className="rounded border border-border p-1"><Copy size={12} /></button>
                   <button onClick={() => void onDeleteSkin(skin.id)} className="rounded border border-border p-1"><Trash2 size={12} /></button>
                 </div>
@@ -323,7 +396,7 @@ export default function AdminThemeSettings() {
           <div className="mb-3 flex flex-wrap gap-2">
             {(["colors", "base", "nav", "card", "marketing", "advanced"] as ConfigTab[]).map((tab) => (
               <button key={tab} onClick={() => setConfigTab(tab)} className={`rounded-full px-3 py-1 text-xs ${configTab === tab ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
-                {tab}
+                {configTabLabels[tab]}
               </button>
             ))}
           </div>
@@ -398,8 +471,9 @@ export default function AdminThemeSettings() {
 
           {configTab === "advanced" && (
             <div className="grid gap-3 md:grid-cols-2">
-              <SelectRow label="后台主题模式" value={themeConfig.adminThemeMode} options={enumOptions.adminThemeMode} onChange={(v) => updateConfig("adminThemeMode", v)} />
-              <p className="col-span-2 text-xs text-muted-foreground">建议后台保持 fixed，避免活动/深色皮肤影响后台可读性。</p>
+              <p className="col-span-2 rounded-lg border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
+                后台与前台已统一使用系统皮肤，全局实时生效。旧的“后台固定主题模式”已停用。
+              </p>
             </div>
           )}
         </section>
@@ -408,7 +482,7 @@ export default function AdminThemeSettings() {
           <div className="mb-3 flex flex-wrap gap-2">
             {(["home", "product", "member", "components"] as PreviewTab[]).map((tab) => (
               <button key={tab} onClick={() => setPreviewTab(tab)} className={`rounded-full px-3 py-1 text-xs ${previewTab === tab ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
-                {tab}
+                {previewTabLabels[tab]}
               </button>
             ))}
           </div>

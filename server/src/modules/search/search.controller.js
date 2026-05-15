@@ -2,7 +2,7 @@ const { asyncRoute } = require('../../middleware/asyncRoute');
 const svc = require('./search.service');
 
 exports.track = asyncRoute(async (req, res) => {
-  const r = await svc.trackSearch(req.body || {});
+  const r = await svc.trackSearch(req.body || {}, req);
   res.success(r.data, r.message);
 });
 

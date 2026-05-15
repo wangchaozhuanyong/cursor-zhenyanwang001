@@ -19,7 +19,7 @@ export async function fetchThemeSkins() {
 export async function saveSystemThemeSkins(data: {
   defaultSkinId: string;
   activeSkinId: string;
-  skins: Array<{ id: string; name: string; config: ThemeConfig }>;
+  skins: Array<{ id: string; name: string; clientEnabled?: boolean; config: ThemeConfig }>;
 }) {
   const res = await themeApi.updateSystemThemeSkins(data);
   return res.data;

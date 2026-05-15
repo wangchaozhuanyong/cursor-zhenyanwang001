@@ -1,5 +1,6 @@
 const repo = require('./search.repository');
 const { normalizeSearchKeyword, buildSearchKeywords } = require('../../utils/searchKeywords');
+const analyticsService = require('../analytics/analytics.service');
 
 function formatTerm(row) {
   return {
@@ -10,7 +11,7 @@ function formatTerm(row) {
   };
 }
 
-async function trackSearch(body) {
+async function trackSearch(body, req) {
   const keyword = normalizeSearchKeyword(body?.keyword);
   if (!keyword) return { data: null, message: 'ok' };
 
@@ -24,6 +25,16 @@ async function trackSearch(body) {
     normalizedKeyword: keyword,
     resultCount,
   });
+  await analyticsService.trackEvent({
+    event_type: 'search',
+    module: 'search',
+    page: '/search',
+    keyword,
+    quantity: 1,
+    amount: resultCount,
+    session_id: body?.session_id,
+    anonymous_id: body?.anonymous_id,
+  }, req);
   return { data: null, message: 'ok' };
 }
 

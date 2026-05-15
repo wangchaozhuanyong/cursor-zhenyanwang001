@@ -213,7 +213,13 @@ export default function Cart() {
                             <SquishButton
                               type="button"
                               variant="ghost"
-                              onClick={() => removeItem(item.product.id, item.variant_id)}
+                              onClick={async () => {
+                                try {
+                                  await removeItem(item.product.id, item.variant_id);
+                                } catch (e) {
+                                  toast.error(e instanceof Error ? e.message : "删除失败");
+                                }
+                              }}
                               className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent hover:bg-[var(--theme-bg)] touch-target !p-0"
                               aria-label="删除"
                             >
@@ -223,9 +229,13 @@ export default function Cart() {
                               <SquishButton
                                 type="button"
                                 variant="ghost"
-                                onClick={() =>
-                                  updateQty(item.product.id, item.qty - 1, item.variant_id)
-                                }
+                                onClick={async () => {
+                                  try {
+                                    await updateQty(item.product.id, item.qty - 1, item.variant_id);
+                                  } catch (e) {
+                                    toast.error(e instanceof Error ? e.message : "更新数量失败");
+                                  }
+                                }}
                                 className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] touch-target !p-0"
                                 aria-label="减少数量"
                               >
@@ -237,9 +247,13 @@ export default function Cart() {
                               <SquishButton
                                 type="button"
                                 variant="ghost"
-                                onClick={() =>
-                                  updateQty(item.product.id, item.qty + 1, item.variant_id)
-                                }
+                                onClick={async () => {
+                                  try {
+                                    await updateQty(item.product.id, item.qty + 1, item.variant_id);
+                                  } catch (e) {
+                                    toast.error(e instanceof Error ? e.message : "更新数量失败");
+                                  }
+                                }}
                                 className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] touch-target !p-0"
                                 aria-label="增加数量"
                               >

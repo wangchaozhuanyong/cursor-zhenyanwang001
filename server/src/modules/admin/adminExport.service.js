@@ -1,4 +1,4 @@
-const path = require('path');
+﻿const path = require('path');
 const fs = require('fs');
 const { generateId } = require('../../utils/helpers');
 const repo = require('./adminExport.repository');
@@ -50,9 +50,19 @@ function startCleanupScheduler() {
 }
 
 const TYPE_GENERATORS = {
-  sales: async (params) => adminReportService.exportSalesReportCsv(params),
-  users_report: async (params) => adminReportService.exportUserReportCsv(params),
-  products_report: async () => adminReportService.exportProductReportCsv(),
+  sales_daily: async (params) => adminReportService.exportByType("sales_daily", params),
+  sales_monthly: async (params) => adminReportService.exportByType("sales_monthly", params),
+  product_analysis: async (params) => adminReportService.exportByType("product_analysis", params),
+  category_analysis: async (params) => adminReportService.exportByType("category_analysis", params),
+  order_analysis: async (params) => adminReportService.exportByType("order_analysis", params),
+  customer_analysis: async (params) => adminReportService.exportByType("customer_analysis", params),
+  activity_analysis: async (params) => adminReportService.exportByType("activity_analysis", params),
+  coupon_analysis: async (params) => adminReportService.exportByType("coupon_analysis", params),
+  inventory_analysis: async (params) => adminReportService.exportByType("inventory_analysis", params),
+  search_analysis: async (params) => adminReportService.exportByType("search_analysis", params),
+  sales: async (params) => adminReportService.exportByType("sales_daily", params),
+  users_report: async (params) => adminReportService.exportByType("customer_analysis", params),
+  products_report: async (params) => adminReportService.exportByType("product_analysis", params),
   products: async (params) => adminProductService.exportProductsCsv(params),
   orders: async (params) => adminOrderService.exportOrdersCsv(params),
   users: async (params) => adminUserService.exportUsersCsv(params),
@@ -60,7 +70,7 @@ const TYPE_GENERATORS = {
 
 async function createExportTask(type, params, adminUserId) {
   if (!TYPE_GENERATORS[type]) {
-    return { error: { code: 400, message: `不支持的导出类型: ${type}` } };
+    return { error: { code: 400, message: `涓嶆敮鎸佺殑瀵煎嚭绫诲瀷: ${type}` } };
   }
 
   const id = generateId();
@@ -100,7 +110,7 @@ async function downloadExportFile(taskId, requester = {}) {
   if (!requester.isSuperAdmin && (!createdBy || createdBy !== requesterId)) {
     return { error: { code: 403, message: '无权下载该导出文件' } };
   }
-  if (task.status !== EXPORT_TASK_STATUS.SUCCESS) return { error: { code: 400, message: '文件未就绪' } };
+  if (task.status !== EXPORT_TASK_STATUS.SUCCESS) return { error: { code: 400, message: '文件尚未就绪' } };
   if (!task.file_path || !fs.existsSync(task.file_path)) {
     return { error: { code: 404, message: '文件不存在' } };
   }
@@ -108,3 +118,4 @@ async function downloadExportFile(taskId, requester = {}) {
 }
 
 module.exports = { createExportTask, listExportTasks, downloadExportFile, startCleanupScheduler };
+

@@ -1,13 +1,14 @@
 const repo = require('./shipping.repository');
 const { BusinessError } = require('../../errors/BusinessError');
 const { computeShippingFee } = require('../../utils/shippingFee');
+const { normalizeKnownMojibakeText } = require('../../utils/textNormalize');
 
 async function getTemplates() {
   const rows = await repo.selectTemplatesOrdered();
   return rows.map((r) => ({
     id: r.id,
-    name: r.name,
-    regions: r.regions,
+    name: normalizeKnownMojibakeText(r.name),
+    regions: normalizeKnownMojibakeText(r.regions),
     baseFee: parseFloat(r.base_fee),
     freeAbove: parseFloat(r.free_above),
     extraPerKg: parseFloat(r.extra_per_kg),
@@ -46,7 +47,7 @@ async function quoteShipping(payload) {
   const shippingFee = computeShippingFee(tpl, rawAmount, estimatedWeightKg == null ? undefined : estimatedWeightKg);
   return {
     shipping_template_id: tpl.id,
-    shipping_name: tpl.name,
+    shipping_name: normalizeKnownMojibakeText(tpl.name),
     shipping_fee: shippingFee,
   };
 }

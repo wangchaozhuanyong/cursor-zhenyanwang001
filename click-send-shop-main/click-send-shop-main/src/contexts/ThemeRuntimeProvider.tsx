@@ -20,6 +20,7 @@ type ThemeContextValue = {
   theme: ThemeMode;
   skinId: string;
   skins: ThemeSkin[];
+  switchableSkins: ThemeSkin[];
   setSkinId: (id: string) => void;
   themeConfig: ThemeConfig;
 };
@@ -50,6 +51,11 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   const [skins, setSkins] = useState<ThemeSkin[]>(THEME_PRESETS);
   const [skinId, setSkinIdState] = useState<string>(DEFAULT_SKIN_ID);
   const [themeConfig, setThemeConfig] = useState<ThemeConfig>(normalizeThemeConfig(THEME_PRESETS[0]?.config));
+
+  const switchableSkins = useMemo(
+    () => skins.filter((skin) => skin.clientEnabled !== false),
+    [skins],
+  );
 
   const loadTheme = useCallback(async () => {
     const base = import.meta.env.VITE_API_BASE_URL ?? "/api";
@@ -86,7 +92,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       if (typeof window !== "undefined") {
         localStorage.setItem(LAST_ACTIVE_SKIN_KEY, currentActive);
       }
-      const canUseManual = isManual && !activeChangedByAdmin && saved && normalized.skins.some((s) => s.id === saved);
+      const canUseManual = isManual && !activeChangedByAdmin && saved && normalized.skins.some((s) => s.id === saved && s.clientEnabled !== false);
       if (isManual && activeChangedByAdmin && typeof window !== "undefined") {
         localStorage.removeItem(SKIN_MANUAL_KEY);
       }
@@ -131,10 +137,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    const inAdmin = isAdminScope();
     root.classList.remove("dark");
-
-    root.setAttribute("data-admin-fixed-theme", inAdmin ? "1" : "0");
     applyThemeDataAttributes(root, themeConfig);
 
     if (typeof window !== "undefined") {
@@ -142,24 +145,14 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
     }
 
     const palette = generateThemePalette(themeConfig);
-    if (inAdmin) {
-      Object.keys(palette).forEach((key) => root.style.removeProperty(key));
-      return;
-    }
     Object.entries(palette).forEach(([key, value]) => root.style.setProperty(key, value));
   }, [themeConfig, skinId]);
 
   useEffect(() => {
     const syncScope = () => {
       const root = document.documentElement;
-      const inAdmin = isAdminScope();
-      root.setAttribute("data-admin-fixed-theme", inAdmin ? "1" : "0");
       const palette = generateThemePalette(themeConfig);
-      if (inAdmin) {
-        Object.keys(palette).forEach((key) => root.style.removeProperty(key));
-      } else {
-        Object.entries(palette).forEach(([key, value]) => root.style.setProperty(key, value));
-      }
+      Object.entries(palette).forEach(([key, value]) => root.style.setProperty(key, value));
       applyThemeDataAttributes(root, themeConfig);
     };
     syncScope();
@@ -172,7 +165,9 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       theme: "light",
       skinId,
       skins,
+      switchableSkins,
       setSkinId: (id: string) => {
+        if (!switchableSkins.some((skin) => skin.id === id)) return;
         setSkinIdState(id);
         if (typeof window !== "undefined") {
           localStorage.setItem(SKIN_STORAGE_KEY, id);
@@ -181,7 +176,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       },
       themeConfig,
     }),
-    [skinId, skins, themeConfig],
+    [skinId, skins, switchableSkins, themeConfig],
   );
 
   return <ThemeRuntimeContext.Provider value={value}>{children}</ThemeRuntimeContext.Provider>;

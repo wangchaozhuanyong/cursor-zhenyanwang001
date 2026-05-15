@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+﻿import { Suspense } from "react";
 import { Outlet, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { AdminOutletFallback } from "@/components/AppRouteFallback";
 import type { LucideIcon } from "lucide-react";
@@ -38,6 +38,7 @@ import {
   CreditCard,
   Crown,
 } from "lucide-react";
+import SkinPickerDialog from "@/components/SkinPickerDialog";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { isAdminAuthenticated, adminLogout, fetchAdminProfile } from "@/services/admin/accountService";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
@@ -107,24 +108,45 @@ const navItemsRaw: NavItem[] = [
       { icon: Crown, label: "会员等级", path: "/admin/member-levels", permission: "member_level.manage" },
     ],
   },
-  { icon: Link2, label: "邀请管理", path: "/admin/invites", permission: "invite.view" },
-  { icon: Gift, label: "返现记录", path: "/admin/rewards", permission: "referral.manage" },
-  { icon: Star, label: "积分明细", path: "/admin/points/records", permission: "points.manage" },
   {
-    icon: Ticket,
-    label: "优惠券管理",
-    path: "/admin/coupons",
-    permission: "coupon.view",
+    icon: Megaphone,
+    label: "活动管理",
+    path: "/admin/marketing",
+    permission: { anyOf: ["activity.manage", "coupon.view", "points.manage", "referral.manage", "invite.view"] },
     children: [
-      { icon: PlusCircle, label: "新建优惠券", path: "/admin/coupons/new", permission: "coupon.view" },
-      { icon: ClipboardList, label: "领券记录", path: "/admin/coupons/records", permission: "coupon.view" },
+      { icon: LayoutGrid, label: "活动总览", path: "/admin/marketing", permission: { anyOf: ["activity.manage", "coupon.view", "points.manage", "referral.manage", "invite.view"] } },
+      { icon: Megaphone, label: "营销活动", path: "/admin/marketing/activities", permission: "activity.manage" },
+      { icon: PlusCircle, label: "新建活动", path: "/admin/marketing/activities/new", permission: "activity.manage" },
+      { icon: Ticket, label: "优惠券管理", path: "/admin/marketing/coupons", permission: "coupon.view" },
+      { icon: ClipboardList, label: "领券记录", path: "/admin/marketing/coupons/records", permission: "coupon.view" },
+      { icon: Star, label: "积分管理", path: "/admin/marketing/points", permission: "points.manage" },
+      { icon: Gift, label: "返现管理", path: "/admin/marketing/rewards", permission: "referral.manage" },
+      { icon: Link2, label: "邀请奖励", path: "/admin/marketing/invites", permission: "invite.view" },
     ],
   },
-  { icon: Megaphone, label: "活动管理", path: "/admin/marketing/activities", permission: "activity.manage" },
   { icon: Bell, label: "通知管理", path: "/admin/notifications", permission: "notification.manage" },
   { icon: Image, label: "Banner管理", path: "/admin/banners", permission: "banner.manage" },
   { icon: Megaphone, label: "首页运营", path: "/admin/home-ops", permission: "home_ops.manage" },
-  { icon: BarChart3, label: "数据报表", path: "/admin/reports", permission: "report.view" },
+  {
+    icon: BarChart3,
+    label: "数据中心",
+    path: "/admin/reports/overview",
+    permission: "report.view",
+    children: [
+      { icon: LayoutDashboard, label: "经营总览", path: "/admin/reports/overview", permission: "report.view" },
+      { icon: BarChart3, label: "销售日报", path: "/admin/reports/daily", permission: "report.view" },
+      { icon: BarChart3, label: "销售月报", path: "/admin/reports/monthly", permission: "report.view" },
+      { icon: Package, label: "商品分析", path: "/admin/reports/products", permission: "report.view" },
+      { icon: FolderTree, label: "分类分析", path: "/admin/reports/categories", permission: "report.view" },
+      { icon: ShoppingCart, label: "订单分析", path: "/admin/reports/orders", permission: "report.view" },
+      { icon: Users, label: "客户分析", path: "/admin/reports/customers", permission: "report.view" },
+      { icon: Megaphone, label: "活动分析", path: "/admin/reports/activities", permission: "report.view" },
+      { icon: Ticket, label: "优惠券分析", path: "/admin/reports/coupons", permission: "report.view" },
+      { icon: Package, label: "库存分析", path: "/admin/reports/inventory", permission: "report.view" },
+      { icon: Search, label: "搜索分析", path: "/admin/reports/search", permission: "report.view" },
+      { icon: FileText, label: "导出中心", path: "/admin/exports", permission: "report.export" }
+    ],
+  },
   { icon: FileText, label: "导出中心", path: "/admin/exports", permission: "report.export" },
   {
     icon: Settings,
@@ -453,6 +475,18 @@ export default function AdminLayout() {
                 <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive" />
               </button>
             )}
+            <SkinPickerDialog
+              title="切换系统皮肤"
+              trigger={(
+                <button
+                  type="button"
+                  aria-label="切换皮肤"
+                  className="touch-manipulation flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-secondary"
+                >
+                  <Palette size={19} />
+                </button>
+              )}
+            />
             <div ref={avatarRef} className="relative shrink-0">
               <button
                 type="button"
@@ -489,7 +523,7 @@ export default function AdminLayout() {
             <div className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2.5">
               <Search size={16} className="shrink-0 text-muted-foreground" />
               <input
-                placeholder="搜索菜单…"
+                placeholder="搜索菜单..."
                 value={topSearch}
                 onChange={(e) => setTopSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleTopSearch()}
@@ -548,3 +582,6 @@ export default function AdminLayout() {
     </div>
   );
 }
+
+
+

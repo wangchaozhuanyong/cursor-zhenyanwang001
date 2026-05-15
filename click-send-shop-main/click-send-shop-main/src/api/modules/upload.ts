@@ -22,7 +22,7 @@ const S3_HOST_ALLOWLIST =
     .filter(Boolean) ?? [];
 
 export type UploadProgressCallback = (percent: number) => void;
-export type UploadMode = "image" | "video" | "auto";
+export type UploadMode = "image" | "video" | "banner" | "auto";
 export type UploadRequestOptions = {
   onProgress?: UploadProgressCallback;
   timeoutMs?: number;
@@ -89,6 +89,10 @@ export function validateUploadFile(file: File, mode: UploadMode = "auto"): void 
   }
   if (mode === "video") {
     validateVideoFile(file);
+    return;
+  }
+  if (mode === "banner") {
+    validateImageFile(file);
     return;
   }
   if (file.type.startsWith("image/")) validateImageFile(file);
@@ -230,6 +234,7 @@ export async function uploadFile(
   validateUploadFile(file, options.mode ?? "auto");
   const formData = new FormData();
   formData.append("file", file, file.name);
+  if (options.mode) formData.append("mode", options.mode);
   const path = (options.adminMode ?? inAdminContext()) ? `${BASE_URL}/admin/upload` : `${BASE_URL}/upload`;
   try {
     return await doUpload<{ url: string; filename: string }>(path, formData, options);
@@ -247,6 +252,7 @@ export async function uploadFiles(
     validateUploadFile(file, options.mode ?? "auto");
     formData.append("files", file, file.name);
   }
+  if (options.mode) formData.append("mode", options.mode);
   const path = (options.adminMode ?? inAdminContext()) ? `${BASE_URL}/admin/upload/multiple` : `${BASE_URL}/upload/multiple`;
   try {
     return await doUpload<{ url: string; filename: string }[]>(path, formData, options);

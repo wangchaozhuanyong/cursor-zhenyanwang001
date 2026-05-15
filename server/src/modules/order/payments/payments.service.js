@@ -19,6 +19,35 @@ const payDb = payRepo.getPool();
 
 const userApi = /** @type {any} */ (userModule).api || {};
 
+async function insertAnalyticsEvent(conn, row) {
+  await conn.query(
+    `INSERT INTO analytics_events
+      (user_id, anonymous_id, session_id, event_type, module, page, product_id, variant_id, category_id, activity_id, coupon_id, keyword, order_id, amount, quantity, device, referrer, ip_hash, user_agent)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      row.user_id || null,
+      row.anonymous_id || '',
+      row.session_id || '',
+      row.event_type,
+      row.module || '',
+      row.page || '',
+      row.product_id || null,
+      row.variant_id || null,
+      row.category_id || null,
+      row.activity_id || null,
+      row.coupon_id || null,
+      row.keyword || '',
+      row.order_id || null,
+      row.amount ?? null,
+      row.quantity ?? null,
+      row.device || 'server',
+      row.referrer || '',
+      row.ip_hash || '',
+      row.user_agent || 'server',
+    ],
+  );
+}
+
 function requireUserApi(name) {
   const fn = userApi[name];
   if (typeof fn !== 'function') {
@@ -149,6 +178,15 @@ async function payWithRewardWallet(userId, orderId) {
       throw new ValidationError('订单状态已变化，请刷新后重试');
     }
     await UserStatsService.syncStatsAfterOrderPaid(userId, payableAmount, lockedOrder.id, conn);
+    await insertAnalyticsEvent(conn, {
+      user_id: userId,
+      event_type: 'payment_success',
+      module: 'reward_wallet',
+      page: '/checkout',
+      order_id: lockedOrder.id,
+      amount: payableAmount,
+      quantity: 1,
+    });
     await checkoutAbandonmentRepo.markPaidByOrderId(conn, lockedOrder.id);
     try {
       await requireUserApi('refreshUserMemberLevel')(conn, userId);
@@ -438,9 +476,27 @@ async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionN
     return { skipped: true, reason: 'already_paid' };
   }
   await UserStatsService.syncStatsAfterOrderPaid(order.user_id, toMoney(order.total_amount), order.id, conn);
+  await insertAnalyticsEvent(conn, {
+    user_id: order.user_id,
+    event_type: 'payment_success',
+    module: paymentOrder.channel_code || paymentOrder.provider || 'payment',
+    page: '/checkout',
+    order_id: order.id,
+    amount: toMoney(order.total_amount),
+    quantity: 1,
+  });
   await checkoutAbandonmentRepo.markPaidByOrderId(conn, order.id);
   try {
     await requireUserApi('refreshUserMemberLevel')(conn, order.user_id);
+    await insertAnalyticsEvent(conn, {
+      user_id: order.user_id,
+      event_type: 'payment_success',
+      module: 'admin_mark_paid',
+      page: '/admin/orders',
+      order_id: order.id,
+      amount: total,
+      quantity: 1,
+    });
   } catch (e) {
     console.error('[markOrderPaidFromProvider] refreshUserMemberLevel failed:', e?.message || e);
   }
@@ -578,6 +634,31 @@ async function recordStripeCapture(orderId, paymentIntentId, stripeEventId, payl
     });
   } catch (e) {
     if (e?.code !== 'ER_DUP_ENTRY') throw e;
+  }
+
+  try {
+    await payDb.query(
+      `INSERT INTO analytics_events
+        (user_id, anonymous_id, session_id, event_type, module, page, order_id, amount, quantity, device, referrer, ip_hash, user_agent)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [
+        order.user_id || null,
+        '',
+        '',
+        'payment_success',
+        'stripe_webhook',
+        '/checkout',
+        order.id,
+        toMoney(order.total_amount),
+        1,
+        'server',
+        '',
+        '',
+        'server',
+      ],
+    );
+  } catch {
+    // best effort analytics
   }
 
   return { ok: true, payment_order_id: paymentOrderId };

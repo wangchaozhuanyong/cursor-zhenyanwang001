@@ -15,11 +15,10 @@ import { trackAddToCart } from "@/utils/tracking";
 import StoreBadge from "@/components/ui/StoreBadge";
 import StorePrice from "@/components/ui/StorePrice";
 import StoreButton from "@/components/ui/StoreButton";
+import { isLoggedIn } from "@/utils/token";
+import { trackEvent } from "@/services/analyticsService";
 
-interface Props {
-  product: Product;
-  index?: number;
-}
+interface Props { product: Product; index?: number; }
 
 function formatSales(n: number): string {
   if (n >= 10000) return `${(n / 10000).toFixed(1).replace(/\.0$/, "")}w+`;
@@ -35,41 +34,52 @@ export default function ProductCard({ product, index = 0 }: Props) {
   const { themeConfig } = useThemeRuntime();
   const cardCenter = themeConfig.cardTextAlign === "center";
   const cardVariant = themeConfig.productCardVariant ?? "standard";
+  const soldOut = (Number(product.stock) || 0) <= 0;
 
-  const onAddToCart = (event?: MouseEvent) => {
+  const onAddToCart = async (event?: MouseEvent) => {
     event?.stopPropagation();
-    addItem(product);
-    trackAddToCart(product, 1);
-    toast.success("已加入购物车", toastPresetQuickSuccess);
+    if (soldOut) {
+      toast.error("库存不足");
+      return;
+    }
+    try {
+      await addItem(product);
+      trackAddToCart(product, 1);
+      void trackEvent({ event_type: "add_to_cart", module: "product_card", product_id: product.id, quantity: 1, amount: Number(product.price || 0) });
+      toast.success("已加入购物车", toastPresetQuickSuccess);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "加入购物车失败");
+    }
+  };
+
+  const onToggleFavorite = async (event?: MouseEvent) => {
+    event?.stopPropagation();
+    try {
+      const favorited = await toggleFavorite(product);
+      void trackEvent({ event_type: "favorite", module: "product_card", product_id: product.id, quantity: favorited ? 1 : 0 });
+      toast.success(favorited ? "已收藏" : "已取消收藏", toastPresetQuickSuccess);
+      if (!isLoggedIn()) toast.message("登录后可同步收藏");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "收藏操作失败");
+    }
   };
 
   if (cardVariant === "compact") {
     return (
-      <Reveal
-        index={index}
-        className="theme-product-card group cursor-pointer overflow-hidden theme-rounded"
-        onClick={() => navigate(`/product/${product.id}`)}
-      >
+      <Reveal index={index} className="theme-product-card group cursor-pointer overflow-hidden theme-rounded" onClick={() => { void trackEvent({ event_type: "product_click", module: "categories", product_id: product.id }); navigate(`/product/${product.id}`); }}>
         <div className="flex gap-3 p-3">
           <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)]">
-            <ProgressiveImage
-              src={product.cover_image}
-              blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
-              alt={product.name}
-              className="h-full w-full bg-transparent"
-              imgClassName="h-full w-full [object-fit:var(--theme-image-fit,cover)]"
-            />
+            <ProgressiveImage src={product.cover_image} blurDataUrl={PRODUCT_BLUR_PLACEHOLDER} alt={product.name} className="h-full w-full bg-transparent" imgClassName="h-full w-full [object-fit:var(--theme-image-fit,cover)]" />
           </div>
           <div className="min-w-0 flex-1">
             <h3 className="line-clamp-2 text-sm font-semibold text-[var(--theme-text)]">{product.name}</h3>
-            <p className="mt-1 text-xs text-[var(--theme-text-muted)]">
-              库存 {Math.max(0, Number(product.stock) || 0)} · 销量 {formatSales(Math.max(0, Number(product.sales_count) || 0))}
-            </p>
+            <p className="mt-1 text-xs text-[var(--theme-text-muted)]">库存 {Math.max(0, Number(product.stock) || 0)} · 销量 {formatSales(Math.max(0, Number(product.sales_count) || 0))}</p>
             <div className="mt-3 flex items-center justify-between">
               <StorePrice price={product.price} size="sm" />
-              <SquishButton type="button" variant="solid" aria-label="加入购物车" onClick={onAddToCart} className="flex h-8 w-8 items-center justify-center rounded-full !p-0">
-                <ShoppingCart size={14} />
-              </SquishButton>
+              <div className="flex items-center gap-1">
+                <button type="button" onClick={onToggleFavorite} className="rounded-full border border-[var(--theme-border)] px-2 py-1 text-[11px]">{isFavorite ? "♥ 已收藏" : "♡ 收藏"}</button>
+                <SquishButton type="button" variant="solid" aria-label={soldOut ? "已售罄" : "加入购物车"} onClick={onAddToCart} disabled={soldOut} className="flex h-8 w-8 items-center justify-center rounded-full !p-0 disabled:opacity-50"><ShoppingCart size={14} /></SquishButton>
+              </div>
             </div>
           </div>
         </div>
@@ -80,88 +90,30 @@ export default function ProductCard({ product, index = 0 }: Props) {
   const isPremium = cardVariant === "premium";
 
   return (
-    <Reveal
-      index={index}
-      className="theme-product-card group cursor-pointer overflow-hidden theme-rounded"
-    >
-      <div
-        className="relative overflow-hidden bg-[var(--theme-bg)]"
-        style={{ aspectRatio: isPremium ? "1 / 1" : "var(--theme-image-ratio)" }}
-        onClick={() => navigate(`/product/${product.id}`)}
-      >
-        <ProgressiveImage
-          src={product.cover_image}
-          blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
-          alt={product.name}
-          className="h-full w-full bg-transparent"
-          imgClassName="h-full w-full transition-all duration-300 ease-in-out group-hover:scale-105 [object-fit:var(--theme-image-fit,cover)]"
-        />
+    <Reveal index={index} className="theme-product-card group cursor-pointer overflow-hidden theme-rounded">
+      <div className="relative overflow-hidden bg-[var(--theme-bg)]" style={{ aspectRatio: isPremium ? "1 / 1" : "var(--theme-image-ratio)" }} onClick={() => { void trackEvent({ event_type: "product_click", module: "product_grid", product_id: product.id }); navigate(`/product/${product.id}`); }}>
+        <ProgressiveImage src={product.cover_image} blurDataUrl={PRODUCT_BLUR_PLACEHOLDER} alt={product.name} className="h-full w-full bg-transparent" imgClassName="h-full w-full transition-all duration-300 ease-in-out group-hover:scale-105 [object-fit:var(--theme-image-fit,cover)]" />
         <div className="absolute left-2 top-2 flex gap-1">
           {product.active_activity && <StoreBadge type="sale">{product.active_activity.type === "flash_sale" ? "秒杀" : "满减"}</StoreBadge>}
           {product.is_hot && <StoreBadge type="hot">热销</StoreBadge>}
           {product.is_new && <StoreBadge type="new">新品</StoreBadge>}
           <ProductTagList tags={product.tags} max={2} />
         </div>
-
-        <SquishButton
-          type="button"
-          variant="ghost"
-          aria-label={isFavorite ? "取消收藏" : "收藏"}
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleFavorite(product);
-            toast.success(isFavorite ? "已取消收藏" : "已收藏", toastPresetQuickSuccess);
-          }}
-          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/90 backdrop-blur-sm transition-all active:scale-90 !p-0"
-        >
-          <Heart
-            size={16}
-            className={isFavorite ? "fill-[var(--theme-price)] text-[var(--theme-price)]" : "text-[var(--theme-text)]"}
-          />
-        </SquishButton>
       </div>
       <div className={`flex flex-col gap-2 p-3 ${isPremium ? "gap-2.5 p-3.5" : ""} ${cardCenter ? "items-center text-center" : ""}`}>
-        <h3
-          className="line-clamp-2 text-[13px] font-medium leading-tight text-[var(--theme-text)]"
-          onClick={() => navigate(`/product/${product.id}`)}
-        >
-          {product.name}
-        </h3>
-        <div
-          className={`flex gap-2 ${cardCenter ? "w-full items-center justify-center" : "items-end justify-between"}`}
-        >
+        <h3 className="line-clamp-2 text-[13px] font-medium leading-tight text-[var(--theme-text)]" onClick={() => { void trackEvent({ event_type: "product_click", module: "product_grid", product_id: product.id }); navigate(`/product/${product.id}`); }}>{product.name}</h3>
+        <div className={`flex gap-2 ${cardCenter ? "w-full items-center justify-center" : "items-end justify-between"}`}>
           <div className={`min-w-0 ${cardCenter ? "flex flex-col items-center" : "flex-1"}`}>
-            <StorePrice
-              price={product.price}
-              originalPrice={product.original_price}
-              size={cardVariant === "deal" ? "lg" : isPremium ? "lg" : "md"}
-              className={cardCenter ? "justify-center" : ""}
-            />
-            {product.active_activity && (
-              <div className={`mt-1 text-[10px] font-semibold text-[var(--theme-danger)] ${cardCenter ? "text-center" : ""}`}>
-                {product.active_activity.title}
-                {product.active_activity.type === "full_reduction" && product.activity_promo_label ? (
-                  <span className="ml-1 opacity-90">· {product.activity_promo_label}</span>
-                ) : null}
-              </div>
-            )}
+            <StorePrice price={product.price} originalPrice={product.original_price} size={cardVariant === "deal" ? "lg" : isPremium ? "lg" : "md"} className={cardCenter ? "justify-center" : ""} />
             <div className={`mt-1 flex flex-wrap items-center gap-2 text-[10px] text-[var(--theme-text-muted)] ${cardCenter ? "justify-center" : ""}`}>
               <span>+{product.points} 积分</span>
-              {typeof product.sales_count === "number" && product.sales_count > 0 && (
-                <span>已售 {formatSales(product.sales_count)}</span>
-              )}
+              {typeof product.sales_count === "number" && product.sales_count > 0 && <span>已售 {formatSales(product.sales_count)}</span>}
             </div>
           </div>
-          <StoreButton
-            aria-label="加入购物车"
-            onClick={onAddToCart}
-            size="sm"
-            variant={cardVariant === "deal" ? "price" : "primary"}
-            className="h-9 w-9 !p-0"
-          >
-            <ShoppingCart size={15} />
-          </StoreButton>
+          <StoreButton aria-label={soldOut ? "已售罄" : "加入购物车"} onClick={onAddToCart} disabled={soldOut} size="sm" variant={cardVariant === "deal" ? "price" : "primary"} className="h-9 w-9 !p-0 disabled:opacity-50"><ShoppingCart size={15} /></StoreButton>
         </div>
+        <button type="button" onClick={onToggleFavorite} className="self-end text-[11px] text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]">{isFavorite ? "♥ 已收藏" : "♡ 收藏"}</button>
+        {soldOut ? <span className="self-end text-[11px] text-[var(--theme-text-muted)]">已售罄</span> : null}
       </div>
     </Reveal>
   );

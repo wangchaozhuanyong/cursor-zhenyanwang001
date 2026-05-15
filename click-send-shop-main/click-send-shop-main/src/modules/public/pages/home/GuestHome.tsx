@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo } from "react";
-import { Gem, LayoutGrid, PackageCheck, ShieldCheck, Sparkles, Ticket, Truck } from "lucide-react";
+import { Gem, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
@@ -144,12 +144,6 @@ export default function GuestHome() {
   const isPremiumLayout = homeLayout === "premium";
   const isDealLayout = homeLayout === "deal";
   const isMagazineLayout = homeLayout === "magazine";
-  const quickEntries = [
-    { label: "新品", icon: Sparkles, path: "/new-arrivals" },
-    { label: "热销", icon: PackageCheck, path: "/categories?sort=sales_desc" },
-    { label: "优惠券", icon: Ticket, path: "/coupons" },
-    { label: "全部分类", icon: LayoutGrid, path: "/categories" },
-  ];
   const headerClass =
     themeConfig.headerStyle === "dark"
       ? "bg-[color-mix(in_srgb,var(--theme-primary)_88%,black)] text-[var(--theme-primary-foreground)] border-transparent"
@@ -158,14 +152,6 @@ export default function GuestHome() {
         : themeConfig.headerStyle === "premium"
           ? "bg-[color-mix(in_srgb,var(--theme-secondary)_16%,var(--theme-surface))] border-[var(--theme-border)]"
           : "bg-[var(--theme-bg)]/90 border-[var(--theme-border)]";
-  const categoryIconClass =
-    themeConfig.categoryIconStyle === "solid"
-      ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
-      : themeConfig.categoryIconStyle === "outline"
-        ? "bg-transparent text-[var(--theme-primary)] ring-1 ring-[var(--theme-border)]"
-        : themeConfig.categoryIconStyle === "circle"
-          ? "bg-[var(--theme-surface)] text-[var(--theme-primary)] ring-1 ring-[var(--theme-border)]"
-          : "bg-[color-mix(in_srgb,var(--theme-secondary)_14%,white)] text-[var(--theme-secondary)]";
 
   return (
     <div className={`min-h-screen bg-[var(--theme-bg)] ${bottomNavSafe} text-[var(--theme-text)]`} data-theme-home-layout={themeConfig.homeLayout}>
@@ -198,21 +184,6 @@ export default function GuestHome() {
           <BannerCarousel banners={banners} themeConfigOverride={themeConfig} />
         </div>
         {isDealLayout && <div className="-mx-4 mt-3"><HomeOpsBlocks /></div>}
-        <section className="mt-3 grid grid-cols-4 gap-2">
-          {quickEntries.map((entry) => (
-            <button
-              key={entry.label}
-              type="button"
-              onClick={() => navigate(entry.path)}
-              className="flex flex-col items-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-3 text-[11px] text-[var(--theme-text)]"
-            >
-              <span className={`flex h-8 w-8 items-center justify-center rounded-full ${categoryIconClass}`}>
-                <entry.icon size={16} />
-              </span>
-              <span>{entry.label}</span>
-            </button>
-          ))}
-        </section>
         {!isDealLayout && <div className="-mx-4 mt-3"><HomeOpsBlocks /></div>}
         <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-[var(--theme-text-muted)] md:text-sm">
           <div className="flex items-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-2">
@@ -234,7 +205,6 @@ export default function GuestHome() {
             <Sparkles className="h-5 w-5 text-[var(--theme-price)]" />
             全网爆款
           </h2>
-          <p className="mt-1 text-xs tracking-wider text-[var(--theme-text-muted)]">大家都在买的热门好物</p>
           {homeError && (
             <div className="mt-4 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-center text-sm text-[var(--theme-text-muted)]">
               <p>{homeError}</p>

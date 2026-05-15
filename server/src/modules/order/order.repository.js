@@ -1,6 +1,5 @@
 /**
- * 订单域数据访问（SQL 集中于此，便于审计与单测 mock）
- * @param {import('mysql2/promise').Pool|import('mysql2/promise').PoolConnection} q
+ * 订单域数据访问（SQL 集中于此，便于审计与单测 mock�? * @param {import('mysql2/promise').Pool|import('mysql2/promise').PoolConnection} q
  */
 const db = require('../../config/db');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
@@ -218,8 +217,9 @@ async function insertOrderItem(q, params) {
 
 async function deductVariantStock(q, variantId, qty, meta = {}) {
   const [[beforeRow]] = await q.query(
-    `SELECT v.stock, v.product_id
+    `SELECT v.stock, v.product_id, v.title, v.sku_code, p.name AS product_name
      FROM product_variants v
+     JOIN products p ON p.id = v.product_id
      WHERE v.id = ?
      FOR UPDATE`,
     [variantId],
@@ -241,8 +241,9 @@ async function deductVariantStock(q, variantId, qty, meta = {}) {
     await q.query(
       `INSERT INTO inventory_stock_records
          (id, product_id, variant_id, change_type, quantity_delta, before_stock,
-          after_stock, reason, ref_type, ref_id, operator_id)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+          after_stock, reason, ref_type, ref_id, operator_id,
+          product_name_snapshot, variant_name_snapshot, sku_code_snapshot, order_no_snapshot, source_no, remark, created_by_type)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         generateId(),
         beforeRow.product_id,
@@ -255,56 +256,18 @@ async function deductVariantStock(q, variantId, qty, meta = {}) {
         meta.refType || 'order',
         meta.refId || '',
         meta.operatorId || null,
+        beforeRow.product_name || '',
+        beforeRow.title || '',
+        beforeRow.sku_code || '',
+        meta.orderNo || '',
+        '',
+        '',
+        'system',
       ],
     );
   }
   return result.affectedRows;
 }
-
-/** @returns {Promise<number>} affectedRows */
-async function deductProductStock(q, productId, qty, meta = {}) {
-  const [[beforeRow]] = await q.query(
-    `SELECT p.stock, v.id AS default_variant_id
-     FROM products p
-     LEFT JOIN product_variants v ON v.product_id = p.id AND v.is_default = 1
-     WHERE p.id = ?
-     FOR UPDATE`,
-    [productId],
-  );
-  const beforeStock = Number(beforeRow?.stock ?? 0);
-  const [result] = await q.query(
-    'UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?',
-    [qty, productId, qty],
-  );
-  if (result.affectedRows > 0) {
-    const afterStock = beforeStock - qty;
-    await q.query(
-      'UPDATE product_variants SET stock = ? WHERE product_id = ? AND is_default = 1',
-      [afterStock, productId],
-    );
-    await q.query(
-      `INSERT INTO inventory_stock_records
-         (id, product_id, variant_id, change_type, quantity_delta, before_stock,
-          after_stock, reason, ref_type, ref_id, operator_id)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-      [
-        generateId(),
-        productId,
-        beforeRow?.default_variant_id || null,
-        'order_deduct',
-        -qty,
-        beforeStock,
-        afterStock,
-        meta.reason || '订单下单扣减库存',
-        meta.refType || 'order',
-        meta.refId || '',
-        meta.operatorId || null,
-      ],
-    );
-  }
-  return result.affectedRows;
-}
-
 async function ensurePointsAccount(q, userId) {
   await q.query(
     `INSERT IGNORE INTO points_accounts (user_id, balance, total_earned)
@@ -457,8 +420,9 @@ async function selectOrderItemQtyRows(q, orderId) {
 
 async function restoreVariantStock(q, variantId, qty, meta = {}) {
   const [[beforeRow]] = await q.query(
-    `SELECT v.stock, v.product_id
+    `SELECT v.stock, v.product_id, v.title, v.sku_code, p.name AS product_name
      FROM product_variants v
+     JOIN products p ON p.id = v.product_id
      WHERE v.id = ?
      FOR UPDATE`,
     [variantId],
@@ -476,8 +440,9 @@ async function restoreVariantStock(q, variantId, qty, meta = {}) {
   await q.query(
     `INSERT INTO inventory_stock_records
        (id, product_id, variant_id, change_type, quantity_delta, before_stock,
-        after_stock, reason, ref_type, ref_id, operator_id)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+        after_stock, reason, ref_type, ref_id, operator_id,
+        product_name_snapshot, variant_name_snapshot, sku_code_snapshot, order_no_snapshot, source_no, remark, created_by_type)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       generateId(),
       beforeRow.product_id,
@@ -490,48 +455,17 @@ async function restoreVariantStock(q, variantId, qty, meta = {}) {
       meta.refType || 'order',
       meta.refId || '',
       meta.operatorId || null,
+      beforeRow.product_name || '',
+      beforeRow.title || '',
+      beforeRow.sku_code || '',
+      meta.orderNo || '',
+      '',
+      '',
+      'system',
     ],
   );
   return 1;
 }
-
-async function restoreProductStock(q, productId, qty, meta = {}) {
-  const [[beforeRow]] = await q.query(
-    `SELECT p.stock, v.id AS default_variant_id
-     FROM products p
-     LEFT JOIN product_variants v ON v.product_id = p.id AND v.is_default = 1
-     WHERE p.id = ?
-     FOR UPDATE`,
-    [productId],
-  );
-  const beforeStock = Number(beforeRow?.stock ?? 0);
-  const afterStock = beforeStock + qty;
-  await q.query('UPDATE products SET stock = ? WHERE id = ?', [afterStock, productId]);
-  await q.query(
-    'UPDATE product_variants SET stock = ? WHERE product_id = ? AND is_default = 1',
-    [afterStock, productId],
-  );
-  await q.query(
-    `INSERT INTO inventory_stock_records
-       (id, product_id, variant_id, change_type, quantity_delta, before_stock,
-        after_stock, reason, ref_type, ref_id, operator_id)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-    [
-      generateId(),
-      productId,
-      beforeRow?.default_variant_id || null,
-      'order_release',
-      qty,
-      beforeStock,
-      afterStock,
-      meta.reason || '订单取消释放库存',
-      meta.refType || 'order',
-      meta.refId || '',
-      meta.operatorId || null,
-    ],
-  );
-}
-
 async function incrementProductSales(q, productId, qty) {
   await q.query(
     'UPDATE products SET sales_count = sales_count + ? WHERE id = ?',
@@ -701,7 +635,6 @@ module.exports = {
   updateOrderCouponUcId,
   insertOrderItem,
   deductVariantStock,
-  deductProductStock,
   incrementUserPoints,
   insertPointsRecord,
   deleteCartItemsForProducts,
@@ -718,7 +651,6 @@ module.exports = {
   updateOrderCancelled,
   selectOrderItemQtyRows,
   restoreVariantStock,
-  restoreProductStock,
   incrementProductSales,
   decrementUserPoints,
   restoreUserCouponById,

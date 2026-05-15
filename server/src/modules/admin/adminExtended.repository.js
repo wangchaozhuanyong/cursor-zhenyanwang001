@@ -1,4 +1,5 @@
 const db = require('../../config/db');
+const { generateId } = require('../../utils/helpers');
 
 function getPool() {
   return db;
@@ -167,6 +168,29 @@ async function selectShippingTemplatesRaw() {
 }
 
 async function insertShippingTemplate(params) {
+  const [name, regions, baseFee, freeAbove, extraPerKg, enabled] = params;
+  const [[col]] = await db.query(
+    `
+      SELECT DATA_TYPE AS dataType
+      FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'shipping_templates'
+        AND COLUMN_NAME = 'id'
+      LIMIT 1
+    `,
+  );
+  const idType = String(col?.dataType || '').toLowerCase();
+
+  // Compatible with old schema: shipping_templates.id is VARCHAR(36) primary key.
+  if (idType === 'varchar' || idType === 'char') {
+    const createdId = generateId();
+    await db.query(
+      `INSERT INTO shipping_templates (id, name, regions, base_fee, free_above, extra_per_kg, enabled) VALUES (?,?,?,?,?,?,?)`,
+      [createdId, name, regions, baseFee, freeAbove, extraPerKg, enabled],
+    );
+    return createdId;
+  }
+
   const [result] = await db.query(
     `INSERT INTO shipping_templates (name, regions, base_fee, free_above, extra_per_kg, enabled) VALUES (?,?,?,?,?,?)`,
     params,

@@ -1,16 +1,17 @@
-import type { ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 
-type RevealProps = {
+type RevealProps = HTMLAttributes<HTMLDivElement> & {
   index?: number;
   children: ReactNode;
-  className?: string;
 };
 
 export default function Reveal({
   index = 0,
   children,
   className = "",
+  style,
+  ...rest
 }: RevealProps) {
   const { ref, revealed } = useScrollReveal({
     threshold: 0.1,
@@ -25,8 +26,9 @@ export default function Reveal({
   return (
     <div
       ref={ref}
+      {...rest}
       className={`will-change-transform will-change-opacity transition-[opacity,transform] duration-700 ${motionClass} ${className}`}
-      style={{ transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)" }}
+      style={{ transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)", ...style }}
     >
       {children}
     </div>

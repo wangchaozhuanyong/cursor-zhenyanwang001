@@ -13,6 +13,7 @@ import {
   Package,
   Palette,
   Settings,
+  ShieldCheck,
   Ticket,
   Truck,
   Wallet,
@@ -35,26 +36,24 @@ import * as inviteService from "@/services/inviteService";
 import * as rewardService from "@/services/rewardService";
 import * as uploadService from "@/services/uploadService";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
-import { getMutedTextColor, getReadableTextColor } from "@/utils/themeContrast";
 
 const CARD_CLASS = "rounded-2xl bg-[var(--theme-surface)] shadow-[var(--theme-shadow)]";
 const SECTION_PADDING = "p-4";
-const ICON_SIZE = 18;
 
-function SectionTitle({
-  title,
-  rightLabel,
-  onRightClick,
-}: {
-  title: string;
-  rightLabel?: string;
-  onRightClick?: () => void;
-}) {
+function gateNavigate(navigate: ReturnType<typeof useNavigate>, path: string, requireAuth = true) {
+  if (requireAuth && !isLoggedIn()) {
+    navigate("/login", { state: { from: "/profile" } });
+    return;
+  }
+  navigate(path);
+}
+
+function SectionTitle({ title, rightLabel, onRightClick }: { title: string; rightLabel?: string; onRightClick?: () => void }) {
   return (
     <div className="mb-3 flex items-center justify-between">
       <h3 className="text-base font-semibold tracking-tight text-[var(--theme-text)]">{title}</h3>
       {rightLabel ? (
-        <button type="button" onClick={onRightClick} className="inline-flex items-center gap-1 text-xs text-[var(--theme-muted)]">
+        <button type="button" onClick={onRightClick} className="inline-flex items-center gap-1 text-xs text-[var(--theme-text-muted-on-surface)]">
           {rightLabel}
           <ChevronRight size={14} />
         </button>
@@ -84,40 +83,17 @@ function ProfileHeroCard({
 }) {
   const heroStyle =
     memberCardStyle === "blackGold"
-      ? "bg-[linear-gradient(120deg,#15120f,#2a2218)]"
+      ? "bg-[linear-gradient(120deg,#15120f,#2a2218)] text-[#f8e7c0]"
       : memberCardStyle === "gold"
-        ? "bg-[linear-gradient(120deg,#f5ead1,#ead6aa)]"
+        ? "bg-[linear-gradient(120deg,#f5ead1,#ead6aa)] text-[#332817]"
         : memberCardStyle === "fresh"
-          ? "bg-[linear-gradient(120deg,#e9f7f4,#d8efe9)]"
-          : "bg-[var(--theme-bg)]";
+          ? "bg-[linear-gradient(120deg,#e9f7f4,#d8efe9)] text-[#17312a]"
+          : "bg-[var(--theme-surface)] text-[var(--theme-text-on-surface)]";
 
-  const heroBg =
-    memberCardStyle === "blackGold"
-      ? "#1b160f"
-      : memberCardStyle === "gold"
-        ? "#f1dfbd"
-        : memberCardStyle === "fresh"
-          ? "#e1f3ec"
-          : "var(--theme-bg)";
-
-  const heroText = getReadableTextColor(heroBg, undefined, 4.5);
-  const heroMuted = getMutedTextColor(heroBg, heroText);
-  const badgeBg = `color-mix(in srgb, ${heroText} 14%, transparent)`;
-  const switchBg = `color-mix(in srgb, ${heroText} 10%, white)`;
-  const switchBorder = `color-mix(in srgb, ${heroText} 20%, transparent)`;
+  const mutedClass = memberCardStyle === "light" ? "text-[var(--theme-text-muted-on-surface)]" : "opacity-80";
 
   return (
-    <section
-      className={`${CARD_CLASS} ${SECTION_PADDING} ${heroStyle}`}
-      style={{
-        color: heroText,
-        ["--hero-text" as string]: heroText,
-        ["--hero-muted" as string]: heroMuted,
-        ["--hero-badge-bg" as string]: badgeBg,
-        ["--hero-switch-bg" as string]: switchBg,
-        ["--hero-switch-border" as string]: switchBorder,
-      }}
-    >
+    <section className={`${CARD_CLASS} ${SECTION_PADDING} ${heroStyle}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <button type="button" onClick={onAvatarClick} className="relative shrink-0" aria-label="更换头像">
@@ -128,17 +104,13 @@ function ProfileHeroCard({
           </button>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <p className="truncate text-2xl font-semibold leading-tight text-[var(--hero-text)]">{userName}</p>
-              <span className="rounded-full bg-[var(--hero-badge-bg)] px-2 py-0.5 text-[11px] font-semibold text-[var(--hero-text)]">
-                {memberLevelName}
-              </span>
+              <p className="truncate text-2xl font-semibold leading-tight">{userName}</p>
+              <span className="rounded-full bg-black/10 px-2 py-0.5 text-[11px] font-semibold">{memberLevelName}</span>
             </div>
-            <p className="mt-1 text-sm text-[var(--hero-muted)]">邀请码：{code}</p>
+            <p className={`mt-1 text-sm ${mutedClass}`}>邀请码：{code}</p>
           </div>
         </div>
-        <div className="shrink-0 [&_button]:border [&_button]:border-[var(--hero-switch-border)] [&_button]:bg-[var(--hero-switch-bg)] [&_button]:text-[var(--hero-text)]">
-          {skinTrigger}
-        </div>
+        <div className="shrink-0">{skinTrigger}</div>
       </div>
     </section>
   );
@@ -154,6 +126,7 @@ export default function Profile() {
   const { orders, loadOrders } = useOrderStore();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const favoriteCount = useFavoritesStore((s) => s.favoriteIds.length);
+  const loadFavorites = useFavoritesStore((s) => s.loadFavorites);
   const coupons = useCouponStore((s) => s.coupons);
   const loadCoupons = useCouponStore((s) => s.loadCoupons);
 
@@ -167,16 +140,11 @@ export default function Profile() {
     loadProfile().catch(() => {});
     loadOrders().catch(() => {});
     loadCoupons().catch(() => {});
+    loadFavorites().catch(() => {});
     useNotificationStore.getState().fetchUnreadCount();
-    inviteService
-      .fetchInviteStats()
-      .then((s) => setInviteCount(s.directCount || 0))
-      .catch(() => {});
-    rewardService
-      .fetchRewardBalance()
-      .then((res) => setRewardBalance(Number(res.balance || 0)))
-      .catch(() => setRewardBalance(0));
-  }, [loadCoupons, loadOrders, loadProfile]);
+    inviteService.fetchInviteStats().then((s) => setInviteCount(s.directCount || 0)).catch(() => {});
+    rewardService.fetchRewardBalance().then((res) => setRewardBalance(Number(res.balance || 0))).catch(() => setRewardBalance(0));
+  }, [loadCoupons, loadFavorites, loadOrders, loadProfile]);
 
   const handleLogout = async () => {
     await authStore.logout();
@@ -203,53 +171,23 @@ export default function Profile() {
   const memberLevelName = memberLevel?.name?.trim() || "普通会员";
   const code = inviteCode?.trim() || "暂无";
   const couponCount = useMemo(() => coupons.filter((c) => !c.used_at && !c.usedAt).length, [coupons]);
-  const cashbackText = `RM ${rewardBalance.toFixed(2)}`;
 
-  const orderPending = useMemo(
-    () => orders.filter((o) => o.status === "pending" || o.payment_status === "pending").length,
-    [orders],
-  );
-  const orderShipping = useMemo(
-    () =>
-      orders.filter(
-        (o) =>
-          (o.status === "paid" || o.payment_status === "paid")
-          && o.status !== "shipped"
-          && o.status !== "completed",
-      ).length,
-    [orders],
-  );
+  const orderPending = useMemo(() => orders.filter((o) => o.status === "pending" || o.payment_status === "pending").length, [orders]);
+  const orderShipping = useMemo(() => orders.filter((o) => (o.status === "paid" || o.payment_status === "paid") && o.status !== "shipped" && o.status !== "completed").length, [orders]);
   const orderReceiving = useMemo(() => orders.filter((o) => o.status === "shipped").length, [orders]);
 
-  if (!isLoggedIn()) {
-    return (
-      <div className="store-page min-h-screen px-4 pb-24 pt-[max(env(safe-area-inset-top),1rem)] text-[var(--theme-text)]">
-        <section className={`${CARD_CLASS} mx-auto max-w-lg ${SECTION_PADDING}`}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src={logoSrc} alt={siteName} className="h-9 w-9 rounded-lg object-cover" />
-              <p className="text-lg font-semibold">{siteName}</p>
-            </div>
-            <SkinPickerDialog trigger={<button type="button" className="rounded-full bg-[var(--theme-bg)] p-2 text-[var(--theme-muted)]"><Palette size={16} /></button>} />
-          </div>
-          <div className="mt-4 rounded-xl bg-[var(--theme-bg)] p-4">
-            <p className="text-base font-semibold">登录后查看会员权益</p>
-            <p className="mt-1 text-xs text-[var(--theme-muted)]">订单、积分、优惠券、收藏都在这里管理</p>
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => navigate("/login")} className="rounded-xl bg-[var(--theme-primary)] py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)]">登录</button>
-              <button type="button" onClick={() => navigate("/login")} className="rounded-xl bg-[var(--theme-surface)] py-2.5 text-sm font-semibold text-[var(--theme-text)] ring-1 ring-[var(--theme-border)]">注册</button>
-            </div>
-          </div>
-        </section>
-      </div>
-    );
-  }
-
   const assetItems = [
-    { label: "积分", value: String(pointsBalance), icon: Gift, path: "/points" },
-    { label: "优惠券", value: String(couponCount), icon: Ticket, path: "/coupons" },
-    { label: "收藏", value: String(favoriteCount), icon: Heart, path: "/favorites" },
-    { label: "返现", value: cashbackText, icon: Wallet, path: "/rewards" },
+    { label: "我的积分", value: String(pointsBalance), hint: "可用于订单抵扣", icon: Gift, path: "/points" },
+    { label: "优惠券", value: String(couponCount), hint: "下单时可选择使用", icon: Ticket, path: "/coupons" },
+    { label: "我的收藏", value: String(favoriteCount), hint: "你收藏的商品", icon: Heart, path: "/favorites" },
+    { label: "返现余额", value: `RM ${rewardBalance.toFixed(2)}`, hint: "邀请奖励累计", icon: Wallet, path: "/rewards" },
+  ];
+
+  const guestOrderItems = [
+    { label: "待付款", icon: Wallet },
+    { label: "待发货", icon: Package },
+    { label: "待收货", icon: Truck },
+    { label: "售后", icon: CircleHelp },
   ];
 
   return (
@@ -262,59 +200,85 @@ export default function Profile() {
               <p className="text-lg font-semibold text-[var(--theme-text)]">{siteName}</p>
             </div>
             <div className="flex items-center gap-2">
-              <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} />
-              <button type="button" className="rounded-full bg-[var(--theme-bg)] p-2 text-[var(--theme-muted)]" onClick={() => navigate("/settings")}>
-                <Settings size={16} />
-              </button>
+              {isLoggedIn() ? <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} /> : null}
+              <SkinPickerDialog trigger={<button type="button" className="rounded-full bg-[var(--theme-bg)] p-2 text-[var(--theme-text-muted-on-surface)]"><Palette size={16} /></button>} />
             </div>
           </div>
 
-          <ProfileHeroCard
-            logoSrc={logoSrc}
-            avatar={avatar}
-            userName={userName}
-            memberLevelName={memberLevelName}
-            code={code}
-            onAvatarClick={() => avatarInputRef.current?.click()}
-            skinTrigger={
-              <SkinPickerDialog
-                trigger={
-                  <button type="button" className="rounded-full bg-[var(--theme-bg)] px-3 py-1.5 text-xs font-medium text-[var(--theme-muted)] ring-1 ring-[var(--theme-border)]">
-                    切换皮肤
-                  </button>
-                }
+          {!isLoggedIn() ? (
+            <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] p-4">
+              <div className="flex items-center gap-3">
+                <img src={logoSrc} alt={siteName} className="h-14 w-14 rounded-xl object-cover" />
+                <div className="min-w-0">
+                  <p className="text-lg font-semibold">欢迎来到 {siteName}</p>
+                  <p className="mt-1 text-xs text-[var(--theme-text-muted-on-surface)]">登录后可查看订单、积分、优惠券、返现与邀请奖励</p>
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => navigate("/login", { state: { from: "/profile" } })} className="rounded-xl bg-[var(--theme-primary)] py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)]">登录</button>
+                <button type="button" onClick={() => navigate("/login", { state: { from: "/profile" } })} className="rounded-xl ring-1 ring-[var(--theme-border)] bg-[var(--theme-surface)] py-2.5 text-sm font-semibold">注册</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <ProfileHeroCard
+                logoSrc={logoSrc}
+                avatar={avatar}
+                userName={userName}
+                memberLevelName={memberLevelName}
+                code={code}
+                onAvatarClick={() => avatarInputRef.current?.click()}
+                skinTrigger={<button type="button" className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs font-medium">切换皮肤</button>}
+                memberCardStyle={themeConfig.memberCardStyle}
               />
-            }
-            memberCardStyle={themeConfig.memberCardStyle}
-          />
-          <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+              <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+            </>
+          )}
         </section>
 
         <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
-          <div className="grid grid-cols-4 gap-2">
-            {assetItems.map((item) => (
-              <button key={item.label} type="button" onClick={() => navigate(item.path)} className="rounded-xl bg-[var(--theme-bg)] px-2 py-3 text-center">
-                <item.icon className="mx-auto mb-1.5 text-[var(--theme-secondary)]" size={ICON_SIZE} />
-                <p className="text-[11px] text-[var(--theme-muted)]">{item.label}</p>
-                <p className="mt-1 text-[22px] font-semibold leading-none tracking-tight text-[var(--theme-text)]">{item.value}</p>
+          <SectionTitle title="我的资产" />
+          <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)]">
+            {assetItems.map((item, idx) => (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => gateNavigate(navigate, item.path, true)}
+                className={`min-h-[84px] px-3 py-3 text-left ${idx % 2 === 0 ? "border-r border-[var(--theme-border)]" : ""} ${idx < 2 ? "border-b border-[var(--theme-border)]" : ""}`}
+              >
+                <div className="flex items-center gap-2 text-[var(--theme-text-muted-on-surface)]"><item.icon size={15} /> <span className="text-xs">{item.label}</span></div>
+                <p className="mt-1 text-lg font-semibold text-[var(--theme-text-on-surface)]">{item.value}</p>
+                <p className="mt-0.5 text-[11px] text-[var(--theme-text-muted-on-surface)]">{item.hint}</p>
               </button>
             ))}
           </div>
         </section>
 
+        <section className={`${CARD_CLASS} ${SECTION_PADDING}`} style={{ background: "linear-gradient(100deg,color-mix(in_srgb,var(--theme-secondary)_12%,var(--theme-surface)),var(--theme-surface))" }}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-base font-semibold text-[var(--theme-text-on-surface)]">邀请好友得奖励</p>
+              <p className="mt-1 text-xs text-[var(--theme-text-muted-on-surface)]">好友注册/下单后可获得积分或返现</p>
+              <p className="mt-2 text-xs text-[var(--theme-text-muted-on-surface)]">已邀请 {inviteCount} 人，累计返现 RM {rewardBalance.toFixed(2)}</p>
+            </div>
+            <button type="button" onClick={() => gateNavigate(navigate, "/invite", true)} className="shrink-0 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]">立即邀请</button>
+          </div>
+        </section>
+
         <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
-          <SectionTitle title="我的订单" rightLabel="查看全部" onRightClick={() => navigate("/orders")} />
-          <div className="grid grid-cols-5 gap-2 text-center">
-            {[
-              { label: "待付款", icon: Wallet, value: orderPending, path: "/orders" },
-              { label: "待发货", icon: Package, value: orderShipping, path: "/orders" },
-              { label: "待收货", icon: Truck, value: orderReceiving, path: "/orders" },
-              { label: "待评价", icon: MessageCircle, value: 0, path: "/orders" },
-              { label: "售后/退款", icon: CircleHelp, value: 0, path: "/returns" },
-            ].map((item) => (
-              <button key={item.label} type="button" onClick={() => navigate(item.path)} className="relative rounded-xl px-1 py-2">
+          <SectionTitle title="我的订单" rightLabel="查看全部" onRightClick={() => gateNavigate(navigate, "/orders", true)} />
+          <div className="grid grid-cols-4 gap-2 text-center">
+            {(isLoggedIn()
+              ? [
+                  { label: "待付款", icon: Wallet, value: orderPending, path: "/orders" },
+                  { label: "待发货", icon: Package, value: orderShipping, path: "/orders" },
+                  { label: "待收货", icon: Truck, value: orderReceiving, path: "/orders" },
+                  { label: "售后", icon: CircleHelp, value: 0, path: "/returns" },
+                ]
+              : guestOrderItems.map((it) => ({ ...it, value: 0, path: "/orders" }))).map((item) => (
+              <button key={item.label} type="button" onClick={() => gateNavigate(navigate, item.path, true)} className="relative rounded-xl px-1 py-2">
                 {item.value > 0 ? <span className="absolute left-7 top-0 min-w-[1rem] rounded-full bg-[var(--theme-danger)] px-1 text-[10px] text-white">{item.value}</span> : null}
-                <item.icon size={ICON_SIZE} className="mx-auto text-[var(--theme-secondary)]" />
+                <item.icon size={18} className="mx-auto text-[var(--theme-secondary)]" />
                 <p className="mt-1 text-xs">{item.label}</p>
               </button>
             ))}
@@ -325,47 +289,37 @@ export default function Profile() {
           <SectionTitle title="常用服务" />
           <div className="grid grid-cols-4 gap-2">
             {[
-              { label: "收货地址", icon: MapPin, path: "/address" },
-              { label: "浏览记录", icon: Clock3, path: "/history" },
-              { label: "积分商城", icon: Gift, path: "/points" },
-              { label: "邀请有礼", icon: Gift, path: "/invite" },
-              { label: "消息通知", icon: Bell, path: "/notifications" },
-              { label: "帮助中心", icon: CircleHelp, path: "/help" },
-              { label: "账户设置", icon: Settings, path: "/settings" },
-              { label: "我的收藏", icon: Heart, path: "/favorites" },
+              { label: "收货地址", icon: MapPin, path: "/address", auth: true },
+              { label: "浏览记录", icon: Clock3, path: "/history", auth: false },
+              { label: "我的积分", icon: Gift, path: "/points", auth: true },
+              { label: "帮助中心", icon: CircleHelp, path: "/help", auth: false },
+              { label: "邀请有礼", icon: Gift, path: "/invite", auth: true },
+              { label: "消息通知", icon: Bell, path: "/notifications", auth: true },
+              { label: "账户设置", icon: Settings, path: "/settings", auth: true },
+              { label: "我的收藏", icon: Heart, path: "/favorites", auth: true },
             ].map((item) => (
-              <button key={item.label} type="button" onClick={() => navigate(item.path)} className="space-y-1 rounded-xl bg-[var(--theme-bg)] px-1 py-2 text-center">
-                <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-secondary)_12%,white)] text-[var(--theme-secondary)]">
-                  <item.icon size={16} />
-                </span>
+              <button key={item.label} type="button" onClick={() => gateNavigate(navigate, item.path, item.auth)} className="space-y-1 rounded-xl bg-[var(--theme-bg)] px-1 py-2 text-center">
+                <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-secondary)_12%,var(--theme-surface))] text-[var(--theme-secondary)]"><item.icon size={16} /></span>
                 <p className="text-[11px]">{item.label}</p>
               </button>
             ))}
           </div>
         </section>
 
-        <section className={`${CARD_CLASS} ${SECTION_PADDING}`} style={{ background: "linear-gradient(90deg,color-mix(in_srgb,var(--theme-secondary)_16%,white),var(--theme-surface))" }}>
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-base font-semibold">邀请好友得奖励</p>
-              <p className="mt-1 line-clamp-1 text-xs text-[var(--theme-muted)]">已邀请 {inviteCount} 位好友，继续邀请可获得积分和优惠券</p>
-            </div>
-            <button type="button" onClick={() => navigate("/invite")} className="shrink-0 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]">立即邀请</button>
-          </div>
-        </section>
-
         <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
           <div className="grid grid-cols-3 gap-2 text-center">
-            <div><p className="text-sm font-semibold">正品保障</p><p className="text-xs text-[var(--theme-muted)]">100% 正品保证</p></div>
-            <div><p className="text-sm font-semibold">本地配送</p><p className="text-xs text-[var(--theme-muted)]">快速发货</p></div>
-            <div><p className="text-sm font-semibold">安全支付</p><p className="text-xs text-[var(--theme-muted)]">多重加密保护</p></div>
+            <div><p className="text-sm font-semibold">正品保障</p><p className="text-xs text-[var(--theme-text-muted-on-surface)]">100% 正品保证</p></div>
+            <div><p className="text-sm font-semibold">本地配送</p><p className="text-xs text-[var(--theme-text-muted-on-surface)]">快速发货</p></div>
+            <div><p className="text-sm font-semibold">安全支付</p><p className="text-xs text-[var(--theme-text-muted-on-surface)]">多重加密保护</p></div>
           </div>
         </section>
 
-        <button type="button" onClick={handleLogout} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[color-mix(in_srgb,var(--theme-danger)_12%,white)] py-3 text-sm font-semibold text-[var(--theme-danger)]">
-          <LogOut size={16} />
-          退出登录
-        </button>
+        {isLoggedIn() ? (
+          <button type="button" onClick={handleLogout} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[color-mix(in_srgb,var(--theme-danger)_12%,var(--theme-surface))] py-3 text-sm font-semibold text-[var(--theme-danger)]">
+            <LogOut size={16} />
+            退出登录
+          </button>
+        ) : null}
       </main>
     </div>
   );

@@ -1,4 +1,4 @@
-import { Loader2, Ticket } from "lucide-react";
+﻿import { Loader2, Ticket } from "lucide-react";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import StoreButton from "@/components/ui/StoreButton";
 import StoreBadge from "@/components/ui/StoreBadge";
@@ -57,9 +57,9 @@ export default function PremiumCouponCard({
   const amountSize = compact ? "text-2xl" : "text-3xl";
   const wrapper = (
     <div
-      className={`relative flex w-full items-stretch gap-3 rounded-xl border border-[var(--theme-border)] p-3 text-[var(--theme-text)] ${styleMap[couponStyle]} ${disabled ? "opacity-60" : ""} ${selected ? "ring-2 ring-[var(--theme-secondary)]" : ""} ${className}`}
+      className={`relative flex w-full items-stretch gap-2 rounded-xl border border-[var(--theme-border)] p-3 text-[var(--theme-text)] ${styleMap[couponStyle]} ${disabled ? "opacity-60" : ""} ${selected ? "ring-2 ring-[var(--theme-secondary)]" : ""} ${className}`}
     >
-      <div className="flex w-[34%] shrink-0 flex-col justify-center rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 text-center">
+      <div className="flex w-[32%] shrink-0 flex-col justify-center rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 text-center">
         <p className="text-xs text-[var(--theme-muted)]">{amountPrefix}</p>
         <p className={`${amountSize} font-black leading-none text-[var(--theme-price)]`}>{amount}</p>
         <p className="mt-1 text-[10px] text-[var(--theme-muted)]">{conditionText}</p>
@@ -72,10 +72,10 @@ export default function PremiumCouponCard({
         </div>
         <p className="line-clamp-2 text-sm font-bold">{title}</p>
         <p className="mt-2 text-xs text-[var(--theme-muted)]">有效期至：{expireText}</p>
-        <p className="mt-1 text-xs text-[var(--theme-muted)] line-clamp-1">{scopeText}</p>
+        <p className="mt-1 line-clamp-1 text-xs text-[var(--theme-muted)]">{scopeText}</p>
       </div>
       {actionLabel ? (
-        <div className="flex shrink-0 items-center">
+        <div className="flex w-[48px] shrink-0 items-center justify-center">
           <StoreButton
             size={compact ? "sm" : "md"}
             variant={couponStyle === "deal" ? "danger" : "primary"}
@@ -84,7 +84,7 @@ export default function PremiumCouponCard({
               e.stopPropagation();
               onAction?.();
             }}
-            className="min-w-[84px]"
+            className="h-full min-h-[96px] w-full px-0 text-xs leading-tight [writing-mode:vertical-rl]"
           >
             {actionLoading ? <Loader2 size={14} className="animate-spin" /> : actionLabel}
           </StoreButton>

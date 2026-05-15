@@ -1,4 +1,5 @@
 const { PAYMENT_STATUS } = require('../../constants/status');
+const { normalizeKnownMojibakeText } = require('../../utils/textNormalize');
 
 function formatOrderItem(row) {
   return {
@@ -37,7 +38,7 @@ function formatOrder(row, items) {
     discount_amount: parseFloat(row.discount_amount),
     coupon_title: row.coupon_title,
     shipping_fee: parseFloat(row.shipping_fee),
-    shipping_name: row.shipping_name,
+    shipping_name: normalizeKnownMojibakeText(row.shipping_name),
     total_amount: parseFloat(row.total_amount),
     tax_mode: row.tax_mode || null,
     tax_rate: row.tax_rate != null && row.tax_rate !== '' ? parseFloat(row.tax_rate) : null,

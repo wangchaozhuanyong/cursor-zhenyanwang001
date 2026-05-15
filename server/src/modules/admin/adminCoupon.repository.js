@@ -31,11 +31,23 @@ async function selectCouponsPage(pageSize, offset) {
 async function insertCoupon(params) {
   const {
     id, code, title, type, value, min_amount, start_date, end_date, description, scope_type, display_badge,
+    total_quantity, per_user_limit, new_user_only, member_only, auto_issue,
+    usable_scope_type, usable_product_ids, usable_category_ids, stackable_with_activity,
   } = params;
   await db.query(
-    `INSERT INTO coupons (id, code, title, type, value, min_amount, start_date, end_date, description, scope_type, display_badge)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-    [id, code, title, type, value, min_amount, start_date, end_date, description, scope_type || 'all', display_badge || ''],
+    `INSERT INTO coupons
+      (id, code, title, type, value, min_amount, start_date, end_date, description, scope_type, display_badge,
+       total_quantity, per_user_limit, new_user_only, member_only, auto_issue,
+       usable_scope_type, usable_product_ids, usable_category_ids, stackable_with_activity)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      id, code, title, type, value, min_amount, start_date, end_date, description, scope_type || 'all', display_badge || '',
+      Number(total_quantity || 0), Number(per_user_limit || 1), new_user_only ? 1 : 0, member_only ? 1 : 0, auto_issue ? 1 : 0,
+      usable_scope_type || 'all',
+      usable_product_ids ? JSON.stringify(usable_product_ids) : null,
+      usable_category_ids ? JSON.stringify(usable_category_ids) : null,
+      stackable_with_activity === false ? 0 : 1,
+    ],
   );
 }
 

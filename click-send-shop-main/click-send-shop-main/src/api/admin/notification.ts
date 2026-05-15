@@ -40,7 +40,7 @@ export interface NotificationTriggerRule {
   enabled: boolean;
   /** 鑷畾涔夋爣棰樻ā鏉匡紝绌哄瓧绗︿覆琛ㄧず浣跨敤 default_title */
   title?: string;
-  /** 鑷畾涔夋鏂囨ā鏉匡紝绌哄瓧绗︿覆琛ㄧず浣跨敤 default_content */
+  /** 自定义正文模板，空字符串表示使用 default_content */
   content?: string;
   default_title?: string;
   default_content?: string;

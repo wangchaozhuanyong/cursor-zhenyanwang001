@@ -1,4 +1,4 @@
-const { generateId, generateOrderNo } = require('../../utils/helpers');
+﻿const { generateId, generateOrderNo } = require('../../utils/helpers');
 const { computeShippingFee, estimateWeightFromItems } = require('../../utils/shippingFee');
 const {
   NotFoundError,
@@ -18,6 +18,35 @@ const { UserStatsService } = require('../user/userStats.service');
 const orderDb = repo.getPool();
 const userApi = /** @type {any} */ (userModule).api || {};
 const paymentsApi = /** @type {any} */ (paymentsModule).api || {};
+
+async function insertAnalyticsEvent(conn, row) {
+  await conn.query(
+    `INSERT INTO analytics_events
+      (user_id, anonymous_id, session_id, event_type, module, page, product_id, variant_id, category_id, activity_id, coupon_id, keyword, order_id, amount, quantity, device, referrer, ip_hash, user_agent)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      row.user_id || null,
+      row.anonymous_id || '',
+      row.session_id || '',
+      row.event_type,
+      row.module || '',
+      row.page || '',
+      row.product_id || null,
+      row.variant_id || null,
+      row.category_id || null,
+      row.activity_id || null,
+      row.coupon_id || null,
+      row.keyword || '',
+      row.order_id || null,
+      row.amount ?? null,
+      row.quantity ?? null,
+      row.device || 'server',
+      row.referrer || '',
+      row.ip_hash || '',
+      row.user_agent || 'server',
+    ],
+  );
+}
 
 function requireApiMethod(api, name) {
   if (typeof api[name] !== 'function') {
@@ -53,16 +82,38 @@ function computeFullReductionDiscount(orderItems, activityByProductId) {
       subtotal: 0,
       threshold: act.threshold_amount,
       discount: act.discount_amount,
+      rules: (() => {
+        try {
+          const cfg = act.activity_config ? (typeof act.activity_config === 'string' ? JSON.parse(act.activity_config) : act.activity_config) : null;
+          return Array.isArray(cfg?.full_reduction_rules) ? cfg.full_reduction_rules : [];
+        } catch {
+          return [];
+        }
+      })(),
     };
     cur.subtotal += line;
     byActivity.set(aid, cur);
   }
   let sum = 0;
   for (const [, g] of byActivity) {
-    const th = g.threshold != null && g.threshold !== '' ? Number(g.threshold) : 0;
-    const disc = g.discount != null && g.discount !== '' ? Number(g.discount) : 0;
-    if (th > 0 && disc > 0 && g.subtotal >= th) {
-      sum += Math.min(disc, g.subtotal);
+    const rules = [];
+    if (Array.isArray(g.rules) && g.rules.length) {
+      for (const r of g.rules) {
+        const th = Number(r.threshold_amount || 0);
+        const disc = Number(r.discount_amount || 0);
+        if (th > 0 && disc > 0) rules.push({ th, disc });
+      }
+    } else {
+      const th = g.threshold != null && g.threshold !== '' ? Number(g.threshold) : 0;
+      const disc = g.discount != null && g.discount !== '' ? Number(g.discount) : 0;
+      if (th > 0 && disc > 0) rules.push({ th, disc });
+    }
+    let best = 0;
+    for (const r of rules) {
+      if (g.subtotal >= r.th) best = Math.max(best, r.disc);
+    }
+    if (best > 0) {
+      sum += Math.min(best, g.subtotal);
     }
   }
   return sum;
@@ -109,7 +160,7 @@ function normalizeMalaysiaAddress(address, contactName, contactPhone) {
 }
 
 /**
- * 创建订单。形状校验已由 routes 层 zod schema 完成；
+ * 创建订单。形状校验已由 routes 层 zod schema 完成。
  * 这里仅做业务规则（库存、优惠券资格、积分扣减、邀请奖励）与事务编排。
  * @param {string} userId
  * @param {object} body
@@ -344,6 +395,7 @@ async function createOrder(userId, body) {
         const affected = await repo.deductVariantStock(conn, oi.variantId, oi.qty, {
           refType: 'order',
           refId: orderId,
+          orderNo,
           reason: oi.activityId
             ? `订单 ${orderNo} 活动「${oi.activityTitle || oi.activityId}」下单扣减 SKU 库存`
             : `订单 ${orderNo} 下单扣减 SKU 库存`,
@@ -354,17 +406,8 @@ async function createOrder(userId, body) {
         }
         continue;
       }
-      const affected = await repo.deductProductStock(conn, oi.productId, oi.qty, {
-        refType: 'order',
-        refId: orderId,
-        reason: oi.activityId
-          ? `订单 ${orderNo} 活动「${oi.activityTitle || oi.activityId}」下单扣减库存`
-          : `订单 ${orderNo} 下单扣减库存`,
-      });
-      if (affected === 0) {
-        await conn.rollback();
-        throw new ValidationError(`商品「${oi.name}」库存不足`);
-      }
+      await conn.rollback();
+      throw new ValidationError(`商品「${oi.name}」缺少 SKU 信息，请先修复商品默认规格后再下单`);
     }
 
     await repo.deleteCartItemsForLines(
@@ -372,6 +415,16 @@ async function createOrder(userId, body) {
       userId,
       items.map((i) => ({ product_id: i.product_id, variant_id: i.variant_id || '' })),
     );
+
+    await insertAnalyticsEvent(conn, {
+      user_id: userId,
+      event_type: 'order_submit',
+      module: 'order',
+      page: '/checkout',
+      order_id: orderId,
+      amount: totalAmount,
+      quantity: orderItems.reduce((sum, it) => sum + Number(it.qty || 0), 0),
+    });
 
     await conn.commit();
 
@@ -445,19 +498,15 @@ async function cancelPendingOrderInTransaction(conn, order, options = {}) {
 
   const lineItems = await repo.selectOrderItemQtyRows(conn, order.id);
   for (const item of lineItems) {
-    if (item.variant_id) {
-      await repo.restoreVariantStock(conn, item.variant_id, item.qty, {
-        refType: 'order',
-        refId: order.id,
-        reason: stockReason,
-      });
-    } else {
-      await repo.restoreProductStock(conn, item.product_id, item.qty, {
-        refType: 'order',
-        refId: order.id,
-        reason: stockReason,
-      });
+    if (!item.variant_id) {
+      throw new ValidationError(`订单 ${order.order_no} 存在缺失 SKU 的明细，无法执行库存释放`);
     }
+    await repo.restoreVariantStock(conn, item.variant_id, item.qty, {
+      refType: 'order',
+      refId: order.id,
+      orderNo: order.order_no,
+      reason: stockReason,
+    });
     if (item.activity_id) {
       await repo.decrementActivitySold(conn, item.activity_id, item.product_id, item.qty);
     }
@@ -481,7 +530,7 @@ async function cancelOrder(userId, orderId) {
 
     const order = await repo.selectOrderByIdAndUserForUpdate(conn, orderId, userId);
     if (!order) throw new NotFoundError('订单不存在');
-    if (!canUserCancel(order)) throw new ValidationError('当前订单状态无法取消（仅未付款的待处理订单可取消）');
+    if (!canUserCancel(order)) throw new ValidationError('当前订单状态无法取消（仅未付款待处理订单可取消）');
 
     await cancelPendingOrderInTransaction(conn, order, {
       trigger: 'user_cancel_order',
@@ -523,7 +572,7 @@ async function createStripeCheckoutSession(userId, orderId) {
 }
 
 /**
- * 将已发货订单标记完成并结算积分/返现（调用方须保证当前为 SHIPPED 且在事务内已加锁如需）
+ * 将已发货订单标记完成并结算积分、返现（调用方需保证当前为 SHIPPED 且在事务内已加锁，如需）
  * @param {import('mysql2/promise').PoolConnection} conn
  * @param {Record<string, unknown>} order
  * @param {Record<string, unknown>} [options]
@@ -566,3 +615,5 @@ module.exports = {
   completeShippedOrder,
   cancelPendingOrderInTransaction,
 };
+
+

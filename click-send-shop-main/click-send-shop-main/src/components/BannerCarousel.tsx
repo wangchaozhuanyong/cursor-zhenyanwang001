@@ -1,11 +1,8 @@
 ﻿import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
 import type { Banner } from "@/types/banner";
-import { supportsColorMix } from "@/utils/cssSupport";
 import type { ThemeConfig } from "@/types/theme";
-import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 
 interface BannerCarouselProps {
   banners: Banner[];
@@ -18,24 +15,17 @@ function resolveBannerLink(link: string): string {
   return value;
 }
 
-export default function BannerCarousel({ banners, themeConfigOverride }: BannerCarouselProps) {
+export default function BannerCarousel({ banners }: BannerCarouselProps) {
   const [current, setCurrent] = useState(0);
-  const [direction, setDirection] = useState(1);
   const navigate = useNavigate();
-  const { themeConfig } = useThemeRuntime();
 
-  const goTo = useCallback(
-    (index: number) => {
-      setDirection(index > current ? 1 : -1);
-      setCurrent(index);
-    },
-    [current],
-  );
+  const goTo = useCallback((index: number) => {
+    setCurrent(index);
+  }, []);
 
   useEffect(() => {
     if (banners.length <= 1) return;
     const timer = setInterval(() => {
-      setDirection(1);
       setCurrent((prev) => (prev + 1) % banners.length);
     }, 4000);
     return () => clearInterval(timer);
@@ -58,38 +48,11 @@ export default function BannerCarousel({ banners, themeConfigOverride }: BannerC
     }
   };
 
-  const variants = {
-    enter: (d: number) => ({ x: d > 0 ? "100%" : "-100%", opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (d: number) => ({ x: d > 0 ? "-100%" : "100%", opacity: 0 }),
-  };
-
   if (banners.length === 0) return null;
 
   const banner = banners[current];
   if (!banner) return null;
 
-  const inactiveDotColor = supportsColorMix() ? "color-mix(in srgb, #ffffff 50%, transparent)" : "rgba(255,255,255,0.5)";
-  const bannerStyle = themeConfigOverride?.bannerStyle ?? themeConfig.bannerStyle ?? "clean";
-  const overlayClass =
-    bannerStyle === "deal"
-      ? "from-[color-mix(in_srgb,var(--theme-danger)_42%,transparent)] via-[color-mix(in_srgb,var(--theme-warning)_20%,transparent)] to-transparent"
-      : bannerStyle === "dark"
-        ? "from-black/62 via-black/25 to-transparent"
-        : bannerStyle === "fresh"
-          ? "from-[color-mix(in_srgb,var(--theme-secondary)_26%,transparent)] via-transparent to-transparent"
-          : bannerStyle === "premium"
-            ? "from-[color-mix(in_srgb,var(--theme-primary)_38%,transparent)] via-black/8 to-transparent"
-            : "from-black/20 via-black/5 to-transparent";
-  const textColorClass = bannerStyle === "fresh" ? "text-[var(--theme-text-on-surface)]" : "text-white";
-  const buttonClass =
-    bannerStyle === "dark"
-      ? "border-white/25 bg-white/10 text-white"
-      : bannerStyle === "deal"
-        ? "border-[var(--theme-warning)]/35 bg-[var(--theme-warning)]/80 text-[var(--theme-price-foreground)]"
-        : bannerStyle === "fresh"
-          ? "border-[var(--theme-secondary)]/35 bg-[var(--theme-surface)]/90 text-[var(--theme-text)]"
-          : "border-white/30 bg-white/20 text-white";
   const bannerLink = resolveBannerLink(banner.link);
 
   const handleOpenBanner = () => {
@@ -103,67 +66,36 @@ export default function BannerCarousel({ banners, themeConfigOverride }: BannerC
 
   return (
     <div
-      className="relative overflow-hidden theme-shadow"
+      className={`relative overflow-hidden theme-shadow ${bannerLink ? "cursor-pointer" : ""}`}
       style={{ aspectRatio: "2.34 / 1", borderRadius: "var(--theme-radius)" }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      onClick={handleOpenBanner}
     >
-      <AnimatePresence initial={false} custom={direction} mode="popLayout">
+      <AnimatePresence initial={false} mode="wait">
         <motion.img
           key={current}
           src={banner.image}
-          alt={banner.title}
+          alt={banner.title || "首页轮播图"}
           width={1200}
           height={512}
           className="absolute inset-0 h-full w-full object-cover"
-          custom={direction}
-          variants={variants}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={{ duration: 0.4, ease: "easeInOut" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.22, ease: "linear" }}
         />
       </AnimatePresence>
-
-      <div className={`pointer-events-none absolute inset-0 bg-gradient-to-r ${overlayClass}`} />
-      <div className="absolute inset-0 flex items-end justify-between p-5">
-        <AnimatePresence mode="wait">
-          {String(banner.title || "").trim() ? (
-            <motion.div
-              key={current}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.3 }}
-              className="max-w-[70%]"
-            >
-              <p className={`font-display text-2xl font-bold leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)] ${textColorClass}`}>
-                {banner.title}
-              </p>
-            </motion.div>
-          ) : (
-            <div />
-          )}
-        </AnimatePresence>
-
-        {bannerLink ? (
-          <button
-            type="button"
-            onClick={handleOpenBanner}
-            className={`mb-1 inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold backdrop-blur ${buttonClass}`}
-          >
-            立即查看
-            <ChevronRight size={14} />
-          </button>
-        ) : null}
-      </div>
 
       <div className="absolute bottom-3 right-4 flex gap-1.5">
         {banners.map((_, i) => (
           <button
             key={i}
             type="button"
-            onClick={() => goTo(i)}
+            onClick={(e) => {
+              e.stopPropagation();
+              goTo(i);
+            }}
             className="touch-target flex items-center justify-center p-0.5"
             aria-label={`Banner ${i + 1}`}
           >
@@ -172,9 +104,9 @@ export default function BannerCarousel({ banners, themeConfigOverride }: BannerC
               animate={{
                 width: i === current ? 18 : 6,
                 height: 6,
-                backgroundColor: i === current ? (bannerStyle === "dark" ? "var(--theme-accent)" : "var(--theme-price)") : inactiveDotColor,
+                backgroundColor: i === current ? "var(--theme-primary)" : "rgba(255,255,255,0.55)",
               }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.2 }}
             />
           </button>
         ))}

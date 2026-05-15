@@ -433,6 +433,10 @@ export default function Checkout() {
       toast.error("请填写收货地址");
       return;
     }
+    if (shippingRulesLoading || shippingQuoteLoading) {
+      toast.error("运费规则加载中，请稍候再试");
+      return;
+    }
     if (!selectedTemplate) {
       toast.error("运费规则未加载完成，无法提交订单");
       return;
@@ -793,7 +797,7 @@ export default function Checkout() {
               />
               <button
                 onClick={handleSubmit}
-                disabled={submitting || shippingRulesLoading || shippingQuoteLoading || !!shippingRulesError || !!shippingQuoteError || !selectedTemplate}
+                disabled={submitting}
                 className="mt-5 w-full rounded-full py-3.5 text-sm font-bold text-white theme-shadow transition-all hover:opacity-95 disabled:opacity-60"
                 style={{ background: "var(--theme-gradient)" }}
               >
@@ -814,7 +818,7 @@ export default function Checkout() {
           </div>
           <button
             onClick={handleSubmit}
-            disabled={submitting || shippingRulesLoading || shippingQuoteLoading || !!shippingRulesError || !!shippingQuoteError || !selectedTemplate}
+            disabled={submitting}
             className="rounded-full px-8 py-3.5 text-sm font-bold text-white theme-shadow transition-all active:scale-[0.97] disabled:opacity-60"
             style={{ background: "var(--theme-gradient)" }}
           >
@@ -1330,5 +1334,6 @@ function OrderSuccess({
     </div>
   );
 }
+
 
 

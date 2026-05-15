@@ -43,7 +43,16 @@ function normalizeEvent(payload) {
     quantity: Number.isFinite(quantity) ? Math.max(0, Math.trunc(quantity)) : null,
     anonymous_id: safeText(payload?.anonymous_id, 64),
     session_id: safeText(payload?.session_id, 64),
+    dedupe_key: safeText(payload?.dedupe_key, 128),
   };
+}
+
+function buildDedupeKey(row) {
+  if (row.dedupe_key) return row.dedupe_key;
+  if (row.order_id && (row.event_type === 'order_submit' || row.event_type === 'payment_success')) {
+    return `${row.event_type}:${row.order_id}:${row.module || 'default'}`.slice(0, 128);
+  }
+  return '';
 }
 
 function hashIp(ip) {
@@ -65,6 +74,7 @@ async function trackEvent(payload, req) {
   if (!normalized) return { data: null, message: 'ignored' };
   await repo.insertEvent({
     ...normalized,
+    dedupe_key: buildDedupeKey(normalized),
     user_id: req?.user?.id || null,
     device: inferDevice(req?.headers?.['user-agent']),
     referrer: safeText(req?.headers?.referer || '', 255),
@@ -77,4 +87,3 @@ async function trackEvent(payload, req) {
 module.exports = {
   trackEvent,
 };
-

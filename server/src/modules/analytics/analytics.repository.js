@@ -3,12 +3,14 @@ const db = require('../../config/db');
 async function insertEvent(row) {
   await db.query(
     `INSERT INTO analytics_events
-      (user_id, anonymous_id, session_id, event_type, module, page, product_id, variant_id, category_id, activity_id, coupon_id, keyword, order_id, amount, quantity, device, referrer, ip_hash, user_agent)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      (user_id, anonymous_id, session_id, dedupe_key, event_type, module, page, product_id, variant_id, category_id, activity_id, coupon_id, keyword, order_id, amount, quantity, device, referrer, ip_hash, user_agent)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+     ON DUPLICATE KEY UPDATE id=id`,
     [
       row.user_id || null,
       row.anonymous_id || '',
       row.session_id || '',
+      row.dedupe_key || '',
       row.event_type,
       row.module || '',
       row.page || '',
@@ -32,4 +34,3 @@ async function insertEvent(row) {
 module.exports = {
   insertEvent,
 };
-

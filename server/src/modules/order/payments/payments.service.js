@@ -20,14 +20,17 @@ const payDb = payRepo.getPool();
 const userApi = /** @type {any} */ (userModule).api || {};
 
 async function insertAnalyticsEvent(conn, row) {
+  const dedupeKey = String(row.dedupe_key || '').trim();
   await conn.query(
     `INSERT INTO analytics_events
-      (user_id, anonymous_id, session_id, event_type, module, page, product_id, variant_id, category_id, activity_id, coupon_id, keyword, order_id, amount, quantity, device, referrer, ip_hash, user_agent)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      (user_id, anonymous_id, session_id, dedupe_key, event_type, module, page, product_id, variant_id, category_id, activity_id, coupon_id, keyword, order_id, amount, quantity, device, referrer, ip_hash, user_agent)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+     ON DUPLICATE KEY UPDATE id=id`,
     [
       row.user_id || null,
       row.anonymous_id || '',
       row.session_id || '',
+      dedupeKey,
       row.event_type,
       row.module || '',
       row.page || '',
@@ -180,6 +183,7 @@ async function payWithRewardWallet(userId, orderId) {
     await UserStatsService.syncStatsAfterOrderPaid(userId, payableAmount, lockedOrder.id, conn);
     await insertAnalyticsEvent(conn, {
       user_id: userId,
+      dedupe_key: `payment_success:${lockedOrder.id}:reward_wallet`,
       event_type: 'payment_success',
       module: 'reward_wallet',
       page: '/checkout',
@@ -478,6 +482,7 @@ async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionN
   await UserStatsService.syncStatsAfterOrderPaid(order.user_id, toMoney(order.total_amount), order.id, conn);
   await insertAnalyticsEvent(conn, {
     user_id: order.user_id,
+    dedupe_key: `payment_success:${order.id}:${paymentOrder.channel_code || paymentOrder.provider || 'payment'}`,
     event_type: 'payment_success',
     module: paymentOrder.channel_code || paymentOrder.provider || 'payment',
     page: '/checkout',
@@ -490,11 +495,12 @@ async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionN
     await requireUserApi('refreshUserMemberLevel')(conn, order.user_id);
     await insertAnalyticsEvent(conn, {
       user_id: order.user_id,
+      dedupe_key: `payment_success:${order.id}:admin_mark_paid`,
       event_type: 'payment_success',
       module: 'admin_mark_paid',
       page: '/admin/orders',
       order_id: order.id,
-      amount: total,
+      amount: toMoney(order.total_amount),
       quantity: 1,
     });
   } catch (e) {
@@ -639,12 +645,14 @@ async function recordStripeCapture(orderId, paymentIntentId, stripeEventId, payl
   try {
     await payDb.query(
       `INSERT INTO analytics_events
-        (user_id, anonymous_id, session_id, event_type, module, page, order_id, amount, quantity, device, referrer, ip_hash, user_agent)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        (user_id, anonymous_id, session_id, dedupe_key, event_type, module, page, order_id, amount, quantity, device, referrer, ip_hash, user_agent)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+       ON DUPLICATE KEY UPDATE id=id`,
       [
         order.user_id || null,
         '',
         '',
+        `payment_success:${order.id}:stripe_webhook`,
         'payment_success',
         'stripe_webhook',
         '/checkout',

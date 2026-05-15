@@ -1,9 +1,11 @@
 ﻿/**
  * Admin Order Service
  *
- * 鑱岃矗锛氱鐞嗗憳瀵硅鍗曠殑鍒楄〃/璇︽儏/鐘舵€佸彉鏇?鍙戣揣 绛変笟鍔＄紪鎺掋€? *
- * 鍒嗗眰绾﹀畾锛? * - 涓嶇洿鎺ユ嫾 SQL锛屾墍鏈夋暟鎹闂€氳繃 `./adminOrder.repository`
- * - 浜嬪姟鐢辨湰灞傛帶鍒讹細`repo.getConnection()` + `beginTransaction()`锛? *   鎶?`conn` 浼犵粰 repository 鐨勪簨鍔℃柟娉? */
+ * 职责：管理员对订单的列表/详情/状态变更/发货等业务编排。
+ * 分层约定：
+ * - 不直接拼 SQL，所有数据访问通过 `./adminOrder.repository`
+ * - 事务由本层控制：`repo.getConnection()` + `beginTransaction()`，并将 `conn` 传给 repository 事务方法
+ */
 const { generateId } = require('../../utils/helpers');
 const { BusinessError, NotFoundError, ValidationError } = require('../../errors');
 const { logAdminAction } = require('../../utils/adminAudit');
@@ -29,7 +31,7 @@ const userApi = /** @type {any} */ (userModule).api || {};
 function requireUserApi(name) {
   const fn = userApi[name];
   if (typeof fn !== 'function') {
-    throw new Error(`User 妯″潡 API 鏈毚闇叉柟娉? ${name}`);
+    throw new Error(`User 模块 API 未暴露方法: ${name}`);
   }
   return fn;
 }
@@ -107,11 +109,11 @@ async function getOrderById(orderId) {
 }
 
 /**
- * 绠＄悊鍛樻墜鍔ㄨ皟鏁磋鍗曠姸鎬侊細鍖呭惈鐘舵€佹満鏍￠獙銆佸簱瀛?绉垎/浼樻儬鍒稿洖婊氥€侀個璇峰鍔便€佹秷鎭€氱煡绛夌紪鎺掋€? */
+ * 管理员手动调整订单状态：包含状态机校验、库存/积分/优惠券回滚、邀请奖励、消息通知等编排。 */
 async function updateOrderStatus(orderId, body, adminUserId, req) {
   const { status, remark } = body;
   if (!ORDER_STATUS_LIST.includes(status)) {
-    throw new ValidationError(`鏃犳晥鐘舵€? ${status}`);
+    throw new ValidationError(`无效状态: ${status}`);
   }
 
   const orderRow = await repo.selectOrderStateById(orderId);
@@ -150,7 +152,7 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
 
       const fullOrder = await repo.selectFullOrder(conn, orderId);
 
-      /** 閿€閲忚鏁帮細绠＄悊鍛樻墜鍔ㄧ‘璁や粯娆炬椂绱姞 sales_count锛涙晠闅滃蹇?*/
+      /** 销量计数：管理员手动确认付款时累加 sales_count；失败不阻断主流程 */
       if (
         newPayment === PAYMENT_STATUS.PAID
         && prevPay !== PAYMENT_STATUS.PAID
@@ -184,7 +186,7 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
             reason: `管理员取消订单 ${fullOrder.order_no} 释放 SKU 库存`,
           });
         }
-        await requireUserApi('reverseOrderPoints')(conn, fullOrder, `璁㈠崟鍙栨秷鍥炴粴绉垎 ${fullOrder.order_no}`, {
+        await requireUserApi('reverseOrderPoints')(conn, fullOrder, `订单取消回滚积分 ${fullOrder.order_no}`, {
           operatorId: adminUserId,
           trigger: 'admin_order_cancelled',
         });
@@ -294,10 +296,10 @@ async function shipOrder(orderId, body, adminUserId, req) {
   try {
     if (!order) throw new NotFoundError('订单不存在');
     if (!canShip(order)) {
-      throw new BusinessError(
-        400,
-        `褰撳墠灞ョ害/鏀粯鐘舵€佹棤娉曞彂璐э紙闇€灞ョ害銆屽凡浠樻銆嶄笖鏀粯銆屽凡鏀粯銆嶏級锛屽綋鍓嶏細灞ョ害=${order.status} 鏀粯=${order.payment_status || PAYMENT_STATUS.PENDING}`,
-      );
+        throw new BusinessError(
+          400,
+          `当前履约/支付状态无法发货（需履约“已付款”且支付“已支付”），当前：履约=${order.status} 支付=${order.payment_status || PAYMENT_STATUS.PENDING}`,
+        );
     }
 
     const trackingNo = body.trackingNo || body.tracking_no || '';
@@ -307,7 +309,7 @@ async function shipOrder(orderId, body, adminUserId, req) {
 
     const shipCopy = await getResolvedTriggerCopy('order_ship', {
       order_no: order.order_no,
-      carrier: carrier || '鏆傛棤',
+      carrier: carrier || '暂无',
       tracking_no: trackingNo || '',
     });
     if (shipCopy) {
@@ -320,7 +322,7 @@ async function shipOrder(orderId, body, adminUserId, req) {
       });
     }
 
-    await logAdminAction(adminUserId, '璁㈠崟鍙戣揣', `${orderId} ${carrier} ${trackingNo}`);
+    await logAdminAction(adminUserId, '订单发货', `${orderId} ${carrier} ${trackingNo}`);
 
     await writeAuditLog({
       req,
@@ -328,7 +330,7 @@ async function shipOrder(orderId, body, adminUserId, req) {
       actionType: 'order.ship',
       objectType: 'order',
       objectId: orderId,
-      summary: `璁㈠崟鍙戣揣 ${order.order_no}`,
+      summary: `订单发货 ${order.order_no}`,
       before: beforeSnap,
       after: { status: ORDER_STATUS.SHIPPED, tracking_no: trackingNo, carrier },
       result: 'success',
@@ -341,7 +343,7 @@ async function shipOrder(orderId, body, adminUserId, req) {
       actionType: 'order.ship',
       objectType: 'order',
       objectId: orderId,
-      summary: '璁㈠崟鍙戣揣澶辫触',
+      summary: '订单发货失败',
       before: beforeSnap || undefined,
       result: 'failure',
       errorMessage: err.message || String(err),

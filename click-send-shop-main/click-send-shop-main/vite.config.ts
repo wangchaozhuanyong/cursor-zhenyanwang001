@@ -1,7 +1,46 @@
 import { defineConfig, type Plugin } from "vite";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 import legacy from "@vitejs/plugin-legacy";
 import path from "path";
+
+function resolveVendorChunkName(id: string): string | undefined {
+  const normalizedId = id.replace(/\\/g, "/");
+  if (!normalizedId.includes("/node_modules/")) return undefined;
+  if (normalizedId.includes("recharts")) return "vendor-recharts";
+  if (normalizedId.includes("framer-motion")) return "vendor-motion";
+  if (normalizedId.includes("@radix-ui")) return "vendor-radix";
+  if (normalizedId.includes("react-router") || normalizedId.includes("@remix-run")) return "vendor-router";
+  if (normalizedId.includes("@tanstack/react-query")) return "vendor-query";
+  if (normalizedId.includes("zustand")) return "vendor-state";
+  if (normalizedId.includes("lucide-react")) return "vendor-icons";
+  if (normalizedId.includes("qrcode.react")) return "vendor-qrcode";
+  if (normalizedId.includes("sonner")) return "vendor-toast";
+
+  if (
+    normalizedId.includes("/node_modules/react/")
+    || normalizedId.includes("/node_modules/react-dom/")
+    || normalizedId.includes("/node_modules/scheduler/")
+  ) {
+    return "vendor-react";
+  }
+
+  if (
+    normalizedId.includes("/node_modules/core-js/")
+    || normalizedId.includes("/node_modules/regenerator-runtime/")
+    || normalizedId.includes("/node_modules/@babel/")
+  ) {
+    return "vendor-legacy-polyfills";
+  }
+
+  const nodeModulesFragment = normalizedId.split("/node_modules/")[1];
+  const packageSegments = nodeModulesFragment?.split("/") ?? [];
+  const packageName = packageSegments[0]?.startsWith("@")
+    ? `${packageSegments[0]}/${packageSegments[1] ?? ""}`
+    : packageSegments[0];
+
+  if (!packageName) return "vendor-misc";
+  return `vendor-${packageName.replace("@", "").replace("/", "-")}`;
+}
 
 /**
  * Vite 8 / Rolldown 会在部分 chunk 开头注入对 `import.meta.resolve` 的运行时检测；
@@ -80,24 +119,14 @@ export default defineConfig(() => ({
   build: {
     sourcemap: false,
     cssTarget: ["chrome64", "safari12"],
-    rollupOptions: {
+    chunkSizeWarningLimit: 900,
+    rolldownOptions: {
+      checks: {
+        pluginTimings: false,
+      },
       output: {
         manualChunks(id) {
-          if (!id.includes("node_modules")) return undefined;
-          if (id.includes("recharts")) return "vendor-recharts";
-          if (id.includes("framer-motion")) return "vendor-motion";
-          if (id.includes("@radix-ui")) return "vendor-radix";
-          if (
-            id.includes("/node_modules/react/")
-            || id.includes("/node_modules/react-dom/")
-            || id.includes("/node_modules/scheduler/")
-            || id.includes("\\node_modules\\react\\")
-            || id.includes("\\node_modules\\react-dom\\")
-            || id.includes("\\node_modules\\scheduler\\")
-          ) {
-            return "vendor-react";
-          }
-          return "vendor-misc";
+          return resolveVendorChunkName(id);
         },
       },
     },

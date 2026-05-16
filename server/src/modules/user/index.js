@@ -6,6 +6,7 @@ const pointsService = require('./points.service');
 const rewardService = require('./reward.service');
 const notificationService = require('./notification.service');
 const memberLevelService = require('./memberLevel.service');
+const { UserStatsService } = require('./userStats.service');
 
 const router = Router();
 
@@ -34,6 +35,9 @@ router.use('/theme', require('./theme.routes'));
   insertUserNotification: notificationService.insertUserNotification,
   refreshUserMemberLevel: memberLevelService.refreshUserMemberLevel,
   getUserMemberLevel: memberLevelService.getUserMemberLevel,
+  syncStatsAfterOrderPaid: UserStatsService.syncStatsAfterOrderPaid,
+  syncStatsAfterRefund: UserStatsService.syncStatsAfterRefund,
+  syncStatsAfterOrderCancelled: UserStatsService.syncStatsAfterOrderCancelled,
 };
 
 module.exports = router;

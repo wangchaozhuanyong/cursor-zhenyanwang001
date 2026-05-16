@@ -14,7 +14,6 @@ const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { getResolvedTriggerCopy } = require('../../admin/notificationTriggerApi');
 const myinvoisService = require('../../myinvois/myinvois.service');
-const { UserStatsService } = require('../../user/userStats.service');
 const payDb = payRepo.getPool();
 
 const userApi = /** @type {any} */ (userModule).api || {};
@@ -148,7 +147,7 @@ async function payWithRewardWallet(userId, orderId) {
     if (!paidUpdated) {
       throw new ValidationError('订单状态已变化，请刷新后重试');
     }
-    await UserStatsService.syncStatsAfterOrderPaid(userId, payableAmount, lockedOrder.id, conn);
+    await requireUserApi('syncStatsAfterOrderPaid')(userId, payableAmount, lockedOrder.id, conn);
     await payRepo.insertAnalyticsEvent(conn, {
       user_id: userId,
       dedupe_key: `payment_success:${lockedOrder.id}:reward_wallet`,
@@ -447,7 +446,7 @@ async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionN
   if (!paidUpdated) {
     return { skipped: true, reason: 'already_paid' };
   }
-  await UserStatsService.syncStatsAfterOrderPaid(order.user_id, toMoney(order.total_amount), order.id, conn);
+  await requireUserApi('syncStatsAfterOrderPaid')(order.user_id, toMoney(order.total_amount), order.id, conn);
   await payRepo.insertAnalyticsEvent(conn, {
     user_id: order.user_id,
     dedupe_key: `payment_success:${order.id}:${paymentOrder.channel_code || paymentOrder.provider || 'payment'}`,

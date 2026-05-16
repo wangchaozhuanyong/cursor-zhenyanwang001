@@ -24,7 +24,6 @@ const checkoutAbandonmentRepo = require('../order/checkoutAbandonment.repository
 const { writeAuditLog } = require('../../utils/auditLog');
 const { ORDER_STATUS, PAYMENT_STATUS, ORDER_STATUS_LIST } = require('../../constants/status');
 const myinvoisService = require('../myinvois/myinvois.service');
-const { UserStatsService } = require('../user/userStats.service');
 
 const userApi = /** @type {any} */ (userModule).api || {};
 
@@ -171,7 +170,7 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
 
       if (status === ORDER_STATUS.CANCELLED && fullOrder) {
         if (beforeSnap.status !== ORDER_STATUS.CANCELLED) {
-          await UserStatsService.syncStatsAfterOrderCancelled(fullOrder.user_id, fullOrder.id, conn);
+          await requireUserApi('syncStatsAfterOrderCancelled')(fullOrder.user_id, fullOrder.id, conn);
         }
         const items = await repo.selectOrderItemPairs(conn, fullOrder.id);
         for (const item of items) {

@@ -7,7 +7,6 @@ const { ORDER_STATUS, RETURN_STATUS } = require('../../constants/status');
 const { getResolvedTriggerCopy } = require('./notificationTriggerSettings.service');
 const userModule = require('../user');
 const myinvoisService = require('../myinvois/myinvois.service');
-const { UserStatsService } = require('../user/userStats.service');
 const { normalizeKnownMojibakeText } = require('../../utils/textNormalize');
 
 const userApi = /** @type {any} */ (userModule).api || {};
@@ -224,7 +223,7 @@ async function approveReturn(id, body, adminUserId, req) {
     const order = await repo.selectOrderByIdConn(conn, ret.order_id);
     if (order) {
       await repo.updateOrderStatusConn(conn, ORDER_STATUS.REFUNDED, order.id);
-      await UserStatsService.syncStatsAfterRefund(order.user_id, order.id, conn);
+      await requireUserApi('syncStatsAfterRefund')(order.user_id, order.id, conn);
       await requireUserApi('reverseOrderPoints')(conn, order, '售后退款批准，积分回滚', {
         operatorId: adminUserId,
         trigger: 'return_approved',

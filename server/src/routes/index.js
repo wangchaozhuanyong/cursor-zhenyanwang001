@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 const { Router } = require('express');
 const health = require('../modules/health');
 const auth = require('../modules/auth');
@@ -6,6 +6,7 @@ const user = require('../modules/user');
 const product = require('../modules/product');
 const cart = require('../modules/cart');
 const order = require('../modules/order');
+const payment = require('../modules/payment');
 const admin = require('../modules/admin');
 const search = require('../modules/search');
 const myinvois = require('../modules/myinvois');
@@ -23,10 +24,13 @@ router.use(search);
 router.use(privacy);
 router.use(cart);
 router.use(order);
+router.use(payment);
 router.use(myinvois);
 router.use(analytics);
 router.use(admin);
-/** 与根路径 SEO 同源逻辑，便于统一走 /api 前缀（爬虫仍可使用 /robots.txt） */
+/** 涓庢牴璺緞 SEO 鍚屾簮閫昏緫锛屼究浜庣粺涓€璧?/api 鍓嶇紑锛堢埇铏粛鍙娇鐢?/robots.txt锛?*/
 router.use('/seo', seoRoutes);
 
 module.exports = router;
+
+

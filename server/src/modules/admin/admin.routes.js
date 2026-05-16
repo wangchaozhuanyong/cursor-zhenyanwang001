@@ -41,13 +41,13 @@ const settingsCtrl = require('./controller/adminSettings.controller');
 const themeCtrl = require('./controller/adminTheme.controller');
 const exportCtrl = require('./controller/adminExport.controller');
 const recycleBinCtrl = require('./controller/adminRecycleBin.controller');
-const adminPayCtrl = require('../order/payments/adminPayments.controller');
+const adminPayCtrl = require('../payment/adminPayments.controller');
 const logisticsCtrl = require('../logistics/logistics.controller');
 const inventoryCtrl = require('./controller/adminInventory.controller');
 const activityCtrl = require('./controller/adminActivity.controller');
 const homeOpsCtrl = require('./controller/adminHomeOps.controller');
 const memberLevelCtrl = require('./controller/adminMemberLevel.controller');
-const paySchemas = require('../order/payments/payments.schemas');
+const paySchemas = require('../payment/payments.schemas');
 const productSchemas = require('./schemas/adminProduct.schemas');
 const userUploadCtrl = require('../user/upload.controller');
 
@@ -405,6 +405,7 @@ router.get('/audit-logs', adminAuth, requirePermission('audit.view'), logCtrl.li
 router.get('/logs', adminAuth, requirePermission('admin_log.view'), logCtrl.listAdminLogs);
 
 module.exports = router;
+
 
 
 

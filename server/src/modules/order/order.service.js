@@ -8,7 +8,7 @@ const { formatOrderItem, formatOrder } = require('./order.mapper');
 const { canUserCancel } = require('./orderStateMachine');
 const repo = require('./order.repository');
 const userModule = require('../user');
-const paymentsModule = require('./payments');
+const paymentsModule = require('../payment');
 const checkoutAbandonmentRepo = require('./checkoutAbandonment.repository');
 const siteSettingsRepo = require('./siteSettings.repository');
 const sstTax = require('./sstTax');
@@ -587,5 +587,6 @@ module.exports = {
   completeShippedOrder,
   cancelPendingOrderInTransaction,
 };
+
 
 

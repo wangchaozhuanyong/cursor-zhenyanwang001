@@ -1,6 +1,6 @@
 const { generateId, parseProductImages } = require('../../utils/helpers');
 const repo = require('./adminExtended.repository');
-const catalogService = require('../product/catalog.service');
+const productModule = require('../product');
 const { writeAuditLog } = require('../../utils/auditLog');
 const { assertReturnTransition } = require('../order/returnStateMachine');
 const { ORDER_STATUS, RETURN_STATUS } = require('../../constants/status');
@@ -10,6 +10,7 @@ const myinvoisService = require('../myinvois/myinvois.service');
 const { normalizeKnownMojibakeText } = require('../../utils/textNormalize');
 
 const userApi = /** @type {any} */ (userModule).api || {};
+const productApi = /** @type {any} */ (productModule).api || {};
 
 const COLOR_PRESETS = {
   红色: { bg_color: '#FEE2E2', text_color: '#B91C1C' },
@@ -47,6 +48,14 @@ function requireUserApi(name) {
   const fn = userApi[name];
   if (typeof fn !== 'function') {
     throw new Error(`User 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
+
+function requireProductApi(name) {
+  const fn = productApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Product 模块 API 未暴露方法: ${name}`);
   }
   return fn;
 }
@@ -111,7 +120,7 @@ async function createBanner(body, adminUserId, req) {
   const id = generateId();
   await repo.insertBanner({ id, title, image, link, sort_order, enabled: enabled !== false ? 1 : 0, publish_status: publish_status || 'published', last_modified_by: adminUserId });
   const row = await repo.selectBannerById(id);
-  catalogService.clearCatalogCache();
+  requireProductApi('clearCatalogCache')();
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'banner.create', objectType: 'banner', objectId: id, summary: `创建Banner ${title || id}`, after: { title, image }, result: 'success' });
   return { data: row, message: '创建成功' };
 }
@@ -129,14 +138,14 @@ async function updateBanner(id, body, adminUserId, req) {
   setFragments.push('last_modified_at = NOW()');
   if (setFragments.length === 0) return { error: { code: 400, message: '没有需要更新的字段' } };
   await repo.updateBannerByFields(setFragments, values, id);
-  catalogService.clearCatalogCache();
+  requireProductApi('clearCatalogCache')();
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'banner.update', objectType: 'banner', objectId: id, summary: `更新Banner ${id}`, after: body, result: 'success' });
   return { message: '更新成功' };
 }
 
 async function deleteBanner(id, adminUserId, req) {
   await repo.deleteBanner(id, adminUserId);
-  catalogService.clearCatalogCache();
+  requireProductApi('clearCatalogCache')();
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'banner.delete', objectType: 'banner', objectId: id, summary: `删除Banner ${id}`, result: 'success' });
   return { message: '已删除' };
 }

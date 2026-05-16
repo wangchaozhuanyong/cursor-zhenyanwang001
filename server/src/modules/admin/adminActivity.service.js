@@ -1,12 +1,22 @@
 const { generateId } = require('../../utils/helpers');
 const { BusinessError } = require('../../errors/BusinessError');
 const { writeAuditLog } = require('../../utils/auditLog');
-const catalogService = require('../product/catalog.service');
+const productModule = require('../product');
 const repo = require('./adminActivity.repository');
+
+const productApi = /** @type {any} */ (productModule).api || {};
+
+function requireProductApi(name) {
+  const fn = productApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Product 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
 
 function bumpCatalogCache() {
   try {
-    if (typeof catalogService.clearCatalogCache === 'function') catalogService.clearCatalogCache();
+    requireProductApi('clearCatalogCache')();
   } catch (e) {
     console.warn(`[adminActivity] clear catalog cache: ${e?.message || e}`);
   }

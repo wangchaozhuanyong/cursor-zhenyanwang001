@@ -1,6 +1,15 @@
 const repo = require('./adminRecycleBin.repository');
-const catalogService = require('../product/catalog.service');
+const productModule = require('../product');
 const { writeAuditLog } = require('../../utils/auditLog');
+const productApi = /** @type {any} */ (productModule).api || {};
+
+function requireProductApi(name) {
+  const fn = productApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Product 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
 
 async function listRecycleBin(query) {
   const type = query.type;
@@ -14,7 +23,7 @@ async function restoreItem(type, id, adminUserId, req) {
   if (!repo.TABLE_CONFIGS[type]) return { error: { code: 400, message: '不支持的类型' } };
   const ok = await repo.restoreItem(type, id);
   if (!ok) return { error: { code: 400, message: '恢复失败' } };
-  if (type === 'banners') catalogService.clearCatalogCache();
+  if (type === 'banners') requireProductApi('clearCatalogCache')();
   await writeAuditLog({
     req, operatorId: adminUserId,
     actionType: 'recycle_bin.restore',
@@ -29,7 +38,7 @@ async function permanentDelete(type, id, adminUserId, req) {
   if (!repo.TABLE_CONFIGS[type]) return { error: { code: 400, message: '不支持的类型' } };
   const ok = await repo.permanentDeleteItem(type, id);
   if (!ok) return { error: { code: 400, message: '删除失败' } };
-  if (type === 'banners') catalogService.clearCatalogCache();
+  if (type === 'banners') requireProductApi('clearCatalogCache')();
   await writeAuditLog({
     req, operatorId: adminUserId,
     actionType: 'recycle_bin.permanent_delete',

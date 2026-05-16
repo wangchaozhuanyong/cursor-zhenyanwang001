@@ -1,0 +1,36 @@
+---
+description: Cursor 只发布本会话改动；与 Codex 分支/部署隔离
+alwaysApply: true
+---
+
+# Cursor 发布规范（与 Codex 分工）
+
+用户可能在 **Codex** 并行写代码。Cursor 助手必须避免误发、并行部署、拖慢服务器。
+
+## 分支
+
+- 本会话代码默认提交到 **`cursor/<简短任务名>`** 分支，不直接 push 到 Codex 正在用的分支。
+- **生产线上**仅 **`main`**；合并进 `main` 并部署，须用户明确说「合并上线 / 部署发布」。
+- 不主动切换、合并、rebase 用户未点名的其它分支。
+
+## 提交
+
+- 只 `git add` **本会话内改过的文件**；提交前展示 `git status` / 关键 `diff`。
+- 不提交 `.env`、密钥、截图、临时验证产物（如 `*-verify-fail.png`）。
+- 用户未要求时 **不 commit、不 push**。
+
+## 部署
+
+- 仅用户明确要求「部署 / 发布」时，才 SSH 执行 **`GIT_BRANCH=main bash deploy/release-deploy.sh`**（或 `ci-deploy`）。
+- 部署前确认：
+  1. 服务器无进行中的 `ci-deploy` / `vite build`（避免并行构建）
+  2. 使用强制更新远端跟踪分支：  
+     `git fetch origin +refs/heads/main:refs/remotes/origin/main`
+  3. 本次要上的提交已落在 `main` 上
+- **禁止**本地上传包覆盖 `/var/www/click-send-shop`（不用 UploadArchive/rsync 覆盖生产）。
+- 发布前用一句话说明：**分支、commit 短哈希、包含的改动摘要**；用户未反对再执行。
+
+## 与 Codex
+
+- 不替用户合并 Codex 未验收的代码。
+- 不因「顺便同步」去部署 Codex 独占分支上的 WIP。

@@ -2,7 +2,7 @@ param(
   [string]$ServerIp = "13.212.179.213",
   [string]$ServerUser = "ubuntu",
   [string]$SshKeyPath = "E:\yamaxunmishi\aws-key.pem",
-  [string]$ReleaseBranch = "release/prod",
+  [string]$ReleaseBranch = "main",
   [string]$RemoteProjectDir = "/var/www/click-send-shop",
   [switch]$SkipChecks,
   [switch]$Force
@@ -48,7 +48,7 @@ Write-Host "==> Release diff preview"
 $PendingLines = @()
 & git -C $RepoRoot log --oneline "origin/$ReleaseBranch..$ReleaseBranch" | ForEach-Object { $PendingLines += $_ }
 if ($PendingLines.Count -eq 0) {
-  Write-Host "No pending commits. release/prod is already same as origin/$ReleaseBranch"
+  Write-Host "No pending commits. $ReleaseBranch is already same as origin/$ReleaseBranch"
 } else {
   Write-Host "Commits to be released:"
   $PendingLines | ForEach-Object { Write-Host "  $_" }

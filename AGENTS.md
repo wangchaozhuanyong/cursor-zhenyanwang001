@@ -144,3 +144,10 @@
 - 先看源码再判断
 - 客户端 UI 不重叠
 - 上传、提示、皮肤、商品、订单等核心功能要稳定
+
+---
+
+## 八、与 Cursor 助手的发布分工
+
+- **Codex**：日常开发，push 开发分支即可；不要与 Cursor 同时在服务器跑 `ci-deploy`。
+- **Cursor**：只提交/发布本会话改动的文件；线上统一 **`main`**，细则见 `.cursor/rules/cursor-release-workflow.mdc`。

@@ -64,7 +64,9 @@ jobs:
             cd "${{ secrets.DEPLOY_PROJECT_DIR }}"
             export PROJECT_DIR="${{ secrets.DEPLOY_PROJECT_DIR }}"
             export PM2_APP="${{ secrets.DEPLOY_PM2_APP || 'gc-api' }}"
+            export GIT_BRANCH="main"
             export AUTO_ROLLBACK="${AUTO_ROLLBACK:-0}"
+            git fetch origin +refs/heads/main:refs/remotes/origin/main
             bash deploy/ci-deploy.sh
 
       - name: On failure, fetch remote logs (best-effort)

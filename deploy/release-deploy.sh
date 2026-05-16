@@ -3,7 +3,7 @@ set -euo pipefail
 
 PROJECT_DIR="${PROJECT_DIR:-/var/www/click-send-shop}"
 PM2_APP="${PM2_APP:-gc-api}"
-GIT_BRANCH="${GIT_BRANCH:-release/prod}"
+GIT_BRANCH="${GIT_BRANCH:-main}"
 AUTO_ROLLBACK="${AUTO_ROLLBACK:-1}"
 
 cd "$PROJECT_DIR"

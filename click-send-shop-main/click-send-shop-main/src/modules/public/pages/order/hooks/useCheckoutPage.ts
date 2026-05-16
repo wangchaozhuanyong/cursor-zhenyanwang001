@@ -1,0 +1,624 @@
+﻿import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { flushSync } from "react-dom";
+import { getCartLinePrice, useCartStore } from "@/stores/useCartStore";
+import { useNotificationStore } from "@/stores/useNotificationStore";
+import { useOrderStore } from "@/stores/useOrderStore";
+import * as orderService from "@/services/orderService";
+import * as paymentService from "@/services/paymentService";
+import * as rewardWalletService from "@/services/rewardService";
+import { useGoBack } from "@/hooks/useGoBack";
+import { useUserStore } from "@/stores/useUserStore";
+import { useCouponStore } from "@/stores/useCouponStore";
+import { toast } from "sonner";
+import { toastPresetQuickSuccess } from "@/utils/toastPresets";
+import type { Order } from "@/types/order";
+import type { PaymentMethod } from "@/components/PaymentMethodPicker";
+import { useShippingStore, calcShippingFee, estimateCartWeightKg } from "@/stores/useShippingStore";
+import { useCheckoutPickerCoupons } from "@/hooks/useCheckoutPickerCoupons";
+import type { CheckoutPickerCoupon } from "@/types/coupon";
+import { ORDER_STATUS } from "@/constants/statusDictionary";
+import * as userShippingService from "@/services/userShippingService";
+import { copyToClipboard } from "@/utils/clipboard";
+import type { PublicPaymentChannel } from "@/services/paymentService";
+import { trackBeginCheckout, trackPurchase } from "@/utils/tracking";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
+import {
+  goodsTaxableInclusivePreview,
+  parseSstFromSiteInfo,
+  splitInclusiveTax,
+} from "@/utils/sstTax";
+import type { Address } from "@/types/address";
+import { formatAddressForDisplay } from "@/services/addressService";
+import { generateOrderText } from "../utils/checkoutText";
+
+export function useCheckoutPage() {
+  const navigate = useNavigate();
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const goBack = useGoBack("/cart");
+  const getSelectedItems = useCartStore((s) => s.getSelectedItems);
+  const removeOrderedItems = useCartStore((s) => s.removeOrderedItems);
+  const { items: cartItems, buyNowItem, clearCart, clearBuyNow } = useCartStore();
+  const isBuyNow = !!buyNowItem;
+  const items = isBuyNow ? [buyNowItem] : getSelectedItems();
+  const totalAmount = () => items.reduce((s, i) => s + getCartLinePrice(i), 0);
+  const totalPoints = () => items.reduce((s, i) => s + i.product.points * i.qty, 0);
+  const { submitOrder, submitting } = useOrderStore();
+  const { getDefaultAddress, loadAddresses } = useUserStore();
+  const loadCoupons = useCouponStore((s) => s.loadCoupons);
+
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+  const [note, setNote] = useState("");
+  const [addressLoaded, setAddressLoaded] = useState(false);
+
+  useEffect(() => {
+    loadAddresses().finally(() => setAddressLoaded(true));
+  }, [loadAddresses]);
+
+  useEffect(() => {
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
+
+  useEffect(() => {
+    if (!addressLoaded) return;
+    const addr = getDefaultAddress();
+    if (addr) {
+      setName((prev) => prev || addr.recipient_name);
+      setPhone((prev) => prev || addr.phone);
+      setAddress((prev) => prev || formatAddressForDisplay(addr));
+      setSelectedAddress(addr);
+    }
+  }, [addressLoaded, getDefaultAddress]);
+
+  useEffect(() => {
+    const handler = () => {
+      const addr = getDefaultAddress();
+      if (addr) {
+        setName(addr.recipient_name);
+        setPhone(addr.phone);
+        setAddress(formatAddressForDisplay(addr));
+        setSelectedAddress(addr);
+      }
+    };
+    window.addEventListener("focus", handler);
+    return () => window.removeEventListener("focus", handler);
+  }, [getDefaultAddress]);
+
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("online");
+  const [stripeReady, setStripeReady] = useState(true);
+  const [paymentChannels, setPaymentChannels] = useState<PublicPaymentChannel[]>([]);
+  const [selectedPaymentChannelCode, setSelectedPaymentChannelCode] = useState("");
+  const [paymentConfigLoaded, setPaymentConfigLoaded] = useState(false);
+  const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null);
+  const [postSubmitOnlineError, setPostSubmitOnlineError] = useState<string | null>(null);
+  const [postSubmitOnlineNote, setPostSubmitOnlineNote] = useState<string | null>(null);
+  const [postSubmitWalletError, setPostSubmitWalletError] = useState<string | null>(null);
+  const [selectedCoupon, setSelectedCoupon] = useState<CheckoutPickerCoupon | null>(null);
+  const siteInfo = useSiteInfo();
+  const [rewardBalance, setRewardBalance] = useState(0);
+  const [payingWallet, setPayingWallet] = useState(false);
+  const [orderFinalizing, setOrderFinalizing] = useState(false);
+  const [couponInitDone, setCouponInitDone] = useState(false);
+  const [shippingId, setShippingId] = useState<number | null>(null);
+  const [serverShippingFee, setServerShippingFee] = useState<number | null>(null);
+  const [shippingQuoteLoading, setShippingQuoteLoading] = useState(false);
+  const [shippingQuoteError, setShippingQuoteError] = useState<string | null>(null);
+  const [checkoutAbandonmentId, setCheckoutAbandonmentId] = useState<string | null>(null);
+  const checkoutAbandonmentIdRef = useRef<string | null>(null);
+  const checkoutSnapshotTimerRef = useRef<number | null>(null);
+  const beginCheckoutTrackedRef = useRef("");
+
+  useEffect(() => { useShippingStore.getState().loadTemplates(); }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      paymentService.getPaymentConfig().catch(() => null),
+      paymentService.getPaymentChannels().catch(() => [] as PublicPaymentChannel[]),
+    ])
+      .then(([config, channels]) => {
+        if (cancelled) return;
+        const ready = !!config?.stripeCheckoutReady;
+        const onlineChannels = channels.filter((channel) => channel.provider !== "internal");
+        setStripeReady(ready);
+        setPaymentChannels(onlineChannels);
+        setSelectedPaymentChannelCode((current) => current || onlineChannels[0]?.code || (ready ? "stripe_checkout" : ""));
+        setPaymentConfigLoaded(true);
+        if (!ready && onlineChannels.length === 0) {
+          setPaymentMethod("whatsapp");
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setStripeReady(false);
+        setPaymentConfigLoaded(true);
+        setPaymentMethod("whatsapp");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    rewardWalletService
+      .fetchRewardBalance()
+      .then((data) => {
+        if (cancelled) return;
+        setRewardBalance(Number(data.balance || 0));
+      })
+      .catch(() => {
+        if (!cancelled) setRewardBalance(0);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const rawTotal = totalAmount();
+  const { coupons: pickerCoupons, loading: pickerCouponsLoading } = useCheckoutPickerCoupons(rawTotal);
+  const { templates: shippingTemplates, loading: shippingRulesLoading, loadError: shippingRulesError } = useShippingStore();
+  const enabledTemplates = shippingTemplates.filter((t) => t.enabled);
+  const selectedTemplate = (shippingId != null ? enabledTemplates.find((t) => t.id === shippingId) : null) ?? enabledTemplates[0] ?? null;
+  const weightKg = estimateCartWeightKg(items.map((i) => ({ qty: i.qty })));
+  const previewShippingFee = selectedTemplate
+    ? calcShippingFee(selectedTemplate, rawTotal, { totalWeightKg: weightKg })
+    : 0;
+  const shippingFee = serverShippingFee ?? previewShippingFee;
+  const discountAmount = selectedCoupon
+    ? selectedCoupon.discountType === "percent"
+      ? Math.min(rawTotal, Math.floor(rawTotal * selectedCoupon.discount / 100))
+      : selectedCoupon.discountType === "shipping"
+        ? Math.min(shippingFee, selectedCoupon.discount > 0 ? selectedCoupon.discount : shippingFee)
+        : Math.min(rawTotal, selectedCoupon.discount)
+    : 0;
+  const finalTotal = Math.max(0, rawTotal - discountAmount + shippingFee);
+  const preferredCouponId = searchParams.get("coupon_id");
+
+  const sstCfg = parseSstFromSiteInfo(siteInfo);
+  const goodsTaxablePreview = goodsTaxableInclusivePreview(
+    rawTotal,
+    discountAmount,
+    selectedCoupon?.discountType ?? null,
+  );
+  const sstPreview =
+    sstCfg.enabled && sstCfg.ratePercent > 0 && goodsTaxablePreview > 0
+      ? (() => {
+          const sp = splitInclusiveTax(goodsTaxablePreview, sstCfg.ratePercent);
+          return {
+            label: sstCfg.label,
+            ratePercent: sstCfg.ratePercent,
+            taxable: goodsTaxablePreview,
+            taxAmount: sp.taxAmount,
+            exclusiveAmount: sp.exclusiveAmount,
+          };
+        })()
+      : null;
+
+  useEffect(() => {
+    if (items.length === 0 || submittedOrder) return;
+    const key = items.map((item) => `${item.product.id}:${item.qty}`).join("|");
+    if (!key || beginCheckoutTrackedRef.current === key) return;
+    beginCheckoutTrackedRef.current = key;
+    trackBeginCheckout(items, rawTotal);
+  }, [items, rawTotal, submittedOrder]);
+
+  useEffect(() => {
+    if (!submittedOrder) return;
+    if (submittedOrder.status === ORDER_STATUS.PAID || submittedOrder.payment_status === "paid") {
+      trackPurchase(submittedOrder);
+    }
+  }, [submittedOrder]);
+
+  const estimateCouponDiscount = useCallback((coupon: CheckoutPickerCoupon) => {
+    if (coupon.discountType === "percent") {
+      return Math.min(rawTotal, Math.floor((rawTotal * coupon.discount) / 100));
+    }
+    if (coupon.discountType === "shipping") {
+      return Math.min(shippingFee, coupon.discount > 0 ? coupon.discount : shippingFee);
+    }
+    return Math.min(rawTotal, coupon.discount);
+  }, [rawTotal, shippingFee]);
+
+  useEffect(() => {
+    if (couponInitDone) return;
+    if (pickerCouponsLoading) return;
+
+    const candidates = pickerCoupons.filter((c) => rawTotal >= c.condition && (c.discountType !== "shipping" || shippingFee > 0));
+
+    if (preferredCouponId) {
+      const preferred = candidates.find((c) => c.id === preferredCouponId) ?? null;
+      if (preferred) {
+        setSelectedCoupon(preferred);
+      } else {
+        const exists = pickerCoupons.some((c) => c.id === preferredCouponId);
+        toast.error(exists ? "该优惠券暂不满足使用条件" : "优惠券不存在或已失效");
+      }
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("coupon_id");
+      setSearchParams(nextParams, { replace: true });
+      setCouponInitDone(true);
+      return;
+    }
+
+    if (candidates.length > 0) {
+      const best = candidates.reduce((max, current) =>
+        estimateCouponDiscount(current) > estimateCouponDiscount(max) ? current : max,
+      );
+      setSelectedCoupon(best);
+    }
+    setCouponInitDone(true);
+  }, [couponInitDone, pickerCouponsLoading, pickerCoupons, preferredCouponId, rawTotal, shippingFee, searchParams, setSearchParams, estimateCouponDiscount]);
+
+  useEffect(() => {
+    if (!selectedCoupon) return;
+    const stillExists = pickerCoupons.some((c) => c.id === selectedCoupon.id);
+    const meetsAmount = rawTotal >= selectedCoupon.condition;
+    const canUseShippingCoupon = selectedCoupon.discountType !== "shipping" || shippingFee > 0;
+    if (!stillExists || !meetsAmount || !canUseShippingCoupon) {
+      setSelectedCoupon(null);
+    }
+  }, [pickerCoupons, rawTotal, selectedCoupon, shippingFee]);
+
+  const selectedTemplateId = selectedTemplate?.id ?? null;
+
+  useEffect(() => {
+    if (!selectedTemplateId || rawTotal < 0) {
+      setServerShippingFee(null);
+      setShippingQuoteError(null);
+      return;
+    }
+    let cancelled = false;
+    setShippingQuoteLoading(true);
+    setShippingQuoteError(null);
+    userShippingService
+      .quoteShipping({
+        shipping_template_id: selectedTemplateId,
+        raw_amount: rawTotal,
+        estimated_weight_kg: weightKg,
+      })
+      .then((quote) => {
+        if (cancelled) return;
+        setServerShippingFee(Number(quote.shipping_fee));
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setServerShippingFee(null);
+        setShippingQuoteError(e instanceof Error ? e.message : "运费规则加载失败");
+      })
+      .finally(() => {
+        if (!cancelled) setShippingQuoteLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedTemplateId, rawTotal, weightKg]);
+
+  useEffect(() => {
+    return () => { clearBuyNow(); };
+  }, [clearBuyNow]);
+
+  useEffect(() => {
+    checkoutAbandonmentIdRef.current = checkoutAbandonmentId;
+  }, [checkoutAbandonmentId]);
+
+  useEffect(() => {
+    if (items.length === 0 || submittedOrder || orderFinalizing) return;
+    if (checkoutSnapshotTimerRef.current) {
+      window.clearTimeout(checkoutSnapshotTimerRef.current);
+    }
+    checkoutSnapshotTimerRef.current = window.setTimeout(() => {
+      void orderService.recordCheckoutAbandonment({
+        checkout_abandonment_id: checkoutAbandonmentIdRef.current || undefined,
+        items: items.map((item) => ({
+          product_id: item.product.id,
+          variant_id: item.variant_id,
+          sku_code: item.sku_code,
+          variant_name: item.variant_name,
+          name: item.product.name,
+          image: item.product.cover_image,
+          qty: item.qty,
+          price: item.unit_price ?? item.product.price,
+        })),
+        raw_amount: rawTotal,
+        discount_amount: discountAmount,
+        shipping_fee: shippingFee,
+        total_amount: finalTotal,
+        payment_method: paymentMethod,
+        contact_name: name,
+        contact_phone: phone,
+      }).then((snapshot) => {
+        if (snapshot?.id) {
+          checkoutAbandonmentIdRef.current = snapshot.id;
+          setCheckoutAbandonmentId((prev) => (prev === snapshot.id ? prev : snapshot.id));
+        }
+      }).catch(() => {});
+    }, 800);
+
+    return () => {
+      if (checkoutSnapshotTimerRef.current) {
+        window.clearTimeout(checkoutSnapshotTimerRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- checkoutAbandonmentId 由 ref 提供
+  }, [items, rawTotal, discountAmount, shippingFee, finalTotal, paymentMethod, name, phone, submittedOrder, orderFinalizing]);
+
+  useEffect(() => {
+    if (items.length === 0 && !submittedOrder && !orderFinalizing) {
+      navigate("/cart", { replace: true });
+    }
+  }, [items.length, submittedOrder, orderFinalizing, navigate]);
+
+  const handleSubmit = async () => {
+    if (!name.trim() || !phone.trim()) {
+      toast.error("请填写姓名和电话");
+      return;
+    }
+    if (!address.trim()) {
+      toast.error("请填写收货地址");
+      return;
+    }
+    if (shippingRulesLoading || shippingQuoteLoading) {
+      toast.error("运费规则加载中，请稍候再试");
+      return;
+    }
+    if (!selectedTemplate) {
+      toast.error("运费规则未加载完成，无法提交订单");
+      return;
+    }
+    if (shippingRulesError || shippingQuoteError) {
+      toast.error("运费规则校验失败，请稍后重试");
+      return;
+    }
+    setPostSubmitOnlineError(null);
+    setPostSubmitOnlineNote(null);
+    setPostSubmitWalletError(null);
+    try {
+      const payloadItems = items.map((i) => ({
+        product_id: i.product.id,
+        variant_id: i.variant_id,
+        sku_code: i.sku_code,
+        qty: i.qty,
+      }));
+      const order = await submitOrder({
+        items: payloadItems,
+        contact_name: name,
+        contact_phone: phone,
+        address: selectedAddress
+          ? {
+              recipient_name: selectedAddress.recipient_name,
+              phone: selectedAddress.phone,
+              line1: selectedAddress.line1,
+              line2: selectedAddress.line2 || "",
+              city: selectedAddress.city,
+              state: selectedAddress.state,
+              postcode: selectedAddress.postcode,
+              country: "MY",
+            }
+          : address,
+        note,
+        coupon_id: selectedCoupon?.id,
+        coupon_title: selectedCoupon?.title ?? "",
+        shipping_template_id: selectedTemplate?.id ?? shippingId,
+        shipping_name: selectedTemplate?.name ?? "",
+        payment_method: paymentMethod,
+        estimated_weight_kg: weightKg,
+        checkout_abandonment_id: checkoutAbandonmentIdRef.current || checkoutAbandonmentId || undefined,
+      });
+      const orderedLines = payloadItems.map((i) => ({ product_id: i.product_id, variant_id: i.variant_id }));
+      flushSync(() => {
+        setOrderFinalizing(true);
+        setSubmittedOrder(order);
+      });
+      if (isBuyNow) {
+        clearBuyNow();
+      } else if (orderedLines.length >= cartItems.length) {
+        clearCart();
+      } else {
+        removeOrderedItems(orderedLines);
+      }
+      void loadCoupons();
+
+      const pending = order.status === ORDER_STATUS.PENDING;
+
+      if (pending && order.payment_method === "online") {
+        const channelCode = selectedPaymentChannelCode || paymentChannels[0]?.code || "stripe_checkout";
+        try {
+          const intent = await paymentService.createPaymentIntent({
+            orderId: order.id,
+            channelCode,
+            returnUrl: `${window.location.origin}/orders/${order.id}`,
+          });
+          if (intent.redirect_url) {
+            window.location.assign(intent.redirect_url);
+            return;
+          }
+          setPostSubmitOnlineNote(
+            intent.client_instructions || "未获取到跳转链接，请点击下方“继续支付”或前往“订单详情”完成付款。",
+          );
+          toast.success("订单已创建");
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "在线支付发起失败";
+          setPostSubmitOnlineError(msg);
+          toast.error(msg);
+        }
+        return;
+      }
+
+      if (pending && order.payment_method === "reward_wallet") {
+        try {
+          await orderService.payOrder(order.id, "reward_wallet");
+          const latest = await orderService.fetchOrderById(order.id);
+          flushSync(() => {
+            setSubmittedOrder(latest);
+          });
+          const balanceData = await rewardWalletService.fetchRewardBalance();
+          setRewardBalance(Number(balanceData.balance || 0));
+          if (latest.status === ORDER_STATUS.PAID || latest.payment_status === "paid") {
+            trackPurchase(latest);
+          }
+          toast.success("返现钱包支付成功");
+          const text = generateOrderText(latest);
+          const copied = await copyToClipboard(text);
+          if (copied) {
+            toast.success("订单内容已复制到剪贴板！", toastPresetQuickSuccess);
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "返现钱包支付失败";
+          setPostSubmitWalletError(msg);
+          toast.error(msg);
+        }
+        return;
+      }
+
+      if (order.payment_method === "whatsapp") {
+        toast.success("订单已提交，请通过下方方式联系客服完成付款");
+      } else {
+        toast.success("订单已提交");
+      }
+      const text = generateOrderText(order);
+      const copied = await copyToClipboard(text);
+      if (copied) {
+        toast.success("订单内容已复制到剪贴板！", toastPresetQuickSuccess);
+      }
+    } catch (e) {
+      setOrderFinalizing(false);
+      toast.error(e instanceof Error ? e.message : "提交订单失败");
+    }
+  };
+
+  const copyOrderText = async () => {
+    if (!submittedOrder) return;
+    const copied = await copyToClipboard(generateOrderText(submittedOrder));
+    if (copied) {
+      toast.success("已复制订单内容", toastPresetQuickSuccess);
+    } else {
+      toast.error("复制失败，请手动复制订单内容");
+    }
+  };
+
+  const openWhatsApp = () => {
+    if (!submittedOrder) return;
+    const text = encodeURIComponent(generateOrderText(submittedOrder));
+    window.open(`https://wa.me/?text=${text}`, "_blank");
+  };
+
+  const openWeChat = () => {
+    toast.info("请打开微信，粘贴订单内容发送给客服");
+    copyOrderText();
+  };
+
+  const payOnlineNow = async () => {
+    if (!submittedOrder) return;
+    setPostSubmitOnlineError(null);
+    setPostSubmitOnlineNote(null);
+    try {
+      const channelCode = selectedPaymentChannelCode || paymentChannels[0]?.code || "stripe_checkout";
+      const intent = await paymentService.createPaymentIntent({
+        orderId: submittedOrder.id,
+        channelCode,
+        returnUrl: `${window.location.origin}/orders/${submittedOrder.id}`,
+      });
+      if (intent.redirect_url) {
+        window.location.assign(intent.redirect_url);
+        return;
+      }
+      setPostSubmitOnlineNote(
+        intent.client_instructions || "请前往订单详情查看支付状态，或稍后在“我的订单”中继续付款。",
+      );
+      toast.message(intent.client_instructions || "支付单已创建");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "在线支付发起失败";
+      setPostSubmitOnlineError(msg);
+      toast.error(msg);
+    }
+  };
+
+  const payByRewardWallet = async () => {
+    if (!submittedOrder) return;
+    setPostSubmitWalletError(null);
+    setPayingWallet(true);
+    try {
+      await orderService.payOrder(submittedOrder.id, "reward_wallet");
+      const latest = await orderService.fetchOrderById(submittedOrder.id);
+      setSubmittedOrder(latest);
+      if (latest.status === ORDER_STATUS.PAID || latest.payment_status === "paid") {
+        trackPurchase(latest);
+      }
+      const balanceData = await rewardWalletService.fetchRewardBalance();
+      setRewardBalance(Number(balanceData.balance || 0));
+      toast.success("返现钱包支付成功");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "返现钱包支付失败";
+      setPostSubmitWalletError(msg);
+      toast.error(msg);
+    } finally {
+      setPayingWallet(false);
+    }
+  };
+
+  return {
+    navigate,
+    goBack,
+    unreadCount,
+    items,
+    isEmpty: items.length === 0 && !submittedOrder && !orderFinalizing,
+    name,
+    setName,
+    phone,
+    setPhone,
+    address,
+    setAddress,
+    selectedAddress,
+    setSelectedAddress,
+    note,
+    setNote,
+    paymentMethod,
+    setPaymentMethod,
+    stripeReady,
+    paymentChannels,
+    selectedPaymentChannelCode,
+    setSelectedPaymentChannelCode,
+    paymentConfigLoaded,
+    submittedOrder,
+    postSubmitOnlineError,
+    postSubmitOnlineNote,
+    postSubmitWalletError,
+    selectedCoupon,
+    setSelectedCoupon,
+    rewardBalance,
+    payingWallet,
+    shippingId,
+    setShippingId,
+    shippingQuoteLoading,
+    shippingQuoteError,
+    rawTotal,
+    pickerCoupons,
+    pickerCouponsLoading,
+    shippingRulesLoading,
+    shippingRulesError,
+    shippingFee,
+    discountAmount,
+    finalTotal,
+    totalPointsValue: totalPoints(),
+    sstCfg,
+    sstPreview,
+    submitting,
+    handleSubmit,
+    copyOrderText,
+    openWhatsApp,
+    openWeChat,
+    payOnlineNow,
+    payByRewardWallet,
+    goHome: () => navigate("/"),
+    goOrders: () => navigate("/orders"),
+    goOrderDetail: (orderId: string) => navigate(`/orders/${orderId}`),
+    goAddress: () => navigate("/address"),
+    goNotifications: () => navigate("/notifications"),
+  };
+}

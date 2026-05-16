@@ -4,7 +4,8 @@ param(
   [string]$SshKeyPath = "E:\yamaxunmishi\aws-key.pem",
   [string]$ReleaseBranch = "release/prod",
   [string]$RemoteProjectDir = "/var/www/click-send-shop",
-  [switch]$SkipChecks
+  [switch]$SkipChecks,
+  [switch]$Force
 )
 
 $ErrorActionPreference = "Stop"
@@ -43,7 +44,23 @@ if ($CurrentBranch -ne $ReleaseBranch) {
   Run-Step "Switch to $ReleaseBranch" "git checkout $ReleaseBranch" $RepoRoot
 }
 
-Run-Step "Sync $ReleaseBranch with origin/$ReleaseBranch" "git reset --hard origin/$ReleaseBranch" $RepoRoot
+Write-Host "==> Release diff preview"
+$PendingLines = @()
+& git -C $RepoRoot log --oneline "origin/$ReleaseBranch..$ReleaseBranch" | ForEach-Object { $PendingLines += $_ }
+if ($PendingLines.Count -eq 0) {
+  Write-Host "No pending commits. release/prod is already same as origin/$ReleaseBranch"
+} else {
+  Write-Host "Commits to be released:"
+  $PendingLines | ForEach-Object { Write-Host "  $_" }
+}
+
+if (-not $Force) {
+  $confirm = Read-Host "Continue deploy with above commits? (y/N)"
+  if ($confirm -ne "y" -and $confirm -ne "Y") {
+    throw "Deployment cancelled by user."
+  }
+}
+
 Run-Step "Push $ReleaseBranch" "git push origin $ReleaseBranch" $RepoRoot
 
 $RemoteCmd = @"

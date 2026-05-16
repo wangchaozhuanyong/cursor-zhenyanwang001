@@ -1,4 +1,5 @@
 ﻿import { Loader2, Ticket } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import StoreButton from "@/components/ui/StoreButton";
 import StoreBadge from "@/components/ui/StoreBadge";
@@ -57,49 +58,89 @@ export default function PremiumCouponCard({
   };
 
   const dense = compact || homeCompact;
-  const amountSize = homeCompact ? "text-xl sm:text-2xl" : compact ? "text-2xl" : "text-3xl";
-  const wrapper = (
-    <div
-      className={`relative flex w-full items-stretch gap-2 rounded-xl border border-[var(--theme-border)] ${homeCompact ? "p-2.5" : "p-3"} text-[var(--theme-text)] ${styleMap[couponStyle]} ${disabled ? "opacity-60" : ""} ${selected ? "ring-2 ring-[var(--theme-secondary)]" : ""} ${className}`}
+  const amountSize = homeCompact ? "text-xl leading-none sm:text-2xl" : compact ? "text-2xl" : "text-3xl";
+
+  const actionButton = actionLabel ? (
+    <StoreButton
+      size={dense ? "sm" : "md"}
+      variant={couponStyle === "deal" ? "danger" : "primary"}
+      disabled={actionDisabled || actionLoading || disabled}
+      onClick={(e) => {
+        e.stopPropagation();
+        onAction?.();
+      }}
+      className={
+        homeCompact
+          ? "!h-10 !min-h-10 w-full !rounded-lg px-2 text-[11px] font-semibold leading-tight"
+          : "min-h-[96px] h-full w-full px-0 text-xs leading-tight [writing-mode:vertical-rl]"
+      }
     >
-      <div className={`flex ${homeCompact ? "w-[29%]" : "w-[32%]"} shrink-0 flex-col justify-center rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 text-center`}>
-        <p className="text-xs text-[var(--theme-muted)]">{amountPrefix}</p>
-        <p className={`${amountSize} font-black leading-none text-[var(--theme-price)]`}>{amount}</p>
+      {actionLoading ? <Loader2 size={14} className="animate-spin" /> : actionLabel}
+    </StoreButton>
+  ) : null;
+
+  const wrapper = homeCompact ? (
+    <div
+      className={cn(
+        "relative grid w-full grid-cols-[minmax(4.5rem,26%)_minmax(0,1fr)_minmax(4.25rem,22%)] items-stretch gap-2 rounded-xl border border-[var(--theme-border)] p-2.5 text-[var(--theme-text)]",
+        styleMap[couponStyle],
+        disabled && "opacity-60",
+        selected && "ring-2 ring-[var(--theme-secondary)]",
+        className,
+      )}
+    >
+      <div className="flex min-h-[5.5rem] flex-col items-center justify-center gap-0.5 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-1.5 py-2 text-center">
+        {amountPrefix ? (
+          <p className="text-[10px] leading-none text-[var(--theme-muted)]">{amountPrefix}</p>
+        ) : null}
+        <p className={cn(amountSize, "font-black text-[var(--theme-price)]")}>{amount}</p>
+        <p className="line-clamp-2 text-[10px] leading-snug text-[var(--theme-muted)]">{conditionText}</p>
+      </div>
+
+      <div className="flex min-h-[5.5rem] min-w-0 flex-col justify-center gap-1 py-0.5">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <Ticket size={14} className="shrink-0 text-[var(--theme-secondary)]" />
+          <p className="truncate text-[11px] text-[var(--theme-muted)]">{eyebrow}</p>
+          {badge ? <StoreBadge type="coupon">{badge}</StoreBadge> : null}
+        </div>
+        <p className="line-clamp-2 text-sm font-bold leading-snug text-[var(--theme-text-on-surface)]">{title}</p>
+        <p className="truncate text-xs text-[var(--theme-muted)]">有效期至：{expireText}</p>
+        <p className="line-clamp-1 text-xs text-[var(--theme-muted)]">{scopeText}</p>
+      </div>
+
+      {actionButton ? (
+        <div className="flex min-h-[5.5rem] items-center justify-center">{actionButton}</div>
+      ) : null}
+    </div>
+  ) : (
+    <div
+      className={cn(
+        "relative flex w-full items-stretch gap-2 rounded-xl border border-[var(--theme-border)] p-3 text-[var(--theme-text)]",
+        styleMap[couponStyle],
+        disabled && "opacity-60",
+        selected && "ring-2 ring-[var(--theme-secondary)]",
+        className,
+      )}
+    >
+      <div className="flex w-[32%] shrink-0 flex-col justify-center rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-3 text-center">
+        {amountPrefix ? <p className="text-xs text-[var(--theme-muted)]">{amountPrefix}</p> : null}
+        <p className={cn(amountSize, "font-black text-[var(--theme-price)]")}>{amount}</p>
         <p className="mt-1 text-[10px] text-[var(--theme-muted)]">{conditionText}</p>
       </div>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 py-1">
         <div className="mb-1 flex items-center gap-2">
           <Ticket size={14} className="text-[var(--theme-secondary)]" />
           <p className="text-[11px] text-[var(--theme-muted)]">{eyebrow}</p>
           {badge ? <StoreBadge type="coupon">{badge}</StoreBadge> : null}
         </div>
-        <p className={`${homeCompact ? "line-clamp-1" : "line-clamp-2"} text-sm font-bold`}>{title}</p>
-        <p className={`${homeCompact ? "mt-1 truncate" : "mt-2"} text-xs text-[var(--theme-muted)]`}>有效期至：{expireText}</p>
+        <p className={cn(compact ? "line-clamp-1" : "line-clamp-2", "text-sm font-bold")}>{title}</p>
+        <p className={cn(compact ? "mt-1 truncate" : "mt-2", "text-xs text-[var(--theme-muted)]")}>
+          有效期至：{expireText}
+        </p>
         <p className="mt-1 line-clamp-1 text-xs text-[var(--theme-muted)]">{scopeText}</p>
       </div>
-      {actionLabel ? (
-        <div
-          className={`flex shrink-0 items-center justify-center ${
-            homeCompact ? "w-[44px] md:w-[5.25rem]" : "w-[48px]"
-          }`}
-        >
-          <StoreButton
-            size={dense ? "sm" : "md"}
-            variant={couponStyle === "deal" ? "danger" : "primary"}
-            disabled={actionDisabled || actionLoading || disabled}
-            onClick={(e) => {
-              e.stopPropagation();
-              onAction?.();
-            }}
-            className={`${
-              homeCompact
-                ? "min-h-[72px] [writing-mode:vertical-rl] md:min-h-0 md:h-9 md:w-full md:px-2 md:[writing-mode:horizontal-tb]"
-                : "min-h-[96px] [writing-mode:vertical-rl]"
-            } h-full w-full px-0 text-xs leading-tight`}
-          >
-            {actionLoading ? <Loader2 size={14} className="animate-spin" /> : actionLabel}
-          </StoreButton>
-        </div>
+      {actionButton ? (
+        <div className="flex w-[48px] shrink-0 items-center justify-center">{actionButton}</div>
       ) : null}
     </div>
   );

@@ -138,7 +138,7 @@ export default function Categories() {
   ].filter(Boolean).join(" · ");
 
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)] pb-20 text-[var(--theme-text)]">
+    <div className="store-bottom-safe min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <header className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
           <button onClick={goBack} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary"><ArrowLeft size={20} className="text-foreground" /></button>

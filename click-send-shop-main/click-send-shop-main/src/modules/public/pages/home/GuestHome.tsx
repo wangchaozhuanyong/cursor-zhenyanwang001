@@ -133,7 +133,7 @@ export default function GuestHome() {
     navigate(path);
   };
 
-  const bottomNavSafe = "pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))]";
+  const bottomNavSafe = "store-bottom-safe";
   const homeLayout = themeConfig.homeLayout ?? "classic";
   const isPremiumLayout = homeLayout === "premium";
   const isMagazineLayout = homeLayout === "magazine";

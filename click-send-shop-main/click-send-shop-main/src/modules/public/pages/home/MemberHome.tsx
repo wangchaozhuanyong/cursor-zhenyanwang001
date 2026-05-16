@@ -129,7 +129,7 @@ export default function MemberHome() {
   const rec = recBatches.length > 0 ? recBatches[recBatchIndex % recBatches.length] : [];
 
   return (
-    <div className={`min-h-screen pb-24 text-[var(--theme-text)] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_90%,black)]" : "bg-[var(--theme-bg)]"}`} data-theme-home-layout={themeConfig.homeLayout}>
+    <div className={`store-bottom-safe min-h-screen text-[var(--theme-text)] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_90%,black)]" : "bg-[var(--theme-bg)]"}`} data-theme-home-layout={themeConfig.homeLayout}>
       <header className={`sticky top-0 z-40 border-b backdrop-blur-xl ${headerClass}`}>
         <div className="mx-auto flex h-14 w-full max-w-screen-xl items-center gap-3 px-4">
           <div className="flex shrink-0 cursor-pointer items-center gap-2" onClick={() => navigate("/")}>
@@ -186,7 +186,7 @@ export default function MemberHome() {
                 return (
                   <div
                     key={i}
-                    className="snap-center min-h-[118px] w-[min(88vw,360px)] shrink-0 animate-pulse rounded-xl bg-[var(--theme-surface)]/70 ring-1 ring-[var(--theme-border)] md:w-full"
+                    className="snap-center min-h-[5.5rem] w-[min(88vw,360px)] shrink-0 animate-pulse rounded-xl bg-[var(--theme-surface)]/70 ring-1 ring-[var(--theme-border)] md:w-full"
                   />
                 );
               }
@@ -196,12 +196,11 @@ export default function MemberHome() {
               return (
                 <div
                   key={c.id}
-                  className="snap-center min-h-[118px] w-[min(88vw,360px)] shrink-0 md:w-full"
+                  className="snap-center w-[min(88vw,360px)] shrink-0 md:w-full"
                 >
                   <PremiumCouponCard
-                    compact
                     homeCompact
-                    className="h-full min-h-[118px] shadow-lg"
+                    className="shadow-lg"
                     title={display.title}
                     amountPrefix={display.amountPrefix}
                     amount={display.amount}

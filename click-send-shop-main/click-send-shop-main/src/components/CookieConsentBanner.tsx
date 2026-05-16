@@ -8,6 +8,7 @@ import {
   subscribeTrackingConsent,
   type TrackingConsentPreferences,
 } from "@/utils/trackingConsent";
+import { getStoreFixedBottomOffset } from "@/utils/storeBottomInset";
 
 function enabled(value: unknown) {
   return value === "1" || value === "true" || value === true || value === "enabled";
@@ -60,8 +61,13 @@ export default function CookieConsentBanner() {
   const rejectOptional = () => saveTrackingConsent(DEFAULT_TRACKING_CONSENT);
   const saveCustom = () => saveTrackingConsent(draft);
 
+  const fixedBottom = useMemo(() => getStoreFixedBottomOffset(location.pathname), [location.pathname]);
+
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[80] px-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
+    <div
+      className="fixed inset-x-0 z-[70] px-4 pb-4"
+      style={{ bottom: fixedBottom }}
+    >
       <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card/95 p-4 text-card-foreground shadow-2xl backdrop-blur-md md:p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">

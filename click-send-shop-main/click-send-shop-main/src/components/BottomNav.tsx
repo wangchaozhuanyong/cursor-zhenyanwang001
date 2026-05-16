@@ -35,7 +35,7 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="pointer-events-auto fixed bottom-0 left-0 right-0 z-[90] border-t border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-[0_-8px_24px_rgba(0,0,0,0.08)]"
+      className="pointer-events-auto fixed bottom-0 left-0 right-0 z-bottom-nav border-t border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-[0_-8px_24px_rgba(0,0,0,0.08)]"
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0px)", touchAction: "manipulation" }}
     >
       <div className="mx-auto max-w-lg">

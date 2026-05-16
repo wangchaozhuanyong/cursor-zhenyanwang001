@@ -25,7 +25,7 @@ export default function NewArrivals() {
   }, [loadProducts, sort]);
 
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)] pb-24 text-[var(--theme-text)]">
+    <div className="store-bottom-safe min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <PageHeader
         title="新品上市"
         rightSlot={(

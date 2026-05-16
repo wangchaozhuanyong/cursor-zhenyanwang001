@@ -653,7 +653,7 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-28 md:pb-0">
+    <div className="store-bottom-action-space min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
       <header className="sticky top-0 z-40 bg-[var(--theme-surface)]/95 px-4 py-3 backdrop-blur-md md:px-6 border-b border-[var(--theme-border)]">
         <div className="mx-auto flex w-full max-w-screen-xl items-center gap-3">
           <button onClick={goBack} aria-label="返回购物车" className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target">
@@ -802,7 +802,7 @@ export default function Checkout() {
       </main>
 
       {/* 移动端：底部固定提交栏 */}
-      <div className="fixed bottom-0 left-0 right-0 z-[55] border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3.5">
           <div>
             <p className="text-xs text-muted-foreground">合计</p>

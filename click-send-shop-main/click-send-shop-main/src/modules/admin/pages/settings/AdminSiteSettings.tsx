@@ -120,9 +120,9 @@ const SECTIONS: Section[] = [
   {
     title: "首页新品运营主视觉",
     category: "brand",
-    desc: "用于首页「新品上市」运营氛围层；商品主图仍保持 1:1 轮播展示。",
+    desc: "用于首页「新品上市」运营氛围层；模块整体为 1:1 方形容器，主视觉与商品轮播图均为正方形展示。",
     fields: [
-      { key: "newArrivalHeroImage", label: "主视觉图片（推荐 1200×1200）", type: "image", hint: "作为首页新品模块背景/氛围图，不会覆盖轮播商品图" },
+      { key: "newArrivalHeroImage", label: "主视觉图片（推荐 1200×1200，1:1）", type: "image", hint: "铺满新品模块正方形容器（object-cover），与右侧商品 1:1 轮播图分层展示" },
       { key: "newArrivalHeroTitle", label: "主视觉标题", placeholder: "新品限时上新，错过再等一季" },
       { key: "newArrivalHeroSubtitle", label: "主视觉副标题", placeholder: "每周精选，支持快速发货" },
       { key: "newArrivalHeroCtaText", label: "按钮文案", placeholder: "前往新品上市" },

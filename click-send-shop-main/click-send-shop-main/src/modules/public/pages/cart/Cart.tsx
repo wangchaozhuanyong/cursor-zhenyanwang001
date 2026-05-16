@@ -57,7 +57,7 @@ export default function Cart() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-44 md:pb-0">
+    <div className="store-bottom-cart-space min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-[var(--theme-surface)]/95 backdrop-blur-md border-b border-[var(--theme-border)]">
         <div className="mx-auto flex w-full max-w-screen-xl items-center gap-3 px-4 py-3 md:px-6">

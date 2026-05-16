@@ -90,6 +90,7 @@
     --theme-density: comfortable;
     --theme-admin-mode: fixed;
     --store-bottom-nav-height: 72px;
+    --store-action-bar-height: 4.75rem;
   }
 
   .dark {
@@ -206,14 +207,23 @@
     color: var(--theme-muted);
   }
   .store-bottom-safe {
-    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+    padding-bottom: calc(var(--store-bottom-nav-height, 72px) + env(safe-area-inset-bottom, 0px));
+  }
+  .store-bottom-action-space {
+    padding-bottom: calc(var(--store-action-bar-height, 4.75rem) + env(safe-area-inset-bottom, 0px));
+  }
+  .store-bottom-cart-space {
+    padding-bottom: calc(
+      var(--store-bottom-nav-height, 72px) + var(--store-action-bar-height, 4.75rem) +
+        env(safe-area-inset-bottom, 0px)
+    );
   }
   .store-floating-nav-space {
-    padding-bottom: calc(86px + env(safe-area-inset-bottom));
+    padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px));
   }
   .z-header { z-index: 40; }
   .z-bottom-nav { z-index: 50; }
-  .z-checkout-bar { z-index: 55; }
+  .z-checkout-bar { z-index: 60; }
   .z-drawer { z-index: 70; }
   .z-modal { z-index: 80; }
   .z-toast { z-index: 90; }

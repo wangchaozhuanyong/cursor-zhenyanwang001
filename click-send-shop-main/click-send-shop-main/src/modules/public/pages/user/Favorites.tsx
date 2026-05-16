@@ -18,7 +18,7 @@ export default function Favorites() {
   }, [loadFavorites]);
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="store-bottom-safe min-h-screen bg-background">
       <PageHeader title="我的收藏" />
 
       <main className="mx-auto max-w-lg px-4">

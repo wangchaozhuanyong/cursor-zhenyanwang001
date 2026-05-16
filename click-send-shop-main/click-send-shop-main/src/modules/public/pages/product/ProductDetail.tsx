@@ -1,15 +1,15 @@
 ﻿import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Heart, Minus, Plus, Share2, ShoppingCart, ShieldCheck, Truck, WalletCards } from "lucide-react";
+import { Heart, Minus, Plus, ShoppingCart, ShieldCheck, Truck, WalletCards } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useCartStore } from "@/stores/useCartStore";
 import { useHistoryStore } from "@/stores/useHistoryStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
-import { useNotificationStore } from "@/stores/useNotificationStore";
 import ProductCard from "@/components/ProductCard";
 import ProductReviews from "@/components/ProductReviews";
 import { useProductReviews } from "@/hooks/useProductReviews";
 import ProductImageGallery from "@/components/ProductImageGallery";
+import ProductGalleryToolbar from "@/components/ProductGalleryToolbar";
 import ProductTagList from "@/components/ProductTagList";
 import { SquishButton } from "@/modules/micro-interactions";
 import TrustInfo from "@/components/TrustInfo";
@@ -22,8 +22,8 @@ import { copyToClipboard } from "@/utils/clipboard";
 import { trackAddToCart, trackProductView } from "@/utils/tracking";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { parseSstEnabled } from "@/utils/sstTax";
-import NotificationIconButton from "@/components/NotificationIconButton";
 import { trackEvent } from "@/services/analyticsService";
+import { buildProductSharePayload } from "@/utils/productShare";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -34,8 +34,6 @@ export default function ProductDetail() {
   const [qty, setQty] = useState(1);
   const [selectedVariantId, setSelectedVariantId] = useState<string>("");
   const trackedProductIdRef = useRef<string | null>(null);
-  const unreadCount = useNotificationStore((s) => s.unreadCount);
-  const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
 
   const {
     currentProduct: product,
@@ -76,10 +74,6 @@ export default function ProductDetail() {
   }, [product]);
 
   useEffect(() => {
-    fetchUnreadCount();
-  }, [fetchUnreadCount]);
-
-  useEffect(() => {
     if (!product) return;
     const active = product.active_activity;
     const variants = (product.variants ?? []).filter((v) => v.id);
@@ -93,16 +87,21 @@ export default function ProductDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background pb-28 md:pb-0">
-        <DetailHeader goBack={goBack} totalItems={totalItems} unreadCount={unreadCount} />
-        <div className="mx-auto w-full max-w-screen-xl px-0 md:px-6">
-          <div className="md:grid md:grid-cols-2 md:gap-10 md:py-10">
-            <Skeleton className="w-full md:rounded-2xl" style={{ aspectRatio: "var(--theme-image-ratio)" }} />
-            <div className="space-y-3 p-4 md:p-0">
-              <Skeleton className="h-8 w-24" />
-              <Skeleton className="h-6 w-full" />
-              <Skeleton className="h-4 w-2/3" />
-            </div>
+      <div className="store-bottom-action-space min-h-screen bg-background md:pb-0">
+        <div className="relative">
+          <Skeleton className="w-full" style={{ aspectRatio: "var(--theme-image-ratio)" }} />
+          <ProductGalleryToolbar
+            onBack={goBack}
+            onShare={() => {}}
+            onCart={() => navigate("/cart")}
+            cartCount={totalItems}
+          />
+        </div>
+        <div className="mx-auto w-full max-w-screen-xl px-4 pt-4 md:px-6 md:py-10">
+          <div className="space-y-3 md:max-w-xl">
+            <Skeleton className="h-8 w-24" />
+            <Skeleton className="h-6 w-full" />
+            <Skeleton className="h-4 w-2/3" />
           </div>
         </div>
       </div>
@@ -112,7 +111,14 @@ export default function ProductDetail() {
   if (error || !product) {
     return (
       <div className="min-h-screen bg-background">
-        <DetailHeader goBack={goBack} totalItems={totalItems} unreadCount={unreadCount} />
+        <div className="relative min-h-[12rem] bg-[var(--theme-surface)]">
+          <ProductGalleryToolbar
+            onBack={goBack}
+            onShare={() => {}}
+            onCart={() => navigate("/cart")}
+            cartCount={totalItems}
+          />
+        </div>
         <div className="p-8 text-center text-muted-foreground">
           <p>{error ?? "商品不存在"}</p>
           <button
@@ -209,43 +215,57 @@ export default function ProductDetail() {
   };
 
   const handleShare = async () => {
+    const url = window.location.href;
+    const sharePayload = buildProductSharePayload(
+      product.name,
+      Number(displayPrice) || 0,
+      url,
+      siteInfo.siteName,
+    );
+    void trackEvent({ event_type: "share", module: "product_detail", product_id: product.id });
+
     if (navigator.share) {
       try {
         await navigator.share({
-          title: product.name,
-          text: `${product.name} - RM ${product.price}`,
-          url: window.location.href,
+          title: sharePayload.title,
+          text: sharePayload.text,
+          url: sharePayload.url,
         });
         return;
-      } catch {
-        // User cancellation should not block the manual copy fallback.
+      } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") return;
       }
     }
 
-    const copied = await copyToClipboard(window.location.href);
+    const copied = await copyToClipboard(sharePayload.text);
     if (copied) {
-      toast.success("链接已复制", toastPresetQuickSuccess);
+      toast.success("商品信息已复制，可粘贴分享给好友", toastPresetQuickSuccess);
     } else {
       toast.error("复制失败，请手动复制链接");
     }
   };
 
-  return (
-    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-28 md:pb-0">
-      <DetailHeader
-        goBack={goBack}
-        totalItems={totalItems}
-        unreadCount={unreadCount}
-        onShare={handleShare}
-      />
+  const galleryToolbar = (
+    <ProductGalleryToolbar
+      onBack={goBack}
+      onShare={handleShare}
+      onCart={() => navigate("/cart")}
+      cartCount={totalItems}
+    />
+  );
 
+  return (
+    <div className="store-bottom-action-space min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
       <main className="mx-auto w-full max-w-screen-xl px-0 md:px-6">
-        {/* 桌面端双列：左图 / 右信息 */}
-        <div className="md:grid md:grid-cols-2 md:gap-10 md:py-10">
-          {/* 左：图集 */}
-          <div className="md:sticky md:top-20 md:self-start">
-            <div className="md:overflow-hidden md:theme-rounded md:border md:border-[var(--theme-border)]">
-              <ProductImageGallery images={galleryImages} name={product.name} videoUrl={product.video_url} />
+        <div className="md:grid md:grid-cols-2 md:gap-10 md:items-start md:py-10">
+          <div className="md:sticky md:top-6 md:self-start">
+            <div className="relative overflow-hidden md:theme-rounded md:border md:border-[var(--theme-border)]">
+              <ProductImageGallery
+                images={galleryImages}
+                name={product.name}
+                videoUrl={product.video_url}
+                overlay={galleryToolbar}
+              />
             </div>
           </div>
 
@@ -315,9 +335,6 @@ export default function ProductDetail() {
                       </span>
                     </>
                   )}
-                <span className="text-xs text-muted-foreground">
-                  +{product.points} 积分
-                </span>
               </div>
               {typeof product.sales_count === "number" && product.sales_count > 0 && (
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -411,57 +428,16 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            {/* 桌面端：操作按钮（移动端使用底部固定栏） */}
-            <div className="mt-4 hidden gap-3 px-0 md:flex">
-              <SquishButton
-                type="button"
-                variant="outline"
-                onClick={handleAddToCart}
-                disabled={soldOut}
-                className="flex-1 rounded-full py-3.5 text-sm font-semibold transition-all !min-h-0"
-              >
-                {soldOut ? "已售罄" : "加入购物车"}
-              </SquishButton>
-              <SquishButton
-                type="button"
-                variant="gold"
-                onClick={handleBuyNow}
-                disabled={soldOut}
-                className="flex-1 rounded-full py-3.5 text-sm font-semibold transition-all hover:opacity-95 shadow-lg shadow-gold/20 !min-h-0"
-              >
-                {soldOut ? "已售罄" : "立即购买"}
-              </SquishButton>
-              <SquishButton
-                type="button"
-                variant="ghost"
-                onClick={handleFavorite}
-                className="flex h-12 w-12 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] hover:bg-[var(--theme-bg)] !p-0"
-                aria-label="收藏"
-              >
-                <Heart
-                  size={20}
-                  className={
-                    isFavorite ? "fill-destructive text-destructive" : "text-muted-foreground"
-                  }
-                />
-              </SquishButton>
-            </div>
-
-            {/* 移动端：收藏按钮浮在右上角（保留交互） */}
-            <SquishButton
-              type="button"
-              variant="ghost"
-              onClick={handleFavorite}
-              className="fixed right-4 top-16 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/90 backdrop-blur-sm theme-shadow md:hidden touch-target !p-0"
-              aria-label="收藏"
-            >
-              <Heart
-                size={18}
-                className={`transition-colors ${
-                  isFavorite ? "fill-destructive text-destructive" : "text-muted-foreground"
-                }`}
+            <div className="mt-4 hidden px-0 md:block">
+              <DetailPurchaseBar
+                soldOut={soldOut}
+                isFavorite={isFavorite}
+                totalItems={totalItems}
+                onFavorite={handleFavorite}
+                onAddToCart={handleAddToCart}
+                onBuyNow={handleBuyNow}
               />
-            </SquishButton>
+            </div>
 
             {/* TrustInfo - 信任三件套（详情页使用 card 强转化样式） */}
             <div className="mt-6 px-4 md:px-0">
@@ -513,27 +489,77 @@ export default function ProductDetail() {
       </main>
       {/* 底部固定操作栏 - 仅移动端 */}
       <div className="fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
-        <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
-          <SquishButton
-            type="button"
-            variant="outline"
-            onClick={handleAddToCart}
-            disabled={soldOut}
-            className="flex-1 rounded-full py-3.5 text-sm font-semibold transition-all !min-h-0"
-          >
-            {soldOut ? "已售罄" : "加入购物车"}
-          </SquishButton>
-          <SquishButton
-            type="button"
-            variant="gold"
-            onClick={handleBuyNow}
-            disabled={soldOut}
-            className="flex-1 rounded-full py-3.5 text-sm font-semibold transition-all shadow-lg shadow-gold/20 !min-h-0"
-          >
-            {soldOut ? "已售罄" : "立即购买"}
-          </SquishButton>
+        <div className="mx-auto max-w-lg px-4 py-3">
+          <DetailPurchaseBar
+            soldOut={soldOut}
+            isFavorite={isFavorite}
+            totalItems={totalItems}
+            onFavorite={handleFavorite}
+            onAddToCart={handleAddToCart}
+            onBuyNow={handleBuyNow}
+          />
         </div>
       </div>
+    </div>
+  );
+}
+
+/** 详情页购买操作条：左收藏 + 购物车，右立即购买 */
+function DetailPurchaseBar({
+  soldOut,
+  isFavorite,
+  totalItems,
+  onFavorite,
+  onAddToCart,
+  onBuyNow,
+}: {
+  soldOut: boolean;
+  isFavorite: boolean;
+  totalItems: number;
+  onFavorite: () => void;
+  onAddToCart: () => void;
+  onBuyNow: () => void;
+}) {
+  return (
+    <div className="flex items-stretch gap-2">
+      <div className="flex shrink-0 items-stretch gap-1">
+        <button
+          type="button"
+          onClick={onFavorite}
+          className="flex min-w-[3.25rem] flex-col items-center justify-center gap-0.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-2 text-[10px] text-[var(--theme-text-muted)] transition hover:bg-[var(--theme-bg)] touch-target"
+          aria-label={isFavorite ? "取消收藏" : "收藏"}
+        >
+          <Heart
+            size={20}
+            className={isFavorite ? "fill-[var(--theme-danger)] text-[var(--theme-danger)]" : "text-[var(--theme-text-muted)]"}
+          />
+          <span>{isFavorite ? "已收藏" : "收藏"}</span>
+        </button>
+        <button
+          type="button"
+          onClick={onAddToCart}
+          disabled={soldOut}
+          className="relative flex min-w-[3.25rem] flex-col items-center justify-center gap-0.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-2 text-[10px] text-[var(--theme-text-muted)] transition hover:bg-[var(--theme-bg)] disabled:cursor-not-allowed disabled:opacity-50 touch-target"
+          aria-label={soldOut ? "已售罄" : "加入购物车"}
+        >
+          <ShoppingCart size={20} className="text-[var(--theme-text-muted)]" />
+          <span>购物车</span>
+          {totalItems > 0 ? (
+            <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--theme-primary)] px-1 text-[9px] font-bold text-[var(--theme-primary-foreground)]">
+              {totalItems > 99 ? "99+" : totalItems}
+            </span>
+          ) : null}
+        </button>
+      </div>
+      <SquishButton
+        type="button"
+        variant="gold"
+        onClick={onBuyNow}
+        disabled={soldOut}
+        className="min-h-[3.25rem] flex-1 rounded-full py-3.5 text-sm font-semibold shadow-lg shadow-gold/20 transition-all !min-h-[3.25rem]"
+      >
+        {soldOut ? "已售罄" : "立即购买"}
+      </SquishButton>
     </div>
   );
 }
@@ -547,64 +573,4 @@ function buildDetailSections(description: string): string[] {
     .filter(Boolean);
   return parts.length > 0 ? parts : [raw];
 }
-
-/** 详情页统一 Header（移动 / 桌面共用，桌面端容器宽） */
-function DetailHeader({
-  goBack,
-  totalItems,
-  unreadCount,
-  onShare,
-}: {
-  goBack: () => void;
-  totalItems: number;
-  unreadCount: number;
-  onShare?: () => void;
-}) {
-  const navigate = useNavigate();
-  return (
-    <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
-      <div className="mx-auto flex w-full max-w-screen-xl items-center justify-between px-4 py-3 md:px-6">
-        <SquishButton
-          type="button"
-          variant="ghost"
-          onClick={goBack}
-          className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target !p-0"
-          aria-label="返回"
-        >
-          <ArrowLeft size={20} className="text-foreground" />
-        </SquishButton>
-        <span className="text-sm font-medium text-foreground">商品详情</span>
-        <div className="flex items-center gap-1">
-          {onShare && (
-            <SquishButton
-              type="button"
-              variant="ghost"
-              onClick={onShare}
-              className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target !p-0"
-              aria-label="分享"
-            >
-              <Share2 size={18} className="text-foreground" />
-            </SquishButton>
-          )}
-          <SquishButton
-            type="button"
-            variant="ghost"
-            onClick={() => navigate("/cart")}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target !p-0"
-            aria-label="购物车"
-          >
-            <ShoppingCart size={20} className="text-foreground" />
-            {totalItems > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-gold px-1 text-[10px] font-bold text-primary-foreground">
-                {totalItems}
-              </span>
-            )}
-          </SquishButton>
-          <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} />
-        </div>
-      </div>
-    </header>
-  );
-}
-
 

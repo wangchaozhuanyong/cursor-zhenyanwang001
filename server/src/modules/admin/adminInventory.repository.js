@@ -108,6 +108,15 @@ async function updateVariantWarningThreshold(variantId, threshold) {
   );
 }
 
+async function batchUpdateVariantWarningThreshold(ids, threshold) {
+  if (!ids.length) return 0;
+  const [result] = await db.query(
+    `UPDATE product_variants SET stock_warning_threshold = ? WHERE id IN (${ids.map(() => '?').join(',')})`,
+    [threshold, ...ids],
+  );
+  return result.affectedRows || 0;
+}
+
 async function selectProductVariants(productId) {
   const [rows] = await db.query(
     `SELECT id, title, sku_code, stock, is_default
@@ -247,6 +256,7 @@ module.exports = {
   selectVariantForUpdate,
   updateVariantStock,
   updateVariantWarningThreshold,
+  batchUpdateVariantWarningThreshold,
   selectProductVariants,
   selectProductById,
   insertStockRecord,

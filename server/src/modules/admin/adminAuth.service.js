@@ -106,7 +106,7 @@ async function refresh(refreshToken) {
   if (!refreshToken) throw new BusinessError(401, '请先登录');
   let payload;
   try {
-    payload = verifyToken(refreshToken);
+    payload = /** @type {{ type?: string, userId?: string }} */ (verifyToken(refreshToken));
   } catch {
     throw new BusinessError(401, '登录已过期，请重新登录');
   }

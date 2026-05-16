@@ -19,38 +19,6 @@ const payDb = payRepo.getPool();
 
 const userApi = /** @type {any} */ (userModule).api || {};
 
-async function insertAnalyticsEvent(conn, row) {
-  const dedupeKey = String(row.dedupe_key || '').trim();
-  await conn.query(
-    `INSERT INTO analytics_events
-      (user_id, anonymous_id, session_id, dedupe_key, event_type, module, page, product_id, variant_id, category_id, activity_id, coupon_id, keyword, order_id, amount, quantity, device, referrer, ip_hash, user_agent)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-     ON DUPLICATE KEY UPDATE id=id`,
-    [
-      row.user_id || null,
-      row.anonymous_id || '',
-      row.session_id || '',
-      dedupeKey,
-      row.event_type,
-      row.module || '',
-      row.page || '',
-      row.product_id || null,
-      row.variant_id || null,
-      row.category_id || null,
-      row.activity_id || null,
-      row.coupon_id || null,
-      row.keyword || '',
-      row.order_id || null,
-      row.amount ?? null,
-      row.quantity ?? null,
-      row.device || 'server',
-      row.referrer || '',
-      row.ip_hash || '',
-      row.user_agent || 'server',
-    ],
-  );
-}
-
 function requireUserApi(name) {
   const fn = userApi[name];
   if (typeof fn !== 'function') {
@@ -181,7 +149,7 @@ async function payWithRewardWallet(userId, orderId) {
       throw new ValidationError('订单状态已变化，请刷新后重试');
     }
     await UserStatsService.syncStatsAfterOrderPaid(userId, payableAmount, lockedOrder.id, conn);
-    await insertAnalyticsEvent(conn, {
+    await payRepo.insertAnalyticsEvent(conn, {
       user_id: userId,
       dedupe_key: `payment_success:${lockedOrder.id}:reward_wallet`,
       event_type: 'payment_success',
@@ -480,7 +448,7 @@ async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionN
     return { skipped: true, reason: 'already_paid' };
   }
   await UserStatsService.syncStatsAfterOrderPaid(order.user_id, toMoney(order.total_amount), order.id, conn);
-  await insertAnalyticsEvent(conn, {
+  await payRepo.insertAnalyticsEvent(conn, {
     user_id: order.user_id,
     dedupe_key: `payment_success:${order.id}:${paymentOrder.channel_code || paymentOrder.provider || 'payment'}`,
     event_type: 'payment_success',
@@ -493,7 +461,7 @@ async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionN
   await checkoutAbandonmentRepo.markPaidByOrderId(conn, order.id);
   try {
     await requireUserApi('refreshUserMemberLevel')(conn, order.user_id);
-    await insertAnalyticsEvent(conn, {
+    await payRepo.insertAnalyticsEvent(conn, {
       user_id: order.user_id,
       dedupe_key: `payment_success:${order.id}:admin_mark_paid`,
       event_type: 'payment_success',
@@ -643,28 +611,18 @@ async function recordStripeCapture(orderId, paymentIntentId, stripeEventId, payl
   }
 
   try {
-    await payDb.query(
-      `INSERT INTO analytics_events
-        (user_id, anonymous_id, session_id, dedupe_key, event_type, module, page, order_id, amount, quantity, device, referrer, ip_hash, user_agent)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-       ON DUPLICATE KEY UPDATE id=id`,
-      [
-        order.user_id || null,
-        '',
-        '',
-        `payment_success:${order.id}:stripe_webhook`,
-        'payment_success',
-        'stripe_webhook',
-        '/checkout',
-        order.id,
-        toMoney(order.total_amount),
-        1,
-        'server',
-        '',
-        '',
-        'server',
-      ],
-    );
+    await payRepo.insertAnalyticsEvent(payDb, {
+      user_id: order.user_id || null,
+      dedupe_key: `payment_success:${order.id}:stripe_webhook`,
+      event_type: 'payment_success',
+      module: 'stripe_webhook',
+      page: '/checkout',
+      order_id: order.id,
+      amount: toMoney(order.total_amount),
+      quantity: 1,
+      device: 'server',
+      user_agent: 'server',
+    });
   } catch {
     // best effort analytics
   }

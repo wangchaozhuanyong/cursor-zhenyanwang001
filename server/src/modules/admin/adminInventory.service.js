@@ -286,11 +286,7 @@ async function batchWarningThreshold(body) {
   const threshold = Number(body.stock_warning_threshold);
   if (!ids.length) throw new BusinessError(400, 'variant_ids 不能为空');
   if (!Number.isInteger(threshold) || threshold < 0) throw new BusinessError(400, '预警阈值必须为非负整数');
-  const pool = repo.getPool();
-  await pool.query(
-    `UPDATE product_variants SET stock_warning_threshold = ? WHERE id IN (${ids.map(() => '?').join(',')})`,
-    [threshold, ...ids],
-  );
+  await repo.batchUpdateVariantWarningThreshold(ids, threshold);
   return { data: { updated: ids.length }, message: '批量预警值已更新' };
 }
 

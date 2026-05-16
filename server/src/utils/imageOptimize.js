@@ -69,7 +69,7 @@ async function canPassthroughSingle(file, spec) {
 }
 
 /**
- * @param {import('multer').File} file
+ * @param {Express.Multer.File} file
  * @param {string} mode
  * @returns {Promise<{ files: Array<{ filename: string, buffer: Buffer, tag?: string }>, primaryTag: string }>}
  */

@@ -305,6 +305,38 @@ async function selectLatestPendingPaymentOrderId(q, { orderId, provider, channel
   return row?.id || null;
 }
 
+async function insertAnalyticsEvent(q, row) {
+  const dedupeKey = String(row.dedupe_key || '').trim();
+  await q.query(
+    `INSERT INTO analytics_events
+      (user_id, anonymous_id, session_id, dedupe_key, event_type, module, page, product_id, variant_id, category_id, activity_id, coupon_id, keyword, order_id, amount, quantity, device, referrer, ip_hash, user_agent)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+     ON DUPLICATE KEY UPDATE id=id`,
+    [
+      row.user_id || null,
+      row.anonymous_id || '',
+      row.session_id || '',
+      dedupeKey,
+      row.event_type,
+      row.module || '',
+      row.page || '',
+      row.product_id || null,
+      row.variant_id || null,
+      row.category_id || null,
+      row.activity_id || null,
+      row.coupon_id || null,
+      row.keyword || '',
+      row.order_id || null,
+      row.amount ?? null,
+      row.quantity ?? null,
+      row.device || 'server',
+      row.referrer || '',
+      row.ip_hash || '',
+      row.user_agent || 'server',
+    ],
+  );
+}
+
 async function selectPaymentEventById(q, eventId) {
   const [[row]] = await q.query('SELECT * FROM payment_events WHERE id = ? LIMIT 1', [eventId]);
   return row || null;
@@ -334,5 +366,6 @@ module.exports = {
   aggregatePaidByDay,
   selectLatestPendingStripePaymentOrderIdByOrderId,
   selectLatestPendingPaymentOrderId,
+  insertAnalyticsEvent,
   selectPaymentEventById,
 };

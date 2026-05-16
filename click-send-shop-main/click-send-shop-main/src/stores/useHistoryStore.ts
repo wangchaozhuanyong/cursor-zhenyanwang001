@@ -9,6 +9,7 @@ interface HistoryStore {
   loading: boolean;
   addToHistory: (product: Product) => void;
   loadHistory: () => Promise<void>;
+  mergeLocalThenSync: (localHistory: Product[]) => Promise<void>;
   clearHistory: () => Promise<void>;
 }
 
@@ -34,6 +35,24 @@ export const useHistoryStore = create<HistoryStore>()(
           set({ history: data.list.map((item) => item.product), loading: false });
         } catch (e) {
           set({ loading: false });
+          throw e;
+        }
+      },
+
+      mergeLocalThenSync: async (localHistory) => {
+        if (!isLoggedIn()) return;
+        const localUnique = Array.from(new Map(localHistory.filter((p) => p?.id).map((p) => [p.id, p])).values());
+        if (localUnique.length) {
+          await Promise.allSettled(localUnique.map((product) => historyService.addHistoryItem(product.id)));
+        }
+        set({ loading: true });
+        try {
+          const data = await historyService.fetchHistory(1, 50);
+          const remoteProducts = data.list.map((item) => item.product).filter(Boolean);
+          const merged = Array.from(new Map([...remoteProducts, ...localUnique].map((p) => [p.id, p])).values()).slice(0, 50);
+          set({ history: merged, loading: false });
+        } catch (e) {
+          set({ history: localUnique.slice(0, 50), loading: false });
           throw e;
         }
       },

@@ -77,10 +77,6 @@ export default function MemberHome() {
           : "bg-[var(--theme-bg)]/90 border-[var(--theme-border)]";
 
   useLayoutEffect(() => {
-    const { hotProducts, newProducts, recommendedProducts, loading } = useProductStore.getState();
-    if (!loading && (hotProducts.length > 0 || newProducts.length > 0 || recommendedProducts.length > 0)) {
-      useProductStore.setState({ loading: true });
-    }
     void loadHomeData();
   }, [loadHomeData]);
 
@@ -111,17 +107,17 @@ export default function MemberHome() {
 
   const hotList = useMemo(() => hotProducts.slice(0, 16), [hotProducts]);
   const recList = useMemo(() => {
-    const hotIds = new Set(hotList.map((p) => p.id));
+    const excludedIds = new Set([...hotList, ...newProducts].map((p) => p.id));
     return buildPersonalizedRecommendations({
-      candidates: [...recommendedProducts, ...newProducts],
-      fallbackProducts: [...recommendedProducts, ...newProducts, ...hotProducts],
+      candidates: recommendedProducts,
+      fallbackProducts: [...recommendedProducts, ...hotProducts],
       historyProducts,
       favoriteIds,
       favoriteProducts,
       cartItems,
       orders,
       limit: 24,
-    }).filter((p) => !hotIds.has(p.id)).slice(0, 16);
+    }).filter((p) => !excludedIds.has(p.id)).slice(0, 16);
   }, [recommendedProducts, newProducts, hotProducts, hotList, historyProducts, favoriteIds, favoriteProducts, cartItems, orders]);
   const hotBatches = useMemo(() => toBatches(hotList, HOT_BATCH_SIZE), [hotList]);
   const recBatches = useMemo(() => toBatches(recList, REC_BATCH_SIZE), [recList]);
@@ -313,7 +309,6 @@ function toBatches<T>(list: T[], size: number): T[][] {
   }
   return out;
 }
-
 
 
 

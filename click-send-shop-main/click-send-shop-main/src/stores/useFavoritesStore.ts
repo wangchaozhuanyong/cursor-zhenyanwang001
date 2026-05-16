@@ -27,6 +27,7 @@ interface FavoritesStore {
   isFavorite: (id: string) => boolean;
   toggleFavorite: (product: FavoriteProduct) => Promise<boolean>;
   loadFavorites: () => Promise<void>;
+  mergeLocalThenSync: (localIds: string[], localProducts: FavoriteProduct[]) => Promise<void>;
 }
 
 export const useFavoritesStore = create<FavoritesStore>()(
@@ -78,6 +79,28 @@ export const useFavoritesStore = create<FavoritesStore>()(
         } catch {
           set({ loading: false });
         }
+      },
+
+      mergeLocalThenSync: async (localIds, localProducts) => {
+        if (!isLoggedIn()) return;
+        await get().loadFavorites();
+        const serverIds = new Set(get().favoriteIds);
+        const localUniqueIds = Array.from(new Set(localIds.filter(Boolean)));
+        const toAdd = localUniqueIds.filter((id) => !serverIds.has(id));
+        if (toAdd.length) {
+          await Promise.allSettled(toAdd.map((id) => favoritesService.addFavoriteProduct(id)));
+        }
+        await get().loadFavorites();
+        set((s) => {
+          const products = [...s.favoriteProducts];
+          const ids = new Set(s.favoriteIds);
+          for (const product of localProducts) {
+            if (!product?.id || ids.has(product.id)) continue;
+            ids.add(product.id);
+            products.push(product);
+          }
+          return { favoriteIds: Array.from(ids), favoriteProducts: products };
+        });
       },
     }),
     {

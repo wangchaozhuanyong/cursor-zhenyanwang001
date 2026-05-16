@@ -41,7 +41,7 @@ const SECTION_PADDING = "p-4";
 
 function gateNavigate(navigate: ReturnType<typeof useNavigate>, path: string, requireAuth = true) {
   if (requireAuth && !isLoggedIn()) {
-    navigate("/login", { state: { from: "/profile" } });
+    navigate("/login", { state: { from: path } });
     return;
   }
   navigate(path);
@@ -176,10 +176,10 @@ export default function Profile() {
   const orderReceiving = useMemo(() => orders.filter((o) => o.status === "shipped").length, [orders]);
 
   const assetItems = [
-    { label: "我的积分", value: String(pointsBalance), hint: "可用于订单抵扣", icon: Gift, path: "/points" },
-    { label: "优惠券", value: String(couponCount), hint: "下单时可选择使用", icon: Ticket, path: "/coupons" },
-    { label: "我的收藏", value: String(favoriteCount), hint: "你收藏的商品", icon: Heart, path: "/favorites" },
-    { label: "返现余额", value: `RM ${rewardBalance.toFixed(2)}`, hint: "邀请奖励累计", icon: Wallet, path: "/rewards" },
+    { label: "我的积分", value: String(pointsBalance), hint: "可用于订单抵扣", icon: Gift, path: "/points", auth: true },
+    { label: "优惠券", value: String(couponCount), hint: "下单时可选择使用", icon: Ticket, path: "/coupons", auth: true },
+    { label: "我的收藏", value: String(favoriteCount), hint: "你收藏的商品", icon: Heart, path: "/favorites", auth: false },
+    { label: "返现余额", value: `RM ${rewardBalance.toFixed(2)}`, hint: "邀请奖励累计", icon: Wallet, path: "/rewards", auth: true },
   ];
 
   const guestOrderItems = [
@@ -245,7 +245,7 @@ export default function Profile() {
               <button
                 key={item.label}
                 type="button"
-                onClick={() => gateNavigate(navigate, item.path, true)}
+                onClick={() => gateNavigate(navigate, item.path, item.auth)}
                 className={`${idx === 3 ? "col-span-2" : ""} min-h-[94px] rounded-[22px] bg-[var(--theme-bg)] px-3.5 py-3 text-left ring-1 ring-[color-mix(in_srgb,var(--theme-border)_70%,transparent)]`}
               >
                 <div className="flex h-full items-start gap-3">
@@ -319,7 +319,7 @@ export default function Profile() {
               { label: "邀请有礼", icon: Gift, path: "/invite", auth: true },
               { label: "消息通知", icon: Bell, path: "/notifications", auth: true },
               { label: "账户设置", icon: Settings, path: "/settings", auth: true },
-              { label: "我的收藏", icon: Heart, path: "/favorites", auth: true },
+              { label: "我的收藏", icon: Heart, path: "/favorites", auth: false },
             ].map((item) => (
               <button key={item.label} type="button" onClick={() => gateNavigate(navigate, item.path, item.auth)} className="min-h-[76px] rounded-2xl bg-[var(--theme-bg)] px-1 py-2 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_60%,transparent)]">
                 <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--theme-secondary)_12%,var(--theme-surface))] text-[var(--theme-secondary)]"><item.icon size={16} /></span>
@@ -355,5 +355,4 @@ export default function Profile() {
     </div>
   );
 }
-
 

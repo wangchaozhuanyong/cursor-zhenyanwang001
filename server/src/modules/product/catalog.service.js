@@ -337,9 +337,11 @@ async function loadHomeProducts() {
 
   const hot = pickUnique(hotManual, fallbackBySales, limit);
   const hotIdSet = new Set(hot.map((p) => p.id));
-  const recommended = pickUnique(recommendedManual, fallbackByRecommend, limit, hotIdSet);
+  const newArrivalsUnique = pickUnique(newArrivals, [], limit, hotIdSet);
+  const homeUsedIdSet = new Set([...hot, ...newArrivalsUnique].map((p) => p.id));
+  const recommended = pickUnique(recommendedManual, fallbackByRecommend, limit, homeUsedIdSet);
 
-  const allRows = [...hot, ...newArrivals, ...recommended];
+  const allRows = [...hot, ...newArrivalsUnique, ...recommended];
   const allIds = allRows.map((r) => r.id);
   const [tagMap, defaultVariants] = await Promise.all([
     tagAssignmentRepo.selectTagsByProductIds(allIds),
@@ -353,7 +355,7 @@ async function loadHomeProducts() {
   const fmt = (rows) => rows.map((r) => attachActivity({ ...formatProduct(r), tags: tagMap.get(r.id) || [], default_variant: defaultVariantMap.get(r.id) || null }, activityMap.get(r.id)));
   return {
     hot: fmt(hot),
-    new_arrivals: fmt(newArrivals),
+    new_arrivals: fmt(newArrivalsUnique),
     recommended: fmt(recommended),
   };
 }

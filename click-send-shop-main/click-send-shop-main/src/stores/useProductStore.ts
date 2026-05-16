@@ -27,6 +27,8 @@ const INITIAL_FILTERS: ProductListParams = {
   pageSize: 10,
 };
 
+let productListRequestSeq = 0;
+
 // ─── Store Interface ────────────────────────────────────
 
 interface ProductState {
@@ -99,14 +101,16 @@ export const useProductStore = create<ProductState>((set, get) => ({
   // ── loadProducts ──────────────────────────────────────
 
   loadProducts: async (params) => {
+    const requestSeq = ++productListRequestSeq;
     const merged: ProductListParams = {
       ...get().filters,
       ...params,
     };
-    set({ loading: true, error: null, filters: merged });
+    set({ products: [], loading: true, error: null, filters: merged });
 
     try {
       const data = await productService.fetchProducts(merged);
+      if (requestSeq !== productListRequestSeq) return;
       set({
         products: data.list,
         pagination: {
@@ -118,6 +122,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
         loading: false,
       });
     } catch (err) {
+      if (requestSeq !== productListRequestSeq) return;
       set({
         loading: false,
         error: err instanceof Error ? err.message : "加载商品失败",

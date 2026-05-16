@@ -20,7 +20,7 @@ export default function BottomNav() {
 
   if (location.pathname.startsWith("/checkout")) return null;
 
-  const requiresAuth = (path: string) => path === "/cart" || path === "/profile";
+  const requiresAuth = (path: string) => path === "/profile";
   const handleNavigate = (path: string) => {
     if (location.pathname === path) {
       window.scrollTo({ top: 0, left: 0, behavior: "smooth" });

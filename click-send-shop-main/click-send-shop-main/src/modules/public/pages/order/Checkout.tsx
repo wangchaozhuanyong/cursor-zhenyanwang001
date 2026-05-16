@@ -302,6 +302,9 @@ export default function Checkout() {
       const preferred = candidates.find((c) => c.id === preferredCouponId) ?? null;
       if (preferred) {
         setSelectedCoupon(preferred);
+      } else {
+        const exists = pickerCoupons.some((c) => c.id === preferredCouponId);
+        toast.error(exists ? "该优惠券暂不满足使用条件" : "优惠券不存在或已失效");
       }
       const nextParams = new URLSearchParams(searchParams);
       nextParams.delete("coupon_id");
@@ -1326,6 +1329,5 @@ function OrderSuccess({
     </div>
   );
 }
-
 
 

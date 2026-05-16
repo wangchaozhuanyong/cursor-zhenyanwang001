@@ -32,11 +32,16 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (params) => {
         const localCartSnapshot: CartItem[] = [...useCartStore.getState().items];
+        const localFavoriteIds = [...useFavoritesStore.getState().favoriteIds];
+        const localFavoriteProducts = [...useFavoritesStore.getState().favoriteProducts];
+        const localHistorySnapshot = [...useHistoryStore.getState().history];
         set({ loading: true, error: null });
         try {
           await authService.login(params);
           set({ isAuthenticated: true });
           await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
+          await useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts);
+          await useHistoryStore.getState().mergeLocalThenSync(localHistorySnapshot).catch(() => {});
           await useUserStore.getState().loadProfile();
           set({ loading: false });
         } catch (e) {
@@ -50,11 +55,16 @@ export const useAuthStore = create<AuthState>()(
 
       register: async (params) => {
         const localCartSnapshot: CartItem[] = [...useCartStore.getState().items];
+        const localFavoriteIds = [...useFavoritesStore.getState().favoriteIds];
+        const localFavoriteProducts = [...useFavoritesStore.getState().favoriteProducts];
+        const localHistorySnapshot = [...useHistoryStore.getState().history];
         set({ loading: true, error: null });
         try {
           await authService.register(params);
           set({ isAuthenticated: true });
           await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
+          await useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts);
+          await useHistoryStore.getState().mergeLocalThenSync(localHistorySnapshot).catch(() => {});
           await useUserStore.getState().loadProfile();
           set({ loading: false });
         } catch (e) {
@@ -68,11 +78,16 @@ export const useAuthStore = create<AuthState>()(
 
       loginWithOtp: async (params) => {
         const localCartSnapshot: CartItem[] = [...useCartStore.getState().items];
+        const localFavoriteIds = [...useFavoritesStore.getState().favoriteIds];
+        const localFavoriteProducts = [...useFavoritesStore.getState().favoriteProducts];
+        const localHistorySnapshot = [...useHistoryStore.getState().history];
         set({ loading: true, error: null });
         try {
           await authService.loginWithOtp(params);
           set({ isAuthenticated: true });
           await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
+          await useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts);
+          await useHistoryStore.getState().mergeLocalThenSync(localHistorySnapshot).catch(() => {});
           await useUserStore.getState().loadProfile();
           set({ loading: false });
         } catch (e) {
@@ -86,11 +101,16 @@ export const useAuthStore = create<AuthState>()(
 
       completeOAuthLogin: async (params) => {
         const localCartSnapshot: CartItem[] = [...useCartStore.getState().items];
+        const localFavoriteIds = [...useFavoritesStore.getState().favoriteIds];
+        const localFavoriteProducts = [...useFavoritesStore.getState().favoriteProducts];
+        const localHistorySnapshot = [...useHistoryStore.getState().history];
         set({ loading: true, error: null });
         try {
           await authService.exchangeOAuthTicket(params);
           set({ isAuthenticated: true });
           await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
+          await useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts);
+          await useHistoryStore.getState().mergeLocalThenSync(localHistorySnapshot).catch(() => {});
           await useUserStore.getState().loadProfile();
           set({ loading: false });
         } catch (e) {
@@ -105,9 +125,7 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         try { await authService.logout(); } catch { /* best-effort */ }
         useUserStore.getState().clearProfile();
-        useCartStore.setState({ items: [], selection: {} });
-        useFavoritesStore.setState({ favoriteIds: [], favoriteProducts: [] });
-        useHistoryStore.setState({ history: [] });
+        useCartStore.setState({ buyNowItem: null, selection: {} });
         useOrderStore.setState({ orders: [], currentOrder: null });
         set({ isAuthenticated: false, error: null });
       },

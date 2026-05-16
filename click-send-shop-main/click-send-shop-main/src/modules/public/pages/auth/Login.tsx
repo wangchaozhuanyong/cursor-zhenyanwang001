@@ -41,7 +41,9 @@ export default function Login() {
   const slogan = siteInfo.siteSlogan || "Premium Lifestyle";
   const supportContact =
     siteInfo.contactWhatsApp || siteInfo.contactPhone || "客服";
-  const rawFrom = (location.state as { from?: string } | null)?.from;
+  const loginState = location.state as { from?: string; fromState?: unknown } | null;
+  const rawFrom = loginState?.from;
+  const fromState = loginState?.fromState;
   const from =
     rawFrom && rawFrom !== "/login" && !rawFrom.startsWith("/admin")
       ? rawFrom
@@ -131,7 +133,7 @@ export default function Login() {
         });
         if (cancelled) return;
         toast.success("登录成功", { duration: 900, position: "top-center" });
-        navigate(from, { replace: true });
+        navigate(from, { replace: true, state: fromState });
       } catch (e) {
         if (!cancelled) {
           const fallback = useAuthStore.getState().error;
@@ -143,7 +145,7 @@ export default function Login() {
     return () => {
       cancelled = true;
     };
-  }, [location.search, navigate, from]);
+  }, [location.search, navigate, from, fromState]);
 
   const loading = authStore.loading;
 
@@ -244,7 +246,7 @@ export default function Login() {
         duration: 900,
         position: "top-center",
       });
-      navigate(from, { replace: true });
+      navigate(from, { replace: true, state: fromState });
     } catch (e) {
       const fallback = useAuthStore.getState().error;
       let msg =

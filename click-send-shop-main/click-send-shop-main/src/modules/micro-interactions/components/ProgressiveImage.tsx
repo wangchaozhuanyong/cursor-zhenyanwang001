@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { toFullUploadImageUrl } from "@/utils/uploadImageVariant";
 import { useEffect, useState } from "react";
 
 export type ProgressiveImageProps = {
@@ -10,6 +11,8 @@ export type ProgressiveImageProps = {
   /** Optional sizes / fetchPriority passthrough for the hi-res image */
   sizes?: string;
   fetchPriority?: "high" | "low" | "auto";
+  /** 主图 404 时回退（如仅有 full、无 -card/-detail 的历史上传） */
+  fallbackSrc?: string;
 };
 
 /**
@@ -23,10 +26,16 @@ export function ProgressiveImage({
   imgClassName,
   sizes,
   fetchPriority,
+  fallbackSrc,
 }: ProgressiveImageProps) {
   const [hiResLoaded, setHiResLoaded] = useState(false);
+  const [activeSrc, setActiveSrc] = useState(src);
+  const resolvedFallback = fallbackSrc ?? (toFullUploadImageUrl(src) !== src ? toFullUploadImageUrl(src) : undefined);
 
-  useEffect(() => setHiResLoaded(false), [src]);
+  useEffect(() => {
+    setActiveSrc(src);
+    setHiResLoaded(false);
+  }, [src]);
 
   return (
     <div className={cn("relative overflow-hidden bg-[var(--theme-surface)]", className)}>
@@ -44,12 +53,18 @@ export function ProgressiveImage({
 
       {/* Hi-res layer */}
       <img
-        src={src}
+        src={activeSrc}
         alt={alt}
         sizes={sizes}
         {...(fetchPriority ? { fetchPriority } : {})}
         draggable={false}
         onLoad={() => setHiResLoaded(true)}
+        onError={() => {
+          if (resolvedFallback && activeSrc !== resolvedFallback) {
+            setActiveSrc(resolvedFallback);
+            setHiResLoaded(false);
+          }
+        }}
         className={cn(
           "absolute inset-0 h-full w-full object-cover transition-opacity ease-out duration-300",
           hiResLoaded ? "opacity-100" : "opacity-0",

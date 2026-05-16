@@ -18,8 +18,12 @@ import {
   syncLockedInviteCodeBySearch,
 } from "@/utils/inviteReferral";
 import { getPublicApiRoot } from "@/utils/apiRoot";
+import { useFormFieldFocus } from "@/hooks/useFormFieldFocus";
+import { cn } from "@/lib/utils";
 
 const REMEMBER_KEY = "login_remembered_phone";
+const INPUT_CLASS =
+  "w-full rounded-2xl border border-border bg-card py-3.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-[border-color,box-shadow]";
 const REMEMBER_COUNTRY_CODE_KEY = "login_remembered_country_code";
 const COUNTRY_CODE_OPTIONS = [
   { value: "+60", label: "🇲🇾 +60" },
@@ -67,6 +71,7 @@ export default function Login() {
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [smsOtpLoginEnabled, setSmsOtpLoginEnabled] = useState(true);
   const hasLockedInviteCode = !!inviteCode;
+  const formFocused = useFormFieldFocus();
 
   useEffect(() => {
     const saved = localStorage.getItem(REMEMBER_KEY);
@@ -306,9 +311,9 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="auth-page-shell flex flex-col overflow-x-hidden bg-background">
       {/* ══════════════ Top Brand Bar ══════════════ */}
-      <header className="flex items-center gap-3 px-5 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
+      <header className="flex shrink-0 items-center gap-3 px-5 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
         <img src={logoSrc} alt={siteName} width={44} height={44} className="rounded-xl object-contain" loading="eager" decoding="async" />
         <div className="flex flex-col">
           <h1 className="font-display text-xl font-bold tracking-tight leading-tight text-foreground">
@@ -320,13 +325,15 @@ export default function Login() {
         </div>
       </header>
 
-      {/* ══════════════ Banner Carousel ══════════════ */}
-      <div className="px-5 mt-2 animate-in fade-in zoom-in-95 duration-300">
-        <LoginBannerCarousel banners={banners} />
-      </div>
+      {/* 聚焦输入时收起轮播，避免软键盘 + 动画导致整页闪动 */}
+      {!formFocused && banners.length > 0 ? (
+        <div className="mt-2 shrink-0 px-5">
+          <LoginBannerCarousel banners={banners} paused={formFocused} />
+        </div>
+      ) : null}
 
       {/* ══════════════ Main Content ══════════════ */}
-      <main className="flex-1 mx-auto w-full max-w-lg px-5 mt-8 animate-in fade-in slide-in-from-bottom-2 duration-300 fill-mode-both">
+      <main className="mx-auto mt-6 w-full max-w-lg flex-1 min-h-0 overflow-y-auto overscroll-y-contain px-5 pb-safe">
         {/* Welcome text */}
         <div className="mb-6">
           <h2 className="font-display text-2xl font-bold text-foreground">
@@ -382,7 +389,7 @@ export default function Login() {
         {/* ══════════════ Form ══════════════ */}
         <div className="space-y-3.5">
           {mode === "register" && !hasLockedInviteCode && (
-            <div className="animate-in fade-in zoom-in-95 duration-200">
+            <div>
               <div className="relative">
                 <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
@@ -390,13 +397,13 @@ export default function Login() {
                   placeholder="昵称"
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
-                  className="w-full rounded-2xl border border-border bg-card py-3.5 pl-12 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-all"
+                  className={cn(INPUT_CLASS, "pl-12 pr-4")}
                 />
               </div>
             </div>
           )}
           {mode === "register" && (
-            <div className="animate-in fade-in zoom-in-95 duration-200">
+            <div>
               <div className="relative">
                 <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
@@ -404,7 +411,7 @@ export default function Login() {
                   placeholder="邀请码（选填）"
                   value={inviteCode}
                   onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                  className="w-full rounded-2xl border border-border bg-card py-3.5 pl-12 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-all"
+                  className={cn(INPUT_CLASS, "pl-12 pr-4")}
                 />
               </div>
             </div>
@@ -426,11 +433,12 @@ export default function Login() {
               <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="tel"
-                inputMode="numeric"
+                inputMode="tel"
+                autoComplete="tel"
                 placeholder="手机号"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value.replace(/[^\d\s\-()]/g, ""))}
-                className="w-full rounded-2xl border border-border bg-card py-3.5 pl-12 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-all"
+                className={cn(INPUT_CLASS, "pl-12 pr-4")}
               />
             </div>
           </div>
@@ -443,7 +451,7 @@ export default function Login() {
                 placeholder="密码"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-2xl border border-border bg-card py-3.5 pl-12 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-all"
+                className={cn(INPUT_CLASS, "pl-12 pr-12")}
               />
               <button
                 type="button"
@@ -456,7 +464,7 @@ export default function Login() {
           )}
 
           {mode === "login" && credentialMode === "otp" && (
-            <div className="space-y-2 animate-in fade-in zoom-in-95 duration-200">
+            <div className="space-y-2">
               <div className="relative">
                 <KeyRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
@@ -467,7 +475,7 @@ export default function Login() {
                   value={otpCode}
                   maxLength={6}
                   onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  className="w-full rounded-2xl border border-border bg-card py-3.5 pl-12 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-all tracking-widest"
+                  className={cn(INPUT_CLASS, "pl-12 pr-4 tracking-widest")}
                 />
               </div>
               <button
@@ -621,7 +629,7 @@ export default function Login() {
         )}
 
         {/* ══════════════ Agreement ══════════════ */}
-        <p className="text-center text-[11px] text-muted-foreground pb-8 pb-safe leading-relaxed">
+        <p className="pb-8 pb-safe text-center text-[11px] leading-relaxed text-muted-foreground">
           登录即代表您同意
           <button onClick={() => navigate("/about")} className="text-gold mx-0.5">《用户协议》</button>
           和

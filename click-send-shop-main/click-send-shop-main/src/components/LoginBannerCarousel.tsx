@@ -10,9 +10,11 @@ interface LoginBanner {
 
 interface LoginBannerCarouselProps {
   banners: LoginBanner[];
+  /** 表单聚焦时暂停自动轮播，避免与软键盘 resize 叠加闪动 */
+  paused?: boolean;
 }
 
-export default function LoginBannerCarousel({ banners }: LoginBannerCarouselProps) {
+export default function LoginBannerCarousel({ banners, paused = false }: LoginBannerCarouselProps) {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
   const touchStartX = useRef(0);
@@ -26,13 +28,13 @@ export default function LoginBannerCarousel({ banners }: LoginBannerCarouselProp
   );
 
   useEffect(() => {
-    if (banners.length <= 1) return;
+    if (paused || banners.length <= 1) return;
     const timer = setInterval(() => {
       setDirection(1);
       setCurrent((prev) => (prev + 1) % banners.length);
     }, 3500);
     return () => clearInterval(timer);
-  }, [banners.length]);
+  }, [banners.length, paused]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;

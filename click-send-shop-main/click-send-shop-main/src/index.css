@@ -232,6 +232,12 @@
   .z-modal { z-index: 80; }
   .z-toast { z-index: 90; }
 
+  /* 登录等全屏表单：软键盘 overlay 布局，减少 min-height 随视口抖动 */
+  .auth-page-shell {
+    min-height: 100dvh;
+    min-height: 100svh;
+  }
+
   .theme-rounded {
     border-radius: var(--theme-radius);
   }

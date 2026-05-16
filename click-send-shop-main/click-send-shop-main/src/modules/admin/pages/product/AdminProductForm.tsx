@@ -443,9 +443,9 @@ export default function AdminProductForm() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">库存</label>
-                <input type="number" disabled={!isNew} value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder="0" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground disabled:opacity-70" />
-                {!isNew ? <p className="mt-1 text-[10px] text-muted-foreground">编辑商品时不直接改库存，请到库存中心按 SKU 调整。</p> : null}
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">库存（默认规格）</label>
+                <input type="number" min={0} value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder="0" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                <p className="mt-1 text-[10px] text-muted-foreground">保存时写入默认 SKU；大批量入库仍建议在库存中心操作。</p>
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">积分值</label>
@@ -513,7 +513,7 @@ export default function AdminProductForm() {
               </button>
             </div>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              库存统一在库存中心按 SKU 调整；此处仅维护规格信息与价格。
+              可在此维护各规格库存与价格；保存后同步到商品总库存。
             </p>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[520px] text-xs">
@@ -594,9 +594,21 @@ export default function AdminProductForm() {
                       <td className="py-2 pr-2">
                         <input
                           type="number"
+                          min={0}
                           value={v.is_default ? form.stock : v.stock}
-                          disabled
-                          className="w-full min-w-[64px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none disabled:opacity-60"
+                          onChange={(e) => {
+                            const t = e.target.value;
+                            if (v.is_default) {
+                              setForm((f) => ({ ...f, stock: t }));
+                              return;
+                            }
+                            setForm((f) => {
+                              const nv = [...f.variants];
+                              nv[idx] = { ...nv[idx], stock: t };
+                              return { ...f, variants: nv };
+                            });
+                          }}
+                          className="w-full min-w-[64px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
                         />
                       </td>
                       <td className="py-2 align-middle">

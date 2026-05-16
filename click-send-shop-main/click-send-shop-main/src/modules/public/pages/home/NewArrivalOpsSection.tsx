@@ -11,6 +11,7 @@ import * as productService from "@/services/productService";
 import type { Product } from "@/types/product";
 import type { ThemeConfig } from "@/types/theme";
 import { cn } from "@/lib/utils";
+import { onUploadVariantImageError } from "@/utils/uploadImageVariant";
 import {
   NEW_ARRIVAL_AUTO_MS,
   NEW_ARRIVAL_OPS_MAX,
@@ -269,7 +270,12 @@ export default function NewArrivalOpsSection({
                         )}
                       >
                         {thumb ? (
-                          <img src={thumb} alt="" className="h-full w-full object-cover" />
+                          <img
+                            src={thumb}
+                            alt=""
+                            className="h-full w-full object-cover"
+                            onError={(e) => onUploadVariantImageError(e.currentTarget, thumb)}
+                          />
                         ) : (
                           <span className="flex h-full w-full items-center justify-center bg-[var(--theme-surface)] text-[10px] text-[var(--theme-text-muted)]">
                             新品

@@ -8,34 +8,46 @@ export function formatCouponMinSpendText(c: UserCoupon["coupon"]) {
   return c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛可用";
 }
 
-/** 供 PremiumCouponCard 使用的展示字段（与优惠券列表页一致） */
+/** 有效期行（中间第三行，含前缀） */
+export function formatCouponExpireText(endDate: string | undefined) {
+  const raw = typeof endDate === "string" ? endDate : "";
+  const date = raw.length >= 10 ? raw.slice(0, 10) : raw;
+  return date ? `有效期至：${date}` : "有效期待定";
+}
+
+/** 左侧大号面额/折扣（图3：单行，如 95% / RM 20） */
+export function formatCouponLeftAmount(c: UserCoupon["coupon"]) {
+  if (c.type === "shipping") {
+    return c.value <= 0 ? "免运" : `RM ${c.value}`;
+  }
+  if (c.type === "percentage") {
+    const v = Number(c.value);
+    if (!Number.isFinite(v)) return `${c.value}%`;
+    // 9.5折 → 左侧展示 95%
+    if (c.title.includes("折") && v > 0 && v < 20) {
+      return `${Math.round(v * 10)}%`;
+    }
+    return `${v}%`;
+  }
+  return `RM ${c.value}`;
+}
+
+/** 供 PremiumCouponCard 使用的展示字段（与图3 会员礼包一致） */
 export function userCouponToPremiumDisplay(uc: UserCoupon) {
   const c = uc.coupon;
-  const amountPrefix =
-    c.type === "percentage" || (c.type === "shipping" && c.value <= 0) ? "" : "RM";
-  const amount =
-    c.type === "percentage"
-      ? `${c.value}%`
-      : c.type === "shipping" && c.value <= 0
-        ? "免运"
-        : String(c.value);
   const minSpendText = formatCouponMinSpendText(c);
   const scopeText =
     c.scope_type === "category" && c.category_names?.length
       ? `适用范围：${c.category_names.join("、")}`
       : "适用范围：全场商品";
-  const expireRaw = typeof c.end_date === "string" ? c.end_date : "";
-  const expireText = expireRaw.length >= 10 ? expireRaw.slice(0, 10) : expireRaw;
-  const badge = c.display_badge || c.description || undefined;
 
   return {
     title: c.title,
-    amountPrefix,
-    amount,
+    amountPrefix: "",
+    amount: formatCouponLeftAmount(c),
     minSpendText,
     scopeText,
-    expireText,
-    badge,
+    expireText: formatCouponExpireText(c.end_date),
     code: c.code,
   };
 }

@@ -1,13 +1,13 @@
-import type { ReactNode } from "react";
+import type { HTMLAttributes, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useMotionConfig } from "../hooks/useMotionConfig";
 import { sectionTransition } from "../motionConfig";
 
-type AnimatedSectionAs = "section" | "div";
+type AnimatedSectionAs = "section" | "motion.div";
 
-type AnimatedSectionProps = {
+type AnimatedSectionProps = HTMLAttributes<HTMLElement> & {
   children: ReactNode;
   className?: string;
   delay?: number;
@@ -21,6 +21,7 @@ export function AnimatedSection({
   delay = 0,
   as = "section",
   once = true,
+  ...rest
 }: AnimatedSectionProps) {
   const { level, enabled } = useMotionConfig();
   const ref = useRef<HTMLElement | null>(null);
@@ -54,7 +55,7 @@ export function AnimatedSection({
   if (!enabled) {
     const Tag = as === "section" ? "section" : "div";
     return (
-      <Tag className={className} ref={ref as never}>
+      <Tag className={cn(className)} ref={ref as never} {...rest}>
         {children}
       </Tag>
     );
@@ -67,6 +68,7 @@ export function AnimatedSection({
       initial={motionProps.initial}
       animate={visible ? motionProps.animate : motionProps.initial}
       transition={motionProps.transition}
+      {...rest}
     >
       {children}
     </MotionTag>

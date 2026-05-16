@@ -4,20 +4,19 @@ import { Clock, Loader2, Package, Tag, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import StoreButton from "@/components/ui/StoreButton";
-import StoreBadge from "@/components/ui/StoreBadge";
 
 interface PremiumCouponCardProps {
-  /** @deprecated ???? */
-  eyebrow?: string;
   title: string;
+  /** @deprecated ???????????? amount */
   amountPrefix?: string;
   amount: string;
   /** @deprecated ??? minSpendText */
   conditionText?: string;
-  /** ????????????? */
   minSpendText?: string;
+  /** ????????????????????? */
   expireText: string;
   scopeText?: string;
+  /** @deprecated ?3 ???????? */
   badge?: string;
   actionLabel?: string;
   actionLoading?: boolean;
@@ -83,13 +82,12 @@ function CouponInfoRow({
 
 export default function PremiumCouponCard({
   title,
-  amountPrefix = "RM",
+  amountPrefix = "",
   amount,
   conditionText,
   minSpendText: minSpendTextProp,
   expireText,
-  scopeText = "?????????",
-  badge,
+  scopeText = "\u9002\u7528\u8303\u56f4\uff1a\u5168\u573a\u5546\u54c1",
   actionLabel,
   actionLoading = false,
   actionDisabled = false,
@@ -103,7 +101,9 @@ export default function PremiumCouponCard({
 }: PremiumCouponCardProps) {
   const { themeConfig } = useThemeRuntime();
   const couponStyle = themeConfig.couponStyle;
-  const minSpendText = minSpendTextProp ?? conditionText ?? "?????";
+  const minSpendText = minSpendTextProp ?? conditionText ?? "\u65e0\u95e8\u69db\u53ef\u7528";
+  const leftValue = `${amountPrefix}${amount}`.trim();
+  const expireLabel = expireText.includes("\u6709\u6548\u671f") ? expireText : `\u6709\u6548\u671f\u81f3\uff1a${expireText}`;
 
   const styleMap: Record<typeof couponStyle, string> = {
     ticket: "bg-[var(--theme-surface)] border-dashed",
@@ -122,7 +122,7 @@ export default function PremiumCouponCard({
     : "text-[var(--theme-secondary)]";
 
   const dense = compact || homeCompact;
-  const amountSize = homeCompact ? "text-xl leading-none sm:text-2xl" : compact ? "text-2xl" : "text-3xl";
+  const amountSize = homeCompact ? "text-2xl leading-none sm:text-3xl" : compact ? "text-2xl" : "text-3xl";
 
   const actionButton = actionLabel ? (
     <StoreButton
@@ -153,8 +153,7 @@ export default function PremiumCouponCard({
       )}
     >
       <div className="flex min-h-[5.25rem] flex-col items-center justify-center rounded-lg border border-dashed border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-3 text-center">
-        {amountPrefix ? <p className="text-[10px] leading-none text-[var(--theme-muted)]">{amountPrefix}</p> : null}
-        <p className={cn(amountSize, "font-black text-[var(--theme-price)]")}>{amount}</p>
+        <p className={cn(amountSize, "font-black tracking-tight text-[var(--theme-price)]")}>{leftValue}</p>
       </div>
 
       <div
@@ -163,11 +162,6 @@ export default function PremiumCouponCard({
           homeCompact ? "min-h-[5.5rem] gap-1 px-2 py-0.5" : "min-h-[5.25rem] gap-1.5 px-2.5 py-1",
         )}
       >
-        {badge ? (
-          <div className="mb-0.5">
-            <StoreBadge type="coupon">{badge}</StoreBadge>
-          </div>
-        ) : null}
         <CouponInfoRow icon={Tag} prominent titleClass={couponTitleClass} mutedClass={couponMutedClass} iconClass={couponIconClass}>
           {title}
         </CouponInfoRow>
@@ -175,7 +169,7 @@ export default function PremiumCouponCard({
           {minSpendText}
         </CouponInfoRow>
         <CouponInfoRow icon={Clock} mutedClass={couponMutedClass} iconClass={couponIconClass}>
-          ?????{expireText}
+          {expireLabel}
         </CouponInfoRow>
         <CouponInfoRow icon={Package} mutedClass={couponMutedClass} iconClass={couponIconClass}>
           {scopeText}

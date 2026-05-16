@@ -20,7 +20,6 @@ interface DisplayCoupon {
   scopeText: string;
   expire: string;
   status: DisplayStatus;
-  tag?: string;
   code: string;
 }
 
@@ -41,7 +40,6 @@ function toDisplayCoupon(uc: UserCoupon): DisplayCoupon {
     scopeText: d.scopeText,
     expire: d.expireText,
     status: displayStatus,
-    tag: d.badge,
     code: d.code,
   };
 }
@@ -227,7 +225,6 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
         minSpendText={coupon.minSpendText}
         expireText={coupon.expire}
         scopeText={coupon.scopeText}
-        badge={coupon.tag}
         disabled={isDisabled}
         actionLabel={coupon.status === "available" ? "立即领取" : undefined}
         actionLoading={claiming}

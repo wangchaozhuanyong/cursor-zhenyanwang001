@@ -3,6 +3,7 @@ import { Ticket, ChevronRight, Check, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import type { CheckoutPickerCoupon } from "@/types/coupon";
+import { formatCouponExpireText } from "@/utils/couponDisplay";
 import { ResponsiveSheet, useMediaSheetMode } from "@/modules/micro-interactions";
 
 interface CouponPickerProps {
@@ -23,9 +24,15 @@ function useCouponHelpers(totalAmount: number, shippingFee: number) {
   const isUsable = (c: CheckoutPickerCoupon) =>
     totalAmount >= c.condition && (c.discountType !== "shipping" || shippingFee > 0);
   const getAmountParts = (c: CheckoutPickerCoupon) => {
-    if (c.discountType === "percent") return { amountPrefix: "", amount: `${c.discount}%` };
+    if (c.discountType === "percent") {
+      const pct =
+        c.title.includes("折") && c.discount > 0 && c.discount < 20
+          ? `${Math.round(c.discount * 10)}%`
+          : `${c.discount}%`;
+      return { amountPrefix: "", amount: pct };
+    }
     if (c.discountType === "shipping" && c.discount <= 0) return { amountPrefix: "", amount: "免运" };
-    return { amountPrefix: "RM", amount: String(c.discount) };
+    return { amountPrefix: "", amount: `RM ${c.discount}` };
   };
   const getMinSpendText = (c: CheckoutPickerCoupon) => {
     if (c.discountType === "shipping") return c.condition > 0 ? `满 RM ${c.condition} 免/减运费` : "无门槛运费券";
@@ -85,7 +92,7 @@ function CouponListBody({
               amountPrefix={amountPrefix}
               amount={amount}
               minSpendText={getMinSpendText(coupon)}
-              expireText={coupon.expire}
+              expireText={formatCouponExpireText(coupon.expire)}
               selected={isSelected}
               disabled={!usable}
               onClick={() => {

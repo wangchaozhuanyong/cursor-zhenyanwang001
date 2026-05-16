@@ -309,13 +309,16 @@ async function getHomeProducts() {
 
 async function loadHomeProducts() {
   const limit = 8;
-  const [hotManual, newArrivals, recommendedManual, fallbackBySales, fallbackByRecommend] = await Promise.all([
-    repo.selectActiveProductsByFlag('is_hot', limit),
-    repo.selectActiveProductsByFlag('is_new', limit),
-    repo.selectActiveProductsByFlag('is_recommended', limit),
-    repo.selectActiveProductsFallback('sales_count DESC, sort_order ASC, created_at DESC', 64),
-    repo.selectActiveProductsFallback('is_recommended DESC, sales_count DESC, sort_order ASC, created_at DESC', 64),
-  ]);
+  const [hotManual, newArrivals, recommendedManual, fallbackBySales, fallbackByRecommend, fallbackByNew] =
+    await Promise.all([
+      repo.selectActiveProductsByFlag('is_hot', limit),
+      repo.selectActiveProductsByFlag('is_new', limit),
+      repo.selectActiveProductsByFlag('is_recommended', limit),
+      repo.selectActiveProductsFallback('sales_count DESC, sort_order ASC, created_at DESC', 64),
+      repo.selectActiveProductsFallback('is_recommended DESC, sales_count DESC, sort_order ASC, created_at DESC', 64),
+      // 无 is_new 标记、或新品已在热销区展示时，用最近上架商品补足
+      repo.selectActiveProductsFallback('created_at DESC, sort_order ASC, id DESC', 64),
+    ]);
 
   const pickUnique = (primary, fallback, target, excludeIds = new Set()) => {
     const out = [];
@@ -337,7 +340,7 @@ async function loadHomeProducts() {
 
   const hot = pickUnique(hotManual, fallbackBySales, limit);
   const hotIdSet = new Set(hot.map((p) => p.id));
-  const newArrivalsUnique = pickUnique(newArrivals, [], limit, hotIdSet);
+  const newArrivalsUnique = pickUnique(newArrivals, fallbackByNew, limit, hotIdSet);
   const homeUsedIdSet = new Set([...hot, ...newArrivalsUnique].map((p) => p.id));
   const recommended = pickUnique(recommendedManual, fallbackByRecommend, limit, homeUsedIdSet);
 

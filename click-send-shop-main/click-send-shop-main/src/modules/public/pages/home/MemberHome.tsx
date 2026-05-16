@@ -159,7 +159,6 @@ export default function MemberHome() {
                     minSpendText={display.minSpendText}
                     expireText={display.expireText}
                     scopeText={display.scopeText}
-                    badge={display.badge}
                     actionLabel={isClaimed ? "去使用" : "立即领取"}
                     actionLoading={!isClaimed && claimingCouponId === c.id}
                     actionDisabled={!isClaimed && claimingCouponId === c.id}

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ProgressiveImage } from "@/modules/micro-interactions";
 import { PRODUCT_BLUR_PLACEHOLDER } from "@/constants/productBlurPlaceholder";
 import { useHomeTrackingSessionId } from "@/hooks/useHomeTrackingSessionId";
@@ -54,7 +54,49 @@ export default function NewArrivalOpsSection({
   const exposedProductIdsRef = useRef<Set<string>>(new Set());
   const touchStartXRef = useRef(0);
 
-  const items = useMemo(() => products.slice(0, NEW_ARRIVAL_OPS_MAX), [products]);
+  const [fallbackProducts, setFallbackProducts] = useState<Product[]>([]);
+  const [fallbackLoading, setFallbackLoading] = useState(false);
+
+  useEffect(() => {
+    if (loading || products.length > 0) {
+      if (products.length > 0) setFallbackProducts([]);
+      setFallbackLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setFallbackLoading(true);
+    (async () => {
+      try {
+        const tagged = await productService.fetchProducts({
+          is_new: true,
+          page: 1,
+          pageSize: NEW_ARRIVAL_OPS_MAX,
+          sort: "newest",
+        });
+        if (cancelled) return;
+        if (tagged.list.length > 0) {
+          setFallbackProducts(tagged.list);
+          return;
+        }
+        const recent = await productService.fetchProducts({
+          page: 1,
+          pageSize: NEW_ARRIVAL_OPS_MAX,
+          sort: "newest",
+        });
+        if (!cancelled) setFallbackProducts(recent.list);
+      } catch {
+        if (!cancelled) setFallbackProducts([]);
+      } finally {
+        if (!cancelled) setFallbackLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, products.length]);
+
+  const displayProducts = products.length > 0 ? products : fallbackProducts;
+  const items = useMemo(() => displayProducts.slice(0, NEW_ARRIVAL_OPS_MAX), [displayProducts]);
   const [index, setIndex] = useState(0);
   const active = items.length > 0 ? items[index] : null;
 
@@ -74,10 +116,12 @@ export default function NewArrivalOpsSection({
   );
 
   const handleProductTouchStart = (e: React.TouchEvent) => {
+    if ((e.target as HTMLElement).closest("[data-new-arrival-product]")) return;
     touchStartXRef.current = e.touches[0].clientX;
   };
 
   const handleProductTouchEnd = (e: React.TouchEvent) => {
+    if ((e.target as HTMLElement).closest("[data-new-arrival-product]")) return;
     const diff = touchStartXRef.current - e.changedTouches[0].clientX;
     if (Math.abs(diff) < 50) return;
     shiftProduct(diff > 0 ? 1 : -1);
@@ -100,14 +144,6 @@ export default function NewArrivalOpsSection({
     trackClick("new_arrivals_page");
     navigate("/new-arrivals");
   }, [navigate, trackClick]);
-
-  const goProduct = useCallback(
-    (product: Product, itemIndex: number) => {
-      trackClick("product", product.id, itemIndex);
-      navigate(`/product/${product.id}`);
-    },
-    [navigate, trackClick],
-  );
 
   const onHeroCta = useCallback(() => {
     trackClick("hero_cta");
@@ -146,7 +182,7 @@ export default function NewArrivalOpsSection({
         ? "rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_35%,var(--theme-border))] theme-shadow"
         : "rounded-2xl border border-[var(--theme-border)] theme-shadow";
 
-  if (loading) {
+  if (loading || fallbackLoading) {
     return (
       <section className={cn("mt-section", className)} data-theme-home-layout={themeConfig.homeLayout}>
         <SectionHeader onMore={goListPage} />
@@ -193,16 +229,18 @@ export default function NewArrivalOpsSection({
         <HeroBackdrop heroImage={heroImage} brandTint={brandTint} />
         <HeroImageOverlay />
 
-        <div className="relative flex h-full flex-col justify-between p-4 md:p-5">
+        <div className="relative z-10 flex h-full flex-col justify-between p-4 md:p-5">
           <HeroCopyPanel copy={copy} onCta={onHeroCta} />
 
           <div className="flex justify-end">
             <div className="w-[38%] max-w-[9.5rem] shrink-0 md:max-w-[11rem]">
-              <button
-                type="button"
-                onClick={() => active && goProduct(active, index)}
+              {active ? (
+              <Link
+                to={`/product/${active.id}`}
+                data-new-arrival-product
+                onClick={() => trackClick("product", active.id, index)}
                 className="flex w-full flex-col overflow-hidden rounded-xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_92%,transparent)] text-left shadow-sm backdrop-blur-md transition hover:bg-[color-mix(in_srgb,var(--theme-surface)_98%,transparent)]"
-                aria-label={active ? `查看 ${active.name}` : "查看新品"}
+                aria-label={`查看 ${active.name}`}
               >
                 <div className="relative aspect-square w-full overflow-hidden bg-[var(--theme-bg)]">
                   <AnimatePresence mode="wait">
@@ -235,7 +273,8 @@ export default function NewArrivalOpsSection({
                   </p>
                   <p className="mt-0.5 text-sm font-black text-[var(--theme-price)]">RM {active?.price}</p>
                 </div>
-              </button>
+              </Link>
+              ) : null}
 
               {items.length > 1 ? (
                 <div className="mt-2 flex items-center justify-center gap-1.5">
@@ -353,11 +392,17 @@ function HeroCopyPanel({
 
 function HeroBackdrop({ heroImage, brandTint }: { heroImage: string; brandTint: string }) {
   if (heroImage) {
-    return <img src={heroImage} alt="" className="absolute inset-0 h-full w-full object-cover" />;
+    return (
+      <img
+        src={heroImage}
+        alt=""
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+      />
+    );
   }
   return (
     <div
-      className="absolute inset-0"
+      className="pointer-events-none absolute inset-0"
       style={{
         background: `linear-gradient(135deg, color-mix(in srgb, ${brandTint} 72%, black), var(--theme-surface))`,
       }}

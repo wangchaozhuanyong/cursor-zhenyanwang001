@@ -8,6 +8,17 @@ set -euo pipefail
 # Optional:
 #   CF_PURGE_MODE - everything|urls (default everything)
 #   CF_PURGE_URLS - newline/comma separated URLs when mode=urls
+#   CF_ENV_FILE   - defaults to PROJECT_DIR/server/.env when present
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="${PROJECT_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
+CF_ENV_FILE="${CF_ENV_FILE:-$PROJECT_DIR/server/.env}"
+if [[ -f "$CF_ENV_FILE" ]]; then
+  # shellcheck disable=SC1090
+  set -a
+  source "$CF_ENV_FILE"
+  set +a
+fi
 
 CF_PURGE_MODE="${CF_PURGE_MODE:-everything}"
 

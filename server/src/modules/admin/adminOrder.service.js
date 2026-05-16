@@ -11,26 +11,47 @@ const { BusinessError, NotFoundError, ValidationError } = require('../../errors'
 const { logAdminAction } = require('../../utils/adminAudit');
 const { rowsToCsv } = require('../../utils/csv');
 const userModule = require('../user');
+const orderModule = require('../order');
 const { getResolvedTriggerCopy } = require('./notificationTriggerSettings.service');
-const {
-  assertFulfillmentTransition,
-  assertPaymentTransition,
-  paymentStatusAfterFulfillmentChange,
-  canShip,
-} = require('../order/orderStateMachine');
-const logisticsService = require('../logistics/logistics.service');
+const logisticsModule = require('../logistics');
 const repo = require('./adminOrder.repository');
-const checkoutAbandonmentRepo = require('../order/checkoutAbandonment.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
 const { ORDER_STATUS, PAYMENT_STATUS, ORDER_STATUS_LIST } = require('../../constants/status');
-const myinvoisService = require('../myinvois/myinvois.service');
+const myinvoisModule = require('../myinvois');
 
 const userApi = /** @type {any} */ (userModule).api || {};
+const orderApi = /** @type {any} */ (orderModule).api || {};
+const logisticsApi = /** @type {any} */ (logisticsModule).api || {};
+const myinvoisApi = /** @type {any} */ (myinvoisModule).api || {};
 
 function requireUserApi(name) {
   const fn = userApi[name];
   if (typeof fn !== 'function') {
     throw new Error(`User 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
+
+function requireLogisticsApi(name) {
+  const fn = logisticsApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Logistics 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
+
+function requireMyinvoisApi(name) {
+  const fn = myinvoisApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`MyInvois 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
+
+function requireOrderApi(name) {
+  const fn = orderApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Order 模块 API 未暴露方法: ${name}`);
   }
   return fn;
 }
@@ -103,7 +124,7 @@ async function getOrderById(orderId) {
   if (!order) throw new NotFoundError('订单不存在');
   const items = await repo.selectOrderItemsWithProduct(repo.getPool(), order.id);
   attachItemsAndAmounts(order, items);
-  await logisticsService.attachTracking(order);
+  await requireLogisticsApi('attachTracking')(order);
   return { data: order };
 }
 
@@ -124,12 +145,12 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
   };
 
   try {
-    assertFulfillmentTransition(orderRow.status, status);
+    requireOrderApi('assertFulfillmentTransition')(orderRow.status, status);
 
     const prevPay = orderRow.payment_status || PAYMENT_STATUS.PENDING;
-    const newPayment = paymentStatusAfterFulfillmentChange(orderRow.status, status, prevPay);
+    const newPayment = requireOrderApi('paymentStatusAfterFulfillmentChange')(orderRow.status, status, prevPay);
     if (newPayment !== prevPay) {
-      assertPaymentTransition(prevPay, newPayment);
+      requireOrderApi('assertPaymentTransition')(prevPay, newPayment);
     }
 
     const conn = await repo.getConnection();
@@ -137,9 +158,9 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
       await conn.beginTransaction();
       await repo.updateOrderStatusAndPayment(conn, orderId, status, newPayment);
       if (newPayment === PAYMENT_STATUS.PAID) {
-        await checkoutAbandonmentRepo.markPaidByOrderId(conn, orderId);
+        await requireOrderApi('markCheckoutAbandonmentPaidByOrderId')(conn, orderId);
       } else if (status === ORDER_STATUS.CANCELLED) {
-        await checkoutAbandonmentRepo.markClosedByOrderId(conn, orderId);
+        await requireOrderApi('markCheckoutAbandonmentClosedByOrderId')(conn, orderId);
       }
       if (status === ORDER_STATUS.SHIPPED) {
         await repo.touchOrderShippedAtIfNull(conn, orderId);
@@ -252,14 +273,14 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
     });
     if (newPayment === PAYMENT_STATUS.PAID && prevPay !== PAYMENT_STATUS.PAID) {
       try {
-        await myinvoisService.enqueueOrderInvoiceIfEnabled(orderId, 'admin_order_status_paid');
+        await requireMyinvoisApi('enqueueOrderInvoiceIfEnabled')(orderId, 'admin_order_status_paid');
       } catch (e) {
         console.error('[MyInvois] enqueue invoice after order status update failed:', e?.message || e);
       }
     }
     if (status === ORDER_STATUS.REFUNDED) {
       try {
-        await myinvoisService.enqueueRefundCreditNoteIfEnabled({ orderId }, 'admin_order_refunded');
+        await requireMyinvoisApi('enqueueRefundCreditNoteIfEnabled')({ orderId }, 'admin_order_refunded');
       } catch (e) {
         console.error('[MyInvois] enqueue credit note after order refund failed:', e?.message || e);
       }
@@ -294,7 +315,7 @@ async function shipOrder(orderId, body, adminUserId, req) {
 
   try {
     if (!order) throw new NotFoundError('订单不存在');
-    if (!canShip(order)) {
+    if (!requireOrderApi('canShip')(order)) {
         throw new BusinessError(
           400,
           `当前履约/支付状态无法发货（需履约“已付款”且支付“已支付”），当前：履约=${order.status} 支付=${order.payment_status || PAYMENT_STATUS.PENDING}`,
@@ -304,7 +325,7 @@ async function shipOrder(orderId, body, adminUserId, req) {
     const trackingNo = body.trackingNo || body.tracking_no || '';
     const carrier = body.carrier || '';
     await repo.updateOrderShipped(orderId, trackingNo, carrier);
-    await logisticsService.refreshOrderTrackingQuietly(orderId);
+    await requireLogisticsApi('refreshOrderTrackingQuietly')(orderId);
 
     const shipCopy = await getResolvedTriggerCopy('order_ship', {
       order_no: order.order_no,

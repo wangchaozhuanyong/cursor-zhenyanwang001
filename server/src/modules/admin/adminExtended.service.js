@@ -1,16 +1,18 @@
 const { generateId, parseProductImages } = require('../../utils/helpers');
 const repo = require('./adminExtended.repository');
 const productModule = require('../product');
+const orderModule = require('../order');
 const { writeAuditLog } = require('../../utils/auditLog');
-const { assertReturnTransition } = require('../order/returnStateMachine');
 const { ORDER_STATUS, RETURN_STATUS } = require('../../constants/status');
 const { getResolvedTriggerCopy } = require('./notificationTriggerSettings.service');
 const userModule = require('../user');
-const myinvoisService = require('../myinvois/myinvois.service');
+const myinvoisModule = require('../myinvois');
 const { normalizeKnownMojibakeText } = require('../../utils/textNormalize');
 
 const userApi = /** @type {any} */ (userModule).api || {};
 const productApi = /** @type {any} */ (productModule).api || {};
+const myinvoisApi = /** @type {any} */ (myinvoisModule).api || {};
+const orderApi = /** @type {any} */ (orderModule).api || {};
 
 const COLOR_PRESETS = {
   红色: { bg_color: '#FEE2E2', text_color: '#B91C1C' },
@@ -60,6 +62,22 @@ function requireProductApi(name) {
   return fn;
 }
 
+function requireMyinvoisApi(name) {
+  const fn = myinvoisApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`MyInvois 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
+
+function requireOrderApi(name) {
+  const fn = orderApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Order 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
+
 function buildReturnListWhere(query) {
   let where = 'WHERE 1=1';
   const params = [];
@@ -95,7 +113,7 @@ async function updateReturnStatus(id, body, adminUserId, req) {
   if (!current) return { error: { code: 404, message: '售后单不存在' } };
 
   try {
-    assertReturnTransition(current.status, status);
+    requireOrderApi('assertReturnTransition')(current.status, status);
   } catch (err) {
     await writeAuditLog({ req, operatorId: adminUserId, actionType: 'return.status_update', objectType: 'return_request', objectId: id, summary: '售后状态更新被拦截', before: { status: current.status }, result: 'failure', errorMessage: err.message });
     return { error: { code: 400, message: err.message } };
@@ -280,7 +298,7 @@ async function approveReturn(id, body, adminUserId, req) {
       result: 'success',
     });
     try {
-      await myinvoisService.enqueueRefundCreditNoteIfEnabled({
+      await requireMyinvoisApi('enqueueRefundCreditNoteIfEnabled')({
         returnId: id,
         refundAmount: refund_amount,
       }, 'return_approved');

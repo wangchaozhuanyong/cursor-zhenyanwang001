@@ -13,15 +13,24 @@ const malaysiaLocalProvider = require('./providers/malaysiaLocalProvider');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { getResolvedTriggerCopy } = require('../../admin/notificationTriggerApi');
-const myinvoisService = require('../../myinvois/myinvois.service');
+const myinvoisModule = require('../../myinvois');
 const payDb = payRepo.getPool();
 
 const userApi = /** @type {any} */ (userModule).api || {};
+const myinvoisApi = /** @type {any} */ (myinvoisModule).api || {};
 
 function requireUserApi(name) {
   const fn = userApi[name];
   if (typeof fn !== 'function') {
     throw new Error(`User 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
+
+function requireMyinvoisApi(name) {
+  const fn = myinvoisApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`MyInvois 模块 API 未暴露方法: ${name}`);
   }
   return fn;
 }
@@ -203,7 +212,7 @@ async function payWithRewardWallet(userId, orderId) {
 
     await conn.commit();
     try {
-      await myinvoisService.enqueueOrderInvoiceIfEnabled(lockedOrder.id, 'reward_wallet_paid');
+      await requireMyinvoisApi('enqueueOrderInvoiceIfEnabled')(lockedOrder.id, 'reward_wallet_paid');
     } catch (e) {
       console.error('[MyInvois] enqueue invoice after reward wallet payment failed:', e?.message || e);
     }
@@ -737,7 +746,7 @@ async function markOrderPaidByAdmin(req, orderId, body) {
 
     await conn.commit();
     try {
-      await myinvoisService.enqueueOrderInvoiceIfEnabled(order.id, 'admin_mark_paid');
+        await requireMyinvoisApi('enqueueOrderInvoiceIfEnabled')(order.id, 'admin_mark_paid');
     } catch (e) {
       console.error('[MyInvois] enqueue invoice after admin mark-paid failed:', e?.message || e);
     }
@@ -830,7 +839,7 @@ async function recordRefundByAdmin(req, orderId, body) {
       result: 'success',
     });
     try {
-      await myinvoisService.enqueueRefundCreditNoteIfEnabled({ orderId: order.id }, 'payment_refund_recorded');
+      await requireMyinvoisApi('enqueueRefundCreditNoteIfEnabled')({ orderId: order.id }, 'payment_refund_recorded');
     } catch (e) {
       console.error('[MyInvois] enqueue credit note after refund record failed:', e?.message || e);
     }
@@ -1053,7 +1062,7 @@ async function handleMalaysiaLocalWebhook(provider, body, headers = {}) {
     await conn.commit();
     if (shouldQueueMyInvoisInvoice) {
       try {
-        await myinvoisService.enqueueOrderInvoiceIfEnabled(order.id, 'malaysia_local_paid');
+        await requireMyinvoisApi('enqueueOrderInvoiceIfEnabled')(order.id, 'malaysia_local_paid');
       } catch (e) {
         console.error('[MyInvois] enqueue invoice after local payment failed:', e?.message || e);
       }

@@ -3,12 +3,30 @@ const repo = require('./order.repository');
 const checkoutAbandonmentRepo = require('./checkoutAbandonment.repository');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
 const paymentsService = require('./payments/payments.service');
-const { getResolvedTriggerCopy } = require('../admin/notificationTriggerApi');
+const adminModule = require('../admin');
 const userModule = require('../user');
-const myinvoisService = require('../myinvois/myinvois.service');
+const myinvoisModule = require('../myinvois');
 
 const orderDb = repo.getPool();
 const userApi = /** @type {any} */ (userModule).api || {};
+const adminApi = /** @type {any} */ (adminModule).api || {};
+const myinvoisApi = /** @type {any} */ (myinvoisModule).api || {};
+
+function requireAdminApi(name) {
+  const fn = adminApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Admin 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
+
+function requireMyinvoisApi(name) {
+  const fn = myinvoisApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`MyInvois 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
 
 async function refreshMemberLevel(q, userId) {
   if (typeof userApi.refreshUserMemberLevel !== 'function') return;
@@ -117,7 +135,7 @@ async function handleStripeEvent(event) {
     console.error('[stripe webhook] increment sales_count failed:', err?.message || err);
   }
 
-  const payCopy = await getResolvedTriggerCopy('stripe_payment_success', { order_no: order.order_no });
+  const payCopy = await requireAdminApi('getResolvedTriggerCopy')('stripe_payment_success', { order_no: order.order_no });
   if (payCopy) {
     await repo.insertNotification(orderDb, {
       id: generateId(),
@@ -128,7 +146,7 @@ async function handleStripeEvent(event) {
     });
   }
   try {
-    await myinvoisService.enqueueOrderInvoiceIfEnabled(orderId, 'stripe_payment_success');
+    await requireMyinvoisApi('enqueueOrderInvoiceIfEnabled')(orderId, 'stripe_payment_success');
   } catch (err) {
     console.error('[MyInvois] enqueue invoice after Stripe payment failed:', err?.message || err);
   }

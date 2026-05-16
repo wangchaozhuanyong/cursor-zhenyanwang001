@@ -35,6 +35,7 @@ router.use('/theme', require('./theme.routes'));
   insertUserNotification: notificationService.insertUserNotification,
   refreshUserMemberLevel: memberLevelService.refreshUserMemberLevel,
   getUserMemberLevel: memberLevelService.getUserMemberLevel,
+  normalizeMemberLevel: memberLevelService.normalizeLevel,
   syncStatsAfterOrderPaid: UserStatsService.syncStatsAfterOrderPaid,
   syncStatsAfterRefund: UserStatsService.syncStatsAfterRefund,
   syncStatsAfterOrderCancelled: UserStatsService.syncStatsAfterOrderCancelled,

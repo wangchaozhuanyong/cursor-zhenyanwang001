@@ -4,6 +4,7 @@ const requirePermission = adminAuth.requirePermission;
 const { validate } = require('../../middleware/validate');
 const ctrl = require('./myinvois.controller');
 const schemas = require('./myinvois.schemas');
+const myinvoisService = require('./myinvois.service');
 
 const router = Router();
 
@@ -57,5 +58,12 @@ router.post(
   validate({ body: schemas.reconciliationBodySchema }),
   ctrl.createReconciliation,
 );
+
+/** @type {any} */ (router).api = {
+  enqueueOrderInvoiceIfEnabled: myinvoisService.enqueueOrderInvoiceIfEnabled,
+  enqueueRefundCreditNoteIfEnabled: myinvoisService.enqueueRefundCreditNoteIfEnabled,
+  processPendingBatch: myinvoisService.processPendingBatch,
+  startMyInvoisRetryScheduler: myinvoisService.startMyInvoisRetryScheduler,
+};
 
 module.exports = router;

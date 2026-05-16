@@ -13,16 +13,25 @@ const checkoutAbandonmentRepo = require('./checkoutAbandonment.repository');
 const siteSettingsRepo = require('./siteSettings.repository');
 const sstTax = require('./sstTax');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
-const logisticsService = require('../logistics/logistics.service');
+const logisticsModule = require('../logistics');
 const orderDb = repo.getPool();
 const userApi = /** @type {any} */ (userModule).api || {};
 const paymentsApi = /** @type {any} */ (paymentsModule).api || {};
+const logisticsApi = /** @type {any} */ (logisticsModule).api || {};
 
 function requireApiMethod(api, name) {
   if (typeof api[name] !== 'function') {
     throw new Error(`模块 API 未暴露方法: ${name}`);
   }
   return api[name];
+}
+
+function requireLogisticsApi(name) {
+  const fn = logisticsApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Logistics 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
 }
 
 function calculateCouponDiscount(coupon, rawAmount, shippingFee) {
@@ -454,7 +463,7 @@ async function getOrderById(userId, orderId) {
   if (!order) throw new NotFoundError('订单不存在');
   const items = await repo.selectOrderItems(orderDb, order.id);
   const data = formatOrder(order, items.map(formatOrderItem));
-  await logisticsService.attachTracking(data);
+  await requireLogisticsApi('attachTracking')(data);
   return { data };
 }
 

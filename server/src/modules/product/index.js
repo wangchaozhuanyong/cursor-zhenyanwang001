@@ -3,6 +3,8 @@
  */
 const { Router } = require('express');
 const catalogService = require('./catalog.service');
+const tagAssignmentRepo = require('./productTagAssignment.repository');
+const lifecycle = require('./productLifecycle');
 
 const router = Router();
 
@@ -14,6 +16,13 @@ router.use('/content', require('./content.routes'));
 
 /** @type {any} */ (router).api = {
   clearCatalogCache: catalogService.clearCatalogCache,
+  selectTagsByProductIds: tagAssignmentRepo.selectTagsByProductIds,
+  replaceTagAssignments: tagAssignmentRepo.replaceAssignments,
+  LIFECYCLE: lifecycle.LIFECYCLE,
+  lifecycleFromBody: lifecycle.lifecycleFromBody,
+  lifecycleFromFilter: lifecycle.lifecycleFromFilter,
+  statusVarcharFromLifecycle: lifecycle.statusVarcharFromLifecycle,
+  normalizeLifecycleFromRow: lifecycle.normalizeLifecycleFromRow,
 };
 
 module.exports = router;

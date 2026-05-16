@@ -6,15 +6,23 @@ const { buildSearchKeywords, normalizeSearchKeyword } = require('../../utils/sea
 const repo = require('./adminProduct.repository');
 const variantRepo = require('./adminProductVariant.repository');
 const inventoryRepo = require('./adminInventory.repository');
-const tagAssignmentRepo = require('../product/productTagAssignment.repository');
+const productModule = require('../product');
 const { writeAuditLog } = require('../../utils/auditLog');
-const {
-  LIFECYCLE,
-  lifecycleFromBody,
-  lifecycleFromFilter,
-  statusVarcharFromLifecycle,
-  normalizeLifecycleFromRow,
-} = require('../product/productLifecycle');
+const productApi = /** @type {any} */ (productModule).api || {};
+
+function requireProductApi(name) {
+  const fn = productApi[name];
+  if (typeof fn === 'undefined') {
+    throw new Error(`Product 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
+
+const LIFECYCLE = requireProductApi('LIFECYCLE');
+const lifecycleFromBody = requireProductApi('lifecycleFromBody');
+const lifecycleFromFilter = requireProductApi('lifecycleFromFilter');
+const statusVarcharFromLifecycle = requireProductApi('statusVarcharFromLifecycle');
+const normalizeLifecycleFromRow = requireProductApi('normalizeLifecycleFromRow');
 
 function buildListWhere(query) {
   let where = 'WHERE deleted_at IS NULL';
@@ -110,7 +118,7 @@ function normalizeVariantPayloadForDb(variants, genId, mainPrice, mainStock) {
 async function attachTagsToProducts(rows) {
   if (!rows.length) return [];
   try {
-    const map = await tagAssignmentRepo.selectTagsByProductIds(rows.map((r) => r.id));
+    const map = await requireProductApi('selectTagsByProductIds')(rows.map((r) => r.id));
     return rows.map((r) => ({ ...formatProduct(r), tags: map.get(r.id) || [] }));
   } catch (e) {
     console.error('[adminProduct] attachTagsToProducts failed (listing without tags):', e.code || e.message);
@@ -151,7 +159,7 @@ async function getProductById(id) {
   const row = await repo.selectProductById(id);
   if (!row) throw new BusinessError(404, '商品不存在');
   const variants = await variantRepo.selectVariantsByProductId(id);
-  const tagMap = await tagAssignmentRepo.selectTagsByProductIds([id]);
+  const tagMap = await requireProductApi('selectTagsByProductIds')([id]);
   return {
     data: {
       ...formatProduct(row),
@@ -239,10 +247,10 @@ async function createProduct(body, adminUserId, req) {
         conn.release();
       }
     }
-    await tagAssignmentRepo.replaceAssignments(id, Array.isArray(tagIdsBody) ? tagIdsBody : []);
+    await requireProductApi('replaceTagAssignments')(id, Array.isArray(tagIdsBody) ? tagIdsBody : []);
     const row = await repo.selectProductById(id);
     const vrows = await variantRepo.selectVariantsByProductId(id);
-    const tagMap = await tagAssignmentRepo.selectTagsByProductIds([id]);
+    const tagMap = await requireProductApi('selectTagsByProductIds')([id]);
     await repo.updateProductDynamic(
       ['search_keywords = ?'],
       [buildProductSearchKeywordsFromPayload(row, vrows, tagMap.get(id) || [])],
@@ -349,11 +357,11 @@ async function updateProduct(id, body, adminUserId, req) {
       );
     }
     if (hasTagUpdate) {
-      await tagAssignmentRepo.replaceAssignments(id, Array.isArray(body.tag_ids) ? body.tag_ids : []);
+      await requireProductApi('replaceTagAssignments')(id, Array.isArray(body.tag_ids) ? body.tag_ids : []);
     }
     const row = await repo.selectProductById(id);
     const vrows = await variantRepo.selectVariantsByProductId(id);
-    const tagMap = await tagAssignmentRepo.selectTagsByProductIds([id]);
+    const tagMap = await requireProductApi('selectTagsByProductIds')([id]);
     await repo.updateProductDynamic(
       ['search_keywords = ?'],
       [buildProductSearchKeywordsFromPayload(row, vrows, tagMap.get(id) || [])],
@@ -400,9 +408,9 @@ async function updateProductTags(id, tagIds, adminUserId, req) {
   const row = await repo.selectProductById(id);
   if (!row) return { error: { code: 404, message: '商品不存在' } };
   if (!Array.isArray(tagIds)) return { error: { code: 400, message: 'tag_ids 必须是数组' } };
-  await tagAssignmentRepo.replaceAssignments(id, tagIds);
+  await requireProductApi('replaceTagAssignments')(id, tagIds);
   const vrows = await variantRepo.selectVariantsByProductId(id);
-  const tagMap = await tagAssignmentRepo.selectTagsByProductIds([id]);
+  const tagMap = await requireProductApi('selectTagsByProductIds')([id]);
   await repo.updateProductDynamic(
     ['search_keywords = ?'],
     [buildProductSearchKeywordsFromPayload(row, vrows, tagMap.get(id) || [])],
@@ -447,7 +455,7 @@ async function patchProductLifecycle(id, lifecycleStatus, adminUserId, req) {
     result: 'success',
   });
   const vrows = await variantRepo.selectVariantsByProductId(id);
-  const tagMap = await tagAssignmentRepo.selectTagsByProductIds([id]);
+  const tagMap = await requireProductApi('selectTagsByProductIds')([id]);
   return {
     data: { ...formatProduct(row), variants: vrows.map(formatVariantRow), tags: tagMap.get(id) || [] },
     message: '状态已更新',

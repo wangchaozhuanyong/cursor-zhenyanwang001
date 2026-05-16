@@ -2,9 +2,18 @@ const { generateId } = require('../../utils/helpers');
 const { BusinessError, NotFoundError, ValidationError } = require('../../errors');
 const { writeAuditLog } = require('../../utils/auditLog');
 const repo = require('./adminMemberLevel.repository');
-const memberLevelService = require('../user/memberLevel.service');
+const userModule = require('../user');
 
 const pool = repo.getPool();
+const userApi = /** @type {any} */ (userModule).api || {};
+
+function requireUserApi(name) {
+  const fn = userApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`User 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
 
 function toNumber(value, fieldName) {
   const n = Number(value ?? 0);
@@ -28,7 +37,7 @@ function normalizeInput(body) {
 
 async function listLevels() {
   const rows = await repo.selectLevels(pool);
-  return rows.map(memberLevelService.normalizeLevel);
+  return rows.map(requireUserApi('normalizeMemberLevel'));
 }
 
 async function createLevel(req, body) {

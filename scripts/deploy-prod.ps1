@@ -63,15 +63,7 @@ if (-not $Force) {
 
 Run-Step "Push $ReleaseBranch" "git push origin $ReleaseBranch" $RepoRoot
 
-$RemoteCmd = @"
-set -e
-export PROJECT_DIR='$RemoteProjectDir'
-export PM2_APP='gc-api'
-export GIT_BRANCH='$ReleaseBranch'
-export AUTO_ROLLBACK='1'
-cd '$RemoteProjectDir'
-bash deploy/release-deploy.sh
-"@
+$RemoteCmd = "set -e; export PROJECT_DIR='$RemoteProjectDir'; export PM2_APP='gc-api'; export GIT_BRANCH='$ReleaseBranch'; export AUTO_ROLLBACK='1'; cd '$RemoteProjectDir'; bash deploy/release-deploy.sh"
 
 Run-Step "Remote deploy on $ServerIp" "ssh -o StrictHostKeyChecking=accept-new -i `"$SshKeyPath`" $ServerUser@$ServerIp `"$RemoteCmd`""
 

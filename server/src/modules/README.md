@@ -1,89 +1,70 @@
-# `server/src/modules` — 模块化单体（7 个业务域）
+﻿# server/src/modules 架构说明（模块化单体 + 分层）
 
-所有 HTTP 接口由 `routes/index.js` 挂载到 **`/api`** 前缀之下（`app.js`：`app.use('/api', routes)`）。
-管理端统一在 **`/api/admin/*`**；健康检查统一在 **`/api/health/live`**、**`/api/health/ready`**。
+本项目后端采用模块化单体（Modular Monolith），所有接口统一挂载在 `/api` 前缀下。
 
-## 业务模块一览
+## API 约定
 
-| 模块 | 路径前缀（相对 `/api`） | 说明 |
-|------|-------------------------|------|
-| **health** | `/health/*` | 存活 `/health/live`、就绪 `/health/ready` |
-| **auth** | `/auth/*` | 注册、登录、刷新令牌、登出 |
-| **user** | `/user`、`/favorites`、`/history`、`/addresses`、`/shipping`、`/notifications`、`/coupons`、`/points`、`/rewards`、`/invite`、`/upload` | 会员侧资料、扩展能力 |
-| **product** | `/banners`、`/products`、`/categories`、`/reviews`、`/content` | 商品与前台内容 |
-| **cart** | `/cart` | 购物车 |
-| **order** | `/orders`、`/payment`、`/returns` | 订单、支付、售后 |
-| **admin** | `/admin/*` | 后台管理（按子域拆 controller + service + repository + RBAC） |
+- 公共接口：`/api/*`
+- 管理后台接口：`/api/admin/*`
+- 健康检查：`/api/health/live`、`/api/health/ready`
 
-## 单模块内分层（强约束）
+## 当前模块（以代码现状为准）
 
-```
-modules/<domain>/
-├── *.routes.js            # 仅声明路由 + 中间件 + 校验 schema；不写业务规则
-├── controller/            # 仅取参 / 调用 service / 写响应；不写业务规则与 SQL
-│   └── *.controller.js
-├── *.service.js           # 业务规则与事务编排；不直接拼 SQL
-├── *.repository.js        # 仅数据访问；不做业务判断
-├── schemas/               # Zod 入参/查询/参数校验（按需）
-│   └── *.schemas.js
-└── index.js               # 把本模块路由挂到对应 /api/<前缀>
-```
+- `health`：健康检查
+- `auth`：认证与会话
+- `user`：用户资料、地址、收藏、积分、优惠券、邀请、主题配置
+- `product`：商品、分类、内容、前台展示数据
+- `cart`：购物车
+- `order`：订单与售后
+- `payment`：支付聚合入口、支付事件、支付渠道能力
+- `admin`：后台管理聚合（按子域拆分 controller/service/repository）
+- `search`：搜索与关键词
+- `analytics`：行为与统计事件
+- `privacy`：隐私与合规模块
+- `seo`：SEO 相关接口
+- `logistics`：物流能力
+- `myinvois`：电子发票能力
+- `notification`：通知能力
+- `theme`：主题相关（逐步与 user/theme 能力收敛）
 
-## 横切基础设施
+## 模块内分层约束
 
-- **统一错误体系**：`server/src/errors/` 提供 `AppError / ValidationError / AuthError /
-  ForbiddenError / NotFoundError / ConflictError / RateLimitError / ServiceUnavailableError`，
-  并保留 `BusinessError` 别名（向后兼容）。
-- **统一错误处理**：`server/src/middleware/errorHandler.js` 统一识别上述错误 + ZodError + Multer 错误，
-  返回稳定的 `{ code, message, data, traceId }`。
-- **统一参数校验**：`server/src/middleware/validate.js` 支持 `body / query / params` 三段，
-  失败抛 `ValidationError`，由 errorHandler 输出 400。
-- **统一鉴权**：`server/src/middleware/auth.js`（用户）与 `adminAuth.js`（管理员 + RBAC `requirePermission`）。
-- **统一响应**：`server/src/middleware/response.js`（注入 `res.success / res.fail / res.paginate / req.traceId`）。
+标准分层：`routes -> controller -> service -> repository`
 
-## 渐进 TypeScript
+- `routes`
+  - 仅路由绑定、中间件绑定、参数校验绑定
+  - 禁止业务逻辑
+  - 禁止 SQL
 
-- 已加 `tsconfig.json` + `tsx` 加载器；启动脚本走 `node -r tsx/cjs ...`，新文件可直接写 `.ts`。
-- `npm run typecheck` 跑 `tsc --noEmit`（当前入口为 `src/tsc-placeholder.ts`；业务仍以 `.js` 为准，避免与同名 `.js` 双份维护）。
+- `controller`
+  - 仅处理请求参数、调用 service、返回响应
+  - 禁止业务逻辑
+  - 禁止 SQL
+  - 禁止直接调用 repository
 
-## admin 子域文件结构
+- `service`
+  - 仅业务规则、状态流转、事务编排
+  - 禁止直接写 SQL（禁止 `pool.query` / `conn.query`）
+  - 禁止直接依赖 `config/db`
 
-```
-modules/admin/
-├── admin.routes.js                      # 路由聚合
-├── controller/                          # 19 个按域拆分的薄 controller
-│   ├── adminAuth.controller.js
-│   ├── adminDashboard.controller.js
-│   ├── adminProduct.controller.js
-│   ├── adminOrder.controller.js
-│   ├── adminUser.controller.js
-│   ├── adminCategory.controller.js
-│   ├── adminCoupon.controller.js
-│   ├── adminReturn.controller.js
-│   ├── adminReview.controller.js
-│   ├── adminBanner.controller.js
-│   ├── adminNotification.controller.js
-│   ├── adminInvite.controller.js
-│   ├── adminLog.controller.js
-│   ├── adminRbac.controller.js
-│   ├── adminShipping.controller.js
-│   ├── adminReport.controller.js
-│   ├── adminSettings.controller.js
-│   ├── adminExport.controller.js
-│   └── adminRecycleBin.controller.js
-├── adminAuth.service.js / adminAuth.repository.js（不存在）
-├── ...                                   # 与 controller 一一对应的 service + repository
-└── index.js
-```
+- `repository`
+  - 仅数据库访问（SQL、读写）
+  - 禁止业务规则判断
+  - 禁止 HTTP 响应结构
 
-## 依赖方向（防止回潮）
+## 跨模块依赖原则
 
-```
-routes  ──>  controller  ──>  service  ──>  repository  ──>  config/db
-                ▲                                  │
-                └─ middleware (auth / validate / errorHandler)
-```
+- 优先通过模块公开 API（例如 `module/index.js` 导出的 api）交互
+- 避免跨模块直接引用内部 repository
+- 禁止形成循环依赖
+- 若出现跨模块写操作，必须在 service 层显式编排
 
-- controller 不能 require `repository` 或 `config/db`。
-- service 不能 require `config/db`（仅事务编排可使用 `db.getConnection()`）。
-- repository 不做业务条件分支，仅 SQL + 行映射。
+## 重构原则
+
+- 只做结构重构，不改变业务功能
+- 不修改 API 路径
+- 不修改数据库字段
+- 不改变订单、库存、支付核心逻辑
+- 每次改动后执行：
+  - `cd server && npm run check:service-layer`
+  - `cd server && npm run typecheck`

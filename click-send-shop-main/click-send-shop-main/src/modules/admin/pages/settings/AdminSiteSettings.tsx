@@ -20,7 +20,6 @@ const EMPTY: SiteSettings = {
   siteSlogan: "",
   logoUrl: "",
   faviconUrl: "",
-  brandColor: "#caa45c",
   contactPhone: "",
   contactEmail: "",
   contactWhatsApp: "",
@@ -116,7 +115,6 @@ const SECTIONS: Section[] = [
       { key: "siteDescription", label: "站点描述", type: "textarea", rows: 2, placeholder: "用于首页 hero / SEO description 兜底" },
       { key: "logoUrl", label: "Logo (推荐 256×256，上传后统一转 WEBP)", type: "image", hint: "未配置时回退到打包内置 logo" },
       { key: "faviconUrl", label: "Favicon (推荐 32×32，上传后统一转 WEBP)", type: "image" },
-      { key: "brandColor", label: "品牌主色", type: "color", hint: "用于按钮/强调色（前端可逐步接入）" },
     ],
   },
   {

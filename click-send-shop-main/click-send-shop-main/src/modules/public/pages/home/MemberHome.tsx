@@ -1,5 +1,5 @@
-﻿import { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
-import { Flame, Gift, Heart, RefreshCw, Search, ShoppingCart, Star, Ticket, Truck, ShieldCheck, Wallet, ChevronRight } from "lucide-react";
+﻿import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { Flame, Gift, Heart, RefreshCw, Search, ShoppingCart, Star, Ticket, Truck, ShieldCheck, Wallet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
@@ -16,14 +16,13 @@ import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import BannerCarousel from "@/components/BannerCarousel";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
 import HomeOpsBlocks from "./HomeOpsBlocks";
-import * as productService from "@/services/productService";
+import NewArrivalOpsSection from "./NewArrivalOpsSection";
 import type { UserCoupon } from "@/types/coupon";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
-import type { Product } from "@/types/product";
 import { buildPersonalizedRecommendations } from "@/utils/personalizedRecommendations";
 import { isLoggedIn } from "@/utils/token";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -96,7 +95,6 @@ export default function MemberHome() {
     }
   }, [loadHistory, loadFavorites, loadCart, loadOrders]);
 
-  const newest = useMemo(() => newProducts.slice(0, 6), [newProducts]);
   const couponTop = useMemo(
     () =>
       coupons
@@ -106,35 +104,10 @@ export default function MemberHome() {
         .slice(0, 4),
     [coupons],
   );
-  const [newArrivalIndex, setNewArrivalIndex] = useState(0);
   const [hotBatchIndex, setHotBatchIndex] = useState(0);
   const [recBatchIndex, setRecBatchIndex] = useState(0);
-  const exposedProductIdsRef = useRef<Set<string>>(new Set());
   const HOT_BATCH_SIZE = 4;
   const REC_BATCH_SIZE = 4;
-
-  const trackingSessionId = useMemo(() => {
-    const key = "home_tracking_session_id";
-    const existing = localStorage.getItem(key);
-    if (existing) return existing;
-    const created = `s_${Math.random().toString(36).slice(2)}_${Date.now()}`;
-    localStorage.setItem(key, created);
-    return created;
-  }, []);
-
-  useEffect(() => {
-    if (newest.length <= 1) return;
-    const timer = window.setInterval(() => {
-      setNewArrivalIndex((prev) => (prev + 1) % newest.length);
-    }, 4200);
-    return () => window.clearInterval(timer);
-  }, [newest.length]);
-
-  useEffect(() => {
-    if (newArrivalIndex >= newest.length) {
-      setNewArrivalIndex(0);
-    }
-  }, [newArrivalIndex, newest.length]);
 
   const hotList = useMemo(() => hotProducts.slice(0, 16), [hotProducts]);
   const recList = useMemo(() => {
@@ -154,34 +127,6 @@ export default function MemberHome() {
   const recBatches = useMemo(() => toBatches(recList, REC_BATCH_SIZE), [recList]);
   const hot = hotBatches.length > 0 ? hotBatches[hotBatchIndex % hotBatches.length] : [];
   const rec = recBatches.length > 0 ? recBatches[recBatchIndex % recBatches.length] : [];
-  const activeNew = newest.length > 0 ? newest[newArrivalIndex] : null;
-  const trackNewArrivalClick = (target: "product" | "new_arrivals_page") => {
-    void productService.trackHomeEngagement({
-      module: "new_arrivals",
-      event: "click",
-      product_id: activeNew?.id,
-      session_id: trackingSessionId,
-      meta: { index: newArrivalIndex, target },
-    });
-  };
-
-  const goNewArrivalsPage = () => {
-    trackNewArrivalClick("new_arrivals_page");
-    navigate("/new-arrivals");
-  };
-
-  useEffect(() => {
-    if (!activeNew?.id) return;
-    if (exposedProductIdsRef.current.has(activeNew.id)) return;
-    exposedProductIdsRef.current.add(activeNew.id);
-    void productService.trackHomeEngagement({
-      module: "new_arrivals",
-      event: "impression",
-      product_id: activeNew.id,
-      session_id: trackingSessionId,
-      meta: { index: newArrivalIndex },
-    });
-  }, [activeNew?.id, newArrivalIndex, trackingSessionId]);
 
   return (
     <div className={`min-h-screen pb-24 text-[var(--theme-text)] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_90%,black)]" : "bg-[var(--theme-bg)]"}`} data-theme-home-layout={themeConfig.homeLayout}>
@@ -297,54 +242,19 @@ export default function MemberHome() {
             </div>
           ) : null}
         </section>
-        <section className="mt-section">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-base font-bold tracking-widest text-[var(--theme-text-on-surface)]">新品上市</h2>
-            <button type="button" onClick={goNewArrivalsPage} className="flex items-center gap-1 text-xs font-semibold text-[var(--theme-text-muted)]">
-              查看更多
-              <ChevronRight size={14} />
-            </button>
-          </div>
-          {newest.length > 0 ? (
-            <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1">
-              {newest.map((item, idx) => {
-                const image = resolveNewArrivalImage(item, idx);
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      setNewArrivalIndex(idx);
-                      void productService.trackHomeEngagement({
-                        module: "new_arrivals",
-                        event: "click",
-                        product_id: item.id,
-                        session_id: trackingSessionId,
-                        meta: { index: idx, target: "product" },
-                      });
-                      navigate(`/product/${item.id}`);
-                    }}
-                    className="flex h-[124px] w-[260px] shrink-0 snap-start gap-3 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-left theme-shadow"
-                  >
-                    <div className="relative h-[96px] w-[96px] shrink-0 overflow-hidden rounded-xl bg-[var(--theme-bg)]">
-                      {image ? <img src={image} alt={item.name} className="h-full w-full object-cover" /> : null}
-                      <span className="absolute left-1.5 top-1.5 rounded-full bg-[var(--theme-primary)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--theme-primary-foreground)]">新品</span>
-                    </div>
-                    <div className="min-w-0 flex flex-1 flex-col justify-center">
-                      <p className="line-clamp-2 text-sm font-semibold text-[var(--theme-text-on-surface)]">{item.name}</p>
-                      <p className="mt-2 text-base font-black text-[var(--theme-price)]">RM {item.price}</p>
-                      <span className="mt-1 text-[11px] text-[var(--theme-text-muted)]">查看商品</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-6 text-center text-sm text-[var(--theme-text-muted)]">
-              暂无新品上市
-            </div>
-          )}
-        </section>
+        <NewArrivalOpsSection
+          products={newProducts}
+          loading={homeLoading}
+          hero={{
+            image: siteInfo.newArrivalHeroImage,
+            title: siteInfo.newArrivalHeroTitle,
+            subtitle: siteInfo.newArrivalHeroSubtitle,
+            ctaText: siteInfo.newArrivalHeroCtaText,
+            brandColor: siteInfo.brandColor,
+            siteSlogan: siteInfo.siteSlogan,
+          }}
+          homeLayout={themeConfig.homeLayout}
+        />
         <section className="mt-section">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text-on-surface)]">
@@ -394,16 +304,6 @@ export default function MemberHome() {
       </main>
     </div>
   );
-}
-
-function resolveNewArrivalImage(product: Product | null, fallbackIndex: number): string {
-  if (!product) return "";
-  const images = Array.isArray(product.images) ? product.images.filter(Boolean) : [];
-  if (images.length > 0) {
-    return images[fallbackIndex % images.length];
-  }
-  if (product.cover_image) return product.cover_image;
-  return "";
 }
 
 function toBatches<T>(list: T[], size: number): T[][] {

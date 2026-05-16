@@ -6,7 +6,6 @@ const FALLBACK: SiteInfo = {
   siteName: "大马严选",
   siteDescription: "精选全球好物，品质生活购物平台",
   siteSlogan: "精选全球好物，品质生活",
-  brandColor: "#caa45c",
   contactPhone: "+60 12-345 6789",
   contactEmail: "support@example.com",
   contactWhatsApp: "60123456789",

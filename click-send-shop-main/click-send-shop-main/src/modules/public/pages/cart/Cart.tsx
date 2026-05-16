@@ -81,11 +81,6 @@ export default function Cart() {
       </header>
 
       <main className="mx-auto w-full max-w-screen-xl px-4 md:px-6 md:py-8">
-        {items.length > 0 && (
-          <div className="mb-3 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-xs text-[var(--theme-text-muted)]">
-            结算流程：地址 → 配送 → 支付 → 优惠券 → 确认
-          </div>
-        )}
         {/* 桌面端：左商品列表 / 右结算摘要 */}
         <div className="md:grid md:grid-cols-[1fr_360px] md:gap-8">
           <div>

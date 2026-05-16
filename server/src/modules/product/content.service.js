@@ -3,7 +3,7 @@ const homeOpsService = require('../admin/adminHomeOps.service');
 
 /**
  * 公开站点信息字段（供前端无鉴权读取）
- *  - 基础品牌：siteName / siteDescription / siteSlogan / logoUrl / faviconUrl / brandColor
+ *  - 基础品牌：siteName / siteDescription / siteSlogan / logoUrl / faviconUrl
  *  - 联系方式：contactPhone / contactEmail / contactWhatsApp / whatsappUrl / wechatId / address / businessHours
  *  - 社交：instagramUrl / facebookUrl / tiktokUrl / xhsUrl
  *  - 业务：currency / sstEnabled / sstRatePercent / sstLabel / sstCustomerNote
@@ -16,7 +16,7 @@ const homeOpsService = require('../admin/adminHomeOps.service');
  */
 const PUBLIC_SITE_KEYS = [
   // 基础品牌
-  'siteName', 'siteDescription', 'siteSlogan', 'logoUrl', 'faviconUrl', 'brandColor',
+  'siteName', 'siteDescription', 'siteSlogan', 'logoUrl', 'faviconUrl',
   // 联系方式
   'contactPhone', 'contactEmail', 'contactWhatsApp', 'whatsappUrl', 'wechatId',
   'address', 'businessHours',

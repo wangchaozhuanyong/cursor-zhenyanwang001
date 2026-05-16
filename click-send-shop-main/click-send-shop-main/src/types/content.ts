@@ -19,7 +19,6 @@ export interface SiteInfo {
   siteSlogan?: string;
   logoUrl?: string;
   faviconUrl?: string;
-  brandColor?: string;
 
   /* ─ 联系方式 ─ */
   contactPhone?: string;

@@ -11,6 +11,7 @@ import { useHomeBanners } from "@/hooks/useHomeBanners";
 import { useProductStore } from "@/stores/useProductStore";
 import GuestMobileFooter from "@/components/GuestMobileFooter";
 import HomeOpsBlocks from "./HomeOpsBlocks";
+import NewArrivalOpsSection from "./NewArrivalOpsSection";
 import type { Product } from "@/types/product";
 import type { FooterNavItem } from "@/types/content";
 import { ROUTES } from "@/constants/routes";
@@ -18,15 +19,10 @@ import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 
 const GUEST_HOME_GRID_MAX = 8;
 
-function mergeHomeProductsForGuest(
-  hot: Product[],
-  newArrivals: Product[],
-  recommended: Product[],
-  max: number,
-): Product[] {
+function mergeHomeProductsForGuest(hot: Product[], recommended: Product[], max: number): Product[] {
   const seen = new Set<string>();
   const out: Product[] = [];
-  for (const list of [hot, newArrivals, recommended]) {
+  for (const list of [hot, recommended]) {
     for (const p of list) {
       if (!p?.id || seen.has(p.id)) continue;
       seen.add(p.id);
@@ -90,14 +86,8 @@ export default function GuestHome() {
   }, [loadHomeData]);
 
   const gridProducts = useMemo(
-    () =>
-      mergeHomeProductsForGuest(
-        hotProducts,
-        newProducts,
-        recommendedProducts,
-        GUEST_HOME_GRID_MAX,
-      ),
-    [hotProducts, newProducts, recommendedProducts],
+    () => mergeHomeProductsForGuest(hotProducts, recommendedProducts, GUEST_HOME_GRID_MAX),
+    [hotProducts, recommendedProducts],
   );
 
   const customNav = useMemo(() => parseFooterNav(siteInfo.footerNav), [siteInfo.footerNav]);
@@ -201,6 +191,21 @@ export default function GuestHome() {
             安心售后
           </div>
         </div>
+
+        <NewArrivalOpsSection
+          products={newProducts}
+          loading={homeLoading}
+          hero={{
+            image: siteInfo.newArrivalHeroImage,
+            title: siteInfo.newArrivalHeroTitle,
+            subtitle: siteInfo.newArrivalHeroSubtitle,
+            ctaText: siteInfo.newArrivalHeroCtaText,
+            brandColor: siteInfo.brandColor,
+            siteSlogan: siteInfo.siteSlogan,
+          }}
+          homeLayout={themeConfig.homeLayout}
+          className="mt-4"
+        />
 
         <section className="mt-4">
           <h2 className="flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text)]">

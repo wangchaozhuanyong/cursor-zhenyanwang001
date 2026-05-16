@@ -26,7 +26,6 @@ import { ORDER_STATUS } from "@/constants/statusDictionary";
 import * as userShippingService from "@/services/userShippingService";
 import { copyToClipboard } from "@/utils/clipboard";
 import TrustInfo from "@/components/TrustInfo";
-import CheckoutStepBar from "@/components/CheckoutStepBar";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import type { PublicPaymentChannel } from "@/services/paymentService";
 import { trackBeginCheckout, trackPurchase } from "@/utils/tracking";
@@ -666,13 +665,6 @@ export default function Checkout() {
       </header>
 
       <main className="mx-auto w-full max-w-screen-xl px-4 py-4 md:px-6 md:py-6">
-        <CheckoutStepBar className="mb-4" />
-        <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
-          <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">1) 填写收货信息</div>
-          <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">2) 选择支付方式</div>
-          <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">3) 配送与优惠</div>
-          <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">4) 确认并提交</div>
-        </div>
         <div className="md:grid md:grid-cols-[1fr_380px] md:items-start md:gap-8">
           <div className="space-y-4">
         {/* Contact info */}

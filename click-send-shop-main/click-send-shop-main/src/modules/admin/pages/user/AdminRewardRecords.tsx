@@ -9,6 +9,7 @@ import { fetchReferralRules, updateReferralRule } from "@/services/admin/inviteS
 import type { RewardRecord, RewardStats, RewardStatus } from "@/types/reward";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 
 const statusOptions: Array<{ value: "" | RewardStatus; label: string }> = [
   { value: "", label: "全部状态" },
@@ -147,8 +148,16 @@ export default function AdminRewardRecords() {
           <p className="text-xs text-theme-muted">返现规则与返现记录同页维护，修改后点击保存。</p>
         </div>
         {rulesLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-[var(--theme-price)]" />
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between rounded-lg border border-[var(--theme-border)] px-3 py-2.5">
+                <div className="space-y-2">
+                  <div className="skeleton-base skeleton-shimmer h-4 w-32 rounded" />
+                  <div className="skeleton-base skeleton-shimmer h-3 w-48 rounded" />
+                </div>
+                <div className="skeleton-base skeleton-shimmer h-6 w-11 rounded-full" />
+              </div>
+            ))}
           </div>
         ) : rules.length === 0 ? (
           <div className="py-8 text-center text-sm text-theme-muted">暂无返现规则</div>
@@ -187,14 +196,16 @@ export default function AdminRewardRecords() {
               </div>
             ))}
             <PermissionGate permission="referral.manage">
-              <button
+              <LoadingButton
                 type="button"
-                disabled={rulesSaving}
-                onClick={saveRules}
-                className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-xs font-semibold text-[var(--theme-price-foreground)] disabled:opacity-60"
+                variant="gold"
+                state={rulesSaving ? "loading" : "normal"}
+                loadingText="保存中..."
+                onClick={() => void saveRules()}
+                className="rounded-lg px-4 py-2 text-xs font-semibold"
               >
-                {rulesSaving ? "保存中..." : "保存返现规则"}
-              </button>
+                保存返现规则
+              </LoadingButton>
             </PermissionGate>
           </div>
         )}
@@ -219,54 +230,49 @@ export default function AdminRewardRecords() {
         </select>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center rounded-xl border border-[var(--theme-border)] bg-theme-surface py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-[var(--theme-price)]" />
-        </div>
-      ) : (
-        <div className="theme-shadow overflow-x-auto rounded-xl border border-[var(--theme-border)] bg-theme-surface">
-          <table className="w-full min-w-[940px] text-sm">
-            <thead>
-              <tr className="border-b border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))]">
-                {["用户", "订单号", "层级", "订单金额", "比例", "返现金额", "状态", "备注", "时间"].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-theme-muted">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {records.map((record) => {
-                const label = statusLabels[record.status] || { label: record.status, className: "bg-muted text-muted-foreground" };
-                return (
-                  <tr key={record.id} className="border-b border-[var(--theme-border)] last:border-0 hover:bg-[color-mix(in_srgb,var(--theme-primary)_5%,transparent)]">
-                    <td className="px-4 py-3">
-                      <p className="text-[var(--theme-text-on-surface)]">{record.user_nickname || record.user_phone || record.user_id}</p>
-                      <p className="font-mono text-[10px] text-theme-muted">{record.user_id}</p>
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs text-[var(--theme-text-on-surface)]">{record.order_no || "—"}</td>
-                    <td className="px-4 py-3 text-theme-muted">L{record.level || 1}</td>
-                    <td className="px-4 py-3 text-theme-muted">RM {money(record.order_amount)}</td>
-                    <td className="px-4 py-3 text-theme-muted">{money(record.rate)}%</td>
-                    <td className="px-4 py-3 font-semibold text-[var(--theme-price)]">RM {money(record.amount)}</td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-1 text-xs ${label.className}`}>{label.label}</span>
-                    </td>
-                    <td className="max-w-[220px] truncate px-4 py-3 text-xs text-theme-muted">{record.remark || "—"}</td>
-                    <td className="px-4 py-3 text-xs text-theme-muted">
-                      {record.created_at ? new Date(record.created_at).toLocaleString("zh-CN") : "—"}
-                    </td>
-                  </tr>
-                );
-              })}
-              {records.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-sm text-theme-muted">暂无返现记录</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-          <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
-        </div>
-      )}
+      <AnimatedTable
+        loading={loading}
+        rows={records}
+        rowKey={(record) => record.id}
+        skeletonRows={8}
+        skeletonCols={9}
+        className="theme-shadow overflow-x-auto rounded-xl border border-[var(--theme-border)] bg-theme-surface"
+        tableClassName="w-full min-w-[940px] text-sm"
+        theadClassName="border-b border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))]"
+        thead={(
+          <tr>
+            {["用户", "订单号", "层级", "订单金额", "比例", "返现金额", "状态", "备注", "时间"].map((h) => (
+              <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-theme-muted">{h}</th>
+            ))}
+          </tr>
+        )}
+        footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
+        emptyIcon={RotateCcw}
+        emptyTitle="暂无返现记录"
+        renderRow={(record) => {
+          const label = statusLabels[record.status] || { label: record.status, className: "bg-muted text-muted-foreground" };
+          return (
+            <>
+              <td className="px-4 py-3">
+                <p className="text-[var(--theme-text-on-surface)]">{record.user_nickname || record.user_phone || record.user_id}</p>
+                <p className="font-mono text-[10px] text-theme-muted">{record.user_id}</p>
+              </td>
+              <td className="px-4 py-3 font-mono text-xs text-[var(--theme-text-on-surface)]">{record.order_no || "—"}</td>
+              <td className="px-4 py-3 text-theme-muted">L{record.level || 1}</td>
+              <td className="px-4 py-3 text-theme-muted">RM {money(record.order_amount)}</td>
+              <td className="px-4 py-3 text-theme-muted">{money(record.rate)}%</td>
+              <td className="px-4 py-3 font-semibold text-[var(--theme-price)]">RM {money(record.amount)}</td>
+              <td className="px-4 py-3">
+                <span className={`rounded-full px-2 py-1 text-xs ${label.className}`}>{label.label}</span>
+              </td>
+              <td className="max-w-[220px] truncate px-4 py-3 text-xs text-theme-muted">{record.remark || "—"}</td>
+              <td className="px-4 py-3 text-xs text-theme-muted">
+                {record.created_at ? new Date(record.created_at).toLocaleString("zh-CN") : "—"}
+              </td>
+            </>
+          );
+        }}
+      />
     </div>
   );
 }

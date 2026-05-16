@@ -42,6 +42,7 @@ function assertThemeSkinsPayload(rawPayload) {
   const serialized = JSON.stringify(rawPayload);
   if (serialized.length > MAX_PAYLOAD_BYTES) throw badRequest('皮肤配置数据过大');
   const incoming = Array.isArray(rawPayload.skins) ? rawPayload.skins : [];
+  if (incoming.length < 1) throw badRequest('至少保留一套皮肤');
   if (incoming.length > MAX_SKINS) throw badRequest(`最多保留 ${MAX_SKINS} 套皮肤`);
   incoming.forEach((skin) => {
     if (!skin || typeof skin !== 'object') throw badRequest('皮肤项格式不正确');
@@ -140,33 +141,49 @@ function normalizeThemeConfig(rawConfig) {
   };
 }
 
+function resolveThemeSkinIds(skins, preferredDefaultId, preferredActiveId) {
+  if (!skins.length) {
+    return { defaultSkinId: DEFAULT_SKIN_ID, activeSkinId: DEFAULT_SKIN_ID };
+  }
+  const has = (id) => !!id && skins.some((s) => s.id === id);
+  let defaultSkinId = has(preferredDefaultId) ? preferredDefaultId : skins[0].id;
+  if (skins.length === 1) defaultSkinId = skins[0].id;
+  if (!has(defaultSkinId)) defaultSkinId = skins[0].id;
+  let activeSkinId = has(preferredActiveId) ? preferredActiveId : defaultSkinId;
+  if (!has(activeSkinId)) activeSkinId = defaultSkinId;
+  return { defaultSkinId, activeSkinId };
+}
+
 function normalizeThemeSkinsPayload(rawPayload) {
   const payload = rawPayload && typeof rawPayload === 'object' ? rawPayload : {};
   const incoming = Array.isArray(payload.skins) ? payload.skins : [];
-  const merged = new Map();
-  THEME_PRESETS.forEach((skin) => merged.set(skin.id, {
-    ...skin,
-    clientEnabled: skin.clientEnabled !== false,
-    config: normalizeThemeConfig(skin.config),
-  }));
-  incoming.forEach((skin) => {
-    if (!skin || typeof skin !== 'object') return;
-    const id = String(skin.id || '').trim() || `skin_${Math.random().toString(16).slice(2, 10)}`;
-    const name = String(skin.name || '自定义皮肤').trim();
-    merged.set(id, {
-      id,
-      name,
+
+  let skins;
+  if (incoming.length > 0) {
+    skins = [];
+    incoming.forEach((skin) => {
+      if (!skin || typeof skin !== 'object') return;
+      const id = String(skin.id || '').trim() || `skin_${Math.random().toString(16).slice(2, 10)}`;
+      const name = String(skin.name || '自定义皮肤').trim();
+      skins.push({
+        id,
+        name,
+        description: typeof skin.description === 'string' ? skin.description.trim() : undefined,
+        sceneTag: skin.sceneTag,
+        clientEnabled: skin.clientEnabled !== false,
+        config: normalizeThemeConfig(skin.config),
+      });
+    });
+  } else {
+    skins = THEME_PRESETS.map((skin) => ({
+      ...skin,
       clientEnabled: skin.clientEnabled !== false,
       config: normalizeThemeConfig(skin.config),
-    });
-  });
-  const skins = Array.from(merged.values()).slice(0, MAX_SKINS);
-  const has = (id) => !!id && skins.some((s) => s.id === id);
-  let defaultSkinId = has(payload.defaultSkinId) ? payload.defaultSkinId : DEFAULT_SKIN_ID;
-  if (!has(defaultSkinId)) defaultSkinId = skins[0]?.id || DEFAULT_SKIN_ID;
-  const activeSkinId = has(payload.activeSkinId)
-    ? payload.activeSkinId
-    : defaultSkinId;
+    }));
+  }
+
+  skins = skins.slice(0, MAX_SKINS);
+  const { defaultSkinId, activeSkinId } = resolveThemeSkinIds(skins, payload.defaultSkinId, payload.activeSkinId);
   return { defaultSkinId, activeSkinId, skins };
 }
 
@@ -184,7 +201,7 @@ async function getThemeSkins() {
   return normalizeThemeSkinsPayload({
     defaultSkinId: DEFAULT_SKIN_ID,
     activeSkinId: DEFAULT_SKIN_ID,
-    skins: [{ id: DEFAULT_SKIN_ID, name: '经典金黑', config: fallbackConfig }],
+    skins: [{ id: DEFAULT_SKIN_ID, name: '大马通默认生活服务绿', config: fallbackConfig }],
   });
 }
 

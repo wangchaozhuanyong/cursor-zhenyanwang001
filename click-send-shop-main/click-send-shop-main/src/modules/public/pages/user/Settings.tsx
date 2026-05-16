@@ -1,15 +1,13 @@
 import { useRef, useState } from "react";
-import { ArrowLeft, Camera, Lock, Palette, ChevronRight, ShieldCheck, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, Lock, ChevronRight, ShieldCheck, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
-import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import * as uploadService from "@/services/uploadService";
 import * as userService from "@/services/userService";
-import SkinPickerDialog from "@/components/SkinPickerDialog";
 import { IMAGE_UPLOAD_HINT_AVATAR } from "@/constants/imageUploadHints";
 
 const CARD = "rounded-2xl bg-[var(--theme-surface)] shadow-[var(--theme-shadow)] p-4";
@@ -18,8 +16,6 @@ export default function Settings() {
   const navigate = useNavigate();
   const goBack = useGoBack();
   const { nickname, phone, avatar, wechat, whatsapp, profileSaving, setNickname, setPhone, setWechat, setWhatsapp, saveProfile } = useUserStore();
-  const { skins, skinId } = useThemeRuntime();
-  const currentSkinName = skins.find((s) => s.id === skinId)?.name || "默认皮肤";
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showPwdForm, setShowPwdForm] = useState(false);
   const [oldPwd, setOldPwd] = useState("");
@@ -137,17 +133,6 @@ export default function Settings() {
             ))}
           </div>
         </section>
-
-        <SkinPickerDialog
-          title="选择皮肤"
-          trigger={
-            <button type="button" className={`${CARD} flex w-full items-center justify-between`}>
-              <div className="flex items-center gap-3"><Palette size={18} className="text-[var(--theme-secondary)]" /><span className="text-sm font-medium">皮肤</span></div>
-              <span className="max-w-[11rem] truncate text-sm text-[var(--theme-muted)]">{currentSkinName}</span>
-              <ChevronRight size={16} className="text-[var(--theme-muted)]" />
-            </button>
-          }
-        />
 
         <button type="button" onClick={() => navigate("/settings/upload-verify")} className={`${CARD} flex w-full items-center justify-between`}>
           <div className="flex items-center gap-3"><ShieldCheck size={18} className="text-emerald-600" /><span className="text-sm font-medium">上传验收</span></div>

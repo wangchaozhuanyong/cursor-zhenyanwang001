@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
-import { Eye, CheckCircle, XCircle, Search, Loader2 } from "lucide-react";
+import { Eye, CheckCircle, XCircle, Search, RotateCcw } from "lucide-react";
+import { AnimatedTable } from "@/modules/micro-interactions";
 import { toast } from "sonner";
 import Pagination from "@/components/admin/Pagination";
 import * as returnService from "@/services/admin/returnService";
@@ -74,15 +75,7 @@ export default function AdminReturns() {
   };
 
   return (
-    <div className="relative min-h-[280px] space-y-6" aria-busy={loading}>
-      {loading ? (
-        <div
-          className="absolute inset-0 z-10 flex justify-center bg-background/45 pt-24 backdrop-blur-[1px]"
-          aria-hidden
-        >
-          <Loader2 className="h-8 w-8 shrink-0 animate-spin text-gold" />
-        </div>
-      ) : null}
+    <div className="space-y-6" aria-busy={loading}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-foreground">退款/售后管理</h1>
@@ -122,7 +115,18 @@ export default function AdminReturns() {
 
       {/* 移动端：卡片 */}
       <div className="space-y-3 md:hidden">
-        {paginatedData.map((r) => (
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-2xl border border-border bg-card p-4">
+              <div className="space-y-2">
+                <div className="skeleton-base skeleton-shimmer h-3 w-24 rounded" />
+                <div className="skeleton-base skeleton-shimmer h-4 w-32 rounded" />
+                <div className="skeleton-base skeleton-shimmer h-10 w-full rounded-xl" />
+              </div>
+            </div>
+          ))
+          : null}
+        {!loading && paginatedData.map((r) => (
           <div key={r.id} className="rounded-2xl border border-border bg-card p-4">
             <div className="flex items-start justify-between gap-2">
               <div>
@@ -160,73 +164,77 @@ export default function AdminReturns() {
             </div>
           </div>
         ))}
-        {paginatedData.length === 0 && (
+        {!loading && paginatedData.length === 0 && (
           <div className="py-12 text-center text-sm text-muted-foreground">暂无售后记录</div>
         )}
         <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
       </div>
 
-      {/* 桌面端：表格 */}
-      <div className="hidden overflow-hidden rounded-2xl border border-border bg-card md:block">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-sm">
-            <thead>
-              <tr className="border-b border-border bg-secondary/50">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">售后单号</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">关联订单</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">类型</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">退款金额</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">原因</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">状态</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">申请时间</th>
-                <th className="px-4 py-3 text-center font-medium text-muted-foreground">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedData.map((r) => (
-                <tr key={r.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
-                  <td className="px-4 py-3 font-mono text-xs">{r.id?.slice(0, 8)}…</td>
-                  <td className="px-4 py-3 font-mono text-xs text-gold">{r.order_no || r.order_id?.slice(0, 8)}</td>
-                  <td className="px-4 py-3">
-                    <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${r.type === "refund" ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"}`}>
-                      {typeLabel[r.type] || r.type}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 font-semibold text-gold">{r.refund_amount ? `RM ${parseFloat(r.refund_amount).toFixed(2)}` : "—"}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground max-w-[150px] truncate">{r.reason}</td>
-                  <td className="px-4 py-3">
-                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${getReturnStatusBadgeClass(r.status)}`}>
-                      {getReturnStatusLabel(r.status)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{new Date(r.created_at).toLocaleString("zh-CN")}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center gap-1">
-                      <button type="button" onClick={() => setDetail(r)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground">
-                        <Eye size={14} />
-                      </button>
-                      {r.status === RETURN_STATUS.PENDING && (
-                        <PermissionGate permission="return.handle">
-                          <>
-                            <button type="button" onClick={() => handleAction(r.id, "approve")} className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
-                              <CheckCircle size={14} />
-                            </button>
-                            <button type="button" onClick={() => handleAction(r.id, "reject")} className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
-                              <XCircle size={14} />
-                            </button>
-                          </>
-                        </PermissionGate>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+      <div className="hidden md:block">
+        <AnimatedTable
+          loading={loading}
+          rows={paginatedData}
+          rowKey={(r) => r.id}
+          skeletonRows={8}
+          skeletonCols={8}
+          className="overflow-hidden rounded-2xl border border-border bg-card"
+          tableClassName="w-full min-w-[900px] text-sm"
+          theadClassName="border-b border-border bg-secondary/50"
+          thead={(
+            <tr>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">售后单号</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">关联订单</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">类型</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">退款金额</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">原因</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">状态</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">申请时间</th>
+              <th className="px-4 py-3 text-center font-medium text-muted-foreground">操作</th>
+            </tr>
+          )}
+          footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
+          emptyIcon={RotateCcw}
+          emptyTitle="暂无售后记录"
+          renderRow={(r) => (
+            <>
+              <td className="px-4 py-3 font-mono text-xs">{r.id?.slice(0, 8)}…</td>
+              <td className="px-4 py-3 font-mono text-xs text-gold">{r.order_no || r.order_id?.slice(0, 8)}</td>
+              <td className="px-4 py-3">
+                <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${r.type === "refund" ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"}`}>
+                  {typeLabel[r.type] || r.type}
+                </span>
+              </td>
+              <td className="px-4 py-3 font-semibold text-gold">{r.refund_amount ? `RM ${parseFloat(r.refund_amount).toFixed(2)}` : "—"}</td>
+              <td className="px-4 py-3 text-xs text-muted-foreground max-w-[150px] truncate">{r.reason}</td>
+              <td className="px-4 py-3">
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${getReturnStatusBadgeClass(r.status)}`}>
+                  {getReturnStatusLabel(r.status)}
+                </span>
+              </td>
+              <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{new Date(r.created_at).toLocaleString("zh-CN")}</td>
+              <td className="px-4 py-3">
+                <div className="flex items-center justify-center gap-1">
+                  <button type="button" onClick={() => setDetail(r)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground">
+                    <Eye size={14} />
+                  </button>
+                  {r.status === RETURN_STATUS.PENDING && (
+                    <PermissionGate permission="return.handle">
+                      <>
+                        <button type="button" onClick={() => handleAction(r.id, "approve")} className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
+                          <CheckCircle size={14} />
+                        </button>
+                        <button type="button" onClick={() => handleAction(r.id, "reject")} className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+                          <XCircle size={14} />
+                        </button>
+                      </>
+                    </PermissionGate>
+                  )}
+                </div>
+              </td>
+            </>
+          )}
+        />
       </div>
-
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDetail(null)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl space-y-4">

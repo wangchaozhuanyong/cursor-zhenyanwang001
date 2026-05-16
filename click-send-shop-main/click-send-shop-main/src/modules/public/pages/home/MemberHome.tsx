@@ -16,6 +16,7 @@ import BannerCarousel from "@/components/BannerCarousel";
 import HomeTrustBar from "@/components/HomeTrustBar";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
 import HomeOpsBlocks from "./HomeOpsBlocks";
+import { AnimatedSection } from "@/modules/micro-interactions";
 import NewArrivalOpsSection from "./NewArrivalOpsSection";
 import type { UserCoupon } from "@/types/coupon";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
@@ -117,16 +118,19 @@ export default function MemberHome() {
     <div className={`store-bottom-safe min-h-screen text-[var(--theme-text)] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_90%,black)]" : "bg-[var(--theme-bg)]"}`} data-theme-home-layout={themeConfig.homeLayout}>
       <StoreTabHeader />
       <main className="mx-auto max-w-screen-xl px-4 pt-4">
-        <section>
+        <AnimatedSection>
           <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
             <BannerCarousel banners={banners} loading={bannersLoading} themeConfigOverride={themeConfig} />
           </div>
-        </section>
-        <HomeTrustBar className="mt-3" />
-        <section className="-mx-4 mt-3">
+        </AnimatedSection>
+        <AnimatedSection delay={0.05}>
+          <HomeTrustBar className="mt-3" />
+        </AnimatedSection>
+        <AnimatedSection delay={0.08} className="-mx-4 mt-3">
           <HomeOpsBlocks />
-        </section>
-        <section className="mt-section">
+        </AnimatedSection>
+        <AnimatedSection delay={0.1} className="mt-section">
+        <section>
           <Header title="会员专属礼包" icon={Ticket} />
           <div className="no-scrollbar -mx-4 flex items-stretch gap-3 overflow-x-auto overflow-y-hidden px-4 pb-2 snap-x snap-mandatory md:mx-0 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 md:pb-0 md:snap-none lg:gap-4">
             {(couponLoading ? Array.from({ length: 4 }) : couponTop).map((c: UserCoupon | number, i) => {
@@ -152,11 +156,10 @@ export default function MemberHome() {
                     title={display.title}
                     amountPrefix={display.amountPrefix}
                     amount={display.amount}
-                    conditionText={display.conditionText}
+                    minSpendText={display.minSpendText}
                     expireText={display.expireText}
                     scopeText={display.scopeText}
                     badge={display.badge}
-                    eyebrow={isClaimed ? "可用优惠券" : "活动优惠券"}
                     actionLabel={isClaimed ? "去使用" : "立即领取"}
                     actionLoading={!isClaimed && claimingCouponId === c.id}
                     actionDisabled={!isClaimed && claimingCouponId === c.id}
@@ -189,6 +192,8 @@ export default function MemberHome() {
             </div>
           ) : null}
         </section>
+        </AnimatedSection>
+        <AnimatedSection delay={0.12}>
         <NewArrivalOpsSection
           products={newProducts}
           loading={homeLoading}
@@ -202,7 +207,9 @@ export default function MemberHome() {
           }}
           homeLayout={themeConfig.homeLayout}
         />
-        <section className="mt-section">
+        </AnimatedSection>
+        <AnimatedSection delay={0.14} className="mt-section">
+        <section>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text-on-surface)]">
               <Flame className="h-5 w-5 text-[var(--theme-price)]" />
@@ -224,7 +231,9 @@ export default function MemberHome() {
               : hot.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
           </div>
         </section>
-        <section className="mt-section">
+        </AnimatedSection>
+        <AnimatedSection delay={0.16} className="mt-section">
+        <section>
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text-on-surface)]">
@@ -248,6 +257,7 @@ export default function MemberHome() {
               : rec.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
           </div>
         </section>
+        </AnimatedSection>
       </main>
     </div>
   );

@@ -18,6 +18,16 @@ export type MotionLevel = "none" | "soft" | "rich";
 export type Density = "comfortable" | "compact";
 export type AdminThemeMode = "fixed" | "follow_store";
 
+/** 皮肤适合场景（用于 Theme Studio 筛选与展示） */
+export type ThemeSceneTag =
+  | "default"
+  | "life_service"
+  | "premium"
+  | "visa"
+  | "mall"
+  | "admin"
+  | "promotion";
+
 export type ThemeConfig = {
   skinName?: string;
   radius: string;
@@ -66,6 +76,8 @@ export type ThemeConfig = {
 export type ThemeSkin = {
   id: string;
   name: string;
+  description?: string;
+  sceneTag?: ThemeSceneTag;
   clientEnabled?: boolean;
   config: ThemeConfig;
 };

@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMotionConfig } from "@/modules/micro-interactions";
 import { useNavigate } from "react-router-dom";
 import type { Banner } from "@/types/banner";
 import type { ThemeConfig } from "@/types/theme";
@@ -17,6 +18,7 @@ function resolveBannerLink(link: string): string {
 }
 
 export default function BannerCarousel({ banners, loading = false, themeConfigOverride }: BannerCarouselProps) {
+  const { enabled: motionEnabled } = useMotionConfig();
   const [current, setCurrent] = useState(0);
   const navigate = useNavigate();
 
@@ -25,12 +27,12 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
   }, []);
 
   useEffect(() => {
-    if (banners.length <= 1) return;
+    if (!motionEnabled || banners.length <= 1) return;
     const timer = setInterval(() => {
       setCurrent((prev) => (prev + 1) % banners.length);
     }, 4000);
     return () => clearInterval(timer);
-  }, [banners.length]);
+  }, [banners.length, motionEnabled]);
 
   const [touchStart, setTouchStart] = useState(0);
 
@@ -85,20 +87,31 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
       onTouchEnd={handleTouchEnd}
       onClick={handleOpenBanner}
     >
-      <AnimatePresence initial={false} mode="wait">
-        <motion.img
+      {motionEnabled ? (
+        <AnimatePresence initial={false} mode="wait">
+          <motion.img
+            key={current}
+            src={banner.image}
+            alt={banner.title || "首页轮播图"}
+            width={1200}
+            height={512}
+            className="absolute inset-0 h-full w-full object-cover"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: "linear" }}
+          />
+        </AnimatePresence>
+      ) : (
+        <img
           key={current}
           src={banner.image}
           alt={banner.title || "首页轮播图"}
           width={1200}
           height={512}
           className="absolute inset-0 h-full w-full object-cover"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.22, ease: "linear" }}
         />
-      </AnimatePresence>
+      )}
 
       <div className="absolute bottom-3 right-4 flex gap-1.5">
         {banners.map((_, i) => (
@@ -112,15 +125,26 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
             className="touch-target flex items-center justify-center p-0.5"
             aria-label={`Banner ${i + 1}`}
           >
-            <motion.div
-              className="rounded-full"
-              animate={{
-                width: i === current ? 18 : 6,
-                height: 6,
-                backgroundColor: i === current ? "var(--theme-primary)" : "rgba(255,255,255,0.55)",
-              }}
-              transition={{ duration: 0.2 }}
-            />
+            {motionEnabled ? (
+              <motion.div
+                className="rounded-full"
+                animate={{
+                  width: i === current ? 18 : 6,
+                  height: 6,
+                  backgroundColor: i === current ? "var(--theme-primary)" : "rgba(255,255,255,0.55)",
+                }}
+                transition={{ duration: 0.2 }}
+              />
+            ) : (
+              <span
+                className="block rounded-full"
+                style={{
+                  width: i === current ? 18 : 6,
+                  height: 6,
+                  backgroundColor: i === current ? "var(--theme-primary)" : "rgba(255,255,255,0.55)",
+                }}
+              />
+            )}
           </button>
         ))}
       </div>

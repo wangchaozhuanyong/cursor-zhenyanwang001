@@ -6,6 +6,7 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import * as bannerService from "@/services/admin/bannerService";
 import * as uploadService from "@/services/uploadService";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { LoadingButton } from "@/modules/micro-interactions";
 
 export default function AdminBanners() {
   const [banners, setBanners] = useState<any[]>([]);
@@ -14,6 +15,7 @@ export default function AdminBanners() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [savingOrder, setSavingOrder] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ title: "", link: "", image: "" });
 
   useEffect(() => {
@@ -52,32 +54,37 @@ export default function AdminBanners() {
     setShowForm(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.image) {
       toast.error("请上传图片");
       return;
     }
-    if (editingId) {
-      bannerService
-        .updateBanner(editingId, { title: form.title, link: form.link, image: form.image })
-        .then(() => {
-          setBanners(banners.map((b) => (b.id === editingId ? { ...b, ...form } : b)));
-          setShowForm(false);
-          setEditingId(null);
-          setForm({ title: "", link: "", image: "" });
-          toast.success("Banner 已更新");
-        })
-        .catch((e) => toast.error(toastErrorMessage(e, "更新失败")));
-    } else {
-      bannerService
-        .createBanner({ title: form.title, link: form.link, image: form.image, sort_order: banners.length + 1, enabled: true } as any)
-        .then((newBanner) => {
-          setBanners([...banners, newBanner]);
-          setShowForm(false);
-          setForm({ title: "", link: "", image: "" });
-          toast.success("Banner 已添加");
-        })
-        .catch((e) => toast.error(toastErrorMessage(e, "添加失败")));
+    setSaving(true);
+    try {
+      if (editingId) {
+        await bannerService.updateBanner(editingId, { title: form.title, link: form.link, image: form.image });
+        setBanners(banners.map((b) => (b.id === editingId ? { ...b, ...form } : b)));
+        setShowForm(false);
+        setEditingId(null);
+        setForm({ title: "", link: "", image: "" });
+        toast.success("Banner 已更新");
+      } else {
+        const newBanner = await bannerService.createBanner({
+          title: form.title,
+          link: form.link,
+          image: form.image,
+          sort_order: banners.length + 1,
+          enabled: true,
+        } as any);
+        setBanners([...banners, newBanner]);
+        setShowForm(false);
+        setForm({ title: "", link: "", image: "" });
+        toast.success("Banner 已添加");
+      }
+    } catch (e) {
+      toast.error(toastErrorMessage(e, editingId ? "更新失败" : "添加失败"));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -113,14 +120,6 @@ export default function AdminBanners() {
     await persistBannerOrder(next);
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -153,7 +152,18 @@ export default function AdminBanners() {
       </div>
 
       <div className="space-y-2">
-        {banners.map((b) => (
+        {loading
+          ? Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4">
+                <div className="skeleton-base skeleton-shimmer h-16 w-28 rounded-xl" />
+                <div className="flex-1 space-y-2">
+                  <div className="skeleton-base skeleton-shimmer h-4 w-40 rounded" />
+                  <div className="skeleton-base skeleton-shimmer h-3 w-56 rounded" />
+                </div>
+              </div>
+            ))
+          : null}
+        {!loading && banners.map((b) => (
           <div
             key={b.id}
             draggable={!savingOrder}
@@ -226,7 +236,16 @@ export default function AdminBanners() {
             <input placeholder="Banner 标题" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
             <input placeholder="跳转链接（如 /categories）" value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
             <PermissionGate permission="banner.manage">
-              <button onClick={handleSave} className="w-full rounded-xl bg-gold py-3 text-sm font-bold text-primary-foreground">{editingId ? "保存修改" : "确认添加"}</button>
+              <LoadingButton
+                type="button"
+                variant="gold"
+                state={saving ? "loading" : "normal"}
+                loadingText="保存中..."
+                onClick={() => void handleSave()}
+                className="w-full rounded-xl py-3 text-sm font-bold"
+              >
+                {editingId ? "保存修改" : "确认添加"}
+              </LoadingButton>
             </PermissionGate>
           </div>
         </div>

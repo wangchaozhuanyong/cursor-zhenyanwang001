@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as shippingService from "@/services/admin/shippingService";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { LoadingButton } from "@/modules/micro-interactions";
 
 interface Template {
   id: number;
@@ -22,6 +23,7 @@ export default function AdminShipping() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", regions: "", baseFee: 0, freeAbove: 0, extraPerKg: 0 });
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -39,6 +41,7 @@ export default function AdminShipping() {
 
   const handleSave = async () => {
     if (!form.name || !form.regions) { toast.error("请填写完整信息"); return; }
+    setSaving(true);
     try {
       if (editing) {
         await shippingService.updateTemplate(editing.id, { name: form.name, regions: form.regions, baseFee: form.baseFee, freeAbove: form.freeAbove, extraPerKg: form.extraPerKg } as any);
@@ -53,6 +56,8 @@ export default function AdminShipping() {
       await loadData();
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败"));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -84,14 +89,6 @@ export default function AdminShipping() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -107,7 +104,20 @@ export default function AdminShipping() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {templates.map((t) => (
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="rounded-2xl border border-border bg-card p-5 space-y-3">
+                <div className="skeleton-base skeleton-shimmer h-5 w-32 rounded" />
+                <div className="skeleton-base skeleton-shimmer h-3 w-24 rounded" />
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="skeleton-base skeleton-shimmer h-12 rounded-xl" />
+                  <div className="skeleton-base skeleton-shimmer h-12 rounded-xl" />
+                  <div className="skeleton-base skeleton-shimmer h-12 rounded-xl" />
+                </div>
+              </div>
+            ))
+          : null}
+        {!loading && templates.map((t) => (
           <div key={t.id} className={`rounded-2xl border bg-card p-5 transition-all ${t.enabled ? "border-border" : "border-border opacity-60"}`}>
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
@@ -167,7 +177,7 @@ export default function AdminShipping() {
               <label className="block"><span className="text-xs text-muted-foreground">续重/kg</span><input type="number" value={form.extraPerKg} onChange={(e) => setForm({ ...form, extraPerKg: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>
             </div>
             <PermissionGate permission="shipping.manage">
-              <button onClick={handleSave} className="w-full rounded-xl bg-gold py-3 text-sm font-bold text-primary-foreground">保存</button>
+              <LoadingButton type="button" variant="gold" state={saving ? "loading" : "normal"} loadingText="保存中..." onClick={() => void handleSave()} className="w-full rounded-xl py-3 text-sm font-bold">保存</LoadingButton>
             </PermissionGate>
           </div>
         </div>

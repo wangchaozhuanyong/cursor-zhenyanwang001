@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Search, Loader2, Shield, ChevronRight } from "lucide-react";
+import { Search, Shield, ChevronRight } from "lucide-react";
+import { AnimatedTable } from "@/modules/micro-interactions";
 import Pagination from "@/components/admin/Pagination";
 import { toast } from "sonner";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
@@ -144,91 +145,69 @@ export default function AdminLogs() {
         </button>
       </div>
 
-      {auditLoading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-[var(--theme-price)]" />
-        </div>
-      ) : (
-        <>
-          <div className="space-y-3 md:hidden">
-            {auditList.map((row) => (
-              <div key={row.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-[11px] text-muted-foreground">{row.created_at ? new Date(row.created_at).toLocaleString("zh-CN") : "—"}</p>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${row.result === "success" ? "bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] text-[var(--theme-price)]" : "bg-destructive/15 text-destructive"}`}>
-                    {row.result === "success" ? "成功" : "失败"}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm font-medium text-foreground">{row.operator_name || "—"}</p>
-                <p className="text-xs text-muted-foreground">{row.operator_role || ""}</p>
-                <p className="mt-2 text-xs font-semibold text-foreground">{zhActionType(row.action_type)}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{zhObjectType(row.object_type)}{row.object_id ? ` · ${row.object_id}` : ""}</p>
-                <p className="mt-2 line-clamp-3 text-xs text-foreground">{row.summary}</p>
-                <button type="button" onClick={() => setDetail(row)} className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1 theme-rounded border border-[var(--theme-border)] py-2 text-sm text-[var(--theme-price)]">
-                  详情 <ChevronRight size={16} />
-                </button>
+      <div className="space-y-3 md:hidden">
+        {auditLoading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow space-y-3">
+                <div className="skeleton-base skeleton-shimmer h-3 w-28 rounded" />
+                <div className="skeleton-base skeleton-shimmer h-4 w-2/3 rounded" />
+                <div className="skeleton-base skeleton-shimmer h-3 w-full rounded" />
+                <div className="skeleton-base skeleton-shimmer h-10 w-full rounded-lg" />
               </div>
-            ))}
-            {auditList.length === 0 && (
-              <div className="py-12 text-center text-sm text-muted-foreground">暂无审计记录</div>
-            )}
-            <Pagination
-              total={auditTotal}
-              page={auditPage}
-              pageSize={auditPageSize}
-              onPageChange={setAuditPage}
-              onPageSizeChange={(n) => { setAuditPageSize(n); setAuditPage(1); }}
-            />
-          </div>
-
-          <div className="hidden overflow-hidden theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] md:block theme-shadow">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-sm">
-                <thead>
-                  <tr className="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70">
-                    <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground whitespace-nowrap">时间</th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground">操作人</th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground">动作</th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground">对象</th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground">摘要</th>
-                    <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground">结果</th>
-                    <th className="px-3 py-3 w-10" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {auditList.map((row) => (
-                    <tr key={row.id} className="border-b border-[var(--theme-border)] last:border-0 hover:bg-[var(--theme-bg)]">
-                      <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
-                        {row.created_at ? new Date(row.created_at).toLocaleString("zh-CN") : "—"}
-                      </td>
-                      <td className="px-3 py-2 text-xs">
-                        <div className="font-medium text-foreground">{row.operator_name || "—"}</div>
-                        <div className="text-muted-foreground">{row.operator_role || ""}</div>
-                      </td>
-                      <td className="px-3 py-2 text-xs font-semibold text-foreground">{zhActionType(row.action_type)}</td>
-                      <td className="px-3 py-2 text-xs">
-                        <span className="text-muted-foreground">{zhObjectType(row.object_type)}</span>
-                        {row.object_id && <div className="font-mono text-[10px] truncate max-w-[120px]">{row.object_id}</div>}
-                      </td>
-                      <td className="px-3 py-2 text-xs text-foreground max-w-[200px] truncate">{row.summary}</td>
-                      <td className="px-3 py-2">
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${row.result === "success" ? "bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] text-[var(--theme-price)]" : "bg-destructive/15 text-destructive"}`}>
-                          {row.result === "success" ? "成功" : "失败"}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2">
-                        <button type="button" onClick={() => setDetail(row)} className="text-[var(--theme-price)] hover:underline">
-                          <ChevronRight size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {auditList.length === 0 && (
-                    <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">暂无审计记录</td></tr>
-                  )}
-                </tbody>
-              </table>
+            ))
+          : null}
+        {!auditLoading && auditList.map((row) => (
+          <div key={row.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-[11px] text-muted-foreground">{row.created_at ? new Date(row.created_at).toLocaleString("zh-CN") : "—"}</p>
+              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${row.result === "success" ? "bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] text-[var(--theme-price)]" : "bg-destructive/15 text-destructive"}`}>
+                {row.result === "success" ? "成功" : "失败"}
+              </span>
             </div>
+            <p className="mt-2 text-sm font-medium text-foreground">{row.operator_name || "—"}</p>
+            <p className="text-xs text-muted-foreground">{row.operator_role || ""}</p>
+            <p className="mt-2 text-xs font-semibold text-foreground">{zhActionType(row.action_type)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{zhObjectType(row.object_type)}{row.object_id ? ` · ${row.object_id}` : ""}</p>
+            <p className="mt-2 line-clamp-3 text-xs text-foreground">{row.summary}</p>
+            <button type="button" onClick={() => setDetail(row)} className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1 theme-rounded border border-[var(--theme-border)] py-2 text-sm text-[var(--theme-price)]">
+              详情 <ChevronRight size={16} />
+            </button>
+          </div>
+        ))}
+        {!auditLoading && auditList.length === 0 && (
+          <div className="py-12 text-center text-sm text-muted-foreground">暂无审计记录</div>
+        )}
+        <Pagination
+          total={auditTotal}
+          page={auditPage}
+          pageSize={auditPageSize}
+          onPageChange={setAuditPage}
+          onPageSizeChange={(n) => { setAuditPageSize(n); setAuditPage(1); }}
+        />
+      </div>
+
+      <div className="hidden md:block">
+        <AnimatedTable
+          loading={auditLoading}
+          rows={auditList}
+          rowKey={(row) => row.id}
+          skeletonRows={8}
+          skeletonCols={7}
+          className="overflow-hidden theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
+          tableClassName="w-full min-w-[900px] text-sm"
+          theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
+          thead={(
+            <tr>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground whitespace-nowrap">时间</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground">操作人</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground">动作</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground">对象</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground">摘要</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground">结果</th>
+              <th className="px-3 py-3 w-10" />
+            </tr>
+          )}
+          footer={(
             <Pagination
               total={auditTotal}
               page={auditPage}
@@ -236,9 +215,38 @@ export default function AdminLogs() {
               onPageChange={setAuditPage}
               onPageSizeChange={(n) => { setAuditPageSize(n); setAuditPage(1); }}
             />
-          </div>
-        </>
-      )}
+          )}
+          emptyIcon={Shield}
+          emptyTitle="暂无审计记录"
+          renderRow={(row) => (
+            <>
+              <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
+                {row.created_at ? new Date(row.created_at).toLocaleString("zh-CN") : "—"}
+              </td>
+              <td className="px-3 py-2 text-xs">
+                <div className="font-medium text-foreground">{row.operator_name || "—"}</div>
+                <div className="text-muted-foreground">{row.operator_role || ""}</div>
+              </td>
+              <td className="px-3 py-2 text-xs font-semibold text-foreground">{zhActionType(row.action_type)}</td>
+              <td className="px-3 py-2 text-xs">
+                <span className="text-muted-foreground">{zhObjectType(row.object_type)}</span>
+                {row.object_id && <div className="font-mono text-[10px] truncate max-w-[120px]">{row.object_id}</div>}
+              </td>
+              <td className="px-3 py-2 text-xs text-foreground max-w-[200px] truncate">{row.summary}</td>
+              <td className="px-3 py-2">
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${row.result === "success" ? "bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] text-[var(--theme-price)]" : "bg-destructive/15 text-destructive"}`}>
+                  {row.result === "success" ? "成功" : "失败"}
+                </span>
+              </td>
+              <td className="px-3 py-2">
+                <button type="button" onClick={() => setDetail(row)} className="text-[var(--theme-price)] hover:underline">
+                  <ChevronRight size={16} />
+                </button>
+              </td>
+            </>
+          )}
+        />
+      </div>
 
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDetail(null)}>

@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { CalendarClock, Copy, Eye, Loader2, PlusCircle, Trash2 } from "lucide-react";
+import { CalendarClock, Copy, Eye, PlusCircle, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import Pagination from "@/components/admin/Pagination";
@@ -8,6 +8,7 @@ import SearchBar from "@/components/SearchBar";
 import * as activityService from "@/services/admin/activityService";
 import type { ActivityStatus, ActivityType, MarketingActivity } from "@/types/activity";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { AnimatedConfirmDialog, AnimatedTable } from "@/modules/micro-interactions";
 
 const TABS: Array<{ key: "" | ActivityStatus; label: string }> = [
   { key: "", label: "全部" },
@@ -27,6 +28,7 @@ export default function AdminActivities() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const load = async (next = page) => {
     setLoading(true);
@@ -72,34 +74,70 @@ export default function AdminActivities() {
         <button onClick={() => { setPage(1); void load(1); }} className="rounded-lg border border-border px-4 py-2 text-sm">查询</button>
       </div>
 
-      <div className="rounded-xl border border-border bg-card">
-        {loading ? <div className="flex h-40 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div> : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1120px] text-sm"><thead className="text-xs text-muted-foreground"><tr><th className="px-4 py-3 text-left">活动名称</th><th className="px-4 py-3 text-left">活动类型</th><th className="px-4 py-3 text-left">活动状态</th><th className="px-4 py-3 text-left">活动时间</th><th className="px-4 py-3 text-left">商品/库存/销量</th><th className="px-4 py-3 text-left">参与数据</th><th className="px-4 py-3 text-left">展示位置</th><th className="px-4 py-3 text-left">操作</th></tr></thead><tbody>
-              {activities.map((a) => (
-                <tr key={a.id} className="border-t border-border">
-                  <td className="px-4 py-3"><p className="font-medium">{a.title}</p><p className="text-xs text-muted-foreground line-clamp-1">{a.description || "-"}</p></td>
-                  <td className="px-4 py-3">{a.type === "flash_sale" ? "限时秒杀" : "满减活动"}</td>
-                  <td className="px-4 py-3 text-xs">{a.status_label}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(a.start_at).toLocaleString()}<br />{new Date(a.end_at).toLocaleString()}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">商品 {a.product_count || 0}<br />库存 {a.activity_stock_total || 0} / 已售 {a.sold_count_total || 0}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">参与数据预留</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">首页活动位</td>
-                  <td className="px-4 py-3"><div className="flex flex-wrap gap-2 text-xs">
-                    <button onClick={() => navigate(`/admin/marketing/activities/${a.id}/edit`)} className="rounded border border-border px-2 py-1">编辑</button>
-                    <button onClick={() => navigate(`/admin/marketing/activities/new?copy_from=${a.id}`)} className="rounded border border-border px-2 py-1"><Copy className="mr-1 inline h-3 w-3" />复制</button>
-                    <button className="rounded border border-border px-2 py-1"><Eye className="mr-1 inline h-3 w-3" />预览</button>
-                    <button className="rounded border border-border px-2 py-1">查看数据</button>
-                    <button onClick={async () => { await activityService.setActivityDisabled(a.id, a.status !== "disabled"); await load(page); }} className="rounded border border-border px-2 py-1">{a.status === "disabled" ? "启用" : "禁用"}</button>
-                    <button onClick={async () => { if (!window.confirm("活动已有参与数据时删除将影响统计，确认删除？")) return; await activityService.deleteActivity(a.id); toast.success("已删除"); await load(page); }} className="rounded border border-destructive/30 px-2 py-1 text-destructive"><Trash2 className="mr-1 inline h-3 w-3" />删除</button>
-                  </div></td>
-                </tr>
-              ))}
-            </tbody></table>
-          </div>
-        )}
-        <Pagination total={total} page={page} pageSize={pageSize} onPageChange={(p) => { setPage(p); void load(p); }} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <AnimatedTable
+          loading={loading}
+          rows={activities}
+          rowKey={(a) => a.id}
+          skeletonRows={6}
+          skeletonCols={8}
+          className="overflow-x-auto"
+          tableClassName="w-full min-w-[1120px] text-sm"
+          theadClassName="text-xs text-muted-foreground"
+          thead={(
+            <tr>
+              <th className="px-4 py-3 text-left">活动名称</th>
+              <th className="px-4 py-3 text-left">活动类型</th>
+              <th className="px-4 py-3 text-left">活动状态</th>
+              <th className="px-4 py-3 text-left">活动时间</th>
+              <th className="px-4 py-3 text-left">商品/库存/销量</th>
+              <th className="px-4 py-3 text-left">参与数据</th>
+              <th className="px-4 py-3 text-left">展示位置</th>
+              <th className="px-4 py-3 text-left">操作</th>
+            </tr>
+          )}
+          footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={(p) => { setPage(p); void load(p); }} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />}
+          emptyIcon={CalendarClock}
+          emptyTitle="暂无活动"
+          renderRow={(a) => (
+            <>
+              <td className="px-4 py-3"><p className="font-medium">{a.title}</p><p className="text-xs text-muted-foreground line-clamp-1">{a.description || "-"}</p></td>
+              <td className="px-4 py-3">{a.type === "flash_sale" ? "限时秒杀" : "满减活动"}</td>
+              <td className="px-4 py-3 text-xs">{a.status_label}</td>
+              <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(a.start_at).toLocaleString()}<br />{new Date(a.end_at).toLocaleString()}</td>
+              <td className="px-4 py-3 text-xs text-muted-foreground">商品 {a.product_count || 0}<br />库存 {a.activity_stock_total || 0} / 已售 {a.sold_count_total || 0}</td>
+              <td className="px-4 py-3 text-xs text-muted-foreground">参与数据预留</td>
+              <td className="px-4 py-3 text-xs text-muted-foreground">首页活动位</td>
+              <td className="px-4 py-3">
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <button type="button" onClick={() => navigate(`/admin/marketing/activities/${a.id}/edit`)} className="rounded border border-border px-2 py-1">编辑</button>
+                  <button type="button" onClick={() => navigate(`/admin/marketing/activities/new?copy_from=${a.id}`)} className="rounded border border-border px-2 py-1"><Copy className="mr-1 inline h-3 w-3" />复制</button>
+                  <button type="button" className="rounded border border-border px-2 py-1"><Eye className="mr-1 inline h-3 w-3" />预览</button>
+                  <button type="button" className="rounded border border-border px-2 py-1">查看数据</button>
+                  <button type="button" onClick={async () => { await activityService.setActivityDisabled(a.id, a.status !== "disabled"); await load(page); }} className="rounded border border-border px-2 py-1">{a.status === "disabled" ? "启用" : "禁用"}</button>
+                  <button type="button" onClick={() => setDeleteId(a.id)} className="rounded border border-destructive/30 px-2 py-1 text-destructive"><Trash2 className="mr-1 inline h-3 w-3" />删除</button>
+                </div>
+              </td>
+            </>
+          )}
+        />
       </div>
+
+      <AnimatedConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        danger
+        title="删除活动"
+        description="活动已有参与数据时删除将影响统计，确认删除？"
+        confirmText="删除"
+        onConfirm={async () => {
+          if (!deleteId) return;
+          await activityService.deleteActivity(deleteId);
+          toast.success("已删除");
+          setDeleteId(null);
+          await load(page);
+        }}
+      />
     </div>
   );
 }

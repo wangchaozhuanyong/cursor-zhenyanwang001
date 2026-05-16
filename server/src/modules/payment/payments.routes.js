@@ -1,6 +1,6 @@
-const { Router } = require('express');
-const auth = require('../../../middleware/auth');
-const { validate } = require('../../../middleware/validate');
+﻿const { Router } = require('express');
+const auth = require('../../middleware/auth');
+const { validate } = require('../../middleware/validate');
 const ctrl = require('./payments.controller');
 const {
   listChannelsQuerySchema,
@@ -17,3 +17,4 @@ router.post('/intents', validate({ body: createIntentBodySchema }), ctrl.createI
 router.get('/intents/:id', validate({ params: paymentOrderIdParamSchema }), ctrl.getIntent);
 
 module.exports = router;
+

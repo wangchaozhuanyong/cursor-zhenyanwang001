@@ -12,7 +12,15 @@ import ProductImageGallery from "@/components/ProductImageGallery";
 import ProductDetailStickyHeader from "@/components/product/ProductDetailStickyHeader";
 import { useProductDetailHeaderSolid } from "@/hooks/useProductDetailHeaderSolid";
 import ProductTagList from "@/components/ProductTagList";
-import { SquishButton } from "@/modules/micro-interactions";
+import {
+  AddToCartFeedback,
+  BottomSheet,
+  FavoriteMotionButton,
+  SquishButton,
+  useMediaSheetMode,
+} from "@/modules/micro-interactions";
+import ProductVariantSheet from "@/components/product/ProductVariantSheet";
+import { motion } from "framer-motion";
 import TrustInfo from "@/components/TrustInfo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -32,6 +40,11 @@ export default function ProductDetail() {
   const addItem = useCartStore((s) => s.addItem);
   const [qty, setQty] = useState(1);
   const [selectedVariantId, setSelectedVariantId] = useState<string>("");
+  const [variantSheetOpen, setVariantSheetOpen] = useState(false);
+  const [purchaseIntent, setPurchaseIntent] = useState<"cart" | "buy">("cart");
+  const [shareSheetOpen, setShareSheetOpen] = useState(false);
+  const [shareText, setShareText] = useState("");
+  const isMobileSheet = useMediaSheetMode();
   const trackedProductIdRef = useRef<string | null>(null);
   const headerSentinelRef = useRef<HTMLDivElement>(null);
 
@@ -163,17 +176,45 @@ export default function ProductDetail() {
   const detailSections = buildDetailSections(product.description);
   const galleryImages = Array.from(new Set([...(Array.isArray(product.images) && product.images.length ? product.images : []), ...(product.cover_image ? [product.cover_image] : [])].filter((url): url is string => typeof url === "string" && url.trim().length > 0)));
 
-  const handleAddToCart = async () => {
+  const ensureVariantSelected = () => {
+    if (availableVariants.length === 1 && !selectedVariantId) {
+      setSelectedVariantId(availableVariants[0].id);
+      return availableVariants[0];
+    }
+    return selectedVariant;
+  };
+
+  const openPurchaseSheet = (intent: "cart" | "buy") => {
     if (soldOut) {
       toast.error("库存不足");
+      return;
+    }
+    if (isMobileSheet) {
+      if (availableVariants.length === 1) setSelectedVariantId(availableVariants[0].id);
+      setPurchaseIntent(intent);
+      setVariantSheetOpen(true);
       return;
     }
     if (availableVariants.length > 1 && !selectedVariant) {
       toast.error("请选择商品规格");
       return;
     }
+    if (intent === "cart") void commitAddToCart();
+    else commitBuyNow();
+  };
+
+  const commitAddToCart = async () => {
+    const variant = ensureVariantSelected() ?? defaultVariant;
+    if (availableVariants.length > 1 && !variant) {
+      toast.error("请选择商品规格");
+      return;
+    }
     try {
-      await addItem(productForCart, qty, selectedVariant ?? defaultVariant);
+      await addItem(
+        variant ? { ...product, price: variant.price, stock: variant.stock } : productForCart,
+        qty,
+        variant ?? defaultVariant,
+      );
       trackAddToCart(productForCart, qty);
       void trackEvent({
         event_type: "add_to_cart",
@@ -183,22 +224,22 @@ export default function ProductDetail() {
         quantity: qty,
         amount: Number(displayPrice || 0) * Number(qty || 0),
       });
-      toast.success(`已加入购物车 x${qty}`, toastPresetQuickSuccess);
+      window.dispatchEvent(new CustomEvent("cart:badge-bump"));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "加入购物车失败");
     }
   };
 
-  const handleBuyNow = () => {
-    if (soldOut) {
-      toast.error("库存不足");
-      return;
-    }
-    if (availableVariants.length > 1 && !selectedVariant) {
+  const handleAddToCart = () => openPurchaseSheet("cart");
+
+  const commitBuyNow = () => {
+    const variant = ensureVariantSelected() ?? defaultVariant;
+    if (availableVariants.length > 1 && !variant) {
       toast.error("请选择商品规格");
       return;
     }
-    useCartStore.getState().setBuyNow(productForCart, qty, selectedVariant ?? defaultVariant);
+    const p = variant ? { ...product, price: variant.price, stock: variant.stock } : productForCart;
+    useCartStore.getState().setBuyNow(p, qty, variant ?? defaultVariant);
     void trackEvent({
       event_type: "checkout_start",
       module: "product_detail",
@@ -209,6 +250,8 @@ export default function ProductDetail() {
     });
     navigate("/checkout");
   };
+
+  const handleBuyNow = () => openPurchaseSheet("buy");
 
   const handleFavorite = async () => {
     try {
@@ -241,6 +284,12 @@ export default function ProductDetail() {
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") return;
       }
+    }
+
+    if (isMobileSheet) {
+      setShareText(sharePayload.text);
+      setShareSheetOpen(true);
+      return;
     }
 
     const copied = await copyToClipboard(sharePayload.text);
@@ -299,7 +348,7 @@ export default function ProductDetail() {
                   </span>
                 )}
                 {activeActivity && (
-                  <span className="theme-rounded bg-red-600 px-2 py-1 text-[10px] font-bold text-white">
+                  <span className="theme-rounded bg-[var(--theme-danger)] px-2 py-1 text-[10px] font-bold text-[var(--theme-danger-foreground)]">
                     {activeActivity.type === "flash_sale" ? "限时秒杀" : "满减活动"}
                   </span>
                 )}
@@ -370,24 +419,25 @@ export default function ProductDetail() {
                     const active = selectedVariant?.id === variant.id;
                     const disabled = variant.stock <= 0;
                     return (
-                      <button
+                      <motion.button
                         key={variant.id}
                         type="button"
                         disabled={disabled}
-                  onClick={() => {
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => {
                           setSelectedVariantId(variant.id);
                           setQty((prev) => (variant.stock > 0 ? Math.max(1, Math.min(prev, variant.stock)) : 0));
                         }}
                         className={`min-h-16 rounded-lg border px-3 py-2 text-left text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${
                           active
-                            ? "border-[var(--theme-price)] bg-[var(--theme-price)]/10 text-foreground"
+                            ? "border-[var(--theme-price)] bg-[var(--theme-price)]/10 text-foreground ring-2 ring-[var(--theme-price)]/30"
                             : "border-[var(--theme-border)] bg-background text-muted-foreground hover:border-[var(--theme-price)]/60"
                         }`}
                       >
                         <span className="block truncate font-semibold">{variant.title || variant.sku_code || "默认规格"}</span>
                         <span className="mt-1 block">RM {variant.price}</span>
                         <span className="mt-0.5 block">库存 {variant.stock}</span>
-                      </button>
+                      </motion.button>
                     );
                   })}
                 </div>
@@ -481,6 +531,50 @@ export default function ProductDetail() {
           />
         </div>
       </div>
+
+      <ProductVariantSheet
+        open={variantSheetOpen}
+        onClose={() => setVariantSheetOpen(false)}
+        product={product}
+        variants={availableVariants}
+        selectedVariantId={selectedVariantId || availableVariants[0]?.id || ""}
+        onSelectVariant={setSelectedVariantId}
+        qty={qty}
+        onQtyChange={setQty}
+        maxQty={maxQty}
+        soldOut={soldOut}
+        intent={purchaseIntent}
+        onConfirm={() => {
+          setVariantSheetOpen(false);
+          if (purchaseIntent === "cart") void commitAddToCart();
+          else commitBuyNow();
+        }}
+      />
+
+      <BottomSheet
+        open={shareSheetOpen}
+        onClose={() => setShareSheetOpen(false)}
+        title="分享商品"
+        height="auto"
+        stickyFooter
+        footer={
+          <button
+            type="button"
+            className="flex min-h-12 w-full items-center justify-center rounded-full bg-[var(--theme-primary)] text-sm font-semibold text-[var(--theme-primary-foreground)]"
+            onClick={async () => {
+              const ok = await copyToClipboard(shareText);
+              if (ok) {
+                toast.success("已复制分享文案", toastPresetQuickSuccess);
+                setShareSheetOpen(false);
+              } else toast.error("复制失败");
+            }}
+          >
+            复制分享文案
+          </button>
+        }
+      >
+        <p className="whitespace-pre-wrap text-sm text-[var(--theme-text-muted)]">{shareText}</p>
+      </BottomSheet>
     </div>
   );
 }
@@ -496,34 +590,24 @@ function DetailPurchaseBar({
   soldOut: boolean;
   isFavorite: boolean;
   onFavorite: () => void;
-  onAddToCart: () => void;
+  onAddToCart: () => void | Promise<void>;
   onBuyNow: () => void;
 }) {
   return (
     <div className="flex items-stretch gap-2">
       <div className="flex shrink-0 items-stretch gap-1">
-        <button
-          type="button"
-          onClick={onFavorite}
-          className="flex min-w-[3.25rem] flex-col items-center justify-center gap-0.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-2 text-[10px] text-[var(--theme-text-muted)] transition hover:bg-[var(--theme-bg)] touch-target"
-          aria-label={isFavorite ? "取消收藏" : "收藏"}
-        >
-          <Heart
-            size={20}
-            className={isFavorite ? "fill-[var(--theme-danger)] text-[var(--theme-danger)]" : "text-[var(--theme-text-muted)]"}
-          />
-          <span>{isFavorite ? "已收藏" : "收藏"}</span>
-        </button>
-        <button
-          type="button"
-          onClick={onAddToCart}
-          disabled={soldOut}
-          className="flex min-w-[3.25rem] flex-col items-center justify-center gap-0.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-2 text-[10px] text-[var(--theme-text-muted)] transition hover:bg-[var(--theme-bg)] disabled:cursor-not-allowed disabled:opacity-50 touch-target"
-          aria-label={soldOut ? "已售罄" : "加入购物车"}
-        >
-          <ShoppingCart size={20} className="text-[var(--theme-text-muted)]" />
-          <span>购物车</span>
-        </button>
+        <div className="flex min-w-[3.25rem] flex-col items-center gap-0.5">
+          <FavoriteMotionButton active={isFavorite} onClick={onFavorite} className="h-10 w-10" size={18} />
+          <span className="text-[10px] text-[var(--theme-text-muted)]">{isFavorite ? "已收藏" : "收藏"}</span>
+        </div>
+        <AddToCartFeedback
+          onAdd={onAddToCart}
+          variant="outline"
+          idleLabel="加购"
+          successLabel="已加入"
+          className="!min-h-[3.25rem] !flex-1"
+          toastMessage="已加入购物车"
+        />
       </div>
       <SquishButton
         type="button"

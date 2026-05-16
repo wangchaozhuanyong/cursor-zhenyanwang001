@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bell, Plus, Trash2, Loader2, Send, Settings } from "lucide-react";
+import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import SegmentedDateTimeInput from "@/components/admin/SegmentedDateTimeInput";
@@ -22,6 +23,7 @@ export default function AdminNotifications() {
   const [triggerRules, setTriggerRules] = useState<notificationService.NotificationTriggerRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingTriggers, setSavingTriggers] = useState(false);
+  const [formSubmitting, setFormSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -85,31 +87,39 @@ export default function AdminNotifications() {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!formData.title || !formData.content) { toast.error("请填写完整信息"); return; }
     if (formData.audience_type === "single" && !formData.user_id.trim()) {
       toast.error("请选择单用户发送时，请填写用户ID");
       return;
     }
-    notificationService.sendNotification(formData)
-      .then(() => {
-        toast.success("通知已发送");
-        setShowForm(false);
-        setFormData({ title: "", content: "", type: "system", audience_type: "all", user_id: "", scheduled_at: "", link_url: "", template_code: "" });
-        loadData();
-      })
-      .catch((e) => toast.error(toastErrorMessage(e, "发送失败")));
+    setFormSubmitting(true);
+    try {
+      await notificationService.sendNotification(formData);
+      toast.success("通知已发送");
+      setShowForm(false);
+      setFormData({ title: "", content: "", type: "system", audience_type: "all", user_id: "", scheduled_at: "", link_url: "", template_code: "" });
+      loadData();
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "发送失败"));
+    } finally {
+      setFormSubmitting(false);
+    }
   };
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = async () => {
     if (!formData.title) { toast.error("草稿至少需要标题"); return; }
-    notificationService.saveNotificationDraft(formData)
-      .then(() => {
-        toast.success("草稿已保存");
-        setShowForm(false);
-        loadData();
-      })
-      .catch((e) => toast.error(toastErrorMessage(e, "保存草稿失败")));
+    setFormSubmitting(true);
+    try {
+      await notificationService.saveNotificationDraft(formData);
+      toast.success("草稿已保存");
+      setShowForm(false);
+      loadData();
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "保存草稿失败"));
+    } finally {
+      setFormSubmitting(false);
+    }
   };
 
   const handlePublish = (id: string) => {
@@ -161,14 +171,6 @@ export default function AdminNotifications() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -206,14 +208,16 @@ export default function AdminNotifications() {
                 控制订单、支付、售后等业务操作是否自动向客户端通知中心推送消息。可为每条规则单独填写标题与正文；留空则使用默认话术（见输入框占位提示）。
               </p>
             </div>
-            <button
+            <LoadingButton
               type="button"
+              variant="gold"
+              state={savingTriggers ? "loading" : "normal"}
+              loadingText="保存中..."
               onClick={() => void handleSaveTriggerRules()}
-              disabled={savingTriggers}
-              className="rounded-xl bg-gold px-4 py-2.5 text-xs font-bold text-primary-foreground disabled:opacity-60"
+              className="rounded-xl px-4 py-2.5 text-xs font-bold"
             >
-              {savingTriggers ? "保存中..." : "保存规则"}
-            </button>
+              保存规则
+            </LoadingButton>
           </div>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {triggerRules.map((rule) => (
@@ -287,7 +291,16 @@ export default function AdminNotifications() {
       </div>
 
       <div className="space-y-3 md:hidden">
-        {notifications.map((n) => (
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="rounded-2xl border border-border bg-card p-4 space-y-3">
+                <div className="skeleton-base skeleton-shimmer h-4 w-2/3 rounded" />
+                <div className="skeleton-base skeleton-shimmer h-12 w-full rounded" />
+                <div className="skeleton-base skeleton-shimmer h-10 w-full rounded-xl" />
+              </div>
+            ))
+          : null}
+        {!loading && notifications.map((n) => (
           <div key={n.id} className="rounded-2xl border border-border bg-card p-4">
             <div className="flex items-start justify-between gap-2">
               <p className="font-medium text-foreground">{n.title}</p>
@@ -307,75 +320,80 @@ export default function AdminNotifications() {
             </PermissionGate>
           </div>
         ))}
-        {notifications.length === 0 && (
+        {!loading && notifications.length === 0 && (
           <div className="py-12 text-center text-sm text-muted-foreground">暂无通知</div>
         )}
         <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
       </div>
 
-      <div className="hidden overflow-hidden rounded-2xl border border-border bg-card md:block">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px] text-sm">
-            <thead>
-              <tr className="border-b border-border bg-secondary/50">
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">标题</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">内容</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">类型</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">发送状态</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">受众/已读</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">时间</th>
-                <th className="px-4 py-3 text-center font-medium text-muted-foreground">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {notifications.map((n) => (
-                <tr key={n.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
-                  <td className="px-4 py-3 font-medium">{n.title}</td>
-                  <td className="px-4 py-3 text-muted-foreground max-w-[200px] truncate">{n.content}</td>
-                  <td className="px-4 py-3">
-                    <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                      {typeLabels[n.type] || n.type}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      n.send_status === "scheduled"
-                        ? "bg-blue-50 text-blue-600"
-                        : n.send_status === "cancelled"
-                          ? "bg-muted text-muted-foreground"
-                          : "bg-emerald-50 text-emerald-600"
-                    }`}>
-                      {n.send_status === "scheduled" ? "定时中" : n.send_status === "cancelled" ? "已撤回" : "已发送"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {(n.audience_type === "all" ? "全部用户" : "单用户")} / {n.read_count || 0}/{n.recipient_count || 0}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{n.created_at ? new Date(n.created_at).toLocaleString("zh-CN") : "—"}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-center">
-                      <PermissionGate permission="notification.manage">
-                        <div className="flex items-center gap-1">
-                          {n.workflow_status === "draft" && (
-                            <button type="button" onClick={() => handlePublish(String(n.id))} className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-emerald-600" title="发布">
-                              <Send size={14} />
-                            </button>
-                          )}
-                          <button type="button" onClick={() => handleDelete(String(n.id))} className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-destructive">
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </PermissionGate>
+      <div className="hidden md:block">
+        <AnimatedTable
+          loading={loading}
+          rows={notifications}
+          rowKey={(n) => n.id}
+          skeletonRows={8}
+          skeletonCols={7}
+          className="overflow-hidden rounded-2xl border border-border bg-card overflow-x-auto"
+          tableClassName="w-full min-w-[800px] text-sm"
+          theadClassName="border-b border-border bg-secondary/50"
+          thead={(
+            <tr>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">标题</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">内容</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">类型</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">发送状态</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">受众/已读</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground">时间</th>
+              <th className="px-4 py-3 text-center font-medium text-muted-foreground">操作</th>
+            </tr>
+          )}
+          footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
+          emptyIcon={Bell}
+          emptyTitle="暂无通知"
+          renderRow={(n) => (
+            <>
+              <td className="px-4 py-3 font-medium">{n.title}</td>
+              <td className="px-4 py-3 text-muted-foreground max-w-[200px] truncate">{n.content}</td>
+              <td className="px-4 py-3">
+                <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                  {typeLabels[n.type] || n.type}
+                </span>
+              </td>
+              <td className="px-4 py-3">
+                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                  n.send_status === "scheduled"
+                    ? "bg-blue-50 text-blue-600"
+                    : n.send_status === "cancelled"
+                      ? "bg-muted text-muted-foreground"
+                      : "bg-emerald-50 text-emerald-600"
+                }`}>
+                  {n.send_status === "scheduled" ? "定时中" : n.send_status === "cancelled" ? "已撤回" : "已发送"}
+                </span>
+              </td>
+              <td className="px-4 py-3 text-xs text-muted-foreground">
+                {(n.audience_type === "all" ? "全部用户" : "单用户")} / {n.read_count || 0}/{n.recipient_count || 0}
+              </td>
+              <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{n.created_at ? new Date(n.created_at).toLocaleString("zh-CN") : "—"}</td>
+              <td className="px-4 py-3">
+                <div className="flex items-center justify-center">
+                  <PermissionGate permission="notification.manage">
+                    <div className="flex items-center gap-1">
+                      {n.workflow_status === "draft" && (
+                        <button type="button" onClick={() => handlePublish(String(n.id))} className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-emerald-600" title="发布">
+                          <Send size={14} />
+                        </button>
+                      )}
+                      <button type="button" onClick={() => handleDelete(String(n.id))} className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-destructive">
+                        <Trash2 size={14} />
+                      </button>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+                  </PermissionGate>
+                </div>
+              </td>
+            </>
+          )}
+        />
       </div>
-
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowForm(false)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl space-y-4">
@@ -442,8 +460,8 @@ export default function AdminNotifications() {
             <p className="text-[11px] text-muted-foreground">留空=立即发送；填写后到时间自动对用户可见。</p>
             <PermissionGate permission="notification.manage">
               <div className="grid grid-cols-2 gap-2">
-                <button onClick={handleSaveDraft} className="w-full rounded-xl border border-border py-2.5 text-sm font-bold text-foreground">保存草稿</button>
-                <button onClick={handleSend} className="w-full rounded-xl bg-gold py-2.5 text-sm font-bold text-primary-foreground">立即发布</button>
+                <LoadingButton type="button" variant="outline" state={formSubmitting ? "loading" : "normal"} loadingText="保存中..." onClick={() => void handleSaveDraft()} className="w-full rounded-xl py-2.5 text-sm font-bold">保存草稿</LoadingButton>
+                <LoadingButton type="button" variant="gold" state={formSubmitting ? "loading" : "normal"} loadingText="发布中..." onClick={() => void handleSend()} className="w-full rounded-xl py-2.5 text-sm font-bold">立即发布</LoadingButton>
               </div>
             </PermissionGate>
           </div>

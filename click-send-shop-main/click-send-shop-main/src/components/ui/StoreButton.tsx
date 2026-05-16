@@ -14,7 +14,7 @@ const variantMap: Record<StoreButtonVariant, string> = {
   primary: "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)] border border-transparent",
   secondary: "bg-[var(--theme-secondary)] text-[var(--theme-secondary-foreground)] border border-transparent",
   ghost: "bg-transparent text-[var(--theme-text)] border border-[var(--theme-border)]",
-  danger: "bg-[var(--theme-danger)] text-white border border-transparent",
+  danger: "bg-[var(--theme-danger)] text-[var(--theme-danger-foreground)] border border-transparent",
   price: "bg-[var(--theme-price)] text-[var(--theme-price-foreground)] border border-transparent",
 };
 

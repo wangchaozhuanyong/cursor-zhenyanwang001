@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
+import { AnimatedTable } from "@/modules/micro-interactions";
 import PermissionGate from "@/components/admin/PermissionGate";
 import Pagination from "@/components/admin/Pagination";
 import PaymentAdminSubnav from "./PaymentAdminSubnav";
@@ -77,62 +78,43 @@ export default function AdminPaymentEvents() {
           </button>
         </div>
 
-        {loading ? (
-          <div className="flex justify-center py-16 text-muted-foreground">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto theme-rounded border border-[var(--theme-border)]">
-              <table className="w-full min-w-[900px] text-left text-sm">
-                <thead className="bg-secondary/50 text-xs text-muted-foreground">
-                  <tr>
-                    <th className="px-3 py-2">时间</th>
-                    <th className="px-3 py-2">Provider</th>
-                    <th className="px-3 py-2">类型</th>
-                    <th className="px-3 py-2">验签/处理</th>
-                    <th className="px-3 py-2">订单</th>
-                    <th className="px-3 py-2">操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {list.map((r) => (
-                    <tr key={r.id} className="border-t border-border">
-                      <td className="px-3 py-2 text-xs text-muted-foreground">
-                        {new Date(r.created_at).toLocaleString()}
-                      </td>
-                      <td className="px-3 py-2">{r.provider}</td>
-                      <td className="px-3 py-2 text-xs">{r.event_type}</td>
-                      <td className="px-3 py-2 text-xs">
-                        {r.verify_status} / {r.processing_result}
-                      </td>
-                      <td className="px-3 py-2 font-mono text-xs">{r.order_id?.slice(0, 8) ?? "—"}…</td>
-                      <td className="px-3 py-2">
-                        <button
-                          type="button"
-                          onClick={() => void replay(r.id)}
-                          className="inline-flex items-center gap-1 text-xs font-medium text-[var(--theme-price)]"
-                        >
-                          <RotateCcw size={12} /> 重放记录
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {list.length === 0 && (
-                <div className="py-10 text-center text-sm text-muted-foreground">暂无数据</div>
-              )}
-            </div>
-            <Pagination
-              page={page}
-              pageSize={pageSize}
-              total={total}
-              onPageChange={setPage}
-              onPageSizeChange={() => {}}
-            />
-          </>
-        )}
+        <AnimatedTable
+          loading={loading}
+          rows={list}
+          rowKey={(r) => r.id}
+          skeletonRows={8}
+          skeletonCols={6}
+          className="theme-rounded border border-[var(--theme-border)] overflow-x-auto"
+          tableClassName="w-full min-w-[900px] text-left text-sm"
+          theadClassName="bg-secondary/50 text-xs text-muted-foreground"
+          thead={(
+            <tr>
+              <th className="px-3 py-2">时间</th>
+              <th className="px-3 py-2">Provider</th>
+              <th className="px-3 py-2">类型</th>
+              <th className="px-3 py-2">验签/处理</th>
+              <th className="px-3 py-2">订单</th>
+              <th className="px-3 py-2">操作</th>
+            </tr>
+          )}
+          footer={<Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={() => {}} />}
+          emptyIcon={RotateCcw}
+          emptyTitle="暂无数据"
+          renderRow={(r) => (
+            <>
+              <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</td>
+              <td className="px-3 py-2">{r.provider}</td>
+              <td className="px-3 py-2 text-xs">{r.event_type}</td>
+              <td className="px-3 py-2 text-xs">{r.verify_status} / {r.processing_result}</td>
+              <td className="px-3 py-2 font-mono text-xs">{r.order_id?.slice(0, 8) ?? "—"}…</td>
+              <td className="px-3 py-2">
+                <button type="button" onClick={() => void replay(r.id)} className="inline-flex items-center gap-1 text-xs font-medium text-[var(--theme-price)]">
+                  <RotateCcw size={12} /> 重放记录
+                </button>
+              </td>
+            </>
+          )}
+        />
       </div>
     </PermissionGate>
   );

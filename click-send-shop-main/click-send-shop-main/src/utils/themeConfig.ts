@@ -1,5 +1,6 @@
-import { CLASSIC_GOLD_BLACK_CONFIG, DEFAULT_SKIN_ID, THEME_PRESETS } from "@/constants/themePresets";
+import { DEFAULT_LIFE_GREEN_CONFIG, DEFAULT_SKIN_ID, THEME_PRESETS } from "@/constants/themePresets";
 import type {
+  ThemeSceneTag,
   AdminThemeMode,
   BadgeStyle,
   BannerStyle,
@@ -45,6 +46,24 @@ const CATEGORY_ICON_VALUES: CategoryIconStyle[] = ["circle", "soft", "solid", "o
 const MOTION_VALUES: MotionLevel[] = ["none", "soft", "rich"];
 const DENSITY_VALUES: Density[] = ["comfortable", "compact"];
 const ADMIN_MODE_VALUES: AdminThemeMode[] = ["fixed", "follow_store"];
+const SCENE_TAG_VALUES: ThemeSceneTag[] = [
+  "default",
+  "life_service",
+  "premium",
+  "visa",
+  "mall",
+  "admin",
+  "promotion",
+];
+
+const PRESET_SCENE_BY_ID: Record<string, ThemeSceneTag> = {
+  default_life_green: "life_service",
+  premium_black_gold: "premium",
+  professional_blue: "visa",
+  promo_red_orange: "promotion",
+  fresh_cyan: "life_service",
+  minimalist_grey: "mall",
+};
 
 function pickEnum<T extends string>(value: unknown, values: readonly T[], fallback: T): T {
   if (typeof value !== "string") return fallback;
@@ -83,7 +102,7 @@ function normalizeFontFamily(value: unknown, fallback: string): string {
 }
 
 export function normalizeThemeConfig(input: Partial<ThemeConfig> | null | undefined): ThemeConfig {
-  const base = CLASSIC_GOLD_BLACK_CONFIG;
+  const base = DEFAULT_LIFE_GREEN_CONFIG;
   const raw = (input ?? {}) as Record<string, unknown>;
 
   const bgColor = normalizeHex(raw.bgColor, base.bgColor);
@@ -144,7 +163,7 @@ export function normalizeThemeConfig(input: Partial<ThemeConfig> | null | undefi
     motionLevel: pickEnum(raw.motionLevel, MOTION_VALUES, base.motionLevel),
     density: pickEnum(raw.density, DENSITY_VALUES, base.density),
 
-    adminThemeMode: pickEnum(raw.adminThemeMode, ADMIN_MODE_VALUES, "fixed"),
+    adminThemeMode: pickEnum(raw.adminThemeMode, ADMIN_MODE_VALUES, "follow_store"),
   };
 }
 
@@ -152,13 +171,48 @@ export function mergeThemeConfig(config: Partial<ThemeConfig> | null | undefined
   return normalizeThemeConfig(config);
 }
 
+function normalizeSceneTag(skin: Partial<ThemeSkin>): ThemeSceneTag {
+  if (typeof skin.sceneTag === "string" && SCENE_TAG_VALUES.includes(skin.sceneTag as ThemeSceneTag)) {
+    return skin.sceneTag as ThemeSceneTag;
+  }
+  return PRESET_SCENE_BY_ID[skin.id] || "default";
+}
+
 export function normalizeThemeSkin(skin: Partial<ThemeSkin> & { id: string; name: string }): ThemeSkin {
+  const description =
+    typeof skin.description === "string" && skin.description.trim() ? skin.description.trim() : undefined;
   return {
     id: skin.id,
-    name: skin.name,
+    name: skin.name.trim() || skin.id,
+    description,
+    sceneTag: normalizeSceneTag(skin),
     clientEnabled: skin.clientEnabled !== false,
     config: normalizeThemeConfig(skin.config),
   };
+}
+
+/** 仅默认皮肤不可删；至少保留一套。 */
+export function canDeleteThemeSkin(skinId: string, defaultSkinId: string, skinCount: number): { ok: boolean; message?: string } {
+  if (skinCount <= 1) return { ok: false, message: "至少保留一套皮肤" };
+  if (skinId === defaultSkinId) return { ok: false, message: "默认皮肤无法删除，请先将其他皮肤设为默认" };
+  return { ok: true };
+}
+
+function resolveThemeSkinIds(
+  skins: ThemeSkin[],
+  preferredDefaultId?: string,
+  preferredActiveId?: string,
+): { defaultSkinId: string; activeSkinId: string } {
+  if (skins.length === 0) {
+    return { defaultSkinId: DEFAULT_SKIN_ID, activeSkinId: DEFAULT_SKIN_ID };
+  }
+  const has = (id: string | undefined | null) => !!id && skins.some((s) => s.id === id);
+  let defaultSkinId = has(preferredDefaultId) ? String(preferredDefaultId) : skins[0].id;
+  if (skins.length === 1) defaultSkinId = skins[0].id;
+  if (!has(defaultSkinId)) defaultSkinId = skins[0].id;
+  let activeSkinId = has(preferredActiveId) ? String(preferredActiveId) : defaultSkinId;
+  if (!has(activeSkinId)) activeSkinId = defaultSkinId;
+  return { defaultSkinId, activeSkinId };
 }
 
 export function normalizeThemeSkinsPayload(payload: {
@@ -172,18 +226,20 @@ export function normalizeThemeSkinsPayload(payload: {
 } {
   const incoming = payload ?? {};
   const normalizedIncoming = Array.isArray(incoming.skins) ? incoming.skins.map(normalizeThemeSkin) : [];
-  const byId = new Map<string, ThemeSkin>();
-  for (const preset of THEME_PRESETS) byId.set(preset.id, { ...preset, config: normalizeThemeConfig(preset.config) });
-  for (const skin of normalizedIncoming) byId.set(skin.id, skin);
-  const skins = Array.from(byId.values());
 
-  const has = (id: string | undefined | null) => !!id && skins.some((s) => s.id === id);
-  const defaultSkinId = has(incoming.defaultSkinId) ? String(incoming.defaultSkinId) : DEFAULT_SKIN_ID;
-  const activeSkinId = has(incoming.activeSkinId)
-    ? String(incoming.activeSkinId)
-    : has(defaultSkinId)
-      ? defaultSkinId
-      : DEFAULT_SKIN_ID;
+  const skins =
+    normalizedIncoming.length > 0
+      ? normalizedIncoming
+      : THEME_PRESETS.map((preset) => ({
+          ...preset,
+          config: normalizeThemeConfig(preset.config),
+        }));
+
+  const { defaultSkinId, activeSkinId } = resolveThemeSkinIds(
+    skins,
+    incoming.defaultSkinId,
+    incoming.activeSkinId,
+  );
 
   return { defaultSkinId, activeSkinId, skins };
 }

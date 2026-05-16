@@ -6,6 +6,8 @@ import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import * as rbacService from "@/services/admin/rbacService";
 import type { RbacAdminUserRow, RbacRoleRow } from "@/services/admin/rbacService";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { AdminTabsPanelSkeleton } from "@/components/admin/AdminLoadingSkeletons";
+import { LoadingButton } from "@/modules/micro-interactions";
 
 interface PermRow { id: number; code: string; name: string; sort_order: number }
 
@@ -123,10 +125,6 @@ export default function AdminRoles() {
     } catch (e) { toast.error(toastErrorMessage(e, "删除失败")); }
   };
 
-  if (loading) {
-    return <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted-foreground">加载中…</div>;
-  }
-
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-2">
@@ -140,6 +138,10 @@ export default function AdminRoles() {
         <button onClick={() => setTab("admins")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "admins" ? "bg-[var(--theme-price)] text-white" : "bg-secondary text-muted-foreground"}`}>管理员账号</button>
       </div>
 
+      {loading ? (
+        <AdminTabsPanelSkeleton />
+      ) : (
+      <>
       {tab === "assign" && (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">为后台管理员账号分配 RBAC 角色。超级管理员角色仅超级管理员账号可分配。</p>
@@ -167,9 +169,17 @@ export default function AdminRoles() {
             </PermissionGate>
           </div>
           <PermissionGate permission="role.manage">
-            <button type="button" onClick={() => void handleSave()} disabled={saving || !selectedUserId} className="min-h-[44px] w-full theme-rounded py-3 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--theme-gradient)" }}>
-              {saving ? "保存中…" : "保存"}
-            </button>
+            <LoadingButton
+              type="button"
+              variant="gold"
+              state={saving ? "loading" : "normal"}
+              loadingText="保存中..."
+              disabled={!selectedUserId}
+              onClick={() => void handleSave()}
+              className="min-h-[44px] w-full rounded-xl py-3 text-sm font-semibold"
+            >
+              保存
+            </LoadingButton>
           </PermissionGate>
         </div>
       )}
@@ -245,6 +255,8 @@ export default function AdminRoles() {
           </div>
         </div>
       )}
+      </>
+      )}
 
       {showAdminModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowAdminModal(false)}>
@@ -258,9 +270,29 @@ export default function AdminRoles() {
               <div><label className="text-xs font-medium text-muted-foreground">密码</label><input type="password" value={adminForm.password} onChange={(e) => setAdminForm((p) => ({ ...p, password: e.target.value }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" /></div>
               <div><label className="text-xs font-medium text-muted-foreground">昵称</label><input value={adminForm.nickname} onChange={(e) => setAdminForm((p) => ({ ...p, nickname: e.target.value }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" /></div>
             </div>
-            <button onClick={async () => { setSaving(true); try { await rbacService.createAdminUser({ phone: adminForm.phone, password: adminForm.password, nickname: adminForm.nickname }); toast.success("已创建"); setShowAdminModal(false); void reload(); } catch (e) { toast.error(toastErrorMessage(e, "创建失败")); } finally { setSaving(false); } }} disabled={saving || !adminForm.phone || !adminForm.password} className="w-full theme-rounded py-3 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--theme-gradient)" }}>
-              {saving ? "创建中…" : "创建"}
-            </button>
+            <LoadingButton
+              type="button"
+              variant="gold"
+              state={saving ? "loading" : "normal"}
+              loadingText="创建中..."
+              disabled={!adminForm.phone || !adminForm.password}
+              onClick={async () => {
+                setSaving(true);
+                try {
+                  await rbacService.createAdminUser({ phone: adminForm.phone, password: adminForm.password, nickname: adminForm.nickname });
+                  toast.success("已创建");
+                  setShowAdminModal(false);
+                  void reload();
+                } catch (e) {
+                  toast.error(toastErrorMessage(e, "创建失败"));
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              className="w-full rounded-xl py-3 text-sm font-semibold"
+            >
+              创建
+            </LoadingButton>
           </div>
         </div>
       )}
@@ -336,9 +368,17 @@ export default function AdminRoles() {
                 </div>
               </div>
             </div>
-            <button onClick={() => void handleRoleSave()} disabled={saving || !roleForm.code || !roleForm.name} className="w-full rounded-xl bg-gold py-3 text-sm font-semibold text-primary-foreground disabled:opacity-50">
-              {saving ? "保存中…" : "保存"}
-            </button>
+            <LoadingButton
+              type="button"
+              variant="gold"
+              state={saving ? "loading" : "normal"}
+              loadingText="保存中..."
+              disabled={!roleForm.code || !roleForm.name}
+              onClick={() => void handleRoleSave()}
+              className="w-full rounded-xl py-3 text-sm font-semibold"
+            >
+              保存
+            </LoadingButton>
           </div>
         </div>
       )}

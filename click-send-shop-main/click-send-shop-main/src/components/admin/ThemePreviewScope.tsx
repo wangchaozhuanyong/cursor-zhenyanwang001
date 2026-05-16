@@ -25,12 +25,17 @@ export default function ThemePreviewScope({
   config,
   children,
   className,
+  style: styleOverride,
 }: {
   config: ThemeConfig;
   children: ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }) {
-  const style = useMemo(() => generateThemePalette(config), [config]);
+  const style = useMemo(
+    () => ({ ...generateThemePalette(config), ...(styleOverride || {}) }),
+    [config, styleOverride],
+  );
   const dataAttrs = toDataAttrs(config);
   return (
     <div className={className} style={style} {...dataAttrs}>

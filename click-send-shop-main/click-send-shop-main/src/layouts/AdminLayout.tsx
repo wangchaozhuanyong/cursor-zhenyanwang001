@@ -1,4 +1,6 @@
-﻿import { Suspense } from "react";
+﻿import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { AnimatedPage } from "@/modules/micro-interactions";
 import { Outlet, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { AdminOutletFallback } from "@/components/AppRouteFallback";
 import type { LucideIcon } from "lucide-react";
@@ -39,7 +41,6 @@ import {
   Crown,
 } from "lucide-react";
 import SkinPickerDialog from "@/components/SkinPickerDialog";
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { isAdminAuthenticated, adminLogout, fetchAdminProfile } from "@/services/admin/accountService";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { canAccessAdminPath, getFirstAllowedAdminPath } from "@/config/adminNavAccess";
@@ -234,7 +235,7 @@ function AdminSidebarNav({
       className={`flex touch-manipulation flex-col ${scrollMode === "overlay" ? "h-full max-h-[100dvh] min-h-0 flex-1" : ""}`}
     >
       <div className="safe-area-pt flex shrink-0 items-center gap-2 border-b border-border px-5 py-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gold text-sm font-bold text-primary-foreground">A</div>
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--theme-primary)] text-sm font-bold text-[var(--theme-primary-foreground)]">A</div>
         <span className="font-display text-lg font-bold text-foreground">管理后台</span>
       </div>
 
@@ -249,7 +250,9 @@ function AdminSidebarNav({
                 type="button"
                 onClick={() => onNavigate(item.path)}
                 className={`flex min-h-[48px] w-full items-center gap-3 rounded-xl px-3 py-3 text-[15px] transition-colors active:bg-secondary/80 ${
-                  active || childActive ? "bg-gold/10 font-semibold text-gold" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  active || childActive
+                    ? "bg-[var(--theme-primary)] font-semibold text-[var(--theme-primary-foreground)]"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                 }`}
               >
                 <item.icon size={20} strokeWidth={2} />
@@ -258,8 +261,15 @@ function AdminSidebarNav({
                   <ChevronRight size={18} className={`shrink-0 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
                 )}
               </button>
-              {item.children && isExpanded && (
-                <div className="ml-4 mt-0.5 space-y-0.5 border-l border-border pl-3">
+              <AnimatePresence initial={false}>
+                {item.children && isExpanded ? (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  className="ml-4 mt-0.5 overflow-hidden space-y-0.5 border-l border-border pl-3"
+                >
                   {item.children.map((child) => {
                     const cActive = child.path === item.path
                       ? pathname === child.path
@@ -270,7 +280,7 @@ function AdminSidebarNav({
                         key={child.path}
                         onClick={() => onNavigate(child.path)}
                         className={`flex min-h-[44px] w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-sm transition-colors active:bg-secondary/80 ${
-                          cActive ? "font-semibold text-gold" : "text-muted-foreground hover:text-foreground"
+                          cActive ? "font-semibold text-[var(--theme-primary)]" : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
                         <child.icon size={18} />
@@ -278,8 +288,9 @@ function AdminSidebarNav({
                       </button>
                     );
                   })}
-                </div>
-              )}
+                </motion.div>
+                ) : null}
+              </AnimatePresence>
             </div>
           );
         })}
@@ -315,7 +326,7 @@ function AdminNavTab({
       type="button"
       onClick={onClick}
       className={`touch-manipulation flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 active:opacity-80 ${
-        active ? "text-gold" : "text-muted-foreground"
+        active ? "text-[var(--theme-primary)]" : "text-muted-foreground"
       }`}
     >
       <Icon size={22} strokeWidth={active ? 2.25 : 2} className="shrink-0" />
@@ -407,8 +418,8 @@ export default function AdminLayout() {
   const showNotifTab = can("notification.manage");
 
   return (
-    <div className="flex min-h-[100dvh] items-start bg-background">
-      <aside className="hidden w-[260px] shrink-0 border-r border-border bg-card lg:block">
+    <div className="flex min-h-[100dvh] items-start bg-[var(--theme-bg)] text-[var(--theme-text)]">
+      <aside className="hidden w-[260px] shrink-0 border-r border-[var(--theme-border)] bg-[var(--theme-card)] lg:block">
         <AdminSidebarNav
           scrollMode="inline"
           navItems={navItems}
@@ -418,15 +429,25 @@ export default function AdminLayout() {
         />
       </aside>
 
-      {sidebarOpen && (
+      <AnimatePresence>
+        {sidebarOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <button
+          <motion.button
             type="button"
             aria-label="关闭菜单"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
             onClick={() => setSidebarOpen(false)}
           />
-          <aside className="safe-area-pl absolute left-0 top-0 flex h-full w-[min(88vw,20rem)] max-w-sm flex-col overflow-hidden bg-card shadow-2xl">
+          <motion.aside
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ type: "spring", stiffness: 380, damping: 36 }}
+            className="safe-area-pl absolute left-0 top-0 flex h-full w-[min(88vw,20rem)] max-w-sm flex-col overflow-hidden bg-[var(--theme-card)] shadow-2xl"
+          >
             <AdminSidebarNav
               scrollMode="overlay"
               navItems={navItems}
@@ -434,12 +455,13 @@ export default function AdminLayout() {
               onNavigate={handleSidebarNavigate}
               onLogout={handleSidebarLogout}
             />
-          </aside>
+          </motion.aside>
         </div>
-      )}
+        ) : null}
+      </AnimatePresence>
 
       <div className="flex min-h-[100dvh] min-w-0 flex-1 flex-col">
-        <header className="safe-area-pt sticky top-0 z-30 flex flex-col border-b border-border bg-background/95 backdrop-blur-md">
+        <header className="safe-area-pt sticky top-0 z-30 flex flex-col border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md">
           <div className="flex min-h-[48px] items-center gap-2 px-3 py-2 sm:px-4 lg:px-6">
             <button
               type="button"
@@ -493,7 +515,7 @@ export default function AdminLayout() {
                 className="touch-manipulation flex h-11 min-w-[44px] items-center gap-1 rounded-xl px-1 hover:bg-secondary"
                 onClick={() => setAvatarMenuOpen(!avatarMenuOpen)}
               >
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gold text-xs font-bold text-primary-foreground">A</div>
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--theme-primary)] text-xs font-bold text-[var(--theme-primary-foreground)]">A</div>
                 <ChevronDown size={14} className={`hidden text-muted-foreground transition-transform sm:block ${avatarMenuOpen ? "rotate-180" : ""}`} />
               </button>
               {avatarMenuOpen && (
@@ -534,12 +556,14 @@ export default function AdminLayout() {
 
         <main className="admin-mobile-main flex-1 p-3 sm:p-4 lg:p-6">
           <Suspense fallback={<AdminOutletFallback />}>
-            <Outlet />
+            <AnimatedPage>
+              <Outlet />
+            </AnimatedPage>
           </Suspense>
         </main>
 
         <nav
-          className="safe-area-pb fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur-md lg:hidden"
+          className="safe-area-pb fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--theme-border)] bg-[var(--theme-card)]/95 backdrop-blur-md lg:hidden"
           aria-label="主导航"
         >
           <div className="flex h-14 max-w-lg mx-auto items-stretch justify-between px-1">

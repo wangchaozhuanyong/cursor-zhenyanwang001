@@ -20,6 +20,7 @@ import * as categoryService from "@/services/admin/categoryService";
 import * as uploadService from "@/services/uploadService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import type { Category } from "@/types/category";
+import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
 
 type CategoryForm = {
   name: string;
@@ -101,6 +102,7 @@ export default function AdminCategories() {
   const [editData, setEditData] = useState<CategoryForm>(EMPTY_FORM);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
 
   const loadCategories = async () => {
     setLoading(true);
@@ -218,11 +220,12 @@ export default function AdminCategories() {
     }
   };
 
-  const handleDelete = async (cat: Category) => {
-    if (!window.confirm(`确定删除分类「${cat.name}」？`)) return;
+  const confirmDeleteCategory = async () => {
+    if (!deleteTarget) return;
     try {
-      await categoryService.deleteCategory(cat.id);
+      await categoryService.deleteCategory(deleteTarget.id);
       toast.success("分类已删除");
+      setDeleteTarget(null);
       await loadCategories();
     } catch (e) {
       toast.error(toastErrorMessage(e, "删除失败"));
@@ -253,14 +256,6 @@ export default function AdminCategories() {
       await loadCategories();
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
-      </div>
-    );
-  }
 
   const renderIcon = (cat: Category) => {
     if (cat.icon_url) return <img src={cat.icon_url} alt="" className="h-8 w-8 rounded-md object-cover" />;
@@ -364,9 +359,16 @@ export default function AdminCategories() {
             </label>
             <div className="flex gap-2">
               <PermissionGate permission="category.manage">
-                <button disabled={saving} onClick={handleAdd} className="rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "添加"}
-                </button>
+                <LoadingButton
+                  type="button"
+                  variant="gold"
+                  state={saving ? "loading" : "normal"}
+                  loadingText="添加中..."
+                  onClick={() => void handleAdd()}
+                  className="rounded-lg px-4 py-2.5 text-sm font-semibold"
+                >
+                  添加
+                </LoadingButton>
               </PermissionGate>
               <button onClick={() => setShowForm(false)} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground">
                 取消
@@ -384,7 +386,17 @@ export default function AdminCategories() {
           <span>排序</span>
           <span className="text-right">操作</span>
         </div>
-        {flatRows.map((cat, i) => {
+        {loading
+          ? Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="grid grid-cols-[1fr_100px_90px_110px_120px] items-center gap-3 border-b border-border px-4 py-3">
+              <div className="skeleton-base skeleton-shimmer h-9 w-48 rounded-lg" />
+              <div className="skeleton-base skeleton-shimmer h-4 w-12 rounded" />
+              <div className="skeleton-base skeleton-shimmer h-4 w-10 rounded" />
+              <div className="skeleton-base skeleton-shimmer h-4 w-8 rounded" />
+              <div className="skeleton-base skeleton-shimmer h-8 w-20 rounded-lg justify-self-end" />
+            </div>
+          ))
+          : flatRows.map((cat, i) => {
           const hasChildren = cat.children.length > 0;
           const isEditing = editingId === cat.id;
           return (
@@ -490,7 +502,7 @@ export default function AdminCategories() {
                       </button>
                     </PermissionGate>
                     <PermissionGate permission="category.manage">
-                      <button onClick={() => handleDelete(cat)} className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+                      <button onClick={() => setDeleteTarget(cat)} className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
                         <Trash2 size={14} />
                       </button>
                     </PermissionGate>
@@ -502,6 +514,15 @@ export default function AdminCategories() {
         })}
         {flatRows.length === 0 && <div className="py-8 text-center text-sm text-muted-foreground">暂无分类</div>}
       </div>
+      <AnimatedConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        danger
+        title="删除分类"
+        description={deleteTarget ? `确定删除分类「${deleteTarget.name}」？` : ""}
+        confirmText="删除"
+        onConfirm={confirmDeleteCategory}
+      />
     </div>
   );
 }

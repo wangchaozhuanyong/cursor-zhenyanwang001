@@ -3,6 +3,24 @@ const { PAID_PAYMENT_STATUS_LIST } = require('../../constants/status');
 
 const PAID_PAYMENT_SQL = PAID_PAYMENT_STATUS_LIST.map((s) => `'${s}'`).join(', ');
 
+/** 未执行 061 迁移时 analytics_events 不存在，报表需降级避免 500 */
+let analyticsEventsReady;
+
+async function isAnalyticsEventsReady() {
+  if (analyticsEventsReady !== undefined) return analyticsEventsReady;
+  try {
+    await db.query('SELECT 1 FROM analytics_events LIMIT 1');
+    analyticsEventsReady = true;
+  } catch (e) {
+    if (e.code === 'ER_NO_SUCH_TABLE') {
+      analyticsEventsReady = false;
+    } else {
+      throw e;
+    }
+  }
+  return analyticsEventsReady;
+}
+
 function rangeWhere(fieldSql) {
   return `(${fieldSql}) BETWEEN ? AND ?`;
 }
@@ -21,12 +39,12 @@ async function selectOverviewSummary(dateFrom, dateTo) {
   return queryOne(
     `SELECT
       COALESCE(SUM(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN total_amount ELSE 0 END),0) AS gross_sales,
-      COALESCE(SUM(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN paid_amount ELSE 0 END),0) AS paid_amount,
+      COALESCE(SUM(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN total_amount ELSE 0 END),0) AS paid_amount,
       COALESCE(SUM(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN discount_amount ELSE 0 END),0) AS discount_amount,
       COUNT(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN 1 END) AS paid_order_count,
       COUNT(*) AS order_count,
-      COALESCE(SUM(CASE WHEN payment_status='refunded' OR order_status='refunded' THEN total_amount ELSE 0 END),0) AS refund_amount,
-      COUNT(CASE WHEN order_status IN ('pending','processing') THEN 1 END) AS pending_orders
+      COALESCE(SUM(CASE WHEN payment_status='refunded' OR status='refunded' THEN total_amount ELSE 0 END),0) AS refund_amount,
+      COUNT(CASE WHEN status IN ('pending') OR payment_status IN ('pending','unpaid') THEN 1 END) AS pending_orders
      FROM orders
      WHERE ${rangeWhere("DATE(DATE_ADD(created_at, INTERVAL 8 HOUR))")}`,
     [dateFrom, dateTo],
@@ -54,13 +72,13 @@ async function selectSalesDaily(dateFrom, dateTo) {
       DATE(DATE_ADD(o.created_at, INTERVAL 8 HOUR)) AS date,
       COUNT(*) AS order_count,
       COUNT(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN 1 END) AS paid_order_count,
-      COUNT(CASE WHEN o.order_status='cancelled' THEN 1 END) AS cancelled_order_count,
-      COUNT(CASE WHEN o.order_status='refunded' OR o.payment_status='refunded' THEN 1 END) AS refund_order_count,
+      COUNT(CASE WHEN o.status='cancelled' THEN 1 END) AS cancelled_order_count,
+      COUNT(CASE WHEN o.status='refunded' OR o.payment_status='refunded' THEN 1 END) AS refund_order_count,
       COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.total_amount ELSE 0 END),0) AS gross_sales,
       COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.discount_amount ELSE 0 END),0) AS discount_amount,
-      COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.shipping_amount ELSE 0 END),0) AS shipping_fee,
-      COALESCE(SUM(CASE WHEN o.order_status='refunded' OR o.payment_status='refunded' THEN o.total_amount ELSE 0 END),0) AS refund_amount,
-      COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.total_amount ELSE 0 END),0) - COALESCE(SUM(CASE WHEN o.order_status='refunded' OR o.payment_status='refunded' THEN o.total_amount ELSE 0 END),0) AS net_sales,
+      COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.shipping_fee ELSE 0 END),0) AS shipping_fee,
+      COALESCE(SUM(CASE WHEN o.status='refunded' OR o.payment_status='refunded' THEN o.total_amount ELSE 0 END),0) AS refund_amount,
+      COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.total_amount ELSE 0 END),0) - COALESCE(SUM(CASE WHEN o.status='refunded' OR o.payment_status='refunded' THEN o.total_amount ELSE 0 END),0) AS net_sales,
       COALESCE(SUM(oi.qty),0) AS items_sold,
       COUNT(DISTINCT CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.user_id END) AS paying_users
      FROM orders o
@@ -77,9 +95,9 @@ async function selectSalesMonthly(dateFrom, dateTo) {
     `SELECT
       DATE_FORMAT(DATE_ADD(created_at, INTERVAL 8 HOUR),'%Y-%m') AS month,
       COALESCE(SUM(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN total_amount ELSE 0 END),0) AS gross_sales,
-      COALESCE(SUM(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN total_amount ELSE 0 END),0) - COALESCE(SUM(CASE WHEN payment_status='refunded' OR order_status='refunded' THEN total_amount ELSE 0 END),0) AS net_sales,
+      COALESCE(SUM(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN total_amount ELSE 0 END),0) - COALESCE(SUM(CASE WHEN payment_status='refunded' OR status='refunded' THEN total_amount ELSE 0 END),0) AS net_sales,
       COUNT(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN 1 END) AS paid_order_count,
-      COALESCE(SUM(CASE WHEN payment_status='refunded' OR order_status='refunded' THEN total_amount ELSE 0 END),0) AS refund_amount,
+      COALESCE(SUM(CASE WHEN payment_status='refunded' OR status='refunded' THEN total_amount ELSE 0 END),0) AS refund_amount,
       COALESCE(SUM(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN discount_amount ELSE 0 END),0) AS discount_amount
      FROM orders
      WHERE ${rangeWhere("DATE(DATE_ADD(created_at, INTERVAL 8 HOUR))")}
@@ -90,6 +108,24 @@ async function selectSalesMonthly(dateFrom, dateTo) {
 }
 
 async function selectProductsAnalysis(dateFrom, dateTo) {
+  const hasAnalytics = await isAnalyticsEventsReady();
+  const analyticsJoin = hasAnalytics
+    ? `LEFT JOIN (
+        SELECT product_id,
+          SUM(CASE WHEN event_type='product_view' THEN 1 ELSE 0 END) AS view_count,
+          SUM(CASE WHEN event_type='add_to_cart' THEN 1 ELSE 0 END) AS add_cart_count,
+          SUM(CASE WHEN event_type='favorite' THEN 1 ELSE 0 END) AS favorite_count
+        FROM analytics_events
+        WHERE ${rangeWhere('DATE(DATE_ADD(created_at, INTERVAL 8 HOUR))')}
+        GROUP BY product_id
+      ) ae ON ae.product_id=p.id`
+    : `LEFT JOIN (
+        SELECT CAST(NULL AS CHAR(36)) AS product_id, 0 AS view_count, 0 AS add_cart_count, 0 AS favorite_count
+        LIMIT 0
+      ) ae ON ae.product_id=p.id`;
+
+  const params = hasAnalytics ? [dateFrom, dateTo, dateFrom, dateTo] : [dateFrom, dateTo];
+
   return queryList(
     `SELECT
       p.id AS product_id,
@@ -116,20 +152,12 @@ async function selectProductsAnalysis(dateFrom, dateTo) {
      LEFT JOIN categories c ON c.id=p.category_id
      LEFT JOIN order_items oi ON oi.product_id=p.id
      LEFT JOIN orders o ON o.id=oi.order_id AND o.payment_status IN (${PAID_PAYMENT_SQL})
-      LEFT JOIN (
-        SELECT product_id,
-          SUM(CASE WHEN event_type='product_view' THEN 1 ELSE 0 END) AS view_count,
-          SUM(CASE WHEN event_type='add_to_cart' THEN 1 ELSE 0 END) AS add_cart_count,
-          SUM(CASE WHEN event_type='favorite' THEN 1 ELSE 0 END) AS favorite_count
-        FROM analytics_events
-        WHERE ${rangeWhere("DATE(DATE_ADD(created_at, INTERVAL 8 HOUR))")}
-        GROUP BY product_id
-      ) ae ON ae.product_id=p.id
-     WHERE (o.id IS NULL OR ${rangeWhere("DATE(DATE_ADD(o.created_at, INTERVAL 8 HOUR))")})
+     ${analyticsJoin}
+     WHERE (o.id IS NULL OR ${rangeWhere('DATE(DATE_ADD(o.created_at, INTERVAL 8 HOUR))')})
      GROUP BY p.id,p.name,p.cover_image,c.name,p.stock
      ORDER BY sales_amount DESC
      LIMIT 200`,
-    [dateFrom, dateTo, dateFrom, dateTo],
+    params,
   );
 }
 
@@ -157,8 +185,8 @@ async function selectSimpleOrderAnalysis(dateFrom, dateTo) {
       COUNT(*) AS order_count,
       COUNT(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN 1 END) AS paid_order_count,
       COUNT(CASE WHEN payment_status='unpaid' THEN 1 END) AS unpaid_order_count,
-      COUNT(CASE WHEN order_status='cancelled' THEN 1 END) AS cancelled_order_count,
-      COUNT(CASE WHEN order_status='refunded' OR payment_status='refunded' THEN 1 END) AS refund_order_count,
+      COUNT(CASE WHEN status='cancelled' THEN 1 END) AS cancelled_order_count,
+      COUNT(CASE WHEN status='refunded' OR payment_status='refunded' THEN 1 END) AS refund_order_count,
       COALESCE(AVG(total_amount),0) AS average_order_value
      FROM orders
      WHERE ${rangeWhere("DATE(DATE_ADD(created_at, INTERVAL 8 HOUR))")}`,
@@ -181,11 +209,23 @@ async function selectSimpleCustomerAnalysis(dateFrom, dateTo) {
 
 async function selectSimpleActivitiesAnalysis(dateFrom, dateTo) {
   return queryList(
-    `SELECT id AS activity_id,title AS activity_title,type AS activity_type,start_at,end_at,
-      product_count,0 AS sales_amount,0 AS order_count,0 AS sales_qty,0 AS discount_amount
-     FROM activities
-     WHERE DATE(DATE_ADD(created_at, INTERVAL 8 HOUR)) BETWEEN ? AND ?
-     ORDER BY created_at DESC
+    `SELECT
+      a.id AS activity_id,
+      a.title AS activity_title,
+      a.type AS activity_type,
+      a.start_at,
+      a.end_at,
+      COUNT(ap.id) AS product_count,
+      0 AS sales_amount,
+      0 AS order_count,
+      0 AS sales_qty,
+      0 AS discount_amount
+     FROM marketing_activities a
+     LEFT JOIN marketing_activity_products ap ON ap.activity_id = a.id
+     WHERE a.deleted_at IS NULL
+       AND DATE(DATE_ADD(a.created_at, INTERVAL 8 HOUR)) BETWEEN ? AND ?
+     GROUP BY a.id, a.title, a.type, a.start_at, a.end_at, a.created_at
+     ORDER BY a.created_at DESC
      LIMIT 100`,
     [dateFrom, dateTo],
   );
@@ -194,9 +234,9 @@ async function selectSimpleActivitiesAnalysis(dateFrom, dateTo) {
 async function selectSimpleCouponsAnalysis(dateFrom, dateTo) {
   return queryList(
     `SELECT c.id AS coupon_id,c.title AS coupon_title,
-      c.total_count AS issued_count,
-      (SELECT COUNT(*) FROM coupon_records cr WHERE cr.coupon_id=c.id) AS claimed_count,
-      (SELECT COUNT(*) FROM coupon_records cr WHERE cr.coupon_id=c.id AND cr.status='used') AS used_count,
+      c.total_quantity AS issued_count,
+      (SELECT COUNT(*) FROM user_coupons uc WHERE uc.coupon_id=c.id) AS claimed_count,
+      (SELECT COUNT(*) FROM user_coupons uc WHERE uc.coupon_id=c.id AND uc.status='used') AS used_count,
       0 AS expired_count
      FROM coupons c
      WHERE DATE(DATE_ADD(c.created_at, INTERVAL 8 HOUR)) BETWEEN ? AND ?
@@ -218,25 +258,47 @@ async function selectSimpleInventoryAnalysis() {
 }
 
 async function selectSimpleSearchAnalysis(dateFrom, dateTo) {
+  const baseTermsSql = `
+     FROM (
+       SELECT keyword,COUNT(*) AS search_count,
+         SUM(CASE WHEN result_count=0 THEN 1 ELSE 0 END) AS no_result_count,
+         MAX(created_at) AS last_searched_at
+       FROM search_terms
+       WHERE DATE(DATE_ADD(created_at, INTERVAL 8 HOUR)) BETWEEN ? AND ?
+       GROUP BY keyword
+     ) st`;
+
+  if (!(await isAnalyticsEventsReady())) {
+    return queryList(
+      `SELECT
+        st.keyword,
+        st.search_count,
+        0 AS user_count,
+        st.no_result_count,
+        st.last_searched_at,
+        0 AS product_click_count,
+        0 AS add_cart_count,
+        0 AS order_count,
+        0 AS sales_amount
+       ${baseTermsSql}
+       ORDER BY st.search_count DESC
+       LIMIT 200`,
+      [dateFrom, dateTo],
+    );
+  }
+
   return queryList(
     `SELECT
       st.keyword,
       st.search_count,
-      st.user_count,
+      0 AS user_count,
       st.no_result_count,
       st.last_searched_at,
       COALESCE(ae.product_click_count,0) AS product_click_count,
       COALESCE(ae.add_cart_count,0) AS add_cart_count,
       COALESCE(ae.order_count,0) AS order_count,
       COALESCE(ae.sales_amount,0) AS sales_amount
-     FROM (
-       SELECT keyword,COUNT(*) AS search_count,COUNT(DISTINCT user_id) AS user_count,
-         SUM(CASE WHEN result_count=0 THEN 1 ELSE 0 END) AS no_result_count,
-         MAX(created_at) AS last_searched_at
-       FROM search_terms
-       WHERE DATE(DATE_ADD(created_at, INTERVAL 8 HOUR)) BETWEEN ? AND ?
-       GROUP BY keyword
-     ) st
+     ${baseTermsSql}
      LEFT JOIN (
        SELECT keyword,
          SUM(CASE WHEN event_type='product_click' THEN 1 ELSE 0 END) AS product_click_count,
@@ -246,7 +308,7 @@ async function selectSimpleSearchAnalysis(dateFrom, dateTo) {
        FROM analytics_events
        WHERE DATE(DATE_ADD(created_at, INTERVAL 8 HOUR)) BETWEEN ? AND ?
        GROUP BY keyword
-     ) ae ON ae.keyword=st.keyword
+     ) ae ON ae.keyword COLLATE utf8mb4_unicode_ci = st.keyword
      ORDER BY st.search_count DESC
      LIMIT 200`,
     [dateFrom, dateTo, dateFrom, dateTo],
@@ -254,6 +316,15 @@ async function selectSimpleSearchAnalysis(dateFrom, dateTo) {
 }
 
 async function selectOverviewBehaviorSummary(dateFrom, dateTo) {
+  if (!(await isAnalyticsEventsReady())) {
+    return {
+      product_view_count: 0,
+      product_click_count: 0,
+      add_to_cart_count: 0,
+      favorite_count: 0,
+      checkout_start_count: 0,
+    };
+  }
   return queryOne(
     `SELECT
       SUM(CASE WHEN event_type='product_view' THEN 1 ELSE 0 END) AS product_view_count,

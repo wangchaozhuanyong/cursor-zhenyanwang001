@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect } from "react";
-import { Loader2, Download } from "lucide-react";
+﻿import { useEffect, useLayoutEffect } from "react";
+import { Download, Package } from "lucide-react";
+import { AnimatedTable } from "@/modules/micro-interactions";
 import { useNavigate } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
@@ -77,14 +78,6 @@ export default function AdminOrders() {
       .catch((e) => toast.error(toastErrorMessage(e, "状态更新失败")));
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--theme-price)]" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
@@ -121,9 +114,17 @@ export default function AdminOrders() {
         </div>
       </div>
 
-      {/* Mobile card view */}
       <div className="space-y-3 md:hidden">
-        {paginatedData.map((o) => (
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
+              <div className="skeleton-base skeleton-shimmer mb-2 h-4 w-32 rounded" />
+              <div className="skeleton-base skeleton-shimmer mb-2 h-4 w-24 rounded" />
+              <div className="skeleton-base skeleton-shimmer h-3 w-40 rounded" />
+            </div>
+          ))
+          : null}
+        {!loading && paginatedData.map((o) => (
           <div key={o.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow" onClick={() => navigate(`/admin/orders/${o.id}`)}>
             <div className="flex items-center justify-between mb-2">
               <span className="font-mono text-xs text-foreground">{o.order_no}</span>
@@ -147,50 +148,54 @@ export default function AdminOrders() {
             </div>
           </div>
         ))}
-        {paginatedData.length === 0 && (
+        {!loading && paginatedData.length === 0 && (
           <div className="py-8 text-center text-sm text-muted-foreground">无匹配订单</div>
         )}
         <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
       </div>
 
-      {/* 平板及以上：表格 */}
-      <div className="hidden overflow-x-auto theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] md:block theme-shadow">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70">
+      <div className="hidden md:block">
+        <AnimatedTable
+          loading={loading}
+          rows={paginatedData}
+          rowKey={(o) => o.id}
+          skeletonRows={8}
+          skeletonCols={10}
+          className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
+          tableClassName="w-full text-sm"
+          theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
+          thead={(
+            <tr>
               {["订单号", "联系人", "金额", "积分", "优惠券", "履约", "支付", "时间", "操作", ""].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{h}</th>
               ))}
             </tr>
-          </thead>
-          <tbody>
-            {paginatedData.map((o) => (
-              <tr key={o.id} className="border-b border-[var(--theme-border)] last:border-0 hover:bg-[var(--theme-bg)]">
-                <td className="px-4 py-3 font-mono text-xs text-foreground">{o.order_no}</td>
-                <td className="px-4 py-3 text-foreground">{o.contact_name || "—"}</td>
-                <td className="px-4 py-3 font-semibold text-foreground">RM {parseFloat(String(o.total_amount ?? 0)).toFixed(2)}</td>
-                <td className="px-4 py-3 text-foreground">{o.total_points ?? 0}</td>
-                <td className="px-4 py-3 text-foreground">{o.coupon_title || "—"}</td>
-                <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${getOrderStatusBadgeClass(o.status)}`}>{getOrderStatusLabel(o.status)}</span></td>
-                <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${getPaymentStatusBadgeClass(o.payment_status || PAYMENT_STATUS.PENDING)}`}>{getPaymentStatusLabel(o.payment_status || PAYMENT_STATUS.PENDING)}</span></td>
-                <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString("zh-CN")}</td>
-                <td className="px-4 py-3">
-                  <PermissionGate permission="order.update">
-                    <select value="" onChange={(e) => { if (e.target.value) handleStatusChange(o.id, e.target.value); }} className="theme-rounded border border-[var(--theme-border)] bg-transparent px-2 py-1 text-[10px] text-foreground outline-none">
-                      <option value="">改状态</option>
-                      {actionStatuses.filter((s) => s !== o.status).map((s) => <option key={s} value={s}>{getOrderStatusLabel(s)}</option>)}
-                    </select>
-                  </PermissionGate>
-                </td>
-                <td className="px-4 py-3"><button onClick={() => navigate(`/admin/orders/${o.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">详情</button></td>
-              </tr>
-            ))}
-            {paginatedData.length === 0 && (
-              <tr><td colSpan={10} className="px-4 py-8 text-center text-sm text-muted-foreground">无匹配订单</td></tr>
-            )}
-          </tbody>
-        </table>
-        <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          )}
+          footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
+          emptyIcon={Package}
+          emptyTitle="无匹配订单"
+          renderRow={(o) => (
+            <>
+              <td className="px-4 py-3 font-mono text-xs text-foreground">{o.order_no}</td>
+              <td className="px-4 py-3 text-foreground">{o.contact_name || "—"}</td>
+              <td className="px-4 py-3 font-semibold text-foreground">RM {parseFloat(String(o.total_amount ?? 0)).toFixed(2)}</td>
+              <td className="px-4 py-3 text-foreground">{o.total_points ?? 0}</td>
+              <td className="px-4 py-3 text-foreground">{o.coupon_title || "—"}</td>
+              <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${getOrderStatusBadgeClass(o.status)}`}>{getOrderStatusLabel(o.status)}</span></td>
+              <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${getPaymentStatusBadgeClass(o.payment_status || PAYMENT_STATUS.PENDING)}`}>{getPaymentStatusLabel(o.payment_status || PAYMENT_STATUS.PENDING)}</span></td>
+              <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString("zh-CN")}</td>
+              <td className="px-4 py-3">
+                <PermissionGate permission="order.update">
+                  <select value="" onChange={(e) => { if (e.target.value) handleStatusChange(o.id, e.target.value); }} className="theme-rounded border border-[var(--theme-border)] bg-transparent px-2 py-1 text-[10px] text-foreground outline-none">
+                    <option value="">改状态</option>
+                    {actionStatuses.filter((s) => s !== o.status).map((s) => <option key={s} value={s}>{getOrderStatusLabel(s)}</option>)}
+                  </select>
+                </PermissionGate>
+              </td>
+              <td className="px-4 py-3"><button type="button" onClick={() => navigate(`/admin/orders/${o.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">详情</button></td>
+            </>
+          )}
+        />
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import * as userService from "@/services/admin/userService";
 import type { MemberLevel } from "@/types/user";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
 
 type Draft = Omit<MemberLevel, "id" | "created_at" | "updated_at"> & { id?: string };
 
@@ -34,6 +35,7 @@ export default function AdminMemberLevels() {
   const [newLevel, setNewLevel] = useState<Draft>(emptyDraft);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MemberLevel | null>(null);
 
   const loadLevels = async () => {
     setLoading(true);
@@ -84,26 +86,18 @@ export default function AdminMemberLevels() {
   };
 
   const handleDelete = async (level: MemberLevel) => {
-    if (!window.confirm(`确定删除会员等级「${level.name}」？已有用户会迁移到默认等级。`)) return;
     setSavingId(level.id);
     try {
       await userService.deleteMemberLevel(level.id);
       await loadLevels();
       toast.success("已删除");
+      setDeleteTarget(null);
     } catch (e) {
       toast.error(toastErrorMessage(e, "删除失败"));
     } finally {
       setSavingId(null);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--theme-price)]" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
@@ -155,14 +149,33 @@ export default function AdminMemberLevels() {
             <span className="text-[11px] font-medium text-muted-foreground">排序权重</span>
             <input type="number" value={newLevel.sort_order} onChange={(e) => setNewLevel((s) => ({ ...s, sort_order: Number(e.target.value) }))} placeholder="0" title="数字越大，同时达标多个等级时越优先；本页列表按此值升序排列" className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none" />
           </div>
-          <button type="button" onClick={handleCreate} disabled={savingId === "new"} className="inline-flex h-[42px] items-center justify-center gap-2 self-end rounded-lg bg-[var(--theme-price)] px-4 text-sm font-semibold text-[var(--theme-price-foreground)] disabled:opacity-60">
-            {savingId === "new" ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} 新增
-          </button>
+          <LoadingButton
+            type="button"
+            variant="gold"
+            state={savingId === "new" ? "loading" : "normal"}
+            loadingText="新增中..."
+            disabled={savingId === "new"}
+            onClick={() => void handleCreate()}
+            className="inline-flex h-[42px] self-end rounded-lg px-4 text-sm font-semibold"
+          >
+            新增
+          </LoadingButton>
         </div>
       </section>
 
       <section className="space-y-3">
-        {levels.map((level) => (
+        {loading
+          ? Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
+              <div className="grid gap-3 lg:grid-cols-[1fr_1.6fr_130px_110px_100px_160px]">
+                <div className="skeleton-base skeleton-shimmer h-10 rounded-lg" />
+                <div className="skeleton-base skeleton-shimmer h-10 rounded-lg" />
+                <div className="skeleton-base skeleton-shimmer h-10 rounded-lg" />
+              </div>
+            </div>
+          ))
+          : null}
+        {!loading && levels.map((level) => (
           <div key={level.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
             <div className="grid gap-3 lg:grid-cols-[1fr_1.6fr_130px_110px_100px_160px] lg:items-end">
               <div className="space-y-1">
@@ -195,10 +208,18 @@ export default function AdminMemberLevels() {
                 规则：累计消费满 RM {Number(level.min_spent || 0).toFixed(2)} <strong className="text-foreground">或</strong> 累计已支付订单满 {level.min_orders || 0} 笔；排序权重 {level.sort_order ?? 0}（多等级同时达标时，权重大者优先）。
               </span>
               <div className="flex gap-2">
-                <button type="button" onClick={() => handleSave(level)} disabled={savingId === level.id} className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-[var(--theme-border)] px-3 text-sm text-foreground disabled:opacity-60">
-                  {savingId === level.id ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} 保存
-                </button>
-                <button type="button" onClick={() => handleDelete(level)} disabled={level.is_default === true || savingId === level.id} className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-destructive/30 px-3 text-sm text-destructive disabled:opacity-40">
+                <LoadingButton
+                  type="button"
+                  variant="outline"
+                  state={savingId === level.id ? "loading" : "normal"}
+                  loadingText="保存中..."
+                  disabled={savingId === level.id}
+                  onClick={() => void handleSave(level)}
+                  className="inline-flex min-h-[36px] rounded-lg border border-[var(--theme-border)] px-3 text-sm text-foreground"
+                >
+                  保存
+                </LoadingButton>
+                <button type="button" onClick={() => setDeleteTarget(level)} disabled={level.is_default === true || savingId === level.id} className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-destructive/30 px-3 text-sm text-destructive disabled:opacity-40">
                   <Trash2 size={15} /> 删除
                 </button>
               </div>
@@ -206,6 +227,15 @@ export default function AdminMemberLevels() {
           </div>
         ))}
       </section>
+      <AnimatedConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        danger
+        title="删除会员等级"
+        description={deleteTarget ? `确定删除会员等级「${deleteTarget.name}」？已有用户会迁移到默认等级。` : ""}
+        confirmText="删除"
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
+      />
     </div>
   );
 }

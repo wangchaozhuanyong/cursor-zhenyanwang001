@@ -16,6 +16,7 @@ import {
   getPaymentStatusLabel,
 } from "@/constants/statusDictionary";
 import { OrderSstLines } from "@/components/OrderSstLines";
+import { AdminOrderDetailSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import type { Order } from "@/types/order";
 
 function canShipByState(order: { status?: string; payment_status?: string }) {
@@ -144,40 +145,43 @@ export default function AdminOrderDetail() {
     window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--theme-price)]" />
-      </div>
-    );
-  }
-
-  if (!order) {
-    return (
-      <div className="text-center py-20 text-muted-foreground">
-        <p>订单不存在</p>
-        <button onClick={goBack} className="mt-4 text-[var(--theme-price)] underline">返回</button>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <button onClick={goBack}>
+        <button type="button" onClick={goBack}>
           <ArrowLeft size={20} className="text-foreground" />
         </button>
         <h2 className="text-lg font-semibold text-foreground">订单详情</h2>
-        <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-          isCancelled || isRefund ? "bg-red-500/10 text-red-500"
-          : order.status === ORDER_STATUS.COMPLETED ? "bg-green-500/10 text-green-500"
-          : "bg-[var(--theme-price)]/10 text-[var(--theme-price)]"
-        }`}>{getOrderStatusLabel(order.status)}</span>
-        <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-          支付：{getPaymentStatusLabel(order.payment_status ?? PAYMENT_STATUS.PENDING)}
-        </span>
+        {loading ? (
+          <>
+            <span className="skeleton-base skeleton-shimmer h-5 w-16 rounded-full" />
+            <span className="skeleton-base skeleton-shimmer h-5 w-20 rounded-full" />
+          </>
+        ) : !order ? null : (
+          <>
+            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+              isCancelled || isRefund ? "bg-red-500/10 text-red-500"
+              : order.status === ORDER_STATUS.COMPLETED ? "bg-green-500/10 text-green-500"
+              : "bg-[var(--theme-price)]/10 text-[var(--theme-price)]"
+            }`}>{getOrderStatusLabel(order.status)}</span>
+            <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+              支付：{getPaymentStatusLabel(order.payment_status ?? PAYMENT_STATUS.PENDING)}
+            </span>
+          </>
+        )}
       </div>
 
+      {loading && <AdminOrderDetailSkeleton />}
+
+      {!loading && !order && (
+        <div className="py-16 text-center text-muted-foreground">
+          <p>订单不存在</p>
+          <button type="button" onClick={goBack} className="mt-4 text-[var(--theme-price)] underline">返回</button>
+        </div>
+      )}
+
+      {!loading && order && (
+      <>
       {/* Status timeline */}
       <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 theme-shadow">
         <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
@@ -491,6 +495,8 @@ export default function AdminOrderDetail() {
           </div>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

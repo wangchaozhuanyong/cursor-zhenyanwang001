@@ -1,5 +1,5 @@
-const paymentsService = require('./payments.service');
-const { asyncRoute } = require('../../../middleware/asyncRoute');
+﻿const paymentsService = require('./payments.service');
+const { asyncRoute } = require('../../middleware/asyncRoute');
 
 exports.listChannels = asyncRoute(async (_req, res) => {
   const list = await paymentsService.listChannelsAdmin();
@@ -51,3 +51,4 @@ exports.createReconciliation = asyncRoute(async (req, res) => {
   const result = await paymentsService.createReconciliation(req, req.body);
   res.success(result.data, result.message);
 });
+

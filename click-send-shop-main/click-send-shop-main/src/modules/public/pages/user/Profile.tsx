@@ -23,6 +23,7 @@ import { isLoggedIn } from "@/utils/token";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import SkinPickerDialog from "@/components/SkinPickerDialog";
+import { BottomSheetConfirm } from "@/modules/micro-interactions";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import StoreTabHeader from "@/components/store/StoreTabHeader";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -38,6 +39,7 @@ import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 
 const CARD_CLASS = "rounded-[26px] bg-[var(--theme-surface)] shadow-[var(--theme-shadow)]";
 const SECTION_PADDING = "p-4";
+const MENU_TAP = "transition-transform active:scale-[0.97]";
 
 function gateNavigate(navigate: ReturnType<typeof useNavigate>, path: string, requireAuth = true) {
   if (requireAuth && !isLoggedIn()) {
@@ -146,6 +148,7 @@ export default function Profile() {
 
   const [inviteCount, setInviteCount] = useState(0);
   const [rewardBalance, setRewardBalance] = useState(0);
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { themeConfig } = useThemeRuntime();
 
@@ -256,7 +259,7 @@ export default function Profile() {
                   key={item.label}
                   type="button"
                   onClick={() => gateNavigate(navigate, item.path, item.auth)}
-                  className="min-w-0 px-1 py-1 text-center"
+                  className={`min-w-0 px-1 py-1 text-center ${MENU_TAP}`}
                 >
                   <p className="truncate text-xs font-semibold text-[var(--theme-text-muted-on-surface)]">{item.label}</p>
                   <p className={`mt-2 truncate font-bold text-[var(--theme-text-on-surface)] ${item.label === "返现" ? "text-sm" : "text-base"}`}>
@@ -307,8 +310,8 @@ export default function Profile() {
                   { label: "售后", icon: CircleHelp, value: 0, path: "/returns" },
                 ]
               : guestOrderItems.map((it) => ({ ...it, value: 0, path: "/orders" }))).map((item) => (
-              <button key={item.label} type="button" onClick={() => gateNavigate(navigate, item.path, true)} className="relative rounded-2xl bg-[var(--theme-bg)] px-1 py-3 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_65%,transparent)]">
-                {item.value > 0 ? <span className="absolute right-3 top-2 min-w-[1rem] rounded-full bg-[var(--theme-danger)] px-1 text-[10px] text-white">{item.value}</span> : null}
+              <button key={item.label} type="button" onClick={() => gateNavigate(navigate, item.path, true)} className={`relative rounded-2xl bg-[var(--theme-bg)] px-1 py-3 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_65%,transparent)] ${MENU_TAP}`}>
+                {item.value > 0 ? <span className="absolute right-3 top-2 min-w-[1rem] rounded-full bg-[var(--theme-danger)] px-1 text-[10px] text-[var(--theme-danger-foreground)]">{item.value}</span> : null}
                 <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--theme-secondary)_10%,var(--theme-surface))] text-[var(--theme-secondary)]">
                   <item.icon size={17} />
                 </span>
@@ -331,7 +334,7 @@ export default function Profile() {
               { label: "账户设置", icon: Settings, path: "/settings", auth: true },
               { label: "我的收藏", icon: Heart, path: "/favorites", auth: false },
             ].map((item) => (
-              <button key={item.label} type="button" onClick={() => gateNavigate(navigate, item.path, item.auth)} className="min-h-[76px] rounded-2xl bg-[var(--theme-bg)] px-1 py-2 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_60%,transparent)]">
+              <button key={item.label} type="button" onClick={() => gateNavigate(navigate, item.path, item.auth)} className={`min-h-[76px] rounded-2xl bg-[var(--theme-bg)] px-1 py-2 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_60%,transparent)] ${MENU_TAP}`}>
                 <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--theme-secondary)_12%,var(--theme-surface))] text-[var(--theme-secondary)]"><item.icon size={16} /></span>
                 <p className="mt-1 text-[11px] leading-4">{item.label}</p>
               </button>
@@ -356,12 +359,22 @@ export default function Profile() {
         </section>
 
         {loggedIn ? (
-          <button type="button" onClick={handleLogout} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[color-mix(in_srgb,var(--theme-danger)_12%,var(--theme-surface))] py-3 text-sm font-semibold text-[var(--theme-danger)]">
+          <button type="button" onClick={() => setLogoutConfirmOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[color-mix(in_srgb,var(--theme-danger)_12%,var(--theme-surface))] py-3 text-sm font-semibold text-[var(--theme-danger)]">
             <LogOut size={16} />
             退出登录
           </button>
         ) : null}
       </main>
+
+      <BottomSheetConfirm
+        open={logoutConfirmOpen}
+        onClose={() => setLogoutConfirmOpen(false)}
+        title="退出登录"
+        description="确定要退出当前账号吗？"
+        confirmText="退出"
+        danger
+        onConfirm={handleLogout}
+      />
     </div>
   );
 }

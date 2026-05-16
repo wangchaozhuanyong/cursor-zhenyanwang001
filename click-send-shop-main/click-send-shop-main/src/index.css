@@ -88,7 +88,14 @@
     --theme-price-style: normal;
     --theme-motion-level: soft;
     --theme-density: comfortable;
-    --theme-admin-mode: fixed;
+    --theme-accent-foreground: #ffffff;
+    --theme-danger-foreground: #ffffff;
+    --theme-success-foreground: #ffffff;
+    --theme-warning-foreground: #000000;
+    --theme-card: #ffffff;
+    --theme-card-foreground: #000000;
+    --theme-surface-foreground: #000000;
+    --theme-admin-mode: follow_store;
     --store-bottom-nav-height: 72px;
     --store-action-bar-height: 4.75rem;
     --store-tab-header-height: 3.5rem;
@@ -325,6 +332,31 @@
   [class*="bg-[var(--theme-price)]"].text-white,
   [class*="bg-[var(--theme-price)]"] .text-white {
     color: var(--theme-price-foreground) !important;
+  }
+
+  [class*="bg-[var(--theme-secondary)]"].text-white,
+  [class*="bg-[var(--theme-secondary)]"] .text-white {
+    color: var(--theme-secondary-foreground) !important;
+  }
+
+  [class*="bg-[var(--theme-danger)]"].text-white,
+  [class*="bg-[var(--theme-danger)]"] .text-white {
+    color: var(--theme-danger-foreground) !important;
+  }
+
+  [class*="bg-[var(--theme-success)]"].text-white,
+  [class*="bg-[var(--theme-success)]"] .text-white {
+    color: var(--theme-success-foreground) !important;
+  }
+
+  [class*="bg-[var(--theme-warning)]"].text-white,
+  [class*="bg-[var(--theme-warning)]"] .text-white {
+    color: var(--theme-warning-foreground) !important;
+  }
+
+  [class*="bg-[var(--theme-accent)]"].text-white,
+  [class*="bg-[var(--theme-accent)]"] .text-white {
+    color: var(--theme-accent-foreground) !important;
   }
 }
 

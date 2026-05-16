@@ -4,6 +4,7 @@ import { Eye, EyeOff, Lock, User } from "lucide-react";
 import { toast } from "sonner";
 import { adminLogin } from "@/services/admin/accountService";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { FormFieldShake } from "@/modules/micro-interactions";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -11,10 +12,12 @@ export default function AdminLogin() {
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [shakeKey, setShakeKey] = useState(0);
 
   const handleLogin = async () => {
     const normalizedAccount = account.trim();
     if (!normalizedAccount || !password.trim()) {
+      setShakeKey((k) => k + 1);
       toast.error("请输入账号和密码");
       return;
     }
@@ -24,6 +27,7 @@ export default function AdminLogin() {
       toast.success("登录成功");
       navigate("/admin");
     } catch (e) {
+      setShakeKey((k) => k + 1);
       toast.error(toastErrorMessage(e, "登录失败，请检查账号密码"));
     } finally {
       setLoading(false);
@@ -42,7 +46,7 @@ export default function AdminLogin() {
             <p className="mt-1 text-sm text-muted-foreground">请使用管理员账号登录</p>
           </div>
 
-          <div className="space-y-4">
+          <FormFieldShake shake={shakeKey} className="space-y-4">
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted-foreground">管理员账号</label>
               <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2.5 focus-within:border-gold/50 focus-within:ring-1 focus-within:ring-gold/20">
@@ -84,10 +88,10 @@ export default function AdminLogin() {
             >
               {loading ? "登录中..." : "登录"}
             </button>
-          </div>
+          </FormFieldShake>
 
           <div className="mt-6 text-center">
-            <button onClick={() => navigate("/")} className="text-xs text-muted-foreground hover:text-foreground">
+            <button type="button" onClick={() => navigate("/")} className="text-xs text-muted-foreground hover:text-foreground">
               返回前台
             </button>
           </div>

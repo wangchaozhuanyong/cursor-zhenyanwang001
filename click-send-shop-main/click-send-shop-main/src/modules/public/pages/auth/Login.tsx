@@ -20,6 +20,7 @@ import {
 import { getPublicApiRoot } from "@/utils/apiRoot";
 import { useFormFieldFocus } from "@/hooks/useFormFieldFocus";
 import { cn } from "@/lib/utils";
+import { FormFieldShake } from "@/modules/micro-interactions";
 
 const REMEMBER_KEY = "login_remembered_phone";
 const INPUT_CLASS =
@@ -72,6 +73,11 @@ export default function Login() {
   const [smsOtpLoginEnabled, setSmsOtpLoginEnabled] = useState(true);
   const hasLockedInviteCode = !!inviteCode;
   const formFocused = useFormFieldFocus();
+  const [shakeKey, setShakeKey] = useState(0);
+  const failValidation = (message: string) => {
+    setShakeKey((k) => k + 1);
+    toast.error(message);
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem(REMEMBER_KEY);
@@ -162,15 +168,15 @@ export default function Login() {
 
   const handleSendOtp = async () => {
     if (!smsOtpLoginEnabled) {
-      toast.error("当前未开启短信验证码登录");
+      failValidation("当前未开启短信验证码登录");
       return;
     }
     if (!phone.trim()) {
-      toast.error("请填写手机号");
+      failValidation("请填写手机号");
       return;
     }
     if (!countryCode || (countryCode !== "+60" && countryCode !== "+86")) {
-      toast.error("请选择国家代码");
+      failValidation("请选择国家代码");
       return;
     }
     if (otpCooldown > 0 || otpSending) return;
@@ -191,32 +197,32 @@ export default function Login() {
 
   const handleSubmit = async () => {
     if (!phone) {
-      toast.error(mode === "login" && credentialMode === "otp" ? "请填写手机号" : "请填写手机号和密码");
+      failValidation(mode === "login" && credentialMode === "otp" ? "请填写手机号" : "请填写手机号和密码");
       return;
     }
     if (mode === "login" && credentialMode === "otp") {
       if (!smsOtpLoginEnabled) {
-        toast.error("当前未开启短信验证码登录");
+        failValidation("当前未开启短信验证码登录");
         return;
       }
       if (!otpCode.trim() || !/^\d{6}$/.test(otpCode.trim())) {
-        toast.error("请填写 6 位验证码");
+        failValidation("请填写 6 位验证码");
         return;
       }
     } else if (!password) {
-      toast.error("请填写密码");
+      failValidation("请填写密码");
       return;
     }
     if (!countryCode) {
-      toast.error("请选择国家代码");
+      failValidation("请选择国家代码");
       return;
     }
     if (countryCode !== "+60" && countryCode !== "+86") {
-      toast.error("仅支持 +60 或 +86 手机号");
+      failValidation("仅支持 +60 或 +86 手机号");
       return;
     }
     if (mode === "register" && !hasLockedInviteCode && !nickname.trim()) {
-      toast.error("请填写昵称");
+      failValidation("请填写昵称");
       return;
     }
     try {
@@ -270,7 +276,7 @@ export default function Login() {
 
   const handleRequestReset = async () => {
     if (!phone.trim()) {
-      toast.error("请先填写手机号");
+      failValidation("请先填写手机号");
       return;
     }
     setResetLoading(true);
@@ -291,7 +297,7 @@ export default function Login() {
 
   const handleConfirmReset = async () => {
     if (!resetToken.trim() || !newPassword) {
-      toast.error("请填写重置令牌和新密码");
+      failValidation("请填写重置令牌和新密码");
       return;
     }
     setResetLoading(true);
@@ -387,7 +393,7 @@ export default function Login() {
         )}
 
         {/* ══════════════ Form ══════════════ */}
-        <div className="space-y-3.5">
+        <FormFieldShake shake={shakeKey} className="space-y-3.5">
           {mode === "register" && !hasLockedInviteCode && (
             <div>
               <div className="relative">
@@ -526,7 +532,7 @@ export default function Login() {
               </span>
             ) : mode === "login" ? "登 录" : "注 册"}
           </button>
-        </div>
+        </FormFieldShake>
 
         {/* ══════════════ Divider ══════════════ */}
         <div className="my-7 flex items-center gap-4">
@@ -565,7 +571,7 @@ export default function Login() {
         </div>
 
         {showReset && (
-          <div className="mb-6 rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <FormFieldShake shake={shakeKey} className="mb-6 rounded-2xl border border-border bg-card p-4 shadow-sm">
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-sm font-semibold text-foreground">重置密码</h3>
@@ -625,7 +631,7 @@ export default function Login() {
             <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
               没收到令牌？请联系客服：{supportContact}
             </p>
-          </div>
+          </FormFieldShake>
         )}
 
         {/* ══════════════ Agreement ══════════════ */}

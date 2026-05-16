@@ -1,6 +1,10 @@
 import { ChevronDown } from "lucide-react";
+import { motion } from "framer-motion";
+import type { ReactNode } from "react";
 import type { Category } from "@/types/category";
 import { isCategoryOrDescendantActive } from "@/utils/categoryTree";
+import { useMotionConfig } from "@/modules/micro-interactions";
+import { cn } from "@/lib/utils";
 
 type CategorySideTreeProps = {
   categories: Category[];
@@ -10,6 +14,52 @@ type CategorySideTreeProps = {
   onRootClick: (category: Category) => void;
   onChildClick: (parentId: string, childId: string) => void;
 };
+
+const SIDE_TAB_SPRING = { type: "spring" as const, stiffness: 360, damping: 30 };
+
+function SideNavButton({
+  active,
+  onClick,
+  layoutId,
+  activeClassName,
+  activeTextClass,
+  className,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  layoutId: string;
+  activeClassName: string;
+  activeTextClass?: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  const { enabled } = useMotionConfig();
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "relative w-full overflow-hidden text-left transition-colors",
+        active ? "border border-transparent" : "border border-transparent",
+        className,
+      )}
+    >
+      {active ? (
+        enabled ? (
+          <motion.span
+            layoutId={layoutId}
+            className={cn("absolute inset-0 rounded-xl", activeClassName)}
+            transition={SIDE_TAB_SPRING}
+          />
+        ) : (
+          <span className={cn("absolute inset-0 rounded-xl", activeClassName)} />
+        )
+      ) : null}
+      <span className={cn("relative z-10 block", active && activeTextClass)}>{children}</span>
+    </button>
+  );
+}
 
 export default function CategorySideTree({
   categories,
@@ -30,17 +80,16 @@ export default function CategorySideTree({
   return (
     <aside className="hidden md:block md:w-64 lg:w-72">
       <div className="sticky top-20 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
-        <button
-          type="button"
+        <SideNavButton
+          active={activeCat === "all"}
           onClick={onSelectAll}
-          className={`mb-2 w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition-colors ${
-            activeCat === "all"
-              ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
-              : "text-[var(--theme-text)] hover:bg-[var(--theme-bg)]"
-          }`}
+          layoutId="category-side-nav"
+          activeClassName="bg-[var(--theme-primary)]"
+          activeTextClass="font-semibold text-[var(--theme-primary-foreground)]"
+          className="mb-2 rounded-xl px-3 py-2 text-sm"
         >
           全部分类
-        </button>
+        </SideNavButton>
 
         <div className="space-y-1">
           {categories.map((category) => {
@@ -50,40 +99,38 @@ export default function CategorySideTree({
 
             return (
               <div key={category.id} className="rounded-xl border border-transparent">
-                <button
-                  type="button"
+                <SideNavButton
+                  active={isActive}
                   onClick={() => onRootClick(category)}
-                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition-colors ${
-                    isActive
-                      ? "bg-[var(--theme-primary)]/10 text-[var(--theme-text)]"
-                      : "text-[var(--theme-text)] hover:bg-[var(--theme-bg)]"
-                  }`}
+                  layoutId="category-side-nav"
+                  activeClassName="bg-[var(--theme-primary)]/12"
+                  activeTextClass="font-medium text-[var(--theme-text)]"
+                  className="flex items-center justify-between rounded-xl px-3 py-2 text-sm"
                 >
                   <span className="truncate">
                     {renderCategoryMark(category)}
                     {category.name}
                   </span>
                   {hasChildren ? (
-                    <ChevronDown size={14} className={`opacity-70 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                    <ChevronDown size={14} className={`shrink-0 opacity-70 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
                   ) : null}
-                </button>
+                </SideNavButton>
 
                 {hasChildren && isExpanded ? (
                   <div className="mt-1 space-y-1 pl-3">
                     {category.children!.map((child) => (
-                      <button
+                      <SideNavButton
                         key={child.id}
-                        type="button"
+                        active={activeCat === child.id}
                         onClick={() => onChildClick(category.id, child.id)}
-                        className={`w-full rounded-lg px-3 py-1.5 text-left text-xs transition-colors ${
-                          activeCat === child.id
-                            ? "bg-[var(--theme-price)]/12 text-[var(--theme-price)]"
-                            : "text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg)]"
-                        }`}
+                        layoutId="category-side-subnav"
+                        activeClassName="bg-[var(--theme-price)]/12"
+                        activeTextClass="text-xs font-medium text-[var(--theme-price)]"
+                        className="rounded-lg px-3 py-1.5"
                       >
                         {renderCategoryMark(child)}
                         {child.name}
-                      </button>
+                      </SideNavButton>
                     ))}
                   </div>
                 ) : null}

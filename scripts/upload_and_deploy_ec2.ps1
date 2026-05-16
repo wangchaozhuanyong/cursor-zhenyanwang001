@@ -83,14 +83,14 @@ Invoke-Native scp ($sshOpts + @($archivePath, "${ServerUser}@${ServerHost}:${rem
 Write-Host "[4/5] Extracting archive to staging directory on server ..."
 Invoke-Native ssh ($sshOpts + @(
   "${ServerUser}@${ServerHost}",
-  "set -euo pipefail; rm -rf '${remoteStaging}'; mkdir -p '${remoteStaging}'; tar -xzf '${remoteArchive}' -C '${remoteStaging}' --strip-components=1; test -f '${remoteStaging}/scripts/deploy_ec2.sh'; if [ -f '${RemoteProjectRoot}/server/.env' ]; then mkdir -p '${remoteStaging}/server' && cp '${RemoteProjectRoot}/server/.env' '${remoteStaging}/server/.env'; fi; rsync -a --delete --exclude='.git/' --exclude='server/.env' '${remoteStaging}/' '${RemoteProjectRoot}/'; rm -rf '${remoteStaging}' '${remoteArchive}'"
+  "set -euo pipefail; rm -rf '${remoteStaging}'; mkdir -p '${remoteStaging}'; tar -xzf '${remoteArchive}' -C '${remoteStaging}' --strip-components=1; test -f '${remoteStaging}/deploy/ci-deploy.sh'; if [ -f '${RemoteProjectRoot}/server/.env' ]; then mkdir -p '${remoteStaging}/server' && cp '${RemoteProjectRoot}/server/.env' '${remoteStaging}/server/.env'; fi; rsync -a --delete --exclude='.git/' --exclude='server/.env' --exclude='**/node_modules/' --exclude='click-send-shop-main/click-send-shop-main/dist/' --exclude='public-frontend/' '${remoteStaging}/' '${RemoteProjectRoot}/'; find '${RemoteProjectRoot}/deploy' -maxdepth 1 -name '*.sh' -exec sed -i 's/\r$//' {} +; rm -rf '${remoteStaging}' '${remoteArchive}'"
 ))
 
 Write-Host "[5/5] Running safe CI deploy script ..."
 # Run deploy as SSH user so PM2 touches the same daemon as production (avoid root vs ubuntu mismatch).
 Invoke-Native ssh ($sshOpts + @(
   "${ServerUser}@${ServerHost}",
-  "set -euo pipefail; cd '${RemoteProjectRoot}'; chmod +x deploy/ci-deploy.sh; PROJECT_DIR='${RemoteProjectRoot}' PM2_APP='gc-api' AUTO_ROLLBACK='1' bash deploy/ci-deploy.sh"
+  "set -euo pipefail; cd '${RemoteProjectRoot}'; chmod +x deploy/ci-deploy.sh; PROJECT_DIR='${RemoteProjectRoot}' PM2_APP='gc-api' AUTO_ROLLBACK='1' SKIP_GIT='1' bash deploy/ci-deploy.sh"
 ))
 
 Write-Host "[Done] Deployment completed."

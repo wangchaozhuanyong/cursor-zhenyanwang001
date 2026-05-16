@@ -11,6 +11,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import type { PointsRecord } from "@/types/points";
 import type { UserTag } from "@/types/user";
 import { productTagBadgeClass } from "@/utils/productTagBadge";
+import { AdminDetailGridSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 
 export default function AdminUserDetail() {
   const navigate = useNavigate();
@@ -80,35 +81,29 @@ export default function AdminUserDetail() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--theme-price)]" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="text-center py-20 text-muted-foreground">
-        <p>用户不存在</p>
-        <button onClick={goBack} className="mt-4 text-[var(--theme-price)] underline">返回</button>
-      </div>
-    );
-  }
-
-  const userTags = Array.isArray(user.tags) ? user.tags as UserTag[] : [];
+  const userTags = user && Array.isArray(user.tags) ? user.tags as UserTag[] : [];
   const userTagIds = new Set(userTags.map((tag) => tag.id));
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <button onClick={goBack}>
+        <button type="button" onClick={goBack}>
           <ArrowLeft size={20} className="text-foreground" />
         </button>
         <h2 className="text-lg font-semibold text-foreground">用户详情</h2>
       </div>
 
+      {loading && <AdminDetailGridSkeleton />}
+
+      {!loading && !user && (
+        <div className="py-16 text-center text-muted-foreground">
+          <p>用户不存在</p>
+          <button type="button" onClick={goBack} className="mt-4 text-[var(--theme-price)] underline">返回</button>
+        </div>
+      )}
+
+      {!loading && user && (
+      <>
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="theme-shadow rounded-xl border border-[var(--theme-border)] bg-theme-surface p-6 space-y-4">
           <h3 className="text-sm font-semibold text-foreground">基本信息</h3>
@@ -255,6 +250,8 @@ export default function AdminUserDetail() {
           </div>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

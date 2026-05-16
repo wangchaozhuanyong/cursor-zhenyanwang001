@@ -8,8 +8,11 @@ import { QRCodeCanvas } from "qrcode.react";
 import * as inviteService from "@/services/inviteService";
 import type { InviteStats, InviteRecord } from "@/types/invite";
 import { copyToClipboard } from "@/utils/clipboard";
+import { motion } from "framer-motion";
+import { useMotionConfig } from "@/modules/micro-interactions";
 
 export default function Invite() {
+  const { enabled: motionEnabled } = useMotionConfig();
   const goBack = useGoBack();
   const { inviteCode, parentInviteCode, loadProfile } = useUserStore();
   const [stats, setStats] = useState<InviteStats | null>(null);
@@ -155,9 +158,15 @@ export default function Invite() {
             <p className="mt-1 text-xs text-[var(--theme-text-muted)]">好友注册/下单后，你可获得积分或返现</p>
             <p className="mt-3 text-xs text-[var(--theme-text-muted)]">我的邀请码</p>
             <p className="text-2xl font-black tracking-wide text-[var(--theme-price)]">{inviteCode || "----"}</p>
-            <div className="mt-3 inline-block rounded-xl border border-[var(--theme-border)] bg-white p-3">
+            <motion.div
+              className="mt-3 inline-block rounded-xl border border-[var(--theme-border)] bg-white p-3"
+              initial={motionEnabled ? { opacity: 0, scale: 0.92 } : false}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.28, delay: inviteCode ? 0.08 : 0 }}
+              key={inviteCode || "pending"}
+            >
               <QRCodeCanvas ref={qrRef} value={inviteLink} size={170} level="H" marginSize={1} fgColor="#111111" bgColor="#ffffff" />
-            </div>
+            </motion.div>
             <p className="mt-2 text-[11px] text-[var(--theme-text-muted)]">规则：邀请好友消费后可获积分/返现</p>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-2">

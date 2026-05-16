@@ -1,7 +1,12 @@
-﻿import { ArrowLeft } from "lucide-react";
+﻿import { useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useMediaSheetMode } from "@/modules/micro-interactions";
+import { useUserStore } from "@/stores/useUserStore";
+import { formatAddressForDisplay } from "@/services/addressService";
 import { CheckoutAddressCard } from "./components/CheckoutAddressCard";
+import { CheckoutAddressPickerSheet } from "./components/CheckoutAddressPickerSheet";
 import { CheckoutCouponSection } from "./components/CheckoutCouponSection";
 import { CheckoutItemsList } from "./components/CheckoutItemsList";
 import { CheckoutOrderSuccess } from "./components/CheckoutOrderSuccess";
@@ -10,11 +15,27 @@ import { CheckoutPriceSummary } from "./components/CheckoutPriceSummary";
 import { CheckoutShippingSection } from "./components/CheckoutShippingSection";
 import { CheckoutSubmitBar } from "./components/CheckoutSubmitBar";
 import { useCheckoutPage } from "./hooks/useCheckoutPage";
+import { LoadingButton } from "@/modules/micro-interactions";
 import { submitCtaLabel } from "./utils/checkoutText";
 
 export default function Checkout() {
   useDocumentTitle("结算");
   const checkout = useCheckoutPage();
+  const isMobileSheet = useMediaSheetMode();
+  const addresses = useUserStore((s) => s.addresses);
+  const [addressSheetOpen, setAddressSheetOpen] = useState(false);
+
+  const handleChooseAddress = () => {
+    if (isMobileSheet) setAddressSheetOpen(true);
+    else checkout.goAddress();
+  };
+
+  const handlePickAddress = (addr: (typeof addresses)[number]) => {
+    checkout.setName(addr.recipient_name);
+    checkout.setPhone(addr.phone);
+    checkout.setAddress(formatAddressForDisplay(addr));
+    checkout.setSelectedAddress(addr);
+  };
 
   if (checkout.isEmpty) {
     return null;
@@ -66,7 +87,7 @@ export default function Checkout() {
               onAddressChange={checkout.setAddress}
               onNoteChange={checkout.setNote}
               onSelectedAddressChange={checkout.setSelectedAddress}
-              onChooseAddress={checkout.goAddress}
+              onChooseAddress={handleChooseAddress}
             />
 
             <CheckoutPaymentMethod
@@ -128,14 +149,16 @@ export default function Checkout() {
                 sstShowInCatalog={checkout.sstCfg.enabled}
                 sstCustomerNote={checkout.sstCfg.customerNote}
               />
-              <button
+              <LoadingButton
+                state={checkout.submitting ? "loading" : "normal"}
                 onClick={checkout.handleSubmit}
                 disabled={checkout.submitting}
-                className="mt-5 w-full rounded-full py-3.5 text-sm font-bold text-white theme-shadow transition-all hover:opacity-95 disabled:opacity-60"
-                style={{ background: "var(--theme-gradient)" }}
+                variant="solid"
+                className="mt-5 w-full rounded-full py-3.5 text-sm font-bold text-white theme-shadow !min-h-0 [background:var(--theme-gradient)]"
+                loadingText={submitCtaLabel(checkout.paymentMethod, true)}
               >
-                {submitCtaLabel(checkout.paymentMethod, checkout.submitting)}
-              </button>
+                {submitCtaLabel(checkout.paymentMethod, false)}
+              </LoadingButton>
             </div>
           </aside>
         </div>
@@ -146,6 +169,14 @@ export default function Checkout() {
         paymentMethod={checkout.paymentMethod}
         submitting={checkout.submitting}
         onSubmit={checkout.handleSubmit}
+      />
+
+      <CheckoutAddressPickerSheet
+        open={addressSheetOpen}
+        onClose={() => setAddressSheetOpen(false)}
+        addresses={addresses}
+        selectedId={checkout.selectedAddress?.id ?? null}
+        onSelect={handlePickAddress}
       />
     </div>
   );

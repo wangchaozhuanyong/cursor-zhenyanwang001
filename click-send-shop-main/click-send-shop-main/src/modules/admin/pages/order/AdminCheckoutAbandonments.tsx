@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
+import { AnimatedTable } from "@/modules/micro-interactions";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import SearchBar from "@/components/SearchBar";
@@ -87,14 +88,6 @@ export default function AdminCheckoutAbandonments() {
     void loadData({ page: 1, pageSize: nextPageSize });
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--theme-price)]" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
@@ -123,7 +116,18 @@ export default function AdminCheckoutAbandonments() {
       </div>
 
       <div className="space-y-3 md:hidden">
-        {rows.map((row) => (
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
+              <div className="space-y-2">
+                <div className="skeleton-base skeleton-shimmer h-4 w-24 rounded-full" />
+                <div className="skeleton-base skeleton-shimmer h-4 w-3/4 rounded" />
+                <div className="skeleton-base skeleton-shimmer h-3 w-1/2 rounded" />
+              </div>
+            </div>
+          ))
+          : null}
+        {!loading && rows.map((row) => (
           <div key={row.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
             <div className="flex items-center justify-between gap-3">
               <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[row.status]}`}>{STATUS_LABEL[row.status]}</span>
@@ -144,49 +148,55 @@ export default function AdminCheckoutAbandonments() {
             )}
           </div>
         ))}
-        {rows.length === 0 && <div className="py-8 text-center text-sm text-muted-foreground">暂无未完成结算</div>}
+        {!loading && rows.length === 0 && <div className="py-8 text-center text-sm text-muted-foreground">暂无未完成结算</div>}
         <Pagination total={total} page={page} pageSize={pageSize} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
       </div>
 
-      <div className="hidden overflow-x-auto theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] md:block theme-shadow">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70">
+      <div className="hidden md:block">
+        <AnimatedTable
+          loading={loading}
+          rows={rows}
+          rowKey={(row) => row.id}
+          skeletonRows={8}
+          skeletonCols={8}
+          className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
+          tableClassName="w-full text-sm"
+          theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
+          thead={(
+            <tr>
               {["状态", "联系人", "商品摘要", "金额", "支付方式", "关联订单", "更新时间", ""].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{h}</th>
               ))}
             </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.id} className="border-b border-[var(--theme-border)] last:border-0 hover:bg-[var(--theme-bg)]">
-                <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[row.status]}`}>{STATUS_LABEL[row.status]}</span></td>
-                <td className="px-4 py-3 text-foreground">
-                  <div>{row.contact_name || "—"}</div>
-                  <div className="text-xs text-muted-foreground">{row.contact_phone_masked || "—"}</div>
-                </td>
-                <td className="max-w-[320px] px-4 py-3 text-foreground">
-                  <div className="truncate">{row.items_summary.map((item) => `${item.name || item.product_id} x${item.qty}`).join("，") || "—"}</div>
-                  <div className="text-xs text-muted-foreground">{row.items_count} 件</div>
-                </td>
-                <td className="px-4 py-3 font-semibold text-foreground">RM {row.total_amount.toFixed(2)}</td>
-                <td className="px-4 py-3 text-foreground">{row.payment_method || "—"}</td>
-                <td className="px-4 py-3 font-mono text-xs text-foreground">{row.order_no || "—"}</td>
-                <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(row.updated_at).toLocaleString("zh-CN")}</td>
-                <td className="px-4 py-3">
-                  {row.order_id ? (
-                    <button type="button" onClick={() => navigate(`/admin/orders/${row.order_id}`)} className="text-xs text-[var(--theme-price)] hover:underline">详情</button>
-                  ) : <span className="text-xs text-muted-foreground">未下单</span>}
-                </td>
-              </tr>
-            ))}
-            {rows.length === 0 && (
-              <tr><td colSpan={8} className="px-4 py-8 text-center text-sm text-muted-foreground">暂无未完成结算</td></tr>
-            )}
-          </tbody>
-        </table>
-        <Pagination total={total} page={page} pageSize={pageSize} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
+          )}
+          footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />}
+          emptyIcon={ShoppingCart}
+          emptyTitle="暂无未完成结算"
+          renderRow={(row) => (
+            <>
+              <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[row.status]}`}>{STATUS_LABEL[row.status]}</span></td>
+              <td className="px-4 py-3 text-foreground">
+                <div>{row.contact_name || "—"}</div>
+                <div className="text-xs text-muted-foreground">{row.contact_phone_masked || "—"}</div>
+              </td>
+              <td className="max-w-[320px] px-4 py-3 text-foreground">
+                <div className="truncate">{row.items_summary.map((item) => `${item.name || item.product_id} x${item.qty}`).join("，") || "—"}</div>
+                <div className="text-xs text-muted-foreground">{row.items_count} 件</div>
+              </td>
+              <td className="px-4 py-3 font-semibold text-foreground">RM {row.total_amount.toFixed(2)}</td>
+              <td className="px-4 py-3 text-foreground">{row.payment_method || "—"}</td>
+              <td className="px-4 py-3 font-mono text-xs text-foreground">{row.order_no || "—"}</td>
+              <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(row.updated_at).toLocaleString("zh-CN")}</td>
+              <td className="px-4 py-3">
+                {row.order_id ? (
+                  <button type="button" onClick={() => navigate(`/admin/orders/${row.order_id}`)} className="text-xs text-[var(--theme-price)] hover:underline">详情</button>
+                ) : <span className="text-xs text-muted-foreground">未下单</span>}
+              </td>
+            </>
+          )}
+        />
       </div>
+
     </div>
   );
 }

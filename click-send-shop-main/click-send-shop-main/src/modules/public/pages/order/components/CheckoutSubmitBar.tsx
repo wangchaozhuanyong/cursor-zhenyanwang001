@@ -1,4 +1,5 @@
 ﻿import type { PaymentMethod } from "@/components/PaymentMethodPicker";
+import { AnimatedNumber, LoadingButton } from "@/modules/micro-interactions";
 import { submitCtaLabel } from "../utils/checkoutText";
 
 interface CheckoutSubmitBarProps {
@@ -14,16 +15,20 @@ export function CheckoutSubmitBar({ finalTotal, paymentMethod, submitting, onSub
       <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3.5">
         <div>
           <p className="text-xs text-muted-foreground">合计</p>
-          <p className="text-xl font-bold text-[var(--theme-price)]">RM {finalTotal}</p>
+          <p className="text-xl font-bold text-[var(--theme-price)]">
+            <AnimatedNumber value={finalTotal} decimals={2} format={(n) => `RM ${n.toFixed(2)}`} />
+          </p>
         </div>
-        <button
+        <LoadingButton
+          state={submitting ? "loading" : "normal"}
           onClick={onSubmit}
           disabled={submitting}
-          className="rounded-full px-8 py-3.5 text-sm font-bold text-white theme-shadow transition-all active:scale-[0.97] disabled:opacity-60"
-          style={{ background: "var(--theme-gradient)" }}
+          variant="solid"
+          className="rounded-full px-8 py-3.5 text-sm font-bold text-white theme-shadow !min-h-0 [background:var(--theme-gradient)]"
+          loadingText={submitCtaLabel(paymentMethod, true)}
         >
-          {submitCtaLabel(paymentMethod, submitting)}
-        </button>
+          {submitCtaLabel(paymentMethod, false)}
+        </LoadingButton>
       </div>
     </div>
   );

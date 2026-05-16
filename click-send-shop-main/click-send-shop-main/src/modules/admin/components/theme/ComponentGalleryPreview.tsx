@@ -1,0 +1,85 @@
+import PremiumCouponCard from "@/components/PremiumCouponCard";
+import ProductCard from "@/components/ProductCard";
+import StoreBadge from "@/components/ui/StoreBadge";
+import StorePrice from "@/components/ui/StorePrice";
+import type { ThemeConfig } from "@/types/theme";
+import { previewProduct } from "./themePreviewData";
+
+function Btn({ label, variant = "primary" }: { label: string; variant?: "primary" | "secondary" | "danger" | "ghost" | "success" }) {
+  const styles: Record<string, string> = {
+    primary: "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]",
+    secondary: "bg-[var(--theme-secondary)] text-[var(--theme-secondary-foreground)]",
+    danger: "bg-[var(--theme-danger)] text-[var(--theme-danger-foreground)]",
+    success: "bg-[var(--theme-success)] text-[var(--theme-success-foreground)]",
+    ghost: "border border-[var(--theme-border)] text-[var(--theme-text)] opacity-50",
+  };
+  return (
+    <button type="button" disabled={variant === "ghost" && label.includes("禁用")} className={`rounded-[var(--theme-button-radius)] px-3 py-1.5 text-xs font-medium ${styles[variant]}`}>
+      {label}
+    </button>
+  );
+}
+
+export default function ComponentGalleryPreview({ config: _config }: { config: ThemeConfig }) {
+  return (
+    <div className="space-y-4 text-[var(--theme-text)]">
+      <section>
+        <p className="mb-2 text-xs font-semibold text-[var(--theme-text-muted)]">按钮</p>
+        <div className="flex flex-wrap gap-2">
+          <Btn label="主按钮" />
+          <Btn label="次按钮" variant="secondary" />
+          <Btn label="危险按钮" variant="danger" />
+          <Btn label="成功按钮" variant="success" />
+          <Btn label="禁用按钮" variant="ghost" />
+        </div>
+      </section>
+      <section>
+        <p className="mb-2 text-xs font-semibold text-[var(--theme-text-muted)]">输入</p>
+        <input className="mb-2 h-9 w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-xs" placeholder="输入框" />
+        <div className="flex h-9 items-center gap-2 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3">
+          <span className="text-[var(--theme-text-muted)]">🔍</span>
+          <span className="text-xs text-[var(--theme-text-muted)]">搜索框</span>
+        </div>
+      </section>
+      <section>
+        <p className="mb-2 text-xs font-semibold text-[var(--theme-text-muted)]">标签 / 徽章</p>
+        <div className="flex flex-wrap gap-2">
+          <StoreBadge type="hot">热销</StoreBadge>
+          <StoreBadge type="sale">促销</StoreBadge>
+          <StoreBadge type="danger">危险</StoreBadge>
+        </div>
+      </section>
+      <StorePrice price={79} originalPrice={99} />
+      <PremiumCouponCard
+        compact
+        title="会员专享券"
+        amount="10"
+        minSpendText="满 RM 50 可用"
+        expireText="2026-12-31"
+        scopeText="适用范围：全场商品"
+        actionLabel="去使用"
+      />
+      <div className="store-card p-2 text-xs">会员卡骨架预览</div>
+      <ProductCard product={previewProduct} />
+      <div className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-2 text-xs">Toast / 提示样式区域</div>
+      <div className="rounded-t-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-xs shadow-lg">
+        <p className="font-medium">Bottom Sheet</p>
+        <p className="mt-1 text-[var(--theme-text-muted)]">从底部上滑的弹层示例</p>
+      </div>
+      <div className="h-8 animate-pulse rounded-lg bg-[var(--theme-border)]/40" />
+      <table className="w-full border-collapse text-[10px]">
+        <tbody>
+          <tr className="border-b border-[var(--theme-border)]">
+            <td className="py-1">表格行 A</td>
+            <td>RM 10</td>
+          </tr>
+        </tbody>
+      </table>
+      <div className="flex justify-center gap-1 text-[10px]">
+        <span className="rounded border border-[var(--theme-border)] px-2 py-1">‹</span>
+        <span className="rounded bg-[var(--theme-primary)] px-2 py-1 text-[var(--theme-primary-foreground)]">1</span>
+        <span className="rounded border border-[var(--theme-border)] px-2 py-1">›</span>
+      </div>
+    </div>
+  );
+}

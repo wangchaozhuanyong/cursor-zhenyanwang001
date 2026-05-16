@@ -5,6 +5,7 @@ import * as activityService from "@/services/admin/activityService";
 import type { ActivityPayload, ActivityProductItem, ActivityStatus, ActivityType } from "@/types/activity";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import ActivityProductPicker from "@/components/admin/ActivityProductPicker";
+import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
 
 const STEPS = ["选择类型", "基础信息", "活动规则", "适用范围", "展示设置", "预览发布"] as const;
 
@@ -20,6 +21,8 @@ export default function AdminActivityForm() {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
+  const [pendingPublishStatus, setPendingPublishStatus] = useState<ActivityStatus | null>(null);
   const [statusLabel, setStatusLabel] = useState("草稿");
   const [form, setForm] = useState<ActivityPayload>({
     type: (search.get("type") as ActivityType) || "flash_sale",
@@ -102,13 +105,18 @@ export default function AdminActivityForm() {
   const validateAndSave = async (targetStatus: ActivityStatus) => {
     const localErr = localValidate();
     if (targetStatus !== "draft" && localErr) return toast.error(localErr);
+    if (targetStatus !== "draft") {
+      setPendingPublishStatus(targetStatus);
+      setPublishConfirmOpen(true);
+      return;
+    }
+    await performSave(targetStatus);
+  };
+
+  const performSave = async (targetStatus: ActivityStatus) => {
     setSaving(true);
     try {
       const payload = { ...form, status: targetStatus };
-      if (targetStatus !== "draft") {
-        const summary = `活动名称：${payload.title}\n类型：${labelType(payload.type)}\n时间：${payload.start_at} ~ ${payload.end_at}\n商品数：${payload.items.length}\n是否发布：确认后不可回退草稿`;
-        if (!window.confirm(summary)) return;
-      }
       if (targetStatus !== "draft") {
         await activityService.validateActivity(payload, id);
       }
@@ -277,12 +285,30 @@ export default function AdminActivityForm() {
 
       <div className="sticky bottom-0 z-10 flex justify-end gap-2 rounded-xl border border-border bg-card p-3">
         <button onClick={() => setStep((s) => Math.max(0, s - 1))} className="rounded-lg border border-border px-3 py-2 text-sm">上一步</button>
-        <button onClick={() => void validateAndSave("draft")} disabled={saving} className="rounded-lg border border-border px-3 py-2 text-sm">保存草稿</button>
+        <LoadingButton type="button" variant="outline" state={saving ? "loading" : "normal"} loadingText="保存中..." onClick={() => void validateAndSave("draft")} className="rounded-lg px-3 py-2 text-sm">保存草稿</LoadingButton>
         <button onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))} className="rounded-lg border border-border px-3 py-2 text-sm">下一步</button>
-        <button onClick={() => void validateAndSave("active")} disabled={saving} className="rounded-lg bg-gold px-3 py-2 text-sm font-semibold text-primary-foreground">发布活动</button>
+        <LoadingButton type="button" variant="gold" state={saving ? "loading" : "normal"} loadingText="发布中..." onClick={() => void validateAndSave("active")} className="rounded-lg px-3 py-2 text-sm font-semibold">发布活动</LoadingButton>
         <button onClick={() => navigate("/admin/marketing/activities")} className="rounded-lg border border-border px-3 py-2 text-sm">取消</button>
       </div>
 
+      <AnimatedConfirmDialog
+        open={publishConfirmOpen}
+        onOpenChange={setPublishConfirmOpen}
+        title="确认发布活动"
+        description={
+          pendingPublishStatus ? (
+            <span className="block whitespace-pre-line text-sm">
+              {`活动名称：${form.title}\n类型：${labelType(form.type)}\n时间：${form.start_at} ~ ${form.end_at}\n商品数：${form.items.length}\n发布后不可回退为草稿。`}
+            </span>
+          ) : null
+        }
+        confirmText="发布"
+        onConfirm={async () => {
+          if (pendingPublishStatus) await performSave(pendingPublishStatus);
+          setPublishConfirmOpen(false);
+          setPendingPublishStatus(null);
+        }}
+      />
       <ActivityProductPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}

@@ -3,15 +3,120 @@ import { Ticket, ChevronRight, Check, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import type { CheckoutPickerCoupon } from "@/types/coupon";
+import { ResponsiveSheet, useMediaSheetMode } from "@/modules/micro-interactions";
 
 interface CouponPickerProps {
   totalAmount: number;
   shippingFee?: number;
   selectedCouponId: string | null;
   onSelect: (coupon: CheckoutPickerCoupon | null) => void;
-  /** 由页面经 useCheckoutPickerCoupons → couponService 注入 */
   coupons: CheckoutPickerCoupon[];
   loading: boolean;
+}
+
+function useCouponHelpers(totalAmount: number, shippingFee: number) {
+  const getDiscountAmount = (c: CheckoutPickerCoupon) => {
+    if (c.discountType === "percent") return Math.min(totalAmount, Math.floor((totalAmount * c.discount) / 100));
+    if (c.discountType === "shipping") return Math.min(shippingFee, c.discount > 0 ? c.discount : shippingFee);
+    return Math.min(totalAmount, c.discount);
+  };
+  const isUsable = (c: CheckoutPickerCoupon) =>
+    totalAmount >= c.condition && (c.discountType !== "shipping" || shippingFee > 0);
+  const getAmountParts = (c: CheckoutPickerCoupon) => {
+    if (c.discountType === "percent") return { amountPrefix: "", amount: `${c.discount}%` };
+    if (c.discountType === "shipping" && c.discount <= 0) return { amountPrefix: "", amount: "免运" };
+    return { amountPrefix: "RM", amount: String(c.discount) };
+  };
+  const getMinSpendText = (c: CheckoutPickerCoupon) => {
+    if (c.discountType === "shipping") return c.condition > 0 ? `满 RM ${c.condition} 免/减运费` : "无门槛运费券";
+    return c.condition > 0 ? `满 RM ${c.condition} 可用` : "无门槛可用";
+  };
+  return { getDiscountAmount, isUsable, getAmountParts, getMinSpendText };
+}
+
+function CouponListBody({
+  coupons,
+  selectedCouponId,
+  selected,
+  totalAmount,
+  onSelect,
+  onClose,
+  getDiscountAmount,
+  isUsable,
+  getAmountParts,
+  getMinSpendText,
+}: {
+  coupons: CheckoutPickerCoupon[];
+  selectedCouponId: string | null;
+  selected: CheckoutPickerCoupon | null;
+  totalAmount: number;
+  onSelect: (coupon: CheckoutPickerCoupon | null) => void;
+  onClose: () => void;
+  getDiscountAmount: (c: CheckoutPickerCoupon) => number;
+  isUsable: (c: CheckoutPickerCoupon) => boolean;
+  getAmountParts: (c: CheckoutPickerCoupon) => { amountPrefix: string; amount: string };
+  getMinSpendText: (c: CheckoutPickerCoupon) => string;
+}) {
+  return (
+    <div className="space-y-2">
+      <button
+        type="button"
+        onClick={() => {
+          onSelect(null);
+          onClose();
+        }}
+        className={`flex w-full items-center justify-between rounded-xl border px-4 py-3.5 transition-all ${
+          !selectedCouponId ? "border-gold bg-gold/5" : "border-border hover:border-gold/20"
+        }`}
+      >
+        <span className="text-sm text-foreground">不使用优惠券</span>
+        {!selectedCouponId && <Check size={16} className="text-gold" />}
+      </button>
+
+      {coupons.map((coupon) => {
+        const usable = isUsable(coupon);
+        const isSelected = selectedCouponId === coupon.id;
+        const { amountPrefix, amount } = getAmountParts(coupon);
+        return (
+          <motion.div key={coupon.id} whileTap={usable ? { scale: 0.98 } : undefined} className="relative">
+            <PremiumCouponCard
+              compact
+              title={coupon.title}
+              amountPrefix={amountPrefix}
+              amount={amount}
+              minSpendText={getMinSpendText(coupon)}
+              expireText={coupon.expire}
+              selected={isSelected}
+              disabled={!usable}
+              onClick={() => {
+                if (!usable) return;
+                onSelect(coupon);
+                onClose();
+              }}
+            />
+            {usable && isSelected ? (
+              <motion.div className="pointer-events-none absolute right-3 top-3 z-20">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#E2C382]">
+                  <Check size={14} className="text-[#4A0A17]" />
+                </div>
+              </motion.div>
+            ) : null}
+            {!usable && (
+              <p className="mt-1 px-2 text-[11px] text-destructive">
+                {totalAmount < coupon.condition
+                  ? `还差 RM ${coupon.condition - totalAmount} 可用`
+                  : "当前订单无运费可抵扣"}
+              </p>
+            )}
+          </motion.div>
+        );
+      })}
+
+      {selected ? (
+        <p className="pt-1 text-center text-xs text-gold">已为您节省 RM {getDiscountAmount(selected)}</p>
+      ) : null}
+    </div>
+  );
 }
 
 export default function CouponPicker({
@@ -23,32 +128,33 @@ export default function CouponPicker({
   loading,
 }: CouponPickerProps) {
   const [open, setOpen] = useState(false);
-
+  const isMobileSheet = useMediaSheetMode();
   const selected = coupons.find((c) => c.id === selectedCouponId) ?? null;
-
-  const getDiscountAmount = (c: CheckoutPickerCoupon) => {
-    if (c.discountType === "percent") return Math.min(totalAmount, Math.floor((totalAmount * c.discount) / 100));
-    if (c.discountType === "shipping") return Math.min(shippingFee, c.discount > 0 ? c.discount : shippingFee);
-    return Math.min(totalAmount, c.discount);
-  };
-
-  const isUsable = (c: CheckoutPickerCoupon) => totalAmount >= c.condition && (c.discountType !== "shipping" || shippingFee > 0);
+  const { getDiscountAmount, isUsable, getAmountParts, getMinSpendText } = useCouponHelpers(
+    totalAmount,
+    shippingFee,
+  );
   const usableCount = coupons.filter(isUsable).length;
-  const getAmountParts = (c: CheckoutPickerCoupon) => {
-    if (c.discountType === "percent") return { amountPrefix: "", amount: `${c.discount}%` };
-    if (c.discountType === "shipping" && c.discount <= 0) return { amountPrefix: "", amount: "免运" };
-    return { amountPrefix: "RM", amount: String(c.discount) };
-  };
-  const getConditionText = (c: CheckoutPickerCoupon) => {
-    if (c.discountType === "shipping") return c.condition > 0 ? `满 RM ${c.condition} 免/减运费` : "免/减运费";
-    return c.condition > 0 ? `满 RM ${c.condition} 可用` : "无门槛可用";
+  const close = () => setOpen(false);
+
+  const listProps = {
+    coupons,
+    selectedCouponId,
+    selected,
+    totalAmount,
+    onSelect,
+    onClose: close,
+    getDiscountAmount,
+    isUsable,
+    getAmountParts,
+    getMinSpendText,
   };
 
   return (
-    <div className="rounded-2xl border border-border bg-card overflow-hidden">
+    <div className="overflow-hidden rounded-2xl border border-border bg-card">
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={() => (isMobileSheet ? setOpen(true) : setOpen((v) => !v))}
         className="flex w-full items-center justify-between p-5"
       >
         <div className="flex items-center gap-2.5">
@@ -71,91 +177,34 @@ export default function CouponPicker({
           ) : (
             <span className="text-xs text-muted-foreground">无可用</span>
           )}
-          <ChevronRight size={16} className={`text-muted-foreground transition-transform duration-200 ${open ? "rotate-90" : ""}`} />
+          <ChevronRight
+            size={16}
+            className={`text-muted-foreground transition-transform duration-200 ${!isMobileSheet && open ? "rotate-90" : ""}`}
+          />
         </div>
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="overflow-hidden"
-          >
-            <div className="border-t border-border px-4 pb-4 pt-3 space-y-2">
-              <button
-                type="button"
-                onClick={() => {
-                  onSelect(null);
-                  setOpen(false);
-                }}
-                className={`flex w-full items-center justify-between rounded-xl border px-4 py-3.5 transition-all ${
-                  !selectedCouponId ? "border-gold bg-gold/5" : "border-border hover:border-gold/20"
-                }`}
-              >
-                <span className="text-sm text-foreground">不使用优惠券</span>
-                {!selectedCouponId && <Check size={16} className="text-gold" />}
-              </button>
-
-              {coupons.map((coupon) => {
-                const usable = isUsable(coupon);
-                const isSelected = selectedCouponId === coupon.id;
-                const { amountPrefix, amount } = getAmountParts(coupon);
-                return (
-                  <motion.div
-                    key={coupon.id}
-                    whileTap={usable ? { scale: 0.98 } : undefined}
-                    className="relative"
-                  >
-                    <PremiumCouponCard
-                      compact
-                      title={coupon.title}
-                      amountPrefix={amountPrefix}
-                      amount={amount}
-                      conditionText={getConditionText(coupon)}
-                      expireText={coupon.expire}
-                      selected={isSelected}
-                      disabled={!usable}
-                      statusLabel={isSelected ? "已选择" : usable ? "点击使用" : "不可用"}
-                      onClick={() => {
-                        if (!usable) return;
-                        onSelect(coupon);
-                        setOpen(false);
-                      }}
-                    />
-                    {usable && (
-                      <div className="pointer-events-none absolute right-3 top-3 z-20">
-                        {isSelected ? (
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#E2C382]">
-                            <Check size={14} className="text-[#4A0A17]" />
-                          </div>
-                        ) : null}
-                      </div>
-                    )}
-                    {!usable && (
-                      <p className="mt-1 px-2 text-[11px] text-destructive">
-                        {totalAmount < coupon.condition ? `还差 RM ${coupon.condition - totalAmount} 可用` : "当前订单无运费可抵扣"}
-                      </p>
-                    )}
-                  </motion.div>
-                );
-              })}
-
-              {selected && (
-                <motion.p
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="pt-1 text-center text-xs text-gold"
-                >
-                  已为您节省 RM {getDiscountAmount(selected)}
-                </motion.p>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {isMobileSheet ? (
+        <ResponsiveSheet open={open} onClose={close} title="选择优惠券" height="85vh">
+          <CouponListBody {...listProps} />
+        </ResponsiveSheet>
+      ) : (
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="overflow-hidden"
+            >
+              <div className="space-y-2 border-t border-border px-4 pb-4 pt-3">
+                <CouponListBody {...listProps} />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Save } from "lucide-react";
+import { CreditCard, Save } from "lucide-react";
 import PermissionGate from "@/components/admin/PermissionGate";
 import PaymentAdminSubnav from "./PaymentAdminSubnav";
 import * as paymentAdmin from "@/services/admin/paymentAdminService";
@@ -78,11 +78,21 @@ export default function AdminPaymentChannels() {
         </div>
         <PaymentAdminSubnav />
 
-        {loading ? (
-          <div className="flex justify-center py-16 text-muted-foreground">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : (
+        {loading
+          ? Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="theme-rounded mb-4 border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow space-y-3"
+              >
+                <div className="skeleton-base skeleton-shimmer h-5 w-1/3 rounded" />
+                <div className="skeleton-base skeleton-shimmer h-3 w-2/3 rounded" />
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="skeleton-base skeleton-shimmer h-10 w-full rounded-lg" />
+                  <div className="skeleton-base skeleton-shimmer h-10 w-full rounded-lg" />
+                </div>
+              </div>
+            ))
+          : (
           <div className="space-y-4">
             {rows.map((row) => (
               <div
@@ -152,7 +162,12 @@ export default function AdminPaymentChannels() {
                 )}
               </div>
             ))}
-            {rows.length === 0 && <p className="text-sm text-muted-foreground">暂无渠道，请执行数据库迁移 028。</p>}
+            {rows.length === 0 && (
+              <div className="py-12 text-center">
+                <CreditCard className="mx-auto h-10 w-10 text-muted-foreground/30" />
+                <p className="mt-3 text-sm text-muted-foreground">暂无渠道，请执行数据库迁移 028。</p>
+              </div>
+            )}
           </div>
         )}
       </div>

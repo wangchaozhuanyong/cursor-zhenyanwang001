@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchProductTags, createProductTag, updateProductTag, deleteProductTag } from "@/services/admin/productService";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { LoadingButton } from "@/modules/micro-interactions";
 import type { ProductTag } from "@/types/product";
 
 const EMPTY_FORM = {
@@ -83,14 +84,6 @@ export default function AdminProductTags() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
@@ -145,9 +138,16 @@ export default function AdminProductTags() {
               </span>
             </div>
             <PermissionGate permission="tag.manage">
-              <button disabled={saving} onClick={handleSave} className="rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingId ? "保存" : "添加"}
-              </button>
+              <LoadingButton
+                type="button"
+                variant="gold"
+                state={saving ? "loading" : "normal"}
+                loadingText="保存中..."
+                onClick={() => void handleSave()}
+                className="rounded-lg px-4 py-2.5 text-sm font-semibold"
+              >
+                {editingId ? "保存" : "添加"}
+              </LoadingButton>
             </PermissionGate>
             <button onClick={resetForm} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground">取消</button>
           </div>
@@ -155,7 +155,16 @@ export default function AdminProductTags() {
       )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {tags.map((tag) => (
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-border bg-card p-4 space-y-3">
+                <div className="skeleton-base skeleton-shimmer h-6 w-20 rounded-full" />
+                <div className="skeleton-base skeleton-shimmer h-3 w-24 rounded" />
+                <div className="skeleton-base skeleton-shimmer h-3 w-16 rounded" />
+              </div>
+            ))
+          : null}
+        {!loading && tags.map((tag) => (
           <div key={tag.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
             <div>
               <span

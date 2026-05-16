@@ -16,7 +16,7 @@ interface DisplayCoupon {
   title: string;
   amountPrefix: string;
   amount: string;
-  conditionText: string;
+  minSpendText: string;
   scopeText: string;
   expire: string;
   status: DisplayStatus;
@@ -37,7 +37,7 @@ function toDisplayCoupon(uc: UserCoupon): DisplayCoupon {
     title: d.title,
     amountPrefix: d.amountPrefix,
     amount: d.amount,
-    conditionText: d.conditionText,
+    minSpendText: d.minSpendText,
     scopeText: d.scopeText,
     expire: d.expireText,
     status: displayStatus,
@@ -209,11 +209,6 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
   ref,
 ) {
   const isDisabled = coupon.status === "used" || coupon.status === "expired";
-  const statusLabel =
-    coupon.status === "claimed" ? "可使用"
-    : coupon.status === "used" ? "已使用"
-    : coupon.status === "expired" ? "已过期"
-    : undefined;
 
   return (
     <motion.div
@@ -229,7 +224,7 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
         title={coupon.title}
         amountPrefix={coupon.amountPrefix}
         amount={coupon.amount}
-        conditionText={coupon.conditionText}
+        minSpendText={coupon.minSpendText}
         expireText={coupon.expire}
         scopeText={coupon.scopeText}
         badge={coupon.tag}
@@ -237,7 +232,6 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
         actionLabel={coupon.status === "available" ? "立即领取" : undefined}
         actionLoading={claiming}
         actionDisabled={claiming}
-        statusLabel={statusLabel}
         onAction={coupon.status === "available" ? onClaim : undefined}
       />
     </motion.div>

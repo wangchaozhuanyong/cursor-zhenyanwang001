@@ -1,10 +1,13 @@
-﻿import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+﻿import { useState, useEffect, useCallback, useRef, useMemo, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import StoreTabHeader from "@/components/store/StoreTabHeader";
 import ProductCard from "@/components/ProductCard";
+import { AnimatePresence, motion } from "framer-motion";
+import { useMotionConfig } from "@/modules/micro-interactions";
+import { cn } from "@/lib/utils";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import ProductFilterDrawer from "@/components/ProductFilterDrawer";
 import ProductSortBar from "@/components/ProductSortBar";
@@ -141,22 +144,51 @@ export default function Categories() {
         <div className="no-scrollbar flex gap-2 overflow-x-auto border-b border-[var(--theme-border)] px-4 py-3 md:hidden">
           {loading && categories.length === 0 ? Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-8 w-16 flex-shrink-0 rounded-full" />) : rootRow.map((item) => {
             if (item.kind === "all") {
-              return <button key="all" ref={(el) => { if (el) categoryBtnRefs.current.set("all", el); else categoryBtnRefs.current.delete("all"); }} type="button" onClick={handleSelectAll} className={`flex-shrink-0 rounded-full px-4 py-1.5 text-xs font-medium ${activeCat === "all" ? "bg-[var(--theme-primary)] text-white" : "border border-[var(--theme-border)] bg-[var(--theme-surface)]"}`}>全部</button>;
+              return (
+                <CategoryTabButton
+                  key="all"
+                  btnRef={(el) => { if (el) categoryBtnRefs.current.set("all", el); else categoryBtnRefs.current.delete("all"); }}
+                  active={activeCat === "all"}
+                  onClick={handleSelectAll}
+                  layoutId="category-root-tab"
+                >
+                  全部
+                </CategoryTabButton>
+              );
             }
             const { node } = item;
             const hasChildren = (node.children?.length ?? 0) > 0;
             const isActive = isCategoryOrDescendantActive(node, activeCat);
             const isExpanded = expandedParentId === node.id;
             return (
-              <button key={node.id} ref={(el) => { if (el) categoryBtnRefs.current.set(node.id, el); else categoryBtnRefs.current.delete(node.id); }} type="button" onClick={() => handleRootCategoryClick(node)} className={`flex shrink-0 items-center gap-0.5 rounded-full px-4 py-1.5 text-xs font-medium ${isActive ? "bg-[var(--theme-primary)] text-white" : "border border-[var(--theme-border)] bg-[var(--theme-surface)]"}`}>
+              <CategoryTabButton
+                key={node.id}
+                btnRef={(el) => { if (el) categoryBtnRefs.current.set(node.id, el); else categoryBtnRefs.current.delete(node.id); }}
+                active={isActive}
+                onClick={() => handleRootCategoryClick(node)}
+                layoutId="category-root-tab"
+                className="flex items-center gap-0.5"
+              >
                 <span className="max-w-[9.5rem] truncate">{node.name}</span>
                 {hasChildren ? <ChevronDown size={14} className={`shrink-0 opacity-80 transition-transform ${isExpanded ? "rotate-180" : ""}`} /> : null}
-              </button>
+              </CategoryTabButton>
             );
           })}
         </div>
 
-        {subCategories.length > 0 ? <div className="border-b border-[var(--theme-border)] px-4 py-3"><div className="flex flex-wrap gap-2">{subCategories.map((child) => <button key={child.id} type="button" onClick={() => handleSelectChild(expandedNode.id, child.id)} className={`rounded-full px-3 py-1.5 text-xs font-medium ${activeCat === child.id ? "bg-[var(--theme-price)] text-[var(--theme-price-foreground)]" : "border border-[var(--theme-border)] bg-[var(--theme-surface)]"}`}>{child.name}</button>)}</div></div> : null}
+        {subCategories.length > 0 ? <div className="border-b border-[var(--theme-border)] px-4 py-3"><div className="flex flex-wrap gap-2">{subCategories.map((child) => (
+                <CategoryTabButton
+                  key={child.id}
+                  active={activeCat === child.id}
+                  onClick={() => handleSelectChild(expandedNode!.id, child.id)}
+                  layoutId="category-sub-tab"
+                  activeClassName="bg-[var(--theme-price)]"
+                  activeTextClass="text-[var(--theme-price-foreground)]"
+                  className="px-3"
+                >
+                  {child.name}
+                </CategoryTabButton>
+              ))}</div></div> : null}
 
         <div className="px-4 pb-6 pt-3 md:px-6">
           <div className="md:grid md:grid-cols-[260px,1fr] md:gap-6 lg:grid-cols-[288px,1fr]">
@@ -202,15 +234,73 @@ export default function Categories() {
 
               {error && <div className="mb-3 rounded-xl bg-destructive/10 p-3 text-center text-sm text-destructive">{error}</div>}
 
-              <div className="grid grid-cols-2 gap-4 pt-1 md:grid-cols-3 lg:grid-cols-4">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`${activeCat}-${sort}-${loading}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18 }}
+                  className="grid grid-cols-2 gap-4 pt-1 md:grid-cols-3 lg:grid-cols-4"
+                >
                 {loading ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />) : products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
                 {!loading && products.length === 0 ? <div className="col-span-2 py-12 text-center text-muted-foreground md:col-span-3 lg:col-span-4"><p>{activeFilterCount > 0 || debouncedQuery ? "当前筛选条件无结果" : activeCat !== "all" ? "当前分类暂无商品" : categories.length > 0 ? "暂无商品上架" : "后台还没有配置商品"}</p>{(activeFilterCount > 0 || debouncedQuery) ? <button type="button" onClick={clearFilters} className="mt-3 rounded-full border border-[var(--theme-border)] px-4 py-2 text-xs">清空筛选</button> : null}</div> : null}
-              </div>
+                </motion.div>
+              </AnimatePresence>
             </section>
           </div>
         </div>
       </main>
     </div>
+  );
+}
+
+const TAB_INDICATOR_SPRING = { type: "spring" as const, stiffness: 380, damping: 32 };
+
+function CategoryTabButton({
+  active,
+  onClick,
+  layoutId,
+  children,
+  className,
+  btnRef,
+  activeClassName = "bg-[var(--theme-primary)]",
+  activeTextClass = "text-[var(--theme-primary-foreground)]",
+}: {
+  active: boolean;
+  onClick: () => void;
+  layoutId: string;
+  children: ReactNode;
+  className?: string;
+  btnRef?: (el: HTMLButtonElement | null) => void;
+  activeClassName?: string;
+  activeTextClass?: string;
+}) {
+  const { enabled } = useMotionConfig();
+  return (
+    <button
+      ref={btnRef}
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "relative flex-shrink-0 overflow-hidden rounded-full px-4 py-1.5 text-xs font-medium",
+        active ? "border border-transparent" : "border border-[var(--theme-border)] bg-[var(--theme-surface)]",
+        className,
+      )}
+    >
+      {active ? (
+        enabled ? (
+          <motion.span
+            layoutId={layoutId}
+            className={cn("absolute inset-0 rounded-full", activeClassName)}
+            transition={TAB_INDICATOR_SPRING}
+          />
+        ) : (
+          <span className={cn("absolute inset-0 rounded-full", activeClassName)} />
+        )
+      ) : null}
+      <span className={cn("relative z-10", active ? activeTextClass : "text-[var(--theme-text)]")}>{children}</span>
+    </button>
   );
 }
 

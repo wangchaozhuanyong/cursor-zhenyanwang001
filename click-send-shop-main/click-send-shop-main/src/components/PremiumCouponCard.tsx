@@ -1,15 +1,21 @@
-﻿import { Loader2, Ticket } from "lucide-react";
+import type { ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
+import { Clock, Loader2, Package, Tag, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import StoreButton from "@/components/ui/StoreButton";
 import StoreBadge from "@/components/ui/StoreBadge";
 
 interface PremiumCouponCardProps {
+  /** @deprecated ???? */
   eyebrow?: string;
   title: string;
   amountPrefix?: string;
   amount: string;
-  conditionText: string;
+  /** @deprecated ??? minSpendText */
+  conditionText?: string;
+  /** ????????????? */
+  minSpendText?: string;
   expireText: string;
   scopeText?: string;
   badge?: string;
@@ -25,14 +31,64 @@ interface PremiumCouponCardProps {
   onAction?: () => void;
 }
 
+function VerticalActionLabel({ label }: { label: string }) {
+  const chars = Array.from(label);
+  return (
+    <span className="inline-flex flex-col items-center justify-center gap-0.5 leading-none tracking-tight">
+      {chars.map((ch, i) => (
+        <span key={`${ch}-${i}`} className="block text-[13px] font-semibold">
+          {ch}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function CouponInfoRow({
+  icon: Icon,
+  children,
+  prominent = false,
+  mutedClass,
+  iconClass,
+  titleClass,
+}: {
+  icon: LucideIcon;
+  children: ReactNode;
+  prominent?: boolean;
+  mutedClass: string;
+  iconClass: string;
+  titleClass?: string;
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <span
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-[var(--theme-border)] bg-[var(--theme-bg)]"
+        aria-hidden
+      >
+        <Icon size={14} className={iconClass} strokeWidth={1.75} />
+      </span>
+      <p
+        className={cn(
+          "min-w-0 flex-1 leading-snug",
+          prominent
+            ? cn("line-clamp-2 text-sm font-bold", titleClass)
+            : cn("truncate text-xs", mutedClass),
+        )}
+      >
+        {children}
+      </p>
+    </div>
+  );
+}
+
 export default function PremiumCouponCard({
-  eyebrow = "活动优惠券",
   title,
   amountPrefix = "RM",
   amount,
   conditionText,
+  minSpendText: minSpendTextProp,
   expireText,
-  scopeText = "适用范围：全场商品",
+  scopeText = "?????????",
   badge,
   actionLabel,
   actionLoading = false,
@@ -47,6 +103,7 @@ export default function PremiumCouponCard({
 }: PremiumCouponCardProps) {
   const { themeConfig } = useThemeRuntime();
   const couponStyle = themeConfig.couponStyle;
+  const minSpendText = minSpendTextProp ?? conditionText ?? "?????";
 
   const styleMap: Record<typeof couponStyle, string> = {
     ticket: "bg-[var(--theme-surface)] border-dashed",
@@ -57,17 +114,9 @@ export default function PremiumCouponCard({
     minimal: "bg-[var(--theme-surface)]",
   };
 
-  /** premium / deal 背景固定偏浅，不能用深色主题下的 surface 文字色 */
   const lightCouponBg = couponStyle === "premium" || couponStyle === "deal";
-  const couponTitleClass = lightCouponBg
-    ? "text-[#1a1612]"
-    : "text-[var(--theme-text-on-surface)]";
-  const couponMutedClass = lightCouponBg
-    ? "text-[#5c5348]"
-    : "text-[var(--theme-muted)]";
-  const couponEyebrowClass = lightCouponBg
-    ? "text-[#7a6f5c]"
-    : "text-[var(--theme-muted)]";
+  const couponTitleClass = lightCouponBg ? "text-[#1a1612]" : "text-[var(--theme-text-on-surface)]";
+  const couponMutedClass = lightCouponBg ? "text-[#5c5348]" : "text-[var(--theme-muted)]";
   const couponIconClass = lightCouponBg
     ? "text-[color-mix(in_srgb,var(--theme-secondary)_75%,#1a1612)]"
     : "text-[var(--theme-secondary)]";
@@ -84,79 +133,56 @@ export default function PremiumCouponCard({
         e.stopPropagation();
         onAction?.();
       }}
-      className={
-        homeCompact
-          ? "!h-10 !min-h-10 w-full !rounded-lg px-2 text-[11px] font-semibold leading-tight"
-          : "min-h-[96px] h-full w-full px-0 text-xs leading-tight [writing-mode:vertical-rl]"
-      }
+      className="flex h-full min-h-[5.25rem] w-full min-w-[2.75rem] max-w-[3.25rem] flex-col items-center justify-center !rounded-lg px-1 py-2"
     >
-      {actionLoading ? <Loader2 size={14} className="animate-spin" /> : actionLabel}
+      {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <VerticalActionLabel label={actionLabel} />}
     </StoreButton>
   ) : null;
 
-  const wrapper = homeCompact ? (
+  const wrapper = (
     <div
       className={cn(
-        "relative grid w-full grid-cols-[minmax(4.5rem,26%)_minmax(0,1fr)_minmax(4.25rem,22%)] items-stretch gap-2 rounded-xl border border-[var(--theme-border)] p-2.5",
+        "relative grid w-full items-stretch gap-0 overflow-hidden rounded-xl border border-[var(--theme-border)] p-2",
+        homeCompact
+          ? "grid-cols-[minmax(4.75rem,24%)_minmax(0,1fr)_minmax(2.75rem,3.25rem)]"
+          : "grid-cols-[minmax(5.5rem,26%)_minmax(0,1fr)_minmax(2.75rem,3.25rem)]",
         styleMap[couponStyle],
         disabled && "opacity-60",
         selected && "ring-2 ring-[var(--theme-secondary)]",
         className,
       )}
     >
-      <div className="flex min-h-[5.5rem] flex-col items-center justify-center gap-0.5 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-1.5 py-2 text-center">
-        {amountPrefix ? (
-          <p className="text-[10px] leading-none text-[var(--theme-muted)]">{amountPrefix}</p>
+      <div className="flex min-h-[5.25rem] flex-col items-center justify-center rounded-lg border border-dashed border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-3 text-center">
+        {amountPrefix ? <p className="text-[10px] leading-none text-[var(--theme-muted)]">{amountPrefix}</p> : null}
+        <p className={cn(amountSize, "font-black text-[var(--theme-price)]")}>{amount}</p>
+      </div>
+
+      <div
+        className={cn(
+          "flex min-w-0 flex-col justify-center border-x border-dashed border-[var(--theme-border)]",
+          homeCompact ? "min-h-[5.5rem] gap-1 px-2 py-0.5" : "min-h-[5.25rem] gap-1.5 px-2.5 py-1",
+        )}
+      >
+        {badge ? (
+          <div className="mb-0.5">
+            <StoreBadge type="coupon">{badge}</StoreBadge>
+          </div>
         ) : null}
-        <p className={cn(amountSize, "font-black text-[var(--theme-price)]")}>{amount}</p>
-        <p className="line-clamp-2 text-[10px] leading-snug text-[var(--theme-muted)]">{conditionText}</p>
+        <CouponInfoRow icon={Tag} prominent titleClass={couponTitleClass} mutedClass={couponMutedClass} iconClass={couponIconClass}>
+          {title}
+        </CouponInfoRow>
+        <CouponInfoRow icon={Wallet} mutedClass={couponMutedClass} iconClass={couponIconClass}>
+          {minSpendText}
+        </CouponInfoRow>
+        <CouponInfoRow icon={Clock} mutedClass={couponMutedClass} iconClass={couponIconClass}>
+          ?????{expireText}
+        </CouponInfoRow>
+        <CouponInfoRow icon={Package} mutedClass={couponMutedClass} iconClass={couponIconClass}>
+          {scopeText}
+        </CouponInfoRow>
       </div>
 
-      <div className="flex min-h-[5.5rem] min-w-0 flex-col justify-center gap-1 py-0.5">
-        <div className="flex min-w-0 items-center gap-1.5">
-          <Ticket size={14} className={cn("shrink-0", couponIconClass)} />
-          <p className={cn("truncate text-[11px]", couponEyebrowClass)}>{eyebrow}</p>
-          {badge ? <StoreBadge type="coupon">{badge}</StoreBadge> : null}
-        </div>
-        <p className={cn("line-clamp-2 text-sm font-bold leading-snug", couponTitleClass)}>{title}</p>
-        <p className={cn("truncate text-xs", couponMutedClass)}>有效期至：{expireText}</p>
-        <p className={cn("line-clamp-1 text-xs", couponMutedClass)}>{scopeText}</p>
-      </div>
-
-      {actionButton ? (
-        <div className="flex min-h-[5.5rem] items-center justify-center">{actionButton}</div>
-      ) : null}
-    </div>
-  ) : (
-    <div
-      className={cn(
-        "relative flex w-full items-stretch gap-2 rounded-xl border border-[var(--theme-border)] p-3",
-        styleMap[couponStyle],
-        disabled && "opacity-60",
-        selected && "ring-2 ring-[var(--theme-secondary)]",
-        className,
-      )}
-    >
-      <div className="flex w-[32%] shrink-0 flex-col justify-center rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-3 text-center">
-        {amountPrefix ? <p className="text-xs text-[var(--theme-muted)]">{amountPrefix}</p> : null}
-        <p className={cn(amountSize, "font-black text-[var(--theme-price)]")}>{amount}</p>
-        <p className="mt-1 text-[10px] text-[var(--theme-muted)]">{conditionText}</p>
-      </div>
-      <div className="min-w-0 flex-1 py-1">
-        <div className="mb-1 flex items-center gap-2">
-          <Ticket size={14} className={couponIconClass} />
-          <p className={cn("text-[11px]", couponEyebrowClass)}>{eyebrow}</p>
-          {badge ? <StoreBadge type="coupon">{badge}</StoreBadge> : null}
-        </div>
-        <p className={cn(compact ? "line-clamp-1" : "line-clamp-2", "text-sm font-bold", couponTitleClass)}>{title}</p>
-        <p className={cn(compact ? "mt-1 truncate" : "mt-2", "text-xs", couponMutedClass)}>
-          有效期至：{expireText}
-        </p>
-        <p className={cn("mt-1 line-clamp-1 text-xs", couponMutedClass)}>{scopeText}</p>
-      </div>
-      {actionButton ? (
-        <div className="flex w-[48px] shrink-0 items-center justify-center">{actionButton}</div>
-      ) : null}
+      {actionButton ? <div className="flex items-stretch justify-center pl-1">{actionButton}</div> : null}
     </div>
   );
 

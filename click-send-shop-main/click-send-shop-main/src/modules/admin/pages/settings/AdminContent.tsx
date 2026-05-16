@@ -1,13 +1,15 @@
 ﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FileText, Edit2, Shield, Loader2, HelpCircle, Plus, Trash2, ChevronDown, ChevronRight, ArrowUp, ArrowDown } from "lucide-react";
+import { FileText, Edit2, Shield, HelpCircle, Plus, Trash2, ChevronDown, ChevronRight, ArrowUp, ArrowDown } from "lucide-react";
+import { LoadingButton } from "@/modules/micro-interactions";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchContentPages, updateContentPage } from "@/services/admin/contentService";
 import { fetchSiteSettings, updateSiteSettings } from "@/services/admin/settingsService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import type { HelpCenterCategory, HelpCenterConfig, HelpCenterFaq } from "@/types/content";
+import { AdminContentPageSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 
 interface ContentItem {
   id: string;
@@ -113,10 +115,6 @@ export default function AdminContent() {
     });
   };
 
-  if (loading) {
-    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-gold" /></div>;
-  }
-
   return (
     <div className="space-y-6">
       <div>
@@ -124,6 +122,10 @@ export default function AdminContent() {
         <p className="text-sm text-muted-foreground">政策页与帮助中心配置分开管理。</p>
       </div>
 
+      {loading ? (
+        <AdminContentPageSkeleton />
+      ) : (
+      <>
       <div className="rounded-2xl border border-border bg-card p-4">
         <div className="mb-3 flex items-center gap-2"><HelpCircle size={18} className="text-gold" /><h3 className="font-semibold">帮助中心管理</h3></div>
         <p className="mb-3 text-xs text-muted-foreground">可视化维护 FAQ 分类、问题、答案、排序与启用状态，前台 Help 优先读取这里。</p>
@@ -231,7 +233,16 @@ export default function AdminContent() {
           </div>
         </div>
         <PermissionGate permission="settings.manage">
-          <button onClick={handleSaveHelp} disabled={helpSaving} className="mt-3 rounded-xl bg-gold px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50">{helpSaving ? "保存中..." : "保存帮助中心配置"}</button>
+          <LoadingButton
+            type="button"
+            variant="gold"
+            state={helpSaving ? "loading" : "normal"}
+            loadingText="保存中..."
+            onClick={() => void handleSaveHelp()}
+            className="mt-3 rounded-xl px-4 py-2 text-sm font-bold"
+          >
+            保存帮助中心配置
+          </LoadingButton>
         </PermissionGate>
       </div>
 
@@ -248,6 +259,8 @@ export default function AdminContent() {
           </div>
         ))}
       </div>
+      </>
+      )}
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowForm(false)}>
@@ -255,7 +268,18 @@ export default function AdminContent() {
             <h3 className="font-bold text-foreground">编辑 - {editing?.title}</h3>
             <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
             <textarea rows={10} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold resize-none" />
-            <PermissionGate permission="content.manage"><button disabled={saving} onClick={handleSave} className="w-full rounded-xl bg-gold py-3 text-sm font-bold text-primary-foreground disabled:opacity-50">{saving ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "保存"}</button></PermissionGate>
+            <PermissionGate permission="content.manage">
+              <LoadingButton
+                type="button"
+                variant="gold"
+                state={saving ? "loading" : "normal"}
+                loadingText="保存中..."
+                onClick={() => void handleSave()}
+                className="w-full rounded-xl py-3 text-sm font-bold"
+              >
+                保存
+              </LoadingButton>
+            </PermissionGate>
           </div>
         </div>
       )}

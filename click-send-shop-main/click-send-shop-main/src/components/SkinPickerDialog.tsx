@@ -1,15 +1,8 @@
-import type { ReactNode } from "react";
+import { cloneElement, isValidElement, useState, type ReactElement, type ReactNode } from "react";
 import { Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { ResponsiveSheet } from "@/modules/micro-interactions";
 
 export default function SkinPickerDialog({
   trigger,
@@ -20,25 +13,44 @@ export default function SkinPickerDialog({
   title?: string;
   className?: string;
 }) {
-  const { switchableSkins, skinId, setSkinId } = useThemeRuntime();
+  const [open, setOpen] = useState(false);
+  const { pickerSkins, skinId, setSkinId } = useThemeRuntime();
+
+  const triggerNode = isValidElement(trigger)
+    ? cloneElement(trigger as ReactElement<{ onClick?: (e: React.MouseEvent) => void }>, {
+        onClick: (e: React.MouseEvent) => {
+          (trigger as ReactElement<{ onClick?: (e: React.MouseEvent) => void }>).props.onClick?.(e);
+          setOpen(true);
+        },
+      })
+    : (
+        <button type="button" onClick={() => setOpen(true)}>
+          {trigger}
+        </button>
+      );
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className={cn("max-w-lg", className)}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <>
+      {triggerNode}
+
+      <ResponsiveSheet
+        open={open}
+        onClose={() => setOpen(false)}
+        title={
+          <span className="flex items-center gap-2">
             <Palette size={16} />
             {title}
-          </DialogTitle>
-          <DialogDescription>请选择一个皮肤以切换主题样式。</DialogDescription>
-        </DialogHeader>
-
-        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          {switchableSkins.length === 0 ? (
-            <div className="col-span-full text-sm text-muted-foreground">皮肤加载中...</div>
+          </span>
+        }
+        description="请选择一个皮肤以切换主题样式。"
+        height="auto"
+        dialogClassName={cn("max-w-lg", className)}
+      >
+        <div className="grid gap-2 pb-2 sm:grid-cols-2">
+          {pickerSkins.length === 0 ? (
+            <p className="col-span-full text-sm text-muted-foreground">皮肤加载中...</p>
           ) : (
-            switchableSkins.map((skin) => {
+            pickerSkins.map((skin) => {
               const primary = skin.config.primaryColor;
               const secondary = skin.config.secondaryColor;
               const gradient = `linear-gradient(135deg, ${primary}, ${secondary})`;
@@ -47,7 +59,10 @@ export default function SkinPickerDialog({
                 <button
                   key={skin.id}
                   type="button"
-                  onClick={() => setSkinId(skin.id)}
+                  onClick={() => {
+                    setSkinId(skin.id);
+                    setOpen(false);
+                  }}
                   className={cn(
                     "relative flex items-center gap-3 rounded-xl border p-3 text-left transition-colors active:scale-[0.99]",
                     active ? "border-gold bg-gold/10" : "border-border bg-card hover:bg-secondary",
@@ -55,10 +70,7 @@ export default function SkinPickerDialog({
                 >
                   <span
                     aria-hidden
-                    className={cn(
-                      "h-10 w-14 rounded-lg border",
-                      active ? "border-gold/50" : "border-border",
-                    )}
+                    className={cn("h-10 w-14 rounded-lg border", active ? "border-gold/50" : "border-border")}
                     style={{ background: gradient }}
                   />
                   <span className="min-w-0 flex-1">
@@ -80,7 +92,7 @@ export default function SkinPickerDialog({
             })
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveSheet>
+    </>
   );
 }

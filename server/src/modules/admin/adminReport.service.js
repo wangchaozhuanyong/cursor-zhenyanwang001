@@ -1,7 +1,16 @@
 ﻿const repo = require('./adminReport.repository');
 
 function formatDate(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return formatDate(new Date());
+  }
   return date.toISOString().slice(0, 10);
+}
+
+function parseQueryDate(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
 function resolveDateRange(query = {}) {
@@ -27,8 +36,10 @@ function resolveDateRange(query = {}) {
     start.setMonth(Math.floor(start.getMonth() / 3) * 3, 1);
   }
 
-  if (query.date_from) start = new Date(query.date_from);
-  if (query.date_to) end = new Date(query.date_to);
+  const parsedFrom = parseQueryDate(query.date_from);
+  const parsedTo = parseQueryDate(query.date_to);
+  if (parsedFrom) start = parsedFrom;
+  if (parsedTo) end = parsedTo;
 
   return { dateFrom: formatDate(start), dateTo: formatDate(end) };
 }

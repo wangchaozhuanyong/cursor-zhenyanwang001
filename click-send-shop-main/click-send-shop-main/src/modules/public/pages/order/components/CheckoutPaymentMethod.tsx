@@ -1,6 +1,14 @@
-﻿import { ShieldCheck } from "lucide-react";
+﻿import { useState } from "react";
+import { ChevronRight, ShieldCheck } from "lucide-react";
 import PaymentMethodPicker, { type PaymentMethod } from "@/components/PaymentMethodPicker";
 import type { PublicPaymentChannel } from "@/services/paymentService";
+import { ResponsiveSheet, useMediaSheetMode } from "@/modules/micro-interactions";
+
+const METHOD_LABELS: Record<PaymentMethod, string> = {
+  online: "在线支付",
+  reward_wallet: "返现钱包",
+  whatsapp: "联系客服下单",
+};
 
 interface CheckoutPaymentMethodProps {
   paymentMethod: PaymentMethod;
@@ -23,6 +31,27 @@ export function CheckoutPaymentMethod({
   selectedPaymentChannelCode,
   onPaymentChannelChange,
 }: CheckoutPaymentMethodProps) {
+  const isMobileSheet = useMediaSheetMode();
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  const picker = (
+    <PaymentMethodPicker
+      value={paymentMethod}
+      onChange={onPaymentMethodChange}
+      onlineDisabled={paymentConfigLoaded && paymentChannels.length === 0 && !stripeReady}
+      onlineDisabledHint="商户暂未开通在线支付，请选择联系客服下单"
+      rewardBalance={rewardBalance}
+      onlineChannels={paymentChannels}
+      selectedOnlineChannelCode={selectedPaymentChannelCode}
+      onOnlineChannelChange={onPaymentChannelChange}
+    />
+  );
+
+  const channelName =
+    paymentMethod === "online" && selectedPaymentChannelCode
+      ? paymentChannels.find((c) => c.code === selectedPaymentChannelCode)?.name
+      : null;
+
   return (
     <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
       <div className="mb-3 flex items-center justify-between">
@@ -31,16 +60,29 @@ export function CheckoutPaymentMethod({
           <ShieldCheck size={12} className="text-emerald-600" /> 安全支付
         </span>
       </div>
-      <PaymentMethodPicker
-        value={paymentMethod}
-        onChange={onPaymentMethodChange}
-        onlineDisabled={paymentConfigLoaded && paymentChannels.length === 0 && !stripeReady}
-        onlineDisabledHint="商户暂未开通在线支付，请选择联系客服下单"
-        rewardBalance={rewardBalance}
-        onlineChannels={paymentChannels}
-        selectedOnlineChannelCode={selectedPaymentChannelCode}
-        onOnlineChannelChange={onPaymentChannelChange}
-      />
+
+      {isMobileSheet ? (
+        <>
+          <button
+            type="button"
+            onClick={() => setSheetOpen(true)}
+            className="flex w-full items-center justify-between gap-3 rounded-xl bg-secondary px-4 py-3.5 text-left"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground">{METHOD_LABELS[paymentMethod]}</p>
+              {channelName ? (
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">{channelName}</p>
+              ) : null}
+            </div>
+            <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
+          </button>
+          <ResponsiveSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="选择支付方式" height="auto">
+            <div className="pb-2">{picker}</div>
+          </ResponsiveSheet>
+        </>
+      ) : (
+        picker
+      )}
     </div>
   );
 }

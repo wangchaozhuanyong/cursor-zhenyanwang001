@@ -1,4 +1,4 @@
-﻿import { useEffect } from "react";
+﻿import { useEffect, useState } from "react";
 import { Minus, Plus, Trash2, ShoppingBag, Loader2, Check } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import StoreTabHeader from "@/components/store/StoreTabHeader";
@@ -9,7 +9,7 @@ import EmptyState from "@/components/EmptyState";
 import TrustInfo from "@/components/TrustInfo";
 import { motion, AnimatePresence } from "framer-motion";
 import { PRODUCT_BLUR_PLACEHOLDER } from "@/constants/productBlurPlaceholder";
-import { ProgressiveImage, SquishButton } from "@/modules/micro-interactions";
+import { AnimatedNumber, BottomSheetConfirm, ProgressiveImage, SquishButton } from "@/modules/micro-interactions";
 import { toast } from "sonner";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
@@ -38,6 +38,7 @@ export default function Cart() {
   const siteInfo = useSiteInfo();
   const sstCartNote = (siteInfo.sstCustomerNote || "").trim();
   const showSstCartHint = parseSstEnabled(siteInfo.sstEnabled);
+  const [deleteTarget, setDeleteTarget] = useState<{ productId: string; variantId?: string; name: string } | null>(null);
 
   const selectedCount = items.filter((i) => selection[cartLineKey(i.product.id, i.variant_id)] !== false).length;
   const allSelected = items.length > 0 && selectedCount === items.length;
@@ -197,13 +198,13 @@ export default function Cart() {
                             <SquishButton
                               type="button"
                               variant="ghost"
-                              onClick={async () => {
-                                try {
-                                  await removeItem(item.product.id, item.variant_id);
-                                } catch (e) {
-                                  toast.error(e instanceof Error ? e.message : "删除失败");
-                                }
-                              }}
+                              onClick={() =>
+                                setDeleteTarget({
+                                  productId: item.product.id,
+                                  variantId: item.variant_id,
+                                  name: item.product.name,
+                                })
+                              }
                               className="flex h-8 w-8 items-center justify-center rounded-full bg-transparent hover:bg-[var(--theme-bg)] touch-target !p-0"
                               aria-label="删除"
                             >
@@ -290,8 +291,8 @@ export default function Cart() {
                   <div className="my-3 border-t border-[var(--theme-border)]" />
                   <div className="flex items-baseline justify-between">
                     <span className="text-sm text-foreground">合计</span>
-                    <span className="text-2xl font-bold text-gold">
-                      RM {totalAmountSelected()}
+                    <span className="text-2xl font-bold text-[var(--theme-price)]">
+                      <AnimatedNumber value={totalAmountSelected()} decimals={2} format={(n) => `RM ${n.toFixed(2)}`} />
                     </span>
                   </div>
                 </div>
@@ -300,7 +301,7 @@ export default function Cart() {
                   variant="gold"
                   onClick={handleCheckout}
                   disabled={totalItemsSelected() === 0}
-                  className="mt-5 w-full rounded-full py-3.5 text-sm font-bold shadow-lg shadow-gold/20 transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
+                  className="mt-5 w-full rounded-full py-3.5 text-sm font-bold transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
                 >
                   去结算
                 </SquishButton>
@@ -340,8 +341,8 @@ export default function Cart() {
               <div>
                 <p className="text-sm text-foreground">
                   合计（已选）:{" "}
-                  <span className="text-xl font-bold text-gold">
-                    RM {totalAmountSelected()}
+                  <span className="text-xl font-bold text-[var(--theme-price)]">
+                    <AnimatedNumber value={totalAmountSelected()} decimals={2} format={(n) => `RM ${n.toFixed(2)}`} />
                   </span>
                 </p>
                 <p className="text-[11px] text-muted-foreground">
@@ -353,7 +354,7 @@ export default function Cart() {
                 variant="gold"
                 onClick={handleCheckout}
                 disabled={totalItemsSelected() === 0}
-                className="rounded-full px-8 py-3.5 text-sm font-bold shadow-lg shadow-gold/20 transition-all disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
+                className="rounded-full px-8 py-3.5 text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
               >
                 去结算
               </SquishButton>
@@ -361,6 +362,20 @@ export default function Cart() {
           </div>
         </div>
       )}
+
+      <BottomSheetConfirm
+        open={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        title="移出购物车？"
+        description={deleteTarget ? `确定将「${deleteTarget.name}」从购物车中移除吗？` : undefined}
+        confirmText="删除"
+        danger
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          await removeItem(deleteTarget.productId, deleteTarget.variantId);
+          toast.success("已从购物车移除", { duration: 2000 });
+        }}
+      />
     </div>
   );
 }

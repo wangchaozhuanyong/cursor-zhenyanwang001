@@ -1,5 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, History, Loader2, RefreshCcw, Search } from "lucide-react";
+import { Download, History, Loader2, Package, RefreshCcw, Search } from "lucide-react";
+import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import Pagination from "@/components/admin/Pagination";
@@ -170,34 +171,111 @@ export default function AdminInventory() {
               <button onClick={() => { setKeyword(""); setStockStatus(""); setPage(1); }} className="rounded-lg border border-border px-3 py-2.5 text-sm">重置</button>
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1100px] text-left text-sm"><thead className="border-b border-border text-xs text-muted-foreground"><tr><th className="px-4 py-3">商品</th><th className="px-4 py-3">规格/SKU</th><th className="px-4 py-3">分类</th><th className="px-4 py-3">可售库存</th><th className="px-4 py-3">预警值</th><th className="px-4 py-3">状态</th><th className="px-4 py-3">更新时间</th><th className="px-4 py-3 text-right">操作</th></tr></thead>
-              <tbody>
-                {loading ? <tr><td colSpan={8} className="px-4 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr> : skus.length === 0 ? <tr><td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">暂无SKU库存数据</td></tr> : skus.map((s) => (
-                  <tr key={s.variant_id} className="border-b border-border last:border-0">
-                    <td className="px-4 py-3"><div className="flex items-center gap-3">{s.cover_image ? <img src={s.cover_image} alt="" className="h-10 w-10 rounded-lg object-cover" /> : <div className="h-10 w-10 rounded-lg bg-secondary" />}<div><p className="font-medium">{s.product_name}</p><p className="text-[10px] text-muted-foreground">PID: {s.product_id}</p></div></div></td>
-                    <td className="px-4 py-3"><p>{s.variant_title || "默认规格"}</p><p className="text-xs text-muted-foreground">{s.sku_code || "-"}</p></td>
-                    <td className="px-4 py-3 text-muted-foreground">{s.category_name || "未分类"}</td>
-                    <td className="px-4 py-3"><span className={s.out_of_stock ? "font-bold text-destructive" : s.low_stock ? "font-bold text-orange-600" : "font-medium"}>{s.available_stock}</span><span className="ml-1 text-xs text-muted-foreground">(总:{s.stock})</span></td>
-                    <td className="px-4 py-3"><input type="number" min={0} defaultValue={s.stock_warning_threshold} onBlur={(e) => { if (Number(e.target.value) !== s.stock_warning_threshold) void saveThreshold(s, e.target.value); }} className="w-20 rounded-lg bg-secondary px-2 py-1.5 text-xs" /></td>
-                    <td className="px-4 py-3 text-xs">{s.out_of_stock ? "缺货" : s.low_stock ? "低库存" : "正常"}</td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{s.updated_at ? new Date(s.updated_at).toLocaleString() : "-"}</td>
-                    <td className="px-4 py-3"><div className="flex justify-end gap-2"><button onClick={() => openAdjust(s, "in")} className="rounded-lg bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-600">入库</button><button onClick={() => openAdjust(s, "out")} className="rounded-lg bg-orange-500/10 px-3 py-1.5 text-xs text-orange-600">出库</button><button onClick={() => openAdjust(s, "adjust")} className="rounded-lg bg-gold/10 px-3 py-1.5 text-xs text-gold">盘点</button></div></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <AnimatedTable
+            loading={loading}
+            rows={skus}
+            rowKey={(s) => s.variant_id}
+            skeletonRows={8}
+            skeletonCols={8}
+            className="overflow-x-auto"
+            tableClassName="w-full min-w-[1100px] text-left text-sm"
+            theadClassName="border-b border-border text-xs text-muted-foreground"
+            thead={(
+              <tr>
+                <th className="px-4 py-3">商品</th>
+                <th className="px-4 py-3">规格/SKU</th>
+                <th className="px-4 py-3">分类</th>
+                <th className="px-4 py-3">可售库存</th>
+                <th className="px-4 py-3">预警值</th>
+                <th className="px-4 py-3">状态</th>
+                <th className="px-4 py-3">更新时间</th>
+                <th className="px-4 py-3 text-right">操作</th>
+              </tr>
+            )}
+            footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
+            emptyIcon={Package}
+            emptyTitle="暂无SKU库存数据"
+            renderRow={(s) => (
+              <>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    {s.cover_image ? <img src={s.cover_image} alt="" className="h-10 w-10 rounded-lg object-cover" /> : <div className="h-10 w-10 rounded-lg bg-secondary" />}
+                    <div>
+                      <p className="font-medium">{s.product_name}</p>
+                      <p className="text-[10px] text-muted-foreground">PID: {s.product_id}</p>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-4 py-3">
+                  <p>{s.variant_title || "默认规格"}</p>
+                  <p className="text-xs text-muted-foreground">{s.sku_code || "-"}</p>
+                </td>
+                <td className="px-4 py-3 text-muted-foreground">{s.category_name || "未分类"}</td>
+                <td className="px-4 py-3">
+                  <span className={s.out_of_stock ? "font-bold text-destructive" : s.low_stock ? "font-bold text-orange-600" : "font-medium"}>{s.available_stock}</span>
+                  <span className="ml-1 text-xs text-muted-foreground">(总:{s.stock})</span>
+                </td>
+                <td className="px-4 py-3">
+                  <input type="number" min={0} defaultValue={s.stock_warning_threshold} onBlur={(e) => { if (Number(e.target.value) !== s.stock_warning_threshold) void saveThreshold(s, e.target.value); }} className="w-20 rounded-lg bg-secondary px-2 py-1.5 text-xs" />
+                </td>
+                <td className="px-4 py-3 text-xs">{s.out_of_stock ? "缺货" : s.low_stock ? "低库存" : "正常"}</td>
+                <td className="px-4 py-3 text-xs text-muted-foreground">{s.updated_at ? new Date(s.updated_at).toLocaleString() : "-"}</td>
+                <td className="px-4 py-3">
+                  <div className="flex justify-end gap-2">
+                    <button type="button" onClick={() => openAdjust(s, "in")} className="rounded-lg bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-600">入库</button>
+                    <button type="button" onClick={() => openAdjust(s, "out")} className="rounded-lg bg-orange-500/10 px-3 py-1.5 text-xs text-orange-600">出库</button>
+                    <button type="button" onClick={() => openAdjust(s, "adjust")} className="rounded-lg bg-gold/10 px-3 py-1.5 text-xs text-gold">盘点</button>
+                  </div>
+                </td>
+              </>
+            )}
+          />
+
           <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
         </div>
 
         <div className="rounded-xl border border-border bg-card">
           <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3"><div className="flex items-center gap-2"><History size={16} className="text-muted-foreground" /><h2 className="text-sm font-semibold">库存流水</h2></div><div className="flex items-center gap-2"><select value={changeType} onChange={(e) => { setChangeType(e.target.value); setRecordsPage(1); }} className="rounded-lg bg-secondary px-2 py-1.5 text-xs"><option value="">全部类型</option><option value="in">入库</option><option value="out">出库</option><option value="adjust">盘点</option><option value="order_deduct">订单扣减</option><option value="order_release">订单释放</option></select><button onClick={() => void exportInventoryRecordsCsv({ keyword, change_type: changeType })} className="rounded-lg border border-border px-3 py-1.5 text-xs">导出流水</button></div></div>
-          <div className="overflow-x-auto"><table className="w-full min-w-[1200px] text-left text-sm"><thead className="border-b border-border text-xs text-muted-foreground"><tr><th className="px-4 py-3">时间</th><th className="px-4 py-3">商品</th><th className="px-4 py-3">规格/SKU</th><th className="px-4 py-3">类型</th><th className="px-4 py-3">变化</th><th className="px-4 py-3">变更前后</th><th className="px-4 py-3">原因</th><th className="px-4 py-3">单据</th><th className="px-4 py-3">操作人</th></tr></thead><tbody>
-            {recordsLoading ? <tr><td colSpan={9} className="px-4 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr> : records.length === 0 ? <tr><td colSpan={9} className="px-4 py-10 text-center text-muted-foreground">暂无库存流水</td></tr> : records.map((r) => (
-              <tr key={r.id} className="border-b border-border last:border-0"><td className="px-4 py-3 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</td><td className="px-4 py-3">{r.product_name}</td><td className="px-4 py-3 text-xs text-muted-foreground">{r.variant_name || "-"} / {r.sku_code || "-"}</td><td className="px-4 py-3 text-xs">{CHANGE_LABEL[r.change_type]}</td><td className={`px-4 py-3 font-semibold ${r.quantity_delta >= 0 ? "text-emerald-600" : "text-destructive"}`}>{r.quantity_delta > 0 ? "+" : ""}{r.quantity_delta}</td><td className="px-4 py-3 text-muted-foreground">{r.before_stock} → {r.after_stock}</td><td className="px-4 py-3 text-muted-foreground">{r.reason || r.remark || "-"}</td><td className="px-4 py-3 text-xs text-muted-foreground">{r.order_no || r.source_no || "-"}</td><td className="px-4 py-3 text-muted-foreground">{r.operator_name || r.operator_id || "系统"}</td></tr>
-            ))}
-          </tbody></table></div>
+          <AnimatedTable
+            loading={recordsLoading}
+            rows={records}
+            rowKey={(r) => r.id}
+            skeletonRows={6}
+            skeletonCols={9}
+            className="overflow-x-auto"
+            tableClassName="w-full min-w-[1200px] text-left text-sm"
+            theadClassName="border-b border-border text-xs text-muted-foreground"
+            thead={(
+              <tr>
+                <th className="px-4 py-3">时间</th>
+                <th className="px-4 py-3">商品</th>
+                <th className="px-4 py-3">规格/SKU</th>
+                <th className="px-4 py-3">类型</th>
+                <th className="px-4 py-3">变化</th>
+                <th className="px-4 py-3">变更前后</th>
+                <th className="px-4 py-3">原因</th>
+                <th className="px-4 py-3">单据</th>
+                <th className="px-4 py-3">操作人</th>
+              </tr>
+            )}
+            footer={<Pagination total={recordsTotal} page={recordsPage} pageSize={recordsPageSize} onPageChange={setRecordsPage} onPageSizeChange={setRecordsPageSize} pageSizeOptions={[10, 20, 50]} />}
+            emptyIcon={History}
+            emptyTitle="暂无库存流水"
+            renderRow={(r) => (
+              <>
+                <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</td>
+                <td className="px-4 py-3">{r.product_name}</td>
+                <td className="px-4 py-3 text-xs text-muted-foreground">{r.variant_name || "-"} / {r.sku_code || "-"}</td>
+                <td className="px-4 py-3 text-xs">{CHANGE_LABEL[r.change_type]}</td>
+                <td className={`px-4 py-3 font-semibold ${r.quantity_delta >= 0 ? "text-emerald-600" : "text-destructive"}`}>{r.quantity_delta > 0 ? "+" : ""}{r.quantity_delta}</td>
+                <td className="px-4 py-3 text-muted-foreground">{r.before_stock} → {r.after_stock}</td>
+                <td className="px-4 py-3 text-muted-foreground">{r.reason || r.remark || "-"}</td>
+                <td className="px-4 py-3 text-xs text-muted-foreground">{r.order_no || r.source_no || "-"}</td>
+                <td className="px-4 py-3 text-muted-foreground">{r.operator_name || r.operator_id || "系统"}</td>
+              </>
+            )}
+          />
+
           <Pagination total={recordsTotal} page={recordsPage} pageSize={recordsPageSize} onPageChange={setRecordsPage} onPageSizeChange={setRecordsPageSize} pageSizeOptions={[10, 20, 50]} />
         </div>
 
@@ -213,7 +291,7 @@ export default function AdminInventory() {
                 <input value={adjusting.remark} onChange={(e) => setAdjusting({ ...adjusting, remark: e.target.value })} placeholder="备注（可选）" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
                 <div className="grid grid-cols-2 gap-2"><input value={adjusting.source_no} onChange={(e) => setAdjusting({ ...adjusting, source_no: e.target.value })} placeholder="来源单号（可选）" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" /><input type="number" value={adjusting.cost_price} onChange={(e) => setAdjusting({ ...adjusting, cost_price: e.target.value })} placeholder="成本价（可选）" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" /></div>
               </div>
-              <div className="mt-5 flex justify-end gap-2"><button onClick={() => setAdjusting(null)} className="rounded-lg border border-border px-4 py-2.5 text-sm">取消</button><button disabled={saving} onClick={() => void submitAdjust()} className="rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "确认"}</button></div>
+              <div className="mt-5 flex justify-end gap-2"><button onClick={() => setAdjusting(null)} className="rounded-lg border border-border px-4 py-2.5 text-sm">取消</button><LoadingButton type="button" variant="gold" state={saving ? "loading" : "normal"} loadingText="提交中..." onClick={() => void submitAdjust()} className="rounded-lg px-4 py-2.5 text-sm font-semibold">确认</LoadingButton></div>
             </div>
           </div>
         )}

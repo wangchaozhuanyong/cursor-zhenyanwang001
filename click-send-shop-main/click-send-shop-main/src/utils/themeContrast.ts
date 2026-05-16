@@ -287,6 +287,14 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
         : rgbToCss(BLACK);
   }
   const secondaryText = getReadableTextColor(secondaryCss);
+  const accentCss = rgbToCss(accent);
+  const successCss = rgbToCss(success);
+  const warningCss = rgbToCss(warning);
+  const dangerCss = rgbToCss(danger);
+  const accentText = getReadableTextColor(accentCss);
+  const successText = getReadableTextColor(successCss);
+  const warningText = getReadableTextColor(warningCss);
+  const dangerText = getReadableTextColor(dangerCss);
   let priceText = getReadableTextColor(priceCss);
   if (getContrastRatio(priceCss, priceText) < 4.5) {
     priceText =
@@ -305,12 +313,19 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     "--theme-primary-foreground": primaryText,
     "--theme-secondary": secondaryCss,
     "--theme-secondary-foreground": secondaryText,
-    "--theme-accent": rgbToCss(accent),
+    "--theme-accent": accentCss,
+    "--theme-accent-foreground": accentText,
     "--theme-price": priceCss,
     "--theme-price-foreground": priceText,
-    "--theme-success": rgbToCss(success),
-    "--theme-warning": rgbToCss(warning),
-    "--theme-danger": rgbToCss(danger),
+    "--theme-success": successCss,
+    "--theme-success-foreground": successText,
+    "--theme-warning": warningCss,
+    "--theme-warning-foreground": warningText,
+    "--theme-danger": dangerCss,
+    "--theme-danger-foreground": dangerText,
+    "--theme-card": surfaceCss,
+    "--theme-card-foreground": surfaceText,
+    "--theme-surface-foreground": surfaceText,
     "--theme-gradient": `linear-gradient(135deg, ${primaryCss}, ${secondaryCss})`,
     "--theme-gradient-foreground": getReadableTextColor(mixColors(primary, secondary, 0.5)),
     "--theme-bg": bgCss,
@@ -345,7 +360,7 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     "--theme-coupon-style": adminConfig.couponStyle || "ticket",
     "--theme-member-card-style": adminConfig.memberCardStyle || "light",
     "--theme-category-icon-style": adminConfig.categoryIconStyle || "circle",
-    "--theme-admin-mode": adminConfig.adminThemeMode || "fixed",
+    "--theme-admin-mode": "follow_store",
     ...getCardShellVariables(adminConfig.cardStyle, surfaceCss, borderCss, shadows["--theme-shadow"], shadows["--theme-shadow-hover"]),
 
     "--background": rgbToHslChannels(bg),
@@ -373,22 +388,174 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
 }
 
 export function getThemeReadabilityReport(adminConfig: ThemeConfig) {
-  const palette = generateThemePalette(adminConfig);
-  const checks = [
-    { label: "页面正文", foreground: palette["--theme-text"], background: palette["--theme-bg"], min: 4.5 },
-    { label: "卡片正文", foreground: palette["--theme-text-on-surface"], background: palette["--theme-surface"], min: 4.5 },
-    { label: "次级文字", foreground: palette["--theme-text-muted"], background: palette["--theme-bg"], min: 3 },
-    { label: "卡片次级文字", foreground: palette["--theme-text-muted-on-surface"], background: palette["--theme-surface"], min: 3 },
-    { label: "主按钮文字", foreground: palette["--theme-primary-foreground"], background: palette["--theme-primary"], min: 4.5 },
-    { label: "价格/强调文字", foreground: palette["--theme-price"], background: palette["--theme-bg"], min: 3 },
-  ].map((item) => ({
-    ...item,
-    ratio: Number(getContrastRatio(item.foreground, item.background).toFixed(2)),
-  }));
-
+  const health = getThemeHealthChecks(adminConfig);
   return {
-    palette,
-    checks,
-    pass: checks.every((item) => item.ratio >= item.min),
+    palette: generateThemePalette(adminConfig),
+    checks: health.map((item) => ({
+      label: item.label,
+      foreground: item.foreground,
+      background: item.background,
+      min: item.minRatio,
+      ratio: item.ratio,
+    })),
+    pass: health.every((item) => item.status === "pass"),
   };
+}
+
+export type ThemeHealthStatus = "pass" | "warn" | "fail";
+
+export type ThemeHealthCheck = {
+  id: string;
+  label: string;
+  foreground: string;
+  background: string;
+  ratio: number;
+  minRatio: number;
+  status: ThemeHealthStatus;
+  message?: string;
+  suggestion?: string;
+};
+
+function healthStatus(ratio: number, min: number, warnGap = 0.35): ThemeHealthStatus {
+  if (ratio >= min) return "pass";
+  if (ratio >= min - warnGap) return "warn";
+  return "fail";
+}
+
+function borderDistinctRatio(border: string, bg: string) {
+  const b = parseColor(border);
+  const background = parseColor(bg);
+  const delta =
+    Math.abs(b.r - background.r) + Math.abs(b.g - background.g) + Math.abs(b.b - background.b);
+  return delta / 765;
+}
+
+export function getThemeHealthChecks(adminConfig: ThemeConfig): ThemeHealthCheck[] {
+  const palette = generateThemePalette(adminConfig);
+  const isDark = isDarkColor(adminConfig.bgColor);
+  const inputBg = palette["--theme-surface"];
+  const inputBorder = palette["--theme-border"];
+
+  const rows: Array<Omit<ThemeHealthCheck, "status" | "ratio"> & { ratio?: number }> = [
+    {
+      id: "primary_button",
+      label: "主按钮文字对比度",
+      foreground: palette["--theme-primary-foreground"],
+      background: palette["--theme-primary"],
+      minRatio: 4.5,
+      suggestion: "主按钮文字对比度不足，建议自动切换为深色或浅色文字。",
+    },
+    {
+      id: "danger_button",
+      label: "危险按钮文字对比度",
+      foreground: palette["--theme-danger-foreground"],
+      background: palette["--theme-danger"],
+      minRatio: 4.5,
+      suggestion: "危险按钮文字对比度不足，请加深背景或调整前景色。",
+    },
+    {
+      id: "body_on_page",
+      label: "正文与页面背景",
+      foreground: palette["--theme-text"],
+      background: palette["--theme-bg"],
+      minRatio: 4.5,
+      suggestion: "正文色与页面背景对比不足，建议使用「自动优化文字对比度」。",
+    },
+    {
+      id: "body_on_card",
+      label: "正文与卡片背景",
+      foreground: palette["--theme-text-on-surface"],
+      background: palette["--theme-surface"],
+      minRatio: 4.5,
+      suggestion: "卡片正文对比不足，请调整 textColor 或 surfaceColor。",
+    },
+    {
+      id: "muted_on_page",
+      label: "次文字与页面背景",
+      foreground: palette["--theme-text-muted"],
+      background: palette["--theme-bg"],
+      minRatio: 3,
+      suggestion: "次文字颜色过浅，移动端阅读可能吃力。",
+    },
+    {
+      id: "border_distinct",
+      label: "边框与背景区分度",
+      foreground: palette["--theme-border"],
+      background: palette["--theme-bg"],
+      minRatio: 0.08,
+      suggestion: "边框颜色过淡，后台表格可能看不清。",
+    },
+    {
+      id: "price_on_card",
+      label: "价格色与卡片背景",
+      foreground: palette["--theme-price"],
+      background: palette["--theme-surface"],
+      minRatio: 3,
+      suggestion: "价格色在卡片上不够醒目，请加深 priceColor。",
+    },
+    {
+      id: "table_border",
+      label: "后台表格边框",
+      foreground: palette["--theme-border"],
+      background: palette["--theme-surface"],
+      minRatio: 0.1,
+      suggestion: "表格边框过淡，请加深 borderColor。",
+    },
+    {
+      id: "dark_input",
+      label: "深色皮肤输入框",
+      foreground: inputBorder,
+      background: inputBg,
+      minRatio: 0.12,
+      suggestion: "深色皮肤下输入框边界不够清楚，请提高边框对比。",
+    },
+    {
+      id: "light_button_text",
+      label: "浅色皮肤按钮文字",
+      foreground: palette["--theme-primary-foreground"],
+      background: palette["--theme-primary"],
+      minRatio: 4.5,
+      suggestion: "浅色皮肤下按钮文字可能不清楚，请检查主色亮度。",
+    },
+  ];
+
+  return rows.map((row) => {
+    let ratio: number;
+    if (row.id === "border_distinct" || row.id === "table_border") {
+      ratio = Number(borderDistinctRatio(row.foreground, row.background).toFixed(2));
+    } else if (row.id === "dark_input" && !isDark) {
+      ratio = 1;
+    } else if (row.id === "light_button_text" && isDark) {
+      ratio = Number(getContrastRatio(row.foreground, row.background).toFixed(2));
+    } else {
+      ratio = Number(getContrastRatio(row.foreground, row.background).toFixed(2));
+    }
+
+    const minRatio = row.minRatio;
+    let status: ThemeHealthStatus;
+    if (row.id === "dark_input" && !isDark) {
+      status = "pass";
+    } else if (row.id === "light_button_text" && isDark) {
+      status = "pass";
+    } else if (row.id === "border_distinct" || row.id === "table_border") {
+      status = ratio >= minRatio ? "pass" : ratio >= minRatio * 0.75 ? "warn" : "fail";
+    } else {
+      status = healthStatus(ratio, minRatio);
+    }
+
+    return {
+      id: row.id,
+      label: row.label,
+      foreground: row.foreground,
+      background: row.background,
+      minRatio,
+      ratio,
+      status,
+      message:
+        status === "pass"
+          ? undefined
+          : `${row.label} ${ratio}${row.id.includes("border") ? "" : `:1`}（建议 ≥ ${minRatio}${row.id.includes("border") ? "" : ":1"}）`,
+      suggestion: status === "pass" ? undefined : row.suggestion,
+    };
+  });
 }

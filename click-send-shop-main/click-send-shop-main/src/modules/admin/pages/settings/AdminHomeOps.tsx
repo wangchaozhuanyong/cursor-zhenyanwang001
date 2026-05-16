@@ -9,6 +9,7 @@ import type { HomeNavItem } from "@/types/content";
 import * as categoryService from "@/services/admin/categoryService";
 import type { Category } from "@/types/category";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { LoadingButton } from "@/modules/micro-interactions";
 import { validateUploadFile } from "@/api/modules/upload";
 
 type NavForm = Pick<HomeNavItem, "icon_url" | "title" | "link_url" | "sort_order" | "enabled" | "target_type" | "target_category_id">;
@@ -106,14 +107,6 @@ export default function AdminHomeOps() {
       setSaving(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
-      </div>
-    );
-  }
 
   const categoryOptions = flattenCategories(categories);
   const categoryNameMap = new Map(categoryOptions.map((c) => [c.id, c.label.replace(/^—+\s*/, "")]));
@@ -245,16 +238,34 @@ export default function AdminHomeOps() {
           <div className="flex flex-col justify-end gap-1">
             <span className="text-[11px] font-medium text-muted-foreground opacity-0 select-none">操作</span>
             <PermissionGate permission="home_ops.manage">
-              <button type="button" disabled={saving} onClick={() => void saveNav()} className="inline-flex h-[42px] items-center justify-center gap-2 rounded-xl bg-gold px-4 text-sm font-bold text-primary-foreground disabled:opacity-50">
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editingNavId ? <Pencil size={16} /> : <Plus size={16} />}
+              <LoadingButton
+                type="button"
+                variant="gold"
+                state={saving ? "loading" : "normal"}
+                loadingText="保存中..."
+                onClick={() => void saveNav()}
+                className="inline-flex h-[42px] rounded-xl px-4 text-sm font-bold"
+              >
                 {editingNavId ? "保存" : "新增"}
-              </button>
+              </LoadingButton>
             </PermissionGate>
           </div>
         </div>
 
         <div className="mt-4 space-y-2">
-          {navItems.map((item) => (
+          {loading
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 rounded-xl border border-border bg-background p-3">
+                  <div className="skeleton-base skeleton-shimmer h-10 w-10 rounded-lg" />
+                  <div className="flex-1 space-y-2">
+                    <div className="skeleton-base skeleton-shimmer h-4 w-28 rounded" />
+                    <div className="skeleton-base skeleton-shimmer h-3 w-48 rounded" />
+                  </div>
+                  <div className="skeleton-base skeleton-shimmer h-6 w-12 rounded-full" />
+                </div>
+              ))
+            : null}
+          {!loading && navItems.map((item) => (
             <div key={item.id} className={`flex flex-wrap items-center gap-3 rounded-xl border border-border bg-background p-3 ${item.enabled ? "" : "opacity-60"}`}>
               <IconPreview value={item.icon_url} />
               <div className="min-w-0 flex-1">

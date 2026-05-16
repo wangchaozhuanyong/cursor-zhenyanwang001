@@ -1,6 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
 import ReportFilterBar from "@/components/admin/report/ReportFilterBar";
 import { fetchReportOverview } from "@/services/admin/reportService";
 import { toast } from "sonner";
@@ -36,7 +35,28 @@ export default function AdminReportOverview() {
     <div className="space-y-4">
       <h1 className="text-xl font-bold text-foreground">经营总览</h1>
       <ReportFilterBar />
-      {loading ? <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin" /></div> : (
+      {loading ? (
+        <>
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 space-y-2">
+                <div className="skeleton-base skeleton-shimmer h-3 w-20 rounded" />
+                <div className="skeleton-base skeleton-shimmer h-6 w-16 rounded" />
+              </div>
+            ))}
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 space-y-3">
+                <div className="skeleton-base skeleton-shimmer h-4 w-32 rounded" />
+                {Array.from({ length: 5 }).map((__, j) => (
+                  <div key={j} className="skeleton-base skeleton-shimmer h-3 w-full rounded" />
+                ))}
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
             {Object.entries(summary).map(([k, v]) => (

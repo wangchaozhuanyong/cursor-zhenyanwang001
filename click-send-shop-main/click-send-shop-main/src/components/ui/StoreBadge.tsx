@@ -20,6 +20,17 @@ const typeTone: Record<BadgeType, string> = {
   neutral: "var(--theme-text)",
 };
 
+const typeForeground: Record<BadgeType, string> = {
+  hot: "var(--theme-price-foreground)",
+  new: "var(--theme-primary-foreground)",
+  sale: "var(--theme-secondary-foreground)",
+  coupon: "var(--theme-accent-foreground)",
+  success: "var(--theme-success-foreground)",
+  warning: "var(--theme-warning-foreground)",
+  danger: "var(--theme-danger-foreground)",
+  neutral: "var(--theme-text)",
+};
+
 export default function StoreBadge({
   type = "neutral",
   className,
@@ -27,10 +38,11 @@ export default function StoreBadge({
 }: PropsWithChildren<StoreBadgeProps>) {
   const { themeConfig } = useThemeRuntime();
   const tone = typeTone[type];
+  const foreground = typeForeground[type];
 
   const style =
     themeConfig.badgeStyle === "solid"
-      ? { backgroundColor: tone, color: "#fff", borderColor: "transparent" }
+      ? { backgroundColor: tone, color: foreground, borderColor: "transparent" }
       : themeConfig.badgeStyle === "outline"
         ? { backgroundColor: "transparent", color: tone, borderColor: tone }
         : { backgroundColor: `color-mix(in srgb, ${tone} 16%, white)`, color: tone, borderColor: "transparent" };

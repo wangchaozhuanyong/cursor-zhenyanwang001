@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useState } from "react";
-import { Loader2, Download, Plus, Trash2 } from "lucide-react";
+import { Loader2, Download, Plus, Trash2, Users } from "lucide-react";
+import { AnimatedConfirmDialog, AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 import { useNavigate } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
@@ -43,6 +44,7 @@ export default function AdminUsers() {
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState("金色");
   const [tagSaving, setTagSaving] = useState(false);
+  const [tagDeleteId, setTagDeleteId] = useState<string | null>(null);
 
   useLayoutEffect(() => {
     useAdminUsersStore.setState({ loading: true });
@@ -114,7 +116,6 @@ export default function AdminUsers() {
   };
 
   const handleDeleteTag = async (tagId: string) => {
-    if (!window.confirm("删除标签后会同步移除用户身上的该标签，确定删除？")) return;
     try {
       await userService.deleteUserTag(tagId);
       await reloadTags();
@@ -125,18 +126,11 @@ export default function AdminUsers() {
         await loadUsers();
       }
       toast.success("标签已删除");
+      setTagDeleteId(null);
     } catch (e) {
       toast.error(toastErrorMessage(e, "删除标签失败"));
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--theme-price)]" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
@@ -185,14 +179,16 @@ export default function AdminUsers() {
                 <option>蓝色</option>
                 <option>金色</option>
               </select>
-              <button
+              <LoadingButton
                 type="button"
-                disabled={tagSaving}
-                onClick={handleCreateTag}
-                className="flex min-h-[40px] items-center gap-1 rounded-lg bg-[var(--theme-price)] px-3 py-2 text-sm font-semibold text-[var(--theme-price-foreground)] disabled:opacity-50"
+                variant="gold"
+                state={tagSaving ? "loading" : "normal"}
+                loadingText="添加中..."
+                onClick={() => void handleCreateTag()}
+                className="min-h-[40px] rounded-lg px-3 py-2 text-sm font-semibold"
               >
-                {tagSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus size={15} />} 添加
-              </button>
+                添加
+              </LoadingButton>
             </div>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -200,7 +196,7 @@ export default function AdminUsers() {
               <span key={tag.id} className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${productTagBadgeClass(tag.color)}`}>
                 {tag.name}
                 <span className="opacity-70">({tag.count ?? 0})</span>
-                <button type="button" onClick={() => handleDeleteTag(tag.id)} className="ml-1 rounded-full p-0.5 hover:bg-black/10" aria-label={`删除${tag.name}`}>
+                <button type="button" onClick={() => setTagDeleteId(tag.id)} className="ml-1 rounded-full p-0.5 hover:bg-black/10" aria-label={`删除${tag.name}`}>
                   <Trash2 size={12} />
                 </button>
               </span>
@@ -225,7 +221,21 @@ export default function AdminUsers() {
 
       {/* 移动端：卡片 */}
       <div className="space-y-3 md:hidden">
-        {users.map((u) => (
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
+              <div className="flex gap-3">
+                <div className="skeleton-base skeleton-shimmer h-12 w-12 shrink-0 rounded-full" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="skeleton-base skeleton-shimmer h-4 w-32 rounded" />
+                  <div className="skeleton-base skeleton-shimmer h-3 w-24 rounded" />
+                  <div className="skeleton-base skeleton-shimmer h-8 w-full rounded" />
+                </div>
+              </div>
+            </div>
+          ))
+          : null}
+        {!loading && users.map((u) => (
           <div key={u.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
             <div className="flex items-start gap-3">
               {u.avatar ? (
@@ -252,53 +262,69 @@ export default function AdminUsers() {
             </div>
           </div>
         ))}
-        {users.length === 0 && (
+        {!loading && users.length === 0 && (
           <div className="py-12 text-center text-sm text-muted-foreground">暂无用户</div>
         )}
         <Pagination total={total} page={page} pageSize={pageSize} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
       </div>
 
-      {/* 桌面端：表格 */}
-      <div className="hidden overflow-x-auto theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] md:block theme-shadow">
-        <table className="w-full min-w-[920px] text-sm">
-          <thead>
-            <tr className="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70">
+      <div className="hidden md:block">
+        <AnimatedTable
+          loading={loading}
+          rows={users}
+          rowKey={(u) => u.id}
+          skeletonRows={8}
+          skeletonCols={9}
+          className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
+          tableClassName="min-w-[920px] w-full text-sm"
+          theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
+          thead={(
+            <tr>
               {["用户", "手机号", "会员等级", "标签", "邀请码", "上级邀请码", "积分", "注册时间", "操作"].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
               ))}
             </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id} className="border-b border-[var(--theme-border)] last:border-0 hover:bg-[var(--theme-bg)]">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    {u.avatar ? (
-                      <img src={u.avatar} alt="" className="h-8 w-8 rounded-full object-cover" />
-                    ) : (
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--theme-gradient)" }}>{(u.nickname || u.phone || "?")[0]}</div>
-                    )}
-                    <span className="font-medium text-foreground">{u.nickname || u.phone}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-foreground whitespace-nowrap">{u.phone}</td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] px-2 py-1 text-xs font-semibold text-[var(--theme-price)]">
-                    {u.member_level_name || "普通会员"}
-                  </span>
-                </td>
-                <td className="px-4 py-3"><UserTagBadges tags={u.tags} /></td>
-                <td className="px-4 py-3 font-mono text-xs text-foreground">{u.invite_code || "—"}</td>
-                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{u.parent_invite_code || "—"}</td>
-                <td className="px-4 py-3 text-foreground">{u.points_balance ?? 0}</td>
-                <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{u.created_at ? new Date(u.created_at).toLocaleString("zh-CN") : "—"}</td>
-                <td className="px-4 py-3"><button type="button" onClick={() => navigate(`/admin/users/${u.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">详情</button></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <Pagination total={total} page={page} pageSize={pageSize} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
+          )}
+          footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />}
+          emptyIcon={Users}
+          emptyTitle="暂无用户"
+          renderRow={(u) => (
+            <>
+              <td className="px-4 py-3">
+                <div className="flex items-center gap-2">
+                  {u.avatar ? (
+                    <img src={u.avatar} alt="" className="h-8 w-8 rounded-full object-cover" />
+                  ) : (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--theme-gradient)" }}>{(u.nickname || u.phone || "?")[0]}</div>
+                  )}
+                  <span className="font-medium text-foreground">{u.nickname || u.phone}</span>
+                </div>
+              </td>
+              <td className="px-4 py-3 text-foreground whitespace-nowrap">{u.phone}</td>
+              <td className="px-4 py-3 whitespace-nowrap">
+                <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] px-2 py-1 text-xs font-semibold text-[var(--theme-price)]">
+                  {u.member_level_name || "普通会员"}
+                </span>
+              </td>
+              <td className="px-4 py-3"><UserTagBadges tags={u.tags} /></td>
+              <td className="px-4 py-3 font-mono text-xs text-foreground">{u.invite_code || "—"}</td>
+              <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{u.parent_invite_code || "—"}</td>
+              <td className="px-4 py-3 text-foreground">{u.points_balance ?? 0}</td>
+              <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{u.created_at ? new Date(u.created_at).toLocaleString("zh-CN") : "—"}</td>
+              <td className="px-4 py-3"><button type="button" onClick={() => navigate(`/admin/users/${u.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">详情</button></td>
+            </>
+          )}
+        />
       </div>
+      <AnimatedConfirmDialog
+        open={!!tagDeleteId}
+        onOpenChange={(open) => !open && setTagDeleteId(null)}
+        danger
+        title="删除标签"
+        description="删除标签后会同步移除用户身上的该标签，确定删除？"
+        confirmText="删除"
+        onConfirm={() => tagDeleteId && handleDeleteTag(tagDeleteId)}
+      />
     </div>
   );
 }

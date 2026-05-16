@@ -1,5 +1,7 @@
 ﻿/* eslint-disable @typescript-eslint/no-explicit-any */
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { LoadingButton } from "@/modules/micro-interactions";
+import { AdminFormSectionsSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -126,25 +128,20 @@ export default function AdminCouponForm() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
-      </div>
-    );
-  }
-
   const categoryOptions = flattenCategories(categories);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <button onClick={goBack}>
+        <button type="button" onClick={goBack}>
           <ArrowLeft size={20} className="text-foreground" />
         </button>
         <h2 className="text-lg font-semibold text-foreground">{isNew ? "新建优惠券" : "编辑优惠券"}</h2>
       </div>
 
+      {loading ? (
+        <AdminFormSectionsSkeleton sections={3} className="max-w-2xl" />
+      ) : (
       <div className="max-w-2xl space-y-6">
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
           <h3 className="text-sm font-semibold text-foreground">基础信息</h3>
@@ -269,13 +266,21 @@ export default function AdminCouponForm() {
 
         <div className="flex gap-3">
           <PermissionGate permission="coupon.manage">
-            <button type="button" disabled={saving} onClick={handleSave} className="rounded-lg bg-gold px-6 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "保存"}
-            </button>
+            <LoadingButton
+              type="button"
+              variant="gold"
+              state={saving ? "loading" : "normal"}
+              loadingText="保存中..."
+              onClick={() => void handleSave()}
+              className="rounded-lg px-6 py-2.5 text-sm font-semibold"
+            >
+              保存
+            </LoadingButton>
           </PermissionGate>
           <button type="button" onClick={goBack} className="rounded-lg border border-border px-6 py-2.5 text-sm text-muted-foreground">取消</button>
         </div>
       </div>
+      )}
     </div>
   );
 }

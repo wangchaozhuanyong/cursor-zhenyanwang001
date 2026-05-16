@@ -1,5 +1,13 @@
 import type { UserCoupon } from "@/types/coupon";
 
+/** 最低消费金额行（中间第二行） */
+export function formatCouponMinSpendText(c: UserCoupon["coupon"]) {
+  if (c.type === "shipping") {
+    return c.min_amount > 0 ? `满 RM ${c.min_amount} 免/减运费` : "无门槛运费券";
+  }
+  return c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛可用";
+}
+
 /** 供 PremiumCouponCard 使用的展示字段（与优惠券列表页一致） */
 export function userCouponToPremiumDisplay(uc: UserCoupon) {
   const c = uc.coupon;
@@ -11,14 +19,7 @@ export function userCouponToPremiumDisplay(uc: UserCoupon) {
       : c.type === "shipping" && c.value <= 0
         ? "免运"
         : String(c.value);
-  const conditionText =
-    c.type === "shipping"
-      ? c.min_amount > 0
-        ? `满 RM ${c.min_amount} 免/减运费`
-        : "免/减运费"
-      : c.min_amount > 0
-        ? `满 RM ${c.min_amount} 可用`
-        : "无门槛可用";
+  const minSpendText = formatCouponMinSpendText(c);
   const scopeText =
     c.scope_type === "category" && c.category_names?.length
       ? `适用范围：${c.category_names.join("、")}`
@@ -31,7 +32,7 @@ export function userCouponToPremiumDisplay(uc: UserCoupon) {
     title: c.title,
     amountPrefix,
     amount,
-    conditionText,
+    minSpendText,
     scopeText,
     expireText,
     badge,

@@ -1,8 +1,7 @@
-/**
- * 支付域数据访问
- * @param {import('mysql2/promise').Pool|import('mysql2/promise').PoolConnection} q
+﻿/**
+ * 鏀粯鍩熸暟鎹闂? * @param {import('mysql2/promise').Pool|import('mysql2/promise').PoolConnection} q
  */
-const db = require('../../../config/db');
+const db = require('../../config/db');
 
 function getPool() {
   return db;
@@ -369,3 +368,4 @@ module.exports = {
   insertAnalyticsEvent,
   selectPaymentEventById,
 };
+

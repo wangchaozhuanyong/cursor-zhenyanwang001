@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useState } from "react";
-import { ShoppingCart, Users, DollarSign, Package, Loader2 } from "lucide-react";
+import { ShoppingCart, Users, DollarSign, Package } from "lucide-react";
 import StatsCard from "@/components/admin/StatsCard";
 import { useNavigate } from "react-router-dom";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
@@ -29,15 +29,7 @@ export default function Dashboard() {
     loadStats();
   }, [loadStats]);
 
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--theme-price)]" />
-      </div>
-    );
-  }
-
-  if (error) {
+  if (error && !loading) {
     return (
       <div className="flex h-64 flex-col items-center justify-center gap-3 text-center">
         <p className="text-sm text-muted-foreground">{error}</p>
@@ -57,6 +49,41 @@ export default function Dashboard() {
   const categoryData = stats?.categoryData ?? [];
   const weeklyOrderData = stats?.weeklyOrders ?? [];
   const recentOrders = stats?.recentOrders ?? [];
+
+  if (loading) {
+    return (
+      <div className="space-y-5 sm:space-y-6">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow space-y-2">
+              <div className="skeleton-base skeleton-shimmer h-3 w-20 rounded" />
+              <div className="skeleton-base skeleton-shimmer h-7 w-24 rounded" />
+            </div>
+          ))}
+        </div>
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-6 lg:col-span-2 theme-shadow">
+            <div className="skeleton-base skeleton-shimmer mb-4 h-4 w-28 rounded" />
+            <div className="skeleton-base skeleton-shimmer h-[220px] w-full rounded-lg" />
+          </div>
+          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-6 theme-shadow">
+            <div className="skeleton-base skeleton-shimmer mb-4 h-4 w-24 rounded" />
+            <div className="skeleton-base skeleton-shimmer mx-auto h-[180px] w-[180px] rounded-full" />
+          </div>
+        </div>
+        <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-6 theme-shadow">
+          <div className="skeleton-base skeleton-shimmer mb-4 h-4 w-32 rounded" />
+          <div className="skeleton-base skeleton-shimmer h-[200px] w-full rounded-lg" />
+        </div>
+        <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-6 theme-shadow space-y-3">
+          <div className="skeleton-base skeleton-shimmer h-4 w-24 rounded" />
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="skeleton-base skeleton-shimmer h-14 w-full rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5 sm:space-y-6">

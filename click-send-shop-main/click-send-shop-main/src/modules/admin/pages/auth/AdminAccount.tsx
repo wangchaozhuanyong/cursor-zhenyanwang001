@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
-import { User, Lock, Mail, Phone, Loader2 } from "lucide-react";
+import { User, Lock, Mail, Phone } from "lucide-react";
+import { LoadingButton } from "@/modules/micro-interactions";
+import { AdminTabsPanelSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import { toast } from "sonner";
 import { fetchAdminProfile, updateAdminProfile, changeAdminPassword } from "@/services/admin/accountService";
 import { toastErrorMessage } from "@/utils/errorMessage";
@@ -63,14 +65,6 @@ export default function AdminAccount() {
     { key: "password" as const, label: "修改密码", icon: Lock },
   ];
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div>
@@ -92,7 +86,9 @@ export default function AdminAccount() {
         ))}
       </div>
 
-      {activeTab === "profile" && (
+      {loading ? (
+        <AdminTabsPanelSkeleton />
+      ) : activeTab === "profile" ? (
         <div className="max-w-lg rounded-2xl border border-border bg-card p-6 space-y-4">
           <div className="flex items-center gap-4 pb-4 border-b border-border">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gold text-2xl font-bold text-primary-foreground">
@@ -126,13 +122,17 @@ export default function AdminAccount() {
               </div>
             </label>
           </div>
-          <button disabled={saving} onClick={handleSaveProfile} className="w-full rounded-xl bg-gold py-3 text-sm font-bold text-primary-foreground active:scale-[0.98] disabled:opacity-50">
-            {saving ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "保存修改"}
-          </button>
+          <LoadingButton
+            variant="gold"
+            state={saving ? "loading" : "normal"}
+            loadingText="保存中..."
+            onClick={() => void handleSaveProfile()}
+            className="w-full rounded-xl py-3 text-sm font-bold"
+          >
+            保存修改
+          </LoadingButton>
         </div>
-      )}
-
-      {activeTab === "password" && (
+      ) : (
         <div className="max-w-lg rounded-2xl border border-border bg-card p-6 space-y-4">
           <h3 className="font-bold text-foreground">修改密码</h3>
           {[
@@ -148,9 +148,15 @@ export default function AdminAccount() {
               </div>
             </label>
           ))}
-          <button disabled={saving} onClick={handleChangePwd} className="w-full rounded-xl bg-gold py-3 text-sm font-bold text-primary-foreground active:scale-[0.98] disabled:opacity-50">
-            {saving ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "确认修改"}
-          </button>
+          <LoadingButton
+            variant="gold"
+            state={saving ? "loading" : "normal"}
+            loadingText="提交中..."
+            onClick={() => void handleChangePwd()}
+            className="w-full rounded-xl py-3 text-sm font-bold"
+          >
+            确认修改
+          </LoadingButton>
         </div>
       )}
     </div>

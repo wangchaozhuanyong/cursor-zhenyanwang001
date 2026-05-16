@@ -10,10 +10,12 @@ import * as uploadService from "@/services/uploadService";
 import { validateUploadFile } from "@/api/modules/upload";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { AdminFormSectionsSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_PRODUCT_LAYOUT } from "@/constants/imageUploadHints";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { flattenCategories } from "@/utils/categoryTree";
 import type { ProductTag } from "@/types/product";
+import { AnimatedConfirmDialog, LoadingButton, UploadDropZone } from "@/modules/micro-interactions";
 
 export default function AdminProductForm() {
   const navigate = useNavigate();
@@ -26,6 +28,7 @@ export default function AdminProductForm() {
   const [deleting, setDeleting] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [allTags, setAllTags] = useState<ProductTag[]>([]);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -138,10 +141,7 @@ export default function AdminProductForm() {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "cover" | "gallery") => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
+  const uploadImageFile = async (file: File, field: "cover" | "gallery") => {
     if (field === "cover" && uploadingCover) return;
     if (field === "gallery" && uploadingGallery) return;
     try {
@@ -173,6 +173,13 @@ export default function AdminProductForm() {
       setUploadingCover(false);
       setUploadingGallery(false);
     }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: "cover" | "gallery") => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    await uploadImageFile(file, field);
   };
 
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -270,7 +277,6 @@ export default function AdminProductForm() {
 
   const handleDelete = async () => {
     if (isNew || !id) return;
-    if (!window.confirm(`确定删除商品「${form.name || id}」？删除后可在「回收站」恢复。`)) return;
     setDeleting(true);
     try {
       await deleteProduct(id);
@@ -283,14 +289,6 @@ export default function AdminProductForm() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
-      </div>
-    );
-  }
-
   const categoryOptions = flattenCategories(categories as any);
 
   return (
@@ -302,6 +300,9 @@ export default function AdminProductForm() {
         <h2 className="text-lg font-semibold text-foreground">{isNew ? "新增商品" : "编辑商品"}</h2>
       </div>
 
+      {loading ? (
+        <AdminFormSectionsSkeleton sections={4} />
+      ) : (
       <PermissionGate
         permission="product.manage"
         fallback={
@@ -320,7 +321,14 @@ export default function AdminProductForm() {
             <div className="space-y-4">
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">封面图</label>
-                <label className={`relative flex h-40 w-40 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border ${uploadingCover ? "cursor-not-allowed opacity-80" : "cursor-pointer hover:border-gold/50"}`}>
+                <UploadDropZone
+                  disabled={uploadingCover}
+                  className={`relative flex h-40 w-40 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border ${uploadingCover ? "cursor-not-allowed opacity-80" : "cursor-pointer hover:border-gold/50"}`}
+                  onFiles={(files) => {
+                    const file = files[0];
+                    if (file) void uploadImageFile(file, "cover");
+                  }}
+                >
                   {form.cover_image ? (
                     <img src={form.cover_image} alt="" className="h-full w-full object-cover" />
                   ) : (
@@ -337,7 +345,7 @@ export default function AdminProductForm() {
                     </div>
                   ) : null}
                   <input disabled={uploadingCover} type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, "cover")} />
-                </label>
+                </UploadDropZone>
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">轮播图（最多 6 张）</label>
@@ -356,10 +364,17 @@ export default function AdminProductForm() {
                     </div>
                   )}
                   {form.images.length < 6 && (
-                    <label className={`flex h-24 w-24 items-center justify-center rounded-lg border-2 border-dashed border-border ${uploadingGallery ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:border-gold/50"}`}>
+                    <UploadDropZone
+                      disabled={uploadingGallery}
+                      className={`flex h-24 w-24 items-center justify-center rounded-lg border-2 border-dashed border-border ${uploadingGallery ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:border-gold/50"}`}
+                      onFiles={(files) => {
+                        const file = files[0];
+                        if (file) void uploadImageFile(file, "gallery");
+                      }}
+                    >
                       <ImagePlus size={18} className="text-muted-foreground" />
                       <input disabled={uploadingGallery} type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, "gallery")} />
-                    </label>
+                    </UploadDropZone>
                   )}
                 </div>
               </div>
@@ -761,26 +776,55 @@ export default function AdminProductForm() {
           </div>
 
           <div className="space-y-2">
-            <button disabled={saving} onClick={() => handleSave(false)} className="w-full rounded-lg bg-gold px-6 py-3 text-sm font-semibold text-primary-foreground disabled:opacity-50">
-              {saving ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "保存"}
-            </button>
-            <button disabled={saving} onClick={() => handleSave(true)} className="w-full rounded-lg border border-gold bg-gold/10 px-6 py-3 text-sm font-semibold text-gold disabled:opacity-50">保存并上架</button>
+            <LoadingButton
+              type="button"
+              variant="gold"
+              state={saving ? "loading" : "normal"}
+              loadingText="保存中..."
+              onClick={() => void handleSave(false)}
+              className="w-full rounded-lg px-6 py-3 text-sm font-semibold"
+            >
+              保存
+            </LoadingButton>
+            <LoadingButton
+              type="button"
+              variant="outline"
+              state={saving ? "loading" : "normal"}
+              loadingText="保存中..."
+              disabled={saving}
+              onClick={() => void handleSave(true)}
+              className="w-full rounded-lg border border-gold bg-gold/10 px-6 py-3 text-sm font-semibold text-gold"
+            >
+              保存并上架
+            </LoadingButton>
             {!isNew && (
-              <button
+              <LoadingButton
                 type="button"
+                variant="outline"
+                state={deleting ? "loading" : "normal"}
+                loadingText="删除中..."
                 disabled={deleting || saving}
-                onClick={handleDelete}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-destructive/40 px-6 py-3 text-sm font-semibold text-destructive disabled:opacity-50 hover:bg-destructive/10"
+                onClick={() => setDeleteConfirmOpen(true)}
+                className="w-full rounded-lg border border-destructive/40 px-6 py-3 text-sm font-semibold text-destructive hover:bg-destructive/10"
               >
-                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 size={16} />}
                 删除商品
-              </button>
+              </LoadingButton>
             )}
             <button onClick={goBack} className="w-full rounded-lg border border-border px-6 py-3 text-sm text-muted-foreground">取消</button>
           </div>
         </div>
       </div>
       </PermissionGate>
+      )}
+      <AnimatedConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        danger
+        title="删除商品"
+        description={`确定删除「${form.name || id}」？删除后可在回收站恢复。`}
+        confirmText="删除"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

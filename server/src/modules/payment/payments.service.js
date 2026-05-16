@@ -1,26 +1,66 @@
-const { generateId } = require('../../../utils/helpers');
+const { generateId } = require('../../utils/helpers');
 const {
   BusinessError,
   NotFoundError,
   ValidationError,
-} = require('../../../errors');
-const orderRepo = require('../order.repository');
-const checkoutAbandonmentRepo = require('../checkoutAbandonment.repository');
-const userModule = require('../../user');
+} = require('../../errors');
 const payRepo = require('./payments.repository');
 const manualProvider = require('./providers/manualProvider');
 const malaysiaLocalProvider = require('./providers/malaysiaLocalProvider');
-const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
-const { writeAuditLog } = require('../../../utils/auditLog');
-const { getResolvedTriggerCopy } = require('../../admin/notificationTriggerApi');
-const myinvoisModule = require('../../myinvois');
+const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
+const { writeAuditLog } = require('../../utils/auditLog');
 const payDb = payRepo.getPool();
 
-const userApi = /** @type {any} */ (userModule).api || {};
-const myinvoisApi = /** @type {any} */ (myinvoisModule).api || {};
+function getOrderApi() {
+  return /** @type {any} */ (require('../order')).api || {};
+}
+
+function getAdminApi() {
+  return /** @type {any} */ (require('../admin')).api || {};
+}
+
+function getUserApi() {
+  return /** @type {any} */ (require('../user')).api || {};
+}
+
+function getMyinvoisApi() {
+  return /** @type {any} */ (require('../myinvois')).api || {};
+}
+
+function requireOrderApi(name) {
+  const fn = getOrderApi()[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Order 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
+
+function requireAdminApi(name) {
+  const fn = getAdminApi()[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Admin 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
+
+const orderRepo = {
+  selectOrderByIdAndUserForUpdate: (...args) => requireOrderApi('selectOrderByIdAndUserForUpdate')(...args),
+  updateOrderPaid: (...args) => requireOrderApi('updateOrderPaid')(...args),
+  selectOrderItemQtyRows: (...args) => requireOrderApi('selectOrderItemQtyRows')(...args),
+  incrementProductSales: (...args) => requireOrderApi('incrementProductSales')(...args),
+  selectOrderByIdAndUser: (...args) => requireOrderApi('selectOrderByIdAndUser')(...args),
+  selectOrderById: (...args) => requireOrderApi('selectOrderById')(...args),
+  selectOrderByIdForUpdate: (...args) => requireOrderApi('selectOrderByIdForUpdate')(...args),
+  updateOrderRefundState: (...args) => requireOrderApi('updateOrderRefundState')(...args),
+  insertNotification: (...args) => requireOrderApi('insertOrderNotification')(...args),
+};
+
+const checkoutAbandonmentRepo = {
+  markPaidByOrderId: (...args) => requireOrderApi('markCheckoutAbandonmentPaidByOrderId')(...args),
+};
 
 function requireUserApi(name) {
-  const fn = userApi[name];
+  const fn = getUserApi()[name];
   if (typeof fn !== 'function') {
     throw new Error(`User 模块 API 未暴露方法: ${name}`);
   }
@@ -28,7 +68,7 @@ function requireUserApi(name) {
 }
 
 function requireMyinvoisApi(name) {
-  const fn = myinvoisApi[name];
+  const fn = getMyinvoisApi()[name];
   if (typeof fn !== 'function') {
     throw new Error(`MyInvois 模块 API 未暴露方法: ${name}`);
   }
@@ -762,7 +802,7 @@ async function markOrderPaidByAdmin(req, orderId, body) {
       result: 'success',
     });
 
-    const manualPayCopy = await getResolvedTriggerCopy('manual_order_mark_paid', { order_no: order.order_no });
+    const manualPayCopy = await requireAdminApi('getResolvedTriggerCopy')('manual_order_mark_paid', { order_no: order.order_no });
     if (manualPayCopy) {
       await orderRepo.insertNotification(payDb, {
         id: generateId(),

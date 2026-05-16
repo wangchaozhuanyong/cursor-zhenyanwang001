@@ -26,6 +26,7 @@ import { ORDER_STATUS, ORDER_STATUS_META, ORDER_STATUS_PROGRESS } from "@/consta
 import TrustInfo from "@/components/TrustInfo";
 import { OrderSstLines } from "@/components/OrderSstLines";
 import { trackPurchase } from "@/utils/tracking";
+import { BottomSheetConfirm } from "@/modules/micro-interactions";
 import type { PublicPaymentChannel } from "@/services/paymentService";
 
 const statusIconMap: Record<string, React.ElementType> = {
@@ -105,6 +106,8 @@ export default function OrderDetail() {
   const [stripeCheckoutReady, setStripeCheckoutReady] = useState(false);
   const [paymentChannels, setPaymentChannels] = useState<PublicPaymentChannel[]>([]);
   const [selectedPaymentChannelCode, setSelectedPaymentChannelCode] = useState("");
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [receiveConfirmOpen, setReceiveConfirmOpen] = useState(false);
 
   useDocumentTitle(order ? `订单 ${order.order_no}` : "订单详情");
 
@@ -204,7 +207,6 @@ export default function OrderDetail() {
   };
 
   const handleCancel = async () => {
-    if (!confirm("确定要取消该订单吗？")) return;
     try {
       await cancelOrder(order.id);
       toast.success("订单已取消");
@@ -235,7 +237,6 @@ export default function OrderDetail() {
   };
 
   const handleConfirmReceive = async () => {
-    if (!confirm("确认已收到商品？确认后无法撤销。")) return;
     try {
       await confirmReceive(order.id);
       toast.success("已确认收货，感谢您的购买！");
@@ -462,7 +463,7 @@ export default function OrderDetail() {
           )}
           {order.status === ORDER_STATUS.SHIPPED && (
             <button
-              onClick={handleConfirmReceive}
+              onClick={() => setReceiveConfirmOpen(true)}
               className="flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold text-white theme-shadow transition-all active:scale-[0.98]"
               style={{ background: "var(--theme-gradient)" }}
             >
@@ -471,7 +472,7 @@ export default function OrderDetail() {
           )}
           {(order.status === ORDER_STATUS.PENDING || order.status === ORDER_STATUS.PAID) && (
             <button
-              onClick={handleCancel}
+              onClick={() => setCancelConfirmOpen(true)}
               className="flex w-full items-center justify-center gap-2 rounded-full border-2 border-destructive/30 py-3.5 text-sm font-semibold text-destructive transition-all active:scale-[0.98] hover:bg-destructive/5"
             >
               <XCircle size={16} /> 取消订单
@@ -500,6 +501,24 @@ export default function OrderDetail() {
           </button>
         </div>
       </motion.main>
+
+      <BottomSheetConfirm
+        open={cancelConfirmOpen}
+        onClose={() => setCancelConfirmOpen(false)}
+        title="取消订单"
+        description="确定要取消该订单吗？取消后无法恢复。"
+        confirmText="取消订单"
+        danger
+        onConfirm={handleCancel}
+      />
+      <BottomSheetConfirm
+        open={receiveConfirmOpen}
+        onClose={() => setReceiveConfirmOpen(false)}
+        title="确认收货"
+        description="确认已收到商品？确认后无法撤销。"
+        confirmText="确认收货"
+        onConfirm={handleConfirmReceive}
+      />
     </div>
   );
 }

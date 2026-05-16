@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import * as reviewService from "@/services/admin/reviewService";
 import type { AdminReview, ReviewListParams } from "@/services/admin/reviewService";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { AnimatedTable } from "@/modules/micro-interactions";
 
 const STATUS_OPTIONS = [
   { value: "", label: "全部状态" },
@@ -213,16 +214,9 @@ export default function AdminReviews() {
         </PermissionGate>
       )}
 
-      {/* Loading skeleton */}
-      {loading ? (
-        <div className="space-y-3">{Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} />)}</div>
-      ) : reviews.length === 0 ? (
-        <div className="py-16 text-center text-sm text-muted-foreground">暂无评论数据</div>
-      ) : (
-        <>
-          {/* Mobile cards */}
-          <div className="space-y-3 md:hidden">
-            {reviews.map((r) => {
+      <div className="space-y-3 md:hidden">
+        {loading ? Array.from({ length: 5 }, (_, i) => <SkeletonRow key={i} />) : null}
+        {!loading && reviews.map((r) => {
               const badge = STATUS_BADGE[r.status] || STATUS_BADGE.normal;
               return (
                 <div key={r.id} className="rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -292,100 +286,106 @@ export default function AdminReviews() {
                 </div>
               );
             })}
-            <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
-          </div>
+        {!loading && reviews.length === 0 && (
+          <div className="py-16 text-center text-sm text-muted-foreground">暂无评论数据</div>
+        )}
+        <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
+      </div>
 
-          {/* Desktop table */}
-          <div className="hidden overflow-x-auto rounded-xl border border-border bg-card md:block">
-            <table className="w-full min-w-[900px] text-sm">
-              <thead>
-                <tr className="border-b border-border bg-secondary/50">
-                  <th className="px-3 py-3 text-left"><input type="checkbox" checked={selected.length === reviews.length && reviews.length > 0} onChange={toggleAll} className="accent-gold" /></th>
-                  {["用户", "星级", "评论内容", "商品", "状态", "官方回复", "时间", "操作"].map((h) => (
-                    <th key={h} className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {reviews.map((r) => {
-                  const badge = STATUS_BADGE[r.status] || STATUS_BADGE.normal;
-                  return (
-                    <tr key={r.id} className="border-b border-border last:border-0 hover:bg-secondary/30">
-                      <td className="px-3 py-3"><input type="checkbox" checked={selected.includes(r.id)} onChange={() => toggleSelect(r.id)} className="accent-gold" /></td>
-                      <td className="px-3 py-3">
-                        <div className="flex items-center gap-2">
-                          {r.avatar ? (
-                            <img src={r.avatar} alt="" className="h-7 w-7 rounded-full object-cover" />
-                          ) : (
-                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gold text-[10px] font-bold text-primary-foreground">{(r.nickname || "?")[0]}</div>
-                          )}
-                          <span className="text-xs text-foreground">{r.nickname || "匿名"}</span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-3"><StarRating rating={r.rating} /></td>
-                      <td className="max-w-[200px] px-3 py-3">
-                        <p className="truncate text-xs text-foreground" title={r.content}>{r.content}</p>
-                        {r.images?.length > 0 && (
-                          <div className="mt-1 flex gap-1">
-                            {r.images.slice(0, 3).map((img, i) => <img key={i} src={img} alt="" className="h-8 w-8 rounded object-cover" />)}
-                            {r.images.length > 3 && <span className="text-[10px] text-muted-foreground">+{r.images.length - 3}</span>}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="flex items-center gap-1.5">
-                          {r.product_cover && <img src={r.product_cover} alt="" className="h-7 w-7 rounded object-cover" />}
-                          <span className="max-w-[100px] truncate text-xs text-foreground" title={r.product_name}>{r.product_name || "—"}</span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>{badge.text}</span></td>
-                      <td className="max-w-[120px] px-3 py-3"><p className="truncate text-[11px] text-muted-foreground" title={r.admin_reply || ""}>{r.admin_reply || "—"}</p></td>
-                      <td className="px-3 py-3 text-[11px] text-muted-foreground whitespace-nowrap">{r.created_at ? new Date(r.created_at).toLocaleString("zh-CN") : "—"}</td>
-                      <td className="px-3 py-3">
-                        <PermissionGate permission="review.manage">
-                          <div className="flex gap-1">
-                            {r.status !== "deleted" ? (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => handleToggleFeatured(r.id)}
-                                  className={`touch-manipulation rounded-lg border p-1.5 hover:bg-secondary ${r.is_featured ? "border-gold bg-gold/10 text-gold" : "border-border text-muted-foreground"}`}
-                                  title={r.is_featured ? "取消精选" : "设为精选"}
-                                >
-                                  <Sparkles size={14} />
-                                </button>
-                                <button type="button" onClick={() => handleToggle(r.id)} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title={r.status === "hidden" ? "显示" : "隐藏"}>
-                                  {r.status === "hidden" ? <Eye size={14} /> : <EyeOff size={14} />}
-                                </button>
-                                <button type="button" onClick={() => { setReplyTarget(r); setReplyText(r.admin_reply || ""); }} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title="回复">
-                                  <MessageSquare size={14} />
-                                </button>
-                                <button type="button" onClick={() => handleDelete(r.id)} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground hover:text-destructive hover:bg-secondary" title="删除">
-                                  <Trash2 size={14} />
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <button type="button" onClick={() => handleRestore(r.id)} className="touch-manipulation rounded-lg border border-border p-1.5 text-green-600 hover:bg-secondary" title="恢复">
-                                  <RotateCcw size={14} />
-                                </button>
-                                <button type="button" onClick={() => setConfirmDelete({ id: r.id, permanent: true })} className="touch-manipulation rounded-lg border border-destructive/30 p-1.5 text-destructive hover:bg-destructive/10" title="彻底删除">
-                                  <Trash2 size={14} />
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </PermissionGate>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
-          </div>
-        </>
-      )}
+      <div className="hidden md:block">
+        <AnimatedTable
+          loading={loading}
+          rows={reviews}
+          rowKey={(r) => r.id}
+          skeletonRows={8}
+          skeletonCols={9}
+          className="overflow-x-auto rounded-xl border border-border bg-card"
+          tableClassName="w-full min-w-[900px] text-sm"
+          theadClassName="border-b border-border bg-secondary/50"
+          thead={(
+            <tr>
+              <th className="px-3 py-3 text-left">
+                <input type="checkbox" checked={selected.length === reviews.length && reviews.length > 0} onChange={toggleAll} className="accent-gold" />
+              </th>
+              {["用户", "星级", "评论内容", "商品", "状态", "官方回复", "时间", "操作"].map((h) => (
+                <th key={h} className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
+              ))}
+            </tr>
+          )}
+          footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />}
+          emptyIcon={MessageSquare}
+          emptyTitle="暂无评论数据"
+          renderRow={(r) => {
+            const badge = STATUS_BADGE[r.status] || STATUS_BADGE.normal;
+            return (
+              <>
+                <td className="px-3 py-3"><input type="checkbox" checked={selected.includes(r.id)} onChange={() => toggleSelect(r.id)} className="accent-gold" /></td>
+                <td className="px-3 py-3">
+                  <div className="flex items-center gap-2">
+                    {r.avatar ? (
+                      <img src={r.avatar} alt="" className="h-7 w-7 rounded-full object-cover" />
+                    ) : (
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gold text-[10px] font-bold text-primary-foreground">{(r.nickname || "?")[0]}</div>
+                    )}
+                    <span className="text-xs text-foreground">{r.nickname || "匿名"}</span>
+                  </div>
+                </td>
+                <td className="px-3 py-3"><StarRating rating={r.rating} /></td>
+                <td className="max-w-[200px] px-3 py-3">
+                  <p className="truncate text-xs text-foreground" title={r.content}>{r.content}</p>
+                  {r.images?.length > 0 && (
+                    <div className="mt-1 flex gap-1">
+                      {r.images.slice(0, 3).map((img, i) => <img key={i} src={img} alt="" className="h-8 w-8 rounded object-cover" />)}
+                      {r.images.length > 3 && <span className="text-[10px] text-muted-foreground">+{r.images.length - 3}</span>}
+                    </div>
+                  )}
+                </td>
+                <td className="px-3 py-3">
+                  <div className="flex items-center gap-1.5">
+                    {r.product_cover && <img src={r.product_cover} alt="" className="h-7 w-7 rounded object-cover" />}
+                    <span className="max-w-[100px] truncate text-xs text-foreground" title={r.product_name}>{r.product_name || "—"}</span>
+                  </div>
+                </td>
+                <td className="px-3 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>{badge.text}</span></td>
+                <td className="max-w-[120px] px-3 py-3"><p className="truncate text-[11px] text-muted-foreground" title={r.admin_reply || ""}>{r.admin_reply || "—"}</p></td>
+                <td className="px-3 py-3 text-[11px] text-muted-foreground whitespace-nowrap">{r.created_at ? new Date(r.created_at).toLocaleString("zh-CN") : "—"}</td>
+                <td className="px-3 py-3">
+                  <PermissionGate permission="review.manage">
+                    <div className="flex gap-1">
+                      {r.status !== "deleted" ? (
+                        <>
+                          <button type="button" onClick={() => handleToggleFeatured(r.id)} className={`touch-manipulation rounded-lg border p-1.5 hover:bg-secondary ${r.is_featured ? "border-gold bg-gold/10 text-gold" : "border-border text-muted-foreground"}`} title={r.is_featured ? "取消精选" : "设为精选"}>
+                            <Sparkles size={14} />
+                          </button>
+                          <button type="button" onClick={() => handleToggle(r.id)} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title={r.status === "hidden" ? "显示" : "隐藏"}>
+                            {r.status === "hidden" ? <Eye size={14} /> : <EyeOff size={14} />}
+                          </button>
+                          <button type="button" onClick={() => { setReplyTarget(r); setReplyText(r.admin_reply || ""); }} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title="回复">
+                            <MessageSquare size={14} />
+                          </button>
+                          <button type="button" onClick={() => handleDelete(r.id)} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground hover:text-destructive hover:bg-secondary" title="删除">
+                            <Trash2 size={14} />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button type="button" onClick={() => handleRestore(r.id)} className="touch-manipulation rounded-lg border border-border p-1.5 text-green-600 hover:bg-secondary" title="恢复">
+                            <RotateCcw size={14} />
+                          </button>
+                          <button type="button" onClick={() => setConfirmDelete({ id: r.id, permanent: true })} className="touch-manipulation rounded-lg border border-destructive/30 p-1.5 text-destructive hover:bg-destructive/10" title="彻底删除">
+                            <Trash2 size={14} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </PermissionGate>
+                </td>
+              </>
+            );
+          }}
+        />
+      </div>
+
 
       {/* Reply modal */}
       {replyTarget && (

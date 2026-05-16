@@ -1,5 +1,6 @@
 import { Home, LayoutGrid, ShoppingCart, Sparkles, User } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCartStore } from "@/stores/useCartStore";
 import { isLoggedIn } from "@/utils/token";
@@ -17,6 +18,21 @@ export default function BottomNav() {
   const navigate = useNavigate();
   const totalItems = useCartStore((s) => s.totalItems());
   const lastTouchNavAtRef = useRef(0);
+  const [badgeBump, setBadgeBump] = useState(false);
+
+  useEffect(() => {
+    let timer: number | undefined;
+    const onBump = () => {
+      setBadgeBump(true);
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(() => setBadgeBump(false), 420);
+    };
+    window.addEventListener("cart:badge-bump", onBump);
+    return () => {
+      window.removeEventListener("cart:badge-bump", onBump);
+      if (timer) window.clearTimeout(timer);
+    };
+  }, []);
 
   if (location.pathname.startsWith("/checkout")) return null;
 
@@ -72,9 +88,13 @@ export default function BottomNav() {
                     strokeWidth={isActive ? 2.5 : 1.8}
                   />
                   {tab.path === "/cart" && totalItems > 0 && (
-                    <span className="absolute -right-2.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--theme-danger)] px-1 text-[10px] font-bold text-white">
+                    <motion.span
+                      animate={badgeBump ? { scale: [1, 1.35, 1] } : { scale: 1 }}
+                      transition={{ duration: 0.35 }}
+                      className="absolute -right-2.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--theme-danger)] px-1 text-[10px] font-bold text-[var(--theme-danger-foreground)]"
+                    >
                       {totalItems > 99 ? "99+" : totalItems}
-                    </span>
+                    </motion.span>
                   )}
                 </span>
                 <span

@@ -2,7 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
-import { DEFAULT_SKIN_ID, THEME_PRESETS } from "@/constants/themePresets";
+import { DEFAULT_SKIN_ID, PROMO_ADMIN_BG_OVERRIDES, THEME_PRESETS } from "@/constants/themePresets";
 import { THEME_REVISION_KEY } from "@/lib/themeRevision";
 import { normalizeMediaUrls } from "@/utils/mediaUrl";
 import { generateThemePalette } from "@/utils/themeContrast";
@@ -21,7 +21,10 @@ type ThemeContextValue = {
   theme: ThemeMode;
   skinId: string;
   skins: ThemeSkin[];
+  /** 客户端皮肤选择器：仅 clientEnabled 的皮肤 */
   switchableSkins: ThemeSkin[];
+  /** 皮肤选择器列表（后台含全部皮肤，前台同 switchableSkins） */
+  pickerSkins: ThemeSkin[];
   setSkinId: (id: string) => void;
   themeConfig: ThemeConfig;
   /** 本地缓存主题已应用，可渲染 UI */
@@ -34,6 +37,13 @@ const ThemeRuntimeContext = createContext<ThemeContextValue | null>(null);
 
 function isAdminScope() {
   return typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
+}
+
+function resolveThemeConfigForScope(config: ThemeConfig, skinId: string, inAdmin: boolean): ThemeConfig {
+  if (inAdmin && skinId === "promo_red_orange") {
+    return normalizeThemeConfig({ ...config, ...PROMO_ADMIN_BG_OVERRIDES });
+  }
+  return config;
 }
 
 function applyThemeDataAttributes(root: HTMLElement, config: ThemeConfig) {
@@ -59,11 +69,24 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   const [themeConfig, setThemeConfig] = useState<ThemeConfig>(initial.themeConfig);
   const [themeReady, setThemeReady] = useState(initial.ready);
   const [themeSynced, setThemeSynced] = useState(false);
+  const [inAdminScope, setInAdminScope] = useState(() => isAdminScope());
 
   const switchableSkins = useMemo(
     () => skins.filter((skin) => skin.clientEnabled !== false),
     [skins],
   );
+
+  const pickerSkins = useMemo(
+    () => (inAdminScope ? skins : switchableSkins),
+    [inAdminScope, skins, switchableSkins],
+  );
+
+  useEffect(() => {
+    const syncScope = () => setInAdminScope(isAdminScope());
+    syncScope();
+    window.addEventListener("app:scope-changed", syncScope);
+    return () => window.removeEventListener("app:scope-changed", syncScope);
+  }, []);
 
   const loadTheme = useCallback(async () => {
     const base = import.meta.env.VITE_API_BASE_URL ?? "/api";
@@ -103,11 +126,24 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       if (typeof window !== "undefined") {
         localStorage.setItem(LAST_ACTIVE_SKIN_KEY, currentActive);
       }
-      const canUseManual = isManual && !activeChangedByAdmin && saved && normalized.skins.some((s) => s.id === saved && s.clientEnabled !== false);
-      if (isManual && activeChangedByAdmin && typeof window !== "undefined") {
-        localStorage.removeItem(SKIN_MANUAL_KEY);
+      const skinExists = (id: string) => normalized.skins.some((s) => s.id === id);
+      const skinClientPickable = (id: string) =>
+        normalized.skins.some((s) => s.id === id && s.clientEnabled !== false);
+      let chosen = currentActive;
+      if (isManual && saved) {
+        if (!skinExists(saved)) {
+          if (typeof window !== "undefined") localStorage.removeItem(SKIN_MANUAL_KEY);
+          chosen = skinExists(currentActive) ? currentActive : normalized.defaultSkinId;
+        } else if (activeChangedByAdmin) {
+          if (typeof window !== "undefined") localStorage.removeItem(SKIN_MANUAL_KEY);
+          chosen = currentActive;
+        } else if (skinClientPickable(saved)) {
+          chosen = saved;
+        } else {
+          if (typeof window !== "undefined") localStorage.removeItem(SKIN_MANUAL_KEY);
+          chosen = skinExists(currentActive) ? currentActive : normalized.defaultSkinId;
+        }
       }
-      const chosen = canUseManual ? saved! : currentActive;
       setSkinIdState(chosen);
       const active = normalized.skins.find((s) => s.id === chosen) ?? normalized.skins[0];
       setThemeConfig(normalizeThemeConfig(active?.config));
@@ -150,30 +186,36 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
     setThemeConfig(normalizeThemeConfig(active?.config));
   }, [skinId, skins]);
 
+  const appliedConfig = useMemo(
+    () => resolveThemeConfigForScope(themeConfig, skinId, inAdminScope),
+    [themeConfig, skinId, inAdminScope],
+  );
+
   useEffect(() => {
     const root = document.documentElement;
     root.classList.remove("dark");
-    applyThemeDataAttributes(root, themeConfig);
+    applyThemeDataAttributes(root, appliedConfig);
 
     if (typeof window !== "undefined") {
       localStorage.setItem(SKIN_STORAGE_KEY, skinId);
     }
 
-    const palette = generateThemePalette(themeConfig);
+    const palette = generateThemePalette(appliedConfig);
     Object.entries(palette).forEach(([key, value]) => root.style.setProperty(key, value));
-  }, [themeConfig, skinId]);
+  }, [appliedConfig, skinId]);
 
   useEffect(() => {
     const syncScope = () => {
       const root = document.documentElement;
-      const palette = generateThemePalette(themeConfig);
+      const scoped = resolveThemeConfigForScope(themeConfig, skinId, isAdminScope());
+      const palette = generateThemePalette(scoped);
       Object.entries(palette).forEach(([key, value]) => root.style.setProperty(key, value));
-      applyThemeDataAttributes(root, themeConfig);
+      applyThemeDataAttributes(root, scoped);
     };
     syncScope();
     window.addEventListener("app:scope-changed", syncScope);
     return () => window.removeEventListener("app:scope-changed", syncScope);
-  }, [themeConfig]);
+  }, [themeConfig, skinId]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({
@@ -181,8 +223,12 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       skinId,
       skins,
       switchableSkins,
+      pickerSkins,
       setSkinId: (id: string) => {
-        if (!switchableSkins.some((skin) => skin.id === id)) return;
+        const allowed = inAdminScope
+          ? skins.some((skin) => skin.id === id)
+          : switchableSkins.some((skin) => skin.id === id);
+        if (!allowed) return;
         setSkinIdState(id);
         if (typeof window !== "undefined") {
           localStorage.setItem(SKIN_STORAGE_KEY, id);
@@ -193,7 +239,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       themeReady,
       themeSynced,
     }),
-    [skinId, skins, switchableSkins, themeConfig, themeReady, themeSynced],
+    [skinId, skins, switchableSkins, pickerSkins, inAdminScope, themeConfig, themeReady, themeSynced],
   );
 
   return <ThemeRuntimeContext.Provider value={value}>{children}</ThemeRuntimeContext.Provider>;

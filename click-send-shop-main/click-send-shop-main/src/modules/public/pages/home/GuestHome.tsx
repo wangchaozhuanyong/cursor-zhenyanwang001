@@ -18,6 +18,7 @@ import type { Product } from "@/types/product";
 import type { FooterNavItem } from "@/types/content";
 import { ROUTES } from "@/constants/routes";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { AnimatedSection } from "@/modules/micro-interactions";
 
 const GUEST_HOME_GRID_MAX = 8;
 
@@ -157,28 +158,36 @@ export default function GuestHome() {
       />
 
       <main className={`store-tab-header-offset mx-auto max-w-screen-xl px-4 ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_88%,black)]" : ""}`}>
-        <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
-          <BannerCarousel banners={banners} themeConfigOverride={themeConfig} />
-        </div>
-        <HomeTrustBar className="mt-3" />
-        <div className="-mx-4 mt-3"><HomeOpsBlocks /></div>
+        <AnimatedSection>
+          <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
+            <BannerCarousel banners={banners} themeConfigOverride={themeConfig} />
+          </div>
+        </AnimatedSection>
+        <AnimatedSection delay={0.05}>
+          <HomeTrustBar className="mt-3" />
+        </AnimatedSection>
+        <AnimatedSection delay={0.08} className="-mx-4 mt-3">
+          <HomeOpsBlocks />
+        </AnimatedSection>
 
-        <NewArrivalOpsSection
-          products={newProducts}
-          loading={homeLoading}
-          hero={{
-            image: siteInfo.newArrivalHeroImage,
-            title: siteInfo.newArrivalHeroTitle,
-            subtitle: siteInfo.newArrivalHeroSubtitle,
-            ctaText: siteInfo.newArrivalHeroCtaText,
-            brandColor: siteInfo.brandColor,
-            siteSlogan: siteInfo.siteSlogan,
-          }}
-          homeLayout={themeConfig.homeLayout}
-          className="mt-4"
-        />
+        <AnimatedSection delay={0.1} className="mt-4">
+          <NewArrivalOpsSection
+            products={newProducts}
+            loading={homeLoading}
+            hero={{
+              image: siteInfo.newArrivalHeroImage,
+              title: siteInfo.newArrivalHeroTitle,
+              subtitle: siteInfo.newArrivalHeroSubtitle,
+              ctaText: siteInfo.newArrivalHeroCtaText,
+              brandColor: siteInfo.brandColor,
+              siteSlogan: siteInfo.siteSlogan,
+            }}
+            homeLayout={themeConfig.homeLayout}
+          />
+        </AnimatedSection>
 
-        <section className="mt-4">
+        <AnimatedSection delay={0.12} className="mt-4">
+        <section>
           <h2 className="flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text)]">
             <Sparkles className="h-5 w-5 text-[var(--theme-price)]" />
             全网爆款
@@ -233,6 +242,7 @@ export default function GuestHome() {
             </div>
           )}
         </section>
+        </AnimatedSection>
 
         <div className="-mx-4 mt-14">
           <GuestMobileFooter

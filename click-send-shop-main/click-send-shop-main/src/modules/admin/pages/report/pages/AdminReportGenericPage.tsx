@@ -1,7 +1,8 @@
-﻿import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+﻿import { useEffect, useMemo, useState } from "react";
+import { FileSpreadsheet } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import ReportFilterBar from "@/components/admin/report/ReportFilterBar";
+import { AnimatedTable } from "@/modules/micro-interactions";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
 
@@ -34,6 +35,12 @@ export default function AdminReportGenericPage({ title, fetcher }: Props) {
 
   const list = Array.isArray(payload.list) ? (payload.list as Record<string, unknown>[]) : [];
   const summary = (payload.summary || {}) as Record<string, unknown>;
+  const columns = useMemo(
+    () => (list.length > 0 ? Object.keys(list[0]) : ["col1", "col2", "col3", "col4", "col5"]),
+    [list],
+  );
+
+  const summaryEntries = Object.entries(summary).slice(0, 8);
 
   return (
     <div className="space-y-4">
@@ -42,37 +49,46 @@ export default function AdminReportGenericPage({ title, fetcher }: Props) {
       </div>
       <ReportFilterBar />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {Object.keys(summary).slice(0, 8).map((k) => (
-          <div key={k} className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
-            <p className="text-xs text-[var(--theme-text-muted)]">{k}</p>
-            <p className="mt-1 text-lg font-bold text-[var(--theme-text)]">{String(summary[k] ?? "-")}</p>
-          </div>
-        ))}
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 space-y-2">
+                <div className="skeleton-base skeleton-shimmer h-3 w-16 rounded" />
+                <div className="skeleton-base skeleton-shimmer h-6 w-24 rounded" />
+              </div>
+            ))
+          : summaryEntries.map(([k, v]) => (
+              <div key={k} className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
+                <p className="text-xs text-[var(--theme-text-muted)]">{k}</p>
+                <p className="mt-1 text-lg font-bold text-[var(--theme-text)]">{String(v ?? "-")}</p>
+              </div>
+            ))}
       </div>
-      <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
-        {loading ? (
-          <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin" /></div>
-        ) : list.length === 0 ? (
-          <p className="py-10 text-center text-sm text-[var(--theme-text-muted)]">暂无数据</p>
-        ) : (
-          <div className="overflow-auto">
-            <table className="w-full min-w-[900px] text-xs">
-              <thead>
-                <tr className="border-b border-[var(--theme-border)]">
-                  {Object.keys(list[0]).map((k) => <th key={k} className="px-2 py-2 text-left">{k}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {list.map((row, i) => (
-                  <tr key={i} className="border-b border-[var(--theme-border)]/60">
-                    {Object.keys(list[0]).map((k) => <td key={k} className="px-2 py-2">{String(row[k] ?? "-")}</td>)}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      <AnimatedTable
+        loading={loading}
+        rows={list}
+        rowKey={(row) => String(list.indexOf(row))}
+        skeletonRows={8}
+        skeletonCols={columns.length}
+        className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-0 overflow-auto"
+        tableClassName="w-full min-w-[900px] text-xs"
+        theadClassName="border-b border-[var(--theme-border)]"
+        thead={(
+          <tr>
+            {columns.map((k) => (
+              <th key={k} className="px-2 py-2 text-left text-muted-foreground">{k}</th>
+            ))}
+          </tr>
         )}
-      </div>
+        emptyIcon={FileSpreadsheet}
+        emptyTitle="暂无数据"
+        renderRow={(row) => (
+          <>
+            {columns.map((k) => (
+              <td key={k} className="px-2 py-2">{String(row[k] ?? "-")}</td>
+            ))}
+          </>
+        )}
+      />
     </div>
   );
 }

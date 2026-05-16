@@ -11,6 +11,7 @@ import {
 } from "@/services/admin/recycleBinService";
 import type { RecycleBinItem } from "@/services/admin/recycleBinService";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { AnimatedTable } from "@/modules/micro-interactions";
 
 const TYPE_OPTIONS = [
   { value: "", label: "全部类型" },
@@ -81,18 +82,28 @@ export default function AdminRecycleBin() {
         </select>
       </div>
 
-      {loading ? (
-        <div className="flex h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-gold" /></div>
-      ) : items.length === 0 ? (
+      {!loading && items.length === 0 ? (
         <div className="py-16 text-center">
           <Trash2 size={40} className="mx-auto text-muted-foreground/30" />
           <p className="mt-3 text-sm text-muted-foreground">回收站为空</p>
         </div>
       ) : (
         <>
-          {/* Mobile */}
           <div className="space-y-3 md:hidden">
-            {paginatedData.map((item) => (
+            {loading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="rounded-xl border border-border bg-card p-4 shadow-sm">
+                  <div className="flex gap-3">
+                    <div className="skeleton-base skeleton-shimmer h-12 w-12 shrink-0 rounded-lg" />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="skeleton-base skeleton-shimmer h-4 w-20 rounded-full" />
+                      <div className="skeleton-base skeleton-shimmer h-4 w-3/4 rounded" />
+                    </div>
+                  </div>
+                </div>
+              ))
+              : null}
+            {!loading && paginatedData.map((item) => (
               <div key={`${item.type}-${item.id}`} className="rounded-xl border border-border bg-card p-4 shadow-sm">
                 <div className="flex items-start gap-3">
                   {item.cover_image && <img src={item.cover_image} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />}
@@ -121,52 +132,58 @@ export default function AdminRecycleBin() {
             <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
           </div>
 
-          {/* Desktop */}
-          <div className="hidden overflow-x-auto rounded-xl border border-border bg-card md:block">
-            <table className="w-full min-w-[600px] text-sm">
-              <thead>
-                <tr className="border-b border-border bg-secondary/50">
+          <div className="hidden md:block">
+            <AnimatedTable
+              loading={loading}
+              rows={paginatedData}
+              rowKey={(item) => `${item.type}-${item.id}`}
+              skeletonRows={8}
+              skeletonCols={4}
+              className="overflow-x-auto rounded-xl border border-border bg-card"
+              tableClassName="w-full min-w-[600px] text-sm"
+              theadClassName="border-b border-border bg-secondary/50"
+              thead={(
+                <tr>
                   {["类型", "名称", "删除时间", "操作"].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
-              </thead>
-              <tbody>
-                {paginatedData.map((item) => (
-                  <tr key={`${item.type}-${item.id}`} className="border-b border-border last:border-0 hover:bg-secondary/30">
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${TYPE_BADGE[item.type] || "bg-muted text-muted-foreground"}`}>
-                        {item.type_label || item.type}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        {item.cover_image && <img src={item.cover_image} alt="" className="h-8 w-8 rounded object-cover" />}
-                        <span className="max-w-[200px] truncate text-foreground" title={item.name}>{item.name || item.id}</span>
+              )}
+              footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />}
+              emptyIcon={Archive}
+              emptyTitle="回收站为空"
+              renderRow={(item) => (
+                <>
+                  <td className="px-4 py-3">
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${TYPE_BADGE[item.type] || "bg-muted text-muted-foreground"}`}>
+                      {item.type_label || item.type}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      {item.cover_image && <img src={item.cover_image} alt="" className="h-8 w-8 rounded object-cover" />}
+                      <span className="max-w-[200px] truncate text-foreground" title={item.name}>{item.name || item.id}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{item.deleted_at ? new Date(item.deleted_at).toLocaleString("zh-CN") : "—"}</td>
+                  <td className="px-4 py-3">
+                    <PermissionGate permission="recycle_bin.manage">
+                      <div className="flex gap-1">
+                        <button type="button" onClick={() => handleRestore(item)} className="touch-manipulation rounded-lg border border-border p-1.5 text-green-600 hover:bg-secondary" title="恢复">
+                          <RotateCcw size={14} />
+                        </button>
+                        <button type="button" onClick={() => setConfirmDelete(item)} className="touch-manipulation rounded-lg border border-destructive/30 p-1.5 text-destructive hover:bg-destructive/10" title="彻底删除">
+                          <Trash2 size={14} />
+                        </button>
                       </div>
-                    </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{item.deleted_at ? new Date(item.deleted_at).toLocaleString("zh-CN") : "—"}</td>
-                    <td className="px-4 py-3">
-                      <PermissionGate permission="recycle_bin.manage">
-                        <div className="flex gap-1">
-                          <button type="button" onClick={() => handleRestore(item)} className="touch-manipulation rounded-lg border border-border p-1.5 text-green-600 hover:bg-secondary" title="恢复">
-                            <RotateCcw size={14} />
-                          </button>
-                          <button type="button" onClick={() => setConfirmDelete(item)} className="touch-manipulation rounded-lg border border-destructive/30 p-1.5 text-destructive hover:bg-destructive/10" title="彻底删除">
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </PermissionGate>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
+                    </PermissionGate>
+                  </td>
+                </>
+              )}
+            />
           </div>
         </>
       )}
-
       {/* Permanent delete confirm */}
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDelete(null)}>

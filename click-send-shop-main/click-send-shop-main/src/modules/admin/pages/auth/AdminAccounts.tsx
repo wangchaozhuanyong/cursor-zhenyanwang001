@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Plus, Loader2, UserCog, Shield, Trash2, KeyRound, ToggleLeft, ToggleRight, AlertTriangle } from "lucide-react";
+import { AnimatedTable } from "@/modules/micro-interactions";
 import Pagination from "@/components/admin/Pagination";
 import SearchBar from "@/components/SearchBar";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -85,14 +86,6 @@ export default function AdminAccounts() {
     } catch (err) { toast.error(toastErrorMessage(err, "删除失败")); }
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--theme-price)]" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -135,7 +128,20 @@ export default function AdminAccounts() {
 
       {/* Mobile cards */}
       <div className="space-y-3 md:hidden">
-        {paginatedData.map((a) => {
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
+              <div className="flex gap-3">
+                <div className="skeleton-base skeleton-shimmer h-10 w-10 shrink-0 rounded-full" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="skeleton-base skeleton-shimmer h-4 w-32 rounded" />
+                  <div className="skeleton-base skeleton-shimmer h-3 w-24 rounded" />
+                </div>
+              </div>
+            </div>
+          ))
+          : null}
+        {!loading && paginatedData.map((a) => {
           const badge = ROLE_BADGE[a.role] || ROLE_BADGE.admin;
           return (
             <div key={a.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
@@ -175,69 +181,75 @@ export default function AdminAccounts() {
             </div>
           );
         })}
-        {paginatedData.length === 0 && <div className="py-12 text-center text-sm text-muted-foreground">暂无管理员</div>}
+        {!loading && paginatedData.length === 0 && <div className="py-12 text-center text-sm text-muted-foreground">暂无管理员</div>}
         <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
       </div>
 
-      {/* Desktop table */}
-      <div className="hidden overflow-x-auto theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] md:block theme-shadow">
-        <table className="w-full min-w-[700px] text-sm">
-          <thead>
-            <tr className="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70">
+      <div className="hidden md:block">
+        <AnimatedTable
+          loading={loading}
+          rows={paginatedData}
+          rowKey={(a) => a.id}
+          skeletonRows={8}
+          skeletonCols={6}
+          className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
+          tableClassName="w-full min-w-[700px] text-sm"
+          theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
+          thead={(
+            <tr>
               {["管理员", "手机号", "角色", "创建时间", "最后登录", "操作"].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
               ))}
             </tr>
-          </thead>
-          <tbody>
-            {paginatedData.map((a) => {
-              const badge = ROLE_BADGE[a.role] || ROLE_BADGE.admin;
-              return (
-                <tr key={a.id} className="border-b border-[var(--theme-border)] last:border-0 hover:bg-[var(--theme-bg)]">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--theme-gradient)" }}>
-                        {(a.nickname || a.phone || "?")[0]}
-                      </div>
-                      <span className="font-medium text-foreground">{a.nickname || "—"}</span>
+          )}
+          footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
+          emptyIcon={UserCog}
+          emptyTitle="暂无管理员"
+          renderRow={(a) => {
+            const badge = ROLE_BADGE[a.role] || ROLE_BADGE.admin;
+            return (
+              <>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--theme-gradient)" }}>
+                      {(a.nickname || a.phone || "?")[0]}
                     </div>
-                  </td>
-                  <td className="px-4 py-3 text-foreground">{a.phone}</td>
-                  <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>{badge.text}</span></td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{a.created_at ? new Date(a.created_at).toLocaleString("zh-CN") : "—"}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{a.last_login_at ? new Date(a.last_login_at).toLocaleString("zh-CN") : <span className="italic text-muted-foreground/60">从未登录</span>}</td>
-                  <td className="px-4 py-3">
-                    <PermissionGate permission="role.manage">
-                      <div className="flex gap-1">
-                        {a.role !== "super_admin" && (
-                          <>
-                            <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title={a.role === "disabled" ? "启用" : "禁用"}>
-                              {a.role === "disabled" ? <ToggleRight size={14} className="text-green-600" /> : <ToggleLeft size={14} />}
-                            </button>
-                            {(a.role !== "super_admin" || isSuperAdminViewer) && (
+                    <span className="font-medium text-foreground">{a.nickname || "—"}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-foreground">{a.phone}</td>
+                <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>{badge.text}</span></td>
+                <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{a.created_at ? new Date(a.created_at).toLocaleString("zh-CN") : "—"}</td>
+                <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{a.last_login_at ? new Date(a.last_login_at).toLocaleString("zh-CN") : <span className="italic text-muted-foreground/60">从未登录</span>}</td>
+                <td className="px-4 py-3">
+                  <PermissionGate permission="role.manage">
+                    <div className="flex gap-1">
+                      {a.role !== "super_admin" && (
+                        <>
+                          <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title={a.role === "disabled" ? "启用" : "禁用"}>
+                            {a.role === "disabled" ? <ToggleRight size={14} className="text-green-600" /> : <ToggleLeft size={14} />}
+                          </button>
+                          {(a.role !== "super_admin" || isSuperAdminViewer) && (
                             <button type="button" onClick={() => { setResetTarget(a); setNewPassword(""); }} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title="重置密码">
                               <KeyRound size={14} />
                             </button>
-                            )}
-                            <button type="button" onClick={() => setConfirmDelete(a)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:text-destructive hover:bg-[var(--theme-bg)]" title="删除">
-                              <Trash2 size={14} />
-                            </button>
-                          </>
-                        )}
-                        {a.role === "super_admin" && (
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground"><Shield size={12} /> 不可操作</span>
-                        )}
-                      </div>
-                    </PermissionGate>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+                          )}
+                          <button type="button" onClick={() => setConfirmDelete(a)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:text-destructive hover:bg-[var(--theme-bg)]" title="删除">
+                            <Trash2 size={14} />
+                          </button>
+                        </>
+                      )}
+                      {a.role === "super_admin" && (
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground"><Shield size={12} /> 不可操作</span>
+                      )}
+                    </div>
+                  </PermissionGate>
+                </td>
+              </>
+            );
+          }}
+        />
       </div>
-
       {/* Create modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowCreate(false)}>

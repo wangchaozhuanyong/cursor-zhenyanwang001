@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
-import { Save, Loader2, Upload, X, Image as ImageIcon } from "lucide-react";
+import { Loader2, Upload, X, Image as ImageIcon } from "lucide-react";
+import { LoadingButton } from "@/modules/micro-interactions";
 import PermissionGate from "@/components/admin/PermissionGate";
 import {
   fetchSiteSettings,
@@ -12,6 +13,7 @@ import { uploadSingle } from "@/services/uploadService";
 import { refreshSiteInfo } from "@/hooks/useSiteInfo";
 import type { SiteSettings } from "@/types/admin";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { AdminSiteSettingsSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_SITE_ASSET } from "@/constants/imageUploadHints";
 
 const EMPTY: SiteSettings = {
@@ -398,14 +400,6 @@ export default function AdminSiteSettings() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
-      </div>
-    );
-  }
-
   const visibleSections =
     activeCategory === "all"
       ? SECTIONS
@@ -444,6 +438,10 @@ export default function AdminSiteSettings() {
         </div>
       </div>
 
+      {loading ? (
+        <AdminSiteSettingsSkeleton />
+      ) : (
+      <>
       <div className="grid max-w-5xl gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-border bg-card p-4 text-xs text-muted-foreground lg:col-span-2">
           <p className="font-medium text-foreground">字段生效提示（避免“设置后看起来没同步”）</p>
@@ -634,22 +632,21 @@ export default function AdminSiteSettings() {
             提示：保存后前端 5 分钟缓存会立即失效，刷新页面即可看到新内容。
           </p>
           <PermissionGate permission="settings.manage">
-            <button
-              disabled={saving}
-              onClick={handleSave}
-              className="flex items-center gap-2 rounded-lg bg-gold px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-gold/20 disabled:opacity-50"
+            <LoadingButton
+              type="button"
+              variant="gold"
+              state={saving ? "loading" : "normal"}
+              loadingText="保存中..."
+              onClick={() => void handleSave()}
+              className="rounded-lg px-6 py-2.5 text-sm font-semibold shadow-lg shadow-gold/20"
             >
-              {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <Save size={14} /> 保存设置
-                </>
-              )}
-            </button>
+              保存设置
+            </LoadingButton>
           </PermissionGate>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

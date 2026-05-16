@@ -1,5 +1,5 @@
-const { Router } = require('express');
-const { validate } = require('../../../middleware/validate');
+﻿const { Router } = require('express');
+const { validate } = require('../../middleware/validate');
 const webhookCtrl = require('./payments.webhook.controller');
 const { webhookManualBodySchema, webhookProviderParamSchema } = require('./payments.schemas');
 
@@ -12,3 +12,4 @@ router.post(
 );
 
 module.exports = router;
+

@@ -1,19 +1,30 @@
-const { generateId } = require('../../utils/helpers');
-const repo = require('./order.repository');
-const checkoutAbandonmentRepo = require('./checkoutAbandonment.repository');
+﻿const { generateId } = require('../../utils/helpers');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
-const paymentsService = require('./payments/payments.service');
-const adminModule = require('../admin');
-const userModule = require('../user');
-const myinvoisModule = require('../myinvois');
+const paymentsService = require('./payments.service');
 
-const orderDb = repo.getPool();
-const userApi = /** @type {any} */ (userModule).api || {};
-const adminApi = /** @type {any} */ (adminModule).api || {};
-const myinvoisApi = /** @type {any} */ (myinvoisModule).api || {};
+function getOrderApi() {
+  return /** @type {any} */ (require('../order')).api || {};
+}
+
+function getOrderDb() {
+  const api = getOrderApi();
+  return typeof api.getOrderPool === 'function' ? api.getOrderPool() : null;
+}
+
+function getUserApi() {
+  return /** @type {any} */ (require('../user')).api || {};
+}
+
+function getAdminApi() {
+  return /** @type {any} */ (require('../admin')).api || {};
+}
+
+function getMyinvoisApi() {
+  return /** @type {any} */ (require('../myinvois')).api || {};
+}
 
 function requireAdminApi(name) {
-  const fn = adminApi[name];
+  const fn = getAdminApi()[name];
   if (typeof fn !== 'function') {
     throw new Error(`Admin 模块 API 未暴露方法: ${name}`);
   }
@@ -21,24 +32,27 @@ function requireAdminApi(name) {
 }
 
 function requireMyinvoisApi(name) {
-  const fn = myinvoisApi[name];
+  const fn = getMyinvoisApi()[name];
   if (typeof fn !== 'function') {
     throw new Error(`MyInvois 模块 API 未暴露方法: ${name}`);
   }
   return fn;
 }
 
+function requireOrderApi(name) {
+  const fn = getOrderApi()[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Order 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
+
 async function refreshMemberLevel(q, userId) {
+  const userApi = getUserApi();
   if (typeof userApi.refreshUserMemberLevel !== 'function') return;
   await userApi.refreshUserMemberLevel(q, userId);
 }
 
-/**
- * 校验 Stripe PaymentIntent 与订单金额、币种一致（与 createStripeCheckoutSession 中 unit_amount 逻辑对齐）
- * @param {{ total_amount: string|number }} order
- * @param {{ amount: number; currency?: string }} pi
- * @returns {{ ok: true } | { ok: false; reason: string; details?: Record<string, unknown> }}
- */
 function validatePaymentIntentAmount(order, pi) {
   const currency = (pi.currency || '').toLowerCase();
   if (currency !== 'myr') {
@@ -58,11 +72,6 @@ function validatePaymentIntentAmount(order, pi) {
   return { ok: true };
 }
 
-/**
- * Stripe Webhook：payment_intent.succeeded 后置订单已付款（签名校验在 controller）
- * 金额不一致时不改单，仅打日志（仍返回 200 避免 Stripe 无限重试；需人工对账）
- * @param {import('stripe').Stripe.Event} event
- */
 async function handleStripeEvent(event) {
   if (event.type !== 'payment_intent.succeeded') return { handled: false };
 
@@ -71,7 +80,8 @@ async function handleStripeEvent(event) {
   const eventId = event.id || '';
   if (!orderId || !eventId) return { handled: true };
 
-  const accepted = await repo.insertWebhookEventIfAbsent(orderDb, {
+  const orderDb = getOrderDb();
+  const accepted = await requireOrderApi('insertWebhookEventIfAbsent')(orderDb, {
     eventId,
     eventType: event.type,
     orderId,
@@ -80,7 +90,7 @@ async function handleStripeEvent(event) {
     return { handled: true, duplicate: true };
   }
 
-  const order = await repo.selectOrderById(orderDb, orderId);
+  const order = await requireOrderApi('selectOrderById')(orderDb, orderId);
   if (!order) {
     console.error('[stripe webhook] order not found:', orderId);
     return { handled: true };
@@ -103,7 +113,7 @@ async function handleStripeEvent(event) {
   const paidAt = Number.isFinite(Number(pi.created))
     ? new Date(Number(pi.created) * 1000)
     : new Date();
-  const paidUpdated = await repo.updateOrderPaid(orderDb, orderId, {
+  const paidUpdated = await requireOrderApi('updateOrderPaid')(orderDb, orderId, {
     paymentTime: paidAt,
     paymentChannel: 'stripe',
     paymentTransactionNo: pi.id || '',
@@ -111,7 +121,7 @@ async function handleStripeEvent(event) {
   if (!paidUpdated) {
     return { handled: true, duplicate: true };
   }
-  await checkoutAbandonmentRepo.markPaidByOrderId(orderDb, orderId);
+  await requireOrderApi('markCheckoutAbandonmentPaidByOrderId')(orderDb, orderId);
   await refreshMemberLevel(orderDb, order.user_id);
 
   try {
@@ -125,10 +135,10 @@ async function handleStripeEvent(event) {
   }
 
   try {
-    const itemRows = await repo.selectOrderItemQtyRows(orderDb, orderId);
+    const itemRows = await requireOrderApi('selectOrderItemQtyRows')(orderDb, orderId);
     for (const it of itemRows) {
       if (it?.product_id && Number(it.qty) > 0) {
-        await repo.incrementProductSales(orderDb, it.product_id, Number(it.qty));
+        await requireOrderApi('incrementProductSales')(orderDb, it.product_id, Number(it.qty));
       }
     }
   } catch (err) {
@@ -137,7 +147,7 @@ async function handleStripeEvent(event) {
 
   const payCopy = await requireAdminApi('getResolvedTriggerCopy')('stripe_payment_success', { order_no: order.order_no });
   if (payCopy) {
-    await repo.insertNotification(orderDb, {
+    await requireOrderApi('insertOrderNotification')(orderDb, {
       id: generateId(),
       userId: order.user_id,
       type: 'order',

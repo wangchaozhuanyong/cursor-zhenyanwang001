@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Plus } from "lucide-react";
+import { Plus, Scale } from "lucide-react";
+import { AnimatedTable } from "@/modules/micro-interactions";
 import PermissionGate from "@/components/admin/PermissionGate";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import Pagination from "@/components/admin/Pagination";
@@ -125,52 +126,41 @@ export default function AdminPaymentReconciliations() {
           </button>
         </div>
 
-        {loading ? (
-          <div className="flex justify-center py-16 text-muted-foreground">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto theme-rounded border border-[var(--theme-border)]">
-              <table className="w-full min-w-[720px] text-left text-sm">
-                <thead className="bg-secondary/50 text-xs text-muted-foreground">
-                  <tr>
-                    <th className="px-3 py-2">日期</th>
-                    <th className="px-3 py-2">Provider</th>
-                    <th className="px-3 py-2">渠道</th>
-                    <th className="px-3 py-2">笔数</th>
-                    <th className="px-3 py-2">成功金额</th>
-                    <th className="px-3 py-2">差异</th>
-                    <th className="px-3 py-2">状态</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {list.map((r) => (
-                    <tr key={r.id} className="border-t border-border">
-                      <td className="px-3 py-2">{r.reconcile_date}</td>
-                      <td className="px-3 py-2">{r.provider}</td>
-                      <td className="px-3 py-2">{r.channel_code || "—"}</td>
-                      <td className="px-3 py-2">{r.order_count}</td>
-                      <td className="px-3 py-2">RM {Number(r.success_amount).toFixed(2)}</td>
-                      <td className="px-3 py-2">RM {Number(r.diff_amount).toFixed(2)}</td>
-                      <td className="px-3 py-2">{r.status}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {list.length === 0 && (
-                <div className="py-10 text-center text-sm text-muted-foreground">暂无对账记录</div>
-              )}
-            </div>
-            <Pagination
-              page={page}
-              pageSize={pageSize}
-              total={total}
-              onPageChange={setPage}
-              onPageSizeChange={() => {}}
-            />
-          </>
-        )}
+        <AnimatedTable
+          loading={loading}
+          rows={list}
+          rowKey={(r) => r.id}
+          skeletonRows={8}
+          skeletonCols={7}
+          className="theme-rounded border border-[var(--theme-border)] overflow-x-auto"
+          tableClassName="w-full min-w-[720px] text-left text-sm"
+          theadClassName="bg-secondary/50 text-xs text-muted-foreground"
+          thead={(
+            <tr>
+              <th className="px-3 py-2">日期</th>
+              <th className="px-3 py-2">Provider</th>
+              <th className="px-3 py-2">渠道</th>
+              <th className="px-3 py-2">笔数</th>
+              <th className="px-3 py-2">成功金额</th>
+              <th className="px-3 py-2">差异</th>
+              <th className="px-3 py-2">状态</th>
+            </tr>
+          )}
+          footer={<Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={() => {}} />}
+          emptyIcon={Scale}
+          emptyTitle="暂无对账记录"
+          renderRow={(r) => (
+            <>
+              <td className="px-3 py-2">{r.reconcile_date}</td>
+              <td className="px-3 py-2">{r.provider}</td>
+              <td className="px-3 py-2">{r.channel_code || "—"}</td>
+              <td className="px-3 py-2">{r.order_count}</td>
+              <td className="px-3 py-2">RM {Number(r.success_amount).toFixed(2)}</td>
+              <td className="px-3 py-2">RM {Number(r.diff_amount).toFixed(2)}</td>
+              <td className="px-3 py-2">{r.status}</td>
+            </>
+          )}
+        />
       </div>
     </PermissionGate>
   );

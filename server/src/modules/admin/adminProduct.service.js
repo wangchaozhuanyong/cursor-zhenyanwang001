@@ -6,23 +6,26 @@ const { buildSearchKeywords, normalizeSearchKeyword } = require('../../utils/sea
 const repo = require('./adminProduct.repository');
 const variantRepo = require('./adminProductVariant.repository');
 const inventoryRepo = require('./adminInventory.repository');
-const productModule = require('../product');
+const {
+  LIFECYCLE,
+  lifecycleFromBody,
+  lifecycleFromFilter,
+  statusVarcharFromLifecycle,
+  normalizeLifecycleFromRow,
+} = require('../product/productLifecycle');
 const { writeAuditLog } = require('../../utils/auditLog');
-const productApi = /** @type {any} */ (productModule).api || {};
+
+function getProductApi() {
+  return /** @type {any} */ (require('../product')).api || {};
+}
 
 function requireProductApi(name) {
-  const fn = productApi[name];
+  const fn = getProductApi()[name];
   if (typeof fn === 'undefined') {
     throw new Error(`Product 模块 API 未暴露方法: ${name}`);
   }
   return fn;
 }
-
-const LIFECYCLE = requireProductApi('LIFECYCLE');
-const lifecycleFromBody = requireProductApi('lifecycleFromBody');
-const lifecycleFromFilter = requireProductApi('lifecycleFromFilter');
-const statusVarcharFromLifecycle = requireProductApi('statusVarcharFromLifecycle');
-const normalizeLifecycleFromRow = requireProductApi('normalizeLifecycleFromRow');
 
 function buildListWhere(query) {
   let where = 'WHERE deleted_at IS NULL';

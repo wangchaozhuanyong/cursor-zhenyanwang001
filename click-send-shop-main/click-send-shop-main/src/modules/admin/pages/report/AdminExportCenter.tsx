@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState, useCallback } from "react";
 import { Download, Loader2, RefreshCw, CheckCircle2, XCircle, Clock, FileSpreadsheet } from "lucide-react";
+import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { toast } from "sonner";
 import {
@@ -120,52 +121,55 @@ export default function AdminExportCenter() {
           </select>
           <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none" />
           <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none" />
-          <button type="button" onClick={handleCreate} disabled={creating} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">
-            {creating ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-            {creating ? "创建中..." : "创建导出任务"}
-          </button>
+          <LoadingButton
+            type="button"
+            variant="gold"
+            state={creating ? "loading" : "normal"}
+            loadingText="创建中..."
+            onClick={() => void handleCreate()}
+            className="touch-manipulation min-h-[44px] rounded-xl px-4 py-2.5 text-sm font-semibold"
+          >
+            创建导出任务
+          </LoadingButton>
         </div>
       </PermissionGate>
 
-      {loading ? (
-        <div className="flex h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-gold" /></div>
-      ) : tasks.length === 0 ? (
-        <div className="py-16 text-center">
-          <FileSpreadsheet size={40} className="mx-auto text-muted-foreground/30" />
-          <p className="mt-3 text-sm text-muted-foreground">暂无导出任务</p>
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-xl border border-border bg-card">
-          <table className="w-full min-w-[760px] text-sm">
-            <thead>
-              <tr className="border-b border-border bg-secondary/50">
-                {"文件名,类型,状态,大小,创建时间,完成时间,操作".split(",").map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {tasks.map((t) => (
-                <tr key={t.id} className="border-b border-border last:border-0 hover:bg-secondary/30">
-                  <td className="px-4 py-3 text-foreground">{t.file_name}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{EXPORT_TYPES.find((x) => x.value === t.type)?.label || t.type}</td>
-                  <td className="px-4 py-3"><div className="flex items-center gap-1 text-xs">{STATUS_ICON[t.status]} {STATUS_TEXT[t.status]}</div></td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{formatBytes(t.file_size)}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{t.created_at ? new Date(t.created_at).toLocaleString("zh-CN") : "-"}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{t.finished_at ? new Date(t.finished_at).toLocaleString("zh-CN") : "-"}</td>
-                  <td className="px-4 py-3">
-                    {t.status === EXPORT_TASK_STATUS.SUCCESS ? (
-                      <button type="button" onClick={() => handleDownload(t)} className="touch-manipulation rounded-lg border border-border p-1.5 text-gold hover:bg-secondary" title="下载">
-                        <Download size={14} />
-                      </button>
-                    ) : t.status === EXPORT_TASK_STATUS.PENDING ? <Loader2 size={14} className="animate-spin text-muted-foreground" /> : <span className="text-xs text-muted-foreground">-</span>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <AnimatedTable
+        loading={loading}
+        rows={tasks}
+        rowKey={(t) => t.id}
+        skeletonRows={6}
+        skeletonCols={7}
+        className="overflow-x-auto rounded-xl border border-border bg-card"
+        tableClassName="w-full min-w-[760px] text-sm"
+        theadClassName="border-b border-border bg-secondary/50"
+        thead={(
+          <tr>
+            {"文件名,类型,状态,大小,创建时间,完成时间,操作".split(",").map((h) => (
+              <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
+            ))}
+          </tr>
+        )}
+        emptyIcon={FileSpreadsheet}
+        emptyTitle="暂无导出任务"
+        renderRow={(t) => (
+          <>
+            <td className="px-4 py-3 text-foreground">{t.file_name}</td>
+            <td className="px-4 py-3 text-xs text-muted-foreground">{EXPORT_TYPES.find((x) => x.value === t.type)?.label || t.type}</td>
+            <td className="px-4 py-3"><div className="flex items-center gap-1 text-xs">{STATUS_ICON[t.status]} {STATUS_TEXT[t.status]}</div></td>
+            <td className="px-4 py-3 text-xs text-muted-foreground">{formatBytes(t.file_size)}</td>
+            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{t.created_at ? new Date(t.created_at).toLocaleString("zh-CN") : "-"}</td>
+            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{t.finished_at ? new Date(t.finished_at).toLocaleString("zh-CN") : "-"}</td>
+            <td className="px-4 py-3">
+              {t.status === EXPORT_TASK_STATUS.SUCCESS ? (
+                <button type="button" onClick={() => handleDownload(t)} className="touch-manipulation rounded-lg border border-border p-1.5 text-gold hover:bg-secondary" title="下载">
+                  <Download size={14} />
+                </button>
+              ) : t.status === EXPORT_TASK_STATUS.PENDING ? <Loader2 size={14} className="animate-spin text-muted-foreground" /> : <span className="text-xs text-muted-foreground">-</span>}
+            </td>
+          </>
+        )}
+      />
     </div>
   );
 }

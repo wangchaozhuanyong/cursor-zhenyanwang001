@@ -1,11 +1,21 @@
-import { ArrowDown, ArrowUp, SlidersHorizontal } from "lucide-react";
+import { useState } from "react";
+import { ArrowDown, ArrowUp, ChevronRight, SlidersHorizontal } from "lucide-react";
 import type { ProductSortType } from "@/types/product";
 import { cn } from "@/lib/utils";
+import { BottomSheetPicker, useMediaSheetMode } from "@/modules/micro-interactions";
 
 type SortItem = {
   value: ProductSortType;
   label: string;
 };
+
+const SORT_ITEMS: SortItem[] = [
+  { value: "default", label: "综合排序" },
+  { value: "sales", label: "热销优先" },
+  { value: "newest", label: "最新上架" },
+  { value: "price-asc", label: "价格从低到高" },
+  { value: "price-desc", label: "价格从高到低" },
+];
 
 const baseSortItems: SortItem[] = [
   { value: "default", label: "综合" },
@@ -19,6 +29,10 @@ function cyclePriceSort(current: ProductSortType): ProductSortType {
   return "price-asc";
 }
 
+function getSortLabel(value: ProductSortType): string {
+  return SORT_ITEMS.find((item) => item.value === value)?.label ?? "综合排序";
+}
+
 interface ProductSortBarProps {
   value: ProductSortType;
   onChange: (value: ProductSortType) => void;
@@ -26,9 +40,41 @@ interface ProductSortBarProps {
 }
 
 export default function ProductSortBar({ value, onChange, className }: ProductSortBarProps) {
+  const isMobileSheet = useMediaSheetMode();
+  const [sheetOpen, setSheetOpen] = useState(false);
   const isPriceAsc = value === "price-asc";
   const isPriceDesc = value === "price-desc";
   const isPriceActive = isPriceAsc || isPriceDesc;
+
+  if (isMobileSheet) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => setSheetOpen(true)}
+          className={cn(
+            "flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2.5 text-left",
+            className,
+          )}
+        >
+          <SlidersHorizontal size={14} className="shrink-0 text-muted-foreground" aria-hidden />
+          <span className="min-w-0 flex-1 truncate text-xs font-semibold text-[var(--theme-text)]">
+            {getSortLabel(value)}
+          </span>
+          <ChevronRight size={16} className="shrink-0 text-muted-foreground" />
+        </button>
+        <BottomSheetPicker
+          open={sheetOpen}
+          onClose={() => setSheetOpen(false)}
+          title="排序方式"
+          height="auto"
+          selectedValue={value}
+          items={SORT_ITEMS.map((item) => ({ value: item.value, label: item.label }))}
+          onChange={(next) => onChange(next)}
+        />
+      </>
+    );
+  }
 
   return (
     <div

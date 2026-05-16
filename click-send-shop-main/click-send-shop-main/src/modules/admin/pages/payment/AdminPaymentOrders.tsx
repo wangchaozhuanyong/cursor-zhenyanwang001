@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { CreditCard } from "lucide-react";
+import { AnimatedTable } from "@/modules/micro-interactions";
 import PermissionGate from "@/components/admin/PermissionGate";
 import Pagination from "@/components/admin/Pagination";
 import PaymentAdminSubnav from "./PaymentAdminSubnav";
@@ -131,54 +132,41 @@ export default function AdminPaymentOrders() {
           </button>
         </div>
 
-        {loading ? (
-          <div className="flex justify-center py-16 text-muted-foreground">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto theme-rounded border border-[var(--theme-border)]">
-              <table className="w-full min-w-[800px] text-left text-sm">
-                <thead className="bg-secondary/50 text-xs text-muted-foreground">
-                  <tr>
-                    <th className="px-3 py-2">支付单</th>
-                    <th className="px-3 py-2">订单</th>
-                    <th className="px-3 py-2">渠道</th>
-                    <th className="px-3 py-2">金额</th>
-                    <th className="px-3 py-2">状态</th>
-                    <th className="px-3 py-2">交易号</th>
-                    <th className="px-3 py-2">时间</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {list.map((r) => (
-                    <tr key={r.id} className="border-t border-border">
-                      <td className="px-3 py-2 font-mono text-xs">{r.id.slice(0, 8)}…</td>
-                      <td className="px-3 py-2 font-mono text-xs">{r.order_no}</td>
-                      <td className="px-3 py-2">{r.channel_code}</td>
-                      <td className="px-3 py-2">{r.currency} {Number(r.amount).toFixed(2)}</td>
-                      <td className="px-3 py-2">{r.status}</td>
-                      <td className="px-3 py-2 font-mono text-xs">{r.payment_transaction_no || "—"}</td>
-                      <td className="px-3 py-2 text-xs text-muted-foreground">
-                        {r.payment_time ? new Date(r.payment_time).toLocaleString() : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {list.length === 0 && (
-                <div className="py-10 text-center text-sm text-muted-foreground">暂无数据</div>
-              )}
-            </div>
-            <Pagination
-              page={page}
-              pageSize={pageSize}
-              total={total}
-              onPageChange={setPage}
-              onPageSizeChange={() => {}}
-            />
-          </>
-        )}
+        <AnimatedTable
+          loading={loading}
+          rows={list}
+          rowKey={(r) => r.id}
+          skeletonRows={8}
+          skeletonCols={7}
+          className="theme-rounded border border-[var(--theme-border)] overflow-x-auto"
+          tableClassName="w-full min-w-[800px] text-left text-sm"
+          theadClassName="bg-secondary/50 text-xs text-muted-foreground"
+          thead={(
+            <tr>
+              <th className="px-3 py-2">支付单</th>
+              <th className="px-3 py-2">订单</th>
+              <th className="px-3 py-2">渠道</th>
+              <th className="px-3 py-2">金额</th>
+              <th className="px-3 py-2">状态</th>
+              <th className="px-3 py-2">交易号</th>
+              <th className="px-3 py-2">时间</th>
+            </tr>
+          )}
+          footer={<Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={() => {}} />}
+          emptyIcon={CreditCard}
+          emptyTitle="暂无数据"
+          renderRow={(r) => (
+            <>
+              <td className="px-3 py-2 font-mono text-xs">{r.id.slice(0, 8)}…</td>
+              <td className="px-3 py-2 font-mono text-xs">{r.order_no}</td>
+              <td className="px-3 py-2">{r.channel_code}</td>
+              <td className="px-3 py-2">{r.currency} {Number(r.amount).toFixed(2)}</td>
+              <td className="px-3 py-2">{r.status}</td>
+              <td className="px-3 py-2 font-mono text-xs">{r.payment_transaction_no || "—"}</td>
+              <td className="px-3 py-2 text-xs text-muted-foreground">{r.payment_time ? new Date(r.payment_time).toLocaleString() : "—"}</td>
+            </>
+          )}
+        />
       </div>
     </PermissionGate>
   );

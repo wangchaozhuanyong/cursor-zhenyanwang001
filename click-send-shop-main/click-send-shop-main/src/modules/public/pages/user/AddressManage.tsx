@@ -4,7 +4,7 @@ import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore, type Address } from "@/stores/useUserStore";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { BottomSheetForm } from "@/modules/micro-interactions";
 import { MALAYSIA_STATES } from "@/types/address";
 import { formatAddressForDisplay } from "@/services/addressService";
 
@@ -60,9 +60,18 @@ export default function AddressManage() {
   };
 
   const handleSave = async () => {
-    if (!form.recipient_name.trim() || !form.phone.trim() || !form.line1.trim() || !form.city.trim() || !form.state.trim() || !form.postcode.trim()) return toast.error("请填写完整地址信息");
-    if (!isValidMyPhone(form.phone)) return toast.error("手机号格式不正确，请输入马来西亚手机号");
-    if (!isValidMyPostcode(form.postcode)) return toast.error("邮编格式不正确，需要 5 位数字");
+    if (!form.recipient_name.trim() || !form.phone.trim() || !form.line1.trim() || !form.city.trim() || !form.state.trim() || !form.postcode.trim()) {
+      toast.error("请填写完整地址信息");
+      throw new Error("validation");
+    }
+    if (!isValidMyPhone(form.phone)) {
+      toast.error("手机号格式不正确，请输入马来西亚手机号");
+      throw new Error("validation");
+    }
+    if (!isValidMyPostcode(form.postcode)) {
+      toast.error("邮编格式不正确，需要 5 位数字");
+      throw new Error("validation");
+    }
     setSaving(true);
     try {
       if (editId) {
@@ -135,13 +144,17 @@ export default function AddressManage() {
         )}
       </main>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{editId ? "编辑地址" : "新增地址"}</DialogTitle>
-            <DialogDescription>请填写马来西亚标准地址：州 / 城市 / 邮编。</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 pt-2">
+      <BottomSheetForm
+        open={open}
+        onClose={() => setOpen(false)}
+        title={editId ? "编辑地址" : "新增地址"}
+        description="请填写马来西亚标准地址：州 / 城市 / 邮编。"
+        submitText="保存"
+        loading={saving}
+        onSubmit={handleSave}
+        height="90vh"
+      >
+        <div className="space-y-3">
             <input value={form.recipient_name} onChange={(e) => setForm((f) => ({ ...f, recipient_name: e.target.value }))} placeholder="收货人姓名" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
             <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="手机号（如 0123456789）" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
             <input value={form.line1} onChange={(e) => setForm((f) => ({ ...f, line1: e.target.value }))} placeholder="地址行 1（门牌号、街道）" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
@@ -157,12 +170,8 @@ export default function AddressManage() {
               <input type="checkbox" checked={form.isDefault} onChange={(e) => setForm((f) => ({ ...f, isDefault: e.target.checked }))} />
               设为默认地址
             </label>
-            <button onClick={handleSave} disabled={saving} className="w-full rounded-full bg-[var(--theme-primary)] py-3 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
-              {saving ? "保存中..." : "保存"}
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </BottomSheetForm>
     </div>
   );
 }

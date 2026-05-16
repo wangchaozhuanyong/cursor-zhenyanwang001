@@ -14,6 +14,13 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { isLoggedIn } from "@/utils/token";
+import {
+  DEFAULT_APPLE_TOUCH_ICON,
+  DEFAULT_FAVICON_ICO,
+  DEFAULT_FAVICON_PNG,
+  DEFAULT_FAVICON_SVG,
+  DEFAULT_FAVICON_WEBP,
+} from "@/constants/siteBrand";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { syncLockedInviteCodeBySearch } from "@/utils/inviteReferral";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -142,27 +149,34 @@ function SiteIdentitySync() {
   const siteInfo = useSiteInfo();
 
   useLayoutEffect(() => {
-    const rawFavicon = (siteInfo.faviconUrl || "").trim();
-    const favicon =
-      rawFavicon && !rawFavicon.startsWith("data:")
-        ? rawFavicon
-        : "/favicon.webp?v=20260516";
-    const links = Array.from(
-      document.querySelectorAll<HTMLLinkElement>(
+    const raw = (siteInfo.faviconUrl || "").trim();
+    const custom =
+      raw && !raw.startsWith("data:") && !/lovable/i.test(raw) ? raw : "";
+
+    const iconTargets: Array<{ rel: string; href: string; type?: string; sizes?: string }> = custom
+      ? [{ rel: "icon", href: custom }]
+      : [
+          { rel: "icon", href: DEFAULT_FAVICON_ICO, sizes: "any" },
+          { rel: "icon", href: DEFAULT_FAVICON_SVG, type: "image/svg+xml" },
+          { rel: "icon", href: DEFAULT_FAVICON_PNG, type: "image/png", sizes: "32x32" },
+          { rel: "icon", href: DEFAULT_FAVICON_WEBP, type: "image/webp" },
+          { rel: "shortcut icon", href: DEFAULT_FAVICON_ICO },
+          { rel: "apple-touch-icon", href: DEFAULT_APPLE_TOUCH_ICON },
+        ];
+
+    document
+      .querySelectorAll<HTMLLinkElement>(
         "link[rel='icon'], link[rel='shortcut icon'], link[rel='apple-touch-icon']",
-      ),
-    );
+      )
+      .forEach((el) => el.remove());
 
-    if (links.length === 0) {
+    iconTargets.forEach(({ rel, href, type, sizes }) => {
       const link = document.createElement("link");
-      link.rel = "icon";
-      link.href = favicon;
+      link.rel = rel;
+      link.href = href;
+      if (type) link.type = type;
+      if (sizes) link.sizes = sizes;
       document.head.appendChild(link);
-      return;
-    }
-
-    links.forEach((link) => {
-      link.href = favicon;
     });
   }, [siteInfo.faviconUrl]);
 

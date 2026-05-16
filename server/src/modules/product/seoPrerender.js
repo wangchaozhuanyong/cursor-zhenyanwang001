@@ -9,7 +9,7 @@ const SITE_FALLBACK = {
   seoTitle: '大马通',
   seoDescription: '精选全球好物，品质生活购物平台',
   seoKeywords: '',
-  ogImageUrl: '/favicon.webp',
+  ogImageUrl: '/favicon-32x32.png',
 };
 
 let cachedTemplate = null;
@@ -183,7 +183,7 @@ function productSeo({ product, site, req }) {
     product.description
       || `${product.name}，价格 RM ${product.price}。${site.seoDescription || site.siteDescription}`,
   );
-  const image = product.cover_image || product.images?.[0] || site.ogImageUrl || '/favicon.webp';
+  const image = product.cover_image || product.images?.[0] || site.ogImageUrl || '/favicon-32x32.png';
   const imageUrl = absoluteUrl(image, req);
   const canonicalUrl = `${getOrigin(req)}${req.path}`;
   const tagKeywords = (product.tags || []).map((tag) => tag.name).join(', ');
@@ -247,7 +247,7 @@ async function categoriesSeo({ site, req }) {
   const canonicalUrl = `${getOrigin(req)}${req.path}${selected ? `?cat=${encodeURIComponent(selected.id)}` : ''}`;
   const categoryNames = flattenCategories(categories).map((item) => item.name).filter(Boolean);
   const keywords = uniqueKeywords([pageName, categoryNames.join(', '), site.seoKeywords]);
-  const imageUrl = absoluteUrl(site.ogImageUrl || '/favicon.webp', req);
+  const imageUrl = absoluteUrl(site.ogImageUrl || '/favicon-32x32.png', req);
   const productItems = list
     .map((product) => `<li><a href="/product/${escapeAttr(product.id)}">${escapeHtml(product.name)}</a> - RM ${escapeHtml(product.price)}</li>`)
     .join('\n        ');
@@ -295,7 +295,7 @@ async function buildSeoForRequest(req) {
     title: site.seoTitle || site.siteName || SITE_FALLBACK.seoTitle,
     description: truncate(site.seoDescription || site.siteDescription || SITE_FALLBACK.seoDescription),
     keywords: site.seoKeywords || '',
-    imageUrl: absoluteUrl(site.ogImageUrl || '/favicon.webp', req),
+    imageUrl: absoluteUrl(site.ogImageUrl || '/favicon-32x32.png', req),
     canonicalUrl: `${getOrigin(req)}${req.path}`,
   };
 }

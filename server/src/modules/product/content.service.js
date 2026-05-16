@@ -1,5 +1,15 @@
 const contentRepo = require('./content.repository');
-const homeOpsService = require('../admin/adminHomeOps.service');
+const adminModule = require('../admin');
+
+const adminApi = /** @type {any} */ (adminModule).api || {};
+
+function requireAdminApi(name) {
+  const fn = adminApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Admin 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
 
 /**
  * 公开站点信息字段（供前端无鉴权读取）
@@ -60,4 +70,4 @@ exports.getContentPageBySlug = async (slug) => {
   return page || null;
 };
 
-exports.getPublicHomeOps = async () => homeOpsService.getPublicHomeOps();
+exports.getPublicHomeOps = async () => requireAdminApi('getPublicHomeOps')();

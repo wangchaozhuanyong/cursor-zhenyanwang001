@@ -1,6 +1,16 @@
 const repo = require('./search.repository');
 const { normalizeSearchKeyword, buildSearchKeywords } = require('../../utils/searchKeywords');
-const analyticsService = require('../analytics/analytics.service');
+const analyticsModule = require('../analytics');
+
+const analyticsApi = /** @type {any} */ (analyticsModule).api || {};
+
+function requireAnalyticsApi(name) {
+  const fn = analyticsApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Analytics 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
 
 function formatTerm(row) {
   return {
@@ -25,7 +35,7 @@ async function trackSearch(body, req) {
     normalizedKeyword: keyword,
     resultCount,
   });
-  await analyticsService.trackEvent({
+  await requireAnalyticsApi('trackEvent')({
     event_type: 'search',
     module: 'search',
     page: '/search',

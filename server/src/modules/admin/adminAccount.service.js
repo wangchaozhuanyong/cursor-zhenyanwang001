@@ -1,7 +1,17 @@
 const { BusinessError } = require('../../errors/BusinessError');
 const repo = require('./adminAccount.repository');
-const authApi = require('../auth/auth.api');
+const authModule = require('../auth');
 const { normalizeIntlPhone, buildPhoneLookupCandidates } = require('../../utils/phone');
+
+const authApi = /** @type {any} */ (authModule).api || {};
+
+function requireAuthApi(name) {
+  const fn = authApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Auth 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
 
 async function getProfile(userId) {
   const user = await repo.selectAdminProfileById(userId);
@@ -41,7 +51,7 @@ async function updateProfile(userId, body) {
       if (!normalizedPhone || !/^\+(60|86)\d+$/.test(normalizedPhone)) {
         throw new BusinessError(400, '仅支持 +60 或 +86 手机号');
       }
-      const dup = await authApi.findPhoneDuplicateByPhonesForUser(
+      const dup = await requireAuthApi('findPhoneDuplicateByPhonesForUser')(
         userId,
         buildPhoneLookupCandidates(p, body.countryCode),
       );
@@ -61,7 +71,7 @@ async function updateProfile(userId, body) {
 }
 
 async function changePassword(userId, body) {
-  return authApi.changePassword(userId, body);
+  return requireAuthApi('changePassword')(userId, body);
 }
 
 module.exports = {

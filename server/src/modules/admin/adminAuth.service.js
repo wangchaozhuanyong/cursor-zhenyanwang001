@@ -1,13 +1,21 @@
 const { BusinessError } = require('../../errors/BusinessError');
 const { AuthError } = require('../../errors');
-const authApi = require('../auth/auth.api');
-const authService = require('../auth/auth.service');
-const authRepo = require('../auth/auth.repository');
+const authModule = require('../auth');
 const { comparePassword, signToken, verifyToken } = require('../../utils/helpers');
 const { logAdminAction } = require('../../utils/adminAudit');
 const { writeAuditLog } = require('../../utils/auditLog');
 const rbacService = require('./rbac.service');
 const { buildPhoneLookupCandidates } = require('../../utils/phone');
+
+const authApi = /** @type {any} */ (authModule).api || {};
+
+function requireAuthApi(name) {
+  const fn = authApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Auth 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
 
 function normalizeLoginAccount(input) {
   // Normalize full-width digits and spaces copied from IM tools/keyboards.
@@ -24,7 +32,7 @@ async function login(body, req) {
   try {
     if (!phone || !password) throw new BusinessError(400, '手机号和密码不能为空');
 
-    const matchedUsers = await authApi.findUsersByPhones(buildPhoneLookupCandidates(phone, countryCode));
+    const matchedUsers = await requireAuthApi('findUsersByPhones')(buildPhoneLookupCandidates(phone, countryCode));
     if (!matchedUsers.length) throw new BusinessError(401, '账号未注册');
 
     function coerceHash(hash) {
@@ -61,7 +69,7 @@ async function login(body, req) {
     const rv = Number.isFinite(Number(user.refresh_token_version)) ? Number(user.refresh_token_version) : 0;
     const token = signToken(uid, rv);
     const access = await rbacService.getAccessContext(uid, user.role);
-    try { await authApi.updateLastLogin(uid); } catch { /* non-critical */ }
+    try { await requireAuthApi('updateLastLogin')(uid); } catch { /* non-critical */ }
     await logAdminAction(user.nickname || phone, '管理员登录', '');
     await writeAuditLog({
       req,
@@ -112,14 +120,14 @@ async function refresh(refreshToken) {
   }
   if (payload.type !== 'refresh') throw new BusinessError(401, '登录已过期，请重新登录');
 
-  const user = await authRepo.selectIdAndRoleByUserId(payload.userId);
+  const user = await requireAuthApi('getUserIdAndRole')(payload.userId);
   if (!user) throw new BusinessError(401, '用户不存在');
   if (user.role !== 'admin' && user.role !== 'super_admin') {
     throw new BusinessError(403, '无管理员权限');
   }
 
   try {
-    return await authService.refresh(refreshToken);
+    return await requireAuthApi('refresh')(refreshToken);
   } catch (err) {
     if (err instanceof AuthError) throw new BusinessError(401, err.message || '登录已过期，请重新登录');
     throw err;
@@ -128,7 +136,7 @@ async function refresh(refreshToken) {
 
 async function logout(userId, req) {
   if (userId) {
-    await authApi.bumpRefreshTokenVersion(userId);
+    await requireAuthApi('bumpRefreshTokenVersion')(userId);
   }
   await logAdminAction(userId, '管理员退出', '');
   await writeAuditLog({

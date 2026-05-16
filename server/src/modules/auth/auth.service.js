@@ -323,6 +323,10 @@ async function findPhoneDuplicateByPhonesForUser(userId, phones) {
   return repo.findPhoneDuplicateByPhones(userId, phones);
 }
 
+async function getUserIdAndRole(userId) {
+  return repo.selectIdAndRoleByUserId(userId);
+}
+
 module.exports = {
   register,
   login,
@@ -342,6 +346,7 @@ module.exports = {
   updateLastLogin,
   findPhoneDuplicateForUser,
   findPhoneDuplicateByPhonesForUser,
+  getUserIdAndRole,
 };
 
 // 兼容历史：保留具名导出 BusinessError 以防有外部 require 该模块时使用

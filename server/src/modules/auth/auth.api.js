@@ -11,6 +11,8 @@ module.exports = {
   bumpRefreshTokenVersion: authService.bumpRefreshTokenVersion,
   changePassword: authService.changePassword,
   updateLastLogin: authService.updateLastLogin,
+  refresh: authService.refresh,
+  getUserIdAndRole: authService.getUserIdAndRole,
   findPhoneDuplicateForUser: authService.findPhoneDuplicateForUser,
   findPhoneDuplicateByPhonesForUser: authService.findPhoneDuplicateByPhonesForUser,
 };

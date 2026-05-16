@@ -142,7 +142,11 @@ function SiteIdentitySync() {
   const siteInfo = useSiteInfo();
 
   useLayoutEffect(() => {
-    const favicon = (siteInfo.faviconUrl || "").trim() || "/favicon.webp";
+    const rawFavicon = (siteInfo.faviconUrl || "").trim();
+    const favicon =
+      rawFavicon && !rawFavicon.startsWith("data:")
+        ? rawFavicon
+        : "/favicon.webp?v=20260516";
     const links = Array.from(
       document.querySelectorAll<HTMLLinkElement>(
         "link[rel='icon'], link[rel='shortcut icon'], link[rel='apple-touch-icon']",

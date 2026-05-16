@@ -118,11 +118,11 @@ async function selectProductsAnalysis(dateFrom, dateTo) {
         FROM analytics_events
         WHERE ${rangeWhere('DATE(DATE_ADD(created_at, INTERVAL 8 HOUR))')}
         GROUP BY product_id
-      ) ae ON ae.product_id=p.id`
+      ) ae ON ae.product_id COLLATE utf8mb4_unicode_ci = p.id COLLATE utf8mb4_unicode_ci`
     : `LEFT JOIN (
         SELECT CAST(NULL AS CHAR(36)) AS product_id, 0 AS view_count, 0 AS add_cart_count, 0 AS favorite_count
         LIMIT 0
-      ) ae ON ae.product_id=p.id`;
+      ) ae ON ae.product_id COLLATE utf8mb4_unicode_ci = p.id COLLATE utf8mb4_unicode_ci`;
 
   const params = hasAnalytics ? [dateFrom, dateTo, dateFrom, dateTo] : [dateFrom, dateTo];
 
@@ -149,9 +149,9 @@ async function selectProductsAnalysis(dateFrom, dateTo) {
       COALESCE(ae.favorite_count,0) AS favorite_count,
       CASE WHEN COALESCE(ae.view_count,0) > 0 THEN ROUND(COUNT(DISTINCT o.id) / COALESCE(ae.view_count,1), 4) ELSE 0 END AS conversion_rate
      FROM products p
-     LEFT JOIN categories c ON c.id=p.category_id
-     LEFT JOIN order_items oi ON oi.product_id=p.id
-     LEFT JOIN orders o ON o.id=oi.order_id AND o.payment_status IN (${PAID_PAYMENT_SQL})
+     LEFT JOIN categories c ON c.id COLLATE utf8mb4_unicode_ci = p.category_id COLLATE utf8mb4_unicode_ci
+     LEFT JOIN order_items oi ON oi.product_id COLLATE utf8mb4_unicode_ci = p.id COLLATE utf8mb4_unicode_ci
+     LEFT JOIN orders o ON o.id COLLATE utf8mb4_unicode_ci = oi.order_id COLLATE utf8mb4_unicode_ci AND o.payment_status IN (${PAID_PAYMENT_SQL})
      ${analyticsJoin}
      WHERE (o.id IS NULL OR ${rangeWhere('DATE(DATE_ADD(o.created_at, INTERVAL 8 HOUR))')})
      GROUP BY p.id,p.name,p.cover_image,c.name,p.stock

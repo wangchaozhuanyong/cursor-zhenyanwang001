@@ -130,12 +130,10 @@ const queryClient = new QueryClient({
   },
 });
 
-/** 持久化的 isAuthenticated 与 access_token 可能不一致（清缓存、多标签页等），启动时对齐 */
+/** 持久化的 isAuthenticated 与登录标记可能不一致（清缓存、多标签页等），启动时与 token 标记对齐 */
 function AuthTokenSync() {
   useLayoutEffect(() => {
-    if (!isLoggedIn()) {
-      useAuthStore.setState({ isAuthenticated: false });
-    }
+    useAuthStore.setState({ isAuthenticated: isLoggedIn() });
   }, []);
   return null;
 }
@@ -225,11 +223,9 @@ function AppScopeSync() {
 }
 
 function HomeRoute() {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const { themeReady } = useThemeRuntime();
-  if (!themeReady) return <StoreOutletFallback />;
-  const hasToken = isLoggedIn();
-  return hasToken || isAuthenticated ? <MemberHome /> : <GuestHome />;
+  const { themeSynced } = useThemeRuntime();
+  if (!themeSynced) return <StoreOutletFallback />;
+  return isLoggedIn() ? <MemberHome /> : <GuestHome />;
 }
 
 function AppRoutes() {

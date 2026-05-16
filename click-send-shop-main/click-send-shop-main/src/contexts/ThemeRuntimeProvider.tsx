@@ -24,7 +24,10 @@ type ThemeContextValue = {
   switchableSkins: ThemeSkin[];
   setSkinId: (id: string) => void;
   themeConfig: ThemeConfig;
+  /** 本地缓存主题已应用，可渲染 UI */
   themeReady: boolean;
+  /** 已完成至少一次服务端主题同步，避免首页布局在刷新时从缓存闪到线上配置 */
+  themeSynced: boolean;
 };
 
 const ThemeRuntimeContext = createContext<ThemeContextValue | null>(null);
@@ -55,6 +58,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   const [skinId, setSkinIdState] = useState<string>(initial.skinId);
   const [themeConfig, setThemeConfig] = useState<ThemeConfig>(initial.themeConfig);
   const [themeReady, setThemeReady] = useState(initial.ready);
+  const [themeSynced, setThemeSynced] = useState(false);
 
   const switchableSkins = useMemo(
     () => skins.filter((skin) => skin.clientEnabled !== false),
@@ -108,6 +112,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       const active = normalized.skins.find((s) => s.id === chosen) ?? normalized.skins[0];
       setThemeConfig(normalizeThemeConfig(active?.config));
       setThemeReady(true);
+      setThemeSynced(true);
     } catch (error) {
       const fallback = normalizeThemeSkinsPayload({
         defaultSkinId: DEFAULT_SKIN_ID,
@@ -118,6 +123,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       setSkinIdState(DEFAULT_SKIN_ID);
       setThemeConfig(normalizeThemeConfig(fallback.skins.find((s) => s.id === DEFAULT_SKIN_ID)?.config));
       setThemeReady(true);
+      setThemeSynced(true);
       toast.error(toastErrorMessage(error, "皮肤加载失败，已回退默认皮肤"));
     }
   }, []);
@@ -185,8 +191,9 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       },
       themeConfig,
       themeReady,
+      themeSynced,
     }),
-    [skinId, skins, switchableSkins, themeConfig, themeReady],
+    [skinId, skins, switchableSkins, themeConfig, themeReady, themeSynced],
   );
 
   return <ThemeRuntimeContext.Provider value={value}>{children}</ThemeRuntimeContext.Provider>;

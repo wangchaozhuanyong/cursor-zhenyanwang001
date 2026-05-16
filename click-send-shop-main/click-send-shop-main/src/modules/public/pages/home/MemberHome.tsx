@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState, useRef } from "react";
+﻿import { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
 import { Flame, Gift, Heart, RefreshCw, Search, ShoppingCart, Star, Ticket, Truck, ShieldCheck, Wallet, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
@@ -77,8 +77,15 @@ export default function MemberHome() {
           ? "bg-[color-mix(in_srgb,var(--theme-secondary)_16%,var(--theme-surface))] border-[var(--theme-border)]"
           : "bg-[var(--theme-bg)]/90 border-[var(--theme-border)]";
 
+  useLayoutEffect(() => {
+    const { hotProducts, newProducts, recommendedProducts, loading } = useProductStore.getState();
+    if (!loading && (hotProducts.length > 0 || newProducts.length > 0 || recommendedProducts.length > 0)) {
+      useProductStore.setState({ loading: true });
+    }
+    void loadHomeData();
+  }, [loadHomeData]);
+
   useEffect(() => {
-    loadHomeData();
     useNotificationStore.getState().fetchUnreadCount();
     useCouponStore.getState().loadCoupons();
     if (isLoggedIn()) {
@@ -87,7 +94,7 @@ export default function MemberHome() {
       loadCart().catch(() => {});
       loadOrders({ page: 1, pageSize: 20 }).catch(() => {});
     }
-  }, [loadHomeData, loadHistory, loadFavorites, loadCart, loadOrders]);
+  }, [loadHistory, loadFavorites, loadCart, loadOrders]);
 
   const newest = useMemo(() => newProducts.slice(0, 6), [newProducts]);
   const couponTop = useMemo(
@@ -148,8 +155,6 @@ export default function MemberHome() {
   const hot = hotBatches.length > 0 ? hotBatches[hotBatchIndex % hotBatches.length] : [];
   const rec = recBatches.length > 0 ? recBatches[recBatchIndex % recBatches.length] : [];
   const activeNew = newest.length > 0 ? newest[newArrivalIndex] : null;
-  const heroTitle = (siteInfo.newArrivalHeroTitle || "").trim();
-  const heroSubtitle = (siteInfo.newArrivalHeroSubtitle || "").trim();
   const trackNewArrivalClick = (target: "product" | "new_arrivals_page") => {
     void productService.trackHomeEngagement({
       module: "new_arrivals",
@@ -230,13 +235,13 @@ export default function MemberHome() {
         </section>
         <section className="mt-section">
           <Header title="会员专属礼包" icon={Ticket} />
-          <div className="-mx-4 flex items-start snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2">
+          <div className="no-scrollbar -mx-4 flex items-stretch gap-3 overflow-x-auto overflow-y-hidden px-4 pb-2 snap-x snap-mandatory md:mx-0 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 md:pb-0 md:snap-none lg:gap-4">
             {(couponLoading ? Array.from({ length: 4 }) : couponTop).map((c: UserCoupon | number, i) => {
               if (couponLoading || typeof c === "number") {
                 return (
                   <div
                     key={i}
-                    className="snap-center h-[118px] w-[min(88vw,560px)] shrink-0 animate-pulse rounded-xl bg-[var(--theme-surface)]/70 ring-1 ring-[var(--theme-border)]"
+                    className="snap-center min-h-[118px] w-[min(88vw,360px)] shrink-0 animate-pulse rounded-xl bg-[var(--theme-surface)]/70 ring-1 ring-[var(--theme-border)] md:w-full"
                   />
                 );
               }
@@ -246,12 +251,12 @@ export default function MemberHome() {
               return (
                 <div
                   key={c.id}
-                  className="snap-center h-[118px] w-[min(88vw,560px)] shrink-0"
+                  className="snap-center min-h-[118px] w-[min(88vw,360px)] shrink-0 md:w-full"
                 >
                   <PremiumCouponCard
                     compact
                     homeCompact
-                    className="min-h-0 shadow-lg"
+                    className="h-full min-h-[118px] shadow-lg"
                     title={display.title}
                     amountPrefix={display.amountPrefix}
                     amount={display.amount}
@@ -300,12 +305,6 @@ export default function MemberHome() {
               <ChevronRight size={14} />
             </button>
           </div>
-          {heroTitle || heroSubtitle ? (
-            <div className="mb-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
-              {heroTitle ? <p className="truncate text-sm font-semibold text-[var(--theme-text-on-surface)]">{heroTitle}</p> : null}
-              {heroSubtitle ? <p className="mt-0.5 truncate text-xs text-[var(--theme-text-muted)]">{heroSubtitle}</p> : null}
-            </div>
-          ) : null}
           {newest.length > 0 ? (
             <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1">
               {newest.map((item, idx) => {

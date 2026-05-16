@@ -78,7 +78,11 @@ export default function PremiumCouponCard({
         <p className="mt-1 line-clamp-1 text-xs text-[var(--theme-muted)]">{scopeText}</p>
       </div>
       {actionLabel ? (
-        <div className={`flex ${homeCompact ? "w-[44px]" : "w-[48px]"} shrink-0 items-center justify-center`}>
+        <div
+          className={`flex shrink-0 items-center justify-center ${
+            homeCompact ? "w-[44px] md:w-[5.25rem]" : "w-[48px]"
+          }`}
+        >
           <StoreButton
             size={dense ? "sm" : "md"}
             variant={couponStyle === "deal" ? "danger" : "primary"}
@@ -87,7 +91,11 @@ export default function PremiumCouponCard({
               e.stopPropagation();
               onAction?.();
             }}
-            className={`${homeCompact ? "min-h-[72px]" : "min-h-[96px]"} h-full w-full px-0 text-xs leading-tight [writing-mode:vertical-rl]`}
+            className={`${
+              homeCompact
+                ? "min-h-[72px] [writing-mode:vertical-rl] md:min-h-0 md:h-9 md:w-full md:px-2 md:[writing-mode:horizontal-tb]"
+                : "min-h-[96px] [writing-mode:vertical-rl]"
+            } h-full w-full px-0 text-xs leading-tight`}
           >
             {actionLoading ? <Loader2 size={14} className="animate-spin" /> : actionLabel}
           </StoreButton>

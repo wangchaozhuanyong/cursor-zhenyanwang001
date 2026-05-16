@@ -49,6 +49,7 @@ export default function HomeOpsBlocks() {
   const navigate = useNavigate();
   const [navItems, setNavItems] = useState<HomeNavItem[]>([]);
   const [announcements, setAnnouncements] = useState<HomeAnnouncement[]>([]);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
     let alive = true;
@@ -57,11 +58,13 @@ export default function HomeOpsBlocks() {
         if (!alive) return;
         setNavItems(data.navItems || []);
         setAnnouncements(data.announcements || []);
+        setLoadState("ready");
       })
       .catch(() => {
         if (!alive) return;
         setNavItems([]);
         setAnnouncements([]);
+        setLoadState("error");
       });
     return () => {
       alive = false;
@@ -69,8 +72,10 @@ export default function HomeOpsBlocks() {
   }, []);
 
   const topAnnouncements = useMemo(() => announcements.slice(0, 3), [announcements]);
-  const navSource = navItems.length > 0 ? navItems : fallbackNavItems;
+  const navSource =
+    loadState === "error" ? (navItems.length > 0 ? navItems : fallbackNavItems) : navItems;
 
+  if (loadState === "loading") return null;
   if (!topAnnouncements.length && !navSource.length) return null;
 
   return (

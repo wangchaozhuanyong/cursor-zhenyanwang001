@@ -6,21 +6,14 @@ import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import ProductSortBar from "@/components/ProductSortBar";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useProductStore } from "@/stores/useProductStore";
 import type { ProductSortType } from "@/types/product";
 
 export default function NewArrivals() {
   useDocumentTitle("新品上市");
   const navigate = useNavigate();
-  const siteInfo = useSiteInfo();
   const { products, loading, error, loadProducts } = useProductStore();
   const [sort, setSort] = useState<ProductSortType>("newest");
-
-  const heroTitle = (siteInfo.newArrivalHeroTitle || "").trim();
-  const heroSubtitle = (siteInfo.newArrivalHeroSubtitle || "").trim();
-  const heroImage = (siteInfo.newArrivalHeroImage || "").trim();
-  const showHero = Boolean(heroImage || heroTitle || heroSubtitle);
 
   useEffect(() => {
     loadProducts({
@@ -48,18 +41,7 @@ export default function NewArrivals() {
       />
 
       <main className="mx-auto max-w-lg px-4 py-4">
-        {showHero ? (
-          <section className="relative flex h-[100px] items-center overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 theme-shadow">
-            {heroImage ? <img src={heroImage} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" /> : null}
-            {heroImage ? <div className="absolute inset-0 bg-black/25" /> : null}
-            <div className="relative min-w-0">
-              {heroTitle ? <h1 className="truncate text-lg font-black text-white">{heroTitle}</h1> : null}
-              {heroSubtitle ? <p className="mt-1 truncate text-xs font-medium text-white/85">{heroSubtitle}</p> : null}
-            </div>
-          </section>
-        ) : null}
-
-        <section className={showHero ? "mt-4" : ""}>
+        <section>
           <ProductSortBar value={sort} onChange={setSort} />
         </section>
 

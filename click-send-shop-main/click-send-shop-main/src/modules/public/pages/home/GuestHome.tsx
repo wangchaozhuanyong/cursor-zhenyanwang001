@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo } from "react";
+﻿import { useLayoutEffect, useMemo } from "react";
 import { Gem, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -81,8 +81,12 @@ export default function GuestHome() {
     loadHomeData,
   } = useProductStore();
 
-  useEffect(() => {
-    loadHomeData();
+  useLayoutEffect(() => {
+    const { hotProducts, newProducts, recommendedProducts, loading } = useProductStore.getState();
+    if (!loading && (hotProducts.length > 0 || newProducts.length > 0 || recommendedProducts.length > 0)) {
+      useProductStore.setState({ loading: true });
+    }
+    void loadHomeData();
   }, [loadHomeData]);
 
   const gridProducts = useMemo(
@@ -142,7 +146,6 @@ export default function GuestHome() {
   const bottomNavSafe = "pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))]";
   const homeLayout = themeConfig.homeLayout ?? "classic";
   const isPremiumLayout = homeLayout === "premium";
-  const isDealLayout = homeLayout === "deal";
   const isMagazineLayout = homeLayout === "magazine";
   const headerClass =
     themeConfig.headerStyle === "dark"
@@ -183,8 +186,7 @@ export default function GuestHome() {
         <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
           <BannerCarousel banners={banners} themeConfigOverride={themeConfig} />
         </div>
-        {isDealLayout && <div className="-mx-4 mt-3"><HomeOpsBlocks /></div>}
-        {!isDealLayout && <div className="-mx-4 mt-3"><HomeOpsBlocks /></div>}
+        <div className="-mx-4 mt-3"><HomeOpsBlocks /></div>
         <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-[var(--theme-text-muted)] md:text-sm">
           <div className="flex items-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-2">
             <ShieldCheck size={16} className="text-[var(--theme-price)]" />

@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from "react";
+﻿import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import {
   Bell,
   Camera,
@@ -81,40 +81,41 @@ function ProfileHeroCard({
 }) {
   const heroStyle =
     memberCardStyle === "blackGold"
-      ? "bg-[linear-gradient(120deg,#15120f,#2a2218)] text-[#f8e7c0]"
+      ? "bg-[linear-gradient(110deg,#0d0b08,#1e1812_45%,#2b2016)] text-[#f7e6be]"
       : memberCardStyle === "gold"
-        ? "bg-[linear-gradient(120deg,#f5ead1,#ead6aa)] text-[#332817]"
+        ? "bg-[linear-gradient(110deg,#f4e7c8,#dec08b)] text-[#2f2415]"
         : memberCardStyle === "fresh"
-          ? "bg-[linear-gradient(120deg,#e9f7f4,#d8efe9)] text-[#17312a]"
-          : "bg-[var(--theme-surface)] text-[var(--theme-text-on-surface)]";
+          ? "bg-[linear-gradient(110deg,#edf9f4,#d8efe4)] text-[#173429]"
+          : "bg-[linear-gradient(110deg,#191714,#2a241d)] text-[#f2deab]";
 
-  const mutedClass = memberCardStyle === "light" ? "text-[var(--theme-text-muted-on-surface)]" : "opacity-80";
+  const mutedClass = memberCardStyle === "light" ? "text-[#d7c18f]" : "opacity-85";
 
   return (
-    <section className={`${CARD_CLASS} ${SECTION_PADDING} ${heroStyle}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          <button type="button" onClick={onAvatarClick} className="relative shrink-0" aria-label="更换头像">
-            <img src={avatar || logoSrc} alt={userName} className="h-16 w-16 rounded-full object-cover ring-1 ring-[var(--theme-border)]" />
-            <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]">
-              <Camera size={11} />
-            </span>
-          </button>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="truncate text-2xl font-semibold leading-tight">{userName}</p>
-              <span className="rounded-full bg-black/10 px-2 py-0.5 text-[11px] font-semibold">{memberLevelName}</span>
-            </div>
-            <p className={`mt-1 text-sm ${mutedClass}`}>邀请码：{code}</p>
+    <section className={`relative overflow-hidden rounded-3xl p-4 shadow-[var(--theme-shadow)] ${heroStyle}`}>
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-[radial-gradient(circle_at_30%_40%,rgba(255,214,137,.22),transparent_65%)]" />
+      <div className="relative flex items-center gap-3">
+        <button type="button" onClick={onAvatarClick} className="relative shrink-0" aria-label="更换头像">
+          <span className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-[#d6b774] bg-black/30 p-1">
+            <img src={avatar || logoSrc} alt={userName} className="h-full w-full rounded-full object-cover" />
+          </span>
+          <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]">
+            <Camera size={11} />
+          </span>
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="truncate text-[36px] font-bold leading-none">{userName}</p>
+            <span className="shrink-0 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-[#2d2720] shadow-[0_4px_14px_rgba(0,0,0,.2)]">{memberLevelName}</span>
           </div>
+          <p className={`mt-3 truncate text-[20px] font-semibold ${mutedClass}`}>邀请码：{code}</p>
         </div>
       </div>
     </section>
   );
 }
-
 export default function Profile() {
   const navigate = useNavigate();
+  const loggedIn = isLoggedIn();
   const siteInfo = useSiteInfo();
   const siteName = siteInfo.siteName || "真烟网";
   const logoSrc = siteInfo.logoUrl || logoWebp;
@@ -133,7 +134,7 @@ export default function Profile() {
   const { themeConfig } = useThemeRuntime();
 
   useEffect(() => {
-    if (!isLoggedIn()) return;
+    if (!loggedIn) return;
     loadProfile().catch(() => {});
     loadOrders().catch(() => {});
     loadCoupons().catch(() => {});
@@ -141,7 +142,7 @@ export default function Profile() {
     useNotificationStore.getState().fetchUnreadCount();
     inviteService.fetchInviteStats().then((s) => setInviteCount(s.directCount || 0)).catch(() => {});
     rewardService.fetchRewardBalance().then((res) => setRewardBalance(Number(res.balance || 0))).catch(() => setRewardBalance(0));
-  }, [loadCoupons, loadFavorites, loadOrders, loadProfile]);
+  }, [loadCoupons, loadFavorites, loadOrders, loadProfile, loggedIn]);
 
   const handleLogout = async () => {
     await authStore.logout();
@@ -190,20 +191,22 @@ export default function Profile() {
   return (
     <div className="store-page min-h-screen px-4 pb-24 pt-[max(env(safe-area-inset-top),1rem)] text-[var(--theme-text)]">
       <main className="mx-auto max-w-lg space-y-3">
-        <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <img src={logoSrc} alt={siteName} className="h-8 w-8 rounded-lg object-contain" />
-              <p className="text-lg font-semibold text-[var(--theme-text)]">{siteName}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              {isLoggedIn() ? <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} /> : null}
-              <SkinPickerDialog trigger={<button type="button" className="rounded-full bg-[var(--theme-bg)] p-2 text-[var(--theme-text-muted-on-surface)]"><Palette size={16} /></button>} />
+        <section className="space-y-3">
+          <div className={`${CARD_CLASS} ${SECTION_PADDING}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex min-w-0 items-center gap-2">
+                <img src={logoSrc} alt={siteName} className="h-9 w-9 rounded-lg object-contain" />
+                <p className="truncate text-[28px] font-bold tracking-tight text-[var(--theme-text)]">{siteName}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {isLoggedIn() ? <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} /> : null}
+                <SkinPickerDialog trigger={<button type="button" className="rounded-full bg-[var(--theme-bg)] p-2 text-[var(--theme-text-muted-on-surface)]"><Palette size={16} /></button>} />
+              </div>
             </div>
           </div>
 
           {!isLoggedIn() ? (
-            <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] p-4">
+            <div className={`${CARD_CLASS} rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-bg)] p-4`}>
               <div className="flex items-center gap-3">
                 <img src={logoSrc} alt={siteName} className="h-14 w-14 rounded-xl object-cover" />
                 <div className="min-w-0">
@@ -257,14 +260,24 @@ export default function Profile() {
           </div>
         </section>
 
-        <section className={`${CARD_CLASS} ${SECTION_PADDING}`} style={{ background: "linear-gradient(100deg,color-mix(in_srgb,var(--theme-secondary)_12%,var(--theme-surface)),var(--theme-surface))" }}>
-          <div className="flex items-center justify-between gap-3">
+        <section
+          className="relative overflow-hidden rounded-3xl border border-[color-mix(in_srgb,var(--theme-secondary)_18%,var(--theme-border))] p-5 shadow-[var(--theme-shadow)]"
+          style={{ background: "linear-gradient(110deg,#f4ead2,#f0dfbd)" }}
+        >
+          <div className="pointer-events-none absolute right-4 top-1/2 h-20 w-20 -translate-y-1/2 rounded-2xl bg-[radial-gradient(circle_at_35%_30%,#f8e7c6,transparent_55%),linear-gradient(140deg,#e5c88c,#d7ad63)] opacity-95 shadow-[0_8px_24px_rgba(89,58,8,.18)]" />
+          <div className="relative flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-base font-semibold text-[var(--theme-text-on-surface)]">邀请好友得奖励</p>
-              <p className="mt-1 text-xs text-[var(--theme-text-muted-on-surface)]">好友注册/下单后可获得积分或返现</p>
-              <p className="mt-2 text-xs text-[var(--theme-text-muted-on-surface)]">已邀请 {inviteCount} 人，累计返现 RM {rewardBalance.toFixed(2)}</p>
+              <p className="text-[34px] font-bold leading-none text-[#2e2417]">邀请好友得奖励</p>
+              <p className="mt-2 text-sm text-[#4a3b25]">{loggedIn ? "好友注册/下单后可获得积分返现" : "登录后邀请好友，注册/下单可获得积分返现"}</p>
+              <p className="mt-2 text-sm text-[#4a3b25]">{loggedIn ? `已邀请 ${inviteCount} 人，累计返现 RM ${rewardBalance.toFixed(2)}` : "登录后查看邀请人数与累计返现"}</p>
             </div>
-            <button type="button" onClick={() => gateNavigate(navigate, "/invite", true)} className="shrink-0 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]">立即邀请</button>
+            <button
+              type="button"
+              onClick={() => (loggedIn ? gateNavigate(navigate, "/invite", true) : navigate("/login", { state: { from: "/profile" } }))}
+              className="shrink-0 rounded-full bg-[linear-gradient(135deg,#2f2d2a,#141414)] px-4 py-2 text-xs font-semibold text-[#f5e4bc] shadow-[0_6px_14px_rgba(0,0,0,.25)]"
+            >
+              {loggedIn ? "立即邀请" : "登录后邀请"}
+            </button>
           </div>
         </section>
 
@@ -327,3 +340,5 @@ export default function Profile() {
     </div>
   );
 }
+
+

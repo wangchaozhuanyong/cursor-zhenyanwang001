@@ -144,10 +144,10 @@ async function selectProductsAnalysis(dateFrom, dateTo) {
       NULL AS gross_margin,
       p.stock AS current_stock,
       NULL AS available_stock_days,
-      COALESCE(ae.view_count,0) AS view_count,
-      COALESCE(ae.add_cart_count,0) AS add_cart_count,
-      COALESCE(ae.favorite_count,0) AS favorite_count,
-      CASE WHEN COALESCE(ae.view_count,0) > 0 THEN ROUND(COUNT(DISTINCT o.id) / COALESCE(ae.view_count,1), 4) ELSE 0 END AS conversion_rate
+      COALESCE(MAX(ae.view_count),0) AS view_count,
+      COALESCE(MAX(ae.add_cart_count),0) AS add_cart_count,
+      COALESCE(MAX(ae.favorite_count),0) AS favorite_count,
+      CASE WHEN COALESCE(MAX(ae.view_count),0) > 0 THEN ROUND(COUNT(DISTINCT o.id) / COALESCE(MAX(ae.view_count),1), 4) ELSE 0 END AS conversion_rate
      FROM products p
      LEFT JOIN categories c ON c.id COLLATE utf8mb4_unicode_ci = p.category_id COLLATE utf8mb4_unicode_ci
      LEFT JOIN order_items oi ON oi.product_id COLLATE utf8mb4_unicode_ci = p.id COLLATE utf8mb4_unicode_ci

@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef } from "react";
-import { Heart, Minus, Plus, ShoppingCart, ShieldCheck, Truck, WalletCards } from "lucide-react";
+import { Heart, Minus, Plus, ShoppingCart } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useCartStore } from "@/stores/useCartStore";
@@ -9,7 +9,8 @@ import ProductCard from "@/components/ProductCard";
 import ProductReviews from "@/components/ProductReviews";
 import { useProductReviews } from "@/hooks/useProductReviews";
 import ProductImageGallery from "@/components/ProductImageGallery";
-import ProductGalleryToolbar from "@/components/ProductGalleryToolbar";
+import ProductDetailStickyHeader from "@/components/product/ProductDetailStickyHeader";
+import { useProductDetailHeaderSolid } from "@/hooks/useProductDetailHeaderSolid";
 import ProductTagList from "@/components/ProductTagList";
 import { SquishButton } from "@/modules/micro-interactions";
 import TrustInfo from "@/components/TrustInfo";
@@ -21,7 +22,6 @@ import { useGoBack } from "@/hooks/useGoBack";
 import { copyToClipboard } from "@/utils/clipboard";
 import { trackAddToCart, trackProductView } from "@/utils/tracking";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
-import { parseSstEnabled } from "@/utils/sstTax";
 import { trackEvent } from "@/services/analyticsService";
 import { buildProductSharePayload } from "@/utils/productShare";
 
@@ -30,10 +30,10 @@ export default function ProductDetail() {
   const navigate = useNavigate();
   const goBack = useGoBack("/");
   const addItem = useCartStore((s) => s.addItem);
-  const totalItems = useCartStore((s) => s.totalItems());
   const [qty, setQty] = useState(1);
   const [selectedVariantId, setSelectedVariantId] = useState<string>("");
   const trackedProductIdRef = useRef<string | null>(null);
+  const headerSentinelRef = useRef<HTMLDivElement>(null);
 
   const {
     currentProduct: product,
@@ -43,14 +43,17 @@ export default function ProductDetail() {
     loadProductDetail,
   } = useProductStore();
 
+  const headerSolid = useProductDetailHeaderSolid(headerSentinelRef, {
+    observe: Boolean(product) && !loading,
+    defaultSolid: !loading && !product,
+  });
+
   const addToHistory = useHistoryStore((s) => s.addToHistory);
   const isFavorite = useFavoritesStore((s) => (id ? s.isFavorite(id) : false));
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
 
   const reviewsVm = useProductReviews(id ?? "");
   const siteInfo = useSiteInfo();
-  const sstNote = (siteInfo.sstCustomerNote || "").trim();
-  const showSstHint = parseSstEnabled(siteInfo.sstEnabled);
 
   useDocumentTitle(product?.name);
 
@@ -88,14 +91,14 @@ export default function ProductDetail() {
   if (loading) {
     return (
       <div className="store-bottom-action-space min-h-screen bg-background md:pb-0">
+        <ProductDetailStickyHeader
+          solid={false}
+          onBack={goBack}
+          onShare={() => {}}
+          onCart={() => navigate("/cart")}
+        />
         <div className="relative">
           <Skeleton className="w-full" style={{ aspectRatio: "var(--theme-image-ratio)" }} />
-          <ProductGalleryToolbar
-            onBack={goBack}
-            onShare={() => {}}
-            onCart={() => navigate("/cart")}
-            cartCount={totalItems}
-          />
         </div>
         <div className="mx-auto w-full max-w-screen-xl px-4 pt-4 md:px-6 md:py-10">
           <div className="space-y-3 md:max-w-xl">
@@ -110,16 +113,19 @@ export default function ProductDetail() {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="relative min-h-[12rem] bg-[var(--theme-surface)]">
-          <ProductGalleryToolbar
-            onBack={goBack}
-            onShare={() => {}}
-            onCart={() => navigate("/cart")}
-            cartCount={totalItems}
-          />
-        </div>
-        <div className="p-8 text-center text-muted-foreground">
+      <div className="min-h-screen bg-[var(--theme-bg)]">
+        <ProductDetailStickyHeader
+          solid
+          onBack={goBack}
+          onShare={() => {}}
+          onCart={() => navigate("/cart")}
+        />
+        <div
+          className="p-8 text-center text-muted-foreground"
+          style={{
+            paddingTop: "calc(var(--store-tab-header-height, 3.5rem) + env(safe-area-inset-top, 0px) + 2rem)",
+          }}
+        >
           <p>{error ?? "商品不存在"}</p>
           <button
             onClick={() => id && loadProductDetail(id)}
@@ -245,34 +251,42 @@ export default function ProductDetail() {
     }
   };
 
-  const galleryToolbar = (
-    <ProductGalleryToolbar
-      onBack={goBack}
-      onShare={handleShare}
-      onCart={() => navigate("/cart")}
-      cartCount={totalItems}
-    />
-  );
-
   return (
     <div className="store-bottom-action-space min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
+      <ProductDetailStickyHeader
+        solid={headerSolid}
+        onBack={goBack}
+        onShare={handleShare}
+        onCart={() => navigate("/cart")}
+      />
       <main className="mx-auto w-full max-w-screen-xl px-0 md:px-6">
         <div className="md:grid md:grid-cols-2 md:gap-10 md:items-start md:py-10">
-          <div className="md:sticky md:top-6 md:self-start">
+          <div className="md:sticky md:top-[calc(var(--store-tab-header-height,3.5rem)+env(safe-area-inset-top,0px)+1.5rem)] md:self-start">
             <div className="relative overflow-hidden md:theme-rounded md:border md:border-[var(--theme-border)]">
               <ProductImageGallery
                 images={galleryImages}
                 name={product.name}
                 videoUrl={product.video_url}
-                overlay={galleryToolbar}
               />
             </div>
           </div>
 
           {/* 右：商品信息 + 操作 */}
           <div>
+            <div
+              ref={headerSentinelRef}
+              className="pointer-events-none h-px w-full shrink-0"
+              aria-hidden
+            />
             {/* 标签 + 标题 */}
-            <div className="px-4 pt-5 md:px-0 md:pt-0">
+            <div
+              className="px-4 pt-5 md:px-0 md:pt-0"
+              style={
+                headerSolid
+                  ? { scrollMarginTop: "calc(var(--store-tab-header-height, 3.5rem) + env(safe-area-inset-top, 0px))" }
+                  : undefined
+              }
+            >
               <div className="flex flex-wrap items-center gap-2">
                 {product.is_hot && (
                   <span className="theme-rounded bg-[var(--theme-price)] px-2 py-1 text-[10px] font-bold text-[var(--theme-price-foreground)]">
@@ -339,25 +353,6 @@ export default function ProductDetail() {
               {typeof product.sales_count === "number" && product.sales_count > 0 && (
                 <p className="mt-1 text-xs text-muted-foreground">
                   已售 {product.sales_count.toLocaleString()} 件
-                </p>
-              )}
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2.5 py-2 text-center">
-                  <Truck size={14} className="mx-auto text-[var(--theme-primary)]" />
-                  <p className="mt-1 text-[10px] text-[var(--theme-text-muted)]">本地配送</p>
-                </div>
-                <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2.5 py-2 text-center">
-                  <WalletCards size={14} className="mx-auto text-[var(--theme-primary)]" />
-                  <p className="mt-1 text-[10px] text-[var(--theme-text-muted)]">安全支付</p>
-                </div>
-                <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2.5 py-2 text-center">
-                  <ShieldCheck size={14} className="mx-auto text-[var(--theme-primary)]" />
-                  <p className="mt-1 text-[10px] text-[var(--theme-text-muted)]">售后保障</p>
-                </div>
-              </div>
-              {showSstHint && (
-                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                  {sstNote || "商品价格已含 SST，运费不计税。"}
                 </p>
               )}
             </div>
@@ -432,7 +427,6 @@ export default function ProductDetail() {
               <DetailPurchaseBar
                 soldOut={soldOut}
                 isFavorite={isFavorite}
-                totalItems={totalItems}
                 onFavorite={handleFavorite}
                 onAddToCart={handleAddToCart}
                 onBuyNow={handleBuyNow}
@@ -442,18 +436,6 @@ export default function ProductDetail() {
             {/* TrustInfo - 信任三件套（详情页使用 card 强转化样式） */}
             <div className="mt-6 px-4 md:px-0">
               <TrustInfo variant="card" />
-            </div>
-
-            {/* 服务保障 */}
-            <div className="mt-6 grid grid-cols-2 gap-2 px-4 md:px-0">
-              <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-xs text-[var(--theme-text-muted)]">
-                <p className="font-semibold text-[var(--theme-text)]">配送保障</p>
-                <p className="mt-1">本地仓发货，支持物流追踪</p>
-              </div>
-              <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-xs text-[var(--theme-text-muted)]">
-                <p className="font-semibold text-[var(--theme-text)]">售后保障</p>
-                <p className="mt-1">7 天内可申请售后服务</p>
-              </div>
             </div>
 
             {/* 描述 */}
@@ -493,7 +475,6 @@ export default function ProductDetail() {
           <DetailPurchaseBar
             soldOut={soldOut}
             isFavorite={isFavorite}
-            totalItems={totalItems}
             onFavorite={handleFavorite}
             onAddToCart={handleAddToCart}
             onBuyNow={handleBuyNow}
@@ -508,14 +489,12 @@ export default function ProductDetail() {
 function DetailPurchaseBar({
   soldOut,
   isFavorite,
-  totalItems,
   onFavorite,
   onAddToCart,
   onBuyNow,
 }: {
   soldOut: boolean;
   isFavorite: boolean;
-  totalItems: number;
   onFavorite: () => void;
   onAddToCart: () => void;
   onBuyNow: () => void;
@@ -539,16 +518,11 @@ function DetailPurchaseBar({
           type="button"
           onClick={onAddToCart}
           disabled={soldOut}
-          className="relative flex min-w-[3.25rem] flex-col items-center justify-center gap-0.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-2 text-[10px] text-[var(--theme-text-muted)] transition hover:bg-[var(--theme-bg)] disabled:cursor-not-allowed disabled:opacity-50 touch-target"
+          className="flex min-w-[3.25rem] flex-col items-center justify-center gap-0.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-2 text-[10px] text-[var(--theme-text-muted)] transition hover:bg-[var(--theme-bg)] disabled:cursor-not-allowed disabled:opacity-50 touch-target"
           aria-label={soldOut ? "已售罄" : "加入购物车"}
         >
           <ShoppingCart size={20} className="text-[var(--theme-text-muted)]" />
           <span>购物车</span>
-          {totalItems > 0 ? (
-            <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--theme-primary)] px-1 text-[9px] font-bold text-[var(--theme-primary-foreground)]">
-              {totalItems > 99 ? "99+" : totalItems}
-            </span>
-          ) : null}
         </button>
       </div>
       <SquishButton

@@ -1,12 +1,14 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useState } from "react";
-import { Truck, ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useShippingStore, calcShippingFee } from "@/stores/useShippingStore";
 import type { ShippingTemplate } from "@/stores/useShippingStore";
 
 interface ShippingPickerProps {
   totalAmount: number;
   selectedId: number | null;
+  /** 外层已有「配送方式」标题时隐藏卡片内重复标题 */
+  hideHeading?: boolean;
   onSelect: (template: ShippingTemplate, fee: number) => void;
 }
 
@@ -31,7 +33,7 @@ function formatRegions(regions: unknown): string {
   return raw;
 }
 
-export default function ShippingPicker({ totalAmount, selectedId, onSelect }: ShippingPickerProps) {
+export default function ShippingPicker({ totalAmount, selectedId, hideHeading = false, onSelect }: ShippingPickerProps) {
   const [expanded, setExpanded] = useState(false);
   const { templates } = useShippingStore();
   const enabledTemplates = templates.filter((t) => t.enabled);
@@ -43,17 +45,19 @@ export default function ShippingPicker({ totalAmount, selectedId, onSelect }: Sh
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-          <Truck size={16} className="text-gold" /> 配送方式
-        </h3>
-        {enabledTemplates.length > 1 && (
-          <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-1 text-xs text-gold">
-            {expanded ? "收起" : "更多选项"}
-            {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-          </button>
-        )}
-      </div>
+      {(enabledTemplates.length > 1 || !hideHeading) && (
+        <div className={`flex items-center mb-3 ${hideHeading ? "justify-end" : "justify-between"}`}>
+          {!hideHeading && (
+            <h3 className="text-sm font-semibold text-foreground">配送方式</h3>
+          )}
+          {enabledTemplates.length > 1 && (
+            <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-1 text-xs text-gold">
+              {expanded ? "收起" : "更多选项"}
+              {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            </button>
+          )}
+        </div>
+      )}
 
       {!expanded && (
         <div className="flex items-center justify-between rounded-xl bg-secondary p-3">

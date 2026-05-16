@@ -4,6 +4,7 @@ import { Play } from "lucide-react";
 import { PRODUCT_BLUR_PLACEHOLDER } from "@/constants/productBlurPlaceholder";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { ProgressiveImage } from "@/modules/micro-interactions";
+import { productCoverForDetail } from "@/utils/uploadImageVariant";
 
 interface ProductImageGalleryProps {
   images: string[];
@@ -79,11 +80,12 @@ export default function ProductImageGallery({ images, name, videoUrl, overlay }:
               />
             ) : (
               <ProgressiveImage
-                src={currentItem.url}
+                src={productCoverForDetail(currentItem.url)}
                 blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
                 alt={`${name} ${current + 1}`}
                 className="h-full w-full bg-transparent"
                 imgClassName="h-full w-full [object-fit:var(--theme-image-fit,cover)]"
+                sizes="100vw"
                 {...(current === 0 ? { fetchPriority: "high" as const } : {})}
               />
             )}

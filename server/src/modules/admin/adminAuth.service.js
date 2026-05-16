@@ -1,6 +1,9 @@
 const { BusinessError } = require('../../errors/BusinessError');
+const { AuthError } = require('../../errors');
 const authApi = require('../auth/auth.api');
-const { comparePassword, signToken } = require('../../utils/helpers');
+const authService = require('../auth/auth.service');
+const authRepo = require('../auth/auth.repository');
+const { comparePassword, signToken, verifyToken } = require('../../utils/helpers');
 const { logAdminAction } = require('../../utils/adminAudit');
 const { writeAuditLog } = require('../../utils/auditLog');
 const rbacService = require('./rbac.service');
@@ -99,6 +102,30 @@ async function login(body, req) {
   }
 }
 
+async function refresh(refreshToken) {
+  if (!refreshToken) throw new BusinessError(401, '请先登录');
+  let payload;
+  try {
+    payload = verifyToken(refreshToken);
+  } catch {
+    throw new BusinessError(401, '登录已过期，请重新登录');
+  }
+  if (payload.type !== 'refresh') throw new BusinessError(401, '登录已过期，请重新登录');
+
+  const user = await authRepo.selectIdAndRoleByUserId(payload.userId);
+  if (!user) throw new BusinessError(401, '用户不存在');
+  if (user.role !== 'admin' && user.role !== 'super_admin') {
+    throw new BusinessError(403, '无管理员权限');
+  }
+
+  try {
+    return await authService.refresh(refreshToken);
+  } catch (err) {
+    if (err instanceof AuthError) throw new BusinessError(401, err.message || '登录已过期，请重新登录');
+    throw err;
+  }
+}
+
 async function logout(userId, req) {
   if (userId) {
     await authApi.bumpRefreshTokenVersion(userId);
@@ -116,4 +143,4 @@ async function logout(userId, req) {
   return { data: null, message: '已退出登录' };
 }
 
-module.exports = { login, logout };
+module.exports = { login, refresh, logout };

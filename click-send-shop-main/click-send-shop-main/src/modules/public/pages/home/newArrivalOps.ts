@@ -1,4 +1,5 @@
 import type { Product } from "@/types/product";
+import { pickUploadImageVariant, productCoverForList } from "@/utils/uploadImageVariant";
 
 export const NEW_ARRIVAL_OPS_MAX = 6;
 export const NEW_ARRIVAL_AUTO_MS = 4200;
@@ -9,9 +10,9 @@ export function resolveNewArrivalImage(product: Product | null, fallbackIndex: n
   if (!product) return "";
   const images = Array.isArray(product.images) ? product.images.filter(Boolean) : [];
   if (images.length > 0) {
-    return images[fallbackIndex % images.length];
+    return pickUploadImageVariant(images[fallbackIndex % images.length], "card");
   }
-  if (product.cover_image) return product.cover_image;
+  if (product.cover_image) return productCoverForList(product.cover_image);
   return "";
 }
 

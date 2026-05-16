@@ -125,20 +125,6 @@ export interface HomeNavItem {
   updated_at?: string;
 }
 
-export interface HomeAnnouncement {
-  id: string;
-  title: string;
-  content: string;
-  link_url: string;
-  sort_order: number;
-  enabled: boolean;
-  start_at?: string | null;
-  end_at?: string | null;
-  created_at?: string;
-  updated_at?: string;
-}
-
 export interface HomeOpsConfig {
   navItems: HomeNavItem[];
-  announcements: HomeAnnouncement[];
 }

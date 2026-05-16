@@ -15,6 +15,5 @@ export async function fetchHomeOps(): Promise<HomeOpsConfig> {
   const res = await contentApi.getHomeOps();
   return {
     navItems: Array.isArray(res.data?.navItems) ? res.data.navItems : [],
-    announcements: Array.isArray(res.data?.announcements) ? res.data.announcements : [],
   };
 }

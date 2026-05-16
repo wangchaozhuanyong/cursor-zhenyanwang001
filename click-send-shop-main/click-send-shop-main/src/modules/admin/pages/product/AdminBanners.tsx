@@ -148,7 +148,7 @@ export default function AdminBanners() {
           <li>比例建议固定为 2.34:1。</li>
           <li>推荐尺寸：1170×500、1500×640、2340×1000。</li>
           <li>支持 JPG/PNG/WebP/GIF，单张不超过 15MB。</li>
-          <li>Banner 上传走专用压缩策略：最长边 2400，WebP quality 90。</li>
+          <li>Banner 由服务器单次处理：最长边 2560，WebP quality 92（无浏览器二次压缩）。</li>
         </ul>
       </div>
 

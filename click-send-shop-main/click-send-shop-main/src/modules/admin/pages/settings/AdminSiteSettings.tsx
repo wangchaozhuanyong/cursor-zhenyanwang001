@@ -382,7 +382,7 @@ export default function AdminSiteSettings() {
       const res =
         key === "logoUrl" || key === "faviconUrl"
           ? await uploadSiteAsset(key, file)
-          : await uploadSingle(file);
+          : await uploadSingle(file, { mode: "asset" });
       setField(key, res.url);
       if (key === "logoUrl" || key === "faviconUrl") {
         await refreshSiteInfo();

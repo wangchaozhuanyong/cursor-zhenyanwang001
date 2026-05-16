@@ -1,5 +1,5 @@
 ﻿import { useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { Flame, Gift, Heart, RefreshCw, Search, ShoppingCart, Star, Ticket, Truck, ShieldCheck, Wallet } from "lucide-react";
+import { Flame, Gift, RefreshCw, ShoppingCart, Star, Ticket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
@@ -9,17 +9,17 @@ import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useHistoryStore } from "@/stores/useHistoryStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
-import logoWebp from "@/assets/logo.webp";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import BannerCarousel from "@/components/BannerCarousel";
+import HomeTrustBar from "@/components/HomeTrustBar";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
 import HomeOpsBlocks from "./HomeOpsBlocks";
 import NewArrivalOpsSection from "./NewArrivalOpsSection";
 import type { UserCoupon } from "@/types/coupon";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
-import NotificationIconButton from "@/components/NotificationIconButton";
+import StoreTabHeader from "@/components/store/StoreTabHeader";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
@@ -42,7 +42,6 @@ function Header({ title, icon: Icon, subtitle }: { title: string; icon?: React.E
 export default function MemberHome() {
   useDocumentTitle(undefined);
   const navigate = useNavigate();
-  const unreadCount = useNotificationStore((s) => s.unreadCount);
   const { hotProducts, newProducts, recommendedProducts, loading: homeLoading, loadHomeData } = useProductStore();
   const siteInfo = useSiteInfo();
   const couponLoading = useCouponStore((s) => s.loading);
@@ -59,22 +58,12 @@ export default function MemberHome() {
   const orders = useOrderStore((s) => s.orders);
   const loadOrders = useOrderStore((s) => s.loadOrders);
   const [claimingCouponId, setClaimingCouponId] = useState<string | null>(null);
-  const siteName = siteInfo.siteName || "大马通";
-  const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
   const { banners, loading: bannersLoading } = useHomeBanners();
   const { themeConfig } = useThemeRuntime();
   const homeLayout = themeConfig.homeLayout ?? "classic";
   const isPremiumLayout = homeLayout === "premium";
   const isDealLayout = homeLayout === "deal";
   const isMagazineLayout = homeLayout === "magazine";
-  const headerClass =
-    themeConfig.headerStyle === "dark"
-      ? "bg-[color-mix(in_srgb,var(--theme-primary)_88%,black)] text-[var(--theme-primary-foreground)] border-transparent"
-      : themeConfig.headerStyle === "transparent"
-        ? "bg-transparent border-transparent"
-        : themeConfig.headerStyle === "premium"
-          ? "bg-[color-mix(in_srgb,var(--theme-secondary)_16%,var(--theme-surface))] border-[var(--theme-border)]"
-          : "bg-[var(--theme-bg)]/90 border-[var(--theme-border)]";
 
   useLayoutEffect(() => {
     void loadHomeData();
@@ -126,53 +115,16 @@ export default function MemberHome() {
 
   return (
     <div className={`store-bottom-safe min-h-screen text-[var(--theme-text)] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_90%,black)]" : "bg-[var(--theme-bg)]"}`} data-theme-home-layout={themeConfig.homeLayout}>
-      <header className={`sticky top-0 z-40 border-b backdrop-blur-xl ${headerClass}`}>
-        <div className="mx-auto flex h-14 w-full max-w-screen-xl items-center gap-3 px-4">
-          <div className="flex shrink-0 cursor-pointer items-center gap-2" onClick={() => navigate("/")}>
-            <img
-              src={logoSrc}
-              alt={siteName}
-              width={28}
-              height={28}
-              className="h-7 w-7 shrink-0 rounded-md object-contain"
-              loading="eager"
-              decoding="async"
-            />
-            <span className="hidden text-lg font-bold tracking-widest text-[var(--theme-text-on-surface)] sm:block">{siteName}</span>
-          </div>
-          <div className="relative flex-1">
-            <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center"><Search className="h-4 w-4 text-[var(--theme-text-muted)]" /></div>
-            <input type="text" placeholder="搜索商品或品牌..." onFocus={() => navigate("/search")} className="w-full rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] py-1.5 pl-9 pr-4 text-sm text-[var(--theme-text)] focus:border-[var(--theme-price)] focus:outline-none" />
-          </div>
-          <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} />
-        </div>
-      </header>
+      <StoreTabHeader />
       <main className="mx-auto max-w-screen-xl px-4 pt-4">
         <section>
           <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
             <BannerCarousel banners={banners} loading={bannersLoading} themeConfigOverride={themeConfig} />
           </div>
         </section>
+        <HomeTrustBar className="mt-3" />
         <section className="-mx-4 mt-3">
           <HomeOpsBlocks />
-        </section>
-        <section className="mt-3 grid grid-cols-4 gap-2 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
-          <div className="flex items-center gap-1.5 text-xs text-[var(--theme-text)]">
-            <ShieldCheck size={14} className="text-[var(--theme-price)]" />
-            正品保障
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-[var(--theme-text)]">
-            <Truck size={14} className="text-[var(--theme-price)]" />
-            本地配送
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-[var(--theme-text)]">
-            <Wallet size={14} className="text-[var(--theme-price)]" />
-            安全支付
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-[var(--theme-text)]">
-            <Heart size={14} className="text-[var(--theme-price)]" />
-            售后无忧
-          </div>
         </section>
         <section className="mt-section">
           <Header title="会员专属礼包" icon={Ticket} />

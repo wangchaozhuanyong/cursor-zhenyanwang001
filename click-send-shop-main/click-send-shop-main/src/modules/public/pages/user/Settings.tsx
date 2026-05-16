@@ -34,7 +34,7 @@ export default function Settings() {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const data = await uploadService.uploadSingle(file);
+      const data = await uploadService.uploadSingle(file, { mode: "thumb" });
       useUserStore.setState({ avatar: data.url });
       await useUserStore.getState().saveProfile();
       const storage = uploadService.getUploadStorageStatus(data.url);

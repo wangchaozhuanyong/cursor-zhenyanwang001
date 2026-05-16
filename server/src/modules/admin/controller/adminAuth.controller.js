@@ -7,12 +7,24 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 const adminAuthService = require('../adminAuth.service');
 const adminAccountService = require('../adminAccount.service');
-const { setAuthCookies, clearAuthCookies } = require('../../../utils/authCookies');
+const { setAuthCookies, clearAuthCookies, getRefreshTokenFromRequest } = require('../../../utils/authCookies');
 
 exports.login = asyncRoute(async (req, res) => {
   const r = await adminAuthService.login(req.body, req);
   setAuthCookies(req, res, r.data.token, 'admin');
   res.success(r.data, r.message);
+});
+
+exports.refresh = asyncRoute(async (req, res) => {
+  const refreshToken = getRefreshTokenFromRequest(req, 'admin');
+  const r = await adminAuthService.refresh(refreshToken);
+  if (r.data?.accessToken) {
+    setAuthCookies(req, res, {
+      accessToken: r.data.accessToken,
+      refreshToken,
+    }, 'admin');
+  }
+  res.success(r.data);
 });
 
 exports.logout = asyncRoute(async (req, res) => {

@@ -2,8 +2,8 @@
 const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs');
-const sharp = require('sharp');
 const { isS3StorageEnabled, uploadBufferToS3 } = require('../../utils/objectStorage');
+const { normalizeImageMode, optimizeImageFile } = require('../../utils/imageOptimize');
 
 const uploadDir = path.join(__dirname, '../../../public/uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -44,48 +44,59 @@ const fileFilter = (_req, file, cb) => {
   }
 };
 
-function getImagePreset(mode) {
-  if (mode === 'banner') return { width: 2400, height: 2400, quality: 90 };
-  return { width: 1600, height: 1600, quality: 82 };
+async function persistBuffer(filename, buffer, contentType = 'image/webp') {
+  if (isS3StorageEnabled()) {
+    const uploaded = await uploadBufferToS3({
+      key: `uploads/${filename}`,
+      body: buffer,
+      contentType,
+      cacheControl: 'public, max-age=31536000, immutable',
+    });
+    return { filename, url: uploaded.url };
+  }
+  const outPath = path.join(uploadDir, filename);
+  await fs.promises.writeFile(outPath, buffer);
+  return { filename, url: `/uploads/${filename}` };
 }
 
-async function writeImageFromFile(file, mode = 'image') {
+async function writeImageFromFile(file, mode = 'product') {
   if (file.size > IMAGE_MAX_SIZE) throw badRequest('图片大小不能超过 15MB');
   const traceId = crypto.randomUUID();
   const startedAt = Date.now();
-  const filename = `${crypto.randomBytes(16).toString('hex')}.webp`;
+  const normalizedMode = normalizeImageMode(mode);
 
-  const preset = getImagePreset(mode);
   const sharpStartedAt = Date.now();
-  let webpBuffer = null;
+  let optimized;
   try {
-    webpBuffer = await sharp(file.buffer)
-      .rotate()
-      .resize({ width: preset.width, height: preset.height, fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: preset.quality, effort: 3 })
-      .toBuffer();
+    optimized = await optimizeImageFile(file, normalizedMode);
   } catch (_error) {
     throw badRequest('图片文件无法解析，请更换图片后重试');
   }
   const sharpCost = Date.now() - sharpStartedAt;
 
-  if (isS3StorageEnabled()) {
-    const s3StartedAt = Date.now();
-    const uploaded = await uploadBufferToS3({
-      key: `uploads/${filename}`,
-      body: webpBuffer,
-      contentType: 'image/webp',
-      cacheControl: 'public, max-age=31536000, immutable',
-    });
-    const s3Cost = Date.now() - s3StartedAt;
-    console.info(`[upload] traceId=${traceId} mode=${mode} type=${file.mimetype} original=${formatMB(file.size)} optimized=${formatMB(webpBuffer.length)} sharp=${sharpCost}ms s3=${s3Cost}ms total=${Date.now() - startedAt}ms`);
-    return { filename, url: uploaded.url };
+  const uploaded = [];
+  for (const item of optimized.files) {
+    // eslint-disable-next-line no-await-in-loop
+    const saved = await persistBuffer(item.filename, item.buffer);
+    uploaded.push({ ...saved, tag: item.tag });
   }
 
-  const outPath = path.join(uploadDir, filename);
-  await fs.promises.writeFile(outPath, webpBuffer);
-  console.info(`[upload] traceId=${traceId} mode=${mode} type=${file.mimetype} original=${formatMB(file.size)} optimized=${formatMB(webpBuffer.length)} sharp=${sharpCost}ms s3=0ms total=${Date.now() - startedAt}ms`);
-  return { filename, url: `/uploads/${filename}` };
+  const primary =
+    uploaded.find((u) => u.tag === optimized.primaryTag) || uploaded[uploaded.length - 1];
+  const totalBytes = optimized.files.reduce((sum, f) => sum + f.buffer.length, 0);
+
+  console.info(
+    `[upload] traceId=${traceId} mode=${normalizedMode} type=${file.mimetype} original=${formatMB(file.size)} optimized=${formatMB(totalBytes)} variants=${uploaded.length} sharp=${sharpCost}ms total=${Date.now() - startedAt}ms`,
+  );
+
+  return {
+    filename: primary.filename,
+    url: primary.url,
+    variants: uploaded.reduce((acc, u) => {
+      if (u.tag) acc[u.tag] = u.url;
+      return acc;
+    }, {}),
+  };
 }
 
 async function writeVideoFromFile(file) {
@@ -117,7 +128,8 @@ async function writeVideoFromFile(file) {
 
 async function writeMediaFromFile(file, mode = 'auto') {
   if (isVideoFile(file)) return writeVideoFromFile(file);
-  return writeImageFromFile(file, mode === 'banner' ? 'banner' : 'image');
+  const imageMode = mode === 'banner' ? 'banner' : normalizeImageMode(mode);
+  return writeImageFromFile(file, imageMode);
 }
 
 const upload = multer({
@@ -132,9 +144,9 @@ exports.uploadMultiple = upload.array('files', 10);
 exports.uploadFile = async (req, res) => {
   if (!req.file || !req.file.buffer) return res.fail(400, '请选择要上传的文件');
   try {
-    const mode = String(req.body?.mode || req.query?.mode || 'auto').toLowerCase();
-    const { url, filename } = await writeMediaFromFile(req.file, mode);
-    return res.success({ url, filename });
+    const mode = String(req.body?.mode || req.query?.mode || 'product').toLowerCase();
+    const result = await writeMediaFromFile(req.file, mode);
+    return res.success(result);
   } catch (error) {
     const statusCode = Number(error?.statusCode || 500);
     return res.fail(statusCode, error instanceof Error ? error.message : '文件处理失败');
@@ -144,7 +156,7 @@ exports.uploadFile = async (req, res) => {
 exports.uploadFiles = async (req, res) => {
   if (!req.files || !req.files.length) return res.fail(400, '请选择要上传的文件');
   try {
-    const mode = String(req.body?.mode || req.query?.mode || 'auto').toLowerCase();
+    const mode = String(req.body?.mode || req.query?.mode || 'product').toLowerCase();
     const queue = [...req.files];
     const result = [];
     const workers = Array.from({ length: Math.min(UPLOAD_CONCURRENCY, queue.length) }).map(async () => {
@@ -157,7 +169,9 @@ exports.uploadFiles = async (req, res) => {
       }
     });
     await Promise.all(workers);
-    return res.success(result.map(({ url, filename }) => ({ url, filename })));
+    return res.success(
+      result.map(({ url, filename, variants }) => ({ url, filename, variants })),
+    );
   } catch (error) {
     const statusCode = Number(error?.statusCode || 500);
     return res.fail(statusCode, error instanceof Error ? error.message : '文件处理失败');

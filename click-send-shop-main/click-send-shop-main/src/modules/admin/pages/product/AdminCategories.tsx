@@ -134,7 +134,7 @@ export default function AdminCategories() {
 
   const uploadIcon = async (file: File, target: "create" | "edit") => {
     try {
-      const res = await uploadService.uploadSingle(file);
+      const res = await uploadService.uploadSingle(file, { mode: "thumb" });
       const url = res.url || "";
       if (!url) throw new Error("服务器未返回图片地址");
       if (target === "create") setFormData((f) => ({ ...f, icon_url: url }));

@@ -1,8 +1,7 @@
-﻿import { useEffect, useMemo, useState } from "react";
-import { Bell, ChevronRight } from "lucide-react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { fetchHomeOps } from "@/services/contentService";
-import type { HomeAnnouncement, HomeNavItem } from "@/types/content";
+import type { HomeNavItem } from "@/types/content";
 
 function openTarget(navigate: ReturnType<typeof useNavigate>, url: string) {
   const target = url.trim();
@@ -48,7 +47,6 @@ const fallbackNavItems: HomeNavItem[] = [
 export default function HomeOpsBlocks() {
   const navigate = useNavigate();
   const [navItems, setNavItems] = useState<HomeNavItem[]>([]);
-  const [announcements, setAnnouncements] = useState<HomeAnnouncement[]>([]);
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
@@ -57,13 +55,11 @@ export default function HomeOpsBlocks() {
       .then((data) => {
         if (!alive) return;
         setNavItems(data.navItems || []);
-        setAnnouncements(data.announcements || []);
         setLoadState("ready");
       })
       .catch(() => {
         if (!alive) return;
         setNavItems([]);
-        setAnnouncements([]);
         setLoadState("error");
       });
     return () => {
@@ -71,52 +67,14 @@ export default function HomeOpsBlocks() {
     };
   }, []);
 
-  const topAnnouncements = useMemo(() => announcements.slice(0, 3), [announcements]);
   const navSource =
     loadState === "error" ? (navItems.length > 0 ? navItems : fallbackNavItems) : navItems;
 
   if (loadState === "loading") return null;
-  if (!topAnnouncements.length && !navSource.length) return null;
+  if (!navSource.length) return null;
 
   return (
-    <div className="space-y-3 px-4">
-      {topAnnouncements.length > 0 && (
-        <section className="space-y-2">
-          {topAnnouncements.map((item) => {
-            const hasLink = Boolean(item.link_url?.trim());
-            const title = normalizeText(item.title, "公告");
-            const content = normalizeText(item.content);
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => openTarget(navigate, item.link_url)}
-                className={`flex w-full items-center gap-3 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2.5 text-left shadow-[var(--theme-shadow)] transition-colors active:scale-[0.99] ${
-                  hasLink ? "cursor-pointer hover:bg-[var(--theme-surface)]" : "cursor-default"
-                }`}
-              >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_12%,transparent)] text-[var(--theme-price)]" aria-hidden>
-                  <Bell className="size-[18px] shrink-0" strokeWidth={2} />
-                </span>
-                <span className="min-w-0 flex-1 text-xs leading-snug text-[var(--theme-text)]">
-                  <span className="line-clamp-2">
-                    <strong className="font-semibold text-[var(--theme-text)]">{title}</strong>
-                    {content ? <span className="text-[var(--theme-text-muted)]"> · {content}</span> : null}
-                  </span>
-                </span>
-                {hasLink ? (
-                  <span className="flex size-9 shrink-0 items-center justify-center text-[var(--theme-text-muted)]" aria-hidden>
-                    <ChevronRight className="size-[18px] shrink-0" strokeWidth={2} />
-                  </span>
-                ) : (
-                  <span className="size-9 shrink-0" aria-hidden />
-                )}
-              </button>
-            );
-          })}
-        </section>
-      )}
-
+    <div className="px-4">
       <section className="-mx-4 overflow-x-auto px-4 pb-1">
         <div className="flex min-w-max gap-2">
           {navSource.slice(0, 12).map((item) => (

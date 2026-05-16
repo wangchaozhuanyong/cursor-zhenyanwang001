@@ -15,11 +15,6 @@ function normalizeBool(value, fallback = true) {
   return value === true || value === 1 || value === '1' || value === 'true';
 }
 
-function normalizeDate(value) {
-  const s = trimString(value, 32);
-  return s || null;
-}
-
 function formatNavItem(row) {
   return {
     id: row.id,
@@ -30,21 +25,6 @@ function formatNavItem(row) {
     target_category_id: row.target_category_id || null,
     sort_order: Number(row.sort_order || 0),
     enabled: !!row.enabled,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-  };
-}
-
-function formatAnnouncement(row) {
-  return {
-    id: row.id,
-    title: row.title || '',
-    content: row.content || '',
-    link_url: row.link_url || '',
-    sort_order: Number(row.sort_order || 0),
-    enabled: !!row.enabled,
-    start_at: row.start_at,
-    end_at: row.end_at,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -123,76 +103,9 @@ async function deleteNavItem(id) {
   return { data: null, message: '删除成功' };
 }
 
-async function listAnnouncements(options) {
-  const rows = await repo.selectAnnouncements(options);
-  return rows.map(formatAnnouncement);
-}
-
-async function createAnnouncement(body) {
-  const title = trimString(body.title, 120);
-  const content = trimString(body.content, 500);
-  if (!title && !content) return { error: { code: 400, message: '公告标题或内容至少填写一项' } };
-  const item = {
-    id: generateId(),
-    title,
-    content,
-    linkUrl: trimString(body.link_url ?? body.linkUrl, 512),
-    sortOrder: toSortOrder(body.sort_order ?? body.sortOrder, 0),
-    enabled: normalizeBool(body.enabled, true),
-    startAt: normalizeDate(body.start_at ?? body.startAt),
-    endAt: normalizeDate(body.end_at ?? body.endAt),
-  };
-  await repo.insertAnnouncement(item);
-  const rows = await repo.selectAnnouncements();
-  return { data: rows.map(formatAnnouncement).find((r) => r.id === item.id), message: '创建成功' };
-}
-
-async function updateAnnouncement(id, body) {
-  const fields = [];
-  const values = [];
-  if (body.title !== undefined) {
-    fields.push('title = ?');
-    values.push(trimString(body.title, 120));
-  }
-  if (body.content !== undefined) {
-    fields.push('content = ?');
-    values.push(trimString(body.content, 500));
-  }
-  if (body.link_url !== undefined || body.linkUrl !== undefined) {
-    fields.push('link_url = ?');
-    values.push(trimString(body.link_url ?? body.linkUrl, 512));
-  }
-  if (body.sort_order !== undefined || body.sortOrder !== undefined) {
-    fields.push('sort_order = ?');
-    values.push(toSortOrder(body.sort_order ?? body.sortOrder, 0));
-  }
-  if (body.enabled !== undefined) {
-    fields.push('enabled = ?');
-    values.push(normalizeBool(body.enabled, true) ? 1 : 0);
-  }
-  if (body.start_at !== undefined || body.startAt !== undefined) {
-    fields.push('start_at = ?');
-    values.push(normalizeDate(body.start_at ?? body.startAt));
-  }
-  if (body.end_at !== undefined || body.endAt !== undefined) {
-    fields.push('end_at = ?');
-    values.push(normalizeDate(body.end_at ?? body.endAt));
-  }
-  await repo.updateAnnouncement(id, fields, values);
-  return { data: null, message: '更新成功' };
-}
-
-async function deleteAnnouncement(id) {
-  await repo.deleteAnnouncement(id);
-  return { data: null, message: '删除成功' };
-}
-
 async function getPublicHomeOps() {
-  const [navItems, announcements] = await Promise.all([
-    listNavItems({ publicOnly: true }),
-    listAnnouncements({ publicOnly: true }),
-  ]);
-  return { navItems, announcements };
+  const navItems = await listNavItems({ publicOnly: true });
+  return { navItems };
 }
 
 module.exports = {
@@ -200,9 +113,5 @@ module.exports = {
   createNavItem,
   updateNavItem,
   deleteNavItem,
-  listAnnouncements,
-  createAnnouncement,
-  updateAnnouncement,
-  deleteAnnouncement,
   getPublicHomeOps,
 };

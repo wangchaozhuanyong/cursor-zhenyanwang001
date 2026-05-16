@@ -25,7 +25,6 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { ORDER_STATUS } from "@/constants/statusDictionary";
 import * as userShippingService from "@/services/userShippingService";
 import { copyToClipboard } from "@/utils/clipboard";
-import TrustInfo from "@/components/TrustInfo";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import type { PublicPaymentChannel } from "@/services/paymentService";
 import { trackBeginCheckout, trackPurchase } from "@/utils/tracking";
@@ -708,7 +707,6 @@ export default function Checkout() {
             selectedOnlineChannelCode={selectedPaymentChannelCode}
             onOnlineChannelChange={setSelectedPaymentChannelCode}
           />
-          <TrustInfo className="mt-3" />
         </div>
 
         <div className="px-1">
@@ -731,6 +729,7 @@ export default function Checkout() {
         <ShippingPicker
           totalAmount={rawTotal}
           selectedId={shippingId}
+          hideHeading
           onSelect={(t) => { setShippingId(t.id); }}
         />
         {(shippingRulesLoading || shippingQuoteLoading) && (
@@ -798,7 +797,6 @@ export default function Checkout() {
               >
                 {submitCtaLabel(paymentMethod, submitting)}
               </button>
-              <TrustInfo className="mt-4" />
             </div>
           </aside>
         </div>
@@ -1308,8 +1306,6 @@ function OrderSuccess({
             </div>
           </div>
         </div>
-
-        <TrustInfo className="mt-6 rounded-2xl border border-border bg-card p-4" />
 
         <div className="mt-6 space-y-3">
           <button

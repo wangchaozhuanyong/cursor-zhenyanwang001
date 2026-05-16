@@ -60,6 +60,7 @@ const router = Router();
 
 /* ---- Auth & Account ---- */
 router.post('/auth/login', authCtrl.login);
+router.post('/auth/refresh', authCtrl.refresh);
 router.post('/auth/logout', adminAuth, authCtrl.logout);
 router.get('/account/profile', adminAuth, authCtrl.getProfile);
 router.put('/account/profile', adminAuth, authCtrl.updateProfile);
@@ -264,10 +265,6 @@ router.get('/home-ops/nav-items', adminAuth, requirePermission('home_ops.manage'
 router.post('/home-ops/nav-items', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.createNavItem);
 router.put('/home-ops/nav-items/:id', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.updateNavItem);
 router.delete('/home-ops/nav-items/:id', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.deleteNavItem);
-router.get('/home-ops/announcements', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.listAnnouncements);
-router.post('/home-ops/announcements', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.createAnnouncement);
-router.put('/home-ops/announcements/:id', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.updateAnnouncement);
-router.delete('/home-ops/announcements/:id', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.deleteAnnouncement);
 
 /* ---- Member Levels ---- */
 router.get('/member-levels', adminAuth, requirePermission('member_level.manage'), memberLevelCtrl.list);

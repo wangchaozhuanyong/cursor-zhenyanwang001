@@ -1,10 +1,9 @@
 ﻿import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { ArrowLeft, ChevronDown } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { useGoBack } from "@/hooks/useGoBack";
+import { ChevronDown } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
-import NotificationIconButton from "@/components/NotificationIconButton";
+import StoreTabHeader from "@/components/store/StoreTabHeader";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import ProductFilterDrawer from "@/components/ProductFilterDrawer";
@@ -19,9 +18,6 @@ import { trackEvent } from "@/services/analyticsService";
 import { toast } from "sonner";
 
 export default function Categories() {
-  const goBack = useGoBack();
-  const navigate = useNavigate();
-  const unreadCount = useNotificationStore((s) => s.unreadCount);
   const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -139,13 +135,7 @@ export default function Categories() {
 
   return (
     <div className="store-bottom-safe min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
-      <header className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
-          <button onClick={goBack} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary"><ArrowLeft size={20} className="text-foreground" /></button>
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="搜索商品..." className="flex-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-2 text-sm text-[var(--theme-text)] outline-none placeholder:text-[var(--theme-text-muted)]" />
-          <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} />
-        </div>
-      </header>
+      <StoreTabHeader searchMode="filter" searchValue={query} onSearchChange={setQuery} searchPlaceholder="搜索商品..." />
 
       <main className="mx-auto max-w-screen-xl">
         <div className="no-scrollbar flex gap-2 overflow-x-auto border-b border-[var(--theme-border)] px-4 py-3 md:hidden">

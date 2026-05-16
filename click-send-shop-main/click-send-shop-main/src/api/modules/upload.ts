@@ -1,3 +1,4 @@
+import { tryRefreshAdminSession } from "@/api/request";
 import {
   clearAdminTokens,
   clearTokens,
@@ -22,7 +23,8 @@ const S3_HOST_ALLOWLIST =
     .filter(Boolean) ?? [];
 
 export type UploadProgressCallback = (percent: number) => void;
-export type UploadMode = "image" | "video" | "banner" | "auto";
+/** @deprecated 请用 product；服务端会将 image 视为 product */
+export type UploadMode = "product" | "banner" | "thumb" | "asset" | "video" | "auto" | "image";
 export type UploadRequestOptions = {
   onProgress?: UploadProgressCallback;
   timeoutMs?: number;
@@ -83,15 +85,17 @@ function validateVideoFile(file: File) {
 }
 
 export function validateUploadFile(file: File, mode: UploadMode = "auto"): void {
-  if (mode === "image") {
-    validateImageFile(file);
-    return;
-  }
   if (mode === "video") {
     validateVideoFile(file);
     return;
   }
-  if (mode === "banner") {
+  if (
+    mode === "product" ||
+    mode === "image" ||
+    mode === "banner" ||
+    mode === "thumb" ||
+    mode === "asset"
+  ) {
     validateImageFile(file);
     return;
   }
@@ -182,11 +186,23 @@ async function doUpload<T>(url: string, formData: FormData, options: UploadReque
   }
 
   if (result.status === 401 && adminMode) {
-    clearAdminTokens();
-    if (typeof window !== "undefined" && !window.location.pathname.startsWith("/admin/login")) {
-      window.location.href = "/admin/login";
+    try {
+      await tryRefreshAdminSession();
+      result = await xhrUpload<T>(url, formData, getAdminAccessToken(), options);
+    } catch {
+      clearAdminTokens();
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/admin/login")) {
+        window.location.href = "/admin/login";
+      }
+      throw new Error(extractMessageFromBody((result.payload ?? {}) as Record<string, unknown>) || "管理员登录已过期，请重新登录");
     }
-    throw new Error(extractMessageFromBody((result.payload ?? {}) as Record<string, unknown>) || "管理员登录已过期，请重新登录");
+    if (result.status === 401) {
+      clearAdminTokens();
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/admin/login")) {
+        window.location.href = "/admin/login";
+      }
+      throw new Error(extractMessageFromBody((result.payload ?? {}) as Record<string, unknown>) || "管理员登录已过期，请重新登录");
+    }
   }
 
   const payload = result.payload || {};
@@ -227,17 +243,23 @@ export function getUploadStorageStatus(url: string): {
   }
 }
 
+export type UploadFileResult = {
+  url: string;
+  filename: string;
+  variants?: Partial<Record<"card" | "detail" | "full", string>>;
+};
+
 export async function uploadFile(
   file: File,
   options: UploadRequestOptions = {},
-): Promise<{ url: string; filename: string }> {
+): Promise<UploadFileResult> {
   validateUploadFile(file, options.mode ?? "auto");
   const formData = new FormData();
   formData.append("file", file, file.name);
   if (options.mode) formData.append("mode", options.mode);
   const path = (options.adminMode ?? inAdminContext()) ? `${BASE_URL}/admin/upload` : `${BASE_URL}/upload`;
   try {
-    return await doUpload<{ url: string; filename: string }>(path, formData, options);
+    return await doUpload<UploadFileResult>(path, formData, options);
   } catch (error) {
     throw normalizeUploadError(error);
   }
@@ -246,7 +268,7 @@ export async function uploadFile(
 export async function uploadFiles(
   files: File[],
   options: UploadRequestOptions = {},
-): Promise<{ url: string; filename: string }[]> {
+): Promise<UploadFileResult[]> {
   const formData = new FormData();
   for (const file of files) {
     validateUploadFile(file, options.mode ?? "auto");
@@ -255,7 +277,7 @@ export async function uploadFiles(
   if (options.mode) formData.append("mode", options.mode);
   const path = (options.adminMode ?? inAdminContext()) ? `${BASE_URL}/admin/upload/multiple` : `${BASE_URL}/upload/multiple`;
   try {
-    return await doUpload<{ url: string; filename: string }[]>(path, formData, options);
+    return await doUpload<UploadFileResult[]>(path, formData, options);
   } catch (error) {
     throw normalizeUploadError(error);
   }

@@ -91,6 +91,7 @@
     --theme-admin-mode: fixed;
     --store-bottom-nav-height: 72px;
     --store-action-bar-height: 4.75rem;
+    --store-tab-header-height: 3.5rem;
   }
 
   .dark {
@@ -208,6 +209,9 @@
   }
   .store-bottom-safe {
     padding-bottom: calc(var(--store-bottom-nav-height, 72px) + env(safe-area-inset-bottom, 0px));
+  }
+  .store-tab-header-offset {
+    padding-top: calc(var(--store-tab-header-height, 3.5rem) + env(safe-area-inset-top, 0px));
   }
   .store-bottom-action-space {
     padding-bottom: calc(var(--store-action-bar-height, 4.75rem) + env(safe-area-inset-bottom, 0px));

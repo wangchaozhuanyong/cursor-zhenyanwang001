@@ -172,6 +172,7 @@ const authSensitiveLimiter = rateLimit({
 app.use('/api/auth/password-reset/request', authSensitiveLimiter);
 app.use('/api/auth/password-reset/confirm', authSensitiveLimiter);
 app.use('/api/auth/refresh', authSensitiveLimiter);
+app.use('/api/admin/auth/refresh', authSensitiveLimiter);
 app.use('/api/auth/otp/send', authSensitiveLimiter);
 app.use('/api/auth/otp/login', authLimiter);
 app.use('/api/auth/oauth/exchange', authSensitiveLimiter);

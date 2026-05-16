@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import SkinPickerDialog from "@/components/SkinPickerDialog";
 import NotificationIconButton from "@/components/NotificationIconButton";
+import StoreTabHeader from "@/components/store/StoreTabHeader";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useCouponStore } from "@/stores/useCouponStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
@@ -113,6 +114,21 @@ function ProfileHeroCard({
     </section>
   );
 }
+
+/** 邀请横幅右侧礼物标识（与「立即邀请」按钮上下排列，固定尺寸避免重叠） */
+function InviteGiftBadge() {
+  return (
+    <div
+      className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[linear-gradient(155deg,#fff9ed_0%,#f4ddb2_48%,#e8c078_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,.7),0_8px_16px_rgba(120,78,20,.14)] ring-1 ring-[#cf9f4d]/35"
+      aria-hidden
+    >
+      <span className="absolute -top-px left-1/2 h-2 w-[18px] -translate-x-1/2 rounded-[3px] bg-[#d4a24c]" />
+      <span className="absolute top-1 left-1/2 h-[7px] w-[7px] -translate-x-1/2 rounded-full bg-[#f5e6c8] ring-1 ring-[#c89a3f]/45" />
+      <Gift className="relative z-[1] text-[#9a6318]" size={22} strokeWidth={2.25} />
+    </div>
+  );
+}
+
 export default function Profile() {
   const navigate = useNavigate();
   const loggedIn = isLoggedIn();
@@ -154,7 +170,7 @@ export default function Profile() {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const data = await uploadService.uploadSingle(file);
+      const data = await uploadService.uploadSingle(file, { mode: "thumb" });
       useUserStore.setState({ avatar: data.url });
       await useUserStore.getState().saveProfile();
       toast.success("头像已更新", toastPresetQuickSuccess);
@@ -189,17 +205,17 @@ export default function Profile() {
   ];
 
   return (
-    <div className="store-page store-bottom-safe min-h-screen px-4 pt-[max(env(safe-area-inset-top),1rem)] text-[var(--theme-text)]">
-      <main className="mx-auto max-w-lg space-y-4">
+    <div className="store-page store-bottom-safe min-h-screen text-[var(--theme-text)]">
+      <StoreTabHeader
+        rightSlot={(
+          <>
+            {loggedIn ? <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} /> : null}
+            <SkinPickerDialog trigger={<button type="button" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50 text-[var(--theme-text-muted-on-surface)]"><Palette size={16} /></button>} />
+          </>
+        )}
+      />
+      <main className="mx-auto max-w-lg space-y-4 px-4 pt-4">
         <section className="space-y-3">
-          <div className="flex items-center justify-between py-1">
-            <img src={logoSrc} alt={siteName} className="h-10 w-10 rounded-xl object-contain shadow-sm" />
-            <div className="flex shrink-0 items-center gap-2">
-              {loggedIn ? <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} /> : null}
-              <SkinPickerDialog trigger={<button type="button" className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--theme-surface)] text-[var(--theme-text-muted-on-surface)] shadow-[var(--theme-shadow)]"><Palette size={17} /></button>} />
-            </div>
-          </div>
-
           {!loggedIn ? (
             <div className={`${CARD_CLASS} relative overflow-hidden p-4`}>
               <div className="absolute inset-x-0 top-0 h-1 bg-[var(--theme-primary)]" />
@@ -252,21 +268,25 @@ export default function Profile() {
           </div>
           <div className="mx-4 mb-4 border-t border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] pt-3">
             <div
-              className="relative overflow-hidden rounded-[22px] border border-[#ead8ad] px-4 py-3"
+              className="relative overflow-hidden rounded-[22px] border border-[#ead8ad] px-4 py-3.5"
               style={{ background: "linear-gradient(110deg,#f7edd3,#efdcb8)" }}
             >
-              <div className="grid grid-cols-[1fr_88px] items-center gap-3">
-                <div className="min-w-0">
+              <div className="flex items-stretch gap-3">
+                <div className="min-w-0 flex-1 pr-1">
                   <p className="truncate text-base font-bold text-[#2e2417]">邀请好友得奖励</p>
-                  <p className="mt-1 truncate text-xs text-[#5b4a30]">{loggedIn ? "好友注册/下单后可获得积分返现" : "登录后邀请好友获得积分返现"}</p>
-                  <p className="mt-1 truncate text-xs text-[#5b4a30]">{loggedIn ? `已邀请 ${inviteCount} 人，累计返现 RM ${rewardBalance.toFixed(2)}` : "登录后查看邀请奖励"}</p>
+                  <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#5b4a30]">
+                    {loggedIn ? "好友注册/下单后可获得积分返现" : "登录后邀请好友获得积分返现"}
+                  </p>
+                  <p className="mt-1 truncate text-xs text-[#5b4a30]">
+                    {loggedIn ? `已邀请 ${inviteCount} 人，累计返现 RM ${rewardBalance.toFixed(2)}` : "登录后查看邀请奖励"}
+                  </p>
                 </div>
-                <div className="flex min-w-0 flex-col items-center gap-2">
-                  <div className="h-10 w-12 rounded-2xl bg-[linear-gradient(140deg,#f6dfaa,#d8ac62)] shadow-[0_8px_18px_rgba(89,58,8,.18)] ring-1 ring-[#c79547]/30" />
+                <div className="flex w-[76px] shrink-0 flex-col items-center justify-between gap-2.5 py-0.5">
+                  <InviteGiftBadge />
                   <button
                     type="button"
                     onClick={() => (loggedIn ? gateNavigate(navigate, "/invite", true) : navigate("/login", { state: { from: "/profile" } }))}
-                    className="w-full rounded-full bg-[linear-gradient(135deg,#2f2d2a,#141414)] px-2 py-1.5 text-xs font-semibold text-[#f5e4bc] shadow-[0_6px_14px_rgba(0,0,0,.22)]"
+                    className="w-full whitespace-nowrap rounded-full bg-[linear-gradient(135deg,#2f2d2a,#141414)] px-2 py-1.5 text-xs font-semibold text-[#f5e4bc] shadow-[0_6px_14px_rgba(0,0,0,.22)]"
                   >
                     {loggedIn ? "立即邀请" : "去登录"}
                   </button>

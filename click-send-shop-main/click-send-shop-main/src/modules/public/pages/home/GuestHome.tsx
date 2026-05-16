@@ -1,12 +1,14 @@
 ﻿import { useLayoutEffect, useMemo } from "react";
-import { Gem, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import logoWebp from "@/assets/logo.webp";
+import StoreTabHeader from "@/components/store/StoreTabHeader";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import BannerCarousel from "@/components/BannerCarousel";
+import HomeTrustBar from "@/components/HomeTrustBar";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
 import { useProductStore } from "@/stores/useProductStore";
 import GuestMobileFooter from "@/components/GuestMobileFooter";
@@ -137,31 +139,13 @@ export default function GuestHome() {
   const homeLayout = themeConfig.homeLayout ?? "classic";
   const isPremiumLayout = homeLayout === "premium";
   const isMagazineLayout = homeLayout === "magazine";
-  const headerClass =
-    themeConfig.headerStyle === "dark"
-      ? "bg-[color-mix(in_srgb,var(--theme-primary)_88%,black)] text-[var(--theme-primary-foreground)] border-transparent"
-      : themeConfig.headerStyle === "transparent"
-        ? "bg-transparent border-transparent"
-        : themeConfig.headerStyle === "premium"
-          ? "bg-[color-mix(in_srgb,var(--theme-secondary)_16%,var(--theme-surface))] border-[var(--theme-border)]"
-          : "bg-[var(--theme-bg)]/90 border-[var(--theme-border)]";
-
   return (
     <div className={`min-h-screen bg-[var(--theme-bg)] ${bottomNavSafe} text-[var(--theme-text)]`} data-theme-home-layout={themeConfig.homeLayout}>
-      <header className={`fixed left-0 right-0 top-0 z-40 border-b backdrop-blur-xl ${headerClass}`}>
-        <div className="mx-auto flex h-14 w-full max-w-screen-xl items-center justify-between px-4">
-          <div className="flex min-w-0 cursor-pointer items-center gap-2" onClick={() => navigate(ROUTES.HOME)}>
-            <img
-              src={logoSrc}
-              alt={siteName}
-              width={28}
-              height={28}
-              className="h-7 w-7 shrink-0 rounded-md object-contain"
-              loading="eager"
-              decoding="async"
-            />
-            <h1 className="min-w-0 truncate text-lg font-bold tracking-widest text-[var(--theme-text-on-surface)]">{siteName}</h1>
-          </div>
+      <StoreTabHeader
+        position="fixed"
+        searchMode="none"
+        showSiteNameMobile
+        rightSlot={(
           <button
             type="button"
             onClick={() => navigate(ROUTES.LOGIN, { state: { from: ROUTES.HOME } })}
@@ -169,28 +153,15 @@ export default function GuestHome() {
           >
             登录 / 注册
           </button>
-        </div>
-      </header>
+        )}
+      />
 
-      <main className={`mx-auto max-w-screen-xl px-4 pt-[4.5rem] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_88%,black)]" : ""}`}>
+      <main className={`store-tab-header-offset mx-auto max-w-screen-xl px-4 ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_88%,black)]" : ""}`}>
         <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
           <BannerCarousel banners={banners} themeConfigOverride={themeConfig} />
         </div>
+        <HomeTrustBar className="mt-3" />
         <div className="-mx-4 mt-3"><HomeOpsBlocks /></div>
-        <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-[var(--theme-text-muted)] md:text-sm">
-          <div className="flex items-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-2">
-            <ShieldCheck size={16} className="text-[var(--theme-price)]" />
-            正品保障
-          </div>
-          <div className="flex items-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-2">
-            <Truck size={16} className="text-[var(--theme-price)]" />
-            快速配送
-          </div>
-          <div className="flex items-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-2">
-            <Gem size={16} className="text-[var(--theme-price)]" />
-            安心售后
-          </div>
-        </div>
 
         <NewArrivalOpsSection
           products={newProducts}

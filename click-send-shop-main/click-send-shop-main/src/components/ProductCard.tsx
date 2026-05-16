@@ -8,6 +8,7 @@ import ProductTagList from "@/components/ProductTagList";
 import StoreBadge from "@/components/ui/StoreBadge";
 import StorePrice from "@/components/ui/StorePrice";
 import { productSalesLabel } from "@/utils/productSales";
+import { productCoverForList } from "@/utils/uploadImageVariant";
 import { trackEvent } from "@/services/analyticsService";
 
 interface Props {
@@ -23,6 +24,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
   const defaultVariant = product.default_variant ?? (product.variants?.length === 1 ? product.variants[0] : null);
   const displayStock = Number(defaultVariant?.stock ?? product.stock ?? 0);
   const soldOut = displayStock <= 0;
+  const coverSrc = productCoverForList(product.cover_image);
   const salesCount = Math.max(0, Number(product.sales_count) || 0);
 
   const openDetail = (module: string) => {
@@ -64,11 +66,12 @@ export default function ProductCard({ product, index = 0 }: Props) {
         <div className="flex gap-3 p-3">
           <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)]">
             <ProgressiveImage
-              src={product.cover_image}
+              src={coverSrc}
               blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
               alt={product.name}
               className="h-full w-full bg-transparent"
               imgClassName="h-full w-full [object-fit:var(--theme-image-fit,cover)]"
+              sizes="(max-width: 768px) 28vw, 200px"
             />
           </div>
           <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 py-0.5">
@@ -93,11 +96,12 @@ export default function ProductCard({ product, index = 0 }: Props) {
         style={{ aspectRatio: isPremium ? "1 / 1" : "var(--theme-image-ratio)" }}
       >
         <ProgressiveImage
-          src={product.cover_image}
+          src={coverSrc}
           blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
           alt={product.name}
           className="h-full w-full bg-transparent"
           imgClassName="h-full w-full transition-all duration-300 ease-in-out group-hover:scale-105 [object-fit:var(--theme-image-fit,cover)]"
+          sizes="(max-width: 768px) 45vw, 320px"
         />
         <div className="absolute left-2 top-2 flex flex-wrap gap-1">
           {product.active_activity && (

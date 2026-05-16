@@ -21,19 +21,3 @@ exports.updateNavItem = asyncRoute(async (req, res) => {
 exports.deleteNavItem = asyncRoute(async (req, res) => {
   sendResult(res, await svc.deleteNavItem(req.params.id));
 });
-
-exports.listAnnouncements = asyncRoute(async (_req, res) => {
-  res.success(await svc.listAnnouncements());
-});
-
-exports.createAnnouncement = asyncRoute(async (req, res) => {
-  sendResult(res, await svc.createAnnouncement(req.body));
-});
-
-exports.updateAnnouncement = asyncRoute(async (req, res) => {
-  sendResult(res, await svc.updateAnnouncement(req.params.id, req.body));
-});
-
-exports.deleteAnnouncement = asyncRoute(async (req, res) => {
-  sendResult(res, await svc.deleteAnnouncement(req.params.id));
-});

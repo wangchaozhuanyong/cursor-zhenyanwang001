@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import { Search } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import PageHeader from "@/components/PageHeader";
+import StoreTabHeader from "@/components/store/StoreTabHeader";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import ProductSortBar from "@/components/ProductSortBar";
@@ -11,7 +9,6 @@ import type { ProductSortType } from "@/types/product";
 
 export default function NewArrivals() {
   useDocumentTitle("新品上市");
-  const navigate = useNavigate();
   const { products, loading, error, loadProducts } = useProductStore();
   const [sort, setSort] = useState<ProductSortType>("newest");
 
@@ -26,19 +23,7 @@ export default function NewArrivals() {
 
   return (
     <div className="store-bottom-safe min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
-      <PageHeader
-        title="新品上市"
-        rightSlot={(
-          <button
-            type="button"
-            onClick={() => navigate("/search")}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]"
-            aria-label="搜索新品"
-          >
-            <Search size={18} className="text-[var(--theme-text)]" />
-          </button>
-        )}
-      />
+      <StoreTabHeader />
 
       <main className="mx-auto max-w-lg px-4 py-4">
         <section>

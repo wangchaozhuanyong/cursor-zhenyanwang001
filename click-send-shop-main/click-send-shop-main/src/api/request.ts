@@ -33,6 +33,7 @@ export function toQueryString(params?: Record<string, unknown>): string {
 }
 
 let refreshing: Promise<string> | null = null;
+let adminRefreshing: Promise<void> | null = null;
 
 async function tryRefreshToken(): Promise<string> {
   const loadingToken = startGlobalLoadingDeferred();
@@ -58,6 +59,26 @@ async function tryRefreshToken(): Promise<string> {
   return newToken;
 }
 
+/** 管理端 access cookie 约 15 分钟过期，依赖 httpOnly refresh cookie 静默续期 */
+export async function tryRefreshAdminSession(): Promise<void> {
+  const loadingToken = startGlobalLoadingDeferred();
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}/admin/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+  } finally {
+    stopGlobalLoading(loadingToken);
+  }
+
+  if (!res.ok) {
+    clearAdminTokens();
+    throw new ApiError(401, "登录已过期，请重新登录");
+  }
+}
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {},
@@ -71,6 +92,8 @@ async function request<T>(
     || endpoint.startsWith("/auth/otp/login")
     || endpoint.startsWith("/auth/oauth/exchange");
   const isAuthLogout = endpoint.startsWith("/auth/logout");
+  const isAdminAuthLogin = endpoint.startsWith("/admin/auth/login");
+  const isAdminAuthRefresh = endpoint.startsWith("/admin/auth/refresh");
   const isAccountCancel = endpoint.startsWith("/user/account/cancel");
   const token = isAdminEndpoint ? getAdminAccessToken() : getAccessToken();
 
@@ -112,6 +135,21 @@ async function request<T>(
         && !window.location.pathname.startsWith("/login")
       ) {
         window.location.href = "/login";
+      }
+      throw new ApiError(401, "登录已过期，请重新登录");
+    }
+  }
+
+  if (res.status === 401 && retry && isAdminEndpoint && !isAdminAuthLogin && !isAdminAuthRefresh) {
+    if (!adminRefreshing) {
+      adminRefreshing = tryRefreshAdminSession().finally(() => { adminRefreshing = null; });
+    }
+    try {
+      await adminRefreshing;
+      return request<T>(endpoint, options, false);
+    } catch {
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/admin/login")) {
+        window.location.href = "/admin/login";
       }
       throw new ApiError(401, "登录已过期，请重新登录");
     }

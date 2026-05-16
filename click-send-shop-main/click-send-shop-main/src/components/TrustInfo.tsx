@@ -22,20 +22,17 @@ export default function TrustInfo({ className = "", variant = "row" }: Props) {
   const items = [
     {
       icon: ShieldCheck,
-      title: "Secure Payment",
-      label: "支付安全",
+      title: "支付安全",
       desc: site.paymentNotice || "Stripe 安全支付，全程 SSL 加密",
     },
     {
       icon: Truck,
-      title: "Fast Delivery",
-      label: "极速发货",
+      title: "极速发货",
       desc: site.shippingNotice || "16:00 前付款当日发货，2-5 天送达",
     },
     {
       icon: RefreshCcw,
-      title: "After-sales Support",
-      label: "售后无忧",
+      title: "售后无忧",
       desc: site.supportText || "7 天无理由退换，专属客服在线响应",
     },
   ];
@@ -64,7 +61,7 @@ export default function TrustInfo({ className = "", variant = "row" }: Props) {
         <div key={it.title} className="flex items-start gap-2">
           <it.icon size={14} className="mt-0.5 flex-shrink-0 text-emerald-600" />
           <div className="min-w-0">
-            <p className="font-medium text-foreground">{it.label}</p>
+            <p className="font-medium text-foreground">{it.title}</p>
             <p className="mt-0.5 line-clamp-3 text-[11px] leading-snug text-muted-foreground">{it.desc}</p>
           </div>
         </div>

@@ -1,8 +1,9 @@
 ﻿import { useEffect } from "react";
-import { ArrowLeft, Minus, Plus, Trash2, ShoppingBag, Loader2, Check } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, Loader2, Check } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useGoBack } from "@/hooks/useGoBack";
+import StoreTabHeader from "@/components/store/StoreTabHeader";
 import { cartLineKey, useCartStore } from "@/stores/useCartStore";
+import { productCoverForList } from "@/utils/uploadImageVariant";
 import { isLoggedIn } from "@/utils/token";
 import EmptyState from "@/components/EmptyState";
 import TrustInfo from "@/components/TrustInfo";
@@ -18,7 +19,6 @@ export default function Cart() {
   useDocumentTitle("购物车");
   const navigate = useNavigate();
   const location = useLocation() as { state?: { coupon_id?: string } };
-  const goBack = useGoBack();
   const {
     items,
     loading,
@@ -58,29 +58,18 @@ export default function Cart() {
 
   return (
     <div className="store-bottom-cart-space min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-[var(--theme-surface)]/95 backdrop-blur-md border-b border-[var(--theme-border)]">
-        <div className="mx-auto flex w-full max-w-screen-xl items-center gap-3 px-4 py-3 md:px-6">
-          <SquishButton
-            type="button"
-            variant="ghost"
-            onClick={goBack}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-transparent hover:bg-[var(--theme-bg)] touch-target !p-0"
-            aria-label="返回"
-          >
-            <ArrowLeft size={20} className="text-foreground" />
-          </SquishButton>
+      <StoreTabHeader />
+
+      <main className="mx-auto w-full max-w-screen-xl px-4 md:px-6 md:py-8">
+        <div className="flex flex-wrap items-baseline gap-2 pb-4 pt-4 md:pt-6">
           <h1 className="text-base font-semibold text-foreground md:text-xl">购物车</h1>
-          {items.length > 0 && (
+          {items.length > 0 ? (
             <span className="text-xs text-muted-foreground">
               ({someSelected ? `已选 ${selectedCount}/` : ""}
               {items.reduce((s, i) => s + i.qty, 0)} 件)
             </span>
-          )}
+          ) : null}
         </div>
-      </header>
-
-      <main className="mx-auto w-full max-w-screen-xl px-4 md:px-6 md:py-8">
         {/* 桌面端：左商品列表 / 右结算摘要 */}
         <div className="md:grid md:grid-cols-[1fr_360px] md:gap-8">
           <div>
@@ -181,7 +170,7 @@ export default function Cart() {
                         aria-label={`查看 ${item.product.name}`}
                       >
                         <ProgressiveImage
-                          src={item.product.cover_image}
+                          src={productCoverForList(item.product.cover_image)}
                           blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
                           alt={item.product.name}
                           className="h-full w-full bg-transparent"

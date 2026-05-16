@@ -39,8 +39,6 @@ interface NewArrivalOpsSectionProps {
 /** 首页新品运营卡：整体与主视觉、商品轮播图均为 1:1 */
 const OPS_SQUARE = "relative aspect-square w-full overflow-hidden";
 
-const THEME_SCRIM =
-  "absolute inset-0 bg-gradient-to-b from-[color-mix(in_srgb,var(--theme-bg)_55%,transparent)] via-transparent to-[color-mix(in_srgb,var(--theme-bg)_88%,transparent)]";
 
 export default function NewArrivalOpsSection({
   products,
@@ -154,10 +152,10 @@ export default function NewArrivalOpsSection({
         <div className={cn(OPS_SQUARE, "animate-pulse bg-[var(--theme-surface)]", cardClass)} aria-busy="true">
           <div className="absolute inset-0 bg-[linear-gradient(90deg,var(--theme-surface),var(--theme-bg),var(--theme-surface))]" />
           <div className="relative flex h-full flex-col justify-between p-4 md:p-5">
-            <div className="max-w-[70%] space-y-2 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)]/80 p-3">
-              <div className="h-5 w-3/4 rounded-md bg-[var(--theme-bg)]" />
-              <div className="h-3 w-full rounded-md bg-[var(--theme-bg)]" />
-              <div className="h-9 w-24 rounded-full bg-[var(--theme-bg)]" />
+            <div className="max-w-[70%] space-y-2">
+              <div className="h-5 w-3/4 rounded-md bg-white/25" />
+              <div className="h-3 w-full rounded-md bg-white/20" />
+              <div className="h-9 w-24 rounded-full bg-white/30" />
             </div>
             <div className="aspect-square w-[38%] max-w-[9.5rem] shrink-0 self-end rounded-xl bg-[var(--theme-bg)]" />
           </div>
@@ -172,7 +170,7 @@ export default function NewArrivalOpsSection({
         <SectionHeader onMore={goListPage} />
         <div className={cn(OPS_SQUARE, cardClass)}>
           <HeroBackdrop heroImage={heroImage} brandTint={brandTint} />
-          <div className={THEME_SCRIM} />
+          <HeroImageOverlay />
           <div className="relative flex h-full flex-col justify-start p-4 md:p-5">
             <HeroCopyPanel copy={copy} onCta={onHeroCta} />
           </div>
@@ -192,7 +190,7 @@ export default function NewArrivalOpsSection({
         onTouchEnd={handleProductTouchEnd}
       >
         <HeroBackdrop heroImage={heroImage} brandTint={brandTint} />
-        <div className={THEME_SCRIM} />
+        <HeroImageOverlay />
 
         <div className="relative flex h-full flex-col justify-between p-4 md:p-5">
           <HeroCopyPanel copy={copy} onCta={onHeroCta} />
@@ -290,6 +288,24 @@ export default function NewArrivalOpsSection({
   );
 }
 
+const HERO_ON_IMAGE_TEXT =
+  "[text-shadow:0_1px_2px_rgba(0,0,0,0.85),0_2px_12px_rgba(0,0,0,0.45)]";
+
+function HeroImageOverlay() {
+  return (
+    <>
+      <div
+        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-black/58 via-black/18 to-transparent"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/22"
+        aria-hidden
+      />
+    </>
+  );
+}
+
 function HeroCopyPanel({
   copy,
   onCta,
@@ -298,14 +314,31 @@ function HeroCopyPanel({
   onCta: () => void;
 }) {
   return (
-    <div className="max-w-[min(72%,17rem)] rounded-2xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_94%,transparent)] p-3 shadow-sm backdrop-blur-md">
-      <p className="text-base font-bold leading-snug text-[var(--theme-text-on-surface)] md:text-lg">{copy.title}</p>
+    <div className="max-w-[min(78%,18rem)]">
+      <p
+        className={cn(
+          "text-base font-bold leading-snug text-white md:text-lg",
+          HERO_ON_IMAGE_TEXT,
+        )}
+      >
+        {copy.title}
+      </p>
       {copy.showSubtitle && copy.subtitle ? (
-        <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-[var(--theme-text-muted)] md:text-xs">
+        <p
+          className={cn(
+            "mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-white/92 md:text-xs",
+            HERO_ON_IMAGE_TEXT,
+          )}
+        >
           {copy.subtitle}
         </p>
       ) : null}
-      <StoreButton type="button" size="sm" className="mt-3 w-fit max-w-full px-4" onClick={onCta}>
+      <StoreButton
+        type="button"
+        size="sm"
+        className="mt-3 w-fit max-w-full px-4 shadow-[0_2px_10px_rgba(0,0,0,0.35)] ring-1 ring-black/15"
+        onClick={onCta}
+      >
         {copy.ctaText}
       </StoreButton>
     </div>

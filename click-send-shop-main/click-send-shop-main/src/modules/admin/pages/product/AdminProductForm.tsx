@@ -7,7 +7,7 @@ import { fetchProductById, createProduct, updateProduct, deleteProduct, fetchPro
 import * as categoryService from "@/services/admin/categoryService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as uploadService from "@/services/uploadService";
-import { compressImageBeforeUpload } from "@/utils/imageCompress";
+import { validateUploadFile } from "@/api/modules/upload";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_PRODUCT_LAYOUT } from "@/constants/imageUploadHints";
@@ -149,14 +149,9 @@ export default function AdminProductForm() {
       if (field === "cover") setUploadingCover(true);
       else setUploadingGallery(true);
       setUploadProgress(0);
-      const compressed = await compressImageBeforeUpload(file, {
-        maxWidth: 1600,
-        maxHeight: 1600,
-        quality: 0.82,
-        outputType: "image/webp",
-      }).catch(() => ({ file, compressed: false }));
-      const res = await uploadService.uploadSingleWithProgress(compressed.file, {
-        mode: "image",
+      validateUploadFile(file, "product");
+      const res = await uploadService.uploadSingleWithProgress(file, {
+        mode: "product",
         timeoutMs: 45_000,
         onProgress: (percent) => setUploadProgress(percent),
       });
@@ -194,7 +189,7 @@ export default function AdminProductForm() {
       return;
     }
     try {
-      const res = await uploadService.uploadSingle(file);
+      const res = await uploadService.uploadSingle(file, { mode: "video" });
       const url = res.url || "";
       if (!url) {
         toast.error("服务器未返回视频地址，请检查存储配置或稍后重试");

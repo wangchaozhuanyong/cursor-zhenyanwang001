@@ -7,18 +7,42 @@ import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
 
 const COLUMN_LABELS: Record<string, string> = {
+  id: "ID",
   date: "日期",
   month: "月份",
+  keyword: "关键词",
+  category_id: "分类ID",
+  coupon_id: "优惠券ID",
+  activity_id: "活动ID",
+  order_id: "订单ID",
+  user_id: "用户ID",
   order_count: "订单数",
   paid_order_count: "支付订单数",
   cancelled_order_count: "取消订单数",
   refund_order_count: "退款订单数",
+  unpaid_order_count: "未支付订单数",
   gross_sales: "销售额",
   discount_amount: "优惠金额",
   shipping_fee: "运费",
   refund_amount: "退款金额",
   net_sales: "净销售额",
   items_sold: "销售件数",
+  user_count: "用户数",
+  search_count: "搜索次数",
+  no_result_count: "无结果次数",
+  product_click_count: "商品点击数",
+  add_to_cart_count: "加购量",
+  issued_count: "发放数量",
+  claimed_count: "领取数量",
+  used_count: "使用数量",
+  expired_count: "过期数量",
+  active_users: "活跃用户",
+  order_users: "下单用户",
+  new_users: "新增用户",
+  product_count: "商品数",
+  active_product_count: "在售商品数",
+  stock_qty: "库存总量",
+  warning_stock: "预警库存",
   paying_users: "支付用户数",
   average_order_value: "客单价",
   payment_rate: "支付率",
@@ -33,12 +57,15 @@ const COLUMN_LABELS: Record<string, string> = {
   view_count: "浏览量",
   add_cart_count: "加购量",
   favorite_count: "收藏量",
+  last_searched_at: "最后搜索时间",
+  created_at: "创建时间",
+  updated_at: "更新时间",
   conversion_rate: "转化率",
 };
 
 function formatCellValue(key: string, value: unknown) {
   if (value === null || value === undefined || value === "") return "-";
-  if ((key === "date" || key === "month") && typeof value === "string") {
+  if (typeof value === "string" && (key === "date" || key === "month" || key.endsWith("_at"))) {
     if (key === "date") return value.slice(0, 10);
     return value;
   }

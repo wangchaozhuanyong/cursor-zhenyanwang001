@@ -1,4 +1,4 @@
-const repo = require('./theme.repository');
+﻿const repo = require('./theme.repository');
 const { DEFAULT_THEME_CONFIG } = require('./theme.default');
 const { DEFAULT_SKIN_ID, THEME_PRESETS } = require('./theme.presets');
 const { writeAuditLog } = require('../../utils/auditLog');
@@ -26,6 +26,31 @@ const ENUMS = {
 };
 
 const HEX6 = /^#[0-9A-F]{6}$/i;
+const MAX_SKINS = 20;
+const MAX_SKIN_NAME_LEN = 40;
+const MAX_PAYLOAD_BYTES = 512 * 1024;
+const SKIN_ID_RE = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/;
+
+function badRequest(message) {
+  const err = /** @type {any} */ (new Error(message));
+  err.statusCode = 400;
+  return err;
+}
+
+function assertThemeSkinsPayload(rawPayload) {
+  if (!rawPayload || typeof rawPayload !== 'object') throw badRequest('皮肤配置格式不正确');
+  const serialized = JSON.stringify(rawPayload);
+  if (serialized.length > MAX_PAYLOAD_BYTES) throw badRequest('皮肤配置数据过大');
+  const incoming = Array.isArray(rawPayload.skins) ? rawPayload.skins : [];
+  if (incoming.length > MAX_SKINS) throw badRequest(`最多保留 ${MAX_SKINS} 套皮肤`);
+  incoming.forEach((skin) => {
+    if (!skin || typeof skin !== 'object') throw badRequest('皮肤项格式不正确');
+    const id = String(skin.id || '').trim();
+    const name = String(skin.name || '').trim();
+    if (!SKIN_ID_RE.test(id)) throw badRequest(`皮肤 ID 格式不合法: ${id || '(空)'}`);
+    if (!name || name.length > MAX_SKIN_NAME_LEN) throw badRequest('皮肤名称长度需在 1-40 字符');
+  });
+}
 
 function pickEnum(value, key, fallback) {
   return ENUMS[key].includes(value) ? value : fallback;
@@ -111,7 +136,7 @@ function normalizeThemeConfig(rawConfig) {
     categoryIconStyle: pickEnum(raw.categoryIconStyle, 'categoryIconStyle', base.categoryIconStyle),
     motionLevel: pickEnum(raw.motionLevel, 'motionLevel', base.motionLevel),
     density: pickEnum(raw.density, 'density', base.density),
-    adminThemeMode: pickEnum(raw.adminThemeMode, 'adminThemeMode', 'fixed'),
+    adminThemeMode: pickEnum(raw.adminThemeMode, 'adminThemeMode', 'follow_store'),
   };
 }
 
@@ -135,14 +160,13 @@ function normalizeThemeSkinsPayload(rawPayload) {
       config: normalizeThemeConfig(skin.config),
     });
   });
-  const skins = Array.from(merged.values());
+  const skins = Array.from(merged.values()).slice(0, MAX_SKINS);
   const has = (id) => !!id && skins.some((s) => s.id === id);
-  const defaultSkinId = has(payload.defaultSkinId) ? payload.defaultSkinId : DEFAULT_SKIN_ID;
+  let defaultSkinId = has(payload.defaultSkinId) ? payload.defaultSkinId : DEFAULT_SKIN_ID;
+  if (!has(defaultSkinId)) defaultSkinId = skins[0]?.id || DEFAULT_SKIN_ID;
   const activeSkinId = has(payload.activeSkinId)
     ? payload.activeSkinId
-    : has(defaultSkinId)
-      ? defaultSkinId
-      : DEFAULT_SKIN_ID;
+    : defaultSkinId;
   return { defaultSkinId, activeSkinId, skins };
 }
 
@@ -194,6 +218,7 @@ async function updateThemeConfig(themeConfig, adminUserId, req) {
 }
 
 async function updateThemeSkins(themeSkinsPayload, adminUserId, req) {
+  assertThemeSkinsPayload(themeSkinsPayload);
   const before = await getThemeSkins();
   const next = normalizeThemeSkinsPayload(themeSkinsPayload);
   await repo.upsertThemeSkins(JSON.stringify(next));

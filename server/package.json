@@ -15,6 +15,7 @@
     "migrate": "node scripts/migrate-cli.js",
     "migrate:down": "node scripts/migrate-cli.js down",
     "migrate:status": "node scripts/migrate-cli.js status",
+    "verify-schema": "node scripts/verify-critical-schema.js",
     "wipe:business-data": "node scripts/wipe-business-data.js",
     "seed:demo-products": "node scripts/seed-demo-products.js",
     "seed:content-pages": "node scripts/seed-content-pages.js",

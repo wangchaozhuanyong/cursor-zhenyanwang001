@@ -12,9 +12,14 @@ function truncateJson(obj) {
   try {
     const s = typeof obj === 'string' ? obj : JSON.stringify(obj);
     if (s.length <= MAX_JSON_CHARS) return s;
-    return `${s.slice(0, MAX_JSON_CHARS)}...[truncated]`;
+    // 必须保持合法 JSON，否则 MySQL JSON 列写入失败（截断裸字符串会破坏引号/转义）
+    return JSON.stringify({
+      _truncated: true,
+      _originalLength: s.length,
+      preview: s.slice(0, Math.max(0, MAX_JSON_CHARS - 256)),
+    });
   } catch {
-    return '{"_error":"serialize_failed"}';
+    return JSON.stringify({ _error: 'serialize_failed' });
   }
 }
 

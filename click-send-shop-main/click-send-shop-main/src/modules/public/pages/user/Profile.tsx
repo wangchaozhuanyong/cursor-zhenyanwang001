@@ -13,7 +13,6 @@ import {
   Palette,
   Settings,
   ShieldCheck,
-  Ticket,
   Truck,
   Wallet,
 } from "lucide-react";
@@ -176,10 +175,10 @@ export default function Profile() {
   const orderReceiving = useMemo(() => orders.filter((o) => o.status === "shipped").length, [orders]);
 
   const assetItems = [
-    { label: "我的积分", value: String(pointsBalance), hint: "可用于订单抵扣", icon: Gift, path: "/points", auth: true },
-    { label: "优惠券", value: String(couponCount), hint: "下单时可选择使用", icon: Ticket, path: "/coupons", auth: true },
-    { label: "我的收藏", value: String(favoriteCount), hint: "你收藏的商品", icon: Heart, path: "/favorites", auth: false },
-    { label: "返现余额", value: `RM ${rewardBalance.toFixed(2)}`, hint: "邀请奖励累计", icon: Wallet, path: "/rewards", auth: true },
+    { label: "积分", value: String(pointsBalance), path: "/points", auth: true },
+    { label: "优惠券", value: String(couponCount), path: "/coupons", auth: true },
+    { label: "收藏", value: String(favoriteCount), path: "/favorites", auth: false },
+    { label: "返现", value: `RM ${rewardBalance.toFixed(2)}`, path: "/rewards", auth: true },
   ];
 
   const guestOrderItems = [
@@ -194,13 +193,7 @@ export default function Profile() {
       <main className="mx-auto max-w-lg space-y-4">
         <section className="space-y-3">
           <div className="flex items-center justify-between py-1">
-            <div className="flex min-w-0 items-center gap-3">
-              <img src={logoSrc} alt={siteName} className="h-10 w-10 rounded-xl object-contain shadow-sm" />
-              <div className="min-w-0">
-                <p className="truncate text-2xl font-bold tracking-tight text-[var(--theme-text)]">{siteName}</p>
-                <p className="truncate text-xs text-[var(--theme-text-muted)]">{loggedIn ? "欢迎回来，查看你的会员权益" : "登录后解锁会员权益"}</p>
-              </div>
-            </div>
+            <img src={logoSrc} alt={siteName} className="h-10 w-10 rounded-xl object-contain shadow-sm" />
             <div className="flex shrink-0 items-center gap-2">
               {loggedIn ? <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} /> : null}
               <SkinPickerDialog trigger={<button type="button" className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--theme-surface)] text-[var(--theme-text-muted-on-surface)] shadow-[var(--theme-shadow)]"><Palette size={17} /></button>} />
@@ -238,50 +231,47 @@ export default function Profile() {
           )}
         </section>
 
-        <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
-          <SectionTitle title="我的资产" />
-          <div className="grid grid-cols-2 gap-3">
-            {assetItems.map((item, idx) => (
-              <button
-                key={item.label}
-                type="button"
-                onClick={() => gateNavigate(navigate, item.path, item.auth)}
-                className={`${idx === 3 ? "col-span-2" : ""} min-h-[94px] rounded-[22px] bg-[var(--theme-bg)] px-3.5 py-3 text-left ring-1 ring-[color-mix(in_srgb,var(--theme-border)_70%,transparent)]`}
-              >
-                <div className="flex h-full items-start gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--theme-secondary)_12%,var(--theme-surface))] text-[var(--theme-secondary)]">
-                    <item.icon size={16} />
-                  </span>
-                  <span className="min-w-0">
-                    <p className="truncate text-base font-bold text-[var(--theme-text-on-surface)]">{item.value}</p>
-                    <p className="mt-1 text-xs font-semibold">{item.label}</p>
-                    <p className="mt-0.5 truncate text-[11px] text-[var(--theme-text-muted-on-surface)]">{item.hint}</p>
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section
-          className="relative overflow-hidden rounded-[26px] border border-[color-mix(in_srgb,var(--theme-secondary)_18%,var(--theme-border))] p-4 shadow-[var(--theme-shadow)]"
-          style={{ background: "linear-gradient(110deg,#f4ead2,#f0dfbd)" }}
-        >
-          <div className="relative grid grid-cols-[1fr_auto] items-center gap-3">
-            <div className="min-w-0 pr-1">
-              <p className="truncate text-lg font-bold text-[#2e2417]">邀请好友得奖励</p>
-              <p className="mt-1 line-clamp-1 text-sm text-[#4a3b25]">{loggedIn ? "好友注册/下单后可获得积分返现" : "登录后邀请好友，注册/下单可获得积分返现"}</p>
-              <p className="mt-1 truncate text-sm text-[#4a3b25]">{loggedIn ? `已邀请 ${inviteCount} 人，累计返现 RM ${rewardBalance.toFixed(2)}` : "登录后查看邀请人数与累计返现"}</p>
+        <section className={`${CARD_CLASS} overflow-hidden`}>
+          <div className="p-4">
+            <SectionTitle title="我的权益" />
+            <div className="grid grid-cols-4 rounded-2xl bg-[var(--theme-bg)] px-2 py-3 ring-1 ring-[color-mix(in_srgb,var(--theme-border)_65%,transparent)]">
+              {assetItems.map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => gateNavigate(navigate, item.path, item.auth)}
+                  className="min-w-0 px-1 py-1 text-center"
+                >
+                  <p className="truncate text-xs font-semibold text-[var(--theme-text-muted-on-surface)]">{item.label}</p>
+                  <p className={`mt-2 truncate font-bold text-[var(--theme-text-on-surface)] ${item.label === "返现" ? "text-sm" : "text-base"}`}>
+                    {item.value}
+                  </p>
+                </button>
+              ))}
             </div>
-            <div className="flex w-[96px] shrink-0 flex-col items-center gap-2">
-              <div className="h-12 w-14 rounded-[18px] bg-[linear-gradient(140deg,#f5dfae,#d6aa61)] shadow-[0_8px_18px_rgba(89,58,8,.2)] ring-1 ring-[#c79547]/30" />
-              <button
-                type="button"
-                onClick={() => (loggedIn ? gateNavigate(navigate, "/invite", true) : navigate("/login", { state: { from: "/profile" } }))}
-                className="w-full rounded-full bg-[linear-gradient(135deg,#2f2d2a,#141414)] px-3 py-2 text-xs font-semibold text-[#f5e4bc] shadow-[0_6px_14px_rgba(0,0,0,.25)]"
-              >
-                {loggedIn ? "立即邀请" : "去登录"}
-              </button>
+          </div>
+          <div className="mx-4 mb-4 border-t border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] pt-3">
+            <div
+              className="relative overflow-hidden rounded-[22px] border border-[#ead8ad] px-4 py-3"
+              style={{ background: "linear-gradient(110deg,#f7edd3,#efdcb8)" }}
+            >
+              <div className="grid grid-cols-[1fr_88px] items-center gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-base font-bold text-[#2e2417]">邀请好友得奖励</p>
+                  <p className="mt-1 truncate text-xs text-[#5b4a30]">{loggedIn ? "好友注册/下单后可获得积分返现" : "登录后邀请好友获得积分返现"}</p>
+                  <p className="mt-1 truncate text-xs text-[#5b4a30]">{loggedIn ? `已邀请 ${inviteCount} 人，累计返现 RM ${rewardBalance.toFixed(2)}` : "登录后查看邀请奖励"}</p>
+                </div>
+                <div className="flex min-w-0 flex-col items-center gap-2">
+                  <div className="h-10 w-12 rounded-2xl bg-[linear-gradient(140deg,#f6dfaa,#d8ac62)] shadow-[0_8px_18px_rgba(89,58,8,.18)] ring-1 ring-[#c79547]/30" />
+                  <button
+                    type="button"
+                    onClick={() => (loggedIn ? gateNavigate(navigate, "/invite", true) : navigate("/login", { state: { from: "/profile" } }))}
+                    className="w-full rounded-full bg-[linear-gradient(135deg,#2f2d2a,#141414)] px-2 py-1.5 text-xs font-semibold text-[#f5e4bc] shadow-[0_6px_14px_rgba(0,0,0,.22)]"
+                  >
+                    {loggedIn ? "立即邀请" : "去登录"}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -355,4 +345,3 @@ export default function Profile() {
     </div>
   );
 }
-

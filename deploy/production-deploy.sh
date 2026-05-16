@@ -119,6 +119,8 @@ if [[ "${SKIP_MIGRATE:-0}" == "1" ]]; then
 else
   echo "🗄 执行数据库迁移..." | tee -a "$LOG_FILE"
   npm run migrate
+  echo "🔎 校验关键数据库列..." | tee -a "$LOG_FILE"
+  npm run verify-schema
 fi
 
 echo "🎨 构建前端..." | tee -a "$LOG_FILE"

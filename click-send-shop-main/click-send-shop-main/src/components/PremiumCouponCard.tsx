@@ -57,6 +57,21 @@ export default function PremiumCouponCard({
     minimal: "bg-[var(--theme-surface)]",
   };
 
+  /** premium / deal 背景固定偏浅，不能用深色主题下的 surface 文字色 */
+  const lightCouponBg = couponStyle === "premium" || couponStyle === "deal";
+  const couponTitleClass = lightCouponBg
+    ? "text-[#1a1612]"
+    : "text-[var(--theme-text-on-surface)]";
+  const couponMutedClass = lightCouponBg
+    ? "text-[#5c5348]"
+    : "text-[var(--theme-muted)]";
+  const couponEyebrowClass = lightCouponBg
+    ? "text-[#7a6f5c]"
+    : "text-[var(--theme-muted)]";
+  const couponIconClass = lightCouponBg
+    ? "text-[color-mix(in_srgb,var(--theme-secondary)_75%,#1a1612)]"
+    : "text-[var(--theme-secondary)]";
+
   const dense = compact || homeCompact;
   const amountSize = homeCompact ? "text-xl leading-none sm:text-2xl" : compact ? "text-2xl" : "text-3xl";
 
@@ -82,7 +97,7 @@ export default function PremiumCouponCard({
   const wrapper = homeCompact ? (
     <div
       className={cn(
-        "relative grid w-full grid-cols-[minmax(4.5rem,26%)_minmax(0,1fr)_minmax(4.25rem,22%)] items-stretch gap-2 rounded-xl border border-[var(--theme-border)] p-2.5 text-[var(--theme-text)]",
+        "relative grid w-full grid-cols-[minmax(4.5rem,26%)_minmax(0,1fr)_minmax(4.25rem,22%)] items-stretch gap-2 rounded-xl border border-[var(--theme-border)] p-2.5",
         styleMap[couponStyle],
         disabled && "opacity-60",
         selected && "ring-2 ring-[var(--theme-secondary)]",
@@ -99,13 +114,13 @@ export default function PremiumCouponCard({
 
       <div className="flex min-h-[5.5rem] min-w-0 flex-col justify-center gap-1 py-0.5">
         <div className="flex min-w-0 items-center gap-1.5">
-          <Ticket size={14} className="shrink-0 text-[var(--theme-secondary)]" />
-          <p className="truncate text-[11px] text-[var(--theme-muted)]">{eyebrow}</p>
+          <Ticket size={14} className={cn("shrink-0", couponIconClass)} />
+          <p className={cn("truncate text-[11px]", couponEyebrowClass)}>{eyebrow}</p>
           {badge ? <StoreBadge type="coupon">{badge}</StoreBadge> : null}
         </div>
-        <p className="line-clamp-2 text-sm font-bold leading-snug text-[var(--theme-text-on-surface)]">{title}</p>
-        <p className="truncate text-xs text-[var(--theme-muted)]">有效期至：{expireText}</p>
-        <p className="line-clamp-1 text-xs text-[var(--theme-muted)]">{scopeText}</p>
+        <p className={cn("line-clamp-2 text-sm font-bold leading-snug", couponTitleClass)}>{title}</p>
+        <p className={cn("truncate text-xs", couponMutedClass)}>有效期至：{expireText}</p>
+        <p className={cn("line-clamp-1 text-xs", couponMutedClass)}>{scopeText}</p>
       </div>
 
       {actionButton ? (
@@ -115,7 +130,7 @@ export default function PremiumCouponCard({
   ) : (
     <div
       className={cn(
-        "relative flex w-full items-stretch gap-2 rounded-xl border border-[var(--theme-border)] p-3 text-[var(--theme-text)]",
+        "relative flex w-full items-stretch gap-2 rounded-xl border border-[var(--theme-border)] p-3",
         styleMap[couponStyle],
         disabled && "opacity-60",
         selected && "ring-2 ring-[var(--theme-secondary)]",
@@ -129,15 +144,15 @@ export default function PremiumCouponCard({
       </div>
       <div className="min-w-0 flex-1 py-1">
         <div className="mb-1 flex items-center gap-2">
-          <Ticket size={14} className="text-[var(--theme-secondary)]" />
-          <p className="text-[11px] text-[var(--theme-muted)]">{eyebrow}</p>
+          <Ticket size={14} className={couponIconClass} />
+          <p className={cn("text-[11px]", couponEyebrowClass)}>{eyebrow}</p>
           {badge ? <StoreBadge type="coupon">{badge}</StoreBadge> : null}
         </div>
-        <p className={cn(compact ? "line-clamp-1" : "line-clamp-2", "text-sm font-bold")}>{title}</p>
-        <p className={cn(compact ? "mt-1 truncate" : "mt-2", "text-xs text-[var(--theme-muted)]")}>
+        <p className={cn(compact ? "line-clamp-1" : "line-clamp-2", "text-sm font-bold", couponTitleClass)}>{title}</p>
+        <p className={cn(compact ? "mt-1 truncate" : "mt-2", "text-xs", couponMutedClass)}>
           有效期至：{expireText}
         </p>
-        <p className="mt-1 line-clamp-1 text-xs text-[var(--theme-muted)]">{scopeText}</p>
+        <p className={cn("mt-1 line-clamp-1 text-xs", couponMutedClass)}>{scopeText}</p>
       </div>
       {actionButton ? (
         <div className="flex w-[48px] shrink-0 items-center justify-center">{actionButton}</div>

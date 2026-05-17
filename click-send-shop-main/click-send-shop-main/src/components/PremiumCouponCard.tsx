@@ -194,12 +194,15 @@ export default function PremiumCouponCard({
 
       <div
         className={cn(
-          "flex min-w-0 flex-col justify-center border-x border-dashed",
-          skin.dividerClass,
+          "relative flex min-w-0 flex-col justify-center",
           skin.infoGap,
           skin.infoPadding,
         )}
       >
+        <span aria-hidden className={cn(skin.columnRuleClass, "absolute bottom-2 top-2 left-0")} />
+        {actionButton ? (
+          <span aria-hidden className={cn(skin.columnRuleClass, "absolute bottom-2 top-2 right-0")} />
+        ) : null}
         {infoRows.map((row, index) => (
           <CouponInfoRow
             key={`info-${index}`}

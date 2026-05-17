@@ -1,44 +1,20 @@
-import { useEffect, useRef } from "react";
+import CategoryKingkongRow, { type CategoryKingkongItem } from "@/components/CategoryKingkongRow";
+import { getCategoryNavIconValue } from "@/utils/categoryNavIcon";
 
 interface CategoryTabsProps {
-  categories: { id: string; name: string; icon?: string; level?: number }[];
+  categories: { id: string; name: string; icon?: string; icon_url?: string; level?: number }[];
   activeId: string;
   onChange: (id: string) => void;
 }
 
 export default function CategoryTabs({ categories, activeId, onChange }: CategoryTabsProps) {
-  const itemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const items: CategoryKingkongItem[] = categories.map((cat) => ({
+    id: cat.id,
+    label: cat.name,
+    iconValue: getCategoryNavIconValue(cat, cat.id === "all" ? "📋" : "📂"),
+    active: activeId === cat.id,
+    onClick: () => onChange(cat.id),
+  }));
 
-  useEffect(() => {
-    const btn = itemRefs.current.get(activeId);
-    btn?.scrollIntoView({
-      behavior: "smooth",
-      inline: "center",
-      block: "nearest",
-    });
-  }, [activeId, categories.length]);
-
-  return (
-    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-      {categories.map((cat) => (
-        <button
-          key={cat.id}
-          ref={(el) => {
-            if (el) itemRefs.current.set(cat.id, el);
-            else itemRefs.current.delete(cat.id);
-          }}
-          onClick={() => onChange(cat.id)}
-          className={`flex-shrink-0 rounded-full px-4 py-2 text-xs font-medium transition-colors ${
-            activeId === cat.id
-              ? "btn-theme-price"
-              : "bg-secondary text-muted-foreground"
-          }`}
-        >
-          {cat.level ? <span className="mr-1 text-[10px] opacity-60">{"—".repeat(cat.level)}</span> : null}
-          {cat.icon && <span className="mr-1">{cat.icon}</span>}
-          {cat.name}
-        </button>
-      ))}
-    </div>
-  );
+  return <CategoryKingkongRow items={items} scrollKey={activeId} className="-mx-1 rounded-none border-x-0" />;
 }

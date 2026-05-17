@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import * as homeBannerService from "@/services/homeBannerService";
+import * as homeService from "@/services/homeService";
 import type { Banner } from "@/types/banner";
 
 type UseHomeBannersOpts = { fetchRemote?: boolean };
@@ -13,6 +14,20 @@ function sanitizeBanners(list: Banner[]): Banner[] {
   });
 }
 
+function normalizeBootstrapBanners(raw: unknown): Banner[] {
+  if (!Array.isArray(raw)) return [];
+  return sanitizeBanners(
+    raw.map((item: any) => ({
+      id: String(item?.id || ""),
+      title: String(item?.title || ""),
+      image: String(item?.image || item?.image_url || ""),
+      link: String(item?.link || item?.url || ""),
+      sort_order: Number(item?.sort_order || 0),
+      enabled: item?.enabled !== false,
+    })),
+  );
+}
+
 export function useHomeBanners(opts?: UseHomeBannersOpts) {
   const fetchRemote = opts?.fetchRemote !== false;
   const [banners, setBanners] = useState<Banner[]>(() => readBannerCache());
@@ -21,21 +36,51 @@ export function useHomeBanners(opts?: UseHomeBannersOpts) {
   useEffect(() => {
     if (!fetchRemote) return;
     let cancelled = false;
-    setLoading(true);
-    homeBannerService
-      .fetchActiveBanners()
-      .then((list) => {
-        if (cancelled) return;
-        const next = sanitizeBanners(Array.isArray(list) ? list : []);
+
+    const cachedBootstrap = homeService.getCachedHomeBootstrap();
+    if (cachedBootstrap?.banners) {
+      const next = normalizeBootstrapBanners(cachedBootstrap.banners);
+      if (next.length > 0) {
         setBanners(next);
         writeBannerCache(next);
+      }
+    }
+
+    setLoading(true);
+    homeService
+      .fetchHomeBootstrap()
+      .then((bootstrap) => {
+        if (cancelled) return;
+        const next = normalizeBootstrapBanners(bootstrap?.banners);
+        if (next.length > 0) {
+          setBanners(next);
+          writeBannerCache(next);
+          return;
+        }
+        return homeBannerService.fetchActiveBanners().then((list) => {
+          if (cancelled) return;
+          const fallback = sanitizeBanners(Array.isArray(list) ? list : []);
+          setBanners(fallback);
+          writeBannerCache(fallback);
+        });
       })
       .catch(() => {
-        /* 请求失败时保留缓存/已有数据，避免轮播区闪灭 */
+        homeBannerService
+          .fetchActiveBanners()
+          .then((list) => {
+            if (cancelled) return;
+            const fallback = sanitizeBanners(Array.isArray(list) ? list : []);
+            setBanners(fallback);
+            writeBannerCache(fallback);
+          })
+          .catch(() => {
+            // keep existing cached banners
+          });
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+
     return () => {
       cancelled = true;
     };

@@ -1,7 +1,6 @@
-/* eslint-disable react-refresh/only-export-components */
+﻿/* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { toast } from "sonner";
 import {
   ADMIN_SAFE_THEME_OVERRIDES,
   DEFAULT_SKIN_ID,
@@ -14,7 +13,6 @@ import { normalizeMediaUrls } from "@/utils/mediaUrl";
 import { generateThemePalette } from "@/utils/themeContrast";
 import { normalizeThemeConfig, normalizeThemeSkinsPayload } from "@/utils/themeConfig";
 import type { ThemeConfig, ThemeSkin } from "@/types/theme";
-import { toastErrorMessage } from "@/utils/errorMessage";
 
 type ThemeMode = "light" | "dark";
 
@@ -27,15 +25,15 @@ type ThemeContextValue = {
   theme: ThemeMode;
   skinId: string;
   skins: ThemeSkin[];
-  /** 客户端皮肤选择器：仅 clientEnabled 的皮肤 */
+  /** 瀹㈡埛绔毊鑲ら€夋嫨鍣細浠?clientEnabled 鐨勭毊鑲?*/
   switchableSkins: ThemeSkin[];
-  /** 皮肤选择器列表（后台含全部皮肤，前台同 switchableSkins） */
+  /** 鐨偆閫夋嫨鍣ㄥ垪琛紙鍚庡彴鍚叏閮ㄧ毊鑲わ紝鍓嶅彴鍚?switchableSkins锛?*/
   pickerSkins: ThemeSkin[];
   setSkinId: (id: string) => void;
   themeConfig: ThemeConfig;
-  /** 本地缓存主题已应用，可渲染 UI */
+  /** 鏈湴缂撳瓨涓婚宸插簲鐢紝鍙覆鏌?UI */
   themeReady: boolean;
-  /** 已完成至少一次服务端主题同步，避免首页布局在刷新时从缓存闪到线上配置 */
+  /** 宸插畬鎴愯嚦灏戜竴娆℃湇鍔＄涓婚鍚屾锛岄伩鍏嶉椤靛竷灞€鍦ㄥ埛鏂版椂浠庣紦瀛橀棯鍒扮嚎涓婇厤缃?*/
   themeSynced: boolean;
 };
 
@@ -103,7 +101,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
     const base = import.meta.env.VITE_API_BASE_URL ?? "/api";
     try {
       const response = await fetch(`${base}/theme/skins`, {
-        cache: "no-store",
+        cache: "default",
         credentials: "same-origin",
         headers: { Accept: "application/json" },
       });
@@ -171,7 +169,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       setThemeConfig(normalizeThemeConfig(fallback.skins.find((s) => s.id === DEFAULT_SKIN_ID)?.config));
       setThemeReady(true);
       setThemeSynced(true);
-      toast.error(toastErrorMessage(error, "皮肤加载失败，已回退默认皮肤"));
+      console.warn("[theme] failed to sync skins, fallback applied", error);
     }
   }, []);
 
@@ -328,3 +326,5 @@ export function useThemeRuntime() {
   if (!context) throw new Error("useThemeRuntime must be used within ThemeRuntimeProvider");
   return context;
 }
+
+

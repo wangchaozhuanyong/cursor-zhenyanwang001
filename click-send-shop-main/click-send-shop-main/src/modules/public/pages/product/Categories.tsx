@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback, useRef, useMemo, type ReactNode } from "react";
+﻿import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import StorePageHeader from "@/components/store/StorePageHeader";
@@ -10,7 +10,9 @@ import { cn } from "@/lib/utils";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import ProductFilterDrawer from "@/components/ProductFilterDrawer";
 import ProductSortBar from "@/components/ProductSortBar";
+import CategoryKingkongRow, { type CategoryKingkongItem } from "@/components/CategoryKingkongRow";
 import CategorySideTree from "@/components/CategorySideTree";
+import { getCategoryNavIconValue } from "@/utils/categoryNavIcon";
 import { Skeleton } from "@/components/ui/skeleton";
 import * as productService from "@/services/productService";
 import type { ProductSortType, ProductTag } from "@/types/product";
@@ -106,7 +108,6 @@ export default function Categories() {
 
   const handleSelectAll = useCallback(() => { setActiveCat("all"); }, []);
 
-  const categoryBtnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const rootRow: Array<{ kind: "all" } | { kind: "root"; node: Category }> = [{ kind: "all" }, ...categories.map((node) => ({ kind: "root" as const, node }))];
 
   const activeRootId = useMemo(() => {
@@ -121,7 +122,28 @@ export default function Categories() {
   }, [activeRootId, categories]);
   const scrollTabKey = activeCat === "all" ? "all" : findRootCategoryIdForActive(categories, activeCat) ?? activeCat;
 
-  useEffect(() => { const btn = categoryBtnRefs.current.get(scrollTabKey); btn?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" }); }, [scrollTabKey, categories.length]);
+  const rootKingkongItems = useMemo((): CategoryKingkongItem[] => {
+    const row: typeof rootRow = [{ kind: "all" }, ...categories.map((node) => ({ kind: "root" as const, node }))];
+    return row.map((item) => {
+      if (item.kind === "all") {
+        return {
+          id: "all",
+          label: "全部",
+          iconValue: "📋",
+          active: activeCat === "all",
+          onClick: handleSelectAll,
+        };
+      }
+      const { node } = item;
+      return {
+        id: node.id,
+        label: node.name,
+        iconValue: getCategoryNavIconValue(node),
+        active: isCategoryOrDescendantActive(node, activeCat),
+        onClick: () => handleRootCategoryClick(node),
+      };
+    });
+  }, [activeCat, categories, handleRootCategoryClick, handleSelectAll]);
 
   const activeFilterCount = useMemo(() => {
     let c = 0;
@@ -193,37 +215,14 @@ export default function Categories() {
         }
         bottomSlot={
           <div className="space-y-2">
-            <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto pb-0.5 md:hidden">
-
-          {loading && categories.length === 0 ? Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-8 w-16 flex-shrink-0 rounded-full" />) : rootRow.map((item) => {
-            if (item.kind === "all") {
-              return (
-                <CategoryTabButton
-                  key="all"
-                  btnRef={(el) => { if (el) categoryBtnRefs.current.set("all", el); else categoryBtnRefs.current.delete("all"); }}
-                  active={activeCat === "all"}
-                  onClick={handleSelectAll}
-                  layoutId="category-root-tab"
-                >
-                  全部
-                </CategoryTabButton>
-              );
-            }
-            const { node } = item;
-            const isActive = isCategoryOrDescendantActive(node, activeCat);
-            return (
-              <CategoryTabButton
-                key={node.id}
-                btnRef={(el) => { if (el) categoryBtnRefs.current.set(node.id, el); else categoryBtnRefs.current.delete(node.id); }}
-                active={isActive}
-                onClick={() => handleRootCategoryClick(node)}
-                layoutId="category-root-tab"
-              >
-                <span className="max-w-[9.5rem] truncate">{node.name}</span>
-              </CategoryTabButton>
-            );
-          })}
-        </div>
+            <div className="md:hidden">
+              <CategoryKingkongRow
+                items={rootKingkongItems}
+                scrollKey={scrollTabKey}
+                loading={loading && categories.length === 0}
+                className="-mx-1 rounded-none border-x-0"
+              />
+            </div>
 
             {subCategories.length > 0 ? (
               <div className="flex flex-wrap gap-1.5 md:hidden">

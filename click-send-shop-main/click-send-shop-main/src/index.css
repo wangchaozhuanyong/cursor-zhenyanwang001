@@ -347,6 +347,31 @@
     color: var(--theme-coupon-card-shell-muted);
   }
 
+  /** 优惠券列分隔：细点穿孔线，避免 border-dashed 与面值区边框叠在一起 */
+  .coupon-card-column-rule {
+    width: 1px;
+    pointer-events: none;
+    background-color: transparent;
+    background-image: radial-gradient(
+      circle at center,
+      color-mix(in srgb, var(--theme-coupon-card-divider, var(--theme-border)) 72%, transparent) 0.45px,
+      transparent 0.46px
+    );
+    background-size: 1px 5px;
+    background-repeat: repeat-y;
+    background-position: center;
+    opacity: 0.85;
+  }
+
+  .coupon-card-column-rule--themed {
+    opacity: 0.7;
+    background-image: radial-gradient(
+      circle at center,
+      color-mix(in srgb, var(--theme-coupon-card-divider) 65%, var(--theme-coupon-card-shell-fg)) 0.45px,
+      transparent 0.46px
+    );
+  }
+
   .bg-theme-gift-badge {
     background: var(--theme-gift-badge-bg);
     color: var(--theme-gift-badge-foreground);

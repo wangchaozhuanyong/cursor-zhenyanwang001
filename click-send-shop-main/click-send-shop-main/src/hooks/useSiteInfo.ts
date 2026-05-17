@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from "react";
 import * as contentService from "@/services/contentService";
+import * as homeService from "@/services/homeService";
 import type { SiteInfo } from "@/types/content";
 
 const FALLBACK: SiteInfo = {
@@ -72,8 +73,7 @@ function notifyAll(info: SiteInfo) {
 async function loadOnce(): Promise<SiteInfo> {
   if (cachedInfo) return cachedInfo;
   if (inflight) return inflight;
-  inflight = contentService
-    .fetchSiteInfo()
+  inflight = homeService.fetchHomeBootstrap().then((b) => b.siteInfo).catch(() => contentService.fetchSiteInfo())
     .then((data) => {
       const merged: SiteInfo = sanitizeSiteInfo({ ...FALLBACK, ...(data ?? {}) });
       cachedInfo = merged;
@@ -117,3 +117,5 @@ export function useSiteInfo(): SiteInfo {
 }
 
 export const SITE_INFO_FALLBACK = FALLBACK;
+
+

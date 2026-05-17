@@ -1,4 +1,4 @@
-﻿import { useLayoutEffect, useMemo } from "react";
+﻿import { useEffect, useMemo } from "react";
 import { Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -98,12 +98,10 @@ export default function GuestHome() {
     loadHomeData,
   } = useProductStore();
 
-  useLayoutEffect(() => {
-    const { hotProducts, newProducts, recommendedProducts, loading } = useProductStore.getState();
-    if (!loading && (hotProducts.length > 0 || newProducts.length > 0 || recommendedProducts.length > 0)) {
-      useProductStore.setState({ loading: true });
-    }
-    void loadHomeData();
+  useEffect(() => {
+    const state = useProductStore.getState();
+    const hasHomeData = state.hotProducts.length > 0 || state.newProducts.length > 0 || state.recommendedProducts.length > 0;
+    void loadHomeData({ background: hasHomeData });
   }, [loadHomeData]);
 
   const gridProducts = useMemo(
@@ -331,4 +329,6 @@ export default function GuestHome() {
     </div>
   );
 }
+
+
 

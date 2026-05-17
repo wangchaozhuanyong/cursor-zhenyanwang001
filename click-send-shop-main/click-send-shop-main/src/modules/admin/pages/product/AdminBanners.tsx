@@ -1,6 +1,6 @@
 ﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
-import { Image, Plus, Trash2, GripVertical, Eye, EyeOff, ExternalLink, Loader2, Pencil } from "lucide-react";
+import { Image, Plus, Trash2, GripVertical, Eye, EyeOff, ExternalLink, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as bannerService from "@/services/admin/bannerService";
@@ -10,6 +10,11 @@ import { Tx } from "@/components/admin/AdminText";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { THEME_HOVER_TEXT_DANGER, THEME_TEXT_SUCCESS_SOFT } from "@/utils/themeVisuals";
+import { isAspectRatioWithinTolerance, readImageSize } from "@/utils/imageRatio";
+
+const BANNER_RATIO = 4 / 3;
+const BANNER_RATIO_TOLERANCE = 0.03;
+const BANNER_SIZE_PRESETS = "1200×900 / 1600×1200 / 2000×1500";
 
 export default function AdminBanners() {
   const { confirm } = useAdminConfirm();
@@ -20,6 +25,7 @@ export default function AdminBanners() {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [savingOrder, setSavingOrder] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [strictRatioCheck, setStrictRatioCheck] = useState(false);
   const [form, setForm] = useState({ title: "", link: "", image: "" });
 
   useEffect(() => {
@@ -55,6 +61,7 @@ export default function AdminBanners() {
   const openEdit = (b: any) => {
     setEditingId(b.id);
     setForm({ title: b.title || "", link: b.link || "", image: b.image || "" });
+    setStrictRatioCheck(false);
     setShowForm(true);
   };
 
@@ -124,18 +131,28 @@ export default function AdminBanners() {
     await persistBannerOrder(next);
   };
 
+  const handleCopyBannerPresets = async () => {
+    try {
+      await navigator.clipboard.writeText(BANNER_SIZE_PRESETS);
+      toast.success("推荐尺寸已复制");
+    } catch {
+      toast.error("复制失败，请手动复制");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-foreground"><Tx>Banner 管理</Tx></h1>
-          <p className="text-sm text-muted-foreground"><Tx>管理首页轮播图</Tx></p>
+          <p className="text-sm text-muted-foreground"><Tx>管理首页顶部 Banner（4:3）</Tx></p>
         </div>
         <PermissionGate permission="banner.manage">
           <button
             onClick={() => {
               setEditingId(null);
               setForm({ title: "", link: "", image: "" });
+              setStrictRatioCheck(false);
               setShowForm(true);
             }}
             className="flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-primary-foreground"
@@ -146,12 +163,21 @@ export default function AdminBanners() {
       </div>
 
       <div className="rounded-xl border border-gold/25 bg-gold/[0.06] px-4 py-3 text-sm dark:bg-gold/10">
-        <p className="font-semibold text-foreground"><Tx>轮播图上传规范</Tx></p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="font-semibold text-foreground"><Tx>轮播图上传规范</Tx></p>
+          <button
+            type="button"
+            onClick={() => void handleCopyBannerPresets()}
+            className="rounded-lg border border-border bg-background px-2.5 py-1 text-xs text-foreground hover:bg-secondary"
+          >
+            复制推荐尺寸
+          </button>
+        </div>
         <ul className="mt-2 list-disc space-y-1.5 pl-5 text-[13px] leading-relaxed text-muted-foreground">
-          <li><Tx>比例建议固定为 2.34:1。</Tx></li>
-          <li><Tx>推荐尺寸：1170×500、1500×640、2340×1000。</Tx></li>
+          <li><Tx>首页顶部 Banner 统一使用 4:3 比例，避免展示裁切与留白。</Tx></li>
+          <li><Tx>推荐尺寸：1200×900、1600×1200、2000×1500（或任意等比 4:3）。</Tx></li>
           <li><Tx>支持 JPG/PNG/WebP/GIF，单张不超过 15MB。</Tx></li>
-          <li><Tx>Banner 由服务器单次处理：最长边 2560，WebP quality 92（无浏览器二次压缩）。</Tx></li>
+          <li><Tx>图片由服务器统一处理：最长边 2560，WebP quality 92（无需浏览器二次压缩）。</Tx></li>
         </ul>
       </div>
 
@@ -159,7 +185,7 @@ export default function AdminBanners() {
         {loading
           ? Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4">
-                <div className="skeleton-base skeleton-shimmer h-16 w-28 rounded-xl" />
+                <div className="skeleton-base skeleton-shimmer aspect-[4/3] w-28 rounded-xl" />
                 <div className="flex-1 space-y-2">
                   <div className="skeleton-base skeleton-shimmer h-4 w-40 rounded" />
                   <div className="skeleton-base skeleton-shimmer h-3 w-56 rounded" />
@@ -180,7 +206,7 @@ export default function AdminBanners() {
             } ${draggingId === String(b.id) ? "opacity-50" : ""} ${savingOrder ? "cursor-wait" : "cursor-move"}`}
           >
             <GripVertical size={16} className="cursor-grab text-muted-foreground" />
-            <div className="flex h-16 w-28 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-secondary">
+            <div className="flex aspect-[4/3] w-28 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-secondary">
               {b.image ? <img src={b.image} alt="" className="h-full w-full object-cover" /> : <Image size={24} className="text-muted-foreground" />}
             </div>
             <div className="min-w-0 flex-1">
@@ -226,13 +252,22 @@ export default function AdminBanners() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowForm(false)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md space-y-4 rounded-2xl bg-card p-6 shadow-xl">
             <h3 className="font-bold text-foreground">{editingId ? "编辑 Banner" : "添加 Banner"}</h3>
-            <label className="flex h-40 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border bg-secondary hover:border-gold/50">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={strictRatioCheck}
+                onChange={(e) => setStrictRatioCheck(e.target.checked)}
+                className="h-4 w-4 rounded border-border"
+              />
+              <span>严格 4:3 校验（开启后，非 4:3 图片将禁止上传）</span>
+            </label>
+            <label className="flex aspect-[4/3] w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border bg-secondary hover:border-gold/50">
               {form.image ? (
                 <img src={form.image} alt="" className="h-full w-full object-cover" />
               ) : (
                 <>
                   <Image size={32} className="text-muted-foreground" />
-                  <p className="mt-2 text-xs font-medium text-foreground"><Tx>点击上传轮播图</Tx></p>
+                  <p className="mt-2 text-xs font-medium text-foreground"><Tx>点击上传 4:3 Banner 图片</Tx></p>
                 </>
               )}
               <input
@@ -243,6 +278,17 @@ export default function AdminBanners() {
                   const file = e.target.files?.[0];
                   if (!file) return;
                   try {
+                    const { width, height } = await readImageSize(file);
+                    if (width > 0 && height > 0) {
+                      const ratioOk = isAspectRatioWithinTolerance(width, height, BANNER_RATIO, BANNER_RATIO_TOLERANCE);
+                      if (!ratioOk && strictRatioCheck) {
+                        toast.error(`当前图片为 ${width}×${height}，不符合 4:3 比例，已阻止上传。`);
+                        return;
+                      }
+                      if (!ratioOk) {
+                        toast.warning(`当前图片为 ${width}×${height}，建议使用 4:3 比例（如 1200×900）以获得最佳展示效果。`);
+                      }
+                    }
                     const res = await uploadService.uploadSingleWithProgress(file, { mode: "banner" });
                     if (res.url) setForm({ ...form, image: res.url });
                     else toast.error("上传失败");

@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import {
-  startGlobalLoadingImmediate,
-  stopGlobalLoading,
-  subscribeGlobalLoading,
-} from "@/lib/loadingProgress";
+import { subscribeGlobalLoading } from "@/lib/loadingProgress";
 
 type BarState = { progress: number; visible: boolean; animatingOut: boolean };
 
@@ -39,24 +34,7 @@ export function TopProgressBar() {
   );
 }
 
-/**
- * Bridge route changes into the global progress system.
- * Keep it lightweight and avoid overlap conflict via tokenized loading manager.
- */
 export function RouterLoadingBridge() {
-  const location = useLocation();
-
-  useEffect(() => {
-    const token = startGlobalLoadingImmediate();
-    const timer = window.setTimeout(() => {
-      stopGlobalLoading(token);
-    }, 380);
-
-    return () => {
-      window.clearTimeout(timer);
-      stopGlobalLoading(token);
-    };
-  }, [location.pathname, location.search, location.hash]);
-
+  // Keep component for backward compatibility; route change no longer forces global loading bar.
   return null;
 }

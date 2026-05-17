@@ -63,7 +63,7 @@ export default function LoginBannerCarousel({ banners, paused = false }: LoginBa
   return (
     <div
       className={`relative w-full overflow-hidden bg-[var(--theme-surface)] ${bannerContainerClass}`}
-      style={{ aspectRatio: "16 / 7", borderRadius: "var(--theme-radius)" }}
+      style={{ aspectRatio: "4 / 3", borderRadius: "var(--theme-radius)" }}
       data-theme-banner-style={themeConfig.bannerStyle}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}

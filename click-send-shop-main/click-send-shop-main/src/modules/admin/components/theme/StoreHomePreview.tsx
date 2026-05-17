@@ -5,10 +5,15 @@ import ProductCard from "@/components/ProductCard";
 import StoreTabHeader from "@/components/store/StoreTabHeader";
 import type { ThemeConfig } from "@/types/theme";
 import { Tx } from "@/components/admin/AdminText";
+import HomeNavIcon from "@/components/store/HomeNavIcon";
+import {
+  HOME_NAV_ICON_FRAME_CLASS,
+  HOME_NAV_ITEM_CLASS,
+  HOME_NAV_LABEL_CLASS,
+} from "@/constants/homeLayout";
 import {
   getBottomNavInnerClassName,
   getBottomNavShellClassName,
-  getCategoryIconShellClassName,
   getMemberCardClassName,
 } from "@/utils/themeVisuals";
 import { previewBanner, previewProduct } from "./themePreviewData";
@@ -25,16 +30,13 @@ export default function StoreHomePreview({ config }: { config: ThemeConfig }) {
       <div className="overflow-hidden rounded-xl border border-[var(--theme-border)]">
         <BannerCarousel banners={[previewBanner]} themeConfigOverride={config} />
       </div>
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-5 gap-1 border-y border-[var(--theme-border)] py-3">
         {categories.map((label) => (
-          <div key={label} className="flex flex-col items-center gap-1 text-center">
-            <div
-              className={getCategoryIconShellClassName(config.categoryIconStyle)}
-              data-theme-category-icon-style={config.categoryIconStyle}
-            >
-              {label.slice(0, 1)}
-            </div>
-            <span className="text-[10px] text-[var(--theme-text-muted)]">{label}</span>
+          <div key={label} className={`${HOME_NAV_ITEM_CLASS} max-w-none w-auto`}>
+            <span className={HOME_NAV_ICON_FRAME_CLASS}>
+              <HomeNavIcon value={label.slice(0, 1)} />
+            </span>
+            <span className={HOME_NAV_LABEL_CLASS}>{label}</span>
           </div>
         ))}
       </div>

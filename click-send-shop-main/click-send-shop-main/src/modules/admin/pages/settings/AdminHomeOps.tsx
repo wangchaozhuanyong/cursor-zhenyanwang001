@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Tx } from "@/components/admin/AdminText";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import {
@@ -44,7 +44,7 @@ const emptyNavForm: NavForm = {
 function flattenCategories(nodes: Category[], level = 0): Array<{ id: string; label: string }> {
   const out: Array<{ id: string; label: string }> = [];
   for (const n of nodes) {
-    out.push({ id: n.id, label: `${"—".repeat(level)}${level > 0 ? " " : ""}${n.icon ? `${n.icon} ` : ""}${n.name}` });
+    out.push({ id: n.id, label: `${"�??".repeat(level)}${level > 0 ? " " : ""}${n.icon ? `${n.icon} ` : ""}${n.name}` });
     if (n.children?.length) out.push(...flattenCategories(n.children.filter(Boolean), level + 1));
   }
   return out;
@@ -53,10 +53,10 @@ function flattenCategories(nodes: Category[], level = 0): Array<{ id: string; la
 type HomeOpsTab = "modules" | "display" | "nav" | "newArrival";
 
 const HOME_OPS_TABS: { id: HomeOpsTab; label: string; icon: React.ElementType; desc: string }[] = [
-  { id: "modules", label: "模块开关", icon: ToggleLeft, desc: "控制首页各区块显示/隐藏" },
-  { id: "display", label: "展示规则", icon: LayoutGrid, desc: "热销/推荐每批数量" },
-  { id: "nav", label: "金刚区导航", icon: Grid3X3, desc: "快捷入口图标与跳转" },
-  { id: "newArrival", label: "新品主视觉", icon: Sparkles, desc: "新品专区氛围图与文案" },
+  { id: "modules", label: "模��?��?�?�", icon: ToggleLeft, desc: "�?��?���?页��?�?���?�?�示/�?��?�" },
+  { id: "display", label: "��?示��?�??", icon: LayoutGrid, desc: "�?��??/�?�荐每�?��?��?�" },
+  { id: "nav", label: "�??�??�?�导�?�", icon: Grid3X3, desc: "快捷�?�口�?���?��?跳转" },
+  { id: "newArrival", label: "�?��?�主��?��?", icon: Sparkles, desc: "�?��?���?�?���?�?��?���?�??��?" },
 ];
 
 export default function AdminHomeOps() {
@@ -81,7 +81,7 @@ export default function AdminHomeOps() {
       setNavItems(nav);
       setCategories(cats);
     } catch (e) {
-      toast.error(toastErrorMessage(e, "加载首页运营配置失败"));
+      toast.error(toastErrorMessage(e, "�?�载��?页运营�?�置失败"));
     } finally {
       setLoading(false);
     }
@@ -100,9 +100,9 @@ export default function AdminHomeOps() {
       validateUploadFile(file, "thumb");
       const { url } = await uploadService.uploadSingleWithProgress(file, { mode: "thumb", timeoutMs: 45000 });
       setNavForm((prev) => ({ ...prev, icon_url: url }));
-      toast.success("图标已上传，保存导航后生效");
+      toast.success("�?���?已��?传��?保��?导�?���?�??�??");
     } catch (err) {
-      toast.error(toastErrorMessage(err, "图标上传失败"));
+      toast.error(toastErrorMessage(err, "�?���?��?传失败"));
     } finally {
       setNavIconUploading(false);
     }
@@ -110,11 +110,11 @@ export default function AdminHomeOps() {
 
   const saveNav = async () => {
     if (!navForm.title.trim()) {
-      toast.error("请填写导航标题");
+      toast.error("请填�??导�?���?��?");
       return;
     }
     if (navForm.target_type === "category" && !String(navForm.target_category_id || "").trim()) {
-      toast.error("请选择要跳转的分类");
+      toast.error("请�??�?�要跳转�??�??类");
       return;
     }
     setSaving(true);
@@ -125,25 +125,25 @@ export default function AdminHomeOps() {
       }
       if (editingNavId) await homeOpsService.updateHomeNavItem(editingNavId, payload);
       else await homeOpsService.createHomeNavItem(payload);
-      toast.success(editingNavId ? "金刚区导航已更新" : "金刚区导航已创建");
+      toast.success(editingNavId ? "�??�??�?�导�?�已�?��?�" : "�??�??�?�导�?�已�??建");
       setEditingNavId(null);
       setNavForm(emptyNavForm);
       await reload();
     } catch (e) {
-      toast.error(toastErrorMessage(e, "保存金刚区导航失败"));
+      toast.error(toastErrorMessage(e, "保��?�??�??�?�导�?�失败"));
     } finally {
       setSaving(false);
     }
   };
 
   const categoryOptions = flattenCategories(categories);
-  const categoryNameMap = new Map(categoryOptions.map((c) => [c.id, c.label.replace(/^—+\s*/, "")]));
+  const categoryNameMap = new Map(categoryOptions.map((c) => [c.id, c.label.replace(/^�??+\s*/, "")]));
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-foreground"><Tx>首页运营</Tx></h1>
-        <p className="text-sm text-muted-foreground"><Tx>模块开关、展示规则、金刚区与新品主视觉统一在此配置</Tx></p>
+        <h1 className="text-xl font-bold text-foreground"><Tx>��?页运营</Tx></h1>
+        <p className="text-sm text-muted-foreground"><Tx>模��?��?�?��?���?示��?�??�?��??�??�?���?�?��?�主��?��?��?��?�?�此�?�置</Tx></p>
       </div>
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         <nav className="flex shrink-0 flex-row gap-2 overflow-x-auto lg:w-52 lg:flex-col lg:gap-1">
@@ -180,18 +180,18 @@ export default function AdminHomeOps() {
         <div className="mb-4 flex items-center gap-2">
           <Grid3X3 size={18} className="text-theme-price" />
           <div>
-            <h2 className="font-semibold text-foreground"><Tx>金刚区导航</Tx></h2>
-            <p className="text-xs text-muted-foreground"><Tx>图标支持本地上传、URL、站内路径或 Emoji；排序越小越靠前</Tx></p>
+            <h2 className="font-semibold text-foreground"><Tx>�??�??�?�导�?�</Tx></h2>
+            <p className="text-xs text-muted-foreground"><Tx>�?���?�?��?��?��?���?传�?�URL�?���?�??路��?�?? Emoji��?�??序��?小��?靠�?�</Tx></p>
           </div>
         </div>
 
         <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_1fr_1.4fr_minmax(7rem,1fr)_auto_auto]">
           <label className="flex min-w-0 flex-col gap-1 md:col-span-1">
-            <span className="text-[11px] font-medium text-muted-foreground"><Tx>图标</Tx></span>
+            <span className="text-[11px] font-medium text-muted-foreground"><Tx>�?���?</Tx></span>
             <div className="flex flex-wrap items-stretch gap-2">
               <input
                 className="min-w-0 flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
-                placeholder="上传后自动填入，或可填 URL / 路径 / Emoji"
+                placeholder="��?传��?�?��?�填�?���?�??可填 URL / 路��? / Emoji"
                 value={navForm.icon_url}
                 onChange={(e) => setNavForm({ ...navForm, icon_url: e.target.value })}
               />
@@ -209,24 +209,24 @@ export default function AdminHomeOps() {
                 className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-border bg-secondary px-3 py-2 text-xs font-medium text-foreground hover:bg-secondary/80 disabled:opacity-50"
               >
                 {navIconUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                上传图片
+                ��?传�?��??
               </button>
-              <div className="flex shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-background/50 px-1 py-1" title="当前图标预览">
+              <div className="flex shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-background/50 px-1 py-1" title="��?�?��?���?��?��?">
                 <IconPreview value={navForm.icon_url} />
               </div>
             </div>
             <p className="text-[10px] leading-relaxed text-muted-foreground">
-              <span className="font-medium text-foreground/80"><Tx>规格说明：</Tx></span>
+              <span className="font-medium text-foreground/80"><Tx>��?格说�??��?</Tx></span>
               {IMAGE_UPLOAD_HINT_HOME_NAV_ICON}
               <span className="mt-0.5 block">{IMAGE_UPLOAD_HINT_API}</span>
             </p>
           </label>
           <label className="flex min-w-0 flex-col gap-1">
-            <span className="text-[11px] font-medium text-muted-foreground"><Tx>标题</Tx></span>
-            <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" placeholder="前台展示名称" value={navForm.title} onChange={(e) => setNavForm({ ...navForm, title: e.target.value })} />
+            <span className="text-[11px] font-medium text-muted-foreground"><Tx>��?��?</Tx></span>
+            <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" placeholder="�?�台��?示名称" value={navForm.title} onChange={(e) => setNavForm({ ...navForm, title: e.target.value })} />
           </label>
           <label className="flex min-w-0 flex-col gap-1">
-            <span className="text-[11px] font-medium text-muted-foreground"><Tx>点击跳转</Tx></span>
+            <span className="text-[11px] font-medium text-muted-foreground"><Tx>�?��?�跳转</Tx></span>
             <select
               className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
               value={navForm.target_type || "url"}
@@ -239,8 +239,8 @@ export default function AdminHomeOps() {
                 }));
               }}
             >
-              <option value="url"><Tx>站内路径 / 外链</Tx></option>
-              <option value="category"><Tx>指定分类（产品分类页）</Tx></option>
+              <option value="url"><Tx>��?�??路��? / ��?�?�</Tx></option>
+              <option value="category"><Tx>�??��?�??类��?产�?��??类页��?</Tx></option>
             </select>
             {navForm.target_type === "category" ? (
               <select
@@ -255,7 +255,7 @@ export default function AdminHomeOps() {
                   }));
                 }}
               >
-                <option value=""><Tx>请选择分类…</Tx></option>
+                <option value=""><Tx>请�??�?��??类�?�</Tx></option>
                 {categoryOptions.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.label}
@@ -265,46 +265,46 @@ export default function AdminHomeOps() {
             ) : (
               <input
                 className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
-                placeholder="/categories 或 https://..."
+                placeholder="/categories �?? https://..."
                 value={navForm.link_url}
                 onChange={(e) => setNavForm({ ...navForm, link_url: e.target.value })}
               />
             )}
             <p className="text-[10px] leading-tight text-muted-foreground">
-              {navForm.target_type === "category" ? "将自动跳转到 /categories 并选中该分类" : "支持 /path 或 https://…"}
+              {navForm.target_type === "category" ? "��?�?��?�跳转�?� /categories 并�??中该�??类" : "�?��?� /path �?? https://�?�"}
             </p>
           </label>
           <label className="flex min-w-0 flex-col gap-1">
-            <span className="text-[11px] font-medium text-muted-foreground"><Tx>排序</Tx></span>
+            <span className="text-[11px] font-medium text-muted-foreground"><Tx>�??序</Tx></span>
             <input
               type="number"
-              title="排序：数字越小越靠前（如 0 会排在 1 前面）"
+              title="�??序��?�?���?��?小��?靠�?���?��? 0 ��?�??�?� 1 �?�面��?"
               className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
-              placeholder="如 0"
+              placeholder="��? 0"
               value={navForm.sort_order}
               onChange={(e) => setNavForm({ ...navForm, sort_order: Number(e.target.value) || 0 })}
             />
-            <span className="text-[10px] leading-tight text-muted-foreground"><Tx>数字越小越靠前</Tx></span>
+            <span className="text-[10px] leading-tight text-muted-foreground"><Tx>�?���?��?小��?靠�?�</Tx></span>
           </label>
           <label className="flex cursor-pointer flex-col justify-end gap-1 pb-0.5">
-            <span className="text-[11px] font-medium text-muted-foreground"><Tx>状态</Tx></span>
+            <span className="text-[11px] font-medium text-muted-foreground"><Tx>�?��?�</Tx></span>
             <span className="flex min-h-[42px] items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-foreground">
               <input type="checkbox" className="accent-gold" checked={navForm.enabled} onChange={(e) => setNavForm({ ...navForm, enabled: e.target.checked })} /><Tx>
-              启用后前台可见
+              启�?���?�?�台可见
             </Tx></span>
           </label>
           <div className="flex flex-col justify-end gap-1">
-            <span className="text-[11px] font-medium text-muted-foreground opacity-0 select-none"><Tx>操作</Tx></span>
+            <span className="text-[11px] font-medium text-muted-foreground opacity-0 select-none"><Tx>�?���?</Tx></span>
             <PermissionGate permission="home_ops.manage">
               <LoadingButton
                 type="button"
                 variant="gold"
                 state={saving ? "loading" : "normal"}
-                loadingText="保存中..."
-                onClick={() => adminConfirmSave(confirm, editingNavId ? "金刚区导航" : "新金刚区导航", () => saveNav())}
+                loadingText="保��?中..."
+                onClick={() => adminConfirmSave(confirm, editingNavId ? "�??�??�?�导�?�" : "�?��??�??�?�导�?�", () => saveNav())}
                 className="inline-flex h-[42px] rounded-xl px-4 text-sm font-bold"
               >
-                {editingNavId ? "保存" : "新增"}
+                {editingNavId ? "保��?" : "�?���?"}
               </LoadingButton>
             </PermissionGate>
           </div>
@@ -331,13 +331,13 @@ export default function AdminHomeOps() {
                 <div className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
                   <ExternalLink size={11} />
                   {item.target_type === "category" && item.target_category_id
-                    ? `分类：${categoryNameMap.get(item.target_category_id) || item.target_category_id}`
-                    : (item.link_url || "无跳转链接")}
-                  · 排序 {item.sort_order}
+                    ? `�??类��?${categoryNameMap.get(item.target_category_id) || item.target_category_id}`
+                    : (item.link_url || "�?�跳转�?��?�")}
+                  · �??序 {item.sort_order}
                 </div>
               </div>
               <span className={`rounded-full px-2 py-1 text-xs font-semibold ${item.enabled ? THEME_BADGE_SUCCESS : THEME_BADGE_MUTED}`}>
-                {item.enabled ? "启用" : "禁用"}
+                {item.enabled ? "启�?�" : "禁�?�"}
               </span>
               <PermissionGate permission="home_ops.manage">
                 <button
@@ -362,7 +362,7 @@ export default function AdminHomeOps() {
                   type="button"
                   className={`rounded-lg p-2 text-muted-foreground hover:bg-secondary ${THEME_HOVER_TEXT_DANGER}`}
                   onClick={() =>
-                    adminConfirmDelete(confirm, item.title || "该导航", async () => { try { await homeOpsService.deleteHomeNavItem(item.id); await reload(); toast.success("已删除"); } catch (e) { toast.error(toastErrorMessage(e, "删除失败")); } })
+                    adminConfirmDelete(confirm, item.title || "该导�?�", async () => { try { await homeOpsService.deleteHomeNavItem(item.id); await reload(); toast.success("已�?��?�"); } catch (e) { toast.error(toastErrorMessage(e, "�?��?�失败")); } })
                   }
                 >
                   <Trash2 size={15} />
@@ -370,7 +370,7 @@ export default function AdminHomeOps() {
               </PermissionGate>
             </div>
           ))}
-          {navItems.length === 0 && <div className="py-8 text-center text-sm text-muted-foreground"><Tx>暂无金刚区导航</Tx></div>}
+          {navItems.length === 0 && <div className="py-8 text-center text-sm text-muted-foreground"><Tx>�??�?��??�??�?�导�?�</Tx></div>}
         </div>
       </section>
           ) : null}
@@ -382,11 +382,11 @@ export default function AdminHomeOps() {
 
 function IconPreview({ value }: { value: string }) {
   const v = value.trim();
-  if (!v) return <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-muted-foreground"><Tx>图</Tx></div>;
+  if (!v) return <div className="flex h-12 w-12 items-center justify-center text-muted-foreground"><Tx>�?�</Tx></div>;
   if (v.startsWith("http") || v.startsWith("/")) {
-    return <img src={v} alt="" className="h-11 w-11 rounded-xl object-cover" />;
+    return <img src={v} alt="" className="h-12 w-12 object-contain object-center" />;
   }
-  return <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-lg">{v.slice(0, 2)}</div>;
+  return <div className="flex h-12 w-12 items-center justify-center text-xl leading-none">{v.slice(0, 2)}</div>;
 }
 
 

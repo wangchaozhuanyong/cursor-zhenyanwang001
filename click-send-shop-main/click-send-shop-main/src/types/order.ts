@@ -18,6 +18,16 @@ export type PaymentStatus =
   | "refunded"
   | "partially_refunded";
 
+export type OrderTab =
+  | "all"
+  | "pending_payment"
+  | "paid"
+  | "shipped"
+  | "pending_review"
+  | "completed"
+  | "after_sale"
+  | "cancelled";
+
 export interface Order {
   id: string;
   order_no: string;
@@ -123,6 +133,7 @@ export interface SubmitOrderParams {
 }
 
 export interface OrderListParams {
+  tab?: OrderTab;
   status?: OrderStatus;
   paymentStatus?: PaymentStatus;
   keyword?: string;
@@ -190,8 +201,11 @@ export interface AdminOrderSummary {
 }
 
 export interface OrderSummary {
+  total?: number;
   pending_payment: number;
+  paid?: number;
   pending_ship: number;
+  shipped?: number;
   pending_receive: number;
   pending_review: number;
   after_sale: number;

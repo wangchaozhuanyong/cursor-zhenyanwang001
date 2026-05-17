@@ -1,25 +1,8 @@
-import * as meApi from "@/api/modules/me";
-import type { WechatLoginBinding } from "@/types/user";
+﻿import * as meApi from "@/api/modules/me";
 
-export async function fetchWechatBinding(): Promise<WechatLoginBinding & { wechatLoginEnabled?: boolean }> {
-  const res = await meApi.getWechatBinding();
-  const d = res.data as unknown as Record<string, unknown>;
-  return {
-    bound: Boolean(d.bound),
-    nickname: (d.nickname as string | null | undefined) ?? null,
-    avatarUrl: (d.avatarUrl ?? d.avatar_url ?? null) as string | null,
-    boundAt: (d.boundAt ?? d.bound_at ?? undefined) as string | undefined,
-    wechatLoginEnabled: Boolean(d.wechatLoginEnabled ?? d.wechat_login_enabled),
-  };
-}
+export type MeSummary = meApi.MeSummaryResponse;
 
-export async function startBindWechat(redirect = "/settings") {
-  const res = await meApi.bindWechat(redirect);
-  const url = res.data?.authorizeUrl;
-  if (!url) throw new Error("鏃犳硶鑾峰彇寰俊鎺堟潈鍦板潃");
-  window.location.href = url;
-}
-
-export async function unbindWechat() {
-  await meApi.unbindWechat();
+export async function fetchMeSummary(): Promise<MeSummary> {
+  const res = await meApi.getMeSummary();
+  return res.data;
 }

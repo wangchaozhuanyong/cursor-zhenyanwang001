@@ -517,6 +517,9 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     "--theme-coupon-card-cta-bg": invitePromoSurface.ctaBg,
     "--theme-coupon-card-cta-fg": invitePromoSurface.ctaFg,
     "--theme-coupon-card-value-pane-bg": rgbToCss(mixColors(surface, WHITE, isDarkBg ? 0.12 : 0.55)),
+    "--theme-coupon-card-divider": rgbToCss(
+      mixColors(parseColor(invitePromoSurface.border), parseColor(surfaceCss), isDarkBg ? 0.35 : 0.5),
+    ),
     "--theme-bg": bgCss,
     "--theme-surface": surfaceCss,
     "--theme-border": rgbToCss(border),

@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { RouterLoadingBridge, TopProgressBar } from "@/components/ui/top-progress-bar";
+import { TopProgressBar } from "@/components/ui/top-progress-bar";
 import AppRouteFallback from "@/components/AppRouteFallback";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import TrackingManager from "@/components/TrackingManager";
@@ -29,26 +29,33 @@ import { useAdminTOptional } from "@/hooks/useAdminT";
 import { AdminI18nProvider } from "@/contexts/AdminI18nProvider";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 
+type PreloadableLazy<T extends React.ComponentType<never>> = T & { preload?: () => Promise<unknown> };
+function lazyWithPreload<T extends React.ComponentType<never>>(factory: () => Promise<{ default: T }>) {
+  const Component = lazy(factory) as PreloadableLazy<T>;
+  Component.preload = factory;
+  return Component;
+}
+
 /* ---------- Public（前台）页面，按业务域组织 ---------- */
-const MemberHome = lazy(() => import("@/modules/public/pages/home/MemberHome"));
-const GuestHome = lazy(() => import("@/modules/public/pages/home/GuestHome"));
+const MemberHome = lazyWithPreload(() => import("@/modules/public/pages/home/MemberHome"));
+const GuestHome = lazyWithPreload(() => import("@/modules/public/pages/home/GuestHome"));
 const Login = lazy(() => import("@/modules/public/pages/auth/Login"));
 const BindWechatPhone = lazy(() => import("@/modules/public/pages/auth/BindWechatPhone"));
 
-const Categories = lazy(() => import("@/modules/public/pages/product/Categories"));
+const Categories = lazyWithPreload(() => import("@/modules/public/pages/product/Categories"));
 const ProductDetail = lazy(() => import("@/modules/public/pages/product/ProductDetail"));
-const NewArrivals = lazy(() => import("@/modules/public/pages/product/NewArrivals"));
+const NewArrivals = lazyWithPreload(() => import("@/modules/public/pages/product/NewArrivals"));
 const Search = lazy(() => import("@/modules/public/pages/product/Search"));
 
-const Cart = lazy(() => import("@/modules/public/pages/cart/Cart"));
+const Cart = lazyWithPreload(() => import("@/modules/public/pages/cart/Cart"));
 
 const Checkout = lazy(() => import("@/modules/public/pages/order/Checkout"));
-const Orders = lazy(() => import("@/modules/public/pages/order/Orders"));
+const Orders = lazyWithPreload(() => import("@/modules/public/pages/order/Orders"));
 const OrderDetail = lazy(() => import("@/modules/public/pages/order/OrderDetail"));
 const Returns = lazy(() => import("@/modules/public/pages/order/Returns"));
 const PendingReviews = lazy(() => import("@/modules/public/pages/review/PendingReviews"));
 
-const Profile = lazy(() => import("@/modules/public/pages/user/Profile"));
+const Profile = lazyWithPreload(() => import("@/modules/public/pages/user/Profile"));
 const Settings = lazy(() => import("@/modules/public/pages/user/Settings"));
 const UploadVerify = lazy(() => import("@/modules/public/pages/user/UploadVerify"));
 const AddressManage = lazy(() => import("@/modules/public/pages/user/AddressManage"));
@@ -254,9 +261,31 @@ function AppScopeSync() {
 }
 
 function HomeRoute() {
-  const { themeSynced } = useThemeRuntime();
-  if (!themeSynced) return <StoreOutletFallback />;
+  const { themeReady } = useThemeRuntime();
+  if (!themeReady) return <StoreOutletFallback />;
   return isLoggedIn() ? <MemberHome /> : <GuestHome />;
+}
+
+function RoutePreloadOnIdle() {
+  useEffect(() => {
+    const run = () => {
+      Categories.preload?.();
+      NewArrivals.preload?.();
+      Cart.preload?.();
+      Profile.preload?.();
+      if (isLoggedIn()) Orders.preload?.();
+    };
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      const id = (window as Window & { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback(run);
+      return () => {
+        const cancel = (window as Window & { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback;
+        if (cancel) cancel(id);
+      };
+    }
+    const timer = window.setTimeout(run, 300);
+    return () => window.clearTimeout(timer);
+  }, []);
+  return null;
 }
 
 function LoyaltyRouteGuard({
@@ -286,7 +315,7 @@ function AppRoutes() {
       <TooltipProvider>
         <Sonner />
           <TopProgressBar />
-          <RouterLoadingBridge />
+          <RoutePreloadOnIdle />
           <AuthTokenSync />
           <SiteIdentitySync />
           <ReferralInviteSync />

@@ -1,4 +1,4 @@
-﻿import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Flame, Gift, RefreshCw, ShoppingCart, Star, Ticket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
@@ -77,8 +77,10 @@ export default function MemberHome() {
   const isDealLayout = homeLayout === "deal";
   const isMagazineLayout = homeLayout === "magazine";
 
-  useLayoutEffect(() => {
-    void loadHomeData();
+  useEffect(() => {
+    const state = useProductStore.getState();
+    const hasHomeData = state.hotProducts.length > 0 || state.newProducts.length > 0 || state.recommendedProducts.length > 0;
+    void loadHomeData({ background: hasHomeData });
   }, [loadHomeData]);
 
   useEffect(() => {
@@ -309,5 +311,7 @@ function toBatches<T>(list: T[], size: number): T[][] {
   }
   return out;
 }
+
+
 
 

@@ -57,6 +57,11 @@ exports.getOrders = asyncRoute(async (req, res) => {
   res.paginate(result.list, result.total, result.page, result.pageSize);
 });
 
+exports.getOrderSummary = asyncRoute(async (req, res) => {
+  const data = await orderService.getOrderSummary(req.user.id);
+  res.success(data);
+});
+
 exports.getOrderById = asyncRoute(async (req, res) => {
   const result = await orderService.getOrderById(req.user.id, req.params.id);
   res.success(result.data);

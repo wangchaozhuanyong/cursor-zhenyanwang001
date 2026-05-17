@@ -1,4 +1,4 @@
-import { post } from "@/api/request";
+﻿import { post } from "@/api/request";
 
 export type AnalyticsEventPayload = {
   event_type:
@@ -32,6 +32,7 @@ export type AnalyticsEventPayload = {
 };
 
 export function trackAnalyticsEvent(payload: AnalyticsEventPayload) {
-  return post<null>("/analytics/events", payload);
+  return post<null>("/analytics/events", payload, { loadingMode: "silent" });
 }
+
 

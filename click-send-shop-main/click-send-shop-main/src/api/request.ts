@@ -1,4 +1,4 @@
-import type { ApiResponse } from "@/types/common";
+﻿import type { ApiResponse } from "@/types/common";
 import { ApiError } from "@/types/common";
 import {
   getAccessToken,
@@ -13,10 +13,14 @@ import { startGlobalLoadingDeferred, stopGlobalLoading } from "@/lib/loadingProg
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
+type LoadingMode = "global" | "silent";
+export type RequestOptions = RequestInit & {
+  skipGlobalLoading?: boolean;
+  loadingMode?: LoadingMode;
+};
+
 function gatewayErrorMessage(status: number): string | null {
-  if (status === 502) {
-    return "服务暂时不可用（网关未连上后端），请稍后重试；若持续出现请联系管理员检查 API 服务是否运行。";
-  }
+  if (status === 502) return "服务暂时不可用，请稍后重试";
   if (status === 503) return "服务维护中，请稍后再试";
   if (status === 504) return "服务响应超时，请稍后再试";
   return null;
@@ -70,7 +74,6 @@ async function tryRefreshToken(): Promise<string> {
   return newToken;
 }
 
-/** 管理端 access cookie 约 15 分钟过期，依赖 httpOnly refresh cookie 静默续期 */
 export async function tryRefreshAdminSession(): Promise<void> {
   const loadingToken = startGlobalLoadingDeferred();
   let res: Response;
@@ -90,12 +93,10 @@ export async function tryRefreshAdminSession(): Promise<void> {
   }
 }
 
-async function request<T>(
-  endpoint: string,
-  options: RequestInit = {},
-  retry = true,
-): Promise<T> {
-  const loadingToken = startGlobalLoadingDeferred();
+async function request<T>(endpoint: string, options: RequestOptions = {}, retry = true): Promise<T> {
+  const isSilent = options.skipGlobalLoading || options.loadingMode === "silent";
+  const loadingToken = isSilent ? null : startGlobalLoadingDeferred();
+
   const isAdminEndpoint = endpoint.startsWith("/admin/");
   const isAuthLoginOrRegister =
     endpoint.startsWith("/auth/login")
@@ -124,7 +125,7 @@ async function request<T>(
   } catch (err) {
     throw new ApiError(0, "网络连接失败，请检查网络设置", err);
   } finally {
-    stopGlobalLoading(loadingToken);
+    if (loadingToken) stopGlobalLoading(loadingToken);
   }
 
   if (res.status === 401 && retry && !isAdminEndpoint && !isAuthLoginOrRegister) {
@@ -190,31 +191,44 @@ async function request<T>(
   return normalizeMediaUrls(payload, BASE_URL);
 }
 
-export function get<T>(endpoint: string, params?: Record<string, unknown>) {
-  return request<ApiResponse<T>>(`${endpoint}${toQueryString(params)}`);
+export function get<T>(endpoint: string, params?: Record<string, unknown>, options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode">) {
+  return request<ApiResponse<T>>(`${endpoint}${toQueryString(params)}`, {
+    skipGlobalLoading: options?.skipGlobalLoading ?? true,
+    loadingMode: options?.loadingMode ?? "silent",
+  });
 }
 
-export function post<T>(endpoint: string, body?: unknown) {
+export function post<T>(endpoint: string, body?: unknown, options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode">) {
   return request<ApiResponse<T>>(endpoint, {
     method: "POST",
     body: body ? JSON.stringify(body) : undefined,
+    skipGlobalLoading: options?.skipGlobalLoading,
+    loadingMode: options?.loadingMode,
   });
 }
 
-export function put<T>(endpoint: string, body?: unknown) {
+export function put<T>(endpoint: string, body?: unknown, options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode">) {
   return request<ApiResponse<T>>(endpoint, {
     method: "PUT",
     body: body ? JSON.stringify(body) : undefined,
+    skipGlobalLoading: options?.skipGlobalLoading,
+    loadingMode: options?.loadingMode,
   });
 }
 
-export function patch<T>(endpoint: string, body?: unknown) {
+export function patch<T>(endpoint: string, body?: unknown, options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode">) {
   return request<ApiResponse<T>>(endpoint, {
     method: "PATCH",
     body: body ? JSON.stringify(body) : undefined,
+    skipGlobalLoading: options?.skipGlobalLoading,
+    loadingMode: options?.loadingMode,
   });
 }
 
-export function del<T>(endpoint: string) {
-  return request<ApiResponse<T>>(endpoint, { method: "DELETE" });
+export function del<T>(endpoint: string, options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode">) {
+  return request<ApiResponse<T>>(endpoint, {
+    method: "DELETE",
+    skipGlobalLoading: options?.skipGlobalLoading,
+    loadingMode: options?.loadingMode,
+  });
 }

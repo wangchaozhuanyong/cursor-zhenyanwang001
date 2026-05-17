@@ -1,0 +1,180 @@
+﻿{
+  "info": {
+    "name": "Order Center Regression",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "GET /orders/summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/orders/summary"
+          }
+        },
+        {
+          "name": "GET /orders (tab=all)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/orders?tab=all&page=1&pageSize=10"
+          }
+        },
+        {
+          "name": "GET /orders (tab=pending_payment)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/orders?tab=pending_payment"
+          }
+        },
+        {
+          "name": "GET /orders (tab=paid)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/orders?tab=paid"
+          }
+        },
+        {
+          "name": "GET /orders (tab=shipped)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/orders?tab=shipped"
+          }
+        },
+        {
+          "name": "GET /orders (tab=pending_review)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/orders?tab=pending_review"
+          }
+        },
+        {
+          "name": "GET /orders (tab=completed)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/orders?tab=completed"
+          }
+        },
+        {
+          "name": "GET /orders (tab=after_sale)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/orders?tab=after_sale"
+          }
+        },
+        {
+          "name": "GET /orders (tab=cancelled)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/orders?tab=cancelled"
+          }
+        },
+        {
+          "name": "GET /orders/:id",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/orders/{{order_id}}"
+          }
+        },
+        {
+          "name": "POST /orders/:id/cancel",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/orders/{{order_id}}/cancel"
+          }
+        },
+        {
+          "name": "POST /orders/:id/confirm",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/orders/{{order_id}}/confirm"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "GET /reviews/pending-items",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/reviews/pending-items"
+          }
+        },
+        {
+          "name": "GET /reviews/product/:productId/eligibility (guest)",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/reviews/product/{{product_id}}/eligibility"
+          }
+        },
+        {
+          "name": "GET /reviews/product/:productId/eligibility (login)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{base_url}}/reviews/product/{{product_id}}/eligibility"
+          }
+        },
+        {
+          "name": "POST /reviews (order_item_id)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_item_id\": \"{{order_item_id}}\",\n  \"rating\": 5,\n  \"content\": \"Postman 联调评价\",\n  \"images\": []\n}"
+            },
+            "url": "{{base_url}}/reviews"
+          }
+        }
+      ]
+    }
+  ]
+}

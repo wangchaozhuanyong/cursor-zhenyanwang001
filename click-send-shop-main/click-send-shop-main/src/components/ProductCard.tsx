@@ -6,7 +6,7 @@ import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import ProductTagList from "@/components/ProductTagList";
 import StoreBadge from "@/components/ui/StoreBadge";
 import StorePrice from "@/components/ui/StorePrice";
-import { productSalesLabel } from "@/utils/productSales";
+import { getProductSalesCount, hasProductSales, productSalesLabel } from "@/utils/productSales";
 import { trackEvent } from "@/services/analyticsService";
 import { cn } from "@/lib/utils";
 
@@ -48,7 +48,8 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
   const defaultVariant = product.default_variant ?? (product.variants?.length === 1 ? product.variants[0] : null);
   const displayStock = Number(defaultVariant?.stock ?? product.stock ?? 0);
   const soldOut = displayStock <= 0;
-  const salesCount = Math.max(0, Number(product.sales_count) || 0);
+  const salesCount = getProductSalesCount(product.sales_count);
+  const showSales = hasProductSales(product.sales_count);
 
   const openDetail = (module: string) => {
     void trackEvent({ event_type: "product_click", module, product_id: product.id });
@@ -83,16 +84,16 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
         size={isHorizontal ? "sm" : cardVariant === "deal" ? "lg" : cardVariant === "premium" ? "lg" : "md"}
         className="min-w-0 max-w-full"
       />
-      {isHorizontal && soldOut ? null : (
+      {showSales ? (
         <span
           className={cn(
             "text-[11px] tabular-nums text-[var(--theme-text-muted)]",
             isHorizontal ? "leading-tight" : "shrink-0",
           )}
         >
-          {soldOut ? "已售罄" : productSalesLabel(salesCount)}
+          {productSalesLabel(salesCount)}
         </span>
-      )}
+      ) : null}
     </div>
   );
 

@@ -1,4 +1,12 @@
-const wechatService = require('../auth/services/wechat.service');
+﻿const wechatService = require('../auth/services/wechat.service');
+const authService = require('../auth/auth.service');
+const orderService = require('../order/order.service');
+const couponService = require('./coupon.service');
+const favoritesService = require('./favorites.service');
+const notificationService = require('./notification.service');
+const inviteService = require('./invite.service');
+const rewardService = require('./reward.service');
+const loyaltyService = require('../loyalty/loyalty.service');
 const { asyncRoute } = require('../../middleware/asyncRoute');
 const { ValidationError } = require('../../errors');
 
@@ -17,6 +25,32 @@ exports.getWechatBinding = asyncRoute(async (req, res) => {
   res.success({
     ...data,
     wechatLoginEnabled: wechatService.isWechatLoginEnabled(),
+  });
+});
+
+exports.getSummary = asyncRoute(async (req, res) => {
+  const userId = req.user.id;
+
+  const [profileRes, orderSummary, couponPage, favoritePage, unread, inviteStats, rewardBalance, loyaltyConfig] = await Promise.all([
+    authService.getProfile(userId),
+    orderService.getOrderSummary(userId),
+    couponService.getUserCoupons(userId, { page: 1, pageSize: 1, status: 'available' }),
+    favoritesService.getFavorites(userId, { page: 1, pageSize: 1 }),
+    notificationService.getUnreadCount(userId),
+    inviteService.getStats(userId),
+    rewardService.getBalance(userId),
+    loyaltyService.getLoyaltyConfig().then((r) => r.data),
+  ]);
+
+  res.success({
+    profile: profileRes?.data || null,
+    orderSummary: orderSummary || null,
+    couponCount: Number(couponPage?.total || 0),
+    favoriteCount: Number(favoritePage?.total || 0),
+    unreadCount: Number(unread?.count || 0),
+    inviteStats: inviteStats || null,
+    rewardBalance: rewardBalance || { balance: 0, pendingAmount: 0 },
+    loyaltyConfig: loyaltyConfig || null,
   });
 });
 

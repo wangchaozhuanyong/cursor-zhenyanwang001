@@ -1,9 +1,7 @@
-import { create } from "zustand";
+﻿import { create } from "zustand";
 import type { Product, ProductListParams } from "@/types/product";
 import type { Category } from "@/types/category";
-import * as productService from "@/services/productService";
-
-// ─── Sub-State Types ────────────────────────────────────
+import * as productService from "@/services/productService";`r`nimport * as homeService from "@/services/homeService";
 
 interface PaginationState {
   total: number;
@@ -27,58 +25,37 @@ const INITIAL_FILTERS: ProductListParams = {
   pageSize: 10,
 };
 
+const HOME_DATA_TTL_MS = 120_000;
 let productListRequestSeq = 0;
 
-// ─── Store Interface ────────────────────────────────────
-
 interface ProductState {
-  // 商品列表
   products: Product[];
   pagination: PaginationState;
   filters: ProductListParams;
 
-  // 商品详情
   currentProduct: Product | null;
   relatedProducts: Product[];
 
-  // 首页版块
   hotProducts: Product[];
   newProducts: Product[];
   recommendedProducts: Product[];
+  homeDataLoadedAt: number;
 
-  // 分类
   categories: Category[];
 
-  // UI 状态
   loading: boolean;
+  listRefreshing: boolean;
   detailLoading: boolean;
   error: string | null;
 
-  // ─── Actions ──────────────────────────────────────────
-
-  /** 加载商品列表（带筛选 / 排序 / 分页） */
   loadProducts: (params?: Partial<ProductListParams>) => Promise<void>;
-
-  /** 加载商品详情 + 相关推荐 */
   loadProductDetail: (id: string) => Promise<void>;
-
-  /** 加载首页数据（热门 / 新品 / 推荐 + 分类） */
-  loadHomeData: () => Promise<void>;
-
-  /** 加载分类列表 */
+  loadHomeData: (options?: { force?: boolean; background?: boolean }) => Promise<void>;
   loadCategories: () => Promise<void>;
-
-  /** 合并更新筛选条件，自动重新加载列表 */
   setFilters: (patch: Partial<ProductListParams>) => Promise<void>;
-
-  /** 重置筛选条件并重新加载 */
   resetFilters: () => Promise<void>;
-
-  /** 清除错误 */
   clearError: () => void;
 }
-
-// ─── Store Implementation ───────────────────────────────
 
 export const useProductStore = create<ProductState>((set, get) => ({
   products: [],
@@ -91,14 +68,14 @@ export const useProductStore = create<ProductState>((set, get) => ({
   hotProducts: [],
   newProducts: [],
   recommendedProducts: [],
+  homeDataLoadedAt: 0,
 
   categories: [],
 
   loading: false,
+  listRefreshing: false,
   detailLoading: false,
   error: null,
-
-  // ── loadProducts ──────────────────────────────────────
 
   loadProducts: async (params) => {
     const requestSeq = ++productListRequestSeq;
@@ -106,7 +83,14 @@ export const useProductStore = create<ProductState>((set, get) => ({
       ...get().filters,
       ...params,
     };
-    set({ products: [], loading: true, error: null, filters: merged });
+
+    const hasData = get().products.length > 0;
+    set({
+      loading: !hasData,
+      listRefreshing: hasData,
+      error: null,
+      filters: merged,
+    });
 
     try {
       const data = await productService.fetchProducts(merged);
@@ -120,17 +104,17 @@ export const useProductStore = create<ProductState>((set, get) => ({
           totalPages: data.totalPages,
         },
         loading: false,
+        listRefreshing: false,
       });
     } catch (err) {
       if (requestSeq !== productListRequestSeq) return;
       set({
         loading: false,
+        listRefreshing: false,
         error: err instanceof Error ? err.message : "加载商品失败",
       });
     }
   },
-
-  // ── loadProductDetail ─────────────────────────────────
 
   loadProductDetail: async (id) => {
     set({ detailLoading: true, error: null, currentProduct: null, relatedProducts: [] });
@@ -156,22 +140,46 @@ export const useProductStore = create<ProductState>((set, get) => ({
     }
   },
 
-  // ── loadHomeData ──────────────────────────────────────
+  loadHomeData: async (options) => {
+    const force = options?.force === true;
+    const background = options?.background === true;
+    const state = get();
+    const hasHomeData =
+      state.hotProducts.length > 0 || state.newProducts.length > 0 || state.recommendedProducts.length > 0;
+    const isFresh = hasHomeData && Date.now() - state.homeDataLoadedAt < HOME_DATA_TTL_MS;
 
-  loadHomeData: async () => {
-    set({ loading: true, error: null });
+    if (!force && isFresh) return;
+
+    if (!background) {
+      set({ loading: !hasHomeData, error: null });
+    }
 
     try {
-      const [homeData, cats] = await Promise.all([
-        productService.fetchHomeProducts(),
-        productService.fetchCategories(),
-      ]);
+      let homeData: { hot: Product[]; new_arrivals: Product[]; recommended: Product[] };
+      let cats: Category[];
+      try {
+        const bootstrap = await homeService.fetchHomeBootstrap();
+        homeData = {
+          hot: Array.isArray(bootstrap?.products?.hot) ? bootstrap.products.hot : [],
+          new_arrivals: Array.isArray(bootstrap?.products?.new_arrivals) ? bootstrap.products.new_arrivals : [],
+          recommended: Array.isArray(bootstrap?.products?.recommended) ? bootstrap.products.recommended : [],
+        };
+        cats = Array.isArray(bootstrap?.categories) ? bootstrap.categories : state.categories;
+      } catch {
+        const fallback = await Promise.all([
+          productService.fetchHomeProducts(),
+          state.categories.length > 0 ? Promise.resolve(state.categories) : productService.fetchCategories(),
+        ]);
+        homeData = fallback[0];
+        cats = fallback[1];
+      }
 
       set({
         hotProducts: homeData.hot,
         newProducts: homeData.new_arrivals,
         recommendedProducts: homeData.recommended,
         categories: cats,
+        homeDataLoadedAt: Date.now(),
         loading: false,
       });
     } catch (err) {
@@ -181,8 +189,6 @@ export const useProductStore = create<ProductState>((set, get) => ({
       });
     }
   },
-
-  // ── loadCategories ────────────────────────────────────
 
   loadCategories: async () => {
     if (get().categories.length > 0) return;
@@ -197,8 +203,6 @@ export const useProductStore = create<ProductState>((set, get) => ({
     }
   },
 
-  // ── setFilters ────────────────────────────────────────
-
   setFilters: async (patch) => {
     const next: ProductListParams = {
       ...get().filters,
@@ -208,13 +212,10 @@ export const useProductStore = create<ProductState>((set, get) => ({
     await get().loadProducts(next);
   },
 
-  // ── resetFilters ──────────────────────────────────────
-
   resetFilters: async () => {
     await get().loadProducts({ ...INITIAL_FILTERS });
   },
 
-  // ── clearError ────────────────────────────────────────
-
   clearError: () => set({ error: null }),
 }));
+

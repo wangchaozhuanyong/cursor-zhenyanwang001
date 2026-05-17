@@ -37,7 +37,7 @@ import { useUserStore } from "@/stores/useUserStore";
 import * as inviteService from "@/services/inviteService";
 import * as orderService from "@/services/orderService";
 import * as rewardService from "@/services/rewardService";
-import * as loyaltyService from "@/services/loyaltyService";
+import * as loyaltyService from "@/services/loyaltyService";`r`nimport * as meService from "@/services/meService";
 import * as uploadService from "@/services/uploadService";
 import type { OrderSummary } from "@/types/order";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -160,26 +160,25 @@ export default function Profile() {
 
   useEffect(() => {
     if (!loggedIn) return;
-    loadProfile().catch(() => {});
-    loadOrders().catch(() => {});
-    loadCoupons().catch(() => {});
-    loadFavorites().catch(() => {});
-    useNotificationStore.getState().fetchUnreadCount();
-    inviteService.fetchInviteStats().then((s) => setInviteCount(s.directCount || 0)).catch(() => {});
-    rewardService.fetchRewardBalance().then((res) => setRewardBalance(Number(res.balance || 0))).catch(() => setRewardBalance(0));
-    orderService.fetchOrderSummary().then((res) => setOrderSummary(res)).catch(() => setOrderSummary(null));
-  }, [loadCoupons, loadFavorites, loadOrders, loadProfile, loggedIn]);
-  useEffect(() => {
-    let cancelled = false;
-    loyaltyService.fetchLoyaltyConfig().then((cfg) => {
-      if (!cancelled) setLoyaltyConfig(cfg);
+
+    meService.fetchMeSummary().then((summary) => {
+      setInviteCount(Number(summary?.inviteStats?.directCount || 0));
+      setRewardBalance(Number(summary?.rewardBalance?.balance || 0));
+      setOrderSummary(summary?.orderSummary || null);
+      setLoyaltyConfig(summary?.loyaltyConfig || null);
+      useNotificationStore.setState({ unreadCount: Number(summary?.unreadCount || 0) });
     }).catch(() => {
-      if (!cancelled) setLoyaltyConfig(null);
+      loadProfile().catch(() => {});
+      loadOrders().catch(() => {});
+      loadCoupons().catch(() => {});
+      loadFavorites().catch(() => {});
+      useNotificationStore.getState().fetchUnreadCount();
+      inviteService.fetchInviteStats().then((s) => setInviteCount(s.directCount || 0)).catch(() => {});
+      rewardService.fetchRewardBalance().then((res) => setRewardBalance(Number(res.balance || 0))).catch(() => setRewardBalance(0));
+      orderService.fetchOrderSummary().then((res) => setOrderSummary(res)).catch(() => setOrderSummary(null));
+      loyaltyService.fetchLoyaltyConfig().then((cfg) => setLoyaltyConfig(cfg)).catch(() => setLoyaltyConfig(null));
     });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  }, [loadCoupons, loadFavorites, loadOrders, loadProfile, loggedIn]);
 
   const handleLogout = async () => {
     await authStore.logout();
@@ -231,35 +230,22 @@ export default function Profile() {
       ? "grid-cols-3"
       : "grid-cols-4";
 
-  const orderFeatureFlags = {
-    pendingPayment: true,
-    pendingShip: true,
-    pendingReceive: true,
-    pendingReview: false,
-    afterSale: false,
-  };
   const orderActions = (loggedIn
-    ? [
-      orderFeatureFlags.pendingPayment ? { label: "待付款", icon: Wallet, count: orderSummary?.pending_payment ?? orderPending, path: "/orders?status=pending", auth: true } : null,
-      orderFeatureFlags.pendingShip ? { label: "待发货", icon: Package, count: orderSummary?.pending_ship ?? orderShipping, path: "/orders?status=paid", auth: true } : null,
-      orderFeatureFlags.pendingReceive ? { label: "待收货", icon: Truck, count: orderSummary?.pending_receive ?? orderReceiving, path: "/orders?status=shipped", auth: true } : null,
-      orderFeatureFlags.pendingReview ? { label: "待评价", icon: MessageSquare, count: orderSummary?.pending_review ?? pendingReviewCount, path: "/reviews/pending", auth: true } : null,
-      orderFeatureFlags.afterSale ? { label: "退款/售后", icon: CircleHelp, count: orderSummary?.after_sale ?? afterSaleCount, path: "/returns", auth: true } : null,
-    ].filter(Boolean)
-    : [
-      { label: "待付款", icon: Wallet, count: 0, path: "/orders?status=pending", auth: true },
-      { label: "待发货", icon: Package, count: 0, path: "/orders?status=paid", auth: true },
-      { label: "待收货", icon: Truck, count: 0, path: "/orders?status=shipped", auth: true },
-    ]) as Array<{ label: string; icon: typeof Wallet; count?: number; path: string; auth: boolean }>;
-  const orderGridClass = orderActions.length >= 5
-    ? "grid-cols-5"
-    : orderActions.length === 4
-      ? "grid-cols-4"
-      : orderActions.length === 3
-        ? "grid-cols-3"
-        : orderActions.length === 2
-          ? "grid-cols-2"
-          : "grid-cols-1";
+  ? [
+    { label: "待付款", icon: Wallet, count: orderSummary?.pending_payment ?? orderPending, path: "/orders?tab=pending_payment", auth: true },
+    { label: "待发货", icon: Package, count: orderSummary?.pending_ship ?? orderShipping, path: "/orders?tab=paid", auth: true },
+    { label: "待收货", icon: Truck, count: orderSummary?.pending_receive ?? orderReceiving, path: "/orders?tab=shipped", auth: true },
+    { label: "待评价", icon: MessageSquare, count: orderSummary?.pending_review ?? pendingReviewCount, path: "/orders?tab=pending_review", auth: true },
+    { label: "退款/售后", icon: CircleHelp, count: orderSummary?.after_sale ?? afterSaleCount, path: "/returns", auth: true },
+  ]
+  : [
+    { label: "待付款", icon: Wallet, count: 0, path: "/orders?tab=pending_payment", auth: true },
+    { label: "待发货", icon: Package, count: 0, path: "/orders?tab=paid", auth: true },
+    { label: "待收货", icon: Truck, count: 0, path: "/orders?tab=shipped", auth: true },
+    { label: "待评价", icon: MessageSquare, count: 0, path: "/orders?tab=pending_review", auth: true },
+    { label: "退款/售后", icon: CircleHelp, count: 0, path: "/returns", auth: true },
+  ]) as Array<{ label: string; icon: typeof Wallet; count?: number; path: string; auth: boolean }>;
+const orderGridClass = "grid-cols-5";
 
   return (
     <div className="store-page store-bottom-safe min-h-screen text-[var(--theme-text)]">
@@ -353,7 +339,7 @@ export default function Profile() {
         </section>
 
         <section className={`${CARD_CLASS} overflow-hidden`}>
-          <div className="px-4 pt-4 pb-0">
+          <div className={cn("px-4 pt-4", inviteEnabled ? "pb-0" : "pb-4")}>
             <div className={cn("grid rounded-2xl bg-[var(--theme-bg)] px-2 py-3.5 ring-1 ring-[color-mix(in_srgb,var(--theme-border)_65%,transparent)]", assetGridClass)}>
               {assetItems.map((item) => (
                 <button
@@ -371,7 +357,7 @@ export default function Profile() {
             </div>
           </div>
           {inviteEnabled ? (
-          <div className="mx-4 mb-4 border-t border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] pt-3">
+          <div className="px-4 pb-4 pt-3">
             <InvitePromoCard
               loggedIn={loggedIn}
               inviteCount={inviteCount}
@@ -445,3 +431,5 @@ export default function Profile() {
     </div>
   );
 }
+
+

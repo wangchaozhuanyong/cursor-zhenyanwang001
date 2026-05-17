@@ -467,29 +467,100 @@ async function selectOrderById(q, orderId) {
   return row || null;
 }
 
-async function countOrdersForUser(q, userId, status) {
-  let where = 'WHERE user_id = ?';
+function buildOrderListWhere(filters = {}) {
+  const { userId, status, tab } = filters;
+  let where = 'WHERE o.user_id = ?';
   const params = [userId];
-  if (status) {
-    where += ' AND status = ?';
+
+  if (tab && tab !== 'all') {
+    if (tab === 'pending_payment') {
+      where += " AND o.status = 'pending' AND (o.payment_status IS NULL OR o.payment_status <> 'paid')";
+    } else if (tab === 'paid') {
+      where += " AND o.status = 'paid'";
+    } else if (tab === 'shipped') {
+      where += " AND o.status = 'shipped'";
+    } else if (tab === 'pending_review') {
+      where += ` AND o.status = 'completed'
+        AND EXISTS (
+          SELECT 1 FROM order_items oi
+          LEFT JOIN product_reviews pr ON pr.order_item_id = oi.id
+          WHERE oi.order_id = o.id AND pr.id IS NULL
+        )`;
+    } else if (tab === 'completed') {
+      where += ` AND o.status = 'completed'
+        AND NOT EXISTS (
+          SELECT 1 FROM order_items oi
+          LEFT JOIN product_reviews pr ON pr.order_item_id = oi.id
+          WHERE oi.order_id = o.id AND pr.id IS NULL
+        )`;
+    } else if (tab === 'after_sale') {
+      where += " AND o.status IN ('refunding','refunded')";
+    } else if (tab === 'cancelled') {
+      where += " AND o.status = 'cancelled'";
+    }
+  } else if (status) {
+    where += ' AND o.status = ?';
     params.push(status);
   }
-  const [[{ total }]] = await q.query(`SELECT COUNT(*) as total FROM orders ${where}`, params);
+
+  return { where, params };
+}
+
+async function countOrdersForUser(q, filters = {}) {
+  const { where, params } = buildOrderListWhere(filters);
+  const [[{ total }]] = await q.query(`SELECT COUNT(*) as total FROM orders o ${where}`, params);
   return total;
 }
 
-async function selectOrdersPage(q, userId, status, pageSize, offset) {
-  let where = 'WHERE user_id = ?';
-  const params = [userId];
-  if (status) {
-    where += ' AND status = ?';
-    params.push(status);
-  }
+async function selectOrdersPage(q, filters = {}, pageSize, offset) {
+  const { where, params } = buildOrderListWhere(filters);
   const [rows] = await q.query(
-    `SELECT * FROM orders ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    `SELECT o.* FROM orders o ${where} ORDER BY o.created_at DESC LIMIT ? OFFSET ?`,
     [...params, pageSize, offset],
   );
   return rows;
+}
+
+async function selectOrderSummary(q, userId) {
+  const [[base]] = await q.query(
+    `SELECT
+      COUNT(*) AS total,
+      SUM(CASE WHEN status = 'pending' AND (payment_status IS NULL OR payment_status <> 'paid') THEN 1 ELSE 0 END) AS pending_payment,
+      SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) AS paid,
+      SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) AS pending_ship,
+      SUM(CASE WHEN status = 'shipped' THEN 1 ELSE 0 END) AS shipped,
+      SUM(CASE WHEN status = 'shipped' THEN 1 ELSE 0 END) AS pending_receive,
+      SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed,
+      SUM(CASE WHEN status IN ('refunding','refunded') THEN 1 ELSE 0 END) AS after_sale,
+      SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled
+     FROM orders
+     WHERE user_id = ?`,
+    [userId],
+  );
+
+  const [[pendingReviewRow]] = await q.query(
+    `SELECT COUNT(*) AS pending_review
+     FROM orders o
+     JOIN order_items oi ON oi.order_id = o.id
+     LEFT JOIN product_reviews pr ON pr.order_item_id = oi.id
+     WHERE o.user_id = ?
+       AND o.status = 'completed'
+       AND pr.id IS NULL`,
+    [userId],
+  );
+
+  return {
+    total: Number(base?.total || 0),
+    pending_payment: Number(base?.pending_payment || 0),
+    paid: Number(base?.paid || 0),
+    pending_ship: Number(base?.pending_ship || 0),
+    shipped: Number(base?.shipped || 0),
+    pending_receive: Number(base?.pending_receive || 0),
+    pending_review: Number(pendingReviewRow?.pending_review || 0),
+    completed: Number(base?.completed || 0),
+    after_sale: Number(base?.after_sale || 0),
+    cancelled: Number(base?.cancelled || 0),
+  };
 }
 
 async function selectOrderItemsByOrderIds(q, orderIds) {
@@ -830,6 +901,7 @@ module.exports = {
   selectOrderById,
   countOrdersForUser,
   selectOrdersPage,
+  selectOrderSummary,
   selectOrderItemsByOrderIds,
   selectOrderByIdAndUser,
   selectOrderByIdAndUserForUpdate,

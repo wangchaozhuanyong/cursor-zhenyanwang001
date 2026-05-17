@@ -1,41 +1,67 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { DEFAULT_HOME_MODULE_SETTINGS, mergeHomeModuleSettings, type HomeModuleSettings } from "@/constants/homeModules";
 import { fetchHomeOps } from "@/services/contentService";
+import * as homeService from "@/services/homeService";
+import type { HomeNavItem } from "@/types/content";
 
-let cached: HomeModuleSettings | null = null;
-let inflight: Promise<HomeModuleSettings> | null = null;
+let cachedSettings: HomeModuleSettings | null = null;
+let cachedNavItems: HomeNavItem[] | null = null;
+let inflight: Promise<{ settings: HomeModuleSettings; navItems: HomeNavItem[] }> | null = null;
 
-async function loadHomeModuleSettings(): Promise<HomeModuleSettings> {
-  if (cached) return cached;
+async function loadHomeModuleSettings() {
+  if (cachedSettings && cachedNavItems) {
+    return { settings: cachedSettings, navItems: cachedNavItems };
+  }
   if (inflight) return inflight;
-  inflight = fetchHomeOps()
-    .then((data) => {
-      const merged = mergeHomeModuleSettings(data.moduleSettings);
-      cached = merged;
-      return merged;
+
+  inflight = homeService
+    .fetchHomeBootstrap()
+    .then((bootstrap) => {
+      const settings = mergeHomeModuleSettings(bootstrap?.homeOps?.moduleSettings);
+      const navItems = Array.isArray(bootstrap?.homeOps?.navItems) ? bootstrap.homeOps.navItems : [];
+      cachedSettings = settings;
+      cachedNavItems = navItems;
+      return { settings, navItems };
     })
-    .catch(() => DEFAULT_HOME_MODULE_SETTINGS)
+    .catch(() =>
+      fetchHomeOps().then((data) => {
+        const settings = mergeHomeModuleSettings(data.moduleSettings);
+        const navItems = Array.isArray(data.navItems) ? data.navItems : [];
+        cachedSettings = settings;
+        cachedNavItems = navItems;
+        return { settings, navItems };
+      }),
+    )
+    .catch(() => {
+      const fallback = { settings: DEFAULT_HOME_MODULE_SETTINGS, navItems: [] as HomeNavItem[] };
+      cachedSettings = fallback.settings;
+      cachedNavItems = fallback.navItems;
+      return fallback;
+    })
     .finally(() => {
       inflight = null;
     });
+
   return inflight;
 }
 
-/** 供后台保存后刷新前台缓存 */
 export function invalidateHomeModuleSettingsCache() {
-  cached = null;
+  cachedSettings = null;
+  cachedNavItems = null;
   inflight = null;
 }
 
 export function useHomeModuleSettings() {
-  const [settings, setSettings] = useState<HomeModuleSettings>(cached ?? DEFAULT_HOME_MODULE_SETTINGS);
-  const [ready, setReady] = useState(Boolean(cached));
+  const [settings, setSettings] = useState<HomeModuleSettings>(cachedSettings ?? DEFAULT_HOME_MODULE_SETTINGS);
+  const [navItems, setNavItems] = useState<HomeNavItem[]>(cachedNavItems ?? []);
+  const [ready, setReady] = useState(Boolean(cachedSettings));
 
   useEffect(() => {
     let alive = true;
     void loadHomeModuleSettings().then((next) => {
       if (!alive) return;
-      setSettings(next);
+      setSettings(next.settings);
+      setNavItems(next.navItems);
       setReady(true);
     });
     return () => {
@@ -43,5 +69,5 @@ export function useHomeModuleSettings() {
     };
   }, []);
 
-  return { settings, ready };
+  return { settings, navItems, ready };
 }

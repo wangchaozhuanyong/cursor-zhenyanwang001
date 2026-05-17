@@ -75,6 +75,18 @@ const checkoutAbandonmentBodySchema = z.object({
 const listOrdersQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(10),
+  tab: z
+    .enum([
+      'all',
+      'pending_payment',
+      'paid',
+      'shipped',
+      'pending_review',
+      'completed',
+      'after_sale',
+      'cancelled',
+    ])
+    .optional(),
   status: z
     .enum([
       'pending', 'paid', 'shipped', 'completed', 'cancelled', 'refunding', 'refunded',

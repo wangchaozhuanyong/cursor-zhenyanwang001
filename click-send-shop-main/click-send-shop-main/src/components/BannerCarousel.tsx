@@ -62,7 +62,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
     return (
       <div
         className="relative overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-surface)]"
-        style={{ aspectRatio: "2.34 / 1", borderRadius: "var(--theme-radius)" }}
+        style={{ aspectRatio: "4 / 3", borderRadius: "var(--theme-radius)" }}
         aria-busy="true"
       >
         <div className="absolute inset-0 animate-pulse bg-[linear-gradient(90deg,var(--theme-surface),var(--theme-bg),var(--theme-surface))]" />
@@ -89,7 +89,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
       className={`relative overflow-hidden theme-shadow ${bannerContainerClass} ${bannerLink ? "cursor-pointer" : ""}`}
       data-banner-style={bannerStyle}
       data-theme-banner-style={bannerStyle}
-      style={{ aspectRatio: "2.34 / 1", borderRadius: bannerStyle === "premium" || bannerStyle === "fresh" ? undefined : "var(--theme-radius)" }}
+      style={{ aspectRatio: "4 / 3", borderRadius: bannerStyle === "premium" || bannerStyle === "fresh" ? undefined : "var(--theme-radius)" }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onClick={handleOpenBanner}
@@ -102,7 +102,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
             src={banner.image}
             alt={banner.title || "首页轮播图"}
             width={1200}
-            height={512}
+            height={900}
             className="absolute inset-0 h-full w-full object-cover"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -116,7 +116,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
           src={banner.image}
           alt={banner.title || "首页轮播图"}
           width={1200}
-          height={512}
+          height={900}
           className="absolute inset-0 h-full w-full object-cover"
         />
       )}

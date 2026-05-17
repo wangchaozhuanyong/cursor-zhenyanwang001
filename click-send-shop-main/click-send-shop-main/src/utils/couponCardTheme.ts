@@ -46,7 +46,7 @@ export type CouponCardPresentation = {
   mutedClass: string;
   iconClass: string;
   valuePaneClass: string;
-  dividerClass: string;
+  columnRuleClass: string;
   amountSize: string;
   showScope: boolean;
   infoGap: string;
@@ -63,10 +63,10 @@ export function getCouponCardPresentation(
   const useThemedMarketingShell = couponStyle === "premium" || couponStyle === "deal";
 
   const shellByStyle: Record<CouponStyle, string> = {
-    ticket: "bg-[var(--theme-surface)] border-dashed",
+    ticket: "bg-[var(--theme-surface)] border border-[var(--theme-border)]",
     premium: "bg-theme-coupon-card-shell border",
     deal: "bg-theme-coupon-card-shell border",
-    minimal: "bg-[var(--theme-surface)]",
+    minimal: "bg-[var(--theme-surface)] border border-[var(--theme-border)]",
   };
 
   const titleClass = useThemedMarketingShell
@@ -82,12 +82,12 @@ export function getCouponCardPresentation(
     : THEME_COUPON_ICON_ON_SURFACE_CLASS;
 
   const valuePaneClass = useThemedMarketingShell
-    ? "bg-[var(--theme-coupon-card-value-pane-bg)] border border-dashed border-[color-mix(in_srgb,var(--theme-coupon-card-shell-border)_65%,var(--theme-border))]"
-    : "bg-[var(--theme-bg)] border border-dashed border-[var(--theme-border)]";
+    ? "bg-[var(--theme-coupon-card-value-pane-bg)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--theme-coupon-card-shell-border)_42%,transparent)]"
+    : "bg-[var(--theme-bg)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--theme-border)_55%,transparent)]";
 
-  const dividerClass = useThemedMarketingShell
-    ? "border-[color-mix(in_srgb,var(--theme-coupon-card-shell-border)_55%,var(--theme-border))]"
-    : "border-[var(--theme-border)]";
+  const columnRuleClass = useThemedMarketingShell
+    ? "coupon-card-column-rule coupon-card-column-rule--themed"
+    : "coupon-card-column-rule";
 
   const gridByLayout: Record<CouponCardLayout, string> = {
     home: "grid-cols-[minmax(4.25rem,23%)_minmax(0,1fr)_minmax(2.5rem,3rem)]",
@@ -118,7 +118,7 @@ export function getCouponCardPresentation(
     mutedClass,
     iconClass,
     valuePaneClass,
-    dividerClass,
+    columnRuleClass,
     amountSize: amountSizeByLayout[layout],
     showScope: layout !== "home",
     infoGap: layout === "home" ? "gap-0.5" : "gap-px",

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Clock } from "lucide-react";
 import * as marketingApi from "@/api/modules/marketing";
+import * as homeService from "@/services/homeService";
 import type { FlashSaleHomeActivity } from "@/api/modules/marketing";
 import { AnimatedSection } from "@/modules/micro-interactions";
 
@@ -20,12 +21,27 @@ export default function FlashSaleSection({ delay = 0 }: { delay?: number }) {
 
   useEffect(() => {
     let cancelled = false;
-    marketingApi
-      .getFlashSaleHome("home_flash_sale")
-      .then((res) => {
+    const cached = homeService.getCachedHomeBootstrap();
+    if (cached?.marketing?.flashSale) {
+      const data = cached.marketing.flashSale as FlashSaleHomeActivity;
+      setActivity(data);
+      setCountdown(data?.countdown_seconds ?? 0);
+    }
+    homeService
+      .fetchHomeBootstrap()
+      .then((bootstrap) => {
         if (cancelled) return;
-        setActivity(res.data ?? null);
-        setCountdown(res.data?.countdown_seconds ?? 0);
+        const data = (bootstrap?.marketing?.flashSale || null) as FlashSaleHomeActivity | null;
+        if (data) {
+          setActivity(data);
+          setCountdown(data?.countdown_seconds ?? 0);
+          return;
+        }
+        return marketingApi.getFlashSaleHome("home_flash_sale").then((res) => {
+          if (cancelled) return;
+          setActivity(res.data ?? null);
+          setCountdown(res.data?.countdown_seconds ?? 0);
+        });
       })
       .catch(() => {
         if (!cancelled) setActivity(null);

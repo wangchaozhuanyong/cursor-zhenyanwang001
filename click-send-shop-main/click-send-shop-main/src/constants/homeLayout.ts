@@ -11,3 +11,13 @@ export const HOME_GUEST_FOOTER_WRAP_CLASS = "-mx-4 mt-6 md:mt-8";
 
 /** 首屏区（轮播 / 保障条 / 快捷导航）内部更紧凑 */
 export const HOME_HERO_STACK_CLASS = "flex flex-col gap-3";
+
+/** 金刚区单格：上图下文，无圆形裁切 */
+export const HOME_NAV_ITEM_CLASS =
+  "flex w-[4.5rem] shrink-0 snap-start flex-col items-center gap-1.5 text-center transition-opacity active:opacity-80";
+
+export const HOME_NAV_ICON_FRAME_CLASS =
+  "flex h-12 w-12 shrink-0 items-center justify-center";
+
+export const HOME_NAV_LABEL_CLASS =
+  "w-full truncate px-0.5 text-[11px] font-normal leading-tight text-[var(--theme-text-muted-on-surface)]";

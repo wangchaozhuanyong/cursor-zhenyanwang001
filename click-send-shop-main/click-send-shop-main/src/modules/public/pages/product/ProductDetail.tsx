@@ -28,6 +28,7 @@ import { getProductGridClassName } from "@/utils/productGridClasses";
 import { THEME_ALERT_DANGER_SHELL, THEME_BTN_ACCENT_SOLID } from "@/utils/themeVisuals";
 import { trackEvent } from "@/services/analyticsService";
 import { buildProductSharePayload } from "@/utils/productShare";
+import { getProductSalesCount, hasProductSales, productSalesDetailLabel } from "@/utils/productSales";
 import { openCustomerService } from "@/utils/customerService";
 import { cn } from "@/lib/utils";
 
@@ -173,8 +174,7 @@ export default function ProductDetail() {
     : displayStock;
   const maxQty = Math.max(0, Math.min(displayStock, activityRemaining, activityLimit));
   const soldOut = maxQty <= 0;
-  const salesCount =
-    typeof product.sales_count === "number" && product.sales_count > 0 ? product.sales_count : null;
+  const salesCount = hasProductSales(product.sales_count) ? getProductSalesCount(product.sales_count) : null;
   const statusBadges: { key: string; label: string; className: string }[] = [];
   if (product.is_hot) {
     statusBadges.push({
@@ -382,7 +382,7 @@ export default function ProductDetail() {
                     ))}
                     {salesCount !== null ? (
                       <span className="shrink-0 whitespace-nowrap text-xs tabular-nums leading-none text-[var(--theme-text-muted)]">
-                        已售 {salesCount.toLocaleString()} 件
+                        {productSalesDetailLabel(salesCount)}
                       </span>
                     ) : null}
                   </div>

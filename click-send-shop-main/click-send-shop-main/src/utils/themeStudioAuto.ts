@@ -118,7 +118,7 @@ export function resetThemeGroup(config: ThemeConfig, group: string, preset?: The
   if (!keys) return config;
   const patch: Partial<ThemeConfig> = {};
   for (const key of keys) {
-    (patch as Record<string, unknown>)[key] = base[key];
+    (patch as unknown as Record<string, unknown>)[key] = base[key];
   }
   return normalizeThemeConfig({ ...config, ...patch });
 }

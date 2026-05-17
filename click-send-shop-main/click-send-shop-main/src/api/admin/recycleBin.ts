@@ -1,4 +1,4 @@
-﻿import { get, put, post } from "@/api/request";
+import { get, put, post } from "@/api/request";
 
 export interface RecycleBinItem {
   id: string;
@@ -13,7 +13,7 @@ export interface RecycleBinItem {
 }
 
 export function getRecycleBin(params?: { type?: string }) {
-  return get<RecycleBinItem[]>("/admin/recycle-bin", params as Record<string, unknown>);
+  return get<RecycleBinItem[]>("/admin/recycle-bin", params as unknown as Record<string, unknown>);
 }
 
 export function restoreItem(id: string, type: string) {

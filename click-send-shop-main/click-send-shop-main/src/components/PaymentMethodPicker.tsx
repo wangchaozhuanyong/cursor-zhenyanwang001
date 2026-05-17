@@ -14,6 +14,8 @@ interface PaymentMethodPickerProps {
   onlineChannels?: PublicPaymentChannel[];
   selectedOnlineChannelCode?: string;
   onOnlineChannelChange?: (code: string) => void;
+  showOnline?: boolean;
+  showCustomerService?: boolean;
 }
 
 export default function PaymentMethodPicker({
@@ -25,6 +27,8 @@ export default function PaymentMethodPicker({
   onlineChannels = [],
   selectedOnlineChannelCode,
   onOnlineChannelChange,
+  showOnline = true,
+  showCustomerService = true,
 }: PaymentMethodPickerProps) {
   const options = [
     {
@@ -56,7 +60,7 @@ export default function PaymentMethodPicker({
       disabled: false,
       disabledHint: "",
     },
-  ];
+  ].filter((opt) => (opt.id === "online" ? showOnline : showCustomerService));
 
   return (
     <div className="space-y-2">

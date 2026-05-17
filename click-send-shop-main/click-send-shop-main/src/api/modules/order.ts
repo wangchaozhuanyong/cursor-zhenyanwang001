@@ -1,10 +1,10 @@
-﻿import { get, post } from "@/api/request";
+import { get, post } from "@/api/request";
 import type { Order, SubmitOrderParams, OrderListParams, CheckoutAbandonmentPayload } from "@/types/order";
 import type { OrderPreviewResult } from "@/types/orderPreview";
 import type { PaginatedData } from "@/types/common";
 
 export function getOrders(params?: OrderListParams) {
-  return get<PaginatedData<Order>>("/orders", params as Record<string, unknown>);
+  return get<PaginatedData<Order>>("/orders", params as unknown as Record<string, unknown>);
 }
 
 export function getOrderById(id: string) {

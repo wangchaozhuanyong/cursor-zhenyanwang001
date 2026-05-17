@@ -13,8 +13,8 @@ export async function fetchUsers(params?: UserListQuery): Promise<PaginatedData<
   return { ...base, summary: (res.data as any)?.summary || {} };
 }
 
-export async function fetchUserById(id: string) {
-  const res = await userApi.getUserById(id);
+export async function fetchUserById(id: string, options?: { signal?: AbortSignal }) {
+  const res = await userApi.getUserById(id, options);
   return res.data;
 }
 

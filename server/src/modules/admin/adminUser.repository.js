@@ -270,7 +270,7 @@ async function selectUserDetailRelations(userId) {
   );
   const [[couponStats]] = await db.query(
     `SELECT COUNT(*) AS total, SUM(CASE WHEN status = 'used' THEN 1 ELSE 0 END) AS usedCount
-     FROM coupon_records WHERE user_id = ?`,
+     FROM user_coupons WHERE user_id = ?`,
     [userId],
   ).catch(() => [[{ total: 0, usedCount: 0 }]]);
   const [pointsRecords] = await db.query(

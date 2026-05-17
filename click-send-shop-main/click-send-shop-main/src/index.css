@@ -336,6 +336,17 @@
     color: var(--theme-invite-promo-muted);
   }
 
+  /** 优惠券列表卡（premium/deal）：与邀请推广条同一套 shell / CTA 变量 */
+  .bg-theme-coupon-card-shell {
+    background: var(--theme-coupon-card-shell-bg);
+    color: var(--theme-coupon-card-shell-fg);
+    border-color: var(--theme-coupon-card-shell-border);
+  }
+
+  .bg-theme-coupon-card-shell .theme-coupon-card-muted {
+    color: var(--theme-coupon-card-shell-muted);
+  }
+
   .bg-theme-gift-badge {
     background: var(--theme-gift-badge-bg);
     color: var(--theme-gift-badge-foreground);

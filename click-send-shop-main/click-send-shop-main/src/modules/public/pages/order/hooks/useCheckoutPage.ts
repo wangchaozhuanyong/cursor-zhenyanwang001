@@ -7,6 +7,7 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import * as orderService from "@/services/orderService";
 import * as paymentService from "@/services/paymentService";
 import * as rewardWalletService from "@/services/rewardService";
+import * as loyaltyService from "@/services/loyaltyService";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
 import { useCouponStore } from "@/stores/useCouponStore";
@@ -95,6 +96,7 @@ export function useCheckoutPage() {
   const [paymentChannels, setPaymentChannels] = useState<PublicPaymentChannel[]>([]);
   const [selectedPaymentChannelCode, setSelectedPaymentChannelCode] = useState("");
   const [paymentConfigLoaded, setPaymentConfigLoaded] = useState(false);
+  const [loyaltyConfig, setLoyaltyConfig] = useState<loyaltyService.LoyaltyConfig | null>(null);
   const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null);
   const [postSubmitOnlineError, setPostSubmitOnlineError] = useState<string | null>(null);
   const [postSubmitOnlineNote, setPostSubmitOnlineNote] = useState<string | null>(null);
@@ -102,6 +104,10 @@ export function useCheckoutPage() {
   const [selectedCoupon, setSelectedCoupon] = useState<CheckoutPickerCoupon | null>(null);
   const siteInfo = useSiteInfo();
   const [rewardBalance, setRewardBalance] = useState(0);
+  const [usePoints, setUsePoints] = useState(false);
+  const [pointsToUse, setPointsToUse] = useState(0);
+  const [useRewardCash, setUseRewardCash] = useState(false);
+  const [rewardCashAmount, setRewardCashAmount] = useState(0);
   const [payingWallet, setPayingWallet] = useState(false);
   const [orderFinalizing, setOrderFinalizing] = useState(false);
   const [couponInitDone, setCouponInitDone] = useState(false);
@@ -144,6 +150,14 @@ export function useCheckoutPage() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    loyaltyService.fetchLoyaltyConfig()
+      .then((cfg) => { if (!cancelled) setLoyaltyConfig(cfg); })
+      .catch(() => { if (!cancelled) setLoyaltyConfig(null); });
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -323,6 +337,10 @@ export function useCheckoutPage() {
         shipping_template_id: selectedTemplateId ?? undefined,
         shipping_name: selectedTemplate?.name,
         estimated_weight_kg: weightKg,
+        use_points: usePoints,
+        points_to_use: usePoints ? pointsToUse : 0,
+        use_reward_cash: useRewardCash,
+        reward_cash_amount: useRewardCash ? rewardCashAmount : 0,
       };
       void orderService
         .previewOrder(payload)
@@ -346,6 +364,10 @@ export function useCheckoutPage() {
     selectedTemplateId,
     selectedTemplate?.name,
     weightKg,
+    usePoints,
+    pointsToUse,
+    useRewardCash,
+    rewardCashAmount,
     submittedOrder,
   ]);
 
@@ -459,6 +481,10 @@ export function useCheckoutPage() {
         payment_method: paymentMethod,
         estimated_weight_kg: weightKg,
         checkout_abandonment_id: checkoutAbandonmentIdRef.current || checkoutAbandonmentId || undefined,
+        use_points: usePoints,
+        points_to_use: usePoints ? pointsToUse : 0,
+        use_reward_cash: useRewardCash,
+        reward_cash_amount: useRewardCash ? rewardCashAmount : 0,
       });
       const orderedLines = payloadItems.map((i) => ({ product_id: i.product_id, variant_id: i.variant_id }));
       flushSync(() => {
@@ -622,6 +648,11 @@ export function useCheckoutPage() {
     }
   };
 
+  const showOnline = loyaltyConfig?.checkout?.onlinePaymentEnabled ?? true;
+  const showCustomerService = loyaltyConfig?.checkout?.customerServicePaymentEnabled ?? true;
+  const pointsRedeemEnabled = loyaltyConfig?.checkout?.pointsRedeemEnabled ?? true;
+  const rewardCashRedeemEnabled = loyaltyConfig?.checkout?.rewardCashRedeemEnabled ?? true;
+
   return {
     navigate,
     goBack,
@@ -640,6 +671,10 @@ export function useCheckoutPage() {
     setNote,
     paymentMethod,
     setPaymentMethod,
+    showOnline,
+    showCustomerService,
+    pointsRedeemEnabled,
+    rewardCashRedeemEnabled,
     stripeReady,
     paymentChannels,
     selectedPaymentChannelCode,
@@ -652,6 +687,15 @@ export function useCheckoutPage() {
     selectedCoupon,
     setSelectedCoupon,
     rewardBalance,
+    usePoints,
+    setUsePoints,
+    pointsToUse,
+    setPointsToUse,
+    useRewardCash,
+    setUseRewardCash,
+    rewardCashAmount,
+    setRewardCashAmount,
+    orderPreview,
     payingWallet,
     shippingId,
     setShippingId,

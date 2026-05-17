@@ -55,7 +55,7 @@ function mapAddress(raw: Record<string, unknown>): Address {
 
 export async function fetchAddresses(): Promise<Address[]> {
   const res = await addressApi.getAddresses();
-  return (res.data as unknown as Record<string, unknown>[]).map(mapAddress);
+  return (res.data as unknown as unknown as Record<string, unknown>[]).map(mapAddress);
 }
 
 export async function createAddress(params: CreateAddressParams): Promise<Address> {
@@ -65,7 +65,7 @@ export async function createAddress(params: CreateAddressParams): Promise<Addres
     address: encodeStructuredAddress(params),
     isDefault: params.isDefault,
   } as unknown as CreateAddressParams);
-  return mapAddress(res.data as unknown as Record<string, unknown>);
+  return mapAddress(res.data as unknown as unknown as Record<string, unknown>);
 }
 
 export async function updateAddress(id: string, params: UpdateAddressParams): Promise<Address> {
@@ -77,7 +77,7 @@ export async function updateAddress(id: string, params: UpdateAddressParams): Pr
       : {}),
     ...(params.isDefault !== undefined ? { isDefault: params.isDefault } : {}),
   } as unknown as UpdateAddressParams);
-  return mapAddress(res.data as unknown as Record<string, unknown>);
+  return mapAddress(res.data as unknown as unknown as Record<string, unknown>);
 }
 
 export async function deleteAddress(id: string): Promise<void> {

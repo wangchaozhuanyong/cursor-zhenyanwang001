@@ -35,6 +35,7 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import { useUserStore } from "@/stores/useUserStore";
 import * as inviteService from "@/services/inviteService";
 import * as rewardService from "@/services/rewardService";
+import * as loyaltyService from "@/services/loyaltyService";
 import * as uploadService from "@/services/uploadService";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import {
@@ -163,6 +164,7 @@ export default function Profile() {
 
   const [inviteCount, setInviteCount] = useState(0);
   const [rewardBalance, setRewardBalance] = useState(0);
+  const [loyaltyConfig, setLoyaltyConfig] = useState<loyaltyService.LoyaltyConfig | null>(null);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const { themeConfig } = useThemeRuntime();
@@ -177,6 +179,17 @@ export default function Profile() {
     inviteService.fetchInviteStats().then((s) => setInviteCount(s.directCount || 0)).catch(() => {});
     rewardService.fetchRewardBalance().then((res) => setRewardBalance(Number(res.balance || 0))).catch(() => setRewardBalance(0));
   }, [loadCoupons, loadFavorites, loadOrders, loadProfile, loggedIn]);
+  useEffect(() => {
+    let cancelled = false;
+    loyaltyService.fetchLoyaltyConfig().then((cfg) => {
+      if (!cancelled) setLoyaltyConfig(cfg);
+    }).catch(() => {
+      if (!cancelled) setLoyaltyConfig(null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleLogout = async () => {
     await authStore.logout();
@@ -202,18 +215,24 @@ export default function Profile() {
   const userName = nickname?.trim() || "会员用户";
   const memberLevelName = memberLevel?.name?.trim() || "普通会员";
   const code = inviteCode?.trim() || "暂无";
-  const couponCount = useMemo(() => coupons.filter((c) => !c.used_at && !c.usedAt).length, [coupons]);
+  const couponCount = useMemo(() => coupons.filter((c) => !c.used_at).length, [coupons]);
 
   const orderPending = useMemo(() => orders.filter((o) => o.status === "pending" || o.payment_status === "pending").length, [orders]);
   const orderShipping = useMemo(() => orders.filter((o) => (o.status === "paid" || o.payment_status === "paid") && o.status !== "shipped" && o.status !== "completed").length, [orders]);
   const orderReceiving = useMemo(() => orders.filter((o) => o.status === "shipped").length, [orders]);
 
+  const pointsEnabled = loyaltyConfig?.points?.displayEnabled ?? true;
+  const rewardsEnabled = loyaltyConfig?.reward?.displayEnabled ?? true;
+  const inviteEnabled = loyaltyConfig?.reward?.referralEnabled ?? true;
   const assetItems = [
     { label: "积分", value: String(pointsBalance), path: "/points", auth: true },
     { label: "优惠券", value: String(couponCount), path: "/coupons", auth: true },
     { label: "收藏", value: String(favoriteCount), path: "/favorites", auth: false },
     { label: "返现", value: `RM ${rewardBalance.toFixed(2)}`, path: "/rewards", auth: true },
-  ];
+  ].filter((item) => (
+    (item.label !== "积分" || pointsEnabled)
+    && (item.label !== "返现" || rewardsEnabled)
+  ));
 
   const guestOrderItems = [
     { label: "待付款", icon: Wallet },
@@ -338,6 +357,7 @@ export default function Profile() {
               ))}
             </div>
           </div>
+          {inviteEnabled ? (
           <div className="mx-4 mb-4 border-t border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] pt-3">
             <div className={`relative overflow-hidden rounded-[22px] px-4 py-3.5 ${THEME_INVITE_PROMO_SHELL}`}>
               <div className="flex items-center gap-3">
@@ -364,6 +384,7 @@ export default function Profile() {
               </div>
             </div>
           </div>
+          ) : null}
         </section>
 
         <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
@@ -377,7 +398,10 @@ export default function Profile() {
               { label: "消息通知", icon: Bell, path: "/notifications", auth: true },
               { label: "账户设置", icon: Settings, path: "/settings", auth: true },
               { label: "我的收藏", icon: Heart, path: "/favorites", auth: false },
-            ].map((item) => (
+            ].filter((item) => (
+              (item.path !== "/points" || pointsEnabled)
+              && (item.path !== "/invite" || inviteEnabled)
+            )).map((item) => (
               <button key={item.label} type="button" onClick={() => gateNavigate(navigate, item.path, item.auth)} className={`min-h-[76px] rounded-2xl bg-[var(--theme-bg)] px-1 py-2 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_60%,transparent)] ${MENU_TAP}`}>
                 <span className={cn("mx-auto flex h-9 w-9 items-center justify-center rounded-2xl", THEME_ACCENT_ICON_SHELL_CLASS)}>
                   <item.icon size={16} strokeWidth={2} />

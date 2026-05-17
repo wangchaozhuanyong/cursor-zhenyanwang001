@@ -26,6 +26,7 @@ export function CheckoutOrderSuccess({
   onHome,
   onViewOrders,
   onViewOrderDetail,
+  onPaymentTimeoutExpired,
 }: {
   order: Order;
   postSubmitOnlineError: string | null;

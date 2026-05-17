@@ -1,9 +1,9 @@
-﻿import { get, post } from "@/api/request";
+import { get, post } from "@/api/request";
 import type { PointsRecord, PointsListParams } from "@/types/points";
 import type { PaginatedData } from "@/types/common";
 
 export function getPointsRecords(params?: PointsListParams) {
-  return get<PaginatedData<PointsRecord>>("/points/records", params as Record<string, string>);
+  return get<PaginatedData<PointsRecord>>("/points/records", params as unknown as Record<string, string>);
 }
 
 export function getPointsBalance() {

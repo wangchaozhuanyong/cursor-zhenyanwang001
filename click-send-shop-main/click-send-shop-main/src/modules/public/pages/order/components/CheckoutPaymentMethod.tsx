@@ -20,17 +20,22 @@ interface CheckoutPaymentMethodProps {
   rewardBalance: number;
   selectedPaymentChannelCode: string;
   onPaymentChannelChange: (value: string) => void;
+  showOnline: boolean;
+  showCustomerService: boolean;
 }
 
 export function CheckoutPaymentMethod({
   paymentMethod,
   onPaymentMethodChange,
+  paymentTimeoutHint,
   paymentConfigLoaded,
   paymentChannels,
   stripeReady,
   rewardBalance,
   selectedPaymentChannelCode,
   onPaymentChannelChange,
+  showOnline,
+  showCustomerService,
 }: CheckoutPaymentMethodProps) {
   const isMobileSheet = useMediaSheetMode();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -45,6 +50,8 @@ export function CheckoutPaymentMethod({
       onlineChannels={paymentChannels}
       selectedOnlineChannelCode={selectedPaymentChannelCode}
       onOnlineChannelChange={onPaymentChannelChange}
+      showOnline={showOnline}
+      showCustomerService={showCustomerService}
     />
   );
 

@@ -74,7 +74,7 @@ export default function Login() {
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [smsOtpLoginEnabled, setSmsOtpLoginEnabled] = useState(true);
   const hasLockedInviteCode = !!inviteCode;
-  const formFocused = useFormFieldFocus();
+  const { keyboardOpen, formCompact } = useFormFieldFocus();
   const [shakeKey, setShakeKey] = useState(0);
   const failValidation = (message: string) => {
     setShakeKey((k) => k + 1);
@@ -363,10 +363,10 @@ export default function Login() {
         </div>
       </header>
 
-      {/* 聚焦时立即隐藏轮播，避免与软键盘叠加造成闪动 */}
-      {banners.length > 0 && !formFocused ? (
+      {/* 软键盘弹起时收起轮播；国家代码下拉不隐藏 */}
+      {banners.length > 0 && !keyboardOpen ? (
         <div className="mt-2 shrink-0 px-5">
-          <LoginBannerCarousel banners={banners} paused={formFocused} />
+          <LoginBannerCarousel banners={banners} paused={formCompact} />
         </div>
       ) : null}
 
@@ -374,7 +374,7 @@ export default function Login() {
       <main
         className={cn(
           "mx-auto w-full max-w-lg flex-1 min-h-0 px-5 pb-safe",
-          formFocused ? "mt-4 overflow-y-visible overscroll-none" : "mt-6 overflow-y-auto overscroll-y-contain",
+          formCompact ? "mt-4 overflow-y-visible overscroll-none" : "mt-6 overflow-y-auto overscroll-y-contain",
         )}
       >
         {/* Welcome text */}
@@ -396,6 +396,7 @@ export default function Login() {
                 type="button"
                 onClick={() => {
                   setMode(m);
+                  setShowReset(false);
                   if (m === "register") setCredentialMode("password");
                 }}
                 className={`relative flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all ${
@@ -416,7 +417,10 @@ export default function Login() {
               <button
                 key={c}
                 type="button"
-                onClick={() => setCredentialMode(c)}
+                onClick={() => {
+                  setCredentialMode(c);
+                  setShowReset(false);
+                }}
                 className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-all ${
                   credentialMode === c
                     ? "bg-card text-foreground shadow-sm"
@@ -451,20 +455,26 @@ export default function Login() {
                 <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="邀请码（选填）"
+                  placeholder={hasLockedInviteCode ? "邀请码（已锁定）" : "邀请码（选填）"}
                   value={inviteCode}
                   onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                  className={cn(INPUT_CLASS, "pl-12 pr-4")}
+                  readOnly={hasLockedInviteCode}
+                  className={cn(
+                    INPUT_CLASS,
+                    "pl-12 pr-4",
+                    hasLockedInviteCode && "cursor-default opacity-80",
+                  )}
                 />
               </div>
             </div>
           )}
 
-          <div className="grid grid-cols-[112px_1fr] gap-2">
+          <div className="grid grid-cols-[minmax(6.5rem,7rem)_1fr] gap-2 sm:grid-cols-[112px_1fr]">
             <select
               value={countryCode}
               onChange={(e) => setCountryCode(e.target.value)}
-              className="rounded-2xl border border-border bg-card px-3 py-3.5 text-base text-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
+              aria-label="国家或地区代码"
+              className="min-w-0 rounded-2xl border border-border bg-card px-2.5 py-3.5 text-base text-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 sm:px-3"
             >
               {COUNTRY_CODE_OPTIONS.map((item) => (
                 <option key={item.value} value={item.value}>
@@ -571,7 +581,7 @@ export default function Login() {
           </button>
         </FormFieldShake>
 
-        {showReset && (
+        {mode === "login" && showReset && (
           <FormFieldShake shake={shakeKey} className="mb-6 rounded-2xl border border-border bg-card p-4 shadow-sm">
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
@@ -636,8 +646,8 @@ export default function Login() {
         )}
 
         {/* ══════════════ Agreement ══════════════ */}
-        <p className="pb-8 pb-safe text-center text-[11px] leading-relaxed text-muted-foreground">
-          登录即代表您同意
+        <p className="pb-8 pb-safe pt-2 text-center text-[11px] leading-relaxed text-muted-foreground">
+          {mode === "login" ? "登录" : "注册"}即代表您同意
           <button onClick={() => navigate("/about")} className="text-theme-price mx-0.5">《用户协议》</button>
           和
           <button onClick={() => navigate("/help")} className="text-theme-price mx-0.5">《隐私政策》</button>

@@ -154,6 +154,7 @@ async function createOrder(userId, body) {
     items, contact_name, contact_phone, address, note,
     coupon_id, coupon_title, shipping_template_id, shipping_name, payment_method,
     estimated_weight_kg,
+    use_points, points_to_use, use_reward_cash, reward_cash_amount,
   } = body;
 
   const conn = await repo.getConnection();
@@ -304,16 +305,33 @@ async function createOrder(userId, body) {
     const sstSettings = sstTax.parseSstSettingsFromSiteSettingsRows(sstRows);
     const taxSnap = sstTax.buildOrderTaxSnapshot(sstSettings, goodsInclusiveTaxable);
 
-    const totalAmount = Math.max(0, rawAmount - discountAmount + shippingFee);
+    const pricing = await orderPricing.buildOrderPricing(userId, {
+      ...body,
+      use_points,
+      points_to_use,
+      use_reward_cash,
+      reward_cash_amount,
+    }, conn);
+    const loyalty = pricing.loyalty || {};
+    const totalAmount = Number(pricing.finalTotal || Math.max(0, rawAmount - discountAmount + shippingFee));
+    totalPoints = Number(loyalty.earned_points || totalPoints || 0);
     const discountMeta = {
       flash_sale_discount: flashSaleDiscount,
       full_reduction_discount: fullReductionDiscount,
       coupon_discount: couponDiscountValue,
+      points_discount: Number(loyalty.points_discount_amount || 0),
+      reward_cash_discount: Number(loyalty.reward_cash_discount_amount || 0),
       lines: [
         flashSaleDiscount > 0 ? { type: 'flash_sale', label: '秒杀优惠', amount: flashSaleDiscount } : null,
         fullReductionDiscount > 0 ? { type: 'full_reduction', label: '满减优惠', amount: fullReductionDiscount } : null,
         couponDiscountValue > 0
           ? { type: 'coupon', label: usedCouponTitle ? `优惠券（${usedCouponTitle}）` : '优惠券抵扣', amount: couponDiscountValue }
+          : null,
+        Number(loyalty.points_discount_amount || 0) > 0
+          ? { type: 'points', label: '积分抵扣', amount: Number(loyalty.points_discount_amount || 0) }
+          : null,
+        Number(loyalty.reward_cash_discount_amount || 0) > 0
+          ? { type: 'reward_cash', label: '返现余额抵扣', amount: Number(loyalty.reward_cash_discount_amount || 0) }
           : null,
       ].filter(Boolean),
     };
@@ -350,6 +368,16 @@ async function createOrder(userId, body) {
       taxableAmount: taxSnap.taxable_amount,
       taxAmount: taxSnap.tax_amount,
       taxExclusiveAmount: taxSnap.tax_exclusive_amount,
+      pointsUsed: Number(loyalty.points_used || 0),
+      pointsDiscountAmount: Number(loyalty.points_discount_amount || 0),
+      rewardCashUsed: Number(loyalty.reward_cash_used || 0),
+      rewardCashDiscountAmount: Number(loyalty.reward_cash_discount_amount || 0),
+      loyaltyMeta: {
+        use_points: !!use_points,
+        use_reward_cash: !!use_reward_cash,
+        available_points: Number(loyalty.available_points || 0),
+        available_reward_balance: Number(loyalty.available_reward_balance || 0),
+      },
     });
 
     if (usedCouponUcId) {
@@ -362,7 +390,44 @@ async function createOrder(userId, body) {
       });
     }
 
+    if (Number(loyalty.points_used || 0) > 0) {
+      await requireApiMethod(userApi, 'changePoints')(conn, {
+        userId,
+        amount: -Number(loyalty.points_used || 0),
+        action: 'order_redeem',
+        description: `订单积分抵扣 ${orderNo}`,
+        orderId,
+        orderNo,
+        sourceType: 'order_checkout',
+        relatedRecordId: `order_redeem:${orderId}`,
+        allowNegative: false,
+      });
+    }
+    if (Number(loyalty.reward_cash_used || 0) > 0) {
+      const balance = await requireApiMethod(userApi, 'sumRewardTransactionsBalance')(conn, userId);
+      const useAmount = Number(loyalty.reward_cash_used || 0);
+      if (Number(balance || 0) < useAmount) {
+        await conn.rollback();
+        throw new ValidationError('返现余额不足');
+      }
+      await requireApiMethod(userApi, 'insertRewardTransaction')(conn, {
+        id: generateId(),
+        rewardRecordId: null,
+        userId,
+        orderId,
+        orderNo,
+        type: 'wallet_redeem_order',
+        amount: -useAmount,
+        status: 'success',
+        reason: `订单返现余额抵扣 ${orderNo}`,
+        metadata: { trigger: 'create_order' },
+      });
+    }
+
     for (const oi of orderItems) {
+      const lineSubtotal = Number(oi.price) * Number(oi.qty);
+      const totalSubtotal = rawAmount || 1;
+      const lineEarned = Math.max(0, Math.floor((lineSubtotal / totalSubtotal) * Number(totalPoints || 0)));
       await repo.insertOrderItem(conn, {
         id: generateId(),
         orderId,
@@ -374,6 +439,11 @@ async function createOrder(userId, body) {
         productImage: oi.image,
         price: oi.price,
         points: oi.points,
+        earnedPoints: lineEarned,
+        pointsRuleSnapshot: {
+          strategy: 'global_amount_based',
+          product_points_legacy: oi.points,
+        },
         qty: oi.qty,
         activityId: oi.activityId,
         activityTitle: oi.activityTitle,
@@ -517,6 +587,33 @@ async function cancelPendingOrderInTransaction(conn, order, options = {}) {
   await requireApiMethod(userApi, 'reverseOrderPoints')(conn, order, pointReason, {
     trigger,
   });
+  if (Number(order.points_used || 0) > 0) {
+    await requireApiMethod(userApi, 'changePoints')(conn, {
+      userId: order.user_id,
+      amount: Number(order.points_used || 0),
+      action: 'order_redeem_refund',
+      description: `订单取消退回积分 ${order.order_no}`,
+      orderId: order.id,
+      orderNo: order.order_no,
+      sourceType: 'order_cancel',
+      relatedRecordId: `order_redeem_refund:${order.id}`,
+      allowNegative: true,
+    });
+  }
+  if (Number(order.reward_cash_used || 0) > 0) {
+    await requireApiMethod(userApi, 'insertRewardTransaction')(conn, {
+      id: generateId(),
+      rewardRecordId: null,
+      userId: order.user_id,
+      orderId: order.id,
+      orderNo: order.order_no,
+      type: 'wallet_redeem_refund',
+      amount: Number(order.reward_cash_used || 0),
+      status: 'success',
+      reason: `订单取消退回返现余额 ${order.order_no}`,
+      metadata: { trigger: trigger || 'order_cancel' },
+    });
+  }
 
   if (order.coupon_uc_id) {
     await repo.restoreUserCouponById(conn, order.coupon_uc_id);
@@ -618,6 +715,13 @@ async function previewOrder(userId, body) {
       shipping_fee: pricing.shippingFee,
       final_amount: pricing.finalTotal,
       total_points: pricing.totalPoints,
+      earned_points: pricing.loyalty?.earned_points || pricing.totalPoints || 0,
+      available_points: pricing.loyalty?.available_points || 0,
+      max_usable_points: pricing.loyalty?.max_usable_points || 0,
+      points_discount_amount: pricing.loyalty?.points_discount_amount || 0,
+      available_reward_balance: pricing.loyalty?.available_reward_balance || 0,
+      max_usable_reward_cash: pricing.loyalty?.max_usable_reward_cash || 0,
+      reward_cash_discount_amount: pricing.loyalty?.reward_cash_discount_amount || 0,
       discount_lines: pricing.discount_lines,
       tax: pricing.taxSnap,
     },
@@ -636,6 +740,5 @@ module.exports = {
   completeShippedOrder,
   cancelPendingOrderInTransaction,
 };
-
 
 

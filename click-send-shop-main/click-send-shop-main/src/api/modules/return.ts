@@ -1,9 +1,9 @@
-﻿import { get, post } from "@/api/request";
+import { get, post } from "@/api/request";
 import type { ReturnRequest, CreateReturnParams, ReturnListParams } from "@/types/return";
 import type { PaginatedData } from "@/types/common";
 
 export function getReturnRequests(params?: ReturnListParams) {
-  return get<PaginatedData<ReturnRequest>>("/returns", params as Record<string, string>);
+  return get<PaginatedData<ReturnRequest>>("/returns", params as unknown as Record<string, string>);
 }
 
 export function getReturnById(id: string) {

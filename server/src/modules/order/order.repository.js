@@ -255,17 +255,19 @@ async function insertOrder(q, params) {
     note, contactName, contactPhone, address, paymentMethod,
     taxMode, taxRate, taxLabel, taxableAmount, taxAmount, taxExclusiveAmount,
     addressLine1, addressLine2, addressCity, addressState, addressPostcode, addressCountry,
+    pointsUsed, pointsDiscountAmount, rewardCashUsed, rewardCashDiscountAmount, loyaltyMeta,
   } = params;
   await q.query(
     `INSERT INTO orders
        (id, user_id, order_no, raw_amount, discount_amount, discount_meta, coupon_title,
         shipping_fee, shipping_name, total_amount,
         tax_mode, tax_rate, tax_label, taxable_amount, tax_amount, tax_exclusive_amount,
+        points_used, points_discount_amount, reward_cash_used, reward_cash_discount_amount, loyalty_meta,
         total_points, status, payment_status,
         note, contact_name, contact_phone, shipping_phone, address,
         address_line1, address_line2, address_city, address_state, address_postcode, address_country,
         payment_method)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id, userId, orderNo, rawAmount, discountAmount,
       discountMeta ? JSON.stringify(discountMeta) : null,
@@ -279,6 +281,11 @@ async function insertOrder(q, params) {
       taxableAmount ?? null,
       taxAmount ?? null,
       taxExclusiveAmount ?? null,
+      Number(pointsUsed || 0),
+      Number(pointsDiscountAmount || 0),
+      Number(rewardCashUsed || 0),
+      Number(rewardCashDiscountAmount || 0),
+      loyaltyMeta ? JSON.stringify(loyaltyMeta) : null,
       totalPoints,
       ORDER_STATUS.PENDING,
       PAYMENT_STATUS.PENDING,
@@ -306,6 +313,8 @@ async function insertOrderItem(q, params) {
     productImage,
     price,
     points,
+    earnedPoints,
+    pointsRuleSnapshot,
     qty,
     activityId,
     activityTitle,
@@ -313,8 +322,8 @@ async function insertOrderItem(q, params) {
   await q.query(
     `INSERT INTO order_items
        (id, order_id, product_id, variant_id, sku_code, variant_name,
-        product_name, product_image, price, points, qty, subtotal, activity_id, activity_title)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        product_name, product_image, price, points, earned_points, points_rule_snapshot, qty, subtotal, activity_id, activity_title)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id,
       orderId,
@@ -326,6 +335,8 @@ async function insertOrderItem(q, params) {
       productImage,
       price,
       points,
+      Number(earnedPoints || 0),
+      pointsRuleSnapshot ? JSON.stringify(pointsRuleSnapshot) : null,
       qty,
       Number(price) * Number(qty),
       activityId || null,

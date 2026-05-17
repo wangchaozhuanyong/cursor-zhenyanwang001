@@ -12,7 +12,7 @@ export function getReturnRequests(
     sortOrder?: string;
   },
 ) {
-  return get<PaginatedData<ReturnRequest>>("/admin/returns", params as Record<string, string>);
+  return get<PaginatedData<ReturnRequest>>("/admin/returns", params as unknown as Record<string, string>);
 }
 
 export function getReturnById(id: string) {

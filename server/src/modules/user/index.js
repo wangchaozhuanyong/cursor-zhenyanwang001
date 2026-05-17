@@ -33,6 +33,7 @@ router.use('/theme', require('./theme.routes'));
   sumRewardTransactionsBalance: rewardService.sumRewardTransactionsBalance,
   insertRewardTransaction: rewardService.insertRewardTransaction,
   adjustUserPoints: pointsService.adjustUserPoints,
+  changePoints: pointsService.changePoints,
   insertUserNotification: notificationService.insertUserNotification,
   refreshUserMemberLevel: memberLevelService.refreshUserMemberLevel,
   getUserMemberLevel: memberLevelService.getUserMemberLevel,

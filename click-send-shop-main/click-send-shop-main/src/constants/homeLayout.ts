@@ -2,5 +2,12 @@
 export const HOME_PAGE_MAIN_CLASS =
   "mx-auto flex max-w-screen-xl flex-col gap-5 px-4 pt-4 pb-8 md:gap-6 md:pb-10";
 
+/** 未登录首页：主内容区底部留白略减（页脚卡片自带内边距） */
+export const HOME_GUEST_MAIN_CLASS =
+  "mx-auto flex max-w-screen-xl flex-col gap-5 px-4 pt-4 pb-4 md:gap-6 md:pb-5";
+
+/** 未登录首页：商品区与品牌页脚之间的间距（避免与页脚自身 margin 叠加） */
+export const HOME_GUEST_FOOTER_WRAP_CLASS = "-mx-4 mt-6 md:mt-8";
+
 /** 首屏区（轮播 / 保障条 / 快捷导航）内部更紧凑 */
 export const HOME_HERO_STACK_CLASS = "flex flex-col gap-3";

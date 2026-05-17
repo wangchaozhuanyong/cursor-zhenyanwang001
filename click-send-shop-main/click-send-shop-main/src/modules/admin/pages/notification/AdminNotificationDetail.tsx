@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { ArrowLeft } from "lucide-react";
@@ -6,26 +6,66 @@ import { toast } from "sonner";
 import * as notificationService from "@/services/admin/notificationService";
 import { labelNotificationType } from "@/utils/adminDisplayLabels";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { useAsyncResource } from "@/hooks/useAsyncResource";
 
 export default function AdminNotificationDetail() {
   const navigate = useNavigate();
   const { id = "" } = useParams();
-  const [loading, setLoading] = useState(true);
   const [readFilter, setReadFilter] = useState<"" | "read" | "unread">("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [data, setData] = useState<null | Awaited<ReturnType<typeof notificationService.fetchNotificationDetail>>>(null);
 
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    notificationService.fetchNotificationDetail(id, { read_status: readFilter || undefined, page, pageSize })
-      .then(setData)
-      .catch((e) => toast.error(toastErrorMessage(e, "加载通知详情失败")))
-      .finally(() => setLoading(false));
-  }, [id, readFilter, page, pageSize]);
+  const { data, loading, error } = useAsyncResource(
+    [id, readFilter, page, pageSize],
+    (signal) =>
+      notificationService.fetchNotificationDetail(
+        id,
+        { read_status: readFilter || undefined, page, pageSize },
+        { signal },
+      ),
+    {
+      enabled: Boolean(id),
+      resetOnChange: true,
+      toastFallback: "加载通知详情失败",
+      toast: (message) => toast.error(message),
+    },
+  );
 
-  if (loading || !data) return <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground">加载中...</div>;
+  if (!id) {
+    return (
+      <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground">
+        缺少通知批次 ID
+      </div>
+    );
+  }
+
+  if (loading && !data) {
+    return <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground">加载中...</div>;
+  }
+
+  if (error && !data) {
+    return (
+      <div className="space-y-4 rounded-2xl border border-border bg-card p-6">
+        <p className="text-sm text-[var(--theme-danger)]">{error}</p>
+        <p className="text-xs text-muted-foreground">
+          {error.includes("不存在")
+            ? "该通知可能已被删除，或链接中的批次 ID 无效。"
+            : "请稍后重试；若持续出现，请将追踪 ID 提供给技术人员。"}
+        </p>
+        <button
+          type="button"
+          className="rounded-lg border px-3 py-1.5 text-xs font-medium"
+          onClick={() => navigate("/admin/notifications")}
+        >
+          返回通知列表
+        </button>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground">加载中...</div>;
+  }
 
   return (
     <div className="space-y-4">

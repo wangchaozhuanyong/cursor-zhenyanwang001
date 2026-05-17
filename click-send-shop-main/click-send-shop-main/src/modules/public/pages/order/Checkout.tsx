@@ -9,6 +9,7 @@ import { CheckoutAddressCard } from "./components/CheckoutAddressCard";
 import { CheckoutAddressPickerSheet } from "./components/CheckoutAddressPickerSheet";
 import { CheckoutCouponSection } from "./components/CheckoutCouponSection";
 import { CheckoutItemsList } from "./components/CheckoutItemsList";
+import { CheckoutLoyaltySection } from "./components/CheckoutLoyaltySection";
 import { CheckoutOrderSuccess } from "./components/CheckoutOrderSuccess";
 import { CheckoutPaymentMethod } from "./components/CheckoutPaymentMethod";
 import { CheckoutPriceSummary } from "./components/CheckoutPriceSummary";
@@ -111,6 +112,8 @@ export default function Checkout() {
               rewardBalance={checkout.rewardBalance}
               selectedPaymentChannelCode={checkout.selectedPaymentChannelCode}
               onPaymentChannelChange={checkout.setSelectedPaymentChannelCode}
+              showOnline={checkout.showOnline}
+              showCustomerService={checkout.showCustomerService}
             />
 
             <CheckoutCouponSection
@@ -120,6 +123,19 @@ export default function Checkout() {
               onSelect={checkout.setSelectedCoupon}
               coupons={checkout.pickerCoupons}
               loading={checkout.pickerCouponsLoading}
+            />
+            <CheckoutLoyaltySection
+              pointsRedeemEnabled={checkout.pointsRedeemEnabled}
+              rewardCashRedeemEnabled={checkout.rewardCashRedeemEnabled}
+              orderPreview={checkout.orderPreview}
+              usePoints={checkout.usePoints}
+              onUsePointsChange={checkout.setUsePoints}
+              pointsToUse={checkout.pointsToUse}
+              onPointsToUseChange={checkout.setPointsToUse}
+              useRewardCash={checkout.useRewardCash}
+              onUseRewardCashChange={checkout.setUseRewardCash}
+              rewardCashAmount={checkout.rewardCashAmount}
+              onRewardCashAmountChange={checkout.setRewardCashAmount}
             />
 
             <CheckoutShippingSection

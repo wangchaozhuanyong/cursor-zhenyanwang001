@@ -1,20 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 
-function isFormField(el: Element | null): boolean {
-  if (el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) return true;
+/** 会唤起软键盘的控件（不含 select / checkbox 等） */
+function isKeyboardTriggerField(el: Element | null): boolean {
+  if (el instanceof HTMLTextAreaElement) return true;
+  if (el instanceof HTMLSelectElement) return false;
   if (!(el instanceof HTMLInputElement)) return false;
   const type = (el.type || "text").toLowerCase();
   return !["checkbox", "radio", "button", "submit", "reset", "file", "hidden", "image"].includes(type);
 }
 
-function isSoftKeyboardLikelyOpen(): boolean {
+export function isSoftKeyboardLikelyOpen(): boolean {
   if (typeof window === "undefined" || !window.visualViewport) return false;
   return window.visualViewport.height < window.innerHeight * 0.82;
 }
 
-/** 页面内是否有表单控件获得焦点（用于键盘弹起时暂停轮播、收起占位区等） */
+/**
+ * 登录等表单页：区分「文本框聚焦」与「软键盘弹起」。
+ * - 国家代码 select 仅聚焦不会收起顶部轮播
+ * - 手机号/密码等输入唤起键盘时才收起轮播并压缩布局
+ */
 export function useFormFieldFocus(enabled = true) {
-  const [focused, setFocused] = useState(false);
+  const [textFieldFocused, setTextFieldFocused] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
   const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -27,41 +34,50 @@ export function useFormFieldFocus(enabled = true) {
       }
     };
 
-    const setFocusedTrue = () => {
-      clearBlurTimer();
-      setFocused(true);
+    const syncKeyboardOpen = () => {
+      setKeyboardOpen(isSoftKeyboardLikelyOpen());
     };
 
-    const scheduleFocusedFalse = () => {
+    const setTextFocusedTrue = () => {
+      clearBlurTimer();
+      setTextFieldFocused(true);
+      syncKeyboardOpen();
+    };
+
+    const scheduleTextFocusedFalse = () => {
       clearBlurTimer();
       blurTimerRef.current = setTimeout(() => {
         blurTimerRef.current = null;
-        if (isFormField(document.activeElement)) return;
-        if (isSoftKeyboardLikelyOpen()) return;
-        setFocused(false);
+        if (isKeyboardTriggerField(document.activeElement)) return;
+        setTextFieldFocused(false);
+        syncKeyboardOpen();
+        if (!isSoftKeyboardLikelyOpen()) setKeyboardOpen(false);
       }, 220);
     };
 
     const onFocusIn = (e: FocusEvent) => {
-      if (isFormField(e.target as Element)) setFocusedTrue();
+      if (isKeyboardTriggerField(e.target as Element)) setTextFocusedTrue();
     };
     const onFocusOut = (e: FocusEvent) => {
       const next = e.relatedTarget as Element | null;
-      if (isFormField(next)) return;
-      scheduleFocusedFalse();
+      if (isKeyboardTriggerField(next)) return;
+      scheduleTextFocusedFalse();
     };
 
     const onViewportResize = () => {
-      if (isFormField(document.activeElement) || isSoftKeyboardLikelyOpen()) {
-        setFocusedTrue();
+      const kb = isSoftKeyboardLikelyOpen();
+      setKeyboardOpen(kb);
+      if (isKeyboardTriggerField(document.activeElement) || kb) {
+        setTextFieldFocused(true);
         return;
       }
-      scheduleFocusedFalse();
+      scheduleTextFocusedFalse();
     };
 
     document.addEventListener("focusin", onFocusIn);
     document.addEventListener("focusout", onFocusOut);
     window.visualViewport?.addEventListener("resize", onViewportResize);
+    syncKeyboardOpen();
     return () => {
       clearBlurTimer();
       document.removeEventListener("focusin", onFocusIn);
@@ -70,5 +86,10 @@ export function useFormFieldFocus(enabled = true) {
     };
   }, [enabled]);
 
-  return focused;
+  return {
+    textFieldFocused,
+    keyboardOpen,
+    /** 文本框聚焦或软键盘已弹起（用于暂停轮播、收紧间距） */
+    formCompact: textFieldFocused || keyboardOpen,
+  };
 }

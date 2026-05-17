@@ -1,12 +1,13 @@
 ﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ArrowLeft, Copy } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { fetchUserById, adjustUserPoints, fetchUserTags, setUserTags, unbindUserWechat, resetUserPassword, updateUserProfile, updateUserStatus, recalculateUserMemberLevel, assignUserMemberLevel, fetchMemberLevels } from "@/services/admin/userService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { isAbortError } from "@/utils/asyncErrors";
 import type { UserTag } from "@/types/user";
 
 const tabs = ["基础资料", "订单记录", "地址信息", "积分/优惠券", "邀请/返现", "售后记录", "评论记录", "操作日志"];
@@ -14,8 +15,11 @@ const tabs = ["基础资料", "订单记录", "地址信息", "积分/优惠券"
 export default function AdminUserDetail() {
   const navigate = useNavigate();
   const goBack = useGoBack("/admin/users");
-  const { id } = useParams();
+  const { id = "" } = useParams();
+  const loadSeqRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [tab, setTab] = useState(tabs[0]);
   const [user, setUser] = useState<any>(null);
   const [allTags, setAllTags] = useState<UserTag[]>([]);
@@ -23,19 +27,43 @@ export default function AdminUserDetail() {
   const [editForm, setEditForm] = useState<any>({});
   const [levels, setLevels] = useState<any[]>([]);
 
-  const reload = async () => {
+  const reload = useCallback(async () => {
     if (!id) return;
-    const [u, tags, memberLevels] = await Promise.all([fetchUserById(id), fetchUserTags(), fetchMemberLevels()]);
-    setUser(u);
-    setAllTags(tags);
-    setLevels(memberLevels || []);
-  };
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const seq = ++loadSeqRef.current;
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const [u, tags, memberLevels] = await Promise.all([
+        fetchUserById(id, { signal: controller.signal }),
+        fetchUserTags(),
+        fetchMemberLevels(),
+      ]);
+      if (seq !== loadSeqRef.current) return;
+      setUser(u);
+      setAllTags(tags);
+      setLevels(memberLevels || []);
+    } catch (e) {
+      if (seq !== loadSeqRef.current || isAbortError(e)) return;
+      const msg = toastErrorMessage(e, "加载用户详情失败");
+      setLoadError(msg);
+      setUser(null);
+      toast.error(msg);
+    } finally {
+      if (seq === loadSeqRef.current) setLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;
-    setLoading(true);
-    reload().catch((e) => toast.error(toastErrorMessage(e, "加载失败"))).finally(() => setLoading(false));
-  }, [id]);
+    void reload();
+    return () => {
+      loadSeqRef.current += 1;
+      abortRef.current?.abort();
+    };
+  }, [id, reload]);
 
   const doResetPassword = async () => {
     if (!id) return;
@@ -72,7 +100,17 @@ export default function AdminUserDetail() {
     }
   };
 
-  if (loading) return <div className="p-6">加载中...</div>;
+  if (loading && !user) return <div className="p-6">加载中...</div>;
+  if (loadError && !user) {
+    return (
+      <div className="space-y-3 p-6">
+        <p className="text-sm text-[var(--theme-danger)]">{loadError}</p>
+        <button type="button" className="rounded border px-3 py-1.5 text-xs" onClick={goBack}>
+          返回用户列表
+        </button>
+      </div>
+    );
+  }
   if (!user) return <div className="p-6">用户不存在</div>;
 
   const userTagIds = new Set((user.tags || []).map((t: any) => t.id));

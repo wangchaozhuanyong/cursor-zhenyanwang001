@@ -1,4 +1,4 @@
-﻿import { get } from "@/api/request";
+import { get } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
 
 export interface AuditLogRow {
@@ -37,6 +37,6 @@ export interface AuditLogListParams {
 }
 
 export function getAuditLogs(params?: AuditLogListParams) {
-  return get<PaginatedData<AuditLogRow>>("/admin/audit-logs", params as Record<string, string>);
+  return get<PaginatedData<AuditLogRow>>("/admin/audit-logs", params as unknown as Record<string, string>);
 }
 

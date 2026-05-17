@@ -17,7 +17,7 @@ export async function adminLogin(
   if (params.countryCode) payload.countryCode = params.countryCode;
 
   const res = await accountApi.adminLogin(payload);
-  const d = res.data as Record<string, unknown>;
+  const d = res.data as unknown as Record<string, unknown>;
 
   // Backend returns { token: { accessToken, refreshToken }, userId }
   const tokenObj = d.token as { accessToken?: string; refreshToken?: string } | undefined;

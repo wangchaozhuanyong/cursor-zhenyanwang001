@@ -10,7 +10,7 @@ function parseDraft(raw: string): Record<string, unknown> {
   const trimmed = raw.trim();
   if (!trimmed) return {};
   try {
-    return JSON.parse(trimmed) as Record<string, unknown>;
+    return JSON.parse(trimmed) as unknown as Record<string, unknown>;
   } catch {
     return {};
   }
@@ -44,11 +44,11 @@ export default function StripeChannelConfigForm({ draft, onDraftChange, onSave }
   return (
     <div className="mt-3">
       <p className="mb-2 text-xs text-muted-foreground">
-        扩展配置（用于对账手续费估算）：{formatPaymentConfigSummary(config)}
+        鎵╁睍閰嶇疆锛堢敤浜庡璐︽墜缁垂浼扮畻锛夛細{formatPaymentConfigSummary(config)}
       </p>
       <div className="grid gap-3 md:grid-cols-3">
         <label className="text-xs text-muted-foreground"><Tx>
-          结账模式
+          缁撹处妯″紡
           </Tx><select
             className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             value={checkoutMode}
@@ -62,14 +62,13 @@ export default function StripeChannelConfigForm({ draft, onDraftChange, onSave }
           </select>
         </label>
         <label className="text-xs text-muted-foreground"><Tx>
-          手续费率（%）
-          </Tx><input
+          鎵嬬画璐圭巼锛?锛?          </Tx><input
             type="number"
             step="0.01"
             min="0"
             className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             value={feeRate}
-            placeholder="如 2.9"
+            placeholder="濡?2.9"
             onChange={(e) =>
               patchConfig({
                 fee_rate_percent: e.target.value === "" ? "" : Number(e.target.value),
@@ -78,14 +77,13 @@ export default function StripeChannelConfigForm({ draft, onDraftChange, onSave }
           />
         </label>
         <label className="text-xs text-muted-foreground"><Tx>
-          固定手续费
-          </Tx><input
+          鍥哄畾鎵嬬画璐?          </Tx><input
             type="number"
             step="0.01"
             min="0"
             className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             value={feeFixed}
-            placeholder="如 1.0"
+            placeholder="濡?1.0"
             onChange={(e) =>
               patchConfig({
                 fee_fixed: e.target.value === "" ? "" : Number(e.target.value),
@@ -96,7 +94,7 @@ export default function StripeChannelConfigForm({ draft, onDraftChange, onSave }
       </div>
       <details className="mt-3">
         <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground"><Tx>
-          高级：查看或编辑原始 JSON
+          楂樼骇锛氭煡鐪嬫垨缂栬緫鍘熷 JSON
         </Tx></summary>
         <textarea
           className="mt-2 min-h-[80px] w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
@@ -109,7 +107,7 @@ export default function StripeChannelConfigForm({ draft, onDraftChange, onSave }
         onClick={onSave}
         className="mt-2 inline-flex items-center gap-1 rounded-full bg-[var(--theme-price)]/15 px-3 py-1.5 text-xs font-medium text-[var(--theme-price)]"
       >
-        <Save size={14} /><Tx> 保存配置
+        <Save size={14} /><Tx> 淇濆瓨閰嶇疆
       </Tx></button>
     </div>
   );

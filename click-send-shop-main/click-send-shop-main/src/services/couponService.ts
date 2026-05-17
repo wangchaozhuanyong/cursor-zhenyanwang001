@@ -21,7 +21,7 @@ export async function fetchAvailableCoupons(orderAmount: number): Promise<UserCo
 
 function mapUserCouponToCheckoutPicker(uc: UserCoupon, idx: number): CheckoutPickerCoupon {
   const c = uc.coupon;
-  const normalizedType = c.type === "percent" ? "percentage" : c.type;
+  const normalizedType = c.type;
   return {
     id: uc.id,
     title: c.title,
@@ -51,7 +51,7 @@ export async function fetchCheckoutPickerCoupons(
   const valid = rows.filter((uc) => {
     if (uc.status !== "available") return false;
     const c = uc.coupon;
-    if (!c || (c.type !== "fixed" && c.type !== "percentage" && c.type !== "percent" && c.type !== "shipping")) return false;
+    if (!c || (c.type !== "fixed" && c.type !== "percentage" && c.type !== "shipping")) return false;
     if (!isCouponInValidPeriod(c.end_date, c.start_date)) return false;
     return true;
   });

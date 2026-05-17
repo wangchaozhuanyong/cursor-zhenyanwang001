@@ -27,8 +27,12 @@ export async function estimateNotificationAudience(data: notificationApi.Notific
   return res.data;
 }
 
-export async function fetchNotificationDetail(id: string, params?: { read_status?: "read" | "unread"; page?: number; pageSize?: number }) {
-  const res = await notificationApi.getNotificationDetail(id, params);
+export async function fetchNotificationDetail(
+  id: string,
+  params?: { read_status?: "read" | "unread"; page?: number; pageSize?: number },
+  options?: { signal?: AbortSignal },
+) {
+  const res = await notificationApi.getNotificationDetail(id, params, options);
   return res.data;
 }
 

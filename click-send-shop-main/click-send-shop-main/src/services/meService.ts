@@ -3,7 +3,7 @@ import type { WechatLoginBinding } from "@/types/user";
 
 export async function fetchWechatBinding(): Promise<WechatLoginBinding & { wechatLoginEnabled?: boolean }> {
   const res = await meApi.getWechatBinding();
-  const d = res.data as Record<string, unknown>;
+  const d = res.data as unknown as Record<string, unknown>;
   return {
     bound: Boolean(d.bound),
     nickname: (d.nickname as string | null | undefined) ?? null,
@@ -16,7 +16,7 @@ export async function fetchWechatBinding(): Promise<WechatLoginBinding & { wecha
 export async function startBindWechat(redirect = "/settings") {
   const res = await meApi.bindWechat(redirect);
   const url = res.data?.authorizeUrl;
-  if (!url) throw new Error("无法获取微信授权地址");
+  if (!url) throw new Error("鏃犳硶鑾峰彇寰俊鎺堟潈鍦板潃");
   window.location.href = url;
 }
 

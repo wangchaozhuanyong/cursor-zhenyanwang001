@@ -78,10 +78,10 @@ export async function bindWechatPhone(params: WechatBindPhoneParams): Promise<Lo
   return res.data;
 }
 
-/** 后端返回 snake_case，前端统一用 camelCase */
+/** 鍚庣杩斿洖 snake_case锛屽墠绔粺涓€鐢?camelCase */
 export async function getProfile(): Promise<UserProfile> {
   const res = await authApi.getProfile();
-  const d = res.data as Record<string, unknown>;
+  const d = res.data as unknown as Record<string, unknown>;
   const memberLevelId = (d.member_level_id ?? d.memberLevelId ?? "") as string;
   return {
     id: (d.id ?? d.userId ?? "") as string,
@@ -91,7 +91,7 @@ export async function getProfile(): Promise<UserProfile> {
     wechat: (d.wechat ?? "") as string,
     whatsapp: (d.whatsapp ?? "") as string,
     wechatLogin: (() => {
-      const raw = (d.wechat_login ?? d.wechatLogin) as Record<string, unknown> | undefined;
+      const raw = (d.wechat_login ?? d.wechatLogin) as unknown as Record<string, unknown> | undefined;
       if (!raw || typeof raw !== "object") return { bound: false };
       return {
         bound: Boolean(raw.bound),
@@ -107,7 +107,7 @@ export async function getProfile(): Promise<UserProfile> {
     memberLevel: memberLevelId
       ? {
         id: memberLevelId,
-        name: (d.member_level_name ?? d.memberLevelName ?? "会员") as string,
+        name: (d.member_level_name ?? d.memberLevelName ?? "浼氬憳") as string,
         description: (d.member_level_description ?? d.memberLevelDescription ?? "") as string,
         min_spent: Number(d.member_level_min_spent ?? d.memberLevelMinSpent ?? 0),
         min_orders: Number(d.member_level_min_orders ?? d.memberLevelMinOrders ?? 0),

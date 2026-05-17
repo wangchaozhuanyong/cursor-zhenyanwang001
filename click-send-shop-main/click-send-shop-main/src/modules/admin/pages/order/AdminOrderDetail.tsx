@@ -1,7 +1,7 @@
 import { ArrowLeft, Loader2, Truck, Check, XCircle, ReceiptText } from "lucide-react";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { useGoBack } from "@/hooks/useGoBack";
 import { fetchOrderById, updateOrderStatus, shipOrder } from "@/services/admin/orderService";
@@ -9,6 +9,7 @@ import { getAuditLogs, type AuditLogRow } from "@/api/admin/audit";
 import { markAdminOrderPaid } from "@/services/admin/paymentAdminService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { isAbortError } from "@/utils/asyncErrors";
 import {
   ORDER_STATUS,
   PAYMENT_STATUS,
@@ -41,7 +42,10 @@ export default function AdminOrderDetail() {
   const goBack = useGoBack("/admin/orders");
   const { id = "" } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
+  const loadSeqRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [order, setOrder] = useState<Order | null>(null);
   const [logs, setLogs] = useState<AuditLogRow[]>([]);
   const [busy, setBusy] = useState(false);
@@ -49,11 +53,17 @@ export default function AdminOrderDetail() {
   const [trackingNo, setTrackingNo] = useState("");
   const [carrier, setCarrier] = useState("J&T Express");
 
-  const reload = async () => {
+  const reload = useCallback(async () => {
     if (!id) return;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const seq = ++loadSeqRef.current;
     setLoading(true);
+    setLoadError(null);
     try {
-      const data = await fetchOrderById(id);
+      const data = await fetchOrderById(id, { signal: controller.signal });
+      if (seq !== loadSeqRef.current) return;
       setOrder(data);
       try {
         const logRes = await getAuditLogs({
@@ -70,13 +80,24 @@ export default function AdminOrderDetail() {
         setLogs([]);
       }
     } catch (e) {
-      toast.error(toastErrorMessage(e, "加载订单详情失败"));
+      if (seq !== loadSeqRef.current || isAbortError(e)) return;
+      const msg = toastErrorMessage(e, "加载订单详情失败");
+      setLoadError(msg);
+      setOrder(null);
+      toast.error(msg);
     } finally {
-      setLoading(false);
+      if (seq === loadSeqRef.current) setLoading(false);
     }
-  };
+  }, [id]);
 
-  useEffect(() => { void reload(); }, [id]);
+  useEffect(() => {
+    if (!id) return;
+    void reload();
+    return () => {
+      loadSeqRef.current += 1;
+      abortRef.current?.abort();
+    };
+  }, [id, reload]);
 
   useEffect(() => {
     if (!order) return;
@@ -148,8 +169,19 @@ export default function AdminOrderDetail() {
     }
   };
 
-  if (loading) {
+  if (loading && !order) {
     return <div className="p-6 text-sm text-muted-foreground">加载中...</div>;
+  }
+
+  if (loadError && !order) {
+    return (
+      <div className="space-y-3 p-6">
+        <p className="text-sm text-[var(--theme-danger)]">{loadError}</p>
+        <button type="button" className="rounded border px-3 py-1.5 text-xs" onClick={goBack}>
+          返回订单列表
+        </button>
+      </div>
+    );
   }
 
   if (!order) {

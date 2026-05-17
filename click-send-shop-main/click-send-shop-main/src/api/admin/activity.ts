@@ -1,4 +1,4 @@
-﻿import { get, post, put, patch, del } from "@/api/request";
+import { get, post, put, patch, del } from "@/api/request";
 import type { ActivityPayload, ActivityStatus, ActivityType, MarketingActivity } from "@/types/activity";
 import type { PaginatedData, PaginationParams } from "@/types/common";
 
@@ -21,11 +21,11 @@ export interface ActivityProductOption {
 }
 
 export function getActivities(params?: ActivityListParams) {
-  return get<PaginatedData<MarketingActivity>>("/admin/activities", params as Record<string, string>);
+  return get<PaginatedData<MarketingActivity>>("/admin/activities", params as unknown as Record<string, string>);
 }
 
 export function getActivityProductOptions(params?: Record<string, string | number>) {
-  return get<PaginatedData<ActivityProductOption>>("/admin/activities/products/options", params as Record<string, string>);
+  return get<PaginatedData<ActivityProductOption>>("/admin/activities/products/options", params as unknown as Record<string, string>);
 }
 
 export function getActivity(id: string) {

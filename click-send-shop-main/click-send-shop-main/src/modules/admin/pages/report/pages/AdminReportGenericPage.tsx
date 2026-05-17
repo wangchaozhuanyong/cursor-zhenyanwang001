@@ -44,7 +44,7 @@ export default function AdminReportGenericPage({ title, fetcher }: Props) {
         const data = await fetcher(p);
         setPayload(data || {});
       } catch (e) {
-        toast.error(toastErrorMessage(e, "加载报表失败"));
+        toast.error(toastErrorMessage(e, "鍔犺浇鎶ヨ〃澶辫触"));
       } finally {
         setLoading(false);
       }
@@ -52,8 +52,8 @@ export default function AdminReportGenericPage({ title, fetcher }: Props) {
     void run();
   }, [fetcher, searchParams]);
 
-  const list = Array.isArray(payload.list) ? (payload.list as Record<string, unknown>[]) : [];
-  const summary = (payload.summary || {}) as Record<string, unknown>;
+  const list = Array.isArray(payload.list) ? (payload.list as unknown as Record<string, unknown>[]) : [];
+  const summary = (payload.summary || {}) as unknown as Record<string, unknown>;
   const columns = useMemo(
     () => (list.length > 0 ? Object.keys(list[0]) : ["col1", "col2", "col3", "col4", "col5"]),
     [list],
@@ -99,7 +99,7 @@ export default function AdminReportGenericPage({ title, fetcher }: Props) {
           </tr>
         )}
         emptyIcon={FileSpreadsheet}
-        emptyTitle="暂无数据"
+        emptyTitle="鏆傛棤鏁版嵁"
         renderRow={(row) => (
           <>
             {columns.map((k) => (

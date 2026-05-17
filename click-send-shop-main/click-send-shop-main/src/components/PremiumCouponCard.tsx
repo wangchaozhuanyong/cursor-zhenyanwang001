@@ -42,9 +42,9 @@ interface PremiumCouponCardProps {
 function VerticalActionLabel({ label }: { label: string }) {
   const chars = Array.from(label);
   return (
-    <span className="inline-flex flex-col items-center justify-center gap-0.5 leading-none tracking-tight">
+    <span className="inline-flex flex-col items-center justify-center gap-0 leading-none tracking-tight">
       {chars.map((ch, i) => (
-        <span key={`${ch}-${i}`} className="block text-xs font-semibold">
+        <span key={`${ch}-${i}`} className="block text-[11px] font-semibold leading-[1.15]">
           {ch}
         </span>
       ))}
@@ -135,25 +135,42 @@ export default function PremiumCouponCard({
     infoRows.push({ icon: Package, prominent: false, text: scopeText });
   }
 
+  const actionButtonInner = actionLoading ? (
+    <Loader2 size={layout === "home" ? 14 : 16} className="animate-spin shrink-0" />
+  ) : skin.actionLayout === "vertical" ? (
+    <VerticalActionLabel label={displayActionLabel} />
+  ) : (
+    <HorizontalActionLabel label={displayActionLabel} />
+  );
+
   const actionButton = displayActionLabel ? (
-    <StoreButton
-      size={layout === "default" ? "md" : "sm"}
-      variant={skin.buttonVariant}
-      disabled={actionDisabled || actionLoading || disabled}
-      onClick={(e) => {
-        e.stopPropagation();
-        onAction?.();
-      }}
-      className={skin.actionButtonClass}
-    >
-      {actionLoading ? (
-        <Loader2 size={layout === "home" ? 14 : 16} className="animate-spin shrink-0" />
-      ) : skin.actionLayout === "vertical" ? (
-        <VerticalActionLabel label={displayActionLabel} />
-      ) : (
-        <HorizontalActionLabel label={displayActionLabel} />
-      )}
-    </StoreButton>
+    skin.useThemedMarketingShell ? (
+      <button
+        type="button"
+        disabled={actionDisabled || actionLoading || disabled}
+        onClick={(e) => {
+          e.stopPropagation();
+          onAction?.();
+        }}
+        className={skin.actionButtonClass}
+        style={{ background: "var(--theme-coupon-card-cta-bg)" }}
+      >
+        {actionButtonInner}
+      </button>
+    ) : (
+      <StoreButton
+        size={layout === "default" ? "md" : "sm"}
+        variant="primary"
+        disabled={actionDisabled || actionLoading || disabled}
+        onClick={(e) => {
+          e.stopPropagation();
+          onAction?.();
+        }}
+        className={skin.actionButtonClass}
+      >
+        {actionButtonInner}
+      </StoreButton>
+    )
   ) : null;
 
   const wrapper = (
@@ -161,7 +178,8 @@ export default function PremiumCouponCard({
       data-theme-coupon-style={skin.couponStyle}
       data-coupon-card-layout={layout}
       className={cn(
-        "relative grid w-full min-w-0 items-stretch gap-0 overflow-hidden rounded-xl border border-[var(--theme-border)]",
+        "relative grid w-full min-w-0 items-stretch gap-0 overflow-hidden rounded-xl border",
+        skin.useThemedMarketingShell ? "border-[var(--theme-coupon-card-shell-border)]" : "border-[var(--theme-border)]",
         skin.cardPadding,
         skin.gridClass,
         skin.shellClass,
@@ -170,13 +188,14 @@ export default function PremiumCouponCard({
         className,
       )}
     >
-      <div className="flex min-h-[3.25rem] flex-col items-center justify-center rounded-lg border border-dashed border-[var(--theme-border)] bg-[var(--theme-bg)] px-1.5 py-1 text-center">
+      <div className={cn("flex min-h-[3.25rem] flex-col items-center justify-center rounded-lg px-1.5 py-1 text-center", skin.valuePaneClass)}>
         <p className={cn(skin.amountSize, "font-black tracking-tight text-[var(--theme-price)]")}>{leftValue}</p>
       </div>
 
       <div
         className={cn(
-          "flex min-w-0 flex-col justify-center border-x border-dashed border-[var(--theme-border)]",
+          "flex min-w-0 flex-col justify-center border-x border-dashed",
+          skin.dividerClass,
           skin.infoGap,
           skin.infoPadding,
         )}
@@ -195,7 +214,7 @@ export default function PremiumCouponCard({
         ))}
       </div>
 
-      {actionButton ? <div className="flex min-w-0 items-stretch">{actionButton}</div> : null}
+      {actionButton ? <div className="flex w-full min-w-0 items-stretch justify-center">{actionButton}</div> : null}
     </div>
   );
 

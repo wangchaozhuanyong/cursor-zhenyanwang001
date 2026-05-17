@@ -1,6 +1,9 @@
 const { ValidationError } = require('../../errors');
 const repo = require('./order.repository');
 const siteSettingsRepo = require('./siteSettings.repository');
+const loyaltyRepo = require('../loyalty/loyalty.repository');
+const pointsRepo = require('../user/points.repository');
+const rewardRepo = require('../user/reward.repository');
 const sstTax = require('./sstTax');
 const { computeShippingFee, estimateWeightFromItems } = require('../../utils/shippingFee');
 
@@ -35,6 +38,38 @@ function calculateCouponDiscount(coupon, rawAmount, shippingFee) {
   if (type === 'percentage') return Math.min(rawAmount, Math.floor(rawAmount * value / 100));
   if (type === 'shipping') return Math.min(shippingFee, value > 0 ? value : shippingFee);
   return 0;
+}
+
+function parseJsonArray(raw, fallback = []) {
+  if (!raw) return fallback;
+  if (Array.isArray(raw)) return raw;
+  try {
+    const v = JSON.parse(raw);
+    return Array.isArray(v) ? v : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
+}
+
+function roundEarnedPoints(value, mode) {
+  if (mode === 'ceil') return Math.ceil(value);
+  if (mode === 'round') return Math.round(value);
+  return Math.floor(value);
+}
+
+function computeEarnedPointsBySettings(settings, amountAfterDiscount, fallbackPoints) {
+  if (!settings || !settings.earn_enabled) return 0;
+  if (settings.earn_basis === 'legacy_product_points') return Math.max(0, Math.trunc(fallbackPoints || 0));
+  const currencyUnit = Number(settings.earn_currency_unit || 1);
+  const pointsUnit = Number(settings.earn_points_unit || 1);
+  const mult = Number(settings.earn_multiplier_percent || 100) / 100;
+  if (currencyUnit <= 0 || pointsUnit <= 0 || amountAfterDiscount <= 0) return 0;
+  const raw = (amountAfterDiscount / currencyUnit) * pointsUnit * mult;
+  return Math.max(0, roundEarnedPoints(raw, settings.earn_rounding || 'floor'));
 }
 
 function lineMatchesActivityScope(oi, product, activity, scopes) {
@@ -193,7 +228,7 @@ async function buildOrderPricing(userId, body, conn = null) {
     : await repo.selectActiveFullReductionActivitiesRead(q);
 
   let rawAmount = 0;
-  let totalPoints = 0;
+  let legacyTotalPoints = 0;
   const orderItems = items.map((item) => {
     const p = productMap[item.product_id];
     const variant = item.variant_id
@@ -203,7 +238,7 @@ async function buildOrderPricing(userId, body, conn = null) {
     const basePrice = parseFloat(variant?.price ?? p?.price ?? 0);
     const price = flash ? parseFloat(flash.activity_price) : basePrice;
     rawAmount += price * item.qty;
-    totalPoints += (p?.points || 0) * item.qty;
+    legacyTotalPoints += (p?.points || 0) * item.qty;
     return {
       productId: p.id,
       variantId: variant?.id || null,
@@ -266,7 +301,63 @@ async function buildOrderPricing(userId, body, conn = null) {
   const taxSnap = sstTax.buildOrderTaxSnapshot(sstSettings, goodsInclusiveTaxable);
 
   const discountAmount = fullReductionDiscount + couponDiscount;
-  const finalTotal = Math.max(0, rawAmount - discountAmount + shippingFee);
+  const basePayableBeforeLoyalty = Math.max(0, rawAmount - discountAmount + shippingFee);
+
+  const pointsSettings = await loyaltyRepo.selectPointsSettings();
+  const rewardSettings = await loyaltyRepo.selectRewardSettings();
+  const pointMethods = parseJsonArray(pointsSettings?.allowed_payment_methods, ['online', 'whatsapp']);
+  const rewardMethods = parseJsonArray(rewardSettings?.allowed_payment_methods, ['online', 'whatsapp']);
+
+  const pointsBalance = userId ? Number(await pointsRepo.selectUserPointsBalance(userId)) : 0;
+  const rewardBalance = userId ? Number(await rewardRepo.sumUserRewardTransactions(q, userId)) : 0;
+  const pointsPerCurrency = Math.max(1, Number(pointsSettings?.points_per_currency || 100));
+  const minRedeemPoints = Math.max(0, Number(pointsSettings?.min_redeem_points || 0));
+  const pointsMaxByPercent = basePayableBeforeLoyalty * (Number(pointsSettings?.max_redeem_percent || 100) / 100);
+  const pointsMaxByAmount = Number(pointsSettings?.max_redeem_amount || 0) > 0
+    ? Number(pointsSettings?.max_redeem_amount || 0)
+    : Number.MAX_SAFE_INTEGER;
+  const pointsMaxCurrency = clamp(
+    Math.min(pointsMaxByPercent, pointsMaxByAmount, basePayableBeforeLoyalty),
+    0,
+    basePayableBeforeLoyalty,
+  );
+  const maxUsablePointsBySetting = Math.floor(pointsMaxCurrency * pointsPerCurrency);
+  const max_usable_points = (
+    pointsSettings?.redeem_enabled
+    && basePayableBeforeLoyalty >= Number(pointsSettings?.min_order_amount || 0)
+    && pointsBalance >= minRedeemPoints
+  ) ? Math.max(0, Math.min(pointsBalance, maxUsablePointsBySetting)) : 0;
+
+  const usePoints = !!body.use_points;
+  const requestPointsToUse = Number(body.points_to_use || 0);
+  const points_used = usePoints
+    ? clamp(requestPointsToUse > 0 ? Math.floor(requestPointsToUse) : max_usable_points, 0, max_usable_points)
+    : 0;
+  const points_discount_amount = points_used > 0 ? clamp(points_used / pointsPerCurrency, 0, basePayableBeforeLoyalty) : 0;
+
+  const afterPoints = Math.max(0, basePayableBeforeLoyalty - points_discount_amount);
+  const rewardMaxByPercent = afterPoints * (Number(rewardSettings?.max_redeem_percent || 100) / 100);
+  const rewardMaxByAmount = Number(rewardSettings?.max_redeem_amount || 0) > 0
+    ? Number(rewardSettings?.max_redeem_amount || 0)
+    : Number.MAX_SAFE_INTEGER;
+  const max_usable_reward_cash = (
+    rewardSettings?.wallet_redeem_enabled
+    && afterPoints >= Number(rewardSettings?.min_redeem_amount || 0)
+  ) ? clamp(Math.min(rewardBalance, rewardMaxByPercent, rewardMaxByAmount, afterPoints), 0, afterPoints) : 0;
+
+  const useRewardCash = !!body.use_reward_cash;
+  const requestRewardCash = Number(body.reward_cash_amount || 0);
+  const reward_cash_used = useRewardCash
+    ? clamp(requestRewardCash > 0 ? requestRewardCash : max_usable_reward_cash, 0, max_usable_reward_cash)
+    : 0;
+  const reward_cash_discount_amount = reward_cash_used;
+
+  const finalTotal = Math.max(0, basePayableBeforeLoyalty - points_discount_amount - reward_cash_discount_amount);
+  const earned_points = computeEarnedPointsBySettings(
+    pointsSettings,
+    Math.max(0, goodsInclusiveTaxable - points_discount_amount - reward_cash_discount_amount),
+    legacyTotalPoints,
+  );
 
   const discount_lines = [];
   if (flashSaleDiscount > 0) {
@@ -282,6 +373,12 @@ async function buildOrderPricing(userId, body, conn = null) {
       amount: couponDiscount,
     });
   }
+  if (points_discount_amount > 0) {
+    discount_lines.push({ type: 'points', label: '积分抵扣', amount: points_discount_amount });
+  }
+  if (reward_cash_discount_amount > 0) {
+    discount_lines.push({ type: 'reward_cash', label: '返现余额抵扣', amount: reward_cash_discount_amount });
+  }
 
   return {
     rawAmount,
@@ -291,7 +388,8 @@ async function buildOrderPricing(userId, body, conn = null) {
     discountAmount,
     shippingFee,
     finalTotal,
-    totalPoints,
+    totalPoints: earned_points,
+    legacyTotalPoints,
     goodsAmountAfterFullReduction,
     taxSnap,
     orderItems,
@@ -301,6 +399,21 @@ async function buildOrderPricing(userId, body, conn = null) {
     couponTitle,
     couponType,
     discount_lines,
+    loyalty: {
+      use_points: usePoints,
+      points_used,
+      points_discount_amount,
+      use_reward_cash: useRewardCash,
+      reward_cash_used,
+      reward_cash_discount_amount,
+      available_points: pointsBalance,
+      max_usable_points,
+      available_reward_balance: rewardBalance,
+      max_usable_reward_cash,
+      earned_points,
+      point_payment_method_whitelist: pointMethods,
+      reward_payment_method_whitelist: rewardMethods,
+    },
   };
 }
 

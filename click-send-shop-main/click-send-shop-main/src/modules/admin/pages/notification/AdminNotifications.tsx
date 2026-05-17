@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { Bell, Plus, XCircle } from "lucide-react";
@@ -13,6 +13,7 @@ import * as adminUserService from "@/services/admin/userService";
 import type { Notification } from "@/types/notification";
 import type { NotificationPayload } from "@/api/admin/notification";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { isAbortError } from "@/utils/asyncErrors";
 import { labelNotificationType, NOTIFICATION_TYPE_LABELS } from "@/utils/adminDisplayLabels";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 
@@ -80,7 +81,10 @@ export default function AdminNotifications() {
   const [bulkImportText, setBulkImportText] = useState("");
   const [estimatedRecipients, setEstimatedRecipients] = useState<number>(0);
 
-  const loadData = () => {
+  const loadSeqRef = useRef(0);
+
+  const loadData = useCallback(() => {
+    const seq = ++loadSeqRef.current;
     setLoading(true);
     Promise.all([
       notificationService.fetchNotifications({ page, pageSize, ...filters }),
@@ -91,6 +95,7 @@ export default function AdminNotifications() {
       adminUserService.fetchMemberLevels(),
     ])
       .then(([listData, summaryData, templateData, triggerData, tags, levels]) => {
+        if (seq !== loadSeqRef.current) return;
         setNotifications(listData.list);
         setTotal(listData.total);
         setSummary(summaryData);
@@ -99,14 +104,22 @@ export default function AdminNotifications() {
         setTagOptions((tags || []).map((t) => ({ id: t.id, name: t.name })));
         setMemberLevelOptions((levels || []).map((l) => ({ id: l.id, name: l.name })));
       })
-      .catch((e) => toast.error(toastErrorMessage(e, "加载通知失败")))
-      .finally(() => setLoading(false));
-  };
+      .catch((e) => {
+        if (seq !== loadSeqRef.current || isAbortError(e)) return;
+        toast.error(toastErrorMessage(e, "加载通知失败"));
+      })
+      .finally(() => {
+        if (seq !== loadSeqRef.current) return;
+        setLoading(false);
+      });
+  }, [filters, page, pageSize]);
 
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, filters]);
+    return () => {
+      loadSeqRef.current += 1;
+    };
+  }, [loadData]);
 
   useEffect(() => {
     if (!showForm) return;
@@ -224,7 +237,15 @@ export default function AdminNotifications() {
       notificationService.cancelScheduledNotification(id).then(() => { toast.success("已取消定时"); loadData(); }).catch((e) => toast.error(toastErrorMessage(e, "取消失败")));
       return;
     }
-    adminConfirmDelete(confirm, n.title || "该通知", () => notificationService.deleteDraftNotification(id).then(() => { toast.success("已删除"); loadData(); }).catch((e) => toast.error(toastErrorMessage(e, "删除失败"))));
+    adminConfirmDelete(confirm, n.title || "该通知", () =>
+      notificationService.deleteDraftNotification(id).then(() => {
+        toast.success("已删除");
+        if (window.location.pathname.includes(`/admin/notifications/${id}`)) {
+          navigate("/admin/notifications");
+        }
+        loadData();
+      }).catch((e) => toast.error(toastErrorMessage(e, "删除失败"))),
+    );
   };
 
   const handleSend = async () => {
@@ -263,7 +284,7 @@ export default function AdminNotifications() {
 
   const statusText = useMemo(() => ({
     draft: "草稿", scheduled: "定时中", sent: "已发送", cancelled: "已取消", published: "已发布",
-  } as Record<string, string>), []);
+  } as unknown as Record<string, string>), []);
 
   const filteredTagOptions = useMemo(
     () => tagOptions.filter((t) => !tagKeyword.trim() || t.name.includes(tagKeyword.trim())),

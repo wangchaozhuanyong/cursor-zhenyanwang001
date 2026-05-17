@@ -38,12 +38,15 @@ export function formatCouponActionLabel(label: string, layout: CouponCardLayout)
 export type CouponCardPresentation = {
   couponStyle: CouponStyle;
   layout: CouponCardLayout;
+  /** premium/deal 使用与邀请推广条一致的 shell + CTA 令牌 */
+  useThemedMarketingShell: boolean;
   shellClass: string;
   gridClass: string;
   titleClass: string;
   mutedClass: string;
   iconClass: string;
-  buttonVariant: "primary" | "danger";
+  valuePaneClass: string;
+  dividerClass: string;
   amountSize: string;
   showScope: boolean;
   infoGap: string;
@@ -57,38 +60,38 @@ export function getCouponCardPresentation(
   couponStyle: CouponStyle,
   layout: CouponCardLayout,
 ): CouponCardPresentation {
-  const lightBg = couponStyle === "premium" || couponStyle === "deal";
+  const useThemedMarketingShell = couponStyle === "premium" || couponStyle === "deal";
 
   const shellByStyle: Record<CouponStyle, string> = {
     ticket: "bg-[var(--theme-surface)] border-dashed",
-    premium:
-      "bg-[linear-gradient(120deg,color-mix(in_srgb,var(--theme-secondary)_22%,var(--theme-surface)),color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface)))]",
-    deal:
-      "bg-[linear-gradient(120deg,color-mix(in_srgb,var(--theme-danger)_18%,var(--theme-surface)),color-mix(in_srgb,var(--theme-warning)_16%,var(--theme-surface)))]",
+    premium: "bg-theme-coupon-card-shell border",
+    deal: "bg-theme-coupon-card-shell border",
     minimal: "bg-[var(--theme-surface)]",
   };
 
-  const titleClass = lightBg
-    ? couponStyle === "deal"
-      ? "text-[var(--theme-coupon-card-deal-fg)]"
-      : "text-[var(--theme-coupon-card-premium-fg)]"
+  const titleClass = useThemedMarketingShell
+    ? "text-[var(--theme-coupon-card-shell-fg)]"
     : "text-[var(--theme-text-on-surface)]";
 
-  const mutedClass = lightBg
-    ? couponStyle === "deal"
-      ? "text-[var(--theme-coupon-card-deal-muted)]"
-      : "text-[var(--theme-coupon-card-premium-muted)]"
+  const mutedClass = useThemedMarketingShell
+    ? "theme-coupon-card-muted"
     : "text-[var(--theme-text-muted-on-surface)]";
 
-  const iconClass = lightBg
-    ? couponStyle === "deal"
-      ? THEME_COUPON_ICON_ON_DEAL_CLASS
-      : THEME_COUPON_ICON_ON_LIGHT_CLASS
+  const iconClass = useThemedMarketingShell
+    ? THEME_COUPON_ICON_ON_LIGHT_CLASS
     : THEME_COUPON_ICON_ON_SURFACE_CLASS;
 
+  const valuePaneClass = useThemedMarketingShell
+    ? "bg-[var(--theme-coupon-card-value-pane-bg)] border border-dashed border-[color-mix(in_srgb,var(--theme-coupon-card-shell-border)_65%,var(--theme-border))]"
+    : "bg-[var(--theme-bg)] border border-dashed border-[var(--theme-border)]";
+
+  const dividerClass = useThemedMarketingShell
+    ? "border-[color-mix(in_srgb,var(--theme-coupon-card-shell-border)_55%,var(--theme-border))]"
+    : "border-[var(--theme-border)]";
+
   const gridByLayout: Record<CouponCardLayout, string> = {
-    home: "grid-cols-[minmax(4.25rem,23%)_minmax(0,1fr)_minmax(4.25rem,5.25rem)]",
-    compact: "grid-cols-[minmax(4.75rem,24%)_minmax(0,1fr)_minmax(3rem,3.75rem)]",
+    home: "grid-cols-[minmax(4.25rem,23%)_minmax(0,1fr)_minmax(2.5rem,3rem)]",
+    compact: "grid-cols-[minmax(4.75rem,24%)_minmax(0,1fr)_minmax(2.5rem,3rem)]",
     default: "grid-cols-[minmax(5.5rem,26%)_minmax(0,1fr)_minmax(2.75rem,3.25rem)]",
   };
 
@@ -98,23 +101,24 @@ export function getCouponCardPresentation(
     default: "text-2xl leading-none",
   };
 
-  const actionLayout: CouponCardPresentation["actionLayout"] =
-    layout === "default" ? "vertical" : "horizontal";
+  /** 操作区统一竖排一字一行（如「使」「用」），贴右侧窄条 */
+  const actionLayout: CouponCardPresentation["actionLayout"] = "vertical";
 
-  const actionButtonClass =
-    actionLayout === "horizontal"
-      ? "flex h-full min-h-[3.25rem] w-full min-w-0 flex-col items-center justify-center self-stretch !rounded-lg px-1.5 py-2"
-      : "flex h-full min-h-0 w-full min-w-[2.75rem] max-w-[3.25rem] flex-col items-center justify-center self-stretch !rounded-lg px-1 py-1.5";
+  const actionButtonClass = useThemedMarketingShell
+    ? "flex h-full min-h-[3.25rem] w-full min-w-0 max-w-full flex-col items-center justify-center self-stretch rounded-lg px-1 py-1.5 text-[var(--theme-coupon-card-cta-fg)] shadow-sm transition active:scale-[0.98] disabled:opacity-60"
+    : "flex h-full min-h-[3.25rem] w-full min-w-0 max-w-full flex-col items-center justify-center self-stretch !h-auto !px-1 !py-1.5 !rounded-lg";
 
   return {
     couponStyle,
     layout,
+    useThemedMarketingShell,
     shellClass: shellByStyle[couponStyle],
     gridClass: gridByLayout[layout],
     titleClass,
     mutedClass,
     iconClass,
-    buttonVariant: couponStyle === "deal" ? "danger" : "primary",
+    valuePaneClass,
+    dividerClass,
     amountSize: amountSizeByLayout[layout],
     showScope: layout !== "home",
     infoGap: layout === "home" ? "gap-0.5" : "gap-px",

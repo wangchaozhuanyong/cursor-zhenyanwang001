@@ -1,9 +1,9 @@
-﻿import { get, post, put, del } from "@/api/request";
+import { get, post, put, del } from "@/api/request";
 import type { Coupon } from "@/types/coupon";
 import type { PaginatedData, PaginationParams } from "@/types/common";
 
 export function getCoupons(params?: PaginationParams) {
-  return get<PaginatedData<Coupon>>("/admin/coupons", params as Record<string, string>);
+  return get<PaginatedData<Coupon>>("/admin/coupons", params as unknown as Record<string, string>);
 }
 
 export function createCoupon(data: Omit<Coupon, "id" | "status">) {
@@ -21,14 +21,14 @@ export function deleteCoupon(id: string) {
 export function getCouponRecords(couponId: string, params?: PaginationParams) {
   return get<PaginatedData<{ userId: string; claimedAt: string; usedAt?: string }>>(
     `/admin/coupons/${couponId}/records`,
-    params as Record<string, string>
+    params as unknown as Record<string, string>
   );
 }
 
 export function getAllCouponRecords(params?: PaginationParams) {
   return get<PaginatedData<Record<string, unknown>>>(
     "/admin/coupon-records",
-    params as Record<string, string>,
+    params as unknown as Record<string, string>,
   );
 }
 

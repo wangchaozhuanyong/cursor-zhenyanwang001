@@ -1,9 +1,9 @@
-﻿import { get, post, put, del } from "@/api/request";
+import { get, post, put, del } from "@/api/request";
 import type { Notification } from "@/types/notification";
 import type { PaginatedData } from "@/types/common";
 
 export function getNotifications(params?: Record<string, unknown>) {
-  return get<PaginatedData<Notification>>("/admin/notifications", params as Record<string, string>);
+  return get<PaginatedData<Notification>>("/admin/notifications", params as unknown as Record<string, string>);
 }
 
 export type NotificationPayload = {
@@ -49,7 +49,10 @@ export function estimateNotificationAudience(data: NotificationPayload) {
   return post<{ audience_type: string; estimated_recipients: number }>("/admin/notifications/audience-estimate", data);
 }
 
-export function getNotificationDetail(id: string, params?: { read_status?: "read" | "unread"; page?: number; pageSize?: number }) {
+export function getNotificationDetail(
+  id: string,
+  params?: { read_status?: "read" | "unread"; page?: number; pageSize?: number },
+) {
   return get<{
     id: string;
     title: string;
@@ -73,7 +76,7 @@ export function getNotificationDetail(id: string, params?: { read_status?: "read
       pageSize: number;
     };
     logs: Array<{ id: string; operator_name?: string; action_type: string; summary?: string; result?: string; created_at: string }>;
-  }>(`/admin/notifications/${id}`, params as Record<string, string>);
+  }>(`/admin/notifications/${id}`, params as unknown as Record<string, string>);
 }
 
 export function resolveNotificationUsers(identifiers: string[]) {
@@ -137,4 +140,3 @@ export function cancelScheduledNotification(id: string) {
 export function revokeSentNotification(id: string) {
   return put<void>(`/admin/notifications/${id}/revoke`, {});
 }
-

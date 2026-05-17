@@ -43,6 +43,10 @@ const createOrderBodySchema = z.object({
     .optional(),
   estimated_weight_kg: z.coerce.number().nonnegative().optional(),
   checkout_abandonment_id: idParam.optional(),
+  use_points: z.coerce.boolean().optional(),
+  points_to_use: z.coerce.number().int().min(0).optional(),
+  use_reward_cash: z.coerce.boolean().optional(),
+  reward_cash_amount: z.coerce.number().min(0).optional(),
 });
 
 const checkoutAbandonmentItemSchema = z.object({

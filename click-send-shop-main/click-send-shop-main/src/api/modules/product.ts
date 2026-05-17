@@ -1,9 +1,9 @@
-﻿import { get, post } from "@/api/request";
+import { get, post } from "@/api/request";
 import type { Product, ProductListParams, ProductReview, ProductTag } from "@/types/product";
 import type { PaginatedData } from "@/types/common";
 
 export function getProducts(params?: ProductListParams) {
-  return get<PaginatedData<Product>>("/products", params as Record<string, unknown>);
+  return get<PaginatedData<Product>>("/products", params as unknown as Record<string, unknown>);
 }
 
 export function getProductById(id: string) {

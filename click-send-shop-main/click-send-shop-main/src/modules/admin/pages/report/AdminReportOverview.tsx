@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import ReportFilterBar from "@/components/admin/report/ReportFilterBar";
 import { fetchReportOverview } from "@/services/admin/reportService";
@@ -28,7 +28,7 @@ export default function AdminReportOverview() {
     void run();
   }, [searchParams]);
 
-  const summary = useMemo(() => (data.summary || {}) as Record<string, unknown>, [data]);
+  const summary = useMemo(() => (data.summary || {}) as unknown as Record<string, unknown>, [data]);
   const topHot = useMemo(() => (Array.isArray(data.topHotProducts) ? data.topHotProducts : []), [data]);
   const topSlow = useMemo(() => (Array.isArray(data.topSlowProducts) ? data.topSlowProducts : []), [data]);
 

@@ -5,9 +5,7 @@ function emptyPaginated<T>(): PaginatedData<T> {
 }
 
 /**
- * 将后端 data 统一为数组：支持 T[] 或 { list: T[] }。
- * 用户端与管理端 Service 共用，避免 Page 层补丁式适配。
- */
+ * 灏嗗悗绔?data 缁熶竴涓烘暟缁勶細鏀寔 T[] 鎴?{ list: T[] }銆? * 鐢ㄦ埛绔笌绠＄悊绔?Service 鍏辩敤锛岄伩鍏?Page 灞傝ˉ涓佸紡閫傞厤銆? */
 export function unwrapList<T>(data: unknown): T[] {
   if (Array.isArray(data)) return data as T[];
   if (data && typeof data === "object" && "list" in data) {
@@ -18,11 +16,10 @@ export function unwrapList<T>(data: unknown): T[] {
 }
 
 /**
- * 将后端 data 统一为 PaginatedData：支持标准分页对象，或裸数组（退化为单页）。
- */
+ * 灏嗗悗绔?data 缁熶竴涓?PaginatedData锛氭敮鎸佹爣鍑嗗垎椤靛璞★紝鎴栬８鏁扮粍锛堥€€鍖栦负鍗曢〉锛夈€? */
 export function unwrapPaginated<T>(data: unknown): PaginatedData<T> {
   if (data == null || typeof data !== "object") return emptyPaginated<T>();
-  const d = data as Record<string, unknown>;
+  const d = data as unknown as Record<string, unknown>;
   if (Array.isArray(d.list)) {
     const total = Number(d.total) || 0;
     const page = Number(d.page) || 1;
@@ -55,7 +52,7 @@ export function unwrapPaginated<T>(data: unknown): PaginatedData<T> {
   return emptyPaginated<T>();
 }
 
-/** `{ count: number }` 类响应，用于未读数等 */
+/** `{ count: number }` 绫诲搷搴旓紝鐢ㄤ簬鏈鏁扮瓑 */
 export function unwrapCount(data: unknown): number {
   if (data && typeof data === "object" && "count" in data) {
     const n = Number((data as { count: unknown }).count);

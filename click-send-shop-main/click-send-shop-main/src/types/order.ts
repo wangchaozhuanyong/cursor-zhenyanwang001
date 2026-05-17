@@ -77,6 +77,11 @@ export interface Order {
   }[];
   /** 下单/支付方式：whatsapp | online | reward_wallet */
   payment_method?: string;
+  points_used?: number;
+  points_discount_amount?: number;
+  reward_cash_used?: number;
+  reward_cash_discount_amount?: number;
+  loyalty_meta?: Record<string, unknown> | null;
   /** 未支付自动关单：是否启用（与站点设置一致） */
   payment_timeout_enabled?: boolean;
   /** 超时分钟数（启用时） */
@@ -111,6 +116,10 @@ export interface SubmitOrderParams {
   estimated_weight_kg?: number;
   /** 结算页快照 ID，用于将未完成结算与正式订单关联 */
   checkout_abandonment_id?: string;
+  use_points?: boolean;
+  points_to_use?: number;
+  use_reward_cash?: boolean;
+  reward_cash_amount?: number;
 }
 
 export interface OrderListParams {

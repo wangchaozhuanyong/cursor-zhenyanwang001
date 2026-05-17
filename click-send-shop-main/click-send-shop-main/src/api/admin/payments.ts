@@ -1,4 +1,4 @@
-﻿import { get, post, put } from "@/api/request";
+import { get, post, put } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
 import type {
   PaymentChannelRow,
@@ -19,11 +19,11 @@ export function putAdminPaymentChannel(
 }
 
 export function getAdminPaymentOrders(params?: Record<string, string>) {
-  return get<PaginatedData<PaymentOrderAdminRow>>("/admin/payments/orders", params as Record<string, unknown>);
+  return get<PaginatedData<PaymentOrderAdminRow>>("/admin/payments/orders", params as unknown as Record<string, unknown>);
 }
 
 export function getAdminPaymentEvents(params?: Record<string, string>) {
-  return get<PaginatedData<PaymentEventAdminRow>>("/admin/payments/events", params as Record<string, unknown>);
+  return get<PaginatedData<PaymentEventAdminRow>>("/admin/payments/events", params as unknown as Record<string, unknown>);
 }
 
 export function postAdminMarkOrderPaid(orderId: string, body: {
@@ -43,7 +43,7 @@ export function postAdminReplayPaymentEvent(eventId: string) {
 export function getAdminPaymentReconciliations(params?: Record<string, string>) {
   return get<PaginatedData<PaymentReconciliationRow>>(
     "/admin/payments/reconciliations",
-    params as Record<string, unknown>,
+    params as unknown as Record<string, unknown>,
   );
 }
 

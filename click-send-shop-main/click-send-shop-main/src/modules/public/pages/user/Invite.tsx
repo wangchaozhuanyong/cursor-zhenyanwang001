@@ -2,6 +2,7 @@
 import { ArrowLeft, Copy, Download, Share2, Users, Gift } from "lucide-react";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useGoBack } from "@/hooks/useGoBack";
+import { useNavigate } from "react-router-dom";
 import { useUserStore } from "@/stores/useUserStore";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
@@ -11,6 +12,7 @@ import type { InviteStats, InviteRecord } from "@/types/invite";
 import { copyToClipboard } from "@/utils/clipboard";
 import { motion } from "framer-motion";
 import { useMotionConfig } from "@/modules/micro-interactions";
+import { fetchLoyaltyConfig } from "@/services/loyaltyService";
 
 function readThemeCssVar(name: string, fallback: string): string {
   const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -19,18 +21,22 @@ function readThemeCssVar(name: string, fallback: string): string {
 
 export default function Invite() {
   const { enabled: motionEnabled } = useMotionConfig();
+  const navigate = useNavigate();
   const goBack = useGoBack();
   const { inviteCode, parentInviteCode, loadProfile } = useUserStore();
   const [stats, setStats] = useState<InviteStats | null>(null);
   const [records, setRecords] = useState<InviteRecord[]>([]);
 
   useEffect(() => {
+    fetchLoyaltyConfig().then((cfg) => {
+      if (!cfg.reward.referralEnabled) navigate("/profile", { replace: true });
+    }).catch(() => {});
     loadProfile();
     Promise.all([
       inviteService.fetchInviteStats().then(setStats),
       inviteService.fetchInviteRecords().then((d) => setRecords(d.list)),
     ]).catch(() => toast.error("加载失败"));
-  }, [loadProfile]);
+  }, [loadProfile, navigate]);
 
   const inviteLink = `${window.location.origin}/login?ref=${encodeURIComponent(inviteCode || "")}`;
   const qrRef = useRef<HTMLCanvasElement>(null);

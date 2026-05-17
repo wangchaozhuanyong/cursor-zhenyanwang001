@@ -1,4 +1,4 @@
-﻿import { del, get, post, put } from "@/api/request";
+import { del, get, post, put } from "@/api/request";
 import type { MemberLevel, UserProfile, UserTag } from "@/types/user";
 import type { PaginatedData, PaginationParams } from "@/types/common";
 
@@ -22,7 +22,7 @@ export interface AdminUserQuery extends PaginationParams {
 }
 
 export function getUsers(params?: AdminUserQuery) {
-  return get<PaginatedData<UserProfile> & { summary?: Record<string, number> }>("/admin/users", params as Record<string, string>);
+  return get<PaginatedData<UserProfile> & { summary?: Record<string, number> }>("/admin/users", params as unknown as Record<string, string>);
 }
 
 export function unbindUserWechat(id: string) {

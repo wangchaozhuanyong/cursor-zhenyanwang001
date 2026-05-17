@@ -1,4 +1,4 @@
-﻿import { get, put, del, post } from "@/api/request";
+import { get, put, del, post } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
 
 export type ReviewStatus = "pending" | "normal" | "hidden" | "rejected" | "deleted";
@@ -68,7 +68,7 @@ export interface ReviewDetailPayload {
 }
 
 export function getReviews(params: ReviewListParams) {
-  return get<PaginatedData<AdminReview>>("/admin/reviews", params as Record<string, unknown>);
+  return get<PaginatedData<AdminReview>>("/admin/reviews", params as unknown as Record<string, unknown>);
 }
 
 export function getReviewDetail(id: string) {

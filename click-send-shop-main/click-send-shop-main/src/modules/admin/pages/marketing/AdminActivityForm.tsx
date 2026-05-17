@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import * as activityService from "@/services/admin/activityService";
@@ -7,17 +7,12 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import ActivityProductPicker from "@/components/admin/ActivityProductPicker";
 import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
 import { Tx } from "@/components/admin/AdminText";
-import {
-  DISPLAY_POSITIONS,
-  DISPLAY_POSITION_LABELS,
-  WIP_ACTIVITY_TYPES,
-  type DisplayPosition,
-} from "@/constants/marketingDisplayPositions";
+import { DISPLAY_POSITIONS, DISPLAY_POSITION_LABELS, WIP_ACTIVITY_TYPES, type DisplayPosition } from "@/constants/marketingDisplayPositions";
 import { labelActivityType } from "@/utils/adminDisplayLabels";
 import { fetchCoupons } from "@/services/admin/couponService";
 import type { Coupon } from "@/types/coupon";
 
-const STEPS = ["閫夋嫨绫诲瀷", "鍩虹淇℃伅", "娲诲姩瑙勫垯", "閫傜敤鑼冨洿", "灞曠ず璁剧疆", "棰勮鍙戝竷"] as const;
+const STEPS = ["选择类型", "基础信息", "活动规则", "适用范围", "展示设置", "预览发布"] as const;
 
 function labelType(type: ActivityType) {
   return labelActivityType(type);
@@ -40,9 +35,10 @@ export default function AdminActivityForm() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
   const [pendingPublishStatus, setPendingPublishStatus] = useState<ActivityStatus | null>(null);
-  const [statusLabel, setStatusLabel] = useState("鑽夌");
+  const [statusLabel, setStatusLabel] = useState("草稿");
   const [couponOptions, setCouponOptions] = useState<Coupon[]>([]);
   const [couponsLoading, setCouponsLoading] = useState(false);
+
   const [form, setForm] = useState<ActivityPayload>({
     type: (search.get("type") as ActivityType) || "flash_sale",
     title: "",
@@ -95,9 +91,9 @@ export default function AdminActivityForm() {
           sort_order: d.sort_order || 0,
           items: d.items || [],
         });
-        setStatusLabel(d.status_label || "鑽夌");
+        setStatusLabel(d.status_label || "草稿");
       } catch (e) {
-        toast.error(toastErrorMessage(e, "鍔犺浇娲诲姩澶辫触"));
+        toast.error(toastErrorMessage(e, "加载活动失败"));
       }
     })();
   }, [id, isEdit]);
@@ -135,71 +131,8 @@ export default function AdminActivityForm() {
     });
   };
 
-  const localValidate = () => {
-    if (!form.title.trim()) return "娲诲姩鍚嶇О蹇呭～";
-    if (!form.start_at || !form.end_at) return "寮€濮?缁撴潫鏃堕棿蹇呭～";
-    if (new Date(form.end_at).getTime() <= new Date(form.start_at).getTime()) return "缁撴潫鏃堕棿蹇呴』鏅氫簬寮€濮嬫椂闂?;
-    if (form.type === "flash_sale" && form.items.length === 0) return "绉掓潃娲诲姩蹇呴』閫夋嫨鍟嗗搧";
-    if ((form.type === "coupon_activity" || form.type === "new_user_gift") && !selectedCouponIds.length) {
-      return "璇疯嚦灏戦€夋嫨涓€寮犱紭鎯犲埜";
-    }
-    if (!(form.display_positions || []).length) return "璇疯嚦灏戦€夋嫨涓€涓睍绀轰綅缃?;
-    if (WIP_ACTIVITY_TYPES.includes(form.type)) return "璇ユ椿鍔ㄧ被鍨嬪皻鍦ㄥ紑鍙戜腑锛屼粎鍙繚瀛樿崏绋?;
-    if (form.type === "full_reduction") {
-      const rules = Array.isArray((form.activity_config as Record<string, unknown>)?.full_reduction_rules)
-        ? ((form.activity_config as Record<string, unknown>).full_reduction_rules as Array<{ threshold_amount: number; discount_amount: number }>)
-        : [{ threshold_amount: Number(form.threshold_amount || 0), discount_amount: Number(form.discount_amount || 0) }];
-      if (!rules.length) return "鑷冲皯閰嶇疆涓€妗ｆ弧鍑?;
-      for (const r of rules) {
-        if (Number(r.threshold_amount || 0) <= 0) return "婊″噺闂ㄦ蹇呴』澶т簬 0";
-        if (Number(r.discount_amount || 0) <= 0) return "婊″噺閲戦蹇呴』澶т簬 0";
-        if (Number(r.discount_amount || 0) > Number(r.threshold_amount || 0)) return "婊″噺閲戦涓嶈兘澶т簬闂ㄦ";
-      }
-    }
-    return "";
-  };
-
-  const validateAndSave = async (targetStatus: ActivityStatus) => {
-    const localErr = localValidate();
-    if (targetStatus !== "draft" && localErr) return toast.error(localErr);
-    if (targetStatus !== "draft") {
-      setPendingPublishStatus(targetStatus);
-      setPublishConfirmOpen(true);
-      return;
-    }
-    await performSave(targetStatus);
-  };
-
-  const performSave = async (targetStatus: ActivityStatus) => {
-    setSaving(true);
-    try {
-      const payload = { ...form, status: targetStatus };
-      if (targetStatus !== "draft") {
-        await activityService.validateActivity(payload, id);
-      }
-      if (isEdit && id) await activityService.updateActivity(id, payload);
-      else await activityService.createActivity(payload);
-      toast.success(targetStatus === "draft" ? "鑽夌宸蹭繚瀛? : "娲诲姩宸插彂甯?);
-      navigate("/admin/marketing/activities");
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "淇濆瓨澶辫触"));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const previewHint = useMemo(() => (localValidate() ? "璇峰畬鎴愭椿鍔ㄨ鍒欏悗棰勮" : "閰嶇疆瀹屾暣锛屽彲鍙戝竷"), [form]);
-
-  const updateItem = (idx: number, patch: Partial<ActivityProductItem>) => {
-    setForm((prev) => {
-      const next = [...prev.items];
-      next[idx] = { ...next[idx], ...patch };
-      return { ...prev, items: next };
-    });
-  };
-
-  const fullReductionRules = Array.isArray((form.activity_config as Record<string, unknown>)?.full_reduction_rules)
-    ? ((form.activity_config as Record<string, unknown>).full_reduction_rules as Array<{ threshold_amount: number; discount_amount: number }>)
+  const fullReductionRules = Array.isArray((form.activity_config as unknown as Record<string, unknown>)?.full_reduction_rules)
+    ? ((form.activity_config as unknown as Record<string, unknown>).full_reduction_rules as Array<{ threshold_amount: number; discount_amount: number }>)
     : [{ threshold_amount: Number(form.threshold_amount || 0), discount_amount: Number(form.discount_amount || 0) }];
 
   const setFullReductionRules = (rules: Array<{ threshold_amount: number; discount_amount: number }>) => {
@@ -211,20 +144,81 @@ export default function AdminActivityForm() {
     }));
   };
 
+  const localValidate = () => {
+    if (!form.title.trim()) return "活动名称必填";
+    if (!form.start_at || !form.end_at) return "开始/结束时间必填";
+    if (new Date(form.end_at).getTime() <= new Date(form.start_at).getTime()) return "结束时间必须晚于开始时间";
+    if (form.type === "flash_sale" && form.items.length === 0) return "秒杀活动必须选择商品";
+    if ((form.type === "coupon_activity" || form.type === "new_user_gift") && !selectedCouponIds.length) return "请至少选择一张优惠券";
+    if (!(form.display_positions || []).length) return "请至少选择一个展示位置";
+    if (WIP_ACTIVITY_TYPES.includes(form.type)) return "该活动类型尚在开发中，仅可保存草稿";
+    if (form.type === "full_reduction") {
+      if (!fullReductionRules.length) return "至少配置一档满减";
+      for (const r of fullReductionRules) {
+        if (Number(r.threshold_amount || 0) <= 0) return "满减门槛必须大于 0";
+        if (Number(r.discount_amount || 0) <= 0) return "满减金额必须大于 0";
+        if (Number(r.discount_amount || 0) > Number(r.threshold_amount || 0)) return "满减金额不能大于门槛";
+      }
+    }
+    return "";
+  };
+
+  const performSave = async (targetStatus: ActivityStatus) => {
+    setSaving(true);
+    try {
+      const payload = { ...form, status: targetStatus };
+      if (targetStatus !== "draft") await activityService.validateActivity(payload, id);
+      if (isEdit && id) await activityService.updateActivity(id, payload);
+      else await activityService.createActivity(payload);
+      toast.success(targetStatus === "draft" ? "草稿已保存" : "活动已发布");
+      navigate("/admin/marketing/activities");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "保存失败"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const validateAndSave = async (targetStatus: ActivityStatus) => {
+    const err = localValidate();
+    if (targetStatus !== "draft" && err) {
+      toast.error(err);
+      return;
+    }
+    if (targetStatus !== "draft") {
+      setPendingPublishStatus(targetStatus);
+      setPublishConfirmOpen(true);
+      return;
+    }
+    await performSave(targetStatus);
+  };
+
+  const previewHint = useMemo(() => (localValidate() ? "请先完成活动规则" : "配置完整，可发布"), [form]);
+
+  const updateItem = (idx: number, patch: Partial<ActivityProductItem>) => {
+    setForm((prev) => {
+      const next = [...prev.items];
+      next[idx] = { ...next[idx], ...patch };
+      return { ...prev, items: next };
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <button onClick={() => navigate(-1)} className="text-sm text-muted-foreground"><Tx>杩斿洖</Tx></button>
-          <h1 className="text-xl font-bold text-foreground">娲诲姩绠＄悊 / {isEdit ? "缂栬緫娲诲姩" : "鏂板缓娲诲姩"}</h1>
-          <p className="text-xs text-muted-foreground">鐘舵€侊細{statusLabel}</p>
+          <button onClick={() => navigate(-1)} className="text-sm text-muted-foreground"><Tx>返回</Tx></button>
+          <h1 className="text-xl font-bold text-foreground">活动管理 / {isEdit ? "编辑活动" : "新建活动"}</h1>
+          <p className="text-xs text-muted-foreground">状态：{statusLabel}</p>
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[220px_1fr_340px]">
         <div className="rounded-xl border border-border bg-card p-3">
           {STEPS.map((s, i) => (
-            <button key={s} onClick={() => setStep(i)} className={`mb-2 block w-full rounded-lg px-3 py-2 text-left text-sm ${i === step ? "bg-gold/15 text-theme-price" : "text-muted-foreground hover:bg-secondary"}`}>{i + 1}. {s}</button>
+            <button key={s} onClick={() => setStep(i)} className={`mb-2 block w-full rounded-lg px-3 py-2 text-left text-sm ${i === step ? "bg-gold/15 text-theme-price" : "text-muted-foreground hover:bg-secondary"}`}>
+              {i + 1}. {s}
+            </button>
           ))}
         </div>
 
@@ -232,10 +226,10 @@ export default function AdminActivityForm() {
           {step === 0 && (
             <div className="grid gap-3 md:grid-cols-2">
               {[
-                { k: "flash_sale" as const, t: "闄愭椂绉掓潃", d: "鐭椂闂翠綆浠蜂績閿€锛屾敮鎸佸簱瀛樹笌闄愯喘", wip: false },
-                { k: "full_reduction" as const, t: "婊″噺娲诲姩", d: "璁㈠崟婊￠鍑忓厤锛屽彲鍏ㄥ満/鍒嗙被/鍟嗗搧", wip: false },
-                { k: "coupon_activity" as const, t: "浼樻儬鍒告椿鍔?, d: "鍏宠仈 coupons 琛紝鍦ㄩ椤甸鍒镐腑蹇冨睍绀?, wip: false },
-                { k: "new_user_gift" as const, t: "鏂颁汉绀煎寘", d: "浼樻儬鍒稿寘锛屾柊鐢ㄦ埛娉ㄥ唽鑷姩鍙戞斁", wip: false },
+                { k: "flash_sale" as const, t: "限时秒杀", d: "短时低价促销" },
+                { k: "full_reduction" as const, t: "满减活动", d: "按门槛减免" },
+                { k: "coupon_activity" as const, t: "优惠券活动", d: "在首页领券中心展示" },
+                { k: "new_user_gift" as const, t: "新人礼包", d: "注册后自动发券" },
               ].map((x) => (
                 <button
                   key={x.k}
@@ -244,21 +238,18 @@ export default function AdminActivityForm() {
                     setForm((p) => ({
                       ...p,
                       type: x.k,
-                      display_positions:
-                        (p.display_positions || []).length > 0
-                          ? p.display_positions
-                          : x.k === "coupon_activity"
-                            ? ["home_coupon_center"]
-                            : x.k === "new_user_gift"
-                              ? ["home_new_user_gift"]
-                              : p.display_positions,
+                      display_positions: (p.display_positions || []).length > 0
+                        ? p.display_positions
+                        : x.k === "coupon_activity"
+                          ? ["home_coupon_center"]
+                          : x.k === "new_user_gift"
+                            ? ["home_new_user_gift"]
+                            : p.display_positions,
                     }))
                   }
                   className={`rounded-xl border p-3 text-left ${form.type === x.k ? "border-gold bg-gold/5" : "border-border"}`}
                 >
-                  <p className="font-semibold flex items-center gap-2">
-                    {x.t}
-                  </p>
+                  <p className="font-semibold">{x.t}</p>
                   <p className="text-xs text-muted-foreground">{x.d}</p>
                 </button>
               ))}
@@ -267,12 +258,12 @@ export default function AdminActivityForm() {
 
           {step === 1 && (
             <>
-              <label className="block text-sm">娲诲姩鍚嶇О锛坽form.title.length}/60锛?input maxLength={60} value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
-              <label className="block text-sm"><Tx>鍓爣棰?/Tx><input value={form.subtitle || ""} onChange={(e) => setForm((p) => ({ ...p, subtitle: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
-              <label className="block text-sm"><Tx>娲诲姩璇存槑</Tx><textarea rows={3} value={form.description || ""} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
+              <label className="block text-sm">活动名称（{form.title.length}/60）<input maxLength={60} value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
+              <label className="block text-sm"><Tx>副标题</Tx><input value={form.subtitle || ""} onChange={(e) => setForm((p) => ({ ...p, subtitle: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
+              <label className="block text-sm"><Tx>活动说明</Tx><textarea rows={3} value={form.description || ""} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
               <div className="grid gap-2 md:grid-cols-2">
-                <label className="text-sm"><Tx>寮€濮嬫椂闂?/Tx><input type="datetime-local" value={form.start_at ? form.start_at.slice(0, 16) : ""} onChange={(e) => setForm((p) => ({ ...p, start_at: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
-                <label className="text-sm"><Tx>缁撴潫鏃堕棿</Tx><input type="datetime-local" value={form.end_at ? form.end_at.slice(0, 16) : ""} onChange={(e) => setForm((p) => ({ ...p, end_at: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
+                <label className="text-sm"><Tx>开始时间</Tx><input type="datetime-local" value={form.start_at ? form.start_at.slice(0, 16) : ""} onChange={(e) => setForm((p) => ({ ...p, start_at: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
+                <label className="text-sm"><Tx>结束时间</Tx><input type="datetime-local" value={form.end_at ? form.end_at.slice(0, 16) : ""} onChange={(e) => setForm((p) => ({ ...p, end_at: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
               </div>
             </>
           )}
@@ -282,12 +273,12 @@ export default function AdminActivityForm() {
               {form.type === "flash_sale" && (
                 <>
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground"><Tx>娲诲姩鍟嗗搧閰嶇疆</Tx></p>
-                    <button type="button" onClick={() => setPickerOpen(true)} className="rounded-lg border border-border px-3 py-1.5 text-sm"><Tx>閫夋嫨鍟嗗搧</Tx></button>
+                    <p className="text-sm text-muted-foreground"><Tx>活动商品配置</Tx></p>
+                    <button type="button" onClick={() => setPickerOpen(true)} className="rounded-lg border border-border px-3 py-1.5 text-sm"><Tx>选择商品</Tx></button>
                   </div>
                   <div className="overflow-x-auto rounded-lg border border-border">
                     <table className="min-w-full text-sm">
-                      <thead className="bg-secondary/60"><tr><th className="px-2 py-2 text-left"><Tx>鍟嗗搧</Tx></th><th className="px-2 py-2"><Tx>鍘熶环</Tx></th><th className="px-2 py-2"><Tx>娲诲姩浠?/Tx></th><th className="px-2 py-2"><Tx>鐪熷疄搴撳瓨</Tx></th><th className="px-2 py-2"><Tx>娲诲姩搴撳瓨</Tx></th><th className="px-2 py-2"><Tx>闄愯喘</Tx></th><th className="px-2 py-2"><Tx>鎿嶄綔</Tx></th></tr></thead>
+                      <thead className="bg-secondary/60"><tr><th className="px-2 py-2 text-left"><Tx>商品</Tx></th><th className="px-2 py-2">原价</th><th className="px-2 py-2">活动价</th><th className="px-2 py-2">真实库存</th><th className="px-2 py-2">活动库存</th><th className="px-2 py-2">限购</th><th className="px-2 py-2">操作</th></tr></thead>
                       <tbody>
                         {form.items.map((it, idx) => (
                           <tr key={`${it.product_id}-${idx}`} className="border-t border-border">
@@ -297,7 +288,7 @@ export default function AdminActivityForm() {
                             <td className="px-2 py-2 text-center">{it.product_stock ?? "-"}</td>
                             <td className="px-2 py-2"><input type="number" value={it.activity_stock} onChange={(e) => updateItem(idx, { activity_stock: Number(e.target.value) })} className="w-24 rounded bg-secondary px-2 py-1" /></td>
                             <td className="px-2 py-2"><input type="number" value={it.limit_per_user} onChange={(e) => updateItem(idx, { limit_per_user: Number(e.target.value) })} className="w-20 rounded bg-secondary px-2 py-1" /></td>
-                            <td className="px-2 py-2"><button type="button" onClick={() => setForm((p) => ({ ...p, items: p.items.filter((_, i) => i !== idx) }))} className="text-xs text-muted-foreground"><Tx>鍒犻櫎</Tx></button></td>
+                            <td className="px-2 py-2"><button type="button" onClick={() => setForm((p) => ({ ...p, items: p.items.filter((_, i) => i !== idx) }))} className="text-xs text-muted-foreground"><Tx>删除</Tx></button></td>
                           </tr>
                         ))}
                       </tbody>
@@ -305,39 +296,25 @@ export default function AdminActivityForm() {
                   </div>
                 </>
               )}
+
               {(form.type === "coupon_activity" || form.type === "new_user_gift") && (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">
-                    <Tx>鍏宠仈浼樻儬鍒?/Tx>
-                    <span className="ml-2 text-xs text-muted-foreground">宸查€?{selectedCouponIds.length} 寮?/span>
-                  </p>
+                  <p className="text-sm font-medium"><Tx>关联优惠券</Tx><span className="ml-2 text-xs text-muted-foreground">已选 {selectedCouponIds.length} 张</span></p>
                   {couponsLoading ? (
-                    <p className="text-sm text-muted-foreground"><Tx>鍔犺浇浼樻儬鍒稿垪琛ㄢ€?/Tx></p>
+                    <p className="text-sm text-muted-foreground"><Tx>加载优惠券列表...</Tx></p>
                   ) : couponOptions.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      <Tx>鏆傛棤鍙敤浼樻儬鍒革紝璇峰厛鍦?/Tx>{" "}
-                      <button type="button" onClick={() => navigate("/admin/marketing/coupons/new")} className="text-theme-price underline">
-                        <Tx>浼樻儬鍒哥鐞?/Tx>
-                      </button>{" "}
-                      <Tx>涓垱寤?/Tx>
-                    </p>
+                    <p className="text-sm text-muted-foreground"><Tx>暂无可用优惠券，请先在优惠券管理中创建</Tx></p>
                   ) : (
                     <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-border p-3">
                       {couponOptions.map((c) => {
                         const checked = selectedCouponIds.includes(c.id);
                         return (
-                          <label
-                            key={c.id}
-                            className={`flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-sm ${checked ? "border-gold bg-gold/5" : "border-border"}`}
-                          >
+                          <label key={c.id} className={`flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-sm ${checked ? "border-gold bg-gold/5" : "border-border"}`}>
                             <input type="checkbox" checked={checked} onChange={() => toggleCouponId(c.id)} className="mt-1" />
                             <span>
                               <span className="font-medium">{c.title}</span>
                               <span className="ml-2 text-xs text-muted-foreground">{c.code}</span>
-                              <span className="mt-0.5 block text-xs text-muted-foreground">
-                                {(c.type === "percentage" || c.type === "percent") ? `${c.value}%` : `RM ${c.value}`}
-                                {c.min_amount > 0 ? ` 路 婊?RM ${c.min_amount}` : ""}
-                              </span>
+                              <span className="mt-0.5 block text-xs text-muted-foreground">{c.type === "percentage" ? `${c.value}%` : `RM ${c.value}`}{c.min_amount > 0 ? ` · 满 RM ${c.min_amount}` : ""}</span>
                             </span>
                           </label>
                         );
@@ -346,115 +323,99 @@ export default function AdminActivityForm() {
                   )}
                 </div>
               )}
+
               {form.type === "full_reduction" && (
                 <div className="space-y-2">
                   {fullReductionRules.map((r, idx) => (
                     <div key={idx} className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
-                      <label className="text-sm"><Tx>婊″噺闂ㄦ</Tx><input type="number" value={r.threshold_amount ?? ""} onChange={(e) => setFullReductionRules(fullReductionRules.map((x, i) => i === idx ? { ...x, threshold_amount: Number(e.target.value) } : x))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
-                      <label className="text-sm"><Tx>鍑忓厤閲戦</Tx><input type="number" value={r.discount_amount ?? ""} onChange={(e) => setFullReductionRules(fullReductionRules.map((x, i) => i === idx ? { ...x, discount_amount: Number(e.target.value) } : x))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
-                      <button type="button" onClick={() => setFullReductionRules(fullReductionRules.filter((_, i) => i !== idx))} className="mt-7 rounded border border-border px-2 py-1 text-xs"><Tx>鍒犻櫎</Tx></button>
+                      <label className="text-sm"><Tx>满减门槛</Tx><input type="number" value={r.threshold_amount ?? ""} onChange={(e) => setFullReductionRules(fullReductionRules.map((x, i) => i === idx ? { ...x, threshold_amount: Number(e.target.value) } : x))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
+                      <label className="text-sm"><Tx>减免金额</Tx><input type="number" value={r.discount_amount ?? ""} onChange={(e) => setFullReductionRules(fullReductionRules.map((x, i) => i === idx ? { ...x, discount_amount: Number(e.target.value) } : x))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
+                      <button type="button" onClick={() => setFullReductionRules(fullReductionRules.filter((_, i) => i !== idx))} className="mt-7 rounded border border-border px-2 py-1 text-xs"><Tx>删除</Tx></button>
                     </div>
                   ))}
-                  <button type="button" onClick={() => setFullReductionRules([...fullReductionRules, { threshold_amount: 0, discount_amount: 0 }])} className="rounded border border-border px-3 py-1 text-sm"><Tx>鏂板涓€妗?/Tx></button>
+                  <button type="button" onClick={() => setFullReductionRules([...fullReductionRules, { threshold_amount: 0, discount_amount: 0 }])} className="rounded border border-border px-3 py-1 text-sm"><Tx>新增一档</Tx></button>
                 </div>
               )}
+
               <div className="grid gap-2 md:grid-cols-3">
-                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.allow_coupon_stack} onChange={(e) => setForm((p) => ({ ...p, allow_coupon_stack: e.target.checked }))} /><Tx>鍏佽鍙犲姞浼樻儬鍒?/Tx></label>
-                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.allow_points_stack} onChange={(e) => setForm((p) => ({ ...p, allow_points_stack: e.target.checked }))} /><Tx>鍏佽浣跨敤绉垎</Tx></label>
-                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.allow_reward} onChange={(e) => setForm((p) => ({ ...p, allow_reward: e.target.checked }))} /><Tx>鍙備笌杩旂幇</Tx></label>
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.allow_coupon_stack} onChange={(e) => setForm((p) => ({ ...p, allow_coupon_stack: e.target.checked }))} /><Tx>允许叠加优惠券</Tx></label>
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.allow_points_stack} onChange={(e) => setForm((p) => ({ ...p, allow_points_stack: e.target.checked }))} /><Tx>允许使用积分</Tx></label>
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.allow_reward} onChange={(e) => setForm((p) => ({ ...p, allow_reward: e.target.checked }))} /><Tx>参与返现</Tx></label>
               </div>
             </>
           )}
 
           {step === 3 && (
             <div className="grid gap-2 md:grid-cols-2">
-              <label className="text-sm"><Tx>閫傜敤鑼冨洿
-                </Tx><select value={form.scope_type || "product"} onChange={(e) => setForm((p) => ({ ...p, scope_type: e.target.value as ActivityPayload["scope_type"] }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2">
-                  <option value="all"><Tx>鍏ㄥ満</Tx></option>
-                  <option value="category"><Tx>鎸囧畾鍒嗙被</Tx></option>
-                  <option value="product"><Tx>鎸囧畾鍟嗗搧</Tx></option>
-                  <option value="new_user"><Tx>鏂扮敤鎴?/Tx></option>
-                  <option value="old_user"><Tx>鑰佺敤鎴?/Tx></option>
-                </select>
-              </label>
-              <label className="text-sm"><Tx>鑼冨洿 ID 鍒楄〃锛堥€楀彿鍒嗛殧锛?                </Tx><input value={(form.scope_ids || []).join(",")} onChange={(e) => setForm((p) => ({ ...p, scope_ids: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" />
-              </label>
+              <label className="text-sm"><Tx>适用范围</Tx><select value={form.scope_type || "product"} onChange={(e) => setForm((p) => ({ ...p, scope_type: e.target.value as ActivityPayload["scope_type"] }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2">
+                <option value="all">全场</option>
+                <option value="category">指定分类</option>
+                <option value="product">指定商品</option>
+                <option value="new_user">新用户</option>
+                <option value="old_user">老用户</option>
+              </select></label>
+              <label className="text-sm"><Tx>范围 ID 列表（逗号分隔）</Tx><input value={(form.scope_ids || []).join(",")} onChange={(e) => setForm((p) => ({ ...p, scope_ids: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
             </div>
           )}
 
           {step === 4 && (
             <div className="grid gap-2 md:grid-cols-2">
               <div className="md:col-span-2">
-                <p className="text-sm font-medium"><Tx>灞曠ず浣嶇疆</Tx></p>
+                <p className="text-sm font-medium"><Tx>展示位置</Tx></p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {DISPLAY_POSITIONS.map((key) => {
                     const checked = (form.display_positions || []).includes(key);
                     return (
-                      <label
-                        key={key}
-                        className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs ${checked ? "border-gold bg-gold/10" : "border-border"}`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() =>
-                            setForm((p) => ({
-                              ...p,
-                              display_positions: toggleDisplayPosition(p.display_positions, key),
-                            }))
-                          }
-                        />
+                      <label key={key} className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs ${checked ? "border-gold bg-gold/10" : "border-border"}`}>
+                        <input type="checkbox" checked={checked} onChange={() => setForm((p) => ({ ...p, display_positions: toggleDisplayPosition(p.display_positions, key) }))} />
                         {DISPLAY_POSITION_LABELS[key]}
                       </label>
                     );
                   })}
                 </div>
               </div>
-              <label className="text-sm"><Tx>鍐呴儴澶囨敞
-                </Tx><input value={form.internal_note || ""} onChange={(e) => setForm((p) => ({ ...p, internal_note: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" />
-              </label>
+              <label className="text-sm"><Tx>内部备注</Tx><input value={form.internal_note || ""} onChange={(e) => setForm((p) => ({ ...p, internal_note: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
             </div>
           )}
 
-          {step === 5 && <p className="text-sm text-muted-foreground">鍙戝竷鍓嶆牎楠岋細{previewHint}</p>}
+          {step === 5 && <p className="text-sm text-muted-foreground">发布前校验：{previewHint}</p>}
         </div>
 
         <div className="rounded-xl border border-border bg-card p-4">
-          <h3 className="mb-2 text-sm font-semibold"><Tx>娲诲姩鎽樿</Tx></h3>
-          <p className="text-sm">绫诲瀷锛歿labelType(form.type)}</p>
-          <p className="text-sm">鍚嶇О锛歿form.title || "-"}</p>
-          <p className="text-sm">鏃堕棿锛歿form.start_at || "-"} ~ {form.end_at || "-"}</p>
-          <p className="text-sm">鍟嗗搧鏁帮細{form.items.length}</p>
-          <div className="mt-3 rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">鍓嶅彴棰勮锛歿previewHint}</div>
+          <h3 className="mb-2 text-sm font-semibold"><Tx>活动摘要</Tx></h3>
+          <p className="text-sm">类型：{labelType(form.type)}</p>
+          <p className="text-sm">名称：{form.title || "-"}</p>
+          <p className="text-sm">时间：{form.start_at || "-"} ~ {form.end_at || "-"}</p>
+          <p className="text-sm">商品数：{form.items.length}</p>
+          <div className="mt-3 rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">前台预览：{previewHint}</div>
         </div>
       </div>
 
       <div className="sticky bottom-0 z-10 flex justify-end gap-2 rounded-xl border border-border bg-card p-3">
-        <button onClick={() => setStep((s) => Math.max(0, s - 1))} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>涓婁竴姝?/Tx></button>
-        <LoadingButton type="button" variant="outline" state={saving ? "loading" : "normal"} loadingText="淇濆瓨涓?.." onClick={() => void validateAndSave("draft")} className="rounded-lg px-3 py-2 text-sm"><Tx>淇濆瓨鑽夌</Tx></LoadingButton>
-        <button onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>涓嬩竴姝?/Tx></button>
-        <LoadingButton type="button" variant="gold" state={saving ? "loading" : "normal"} loadingText="鍙戝竷涓?.." onClick={() => void validateAndSave("active")} className="rounded-lg px-3 py-2 text-sm font-semibold"><Tx>鍙戝竷娲诲姩</Tx></LoadingButton>
-        <button onClick={() => navigate("/admin/marketing/activities")} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>鍙栨秷</Tx></button>
+        <button onClick={() => setStep((s) => Math.max(0, s - 1))} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>上一步</Tx></button>
+        <LoadingButton type="button" variant="outline" state={saving ? "loading" : "normal"} loadingText="保存中..." onClick={() => void validateAndSave("draft")} className="rounded-lg px-3 py-2 text-sm"><Tx>保存草稿</Tx></LoadingButton>
+        <button onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>下一步</Tx></button>
+        <LoadingButton type="button" variant="gold" state={saving ? "loading" : "normal"} loadingText="发布中..." onClick={() => void validateAndSave("active")} className="rounded-lg px-3 py-2 text-sm font-semibold"><Tx>发布活动</Tx></LoadingButton>
+        <button onClick={() => navigate("/admin/marketing/activities")} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>取消</Tx></button>
       </div>
 
       <AnimatedConfirmDialog
         open={publishConfirmOpen}
         onOpenChange={setPublishConfirmOpen}
-        title="纭鍙戝竷娲诲姩"
-        description={
-          pendingPublishStatus ? (
-            <span className="block whitespace-pre-line text-sm">
-              {`娲诲姩鍚嶇О锛?{form.title}\n绫诲瀷锛?{labelType(form.type)}\n鏃堕棿锛?{form.start_at} ~ ${form.end_at}\n鍟嗗搧鏁帮細${form.items.length}\n鍙戝竷鍚庝笉鍙洖閫€涓鸿崏绋裤€俙}
-            </span>
-          ) : null
-        }
-        confirmText="鍙戝竷"
+        title="确认发布活动"
+        description={pendingPublishStatus ? (
+          <span className="block whitespace-pre-line text-sm">
+            {`活动名称：${form.title}\n类型：${labelType(form.type)}\n时间：${form.start_at} ~ ${form.end_at}\n商品数：${form.items.length}\n发布后不可回退为草稿。`}
+          </span>
+        ) : null}
+        confirmText="发布"
         onConfirm={async () => {
           if (pendingPublishStatus) await performSave(pendingPublishStatus);
           setPublishConfirmOpen(false);
           setPendingPublishStatus(null);
         }}
       />
+
       <ActivityProductPicker
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
@@ -464,4 +425,3 @@ export default function AdminActivityForm() {
     </div>
   );
 }
-

@@ -10,15 +10,15 @@ export async function fetchOrders(params?: OrderListParams): Promise<PaginatedDa
   const summary = (
     res.data &&
     typeof res.data === "object" &&
-    "summary" in (res.data as Record<string, unknown>)
+    "summary" in (res.data as unknown as Record<string, unknown>)
   )
-    ? ((res.data as Record<string, unknown>).summary as AdminOrderSummary)
+    ? ((res.data as unknown as Record<string, unknown>).summary as AdminOrderSummary)
     : undefined;
   return { ...page, summary };
 }
 
-export async function fetchOrderById(id: string) {
-  const res = await orderApi.getOrderById(id);
+export async function fetchOrderById(id: string, options?: { signal?: AbortSignal }) {
+  const res = await orderApi.getOrderById(id, options);
   return res.data;
 }
 

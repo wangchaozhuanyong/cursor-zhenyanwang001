@@ -14,6 +14,14 @@ function calculateRewardAmount(orderAmount, rewardPercent) {
   return Math.floor(amount * percent) / 100;
 }
 
+function calculateRewardPoints(orderAmount, pointsPercent, fixedPoints) {
+  const amount = toMoney(orderAmount);
+  const percent = toMoney(pointsPercent);
+  const fixed = Math.max(0, Math.floor(Number(fixedPoints || 0)));
+  const byPercent = amount > 0 && percent > 0 ? Math.floor((amount * percent) / 100) : 0;
+  return Math.max(byPercent, fixed);
+}
+
 async function getInviteAncestors(conn, buyerUserId, maxLevel) {
   const ancestors = [];
   let current = await repo.selectBuyerInviteInfo(conn, buyerUserId);
@@ -45,8 +53,13 @@ async function settleOrderRewards(conn, order, options = {}) {
     const rule = ruleByLevel.get(ancestor.level);
     if (!rule) continue;
 
-    const amount = calculateRewardAmount(orderAmount, rule.reward_percent);
-    if (amount <= 0) continue;
+    const rewardType = String(rule.reward_type || 'cash').toLowerCase();
+    const settlementTiming = String(rule.settlement_timing || 'order_completed').toLowerCase();
+    if (settlementTiming !== 'order_completed') continue;
+
+    const cashAmount = rewardType === 'points' ? 0 : calculateRewardAmount(orderAmount, rule.reward_percent);
+    const pointsAmount = rewardType === 'cash' ? 0 : calculateRewardPoints(orderAmount, rule.points_percent, rule.fixed_points);
+    if (cashAmount <= 0 && pointsAmount <= 0) continue;
 
     const recordId = generateId();
     const inserted = await repo.insertSettlementRecord(conn, {
@@ -55,7 +68,7 @@ async function settleOrderRewards(conn, order, options = {}) {
       orderId: order.id,
       orderNo: order.order_no,
       orderAmount,
-      amount,
+      amount: cashAmount,
       rate: rule.reward_percent,
       level: ancestor.level,
       status: REWARD_STATUS.APPROVED,
@@ -63,6 +76,8 @@ async function settleOrderRewards(conn, order, options = {}) {
       remark: `订单完成返现 ${order.order_no}`,
       metadata: {
         buyerUserId: order.user_id,
+        rewardType,
+        rewardPoints: pointsAmount,
         operatorId: options.operatorId || null,
         trigger: options.trigger || 'order_completed',
       },
@@ -70,19 +85,38 @@ async function settleOrderRewards(conn, order, options = {}) {
 
     if (!inserted) continue;
 
-    await repo.insertTransaction(conn, {
-      id: generateId(),
-      rewardRecordId: recordId,
-      userId: ancestor.userId,
-      orderId: order.id,
-      orderNo: order.order_no,
-      type: 'settle',
-      amount,
-      status: 'success',
-      reason: `订单完成返现 Level ${ancestor.level}`,
-      operatorId: options.operatorId,
-      metadata: { buyerUserId: order.user_id, rate: rule.reward_percent },
-    });
+    if (cashAmount > 0) {
+      await repo.insertTransaction(conn, {
+        id: generateId(),
+        rewardRecordId: recordId,
+        userId: ancestor.userId,
+        orderId: order.id,
+        orderNo: order.order_no,
+        type: 'settle',
+        amount: cashAmount,
+        status: 'success',
+        reason: `订单完成返现 Level ${ancestor.level}`,
+        operatorId: options.operatorId,
+        metadata: { buyerUserId: order.user_id, rate: rule.reward_percent, rewardType, rewardPoints: pointsAmount },
+      });
+    }
+
+    if (pointsAmount > 0) {
+      await repo.insertTransaction(conn, {
+        id: generateId(),
+        rewardRecordId: recordId,
+        userId: ancestor.userId,
+        orderId: order.id,
+        orderNo: order.order_no,
+        type: 'settle_points',
+        amount: pointsAmount,
+        status: 'success',
+        reason: `订单完成邀请积分结算 Level ${ancestor.level}`,
+        operatorId: options.operatorId,
+        metadata: { buyerUserId: order.user_id, pointsPercent: rule.points_percent, fixedPoints: rule.fixed_points },
+      });
+    }
+
     settled += 1;
   }
 
@@ -187,12 +221,10 @@ async function getBalance(userId) {
   };
 }
 
-/** 事务内：返现钱包可用余额（与 reward_transactions 汇总一致） */
 async function sumRewardTransactionsBalance(conn, userId) {
   return repo.sumUserRewardTransactions(conn, userId);
 }
 
-/** 事务内：写入返现流水（供订单域支付等与订单同事务） */
 async function insertRewardTransaction(conn, params) {
   return repo.insertTransaction(conn, params);
 }

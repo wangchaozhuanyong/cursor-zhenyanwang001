@@ -1,9 +1,9 @@
-﻿import { get, put } from "@/api/request";
+import { get, put } from "@/api/request";
 import type { InviteRecord, ReferralRule } from "@/types/invite";
 import type { PaginatedData, PaginationParams } from "@/types/common";
 
 export function getInviteRecords(params?: PaginationParams & { keyword?: string; dateFrom?: string; dateTo?: string }) {
-  return get<PaginatedData<InviteRecord> & { summary?: Record<string, number> }>("/admin/invites", params as Record<string, string>);
+  return get<PaginatedData<InviteRecord> & { summary?: Record<string, number> }>("/admin/invites", params as unknown as Record<string, string>);
 }
 
 export function getReferralRules() {

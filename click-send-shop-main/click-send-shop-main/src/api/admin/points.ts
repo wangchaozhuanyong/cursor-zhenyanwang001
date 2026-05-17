@@ -1,4 +1,4 @@
-﻿import { get, put } from "@/api/request";
+import { get, put } from "@/api/request";
 import type { AdminPointsRecordsResponse, PointsListParams, PointsRule } from "@/types/points";
 
 export function getPointsRules() {
@@ -10,7 +10,7 @@ export function updatePointsRule(id: string, data: Partial<PointsRule>) {
 }
 
 export function getAdminPointsRecords(params?: PointsListParams) {
-  return get<AdminPointsRecordsResponse>("/admin/points/records", params as Record<string, string>);
+  return get<AdminPointsRecordsResponse>("/admin/points/records", params as unknown as Record<string, string>);
 }
 
 export function adjustUserPoints(userId: string, amount: number, description: string) {

@@ -1,9 +1,9 @@
-﻿import { get, post, put } from "@/api/request";
+import { get, post, put } from "@/api/request";
 import type { CheckoutAbandonment, CheckoutAbandonmentStatus, Order, OrderListParams } from "@/types/order";
 import type { PaginatedData } from "@/types/common";
 
 export function getOrders(params?: OrderListParams) {
-  return get<PaginatedData<Order>>("/admin/orders", params as Record<string, string>);
+  return get<PaginatedData<Order>>("/admin/orders", params as unknown as Record<string, string>);
 }
 
 export function getOrderById(id: string) {
@@ -30,4 +30,3 @@ export function getCheckoutAbandonments(params?: {
 }) {
   return get<PaginatedData<CheckoutAbandonment>>("/admin/checkout-abandonments", params as Record<string, string | number>);
 }
-

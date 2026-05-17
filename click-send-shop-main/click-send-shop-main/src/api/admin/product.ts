@@ -1,9 +1,9 @@
-﻿import { get, post, put, patch, del } from "@/api/request";
+import { get, post, put, patch, del } from "@/api/request";
 import type { Product, ProductLifecycleStatus, ProductListParams, ProductTag } from "@/types/product";
 import type { PaginatedData } from "@/types/common";
 
 export function getProducts(params?: ProductListParams) {
-  return get<PaginatedData<Product>>("/admin/products", params as Record<string, string>);
+  return get<PaginatedData<Product>>("/admin/products", params as unknown as Record<string, string>);
 }
 
 export function getProductById(id: string) {

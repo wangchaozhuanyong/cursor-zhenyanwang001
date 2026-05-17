@@ -1,4 +1,4 @@
-﻿import { get, patch, post } from "@/api/request";
+import { get, patch, post } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
 import type { InventoryChangeType, InventorySku, InventoryStockRecord, InventorySummary } from "@/types/inventory";
 import { getAdminAccessToken } from "@/utils/token";
@@ -18,7 +18,7 @@ export function getInventorySkus(params?: {
   sku_code?: string;
   sort?: string;
 }) {
-  return get<PaginatedData<InventorySku>>("/admin/inventory/skus", params as Record<string, unknown>);
+  return get<PaginatedData<InventorySku>>("/admin/inventory/skus", params as unknown as Record<string, unknown>);
 }
 
 export function adjustInventorySkuStock(
@@ -53,7 +53,7 @@ export function getInventoryRecords(params?: {
   date_from?: string;
   date_to?: string;
 }) {
-  return get<PaginatedData<InventoryStockRecord>>("/admin/inventory/records", params as Record<string, unknown>);
+  return get<PaginatedData<InventoryStockRecord>>("/admin/inventory/records", params as unknown as Record<string, unknown>);
 }
 
 async function downloadCsv(url: string, filename: string) {

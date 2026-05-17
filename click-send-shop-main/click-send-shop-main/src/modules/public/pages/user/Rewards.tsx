@@ -1,7 +1,6 @@
-import { formatDateTime } from "@/utils/formatDateTime";
-﻿import { useEffect, useState } from "react";
+﻿import { formatDateTime } from "@/utils/formatDateTime";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Gift, TrendingUp, TrendingDown, Loader2, Wallet } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
 import * as rewardService from "@/services/rewardService";
 import type { RewardTransaction } from "@/types/reward";
@@ -10,7 +9,6 @@ import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import {
   THEME_ACCENT_HERO_ICON,
   THEME_ACCENT_HERO_LABEL,
-  THEME_ACCENT_HERO_MUTED,
   THEME_ACCENT_HERO_SHELL,
   THEME_ACCENT_HERO_SUBTLE,
   THEME_ACCENT_HERO_VALUE,
@@ -21,7 +19,6 @@ import {
 } from "@/utils/themeVisuals";
 
 export default function Rewards() {
-  const navigate = useNavigate();
   const goBack = useGoBack();
   const [records, setRecords] = useState<RewardTransaction[]>([]);
   const [balance, setBalance] = useState(0);
@@ -63,14 +60,21 @@ export default function Rewards() {
       setRecords((prev) => [...prev, ...data.list]);
       setPage(nextPage);
       setHasMore(data.list.length >= PAGE_SIZE);
-    } catch { /* ignore */ }
+    } catch {
+      // ignore
+    }
     setLoadingMore(false);
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const handleWithdraw = async () => {
-    if (balance <= 0) { toast.error("暂无可提现余额"); return; }
+    if (balance <= 0) {
+      toast.error("暂无可提现余额");
+      return;
+    }
     setWithdrawing(true);
     try {
       await rewardService.requestWithdraw(balance);
@@ -99,9 +103,7 @@ export default function Rewards() {
           <Gift size={32} className={`mx-auto ${THEME_ACCENT_HERO_ICON}`} />
           <p className={`mt-2 ${THEME_ACCENT_HERO_LABEL} normal-case tracking-normal`}>可提现余额</p>
           <p className={`text-4xl ${THEME_ACCENT_HERO_VALUE}`}>RM {Number(balance).toFixed(2)}</p>
-          {pendingAmount > 0 && (
-            <p className={`mt-1 ${THEME_ACCENT_HERO_SUBTLE}`}>待审核：RM {Number(pendingAmount).toFixed(2)}</p>
-          )}
+          {pendingAmount > 0 && <p className={`mt-1 ${THEME_ACCENT_HERO_SUBTLE}`}>待审核：RM {Number(pendingAmount).toFixed(2)}</p>}
           <button
             onClick={handleWithdraw}
             disabled={withdrawing || balance <= 0}
@@ -121,18 +123,10 @@ export default function Rewards() {
           ) : error ? (
             <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card p-10 text-center">
               <p className="text-sm text-muted-foreground">{error}</p>
-              <button
-                type="button"
-                onClick={() => loadData()}
-                className="rounded-full btn-theme-price px-5 py-2 text-sm font-semibold text-primary-foreground active:scale-95 transition-transform"
-              >
-                重试
-              </button>
+              <button type="button" onClick={() => loadData()} className="rounded-full btn-theme-price px-5 py-2 text-sm font-semibold text-primary-foreground active:scale-95 transition-transform">重试</button>
             </div>
           ) : records.length === 0 ? (
-            <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
-              暂无返现记录
-            </div>
+            <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">暂无返现记录</div>
           ) : (
             <div className="space-y-2">
               {records.map((r) => (
@@ -141,22 +135,14 @@ export default function Rewards() {
                     {Number(r.amount) >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{r.reason || `订单 ${r.order_no || "—"}`}</p>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {r.order_no ? `订单 ${r.order_no} · ` : ""}{formatDateTime(r.created_at)}
-                    </p>
+                    <p className="text-sm font-medium text-foreground truncate">{r.reason || `订单 ${r.order_no || "-"}`}</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">{r.order_no ? `订单 ${r.order_no} · ` : ""}{formatDateTime(r.created_at)}</p>
                   </div>
-                  <span className={`text-sm font-bold ${Number(r.amount) >= 0 ? THEME_TEXT_SUCCESS : THEME_TEXT_DANGER}`}>
-                    {Number(r.amount) > 0 ? "+" : ""}{Number(r.amount).toFixed(2)}
-                  </span>
+                  <span className={`text-sm font-bold ${Number(r.amount) >= 0 ? THEME_TEXT_SUCCESS : THEME_TEXT_DANGER}`}>{Number(r.amount) > 0 ? "+" : ""}{Number(r.amount).toFixed(2)}</span>
                 </div>
               ))}
               {hasMore && (
-                <button
-                  onClick={loadMore}
-                  disabled={loadingMore}
-                  className="w-full rounded-xl border border-border bg-card py-3 text-sm text-muted-foreground hover:bg-secondary transition-colors disabled:opacity-60"
-                >
+                <button onClick={loadMore} disabled={loadingMore} className="w-full rounded-xl border border-border bg-card py-3 text-sm text-muted-foreground hover:bg-secondary transition-colors disabled:opacity-60">
                   {loadingMore ? "加载中..." : "加载更多"}
                 </button>
               )}

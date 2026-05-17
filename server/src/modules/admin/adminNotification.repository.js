@@ -218,6 +218,19 @@ async function selectBatchById(batchId) {
   return row || null;
 }
 
+async function selectBatchRecipientStats(batchId) {
+  const [[row]] = await db.query(
+    `SELECT COUNT(*) AS recipient_count, SUM(CASE WHEN is_read = 1 THEN 1 ELSE 0 END) AS read_count
+     FROM notifications
+     WHERE batch_id = ? AND deleted_at IS NULL`,
+    [batchId],
+  );
+  return {
+    recipient_count: Number(row?.recipient_count || 0),
+    read_count: Number(row?.read_count || 0),
+  };
+}
+
 async function markBatchDeleted(batchId) {
   await db.query('UPDATE notification_batches SET deleted_at = NOW(), updated_at = NOW() WHERE id = ? AND deleted_at IS NULL', [batchId]);
   await db.query('UPDATE notifications SET deleted_at = NOW() WHERE batch_id = ? AND deleted_at IS NULL', [batchId]);
@@ -344,6 +357,7 @@ module.exports = {
   searchUserCandidates,
   selectAllUserIds,
   selectBatchById,
+  selectBatchRecipientStats,
   markBatchDeleted,
   cancelScheduledBatch,
   revokeSentBatch,

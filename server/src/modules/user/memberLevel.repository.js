@@ -85,5 +85,4 @@ module.exports = {
   selectUserCurrentLevel,
   selectUserPaidStats,
   updateUserMemberLevel,
-  selectAllLevels,
 };

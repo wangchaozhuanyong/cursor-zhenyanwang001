@@ -80,6 +80,28 @@ async function searchUsers(query) {
   return { data, message: 'ok' };
 }
 
+async function estimateAudience(body) {
+  const { audienceType, audienceValue, targetUserIds } = await resolveAudience(body);
+  return {
+    data: {
+      audience_type: audienceType,
+      audience_value: audienceValue,
+      estimated_count: targetUserIds.length,
+    },
+    message: 'ok',
+  };
+}
+
+async function getNotificationDetail(batchId, _query = {}) {
+  const batch = await repo.selectBatchById(batchId);
+  if (!batch) throw new BusinessError(404, '通知批次不存在');
+  const stats = await repo.selectBatchRecipientStats(batchId);
+  return {
+    data: { batch, stats },
+    message: 'ok',
+  };
+}
+
 async function sendNotification(body, adminUserId, req) {
   const { type, title, content, link_url, template_code } = body;
   if (!title || !content) throw new BusinessError(400, '标题和内容必填');
@@ -323,6 +345,8 @@ module.exports = {
   listNotifications,
   getSummary,
   searchUsers,
+  estimateAudience,
+  getNotificationDetail,
   sendNotification,
   createDraft,
   publishDraft,

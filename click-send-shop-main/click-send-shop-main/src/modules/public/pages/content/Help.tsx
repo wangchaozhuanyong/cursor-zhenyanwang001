@@ -7,6 +7,14 @@ import * as contentService from "@/services/contentService";
 import type { SiteInfo, HelpCenterConfig } from "@/types/content";
 import { copyToClipboard } from "@/utils/clipboard";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
+import {
+  THEME_ACCENT_HERO_ICON,
+  THEME_ACCENT_HERO_ICON_WRAP,
+  THEME_ACCENT_HERO_MUTED,
+  THEME_ACCENT_HERO_SHELL,
+  THEME_ACCENT_HERO_SUBTLE,
+  THEME_ACCENT_HERO_VALUE,
+} from "@/utils/themeVisuals";
 
 export default function Help() {
   const goBack = useGoBack();
@@ -63,19 +71,23 @@ export default function Help() {
       </header>
 
       <main className="mx-auto max-w-lg px-4 pt-4">
-        <div className="rounded-2xl bg-primary p-5">
+        <div className={`rounded-2xl p-5 ${THEME_ACCENT_HERO_SHELL}`}>
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-foreground/10"><HelpCircle size={24} className="text-gold" /></div>
+            <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${THEME_ACCENT_HERO_ICON_WRAP}`}>
+              <HelpCircle size={24} className={THEME_ACCENT_HERO_ICON} />
+            </div>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-primary-foreground">需要帮助？</p>
-              <p className="text-xs text-primary-foreground/60">随时联系我们的客服团队</p>
+              <p className={`text-sm font-semibold ${THEME_ACCENT_HERO_VALUE}`}>需要帮助？</p>
+              <p className={`text-xs ${THEME_ACCENT_HERO_MUTED}`}>随时联系我们的客服团队</p>
             </div>
           </div>
           <div className="mt-4 flex gap-3">
             {whatsappUrl && <button onClick={() => window.open(whatsappUrl, "_blank", "noopener,noreferrer")} className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-[var(--theme-gradient-foreground)] theme-shadow" style={{ background: "var(--theme-gradient)" }}><MessageCircle size={16} /> WhatsApp</button>}
             {wechatId && <button onClick={async () => { const [{ toast }, copied] = await Promise.all([import("sonner"), copyToClipboard(wechatId)]); if (copied) toast.success("客服微信号已复制", toastPresetQuickSuccess); else toast.error("复制失败，请手动复制微信号"); }} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--theme-price)] py-3 text-sm font-bold text-[var(--theme-price-foreground)] theme-shadow"><Phone size={16} /> 微信客服</button>}
           </div>
-          <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-primary-foreground/50"><Clock size={12} /> 工作时间: {helpConfig?.workingHours || WORKING_HOURS}</div>
+          <div className={`mt-3 flex items-center justify-center gap-1.5 ${THEME_ACCENT_HERO_SUBTLE}`}>
+            <Clock size={12} /> 工作时间: {helpConfig?.workingHours || WORKING_HOURS}
+          </div>
         </div>
 
         <div className="no-scrollbar mt-8 flex gap-2 overflow-x-auto">

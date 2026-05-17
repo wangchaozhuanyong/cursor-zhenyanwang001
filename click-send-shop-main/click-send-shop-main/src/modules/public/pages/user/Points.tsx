@@ -7,6 +7,14 @@ import { usePointsStore } from "@/stores/usePointsStore";
 import { fetchPointsConfig, signIn } from "@/services/pointsService";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
+import {
+  THEME_ACCENT_HERO_ICON,
+  THEME_ACCENT_HERO_LABEL,
+  THEME_ACCENT_HERO_MUTED,
+  THEME_ACCENT_HERO_SHELL,
+  THEME_ACCENT_HERO_SUBTLE,
+  THEME_ACCENT_HERO_VALUE,
+} from "@/utils/themeVisuals";
 
 export default function Points() {
   const navigate = useNavigate();
@@ -63,15 +71,15 @@ export default function Points() {
       </header>
 
       <main className="mx-auto max-w-lg px-4 py-6">
-        <div className="rounded-2xl bg-primary p-8 text-center">
-          <Star size={36} className="mx-auto text-gold" />
-          <p className="mt-3 text-xs text-primary-foreground/70">当前积分</p>
-          <p className="mt-1 text-5xl font-bold text-gold">{pointsBalance}</p>
-          <p className="mt-3 px-2 text-xs leading-relaxed text-primary-foreground/60">
+        <div className={`rounded-2xl p-8 text-center ${THEME_ACCENT_HERO_SHELL}`}>
+          <Star size={36} className={`mx-auto ${THEME_ACCENT_HERO_ICON}`} />
+          <p className={`mt-3 ${THEME_ACCENT_HERO_LABEL} normal-case tracking-normal`}>当前积分</p>
+          <p className={`mt-1 text-5xl ${THEME_ACCENT_HERO_VALUE}`}>{pointsBalance}</p>
+          <p className={`mt-3 px-2 text-xs leading-relaxed ${THEME_ACCENT_HERO_MUTED}`}>
             {pointsHint || "订单支付完成后，按商品所设积分累计发放"}
           </p>
           {signInAward && (
-            <p className="mt-1 text-[11px] text-primary-foreground/55">
+            <p className={`mt-1 ${THEME_ACCENT_HERO_SUBTLE}`}>
               {signInAward.enabled
                 ? `每日签到可获 ${signInAward.points} 积分（与后台规则一致）`
                 : (signInAward.disabledReason || "暂时无法签到")}

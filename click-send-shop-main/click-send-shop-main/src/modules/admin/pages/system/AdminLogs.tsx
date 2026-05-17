@@ -7,7 +7,15 @@ import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { fetchAuditLogs } from "@/services/admin/logService";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import type { AuditLogRow } from "@/services/admin/logService";
-import { buildAuditChangeSummary, zhActionType, zhObjectType } from "@/utils/auditLogI18n";
+import {
+  buildAuditChangeSummary,
+  zhActionType,
+  zhAuditErrorMessage,
+  zhAuditResult,
+  zhAuditSummary,
+  zhObjectType,
+  zhOperatorRole,
+} from "@/utils/auditLogI18n";
 import { Tx } from "@/components/admin/AdminText";
 
 export default function AdminLogs() {
@@ -162,16 +170,16 @@ export default function AdminLogs() {
             <div className="flex items-start justify-between gap-2">
               <p className="text-[11px] text-muted-foreground">{row.created_at ? new Date(row.created_at).toLocaleString("zh-CN") : "—"}</p>
               <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${row.result === "success" ? "bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] text-[var(--theme-price)]" : "bg-destructive/15 text-destructive"}`}>
-                {row.result === "success" ? "成功" : "失败"}
+                {zhAuditResult(row.result)}
               </span>
             </div>
             <p className="mt-2 text-sm font-medium text-foreground">{row.operator_name || "—"}</p>
-            <p className="text-xs text-muted-foreground">{row.operator_role || ""}</p>
+            <p className="text-xs text-muted-foreground">{zhOperatorRole(row.operator_role)}</p>
             <p className="mt-2 text-xs font-semibold text-foreground">{zhActionType(row.action_type)}</p>
             <p className="mt-1 text-xs text-muted-foreground" title={row.object_id || undefined}>
               {zhObjectType(row.object_type)}{row.object_id ? " · 已关联对象" : ""}
             </p>
-            <p className="mt-2 line-clamp-3 text-xs text-foreground">{row.summary}</p>
+            <p className="mt-2 line-clamp-3 text-xs text-foreground">{zhAuditSummary(row.summary)}</p>
             <button type="button" onClick={() => setDetail(row)} className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1 theme-rounded border border-[var(--theme-border)] py-2 text-sm text-[var(--theme-price)]"><Tx>
               详情 </Tx><ChevronRight size={16} />
             </button>
@@ -228,7 +236,7 @@ export default function AdminLogs() {
               </td>
               <td className="px-3 py-2 text-xs">
                 <div className="font-medium text-foreground">{row.operator_name || "—"}</div>
-                <div className="text-muted-foreground">{row.operator_role || ""}</div>
+                <div className="text-muted-foreground">{zhOperatorRole(row.operator_role)}</div>
               </td>
               <td className="px-3 py-2 text-xs font-semibold text-foreground">{zhActionType(row.action_type)}</td>
               <td className="px-3 py-2 text-xs">
@@ -237,10 +245,10 @@ export default function AdminLogs() {
                   <div className="text-[10px] text-muted-foreground" title={row.object_id}><Tx>已关联</Tx></div>
                 ) : null}
               </td>
-              <td className="px-3 py-2 text-xs text-foreground max-w-[200px] truncate">{row.summary}</td>
+              <td className="px-3 py-2 text-xs text-foreground max-w-[200px] truncate" title={row.summary || undefined}>{zhAuditSummary(row.summary)}</td>
               <td className="px-3 py-2">
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${row.result === "success" ? "bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] text-[var(--theme-price)]" : "bg-destructive/15 text-destructive"}`}>
-                  {row.result === "success" ? "成功" : "失败"}
+                  {zhAuditResult(row.result)}
                 </span>
               </td>
               <td className="px-3 py-2">
@@ -262,12 +270,13 @@ export default function AdminLogs() {
             <h3 className="text-sm font-bold text-foreground mb-3"><Tx>审计详情</Tx></h3>
             <dl className="space-y-2 text-xs">
               <div className="flex justify-between gap-2"><dt className="text-muted-foreground"><Tx>动作</Tx></dt><dd className="text-right font-semibold">{zhActionType(detail.action_type)}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-muted-foreground"><Tx>摘要</Tx></dt><dd className="text-right max-w-[70%] break-words">{zhAuditSummary(detail.summary)}</dd></div>
               <div className="flex justify-between gap-2"><dt className="text-muted-foreground"><Tx>对象</Tx></dt><dd className="text-right" title={detail.object_id || undefined}>{zhObjectType(detail.object_type)}{detail.object_id ? " · 已关联" : ""}</dd></div>
               <div className="flex justify-between gap-2"><dt className="text-muted-foreground"><Tx>路径</Tx></dt><dd className="text-right break-all">{detail.request_method} {detail.request_path}</dd></div>
               <div className="flex justify-between gap-2"><dt className="text-muted-foreground"><Tx>IP 地址</Tx></dt><dd>{detail.ip || "—"}</dd></div>
               <div className="flex justify-between gap-2"><dt className="text-muted-foreground"><Tx>浏览器标识</Tx></dt><dd className="text-right break-all max-w-[70%]">{detail.user_agent || "—"}</dd></div>
               {detail.result === "failure" && detail.error_message && (
-                <div className="rounded-lg bg-destructive/10 p-2 text-destructive">{detail.error_message}</div>
+                <div className="rounded-lg bg-destructive/10 p-2 text-destructive">{zhAuditErrorMessage(detail.error_message)}</div>
               )}
               {(() => {
                 const changes = buildAuditChangeSummary(detail.before_json, detail.after_json);

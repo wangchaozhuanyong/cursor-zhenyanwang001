@@ -8,6 +8,15 @@ import { useCouponStore } from "@/stores/useCouponStore";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import type { UserCoupon } from "@/types/coupon";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
+import {
+  THEME_ACCENT_HERO_ICON,
+  THEME_ACCENT_HERO_ICON_WRAP,
+  THEME_ACCENT_HERO_LABEL,
+  THEME_ACCENT_HERO_MUTED,
+  THEME_ACCENT_HERO_SHELL,
+  THEME_ACCENT_HERO_SUBTLE,
+  THEME_ACCENT_HERO_VALUE,
+} from "@/utils/themeVisuals";
 
 type DisplayStatus = "available" | "claimed" | "used" | "expired";
 
@@ -116,25 +125,30 @@ export default function Coupons() {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-[hsl(var(--gold-dark))] p-6"
+          className={`relative overflow-hidden rounded-2xl p-6 ${THEME_ACCENT_HERO_SHELL}`}
         >
-          {/* Decorative circles */}
-          <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-gold/10" />
-          <div className="absolute -bottom-4 -left-4 h-20 w-20 rounded-full bg-gold/5" />
+          <div
+            className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full"
+            style={{ background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 12%, transparent)" }}
+          />
+          <div
+            className="pointer-events-none absolute -bottom-4 -left-4 h-20 w-20 rounded-full"
+            style={{ background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 8%, transparent)" }}
+          />
 
           <div className="relative flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-primary-foreground/50 uppercase tracking-wider">我的优惠券</p>
+              <p className={THEME_ACCENT_HERO_LABEL}>我的优惠券</p>
               <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-5xl font-bold text-gold">{claimedCount}</span>
-                <span className="text-sm text-primary-foreground/60">张可用</span>
+                <span className={`text-5xl ${THEME_ACCENT_HERO_VALUE}`}>{claimedCount}</span>
+                <span className={`text-sm ${THEME_ACCENT_HERO_MUTED}`}>张可用</span>
               </div>
-              <p className="mt-2 text-[11px] text-primary-foreground/40">
+              <p className={`mt-2 ${THEME_ACCENT_HERO_SUBTLE}`}>
                 {available.length > 0 ? `还有 ${available.length} 张新券待领取` : "所有优惠券已领取"}
               </p>
             </div>
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gold/15 backdrop-blur-sm">
-              <Ticket size={32} className="text-gold" />
+            <div className={`h-16 w-16 ${THEME_ACCENT_HERO_ICON_WRAP}`}>
+              <Ticket size={32} className={THEME_ACCENT_HERO_ICON} />
             </div>
           </div>
         </motion.div>

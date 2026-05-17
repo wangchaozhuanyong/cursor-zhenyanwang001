@@ -21,6 +21,24 @@ export const THEME_COUPON_ICON_ON_LIGHT_CLASS =
 export const THEME_COUPON_ICON_ON_SURFACE_CLASS =
   "text-[color-mix(in_srgb,var(--theme-primary)_80%,var(--theme-text-on-surface))]";
 
+/**
+ * 优惠券/积分/返现等页顶部强调卡片。
+ * 背景/文字由 ThemeRuntimeProvider → generateThemePalette 写入的
+ * --theme-coupon-accent-*（按渐变中位色算对比度），换肤自动适配。
+ */
+export const THEME_ACCENT_HERO_SHELL = "theme-accent-hero bg-theme-coupon-accent";
+
+/** 品牌主渐变 Hero（与后台「主色+辅色」渐变一致） */
+export const THEME_GRADIENT_HERO_SHELL = "theme-accent-hero bg-theme-gradient";
+export const THEME_ACCENT_HERO_LABEL =
+  "theme-hero-accent-label text-xs font-medium uppercase tracking-wider";
+export const THEME_ACCENT_HERO_VALUE = "theme-hero-accent-value font-bold";
+export const THEME_ACCENT_HERO_MUTED = "theme-hero-accent-muted";
+export const THEME_ACCENT_HERO_SUBTLE = "theme-hero-accent-subtle";
+export const THEME_ACCENT_HERO_ICON_WRAP =
+  "theme-hero-accent-icon-wrap flex items-center justify-center rounded-2xl backdrop-blur-sm";
+export const THEME_ACCENT_HERO_ICON = "theme-hero-accent-icon";
+
 export function getMemberCardClassName(style: ThemeConfig["memberCardStyle"]): string {
   switch (style) {
     case "blackGold":

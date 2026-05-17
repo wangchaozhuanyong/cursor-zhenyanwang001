@@ -250,6 +250,33 @@ function getCardShellVariables(
   }
 }
 
+function ensureReadableForeground(background: RGB | string, preferred?: string, minRatio = 4.5): string {
+  const bg = typeof background === "string" ? parseColor(background) : background;
+  let fg = getReadableTextColor(bg, preferred, minRatio);
+  if (getContrastRatio(bg, fg) < minRatio) {
+    fg =
+      getContrastRatio(bg, WHITE) >= getContrastRatio(bg, BLACK)
+        ? rgbToCss(WHITE)
+        : rgbToCss(BLACK);
+  }
+  return fg;
+}
+
+/** 渐变/双色块上的可读前景：按渐变中位色计算，而非单色 price/primary */
+function paletteForGradientSurface(start: RGB, end: RGB, midWeight = 0.42) {
+  const mid = mixColors(start, end, midWeight);
+  const fg = ensureReadableForeground(mid);
+  const fgRgb = parseColor(fg);
+  return {
+    midCss: rgbToCss(mid),
+    foreground: fg,
+    muted: getMutedTextColor(mid, fg),
+    subtle: rgbToCss(mixColors(fgRgb, mid, 0.55)),
+    icon: rgbToCss(mixColors(fgRgb, start, 0.1)),
+    iconWrap: rgbToCss(mixColors(fgRgb, mid, 0.16)),
+  };
+}
+
 export function generateThemePalette(adminConfig: ThemeConfig) {
   const bg = parseColor(adminConfig.bgColor, WHITE);
   const surface = parseColor(adminConfig.surfaceColor, bg);
@@ -307,6 +334,15 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
   const borderCss = rgbToCss(border);
   const shadows = getShadowVariables(adminConfig.shadowStyle, isDarkBg);
 
+  const gradientSurface = paletteForGradientSurface(primary, secondary, 0.5);
+  const couponAccentEnd = mixColors(
+    price,
+    isDarkColor(price) ? BLACK : mixColors(price, bg, isDarkBg ? 0.12 : 0.22),
+    isDarkColor(price) ? 0.3 : 0.34,
+  );
+  const couponAccentSurface = paletteForGradientSurface(price, couponAccentEnd, 0.4);
+  const couponAccentEndCss = rgbToCss(couponAccentEnd);
+
   return {
     "--theme-primary": primaryCss,
     "--theme-primary-hover": adjustColor(primaryCss, isDarkBg ? 20 : -20),
@@ -327,7 +363,17 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     "--theme-card-foreground": surfaceText,
     "--theme-surface-foreground": surfaceText,
     "--theme-gradient": `linear-gradient(135deg, ${primaryCss}, ${secondaryCss})`,
-    "--theme-gradient-foreground": getReadableTextColor(mixColors(primary, secondary, 0.5)),
+    "--theme-gradient-foreground": gradientSurface.foreground,
+    "--theme-gradient-muted": gradientSurface.muted,
+    "--theme-gradient-subtle": gradientSurface.subtle,
+    "--theme-gradient-mid": gradientSurface.midCss,
+    "--theme-coupon-accent-bg": `linear-gradient(to bottom right, ${priceCss}, ${couponAccentEndCss})`,
+    "--theme-coupon-accent-mid": couponAccentSurface.midCss,
+    "--theme-coupon-accent-foreground": couponAccentSurface.foreground,
+    "--theme-coupon-accent-muted": couponAccentSurface.muted,
+    "--theme-coupon-accent-subtle": couponAccentSurface.subtle,
+    "--theme-coupon-accent-icon": couponAccentSurface.icon,
+    "--theme-coupon-accent-icon-wrap": couponAccentSurface.iconWrap,
     "--theme-bg": bgCss,
     "--theme-surface": surfaceCss,
     "--theme-border": rgbToCss(border),
@@ -487,6 +533,20 @@ export function getThemeHealthChecks(adminConfig: ThemeConfig): ThemeHealthCheck
       foreground: palette["--theme-price"],
       background: palette["--theme-surface"],
       minRatio: 3,
+    },
+    {
+      id: "gradient_hero_text",
+      label: "品牌渐变区文字对比度",
+      foreground: palette["--theme-gradient-foreground"],
+      background: palette["--theme-gradient-mid"],
+      minRatio: 4.5,
+    },
+    {
+      id: "coupon_accent_hero_text",
+      label: "优惠券强调区文字对比度",
+      foreground: palette["--theme-coupon-accent-foreground"],
+      background: palette["--theme-coupon-accent-mid"],
+      minRatio: 4.5,
     },
     {
       id: "table_border",

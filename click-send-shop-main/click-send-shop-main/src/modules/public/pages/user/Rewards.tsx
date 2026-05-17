@@ -6,6 +6,14 @@ import * as rewardService from "@/services/rewardService";
 import type { RewardTransaction } from "@/types/reward";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
+import {
+  THEME_ACCENT_HERO_ICON,
+  THEME_ACCENT_HERO_LABEL,
+  THEME_ACCENT_HERO_MUTED,
+  THEME_ACCENT_HERO_SHELL,
+  THEME_ACCENT_HERO_SUBTLE,
+  THEME_ACCENT_HERO_VALUE,
+} from "@/utils/themeVisuals";
 
 export default function Rewards() {
   const navigate = useNavigate();
@@ -82,12 +90,12 @@ export default function Rewards() {
       </header>
 
       <main className="mx-auto max-w-lg px-4 py-6">
-        <div className="rounded-xl bg-primary p-6 text-center">
-          <Gift size={32} className="mx-auto text-gold" />
-          <p className="mt-2 text-xs text-primary-foreground/70">可提现余额</p>
-          <p className="text-4xl font-bold text-gold">RM {Number(balance).toFixed(2)}</p>
+        <div className={`rounded-xl p-6 text-center ${THEME_ACCENT_HERO_SHELL}`}>
+          <Gift size={32} className={`mx-auto ${THEME_ACCENT_HERO_ICON}`} />
+          <p className={`mt-2 ${THEME_ACCENT_HERO_LABEL} normal-case tracking-normal`}>可提现余额</p>
+          <p className={`text-4xl ${THEME_ACCENT_HERO_VALUE}`}>RM {Number(balance).toFixed(2)}</p>
           {pendingAmount > 0 && (
-            <p className="mt-1 text-xs text-primary-foreground/50">待审核：RM {Number(pendingAmount).toFixed(2)}</p>
+            <p className={`mt-1 ${THEME_ACCENT_HERO_SUBTLE}`}>待审核：RM {Number(pendingAmount).toFixed(2)}</p>
           )}
           <button
             onClick={handleWithdraw}

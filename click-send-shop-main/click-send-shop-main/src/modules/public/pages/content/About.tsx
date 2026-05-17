@@ -8,6 +8,12 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { renderBrandTitle } from "@/utils/brand";
 import { useGoBack } from "@/hooks/useGoBack";
 import { SiteSocialLinks } from "@/components/SiteSocialLinks";
+import {
+  THEME_ACCENT_HERO_MUTED,
+  THEME_ACCENT_HERO_SHELL,
+  THEME_ACCENT_HERO_SUBTLE,
+  THEME_ACCENT_HERO_VALUE,
+} from "@/utils/themeVisuals";
 
 export default function About() {
   const navigate = useNavigate();
@@ -40,15 +46,18 @@ export default function About() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl bg-primary p-6 text-center"
+          className={`rounded-2xl p-6 text-center ${THEME_ACCENT_HERO_SHELL}`}
         >
           <img src={logoSrc} alt={siteName} width={64} height={64} className="mx-auto rounded-xl object-contain" />
-          <h2 className="mt-3 font-display text-3xl font-bold text-primary-foreground">
+          <h2 className={`mt-3 font-display text-3xl ${THEME_ACCENT_HERO_VALUE}`}>
             {renderBrandTitle(siteName)}
           </h2>
-          <p className="mt-2 text-sm text-primary-foreground/70">{slogan}</p>
-          <div className="mx-auto mt-4 h-px w-12 bg-gold" />
-          <p className="mt-4 text-xs leading-relaxed text-primary-foreground/60">
+          <p className={`mt-2 text-sm ${THEME_ACCENT_HERO_MUTED}`}>{slogan}</p>
+          <div
+            className="mx-auto mt-4 h-px w-12"
+            style={{ background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 55%, transparent)" }}
+          />
+          <p className={`mt-4 text-xs leading-relaxed ${THEME_ACCENT_HERO_SUBTLE}`}>
             {siteInfo.siteDescription ||
               `${siteName}致力于为消费者提供精选的全球高品质商品。我们严格把控供应链，确保每一件商品都经过品质认证，让您在家即可享受全球精品购物体验。`}
           </p>
@@ -68,7 +77,7 @@ export default function About() {
               transition={{ delay: 0.1 + i * 0.08 }}
               className="rounded-2xl border border-border bg-card p-4 text-center"
             >
-              <item.icon size={22} className="mx-auto text-gold" />
+              <item.icon size={22} className="mx-auto text-[var(--theme-primary)]" />
               <p className="mt-2 text-xs font-semibold text-foreground">{item.label}</p>
               <p className="mt-0.5 text-[10px] text-muted-foreground">{item.desc}</p>
             </motion.div>

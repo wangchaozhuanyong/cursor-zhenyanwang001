@@ -61,6 +61,12 @@
     --theme-price-foreground: #ffffff;
     --theme-gradient: linear-gradient(135deg, #000000, #4b5563);
     --theme-gradient-foreground: #ffffff;
+    --theme-gradient-muted: rgba(255, 255, 255, 0.72);
+    --theme-gradient-subtle: rgba(255, 255, 255, 0.58);
+    --theme-coupon-accent-bg: linear-gradient(to bottom right, #dc2626, #7f1d1d);
+    --theme-coupon-accent-foreground: #ffffff;
+    --theme-coupon-accent-muted: rgba(255, 255, 255, 0.78);
+    --theme-coupon-accent-subtle: rgba(255, 255, 255, 0.58);
     --theme-bg: #f9fafb;
     --theme-surface: #ffffff;
     --theme-border: #e5e7eb;
@@ -290,6 +296,13 @@
     color: var(--theme-gradient-foreground);
   }
 
+  .bg-theme-gradient .text-white,
+  .bg-theme-gradient .text-primary-foreground,
+  .bg-theme-gradient.text-white,
+  .bg-theme-gradient.text-primary-foreground {
+    color: var(--theme-gradient-foreground) !important;
+  }
+
   .theme-product-card {
     background-color: var(--theme-card-shell-bg);
     border: var(--theme-card-shell-border);
@@ -316,18 +329,77 @@
     min-height: var(--theme-density-row, 2.25rem);
   }
 
-  /** 优惠券「金色」分区：随 --theme-price 变化 */
+  /**
+   * 优惠券/积分等强调 Hero：背景与文字均由 generateThemePalette 按渐变中位色计算
+   *（--theme-coupon-accent-*），换肤后自动适配，勿用 text-gold / text-primary-foreground。
+   */
   .bg-theme-coupon-accent {
-    background-image: linear-gradient(
-      to bottom right,
-      var(--theme-price),
-      #7f1d1d
-    );
-    background-image: linear-gradient(
-      to bottom right,
-      var(--theme-price),
-      color-mix(in srgb, var(--theme-price) 72%, black)
-    );
+    background: var(--theme-coupon-accent-bg);
+    color: var(--theme-coupon-accent-foreground);
+  }
+
+  .theme-accent-hero.bg-theme-coupon-accent .theme-hero-accent-label,
+  .bg-theme-coupon-accent .theme-hero-accent-label {
+    color: var(--theme-coupon-accent-muted);
+  }
+
+  .theme-accent-hero.bg-theme-coupon-accent .theme-hero-accent-value,
+  .bg-theme-coupon-accent .theme-hero-accent-value {
+    color: var(--theme-coupon-accent-foreground);
+  }
+
+  .theme-accent-hero.bg-theme-coupon-accent .theme-hero-accent-muted,
+  .bg-theme-coupon-accent .theme-hero-accent-muted {
+    color: var(--theme-coupon-accent-muted);
+  }
+
+  .theme-accent-hero.bg-theme-coupon-accent .theme-hero-accent-subtle,
+  .bg-theme-coupon-accent .theme-hero-accent-subtle {
+    color: var(--theme-coupon-accent-subtle);
+  }
+
+  .theme-accent-hero.bg-theme-coupon-accent .theme-hero-accent-icon,
+  .bg-theme-coupon-accent .theme-hero-accent-icon {
+    color: var(--theme-coupon-accent-icon);
+  }
+
+  .theme-accent-hero.bg-theme-coupon-accent .theme-hero-accent-icon-wrap,
+  .bg-theme-coupon-accent .theme-hero-accent-icon-wrap {
+    background-color: var(--theme-coupon-accent-icon-wrap);
+  }
+
+  .bg-theme-coupon-accent .text-gold,
+  .bg-theme-coupon-accent .text-primary-foreground,
+  .bg-theme-coupon-accent .text-primary-foreground\/40,
+  .bg-theme-coupon-accent .text-primary-foreground\/50,
+  .bg-theme-coupon-accent .text-primary-foreground\/60,
+  .bg-theme-coupon-accent .text-primary-foreground\/70 {
+    color: var(--theme-coupon-accent-foreground) !important;
+  }
+
+  /** 主色块 Hero：主色为深/黑时避免 text-gold（price 色）与背景融在一起 */
+  .bg-primary.theme-accent-hero,
+  .bg-primary.theme-accent-hero .theme-hero-accent-label,
+  .bg-primary.theme-accent-hero .theme-hero-accent-muted,
+  .bg-primary.theme-accent-hero .theme-hero-accent-subtle {
+    color: var(--theme-primary-foreground);
+  }
+
+  .bg-primary.theme-accent-hero .theme-hero-accent-value,
+  .bg-primary.theme-accent-hero .theme-hero-accent-icon {
+    color: var(--theme-price-foreground);
+  }
+
+  .bg-primary.theme-accent-hero .text-gold {
+    color: var(--theme-price-foreground) !important;
+  }
+
+  .bg-primary.theme-accent-hero .text-primary-foreground\/40,
+  .bg-primary.theme-accent-hero .text-primary-foreground\/50,
+  .bg-primary.theme-accent-hero .text-primary-foreground\/55,
+  .bg-primary.theme-accent-hero .text-primary-foreground\/60,
+  .bg-primary.theme-accent-hero .text-primary-foreground\/70 {
+    color: color-mix(in srgb, var(--theme-primary-foreground) 65%, transparent) !important;
   }
 
   .bg-gold.text-primary-foreground,

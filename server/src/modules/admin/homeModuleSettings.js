@@ -2,7 +2,6 @@
 /**
  * 首页内容模块开关与展示参数（存 site_settings.home_module_settings JSON）
  */
-const db = require('../../config/db');
 const siteSettingsRepo = require('./adminSiteSettings.repository');
 
 const SETTING_KEY = 'home_module_settings';
@@ -65,11 +64,8 @@ function parseSettings(raw) {
 }
 
 async function getHomeModuleSettings() {
-  const [[row]] = await db.query(
-    'SELECT setting_value FROM site_settings WHERE setting_key = ? LIMIT 1',
-    [SETTING_KEY],
-  );
-  return parseSettings(row?.setting_value);
+  const raw = await siteSettingsRepo.selectSettingValue(SETTING_KEY);
+  return parseSettings(raw);
 }
 
 async function saveHomeModuleSettings(body, adminUserId, req) {

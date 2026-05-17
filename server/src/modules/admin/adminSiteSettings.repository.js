@@ -21,8 +21,17 @@ async function upsertSetting(key, value) {
   );
 }
 
+async function selectSettingValue(key) {
+  const [[row]] = await db.query(
+    'SELECT setting_value FROM site_settings WHERE setting_key = ? LIMIT 1',
+    [key],
+  );
+  return row?.setting_value ?? null;
+}
+
 module.exports = {
   selectShippingSettingsRows,
   selectNonShippingSettingsRows,
   upsertSetting,
+  selectSettingValue,
 };

@@ -27,31 +27,53 @@ export default function PendingReviews() {
     setLoading(false);
   };
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background p-4">
-      <h1 className="mb-4 text-lg font-semibold">´ıÆÀ¼Û</h1>
-      {loading ? <p>¼ÓÔØÖĞ...</p> : null}
-      {!loading && items.length === 0 ? <p className="text-sm text-muted-foreground">ÔİÎŞ´ıÆÀ¼ÛÉÌÆ·£¬È·ÈÏÊÕ»õºó¿ÉÆÀ¼Û¡£</p> : null}
+      <h1 className="mb-4 text-lg font-semibold">å¾…è¯„ä»·</h1>
+      {loading ? <p>åŠ è½½ä¸­...</p> : null}
+      {!loading && items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">æš‚æ— å¾…è¯„ä»·å•†å“ï¼Œç¡®è®¤æ”¶è´§åå¯è¯„ä»·ã€‚</p>
+      ) : null}
       <div className="space-y-4">
         {grouped.map(([orderId, list]) => (
           <div key={orderId} className="rounded-xl border p-3">
-            <p className="mb-2 text-xs text-muted-foreground">¶©µ¥ºÅ£º{list[0].order_no}</p>
+            <p className="mb-2 text-xs text-muted-foreground">è®¢å•å·ï¼š{list[0].order_no}</p>
             {list.map((it) => (
               <div key={it.order_item_id} className="mb-2 flex items-center gap-3">
-                <img src={it.product_image} className="h-12 w-12 rounded object-cover" onClick={() => navigate(`/product/${it.product_id}`)} />
-                <div className="flex-1 min-w-0">
+                <img
+                  src={it.product_image}
+                  className="h-12 w-12 rounded object-cover"
+                  alt={it.product_name}
+                  onClick={() => navigate(`/product/${it.product_id}`)}
+                />
+                <div className="min-w-0 flex-1">
                   <p className="truncate text-sm">{it.product_name}</p>
-                  <p className="text-xs text-muted-foreground">{it.variant_name || it.sku_code || "Ä¬ÈÏ¹æ¸ñ"}</p>
+                  <p className="text-xs text-muted-foreground">{it.variant_name || it.sku_code || "é»˜è®¤è§„æ ¼"}</p>
                 </div>
-                <button className="rounded-full border px-3 py-1 text-xs" onClick={() => setOrderItemId(it.order_item_id)}>Ğ´ÆÀ¼Û</button>
+                <button
+                  type="button"
+                  className="rounded-full border px-3 py-1 text-xs"
+                  onClick={() => setOrderItemId(it.order_item_id)}
+                >
+                  å†™è¯„ä»·
+                </button>
               </div>
             ))}
           </div>
         ))}
       </div>
-      <ReviewComposerSheet open={!!orderItemId} onClose={() => setOrderItemId("")} orderItemId={orderItemId} onSuccess={() => { void load(); }} />
+      <ReviewComposerSheet
+        open={!!orderItemId}
+        onClose={() => setOrderItemId("")}
+        orderItemId={orderItemId}
+        onSuccess={() => {
+          void load();
+        }}
+      />
     </div>
   );
 }

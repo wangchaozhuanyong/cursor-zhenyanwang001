@@ -1,7 +1,8 @@
 ﻿import { create } from "zustand";
 import type { Product, ProductListParams } from "@/types/product";
 import type { Category } from "@/types/category";
-import * as productService from "@/services/productService";`r`nimport * as homeService from "@/services/homeService";
+import * as productService from "@/services/productService";
+import * as homeService from "@/services/homeService";
 
 interface PaginationState {
   total: number;

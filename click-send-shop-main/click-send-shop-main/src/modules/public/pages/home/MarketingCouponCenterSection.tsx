@@ -6,6 +6,7 @@ import { useCouponStore } from "@/stores/useCouponStore";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import * as marketingService from "@/services/marketingService";
+import * as homeService from "@/services/homeService";
 import { marketingCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import { AnimatedSection } from "@/modules/micro-interactions";
 
@@ -17,8 +18,19 @@ export default function MarketingCouponCenterSection({ delay = 0 }: { delay?: nu
 
   useEffect(() => {
     let cancelled = false;
-    marketingService.fetchCouponCenter().then((data) => {
-      if (!cancelled) setPayload(data);
+    const cached = homeService.getCachedHomeBootstrap();
+    if (cached?.marketing?.couponCenter) {
+      setPayload(cached.marketing.couponCenter as Awaited<ReturnType<typeof marketingService.fetchCouponCenter>>);
+    }
+    homeService.fetchHomeBootstrap().then((bootstrap) => {
+      if (cancelled) return;
+      if (bootstrap?.marketing?.couponCenter) {
+        setPayload(bootstrap.marketing.couponCenter as Awaited<ReturnType<typeof marketingService.fetchCouponCenter>>);
+        return;
+      }
+      return marketingService.fetchCouponCenter().then((data) => {
+        if (!cancelled) setPayload(data);
+      });
     });
     return () => {
       cancelled = true;

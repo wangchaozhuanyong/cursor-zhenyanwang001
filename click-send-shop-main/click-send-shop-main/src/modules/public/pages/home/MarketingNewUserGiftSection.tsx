@@ -5,6 +5,7 @@ import PremiumCouponCard from "@/components/PremiumCouponCard";
 import { isLoggedIn } from "@/utils/token";
 import { marketingCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import * as marketingService from "@/services/marketingService";
+import * as homeService from "@/services/homeService";
 import {
   THEME_GIFT_BADGE_SHELL,
   THEME_INVITE_PROMO_CTA,
@@ -19,8 +20,19 @@ export default function MarketingNewUserGiftSection({ delay = 0 }: { delay?: num
 
   useEffect(() => {
     let cancelled = false;
-    marketingService.fetchNewUserGift().then((data) => {
-      if (!cancelled) setPayload(data);
+    const cached = homeService.getCachedHomeBootstrap();
+    if (cached?.marketing?.newUserGift) {
+      setPayload(cached.marketing.newUserGift as Awaited<ReturnType<typeof marketingService.fetchNewUserGift>>);
+    }
+    homeService.fetchHomeBootstrap().then((bootstrap) => {
+      if (cancelled) return;
+      if (bootstrap?.marketing?.newUserGift) {
+        setPayload(bootstrap.marketing.newUserGift as Awaited<ReturnType<typeof marketingService.fetchNewUserGift>>);
+        return;
+      }
+      return marketingService.fetchNewUserGift().then((data) => {
+        if (!cancelled) setPayload(data);
+      });
     });
     return () => {
       cancelled = true;

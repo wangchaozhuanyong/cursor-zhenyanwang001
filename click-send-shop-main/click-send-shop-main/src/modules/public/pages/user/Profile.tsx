@@ -134,7 +134,7 @@ function ProfileHeroCard({
   );
 }
 
-/** 邀请横幅右侧礼物标识（与「立即邀请」按钮横向排列，控制整体高度） */
+/** 邀请横幅右侧礼物标识（位于「立即邀请」按钮上方） */
 function InviteGiftBadge() {
   return (
     <div
@@ -321,9 +321,8 @@ export default function Profile() {
         </section>
 
         <section className={`${CARD_CLASS} overflow-hidden`}>
-          <div className="p-4">
-            <SectionTitle title="我的权益" />
-            <div className="grid grid-cols-4 rounded-2xl bg-[var(--theme-bg)] px-2 py-3 ring-1 ring-[color-mix(in_srgb,var(--theme-border)_65%,transparent)]">
+          <div className="px-4 pt-4 pb-0">
+            <div className="grid grid-cols-4 rounded-2xl bg-[var(--theme-bg)] px-2 py-3.5 ring-1 ring-[color-mix(in_srgb,var(--theme-border)_65%,transparent)]">
               {assetItems.map((item) => (
                 <button
                   key={item.label}
@@ -342,21 +341,21 @@ export default function Profile() {
           <div className="mx-4 mb-4 border-t border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] pt-3">
             <div className={`relative overflow-hidden rounded-[22px] px-4 py-3.5 ${THEME_INVITE_PROMO_SHELL}`}>
               <div className="flex items-center gap-3">
-                <div className="min-w-0 flex-1 pr-1">
-                  <p className="truncate text-base font-bold">邀请好友得奖励</p>
-                  <p className={`mt-1 line-clamp-2 text-xs leading-snug ${THEME_INVITE_PROMO_MUTED}`}>
-                    {loggedIn ? "好友注册/下单后可获得现金返现" : "登录后邀请好友获得现金返现"}
+                <div className="min-w-0 flex-1">
+                  <p className="text-base font-bold leading-snug">邀请好友得奖励</p>
+                  <p className={`mt-1 text-xs leading-relaxed ${THEME_INVITE_PROMO_MUTED}`}>
+                    {loggedIn ? "好友下单即可获得现金返现" : "登录后邀请好友获得现金返现"}
                   </p>
-                  <p className={`mt-1 truncate text-xs ${THEME_INVITE_PROMO_MUTED}`}>
+                  <p className={`mt-1.5 text-xs leading-snug ${THEME_INVITE_PROMO_MUTED}`}>
                     {loggedIn ? `已邀请 ${inviteCount} 人，累计返现 RM ${rewardBalance.toFixed(2)}` : "登录后查看邀请奖励"}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="flex w-[5.25rem] shrink-0 flex-col items-center justify-center gap-2">
                   <InviteGiftBadge />
                   <button
                     type="button"
                     onClick={() => (loggedIn ? gateNavigate(navigate, "/invite", true) : navigate("/login", { state: { from: "/profile" } }))}
-                    className={`whitespace-nowrap rounded-full px-3.5 py-2 ${THEME_INVITE_PROMO_CTA}`}
+                    className={`w-full whitespace-nowrap rounded-full px-2 py-2 text-center text-xs font-semibold ${THEME_INVITE_PROMO_CTA}`}
                     style={{ background: "var(--theme-invite-promo-cta-bg)", color: "var(--theme-invite-promo-cta-fg)" }}
                   >
                     {loggedIn ? "立即邀请" : "去登录"}
@@ -368,8 +367,7 @@ export default function Profile() {
         </section>
 
         <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
-          <SectionTitle title="常用服务" />
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-x-2 gap-y-2.5">
             {[
               { label: "收货地址", icon: MapPin, path: "/address", auth: true },
               { label: "浏览记录", icon: Clock3, path: "/history", auth: false },

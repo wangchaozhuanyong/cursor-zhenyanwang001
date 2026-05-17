@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/utils/formatDateTime";
 import { useEffect, useState, useCallback } from "react";
 import { Trash2, RotateCcw, Loader2, AlertTriangle, Archive } from "lucide-react";
 import Pagination from "@/components/admin/Pagination";
@@ -14,6 +15,19 @@ import type { RecycleBinItem } from "@/services/admin/recycleBinService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { labelRecycleType } from "@/utils/adminDisplayLabels";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import {
+  THEME_BADGE_ACCENT,
+  THEME_BADGE_DANGER,
+  THEME_BADGE_PRICE,
+  THEME_BADGE_PRIMARY,
+  THEME_BADGE_SUCCESS,
+  THEME_BADGE_WARNING,
+  THEME_TEXT_SUCCESS_SOFT,
+  THEME_TEXT_DANGER,
+  THEME_BORDER_DANGER_SOFT,
+  THEME_HOVER_BG_DANGER,
+  THEME_BTN_DANGER_SOLID,
+} from "@/utils/themeVisuals";
 
 const TYPE_OPTIONS = [
   { value: "", label: "全部类型" },
@@ -26,12 +40,12 @@ const TYPE_OPTIONS = [
 ];
 
 const TYPE_BADGE: Record<string, string> = {
-  products: "bg-blue-500/10 text-blue-600",
-  categories: "bg-purple-500/10 text-purple-600",
-  coupons: "bg-green-500/10 text-green-600",
-  banners: "bg-yellow-500/10 text-yellow-600",
-  content_pages: "bg-pink-500/10 text-pink-600",
-  product_reviews: "bg-orange-500/10 text-orange-600",
+  products: THEME_BADGE_PRIMARY,
+  categories: THEME_BADGE_ACCENT,
+  coupons: THEME_BADGE_SUCCESS,
+  banners: THEME_BADGE_WARNING,
+  content_pages: THEME_BADGE_PRICE,
+  product_reviews: THEME_BADGE_DANGER,
 };
 
 export default function AdminRecycleBin() {
@@ -116,13 +130,13 @@ export default function AdminRecycleBin() {
                       </span>
                     </div>
                     <p className="text-sm font-medium text-foreground truncate">{item.name || item.id}</p>
-                    <p className="text-[11px] text-muted-foreground">删除时间: {item.deleted_at ? new Date(item.deleted_at).toLocaleString("zh-CN") : "—"}</p>
+                    <p className="text-[11px] text-muted-foreground">删除时间: {item.deleted_at ? formatDateTime(item.deleted_at) : "—"}</p>
                     <PermissionGate permission="recycle_bin.manage">
                       <div className="flex gap-2 pt-1">
-                        <button type="button" onClick={() => handleRestore(item)} className="touch-manipulation min-h-[40px] flex-1 rounded-lg border border-border py-1.5 text-xs text-green-600 hover:bg-secondary">
+                        <button type="button" onClick={() => handleRestore(item)} className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border border-[var(--theme-border)] py-1.5 text-xs ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`}>
                           <RotateCcw size={12} className="mr-1 inline" /><Tx>恢复
                         </Tx></button>
-                        <button type="button" onClick={() => setConfirmDelete(item)} className="touch-manipulation min-h-[40px] flex-1 rounded-lg border border-destructive/30 py-1.5 text-xs text-destructive hover:bg-destructive/10">
+                        <button type="button" onClick={() => setConfirmDelete(item)} className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border py-1.5 text-xs ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`}>
                           <Trash2 size={12} className="mr-1 inline" /><Tx>彻底删除
                         </Tx></button>
                       </div>
@@ -167,14 +181,14 @@ export default function AdminRecycleBin() {
                       <span className="max-w-[200px] truncate text-foreground" title={item.name}>{item.name || item.id}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{item.deleted_at ? new Date(item.deleted_at).toLocaleString("zh-CN") : "—"}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{item.deleted_at ? formatDateTime(item.deleted_at) : "—"}</td>
                   <td className="px-4 py-3">
                     <PermissionGate permission="recycle_bin.manage">
                       <div className="flex gap-1">
-                        <button type="button" onClick={() => handleRestore(item)} className="touch-manipulation rounded-lg border border-border p-1.5 text-green-600 hover:bg-secondary" title="恢复">
+                        <button type="button" onClick={() => handleRestore(item)} className={`touch-manipulation rounded-lg border border-[var(--theme-border)] p-1.5 ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`} title="恢复">
                           <RotateCcw size={14} />
                         </button>
-                        <button type="button" onClick={() => setConfirmDelete(item)} className="touch-manipulation rounded-lg border border-destructive/30 p-1.5 text-destructive hover:bg-destructive/10" title="彻底删除">
+                        <button type="button" onClick={() => setConfirmDelete(item)} className={`touch-manipulation rounded-lg border p-1.5 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`} title="彻底删除">
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -190,12 +204,12 @@ export default function AdminRecycleBin() {
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDelete(null)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4 text-center">
-            <AlertTriangle size={40} className="mx-auto text-destructive" />
+            <AlertTriangle size={40} className={`mx-auto ${THEME_TEXT_DANGER}`} />
             <h3 className="font-bold text-foreground"><Tx>确认彻底删除</Tx></h3>
             <p className="text-sm text-muted-foreground"><Tx>此操作不可恢复！</Tx><br />{confirmDelete.type_label}: {confirmDelete.name}</p>
             <div className="flex justify-center gap-3">
               <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
-              <button type="button" onClick={handlePermanentDelete} className="rounded-xl bg-destructive px-4 py-2.5 text-sm font-semibold btn-theme-gradient"><Tx>确认删除</Tx></button>
+              <button type="button" onClick={handlePermanentDelete} className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${THEME_BTN_DANGER_SOLID}`}><Tx>确认删除</Tx></button>
             </div>
           </div>
         </div>

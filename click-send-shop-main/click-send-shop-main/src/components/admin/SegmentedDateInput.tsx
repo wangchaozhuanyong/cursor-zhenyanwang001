@@ -1,5 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { Calendar } from "lucide-react";
+import {
+  SEGMENT_DAY_LEN,
+  SEGMENT_MONTH_LEN,
+  SEGMENT_YEAR_INPUT_CLASS,
+  SEGMENT_YEAR_LEN,
+  applyYearSegmentInput,
+  focusNextAfterMonthComplete,
+  handleYearSegmentPaste,
+  segmentDigits,
+} from "./segmentedDateField";
 
 function parseDateValue(v: string): { y: string; m: string; d: string } {
   if (!v || !/^\d{4}-\d{2}-\d{2}$/.test(v)) {
@@ -94,7 +104,11 @@ export default function SegmentedDateInput({
     setD(p.d);
   };
 
-  const digitOnly = (raw: string, maxLen: number) => raw.replace(/\D/g, "").slice(0, maxLen);
+  const setYearFromInput = (raw: string) => {
+    const v = applyYearSegmentInput(raw, mRef);
+    setY(v);
+    tryEmit(v, m, d);
+  };
 
   return (
     <div className={`relative ${className}`}>
@@ -110,18 +124,16 @@ export default function SegmentedDateInput({
           autoComplete="off"
           placeholder="年"
           disabled={disabled}
-          maxLength={4}
+          maxLength={SEGMENT_YEAR_LEN}
+          size={SEGMENT_YEAR_LEN}
           value={y}
           aria-label="年（4 位）"
-          className="w-[4.25ch] min-w-0 bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
-          onChange={(e) => {
-            const v = digitOnly(e.target.value, 4);
-            setY(v);
-            if (v.length === 4) mRef.current?.focus();
-            tryEmit(v, m, d);
-          }}
+          className={SEGMENT_YEAR_INPUT_CLASS}
+          onChange={(e) => setYearFromInput(e.target.value)}
+          onInput={(e) => setYearFromInput(e.currentTarget.value)}
+          onPaste={(e) => handleYearSegmentPaste(e, mRef, setYearFromInput)}
           onKeyDown={(e) => {
-            if (e.key === "ArrowRight" && y.length === 4) mRef.current?.focus();
+            if (e.key === "ArrowRight" && y.length === SEGMENT_YEAR_LEN) mRef.current?.focus();
           }}
         />
         <span className="text-muted-foreground select-none" aria-hidden>
@@ -134,14 +146,20 @@ export default function SegmentedDateInput({
           autoComplete="off"
           placeholder="月"
           disabled={disabled}
-          maxLength={2}
+          maxLength={SEGMENT_MONTH_LEN}
           value={m}
           aria-label="月（2 位）"
-          className="w-[2.75ch] min-w-0 bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
+          className="w-[2.75ch] min-w-0 tabular-nums bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
           onChange={(e) => {
-            const v = digitOnly(e.target.value, 2);
+            const v = segmentDigits(e.target.value, SEGMENT_MONTH_LEN);
             setM(v);
-            if (v.length === 2) dRef.current?.focus();
+            focusNextAfterMonthComplete(v, dRef.current);
+            tryEmit(y, v, d);
+          }}
+          onInput={(e) => {
+            const v = segmentDigits(e.currentTarget.value, SEGMENT_MONTH_LEN);
+            setM(v);
+            focusNextAfterMonthComplete(v, dRef.current);
             tryEmit(y, v, d);
           }}
           onKeyDown={(e) => {
@@ -163,12 +181,12 @@ export default function SegmentedDateInput({
           autoComplete="off"
           placeholder="日"
           disabled={disabled}
-          maxLength={2}
+          maxLength={SEGMENT_DAY_LEN}
           value={d}
           aria-label="日（2 位）"
-          className="w-[2.75ch] min-w-0 bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
+          className="w-[2.75ch] min-w-0 tabular-nums bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
           onChange={(e) => {
-            const v = digitOnly(e.target.value, 2);
+            const v = segmentDigits(e.target.value, SEGMENT_DAY_LEN);
             setD(v);
             tryEmit(y, m, v);
           }}

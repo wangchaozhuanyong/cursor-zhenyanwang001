@@ -6,6 +6,7 @@ import { adminLogin } from "@/services/admin/accountService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { FormFieldShake } from "@/modules/micro-interactions";
 import { useAdminT } from "@/hooks/useAdminT";
+import AdminSiteLogo from "@/components/admin/AdminSiteLogo";
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -41,8 +42,8 @@ export default function AdminLogin() {
       <div className="w-full max-w-md">
         <div className="rounded-2xl border border-border bg-card p-6 shadow-lg sm:p-8">
           <div className="mb-8 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gold text-2xl font-bold text-primary-foreground shadow-md">
-              A
+            <div className="mx-auto w-fit shadow-md">
+              <AdminSiteLogo size="lg" />
             </div>
             <h1 className="mt-4 font-display text-2xl font-bold text-foreground">{t("login.title")}</h1>
             <p className="mt-1 text-sm text-muted-foreground">{t("login.subtitle")}</p>

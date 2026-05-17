@@ -75,6 +75,7 @@ async function autoCancelOneOrder(orderId, minutes) {
       !order
       || order.status !== ORDER_STATUS.PENDING
       || (order.payment_status || PAYMENT_STATUS.PENDING) !== PAYMENT_STATUS.PENDING
+      || (order.payment_method || 'whatsapp') !== 'online'
       || !isTimedOutByCreatedAt(order, minutes)
     ) {
       await conn.rollback();

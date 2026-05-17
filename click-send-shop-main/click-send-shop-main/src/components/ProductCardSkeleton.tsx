@@ -1,16 +1,21 @@
 ﻿import { Skeleton } from "@/components/ui/skeleton";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { cn } from "@/lib/utils";
 
-export default function ProductCardSkeleton() {
+interface ProductCardSkeletonProps {
+  list?: boolean;
+}
+
+export default function ProductCardSkeleton({ list = false }: ProductCardSkeletonProps) {
   const { themeConfig } = useThemeRuntime();
   const cardCenter = themeConfig.cardTextAlign === "center";
   const cardVariant = themeConfig.productCardVariant ?? "standard";
 
-  if (cardVariant === "compact") {
+  if (list || cardVariant === "compact") {
     return (
       <div className="theme-product-card overflow-hidden theme-rounded p-3">
         <div className="flex gap-3">
-          <Skeleton className="h-24 w-24 rounded-xl" />
+          <Skeleton className={cn("shrink-0 rounded-xl", list ? "h-28 w-28" : "h-24 w-24")} />
           <div className="flex-1 space-y-2">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-3/5" />

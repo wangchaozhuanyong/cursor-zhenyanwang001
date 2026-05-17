@@ -12,6 +12,7 @@ import { fetchHotSearchTerms, fetchSearchSuggestions, trackSearchKeyword } from 
 import type { HotSearchTerm, SearchSuggestion } from "@/types/search";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getProductGridClassName } from "@/utils/productGridClasses";
+import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 
 const HISTORY_KEY = "search_history";
 const MAX_HISTORY = 10;
@@ -188,7 +189,7 @@ export default function Search() {
                       </h3>
                       <button
                         onClick={clearHistory}
-                        className="text-xs text-muted-foreground hover:text-destructive"
+                        className="text-xs text-muted-foreground hover:text-[var(--theme-danger)]"
                       >
                         清空
                       </button>
@@ -241,7 +242,7 @@ export default function Search() {
                   </h3>
                   <button
                     onClick={clearHistory}
-                    className="text-xs text-muted-foreground hover:text-destructive"
+                    className="text-xs text-muted-foreground hover:text-[var(--theme-danger)]"
                   >
                     清空
                   </button>
@@ -256,7 +257,7 @@ export default function Search() {
                       {term}
                       <X
                         size={12}
-                        className="text-muted-foreground hover:text-destructive"
+                        className="text-muted-foreground hover:text-[var(--theme-danger)]"
                         onClick={(e) => {
                           e.stopPropagation();
                           const newList = history.filter((h) => h !== term);
@@ -312,7 +313,7 @@ export default function Search() {
         )}
 
         {error && (
-          <div className="mb-4 rounded-xl bg-destructive/10 p-3 text-center text-sm text-destructive">
+          <div className={`mb-4 p-3 text-center text-sm ${THEME_ALERT_ERROR_SOFT}`}>
             {error}
           </div>
         )}

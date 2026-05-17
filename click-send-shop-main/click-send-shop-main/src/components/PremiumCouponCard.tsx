@@ -5,30 +5,34 @@ import { cn } from "@/lib/utils";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import StoreButton from "@/components/ui/StoreButton";
 import {
-  THEME_COUPON_ICON_ON_DEAL_CLASS,
-  THEME_COUPON_ICON_ON_LIGHT_CLASS,
-  THEME_COUPON_ICON_ON_SURFACE_CLASS,
-} from "@/utils/themeVisuals";
+  formatCouponActionLabel,
+  getCouponCardPresentation,
+  resolveCouponCardLayout,
+  type CouponCardLayout,
+} from "@/utils/couponCardTheme";
 
 interface PremiumCouponCardProps {
   title: string;
-  /** @deprecated ???????????? amount */
+  /** @deprecated 请使用 amount */
   amountPrefix?: string;
   amount: string;
-  /** @deprecated ??? minSpendText */
+  /** @deprecated 请使用 minSpendText */
   conditionText?: string;
   minSpendText?: string;
-  /** ????????????????????? */
   expireText: string;
   scopeText?: string;
-  /** @deprecated ?3 ???????? */
+  /** @deprecated 未使用 */
   badge?: string;
   actionLabel?: string;
   actionLoading?: boolean;
   actionDisabled?: boolean;
   disabled?: boolean;
   selected?: boolean;
+  /** 展示密度；优先于 compact / homeCompact */
+  layout?: CouponCardLayout;
+  /** @deprecated 请使用 layout="compact" */
   compact?: boolean;
+  /** @deprecated 请使用 layout="home" */
   homeCompact?: boolean;
   className?: string;
   onClick?: () => void;
@@ -44,6 +48,14 @@ function VerticalActionLabel({ label }: { label: string }) {
           {ch}
         </span>
       ))}
+    </span>
+  );
+}
+
+function HorizontalActionLabel({ label }: { label: string }) {
+  return (
+    <span className="block max-w-full text-center text-[10px] font-semibold leading-tight sm:text-[11px]">
+      {label}
     </span>
   );
 }
@@ -73,7 +85,7 @@ function CouponInfoRow({
       </span>
       <p
         className={cn(
-          "min-w-0 flex-1 leading-none",
+          "min-w-0 flex-1 leading-snug",
           prominent
             ? cn("line-clamp-2 text-[13px] font-bold", titleClass)
             : cn("truncate text-[11px]", mutedClass),
@@ -92,12 +104,13 @@ export default function PremiumCouponCard({
   conditionText,
   minSpendText: minSpendTextProp,
   expireText,
-  scopeText = "\u9002\u7528\u8303\u56f4\uff1a\u5168\u573a\u5546\u54c1",
+  scopeText = "适用范围：全场商品",
   actionLabel,
   actionLoading = false,
   actionDisabled = false,
   disabled = false,
   selected = false,
+  layout: layoutProp,
   compact = false,
   homeCompact = false,
   className = "",
@@ -105,100 +118,90 @@ export default function PremiumCouponCard({
   onAction,
 }: PremiumCouponCardProps) {
   const { themeConfig } = useThemeRuntime();
-  const couponStyle = themeConfig.couponStyle;
-  const minSpendText = minSpendTextProp ?? conditionText ?? "\u65e0\u95e8\u69db\u53ef\u7528";
+  const layout = resolveCouponCardLayout({ layout: layoutProp, compact, homeCompact });
+  const skin = getCouponCardPresentation(themeConfig.couponStyle, layout);
+
+  const minSpendText = minSpendTextProp ?? conditionText ?? "无门槛可用";
   const leftValue = `${amountPrefix}${amount}`.trim();
-  const expireLabel = expireText.includes("\u6709\u6548\u671f") ? expireText : `\u6709\u6548\u671f\u81f3\uff1a${expireText}`;
+  const expireLabel = expireText.includes("有效期") ? expireText : `有效期至：${expireText}`;
+  const displayActionLabel = actionLabel ? formatCouponActionLabel(actionLabel, layout) : "";
 
-  const styleMap: Record<typeof couponStyle, string> = {
-    ticket: "bg-[var(--theme-surface)] border-dashed",
-    premium:
-      "bg-[linear-gradient(120deg,color-mix(in_srgb,var(--theme-secondary)_22%,white),color-mix(in_srgb,var(--theme-primary)_10%,white))]",
-    deal:
-      "bg-[linear-gradient(120deg,color-mix(in_srgb,var(--theme-danger)_18%,white),color-mix(in_srgb,var(--theme-warning)_16%,white))]",
-    minimal: "bg-[var(--theme-surface)]",
-  };
+  const infoRows: Array<{ icon: LucideIcon; prominent: boolean; text: string }> = [
+    { icon: Tag, prominent: true, text: title },
+    { icon: Wallet, prominent: false, text: minSpendText },
+    { icon: Clock, prominent: false, text: expireLabel },
+  ];
+  if (skin.showScope) {
+    infoRows.push({ icon: Package, prominent: false, text: scopeText });
+  }
 
-  const lightCouponBg = couponStyle === "premium" || couponStyle === "deal";
-  const couponTitleClass = lightCouponBg
-    ? couponStyle === "deal"
-      ? "text-[var(--theme-coupon-card-deal-fg)]"
-      : "text-[var(--theme-coupon-card-premium-fg)]"
-    : "text-[var(--theme-text-on-surface)]";
-  const couponMutedClass = lightCouponBg
-    ? couponStyle === "deal"
-      ? "text-[var(--theme-coupon-card-deal-muted)]"
-      : "text-[var(--theme-coupon-card-premium-muted)]"
-    : "text-[var(--theme-text-muted-on-surface)]";
-  const couponIconClass = lightCouponBg
-    ? couponStyle === "deal"
-      ? THEME_COUPON_ICON_ON_DEAL_CLASS
-      : THEME_COUPON_ICON_ON_LIGHT_CLASS
-    : THEME_COUPON_ICON_ON_SURFACE_CLASS;
-
-  const dense = compact || homeCompact;
-  const amountSize = homeCompact ? "text-xl leading-none sm:text-2xl" : compact ? "text-xl" : "text-2xl";
-
-  const actionButton = actionLabel ? (
+  const actionButton = displayActionLabel ? (
     <StoreButton
-      size={dense ? "sm" : "md"}
-      variant={couponStyle === "deal" ? "danger" : "primary"}
+      size={layout === "default" ? "md" : "sm"}
+      variant={skin.buttonVariant}
       disabled={actionDisabled || actionLoading || disabled}
       onClick={(e) => {
         e.stopPropagation();
         onAction?.();
       }}
-      className="flex w-full min-w-[2.5rem] max-w-[3rem] flex-col items-center justify-center self-center !rounded-lg px-1 py-1.5"
+      className={skin.actionButtonClass}
     >
-      {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <VerticalActionLabel label={actionLabel} />}
+      {actionLoading ? (
+        <Loader2 size={layout === "home" ? 14 : 16} className="animate-spin shrink-0" />
+      ) : skin.actionLayout === "vertical" ? (
+        <VerticalActionLabel label={displayActionLabel} />
+      ) : (
+        <HorizontalActionLabel label={displayActionLabel} />
+      )}
     </StoreButton>
   ) : null;
 
   const wrapper = (
     <div
-      data-theme-coupon-style={couponStyle}
+      data-theme-coupon-style={skin.couponStyle}
+      data-coupon-card-layout={layout}
       className={cn(
-        "relative grid w-full items-center gap-0 overflow-hidden rounded-xl border border-[var(--theme-border)] p-1.5",
-        homeCompact
-          ? "grid-cols-[minmax(4.75rem,24%)_minmax(0,1fr)_minmax(2.75rem,3.25rem)]"
-          : "grid-cols-[minmax(5.5rem,26%)_minmax(0,1fr)_minmax(2.75rem,3.25rem)]",
-        styleMap[couponStyle],
+        "relative grid w-full min-w-0 items-stretch gap-0 overflow-hidden rounded-xl border border-[var(--theme-border)]",
+        skin.cardPadding,
+        skin.gridClass,
+        skin.shellClass,
         disabled && "opacity-60",
         selected && "ring-2 ring-[var(--theme-primary)]",
         className,
       )}
     >
-      <div className="flex flex-col items-center justify-center self-center rounded-lg border border-dashed border-[var(--theme-border)] bg-[var(--theme-bg)] px-1.5 py-1 text-center">
-        <p className={cn(amountSize, "font-black tracking-tight text-[var(--theme-price)]")}>{leftValue}</p>
+      <div className="flex min-h-[3.25rem] flex-col items-center justify-center rounded-lg border border-dashed border-[var(--theme-border)] bg-[var(--theme-bg)] px-1.5 py-1 text-center">
+        <p className={cn(skin.amountSize, "font-black tracking-tight text-[var(--theme-price)]")}>{leftValue}</p>
       </div>
 
       <div
         className={cn(
           "flex min-w-0 flex-col justify-center border-x border-dashed border-[var(--theme-border)]",
-          homeCompact ? "gap-px px-1.5 py-0.5" : "gap-px px-2 py-0.5",
+          skin.infoGap,
+          skin.infoPadding,
         )}
       >
-        <CouponInfoRow icon={Tag} prominent titleClass={couponTitleClass} mutedClass={couponMutedClass} iconClass={couponIconClass}>
-          {title}
-        </CouponInfoRow>
-        <CouponInfoRow icon={Wallet} mutedClass={couponMutedClass} iconClass={couponIconClass}>
-          {minSpendText}
-        </CouponInfoRow>
-        <CouponInfoRow icon={Clock} mutedClass={couponMutedClass} iconClass={couponIconClass}>
-          {expireLabel}
-        </CouponInfoRow>
-        <CouponInfoRow icon={Package} mutedClass={couponMutedClass} iconClass={couponIconClass}>
-          {scopeText}
-        </CouponInfoRow>
+        {infoRows.map((row, index) => (
+          <CouponInfoRow
+            key={`info-${index}`}
+            icon={row.icon}
+            prominent={row.prominent}
+            titleClass={skin.titleClass}
+            mutedClass={skin.mutedClass}
+            iconClass={skin.iconClass}
+          >
+            {row.text}
+          </CouponInfoRow>
+        ))}
       </div>
 
-      {actionButton ? <div className="flex items-center justify-center self-center pl-0.5">{actionButton}</div> : null}
+      {actionButton ? <div className="flex min-w-0 items-stretch">{actionButton}</div> : null}
     </div>
   );
 
   if (!onClick) return wrapper;
   return (
-    <button type="button" onClick={onClick} disabled={disabled} className="w-full text-left">
+    <button type="button" onClick={onClick} disabled={disabled} className="w-full min-w-0 text-left">
       {wrapper}
     </button>
   );

@@ -9,7 +9,7 @@ export function GuestFooterBrandMark({ siteName }: { siteName: string }) {
   return (
     <h2 className="text-center text-[1.875rem] font-bold leading-none tracking-tight text-[var(--theme-text)]">
       {base}
-      <span className="text-red-600">.</span>
+      <span className="text-[var(--theme-price)]">.</span>
     </h2>
   );
 }
@@ -33,7 +33,7 @@ function AccordionItem({
       >
         <span className="text-[15px] font-medium text-[var(--theme-text)]">{title}</span>
         <svg
-          className={`h-4 w-4 shrink-0 text-neutral-400 transition-transform duration-300 ease-out ${isOpen ? "rotate-180" : ""}`}
+          className={`h-4 w-4 shrink-0 text-[var(--theme-text-muted)] transition-transform duration-300 ease-out ${isOpen ? "rotate-180" : ""}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -64,7 +64,7 @@ function FooterNavButton({
     <button
       type="button"
       onClick={() => onNavigate(item.path)}
-      className="block w-full text-left text-[14px] font-medium text-neutral-600 transition-colors hover:text-red-600 active:text-red-600"
+      className="block w-full text-left text-[14px] font-medium text-[var(--theme-text-muted)] transition-colors hover:text-[var(--theme-primary)] active:text-[var(--theme-primary)]"
     >
       {item.label}
     </button>
@@ -171,8 +171,8 @@ export default function GuestMobileFooter({
             <h3 className="mb-5 text-[15px] font-medium text-[var(--theme-text)]">联系我们</h3>
             <div className="flex flex-col">
               {contactPhone && (
-                <div className="grid grid-cols-[minmax(0,auto)_1fr] items-start gap-x-4 gap-y-1 border-b border-neutral-100 py-[0.875rem]">
-                  <span className="pt-0.5 text-[14px] font-medium leading-snug text-neutral-500">
+                <div className="grid grid-cols-[minmax(0,auto)_1fr] items-start gap-x-4 gap-y-1 border-b border-[color-mix(in_srgb,var(--theme-border)_85%,transparent)] py-[0.875rem]">
+                  <span className="pt-0.5 text-[14px] font-medium leading-snug text-[var(--theme-text-muted)]">
                     客服电话
                   </span>
                   <span className="text-right text-[14px] font-semibold tracking-wide text-[var(--theme-text)] break-all">
@@ -181,8 +181,8 @@ export default function GuestMobileFooter({
                 </div>
               )}
               {contactEmail && (
-                <div className="grid grid-cols-[minmax(0,auto)_1fr] items-start gap-x-4 gap-y-1 border-b border-neutral-100 py-[0.875rem]">
-                  <span className="pt-0.5 text-[14px] font-medium leading-snug text-neutral-500">
+                <div className="grid grid-cols-[minmax(0,auto)_1fr] items-start gap-x-4 gap-y-1 border-b border-[color-mix(in_srgb,var(--theme-border)_85%,transparent)] py-[0.875rem]">
+                  <span className="pt-0.5 text-[14px] font-medium leading-snug text-[var(--theme-text-muted)]">
                     电子邮箱
                   </span>
                   <span className="text-right text-[14px] font-semibold tracking-wide text-[var(--theme-text)] break-all">
@@ -191,8 +191,8 @@ export default function GuestMobileFooter({
                 </div>
               )}
               {contactWhatsApp && (
-                <div className="grid grid-cols-[minmax(0,auto)_1fr] items-start gap-x-4 gap-y-1 border-b border-neutral-100 py-[0.875rem]">
-                  <span className="pt-0.5 text-[14px] font-medium leading-snug text-neutral-500">
+                <div className="grid grid-cols-[minmax(0,auto)_1fr] items-start gap-x-4 gap-y-1 border-b border-[color-mix(in_srgb,var(--theme-border)_85%,transparent)] py-[0.875rem]">
+                  <span className="pt-0.5 text-[14px] font-medium leading-snug text-[var(--theme-text-muted)]">
                     客服专线
                   </span>
                   <span className="text-right text-[14px] font-semibold tracking-wide text-[var(--theme-text)] break-all">
@@ -201,8 +201,8 @@ export default function GuestMobileFooter({
                 </div>
               )}
               {businessHours && (
-                <div className="grid grid-cols-[minmax(0,auto)_1fr] items-start gap-x-4 gap-y-1 border-b border-neutral-100 py-[0.875rem]">
-                  <span className="pt-0.5 text-[14px] font-medium leading-snug text-neutral-500">
+                <div className="grid grid-cols-[minmax(0,auto)_1fr] items-start gap-x-4 gap-y-1 border-b border-[color-mix(in_srgb,var(--theme-border)_85%,transparent)] py-[0.875rem]">
+                  <span className="pt-0.5 text-[14px] font-medium leading-snug text-[var(--theme-text-muted)]">
                     服务时间
                   </span>
                   <span className="text-right text-[14px] font-semibold leading-snug text-[var(--theme-text)] break-words">
@@ -212,7 +212,7 @@ export default function GuestMobileFooter({
               )}
               {address && (
                 <div className="grid grid-cols-[minmax(0,auto)_1fr] items-start gap-x-4 gap-y-1 py-[0.875rem]">
-                  <span className="pt-0.5 text-[14px] font-medium leading-snug text-neutral-500">
+                  <span className="pt-0.5 text-[14px] font-medium leading-snug text-[var(--theme-text-muted)]">
                     公司地址
                   </span>
                   <span className="text-right text-[14px] font-medium leading-snug text-[var(--theme-text)] break-words">

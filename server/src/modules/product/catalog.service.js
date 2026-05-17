@@ -317,18 +317,24 @@ async function getHomeProducts() {
 }
 
 async function loadHomeProducts() {
+  const homeModuleSettings = require('../admin/homeModuleSettings');
+  const moduleSettings = await homeModuleSettings.getHomeModuleSettings();
+  const hotBatchSize = Number(moduleSettings.hotBatchSize) || 4;
+  const recBatchSize = Number(moduleSettings.recBatchSize) || 4;
+
   const siteSettings = await repo.selectSiteSettingValues([
     'newArrivalDisplayCount',
     'newArrivalOnlyInStock',
   ]);
-  const limit = 8;
-  const newArrivalLimit = Math.min(16, Math.max(1, Number(siteSettings.newArrivalDisplayCount) || limit));
+  const hotLimit = Math.min(24, Math.max(8, hotBatchSize + 4));
+  const recLimit = Math.min(32, Math.max(8, recBatchSize + hotBatchSize + 8));
+  const newArrivalLimit = Math.min(16, Math.max(1, Number(siteSettings.newArrivalDisplayCount) || 8));
   const newArrivalOnlyInStock = String(siteSettings.newArrivalOnlyInStock ?? '1') !== '0';
   const [hotManual, newArrivals, recommendedManual, fallbackBySales, fallbackByRecommend, fallbackByNew] =
     await Promise.all([
-      repo.selectActiveProductsByFlag('is_hot', limit),
+      repo.selectActiveProductsByFlag('is_hot', hotLimit),
       repo.selectActiveProductsByFlag('is_new', newArrivalLimit),
-      repo.selectActiveProductsByFlag('is_recommended', limit),
+      repo.selectActiveProductsByFlag('is_recommended', recLimit),
       repo.selectActiveProductsFallback('sales_count DESC, sort_order ASC, created_at DESC', 64),
       repo.selectActiveProductsFallback('is_recommended DESC, sales_count DESC, sort_order ASC, created_at DESC', 64),
       repo.selectActiveProductsRecent(14, 64, newArrivalOnlyInStock),
@@ -352,11 +358,11 @@ async function loadHomeProducts() {
     return out;
   };
 
-  const hot = pickUnique(hotManual, fallbackBySales, limit);
+  const hot = pickUnique(hotManual, fallbackBySales, hotBatchSize);
   const hotIdSet = new Set(hot.map((p) => p.id));
   const newArrivalsUnique = pickUnique(newArrivals, fallbackByNew, newArrivalLimit, hotIdSet);
   const homeUsedIdSet = new Set([...hot, ...newArrivalsUnique].map((p) => p.id));
-  const recommended = pickUnique(recommendedManual, fallbackByRecommend, limit, homeUsedIdSet);
+  const recommended = pickUnique(recommendedManual, fallbackByRecommend, recBatchSize, homeUsedIdSet);
 
   const allRows = [...hot, ...newArrivalsUnique, ...recommended];
   const allIds = allRows.map((r) => r.id);

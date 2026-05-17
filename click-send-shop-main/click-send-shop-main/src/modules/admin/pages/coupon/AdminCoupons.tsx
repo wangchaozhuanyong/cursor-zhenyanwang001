@@ -14,16 +14,24 @@ import { labelCouponStatus, labelCouponType } from "@/utils/adminDisplayLabels";
 import { formatAdminDateRange } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
 import { AnimatedConfirmDialog, AnimatedTable } from "@/modules/micro-interactions";
+import {
+  THEME_BADGE_DANGER,
+  THEME_BADGE_MUTED,
+  THEME_BADGE_PRICE,
+  THEME_BADGE_PRIMARY,
+  THEME_BADGE_SUCCESS,
+  THEME_OUTLINE_DANGER,
+} from "@/utils/themeVisuals";
 
 const typeLabels: Record<string, { label: string; color: string }> = {
-  fixed: { label: "满减券", color: "bg-red-500/10 text-red-500" },
-  percentage: { label: "折扣券", color: "bg-blue-500/10 text-blue-500" },
-  shipping: { label: "运费券", color: "bg-cyan-500/10 text-cyan-500" },
+  fixed: { label: "满减券", color: THEME_BADGE_DANGER },
+  percentage: { label: "折扣券", color: THEME_BADGE_PRIMARY },
+  shipping: { label: "运费券", color: THEME_BADGE_PRICE },
 };
 
 const statusLabels: Record<string, { label: string; color: string }> = {
-  available: { label: "启用", color: "bg-green-500/10 text-green-500" },
-  expired: { label: "已过期", color: "bg-muted text-muted-foreground" },
+  available: { label: "启用", color: THEME_BADGE_SUCCESS },
+  expired: { label: "已过期", color: THEME_BADGE_MUTED },
 };
 
 export default function AdminCoupons() {
@@ -123,7 +131,7 @@ export default function AdminCoupons() {
               <div className="flex gap-2">
                 <button type="button" onClick={() => navigate(`/admin/marketing/coupons/${c.id}`)} className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground" title="编辑"><Pencil size={13} /></button>
                 <PermissionGate permission="coupon.manage"><button type="button" onClick={() => setIssueCouponId(c.id)} className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground" title="按标签发券">发券</button></PermissionGate>
-                <PermissionGate permission="coupon.manage"><button type="button" onClick={() => setDeleteId(c.id)} className="rounded-md border border-destructive/40 p-1.5 text-destructive hover:bg-destructive/10" title="删除"><Trash2 size={13} /></button></PermissionGate>
+                <PermissionGate permission="coupon.manage"><button type="button" onClick={() => setDeleteId(c.id)} className={`rounded-md p-1.5 ${THEME_OUTLINE_DANGER}`} title="删除"><Trash2 size={13} /></button></PermissionGate>
               </div>
             </td>
           </>

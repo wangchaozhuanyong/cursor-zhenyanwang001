@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
+import { formatDateTime } from "@/utils/formatDateTime";
 import { X, Star, Package, ShoppingBag } from "lucide-react";
 import type { ReviewDetailPayload, ComplaintStatus } from "@/services/admin/reviewService";
 import { Tx } from "@/components/admin/AdminText";
+import { THEME_BADGE_SUCCESS, THEME_STAR_FILLED } from "@/utils/themeVisuals";
 
 const COMPLAINT_LABELS: Record<ComplaintStatus, string> = {
   none: "—",
@@ -59,14 +61,14 @@ export default function AdminReviewDetailDialog({ detail, loading, onClose, prev
                   <StarRow rating={r.rating} />
                   <span className="text-xs text-muted-foreground">{STATUS_LABELS[r.status] || r.status}</span>
                   {r.is_verified_purchase && (
-                    <span className="rounded bg-green-500/10 px-2 py-0.5 text-[10px] text-green-600">已购评价</span>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${THEME_BADGE_SUCCESS}`}>已购评价</span>
                   )}
                   {r.is_featured && (
                     <span className="rounded bg-gold/10 px-2 py-0.5 text-[10px] text-theme-price">精选</span>
                   )}
                 </div>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  {r.created_at ? new Date(r.created_at).toLocaleString("zh-CN") : ""}
+                  {r.created_at ? formatDateTime(r.created_at) : ""}
                 </p>
               </div>
             </section>
@@ -115,7 +117,7 @@ export default function AdminReviewDetailDialog({ detail, loading, onClose, prev
                 <p className="mt-1 text-sm text-foreground">{r.admin_reply}</p>
                 {r.admin_reply_at && (
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    {new Date(r.admin_reply_at).toLocaleString("zh-CN")}
+                    {formatDateTime(r.admin_reply_at)}
                   </p>
                 )}
               </section>
@@ -140,7 +142,7 @@ export default function AdminReviewDetailDialog({ detail, loading, onClose, prev
                       <div className="flex justify-between gap-2">
                         <span className="font-medium text-foreground">{log.summary || log.action_type}</span>
                         <span className="shrink-0 text-muted-foreground">
-                          {log.created_at ? new Date(log.created_at).toLocaleString("zh-CN") : ""}
+                          {log.created_at ? formatDateTime(log.created_at) : ""}
                         </span>
                       </div>
                       <p className="mt-0.5 text-muted-foreground">{log.operator_name || log.operator_id}</p>
@@ -160,7 +162,7 @@ function StarRow({ rating }: { rating: number }) {
   return (
     <div className="flex gap-0.5">
       {Array.from({ length: 5 }, (_, i) => (
-        <Star key={i} size={12} className={i < rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"} />
+        <Star key={i} size={12} className={i < rating ? THEME_STAR_FILLED : "text-muted-foreground/30"} />
       ))}
     </div>
   );

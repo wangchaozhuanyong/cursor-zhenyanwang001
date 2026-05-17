@@ -120,8 +120,8 @@ export default function MemberHome() {
       limit: 24,
     }).filter((p) => !excludedIds.has(p.id)).slice(0, 16);
   }, [recommendedProducts, newProducts, hotProducts, hotList, historyProducts, favoriteIds, favoriteProducts, cartItems, orders]);
-  const hotBatches = useMemo(() => toBatches(hotList, HOT_BATCH_SIZE), [hotList]);
-  const recBatches = useMemo(() => toBatches(recList, REC_BATCH_SIZE), [recList]);
+  const hotBatches = useMemo(() => toBatches(hotList, HOT_BATCH_SIZE), [hotList, HOT_BATCH_SIZE]);
+  const recBatches = useMemo(() => toBatches(recList, REC_BATCH_SIZE), [recList, REC_BATCH_SIZE]);
   const hot = hotBatches.length > 0 ? hotBatches[hotBatchIndex % hotBatches.length] : [];
   const rec = recBatches.length > 0 ? recBatches[recBatchIndex % recBatches.length] : [];
 
@@ -129,6 +129,10 @@ export default function MemberHome() {
     <div className={`store-bottom-safe min-h-screen text-[var(--theme-text)] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_90%,black)]" : "bg-[var(--theme-bg)]"}`} data-theme-home-layout={themeConfig.homeLayout}>
       <StoreTabHeader searchMode="navigate" />
       <main className={HOME_PAGE_MAIN_CLASS}>
+        {(isHomeModuleEnabled(homeModules, "banner", "member") ||
+          isHomeModuleEnabled(homeModules, "trust_bar", "member") ||
+          isHomeModuleEnabled(homeModules, "nav_grid", "member")) ? (
+          <div className={HOME_HERO_STACK_CLASS}>
         {isHomeModuleEnabled(homeModules, "banner", "member") ? (
           <AnimatedSection>
             <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
@@ -145,6 +149,8 @@ export default function MemberHome() {
           <AnimatedSection delay={0.08} className="-mx-4">
             <HomeOpsBlocks />
           </AnimatedSection>
+        ) : null}
+          </div>
         ) : null}
         {isHomeModuleEnabled(homeModules, "member_coupons", "member") ? (
         <AnimatedSection delay={0.1}>
@@ -169,14 +175,14 @@ export default function MemberHome() {
                   className="snap-center w-[min(88vw,360px)] shrink-0 md:w-full"
                 >
                   <PremiumCouponCard
-                    homeCompact
+                    layout="home"
                     title={display.title}
                     amountPrefix={display.amountPrefix}
                     amount={display.amount}
                     minSpendText={display.minSpendText}
                     expireText={display.expireText}
                     scopeText={display.scopeText}
-                    actionLabel={isClaimed ? "去使用" : "立即领取"}
+                    actionLabel={isClaimed ? "使用" : "领取"}
                     actionLoading={!isClaimed && claimingCouponId === c.id}
                     actionDisabled={!isClaimed && claimingCouponId === c.id}
                     onAction={() => {
@@ -222,29 +228,19 @@ export default function MemberHome() {
         </AnimatedSection>
         ) : null}
         {isHomeModuleEnabled(homeModules, "promotion_banner", "member") ? (
-        <AnimatedSection delay={0.125}>
-          <MarketingPromotionBannerSection />
-        </AnimatedSection>
+          <MarketingPromotionBannerSection delay={0.125} />
         ) : null}
         {isHomeModuleEnabled(homeModules, "flash_sale_section", "member") ? (
-        <AnimatedSection delay={0.13}>
-          <FlashSaleSection />
-        </AnimatedSection>
+          <FlashSaleSection delay={0.13} />
         ) : null}
         {isHomeModuleEnabled(homeModules, "full_reduction_notice", "member") ? (
-        <AnimatedSection delay={0.131}>
-          <MarketingFullReductionSection />
-        </AnimatedSection>
+          <MarketingFullReductionSection delay={0.131} />
         ) : null}
         {isHomeModuleEnabled(homeModules, "coupon_center", "member") ? (
-        <AnimatedSection delay={0.132}>
-          <MarketingCouponCenterSection />
-        </AnimatedSection>
+          <MarketingCouponCenterSection delay={0.132} />
         ) : null}
         {isHomeModuleEnabled(homeModules, "new_user_gift", "member") ? (
-        <AnimatedSection delay={0.133}>
-          <MarketingNewUserGiftSection />
-        </AnimatedSection>
+          <MarketingNewUserGiftSection delay={0.133} />
         ) : null}
         {isHomeModuleEnabled(homeModules, "hot_sales", "member") ? (
         <AnimatedSection delay={0.14}>

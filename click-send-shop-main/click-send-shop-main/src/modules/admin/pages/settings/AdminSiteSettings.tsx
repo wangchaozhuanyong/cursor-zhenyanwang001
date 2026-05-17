@@ -17,6 +17,7 @@ import type { SiteSettings } from "@/types/admin";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { AdminSiteSettingsSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_SITE_ASSET } from "@/constants/imageUploadHints";
+import { THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 
 const EMPTY: SiteSettings = {
   siteName: "",
@@ -52,20 +53,13 @@ const EMPTY: SiteSettings = {
   paymentNotice: "",
   autoConfirmReceiveEnabled: "0",
   autoConfirmReceiveDays: "7",
+  orderPaymentTimeoutEnabled: "0",
+  orderPaymentTimeoutMinutes: "30",
   sstEnabled: "0",
   sstRatePercent: "6",
   sstLabel: "SST",
   sstCustomerNote: "商品价格已含 SST，运费不计税。",
   footerNav: "",
-  newArrivalHeroImage: "",
-  newArrivalHeroTitle: "",
-  newArrivalHeroSubtitle: "",
-  newArrivalHeroCtaText: "",
-  newArrivalSectionTitle: "",
-  newArrivalSectionSubtitle: "",
-  newArrivalDisplayCount: "8",
-  newArrivalShowPrice: "1",
-  newArrivalOnlyInStock: "1",
   ga4Enabled: "0",
   ga4MeasurementId: "",
   metaPixelEnabled: "0",
@@ -127,39 +121,6 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    title: "首页新品运营主视觉",
-    category: "brand",
-    desc: "用于首页「新品上市」运营氛围层；模块整体为 1:1 方形容器，主视觉与商品轮播图均为正方形展示。",
-    fields: [
-      { key: "newArrivalHeroImage", label: "主视觉图片（推荐 1200×1200，1:1）", type: "image", hint: "铺满新品模块正方形容器（object-cover），与右侧商品 1:1 轮播图分层展示" },
-      { key: "newArrivalHeroTitle", label: "主视觉标题", placeholder: "新品限时上新，错过再等一季" },
-      { key: "newArrivalHeroSubtitle", label: "主视觉副标题", placeholder: "每周精选，支持快速发货" },
-      { key: "newArrivalHeroCtaText", label: "按钮文案", placeholder: "前往新品上市" },
-      { key: "newArrivalSectionTitle", label: "新版模块标题", placeholder: "新品上市", hint: "横滑商品区左上角标题；为空时使用默认标题" },
-      { key: "newArrivalSectionSubtitle", label: "新版模块副标题", placeholder: "最近上架好物，第一时间发现" },
-      { key: "newArrivalDisplayCount", label: "新版展示数量", placeholder: "8", hint: "建议 4-12，服务端默认最多 16" },
-      {
-        key: "newArrivalShowPrice",
-        label: "新版显示价格",
-        type: "select",
-        options: [
-          { value: "1", label: "显示" },
-          { value: "0", label: "隐藏" },
-        ],
-      },
-      {
-        key: "newArrivalOnlyInStock",
-        label: "新品补位仅库存",
-        type: "select",
-        options: [
-          { value: "1", label: "是" },
-          { value: "0", label: "否" },
-        ],
-        hint: "当 is_new 商品不足时，是否只用有库存的最近上架商品补足首页新品位",
-      },
-    ],
-  },
-  {
     title: "联系方式",
     category: "contact",
     desc: "底部、关于我们、订单页都会展示",
@@ -214,6 +175,22 @@ const SECTIONS: Section[] = [
         label: "自动确认天数",
         placeholder: "7",
         hint: "填写 1–365 的整数；保存时会自动限制在范围内。仅对已有「发货时间」的订单生效。",
+      },
+      {
+        key: "orderPaymentTimeoutEnabled",
+        label: "未支付订单自动取消",
+        type: "select",
+        options: [
+          { value: "0", label: "关闭" },
+          { value: "1", label: "开启" },
+        ],
+        hint: "开启后，仅「在线支付」且仍为待付款的订单，在超过下方分钟数未支付时将自动取消并释放库存/优惠。服务端约每 5 分钟扫描一次。",
+      },
+      {
+        key: "orderPaymentTimeoutMinutes",
+        label: "未支付超时（分钟）",
+        placeholder: "30",
+        hint: "填写 1–43200（30 天）的整数；前台结算成功页与订单详情会显示倒计时。",
       },
       {
         key: "sstEnabled",
@@ -381,6 +358,15 @@ export default function AdminSiteSettings() {
       toast.error("自动确认天数须为 1–365 之间的整数");
       return;
     }
+    const payTimeoutRaw = (settings.orderPaymentTimeoutMinutes ?? "30").trim();
+    const payTimeoutNum = parseInt(payTimeoutRaw, 10);
+    if (
+      settings.orderPaymentTimeoutEnabled === "1"
+      && (!Number.isFinite(payTimeoutNum) || payTimeoutNum < 1 || payTimeoutNum > 43200)
+    ) {
+      toast.error("未支付超时分钟数须为 1–43200 之间的整数");
+      return;
+    }
     const sstRateRaw = (settings.sstRatePercent ?? "0").trim();
     const sstRateNum = parseFloat(sstRateRaw);
     if (settings.sstEnabled === "1" && (!Number.isFinite(sstRateNum) || sstRateNum < 0 || sstRateNum > 100)) {
@@ -390,6 +376,10 @@ export default function AdminSiteSettings() {
     const toSave = {
       ...settings,
       autoConfirmReceiveDays: String(daysNum),
+      orderPaymentTimeoutMinutes:
+        settings.orderPaymentTimeoutEnabled === "1" && Number.isFinite(payTimeoutNum)
+          ? String(Math.min(43200, Math.max(1, payTimeoutNum)))
+          : (settings.orderPaymentTimeoutMinutes ?? "30"),
       sstRatePercent: Number.isFinite(sstRateNum) ? String(Math.min(100, Math.max(0, sstRateNum))) : "0",
       footerPolicyUrl: "",
       footerTermsUrl: "",
@@ -616,7 +606,7 @@ export default function AdminSiteSettings() {
                             <button
                               type="button"
                               onClick={() => setField(field.key, "")}
-                              className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-destructive"
+                              className={`flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground ${THEME_HOVER_TEXT_DANGER}`}
                             >
                               <X size={12} /><Tx> 清除
                             </Tx></button>

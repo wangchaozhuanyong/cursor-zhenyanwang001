@@ -36,7 +36,7 @@ export function CheckoutShippingSection({
         <p className="mt-3 text-xs text-muted-foreground">正在同步服务端运费规则...</p>
       )}
       {(shippingRulesError || shippingQuoteError) && (
-        <p className="mt-3 text-xs text-destructive">
+        <p className="mt-3 text-xs text-[var(--theme-danger)]">
           运费规则获取失败：{shippingQuoteError || shippingRulesError}
         </p>
       )}

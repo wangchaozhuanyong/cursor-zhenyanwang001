@@ -67,7 +67,7 @@ function ShippingOptionButton({
       </div>
       <div className="shrink-0 text-right">
         {fee === 0 ? (
-          <span className="text-sm font-bold text-emerald-600">包邮</span>
+          <span className="text-sm font-bold text-[var(--theme-success)]">包邮</span>
         ) : (
           <span className="text-sm font-bold text-foreground">RM {fee}</span>
         )}
@@ -99,7 +99,7 @@ function ShippingSummary({
       </div>
       <div className="shrink-0 text-right">
         {fee === 0 ? (
-          <span className="text-sm font-bold text-emerald-600">包邮</span>
+          <span className="text-sm font-bold text-[var(--theme-success)]">包邮</span>
         ) : (
           <span className="text-sm font-bold text-foreground">RM {fee}</span>
         )}

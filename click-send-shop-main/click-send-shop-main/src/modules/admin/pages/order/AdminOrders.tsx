@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo } from "react";
 import { Download, Package, Truck } from "lucide-react";
+import { formatDateTime } from "@/utils/formatDateTime";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import { useNavigate } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
@@ -21,6 +22,8 @@ import {
   getPaymentStatusBadgeClass,
   getPaymentStatusLabel,
 } from "@/constants/statusDictionary";
+import { THEME_OUTLINE_DANGER, THEME_OUTLINE_PRIMARY, THEME_OUTLINE_SUCCESS } from "@/utils/themeVisuals";
+import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 
 export default function AdminOrders() {
   const navigate = useNavigate();
@@ -115,7 +118,7 @@ export default function AdminOrders() {
                 e.stopPropagation();
                 navigate(`/admin/orders/${o.id}?action=mark-paid`);
               }}
-              className="rounded-md border border-emerald-500/40 px-2 py-1 text-[11px] text-emerald-600"
+              className={`rounded-md px-2 py-1 text-[11px] ${THEME_OUTLINE_SUCCESS}`}
             >
               确认收款
             </button>
@@ -127,7 +130,7 @@ export default function AdminOrders() {
                 e.stopPropagation();
                 navigate(`/admin/orders/${o.id}?action=cancel`);
               }}
-              className="rounded-md border border-red-500/40 px-2 py-1 text-[11px] text-red-600"
+              className={`rounded-md px-2 py-1 text-[11px] ${THEME_OUTLINE_DANGER}`}
             >
               取消订单
             </button>
@@ -145,7 +148,7 @@ export default function AdminOrders() {
               e.stopPropagation();
               navigate(`/admin/orders/${o.id}?action=ship`);
             }}
-            className="inline-flex items-center gap-1 rounded-md border border-blue-500/40 px-2 py-1 text-[11px] text-blue-600"
+            className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] ${THEME_OUTLINE_PRIMARY}`}
           >
             <Truck size={12} /> 发货
           </button>
@@ -187,8 +190,8 @@ export default function AdminOrders() {
       <div className="space-y-2">
         <div className="grid gap-2 md:grid-cols-5">
           <SearchBar placeholder="搜索订单号/联系人/电话" value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
-          <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3" />
-          <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3" />
+          <SegmentedDateInput value={dateFrom} onChange={(v) => { setDateFrom(v); setPage(1); }} />
+          <SegmentedDateInput value={dateTo} onChange={(v) => { setDateTo(v); setPage(1); }} />
           <input value={amountMin} onChange={(e) => { setAmountMin(e.target.value); setPage(1); }} placeholder="最低金额" className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-sm" />
           <input value={amountMax} onChange={(e) => { setAmountMax(e.target.value); setPage(1); }} placeholder="最高金额" className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-sm" />
         </div>
@@ -232,7 +235,7 @@ export default function AdminOrders() {
             <td className="px-4 py-3 font-semibold text-foreground">RM {parseFloat(String(o.total_amount ?? 0)).toFixed(2)}</td>
             <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${getOrderStatusBadgeClass(o.status)}`}>{getOrderStatusLabel(o.status)}</span></td>
             <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${getPaymentStatusBadgeClass(o.payment_status || PAYMENT_STATUS.PENDING)}`}>{getPaymentStatusLabel(o.payment_status || PAYMENT_STATUS.PENDING)}</span></td>
-            <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString('zh-CN')}</td>
+            <td className="px-4 py-3 text-xs text-muted-foreground">{formatDateTime(o.created_at)}</td>
             <td className="px-4 py-3">{renderActions(o)}</td>
             <td className="px-4 py-3"><button type="button" onClick={() => navigate(`/admin/orders/${o.id}`)} className="text-xs text-[var(--theme-price)] hover:underline"><Tx>详情</Tx></button></td>
           </>

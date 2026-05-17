@@ -1,5 +1,6 @@
 ﻿import { getCartLinePrice } from "@/stores/useCartStore";
 import type { Order } from "@/types/order";
+import { formatDateTime } from "@/utils/formatDateTime";
 import type { PaymentMethod } from "@/components/PaymentMethodPicker";
 import { appendOrderDiscountTextLines } from "@/utils/orderDiscount";
 
@@ -44,7 +45,7 @@ export function generateOrderText(order: Order) {
     `地址：${order.address}`,
     `备注：${order.note || "无"}`,
     `------------------------`,
-    `下单时间：${new Date(order.created_at).toLocaleString("zh-CN")}`,
+    `下单时间：${formatDateTime(order.created_at)}`,
   );
   return lines.join("\n");
 }

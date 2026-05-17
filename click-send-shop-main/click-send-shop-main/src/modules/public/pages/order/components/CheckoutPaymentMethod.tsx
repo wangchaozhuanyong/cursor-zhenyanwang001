@@ -13,6 +13,7 @@ const METHOD_LABELS: Record<PaymentMethod, string> = {
 interface CheckoutPaymentMethodProps {
   paymentMethod: PaymentMethod;
   onPaymentMethodChange: (value: PaymentMethod) => void;
+  paymentTimeoutHint?: string | null;
   paymentConfigLoaded: boolean;
   paymentChannels: PublicPaymentChannel[];
   stripeReady: boolean;
@@ -57,7 +58,7 @@ export function CheckoutPaymentMethod({
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground">2. 支付方式</h3>
         <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-          <ShieldCheck size={12} className="text-emerald-600" /> 安全支付
+          <ShieldCheck size={12} className="text-[var(--theme-success)]" /> 安全支付
         </span>
       </div>
 
@@ -83,6 +84,9 @@ export function CheckoutPaymentMethod({
       ) : (
         picker
       )}
+      {paymentTimeoutHint && paymentMethod === "online" ? (
+        <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{paymentTimeoutHint}</p>
+      ) : null}
     </div>
   );
 }

@@ -145,6 +145,14 @@ export const DEFAULT_HOME_MODULE_SETTINGS: HomeModuleSettings = {
   guestRecommendMax: 8,
 };
 
+function clampHomeBatchSize(value: unknown, fallback: number) {
+  return typeof value === "number" && value >= 2 ? Math.min(12, Math.trunc(value)) : fallback;
+}
+
+function clampGuestRecommendMax(value: unknown, fallback: number) {
+  return typeof value === "number" && value >= 4 ? Math.min(24, Math.trunc(value)) : fallback;
+}
+
 export function mergeHomeModuleSettings(
   partial?: Partial<HomeModuleSettings> | null,
 ): HomeModuleSettings {
@@ -157,18 +165,18 @@ export function mergeHomeModuleSettings(
   }
   return {
     modules,
-    hotBatchSize:
-      typeof partial?.hotBatchSize === "number" && partial.hotBatchSize >= 2
-        ? Math.min(12, Math.trunc(partial.hotBatchSize))
-        : DEFAULT_HOME_MODULE_SETTINGS.hotBatchSize,
-    recBatchSize:
-      typeof partial?.recBatchSize === "number" && partial.recBatchSize >= 2
-        ? Math.min(12, Math.trunc(partial.recBatchSize))
-        : DEFAULT_HOME_MODULE_SETTINGS.recBatchSize,
-    guestRecommendMax:
-      typeof partial?.guestRecommendMax === "number" && partial.guestRecommendMax >= 4
-        ? Math.min(24, Math.trunc(partial.guestRecommendMax))
-        : DEFAULT_HOME_MODULE_SETTINGS.guestRecommendMax,
+    hotBatchSize: clampHomeBatchSize(
+      partial?.hotBatchSize ?? (partial as { hot_batch_size?: number })?.hot_batch_size,
+      DEFAULT_HOME_MODULE_SETTINGS.hotBatchSize,
+    ),
+    recBatchSize: clampHomeBatchSize(
+      partial?.recBatchSize ?? (partial as { rec_batch_size?: number })?.rec_batch_size,
+      DEFAULT_HOME_MODULE_SETTINGS.recBatchSize,
+    ),
+    guestRecommendMax: clampGuestRecommendMax(
+      partial?.guestRecommendMax ?? (partial as { guest_recommend_max?: number })?.guest_recommend_max,
+      DEFAULT_HOME_MODULE_SETTINGS.guestRecommendMax,
+    ),
   };
 }
 

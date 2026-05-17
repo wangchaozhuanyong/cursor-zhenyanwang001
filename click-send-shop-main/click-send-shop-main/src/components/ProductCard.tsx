@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 interface Props {
   product: Product;
   index?: number;
+  /** 分类页列表：左图右文单行，不受主题「紧凑横版」影响 */
+  displayMode?: "theme" | "list";
 }
 
 /** 商品图上的售罄层：保留封面可见，文案清晰可读 */
@@ -37,11 +39,12 @@ function ProductSoldOutOverlay({ compact = false }: { compact?: boolean }) {
   );
 }
 
-export default function ProductCard({ product, index = 0 }: Props) {
+export default function ProductCard({ product, index = 0, displayMode = "theme" }: Props) {
   const navigate = useNavigate();
   const { themeConfig } = useThemeRuntime();
-  const cardCenter = themeConfig.cardTextAlign === "center";
+  const cardCenter = themeConfig.cardTextAlign === "center" && displayMode !== "list";
   const cardVariant = themeConfig.productCardVariant ?? "standard";
+  const isListRow = displayMode === "list";
   const defaultVariant = product.default_variant ?? (product.variants?.length === 1 ? product.variants[0] : null);
   const displayStock = Number(defaultVariant?.stock ?? product.stock ?? 0);
   const soldOut = displayStock <= 0;
@@ -62,26 +65,29 @@ export default function ProductCard({ product, index = 0 }: Props) {
     </h3>
   );
 
-  const isCompact = cardVariant === "compact";
+  const isThemeCompact = !isListRow && cardVariant === "compact";
+  const isHorizontal = isListRow || isThemeCompact;
   const metaRow = (
     <div
       className={cn(
         "flex w-full gap-2",
-        isCompact ? "flex-col items-start gap-1" : "items-end justify-between",
-        cardCenter && !isCompact ? "justify-center" : "",
+        isHorizontal ? "flex-col items-start gap-1" : "items-end justify-between",
+        cardCenter && !isHorizontal ? "justify-center" : "",
       )}
     >
       <StorePrice
         price={product.price}
-        originalPrice={cardVariant === "deal" || cardVariant === "premium" ? product.original_price : undefined}
-        size={isCompact ? "sm" : cardVariant === "deal" ? "lg" : cardVariant === "premium" ? "lg" : "md"}
+        originalPrice={
+          !isListRow && (cardVariant === "deal" || cardVariant === "premium") ? product.original_price : undefined
+        }
+        size={isHorizontal ? "sm" : cardVariant === "deal" ? "lg" : cardVariant === "premium" ? "lg" : "md"}
         className="min-w-0 max-w-full"
       />
-      {isCompact && soldOut ? null : (
+      {isHorizontal && soldOut ? null : (
         <span
           className={cn(
             "text-[11px] tabular-nums text-[var(--theme-text-muted)]",
-            isCompact ? "leading-tight" : "shrink-0",
+            isHorizontal ? "leading-tight" : "shrink-0",
           )}
         >
           {soldOut ? "已售罄" : productSalesLabel(salesCount)}
@@ -90,15 +96,20 @@ export default function ProductCard({ product, index = 0 }: Props) {
     </div>
   );
 
-  if (isCompact) {
+  if (isHorizontal) {
     return (
       <Reveal
         index={index}
         className="theme-product-card group cursor-pointer overflow-hidden theme-rounded"
         onClick={() => openDetail("categories")}
       >
-        <div className="flex gap-2.5 p-2.5 sm:gap-3 sm:p-3">
-          <div className="relative h-[5.25rem] w-[5.25rem] shrink-0 overflow-hidden rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] sm:h-24 sm:w-24">
+        <div className={cn("flex", isListRow ? "gap-3 p-3" : "gap-2.5 p-2.5 sm:gap-3 sm:p-3")}>
+          <div
+            className={cn(
+              "relative shrink-0 overflow-hidden rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)]",
+              isListRow ? "h-28 w-28 sm:h-[7.25rem] sm:w-[7.25rem]" : "h-[5.25rem] w-[5.25rem] sm:h-24 sm:w-24",
+            )}
+          >
             <ProductCoverImage
               url={product.cover_image}
               alt={product.name}
@@ -107,12 +118,27 @@ export default function ProductCard({ product, index = 0 }: Props) {
                 "h-full w-full [object-fit:var(--theme-image-fit,cover)]",
                 soldOut && "grayscale-[35%] brightness-[0.88] saturate-[0.85]",
               )}
-              sizes="(max-width: 768px) 28vw, 200px"
+              sizes={isListRow ? "(max-width: 768px) 112px, 160px" : "(max-width: 768px) 28vw, 200px"}
             />
             {soldOut ? <ProductSoldOutOverlay compact /> : null}
           </div>
-          <div className="flex min-w-0 flex-1 flex-col justify-between gap-1.5 py-0.5 sm:gap-2">
-            {nameRow}
+          <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 py-0.5">
+            <div className="space-y-1.5">
+              {nameRow}
+              {isListRow &&
+              (product.active_activity || product.is_hot || product.is_new || (product.tags?.length ?? 0) > 0) ? (
+                <div className="flex flex-wrap gap-1">
+                  {product.active_activity ? (
+                    <StoreBadge type="sale">
+                      {product.active_activity.type === "flash_sale" ? "秒杀" : "满减"}
+                    </StoreBadge>
+                  ) : null}
+                  {product.is_hot ? <StoreBadge type="hot">热销</StoreBadge> : null}
+                  {product.is_new ? <StoreBadge type="new">新品</StoreBadge> : null}
+                  <ProductTagList tags={product.tags} max={2} />
+                </div>
+              ) : null}
+            </div>
             <div className="mt-auto w-full">{metaRow}</div>
           </div>
         </div>

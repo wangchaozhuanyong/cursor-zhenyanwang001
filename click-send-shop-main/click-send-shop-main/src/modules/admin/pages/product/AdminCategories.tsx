@@ -22,6 +22,13 @@ import * as uploadService from "@/services/uploadService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import type { Category } from "@/types/category";
 import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
+import {
+  THEME_BADGE_MUTED,
+  THEME_BADGE_SUCCESS,
+  THEME_HOVER_BG_DANGER,
+  THEME_HOVER_TEXT_DANGER,
+  THEME_TEXT_SUCCESS_SOFT,
+} from "@/utils/themeVisuals";
 
 type CategoryForm = {
   name: string;
@@ -481,7 +488,7 @@ export default function AdminCategories() {
                   type="button"
                   onClick={() => handleVisibleToggle(cat)}
                   className={`flex w-fit items-center gap-1 rounded-full px-2.5 py-1 text-xs ${
-                    cat.is_visible === false ? "bg-secondary text-muted-foreground" : "bg-emerald-500/10 text-emerald-600"
+                    cat.is_visible === false ? THEME_BADGE_MUTED : THEME_BADGE_SUCCESS
                   }`}
                 >
                   {cat.is_visible === false ? <EyeOff size={12} /> : <Eye size={12} />}
@@ -502,7 +509,7 @@ export default function AdminCategories() {
                 {isEditing ? (
                   <>
                     <PermissionGate permission="category.manage">
-                      <button onClick={() => handleEditSave(cat.id)} className="rounded-md p-1.5 text-green-500 hover:bg-green-500/10">
+                      <button onClick={() => handleEditSave(cat.id)} className={`rounded-md p-1.5 hover:bg-[color-mix(in_srgb,var(--theme-success)_10%,var(--theme-surface))] ${THEME_TEXT_SUCCESS_SOFT}`}>
                         <Check size={14} />
                       </button>
                     </PermissionGate>
@@ -518,7 +525,7 @@ export default function AdminCategories() {
                       </button>
                     </PermissionGate>
                     <PermissionGate permission="category.manage">
-                      <button onClick={() => setDeleteTarget(cat)} className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+                      <button onClick={() => setDeleteTarget(cat)} className={`rounded-md p-1.5 text-muted-foreground ${THEME_HOVER_BG_DANGER} ${THEME_HOVER_TEXT_DANGER}`}>
                         <Trash2 size={14} />
                       </button>
                     </PermissionGate>

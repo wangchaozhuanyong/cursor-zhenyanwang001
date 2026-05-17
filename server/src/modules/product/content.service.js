@@ -34,6 +34,8 @@ const PUBLIC_SITE_KEYS = [
   'instagramUrl', 'facebookUrl', 'tiktokUrl', 'xhsUrl',
   // 业务
   'currency',
+  'orderPaymentTimeoutEnabled',
+  'orderPaymentTimeoutMinutes',
   'sstEnabled',
   'sstRatePercent',
   'sstLabel',
@@ -50,7 +52,6 @@ const PUBLIC_SITE_KEYS = [
   // 自定义页脚导航（JSON 字符串：[{label,path}]，未设置则前端使用默认导航）
   'footerNav',
   // 首页新品运营主视觉
-  'newArrivalHeroImage', 'newArrivalHeroTitle', 'newArrivalHeroSubtitle', 'newArrivalHeroCtaText',
   'newArrivalSectionTitle', 'newArrivalSectionSubtitle', 'newArrivalDisplayCount', 'newArrivalShowPrice', 'newArrivalOnlyInStock',
   // Cookie 同意后才会由前端读取并加载的分析/广告追踪配置
   'ga4Enabled', 'ga4MeasurementId', 'metaPixelEnabled', 'metaPixelId',

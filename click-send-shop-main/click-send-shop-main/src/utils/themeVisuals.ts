@@ -13,6 +13,96 @@ export const THEME_ACCENT_ICON_SHELL_CLASS =
 export const THEME_ACCENT_CHIP_CLASS =
   "rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--theme-primary)]";
 
+/** 状态徽章底纹（订单/支付/售后等） */
+export const THEME_BADGE_WARNING =
+  "bg-[color-mix(in_srgb,var(--theme-warning)_15%,var(--theme-surface))] text-[var(--theme-warning)]";
+export const THEME_BADGE_SUCCESS =
+  "bg-[color-mix(in_srgb,var(--theme-success)_15%,var(--theme-surface))] text-[var(--theme-success)]";
+export const THEME_BADGE_DANGER =
+  "bg-[color-mix(in_srgb,var(--theme-danger)_15%,var(--theme-surface))] text-[var(--theme-danger)]";
+export const THEME_BADGE_PRIMARY =
+  "bg-[color-mix(in_srgb,var(--theme-primary)_15%,var(--theme-surface))] text-[var(--theme-primary)]";
+export const THEME_BADGE_PRICE =
+  "bg-[color-mix(in_srgb,var(--theme-price)_15%,var(--theme-surface))] text-[var(--theme-price)]";
+export const THEME_BADGE_ACCENT =
+  "bg-[color-mix(in_srgb,var(--theme-accent)_15%,var(--theme-surface))] text-[var(--theme-accent)]";
+export const THEME_BADGE_MUTED =
+  "bg-[color-mix(in_srgb,var(--theme-text-muted)_12%,var(--theme-surface))] text-[var(--theme-text-muted)]";
+
+/** 列表行图标圆底 */
+export const THEME_ROW_ICON_POSITIVE =
+  "bg-[color-mix(in_srgb,var(--theme-success)_12%,var(--theme-surface))] text-[var(--theme-success)]";
+export const THEME_ROW_ICON_NEGATIVE =
+  "bg-[color-mix(in_srgb,var(--theme-danger)_12%,var(--theme-surface))] text-[var(--theme-danger)]";
+
+export const THEME_TEXT_SUCCESS = "text-[var(--theme-success)]";
+export const THEME_TEXT_DANGER = "text-[var(--theme-danger)]";
+export const THEME_TEXT_WARNING = "text-[var(--theme-warning)]";
+export const THEME_TEXT_PRIMARY = "text-[var(--theme-primary)]";
+
+/** 星级（评价等，实心星） */
+export const THEME_STAR_FILLED = "fill-[var(--theme-warning)] text-[var(--theme-warning)]";
+
+/** 危险态浅底 / 描边（后台删除、错误提示） */
+export const THEME_HOVER_BG_DANGER =
+  "hover:bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))]";
+export const THEME_HOVER_BG_DANGER_STRONG =
+  "hover:bg-[color-mix(in_srgb,var(--theme-danger)_20%,var(--theme-surface))]";
+export const THEME_BG_DANGER_SOFT =
+  "bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))]";
+export const THEME_BORDER_DANGER_SOFT =
+  "border-[color-mix(in_srgb,var(--theme-danger)_30%,var(--theme-border))]";
+export const THEME_BORDER_DANGER_MEDIUM =
+  "border-[color-mix(in_srgb,var(--theme-danger)_40%,var(--theme-border))]";
+export const THEME_ACTIVE_BG_DANGER =
+  "active:bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))]";
+export const THEME_TEXT_FREE_SHIPPING = THEME_TEXT_SUCCESS;
+
+/** 活动/促销提示条 */
+export const THEME_ALERT_DANGER_SHELL =
+  "border border-[color-mix(in_srgb,var(--theme-danger)_25%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))] text-[var(--theme-danger)]";
+
+/** 错误提示块（列表页/表单） */
+export const THEME_ALERT_ERROR_SOFT =
+  "rounded-xl bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))] text-[var(--theme-danger)]";
+
+/** 带边框的错误提示 */
+export const THEME_ALERT_ERROR_BOX =
+  "rounded-lg border border-[color-mix(in_srgb,var(--theme-danger)_40%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))] text-[var(--theme-danger)]";
+
+/** 危险描边按钮 */
+export const THEME_BTN_DANGER_OUTLINE =
+  "border-2 border-[color-mix(in_srgb,var(--theme-danger)_30%,var(--theme-border))] text-[var(--theme-danger)] hover:bg-[color-mix(in_srgb,var(--theme-danger)_5%,var(--theme-surface))]";
+
+export const THEME_HOVER_TEXT_DANGER = "hover:text-[var(--theme-danger)]";
+
+export const THEME_DANGER_ICON_BTN =
+  "bg-[var(--theme-danger)] text-[var(--theme-danger-foreground)]";
+
+/** 后台实心操作按钮 */
+export const THEME_BTN_SUCCESS_SOLID =
+  "bg-[var(--theme-success)] text-[var(--theme-success-foreground)]";
+export const THEME_BTN_DANGER_SOLID = "bg-[var(--theme-danger)] text-[var(--theme-danger-foreground)]";
+export const THEME_BTN_PRIMARY_SOLID =
+  "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]";
+
+/** 后台描边操作按钮 */
+export const THEME_OUTLINE_SUCCESS =
+  "border border-[color-mix(in_srgb,var(--theme-success)_40%,var(--theme-border))] text-[var(--theme-success)] hover:bg-[color-mix(in_srgb,var(--theme-success)_8%,var(--theme-surface))]";
+export const THEME_OUTLINE_DANGER =
+  "border border-[color-mix(in_srgb,var(--theme-danger)_40%,var(--theme-border))] text-[var(--theme-danger)] hover:bg-[color-mix(in_srgb,var(--theme-danger)_8%,var(--theme-surface))]";
+export const THEME_OUTLINE_PRIMARY =
+  "border border-[color-mix(in_srgb,var(--theme-primary)_40%,var(--theme-border))] text-[var(--theme-primary)] hover:bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))]";
+export const THEME_OUTLINE_WARNING =
+  "border border-[color-mix(in_srgb,var(--theme-warning)_40%,var(--theme-border))] text-[var(--theme-warning)] hover:bg-[color-mix(in_srgb,var(--theme-warning)_8%,var(--theme-surface))]";
+
+export const THEME_TEXT_DANGER_SOFT = "text-[var(--theme-danger)]";
+export const THEME_TEXT_SUCCESS_SOFT = "text-[var(--theme-success)]";
+
+/** 次要实心按钮（如加购） */
+export const THEME_BTN_ACCENT_SOLID =
+  "bg-[var(--theme-accent)] text-[var(--theme-accent-foreground)]";
+
 /** 价格色强调文字（等同 text-theme-price，语义更清晰） */
 export const THEME_TEXT_PRICE = "text-theme-price";
 

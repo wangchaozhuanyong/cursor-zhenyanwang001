@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supportsColorMix } from "@/utils/cssSupport";
+import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { getBannerContainerClassName, getBannerOverlayClassName } from "@/utils/themeVisuals";
 
 interface LoginBanner {
   image: string;
@@ -15,6 +17,9 @@ interface LoginBannerCarouselProps {
 }
 
 export default function LoginBannerCarousel({ banners, paused = false }: LoginBannerCarouselProps) {
+  const { themeConfig } = useThemeRuntime();
+  const bannerContainerClass = getBannerContainerClassName(themeConfig.bannerStyle);
+  const bannerOverlayClass = getBannerOverlayClassName(themeConfig.bannerStyle);
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
   const touchStartX = useRef(0);
@@ -57,8 +62,9 @@ export default function LoginBannerCarousel({ banners, paused = false }: LoginBa
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-2xl bg-secondary"
-      style={{ aspectRatio: "16 / 7" }}
+      className={`relative w-full overflow-hidden bg-[var(--theme-surface)] ${bannerContainerClass}`}
+      style={{ aspectRatio: "16 / 7", borderRadius: "var(--theme-radius)" }}
+      data-theme-banner-style={themeConfig.bannerStyle}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -79,8 +85,11 @@ export default function LoginBannerCarousel({ banners, paused = false }: LoginBa
             className="h-full w-full object-cover"
             decoding="async"
           />
-          {/* Gradient overlay */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+          {bannerOverlayClass ? (
+            <div className={bannerOverlayClass} />
+          ) : (
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+          )}
           {/* Title */}
           {banners[current].title && (
             <div className="absolute bottom-3 left-4 right-12">

@@ -1,6 +1,7 @@
 import { ChevronDown, RotateCcw, Sparkles, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Tx } from "@/components/admin/AdminText";
+import { THEME_OUTLINE_WARNING } from "@/utils/themeVisuals";
 import { useThemeStudioLabel } from "@/hooks/useThemeStudioLabel";
 import type { ThemeConfig, ThemeSceneTag, ThemeSkin } from "@/types/theme";
 import type { AutoColorAction } from "@/utils/themeStudioAuto";
@@ -214,7 +215,7 @@ export default function ThemeEditorPanel({
             <Sparkles size={12} /><Tx> 生成前景色变量
           </Tx></button>
           {canUndoOptimize ? (
-            <button type="button" onClick={onUndoOptimize} className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-900">
+            <button type="button" onClick={onUndoOptimize} className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] ${THEME_OUTLINE_WARNING}`}>
               <Undo2 size={12} /><Tx> 撤销优化
             </Tx></button>
           ) : null}

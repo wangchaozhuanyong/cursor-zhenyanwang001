@@ -5,6 +5,7 @@ import * as userService from "@/services/admin/userService";
 import type { MemberLevel } from "@/types/user";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
+import { THEME_BORDER_DANGER_SOFT, THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 
 type Draft = Omit<MemberLevel, "id" | "created_at" | "updated_at"> & { id?: string; discount_rate?: number; points_multiplier?: number; coupon_pack_id?: string; free_shipping_enabled?: boolean };
 
@@ -89,7 +90,7 @@ export default function AdminMemberLevels() {
           </div>
           <div className="flex gap-2">
             <LoadingButton type="button" variant="outline" state={savingId === level.id ? "loading" : "normal"} onClick={async () => { setSavingId(level.id); try { await userService.updateMemberLevel(level.id, toPayload(level) as any); await loadLevels(); toast.success("已保存"); } catch (e) { toast.error(toastErrorMessage(e, "保存失败")); } finally { setSavingId(null); } }}>保存</LoadingButton>
-            <button type="button" onClick={() => setDeleteTarget(level)} disabled={level.is_default === true || savingId === level.id} className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-destructive/30 px-3 text-sm text-destructive disabled:opacity-40"><Trash2 size={15} />删除</button>
+            <button type="button" onClick={() => setDeleteTarget(level)} disabled={level.is_default === true || savingId === level.id} className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border px-3 text-sm disabled:opacity-40 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER}`}><Trash2 size={15} />删除</button>
           </div>
         </div>
       ))}

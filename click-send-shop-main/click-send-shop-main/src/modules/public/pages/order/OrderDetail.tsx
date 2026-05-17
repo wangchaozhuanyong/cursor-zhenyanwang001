@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/utils/formatDateTime";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useOrderStore } from "@/stores/useOrderStore";
@@ -30,6 +31,15 @@ import { OrderSstLines } from "@/components/OrderSstLines";
 import { trackPurchase } from "@/utils/tracking";
 import { BottomSheetConfirm } from "@/modules/micro-interactions";
 import type { PublicPaymentChannel } from "@/services/paymentService";
+import { OrderPaymentCountdown } from "@/components/order/OrderPaymentCountdown";
+import {
+  THEME_TEXT_DANGER,
+  THEME_TEXT_FREE_SHIPPING,
+  THEME_TEXT_PRIMARY,
+  THEME_TEXT_SUCCESS,
+  THEME_TEXT_WARNING,
+  THEME_BTN_DANGER_OUTLINE,
+} from "@/utils/themeVisuals";
 
 const statusIconMap: Record<string, React.ElementType> = {
   pending: Clock,
@@ -42,13 +52,13 @@ const statusIconMap: Record<string, React.ElementType> = {
 };
 
 const statusColorMap: Record<string, string> = {
-  pending: "text-yellow-500",
+  pending: THEME_TEXT_WARNING,
   paid: "text-[var(--theme-price)]",
-  shipped: "text-blue-500",
-  completed: "text-emerald-500",
-  cancelled: "text-destructive",
-  refunding: "text-orange-500",
-  refunded: "text-muted-foreground",
+  shipped: THEME_TEXT_PRIMARY,
+  completed: THEME_TEXT_SUCCESS,
+  cancelled: THEME_TEXT_DANGER,
+  refunding: THEME_TEXT_WARNING,
+  refunded: "text-[var(--theme-text-muted)]",
 };
 
 const ORDER_STATUS_PROGRESS = [
@@ -98,7 +108,7 @@ function generateOrderText(order: Order) {
     `📍 地址：${order.address || "未填写"}`,
     `📝 备注：${order.note || "无"}`,
     "━━━━━━━━━━━━",
-    `下单时间：${new Date(order.created_at).toLocaleString("zh-CN")}`,
+    `下单时间：${formatDateTime(order.created_at)}`,
   );
   return lines.join("\n");
 }
@@ -280,11 +290,20 @@ export default function OrderDetail() {
           </div>
         </div>
 
+        {order.status === ORDER_STATUS.PENDING && order.payment_method === "online" && (
+          <OrderPaymentCountdown
+            order={order}
+            onExpired={() => {
+              if (id) void loadOrderDetail(id);
+            }}
+          />
+        )}
+
         {/* Tracking info */}
         {order.tracking_no && (
           <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
             <h3 className="mb-3 text-sm font-semibold text-foreground flex items-center gap-2">
-              <Truck size={16} className="text-blue-500" /> 物流信息
+              <Truck size={16} className={THEME_TEXT_PRIMARY} /> 物流信息
             </h3>
             <div className="space-y-2">
               {order.carrier && (
@@ -316,7 +335,7 @@ export default function OrderDetail() {
                       <p className="text-sm font-medium text-foreground">{track.title}</p>
                       <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{track.description}</p>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                        <span>{new Date(track.event_time).toLocaleString("en-MY")}</span>
+                        <span>{formatDateTime(track.event_time)}</span>
                         {track.location && (
                           <span className="inline-flex items-center gap-1">
                             <MapPin size={11} /> {track.location}
@@ -380,7 +399,7 @@ export default function OrderDetail() {
             <span className="text-muted-foreground">
               运费（{order.shipping_name || "标准"}）{order.tax_mode === "inclusive" ? "，不计税" : ""}
             </span>
-            <span className={`font-medium ${(order.shipping_fee ?? 0) === 0 ? "text-emerald-600" : "text-foreground"}`}>
+            <span className={`font-medium ${(order.shipping_fee ?? 0) === 0 ? THEME_TEXT_FREE_SHIPPING : "text-foreground"}`}>
               {(order.shipping_fee ?? 0) === 0 ? "包邮" : `RM ${order.shipping_fee}`}
             </span>
           </div>
@@ -394,12 +413,12 @@ export default function OrderDetail() {
           </div>
           <div className="mt-2 flex justify-between text-xs">
             <span className="text-muted-foreground">下单时间</span>
-            <span className="text-foreground">{new Date(order.created_at).toLocaleString("zh-CN")}</span>
+            <span className="text-foreground">{formatDateTime(order.created_at)}</span>
           </div>
           {order.payment_time && (
             <div className="mt-2 flex justify-between text-xs">
               <span className="text-muted-foreground">支付时间</span>
-              <span className="text-foreground">{new Date(order.payment_time).toLocaleString("zh-CN")}</span>
+              <span className="text-foreground">{formatDateTime(order.payment_time)}</span>
             </div>
           )}
           {order.payment_channel && (
@@ -474,7 +493,7 @@ export default function OrderDetail() {
           {(order.status === ORDER_STATUS.PENDING || order.status === ORDER_STATUS.PAID) && (
             <button
               onClick={() => setCancelConfirmOpen(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-full border-2 border-destructive/30 py-3.5 text-sm font-semibold text-destructive transition-all active:scale-[0.98] hover:bg-destructive/5"
+              className={`flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-semibold transition-all active:scale-[0.98] ${THEME_BTN_DANGER_OUTLINE}`}
             >
               <XCircle size={16} /> 取消订单
             </button>

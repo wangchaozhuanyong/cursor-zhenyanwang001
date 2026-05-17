@@ -62,9 +62,24 @@ function parseSettings(raw) {
   }
   return {
     modules,
-    hotBatchSize: clampInt(parsed.hotBatchSize, 2, 12, DEFAULT_SETTINGS.hotBatchSize),
-    recBatchSize: clampInt(parsed.recBatchSize, 2, 12, DEFAULT_SETTINGS.recBatchSize),
-    guestRecommendMax: clampInt(parsed.guestRecommendMax, 4, 24, DEFAULT_SETTINGS.guestRecommendMax),
+    hotBatchSize: clampInt(
+      parsed.hotBatchSize ?? parsed.hot_batch_size,
+      2,
+      12,
+      DEFAULT_SETTINGS.hotBatchSize,
+    ),
+    recBatchSize: clampInt(
+      parsed.recBatchSize ?? parsed.rec_batch_size,
+      2,
+      12,
+      DEFAULT_SETTINGS.recBatchSize,
+    ),
+    guestRecommendMax: clampInt(
+      parsed.guestRecommendMax ?? parsed.guest_recommend_max,
+      4,
+      24,
+      DEFAULT_SETTINGS.guestRecommendMax,
+    ),
   };
 }
 
@@ -96,6 +111,13 @@ async function saveHomeModuleSettings(body, adminUserId, req) {
   }
 
   await siteSettingsRepo.upsertSetting(SETTING_KEY, JSON.stringify(next));
+
+  try {
+    const { clearCatalogCache } = require('../product/catalog.service');
+    clearCatalogCache();
+  } catch {
+    /* catalog 未加载时忽略 */
+  }
 
   const { writeAuditLog } = require('../../utils/auditLog');
   await writeAuditLog({

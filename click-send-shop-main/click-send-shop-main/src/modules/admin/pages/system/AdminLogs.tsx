@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/utils/formatDateTime";
 import { useState, useEffect } from "react";
 import { Search, Shield, ChevronRight } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
@@ -17,6 +18,7 @@ import {
   zhOperatorRole,
 } from "@/utils/auditLogI18n";
 import { Tx } from "@/components/admin/AdminText";
+import { THEME_ALERT_ERROR_SOFT, THEME_BADGE_DANGER } from "@/utils/themeVisuals";
 
 export default function AdminLogs() {
   const can = useAdminPermissionStore((s) => s.can);
@@ -168,8 +170,8 @@ export default function AdminLogs() {
         {!auditLoading && auditList.map((row) => (
           <div key={row.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
             <div className="flex items-start justify-between gap-2">
-              <p className="text-[11px] text-muted-foreground">{row.created_at ? new Date(row.created_at).toLocaleString("zh-CN") : "—"}</p>
-              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${row.result === "success" ? "bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] text-[var(--theme-price)]" : "bg-destructive/15 text-destructive"}`}>
+              <p className="text-[11px] text-muted-foreground">{row.created_at ? formatDateTime(row.created_at) : "—"}</p>
+              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${row.result === "success" ? "bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] text-[var(--theme-price)]" : THEME_BADGE_DANGER}`}>
                 {zhAuditResult(row.result)}
               </span>
             </div>
@@ -232,7 +234,7 @@ export default function AdminLogs() {
           renderRow={(row) => (
             <>
               <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
-                {row.created_at ? new Date(row.created_at).toLocaleString("zh-CN") : "—"}
+                {row.created_at ? formatDateTime(row.created_at) : "—"}
               </td>
               <td className="px-3 py-2 text-xs">
                 <div className="font-medium text-foreground">{row.operator_name || "—"}</div>
@@ -247,7 +249,7 @@ export default function AdminLogs() {
               </td>
               <td className="px-3 py-2 text-xs text-foreground max-w-[200px] truncate" title={row.summary || undefined}>{zhAuditSummary(row.summary)}</td>
               <td className="px-3 py-2">
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${row.result === "success" ? "bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] text-[var(--theme-price)]" : "bg-destructive/15 text-destructive"}`}>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${row.result === "success" ? "bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] text-[var(--theme-price)]" : THEME_BADGE_DANGER}`}>
                   {zhAuditResult(row.result)}
                 </span>
               </td>
@@ -276,7 +278,7 @@ export default function AdminLogs() {
               <div className="flex justify-between gap-2"><dt className="text-muted-foreground"><Tx>IP 地址</Tx></dt><dd>{detail.ip || "—"}</dd></div>
               <div className="flex justify-between gap-2"><dt className="text-muted-foreground"><Tx>浏览器标识</Tx></dt><dd className="text-right break-all max-w-[70%]">{detail.user_agent || "—"}</dd></div>
               {detail.result === "failure" && detail.error_message && (
-                <div className="rounded-lg bg-destructive/10 p-2 text-destructive">{zhAuditErrorMessage(detail.error_message)}</div>
+                <div className={`rounded-lg p-2 ${THEME_ALERT_ERROR_SOFT}`}>{zhAuditErrorMessage(detail.error_message)}</div>
               )}
               {(() => {
                 const changes = buildAuditChangeSummary(detail.before_json, detail.after_json);

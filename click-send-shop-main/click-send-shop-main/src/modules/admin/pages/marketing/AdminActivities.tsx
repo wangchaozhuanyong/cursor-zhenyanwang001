@@ -10,6 +10,7 @@ import type { ActivityStatus, ActivityType, MarketingActivity } from "@/types/ac
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatAdminDateTime } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
+import { THEME_OUTLINE_DANGER } from "@/utils/themeVisuals";
 import { labelDisplayPositions } from "@/constants/marketingDisplayPositions";
 import { labelActivityType } from "@/utils/adminDisplayLabels";
 import { AnimatedConfirmDialog, AnimatedTable } from "@/modules/micro-interactions";
@@ -122,7 +123,7 @@ export default function AdminActivities() {
                   <button type="button" className="rounded border border-border px-2 py-1"><Eye className="mr-1 inline h-3 w-3" /><Tx>预览</Tx></button>
                   <button type="button" className="rounded border border-border px-2 py-1"><Tx>查看数据</Tx></button>
                   <button type="button" onClick={async () => { await activityService.setActivityDisabled(a.id, a.status !== "disabled"); await load(page); }} className="rounded border border-border px-2 py-1">{a.status === "disabled" ? "启用" : "禁用"}</button>
-                  <button type="button" onClick={() => setDeleteId(a.id)} className="rounded border border-destructive/30 px-2 py-1 text-destructive"><Trash2 className="mr-1 inline h-3 w-3" /><Tx>删除</Tx></button>
+                  <button type="button" onClick={() => setDeleteId(a.id)} className={`rounded border px-2 py-1 ${THEME_OUTLINE_DANGER}`}><Trash2 className="mr-1 inline h-3 w-3" /><Tx>删除</Tx></button>
                 </div>
               </td>
             </>

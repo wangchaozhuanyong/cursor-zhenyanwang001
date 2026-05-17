@@ -14,6 +14,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { parseSstEnabled } from "@/utils/sstTax";
 import MarketingPositionNotices from "@/modules/public/components/marketing/MarketingPositionNotices";
+import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 
 export default function Cart() {
   useDocumentTitle("购物车");
@@ -111,7 +112,7 @@ export default function Cart() {
               </div>
             )}
             {error && (
-              <div className="mb-3 flex items-center justify-between rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              <div className={`mb-3 flex items-center justify-between rounded-lg px-4 py-3 text-sm ${THEME_ALERT_ERROR_SOFT}`}>
                 <span>{error}</span>
                 <button
                   onClick={() => {

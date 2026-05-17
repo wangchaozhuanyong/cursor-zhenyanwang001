@@ -1,4 +1,5 @@
 import type { ProductCatalogTag } from "@/types/product";
+import { productTagInlineStyle } from "@/utils/productTagBadge";
 
 interface ProductTagListProps {
   tags?: ProductCatalogTag[];
@@ -29,11 +30,7 @@ export default function ProductTagList({
         <span
           key={tag.id}
           className={`inline-flex max-w-[7rem] items-center rounded-full border font-bold leading-4 shadow-sm backdrop-blur ${sizeClass}`}
-          style={{
-            backgroundColor: tag.bg_color || "#FEF3C7",
-            borderColor: tag.bg_color || "#FEF3C7",
-            color: tag.text_color || "#92400E",
-          }}
+          style={productTagInlineStyle(tag)}
           title={tag.name}
         >
           <span className="truncate">{tag.name}</span>

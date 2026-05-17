@@ -100,7 +100,7 @@ export default function ProductDetailStickyHeader({
           />
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           <ActionBtn label="分享商品" onClick={onShare}>
             <Share2 size={18} strokeWidth={2.25} />
           </ActionBtn>

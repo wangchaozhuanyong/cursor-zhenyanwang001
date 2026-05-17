@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { Tx } from "@/components/admin/AdminText";
+import { THEME_TEXT_SUCCESS_SOFT } from "@/utils/themeVisuals";
 import { adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import {
   DEFAULT_HOME_MODULE_SETTINGS,
@@ -46,7 +47,7 @@ export default function AdminHomeOpsModulePanel() {
   const save = async () => {
     setSaving(true);
     try {
-      const saved = await homeOpsService.updateHomeOpsSettings(settings);
+      const saved = await homeOpsService.updateHomeOpsSettings({ modules: settings.modules });
       setSettings(mergeHomeModuleSettings(saved));
       invalidateHomeModuleSettingsCache();
       toast.success("模块开关已保存，前台刷新后生效");
@@ -104,7 +105,7 @@ export default function AdminHomeOpsModulePanel() {
                           checked={settings.modules[def.key] !== false}
                           onChange={(e) => setModule(def.key, e.target.checked)}
                         />
-                        <span className={settings.modules[def.key] !== false ? "text-emerald-600" : "text-muted-foreground"}>
+                        <span className={settings.modules[def.key] !== false ? THEME_TEXT_SUCCESS_SOFT : "text-muted-foreground"}>
                           {settings.modules[def.key] !== false ? "显示" : "隐藏"}
                         </span>
                       </label>

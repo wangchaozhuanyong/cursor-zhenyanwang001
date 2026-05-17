@@ -21,7 +21,8 @@ export default function BottomNav() {
   const { themeConfig } = useThemeRuntime();
   const navStyle = themeConfig.navStyle;
   const totalItems = useCartStore((s) => s.totalItems());
-  const lastTouchNavAtRef = useRef(0);
+  /** 触摸已在 pointerdown 处理，避免随后合成 click 重复跳转 */
+  const touchHandledPathRef = useRef<string | null>(null);
   const [badgeBump, setBadgeBump] = useState(false);
 
   useEffect(() => {
@@ -57,28 +58,32 @@ export default function BottomNav() {
     <nav
       className={getBottomNavShellClassName(navStyle, "fixed")}
       data-theme-nav-style={navStyle}
-      style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0px)", touchAction: "manipulation" }}
+      style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0px)", touchAction: "none" }}
     >
       <div className={getBottomNavInnerClassName(navStyle)}>
         <div className="grid h-[68px] grid-cols-5 items-center px-1">
           {tabs.map((tab) => {
             const isActive = location.pathname === tab.path;
             const Icon = tab.icon;
-            const fire = () => handleNavigate(tab.path);
+            const activate = () => handleNavigate(tab.path);
             return (
               <button
                 key={tab.path}
                 type="button"
-                onClick={() => {
-                  if (Date.now() - lastTouchNavAtRef.current < 350) return;
-                  fire();
-                }}
-                onPointerUp={(event) => {
+                onPointerDown={(event) => {
                   if (event.pointerType !== "touch") return;
-                  lastTouchNavAtRef.current = Date.now();
-                  fire();
+                  event.preventDefault();
+                  touchHandledPathRef.current = tab.path;
+                  activate();
                 }}
-                className="relative flex min-h-0 touch-manipulation flex-col items-center justify-center gap-1 bg-transparent px-1 py-2"
+                onClick={() => {
+                  if (touchHandledPathRef.current === tab.path) {
+                    touchHandledPathRef.current = null;
+                    return;
+                  }
+                  activate();
+                }}
+                className="relative flex min-h-0 select-none flex-col items-center justify-center gap-1 bg-transparent px-1 py-2"
               >
                 <span
                   className={`relative flex h-8 min-w-8 items-center justify-center rounded-full px-2 transition-transform duration-150 ${

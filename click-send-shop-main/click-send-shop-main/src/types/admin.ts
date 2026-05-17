@@ -65,6 +65,10 @@ export interface SiteSettings {
   autoConfirmReceiveEnabled?: string;
   /** 发货后天数（1–365，字符串与 site_settings 一致） */
   autoConfirmReceiveDays?: string;
+  /** 未支付订单自动取消：'1' 开启 / '0' 关闭（仅在线支付待付款订单） */
+  orderPaymentTimeoutEnabled?: string;
+  /** 未支付超时分钟数（1–43200，字符串与 site_settings 一致） */
+  orderPaymentTimeoutMinutes?: string;
   /** SST：'1' 开启 */
   sstEnabled?: string;
   sstRatePercent?: string;
@@ -99,10 +103,6 @@ export interface SiteSettings {
   footerNav?: string;
 
   /* 首页新品运营主视觉 */
-  newArrivalHeroImage?: string;
-  newArrivalHeroTitle?: string;
-  newArrivalHeroSubtitle?: string;
-  newArrivalHeroCtaText?: string;
   newArrivalSectionTitle?: string;
   newArrivalSectionSubtitle?: string;
   newArrivalDisplayCount?: string;

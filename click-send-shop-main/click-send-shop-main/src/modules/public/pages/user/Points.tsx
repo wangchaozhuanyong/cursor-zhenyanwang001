@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/utils/formatDateTime";
 ﻿import { useEffect, useState } from "react";
 import { ArrowLeft, Star, TrendingUp, TrendingDown, Loader2, CalendarCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -14,6 +15,10 @@ import {
   THEME_ACCENT_HERO_SHELL,
   THEME_ACCENT_HERO_SUBTLE,
   THEME_ACCENT_HERO_VALUE,
+  THEME_ROW_ICON_NEGATIVE,
+  THEME_ROW_ICON_POSITIVE,
+  THEME_TEXT_DANGER,
+  THEME_TEXT_SUCCESS,
 } from "@/utils/themeVisuals";
 
 export default function Points() {
@@ -106,7 +111,7 @@ export default function Points() {
               <Loader2 size={20} className="animate-spin text-muted-foreground" />
             </div>
           ) : error ? (
-            <div className="rounded-xl border border-border bg-card p-10 text-center text-sm text-destructive">
+            <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-10 text-center text-sm text-[var(--theme-danger)]">
               {error}
             </div>
           ) : records.length === 0 ? (
@@ -123,8 +128,8 @@ export default function Points() {
                   <div
                     className={`flex h-9 w-9 items-center justify-center rounded-full ${
                       record.amount >= 0
-                        ? "bg-green-500/10 text-green-500"
-                        : "bg-destructive/10 text-destructive"
+                        ? THEME_ROW_ICON_POSITIVE
+                        : THEME_ROW_ICON_NEGATIVE
                     }`}
                   >
                     {record.amount >= 0 ? (
@@ -138,12 +143,12 @@ export default function Points() {
                       {record.description}
                     </p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {new Date(record.created_at).toLocaleDateString("zh-CN")}
+                      {formatDateTime(record.created_at)}
                     </p>
                   </div>
                   <span
                     className={`text-sm font-bold ${
-                      record.amount >= 0 ? "text-green-500" : "text-destructive"
+                      record.amount >= 0 ? THEME_TEXT_SUCCESS : THEME_TEXT_DANGER
                     }`}
                   >
                     {record.amount > 0 ? "+" : ""}

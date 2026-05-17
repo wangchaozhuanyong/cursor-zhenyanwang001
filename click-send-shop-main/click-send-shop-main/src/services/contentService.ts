@@ -1,5 +1,6 @@
 import * as contentApi from "@/api/modules/content";
 import type { ContentPage, HomeOpsConfig, SiteInfo } from "@/types/content";
+import { ApiError } from "@/types/common";
 
 export async function fetchSiteInfo(): Promise<SiteInfo | undefined> {
   const res = await contentApi.getSiteInfo();
@@ -7,8 +8,13 @@ export async function fetchSiteInfo(): Promise<SiteInfo | undefined> {
 }
 
 export async function fetchContentBySlug(slug: string): Promise<ContentPage | undefined> {
-  const res = await contentApi.getContentBySlug(slug);
-  return res.data;
+  try {
+    const res = await contentApi.getContentBySlug(slug);
+    return res.data;
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return undefined;
+    throw e;
+  }
 }
 
 export async function fetchHomeOps(): Promise<HomeOpsConfig> {

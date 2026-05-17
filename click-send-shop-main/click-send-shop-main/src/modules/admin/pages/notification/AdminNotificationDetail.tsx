@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { formatDateTime } from "@/utils/formatDateTime";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import * as notificationService from "@/services/admin/notificationService";
@@ -111,7 +112,7 @@ export default function AdminNotificationDetail() {
         <div className="rounded-xl border border-border overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-secondary/60"><tr><th className="px-3 py-2 text-left">时间</th><th className="px-3 py-2 text-left">操作人</th><th className="px-3 py-2 text-left">动作</th><th className="px-3 py-2 text-left">摘要</th></tr></thead>
-            <tbody>{data.logs.map((l) => <tr key={l.id} className="border-t border-border"><td className="px-3 py-2">{new Date(l.created_at).toLocaleString("zh-CN")}</td><td className="px-3 py-2">{l.operator_name || "-"}</td><td className="px-3 py-2">{l.action_type}</td><td className="px-3 py-2">{l.summary || "-"}</td></tr>)}</tbody>
+            <tbody>{data.logs.map((l) => <tr key={l.id} className="border-t border-border"><td className="px-3 py-2">{formatDateTime(l.created_at)}</td><td className="px-3 py-2">{l.operator_name || "-"}</td><td className="px-3 py-2">{l.action_type}</td><td className="px-3 py-2">{l.summary || "-"}</td></tr>)}</tbody>
           </table>
         </div>
       </div>

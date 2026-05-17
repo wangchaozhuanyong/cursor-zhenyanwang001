@@ -83,14 +83,13 @@ export default function HomeOpsBlocks() {
 
   return (
     <div className="px-4">
-      <section className="-mx-4 overflow-x-auto px-4 pb-1">
-        <div className="flex min-w-max gap-2">
+      <section className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-2 overflow-x-auto overflow-y-hidden scroll-smooth px-4 pb-1 [-webkit-overflow-scrolling:touch]">
           {navSource.slice(0, 12).map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => openHomeNavTarget(navigate, item)}
-              className="flex w-[72px] shrink-0 flex-col items-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-1 py-2 text-center transition-colors hover:bg-[var(--theme-bg)]/60 active:scale-[0.98]"
+              className="flex w-[72px] shrink-0 snap-start flex-col items-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-1 py-2 text-center transition-colors hover:bg-[var(--theme-bg)]/60 active:scale-[0.98]"
             >
               <span
                 className={`${categoryIconClass} h-[44px] w-[44px] overflow-hidden text-base`}
@@ -103,7 +102,6 @@ export default function HomeOpsBlocks() {
               </span>
             </button>
           ))}
-        </div>
       </section>
     </div>
   );

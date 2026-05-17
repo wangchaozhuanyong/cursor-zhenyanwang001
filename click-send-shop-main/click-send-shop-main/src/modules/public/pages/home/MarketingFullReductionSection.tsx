@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Percent } from "lucide-react";
 import * as marketingService from "@/services/marketingService";
 import type { MarketingActivitySummary } from "@/services/marketingService";
+import { AnimatedSection } from "@/modules/micro-interactions";
 
-export default function MarketingFullReductionSection() {
+export default function MarketingFullReductionSection({ delay = 0 }: { delay?: number }) {
   const navigate = useNavigate();
   const [list, setList] = useState<MarketingActivitySummary[]>([]);
 
@@ -21,6 +22,7 @@ export default function MarketingFullReductionSection() {
   if (!list.length) return null;
 
   return (
+    <AnimatedSection delay={delay}>
     <section className="w-full">
       <h2 className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--theme-text)]">
         <Percent size={16} className="text-[var(--theme-primary)]" />
@@ -39,5 +41,6 @@ export default function MarketingFullReductionSection() {
         ))}
       </div>
     </section>
+    </AnimatedSection>
   );
 }

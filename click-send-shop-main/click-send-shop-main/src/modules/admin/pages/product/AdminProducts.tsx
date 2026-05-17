@@ -14,6 +14,19 @@ import type { Product, ProductStatus } from "@/types/product";
 import { useAdminProductsStore } from "@/stores/useAdminProductsStore";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
+import {
+  THEME_ACTIVE_BG_DANGER,
+  THEME_BADGE_DANGER,
+  THEME_BADGE_MUTED,
+  THEME_BADGE_PRIMARY,
+  THEME_BADGE_SUCCESS,
+  THEME_BADGE_WARNING,
+  THEME_BG_DANGER_SOFT,
+  THEME_BORDER_DANGER_MEDIUM,
+  THEME_BORDER_DANGER_SOFT,
+  THEME_HOVER_BG_DANGER_STRONG,
+  THEME_TEXT_DANGER,
+} from "@/utils/themeVisuals";
 
 export default function AdminProducts() {
   const { confirm } = useAdminConfirm();
@@ -46,9 +59,9 @@ export default function AdminProducts() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const statusBadge = (p: Product) => {
-    if (p.status === "active") return { cls: "bg-green-500/10 text-green-600", text: "上架" };
-    if (p.status === "draft") return { cls: "bg-amber-500/10 text-amber-800 dark:text-amber-200", text: "草稿" };
-    return { cls: "bg-muted text-muted-foreground", text: "下架" };
+    if (p.status === "active") return { cls: THEME_BADGE_SUCCESS, text: "上架" };
+    if (p.status === "draft") return { cls: THEME_BADGE_WARNING, text: "草稿" };
+    return { cls: THEME_BADGE_MUTED, text: "下架" };
   };
 
   const filteredProducts = products.filter((p) => {
@@ -202,13 +215,13 @@ export default function AdminProducts() {
               )}
               <div className="min-w-0 flex-1">
                 <p className="font-medium leading-snug text-foreground">{p.name}</p>
-                <p className="mt-1 text-sm text-muted-foreground">RM <span className="text-[var(--theme-price)]">{p.price}</span> · 库存 {p.stock === 0 ? <span className="text-destructive"><Tx>缺货</Tx></span> : p.stock}</p>
+                <p className="mt-1 text-sm text-muted-foreground">RM <span className="text-[var(--theme-price)]">{p.price}</span> · 库存 {p.stock === 0 ? <span className={THEME_TEXT_DANGER}><Tx>缺货</Tx></span> : p.stock}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge(p).cls}`}>
                     {statusBadge(p).text}
                   </span>
-                  {p.is_hot && <span className="rounded bg-red-500/10 px-2 py-0.5 text-xs text-red-500"><Tx>热门</Tx></span>}
-                  {p.is_new && <span className="rounded bg-blue-500/10 px-2 py-0.5 text-xs text-blue-500"><Tx>新品</Tx></span>}
+                  {p.is_hot && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_DANGER}`}><Tx>热门</Tx></span>}
+                  {p.is_new && <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_PRIMARY}`}><Tx>新品</Tx></span>}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <PermissionGate permission="product.manage">
@@ -234,7 +247,7 @@ export default function AdminProducts() {
                     <button
                       type="button"
                       onClick={() => handleDeleteProduct(p.id, p.name || p.id)}
-                      className="touch-manipulation flex min-h-[44px] w-full min-w-[calc(50%-4px)] flex-1 items-center justify-center gap-1 theme-rounded border border-destructive/30 py-2 text-sm text-destructive active:bg-destructive/10 sm:w-auto"
+                      className={`touch-manipulation flex min-h-[44px] w-full min-w-[calc(50%-4px)] flex-1 items-center justify-center gap-1 theme-rounded border py-2 text-sm sm:w-auto ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_ACTIVE_BG_DANGER}`}
                     >
                       <Trash2 size={16} /><Tx> 删除
                     </Tx></button>
@@ -293,7 +306,7 @@ export default function AdminProducts() {
                 </div>
               </td>
               <td className="px-4 py-3 text-foreground">RM {p.price}</td>
-              <td className="px-4 py-3 text-foreground">{p.stock === 0 ? <span className="text-destructive"><Tx>缺货</Tx></span> : p.stock}</td>
+              <td className="px-4 py-3 text-foreground">{p.stock === 0 ? <span className={THEME_TEXT_DANGER}><Tx>缺货</Tx></span> : p.stock}</td>
               <td className="px-4 py-3">
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusBadge(p).cls}`}>
                   {statusBadge(p).text}
@@ -301,8 +314,8 @@ export default function AdminProducts() {
               </td>
               <td className="px-4 py-3">
                 <div className="flex gap-1">
-                  {p.is_hot && <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] text-red-500"><Tx>热门</Tx></span>}
-                  {p.is_new && <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] text-blue-500"><Tx>新品</Tx></span>}
+                  {p.is_hot && <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${THEME_BADGE_DANGER}`}><Tx>热门</Tx></span>}
+                  {p.is_new && <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${THEME_BADGE_PRIMARY}`}><Tx>新品</Tx></span>}
                   {p.is_recommended && <span className="theme-rounded bg-[var(--theme-price)]/10 px-1.5 py-0.5 text-[10px] text-[var(--theme-price)]"><Tx>推荐</Tx></span>}
                 </div>
               </td>
@@ -328,7 +341,7 @@ export default function AdminProducts() {
                     <button
                       type="button"
                       onClick={() => handleDeleteProduct(p.id, p.name || p.id)}
-                      className="touch-manipulation flex shrink-0 items-center gap-1 theme-rounded border border-destructive/50 bg-destructive/10 px-2 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/20"
+                      className={`touch-manipulation flex shrink-0 items-center gap-1 theme-rounded border px-2 py-1.5 text-xs font-semibold ${THEME_BORDER_DANGER_MEDIUM} ${THEME_BG_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER_STRONG}`}
                       title="删除商品"
                     >
                       <Trash2 size={14} aria-hidden /><Tx>

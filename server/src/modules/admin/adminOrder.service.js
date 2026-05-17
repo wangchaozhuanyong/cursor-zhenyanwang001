@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Admin Order Service
  *
  * 职责：管理员对订单的列表/详情/状态变更/发货等业务编排。
@@ -190,12 +190,21 @@ async function listOrders(query) {
 }
 
 async function getOrderById(orderId) {
+  const { formatOrder, formatOrderItem } = require('../order/order.mapper');
   const order = await repo.selectOrderById(null, orderId);
   if (!order) throw new NotFoundError('订单不存在');
-  const items = await repo.selectOrderItemsWithProduct(repo.getPool(), order.id);
-  attachItemsAndAmounts(order, items);
-  await requireLogisticsApi('attachTracking')(order);
-  return { data: order };
+  const rawItems = await repo.selectOrderItemsWithProduct(repo.getPool(), order.id);
+  const items = rawItems.map((it) =>
+    formatOrderItem({
+      ...it,
+      product_name: it.name,
+      product_image: it.cover_image,
+      price: it.unit_price,
+    }),
+  );
+  const data = formatOrder(order, items);
+  await requireLogisticsApi('attachTracking')(data);
+  return { data };
 }
 
 /**

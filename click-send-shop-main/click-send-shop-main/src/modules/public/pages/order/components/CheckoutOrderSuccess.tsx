@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/utils/formatDateTime";
 import { useState } from "react";
 import { ArrowLeft, ChevronDown, ChevronUp, Copy, MessageCircle, Phone, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -6,6 +7,8 @@ import type { Order } from "@/types/order";
 import { ORDER_STATUS } from "@/constants/statusDictionary";
 import { OrderSstLines } from "@/components/OrderSstLines";
 import { OrderDiscountLines } from "./OrderDiscountLines";
+import { OrderPaymentCountdown } from "@/components/order/OrderPaymentCountdown";
+import { THEME_ALERT_ERROR_BOX } from "@/utils/themeVisuals";
 
 /* ----- Order Success Page ----- */
 export function CheckoutOrderSuccess({
@@ -38,6 +41,7 @@ export function CheckoutOrderSuccess({
   onHome: () => void;
   onViewOrders: () => void;
   onViewOrderDetail: () => void;
+  onPaymentTimeoutExpired?: () => void;
 }) {
   const [alternatePayOpen, setAlternatePayOpen] = useState(false);
   const [moreWaysOpen, setMoreWaysOpen] = useState(false);
@@ -95,7 +99,7 @@ export function CheckoutOrderSuccess({
   })();
   const statusBadge = isPaid ? "已支付" : isPending ? "待支付" : "处理中";
   const primaryActionClass = isPaid
-    ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
+    ? "btn-theme-gradient shadow-lg theme-shadow"
     : "btn-theme-price shadow-lg shadow-gold/20";
 
   return (
@@ -130,7 +134,7 @@ export function CheckoutOrderSuccess({
             订单编号: <span className="font-mono font-semibold text-foreground">{order.order_no}</span>
           </p>
           {postSubmitOnlineError && isOnlinePending && (
-            <p className="mt-4 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-left text-xs text-destructive">
+            <p className={`mt-4 px-3 py-2 text-left text-xs ${THEME_ALERT_ERROR_BOX}`}>
               {postSubmitOnlineError}
             </p>
           )}
@@ -138,6 +142,13 @@ export function CheckoutOrderSuccess({
             <p className="mt-4 rounded-lg border border-border bg-muted/40 px-3 py-2 text-left text-xs text-muted-foreground">
               {postSubmitOnlineNote}
             </p>
+          )}
+          {isOnlinePending && (
+            <OrderPaymentCountdown
+              order={order}
+              onExpired={onPaymentTimeoutExpired}
+              className="mt-4"
+            />
           )}
           <div className="mt-5 rounded-xl bg-secondary p-4">
             <p className="text-xs leading-relaxed text-muted-foreground">{helperText}</p>
@@ -164,7 +175,7 @@ export function CheckoutOrderSuccess({
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">下单时间</span>
               <span className="font-medium text-foreground">
-                {new Date(order.created_at).toLocaleString("zh-CN")}
+                {formatDateTime(order.created_at)}
               </span>
             </div>
           </div>
@@ -387,7 +398,7 @@ export function CheckoutOrderSuccess({
               <span className="text-muted-foreground">
                 运费（{order.shipping_name || "标准"}{order.tax_mode === "inclusive" ? "，不计税" : ""}）
               </span>
-              <span className={`font-medium ${order.shipping_fee === 0 ? "text-emerald-600" : "text-foreground"}`}>
+              <span className={`font-medium ${order.shipping_fee === 0 ? "text-[var(--theme-success)]" : "text-foreground"}`}>
                 {order.shipping_fee === 0 ? "包邮" : `RM ${order.shipping_fee}`}
               </span>
             </div>

@@ -1,5 +1,4 @@
 ﻿import { useState, useEffect, useCallback, useRef, useMemo, type ReactNode } from "react";
-import { ChevronDown } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import StorePageHeader from "@/components/store/StorePageHeader";
@@ -16,15 +15,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import * as productService from "@/services/productService";
 import type { ProductSortType, ProductTag } from "@/types/product";
 import type { Category } from "@/types/category";
-import { findCategoryById, findImmediateParentId, findRootCategoryIdForActive, isCategoryOrDescendantActive } from "@/utils/categoryTree";
+import { findCategoryById, findRootCategoryIdForActive, isCategoryOrDescendantActive } from "@/utils/categoryTree";
 import { trackEvent } from "@/services/analyticsService";
 import { toast } from "sonner";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
-import { getProductGridClassName, getProductGridEmptyColSpan } from "@/utils/productGridClasses";
+import ProductListViewToggle from "@/components/ProductListViewToggle";
+import { useCategoryListView } from "@/hooks/useCategoryListView";
+import { getCategoryProductsEmptyColSpan, getCategoryProductsGridClass } from "@/utils/productGridClasses";
+import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 
 export default function Categories() {
   const { themeConfig } = useThemeRuntime();
+  const { viewMode, setViewMode } = useCategoryListView();
   const [searchParams, setSearchParams] = useSearchParams();
+  const productGridClass = getCategoryProductsGridClass(viewMode, themeConfig.productCardVariant);
+  const emptyColSpan = getCategoryProductsEmptyColSpan(viewMode, themeConfig.productCardVariant);
+  const isListView = viewMode === "list";
 
   const [activeCat, setActiveCat] = useState(searchParams.get("cat") || "all");
   const [activeTagId, setActiveTagId] = useState(searchParams.get("tag_id") || "");
@@ -38,8 +44,6 @@ export default function Categories() {
   const [isNew, setIsNew] = useState(searchParams.get("is_new") === "1");
   const [isHot, setIsHot] = useState(searchParams.get("is_hot") === "1");
   const [isRecommended, setIsRecommended] = useState(searchParams.get("is_recommended") === "1");
-  const [expandedParentId, setExpandedParentId] = useState<string | null>(null);
-
   const { products, categories, loading, error, loadProducts, loadCategories } = useProductStore();
 
   useEffect(() => { loadCategories(); }, [loadCategories]);
@@ -86,32 +90,35 @@ export default function Categories() {
     });
   }, [activeCat, activeTagId, debouncedQuery, inStock, isHot, isNew, isRecommended, loadProducts, maxPrice, minPrice, sort, syncQuery]);
 
-  useEffect(() => {
-    const cat = searchParams.get("cat");
-    if (!cat || cat === "all" || categories.length === 0) return;
-    const parentId = findImmediateParentId(categories, cat);
-    if (parentId) setExpandedParentId(parentId);
-  }, [searchParams, categories]);
+  const handleSelectChild = useCallback((childId: string) => {
+    void trackEvent({ event_type: "category_click", module: "categories", category_id: childId });
+    setActiveCat(childId);
+  }, []);
 
-  const handleSelectChild = useCallback((parentId: string, childId: string) => { void trackEvent({ event_type: "category_click", module: "categories", category_id: childId }); setActiveCat(childId); setExpandedParentId(parentId); }, []);
   const handleRootCategoryClick = useCallback((cat: Category) => {
-    const children = cat.children?.filter(Boolean) ?? [];
-    if (children.length === 0) { void trackEvent({ event_type: "category_click", module: "categories", category_id: cat.id }); setActiveCat(cat.id); setExpandedParentId(null); return; }
-    if (expandedParentId === cat.id) { setExpandedParentId(null); return; }
-    setExpandedParentId(cat.id); setActiveCat(cat.id);
-  }, [expandedParentId]);
+    void trackEvent({ event_type: "category_click", module: "categories", category_id: cat.id });
+    setActiveCat(cat.id);
+  }, []);
 
   const clearFilters = useCallback(() => {
     setActiveTagId(""); setSort("default"); setQuery(""); setMinPrice(""); setMaxPrice(""); setInStock(false); setIsNew(false); setIsHot(false); setIsRecommended(false);
   }, []);
 
-  const handleSelectAll = useCallback(() => { setActiveCat("all"); setExpandedParentId(null); }, []);
+  const handleSelectAll = useCallback(() => { setActiveCat("all"); }, []);
 
   const categoryBtnRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const rootRow: Array<{ kind: "all" } | { kind: "root"; node: Category }> = [{ kind: "all" }, ...categories.map((node) => ({ kind: "root" as const, node }))];
 
-  const expandedNode = expandedParentId ? findCategoryById(categories, expandedParentId) : null;
-  const subCategories = expandedNode?.children?.filter(Boolean) ?? [];
+  const activeRootId = useMemo(() => {
+    if (activeCat === "all") return null;
+    return findRootCategoryIdForActive(categories, activeCat);
+  }, [activeCat, categories]);
+
+  const subCategories = useMemo(() => {
+    if (!activeRootId) return [];
+    const root = findCategoryById(categories, activeRootId);
+    return root?.children?.filter(Boolean) ?? [];
+  }, [activeRootId, categories]);
   const scrollTabKey = activeCat === "all" ? "all" : findRootCategoryIdForActive(categories, activeCat) ?? activeCat;
 
   useEffect(() => { const btn = categoryBtnRefs.current.get(scrollTabKey); btn?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" }); }, [scrollTabKey, categories.length]);
@@ -203,9 +210,7 @@ export default function Categories() {
               );
             }
             const { node } = item;
-            const hasChildren = (node.children?.length ?? 0) > 0;
             const isActive = isCategoryOrDescendantActive(node, activeCat);
-            const isExpanded = expandedParentId === node.id;
             return (
               <CategoryTabButton
                 key={node.id}
@@ -213,10 +218,8 @@ export default function Categories() {
                 active={isActive}
                 onClick={() => handleRootCategoryClick(node)}
                 layoutId="category-root-tab"
-                className="flex items-center gap-0.5"
               >
                 <span className="max-w-[9.5rem] truncate">{node.name}</span>
-                {hasChildren ? <ChevronDown size={14} className={`shrink-0 opacity-80 transition-transform ${isExpanded ? "rotate-180" : ""}`} /> : null}
               </CategoryTabButton>
             );
           })}
@@ -228,7 +231,7 @@ export default function Categories() {
                   <CategoryTabButton
                     key={child.id}
                     active={activeCat === child.id}
-                    onClick={() => handleSelectChild(expandedNode!.id, child.id)}
+                    onClick={() => handleSelectChild(child.id)}
                     layoutId="category-sub-tab"
                     activeClassName="bg-[var(--theme-price)]"
                     activeTextClass="text-[var(--theme-price-foreground)]"
@@ -243,6 +246,7 @@ export default function Categories() {
               <div className="min-w-0 flex-1">
                 <ProductSortBar value={sort} onChange={setSort} />
               </div>
+              <ProductListViewToggle value={viewMode} onChange={setViewMode} />
               {filterDrawer}
             </div>
           </div>
@@ -252,30 +256,40 @@ export default function Categories() {
       <main className="mx-auto max-w-screen-xl">
         <div className="px-4 pb-6 pt-3 md:px-6">
           <div className="md:grid md:grid-cols-[260px,1fr] md:gap-6 lg:grid-cols-[288px,1fr]">
-            <CategorySideTree categories={categories} activeCat={activeCat} expandedParentId={expandedParentId} onSelectAll={handleSelectAll} onRootClick={handleRootCategoryClick} onChildClick={handleSelectChild} />
+            <CategorySideTree categories={categories} activeCat={activeCat} onSelectAll={handleSelectAll} onRootClick={handleRootCategoryClick} onChildClick={handleSelectChild} />
             <section>
               <div className="mb-3 hidden items-center gap-2 md:flex">
                 <div className="min-w-0 flex-1">
                   <ProductSortBar value={sort} onChange={setSort} />
                 </div>
+                <ProductListViewToggle value={viewMode} onChange={setViewMode} />
                 {filterDrawer}
               </div>
 
               {filterSummary ? <div className="mb-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">当前筛选：{filterSummary}</div> : null}
 
-              {error && <div className="mb-3 rounded-xl bg-destructive/10 p-3 text-center text-sm text-destructive">{error}</div>}
+              {error && <div className={`mb-3 p-3 text-center text-sm ${THEME_ALERT_ERROR_SOFT}`}>{error}</div>}
 
               <AnimatePresence mode="wait">
                 <motion.div
-                  key={`${activeCat}-${sort}-${loading}`}
+                  key={`${activeCat}-${sort}-${viewMode}-${loading}`}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.18 }}
-                  className={getProductGridClassName(themeConfig.productCardVariant)}
+                  className={productGridClass}
                 >
-                {loading ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />) : products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
-                {!loading && products.length === 0 ? <div className={cn(getProductGridEmptyColSpan(themeConfig.productCardVariant), "py-12 text-center text-muted-foreground")}><p>{activeFilterCount > 0 || debouncedQuery ? "当前筛选条件无结果" : activeCat !== "all" ? "当前分类暂无商品" : categories.length > 0 ? "暂无商品上架" : "后台还没有配置商品"}</p>{(activeFilterCount > 0 || debouncedQuery) ? <button type="button" onClick={clearFilters} className="mt-3 rounded-full border border-[var(--theme-border)] px-4 py-2 text-xs">清空筛选</button> : null}</div> : null}
+                {loading
+                  ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} list={isListView} />)
+                  : products.map((p, i) => (
+                      <ProductCard
+                        key={p.id}
+                        product={p}
+                        index={i}
+                        displayMode={isListView ? "list" : "theme"}
+                      />
+                    ))}
+                {!loading && products.length === 0 ? <div className={cn(emptyColSpan, "py-12 text-center text-muted-foreground")}><p>{activeFilterCount > 0 || debouncedQuery ? "当前筛选条件无结果" : activeCat !== "all" ? "当前分类暂无商品" : categories.length > 0 ? "暂无商品上架" : "后台还没有配置商品"}</p>{(activeFilterCount > 0 || debouncedQuery) ? <button type="button" onClick={clearFilters} className="mt-3 rounded-full border border-[var(--theme-border)] px-4 py-2 text-xs">清空筛选</button> : null}</div> : null}
                 </motion.div>
               </AnimatePresence>
             </section>

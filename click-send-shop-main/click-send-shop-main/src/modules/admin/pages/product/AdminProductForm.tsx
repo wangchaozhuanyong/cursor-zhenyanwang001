@@ -17,6 +17,12 @@ import { flattenCategories } from "@/utils/categoryTree";
 import type { ProductTag } from "@/types/product";
 import { Tx } from "@/components/admin/AdminText";
 import { AnimatedConfirmDialog, LoadingButton, UploadDropZone } from "@/modules/micro-interactions";
+import {
+  THEME_BTN_DANGER_SOLID,
+  THEME_HOVER_TEXT_DANGER,
+  THEME_OUTLINE_DANGER,
+  THEME_TEXT_DANGER,
+} from "@/utils/themeVisuals";
 
 export default function AdminProductForm() {
   const navigate = useNavigate();
@@ -354,7 +360,7 @@ export default function AdminProductForm() {
                   {form.images.map((img, i) => (
                     <div key={i} className="relative h-24 w-24 rounded-lg overflow-hidden border border-border">
                       <img src={img} alt="" className="h-full w-full object-cover" />
-                      <button onClick={() => setForm((f) => ({ ...f, images: f.images.filter((_, idx) => idx !== i) }))} className="absolute top-0 right-0 bg-destructive text-white rounded-bl px-1 text-xs">×</button>
+                      <button onClick={() => setForm((f) => ({ ...f, images: f.images.filter((_, idx) => idx !== i) }))} className={`absolute top-0 right-0 rounded-bl px-1 text-xs ${THEME_BTN_DANGER_SOLID}`}>×</button>
                     </div>
                   ))}
                   {uploadingGallery && (
@@ -399,7 +405,7 @@ export default function AdminProductForm() {
                     <button
                       type="button"
                       onClick={() => setForm((f) => ({ ...f, video_url: "" }))}
-                      className="shrink-0 text-xs text-destructive hover:underline"
+                      className={`shrink-0 text-xs hover:underline ${THEME_TEXT_DANGER}`}
                     ><Tx>
                       清除
                     </Tx></button>
@@ -639,7 +645,7 @@ export default function AdminProductForm() {
                               return { ...f, variants: nv };
                             });
                           }}
-                          className="text-destructive disabled:opacity-30"
+                          className={`${THEME_TEXT_DANGER} disabled:opacity-30`}
                           title="删除此行"
                         >
                           <Trash2 size={14} />
@@ -806,7 +812,7 @@ export default function AdminProductForm() {
                 loadingText="删除中..."
                 disabled={deleting || saving}
                 onClick={() => setDeleteConfirmOpen(true)}
-                className="w-full rounded-lg border border-destructive/40 px-6 py-3 text-sm font-semibold text-destructive hover:bg-destructive/10"
+                className={`w-full rounded-lg border px-6 py-3 text-sm font-semibold ${THEME_OUTLINE_DANGER}`}
               ><Tx>
                 删除商品
               </Tx></LoadingButton>

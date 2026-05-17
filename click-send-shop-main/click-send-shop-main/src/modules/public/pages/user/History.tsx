@@ -27,7 +27,7 @@ export default function History() {
             <h1 className="text-base font-semibold text-foreground">浏览历史</h1>
           </div>
           {history.length > 0 && (
-            <button onClick={clearHistory} className="flex items-center gap-1 text-xs text-destructive active:opacity-70">
+            <button onClick={clearHistory} className="flex items-center gap-1 text-xs text-[var(--theme-danger)] active:opacity-70">
               <Trash2 size={14} /> 清空
             </button>
           )}

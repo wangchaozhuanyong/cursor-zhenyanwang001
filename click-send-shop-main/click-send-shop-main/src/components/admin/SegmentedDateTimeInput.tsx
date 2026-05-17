@@ -1,5 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { CalendarClock } from "lucide-react";
+import {
+  SEGMENT_DAY_LEN,
+  SEGMENT_HOUR_LEN,
+  SEGMENT_MINUTE_LEN,
+  SEGMENT_MONTH_LEN,
+  SEGMENT_YEAR_INPUT_CLASS,
+  SEGMENT_YEAR_LEN,
+  applyYearSegmentInput,
+  focusNextAfterDayComplete,
+  focusNextAfterHourComplete,
+  focusNextAfterMonthComplete,
+  handleYearSegmentPaste,
+  segmentDigits,
+} from "./segmentedDateField";
 
 function parseDateTimeLocal(v: string): { y: string; m: string; d: string; h: string; mi: string } {
   if (!v || !v.trim()) return { y: "", m: "", d: "", h: "", mi: "" };
@@ -66,8 +80,6 @@ export type SegmentedDateTimeInputProps = {
   disabled?: boolean;
   id?: string;
 };
-
-const digitOnly = (raw: string, maxLen: number) => raw.replace(/\D/g, "").slice(0, maxLen);
 
 /**
  * 替代原生 `type="datetime-local"`：年 4 位、月/日各最多 2 位、时/分各最多 2 位，满位自动跳到下一段。
@@ -157,6 +169,12 @@ export default function SegmentedDateTimeInput({
     return `${ymd}T${String(hhNum).padStart(2, "0")}:${String(mmNum).padStart(2, "0")}`;
   })();
 
+  const setYearFromInput = (raw: string) => {
+    const v = applyYearSegmentInput(raw, mRef);
+    setY(v);
+    tryEmit(v, m, d, h, mi);
+  };
+
   return (
     <div className={`relative ${className}`}>
       <div
@@ -200,9 +218,15 @@ export default function SegmentedDateTimeInput({
           aria-label="月（2 位）"
           className="w-[2.75ch] min-w-0 bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
           onChange={(e) => {
-            const v = digitOnly(e.target.value, 2);
+            const v = segmentDigits(e.target.value, SEGMENT_MONTH_LEN);
             setM(v);
-            if (v.length === 2) dRef.current?.focus();
+            focusNextAfterMonthComplete(v, dRef.current);
+            tryEmit(y, v, d, h, mi);
+          }}
+          onInput={(e) => {
+            const v = segmentDigits(e.currentTarget.value, SEGMENT_MONTH_LEN);
+            setM(v);
+            focusNextAfterMonthComplete(v, dRef.current);
             tryEmit(y, v, d, h, mi);
           }}
           onKeyDown={(e) => {
@@ -229,9 +253,15 @@ export default function SegmentedDateTimeInput({
           aria-label="日（2 位）"
           className="w-[2.75ch] min-w-0 bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
           onChange={(e) => {
-            const v = digitOnly(e.target.value, 2);
+            const v = segmentDigits(e.target.value, SEGMENT_DAY_LEN);
             setD(v);
-            if (v.length === 2) hRef.current?.focus();
+            focusNextAfterDayComplete(v, hRef.current);
+            tryEmit(y, m, v, h, mi);
+          }}
+          onInput={(e) => {
+            const v = segmentDigits(e.currentTarget.value, SEGMENT_DAY_LEN);
+            setD(v);
+            focusNextAfterDayComplete(v, hRef.current);
             tryEmit(y, m, v, h, mi);
           }}
           onKeyDown={(e) => {
@@ -289,7 +319,7 @@ export default function SegmentedDateTimeInput({
           aria-label="分（0–59，2 位）"
           className="w-[2.75ch] min-w-0 bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
           onChange={(e) => {
-            const v = digitOnly(e.target.value, 2);
+            const v = segmentDigits(e.target.value, SEGMENT_MINUTE_LEN);
             setMi(v);
             tryEmit(y, m, d, h, v);
           }}

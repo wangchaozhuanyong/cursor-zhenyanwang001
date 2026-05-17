@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as marketingService from "@/services/marketingService";
 import type { MarketingActivitySummary } from "@/services/marketingService";
+import { AnimatedSection } from "@/modules/micro-interactions";
 
-export default function MarketingPromotionBannerSection() {
+export default function MarketingPromotionBannerSection({ delay = 0 }: { delay?: number }) {
   const navigate = useNavigate();
   const [banners, setBanners] = useState<MarketingActivitySummary[]>([]);
 
@@ -21,6 +22,7 @@ export default function MarketingPromotionBannerSection() {
   if (!banner) return null;
 
   return (
+    <AnimatedSection delay={delay}>
     <section className="w-full">
       <button
         type="button"
@@ -38,5 +40,6 @@ export default function MarketingPromotionBannerSection() {
         </div>
       </button>
     </section>
+    </AnimatedSection>
   );
 }

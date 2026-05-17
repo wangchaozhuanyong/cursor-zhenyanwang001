@@ -1,5 +1,6 @@
 import { LucideIcon } from "lucide-react";
 import { AnimatedNumber } from "@/modules/micro-interactions";
+import { THEME_TEXT_DANGER, THEME_TEXT_SUCCESS } from "@/utils/themeVisuals";
 
 interface StatsCardProps {
   icon: LucideIcon;
@@ -21,7 +22,7 @@ export default function StatsCard({ icon: Icon, label, value, change, trend }: S
       </p>
       {change && (
         <p className={`mt-1 text-[10px] font-medium ${
-          trend === "up" ? "text-emerald-500" : trend === "down" ? "text-red-500" : "text-muted-foreground"
+          trend === "up" ? THEME_TEXT_SUCCESS : trend === "down" ? THEME_TEXT_DANGER : "text-muted-foreground"
         }`}>
           {trend === "up" ? "↑ " : trend === "down" ? "↓ " : ""}{change}
         </p>

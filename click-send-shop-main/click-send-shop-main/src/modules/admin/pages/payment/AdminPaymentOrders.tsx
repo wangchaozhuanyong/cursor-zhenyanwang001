@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/utils/formatDateTime";
 import { useCallback, useEffect, useState } from "react";
 import { CreditCard } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
@@ -186,7 +187,7 @@ export default function AdminPaymentOrders() {
               </td>
               <td className="px-3 py-2">{labelPaymentOrderStatus(r.status)}</td>
               <td className="px-3 py-2 font-mono text-xs">{r.payment_transaction_no || "—"}</td>
-              <td className="px-3 py-2 text-xs text-muted-foreground">{r.payment_time ? new Date(r.payment_time).toLocaleString() : "—"}</td>
+              <td className="px-3 py-2 text-xs text-muted-foreground">{r.payment_time ? formatDateTime(r.payment_time) : "—"}</td>
             </>
           )}
         />

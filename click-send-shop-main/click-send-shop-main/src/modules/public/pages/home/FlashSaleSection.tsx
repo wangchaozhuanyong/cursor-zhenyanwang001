@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Clock } from "lucide-react";
 import * as marketingApi from "@/api/modules/marketing";
 import type { FlashSaleHomeActivity } from "@/api/modules/marketing";
+import { AnimatedSection } from "@/modules/micro-interactions";
 
 function formatCountdown(seconds: number) {
   const s = Math.max(0, Math.floor(seconds));
@@ -12,7 +13,7 @@ function formatCountdown(seconds: number) {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
 }
 
-export default function FlashSaleSection() {
+export default function FlashSaleSection({ delay = 0 }: { delay?: number }) {
   const navigate = useNavigate();
   const [activity, setActivity] = useState<FlashSaleHomeActivity | null>(null);
   const [countdown, setCountdown] = useState(0);
@@ -45,6 +46,7 @@ export default function FlashSaleSection() {
   if (!activity?.items?.length) return null;
 
   return (
+    <AnimatedSection delay={delay}>
     <section className="w-full">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="min-w-0">
@@ -80,5 +82,6 @@ export default function FlashSaleSection() {
         ))}
       </div>
     </section>
+    </AnimatedSection>
   );
 }

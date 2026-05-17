@@ -69,9 +69,9 @@ export default function UploadVerify() {
           <div className="mt-4 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
             <div className="flex items-center gap-2">
               {result.isS3 ? (
-                <CheckCircle2 size={18} className="text-emerald-600" />
+                <CheckCircle2 size={18} className="text-[var(--theme-success)]" />
               ) : (
-                <XCircle size={18} className="text-destructive" />
+                <XCircle size={18} className="text-[var(--theme-danger)]" />
               )}
               <span className="text-sm font-semibold text-foreground">
                 {result.isS3 ? "S3 校验通过" : "S3 校验失败"}

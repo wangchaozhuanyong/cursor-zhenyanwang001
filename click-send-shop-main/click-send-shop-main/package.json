@@ -15,7 +15,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "regression:shots": "node scripts/regression-with-screenshots.mjs",
-    "verify:theme-studio": "node scripts/verify-theme-studio.mjs"
+    "verify:theme-studio": "node scripts/verify-theme-studio.mjs",
+    "audit:overlap": "node scripts/audit-ui-overlap.mjs",
+    "audit:overlap:full": "node scripts/audit-ui-overlap.mjs --full"
   },
   "browserslist": [
     "> 0.3%",

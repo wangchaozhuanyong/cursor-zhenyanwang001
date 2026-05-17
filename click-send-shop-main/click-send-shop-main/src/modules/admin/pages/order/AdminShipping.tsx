@@ -8,6 +8,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import { THEME_BADGE_MUTED, THEME_BADGE_SUCCESS, THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 
 interface Template {
   id: number;
@@ -127,7 +128,7 @@ export default function AdminShipping() {
                 <Truck size={18} className="text-theme-price" />
                 <h3 className="font-bold text-foreground">{t.name}</h3>
               </div>
-              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${t.enabled ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${t.enabled ? THEME_BADGE_SUCCESS : THEME_BADGE_MUTED}`}>
                 {t.enabled ? "启用" : "停用"}
               </span>
             </div>
@@ -156,7 +157,7 @@ export default function AdminShipping() {
                 <button
                   type="button"
                   onClick={() => adminConfirmDelete(confirm, t.name, () => handleDelete(t.id))}
-                  className="flex items-center justify-center rounded-xl border border-border px-3 py-2 text-muted-foreground hover:text-destructive hover:bg-secondary"
+                  className={`flex items-center justify-center rounded-xl border border-border px-3 py-2 text-muted-foreground ${THEME_HOVER_TEXT_DANGER} hover:bg-secondary`}
                 >
                   <Trash2 size={12} />
                 </button>

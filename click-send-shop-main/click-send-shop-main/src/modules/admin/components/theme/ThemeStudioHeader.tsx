@@ -3,6 +3,7 @@ import { LoadingButton } from "@/modules/micro-interactions";
 import PermissionGate from "@/components/admin/PermissionGate";
 import StoreBadge from "@/components/ui/StoreBadge";
 import { Tx } from "@/components/admin/AdminText";
+import { THEME_BADGE_WARNING, THEME_OUTLINE_DANGER } from "@/utils/themeVisuals";
 
 export type ThemeStudioHeaderProps = {
   skinName: string;
@@ -47,7 +48,7 @@ export default function ThemeStudioHeader({
             <h1 className="truncate text-lg font-bold text-foreground"><Tx>Theme Studio 皮肤设计工作台</Tx></h1>
             {isDefault ? <StoreBadge type="success"><Tx>默认皮肤</Tx></StoreBadge> : null}
             {dirty ? (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800"><Tx>
+              <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${THEME_BADGE_WARNING}`}><Tx>
                 有未保存更改
               </Tx></span>
             ) : (
@@ -95,7 +96,7 @@ export default function ThemeStudioHeader({
             </Tx></button>
           ) : null}
           {canDelete ? (
-            <button type="button" onClick={onDelete} className="inline-flex items-center gap-1 rounded-lg border border-destructive/40 px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10">
+            <button type="button" onClick={onDelete} className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs ${THEME_OUTLINE_DANGER}`}>
               <Trash2 size={14} /><Tx>
               删除
             </Tx></button>

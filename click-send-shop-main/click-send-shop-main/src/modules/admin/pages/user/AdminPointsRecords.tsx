@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
+import { formatDateTime } from "@/utils/formatDateTime";
 import { useSearchParams } from "react-router-dom";
 import { Loader2, Star, TrendingDown, TrendingUp, Users } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
@@ -12,6 +13,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatUserDisplay, labelPointsAction } from "@/utils/adminDisplayLabels";
 import { Tx } from "@/components/admin/AdminText";
 import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
+import { THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 
 const actionOptions: Array<{ value: "" | PointsAction; label: string }> = [
   { value: "", label: "全部类型" },
@@ -131,7 +133,7 @@ export default function AdminPointsRecords() {
 
   const cards = [
     { label: "累计增加", value: String(intValue(stats.totalEarned)), icon: TrendingUp, className: "text-[var(--theme-price)]" },
-    { label: "累计扣减/回滚", value: String(intValue(stats.totalDeducted)), icon: TrendingDown, className: "text-destructive" },
+    { label: "累计扣减/回滚", value: String(intValue(stats.totalDeducted)), icon: TrendingDown, className: THEME_TEXT_DANGER },
     { label: "流水总数", value: String(intValue(stats.totalRecords)), icon: Star, className: "text-[var(--theme-price)]" },
     { label: "涉及用户", value: String(intValue(stats.activeUsers)), icon: Users, className: "text-[var(--theme-primary)]" },
   ];
@@ -277,14 +279,14 @@ export default function AdminPointsRecords() {
               </td>
               <td className="px-4 py-3 text-theme-muted">{labelPointsAction(record.action)}</td>
               <td className="px-4 py-3 font-mono text-xs text-[var(--theme-text-on-surface)]">{record.order_no || "—"}</td>
-              <td className={`px-4 py-3 font-semibold ${amount >= 0 ? "text-[var(--theme-price)]" : "text-destructive"}`}>
+              <td className={`px-4 py-3 font-semibold ${amount >= 0 ? "text-[var(--theme-price)]" : THEME_TEXT_DANGER}`}>
                 {amount > 0 ? "+" : ""}{amount}
               </td>
               <td className="px-4 py-3 text-theme-muted">{record.balance_before ?? "—"}</td>
               <td className="px-4 py-3 text-[var(--theme-text-on-surface)]">{record.balance_after ?? "—"}</td>
               <td className="max-w-[260px] truncate px-4 py-3 text-xs text-theme-muted">{record.description || "—"}</td>
               <td className="px-4 py-3 text-xs text-theme-muted">
-                {record.created_at ? new Date(record.created_at).toLocaleString("zh-CN") : "—"}
+                {record.created_at ? formatDateTime(record.created_at) : "—"}
               </td>
             </>
           );

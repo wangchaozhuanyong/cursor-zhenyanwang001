@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { formatDateTime } from "@/utils/formatDateTime";
 import { Bell, Plus, XCircle } from "lucide-react";
 import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 import { toast } from "sonner";
@@ -335,7 +336,7 @@ export default function AdminNotifications() {
       <AnimatedTable loading={loading} rows={notifications} rowKey={(n) => n.id} skeletonRows={6} skeletonCols={7} className="overflow-hidden rounded-2xl border border-border bg-card overflow-x-auto" tableClassName="w-full min-w-[860px] text-sm"
         thead={<tr><th className="px-4 py-3 text-left">标题</th><th className="px-4 py-3 text-left">类型</th><th className="px-4 py-3 text-left">状态</th><th className="px-4 py-3 text-left">接收/已读</th><th className="px-4 py-3 text-left">创建时间</th><th className="px-4 py-3 text-center">操作</th></tr>}
         footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />} emptyIcon={Bell} emptyTitle="暂无通知"
-        renderRow={(n) => <><td className="px-4 py-3"><button className="font-medium text-left hover:underline" onClick={() => navigate(`/admin/notifications/${n.id}`)}>{n.title}</button></td><td className="px-4 py-3">{labelNotificationType(n.type)}</td><td className="px-4 py-3">{statusText[n.send_status || ""] || statusText[n.workflow_status || ""] || "-"}</td><td className="px-4 py-3 text-xs">{n.recipient_count || 0} / {n.read_count || 0}</td><td className="px-4 py-3 text-xs">{n.created_at ? new Date(n.created_at).toLocaleString("zh-CN") : "-"}</td><td className="px-4 py-3 text-center"><button className="rounded-lg border px-2 py-1 text-xs" onClick={() => handleStatusAction(String(n.id))}>{getActionMeta(n).label}</button></td></>}
+        renderRow={(n) => <><td className="px-4 py-3"><button className="font-medium text-left hover:underline" onClick={() => navigate(`/admin/notifications/${n.id}`)}>{n.title}</button></td><td className="px-4 py-3">{labelNotificationType(n.type)}</td><td className="px-4 py-3">{statusText[n.send_status || ""] || statusText[n.workflow_status || ""] || "-"}</td><td className="px-4 py-3 text-xs">{n.recipient_count || 0} / {n.read_count || 0}</td><td className="px-4 py-3 text-xs">{n.created_at ? formatDateTime(n.created_at) : "-"}</td><td className="px-4 py-3 text-center"><button className="rounded-lg border px-2 py-1 text-xs" onClick={() => handleStatusAction(String(n.id))}>{getActionMeta(n).label}</button></td></>}
       />
 
       <PermissionGate permission="notification.trigger">

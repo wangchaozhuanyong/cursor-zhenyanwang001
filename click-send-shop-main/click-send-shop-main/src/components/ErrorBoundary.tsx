@@ -39,8 +39,8 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-6 py-16 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
-            <AlertTriangle className="h-8 w-8 text-destructive" />
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))]">
+            <AlertTriangle className="h-8 w-8 text-[var(--theme-danger)]" />
           </div>
           <div>
             <h1 className="font-display text-xl font-bold text-foreground">

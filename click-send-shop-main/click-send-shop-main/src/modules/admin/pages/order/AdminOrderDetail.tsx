@@ -1,4 +1,5 @@
-﻿import { ArrowLeft, Loader2, Truck, Check, XCircle, ReceiptText } from "lucide-react";
+import { ArrowLeft, Loader2, Truck, Check, XCircle, ReceiptText } from "lucide-react";
+import { formatDateTime } from "@/utils/formatDateTime";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -15,6 +16,14 @@ import {
   getPaymentStatusLabel,
 } from "@/constants/statusDictionary";
 import type { Order } from "@/types/order";
+import { getOrderDiscountLines } from "@/utils/orderDiscount";
+import {
+  THEME_BTN_PRIMARY_SOLID,
+  THEME_OUTLINE_DANGER,
+  THEME_OUTLINE_PRIMARY,
+  THEME_OUTLINE_SUCCESS,
+  THEME_TEXT_DANGER,
+} from "@/utils/themeVisuals";
 
 const ORDER_STATUS_PROGRESS = [
   ORDER_STATUS.PENDING,
@@ -81,26 +90,8 @@ export default function AdminOrderDetail() {
     : null;
 
   const discountLines = useMemo(() => {
-    const src = order as unknown as {
-      flash_sale_discount?: number;
-      full_reduction_discount?: number;
-      coupon_discount?: number;
-      discount_lines?: Array<{ label?: string; amount?: number }>;
-    };
-    const list: Array<{ label: string; amount: number }> = [];
-    const flash = Number(src.flash_sale_discount || 0);
-    const fullReduction = Number(src.full_reduction_discount || 0);
-    const coupon = Number(src.coupon_discount || 0);
-    if (flash > 0) list.push({ label: "秒杀优惠", amount: flash });
-    if (fullReduction > 0) list.push({ label: "满减优惠", amount: fullReduction });
-    if (coupon > 0) list.push({ label: "优惠券优惠", amount: coupon });
-    if (Array.isArray(src.discount_lines)) {
-      for (const it of src.discount_lines) {
-        const amount = Number(it?.amount || 0);
-        if (amount > 0 && it?.label) list.push({ label: it.label, amount });
-      }
-    }
-    return list;
+    if (!order) return [];
+    return getOrderDiscountLines(order);
   }, [order]);
 
   const handleStatus = async (target: string) => {
@@ -191,17 +182,17 @@ export default function AdminOrderDetail() {
               {order.status === ORDER_STATUS.PENDING && (
                 <>
                   <PermissionGate permission="payment.manage">
-                    <button type="button" disabled={busy} onClick={handleMarkPaid} className="rounded-lg border border-emerald-500/40 px-3 py-2 text-xs text-emerald-600">确认线下收款</button>
+                    <button type="button" disabled={busy} onClick={handleMarkPaid} className={`rounded-lg px-3 py-2 text-xs ${THEME_OUTLINE_SUCCESS}`}>确认线下收款</button>
                   </PermissionGate>
                   <PermissionGate permission="order.update">
-                    <button type="button" disabled={busy} onClick={() => void handleStatus(ORDER_STATUS.CANCELLED)} className="rounded-lg border border-red-500/40 px-3 py-2 text-xs text-red-600">取消订单</button>
+                    <button type="button" disabled={busy} onClick={() => void handleStatus(ORDER_STATUS.CANCELLED)} className={`rounded-lg px-3 py-2 text-xs ${THEME_OUTLINE_DANGER}`}>取消订单</button>
                   </PermissionGate>
                 </>
               )}
 
               {order.status === ORDER_STATUS.PAID && (
                 <PermissionGate permission="order.ship">
-                  <button type="button" disabled={busy} onClick={() => setShowShipForm(true)} className="rounded-lg border border-blue-500/40 px-3 py-2 text-xs text-blue-600">发货</button>
+                  <button type="button" disabled={busy} onClick={() => setShowShipForm(true)} className={`rounded-lg px-3 py-2 text-xs ${THEME_OUTLINE_PRIMARY}`}>发货</button>
                 </PermissionGate>
               )}
 
@@ -237,9 +228,9 @@ export default function AdminOrderDetail() {
           <div className="border-t border-border pt-2 space-y-1 text-sm">
             <div className="flex justify-between"><span>商品原价</span><span>RM {Number(order.raw_amount || 0).toFixed(2)}</span></div>
             {discountLines.map((d, i) => (
-              <div key={i} className="flex justify-between text-red-600"><span>{d.label}</span><span>-RM {Number(d.amount).toFixed(2)}</span></div>
+              <div key={i} className={`flex justify-between ${THEME_TEXT_DANGER}`}><span>{d.label}</span><span>-RM {Number(d.amount).toFixed(2)}</span></div>
             ))}
-            {!!Number(order.total_points || 0) && <div className="flex justify-between text-red-600"><span>积分抵扣</span><span>-{order.total_points} 分</span></div>}
+            {!!Number(order.total_points || 0) && <div className={`flex justify-between ${THEME_TEXT_DANGER}`}><span>积分抵扣</span><span>-{order.total_points} 分</span></div>}
             <div className="flex justify-between"><span>运费</span><span>{Number(order.shipping_fee || 0) > 0 ? `RM ${Number(order.shipping_fee).toFixed(2)}` : "包邮"}</span></div>
             <div className="flex justify-between"><span>SST</span><span>RM {Number(order.tax_amount || 0).toFixed(2)}</span></div>
             <div className="flex justify-between border-t border-border pt-1 font-bold"><span>实付金额</span><span>RM {Number(order.total_amount || 0).toFixed(2)}</span></div>
@@ -254,7 +245,7 @@ export default function AdminOrderDetail() {
               <div key={log.id} className="rounded-lg border border-border p-2 text-xs">
                 <div className="font-medium">{log.action_type}</div>
                 <div className="text-muted-foreground">操作人：{log.operator_name || "系统"}</div>
-                <div className="text-muted-foreground">时间：{new Date(log.created_at).toLocaleString("zh-CN")}</div>
+                <div className="text-muted-foreground">时间：{formatDateTime(log.created_at)}</div>
                 <div className="text-muted-foreground">备注：{log.summary || "-"}</div>
                 <div className="text-muted-foreground">before: {JSON.stringify(log.before_json)}</div>
                 <div className="text-muted-foreground">after: {JSON.stringify(log.after_json)}</div>
@@ -272,7 +263,7 @@ export default function AdminOrderDetail() {
               <input value={carrier} onChange={(e) => setCarrier(e.target.value)} placeholder="物流公司" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
               <input value={trackingNo} onChange={(e) => setTrackingNo(e.target.value)} placeholder="快递单号" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
               <PermissionGate permission="order.ship">
-                <button type="button" disabled={busy} onClick={handleShip} className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-sm text-white">
+                <button type="button" disabled={busy} onClick={handleShip} className={`inline-flex w-full items-center justify-center gap-1 rounded-lg px-3 py-2 text-sm ${THEME_BTN_PRIMARY_SOLID}`}>
                   {busy ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} 确认发货
                 </button>
               </PermissionGate>

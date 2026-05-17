@@ -52,7 +52,7 @@ export default function ComponentGalleryPreview({ config: _config }: { config: T
       </section>
       <StorePrice price={79} originalPrice={99} />
       <PremiumCouponCard
-        compact
+        layout="default"
         title="会员专享券"
         amount="10"
         minSpendText="满 RM 50 可用"

@@ -3,6 +3,7 @@ import type { ThemeSceneTag, ThemeSkin } from "@/types/theme";
 import { useThemeStudioLabel } from "@/hooks/useThemeStudioLabel";
 import { SCENE_FILTER_OPTIONS, SCENE_TAG_LABELS } from "./themeStudioConstants";
 import { Tx } from "@/components/admin/AdminText";
+import { THEME_BADGE_PRIMARY, THEME_BADGE_SUCCESS, THEME_HOVER_BG_DANGER, THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 
 export type ThemeSkinSidebarProps = {
   skins: ThemeSkin[];
@@ -111,8 +112,8 @@ export default function ThemeSkinSidebar({
                     </div>
                   </div>
                   <div className="mt-1.5 flex flex-wrap gap-1">
-                    {isDefault ? <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-800"><Tx>默认</Tx></span> : null}
-                    {selected ? <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-800"><Tx>编辑中</Tx></span> : null}
+                    {isDefault ? <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${THEME_BADGE_SUCCESS}`}><Tx>默认</Tx></span> : null}
+                    {selected ? <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${THEME_BADGE_PRIMARY}`}><Tx>编辑中</Tx></span> : null}
                     {skin.sceneTag ? (
                       <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
                         {tl(SCENE_TAG_LABELS[skin.sceneTag])}
@@ -130,7 +131,7 @@ export default function ThemeSkinSidebar({
                     <Copy size={12} />
                   </button>
                   {canDeleteSkin(skin.id) ? (
-                    <button type="button" title="删除" onClick={() => onDelete(skin.id)} className="rounded border border-border p-1 text-destructive hover:bg-destructive/10">
+                    <button type="button" title="删除" onClick={() => onDelete(skin.id)} className={`rounded border border-border p-1 ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`}>
                       <Trash2 size={12} />
                     </button>
                   ) : (

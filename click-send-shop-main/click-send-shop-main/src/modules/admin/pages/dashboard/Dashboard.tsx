@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/utils/formatDateTime";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useState } from "react";
 import { ShoppingCart, Users, DollarSign, Package } from "lucide-react";
@@ -7,7 +8,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as dashboardService from "@/services/admin/dashboardService";
 import { Tx } from "@/components/admin/AdminText";
-import { ORDER_STATUS, getOrderStatusLabel } from "@/constants/statusDictionary";
+import { getOrderStatusBadgeClass, getOrderStatusLabel } from "@/constants/statusDictionary";
 
 const PIE_COLORS = ["var(--theme-price)", "hsl(210, 80%, 55%)", "hsl(150, 60%, 45%)", "hsl(340, 70%, 55%)", "hsl(270, 60%, 55%)", "hsl(30, 80%, 55%)"];
 
@@ -161,7 +162,7 @@ export default function Dashboard() {
               <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
               <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }} />
               <Bar dataKey="completed" fill="var(--theme-price)" radius={[4, 4, 0, 0]} name="已完成" />
-              <Bar dataKey="cancelled" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} name="已取消" />
+              <Bar dataKey="cancelled" fill="var(--theme-danger)" radius={[4, 4, 0, 0]} name="已取消" />
             </BarChart>
           </ResponsiveContainer>
         ) : (
@@ -183,14 +184,11 @@ export default function Dashboard() {
                 <div className="flex min-h-[52px] items-center justify-between theme-rounded border border-[var(--theme-border)] p-3 opacity-80">
                   <div>
                     <p className="text-sm font-medium text-foreground font-mono">{o.order_no}</p>
-                    <p className="text-xs text-muted-foreground">{o.contact_name} · {new Date(o.created_at).toLocaleString("zh-CN")}</p>
+                    <p className="text-xs text-muted-foreground">{o.contact_name} · {formatDateTime(o.created_at)}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-foreground">RM {o.total_amount?.toFixed(2)}</p>
-                    <span className={`text-[10px] font-medium ${
-                      o.status === ORDER_STATUS.COMPLETED ? "text-green-500" :
-                      o.status === ORDER_STATUS.CANCELLED ? "text-destructive" : "text-[var(--theme-price)]"
-                    }`}>{getOrderStatusLabel(o.status)}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${getOrderStatusBadgeClass(o.status)}`}>{getOrderStatusLabel(o.status)}</span>
                   </div>
                 </div>
               )}>
@@ -203,14 +201,11 @@ export default function Dashboard() {
                 >
                   <div>
                     <p className="text-sm font-medium text-foreground font-mono">{o.order_no}</p>
-                    <p className="text-xs text-muted-foreground">{o.contact_name} · {new Date(o.created_at).toLocaleString("zh-CN")}</p>
+                    <p className="text-xs text-muted-foreground">{o.contact_name} · {formatDateTime(o.created_at)}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-foreground">RM {o.total_amount?.toFixed(2)}</p>
-                    <span className={`text-[10px] font-medium ${
-                      o.status === ORDER_STATUS.COMPLETED ? "text-green-500" :
-                      o.status === ORDER_STATUS.CANCELLED ? "text-destructive" : "text-[var(--theme-price)]"
-                    }`}>{getOrderStatusLabel(o.status)}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${getOrderStatusBadgeClass(o.status)}`}>{getOrderStatusLabel(o.status)}</span>
                   </div>
                 </div>
               </PermissionGate>

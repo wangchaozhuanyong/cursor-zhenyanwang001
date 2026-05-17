@@ -1,4 +1,5 @@
-﻿import { useEffect, useState } from "react";
+﻿import { formatDateTime } from "@/utils/formatDateTime";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Bell,
@@ -19,21 +20,30 @@ import { useGoBack } from "@/hooks/useGoBack";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import type { NotificationType } from "@/types/notification";
+import {
+  THEME_BADGE_ACCENT,
+  THEME_BADGE_DANGER,
+  THEME_BADGE_MUTED,
+  THEME_BADGE_PRICE,
+  THEME_BADGE_PRIMARY,
+  THEME_BADGE_SUCCESS,
+  THEME_BADGE_WARNING,
+} from "@/utils/themeVisuals";
 
 const typeConfig: Record<NotificationType, { icon: typeof Bell; color: string }> = {
-  order: { icon: Package, color: "bg-blue-500/10 text-blue-500" },
-  shipping: { icon: Truck, color: "bg-cyan-500/10 text-cyan-500" },
-  payment: { icon: CreditCard, color: "bg-emerald-500/10 text-emerald-500" },
-  refund: { icon: RotateCcw, color: "bg-rose-500/10 text-rose-500" },
-  after_sale: { icon: ShieldCheck, color: "bg-purple-500/10 text-purple-500" },
-  promotion: { icon: Megaphone, color: "bg-gold/10 text-theme-price" },
-  coupon: { icon: Ticket, color: "bg-amber-500/10 text-amber-500" },
-  points: { icon: Ticket, color: "bg-green-500/10 text-green-500" },
-  reward: { icon: Gift, color: "bg-orange-500/10 text-orange-500" },
-  system: { icon: Bell, color: "bg-primary/10 text-foreground" },
+  order: { icon: Package, color: THEME_BADGE_PRIMARY },
+  shipping: { icon: Truck, color: THEME_BADGE_PRIMARY },
+  payment: { icon: CreditCard, color: THEME_BADGE_SUCCESS },
+  refund: { icon: RotateCcw, color: THEME_BADGE_DANGER },
+  after_sale: { icon: ShieldCheck, color: THEME_BADGE_ACCENT },
+  promotion: { icon: Megaphone, color: THEME_BADGE_PRICE },
+  coupon: { icon: Ticket, color: THEME_BADGE_WARNING },
+  points: { icon: Ticket, color: THEME_BADGE_SUCCESS },
+  reward: { icon: Gift, color: THEME_BADGE_ACCENT },
+  system: { icon: Bell, color: THEME_BADGE_MUTED },
 };
 
-const fallbackConfig = { icon: Bell, color: "bg-primary/10 text-foreground" };
+const fallbackConfig = { icon: Bell, color: THEME_BADGE_MUTED };
 
 export default function Notifications() {
   const navigate = useNavigate();
@@ -67,7 +77,7 @@ export default function Notifications() {
   if (error && notifications.length === 0) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
-        <p className="text-sm text-destructive">{error}</p>
+        <p className="text-sm text-[var(--theme-danger)]">{error}</p>
         <button
           onClick={() => loadNotifications()}
           className="rounded-full btn-theme-price px-6 py-2.5 text-sm font-bold text-primary-foreground"
@@ -138,7 +148,7 @@ export default function Notifications() {
                       <p className="mt-1 text-xs leading-relaxed text-muted-foreground line-clamp-2">
                         {n.content}
                       </p>
-                      <p className="mt-2 text-[11px] text-muted-foreground/60">{n.created_at}</p>
+                      <p className="mt-2 text-[11px] text-muted-foreground/60">{formatDateTime(n.created_at)}</p>
                     </div>
                   </div>
                 </motion.div>

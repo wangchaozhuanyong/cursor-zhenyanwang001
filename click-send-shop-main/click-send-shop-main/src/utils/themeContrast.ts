@@ -269,13 +269,18 @@ function paletteForGradientSurface(start: RGB, end: RGB, midWeight = 0.42): Grad
   const mid = mixColors(start, end, midWeight);
   const fg = ensureReadableForeground(mid);
   const fgRgb = parseColor(fg);
+  const darkMid = isDarkColor(mid);
+  /** 实底图标容器：避免半透明浅底 + 浅色描边导致图标发虚 */
+  const iconWrapBg = darkMid ? mixColors(WHITE, mid, 0.94) : mixColors(WHITE, mid, 0.9);
+  const brandTone = mixColors(start, end, 0.42);
+  const iconFg = ensureReadableForeground(iconWrapBg, rgbToCss(brandTone), 3.2);
   return {
     midCss: rgbToCss(mid),
     foreground: fg,
     muted: getMutedTextColor(mid, fg),
     subtle: rgbToCss(mixColors(fgRgb, mid, 0.55)),
-    icon: rgbToCss(mixColors(fgRgb, start, 0.1)),
-    iconWrap: rgbToCss(mixColors(fgRgb, mid, 0.16)),
+    icon: iconFg,
+    iconWrap: rgbToCss(iconWrapBg),
   };
 }
 

@@ -15,6 +15,8 @@ import { CheckoutPriceSummary } from "./components/CheckoutPriceSummary";
 import { CheckoutShippingSection } from "./components/CheckoutShippingSection";
 import { CheckoutSubmitBar } from "./components/CheckoutSubmitBar";
 import { useCheckoutPage } from "./hooks/useCheckoutPage";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { parseOrderPaymentTimeoutFromSite } from "@/utils/orderPaymentTimeout";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { submitCtaLabel } from "./utils/checkoutText";
 import MarketingPositionNotices from "@/modules/public/components/marketing/MarketingPositionNotices";
@@ -22,6 +24,12 @@ import MarketingPositionNotices from "@/modules/public/components/marketing/Mark
 export default function Checkout() {
   useDocumentTitle("结算");
   const checkout = useCheckoutPage();
+  const siteInfo = useSiteInfo();
+  const payTimeout = parseOrderPaymentTimeoutFromSite(siteInfo);
+  const paymentTimeoutHint =
+    payTimeout.enabled && checkout.paymentMethod === "online"
+      ? `在线支付订单需在 ${payTimeout.minutes} 分钟内完成付款，超时将自动取消并释放库存。`
+      : null;
   const isMobileSheet = useMediaSheetMode();
   const addresses = useUserStore((s) => s.addresses);
   const [addressSheetOpen, setAddressSheetOpen] = useState(false);
@@ -59,6 +67,7 @@ export default function Checkout() {
         onHome={checkout.goHome}
         onViewOrders={checkout.goOrders}
         onViewOrderDetail={() => checkout.goOrderDetail(checkout.submittedOrder!.id)}
+        onPaymentTimeoutExpired={checkout.refreshSubmittedOrder}
       />
     );
   }
@@ -95,6 +104,7 @@ export default function Checkout() {
             <CheckoutPaymentMethod
               paymentMethod={checkout.paymentMethod}
               onPaymentMethodChange={checkout.setPaymentMethod}
+              paymentTimeoutHint={paymentTimeoutHint}
               paymentConfigLoaded={checkout.paymentConfigLoaded}
               paymentChannels={checkout.paymentChannels}
               stripeReady={checkout.stripeReady}

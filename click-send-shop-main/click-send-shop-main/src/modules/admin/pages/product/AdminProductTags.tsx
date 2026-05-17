@@ -7,6 +7,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { LoadingButton } from "@/modules/micro-interactions";
 import type { ProductTag } from "@/types/product";
 import { Tx } from "@/components/admin/AdminText";
+import { THEME_HOVER_BG_DANGER, THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 
 const EMPTY_FORM = {
@@ -189,7 +190,7 @@ export default function AdminProductTags() {
                 <button
                   type="button"
                   onClick={() => adminConfirmDelete(confirm, tag.name, () => handleDelete(tag.id))}
-                  className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  className={`rounded-md p-1.5 text-muted-foreground ${THEME_HOVER_BG_DANGER} ${THEME_HOVER_TEXT_DANGER}`}
                 >
                   <Trash2 size={14} />
                 </button>

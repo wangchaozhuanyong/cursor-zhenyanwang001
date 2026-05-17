@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatDateTime } from "@/utils/formatDateTime";
 import { ShoppingCart } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import { useNavigate } from "react-router-dom";
@@ -10,6 +11,7 @@ import type { CheckoutAbandonment, CheckoutAbandonmentStatus } from "@/types/ord
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { labelCheckoutPaymentMethod } from "@/utils/adminDisplayLabels";
 import { Tx } from "@/components/admin/AdminText";
+import { THEME_BADGE_ACCENT, THEME_BADGE_MUTED, THEME_BADGE_SUCCESS, THEME_BADGE_WARNING } from "@/utils/themeVisuals";
 
 const STATUS_OPTIONS: Array<{ value: "" | CheckoutAbandonmentStatus; label: string }> = [
   { value: "", label: "未完成" },
@@ -27,10 +29,10 @@ const STATUS_LABEL: Record<CheckoutAbandonmentStatus, string> = {
 };
 
 const STATUS_BADGE: Record<CheckoutAbandonmentStatus, string> = {
-  open: "bg-amber-500/10 text-amber-700",
-  ordered: "bg-orange-500/10 text-orange-700",
-  paid: "bg-emerald-500/10 text-emerald-700",
-  closed: "bg-muted text-muted-foreground",
+  open: THEME_BADGE_WARNING,
+  ordered: THEME_BADGE_ACCENT,
+  paid: THEME_BADGE_SUCCESS,
+  closed: THEME_BADGE_MUTED,
 };
 
 export default function AdminCheckoutAbandonments() {
@@ -133,7 +135,7 @@ export default function AdminCheckoutAbandonments() {
           <div key={row.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
             <div className="flex items-center justify-between gap-3">
               <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[row.status]}`}>{STATUS_LABEL[row.status]}</span>
-              <span className="text-xs text-muted-foreground">{new Date(row.updated_at).toLocaleString("zh-CN")}</span>
+              <span className="text-xs text-muted-foreground">{formatDateTime(row.updated_at)}</span>
             </div>
             <div className="mt-3 flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -188,7 +190,7 @@ export default function AdminCheckoutAbandonments() {
               <td className="px-4 py-3 font-semibold text-foreground">RM {row.total_amount.toFixed(2)}</td>
               <td className="px-4 py-3 text-foreground">{labelCheckoutPaymentMethod(row.payment_method)}</td>
               <td className="px-4 py-3 font-mono text-xs text-foreground">{row.order_no || "—"}</td>
-              <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(row.updated_at).toLocaleString("zh-CN")}</td>
+              <td className="px-4 py-3 text-xs text-muted-foreground">{formatDateTime(row.updated_at)}</td>
               <td className="px-4 py-3">
                 {row.order_id ? (
                   <button type="button" onClick={() => navigate(`/admin/orders/${row.order_id}`)} className="text-xs text-[var(--theme-price)] hover:underline"><Tx>详情</Tx></button>

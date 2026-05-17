@@ -39,6 +39,8 @@ export interface SiteInfo {
 
   /* ─ 业务 ─ */
   currency?: string;
+  orderPaymentTimeoutEnabled?: string;
+  orderPaymentTimeoutMinutes?: string;
   sstEnabled?: string;
   sstRatePercent?: string;
   sstLabel?: string;
@@ -72,10 +74,6 @@ export interface SiteInfo {
   footerNav?: string;
 
   /* ─ 首页新品运营主视觉 ─ */
-  newArrivalHeroImage?: string;
-  newArrivalHeroTitle?: string;
-  newArrivalHeroSubtitle?: string;
-  newArrivalHeroCtaText?: string;
   newArrivalSectionTitle?: string;
   newArrivalSectionSubtitle?: string;
   newArrivalDisplayCount?: string;

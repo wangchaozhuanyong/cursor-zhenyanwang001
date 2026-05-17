@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
+import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 
 type Props = {
   categoryOptions?: Array<{ value: string; label: string }>;
@@ -108,8 +109,8 @@ export default function ReportFilterBar({ categoryOptions = [], onChange }: Prop
         <select value={compare} onChange={(e) => update({ compare: e.target.value })} className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-xs">
           {COMPARE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
-        <input disabled={!isCustom} type="date" value={dateFrom} onChange={(e) => update({ date_from: e.target.value })} className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-xs disabled:opacity-60" />
-        <input disabled={!isCustom} type="date" value={dateTo} onChange={(e) => update({ date_to: e.target.value })} className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-xs disabled:opacity-60" />
+        <SegmentedDateInput disabled={!isCustom} value={dateFrom} onChange={(v) => update({ date_from: v })} className="min-w-0" />
+        <SegmentedDateInput disabled={!isCustom} value={dateTo} onChange={(v) => update({ date_to: v })} className="min-w-0" />
         <select value={categoryId} onChange={(e) => update({ category_id: e.target.value })} className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-xs">
           <option value="">全部分类</option>
           {categoryOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}

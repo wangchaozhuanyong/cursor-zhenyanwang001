@@ -1,4 +1,3 @@
-import { ChevronDown } from "lucide-react";
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 import type { Category } from "@/types/category";
@@ -9,10 +8,9 @@ import { cn } from "@/lib/utils";
 type CategorySideTreeProps = {
   categories: Category[];
   activeCat: string;
-  expandedParentId: string | null;
   onSelectAll: () => void;
   onRootClick: (category: Category) => void;
-  onChildClick: (parentId: string, childId: string) => void;
+  onChildClick: (childId: string) => void;
 };
 
 const SIDE_TAB_SPRING = { type: "spring" as const, stiffness: 360, damping: 30 };
@@ -64,7 +62,6 @@ function SideNavButton({
 export default function CategorySideTree({
   categories,
   activeCat,
-  expandedParentId,
   onSelectAll,
   onRootClick,
   onChildClick,
@@ -94,7 +91,6 @@ export default function CategorySideTree({
         <div className="space-y-1">
           {categories.map((category) => {
             const hasChildren = (category.children?.length ?? 0) > 0;
-            const isExpanded = expandedParentId === category.id;
             const isActive = isCategoryOrDescendantActive(category, activeCat);
 
             return (
@@ -105,24 +101,21 @@ export default function CategorySideTree({
                   layoutId="category-side-nav"
                   activeClassName="bg-[var(--theme-primary)]/12"
                   activeTextClass="font-medium text-[var(--theme-text)]"
-                  className="flex items-center justify-between rounded-xl px-3 py-2 text-sm"
+                  className="rounded-xl px-3 py-2 text-sm"
                 >
                   <span className="truncate">
                     {renderCategoryMark(category)}
                     {category.name}
                   </span>
-                  {hasChildren ? (
-                    <ChevronDown size={14} className={`shrink-0 opacity-70 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
-                  ) : null}
                 </SideNavButton>
 
-                {hasChildren && isExpanded ? (
+                {hasChildren && isActive ? (
                   <div className="mt-1 space-y-1 pl-3">
                     {category.children!.map((child) => (
                       <SideNavButton
                         key={child.id}
                         active={activeCat === child.id}
-                        onClick={() => onChildClick(category.id, child.id)}
+                        onClick={() => onChildClick(child.id)}
                         layoutId="category-side-subnav"
                         activeClassName="bg-[var(--theme-price)]/12"
                         activeTextClass="text-xs font-medium text-[var(--theme-price)]"

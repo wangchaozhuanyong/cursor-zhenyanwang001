@@ -5,6 +5,10 @@ const {
   ValidationError,
 } = require('../../errors');
 const { formatOrderItem, formatOrder } = require('./order.mapper');
+const {
+  enrichOrderWithPaymentDeadline,
+  enrichOrdersWithPaymentDeadline,
+} = require('./orderPaymentDeadline');
 const { canUserCancel } = require('./orderStateMachine');
 const repo = require('./order.repository');
 const userModule = require('../user');
@@ -435,7 +439,8 @@ async function createOrder(userId, body) {
       subtotal: oi.price * oi.qty,
     }));
     const orderRow = await repo.selectOrderById(orderDb, orderId);
-    return { data: formatOrder(orderRow, formattedItems), message: '下单成功' };
+    const data = await enrichOrderWithPaymentDeadline(formatOrder(orderRow, formattedItems));
+    return { data, message: '下单成功' };
   } catch (err) {
     try {
       await conn.rollback();
@@ -468,7 +473,9 @@ async function getOrders(userId, query) {
     itemMap[oi.order_id].push(formatOrderItem(oi));
   }
 
-  const list = orders.map((o) => formatOrder(o, itemMap[o.id] || []));
+  const list = await enrichOrdersWithPaymentDeadline(
+    orders.map((o) => formatOrder(o, itemMap[o.id] || [])),
+  );
   return { kind: 'paginate', list, total, page, pageSize };
 }
 
@@ -476,8 +483,9 @@ async function getOrderById(userId, orderId) {
   const order = await repo.selectOrderByIdAndUser(orderDb, orderId, userId);
   if (!order) throw new NotFoundError('订单不存在');
   const items = await repo.selectOrderItems(orderDb, order.id);
-  const data = formatOrder(order, items.map(formatOrderItem));
+  let data = formatOrder(order, items.map(formatOrderItem));
   await requireLogisticsApi('attachTracking')(data);
+  data = await enrichOrderWithPaymentDeadline(data);
   return { data };
 }
 

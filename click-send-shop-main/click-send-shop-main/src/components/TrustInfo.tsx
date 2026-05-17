@@ -59,7 +59,7 @@ export default function TrustInfo({ className = "", variant = "row" }: Props) {
     <div className={`space-y-2.5 text-xs ${className}`}>
       {items.map((it) => (
         <div key={it.title} className="flex items-start gap-2">
-          <it.icon size={14} className="mt-0.5 flex-shrink-0 text-emerald-600" />
+          <it.icon size={14} className="mt-0.5 flex-shrink-0 text-[var(--theme-success)]" />
           <div className="min-w-0">
             <p className="font-medium text-foreground">{it.title}</p>
             <p className="mt-0.5 line-clamp-3 text-[11px] leading-snug text-muted-foreground">{it.desc}</p>

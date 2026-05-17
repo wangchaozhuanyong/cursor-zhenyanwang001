@@ -6,16 +6,10 @@ import { useCouponStore } from "@/stores/useCouponStore";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import * as marketingService from "@/services/marketingService";
-import type { MarketingCouponPublic } from "@/services/marketingService";
-import { formatCouponExpireText } from "@/utils/couponDisplay";
+import { marketingCouponToPremiumDisplay } from "@/utils/couponDisplay";
+import { AnimatedSection } from "@/modules/micro-interactions";
 
-function couponDisplay(c: MarketingCouponPublic) {
-  if (c.type === "percent") return { amount: `${c.value}%`, prefix: "" };
-  if (c.type === "shipping" && c.value <= 0) return { amount: "免运", prefix: "" };
-  return { amount: `RM ${c.value}`, prefix: "" };
-}
-
-export default function MarketingCouponCenterSection() {
+export default function MarketingCouponCenterSection({ delay = 0 }: { delay?: number }) {
   const navigate = useNavigate();
   const claimCoupon = useCouponStore((s) => s.claimCoupon);
   const [payload, setPayload] = useState<Awaited<ReturnType<typeof marketingService.fetchCouponCenter>>>(null);
@@ -34,6 +28,7 @@ export default function MarketingCouponCenterSection() {
   if (!payload?.coupons?.length) return null;
 
   return (
+    <AnimatedSection delay={delay}>
     <section className="w-full">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-base font-bold text-[var(--theme-text-on-surface)]">
@@ -46,17 +41,18 @@ export default function MarketingCouponCenterSection() {
       </div>
       <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
         {payload.coupons.map((c) => {
-          const { amount, prefix } = couponDisplay(c);
+          const display = marketingCouponToPremiumDisplay(c);
           return (
             <div key={c.id} className="w-[min(88vw,320px)] shrink-0 snap-center">
               <PremiumCouponCard
-                homeCompact
-                title={c.title}
-                amountPrefix={prefix}
-                amount={amount}
-                minSpendText={c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛"}
-                expireText={formatCouponExpireText(c.end_date)}
-                actionLabel="立即领取"
+                layout="home"
+                title={display.title}
+                amountPrefix={display.amountPrefix}
+                amount={display.amount}
+                minSpendText={display.minSpendText}
+                expireText={display.expireText}
+                scopeText={display.scopeText}
+                actionLabel="领取"
                 actionLoading={claimingId === c.id}
                 onAction={() => {
                   void (async () => {
@@ -77,5 +73,6 @@ export default function MarketingCouponCenterSection() {
         })}
       </div>
     </section>
+    </AnimatedSection>
   );
 }

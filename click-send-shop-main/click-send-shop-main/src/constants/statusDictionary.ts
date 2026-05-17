@@ -1,5 +1,14 @@
 import type { OrderStatus, PaymentStatus } from "@/types/order";
 import type { ReturnStatus } from "@/types/return";
+import {
+  THEME_BADGE_ACCENT,
+  THEME_BADGE_DANGER,
+  THEME_BADGE_MUTED,
+  THEME_BADGE_PRICE,
+  THEME_BADGE_PRIMARY,
+  THEME_BADGE_SUCCESS,
+  THEME_BADGE_WARNING,
+} from "@/utils/themeVisuals";
 
 export const ORDER_STATUS = {
   PENDING: "pending",
@@ -45,36 +54,36 @@ export const RETURN_STATUS = {
 } as const;
 
 export const ORDER_STATUS_META: Record<OrderStatus, { label: string; badgeClass: string }> = {
-  pending: { label: "待付款", badgeClass: "bg-amber-500/15 text-amber-600" },
-  paid: { label: "已付款", badgeClass: "bg-gold/15 text-gold" },
-  shipped: { label: "已发货", badgeClass: "bg-blue-500/15 text-blue-600" },
-  completed: { label: "已完成", badgeClass: "bg-green-500/15 text-green-600" },
-  cancelled: { label: "已取消", badgeClass: "bg-red-500/15 text-red-600" },
-  refunding: { label: "退款中", badgeClass: "bg-orange-500/15 text-orange-600" },
-  refunded: { label: "已退款", badgeClass: "bg-slate-500/15 text-slate-600" },
+  pending: { label: "待付款", badgeClass: THEME_BADGE_WARNING },
+  paid: { label: "已付款", badgeClass: THEME_BADGE_PRICE },
+  shipped: { label: "已发货", badgeClass: THEME_BADGE_PRIMARY },
+  completed: { label: "已完成", badgeClass: THEME_BADGE_SUCCESS },
+  cancelled: { label: "已取消", badgeClass: THEME_BADGE_DANGER },
+  refunding: { label: "退款中", badgeClass: THEME_BADGE_WARNING },
+  refunded: { label: "已退款", badgeClass: THEME_BADGE_MUTED },
 };
 
 export const PAYMENT_STATUS_META: Record<PaymentStatus, { label: string; badgeClass: string }> = {
-  pending: { label: "待支付", badgeClass: "bg-secondary text-muted-foreground" },
-  paid: { label: "已支付", badgeClass: "bg-emerald-500/10 text-emerald-600" },
-  failed: { label: "支付失败", badgeClass: "bg-destructive/10 text-destructive" },
-  refunded: { label: "已退款", badgeClass: "bg-orange-500/10 text-orange-600" },
-  partially_refunded: { label: "部分退款", badgeClass: "bg-orange-500/10 text-orange-700" },
+  pending: { label: "待支付", badgeClass: THEME_BADGE_MUTED },
+  paid: { label: "已支付", badgeClass: THEME_BADGE_SUCCESS },
+  failed: { label: "支付失败", badgeClass: THEME_BADGE_DANGER },
+  refunded: { label: "已退款", badgeClass: THEME_BADGE_WARNING },
+  partially_refunded: { label: "部分退款", badgeClass: THEME_BADGE_WARNING },
 };
 
 export const RETURN_STATUS_META: Record<ReturnStatus, { label: string; badgeClass: string }> = {
-  pending: { label: "待审核", badgeClass: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
-  need_evidence: { label: "需补充凭证", badgeClass: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300" },
-  approved: { label: "已通过", badgeClass: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
-  rejected: { label: "已拒绝", badgeClass: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
-  processing: { label: "处理中", badgeClass: "bg-gold/10 text-gold" },
-  waiting_return: { label: "待用户寄回", badgeClass: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300" },
-  return_in_transit: { label: "退货运输中", badgeClass: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300" },
-  received: { label: "已收货", badgeClass: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300" },
-  refund_pending: { label: "待退款", badgeClass: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300" },
-  refunded: { label: "已退款", badgeClass: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" },
-  exchange_shipping: { label: "换货发货中", badgeClass: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300" },
-  completed: { label: "已完成", badgeClass: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
+  pending: { label: "待审核", badgeClass: THEME_BADGE_WARNING },
+  need_evidence: { label: "需补充凭证", badgeClass: THEME_BADGE_WARNING },
+  approved: { label: "已通过", badgeClass: THEME_BADGE_PRIMARY },
+  rejected: { label: "已拒绝", badgeClass: THEME_BADGE_DANGER },
+  processing: { label: "处理中", badgeClass: THEME_BADGE_PRICE },
+  waiting_return: { label: "待用户寄回", badgeClass: THEME_BADGE_PRIMARY },
+  return_in_transit: { label: "退货运输中", badgeClass: THEME_BADGE_PRIMARY },
+  received: { label: "已收货", badgeClass: THEME_BADGE_ACCENT },
+  refund_pending: { label: "待退款", badgeClass: THEME_BADGE_WARNING },
+  refunded: { label: "已退款", badgeClass: THEME_BADGE_SUCCESS },
+  exchange_shipping: { label: "换货发货中", badgeClass: THEME_BADGE_ACCENT },
+  completed: { label: "已完成", badgeClass: THEME_BADGE_SUCCESS },
 };
 
 export const ORDER_STATUS_FILTER_OPTIONS: Array<{ value: "" | OrderStatus; label: string }> = [

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
+import { formatDateTime } from "@/utils/formatDateTime";
 import { Loader2, RotateCcw, TrendingDown, TrendingUp, Users } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
@@ -12,6 +13,14 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatUserDisplay, labelRewardStatus } from "@/utils/adminDisplayLabels";
 import { Tx } from "@/components/admin/AdminText";
 import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
+import {
+  THEME_BADGE_DANGER,
+  THEME_BADGE_MUTED,
+  THEME_BADGE_PRIMARY,
+  THEME_BADGE_SUCCESS,
+  THEME_BADGE_WARNING,
+  THEME_TEXT_DANGER,
+} from "@/utils/themeVisuals";
 
 const statusOptions: Array<{ value: "" | RewardStatus; label: string }> = [
   { value: "", label: "全部状态" },
@@ -23,11 +32,11 @@ const statusOptions: Array<{ value: "" | RewardStatus; label: string }> = [
 ];
 
 const statusLabels: Record<string, { label: string; className: string }> = {
-  pending: { label: "待处理", className: "bg-amber-500/10 text-amber-600" },
-  approved: { label: "已入账", className: "bg-green-500/10 text-green-600" },
-  paid: { label: "已提现", className: "bg-blue-500/10 text-blue-600" },
-  rejected: { label: "已拒绝", className: "bg-muted text-muted-foreground" },
-  reversed: { label: "已冲正", className: "bg-destructive/10 text-destructive" },
+  pending: { label: "待处理", className: THEME_BADGE_WARNING },
+  approved: { label: "已入账", className: THEME_BADGE_SUCCESS },
+  paid: { label: "已提现", className: THEME_BADGE_PRIMARY },
+  rejected: { label: "已拒绝", className: THEME_BADGE_MUTED },
+  reversed: { label: "已冲正", className: THEME_BADGE_DANGER },
 };
 
 const emptyStats: RewardStats = {
@@ -120,7 +129,7 @@ export default function AdminRewardRecords() {
 
   const cards = [
     { label: "累计入账", value: `RM ${money(stats.settledAmount)}`, icon: TrendingUp, className: "text-[var(--theme-price)]" },
-    { label: "累计冲正", value: `RM ${money(stats.reversedAmount)}`, icon: TrendingDown, className: "text-destructive" },
+    { label: "累计冲正", value: `RM ${money(stats.reversedAmount)}`, icon: TrendingDown, className: THEME_TEXT_DANGER },
     { label: "返现记录", value: String(stats.totalRecords || 0), icon: RotateCcw, className: "text-[var(--theme-price)]" },
     { label: "获奖用户", value: String(stats.rewardedUsers || 0), icon: Users, className: "text-[var(--theme-primary)]" },
   ];
@@ -273,7 +282,7 @@ export default function AdminRewardRecords() {
               </td>
               <td className="max-w-[220px] truncate px-4 py-3 text-xs text-theme-muted">{record.remark || "—"}</td>
               <td className="px-4 py-3 text-xs text-theme-muted">
-                {record.created_at ? new Date(record.created_at).toLocaleString("zh-CN") : "—"}
+                {record.created_at ? formatDateTime(record.created_at) : "—"}
               </td>
             </>
           );

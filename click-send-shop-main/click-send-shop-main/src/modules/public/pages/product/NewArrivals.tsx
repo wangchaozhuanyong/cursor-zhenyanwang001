@@ -4,16 +4,20 @@ import StorePageHeader from "@/components/store/StorePageHeader";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import ProductSortBar from "@/components/ProductSortBar";
+import ProductListViewToggle from "@/components/ProductListViewToggle";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useCategoryListView } from "@/hooks/useCategoryListView";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useProductStore } from "@/stores/useProductStore";
 import type { ProductSortType } from "@/types/product";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
-import { getProductGridClassName } from "@/utils/productGridClasses";
+import { getCategoryProductsGridClass } from "@/utils/productGridClasses";
 
 export default function NewArrivals() {
   const { themeConfig } = useThemeRuntime();
-  const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
+  const { viewMode, setViewMode } = useCategoryListView();
+  const productGridClass = getCategoryProductsGridClass(viewMode, themeConfig.productCardVariant);
+  const isListView = viewMode === "list";
   useDocumentTitle("新品上市");
   const navigate = useNavigate();
   const siteInfo = useSiteInfo();
@@ -36,13 +40,14 @@ export default function NewArrivals() {
       <StorePageHeader
         title="新品上市"
         titleInlineSlot={
-          <div className="flex min-w-0 flex-1 justify-end">
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
             <ProductSortBar
               hideNewest
               value={sort === "newest" ? "default" : sort}
               onChange={(next) => setSort(next === "newest" ? "default" : next)}
-              className="w-full max-w-[min(100%,20rem)]"
+              className="min-w-0 flex-1 max-w-[min(100%,18rem)]"
             />
+            <ProductListViewToggle value={viewMode} onChange={setViewMode} />
           </div>
         }
       />
@@ -56,9 +61,14 @@ export default function NewArrivals() {
 
         <section className={`mt-4 ${productGridClass}`}>
           {loading
-            ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
+            ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} list={isListView} />)
             : products.map((product, index) => (
-                <ProductCard key={product.id} product={product} index={index} />
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  index={index}
+                  displayMode={isListView ? "list" : "theme"}
+                />
               ))}
         </section>
 

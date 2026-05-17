@@ -1,5 +1,6 @@
 ﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
+import { formatDateTime } from "@/utils/formatDateTime";
 import { Users } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
@@ -74,7 +75,7 @@ export default function AdminInvites() {
               <td className="px-4 py-3 text-foreground">{inv.phone || "-"}</td>
               <td className="px-4 py-3 text-foreground">{inv.inviter_nickname || "-"}</td>
               <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{inv.parent_invite_code || "-"}</td>
-              <td className="px-4 py-3 text-xs text-muted-foreground">{inv.created_at ? new Date(inv.created_at).toLocaleString("zh-CN") : "-"}</td>
+              <td className="px-4 py-3 text-xs text-muted-foreground">{inv.created_at ? formatDateTime(inv.created_at) : "-"}</td>
               <td className="px-4 py-3">
                 <PermissionGate permission="user.view" fallback={<span className="text-xs text-muted-foreground">-</span>}>
                   <button type="button" onClick={() => navigate(`/admin/users/${inv.id}`)} className="text-xs text-theme-price hover:underline"><Tx>查看用户</Tx></button>

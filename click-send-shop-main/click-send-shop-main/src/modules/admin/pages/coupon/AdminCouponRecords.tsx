@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/utils/formatDateTime";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { ClipboardList } from "lucide-react";
@@ -9,10 +10,11 @@ import { fetchCouponRecords } from "@/services/admin/couponService";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import { Tx } from "@/components/admin/AdminText";
 import { formatUserDisplay, labelCouponRecordStatus } from "@/utils/adminDisplayLabels";
+import { THEME_BADGE_SUCCESS } from "@/utils/themeVisuals";
 
 const statusLabels: Record<string, { label: string; color: string }> = {
   available: { label: "未使用", color: "bg-gold/10 text-theme-price" },
-  used: { label: "已使用", color: "bg-green-500/10 text-green-500" },
+  used: { label: "已使用", color: THEME_BADGE_SUCCESS },
   expired: { label: "已过期", color: "bg-muted text-muted-foreground" },
 };
 
@@ -84,8 +86,8 @@ export default function AdminCouponRecords() {
                 <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${st.color}`}>{st.label}</span>
               </div>
               <p className="mt-2 text-sm text-foreground">{formatUserDisplay(r.nickname, r.phone)}</p>
-              <p className="mt-2 text-[11px] text-muted-foreground">领取 {r.claimed_at ? new Date(r.claimed_at).toLocaleString("zh-CN") : "—"}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">使用 {r.used_at ? new Date(r.used_at).toLocaleString("zh-CN") : "—"}</p>
+              <p className="mt-2 text-[11px] text-muted-foreground">领取 {r.claimed_at ? formatDateTime(r.claimed_at) : "—"}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">使用 {r.used_at ? formatDateTime(r.used_at) : "—"}</p>
             </div>
           );
         })}
@@ -122,9 +124,9 @@ export default function AdminCouponRecords() {
                 <td className="px-4 py-3 text-foreground">{formatUserDisplay(r.nickname, r.phone)}</td>
                 <td className="px-4 py-3 text-foreground">{formatPhone(r.phone)}</td>
                 <td className="px-4 py-3 text-foreground">{r.coupon_title || "未命名优惠券"}</td>
-                <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{r.claimed_at ? new Date(r.claimed_at).toLocaleString("zh-CN") : "—"}</td>
+                <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{r.claimed_at ? formatDateTime(r.claimed_at) : "—"}</td>
                 <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${st.color}`}>{st.label}</span></td>
-                <td className="px-4 py-3 text-xs text-muted-foreground">{r.used_at ? new Date(r.used_at).toLocaleString("zh-CN") : "—"}</td>
+                <td className="px-4 py-3 text-xs text-muted-foreground">{r.used_at ? formatDateTime(r.used_at) : "—"}</td>
               </>
             );
           }}

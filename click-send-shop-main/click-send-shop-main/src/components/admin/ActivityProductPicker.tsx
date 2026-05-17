@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Search, X } from "lucide-react";
 import type { ActivityProductItem } from "@/types/activity";
 import type { ActivityProductOption } from "@/api/admin/activity";
 import * as activityService from "@/services/admin/activityService";
+import { getProducts } from "@/api/admin/product";
 
 type Props = {
   open: boolean;
@@ -23,10 +24,45 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
   useEffect(() => {
     if (!open) return;
     setLoading(true);
-    activityService
-      .fetchActivityProductOptions({ page: 1, pageSize: 30, keyword })
-      .then((p) => setList(p.list))
-      .finally(() => setLoading(false));
+
+    const load = async () => {
+      try {
+        const p = await activityService.fetchActivityProductOptions({
+          page: 1,
+          pageSize: 50,
+          keyword,
+          lifecycle_status: 1,
+        });
+        if (Array.isArray(p.list) && p.list.length > 0) {
+          setList(p.list);
+          return;
+        }
+      } catch {
+        // fallback to admin product list
+      }
+
+      try {
+        const res = await getProducts({ page: 1, pageSize: 50, keyword });
+        const fallbackList = (res.data?.list || [])
+          .filter((p) => Number(p.lifecycle_status) === 1 && Number(p.stock || 0) > 0)
+          .map((p) => ({
+            id: p.id,
+            name: p.name,
+            cover_image: p.cover_image,
+            price: Number(p.price || 0),
+            stock: Number(p.stock || 0),
+            lifecycle_status: Number(p.lifecycle_status || 0),
+            category_id: p.category_id,
+          })) as ActivityProductOption[];
+        setList(fallbackList);
+      } catch {
+        setList([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void load();
   }, [open, keyword]);
 
   const filtered = useMemo(
@@ -138,4 +174,3 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
     </div>
   );
 }
-

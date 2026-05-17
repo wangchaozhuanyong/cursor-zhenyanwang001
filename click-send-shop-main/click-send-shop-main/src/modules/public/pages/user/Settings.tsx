@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/utils/formatDateTime";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Camera, Lock, ChevronRight, ShieldCheck, Trash2 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -205,7 +206,7 @@ export default function Settings() {
             </div>
             {wechatBinding.bound && wechatBinding.boundAt ? (
               <p className="mt-2 text-[11px] text-[var(--theme-muted)]">
-                绑定时间：{new Date(wechatBinding.boundAt).toLocaleString("zh-CN")}
+                绑定时间：{formatDateTime(wechatBinding.boundAt)}
               </p>
             ) : null}
             <div className="mt-4">
@@ -258,7 +259,7 @@ export default function Settings() {
         </section>
 
         <button type="button" onClick={() => navigate("/settings/upload-verify")} className={`${CARD} flex w-full items-center justify-between`}>
-          <div className="flex items-center gap-3"><ShieldCheck size={18} className="text-emerald-600" /><span className="text-sm font-medium">上传验收</span></div>
+          <div className="flex items-center gap-3"><ShieldCheck size={18} className="text-[var(--theme-success)]" /><span className="text-sm font-medium">上传验收</span></div>
           <span className="text-xs text-[var(--theme-muted)]">检查是否 S3</span>
           <ChevronRight size={16} className="text-[var(--theme-muted)]" />
         </button>

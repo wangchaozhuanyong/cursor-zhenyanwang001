@@ -3,23 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { Gift } from "lucide-react";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import { isLoggedIn } from "@/utils/token";
-import { formatCouponExpireText } from "@/utils/couponDisplay";
+import { marketingCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import * as marketingService from "@/services/marketingService";
-import type { MarketingCouponPublic } from "@/services/marketingService";
 import {
   THEME_GIFT_BADGE_SHELL,
   THEME_INVITE_PROMO_CTA,
   THEME_INVITE_PROMO_MUTED,
   THEME_INVITE_PROMO_SHELL,
 } from "@/utils/themeVisuals";
+import { AnimatedSection } from "@/modules/micro-interactions";
 
-function couponDisplay(c: MarketingCouponPublic) {
-  if (c.type === "percent") return { amount: `${c.value}%`, prefix: "" };
-  if (c.type === "shipping" && c.value <= 0) return { amount: "免运", prefix: "" };
-  return { amount: `RM ${c.value}`, prefix: "" };
-}
-
-export default function MarketingNewUserGiftSection() {
+export default function MarketingNewUserGiftSection({ delay = 0 }: { delay?: number }) {
   const navigate = useNavigate();
   const [payload, setPayload] = useState<Awaited<ReturnType<typeof marketingService.fetchNewUserGift>>>(null);
 
@@ -36,6 +30,7 @@ export default function MarketingNewUserGiftSection() {
   if (!payload?.coupons?.length) return null;
 
   return (
+    <AnimatedSection delay={delay}>
     <section className="w-full">
       <div className={`mb-3 rounded-2xl p-4 ${THEME_INVITE_PROMO_SHELL}`}>
         <div className="flex items-start gap-3">
@@ -66,18 +61,18 @@ export default function MarketingNewUserGiftSection() {
 
       <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
         {payload.coupons.map((c) => {
-          const { amount, prefix } = couponDisplay(c);
+          const display = marketingCouponToPremiumDisplay(c);
           return (
             <div key={c.id} className="w-[min(88vw,320px)] shrink-0 snap-center">
               <PremiumCouponCard
-                homeCompact
-                title={c.title}
-                amountPrefix={prefix}
-                amount={amount}
-                minSpendText={c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛"}
-                expireText={formatCouponExpireText(c.end_date)}
+                layout="home"
+                title={display.title}
+                amountPrefix={display.amountPrefix}
+                amount={display.amount}
+                minSpendText={display.minSpendText}
+                expireText={display.expireText}
                 scopeText="新人专享"
-                actionLabel={!isLoggedIn() ? "注册领取" : undefined}
+                actionLabel={!isLoggedIn() ? "注册领" : undefined}
                 onAction={!isLoggedIn() ? () => navigate("/register") : undefined}
               />
             </div>
@@ -85,5 +80,6 @@ export default function MarketingNewUserGiftSection() {
         })}
       </div>
     </section>
+    </AnimatedSection>
   );
 }

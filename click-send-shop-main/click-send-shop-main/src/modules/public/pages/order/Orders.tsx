@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/utils/formatDateTime";
 ﻿import { useEffect, useRef } from "react";
 import { ArrowLeft, Loader2, Package } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -89,7 +90,7 @@ export default function Orders() {
       <main className="mx-auto max-w-lg px-4 py-4">
         {error && !loading && (
           <div className="flex flex-col items-center py-20">
-            <p className="text-sm text-destructive mb-3">{error}</p>
+            <p className="mb-3 text-sm text-[var(--theme-danger)]">{error}</p>
             <button
               onClick={() => loadOrders({ page: 1 })}
               className="rounded-full px-6 py-2.5 text-sm font-semibold btn-theme-gradient"
@@ -152,7 +153,7 @@ export default function Orders() {
                   </div>
                   <div className="mt-3 flex items-center justify-between border-t border-[var(--theme-border)] pt-3">
                     <span className="text-xs text-muted-foreground">
-                      {new Date(order.created_at).toLocaleDateString("zh-CN")} · 共{" "}
+                      {formatDateTime(order.created_at)} · 共{" "}
                       {order.items.reduce((s, i) => s + i.qty, 0)} 件
                     </span>
                     <span className="text-base font-bold text-[var(--theme-price)]">

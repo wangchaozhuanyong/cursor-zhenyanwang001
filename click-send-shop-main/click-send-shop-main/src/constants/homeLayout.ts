@@ -4,6 +4,3 @@ export const HOME_PAGE_MAIN_CLASS =
 
 /** 首屏区（轮播 / 保障条 / 快捷导航）内部更紧凑 */
 export const HOME_HERO_STACK_CLASS = "flex flex-col gap-3";
-
-/** 营销子模块外层：不再重复 main 的左右 padding */
-export const HOME_MARKETING_SECTION_CLASS = "w-full";

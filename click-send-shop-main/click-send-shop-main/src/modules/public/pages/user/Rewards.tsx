@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/utils/formatDateTime";
 ﻿import { useEffect, useState } from "react";
 import { ArrowLeft, Gift, TrendingUp, TrendingDown, Loader2, Wallet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +14,10 @@ import {
   THEME_ACCENT_HERO_SHELL,
   THEME_ACCENT_HERO_SUBTLE,
   THEME_ACCENT_HERO_VALUE,
+  THEME_ROW_ICON_NEGATIVE,
+  THEME_ROW_ICON_POSITIVE,
+  THEME_TEXT_DANGER,
+  THEME_TEXT_SUCCESS,
 } from "@/utils/themeVisuals";
 
 export default function Rewards() {
@@ -132,16 +137,16 @@ export default function Rewards() {
             <div className="space-y-2">
               {records.map((r) => (
                 <div key={r.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
-                  <div className={`flex h-9 w-9 items-center justify-center rounded-full ${Number(r.amount) >= 0 ? "bg-green-500/10 text-green-500" : "bg-destructive/10 text-destructive"}`}>
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-full ${Number(r.amount) >= 0 ? THEME_ROW_ICON_POSITIVE : THEME_ROW_ICON_NEGATIVE}`}>
                     {Number(r.amount) >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{r.reason || `订单 ${r.order_no || "—"}`}</p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {r.order_no ? `订单 ${r.order_no} · ` : ""}{new Date(r.created_at).toLocaleDateString("zh-CN")}
+                      {r.order_no ? `订单 ${r.order_no} · ` : ""}{formatDateTime(r.created_at)}
                     </p>
                   </div>
-                  <span className={`text-sm font-bold ${Number(r.amount) >= 0 ? "text-green-500" : "text-destructive"}`}>
+                  <span className={`text-sm font-bold ${Number(r.amount) >= 0 ? THEME_TEXT_SUCCESS : THEME_TEXT_DANGER}`}>
                     {Number(r.amount) > 0 ? "+" : ""}{Number(r.amount).toFixed(2)}
                   </span>
                 </div>

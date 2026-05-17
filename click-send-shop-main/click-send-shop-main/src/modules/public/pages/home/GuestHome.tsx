@@ -27,6 +27,8 @@ import { getProductGridClassName } from "@/utils/productGridClasses";
 import { AnimatedSection } from "@/modules/micro-interactions";
 import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
 import { isHomeModuleEnabled } from "@/constants/homeModules";
+import { HOME_HERO_STACK_CLASS, HOME_PAGE_MAIN_CLASS } from "@/constants/homeLayout";
+import { cn } from "@/lib/utils";
 
 function mergeHomeProductsForGuest(hot: Product[], recommended: Product[], max: number): Product[] {
   const seen = new Set<string>();
@@ -165,7 +167,16 @@ export default function GuestHome() {
         )}
       />
 
-      <main className={`mx-auto max-w-screen-xl px-4 pt-4 ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_88%,black)]" : ""}`}>
+      <main
+        className={cn(
+          HOME_PAGE_MAIN_CLASS,
+          isMagazineLayout && "bg-[color-mix(in_srgb,var(--theme-bg)_88%,black)]",
+        )}
+      >
+        {(isHomeModuleEnabled(homeModules, "banner", "guest") ||
+          isHomeModuleEnabled(homeModules, "trust_bar", "guest") ||
+          isHomeModuleEnabled(homeModules, "nav_grid", "guest")) ? (
+          <div className={HOME_HERO_STACK_CLASS}>
         {isHomeModuleEnabled(homeModules, "banner", "guest") ? (
           <AnimatedSection>
             <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
@@ -175,17 +186,19 @@ export default function GuestHome() {
         ) : null}
         {isHomeModuleEnabled(homeModules, "trust_bar", "guest") ? (
           <AnimatedSection delay={0.05}>
-            <HomeTrustBar className="mt-3" />
+            <HomeTrustBar />
           </AnimatedSection>
         ) : null}
         {isHomeModuleEnabled(homeModules, "nav_grid", "guest") ? (
-          <AnimatedSection delay={0.08} className="-mx-4 mt-3">
+          <AnimatedSection delay={0.08} className="-mx-4">
             <HomeOpsBlocks />
           </AnimatedSection>
         ) : null}
+          </div>
+        ) : null}
 
         {isHomeModuleEnabled(homeModules, "new_arrivals", "guest") ? (
-        <AnimatedSection delay={0.1} className="mt-4">
+        <AnimatedSection delay={0.1}>
           <NewArrivalSection
             products={newProducts}
             loading={homeLoading}
@@ -197,39 +210,29 @@ export default function GuestHome() {
         ) : null}
 
         {isHomeModuleEnabled(homeModules, "promotion_banner", "guest") ? (
-        <AnimatedSection delay={0.105} className="mt-4">
-          <MarketingPromotionBannerSection />
-        </AnimatedSection>
+          <MarketingPromotionBannerSection delay={0.105} />
         ) : null}
 
         {isHomeModuleEnabled(homeModules, "flash_sale_section", "guest") ? (
-        <AnimatedSection delay={0.11} className="mt-4">
-          <FlashSaleSection />
-        </AnimatedSection>
+          <FlashSaleSection delay={0.11} />
         ) : null}
 
         {isHomeModuleEnabled(homeModules, "full_reduction_notice", "guest") ? (
-        <AnimatedSection delay={0.111} className="mt-2">
-          <MarketingFullReductionSection />
-        </AnimatedSection>
+          <MarketingFullReductionSection delay={0.111} />
         ) : null}
 
         {isHomeModuleEnabled(homeModules, "coupon_center", "guest") ? (
-        <AnimatedSection delay={0.112}>
-          <MarketingCouponCenterSection />
-        </AnimatedSection>
+          <MarketingCouponCenterSection delay={0.112} />
         ) : null}
 
         {isHomeModuleEnabled(homeModules, "new_user_gift", "guest") ? (
-        <AnimatedSection delay={0.113}>
-          <MarketingNewUserGiftSection />
-        </AnimatedSection>
+          <MarketingNewUserGiftSection delay={0.113} />
         ) : null}
 
         {isHomeModuleEnabled(homeModules, "guest_recommend", "guest") ? (
-        <AnimatedSection delay={0.12} className="mt-4">
+        <AnimatedSection delay={0.12}>
         <section>
-          <h2 className="flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text)]">
+          <h2 className="mb-3 flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text)] md:mb-4">
             <Sparkles className="h-5 w-5 text-[var(--theme-price)]" />
             全网爆款
           </h2>

@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/utils/formatDateTime";
 import { useEffect, useState, useCallback } from "react";
 import { Download, Loader2, RefreshCw, CheckCircle2, XCircle, Clock, FileSpreadsheet } from "lucide-react";
 import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
@@ -15,6 +16,8 @@ import { getAdminAccessToken } from "@/utils/token";
 import { EXPORT_TASK_STATUS, EXPORT_TASK_STATUS_META } from "@/constants/statusDictionary";
 import { labelExportType } from "@/utils/adminDisplayLabels";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
+import { THEME_TEXT_DANGER, THEME_TEXT_SUCCESS, THEME_TEXT_WARNING } from "@/utils/themeVisuals";
 
 const EXPORT_TYPES = [
   { value: "sales_daily", label: "销售日报" },
@@ -33,9 +36,9 @@ const EXPORT_TYPES = [
 ];
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
-  pending: <Clock size={14} className="text-yellow-500 animate-pulse" />,
-  success: <CheckCircle2 size={14} className="text-green-500" />,
-  failed: <XCircle size={14} className="text-destructive" />,
+  pending: <Clock size={14} className={`animate-pulse ${THEME_TEXT_WARNING}`} />,
+  success: <CheckCircle2 size={14} className={THEME_TEXT_SUCCESS} />,
+  failed: <XCircle size={14} className={THEME_TEXT_DANGER} />,
 };
 
 const STATUS_TEXT: Record<string, string> = {
@@ -123,8 +126,8 @@ export default function AdminExportCenter() {
           <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none">
             {EXPORT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none" />
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none" />
+          <SegmentedDateInput value={dateFrom} onChange={setDateFrom} className="min-w-[12rem]" />
+          <SegmentedDateInput value={dateTo} onChange={setDateTo} className="min-w-[12rem]" />
           <LoadingButton
             type="button"
             variant="gold"
@@ -169,8 +172,8 @@ export default function AdminExportCenter() {
             <td className="px-4 py-3 text-xs text-muted-foreground">{EXPORT_TYPES.find((x) => x.value === t.type)?.label || labelExportType(t.type)}</td>
             <td className="px-4 py-3"><div className="flex items-center gap-1 text-xs">{STATUS_ICON[t.status]} {STATUS_TEXT[t.status] || "未知"}</div></td>
             <td className="px-4 py-3 text-xs text-muted-foreground">{formatBytes(t.file_size)}</td>
-            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{t.created_at ? new Date(t.created_at).toLocaleString("zh-CN") : "-"}</td>
-            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{t.finished_at ? new Date(t.finished_at).toLocaleString("zh-CN") : "-"}</td>
+            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{t.created_at ? formatDateTime(t.created_at) : "-"}</td>
+            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{t.finished_at ? formatDateTime(t.finished_at) : "-"}</td>
             <td className="px-4 py-3">
               {t.status === EXPORT_TASK_STATUS.SUCCESS ? (
                 <button type="button" onClick={() => handleDownload(t)} className="touch-manipulation rounded-lg border border-border p-1.5 text-theme-price hover:bg-secondary" title="下载">

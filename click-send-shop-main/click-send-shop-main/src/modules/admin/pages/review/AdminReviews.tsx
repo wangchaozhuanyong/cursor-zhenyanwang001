@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/utils/formatDateTime";
 import { useEffect, useState, useCallback } from "react";
 import { Star, Eye, EyeOff, Trash2, RotateCcw, MessageSquare, AlertTriangle, Sparkles, Check, XCircle, Info } from "lucide-react";
 import AdminReviewDetailDialog from "@/modules/admin/pages/review/AdminReviewDetailDialog";
@@ -12,6 +13,22 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import { Tx } from "@/components/admin/AdminText";
 import { adminConfirmDelete, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import {
+  THEME_BADGE_DANGER,
+  THEME_BADGE_MUTED,
+  THEME_BADGE_PRIMARY,
+  THEME_BADGE_SUCCESS,
+  THEME_BADGE_WARNING,
+  THEME_OUTLINE_SUCCESS,
+  THEME_OUTLINE_WARNING,
+  THEME_TEXT_SUCCESS_SOFT,
+  THEME_STAR_FILLED,
+  THEME_TEXT_DANGER,
+  THEME_HOVER_TEXT_DANGER,
+  THEME_BORDER_DANGER_SOFT,
+  THEME_HOVER_BG_DANGER,
+  THEME_BTN_DANGER_SOLID,
+} from "@/utils/themeVisuals";
 
 const STATUS_OPTIONS = [
   { value: "", label: "全部状态" },
@@ -47,18 +64,18 @@ const RATING_OPTIONS = [
 ];
 
 const STATUS_BADGE: Record<string, { cls: string; text: string }> = {
-  pending: { cls: "bg-blue-500/10 text-blue-600", text: "待审核" },
-  normal: { cls: "bg-green-500/10 text-green-600", text: "正常" },
-  hidden: { cls: "bg-yellow-500/10 text-yellow-600", text: "已隐藏" },
-  rejected: { cls: "bg-orange-500/10 text-orange-600", text: "已拒绝" },
-  deleted: { cls: "bg-red-500/10 text-red-500", text: "已删除" },
+  pending: { cls: THEME_BADGE_PRIMARY, text: "待审核" },
+  normal: { cls: THEME_BADGE_SUCCESS, text: "正常" },
+  hidden: { cls: THEME_BADGE_WARNING, text: "已隐藏" },
+  rejected: { cls: THEME_BADGE_WARNING, text: "已拒绝" },
+  deleted: { cls: THEME_BADGE_DANGER, text: "已删除" },
 };
 
 function StarRating({ rating }: { rating: number }) {
   return (
     <div className="flex gap-0.5">
       {Array.from({ length: 5 }, (_, i) => (
-        <Star key={i} size={12} className={i < rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"} />
+        <Star key={i} size={12} className={i < rating ? THEME_STAR_FILLED : "text-muted-foreground/30"} />
       ))}
     </div>
   );
@@ -283,7 +300,7 @@ export default function AdminReviews() {
             </button>
           </PermissionGate>
           <PermissionGate anyOf={REVIEW_DELETE}>
-            <button type="button" onClick={() => confirm({ title: "确认批量删除", description: `确定删除选中的 ${selected.length} 条评论？`, confirmText: "删除", danger: true, onConfirm: () => handleBatchDelete() })} className="touch-manipulation flex min-h-[40px] items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs text-destructive hover:bg-secondary">
+            <button type="button" onClick={() => confirm({ title: "确认批量删除", description: `确定删除选中的 ${selected.length} 条评论？`, confirmText: "删除", danger: true, onConfirm: () => handleBatchDelete() })} className={`touch-manipulation flex min-h-[40px] items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs ${THEME_TEXT_DANGER} hover:bg-secondary`}>
               <Trash2 size={14} /><Tx> 批量删除</Tx>
             </button>
           </PermissionGate>
@@ -310,7 +327,7 @@ export default function AdminReviews() {
                       </div>
                       <StarRating rating={r.rating} />
                       {r.is_verified_purchase && (
-                        <span className="inline-block rounded bg-green-500/10 px-1.5 py-0.5 text-[10px] text-green-600">已购评价{r.order_id ? ` · ${r.order_id.slice(-8)}` : ""}</span>
+                        <span className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${THEME_BADGE_SUCCESS}`}>已购评价{r.order_id ? ` · ${r.order_id.slice(-8)}` : ""}</span>
                       )}
                       <button type="button" onClick={() => openDetail(r.id)} className="block w-full text-left text-sm text-foreground leading-relaxed hover:text-theme-price">{r.content}</button>
                       {r.images?.length > 0 && (
@@ -319,7 +336,7 @@ export default function AdminReviews() {
                         </div>
                       )}
                       <p className="text-xs text-muted-foreground">商品：{r.product_name || "未命名商品"}</p>
-                      <p className="text-[11px] text-muted-foreground">{r.created_at ? new Date(r.created_at).toLocaleString("zh-CN") : ""}</p>
+                      <p className="text-[11px] text-muted-foreground">{r.created_at ? formatDateTime(r.created_at) : ""}</p>
                       {r.admin_reply && (
                         <div className="rounded-lg bg-secondary/50 p-2 text-xs text-muted-foreground">
                           <span className="font-medium text-theme-price"><Tx>官方回复: </Tx></span>{r.admin_reply}
@@ -331,10 +348,10 @@ export default function AdminReviews() {
                         </button>
                         {r.status === "pending" && (
                           <PermissionGate anyOf={REVIEW_MODERATE}>
-                            <button type="button" onClick={() => handleApprove(r.id)} className="touch-manipulation min-h-[40px] rounded-lg border border-green-500/30 px-3 py-1.5 text-xs text-green-600 hover:bg-green-500/10">
+                            <button type="button" onClick={() => handleApprove(r.id)} className={`touch-manipulation min-h-[40px] rounded-lg px-3 py-1.5 text-xs ${THEME_OUTLINE_SUCCESS}`}>
                               <Check size={12} className="mr-1 inline" /><Tx>通过</Tx>
                             </button>
-                            <button type="button" onClick={() => handleReject(r.id)} className="touch-manipulation min-h-[40px] rounded-lg border border-orange-500/30 px-3 py-1.5 text-xs text-orange-600 hover:bg-orange-500/10">
+                            <button type="button" onClick={() => handleReject(r.id)} className={`touch-manipulation min-h-[40px] rounded-lg px-3 py-1.5 text-xs ${THEME_OUTLINE_WARNING}`}>
                               <XCircle size={12} className="mr-1 inline" /><Tx>拒绝</Tx>
                             </button>
                           </PermissionGate>
@@ -362,7 +379,7 @@ export default function AdminReviews() {
                               </PermissionGate>
                             )}
                             <PermissionGate anyOf={REVIEW_DELETE}>
-                              <button type="button" onClick={() => adminConfirmDelete(confirm, "该评论", () => handleDelete(r.id))} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs text-destructive hover:bg-secondary">
+                              <button type="button" onClick={() => adminConfirmDelete(confirm, "该评论", () => handleDelete(r.id))} className={`touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs ${THEME_TEXT_DANGER} hover:bg-secondary`}>
                                 <Trash2 size={12} className="mr-1 inline" /><Tx>删除</Tx>
                               </button>
                             </PermissionGate>
@@ -370,10 +387,10 @@ export default function AdminReviews() {
                         )}
                         {r.status === "deleted" && (
                           <PermissionGate anyOf={REVIEW_DELETE}>
-                            <button type="button" onClick={() => handleRestore(r.id)} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs text-green-600 hover:bg-secondary">
+                            <button type="button" onClick={() => handleRestore(r.id)} className={`touch-manipulation min-h-[40px] rounded-lg border border-[var(--theme-border)] px-3 py-1.5 text-xs ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`}>
                               <RotateCcw size={12} className="mr-1 inline" /><Tx>恢复</Tx>
                             </button>
-                            <button type="button" onClick={() => setConfirmDelete({ id: r.id, permanent: true })} className="touch-manipulation min-h-[40px] rounded-lg border border-destructive/30 px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10"><Tx>彻底删除</Tx></button>
+                            <button type="button" onClick={() => setConfirmDelete({ id: r.id, permanent: true })} className={`touch-manipulation min-h-[40px] rounded-lg border px-3 py-1.5 text-xs ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`}><Tx>彻底删除</Tx></button>
                           </PermissionGate>
                         )}
                       </div>
@@ -429,7 +446,7 @@ export default function AdminReviews() {
                 <td className="px-3 py-3"><StarRating rating={r.rating} /></td>
                 <td className="max-w-[200px] px-3 py-3">
                   <button type="button" onClick={() => openDetail(r.id)} className="truncate text-left text-xs text-foreground hover:text-theme-price" title={r.content}>{r.content}</button>
-                  {r.is_verified_purchase && <p className="mt-0.5 text-[10px] text-green-600">已购</p>}
+                  {r.is_verified_purchase && <p className={`mt-0.5 text-[10px] ${THEME_TEXT_SUCCESS_SOFT}`}>已购</p>}
                   {r.images?.length > 0 && (
                     <div className="mt-1 flex gap-1">
                       {r.images.slice(0, 3).map((img, i) => <img key={i} src={img} alt="" className="h-8 w-8 rounded object-cover" />)}
@@ -445,14 +462,14 @@ export default function AdminReviews() {
                 </td>
                 <td className="px-3 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>{badge.text}</span></td>
                 <td className="max-w-[120px] px-3 py-3"><p className="truncate text-[11px] text-muted-foreground" title={r.admin_reply || ""}>{r.admin_reply || "—"}</p></td>
-                <td className="px-3 py-3 text-[11px] text-muted-foreground whitespace-nowrap">{r.created_at ? new Date(r.created_at).toLocaleString("zh-CN") : "—"}</td>
+                <td className="px-3 py-3 text-[11px] text-muted-foreground whitespace-nowrap">{r.created_at ? formatDateTime(r.created_at) : "—"}</td>
                 <td className="px-3 py-3">
                   <div className="flex gap-1">
                     <button type="button" onClick={() => openDetail(r.id)} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title="详情"><Info size={14} /></button>
                     {r.status === "pending" && (
                       <PermissionGate anyOf={REVIEW_MODERATE}>
-                        <button type="button" onClick={() => handleApprove(r.id)} className="touch-manipulation rounded-lg border border-green-500/30 p-1.5 text-green-600" title="通过"><Check size={14} /></button>
-                        <button type="button" onClick={() => handleReject(r.id)} className="touch-manipulation rounded-lg border border-orange-500/30 p-1.5 text-orange-600" title="拒绝"><XCircle size={14} /></button>
+                        <button type="button" onClick={() => handleApprove(r.id)} className={`touch-manipulation rounded-lg p-1.5 ${THEME_OUTLINE_SUCCESS}`} title="通过"><Check size={14} /></button>
+                        <button type="button" onClick={() => handleReject(r.id)} className={`touch-manipulation rounded-lg p-1.5 ${THEME_OUTLINE_WARNING}`} title="拒绝"><XCircle size={14} /></button>
                       </PermissionGate>
                     )}
                     {r.status !== "deleted" && r.status !== "pending" && r.status !== "rejected" && (
@@ -460,13 +477,13 @@ export default function AdminReviews() {
                         <PermissionGate anyOf={REVIEW_FEATURE}><button type="button" onClick={() => confirm({ title: "确认", description: "切换精选？", onConfirm: () => handleToggleFeatured(r.id) })} className={`touch-manipulation rounded-lg border p-1.5 ${r.is_featured ? "border-gold bg-gold/10 text-theme-price" : "border-border text-muted-foreground"}`}><Sparkles size={14} /></button></PermissionGate>
                         <PermissionGate anyOf={REVIEW_MODERATE}><button type="button" onClick={() => confirm({ title: "确认", description: "切换显示？", onConfirm: () => handleToggle(r.id) })} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground">{r.status === "hidden" ? <Eye size={14} /> : <EyeOff size={14} />}</button></PermissionGate>
                         <PermissionGate anyOf={REVIEW_REPLY}><button type="button" onClick={() => { setReplyTarget(r); setReplyText(r.admin_reply || ""); }} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground"><MessageSquare size={14} /></button></PermissionGate>
-                        <PermissionGate anyOf={REVIEW_DELETE}><button type="button" onClick={() => adminConfirmDelete(confirm, "该评论", () => handleDelete(r.id))} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground hover:text-destructive"><Trash2 size={14} /></button></PermissionGate>
+                        <PermissionGate anyOf={REVIEW_DELETE}><button type="button" onClick={() => adminConfirmDelete(confirm, "该评论", () => handleDelete(r.id))} className={`touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground ${THEME_HOVER_TEXT_DANGER}`}><Trash2 size={14} /></button></PermissionGate>
                       </>
                     )}
                     {r.status === "deleted" && (
                       <PermissionGate anyOf={REVIEW_DELETE}>
-                        <button type="button" onClick={() => handleRestore(r.id)} className="touch-manipulation rounded-lg border border-border p-1.5 text-green-600"><RotateCcw size={14} /></button>
-                        <button type="button" onClick={() => setConfirmDelete({ id: r.id, permanent: true })} className="touch-manipulation rounded-lg border border-destructive/30 p-1.5 text-destructive"><Trash2 size={14} /></button>
+                        <button type="button" onClick={() => handleRestore(r.id)} className={`touch-manipulation rounded-lg border border-[var(--theme-border)] p-1.5 ${THEME_TEXT_SUCCESS_SOFT}`}><RotateCcw size={14} /></button>
+                        <button type="button" onClick={() => setConfirmDelete({ id: r.id, permanent: true })} className={`touch-manipulation rounded-lg border p-1.5 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER}`}><Trash2 size={14} /></button>
                       </PermissionGate>
                     )}
                   </div>
@@ -537,12 +554,12 @@ export default function AdminReviews() {
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDelete(null)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4 text-center">
-            <AlertTriangle size={40} className="mx-auto text-destructive" />
+            <AlertTriangle size={40} className={`mx-auto ${THEME_TEXT_DANGER}`} />
             <h3 className="font-bold text-foreground"><Tx>确认彻底删除</Tx></h3>
             <p className="text-sm text-muted-foreground"><Tx>此操作不可恢复，评论数据将被永久删除。</Tx></p>
             <div className="flex justify-center gap-3">
               <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
-              <button type="button" onClick={() => handlePermanentDelete(confirmDelete.id)} className="rounded-xl bg-destructive px-4 py-2.5 text-sm font-semibold btn-theme-gradient"><Tx>确认删除</Tx></button>
+              <button type="button" onClick={() => handlePermanentDelete(confirmDelete.id)} className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${THEME_BTN_DANGER_SOLID}`}><Tx>确认删除</Tx></button>
             </div>
           </div>
         </div>

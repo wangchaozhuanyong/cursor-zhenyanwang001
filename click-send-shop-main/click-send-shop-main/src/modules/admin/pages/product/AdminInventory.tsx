@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/utils/formatDateTime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download, History, Loader2, Package, RefreshCcw, Search } from "lucide-react";
 import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
@@ -16,6 +17,7 @@ import {
 } from "@/services/admin/inventoryService";
 import type { InventoryChangeType, InventorySku, InventoryStockRecord, InventorySummary } from "@/types/inventory";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { THEME_BADGE_SUCCESS, THEME_BADGE_WARNING, THEME_TEXT_DANGER, THEME_TEXT_SUCCESS_SOFT, THEME_TEXT_WARNING } from "@/utils/themeVisuals";
 
 const CHANGE_LABEL: Record<InventoryChangeType, string> = {
   in: "入库",
@@ -218,18 +220,18 @@ export default function AdminInventory() {
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{s.category_name || "未分类"}</td>
                 <td className="px-4 py-3">
-                  <span className={s.out_of_stock ? "font-bold text-destructive" : s.low_stock ? "font-bold text-orange-600" : "font-medium"}>{s.available_stock}</span>
+                  <span className={s.out_of_stock ? `font-bold ${THEME_TEXT_DANGER}` : s.low_stock ? `font-bold ${THEME_TEXT_WARNING}` : "font-medium"}>{s.available_stock}</span>
                   <span className="ml-1 text-xs text-muted-foreground">(总:{s.stock})</span>
                 </td>
                 <td className="px-4 py-3">
                   <input type="number" min={0} defaultValue={s.stock_warning_threshold} onBlur={(e) => { if (Number(e.target.value) !== s.stock_warning_threshold) void saveThreshold(s, e.target.value); }} className="w-20 rounded-lg bg-secondary px-2 py-1.5 text-xs" />
                 </td>
                 <td className="px-4 py-3 text-xs">{s.out_of_stock ? "缺货" : s.low_stock ? "低库存" : "正常"}</td>
-                <td className="px-4 py-3 text-xs text-muted-foreground">{s.updated_at ? new Date(s.updated_at).toLocaleString() : "-"}</td>
+                <td className="px-4 py-3 text-xs text-muted-foreground">{s.updated_at ? formatDateTime(s.updated_at) : "-"}</td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-2">
-                    <button type="button" onClick={() => openAdjust(s, "in")} className="rounded-lg bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-600"><Tx>入库</Tx></button>
-                    <button type="button" onClick={() => openAdjust(s, "out")} className="rounded-lg bg-orange-500/10 px-3 py-1.5 text-xs text-orange-600"><Tx>出库</Tx></button>
+                    <button type="button" onClick={() => openAdjust(s, "in")} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_SUCCESS}`}><Tx>入库</Tx></button>
+                    <button type="button" onClick={() => openAdjust(s, "out")} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_WARNING}`}><Tx>出库</Tx></button>
                     <button type="button" onClick={() => openAdjust(s, "adjust")} className="rounded-lg bg-gold/10 px-3 py-1.5 text-xs text-theme-price"><Tx>盘点</Tx></button>
                   </div>
                 </td>
@@ -269,11 +271,11 @@ export default function AdminInventory() {
             emptyTitle="暂无库存流水"
             renderRow={(r) => (
               <>
-                <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</td>
+                <td className="px-4 py-3 text-xs text-muted-foreground">{formatDateTime(r.created_at)}</td>
                 <td className="px-4 py-3">{r.product_name}</td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">{r.variant_name || "-"} / {r.sku_code || "-"}</td>
                 <td className="px-4 py-3 text-xs">{CHANGE_LABEL[r.change_type]}</td>
-                <td className={`px-4 py-3 font-semibold ${r.quantity_delta >= 0 ? "text-emerald-600" : "text-destructive"}`}>{r.quantity_delta > 0 ? "+" : ""}{r.quantity_delta}</td>
+                <td className={`px-4 py-3 font-semibold ${r.quantity_delta >= 0 ? THEME_TEXT_SUCCESS_SOFT : THEME_TEXT_DANGER}`}>{r.quantity_delta > 0 ? "+" : ""}{r.quantity_delta}</td>
                 <td className="px-4 py-3 text-muted-foreground">{r.before_stock} → {r.after_stock}</td>
                 <td className="px-4 py-3 text-muted-foreground">{r.reason || r.remark || "-"}</td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">{r.order_no || r.source_no || "-"}</td>

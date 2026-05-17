@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { formatDateTime } from "@/utils/formatDateTime";
 import { toast } from "sonner";
 import { Eye } from "lucide-react";
 import * as returnService from "@/services/admin/returnService";
@@ -7,6 +8,7 @@ import Pagination from "@/components/admin/Pagination";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { RETURN_STATUS, RETURN_STATUS_FILTER_OPTIONS, getReturnStatusBadgeClass, getReturnStatusLabel } from "@/constants/statusDictionary";
 import type { ApproveReturnParams, ReturnRequest } from "@/types/return";
+import { THEME_BTN_DANGER_SOLID, THEME_BTN_SUCCESS_SOLID, THEME_OUTLINE_DANGER } from "@/utils/themeVisuals";
 
 type ReturnDetail = ReturnRequest & {
   order_info?: { total_amount?: number; payment_status?: string; status?: string };
@@ -190,7 +192,7 @@ export default function AdminReturns() {
                     {getReturnStatusLabel(r.status)}
                   </span>
                 </td>
-                <td className="px-3 py-2">{new Date(r.created_at).toLocaleString("zh-CN")}</td>
+                <td className="px-3 py-2">{formatDateTime(r.created_at)}</td>
                 <td className="px-3 py-2">
                   <div className="flex items-center justify-center gap-2">
                     <button
@@ -202,8 +204,8 @@ export default function AdminReturns() {
                     {r.status === RETURN_STATUS.PENDING ? (
                       <PermissionGate permission="return.handle">
                         <div className="flex items-center gap-2">
-                          <button className="rounded bg-emerald-600 px-2 py-1 text-xs text-white" onClick={() => { void openApprove(r); }}>通过</button>
-                          <button className="rounded border border-red-300 px-2 py-1 text-xs text-red-600" onClick={() => { void openReject(r); }}>拒绝</button>
+                          <button className={`rounded px-2 py-1 text-xs ${THEME_BTN_SUCCESS_SOLID}`} onClick={() => { void openApprove(r); }}>通过</button>
+                          <button className={`rounded px-2 py-1 text-xs ${THEME_OUTLINE_DANGER}`} onClick={() => { void openReject(r); }}>拒绝</button>
                         </div>
                       </PermissionGate>
                     ) : null}
@@ -240,19 +242,19 @@ export default function AdminReturns() {
             <div className="mt-4 text-sm font-medium">退款记录</div>
             <div className="space-y-1 text-xs text-muted-foreground">
               {(detail as any).refund_records?.length ? (detail as any).refund_records.map((x: any) => (
-                <div key={x.id}>{x.event_type} / {x.processing_result} / {new Date(x.created_at).toLocaleString("zh-CN")}</div>
+                <div key={x.id}>{x.event_type} / {x.processing_result} / {formatDateTime(x.created_at)}</div>
               )) : <div>暂无</div>}
             </div>
             <div className="mt-4 text-sm font-medium">库存恢复记录</div>
             <div className="space-y-1 text-xs text-muted-foreground">
               {(detail as any).inventory_restore_records?.length ? (detail as any).inventory_restore_records.map((x: any) => (
-                <div key={x.id}>Δ{x.quantity_delta} / {new Date(x.created_at).toLocaleString("zh-CN")}</div>
+                <div key={x.id}>Δ{x.quantity_delta} / {formatDateTime(x.created_at)}</div>
               )) : <div>暂无</div>}
             </div>
             <div className="mt-4 text-sm font-medium">操作日志</div>
             <div className="space-y-1 text-xs text-muted-foreground">
               {(detail as any).operation_logs?.length ? (detail as any).operation_logs.map((x: any) => (
-                <div key={x.id}>{x.summary || x.result} / {new Date(x.created_at).toLocaleString("zh-CN")}</div>
+                <div key={x.id}>{x.summary || x.result} / {formatDateTime(x.created_at)}</div>
               )) : <div>暂无</div>}
             </div>
           </div>
@@ -305,7 +307,7 @@ export default function AdminReturns() {
             </div>
             <div className="mt-4 flex justify-end gap-2">
               <button className="rounded border border-border px-3 py-1.5 text-sm" onClick={() => setApproveTarget(null)}>取消</button>
-              <button className="rounded bg-emerald-600 px-3 py-1.5 text-sm text-white" onClick={() => { void submitApprove(); }}>确认通过</button>
+              <button className={`rounded px-3 py-1.5 text-sm ${THEME_BTN_SUCCESS_SOLID}`} onClick={() => { void submitApprove(); }}>确认通过</button>
             </div>
           </div>
         </div>
@@ -323,7 +325,7 @@ export default function AdminReturns() {
             />
             <div className="mt-4 flex justify-end gap-2">
               <button className="rounded border border-border px-3 py-1.5 text-sm" onClick={() => setRejectTarget(null)}>取消</button>
-              <button className="rounded bg-red-600 px-3 py-1.5 text-sm text-white" onClick={() => { void submitReject(); }}>确认拒绝</button>
+              <button className={`rounded px-3 py-1.5 text-sm ${THEME_BTN_DANGER_SOLID}`} onClick={() => { void submitReject(); }}>确认拒绝</button>
             </div>
           </div>
         </div>

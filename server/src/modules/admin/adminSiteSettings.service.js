@@ -1,5 +1,6 @@
 const repo = require('./adminSiteSettings.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
+const { invalidatePaymentTimeoutSettingsCache } = require('../order/orderPaymentDeadline');
 const sharp = require('sharp');
 const { isS3StorageEnabled, uploadBufferToS3 } = require('../../utils/objectStorage');
 
@@ -39,6 +40,12 @@ async function updateSiteSettings(body, adminUserId, req) {
   try {
     for (const [key, value] of Object.entries(body)) {
       await repo.upsertSetting(key, value);
+    }
+    if (
+      Object.prototype.hasOwnProperty.call(body, 'orderPaymentTimeoutEnabled')
+      || Object.prototype.hasOwnProperty.call(body, 'orderPaymentTimeoutMinutes')
+    ) {
+      invalidatePaymentTimeoutSettingsCache();
     }
     await writeAuditLog({
       req,

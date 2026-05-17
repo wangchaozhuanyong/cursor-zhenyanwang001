@@ -99,7 +99,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
                       <button
                         type="button"
                         onClick={() => setReviewImages((prev) => prev.filter((_, i) => i !== idx))}
-                        className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-white"
+                        className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--theme-danger)] text-[var(--theme-danger-foreground)]"
                       >
                         <X size={10} />
                       </button>

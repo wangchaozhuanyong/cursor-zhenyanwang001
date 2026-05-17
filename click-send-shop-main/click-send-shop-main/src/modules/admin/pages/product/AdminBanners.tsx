@@ -9,6 +9,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import { THEME_HOVER_TEXT_DANGER, THEME_TEXT_SUCCESS_SOFT } from "@/utils/themeVisuals";
 
 export default function AdminBanners() {
   const { confirm } = useAdminConfirm();
@@ -204,14 +205,14 @@ export default function AdminBanners() {
                       onConfirm: () => toggleBanner(b.id),
                     })
                   }
-                  className={`rounded-lg p-2 transition-colors ${b.enabled ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" : "text-muted-foreground hover:bg-secondary"}`}
+                  className={`rounded-lg p-2 transition-colors ${b.enabled ? `${THEME_TEXT_SUCCESS_SOFT} hover:bg-[color-mix(in_srgb,var(--theme-success)_8%,var(--theme-surface))]` : "text-muted-foreground hover:bg-secondary"}`}
                 >
                   {b.enabled ? <Eye size={16} /> : <EyeOff size={16} />}
                 </button>
                 <button
                   type="button"
                   onClick={() => adminConfirmDelete(confirm, b.title || b.id, () => handleDelete(b.id))}
-                  className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-destructive"
+                  className={`rounded-lg p-2 text-muted-foreground hover:bg-secondary ${THEME_HOVER_TEXT_DANGER}`}
                 >
                   <Trash2 size={16} />
                 </button>

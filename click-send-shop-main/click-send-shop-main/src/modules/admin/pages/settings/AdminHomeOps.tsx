@@ -23,6 +23,7 @@ import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_HOME_NAV_ICON } from "@/consta
 import * as homeOpsService from "@/services/admin/homeOpsService";
 import type { HomeNavItem } from "@/types/content";
 import * as categoryService from "@/services/admin/categoryService";
+import { THEME_BADGE_MUTED, THEME_BADGE_SUCCESS, THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 import type { Category } from "@/types/category";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { LoadingButton } from "@/modules/micro-interactions";
@@ -335,7 +336,7 @@ export default function AdminHomeOps() {
                   · 排序 {item.sort_order}
                 </div>
               </div>
-              <span className={`rounded-full px-2 py-1 text-xs ${item.enabled ? "bg-emerald-500/10 text-emerald-600" : "bg-secondary text-muted-foreground"}`}>
+              <span className={`rounded-full px-2 py-1 text-xs font-semibold ${item.enabled ? THEME_BADGE_SUCCESS : THEME_BADGE_MUTED}`}>
                 {item.enabled ? "启用" : "禁用"}
               </span>
               <PermissionGate permission="home_ops.manage">
@@ -359,7 +360,7 @@ export default function AdminHomeOps() {
                 </button>
                 <button
                   type="button"
-                  className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-destructive"
+                  className={`rounded-lg p-2 text-muted-foreground hover:bg-secondary ${THEME_HOVER_TEXT_DANGER}`}
                   onClick={() =>
                     adminConfirmDelete(confirm, item.title || "该导航", () =>
                       homeOpsService

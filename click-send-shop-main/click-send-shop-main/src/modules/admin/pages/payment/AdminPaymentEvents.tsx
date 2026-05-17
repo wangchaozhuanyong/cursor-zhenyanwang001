@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { formatDateTime } from "@/utils/formatDateTime";
 import { RotateCcw } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -117,7 +118,7 @@ export default function AdminPaymentEvents() {
           emptyTitle="暂无数据"
           renderRow={(r) => (
             <>
-              <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</td>
+              <td className="px-3 py-2 text-xs text-muted-foreground">{formatDateTime(r.created_at)}</td>
               <td className="px-3 py-2">{labelProvider(r.provider)}</td>
               <td className="px-3 py-2 text-xs" title={r.event_type}>{labelPaymentEventType(r.event_type)}</td>
               <td className="px-3 py-2 text-xs">

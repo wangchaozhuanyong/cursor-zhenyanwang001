@@ -589,6 +589,16 @@ export function useCheckoutPage() {
     }
   };
 
+  const refreshSubmittedOrder = useCallback(async () => {
+    if (!submittedOrder?.id) return;
+    try {
+      const latest = await orderService.fetchOrderById(submittedOrder.id);
+      setSubmittedOrder(latest);
+    } catch {
+      /* 静默：倒计时结束时仅作状态同步 */
+    }
+  }, [submittedOrder?.id]);
+
   const payByRewardWallet = async () => {
     if (!submittedOrder) return;
     setPostSubmitWalletError(null);
@@ -666,6 +676,7 @@ export function useCheckoutPage() {
     openWeChat,
     payOnlineNow,
     payByRewardWallet,
+    refreshSubmittedOrder,
     goHome: () => navigate("/"),
     goOrders: () => navigate("/orders"),
     goOrderDetail: (orderId: string) => navigate(`/orders/${orderId}`),

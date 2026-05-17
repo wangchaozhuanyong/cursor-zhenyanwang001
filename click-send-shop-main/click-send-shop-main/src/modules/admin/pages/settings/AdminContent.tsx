@@ -11,6 +11,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import type { HelpCenterCategory, HelpCenterConfig, HelpCenterFaq } from "@/types/content";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminContentPageSkeleton } from "@/components/admin/AdminLoadingSkeletons";
+import { THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 
 interface ContentItem {
   id: string;
@@ -178,7 +179,7 @@ export default function AdminContent() {
                   <button type="button" onClick={() => reorderCategories(cat.id, categories[Math.max(0, categories.findIndex((c) => c.id === cat.id) - 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowUp size={14} /></button>
                   <button type="button" onClick={() => reorderCategories(cat.id, categories[Math.min(categories.length - 1, categories.findIndex((c) => c.id === cat.id) + 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowDown size={14} /></button>
                   <label className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1.5 text-xs"><input type="checkbox" checked={cat.enabled} onChange={(e) => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => x.id === cat.id ? { ...x, enabled: e.target.checked } : x) }))} /><Tx>启用</Tx></label>
-                  <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, categories: prev.categories.filter((x) => x.id !== cat.id), faqs: prev.faqs.filter((f) => f.categoryId !== cat.id) }))} className="inline-flex items-center justify-center rounded-lg border border-border bg-card text-destructive"><Trash2 size={14} /></button>
+                  <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, categories: prev.categories.filter((x) => x.id !== cat.id), faqs: prev.faqs.filter((f) => f.categoryId !== cat.id) }))} className={`inline-flex items-center justify-center rounded-lg border border-border bg-card ${THEME_TEXT_DANGER}`}><Trash2 size={14} /></button>
                 </div>
               ))}
               {categories.length === 0 ? <p className="text-xs text-muted-foreground"><Tx>暂无分类，请先新增分类。</Tx></p> : null}
@@ -215,7 +216,7 @@ export default function AdminContent() {
                     <button type="button" onClick={() => reorderFaqs(faq.id, faqs[Math.max(0, faqs.findIndex((f) => f.id === faq.id) - 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowUp size={14} /></button>
                     <button type="button" onClick={() => reorderFaqs(faq.id, faqs[Math.min(faqs.length - 1, faqs.findIndex((f) => f.id === faq.id) + 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowDown size={14} /></button>
                     <label className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1.5 text-xs"><input type="checkbox" checked={faq.enabled} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, enabled: e.target.checked } : x) }))} /><Tx>启用</Tx></label>
-                    <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.filter((x) => x.id !== faq.id) }))} className="inline-flex items-center justify-center rounded-lg border border-border bg-card text-destructive"><Trash2 size={14} /></button>
+                    <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.filter((x) => x.id !== faq.id) }))} className={`inline-flex items-center justify-center rounded-lg border border-border bg-card ${THEME_TEXT_DANGER}`}><Trash2 size={14} /></button>
                   </div>
                   {!collapsedCategoryIds[faq.categoryId] ? <textarea value={faq.answer} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, answer: e.target.value } : x) }))} rows={3} placeholder="答案" className="w-full rounded-lg border border-border bg-card px-2 py-2 text-xs outline-none focus:border-gold" /> : null}
                 </div>

@@ -11,6 +11,7 @@ import { AdminTabsPanelSkeleton } from "@/components/admin/AdminLoadingSkeletons
 import { LoadingButton } from "@/modules/micro-interactions";
 import { Tx } from "@/components/admin/AdminText";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import { THEME_BTN_DANGER_SOLID, THEME_OUTLINE_DANGER, THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 
 interface PermRow { id: number; code: string; name: string; sort_order: number }
 
@@ -209,7 +210,7 @@ export default function AdminRoles() {
                   <PermissionGate permission="role.manage">
                     <div className="flex gap-1">
                       <button onClick={() => openRoleEdit(r)} className="theme-rounded p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]"><Pencil size={14} /></button>
-                      {!r.is_system && <button onClick={() => void handleRoleDelete(r)} className="theme-rounded p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"><Trash2 size={14} /></button>}
+                      {!r.is_system && <button onClick={() => void handleRoleDelete(r)} className={`theme-rounded p-1.5 hover:bg-[color-mix(in_srgb,var(--theme-danger)_8%,var(--theme-surface))] ${THEME_TEXT_DANGER}`}><Trash2 size={14} /></button>}
                     </div>
                   </PermissionGate>
                 </div>
@@ -265,7 +266,7 @@ export default function AdminRoles() {
                       <button onClick={() => { setShowResetModal(u.id); setResetPw(""); }} className="theme-rounded px-2 py-1 text-xs border border-[var(--theme-border)] hover:bg-[var(--theme-bg)]"><Tx>重置密码</Tx></button>
                     )}
                     {u.role !== "super_admin" && (
-                      <button type="button" onClick={() => setConfirmDeleteAdmin(u)} className="theme-rounded px-2 py-1 text-xs border border-destructive/40 text-destructive hover:bg-destructive/10"><Tx>删除</Tx></button>
+                      <button type="button" onClick={() => setConfirmDeleteAdmin(u)} className={`theme-rounded px-2 py-1 text-xs ${THEME_OUTLINE_DANGER}`}><Tx>删除</Tx></button>
                     )}
                   </div>
                 </PermissionGate>
@@ -356,7 +357,7 @@ export default function AdminRoles() {
                     toast.error(toastErrorMessage(e, "删除失败"));
                   }
                 }}
-                className="flex-1 theme-rounded bg-destructive py-2.5 text-sm font-semibold text-destructive-foreground"
+                className={`flex-1 theme-rounded py-2.5 text-sm font-semibold ${THEME_BTN_DANGER_SOLID}`}
               ><Tx>
                 删除
               </Tx></button>

@@ -1,4 +1,5 @@
 ﻿import { ORDER_STATUS_META } from "@/constants/statusDictionary";
+import { THEME_BADGE_PRIMARY, THEME_BADGE_SUCCESS } from "@/utils/themeVisuals";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   ...Object.fromEntries(
@@ -7,9 +8,9 @@ const statusConfig: Record<string, { label: string; className: string }> = {
       { label: value.label, className: value.badgeClass },
     ]),
   ),
-  copied: { label: "已复制", className: "bg-indigo-500/15 text-indigo-600" },
-  sent: { label: "已发送", className: "bg-indigo-500/15 text-indigo-600" },
-  confirmed: { label: "已确认", className: "bg-emerald-500/15 text-emerald-600" },
+  copied: { label: "已复制", className: THEME_BADGE_PRIMARY },
+  sent: { label: "已发送", className: THEME_BADGE_PRIMARY },
+  confirmed: { label: "已确认", className: THEME_BADGE_SUCCESS },
 };
 
 interface StatusBadgeProps {

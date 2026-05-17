@@ -756,6 +756,7 @@ async function selectExpiredPendingOrderIds(q, minutes, limit, pendingStatus, pe
     `SELECT id FROM orders
      WHERE status = ?
        AND (payment_status IS NULL OR payment_status = ?)
+       AND payment_method = 'online'
        AND created_at <= DATE_SUB(NOW(), INTERVAL ? MINUTE)
      ORDER BY created_at ASC
      LIMIT ?`,

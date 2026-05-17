@@ -48,6 +48,7 @@ import { isAdminAuthenticated, adminLogout, fetchAdminProfile } from "@/services
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { canAccessAdminPath, getFirstAllowedAdminPath } from "@/config/adminNavAccess";
 import { AdminConfirmProvider } from "@/modules/admin/context/AdminConfirmContext";
+import AdminSiteLogo from "@/components/admin/AdminSiteLogo";
 
 type NavPerm = string | { anyOf: string[] };
 
@@ -254,8 +255,8 @@ function AdminSidebarNav({
       className={`flex touch-manipulation flex-col ${scrollMode === "overlay" ? "h-full max-h-[100dvh] min-h-0 flex-1" : ""}`}
     >
       <div className="safe-area-pt flex shrink-0 items-center gap-2 border-b border-border px-5 py-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--theme-primary)] text-sm font-bold text-[var(--theme-primary-foreground)]">A</div>
-        <span className="font-display text-lg font-bold text-foreground">{layoutTitle}</span>
+        <AdminSiteLogo size="sm" />
+        <span className="min-w-0 truncate font-display text-lg font-bold text-foreground">{layoutTitle}</span>
       </div>
 
       <div className={listClassName}>

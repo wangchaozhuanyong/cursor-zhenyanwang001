@@ -77,6 +77,14 @@ export interface Order {
   }[];
   /** 下单/支付方式：whatsapp | online | reward_wallet */
   payment_method?: string;
+  /** 未支付自动关单：是否启用（与站点设置一致） */
+  payment_timeout_enabled?: boolean;
+  /** 超时分钟数（启用时） */
+  payment_timeout_minutes?: number | null;
+  /** 付款截止时间 ISO（仅待支付在线订单） */
+  payment_deadline_at?: string | null;
+  /** 距截止剩余秒数（接口返回时快照，前端以 payment_deadline_at 为准倒计时） */
+  payment_ttl_seconds?: number | null;
 }
 
 export interface SubmitOrderParams {

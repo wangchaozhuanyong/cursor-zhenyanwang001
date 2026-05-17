@@ -51,13 +51,13 @@ export function CheckoutPriceSummary({
         ? discountLines.map((line) => (
             <div key={`${line.type}-${line.label}`} className="mt-2 flex justify-between text-sm">
               <span className="text-muted-foreground">{line.label}</span>
-              <span className="font-medium text-destructive">-RM {line.amount}</span>
+              <span className="font-medium text-[var(--theme-danger)]">-RM {line.amount}</span>
             </div>
           ))
         : discountAmount > 0 ? (
           <div className="mt-2 flex justify-between text-sm">
             <span className="text-muted-foreground">优惠抵扣</span>
-            <span className="font-medium text-destructive">-RM {discountAmount}</span>
+            <span className="font-medium text-[var(--theme-danger)]">-RM {discountAmount}</span>
           </div>
         ) : null}
       {sstPreview ? (
@@ -80,7 +80,7 @@ export function CheckoutPriceSummary({
       ) : null}
       <div className="mt-2 flex justify-between text-sm">
         <span className="text-muted-foreground">运费{sstShowInCatalog ? "（不计税）" : ""}</span>
-        <span className={`font-medium ${shippingFee === 0 ? "text-emerald-600" : "text-foreground"}`}>
+        <span className={`font-medium ${shippingFee === 0 ? "text-[var(--theme-success)]" : "text-foreground"}`}>
           {shippingFee === 0 ? "包邮" : `RM ${shippingFee}`}
         </span>
       </div>

@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/utils/formatDateTime";
 import { useEffect, useState } from "react";
 import { Plus, Loader2, UserCog, Shield, Trash2, KeyRound, ToggleLeft, ToggleRight, AlertTriangle } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
@@ -11,11 +12,22 @@ import * as rbacService from "@/services/admin/rbacService";
 import type { RbacAdminUserRow } from "@/services/admin/rbacService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
+import {
+  THEME_ALERT_ERROR_SOFT,
+  THEME_BADGE_DANGER,
+  THEME_BADGE_MUTED,
+  THEME_BADGE_PRIMARY,
+  THEME_BADGE_WARNING,
+  THEME_TEXT_SUCCESS_SOFT,
+  THEME_TEXT_DANGER,
+  THEME_HOVER_TEXT_DANGER,
+  THEME_BTN_DANGER_SOLID,
+} from "@/utils/themeVisuals";
 
 const ROLE_BADGE: Record<string, { cls: string; text: string }> = {
-  super_admin: { cls: "bg-red-500/10 text-red-600", text: "超级管理员" },
-  admin: { cls: "bg-blue-500/10 text-blue-600", text: "管理员" },
-  disabled: { cls: "bg-muted text-muted-foreground", text: "已禁用" },
+  super_admin: { cls: THEME_BADGE_DANGER, text: "超级管理员" },
+  admin: { cls: THEME_BADGE_PRIMARY, text: "管理员" },
+  disabled: { cls: THEME_BADGE_MUTED, text: "已禁用" },
 };
 
 export default function AdminAccounts() {
@@ -100,8 +112,8 @@ export default function AdminAccounts() {
         </PermissionGate>
       </div>
 
-      <div className="theme-rounded border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-xs text-foreground/90 leading-relaxed">
-        <p className="font-medium text-amber-800 dark:text-amber-200/90"><Tx>管理员与超级管理员</Tx></p>
+      <div className={`theme-rounded border px-4 py-3 text-xs leading-relaxed text-foreground/90 ${THEME_ALERT_ERROR_SOFT}`}>
+        <p className="font-medium text-[var(--theme-warning)]"><Tx>管理员与超级管理员</Tx></p>
         <p className="mt-1 text-muted-foreground"><Tx>
           拥有「角色权限」权限的账号可在此新增、禁用、重置密码、删除</Tx><strong className="text-foreground/80"><Tx>普通管理员</Tx></strong><Tx>（不可删除超级管理员）。
           若数据库里</Tx><strong className="text-foreground/80"><Tx>没有任何 super_admin</Tx></strong>，无法把别人设为超级管理员时，请 SSH 到服务器，在{" "}
@@ -156,21 +168,21 @@ export default function AdminAccounts() {
                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>{badge.text}</span>
                   </div>
                   <p className="text-xs text-muted-foreground">{a.phone}</p>
-                  <p className="text-[11px] text-muted-foreground">创建: {a.created_at ? new Date(a.created_at).toLocaleString("zh-CN") : "—"}</p>
-                  <p className="text-[11px] text-muted-foreground">最后登录: {a.last_login_at ? new Date(a.last_login_at).toLocaleString("zh-CN") : <span className="italic text-muted-foreground/60"><Tx>从未登录</Tx></span>}</p>
+                  <p className="text-[11px] text-muted-foreground">创建: {a.created_at ? formatDateTime(a.created_at) : "—"}</p>
+                  <p className="text-[11px] text-muted-foreground">最后登录: {a.last_login_at ? formatDateTime(a.last_login_at) : <span className="italic text-muted-foreground/60"><Tx>从未登录</Tx></span>}</p>
                   <PermissionGate permission="role.manage">
                     <div className="flex flex-wrap gap-2 pt-1">
                       {a.role !== "super_admin" && (
                         <>
                         <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation min-h-[40px] theme-rounded border border-[var(--theme-border)] px-3 py-1.5 text-xs hover:bg-[var(--theme-bg)]">
-                            {a.role === "disabled" ? <><ToggleRight size={12} className="mr-1 inline text-green-600" /><Tx>启用</Tx></> : <><ToggleLeft size={12} className="mr-1 inline" /><Tx>禁用</Tx></>}
+                            {a.role === "disabled" ? <><ToggleRight size={12} className={`mr-1 inline ${THEME_TEXT_SUCCESS_SOFT}`} /><Tx>启用</Tx></> : <><ToggleLeft size={12} className="mr-1 inline" /><Tx>禁用</Tx></>}
                           </button>
                           {(a.role !== "super_admin" || isSuperAdminViewer) && (
                           <button type="button" onClick={() => { setResetTarget(a); setNewPassword(""); }} className="touch-manipulation min-h-[40px] theme-rounded border border-[var(--theme-border)] px-3 py-1.5 text-xs hover:bg-[var(--theme-bg)]">
                             <KeyRound size={12} className="mr-1 inline" /><Tx>重置密码
                           </Tx></button>
                           )}
-                          <button type="button" onClick={() => setConfirmDelete(a)} className="touch-manipulation min-h-[40px] theme-rounded border border-[var(--theme-border)] px-3 py-1.5 text-xs text-destructive hover:bg-[var(--theme-bg)]">
+                          <button type="button" onClick={() => setConfirmDelete(a)} className={`touch-manipulation min-h-[40px] theme-rounded border border-[var(--theme-border)] px-3 py-1.5 text-xs ${THEME_TEXT_DANGER} hover:bg-[var(--theme-bg)]`}>
                             <Trash2 size={12} className="mr-1 inline" /><Tx>删除
                           </Tx></button>
                         </>
@@ -220,22 +232,22 @@ export default function AdminAccounts() {
                 </td>
                 <td className="px-4 py-3 text-foreground">{a.phone}</td>
                 <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>{badge.text}</span></td>
-                <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{a.created_at ? new Date(a.created_at).toLocaleString("zh-CN") : "—"}</td>
-                <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{a.last_login_at ? new Date(a.last_login_at).toLocaleString("zh-CN") : <span className="italic text-muted-foreground/60"><Tx>从未登录</Tx></span>}</td>
+                <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{a.created_at ? formatDateTime(a.created_at) : "—"}</td>
+                <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{a.last_login_at ? formatDateTime(a.last_login_at) : <span className="italic text-muted-foreground/60"><Tx>从未登录</Tx></span>}</td>
                 <td className="px-4 py-3">
                   <PermissionGate permission="role.manage">
                     <div className="flex gap-1">
                       {a.role !== "super_admin" && (
                         <>
                           <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title={a.role === "disabled" ? "启用" : "禁用"}>
-                            {a.role === "disabled" ? <ToggleRight size={14} className="text-green-600" /> : <ToggleLeft size={14} />}
+                            {a.role === "disabled" ? <ToggleRight size={14} className={THEME_TEXT_SUCCESS_SOFT} /> : <ToggleLeft size={14} />}
                           </button>
                           {(a.role !== "super_admin" || isSuperAdminViewer) && (
                             <button type="button" onClick={() => { setResetTarget(a); setNewPassword(""); }} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title="重置密码">
                               <KeyRound size={14} />
                             </button>
                           )}
-                          <button type="button" onClick={() => setConfirmDelete(a)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:text-destructive hover:bg-[var(--theme-bg)]" title="删除">
+                          <button type="button" onClick={() => setConfirmDelete(a)} className={`touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground ${THEME_HOVER_TEXT_DANGER} hover:bg-[var(--theme-bg)]`} title="删除">
                             <Trash2 size={14} />
                           </button>
                         </>
@@ -286,12 +298,12 @@ export default function AdminAccounts() {
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDelete(null)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4 text-center">
-            <AlertTriangle size={40} className="mx-auto text-destructive" />
+            <AlertTriangle size={40} className={`mx-auto ${THEME_TEXT_DANGER}`} />
             <h3 className="font-bold text-foreground"><Tx>确认删除管理员</Tx></h3>
             <p className="text-sm text-muted-foreground">将禁用 {confirmDelete.nickname || confirmDelete.phone} 的管理员权限。</p>
             <div className="flex justify-center gap-3">
               <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
-              <button type="button" onClick={handleDelete} className="rounded-xl bg-destructive px-4 py-2.5 text-sm font-semibold btn-theme-gradient"><Tx>确认删除</Tx></button>
+              <button type="button" onClick={handleDelete} className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${THEME_BTN_DANGER_SOLID}`}><Tx>确认删除</Tx></button>
             </div>
           </div>
         </div>

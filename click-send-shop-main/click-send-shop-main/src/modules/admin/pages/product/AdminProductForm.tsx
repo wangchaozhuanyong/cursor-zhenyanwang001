@@ -15,8 +15,8 @@ import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_PRODUCT_LAYOUT } from "@/const
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { flattenCategories } from "@/utils/categoryTree";
 import type { ProductTag } from "@/types/product";
-import { AnimatedConfirmDialog, LoadingButtoimport { Tx } from "@/components/admin/AdminText";
-n, UploadDropZone } from "@/modules/micro-interactions";
+import { Tx } from "@/components/admin/AdminText";
+import { AnimatedConfirmDialog, LoadingButton, UploadDropZone } from "@/modules/micro-interactions";
 
 export default function AdminProductForm() {
   const navigate = useNavigate();

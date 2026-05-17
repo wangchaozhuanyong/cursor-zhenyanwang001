@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download, History, Loader2, Package, RefreshCcw, Search } from "lucide-react";
 import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 import { toast } from "sonner";
-import PermissionGate from "@/components/admin/PermissionGateimport { Tx } from "@/components/admin/AdminText";
+import PermissionGate from "@/components/admin/PermissionGate";
+import { Tx } from "@/components/admin/AdminText";
 ";
 import Pagination from "@/components/admin/Pagination";
 import {

@@ -5,8 +5,8 @@ import { LoadingButton } from "@/modules/micro-interactions";
 import { AdminTabsPanelSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import { toast } from "sonner";
 import { fetchAdminProfile, updateAdminProfile, changeAdminPassword } from "@/services/admin/accountService";
-imimport { Tx } from "@/components/admin/AdminText";
-port { toastErrorMessage } from "@/utils/errorMessage";
+import { Tx } from "@/components/admin/AdminText";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 export default function AdminAccount() {
   const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");

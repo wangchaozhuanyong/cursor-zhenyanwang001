@@ -4,8 +4,8 @@ import type { ThemeConfig, ThemeSceneTag, ThemeSkin } from "@/types/theme";
 import type { AutoColorAction } from "@/utils/themeStudioAuto";
 import ColorField from "./ColorField";
 import ThemeHealthCheck from "./ThemeHealthCheck";
-import {
 import { Tx } from "@/components/admin/AdminText";
+import {
   EDITOR_GROUP_LABELS,
   enumOptions,
   enumValueLabels,

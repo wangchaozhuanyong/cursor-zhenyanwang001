@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Save } from "lucide-react";
-import {
 import { Tx } from "@/components/admin/AdminText";
+import {
   CHECKOUT_MODE_LABELS,
   formatPaymentConfigSummary,
 } from "@/utils/paymentAdminLabels";

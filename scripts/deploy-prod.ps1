@@ -73,13 +73,12 @@ if ($Quick) {
 Run-Step "Remote deploy on $ServerIp" "ssh -o StrictHostKeyChecking=accept-new -i `"$SshKeyPath`" $ServerUser@$ServerIp `"$RemoteCmd`""
 
 Write-Host "==> Upload frontend dist (local build, avoids EC2 OOM)"
-& (Join-Path $PSScriptRoot "upload-frontend-dist-ec2.ps1") @(
-  "-ServerHost", $ServerIp,
-  "-ServerUser", $ServerUser,
-  "-RemoteProjectRoot", $RemoteProjectDir,
-  "-IdentityFile", $SshKeyPath,
-  "-SyncPublicFrontend"
-)
+& (Join-Path $PSScriptRoot "upload-frontend-dist-ec2.ps1") `
+  -ServerHost $ServerIp `
+  -ServerUser $ServerUser `
+  -RemoteProjectRoot $RemoteProjectDir `
+  -IdentityFile $SshKeyPath `
+  -SyncPublicFrontend
 
 Write-Host ""
 Write-Host "Done. Release branch deployed: $ReleaseBranch"

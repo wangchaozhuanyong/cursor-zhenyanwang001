@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+import { Tx } from "@/components/admin/AdminText";
   Check,
   ChevronDown,
   ChevronRight,
@@ -69,6 +70,18 @@ function siblingSortPayload(nodes: Category[], parentId: string | null) {
   }));
 }
 
+const LEVEL_LABELS = ["一级分类", "二级分类", "三级分类"] as const;
+
+function categorySubtitle(cat: FlatCategory, nameById: Map<string, string>): string {
+  const levelLabel = LEVEL_LABELS[cat.level] ?? `第 ${cat.level + 1} 级`;
+  const parentId = cat.parent_id;
+  if (parentId) {
+    const parentName = nameById.get(parentId);
+    if (parentName) return `${levelLabel} · 上级：${parentName}`;
+  }
+  return levelLabel;
+}
+
 function reorderSiblings(nodes: Category[], draggedId: string, targetId: string): { tree: Category[]; payload: ReturnType<typeof siblingSortPayload> | null } {
   let resultPayload: ReturnType<typeof siblingSortPayload> | null = null;
   const walk = (list: Category[], parentId: string | null): Category[] => {
@@ -124,6 +137,7 @@ export default function AdminCategories() {
   const flatRows = useMemo(() => flattenTree(categories, expanded), [categories, expanded]);
   const allRows = useMemo(() => flattenAll(categories), [categories]);
   const parentOptions = useMemo(() => allRows.filter((x) => x.level < 2), [allRows]);
+  const categoryNameById = useMemo(() => new Map(allRows.map((row) => [row.id, row.name])), [allRows]);
 
   const toggleExpand = (id: string) => {
     setExpanded((prev) => {
@@ -269,7 +283,7 @@ export default function AdminCategories() {
       onChange={(e) => onChange(e.target.value)}
       className="min-w-[180px] rounded-lg bg-secondary px-3 py-2.5 text-sm text-foreground outline-none"
     >
-      <option value="">一级分类</option>
+      <option value=""><Tx>一级分类</Tx></option>
       {parentOptions
         .filter((item) => item.id !== disabledId)
         .map((item) => (
@@ -285,16 +299,16 @@ export default function AdminCategories() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">分类管理</h2>
-          <p className="mt-1 text-xs text-muted-foreground">支持最多 3 级分类；有子分类或已关联商品的分类禁止删除。</p>
+          <h2 className="text-lg font-semibold text-foreground"><Tx>分类管理</Tx></h2>
+          <p className="mt-1 text-xs text-muted-foreground"><Tx>支持最多 3 级分类；有子分类或已关联商品的分类禁止删除。</Tx></p>
         </div>
         <PermissionGate permission="category.manage">
           <button
             onClick={() => setShowForm(!showForm)}
             className="flex items-center gap-1 rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"
           >
-            <Plus size={16} /> 新增分类
-          </button>
+            <Plus size={16} /><Tx> 新增分类
+          </Tx></button>
         </PermissionGate>
       </div>
 
@@ -302,7 +316,7 @@ export default function AdminCategories() {
         <div className="rounded-xl border border-gold/30 bg-card p-4">
           <div className="grid gap-3 lg:grid-cols-[1fr_120px_1fr_180px_90px_120px_auto] lg:items-end">
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">分类名称</label>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>分类名称</Tx></label>
               <input
                 placeholder="输入分类名称"
                 value={formData.name}
@@ -311,7 +325,7 @@ export default function AdminCategories() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">符号图标</label>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>符号图标</Tx></label>
               <input
                 placeholder="如 🛍️"
                 value={formData.icon}
@@ -320,8 +334,8 @@ export default function AdminCategories() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">图标 URL</label>
-              <p className="mb-1 text-[11px] text-muted-foreground">建议 128×128 正方形（PNG/WebP/SVG 均可），透明背景更佳。</p>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>图标 URL</Tx></label>
+              <p className="mb-1 text-[11px] text-muted-foreground"><Tx>建议 128×128 正方形（PNG/WebP/SVG 均可），透明背景更佳。</Tx></p>
               <div className="flex gap-2">
                 <input
                   placeholder="可粘贴 URL 或上传"
@@ -336,11 +350,11 @@ export default function AdminCategories() {
               </div>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">父级分类</label>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>父级分类</Tx></label>
               {parentSelect(formData.parent_id, (v) => setFormData({ ...formData, parent_id: v }))}
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">排序</label>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>排序</Tx></label>
               <input
                 type="number"
                 value={formData.sort_order}
@@ -354,9 +368,9 @@ export default function AdminCategories() {
                 className="accent-gold"
                 checked={formData.is_visible}
                 onChange={(e) => setFormData({ ...formData, is_visible: e.target.checked })}
-              />
+              /><Tx>
               前台显示
-            </label>
+            </Tx></label>
             <div className="flex gap-2">
               <PermissionGate permission="category.manage">
                 <LoadingButton
@@ -366,13 +380,13 @@ export default function AdminCategories() {
                   loadingText="添加中..."
                   onClick={() => void handleAdd()}
                   className="rounded-lg px-4 py-2.5 text-sm font-semibold"
-                >
+                ><Tx>
                   添加
-                </LoadingButton>
+                </Tx></LoadingButton>
               </PermissionGate>
-              <button onClick={() => setShowForm(false)} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground">
+              <button onClick={() => setShowForm(false)} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground"><Tx>
                 取消
-              </button>
+              </Tx></button>
             </div>
           </div>
         </div>
@@ -380,11 +394,11 @@ export default function AdminCategories() {
 
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="grid grid-cols-[1fr_100px_90px_110px_120px] gap-3 border-b border-border px-4 py-3 text-xs font-medium text-muted-foreground">
-          <span>分类</span>
-          <span>商品数</span>
-          <span>显示</span>
-          <span>排序</span>
-          <span className="text-right">操作</span>
+          <span><Tx>分类</Tx></span>
+          <span><Tx>商品数</Tx></span>
+          <span><Tx>显示</Tx></span>
+          <span><Tx>排序</Tx></span>
+          <span className="text-right"><Tx>操作</Tx></span>
         </div>
         {loading
           ? Array.from({ length: 5 }).map((_, i) => (
@@ -455,7 +469,9 @@ export default function AdminCategories() {
                 ) : (
                   <div className="min-w-0">
                     <p className="truncate font-medium text-foreground">{cat.name}</p>
-                    <p className="text-[10px] text-muted-foreground">ID: {cat.id}</p>
+                    <p className="truncate text-[10px] text-muted-foreground" title={cat.id}>
+                      {categorySubtitle(cat, categoryNameById)}
+                    </p>
                   </div>
                 )}
               </div>
@@ -512,7 +528,7 @@ export default function AdminCategories() {
             </div>
           );
         })}
-        {flatRows.length === 0 && <div className="py-8 text-center text-sm text-muted-foreground">暂无分类</div>}
+        {flatRows.length === 0 && <div className="py-8 text-center text-sm text-muted-foreground"><Tx>暂无分类</Tx></div>}
       </div>
       <AnimatedConfirmDialog
         open={!!deleteTarget}

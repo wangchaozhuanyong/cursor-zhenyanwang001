@@ -7,6 +7,7 @@ import ProductDetailPreview from "./ProductDetailPreview";
 import StoreHomePreview from "./StoreHomePreview";
 import type { PreviewDevice, PreviewMode } from "./themeStudioConstants";
 import { DEVICE_WIDTH } from "./themeStudioConstants";
+import { Tx } from "@/components/admin/AdminText";
 
 type Props = {
   config: ThemeConfig;
@@ -19,8 +20,8 @@ function MobileProfilePreview() {
   return (
     <div className="space-y-3 pb-16">
       <div className="store-card p-4">
-        <p className="text-sm font-semibold">我的</p>
-        <p className="text-xs text-[var(--theme-text-muted)]">会员 · 订单 · 设置</p>
+        <p className="text-sm font-semibold"><Tx>我的</Tx></p>
+        <p className="text-xs text-[var(--theme-text-muted)]"><Tx>会员 · 订单 · 设置</Tx></p>
       </div>
       <div className="store-card divide-y divide-[var(--theme-border)] text-xs">
         {["我的订单", "收货地址", "优惠券", "客服"].map((item) => (
@@ -41,11 +42,11 @@ export default function ThemePreviewCanvas({ config, mode, device, skinKey }: Pr
     if (mode === "mobile") {
       return (
         <div className="space-y-4">
-          <p className="text-[10px] font-medium text-[var(--theme-text-muted)]">首页</p>
+          <p className="text-[10px] font-medium text-[var(--theme-text-muted)]"><Tx>首页</Tx></p>
           <StoreHomePreview config={config} />
-          <p className="text-[10px] font-medium text-[var(--theme-text-muted)]">商品详情</p>
+          <p className="text-[10px] font-medium text-[var(--theme-text-muted)]"><Tx>商品详情</Tx></p>
           <ProductDetailPreview config={config} />
-          <p className="text-[10px] font-medium text-[var(--theme-text-muted)]">我的</p>
+          <p className="text-[10px] font-medium text-[var(--theme-text-muted)]"><Tx>我的</Tx></p>
           <MobileProfilePreview />
         </div>
       );

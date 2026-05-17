@@ -1,7 +1,9 @@
-﻿import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Download, Loader2, RefreshCw, CheckCircle2, XCircle, Clock, FileSpreadsheet } from "lucide-react";
 import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 import PermissionGate from "@/components/admin/PermissionGate";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { toast } from "sonner";
 import {
   createExportTask,
@@ -11,6 +13,7 @@ import {
 import type { ExportTask } from "@/services/admin/exportCenterService";
 import { getAdminAccessToken } from "@/utils/token";
 import { EXPORT_TASK_STATUS, EXPORT_TASK_STATUS_META } from "@/constants/statusDictionary";
+import { labelExportType } from "@/utils/adminDisplayLabels";
 import { toastErrorMessage } from "@/utils/errorMessage";
 
 const EXPORT_TYPES = [
@@ -49,6 +52,7 @@ function formatBytes(bytes: number) {
 }
 
 export default function AdminExportCenter() {
+  const { confirm } = useAdminConfirm();
   const [tasks, setTasks] = useState<ExportTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -105,8 +109,8 @@ export default function AdminExportCenter() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="flex items-center gap-2 text-lg font-bold text-foreground"><FileSpreadsheet size={20} /> 导出中心</h2>
-          <p className="text-sm text-muted-foreground">支持按报表类型与日期范围创建导出任务</p>
+          <h2 className="flex items-center gap-2 text-lg font-bold text-foreground"><FileSpreadsheet size={20} /><Tx> 导出中心</Tx></h2>
+          <p className="text-sm text-muted-foreground"><Tx>支持按报表类型与日期范围创建导出任务</Tx></p>
         </div>
         <button type="button" onClick={() => void loadTasks()} className="touch-manipulation rounded-xl border border-border p-2.5 text-muted-foreground hover:bg-secondary" title="刷新">
           <RefreshCw size={16} />
@@ -115,7 +119,7 @@ export default function AdminExportCenter() {
 
       <PermissionGate permission="report.export">
         <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center">
-          <span className="text-sm font-medium text-foreground">创建导出:</span>
+          <span className="text-sm font-medium text-foreground"><Tx>创建导出:</Tx></span>
           <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none">
             {EXPORT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
@@ -126,11 +130,18 @@ export default function AdminExportCenter() {
             variant="gold"
             state={creating ? "loading" : "normal"}
             loadingText="创建中..."
-            onClick={() => void handleCreate()}
+            onClick={() =>
+              confirm({
+                title: "确认导出",
+                description: "确定创建导出任务？完成后可在列表下载文件。",
+                confirmText: "开始导出",
+                onConfirm: () => handleCreate(),
+              })
+            }
             className="touch-manipulation min-h-[44px] rounded-xl px-4 py-2.5 text-sm font-semibold"
-          >
+          ><Tx>
             创建导出任务
-          </LoadingButton>
+          </Tx></LoadingButton>
         </div>
       </PermissionGate>
 
@@ -155,8 +166,8 @@ export default function AdminExportCenter() {
         renderRow={(t) => (
           <>
             <td className="px-4 py-3 text-foreground">{t.file_name}</td>
-            <td className="px-4 py-3 text-xs text-muted-foreground">{EXPORT_TYPES.find((x) => x.value === t.type)?.label || t.type}</td>
-            <td className="px-4 py-3"><div className="flex items-center gap-1 text-xs">{STATUS_ICON[t.status]} {STATUS_TEXT[t.status]}</div></td>
+            <td className="px-4 py-3 text-xs text-muted-foreground">{EXPORT_TYPES.find((x) => x.value === t.type)?.label || labelExportType(t.type)}</td>
+            <td className="px-4 py-3"><div className="flex items-center gap-1 text-xs">{STATUS_ICON[t.status]} {STATUS_TEXT[t.status] || "未知"}</div></td>
             <td className="px-4 py-3 text-xs text-muted-foreground">{formatBytes(t.file_size)}</td>
             <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{t.created_at ? new Date(t.created_at).toLocaleString("zh-CN") : "-"}</td>
             <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{t.finished_at ? new Date(t.finished_at).toLocaleString("zh-CN") : "-"}</td>

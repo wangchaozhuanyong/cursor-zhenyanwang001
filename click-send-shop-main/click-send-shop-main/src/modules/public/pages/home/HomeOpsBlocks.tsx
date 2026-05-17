@@ -4,6 +4,7 @@ import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { fetchHomeOps } from "@/services/contentService";
 import { getCategoryIconShellClassName } from "@/utils/themeVisuals";
 import type { HomeNavItem } from "@/types/content";
+import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
 
 function openTarget(navigate: ReturnType<typeof useNavigate>, url: string) {
   const target = url.trim();
@@ -47,8 +48,11 @@ const fallbackNavItems: HomeNavItem[] = [
 ];
 
 export default function HomeOpsBlocks() {
+  const { settings: homeModules } = useHomeModuleSettings();
   const navigate = useNavigate();
   const { themeConfig } = useThemeRuntime();
+
+  if (homeModules.modules.nav_grid === false) return null;
   const categoryIconClass = getCategoryIconShellClassName(themeConfig.categoryIconStyle);
   const [navItems, setNavItems] = useState<HomeNavItem[]>([]);
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");

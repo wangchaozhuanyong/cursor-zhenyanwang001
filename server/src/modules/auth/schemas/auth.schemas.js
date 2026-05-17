@@ -105,12 +105,12 @@ const wechatBindPhoneBodySchema = z.object({
     .max(128, '绑定凭证无效'),
 });
 
-const wechatOtpSendBodySchema = otpSendBodySchema;
-
 const otpSendBodySchema = z.object({
   countryCode: countryCodeSchema,
   phone: phoneSchema,
 });
+
+const wechatOtpSendBodySchema = otpSendBodySchema;
 
 const otpLoginBodySchema = z.object({
   countryCode: countryCodeSchema,

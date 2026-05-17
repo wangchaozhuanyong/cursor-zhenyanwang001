@@ -6,6 +6,8 @@ import { fetchProductTags, createProductTag, updateProductTag, deleteProductTag 
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { LoadingButton } from "@/modules/micro-interactions";
 import type { ProductTag } from "@/types/product";
+import { Tx } from "@/components/admin/AdminText";
+import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 
 const EMPTY_FORM = {
   name: "",
@@ -16,6 +18,7 @@ const EMPTY_FORM = {
 };
 
 export default function AdminProductTags() {
+  const { confirm } = useAdminConfirm();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tags, setTags] = useState<ProductTag[]>([]);
@@ -88,8 +91,8 @@ export default function AdminProductTags() {
     <div className="space-y-4">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">标签管理</h2>
-          <p className="mt-1 text-xs text-muted-foreground">创建后，在「商品管理 → 新增/编辑商品」中勾选即可关联；前台列表与详情页会展示。</p>
+          <h2 className="text-lg font-semibold text-foreground"><Tx>标签管理</Tx></h2>
+          <p className="mt-1 text-xs text-muted-foreground"><Tx>创建后，在「商品管理 → 新增/编辑商品」中勾选即可关联；前台列表与详情页会展示。</Tx></p>
         </div>
         <PermissionGate permission="tag.manage">
           <button
@@ -103,8 +106,8 @@ export default function AdminProductTags() {
             }}
             className="flex items-center gap-1 rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"
           >
-            <Plus size={16} /> 新增标签
-          </button>
+            <Plus size={16} /><Tx> 新增标签
+          </Tx></button>
         </PermissionGate>
       </div>
 
@@ -112,27 +115,27 @@ export default function AdminProductTags() {
         <div className="rounded-xl border border-gold/30 bg-card p-4">
           <div className="flex flex-wrap items-end gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">标签名称</label>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>标签名称</Tx></label>
               <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="输入标签名称" className="rounded-lg bg-secondary px-4 py-2.5 text-sm text-foreground outline-none" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">背景色</label>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>背景色</Tx></label>
               <input type="color" value={form.bg_color} onChange={(e) => setForm({ ...form, bg_color: e.target.value })} className="h-10 w-16 rounded-lg bg-secondary p-1" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">文字色</label>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>文字色</Tx></label>
               <input type="color" value={form.text_color} onChange={(e) => setForm({ ...form, text_color: e.target.value })} className="h-10 w-16 rounded-lg bg-secondary p-1" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">排序权重</label>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>排序权重</Tx></label>
               <input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} className="w-24 rounded-lg bg-secondary px-3 py-2.5 text-sm text-foreground outline-none" />
             </div>
             <label className="flex items-center gap-2 rounded-lg border border-border px-3 py-2.5 text-xs text-muted-foreground">
-              <input type="checkbox" className="accent-gold" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} />
+              <input type="checkbox" className="accent-gold" checked={form.enabled} onChange={(e) => setForm({ ...form, enabled: e.target.checked })} /><Tx>
               启用
-            </label>
+            </Tx></label>
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">预览</label>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>预览</Tx></label>
               <span className="inline-flex rounded-full px-3 py-1 text-xs font-bold" style={{ backgroundColor: form.bg_color, color: form.text_color }}>
                 {form.name || "标签"}
               </span>
@@ -143,13 +146,13 @@ export default function AdminProductTags() {
                 variant="gold"
                 state={saving ? "loading" : "normal"}
                 loadingText="保存中..."
-                onClick={() => void handleSave()}
+                onClick={() => adminConfirmSave(confirm, editingId ? "标签修改" : "新标签", () => handleSave())}
                 className="rounded-lg px-4 py-2.5 text-sm font-semibold"
               >
                 {editingId ? "保存" : "添加"}
               </LoadingButton>
             </PermissionGate>
-            <button onClick={resetForm} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground">取消</button>
+            <button onClick={resetForm} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground"><Tx>取消</Tx></button>
           </div>
         </div>
       )}
@@ -183,7 +186,11 @@ export default function AdminProductTags() {
                 </button>
               </PermissionGate>
               <PermissionGate permission="tag.manage">
-                <button onClick={() => handleDelete(tag.id)} className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+                <button
+                  type="button"
+                  onClick={() => adminConfirmDelete(confirm, tag.name, () => handleDelete(tag.id))}
+                  className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                >
                   <Trash2 size={14} />
                 </button>
               </PermissionGate>

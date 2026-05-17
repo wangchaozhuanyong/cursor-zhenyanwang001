@@ -2,6 +2,7 @@ import { Copy, Maximize2, Plus, Star, Trash2 } from "lucide-react";
 import { LoadingButton } from "@/modules/micro-interactions";
 import PermissionGate from "@/components/admin/PermissionGate";
 import StoreBadge from "@/components/ui/StoreBadge";
+import { Tx } from "@/components/admin/AdminText";
 
 export type ThemeStudioHeaderProps = {
   skinName: string;
@@ -39,18 +40,18 @@ export default function ThemeStudioHeader({
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="truncate text-lg font-bold text-foreground">Theme Studio 皮肤设计工作台</h1>
-            {isDefault ? <StoreBadge type="success">默认皮肤</StoreBadge> : null}
+            <h1 className="truncate text-lg font-bold text-foreground"><Tx>Theme Studio 皮肤设计工作台</Tx></h1>
+            {isDefault ? <StoreBadge type="success"><Tx>默认皮肤</Tx></StoreBadge> : null}
             {dirty ? (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800"><Tx>
                 有未保存更改
-              </span>
+              </Tx></span>
             ) : (
-              <span className="text-[11px] text-muted-foreground">已与服务器同步</span>
+              <span className="text-[11px] text-muted-foreground"><Tx>已与服务器同步</Tx></span>
             )}
           </div>
-          <p className="mt-1 truncate text-sm text-muted-foreground">
-            正在编辑：<span className="font-medium text-foreground">{skinName || "未命名皮肤"}</span>
+          <p className="mt-1 truncate text-sm text-muted-foreground"><Tx>
+            正在编辑：</Tx><span className="font-medium text-foreground">{skinName || "未命名皮肤"}</span>
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -59,32 +60,32 @@ export default function ThemeStudioHeader({
             onClick={onFullscreen}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary"
           >
-            <Maximize2 size={14} />
+            <Maximize2 size={14} /><Tx>
             全屏预览
-          </button>
+          </Tx></button>
           <button type="button" onClick={onAdd} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
-            <Plus size={14} />
+            <Plus size={14} /><Tx>
             新建
-          </button>
+          </Tx></button>
           <button type="button" onClick={onCopy} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
-            <Copy size={14} />
+            <Copy size={14} /><Tx>
             复制
-          </button>
+          </Tx></button>
           {!isDefault ? (
             <button type="button" onClick={onSetDefault} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
-              <Star size={14} />
+              <Star size={14} /><Tx>
               设为默认
-            </button>
+            </Tx></button>
           ) : null}
           {canDelete ? (
             <button type="button" onClick={onDelete} className="inline-flex items-center gap-1 rounded-lg border border-destructive/40 px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10">
-              <Trash2 size={14} />
+              <Trash2 size={14} /><Tx>
               删除
-            </button>
+            </Tx></button>
           ) : (
-            <span className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground" title="默认皮肤不可删除">
+            <span className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground" title="默认皮肤不可删除"><Tx>
               默认皮肤
-            </span>
+            </Tx></span>
           )}
           <PermissionGate permission="settings.manage">
             <LoadingButton
@@ -95,9 +96,9 @@ export default function ThemeStudioHeader({
               disabled={saveDisabled}
               onClick={onSaveDraft}
               className="inline-flex rounded-lg border border-border px-3 py-2 text-xs font-semibold"
-            >
+            ><Tx>
               保存草稿
-            </LoadingButton>
+            </Tx></LoadingButton>
             <LoadingButton
               type="button"
               variant="solid"
@@ -106,9 +107,9 @@ export default function ThemeStudioHeader({
               disabled={saveDisabled}
               onClick={onSaveAndApply}
               className="inline-flex rounded-lg bg-[var(--theme-primary)] px-4 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]"
-            >
+            ><Tx>
               保存并应用到全站
-            </LoadingButton>
+            </Tx></LoadingButton>
           </PermissionGate>
         </div>
       </div>

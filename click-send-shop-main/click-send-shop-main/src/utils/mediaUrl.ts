@@ -1,5 +1,7 @@
 const UPLOADS_PREFIX = "/uploads/";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
+
 function getApiOrigin(baseUrl: string): string {
   try {
     const fallback =
@@ -30,4 +32,14 @@ export function normalizeMediaUrls<T>(input: T, baseUrl: string): T {
   };
 
   return walk(input) as T;
+}
+
+/** 将 /uploads/... 转为可访问的绝对地址（本地持久化购物车等未经 API 归一化时也需要） */
+export function ensureMediaUrl(value: string | null | undefined): string {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (/^(https?:|data:|blob:)/i.test(raw)) return raw;
+  if (!raw.startsWith(UPLOADS_PREFIX)) return raw;
+  const apiOrigin = getApiOrigin(API_BASE);
+  return apiOrigin ? `${apiOrigin}${raw}` : raw;
 }

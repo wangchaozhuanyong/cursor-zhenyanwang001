@@ -1,5 +1,5 @@
 const { BusinessError } = require('../../errors/BusinessError');
-const { rowsToCsv } = require('../../utils/csv');
+const { rowsToCsvLocalized } = require('../../utils/adminCsvLabels');
 const repo = require('./adminUser.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
 const { formatUserResponse } = require('../../utils/formatUserResponse');
@@ -377,7 +377,7 @@ async function exportUsersCsv(query) {
     tags: (tagsByUserId[u.id] || []).map((tag) => tag.name).join('|'),
     created_at: u.created_at ? new Date(u.created_at).toISOString() : '',
   }));
-  const csv = rowsToCsv(USER_EXPORT_HEADERS, data);
+  const csv = rowsToCsvLocalized(USER_EXPORT_HEADERS, data);
   return { csv, filename: `users_${Date.now()}.csv` };
 }
 

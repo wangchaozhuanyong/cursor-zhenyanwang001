@@ -1,4 +1,4 @@
-﻿import { lazy, Suspense, useEffect, useLayoutEffect } from "react";
+﻿import { lazy, Suspense, useEffect, useLayoutEffect, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -25,6 +25,8 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { syncLockedInviteCodeBySearch } from "@/utils/inviteReferral";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { StoreOutletFallback } from "@/components/AppRouteFallback";
+import { useAdminTOptional } from "@/hooks/useAdminT";
+import { AdminI18nProvider } from "@/contexts/AdminI18nProvider";
 
 /* ---------- Public（前台）页面，按业务域组织 ---------- */
 const MemberHome = lazy(() => import("@/modules/public/pages/home/MemberHome"));
@@ -192,40 +194,47 @@ function ReferralInviteSync() {
   return null;
 }
 
+function AdminI18nScope({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  if (!pathname.startsWith("/admin")) return <>{children}</>;
+  return <AdminI18nProvider>{children}</AdminI18nProvider>;
+}
+
 function AdminTitleSync() {
   const location = useLocation();
   const siteInfo = useSiteInfo();
+  const { t } = useAdminTOptional();
 
   useEffect(() => {
     if (!location.pathname.startsWith("/admin")) return;
     const siteName = (siteInfo.siteName || "大马通").trim();
     const seoTitle = (siteInfo.seoTitle || "").trim();
-    const routeTitleMap: Array<{ test: (path: string) => boolean; title: string }> = [
-      { test: (p) => p === "/admin" || p === "/admin/", title: "管理后台" },
-      { test: (p) => p.startsWith("/admin/settings/site"), title: "站点设置" },
-      { test: (p) => p.startsWith("/admin/home-ops"), title: "首页运营配置" },
-      { test: (p) => p.startsWith("/admin/banners"), title: "Banner管理" },
-      { test: (p) => p === "/admin/marketing", title: "活动管理 / 活动总览" },
-      { test: (p) => p.startsWith("/admin/marketing/activities/new"), title: "活动管理 / 新建活动" },
-      { test: (p) => /^\/admin\/marketing\/activities\/[^/]+\/edit/.test(p), title: "活动管理 / 编辑活动" },
-      { test: (p) => p.startsWith("/admin/marketing/activities"), title: "活动管理 / 营销活动" },
-      { test: (p) => p.startsWith("/admin/marketing/coupons/records"), title: "活动管理 / 领券记录" },
-      { test: (p) => p.startsWith("/admin/marketing/coupons"), title: "活动管理 / 优惠券管理" },
-      { test: (p) => p.startsWith("/admin/marketing/points"), title: "活动管理 / 积分管理" },
-      { test: (p) => p.startsWith("/admin/marketing/rewards"), title: "活动管理 / 返现管理" },
-      { test: (p) => p.startsWith("/admin/marketing/invites"), title: "活动管理 / 邀请奖励" },
-      { test: (p) => p.startsWith("/admin/users"), title: "用户管理" },
-      { test: (p) => p.startsWith("/admin/member-levels"), title: "会员等级" },
-      { test: (p) => p.startsWith("/admin/orders/unfinished"), title: "未完成结算" },
-      { test: (p) => p.startsWith("/admin/orders"), title: "订单管理" },
-      { test: (p) => p.startsWith("/admin/products"), title: "商品管理" },
-      { test: (p) => p.startsWith("/admin/reports"), title: "数据中心" },
-      { test: (p) => p.startsWith("/admin/exports"), title: "导出中心" },
+    const routeTitleMap: Array<{ test: (path: string) => boolean; titleKey: string }> = [
+      { test: (p) => p === "/admin" || p === "/admin/", titleKey: "routeTitles.admin" },
+      { test: (p) => p.startsWith("/admin/settings/site"), titleKey: "routeTitles.siteSettings" },
+      { test: (p) => p.startsWith("/admin/home-ops"), titleKey: "routeTitles.homeOps" },
+      { test: (p) => p.startsWith("/admin/banners"), titleKey: "routeTitles.banners" },
+      { test: (p) => p === "/admin/marketing", titleKey: "routeTitles.marketing" },
+      { test: (p) => p.startsWith("/admin/marketing/activities/new"), titleKey: "routeTitles.marketingNew" },
+      { test: (p) => /^\/admin\/marketing\/activities\/[^/]+\/edit/.test(p), titleKey: "routeTitles.marketingEdit" },
+      { test: (p) => p.startsWith("/admin/marketing/activities"), titleKey: "routeTitles.marketingActivities" },
+      { test: (p) => p.startsWith("/admin/marketing/coupons/records"), titleKey: "routeTitles.couponRecords" },
+      { test: (p) => p.startsWith("/admin/marketing/coupons"), titleKey: "routeTitles.coupons" },
+      { test: (p) => p.startsWith("/admin/marketing/points"), titleKey: "routeTitles.points" },
+      { test: (p) => p.startsWith("/admin/marketing/rewards"), titleKey: "routeTitles.rewards" },
+      { test: (p) => p.startsWith("/admin/marketing/invites"), titleKey: "routeTitles.invites" },
+      { test: (p) => p.startsWith("/admin/users"), titleKey: "routeTitles.users" },
+      { test: (p) => p.startsWith("/admin/member-levels"), titleKey: "routeTitles.memberLevels" },
+      { test: (p) => p.startsWith("/admin/orders/unfinished"), titleKey: "routeTitles.unfinishedOrders" },
+      { test: (p) => p.startsWith("/admin/orders"), titleKey: "routeTitles.orders" },
+      { test: (p) => p.startsWith("/admin/products"), titleKey: "routeTitles.products" },
+      { test: (p) => p.startsWith("/admin/reports"), titleKey: "routeTitles.reports" },
+      { test: (p) => p.startsWith("/admin/exports"), titleKey: "routeTitles.exports" },
     ];
     const match = routeTitleMap.find((item) => item.test(location.pathname));
-    const pageTitle = match?.title || "管理后台";
+    const pageTitle = t(match?.titleKey ?? "routeTitles.admin");
     document.title = `${pageTitle} | ${siteName || seoTitle || "大马通"}`;
-  }, [location.pathname, siteInfo.siteName, siteInfo.seoTitle]);
+  }, [location.pathname, siteInfo.siteName, siteInfo.seoTitle, t]);
 
   return null;
 }
@@ -260,6 +269,7 @@ function AppRoutes() {
           <SiteIdentitySync />
           <ReferralInviteSync />
           <AppScopeSync />
+          <AdminI18nScope>
           <AdminTitleSync />
           <TrackingManager />
           <Suspense fallback={<AppRouteFallback />}>
@@ -370,6 +380,7 @@ function AppRoutes() {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
+          </AdminI18nScope>
           <CookieConsentBanner />
       </TooltipProvider>
     </QueryClientProvider>

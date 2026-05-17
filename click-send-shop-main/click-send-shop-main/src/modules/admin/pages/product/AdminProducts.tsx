@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Eye, EyeOff, Pencil, FolderTree, Tags, Download, Upload, Trash2, Package } from "lucide-react";
 import { AnimatedConfirmDialog, AnimatedTable } from "@/modules/micro-interactions";
+import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { useNavigate } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
@@ -12,8 +13,10 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import type { Product, ProductStatus } from "@/types/product";
 import { useAdminProductsStore } from "@/stores/useAdminProductsStore";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { Tx } from "@/components/admin/AdminText";
 
 export default function AdminProducts() {
+  const { confirm } = useAdminConfirm();
   const navigate = useNavigate();
   const products = useAdminProductsStore((s) => s.products);
   const loading = useAdminProductsStore((s) => s.loading);
@@ -132,24 +135,24 @@ export default function AdminProducts() {
             className="touch-manipulation min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-sm text-foreground outline-none"
             aria-label="按状态筛选"
           >
-            <option value="">全部状态</option>
-            <option value="draft">草稿</option>
-            <option value="active">上架</option>
-            <option value="inactive">下架</option>
+            <option value=""><Tx>全部状态</Tx></option>
+            <option value="draft"><Tx>草稿</Tx></option>
+            <option value="active"><Tx>上架</Tx></option>
+            <option value="inactive"><Tx>下架</Tx></option>
           </select>
-          <button type="button" onClick={() => navigate("/admin/categories")} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded border border-[var(--theme-border)] px-4 py-2.5 text-sm text-foreground hover:bg-[var(--theme-bg)]"><FolderTree size={16} /> 分类</button>
-          <button type="button" onClick={() => navigate("/admin/tags")} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded border border-[var(--theme-border)] px-4 py-2.5 text-sm text-foreground hover:bg-[var(--theme-bg)]"><Tags size={16} /> 标签</button>
+          <button type="button" onClick={() => navigate("/admin/categories")} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded border border-[var(--theme-border)] px-4 py-2.5 text-sm text-foreground hover:bg-[var(--theme-bg)]"><FolderTree size={16} /><Tx> 分类</Tx></button>
+          <button type="button" onClick={() => navigate("/admin/tags")} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded border border-[var(--theme-border)] px-4 py-2.5 text-sm text-foreground hover:bg-[var(--theme-bg)]"><Tags size={16} /><Tx> 标签</Tx></button>
           <PermissionGate permission="product.view">
-            <button type="button" onClick={handleExportCsv} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded border border-[var(--theme-border)] px-4 py-2.5 text-sm text-foreground hover:bg-[var(--theme-bg)]"><Download size={16} /> 导出</button>
+            <button type="button" onClick={handleExportCsv} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded border border-[var(--theme-border)] px-4 py-2.5 text-sm text-foreground hover:bg-[var(--theme-bg)]"><Download size={16} /><Tx> 导出</Tx></button>
           </PermissionGate>
           <PermissionGate permission="product.manage">
             <label className="touch-manipulation flex min-h-[44px] cursor-pointer items-center gap-1.5 theme-rounded border border-[var(--theme-border)] px-4 py-2.5 text-sm text-foreground hover:bg-[var(--theme-bg)]">
-              <Upload size={16} /> 导入
-              <input type="file" accept=".csv,text/csv" className="hidden" onChange={handleImportCsv} />
+              <Upload size={16} /><Tx> 导入
+              </Tx><input type="file" accept=".csv,text/csv" className="hidden" onChange={handleImportCsv} />
             </label>
           </PermissionGate>
           <PermissionGate permission="product.manage">
-            <button type="button" onClick={() => navigate("/admin/products/new")} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded px-4 py-2.5 text-sm font-semibold text-white active:opacity-90" style={{ background: "var(--theme-gradient)" }}><Plus size={16} /> 新增</button>
+            <button type="button" onClick={() => navigate("/admin/products/new")} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded px-4 py-2.5 text-sm font-semibold text-white active:opacity-90" style={{ background: "var(--theme-gradient)" }}><Plus size={16} /><Tx> 新增</Tx></button>
           </PermissionGate>
         </div>
       </div>
@@ -165,9 +168,9 @@ export default function AdminProducts() {
           >
             <span className="text-sm font-medium text-foreground">已选 {selected.length} 项</span>
             <span className="h-4 w-px bg-border" />
-            <button type="button" onClick={() => batchToggleStatus("active")} className="touch-manipulation flex min-h-[40px] items-center gap-1 theme-rounded border border-[var(--theme-border)] px-3 py-2 text-xs text-foreground hover:bg-[var(--theme-bg)]"><Eye size={14} /> 批量上架</button>
-            <button type="button" onClick={() => batchToggleStatus("inactive")} className="touch-manipulation flex min-h-[40px] items-center gap-1 theme-rounded border border-[var(--theme-border)] px-3 py-2 text-xs text-foreground hover:bg-[var(--theme-bg)]"><EyeOff size={14} /> 批量下架</button>
-            <button type="button" onClick={() => batchToggleStatus("draft")} className="touch-manipulation flex min-h-[40px] items-center gap-1 theme-rounded border border-[var(--theme-border)] px-3 py-2 text-xs text-foreground hover:bg-[var(--theme-bg)]">草稿</button>
+            <button type="button" onClick={() => batchToggleStatus("active")} className="touch-manipulation flex min-h-[40px] items-center gap-1 theme-rounded border border-[var(--theme-border)] px-3 py-2 text-xs text-foreground hover:bg-[var(--theme-bg)]"><Eye size={14} /><Tx> 批量上架</Tx></button>
+            <button type="button" onClick={() => batchToggleStatus("inactive")} className="touch-manipulation flex min-h-[40px] items-center gap-1 theme-rounded border border-[var(--theme-border)] px-3 py-2 text-xs text-foreground hover:bg-[var(--theme-bg)]"><EyeOff size={14} /><Tx> 批量下架</Tx></button>
+            <button type="button" onClick={() => batchToggleStatus("draft")} className="touch-manipulation flex min-h-[40px] items-center gap-1 theme-rounded border border-[var(--theme-border)] px-3 py-2 text-xs text-foreground hover:bg-[var(--theme-bg)]"><Tx>草稿</Tx></button>
           </motion.div>
         </PermissionGate>
         ) : null}
@@ -199,22 +202,30 @@ export default function AdminProducts() {
               )}
               <div className="min-w-0 flex-1">
                 <p className="font-medium leading-snug text-foreground">{p.name}</p>
-                <p className="mt-1 text-sm text-muted-foreground">RM <span className="text-[var(--theme-price)]">{p.price}</span> · 库存 {p.stock === 0 ? <span className="text-destructive">缺货</span> : p.stock}</p>
+                <p className="mt-1 text-sm text-muted-foreground">RM <span className="text-[var(--theme-price)]">{p.price}</span> · 库存 {p.stock === 0 ? <span className="text-destructive"><Tx>缺货</Tx></span> : p.stock}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge(p).cls}`}>
                     {statusBadge(p).text}
                   </span>
-                  {p.is_hot && <span className="rounded bg-red-500/10 px-2 py-0.5 text-xs text-red-500">热门</span>}
-                  {p.is_new && <span className="rounded bg-blue-500/10 px-2 py-0.5 text-xs text-blue-500">新品</span>}
+                  {p.is_hot && <span className="rounded bg-red-500/10 px-2 py-0.5 text-xs text-red-500"><Tx>热门</Tx></span>}
+                  {p.is_new && <span className="rounded bg-blue-500/10 px-2 py-0.5 text-xs text-blue-500"><Tx>新品</Tx></span>}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <PermissionGate permission="product.manage">
                     <button type="button" onClick={() => navigate(`/admin/products/${p.id}`)} className="touch-manipulation flex min-h-[44px] min-w-[calc(50%-4px)] flex-1 items-center justify-center gap-1 theme-rounded border border-[var(--theme-border)] py-2 text-sm font-medium text-foreground active:bg-[var(--theme-bg)]">
-                      <Pencil size={16} /> 编辑
-                    </button>
+                      <Pencil size={16} /><Tx> 编辑
+                    </Tx></button>
                   </PermissionGate>
                   <PermissionGate permission="product.manage">
-                    <button type="button" onClick={() => toggleSingleStatus(p.id)} className="touch-manipulation flex min-h-[44px] min-w-[calc(50%-4px)] flex-1 items-center justify-center gap-1 theme-rounded border border-[var(--theme-border)] py-2 text-sm active:bg-[var(--theme-bg)]">
+                    <button type="button" onClick={() => {
+                      const next = p.status === "active" ? "下架" : "上架";
+                      confirm({
+                        title: `确认${next}`,
+                        description: `确定${next}商品「${p.name || p.id}」？`,
+                        confirmText: next,
+                        onConfirm: () => toggleSingleStatus(p.id),
+                      });
+                    }} className="touch-manipulation flex min-h-[44px] min-w-[calc(50%-4px)] flex-1 items-center justify-center gap-1 theme-rounded border border-[var(--theme-border)] py-2 text-sm active:bg-[var(--theme-bg)]">
                       {p.status === "active" ? <EyeOff size={16} /> : <Eye size={16} />}
                       {p.status === "active" ? "下架" : "上架"}
                     </button>
@@ -225,8 +236,8 @@ export default function AdminProducts() {
                       onClick={() => handleDeleteProduct(p.id, p.name || p.id)}
                       className="touch-manipulation flex min-h-[44px] w-full min-w-[calc(50%-4px)] flex-1 items-center justify-center gap-1 theme-rounded border border-destructive/30 py-2 text-sm text-destructive active:bg-destructive/10 sm:w-auto"
                     >
-                      <Trash2 size={16} /> 删除
-                    </button>
+                      <Trash2 size={16} /><Tx> 删除
+                    </Tx></button>
                   </PermissionGate>
                 </div>
               </div>
@@ -234,7 +245,7 @@ export default function AdminProducts() {
           </div>
         ))}
         {!loading && paginatedData.length === 0 && (
-          <div className="py-12 text-center text-sm text-muted-foreground">暂无商品</div>
+          <div className="py-12 text-center text-sm text-muted-foreground"><Tx>暂无商品</Tx></div>
         )}
         <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
       </div>
@@ -282,7 +293,7 @@ export default function AdminProducts() {
                 </div>
               </td>
               <td className="px-4 py-3 text-foreground">RM {p.price}</td>
-              <td className="px-4 py-3 text-foreground">{p.stock === 0 ? <span className="text-destructive">缺货</span> : p.stock}</td>
+              <td className="px-4 py-3 text-foreground">{p.stock === 0 ? <span className="text-destructive"><Tx>缺货</Tx></span> : p.stock}</td>
               <td className="px-4 py-3">
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusBadge(p).cls}`}>
                   {statusBadge(p).text}
@@ -290,20 +301,28 @@ export default function AdminProducts() {
               </td>
               <td className="px-4 py-3">
                 <div className="flex gap-1">
-                  {p.is_hot && <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] text-red-500">热门</span>}
-                  {p.is_new && <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] text-blue-500">新品</span>}
-                  {p.is_recommended && <span className="theme-rounded bg-[var(--theme-price)]/10 px-1.5 py-0.5 text-[10px] text-[var(--theme-price)]">推荐</span>}
+                  {p.is_hot && <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] text-red-500"><Tx>热门</Tx></span>}
+                  {p.is_new && <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] text-blue-500"><Tx>新品</Tx></span>}
+                  {p.is_recommended && <span className="theme-rounded bg-[var(--theme-price)]/10 px-1.5 py-0.5 text-[10px] text-[var(--theme-price)]"><Tx>推荐</Tx></span>}
                 </div>
               </td>
               <td className="px-4 py-3 text-xs text-muted-foreground">{p.sort_order}</td>
               <td className="sticky right-0 z-[1] bg-[var(--theme-surface)] px-4 py-3 shadow-[-8px_0_12px_-8px_rgba(0,0,0,0.12)] dark:shadow-[-8px_0_12px_-8px_rgba(0,0,0,0.4)]">
                 <PermissionGate
                   permission="product.manage"
-                  fallback={<span className="text-xs text-muted-foreground">仅可查看</span>}
+                  fallback={<span className="text-xs text-muted-foreground"><Tx>仅可查看</Tx></span>}
                 >
                   <div className="flex flex-nowrap items-center justify-end gap-1">
                     <button type="button" onClick={() => navigate(`/admin/products/${p.id}`)} className="touch-manipulation shrink-0 theme-rounded border border-[var(--theme-border)] p-2 text-muted-foreground hover:bg-[var(--theme-bg)]" title="编辑"><Pencil size={14} /></button>
-                    <button type="button" onClick={() => toggleSingleStatus(p.id)} className="touch-manipulation shrink-0 theme-rounded border border-[var(--theme-border)] p-2 text-muted-foreground hover:bg-[var(--theme-bg)]" title={p.status === "active" ? "下架" : "上架"}>
+                    <button type="button" onClick={() => {
+                      const next = p.status === "active" ? "下架" : "上架";
+                      confirm({
+                        title: `确认${next}`,
+                        description: `确定${next}商品「${p.name || p.id}」？`,
+                        confirmText: next,
+                        onConfirm: () => toggleSingleStatus(p.id),
+                      });
+                    }} className="touch-manipulation shrink-0 theme-rounded border border-[var(--theme-border)] p-2 text-muted-foreground hover:bg-[var(--theme-bg)]" title={p.status === "active" ? "下架" : "上架"}>
                       {p.status === "active" ? <EyeOff size={14} /> : <Eye size={14} />}
                     </button>
                     <button
@@ -312,9 +331,9 @@ export default function AdminProducts() {
                       className="touch-manipulation flex shrink-0 items-center gap-1 theme-rounded border border-destructive/50 bg-destructive/10 px-2 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/20"
                       title="删除商品"
                     >
-                      <Trash2 size={14} aria-hidden />
+                      <Trash2 size={14} aria-hidden /><Tx>
                       删除
-                    </button>
+                    </Tx></button>
                   </div>
                 </PermissionGate>
               </td>

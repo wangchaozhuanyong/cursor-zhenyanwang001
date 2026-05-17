@@ -1,4 +1,4 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, ClipboardList, Ticket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -9,7 +9,10 @@ import { toast } from "sonner";
 import * as couponService from "@/services/admin/couponService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { AnimatedConfirmDialog, AnimatedTable } from "@/modules/micro-interactions";
+import { labelCouponStatus, labelCouponType } from "@/utils/adminDisplayLabels";
+import { formatAdminDateRange } from "@/utils/formatDateTime";
+import { AnimatedConfirmDialimport { Tx } from "@/components/admin/AdminText";
+og, AnimatedTable } from "@/modules/micro-interactions";
 
 const typeLabels: Record<string, { label: string; color: string }> = {
   fixed: { label: "满减券", color: "bg-red-500/10 text-red-500" },
@@ -56,13 +59,13 @@ export default function AdminCoupons() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground">活动管理 / 优惠券管理</h1>
-          <p className="text-sm text-muted-foreground">管理优惠券、发放与有效期。</p>
+          <h1 className="text-xl font-bold text-foreground"><Tx>活动管理 / 优惠券管理</Tx></h1>
+          <p className="text-sm text-muted-foreground"><Tx>管理优惠券、发放与有效期。</Tx></p>
         </div>
         <div className="flex gap-2">
-          <button type="button" onClick={() => navigate("/admin/marketing/coupons/records")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg border border-border px-3 py-2.5 text-sm text-foreground hover:bg-secondary"><ClipboardList size={14} />领券记录</button>
+          <button type="button" onClick={() => navigate("/admin/marketing/coupons/records")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg border border-border px-3 py-2.5 text-sm text-foreground hover:bg-secondary"><ClipboardList size={14} /><Tx>领券记录</Tx></button>
           <PermissionGate permission="coupon.manage">
-            <button type="button" onClick={() => navigate("/admin/marketing/coupons/new")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"><Plus size={16} />新建优惠券</button>
+            <button type="button" onClick={() => navigate("/admin/marketing/coupons/new")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground"><Plus size={16} /><Tx>新建优惠券</Tx></button>
           </PermissionGate>
         </div>
       </div>
@@ -80,14 +83,14 @@ export default function AdminCoupons() {
         theadClassName="bg-secondary/40 text-left text-xs text-muted-foreground"
         thead={(
           <tr>
-            <th className="px-4 py-3">标题</th>
-            <th className="px-4 py-3">类型</th>
-            <th className="px-4 py-3">编码</th>
-            <th className="px-4 py-3">面值</th>
-            <th className="px-4 py-3">门槛</th>
-            <th className="px-4 py-3">有效期</th>
-            <th className="px-4 py-3">状态</th>
-            <th className="px-4 py-3">操作</th>
+            <th className="px-4 py-3"><Tx>标题</Tx></th>
+            <th className="px-4 py-3"><Tx>类型</Tx></th>
+            <th className="px-4 py-3"><Tx>编码</Tx></th>
+            <th className="px-4 py-3"><Tx>面值</Tx></th>
+            <th className="px-4 py-3"><Tx>门槛</Tx></th>
+            <th className="px-4 py-3"><Tx>有效期</Tx></th>
+            <th className="px-4 py-3"><Tx>状态</Tx></th>
+            <th className="px-4 py-3"><Tx>操作</Tx></th>
           </tr>
         )}
         footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
@@ -96,12 +99,14 @@ export default function AdminCoupons() {
         renderRow={(c) => (
           <>
             <td className="px-4 py-3 font-medium">{c.title}</td>
-            <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs ${typeLabels[c.type]?.color || "bg-secondary text-foreground"}`}>{typeLabels[c.type]?.label || c.type}</span></td>
+            <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs ${typeLabels[c.type]?.color || "bg-secondary text-foreground"}`}>{typeLabels[c.type]?.label || labelCouponType(c.type)}</span></td>
             <td className="px-4 py-3 text-xs text-muted-foreground">{c.code}</td>
             <td className="px-4 py-3">{c.value}</td>
             <td className="px-4 py-3">{c.min_amount}</td>
-            <td className="px-4 py-3 text-xs text-muted-foreground">{c.start_date} ~ {c.end_date}</td>
-            <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs ${statusLabels[c.status]?.color || "bg-secondary text-foreground"}`}>{statusLabels[c.status]?.label || c.status}</span></td>
+            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+              {formatAdminDateRange(c.start_date, c.end_date)}
+            </td>
+            <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs ${statusLabels[c.status]?.color || "bg-secondary text-foreground"}`}>{statusLabels[c.status]?.label || labelCouponStatus(c.status)}</span></td>
             <td className="px-4 py-3">
               <div className="flex gap-2">
                 <button type="button" onClick={() => navigate(`/admin/marketing/coupons/${c.id}`)} className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground" title="编辑"><Pencil size={13} /></button>

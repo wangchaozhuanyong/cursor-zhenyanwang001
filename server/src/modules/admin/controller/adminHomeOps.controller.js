@@ -21,3 +21,12 @@ exports.updateNavItem = asyncRoute(async (req, res) => {
 exports.deleteNavItem = asyncRoute(async (req, res) => {
   sendResult(res, await svc.deleteNavItem(req.params.id));
 });
+
+exports.getSettings = asyncRoute(async (_req, res) => {
+  res.success(await svc.getHomeOpsSettings());
+});
+
+exports.updateSettings = asyncRoute(async (req, res) => {
+  const result = await svc.updateHomeOpsSettings(req.body, req.user?.id, req);
+  res.success(result.data, result.message);
+});

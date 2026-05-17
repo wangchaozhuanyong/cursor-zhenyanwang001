@@ -5,7 +5,7 @@ import * as userService from "@/services/userService";
 import * as addressService from "@/services/addressService";
 import { isLoggedIn } from "@/utils/token";
 import type { Address } from "@/types/address";
-import type { MemberLevel } from "@/types/user";
+import type { MemberLevel, WechatLoginBinding } from "@/types/user";
 
 export type { Address };
 
@@ -22,6 +22,7 @@ interface UserState {
   addresses: Address[];
   addressLoading: boolean;
   subordinateEnabled: boolean;
+  wechatLogin: WechatLoginBinding;
   profileLoading: boolean;
   profileSaving: boolean;
 
@@ -61,6 +62,7 @@ export const useUserStore = create<UserState>()(
       addresses: [],
       addressLoading: false,
       subordinateEnabled: false,
+      wechatLogin: { bound: false },
       profileLoading: false,
       profileSaving: false,
 
@@ -79,6 +81,7 @@ export const useUserStore = create<UserState>()(
             pointsBalance: profile.pointsBalance ?? 0,
             memberLevel: profile.memberLevel ?? null,
             subordinateEnabled: profile.subordinateEnabled ?? false,
+            wechatLogin: profile.wechatLogin ?? { bound: false },
             profileLoading: false,
           });
         } catch {
@@ -116,6 +119,7 @@ export const useUserStore = create<UserState>()(
           memberLevel: null,
           addresses: [],
           subordinateEnabled: false,
+          wechatLogin: { bound: false },
         }),
 
       setNickname: (nickname) => set({ nickname }),

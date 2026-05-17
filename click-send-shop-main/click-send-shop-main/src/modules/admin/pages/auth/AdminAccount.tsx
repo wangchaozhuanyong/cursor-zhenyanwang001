@@ -5,7 +5,8 @@ import { LoadingButton } from "@/modules/micro-interactions";
 import { AdminTabsPanelSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import { toast } from "sonner";
 import { fetchAdminProfile, updateAdminProfile, changeAdminPassword } from "@/services/admin/accountService";
-import { toastErrorMessage } from "@/utils/errorMessage";
+imimport { Tx } from "@/components/admin/AdminText";
+port { toastErrorMessage } from "@/utils/errorMessage";
 
 export default function AdminAccount() {
   const [activeTab, setActiveTab] = useState<"profile" | "password">("profile");
@@ -68,8 +69,8 @@ export default function AdminAccount() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-foreground">账号设置</h1>
-        <p className="text-sm text-muted-foreground">管理您的账号信息</p>
+        <h1 className="text-xl font-bold text-foreground"><Tx>账号设置</Tx></h1>
+        <p className="text-sm text-muted-foreground"><Tx>管理您的账号信息</Tx></p>
       </div>
 
       <div className="flex gap-1 rounded-2xl bg-secondary p-1">
@@ -96,26 +97,26 @@ export default function AdminAccount() {
             </div>
             <div>
               <h3 className="font-bold text-foreground">{profile.name}</h3>
-              <p className="text-sm text-muted-foreground">管理员</p>
+              <p className="text-sm text-muted-foreground"><Tx>管理员</Tx></p>
             </div>
           </div>
           <div className="space-y-3">
             <label className="block">
-              <span className="text-xs font-medium text-muted-foreground">昵称</span>
+              <span className="text-xs font-medium text-muted-foreground"><Tx>昵称</Tx></span>
               <div className="relative mt-1">
                 <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm outline-none focus:border-gold" />
               </div>
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-muted-foreground">邮箱</span>
+              <span className="text-xs font-medium text-muted-foreground"><Tx>邮箱</Tx></span>
               <div className="relative mt-1">
                 <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm outline-none focus:border-gold" />
               </div>
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-muted-foreground">手机</span>
+              <span className="text-xs font-medium text-muted-foreground"><Tx>手机</Tx></span>
               <div className="relative mt-1">
                 <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm outline-none focus:border-gold" />
@@ -128,13 +129,13 @@ export default function AdminAccount() {
             loadingText="保存中..."
             onClick={() => void handleSaveProfile()}
             className="w-full rounded-xl py-3 text-sm font-bold"
-          >
+          ><Tx>
             保存修改
-          </LoadingButton>
+          </Tx></LoadingButton>
         </div>
       ) : (
         <div className="max-w-lg rounded-2xl border border-border bg-card p-6 space-y-4">
-          <h3 className="font-bold text-foreground">修改密码</h3>
+          <h3 className="font-bold text-foreground"><Tx>修改密码</Tx></h3>
           {[
             { label: "当前密码", key: "old" as const, placeholder: "请输入当前密码" },
             { label: "新密码", key: "new1" as const, placeholder: "请输入新密码（至少6位）" },
@@ -154,9 +155,9 @@ export default function AdminAccount() {
             loadingText="提交中..."
             onClick={() => void handleChangePwd()}
             className="w-full rounded-xl py-3 text-sm font-bold"
-          >
+          ><Tx>
             确认修改
-          </LoadingButton>
+          </Tx></LoadingButton>
         </div>
       )}
     </div>

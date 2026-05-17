@@ -5,12 +5,14 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import { usePagination } from "@/hooks/usePagination";
 import { toast } from "sonner";
 import {
+import { Tx } from "@/components/admin/AdminText";
   loadRecycleBin,
   permanentlyDeleteRecycleBinItem,
   restoreRecycleBinItem,
 } from "@/services/admin/recycleBinService";
 import type { RecycleBinItem } from "@/services/admin/recycleBinService";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { labelRecycleType } from "@/utils/adminDisplayLabels";
 import { AnimatedTable } from "@/modules/micro-interactions";
 
 const TYPE_OPTIONS = [
@@ -75,7 +77,7 @@ export default function AdminRecycleBin() {
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           <Archive size={20} className="text-muted-foreground" />
-          <h2 className="text-lg font-bold text-foreground">回收站</h2>
+          <h2 className="text-lg font-bold text-foreground"><Tx>回收站</Tx></h2>
         </div>
         <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
           {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -85,7 +87,7 @@ export default function AdminRecycleBin() {
       {!loading && items.length === 0 ? (
         <div className="py-16 text-center">
           <Trash2 size={40} className="mx-auto text-muted-foreground/30" />
-          <p className="mt-3 text-sm text-muted-foreground">回收站为空</p>
+          <p className="mt-3 text-sm text-muted-foreground"><Tx>回收站为空</Tx></p>
         </div>
       ) : (
         <>
@@ -110,7 +112,7 @@ export default function AdminRecycleBin() {
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex items-center gap-2">
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${TYPE_BADGE[item.type] || "bg-muted text-muted-foreground"}`}>
-                        {item.type_label || item.type}
+                        {labelRecycleType(item.type, item.type_label)}
                       </span>
                     </div>
                     <p className="text-sm font-medium text-foreground truncate">{item.name || item.id}</p>
@@ -118,11 +120,11 @@ export default function AdminRecycleBin() {
                     <PermissionGate permission="recycle_bin.manage">
                       <div className="flex gap-2 pt-1">
                         <button type="button" onClick={() => handleRestore(item)} className="touch-manipulation min-h-[40px] flex-1 rounded-lg border border-border py-1.5 text-xs text-green-600 hover:bg-secondary">
-                          <RotateCcw size={12} className="mr-1 inline" />恢复
-                        </button>
+                          <RotateCcw size={12} className="mr-1 inline" /><Tx>恢复
+                        </Tx></button>
                         <button type="button" onClick={() => setConfirmDelete(item)} className="touch-manipulation min-h-[40px] flex-1 rounded-lg border border-destructive/30 py-1.5 text-xs text-destructive hover:bg-destructive/10">
-                          <Trash2 size={12} className="mr-1 inline" />彻底删除
-                        </button>
+                          <Trash2 size={12} className="mr-1 inline" /><Tx>彻底删除
+                        </Tx></button>
                       </div>
                     </PermissionGate>
                   </div>
@@ -156,7 +158,7 @@ export default function AdminRecycleBin() {
                 <>
                   <td className="px-4 py-3">
                     <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${TYPE_BADGE[item.type] || "bg-muted text-muted-foreground"}`}>
-                      {item.type_label || item.type}
+                      {labelRecycleType(item.type, item.type_label)}
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -189,11 +191,11 @@ export default function AdminRecycleBin() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDelete(null)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4 text-center">
             <AlertTriangle size={40} className="mx-auto text-destructive" />
-            <h3 className="font-bold text-foreground">确认彻底删除</h3>
-            <p className="text-sm text-muted-foreground">此操作不可恢复！<br />{confirmDelete.type_label}: {confirmDelete.name}</p>
+            <h3 className="font-bold text-foreground"><Tx>确认彻底删除</Tx></h3>
+            <p className="text-sm text-muted-foreground"><Tx>此操作不可恢复！</Tx><br />{confirmDelete.type_label}: {confirmDelete.name}</p>
             <div className="flex justify-center gap-3">
-              <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary">取消</button>
-              <button type="button" onClick={handlePermanentDelete} className="rounded-xl bg-destructive px-4 py-2.5 text-sm font-semibold text-white">确认删除</button>
+              <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
+              <button type="button" onClick={handlePermanentDelete} className="rounded-xl bg-destructive px-4 py-2.5 text-sm font-semibold text-white"><Tx>确认删除</Tx></button>
             </div>
           </div>
         </div>

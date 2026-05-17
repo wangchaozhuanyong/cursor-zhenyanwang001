@@ -19,8 +19,8 @@ import type { FooterNavItem } from "@/types/content";
 import { ROUTES } from "@/constants/routes";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { AnimatedSection } from "@/modules/micro-interactions";
-
-const GUEST_HOME_GRID_MAX = 8;
+import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
+import { isHomeModuleEnabled } from "@/constants/homeModules";
 
 function mergeHomeProductsForGuest(hot: Product[], recommended: Product[], max: number): Product[] {
   const seen = new Set<string>();
@@ -71,6 +71,8 @@ export default function GuestHome() {
   const description = siteInfo.siteDescription || "精选全球好物，品质生活购物平台";
   const { banners } = useHomeBanners();
   const { themeConfig } = useThemeRuntime();
+  const { settings: homeModules } = useHomeModuleSettings();
+  const guestGridMax = homeModules.guestRecommendMax;
   const {
     hotProducts,
     newProducts,
@@ -89,8 +91,8 @@ export default function GuestHome() {
   }, [loadHomeData]);
 
   const gridProducts = useMemo(
-    () => mergeHomeProductsForGuest(hotProducts, recommendedProducts, GUEST_HOME_GRID_MAX),
-    [hotProducts, recommendedProducts],
+    () => mergeHomeProductsForGuest(hotProducts, recommendedProducts, guestGridMax),
+    [hotProducts, recommendedProducts, guestGridMax],
   );
 
   const customNav = useMemo(() => parseFooterNav(siteInfo.footerNav), [siteInfo.footerNav]);
@@ -157,18 +159,25 @@ export default function GuestHome() {
       />
 
       <main className={`mx-auto max-w-screen-xl px-4 pt-4 ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_88%,black)]" : ""}`}>
-        <AnimatedSection>
-          <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
-            <BannerCarousel banners={banners} themeConfigOverride={themeConfig} />
-          </div>
-        </AnimatedSection>
-        <AnimatedSection delay={0.05}>
-          <HomeTrustBar className="mt-3" />
-        </AnimatedSection>
-        <AnimatedSection delay={0.08} className="-mx-4 mt-3">
-          <HomeOpsBlocks />
-        </AnimatedSection>
+        {isHomeModuleEnabled(homeModules, "banner", "guest") ? (
+          <AnimatedSection>
+            <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
+              <BannerCarousel banners={banners} themeConfigOverride={themeConfig} />
+            </div>
+          </AnimatedSection>
+        ) : null}
+        {isHomeModuleEnabled(homeModules, "trust_bar", "guest") ? (
+          <AnimatedSection delay={0.05}>
+            <HomeTrustBar className="mt-3" />
+          </AnimatedSection>
+        ) : null}
+        {isHomeModuleEnabled(homeModules, "nav_grid", "guest") ? (
+          <AnimatedSection delay={0.08} className="-mx-4 mt-3">
+            <HomeOpsBlocks />
+          </AnimatedSection>
+        ) : null}
 
+        {isHomeModuleEnabled(homeModules, "new_arrivals", "guest") ? (
         <AnimatedSection delay={0.1} className="mt-4">
           <NewArrivalOpsSection
             products={newProducts}
@@ -184,7 +193,9 @@ export default function GuestHome() {
             homeLayout={themeConfig.homeLayout}
           />
         </AnimatedSection>
+        ) : null}
 
+        {isHomeModuleEnabled(homeModules, "guest_recommend", "guest") ? (
         <AnimatedSection delay={0.12} className="mt-4">
         <section>
           <h2 className="flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text)]">
@@ -205,7 +216,7 @@ export default function GuestHome() {
           )}
           {homeLoading && !homeError && (
             <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
-              {Array.from({ length: GUEST_HOME_GRID_MAX }).map((_, i) => (
+              {Array.from({ length: guestGridMax }).map((_, i) => (
                 <ProductCardSkeleton key={i} />
               ))}
             </div>
@@ -242,6 +253,7 @@ export default function GuestHome() {
           )}
         </section>
         </AnimatedSection>
+        ) : null}
 
         <div className="-mx-4 mt-14">
           <GuestMobileFooter

@@ -10,7 +10,8 @@ import * as orderService from "@/services/admin/orderService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import type { OrderStatus, PaymentStatus } from "@/types/order";
 import { useAdminOrdersStore } from "@/stores/useAdminOrdersStore";
-import { toastErrorMessage } from "@/utils/errorMessage";
+import { toastimport { Tx } from "@/components/admin/AdminText";
+ErrorMessage } from "@/utils/errorMessage";
 import {
   ORDER_STATUS,
   PAYMENT_STATUS,
@@ -103,13 +104,13 @@ export default function AdminOrders() {
           <select value={paymentFilter} onChange={(e) => { setPaymentFilter(e.target.value as "" | PaymentStatus); setPage(1); }} className="touch-manipulation min-h-[44px] max-w-[160px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2.5 text-sm text-foreground outline-none">
             {PAYMENT_STATUS_FILTER_OPTIONS.map((s) => <option key={s.value || "all"} value={s.value}>{s.label}</option>)}
           </select>
-          <button type="button" onClick={() => { setPage(1); void loadOrders().catch((e) => toast.error(toastErrorMessage(e, "加载数据失败"))); }} className="touch-manipulation min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-sm text-foreground hover:opacity-90">
+          <button type="button" onClick={() => { setPage(1); void loadOrders().catch((e) => toast.error(toastErrorMessage(e, "加载数据失败"))); }} className="touch-manipulation min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-sm text-foreground hover:opacity-90"><Tx>
             搜索
-          </button>
+          </Tx></button>
           <PermissionGate permission="order.view">
             <button type="button" onClick={handleExportCsv} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2.5 text-sm text-foreground hover:bg-[var(--theme-bg)]">
-              <Download size={16} /> 导出
-            </button>
+              <Download size={16} /><Tx> 导出
+            </Tx></button>
           </PermissionGate>
         </div>
       </div>
@@ -140,7 +141,7 @@ export default function AdminOrders() {
                 <span>积分:{o.total_points ?? 0}</span>
                 <PermissionGate permission="order.update">
                   <select value="" onChange={(e) => { e.stopPropagation(); if (e.target.value) handleStatusChange(o.id, e.target.value); }} className="theme-rounded border border-[var(--theme-border)] bg-transparent px-2 py-1 text-[10px] text-foreground outline-none">
-                    <option value="">改状态</option>
+                    <option value=""><Tx>改状态</Tx></option>
                     {actionStatuses.filter((s) => s !== o.status).map((s) => <option key={s} value={s}>{getOrderStatusLabel(s)}</option>)}
                   </select>
                 </PermissionGate>
@@ -149,7 +150,7 @@ export default function AdminOrders() {
           </div>
         ))}
         {!loading && paginatedData.length === 0 && (
-          <div className="py-8 text-center text-sm text-muted-foreground">无匹配订单</div>
+          <div className="py-8 text-center text-sm text-muted-foreground"><Tx>无匹配订单</Tx></div>
         )}
         <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
       </div>
@@ -187,12 +188,12 @@ export default function AdminOrders() {
               <td className="px-4 py-3">
                 <PermissionGate permission="order.update">
                   <select value="" onChange={(e) => { if (e.target.value) handleStatusChange(o.id, e.target.value); }} className="theme-rounded border border-[var(--theme-border)] bg-transparent px-2 py-1 text-[10px] text-foreground outline-none">
-                    <option value="">改状态</option>
+                    <option value=""><Tx>改状态</Tx></option>
                     {actionStatuses.filter((s) => s !== o.status).map((s) => <option key={s} value={s}>{getOrderStatusLabel(s)}</option>)}
                   </select>
                 </PermissionGate>
               </td>
-              <td className="px-4 py-3"><button type="button" onClick={() => navigate(`/admin/orders/${o.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">详情</button></td>
+              <td className="px-4 py-3"><button type="button" onClick={() => navigate(`/admin/orders/${o.id}`)} className="text-xs text-[var(--theme-price)] hover:underline"><Tx>详情</Tx></button></td>
             </>
           )}
         />

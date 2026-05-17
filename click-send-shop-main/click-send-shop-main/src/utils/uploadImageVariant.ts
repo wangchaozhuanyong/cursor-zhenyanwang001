@@ -1,3 +1,5 @@
+import { ensureMediaUrl } from "@/utils/mediaUrl";
+
 /** 与服务端 imageOptimize 生成的后缀一致 */
 export type UploadImageVariant = "card" | "detail" | "full";
 
@@ -23,7 +25,7 @@ export function pickUploadImageVariant(
   url: string | null | undefined,
   variant: UploadImageVariant = "full",
 ): string {
-  const raw = String(url || "").trim();
+  const raw = ensureMediaUrl(url);
   if (!raw || variant === "full") return raw;
 
   const match = raw.match(HASH_WEBP_RE);
@@ -40,8 +42,9 @@ export function resolveProductImageSrc(
   url: string | null | undefined,
   variant: UploadImageVariant = "card",
 ): { src: string; fallbackSrc?: string } {
-  const full = toFullUploadImageUrl(url) || String(url || "").trim();
-  const preferred = pickUploadImageVariant(url, variant) || full;
+  const absolute = ensureMediaUrl(url);
+  const full = toFullUploadImageUrl(absolute) || absolute;
+  const preferred = pickUploadImageVariant(absolute, variant) || full;
   if (!preferred) return { src: "" };
   if (preferred === full) return { src: preferred };
   return { src: preferred, fallbackSrc: full };

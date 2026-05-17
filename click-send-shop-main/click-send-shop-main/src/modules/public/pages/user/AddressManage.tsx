@@ -7,6 +7,7 @@ import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { BottomSheetForm } from "@/modules/micro-interactions";
 import { MALAYSIA_STATES } from "@/types/address";
 import { formatAddressForDisplay } from "@/services/addressService";
+import { THEME_ACCENT_CHIP_CLASS } from "@/utils/themeVisuals";
 
 type AddressForm = Omit<Address, "id">;
 const CARD = "rounded-2xl bg-[var(--theme-surface)] shadow-[var(--theme-shadow)] p-4";
@@ -119,15 +120,15 @@ export default function AddressManage() {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold">{addr.recipient_name}</span>
                       <span className="text-sm text-[var(--theme-muted)]">{addr.phone}</span>
-                      {addr.isDefault && <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-secondary)_18%,white)] px-2 py-0.5 text-[10px] font-semibold text-[var(--theme-secondary)]">默认</span>}
+                      {addr.isDefault && <span className={THEME_ACCENT_CHIP_CLASS}>默认</span>}
                     </div>
                     <p className="mt-1 text-xs text-[var(--theme-muted)]">{formatAddressForDisplay(addr)}</p>
                   </div>
                 </div>
                 <div className="mt-3 flex items-center justify-between border-t border-[var(--theme-border)] pt-3">
                   <button onClick={() => setDefaultAddress(addr.id)} className="flex items-center gap-1 text-xs text-[var(--theme-muted)]">
-                    <div className={`flex h-4 w-4 items-center justify-center rounded-full border ${addr.isDefault ? "border-[var(--theme-secondary)] bg-[var(--theme-secondary)]" : "border-[var(--theme-border)]"}`}>
-                      {addr.isDefault && <Check size={10} className="text-white" />}
+                    <div className={`flex h-4 w-4 items-center justify-center rounded-full border ${addr.isDefault ? "border-[var(--theme-primary)] bg-[var(--theme-primary)]" : "border-[var(--theme-border)]"}`}>
+                      {addr.isDefault && <Check size={10} className="text-[var(--theme-primary-foreground)]" />}
                     </div>
                     设为默认
                   </button>

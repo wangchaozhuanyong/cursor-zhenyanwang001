@@ -1,5 +1,26 @@
 import type { ThemeConfig } from "@/types/theme";
 
+/**
+ * 浅色卡片/菜单上的描边图标色。勿用 --theme-secondary（皮肤里多为浅色「标签底」）。
+ */
+export const THEME_ACCENT_ICON_CLASS = "text-[var(--theme-primary)]";
+
+/** 圆角图标底 + 描边色（个人中心订单/服务等） */
+export const THEME_ACCENT_ICON_SHELL_CLASS =
+  "bg-[color-mix(in_srgb,var(--theme-primary)_12%,var(--theme-surface))] text-[var(--theme-primary)]";
+
+/** 浅色表面上的小标签（如地址「默认」） */
+export const THEME_ACCENT_CHIP_CLASS =
+  "rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--theme-primary)]";
+
+/** 优惠券等浅色渐变底上的行内图标 */
+export const THEME_COUPON_ICON_ON_LIGHT_CLASS =
+  "text-[color-mix(in_srgb,var(--theme-secondary)_75%,#1a1612)]";
+
+/** 深色/渐变券面上的行内图标 */
+export const THEME_COUPON_ICON_ON_SURFACE_CLASS =
+  "text-[color-mix(in_srgb,var(--theme-primary)_80%,var(--theme-text-on-surface))]";
+
 export function getMemberCardClassName(style: ThemeConfig["memberCardStyle"]): string {
   switch (style) {
     case "blackGold":

@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { THEME_ACCENT_ICON_SHELL_CLASS } from "@/utils/themeVisuals";
 import { AnimatedSection } from "./AnimatedSection";
 
 type AnimatedEmptyStateProps = {
@@ -25,8 +26,8 @@ export function AnimatedEmptyState({
         className,
       )}
     >
-      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--theme-secondary)] text-[var(--theme-primary)]">
-        <Icon size={22} aria-hidden />
+      <div className={cn("mb-3 flex h-12 w-12 items-center justify-center rounded-full", THEME_ACCENT_ICON_SHELL_CLASS)}>
+        <Icon size={22} strokeWidth={2} aria-hidden />
       </div>
       <h3 className="text-sm font-semibold text-[var(--theme-text)]">{title}</h3>
       {description ? (

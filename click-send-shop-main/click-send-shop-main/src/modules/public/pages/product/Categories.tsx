@@ -173,15 +173,16 @@ export default function Categories() {
     <div className="store-bottom-safe min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <StorePageHeader
         title="分类"
-        bottomSlot={(
+        titleInlineSlot={
+          <StoreSearchField
+            mode="filter"
+            placeholder="搜索商品..."
+            value={query}
+            onValueChange={setQuery}
+          />
+        }
+        bottomSlot={
           <div className="space-y-2">
-            <StoreSearchField
-              mode="filter"
-              placeholder="搜索商品..."
-              value={query}
-              onValueChange={setQuery}
-              className="max-w-none flex-none"
-            />
             <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto pb-0.5 md:hidden">
 
           {loading && categories.length === 0 ? Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-8 w-16 flex-shrink-0 rounded-full" />) : rootRow.map((item) => {
@@ -242,7 +243,7 @@ export default function Categories() {
               {filterDrawer}
             </div>
           </div>
-        )}
+        }
       />
 
       <main className="mx-auto max-w-screen-xl">

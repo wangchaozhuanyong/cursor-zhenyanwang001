@@ -8,6 +8,8 @@ import * as reviewService from "@/services/admin/reviewService";
 import type { AdminReview, ReviewListParams } from "@/services/admin/reviewService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import { Tx } from "@/components/admin/AdminText";
+import { adminConfirmDelete, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 
 const STATUS_OPTIONS = [
   { value: "", label: "全部状态" },
@@ -57,6 +59,7 @@ function SkeletonRow() {
 }
 
 export default function AdminReviews() {
+  const { confirm } = useAdminConfirm();
   const [reviews, setReviews] = useState<AdminReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -178,7 +181,7 @@ export default function AdminReviews() {
       <div className="flex h-64 flex-col items-center justify-center gap-3 text-muted-foreground">
         <AlertTriangle size={32} />
         <p>{error}</p>
-        <button type="button" onClick={loadData} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary">重试</button>
+        <button type="button" onClick={loadData} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary"><Tx>重试</Tx></button>
       </div>
     );
   }
@@ -204,12 +207,35 @@ export default function AdminReviews() {
           <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gold/30 bg-gold/5 px-3 py-3">
             <span className="text-sm font-medium text-foreground">已选 {selected.length} 项</span>
             <span className="h-4 w-px bg-border" />
-            <button type="button" onClick={handleBatchHide} className="touch-manipulation flex min-h-[40px] items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs text-foreground hover:bg-secondary">
-              <EyeOff size={14} /> 批量隐藏
-            </button>
-            <button type="button" onClick={handleBatchDelete} className="touch-manipulation flex min-h-[40px] items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs text-destructive hover:bg-secondary">
-              <Trash2 size={14} /> 批量删除
-            </button>
+            <button
+              type="button"
+              onClick={() =>
+                confirm({
+                  title: "确认批量隐藏",
+                  description: `确定隐藏选中的 ${selected.length} 条评论？`,
+                  confirmText: "隐藏",
+                  onConfirm: () => handleBatchHide(),
+                })
+              }
+              className="touch-manipulation flex min-h-[40px] items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs text-foreground hover:bg-secondary"
+            >
+              <EyeOff size={14} /><Tx> 批量隐藏
+            </Tx></button>
+            <button
+              type="button"
+              onClick={() =>
+                confirm({
+                  title: "确认批量删除",
+                  description: `确定删除选中的 ${selected.length} 条评论？`,
+                  confirmText: "删除",
+                  danger: true,
+                  onConfirm: () => handleBatchDelete(),
+                })
+              }
+              className="touch-manipulation flex min-h-[40px] items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs text-destructive hover:bg-secondary"
+            >
+              <Trash2 size={14} /><Tx> 批量删除
+            </Tx></button>
           </div>
         </PermissionGate>
       )}
@@ -239,11 +265,11 @@ export default function AdminReviews() {
                           {r.images.map((img, i) => <img key={i} src={img} alt="" className="h-14 w-14 rounded-lg object-cover" />)}
                         </div>
                       )}
-                      <p className="text-xs text-muted-foreground">商品: {r.product_name || r.product_id}</p>
+                      <p className="text-xs text-muted-foreground">商品：{r.product_name || "未命名商品"}</p>
                       <p className="text-[11px] text-muted-foreground">{r.created_at ? new Date(r.created_at).toLocaleString("zh-CN") : ""}</p>
                       {r.admin_reply && (
                         <div className="rounded-lg bg-secondary/50 p-2 text-xs text-muted-foreground">
-                          <span className="font-medium text-gold">官方回复: </span>{r.admin_reply}
+                          <span className="font-medium text-gold"><Tx>官方回复: </Tx></span>{r.admin_reply}
                         </div>
                       )}
                       <PermissionGate permission="review.manage">
@@ -252,31 +278,43 @@ export default function AdminReviews() {
                             <>
                               <button
                                 type="button"
-                                onClick={() => handleToggleFeatured(r.id)}
+                                onClick={() =>
+                                  confirm({
+                                    title: "确认操作",
+                                    description: "确定切换该评论的精选状态？",
+                                    onConfirm: () => handleToggleFeatured(r.id),
+                                  })
+                                }
                                 className={`touch-manipulation min-h-[40px] rounded-lg border px-3 py-1.5 text-xs hover:bg-secondary ${r.is_featured ? "border-gold bg-gold/10 text-gold" : "border-border"}`}
                               >
                                 <Sparkles size={12} className="mr-1 inline" />
                                 {r.is_featured ? "已精选" : "设精选"}
                               </button>
-                              <button type="button" onClick={() => handleToggle(r.id)} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
-                                {r.status === "hidden" ? <><Eye size={12} className="mr-1 inline" />显示</> : <><EyeOff size={12} className="mr-1 inline" />隐藏</>}
+                              <button type="button" onClick={() =>
+                                  confirm({
+                                    title: "确认操作",
+                                    description: "确定切换该评论的显示状态？",
+                                    onConfirm: () => handleToggle(r.id),
+                                  })
+                                } className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
+                                {r.status === "hidden" ? <><Eye size={12} className="mr-1 inline" /><Tx>显示</Tx></> : <><EyeOff size={12} className="mr-1 inline" /><Tx>隐藏</Tx></>}
                               </button>
                               <button type="button" onClick={() => { setReplyTarget(r); setReplyText(r.admin_reply || ""); }} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
-                                <MessageSquare size={12} className="mr-1 inline" />回复
-                              </button>
-                              <button type="button" onClick={() => handleDelete(r.id)} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs text-destructive hover:bg-secondary">
-                                <Trash2 size={12} className="mr-1 inline" />删除
-                              </button>
+                                <MessageSquare size={12} className="mr-1 inline" /><Tx>回复
+                              </Tx></button>
+                              <button type="button" onClick={() => adminConfirmDelete(confirm, "该评论", () => handleDelete(r.id))} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs text-destructive hover:bg-secondary">
+                                <Trash2 size={12} className="mr-1 inline" /><Tx>删除
+                              </Tx></button>
                             </>
                           )}
                           {r.status === "deleted" && (
                             <>
                               <button type="button" onClick={() => handleRestore(r.id)} className="touch-manipulation min-h-[40px] rounded-lg border border-border px-3 py-1.5 text-xs text-green-600 hover:bg-secondary">
-                                <RotateCcw size={12} className="mr-1 inline" />恢复
-                              </button>
-                              <button type="button" onClick={() => setConfirmDelete({ id: r.id, permanent: true })} className="touch-manipulation min-h-[40px] rounded-lg border border-destructive/30 px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10">
+                                <RotateCcw size={12} className="mr-1 inline" /><Tx>恢复
+                              </Tx></button>
+                              <button type="button" onClick={() => setConfirmDelete({ id: r.id, permanent: true })} className="touch-manipulation min-h-[40px] rounded-lg border border-destructive/30 px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10"><Tx>
                                 彻底删除
-                              </button>
+                              </Tx></button>
                             </>
                           )}
                         </div>
@@ -287,7 +325,7 @@ export default function AdminReviews() {
               );
             })}
         {!loading && reviews.length === 0 && (
-          <div className="py-16 text-center text-sm text-muted-foreground">暂无评论数据</div>
+          <div className="py-16 text-center text-sm text-muted-foreground"><Tx>暂无评论数据</Tx></div>
         )}
         <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
       </div>
@@ -354,16 +392,28 @@ export default function AdminReviews() {
                     <div className="flex gap-1">
                       {r.status !== "deleted" ? (
                         <>
-                          <button type="button" onClick={() => handleToggleFeatured(r.id)} className={`touch-manipulation rounded-lg border p-1.5 hover:bg-secondary ${r.is_featured ? "border-gold bg-gold/10 text-gold" : "border-border text-muted-foreground"}`} title={r.is_featured ? "取消精选" : "设为精选"}>
+                          <button type="button" onClick={() =>
+                                  confirm({
+                                    title: "确认操作",
+                                    description: "确定切换该评论的精选状态？",
+                                    onConfirm: () => handleToggleFeatured(r.id),
+                                  })
+                                } className={`touch-manipulation rounded-lg border p-1.5 hover:bg-secondary ${r.is_featured ? "border-gold bg-gold/10 text-gold" : "border-border text-muted-foreground"}`} title={r.is_featured ? "取消精选" : "设为精选"}>
                             <Sparkles size={14} />
                           </button>
-                          <button type="button" onClick={() => handleToggle(r.id)} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title={r.status === "hidden" ? "显示" : "隐藏"}>
+                          <button type="button" onClick={() =>
+                                  confirm({
+                                    title: "确认操作",
+                                    description: "确定切换该评论的显示状态？",
+                                    onConfirm: () => handleToggle(r.id),
+                                  })
+                                } className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title={r.status === "hidden" ? "显示" : "隐藏"}>
                             {r.status === "hidden" ? <Eye size={14} /> : <EyeOff size={14} />}
                           </button>
                           <button type="button" onClick={() => { setReplyTarget(r); setReplyText(r.admin_reply || ""); }} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title="回复">
                             <MessageSquare size={14} />
                           </button>
-                          <button type="button" onClick={() => handleDelete(r.id)} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground hover:text-destructive hover:bg-secondary" title="删除">
+                          <button type="button" onClick={() => adminConfirmDelete(confirm, "该评论", () => handleDelete(r.id))} className="touch-manipulation rounded-lg border border-border p-1.5 text-muted-foreground hover:text-destructive hover:bg-secondary" title="删除">
                             <Trash2 size={14} />
                           </button>
                         </>
@@ -391,7 +441,7 @@ export default function AdminReviews() {
       {replyTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setReplyTarget(null)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl space-y-4">
-            <h3 className="font-bold text-foreground">官方回复</h3>
+            <h3 className="font-bold text-foreground"><Tx>官方回复</Tx></h3>
             <div className="rounded-lg bg-secondary/50 p-3 text-sm text-muted-foreground">
               <p className="text-xs font-medium text-foreground mb-1">{replyTarget.nickname} ({replyTarget.rating}星)</p>
               <p>{replyTarget.content}</p>
@@ -404,8 +454,8 @@ export default function AdminReviews() {
               className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold resize-none"
             />
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setReplyTarget(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary">取消</button>
-              <button type="button" onClick={handleReply} disabled={!replyText.trim()} className="rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">提交回复</button>
+              <button type="button" onClick={() => setReplyTarget(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
+              <button type="button" onClick={handleReply} disabled={!replyText.trim()} className="rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"><Tx>提交回复</Tx></button>
             </div>
           </div>
         </div>
@@ -416,11 +466,11 @@ export default function AdminReviews() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDelete(null)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4 text-center">
             <AlertTriangle size={40} className="mx-auto text-destructive" />
-            <h3 className="font-bold text-foreground">确认彻底删除</h3>
-            <p className="text-sm text-muted-foreground">此操作不可恢复，评论数据将被永久删除。</p>
+            <h3 className="font-bold text-foreground"><Tx>确认彻底删除</Tx></h3>
+            <p className="text-sm text-muted-foreground"><Tx>此操作不可恢复，评论数据将被永久删除。</Tx></p>
             <div className="flex justify-center gap-3">
-              <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary">取消</button>
-              <button type="button" onClick={() => handlePermanentDelete(confirmDelete.id)} className="rounded-xl bg-destructive px-4 py-2.5 text-sm font-semibold text-white">确认删除</button>
+              <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
+              <button type="button" onClick={() => handlePermanentDelete(confirmDelete.id)} className="rounded-xl bg-destructive px-4 py-2.5 text-sm font-semibold text-white"><Tx>确认删除</Tx></button>
             </div>
           </div>
         </div>

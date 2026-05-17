@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 const tabs = [
   { to: "/admin/payments/channels", label: "渠道配置" },
   { to: "/admin/payments/orders", label: "支付流水" },
-  { to: "/admin/payments/events", label: "Webhook / 事件" },
+  { to: "/admin/payments/events", label: "回调 / 事件" },
   { to: "/admin/payments/reconciliations", label: "对账中心" },
 ];
 

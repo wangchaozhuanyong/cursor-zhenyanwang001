@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as dashboardService from "@/services/admin/dashboardService";
+import { Tx } from "@/components/admin/AdminText";
 import { ORDER_STATUS, getOrderStatusLabel } from "@/constants/statusDictionary";
 
 const PIE_COLORS = ["var(--theme-price)", "hsl(210, 80%, 55%)", "hsl(150, 60%, 45%)", "hsl(340, 70%, 55%)", "hsl(270, 60%, 55%)", "hsl(30, 80%, 55%)"];
@@ -38,9 +39,9 @@ export default function Dashboard() {
           onClick={() => loadStats()}
           className="rounded-full px-5 py-2 text-sm font-semibold text-white"
           style={{ background: "var(--theme-gradient)" }}
-        >
+        ><Tx>
           重试
-        </button>
+        </Tx></button>
       </div>
     );
   }
@@ -100,7 +101,7 @@ export default function Dashboard() {
 
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-6 lg:col-span-2 theme-shadow">
-          <h3 className="mb-3 text-sm font-semibold text-foreground sm:mb-4">7日销售趋势</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground sm:mb-4"><Tx>7日销售趋势</Tx></h3>
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={salesTrendData}>
               <defs>
@@ -122,7 +123,7 @@ export default function Dashboard() {
         </div>
 
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-6 theme-shadow">
-          <h3 className="mb-3 text-sm font-semibold text-foreground sm:mb-4">品类分布</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground sm:mb-4"><Tx>品类分布</Tx></h3>
           {categoryData.length > 0 ? (
             <>
               <ResponsiveContainer width="100%" height={180}>
@@ -145,13 +146,13 @@ export default function Dashboard() {
               </div>
             </>
           ) : (
-            <p className="py-8 text-center text-sm text-muted-foreground">暂无分类数据</p>
+            <p className="py-8 text-center text-sm text-muted-foreground"><Tx>暂无分类数据</Tx></p>
           )}
         </div>
       </div>
 
       <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-6 theme-shadow">
-        <h3 className="mb-3 text-sm font-semibold text-foreground sm:mb-4">本周订单统计</h3>
+        <h3 className="mb-3 text-sm font-semibold text-foreground sm:mb-4"><Tx>本周订单统计</Tx></h3>
         {weeklyOrderData.length > 0 ? (
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={weeklyOrderData}>
@@ -164,15 +165,15 @@ export default function Dashboard() {
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <p className="py-8 text-center text-sm text-muted-foreground">暂无订单数据</p>
+          <p className="py-8 text-center text-sm text-muted-foreground"><Tx>暂无订单数据</Tx></p>
         )}
       </div>
 
       <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-6 theme-shadow">
         <div className="mb-3 flex items-center justify-between sm:mb-4">
-          <h3 className="text-sm font-semibold text-foreground">最近订单</h3>
+          <h3 className="text-sm font-semibold text-foreground"><Tx>最近订单</Tx></h3>
           <PermissionGate permission="order.view">
-            <button type="button" onClick={() => navigate("/admin/orders")} className="touch-manipulation min-h-[44px] px-2 text-xs text-[var(--theme-price)] hover:underline">查看全部</button>
+            <button type="button" onClick={() => navigate("/admin/orders")} className="touch-manipulation min-h-[44px] px-2 text-xs text-[var(--theme-price)] hover:underline"><Tx>查看全部</Tx></button>
           </PermissionGate>
         </div>
         {recentOrders.length > 0 ? (
@@ -216,7 +217,7 @@ export default function Dashboard() {
             ))}
           </div>
         ) : (
-          <p className="py-4 text-center text-sm text-muted-foreground">暂无订单</p>
+          <p className="py-4 text-center text-sm text-muted-foreground"><Tx>暂无订单</Tx></p>
         )}
       </div>
     </div>

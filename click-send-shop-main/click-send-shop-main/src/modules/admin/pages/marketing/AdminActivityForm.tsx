@@ -6,6 +6,7 @@ import type { ActivityPayload, ActivityProductItem, ActivityStatus, ActivityType
 import { toastErrorMessage } from "@/utils/errorMessage";
 import ActivityProductPicker from "@/components/admin/ActivityProductPicker";
 import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
+import { Tx } from "@/components/admin/AdminText";
 
 const STEPS = ["选择类型", "基础信息", "活动规则", "适用范围", "展示设置", "预览发布"] as const;
 
@@ -22,9 +23,9 @@ export default function AdminActivityForm() {
   const [saving, setSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
-  const [pendingPublishStatus, setPendingPublishStatus] = useState<ActivityStatus | null>(null);
+  const [pendingPublishStatus, setPendingPublishStatus] = useState<ActivityStatus | null><Tx>(null);
   const [statusLabel, setStatusLabel] = useState("草稿");
-  const [form, setForm] = useState<ActivityPayload>({
+  const [form, setForm] = useState</Tx><ActivityPayload>({
     type: (search.get("type") as ActivityType) || "flash_sale",
     title: "",
     subtitle: "",
@@ -131,9 +132,9 @@ export default function AdminActivityForm() {
     }
   };
 
-  const previewHint = useMemo(() => (localValidate() ? "请完成活动规则后预览" : "配置完整，可发布"), [form]);
+  const previewHint = useMemo(() =><Tx> (localValidate() ? "请完成活动规则后预览" : "配置完整，可发布"), [form]);
 
-  const updateItem = (idx: number, patch: Partial<ActivityProductItem>) => {
+  const updateItem = (idx: number, patch: Partial</Tx><ActivityProductItem>) => {
     setForm((prev) => {
       const next = [...prev.items];
       next[idx] = { ...next[idx], ...patch };
@@ -158,7 +159,7 @@ export default function AdminActivityForm() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <button onClick={() => navigate(-1)} className="text-sm text-muted-foreground">返回</button>
+          <button onClick={() => navigate(-1)} className="text-sm text-muted-foreground"><Tx>返回</Tx></button>
           <h1 className="text-xl font-bold text-foreground">活动管理 / {isEdit ? "编辑活动" : "新建活动"}</h1>
           <p className="text-xs text-muted-foreground">状态：{statusLabel}</p>
         </div>
@@ -185,11 +186,11 @@ export default function AdminActivityForm() {
           {step === 1 && (
             <>
               <label className="block text-sm">活动名称（{form.title.length}/60）<input maxLength={60} value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
-              <label className="block text-sm">副标题<input value={form.subtitle || ""} onChange={(e) => setForm((p) => ({ ...p, subtitle: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
-              <label className="block text-sm">活动说明<textarea rows={3} value={form.description || ""} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
+              <label className="block text-sm"><Tx>副标题</Tx><input value={form.subtitle || ""} onChange={(e) => setForm((p) => ({ ...p, subtitle: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
+              <label className="block text-sm"><Tx>活动说明</Tx><textarea rows={3} value={form.description || ""} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
               <div className="grid gap-2 md:grid-cols-2">
-                <label className="text-sm">开始时间<input type="datetime-local" value={form.start_at ? form.start_at.slice(0, 16) : ""} onChange={(e) => setForm((p) => ({ ...p, start_at: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
-                <label className="text-sm">结束时间<input type="datetime-local" value={form.end_at ? form.end_at.slice(0, 16) : ""} onChange={(e) => setForm((p) => ({ ...p, end_at: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
+                <label className="text-sm"><Tx>开始时间</Tx><input type="datetime-local" value={form.start_at ? form.start_at.slice(0, 16) : ""} onChange={(e) => setForm((p) => ({ ...p, start_at: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
+                <label className="text-sm"><Tx>结束时间</Tx><input type="datetime-local" value={form.end_at ? form.end_at.slice(0, 16) : ""} onChange={(e) => setForm((p) => ({ ...p, end_at: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
               </div>
             </>
           )}
@@ -199,12 +200,12 @@ export default function AdminActivityForm() {
               {form.type === "flash_sale" && (
                 <>
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">活动商品配置</p>
-                    <button type="button" onClick={() => setPickerOpen(true)} className="rounded-lg border border-border px-3 py-1.5 text-sm">选择商品</button>
+                    <p className="text-sm text-muted-foreground"><Tx>活动商品配置</Tx></p>
+                    <button type="button" onClick={() => setPickerOpen(true)} className="rounded-lg border border-border px-3 py-1.5 text-sm"><Tx>选择商品</Tx></button>
                   </div>
                   <div className="overflow-x-auto rounded-lg border border-border">
                     <table className="min-w-full text-sm">
-                      <thead className="bg-secondary/60"><tr><th className="px-2 py-2 text-left">商品</th><th className="px-2 py-2">原价</th><th className="px-2 py-2">活动价</th><th className="px-2 py-2">真实库存</th><th className="px-2 py-2">活动库存</th><th className="px-2 py-2">限购</th><th className="px-2 py-2">操作</th></tr></thead>
+                      <thead className="bg-secondary/60"><tr><th className="px-2 py-2 text-left"><Tx>商品</Tx></th><th className="px-2 py-2"><Tx>原价</Tx></th><th className="px-2 py-2"><Tx>活动价</Tx></th><th className="px-2 py-2"><Tx>真实库存</Tx></th><th className="px-2 py-2"><Tx>活动库存</Tx></th><th className="px-2 py-2"><Tx>限购</Tx></th><th className="px-2 py-2"><Tx>操作</Tx></th></tr></thead>
                       <tbody>
                         {form.items.map((it, idx) => (
                           <tr key={`${it.product_id}-${idx}`} className="border-t border-border">
@@ -214,7 +215,7 @@ export default function AdminActivityForm() {
                             <td className="px-2 py-2 text-center">{it.product_stock ?? "-"}</td>
                             <td className="px-2 py-2"><input type="number" value={it.activity_stock} onChange={(e) => updateItem(idx, { activity_stock: Number(e.target.value) })} className="w-24 rounded bg-secondary px-2 py-1" /></td>
                             <td className="px-2 py-2"><input type="number" value={it.limit_per_user} onChange={(e) => updateItem(idx, { limit_per_user: Number(e.target.value) })} className="w-20 rounded bg-secondary px-2 py-1" /></td>
-                            <td className="px-2 py-2"><button type="button" onClick={() => setForm((p) => ({ ...p, items: p.items.filter((_, i) => i !== idx) }))} className="text-xs text-muted-foreground">删除</button></td>
+                            <td className="px-2 py-2"><button type="button" onClick={() => setForm((p) => ({ ...p, items: p.items.filter((_, i) => i !== idx) }))} className="text-xs text-muted-foreground"><Tx>删除</Tx></button></td>
                           </tr>
                         ))}
                       </tbody>
@@ -226,46 +227,46 @@ export default function AdminActivityForm() {
                 <div className="space-y-2">
                   {fullReductionRules.map((r, idx) => (
                     <div key={idx} className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
-                      <label className="text-sm">满减门槛<input type="number" value={r.threshold_amount ?? ""} onChange={(e) => setFullReductionRules(fullReductionRules.map((x, i) => i === idx ? { ...x, threshold_amount: Number(e.target.value) } : x))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
-                      <label className="text-sm">减免金额<input type="number" value={r.discount_amount ?? ""} onChange={(e) => setFullReductionRules(fullReductionRules.map((x, i) => i === idx ? { ...x, discount_amount: Number(e.target.value) } : x))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
-                      <button type="button" onClick={() => setFullReductionRules(fullReductionRules.filter((_, i) => i !== idx))} className="mt-7 rounded border border-border px-2 py-1 text-xs">删除</button>
+                      <label className="text-sm"><Tx>满减门槛</Tx><input type="number" value={r.threshold_amount ?? ""} onChange={(e) => setFullReductionRules(fullReductionRules.map((x, i) => i === idx ? { ...x, threshold_amount: Number(e.target.value) } : x))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
+                      <label className="text-sm"><Tx>减免金额</Tx><input type="number" value={r.discount_amount ?? ""} onChange={(e) => setFullReductionRules(fullReductionRules.map((x, i) => i === idx ? { ...x, discount_amount: Number(e.target.value) } : x))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
+                      <button type="button" onClick={() => setFullReductionRules(fullReductionRules.filter((_, i) => i !== idx))} className="mt-7 rounded border border-border px-2 py-1 text-xs"><Tx>删除</Tx></button>
                     </div>
                   ))}
-                  <button type="button" onClick={() => setFullReductionRules([...fullReductionRules, { threshold_amount: 0, discount_amount: 0 }])} className="rounded border border-border px-3 py-1 text-sm">新增一档</button>
+                  <button type="button" onClick={() => setFullReductionRules([...fullReductionRules, { threshold_amount: 0, discount_amount: 0 }])} className="rounded border border-border px-3 py-1 text-sm"><Tx>新增一档</Tx></button>
                 </div>
               )}
               <div className="grid gap-2 md:grid-cols-3">
-                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.allow_coupon_stack} onChange={(e) => setForm((p) => ({ ...p, allow_coupon_stack: e.target.checked }))} />允许叠加优惠券</label>
-                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.allow_points_stack} onChange={(e) => setForm((p) => ({ ...p, allow_points_stack: e.target.checked }))} />允许使用积分</label>
-                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.allow_reward} onChange={(e) => setForm((p) => ({ ...p, allow_reward: e.target.checked }))} />参与返现</label>
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.allow_coupon_stack} onChange={(e) => setForm((p) => ({ ...p, allow_coupon_stack: e.target.checked }))} /><Tx>允许叠加优惠券</Tx></label>
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.allow_points_stack} onChange={(e) => setForm((p) => ({ ...p, allow_points_stack: e.target.checked }))} /><Tx>允许使用积分</Tx></label>
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!form.allow_reward} onChange={(e) => setForm((p) => ({ ...p, allow_reward: e.target.checked }))} /><Tx>参与返现</Tx></label>
               </div>
             </>
           )}
 
           {step === 3 && (
             <div className="grid gap-2 md:grid-cols-2">
-              <label className="text-sm">适用范围
-                <select value={form.scope_type || "product"} onChange={(e) => setForm((p) => ({ ...p, scope_type: e.target.value as ActivityPayload["scope_type"] }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2">
-                  <option value="all">全场</option>
-                  <option value="category">指定分类</option>
-                  <option value="product">指定商品</option>
-                  <option value="new_user">新用户</option>
-                  <option value="old_user">老用户</option>
+              <label className="text-sm"><Tx>适用范围
+                </Tx><select value={form.scope_type || "product"} onChange={(e) => setForm((p) => ({ ...p, scope_type: e.target.value as ActivityPayload["scope_type"] }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2">
+                  <option value="all"><Tx>全场</Tx></option>
+                  <option value="category"><Tx>指定分类</Tx></option>
+                  <option value="product"><Tx>指定商品</Tx></option>
+                  <option value="new_user"><Tx>新用户</Tx></option>
+                  <option value="old_user"><Tx>老用户</Tx></option>
                 </select>
               </label>
-              <label className="text-sm">范围 ID 列表（逗号分隔）
-                <input value={(form.scope_ids || []).join(",")} onChange={(e) => setForm((p) => ({ ...p, scope_ids: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" />
+              <label className="text-sm"><Tx>范围 ID 列表（逗号分隔）
+                </Tx><input value={(form.scope_ids || []).join(",")} onChange={(e) => setForm((p) => ({ ...p, scope_ids: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" />
               </label>
             </div>
           )}
 
           {step === 4 && (
             <div className="grid gap-2 md:grid-cols-2">
-              <label className="text-sm">展示位置（逗号分隔）
-                <input value={(form.display_positions || []).join(",")} onChange={(e) => setForm((p) => ({ ...p, display_positions: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" />
+              <label className="text-sm"><Tx>展示位置（逗号分隔）
+                </Tx><input value={(form.display_positions || []).join(",")} onChange={(e) => setForm((p) => ({ ...p, display_positions: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" />
               </label>
-              <label className="text-sm">内部备注
-                <input value={form.internal_note || ""} onChange={(e) => setForm((p) => ({ ...p, internal_note: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" />
+              <label className="text-sm"><Tx>内部备注
+                </Tx><input value={form.internal_note || ""} onChange={(e) => setForm((p) => ({ ...p, internal_note: e.target.value }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" />
               </label>
             </div>
           )}
@@ -274,7 +275,7 @@ export default function AdminActivityForm() {
         </div>
 
         <div className="rounded-xl border border-border bg-card p-4">
-          <h3 className="mb-2 text-sm font-semibold">活动摘要</h3>
+          <h3 className="mb-2 text-sm font-semibold"><Tx>活动摘要</Tx></h3>
           <p className="text-sm">类型：{labelType(form.type)}</p>
           <p className="text-sm">名称：{form.title || "-"}</p>
           <p className="text-sm">时间：{form.start_at || "-"} ~ {form.end_at || "-"}</p>
@@ -284,11 +285,11 @@ export default function AdminActivityForm() {
       </div>
 
       <div className="sticky bottom-0 z-10 flex justify-end gap-2 rounded-xl border border-border bg-card p-3">
-        <button onClick={() => setStep((s) => Math.max(0, s - 1))} className="rounded-lg border border-border px-3 py-2 text-sm">上一步</button>
-        <LoadingButton type="button" variant="outline" state={saving ? "loading" : "normal"} loadingText="保存中..." onClick={() => void validateAndSave("draft")} className="rounded-lg px-3 py-2 text-sm">保存草稿</LoadingButton>
-        <button onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))} className="rounded-lg border border-border px-3 py-2 text-sm">下一步</button>
-        <LoadingButton type="button" variant="gold" state={saving ? "loading" : "normal"} loadingText="发布中..." onClick={() => void validateAndSave("active")} className="rounded-lg px-3 py-2 text-sm font-semibold">发布活动</LoadingButton>
-        <button onClick={() => navigate("/admin/marketing/activities")} className="rounded-lg border border-border px-3 py-2 text-sm">取消</button>
+        <button onClick={() => setStep((s) => Math.max(0, s - 1))} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>上一步</Tx></button>
+        <LoadingButton type="button" variant="outline" state={saving ? "loading" : "normal"} loadingText="保存中..." onClick={() => void validateAndSave("draft")} className="rounded-lg px-3 py-2 text-sm"><Tx>保存草稿</Tx></LoadingButton>
+        <button onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>下一步</Tx></button>
+        <LoadingButton type="button" variant="gold" state={saving ? "loading" : "normal"} loadingText="发布中..." onClick={() => void validateAndSave("active")} className="rounded-lg px-3 py-2 text-sm font-semibold"><Tx>发布活动</Tx></LoadingButton>
+        <button onClick={() => navigate("/admin/marketing/activities")} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>取消</Tx></button>
       </div>
 
       <AnimatedConfirmDialog

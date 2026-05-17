@@ -8,6 +8,8 @@ import Pagination from "@/components/admin/Pagination";
 import * as orderService from "@/services/admin/orderService";
 import type { CheckoutAbandonment, CheckoutAbandonmentStatus } from "@/types/order";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { labelCheckoutPaymentMethod } from "@/utils/adminDisplayLabels";
+import { Tx } from "@/components/admin/AdminText";
 
 const STATUS_OPTIONS: Array<{ value: "" | CheckoutAbandonmentStatus; label: string }> = [
   { value: "", label: "未完成" },
@@ -91,17 +93,17 @@ export default function AdminCheckoutAbandonments() {
   return (
     <div className="space-y-4">
       <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
-        <h1 className="text-lg font-semibold text-foreground">未完成结算</h1>
-        <p className="mt-1 text-sm text-muted-foreground">仅做站内记录和后台查看，不触发邮件、短信或自动外呼。</p>
-        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-          同一用户、同一次停留在结算页的过程，只会维护<strong>一条</strong>「进行中」快照：内容随填写与勾选变化而更新；下单成功后该条变为「已下单未支付」，其余误入的「仅进入结算」空壳会自动关闭。
+        <h1 className="text-lg font-semibold text-foreground"><Tx>未完成结算</Tx></h1>
+        <p className="mt-1 text-sm text-muted-foreground"><Tx>仅做站内记录和后台查看，不触发邮件、短信或自动外呼。</Tx></p>
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground"><Tx>
+          同一用户、同一次停留在结算页的过程，只会维护</Tx><strong><Tx>一条</Tx></strong><Tx>「进行中」快照：内容随填写与勾选变化而更新；下单成功后该条变为「已下单未支付」，其余误入的「仅进入结算」空壳会自动关闭。
           若仍看到两条时间接近的旧数据，多为升级前产生的重复快照，可忽略或后续数据清理。
-        </p>
+        </Tx></p>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="min-w-0 flex-1">
-          <SearchBar placeholder="搜索订单号 / 联系人 / 用户ID..." value={keyword} onChange={setKeyword} />
+          <SearchBar placeholder="搜索订单号 / 联系人 / 手机号..." value={keyword} onChange={setKeyword} />
         </div>
         <select
           value={status}
@@ -110,9 +112,9 @@ export default function AdminCheckoutAbandonments() {
         >
           {STATUS_OPTIONS.map((option) => <option key={option.value || "unfinished"} value={option.value}>{option.label}</option>)}
         </select>
-        <button type="button" onClick={handleSearch} className="touch-manipulation min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-2.5 text-sm text-foreground hover:opacity-90">
+        <button type="button" onClick={handleSearch} className="touch-manipulation min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-2.5 text-sm text-foreground hover:opacity-90"><Tx>
           搜索
-        </button>
+        </Tx></button>
       </div>
 
       <div className="space-y-3 md:hidden">
@@ -140,7 +142,7 @@ export default function AdminCheckoutAbandonments() {
               </div>
               <p className="shrink-0 text-sm font-semibold text-[var(--theme-price)]">RM {row.total_amount.toFixed(2)}</p>
             </div>
-            <p className="mt-2 truncate text-xs text-muted-foreground">{row.items_summary.map((item) => `${item.name || item.product_id} x${item.qty}`).join("，") || "无商品摘要"}</p>
+            <p className="mt-2 truncate text-xs text-muted-foreground">{row.items_summary.map((item) => `${item.name || "未命名商品"} x${item.qty}`).join("，") || "无商品摘要"}</p>
             {row.order_id && (
               <button type="button" onClick={() => navigate(`/admin/orders/${row.order_id}`)} className="mt-3 text-xs text-[var(--theme-price)] hover:underline">
                 查看订单 {row.order_no || ""}
@@ -148,7 +150,7 @@ export default function AdminCheckoutAbandonments() {
             )}
           </div>
         ))}
-        {!loading && rows.length === 0 && <div className="py-8 text-center text-sm text-muted-foreground">暂无未完成结算</div>}
+        {!loading && rows.length === 0 && <div className="py-8 text-center text-sm text-muted-foreground"><Tx>暂无未完成结算</Tx></div>}
         <Pagination total={total} page={page} pageSize={pageSize} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
       </div>
 
@@ -180,17 +182,17 @@ export default function AdminCheckoutAbandonments() {
                 <div className="text-xs text-muted-foreground">{row.contact_phone_masked || "—"}</div>
               </td>
               <td className="max-w-[320px] px-4 py-3 text-foreground">
-                <div className="truncate">{row.items_summary.map((item) => `${item.name || item.product_id} x${item.qty}`).join("，") || "—"}</div>
+                <div className="truncate">{row.items_summary.map((item) => `${item.name || "未命名商品"} x${item.qty}`).join("，") || "—"}</div>
                 <div className="text-xs text-muted-foreground">{row.items_count} 件</div>
               </td>
               <td className="px-4 py-3 font-semibold text-foreground">RM {row.total_amount.toFixed(2)}</td>
-              <td className="px-4 py-3 text-foreground">{row.payment_method || "—"}</td>
+              <td className="px-4 py-3 text-foreground">{labelCheckoutPaymentMethod(row.payment_method)}</td>
               <td className="px-4 py-3 font-mono text-xs text-foreground">{row.order_no || "—"}</td>
               <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(row.updated_at).toLocaleString("zh-CN")}</td>
               <td className="px-4 py-3">
                 {row.order_id ? (
-                  <button type="button" onClick={() => navigate(`/admin/orders/${row.order_id}`)} className="text-xs text-[var(--theme-price)] hover:underline">详情</button>
-                ) : <span className="text-xs text-muted-foreground">未下单</span>}
+                  <button type="button" onClick={() => navigate(`/admin/orders/${row.order_id}`)} className="text-xs text-[var(--theme-price)] hover:underline"><Tx>详情</Tx></button>
+                ) : <span className="text-xs text-muted-foreground"><Tx>未下单</Tx></span>}
               </td>
             </>
           )}

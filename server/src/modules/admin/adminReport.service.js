@@ -1,4 +1,5 @@
 ﻿const repo = require('./adminReport.repository');
+const { labelReportColumn } = require('../../utils/reportColumnLabels');
 
 function formatDate(date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
@@ -207,55 +208,64 @@ function buildCsv(headers, rows) {
   return `${BOM}${h}\r\n${body}`;
 }
 
+function buildCsvFromRecords(records) {
+  if (!records?.length) return buildCsv([], []);
+  const keys = Object.keys(records[0]);
+  return buildCsv(
+    keys.map(labelReportColumn),
+    records.map((r) => keys.map((k) => r[k])),
+  );
+}
+
 async function exportByType(type, query) {
   if (type === 'sales_daily') {
     const data = await getSalesDaily(query);
-    const csv = buildCsv(Object.keys(data.list[0] || {}), data.list.map((r) => Object.values(r)));
+    const csv = buildCsvFromRecords(data.list);
     return { csv, filename: `sales-daily-${data.date_from}-${data.date_to}.csv` };
   }
   if (type === 'sales_monthly') {
     const data = await getSalesMonthly(query);
-    const csv = buildCsv(Object.keys(data.list[0] || {}), data.list.map((r) => Object.values(r)));
+    const csv = buildCsvFromRecords(data.list);
     return { csv, filename: `sales-monthly-${data.date_from}-${data.date_to}.csv` };
   }
   if (type === 'product_analysis') {
     const data = await getProductsAnalysis(query);
-    const csv = buildCsv(Object.keys(data.list[0] || {}), data.list.map((r) => Object.values(r)));
+    const csv = buildCsvFromRecords(data.list);
     return { csv, filename: `product-analysis-${data.date_from}-${data.date_to}.csv` };
   }
   if (type === 'category_analysis') {
     const data = await getCategoriesAnalysis(query);
-    const csv = buildCsv(Object.keys(data.list[0] || {}), data.list.map((r) => Object.values(r)));
+    const csv = buildCsvFromRecords(data.list);
     return { csv, filename: `category-analysis-${data.date_from}-${data.date_to}.csv` };
   }
   if (type === 'order_analysis') {
     const data = await getOrdersAnalysis(query);
-    const csv = buildCsv(Object.keys(data.summary || {}), [Object.values(data.summary || {})]);
+    const csv = buildCsvFromRecords([data.summary || {}]);
     return { csv, filename: `order-analysis-${data.date_from}-${data.date_to}.csv` };
   }
   if (type === 'customer_analysis') {
     const data = await getCustomersAnalysis(query);
-    const csv = buildCsv(Object.keys(data.summary || {}), [Object.values(data.summary || {})]);
+    const csv = buildCsvFromRecords([data.summary || {}]);
     return { csv, filename: `customer-analysis-${data.date_from}-${data.date_to}.csv` };
   }
   if (type === 'activity_analysis') {
     const data = await getActivitiesAnalysis(query);
-    const csv = buildCsv(Object.keys(data.list[0] || {}), data.list.map((r) => Object.values(r)));
+    const csv = buildCsvFromRecords(data.list);
     return { csv, filename: `activity-analysis-${data.date_from}-${data.date_to}.csv` };
   }
   if (type === 'coupon_analysis') {
     const data = await getCouponsAnalysis(query);
-    const csv = buildCsv(Object.keys(data.list[0] || {}), data.list.map((r) => Object.values(r)));
+    const csv = buildCsvFromRecords(data.list);
     return { csv, filename: `coupon-analysis-${data.date_from}-${data.date_to}.csv` };
   }
   if (type === 'inventory_analysis') {
     const data = await getInventoryAnalysis(query);
-    const csv = buildCsv(Object.keys(data.list[0] || {}), data.list.map((r) => Object.values(r)));
+    const csv = buildCsvFromRecords(data.list);
     return { csv, filename: `inventory-analysis.csv` };
   }
   if (type === 'search_analysis') {
     const data = await getSearchAnalysis(query);
-    const csv = buildCsv(Object.keys(data.list[0] || {}), data.list.map((r) => Object.values(r)));
+    const csv = buildCsvFromRecords(data.list);
     return { csv, filename: `search-analysis-${data.date_from}-${data.date_to}.csv` };
   }
   throw new Error(`不支持的报表类型: ${type}`);

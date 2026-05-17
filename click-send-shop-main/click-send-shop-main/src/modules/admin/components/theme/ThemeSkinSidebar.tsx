@@ -1,6 +1,7 @@
 import { Copy, Plus, Search, Star, Trash2 } from "lucide-react";
 import type { ThemeSceneTag, ThemeSkin } from "@/types/theme";
 import { SCENE_FILTER_OPTIONS, SCENE_TAG_LABELS } from "./themeStudioConstants";
+import { Tx } from "@/components/admin/AdminText";
 
 export type ThemeSkinSidebarProps = {
   skins: ThemeSkin[];
@@ -52,15 +53,15 @@ export default function ThemeSkinSidebar({
     <aside className="flex h-[calc(100vh-110px)] w-[260px] shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-card">
       <div className="shrink-0 space-y-2 border-b border-border p-3">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold">皮肤列表</p>
+          <p className="text-sm font-semibold"><Tx>皮肤列表</Tx></p>
           <button
             type="button"
             onClick={onAdd}
             className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] hover:bg-secondary"
           >
-            <Plus size={12} />
+            <Plus size={12} /><Tx>
             新建
-          </button>
+          </Tx></button>
         </div>
         <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-2 py-1.5">
           <Search size={14} className="shrink-0 text-muted-foreground" />
@@ -108,8 +109,8 @@ export default function ThemeSkinSidebar({
                     </div>
                   </div>
                   <div className="mt-1.5 flex flex-wrap gap-1">
-                    {isDefault ? <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-800">默认</span> : null}
-                    {selected ? <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-800">编辑中</span> : null}
+                    {isDefault ? <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-800"><Tx>默认</Tx></span> : null}
+                    {selected ? <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-800"><Tx>编辑中</Tx></span> : null}
                     {skin.sceneTag ? (
                       <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
                         {SCENE_TAG_LABELS[skin.sceneTag]}
@@ -131,15 +132,15 @@ export default function ThemeSkinSidebar({
                       <Trash2 size={12} />
                     </button>
                   ) : (
-                    <span className="rounded border border-border px-1 py-0.5 text-[10px] text-muted-foreground" title="默认皮肤不可删除">
+                    <span className="rounded border border-border px-1 py-0.5 text-[10px] text-muted-foreground" title="默认皮肤不可删除"><Tx>
                       锁定
-                    </span>
+                    </Tx></span>
                   )}
                 </div>
               </div>
             );
           })}
-          {filtered.length === 0 ? <p className="py-8 text-center text-xs text-muted-foreground">没有匹配的皮肤</p> : null}
+          {filtered.length === 0 ? <p className="py-8 text-center text-xs text-muted-foreground"><Tx>没有匹配的皮肤</Tx></p> : null}
         </div>
       </div>
     </aside>

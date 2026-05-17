@@ -109,7 +109,7 @@ export const EXPORT_TASK_STATUS = {
 } as const;
 
 export function getOrderStatusLabel(status: string) {
-  return ORDER_STATUS_META[status as OrderStatus]?.label ?? status;
+  return ORDER_STATUS_META[status as OrderStatus]?.label ?? "未知状态";
 }
 
 export function getOrderStatusBadgeClass(status: string) {
@@ -117,7 +117,7 @@ export function getOrderStatusBadgeClass(status: string) {
 }
 
 export function getPaymentStatusLabel(status: string) {
-  return PAYMENT_STATUS_META[status as PaymentStatus]?.label ?? status;
+  return PAYMENT_STATUS_META[status as PaymentStatus]?.label ?? "未知支付状态";
 }
 
 export function getPaymentStatusBadgeClass(status: string) {
@@ -125,7 +125,7 @@ export function getPaymentStatusBadgeClass(status: string) {
 }
 
 export function getReturnStatusLabel(status: string) {
-  return RETURN_STATUS_META[status as ReturnStatus]?.label ?? status;
+  return RETURN_STATUS_META[status as ReturnStatus]?.label ?? "未知状态";
 }
 
 export function getReturnStatusBadgeClass(status: string) {

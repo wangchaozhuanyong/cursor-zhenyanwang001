@@ -1,5 +1,21 @@
 ﻿import { useEffect, useRef, useState } from "react";
-import { ExternalLink, Grid3X3, Loader2, Pencil, Plus, Trash2, Upload } from "lucide-react";
+import { Tx } from "@/components/admin/AdminText";
+import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import {
+  ExternalLink,
+  Grid3X3,
+  LayoutGrid,
+  Loader2,
+  Pencil,
+  Sparkles,
+  ToggleLeft,
+  Trash2,
+  Upload,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import AdminHomeOpsDisplayPanel from "./homeOps/AdminHomeOpsDisplayPanel";
+import AdminHomeOpsModulePanel from "./homeOps/AdminHomeOpsModulePanel";
+import AdminHomeOpsNewArrivalPanel from "./homeOps/AdminHomeOpsNewArrivalPanel";
 import { toast } from "sonner";
 import * as uploadService from "@/services/uploadService";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -33,7 +49,18 @@ function flattenCategories(nodes: Category[], level = 0): Array<{ id: string; la
   return out;
 }
 
+type HomeOpsTab = "modules" | "display" | "nav" | "newArrival";
+
+const HOME_OPS_TABS: { id: HomeOpsTab; label: string; icon: React.ElementType; desc: string }[] = [
+  { id: "modules", label: "模块开关", icon: ToggleLeft, desc: "控制首页各区块显示/隐藏" },
+  { id: "display", label: "展示规则", icon: LayoutGrid, desc: "热销/推荐每批数量" },
+  { id: "nav", label: "金刚区导航", icon: Grid3X3, desc: "快捷入口图标与跳转" },
+  { id: "newArrival", label: "新品主视觉", icon: Sparkles, desc: "新品专区氛围图与文案" },
+];
+
 export default function AdminHomeOps() {
+  const { confirm } = useAdminConfirm();
+  const [activeTab, setActiveTab] = useState<HomeOpsTab>("modules");
   const [navItems, setNavItems] = useState<HomeNavItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,22 +141,52 @@ export default function AdminHomeOps() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-foreground">首页运营配置</h1>
-        <p className="text-sm text-muted-foreground">配置前台首页金刚区导航展示</p>
+        <h1 className="text-xl font-bold text-foreground"><Tx>首页运营</Tx></h1>
+        <p className="text-sm text-muted-foreground"><Tx>模块开关、展示规则、金刚区与新品主视觉统一在此配置</Tx></p>
       </div>
-
-      <section className="rounded-2xl border border-border bg-card p-4">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <nav className="flex shrink-0 flex-row gap-2 overflow-x-auto lg:w-52 lg:flex-col lg:gap-1">
+          {HOME_OPS_TABS.map((tab) => {
+            const Icon = tab.icon;
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "flex min-w-[9.5rem] flex-col items-start rounded-xl border px-3 py-2.5 text-left transition-colors lg:min-w-0 lg:w-full",
+                  active
+                    ? "border-gold/40 bg-gold/10 text-foreground"
+                    : "border-border bg-card text-muted-foreground hover:border-gold/25 hover:bg-secondary/50",
+                )}
+              >
+                <span className="flex items-center gap-2 text-sm font-semibold">
+                  <Icon size={16} className={active ? "text-gold" : ""} />
+                  {tab.label}
+                </span>
+                <span className="mt-0.5 hidden text-[10px] leading-snug lg:block">{tab.desc}</span>
+              </button>
+            );
+          })}
+        </nav>
+        <div className="min-w-0 flex-1">
+          {activeTab === "modules" ? <AdminHomeOpsModulePanel /> : null}
+          {activeTab === "display" ? <AdminHomeOpsDisplayPanel /> : null}
+          {activeTab === "newArrival" ? <AdminHomeOpsNewArrivalPanel /> : null}
+          {activeTab === "nav" ? (
+<section className="rounded-2xl border border-border bg-card p-4">
         <div className="mb-4 flex items-center gap-2">
           <Grid3X3 size={18} className="text-gold" />
           <div>
-            <h2 className="font-semibold text-foreground">金刚区导航</h2>
-            <p className="text-xs text-muted-foreground">图标支持本地上传、URL、站内路径或 Emoji；排序越小越靠前</p>
+            <h2 className="font-semibold text-foreground"><Tx>金刚区导航</Tx></h2>
+            <p className="text-xs text-muted-foreground"><Tx>图标支持本地上传、URL、站内路径或 Emoji；排序越小越靠前</Tx></p>
           </div>
         </div>
 
         <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_1fr_1.4fr_minmax(7rem,1fr)_auto_auto]">
           <label className="flex min-w-0 flex-col gap-1 md:col-span-1">
-            <span className="text-[11px] font-medium text-muted-foreground">图标</span>
+            <span className="text-[11px] font-medium text-muted-foreground"><Tx>图标</Tx></span>
             <div className="flex flex-wrap items-stretch gap-2">
               <input
                 className="min-w-0 flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
@@ -158,17 +215,17 @@ export default function AdminHomeOps() {
               </div>
             </div>
             <p className="text-[10px] leading-relaxed text-muted-foreground">
-              <span className="font-medium text-foreground/80">规格说明：</span>
+              <span className="font-medium text-foreground/80"><Tx>规格说明：</Tx></span>
               {IMAGE_UPLOAD_HINT_HOME_NAV_ICON}
               <span className="mt-0.5 block">{IMAGE_UPLOAD_HINT_API}</span>
             </p>
           </label>
           <label className="flex min-w-0 flex-col gap-1">
-            <span className="text-[11px] font-medium text-muted-foreground">标题</span>
+            <span className="text-[11px] font-medium text-muted-foreground"><Tx>标题</Tx></span>
             <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold" placeholder="前台展示名称" value={navForm.title} onChange={(e) => setNavForm({ ...navForm, title: e.target.value })} />
           </label>
           <label className="flex min-w-0 flex-col gap-1">
-            <span className="text-[11px] font-medium text-muted-foreground">点击跳转</span>
+            <span className="text-[11px] font-medium text-muted-foreground"><Tx>点击跳转</Tx></span>
             <select
               className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
               value={navForm.target_type || "url"}
@@ -181,8 +238,8 @@ export default function AdminHomeOps() {
                 }));
               }}
             >
-              <option value="url">站内路径 / 外链</option>
-              <option value="category">指定分类（产品分类页）</option>
+              <option value="url"><Tx>站内路径 / 外链</Tx></option>
+              <option value="category"><Tx>指定分类（产品分类页）</Tx></option>
             </select>
             {navForm.target_type === "category" ? (
               <select
@@ -197,7 +254,7 @@ export default function AdminHomeOps() {
                   }));
                 }}
               >
-                <option value="">请选择分类…</option>
+                <option value=""><Tx>请选择分类…</Tx></option>
                 {categoryOptions.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.label}
@@ -217,7 +274,7 @@ export default function AdminHomeOps() {
             </p>
           </label>
           <label className="flex min-w-0 flex-col gap-1">
-            <span className="text-[11px] font-medium text-muted-foreground">排序</span>
+            <span className="text-[11px] font-medium text-muted-foreground"><Tx>排序</Tx></span>
             <input
               type="number"
               title="排序：数字越小越靠前（如 0 会排在 1 前面）"
@@ -226,24 +283,24 @@ export default function AdminHomeOps() {
               value={navForm.sort_order}
               onChange={(e) => setNavForm({ ...navForm, sort_order: Number(e.target.value) || 0 })}
             />
-            <span className="text-[10px] leading-tight text-muted-foreground">数字越小越靠前</span>
+            <span className="text-[10px] leading-tight text-muted-foreground"><Tx>数字越小越靠前</Tx></span>
           </label>
           <label className="flex cursor-pointer flex-col justify-end gap-1 pb-0.5">
-            <span className="text-[11px] font-medium text-muted-foreground">状态</span>
+            <span className="text-[11px] font-medium text-muted-foreground"><Tx>状态</Tx></span>
             <span className="flex min-h-[42px] items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm text-foreground">
-              <input type="checkbox" className="accent-gold" checked={navForm.enabled} onChange={(e) => setNavForm({ ...navForm, enabled: e.target.checked })} />
+              <input type="checkbox" className="accent-gold" checked={navForm.enabled} onChange={(e) => setNavForm({ ...navForm, enabled: e.target.checked })} /><Tx>
               启用后前台可见
-            </span>
+            </Tx></span>
           </label>
           <div className="flex flex-col justify-end gap-1">
-            <span className="text-[11px] font-medium text-muted-foreground opacity-0 select-none">操作</span>
+            <span className="text-[11px] font-medium text-muted-foreground opacity-0 select-none"><Tx>操作</Tx></span>
             <PermissionGate permission="home_ops.manage">
               <LoadingButton
                 type="button"
                 variant="gold"
                 state={saving ? "loading" : "normal"}
                 loadingText="保存中..."
-                onClick={() => void saveNav()}
+                onClick={() => adminConfirmSave(confirm, editingNavId ? "金刚区导航" : "新金刚区导航", () => saveNav())}
                 className="inline-flex h-[42px] rounded-xl px-4 text-sm font-bold"
               >
                 {editingNavId ? "保存" : "新增"}
@@ -300,22 +357,37 @@ export default function AdminHomeOps() {
                 >
                   <Pencil size={15} />
                 </button>
-                <button type="button" className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-destructive" onClick={() => void homeOpsService.deleteHomeNavItem(item.id).then(reload).then(() => toast.success("已删除")).catch((e) => toast.error(toastErrorMessage(e, "删除失败")))}>
+                <button
+                  type="button"
+                  className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-destructive"
+                  onClick={() =>
+                    adminConfirmDelete(confirm, item.title || "该导航", () =>
+                      homeOpsService
+                        .deleteHomeNavItem(item.id)
+                        .then(reload)
+                        .then(() => toast.success("已删除"))
+                        .catch((e) => toast.error(toastErrorMessage(e, "删除失败"))),
+                    )
+                  }
+                >
                   <Trash2 size={15} />
                 </button>
               </PermissionGate>
             </div>
           ))}
-          {navItems.length === 0 && <div className="py-8 text-center text-sm text-muted-foreground">暂无金刚区导航</div>}
+          {navItems.length === 0 && <div className="py-8 text-center text-sm text-muted-foreground"><Tx>暂无金刚区导航</Tx></div>}
         </div>
       </section>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }
 
 function IconPreview({ value }: { value: string }) {
   const v = value.trim();
-  if (!v) return <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-muted-foreground">图</div>;
+  if (!v) return <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-muted-foreground"><Tx>图</Tx></div>;
   if (v.startsWith("http") || v.startsWith("/")) {
     return <img src={v} alt="" className="h-11 w-11 rounded-xl object-cover" />;
   }

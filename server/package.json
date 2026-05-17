@@ -20,7 +20,7 @@
     "seed:demo-products": "node scripts/seed-demo-products.js",
     "seed:content-pages": "node scripts/seed-content-pages.js",
     "seed:policy-paths": "node scripts/seed-policy-paths.js",
-    "test": "node -r tsx/cjs --test test/health.test.js",
+    "test": "node -r tsx/cjs --test test/health.test.js test/auth-flow.test.js",
     "test:redis": "node -r tsx/cjs --test test/redis-standard.test.js",
     "test:integration": "node -r tsx/cjs --test test/auth-flow.test.js test/payment-channels.test.js",
     "test:flow": "node -r tsx/cjs --test test/flow-smoke.test.js",

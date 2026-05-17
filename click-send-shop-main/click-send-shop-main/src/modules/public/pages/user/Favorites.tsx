@@ -6,7 +6,7 @@ import { useCartStore } from "@/stores/useCartStore";
 import { isLoggedIn } from "@/utils/token";
 import PageHeader from "@/components/PageHeader";
 import { toast } from "sonner";
-import { onUploadVariantImageError, productCoverForList } from "@/utils/uploadImageVariant";
+import ProductCoverImage from "@/components/ProductCoverImage";
 
 export default function Favorites() {
   const navigate = useNavigate();
@@ -43,13 +43,11 @@ export default function Favorites() {
             {favoriteProducts.map((p) => (
               <div key={p.id} className={`rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 transition-opacity ${removingId === p.id ? "opacity-50" : "opacity-100"}`}>
                 <div className="flex gap-3">
-                  <img
-                    src={productCoverForList(p.cover_image)}
+                  <ProductCoverImage
+                    url={p.cover_image}
                     alt={p.name}
-                    className="h-24 w-24 rounded-xl object-cover"
-                    loading="lazy"
-                    decoding="async"
-                    onError={(e) => onUploadVariantImageError(e.currentTarget, productCoverForList(p.cover_image))}
+                    className="h-24 w-24 rounded-xl"
+                    imgClassName="h-full w-full rounded-xl object-cover"
                   />
                   <div className="min-w-0 flex-1">
                     <p className="line-clamp-2 text-sm font-semibold text-[var(--theme-text)]">{p.name}</p>

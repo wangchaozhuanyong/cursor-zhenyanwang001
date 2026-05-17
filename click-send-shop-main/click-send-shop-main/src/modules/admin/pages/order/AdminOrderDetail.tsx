@@ -1,4 +1,4 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ArrowLeft, MessageSquare, Copy, Check, Loader2, Truck, RefreshCw, MapPin } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -7,6 +7,8 @@ import { useGoBack } from "@/hooks/useGoBack";
 import { fetchOrderById, updateOrderStatus, shipOrder, refreshOrderLogistics } from "@/services/admin/orderService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { copyToClipboard } from "@/utils/clipboard";
 import {
   ORDER_STATUS,
@@ -15,6 +17,8 @@ import {
   getOrderStatusLabel,
   getPaymentStatusLabel,
 } from "@/constants/statusDictionary";
+import { labelOrderPaymentMethod } from "@/utils/adminDisplayLabels";
+import { labelChannelCode } from "@/utils/paymentAdminLabels";
 import { OrderSstLines } from "@/components/OrderSstLines";
 import { AdminOrderDetailSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import type { Order } from "@/types/order";
@@ -27,6 +31,7 @@ function canShipByState(order: { status?: string; payment_status?: string }) {
 const allStatuses = ORDER_STATUS_PROGRESS;
 
 export default function AdminOrderDetail() {
+  const { confirm } = useAdminConfirm();
   const navigate = useNavigate();
   const goBack = useGoBack("/admin/orders");
   const { id } = useParams();
@@ -151,7 +156,7 @@ export default function AdminOrderDetail() {
         <button type="button" onClick={goBack}>
           <ArrowLeft size={20} className="text-foreground" />
         </button>
-        <h2 className="text-lg font-semibold text-foreground">订单详情</h2>
+        <h2 className="text-lg font-semibold text-foreground"><Tx>订单详情</Tx></h2>
         {loading ? (
           <>
             <span className="skeleton-base skeleton-shimmer h-5 w-16 rounded-full" />
@@ -175,8 +180,8 @@ export default function AdminOrderDetail() {
 
       {!loading && !order && (
         <div className="py-16 text-center text-muted-foreground">
-          <p>订单不存在</p>
-          <button type="button" onClick={goBack} className="mt-4 text-[var(--theme-price)] underline">返回</button>
+          <p><Tx>订单不存在</Tx></p>
+          <button type="button" onClick={goBack} className="mt-4 text-[var(--theme-price)] underline"><Tx>返回</Tx></button>
         </div>
       )}
 
@@ -185,17 +190,28 @@ export default function AdminOrderDetail() {
       {/* Status timeline */}
       <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 theme-shadow">
         <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
-          <h3 className="text-sm font-semibold text-foreground">订单状态流转</h3>
+          <h3 className="text-sm font-semibold text-foreground"><Tx>订单状态流转</Tx></h3>
           {nextStatus === ORDER_STATUS.SHIPPED && (
             <PermissionGate permission="order.ship">
               <button type="button" onClick={() => setShowShipForm(true)} className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white">
-                <Truck size={12} /> 标记发货
-              </button>
+                <Truck size={12} /><Tx> 标记发货
+              </Tx></button>
             </PermissionGate>
           )}
           {nextStatus && nextStatus !== ORDER_STATUS.SHIPPED && (
             <PermissionGate permission="order.update">
-              <button type="button" onClick={() => handleStatusChange(nextStatus)} className="flex items-center gap-1 theme-rounded px-3 py-1.5 text-xs font-semibold text-white" style={{ background: "var(--theme-gradient)" }}>
+              <button
+                type="button"
+                onClick={() =>
+                  confirm({
+                    title: "确认更新状态",
+                    description: `确定将订单状态更新为「${getOrderStatusLabel(nextStatus)}」？`,
+                    onConfirm: () => handleStatusChange(nextStatus),
+                  })
+                }
+                className="flex items-center gap-1 theme-rounded px-3 py-1.5 text-xs font-semibold text-white"
+                style={{ background: "var(--theme-gradient)" }}
+              >
                 <Check size={12} /> 推进到「{getOrderStatusLabel(nextStatus)}」
               </button>
             </PermissionGate>
@@ -216,10 +232,10 @@ export default function AdminOrderDetail() {
           ))}
         </div>
         {isCancelled && (
-          <div className="mt-3 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">该订单已被取消</div>
+          <div className="mt-3 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive"><Tx>该订单已被取消</Tx></div>
         )}
         {isRefund && (
-          <div className="mt-3 rounded-lg bg-orange-500/10 px-3 py-2 text-xs text-orange-600">该订单处于退款流程中</div>
+          <div className="mt-3 rounded-lg bg-orange-500/10 px-3 py-2 text-xs text-orange-600"><Tx>该订单处于退款流程中</Tx></div>
         )}
       </div>
 
@@ -227,9 +243,9 @@ export default function AdminOrderDetail() {
       {showShipForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowShipForm(false)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md theme-rounded bg-[var(--theme-surface)] p-6 theme-shadow space-y-4">
-            <h3 className="font-bold text-foreground flex items-center gap-2"><Truck size={18} className="text-blue-600" /> 发货信息</h3>
+            <h3 className="font-bold text-foreground flex items-center gap-2"><Truck size={18} className="text-blue-600" /><Tx> 发货信息</Tx></h3>
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">快递公司</label>
+              <label className="mb-1 block text-xs text-muted-foreground"><Tx>快递公司</Tx></label>
               <select value={carrier} onChange={(e) => setCarrier(e.target.value)} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]">
                 {["J&T Express", "Pos Laju", "DHL eCommerce", "Ninja Van", "GD Express", "City-Link Express", "顺丰速运", "其他"].map((c) => (
                   <option key={c} value={c}>{c}</option>
@@ -237,11 +253,24 @@ export default function AdminOrderDetail() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-muted-foreground">快递单号</label>
+              <label className="mb-1 block text-xs text-muted-foreground"><Tx>快递单号</Tx></label>
               <input value={trackingNo} onChange={(e) => setTrackingNo(e.target.value)} placeholder="输入快递单号" className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
             </div>
             <PermissionGate permission="order.ship">
-              <button type="button" onClick={handleShip} className="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white">确认发货</button>
+              <button
+                type="button"
+                onClick={() =>
+                  confirm({
+                    title: "确认发货",
+                    description: "确定提交发货信息？提交后订单将进入已发货状态。",
+                    confirmText: "确认发货",
+                    onConfirm: () => handleShip(),
+                  })
+                }
+                className="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white"
+              >
+                <Tx>确认发货</Tx>
+              </button>
             </PermissionGate>
           </div>
         </div>
@@ -251,7 +280,7 @@ export default function AdminOrderDetail() {
         {/* Left - user info */}
         <div className="space-y-4">
           <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 space-y-3 theme-shadow">
-            <h3 className="text-sm font-semibold text-foreground">收货信息</h3>
+            <h3 className="text-sm font-semibold text-foreground"><Tx>收货信息</Tx></h3>
             {[
               { label: "姓名", value: order.contact_name || "—" },
               { label: "电话", value: order.contact_phone || "—" },
@@ -266,23 +295,23 @@ export default function AdminOrderDetail() {
           </div>
 
           <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 space-y-3 theme-shadow">
-            <h3 className="text-sm font-semibold text-foreground">订单信息</h3>
+            <h3 className="text-sm font-semibold text-foreground"><Tx>订单信息</Tx></h3>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">订单号</span>
+              <span className="text-muted-foreground"><Tx>订单号</Tx></span>
               <span className="font-mono text-foreground">{order.order_no}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">下单时间</span>
+              <span className="text-muted-foreground"><Tx>下单时间</Tx></span>
               <span className="text-foreground">{new Date(order.created_at).toLocaleString("zh-CN")}</span>
             </div>
             {order.tracking_no && (
               <>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">快递公司</span>
+                  <span className="text-muted-foreground"><Tx>快递公司</Tx></span>
                   <span className="text-foreground">{order.carrier || "—"}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">快递单号</span>
+                  <span className="text-muted-foreground"><Tx>快递单号</Tx></span>
                   <span className="font-mono text-foreground">{order.tracking_no}</span>
                 </div>
                 {order.logistics_provider?.tracking_url && (
@@ -291,9 +320,9 @@ export default function AdminOrderDetail() {
                     target="_blank"
                     rel="noreferrer"
                     className="block text-right text-xs text-[var(--theme-price)] underline"
-                  >
+                  ><Tx>
                     打开承运商官网查询
-                  </a>
+                  </Tx></a>
                 )}
               </>
             )}
@@ -301,7 +330,7 @@ export default function AdminOrderDetail() {
 
           <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 space-y-4 theme-shadow">
             <div className="flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold text-foreground">物流轨迹</h3>
+              <h3 className="text-sm font-semibold text-foreground"><Tx>物流轨迹</Tx></h3>
               {order.tracking_no && (
                 <PermissionGate permission="order.ship">
                   <button
@@ -310,9 +339,9 @@ export default function AdminOrderDetail() {
                     disabled={refreshingLogistics}
                     className="flex items-center gap-1 rounded-lg border border-[var(--theme-border)] px-2.5 py-1.5 text-xs text-foreground hover:bg-[var(--theme-bg)] disabled:opacity-50"
                   >
-                    <RefreshCw size={12} className={refreshingLogistics ? "animate-spin" : ""} />
+                    <RefreshCw size={12} className={refreshingLogistics ? "animate-spin" : ""} /><Tx>
                     刷新
-                  </button>
+                  </Tx></button>
                 </PermissionGate>
               )}
             </div>
@@ -345,7 +374,7 @@ export default function AdminOrderDetail() {
           {/* 支付信息 */}
           <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 space-y-3 theme-shadow">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">支付信息</h3>
+              <h3 className="text-sm font-semibold text-foreground"><Tx>支付信息</Tx></h3>
               <span
                 className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
                   (order.payment_status ?? PAYMENT_STATUS.PENDING) === PAYMENT_STATUS.PAID
@@ -359,30 +388,26 @@ export default function AdminOrderDetail() {
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">支付方式</span>
+              <span className="text-muted-foreground"><Tx>支付方式</Tx></span>
               <span className="text-foreground">
-                {order.payment_method === "online"
-                  ? "在线支付"
-                  : order.payment_method === "whatsapp"
-                  ? "联系客服"
-                  : order.payment_method || "—"}
+                {labelOrderPaymentMethod(order.payment_method)}
               </span>
             </div>
             {order.payment_channel && (
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">支付渠道</span>
-                <span className="text-foreground capitalize">{order.payment_channel}</span>
+                <span className="text-muted-foreground"><Tx>支付渠道</Tx></span>
+                <span className="text-foreground">{labelChannelCode(order.payment_channel)}</span>
               </div>
             )}
             {order.payment_time && (
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">支付时间</span>
+                <span className="text-muted-foreground"><Tx>支付时间</Tx></span>
                 <span className="text-foreground">{new Date(order.payment_time).toLocaleString("zh-CN")}</span>
               </div>
             )}
             {order.payment_transaction_no && (
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">交易号</span>
+                <span className="text-muted-foreground"><Tx>交易号</Tx></span>
                 <span className="font-mono text-foreground text-xs break-all max-w-[60%] text-right">
                   {order.payment_transaction_no}
                 </span>
@@ -394,19 +419,19 @@ export default function AdminOrderDetail() {
                 target="_blank"
                 rel="noreferrer"
                 className="block text-xs text-[var(--theme-price)] underline text-right"
-              >
+              ><Tx>
                 在 Stripe Dashboard 查看 →
-              </a>
+              </Tx></a>
             )}
             {!order.payment_time && (
-              <p className="text-xs text-muted-foreground">尚未支付</p>
+              <p className="text-xs text-muted-foreground"><Tx>尚未支付</Tx></p>
             )}
           </div>
         </div>
 
         {/* Center - items */}
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 theme-shadow">
-          <h3 className="mb-4 text-sm font-semibold text-foreground">商品清单</h3>
+          <h3 className="mb-4 text-sm font-semibold text-foreground"><Tx>商品清单</Tx></h3>
           <div className="space-y-3">
             {items.map((item: any, idx: number) => {
               const product = item.product || item;
@@ -443,7 +468,7 @@ export default function AdminOrderDetail() {
               <span className="text-foreground">{parseFloat(order.shipping_fee || 0) === 0 ? "包邮" : `RM ${parseFloat(order.shipping_fee).toFixed(2)}`}</span>
             </div>
             <div className="flex justify-between text-sm font-bold border-t border-[var(--theme-border)] pt-2">
-              <span className="text-foreground">实付金额</span>
+              <span className="text-foreground"><Tx>实付金额</Tx></span>
               <span className="text-[var(--theme-price)]">RM {parseFloat(order.total_amount || 0).toFixed(2)}</span>
             </div>
           </div>
@@ -452,7 +477,7 @@ export default function AdminOrderDetail() {
         {/* Right - actions */}
         <div className="space-y-4">
           <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 space-y-3 theme-shadow">
-            <h3 className="text-sm font-semibold text-foreground">快捷操作</h3>
+            <h3 className="text-sm font-semibold text-foreground"><Tx>快捷操作</Tx></h3>
             <div className="grid grid-cols-2 gap-2">
               <PermissionGate permission="order.ship">
                 <button
@@ -460,29 +485,43 @@ export default function AdminOrderDetail() {
                   onClick={() => setShowShipForm(true)}
                   disabled={isCancelled || isRefund || !showShip}
                   className="theme-rounded border border-[var(--theme-border)] px-3 py-2 text-sm text-foreground hover:bg-[var(--theme-bg)] disabled:opacity-40 disabled:cursor-not-allowed"
-                >标记发货</button>
+                ><Tx>标记发货</Tx></button>
               </PermissionGate>
               <PermissionGate permission="order.update">
                 <button
                   type="button"
-                  onClick={() => handleStatusChange(ORDER_STATUS.COMPLETED)}
+                  onClick={() =>
+                    confirm({
+                      title: "确认完成",
+                      description: "确定将订单标记为已完成？",
+                      onConfirm: () => handleStatusChange(ORDER_STATUS.COMPLETED),
+                    })
+                  }
                   disabled={isCancelled || isRefund || order.status === ORDER_STATUS.COMPLETED}
                   className="theme-rounded border border-[var(--theme-border)] px-3 py-2 text-sm text-foreground hover:bg-[var(--theme-bg)] disabled:opacity-40 disabled:cursor-not-allowed"
-                >标记完成</button>
+                ><Tx>标记完成</Tx></button>
               </PermissionGate>
               <PermissionGate permission="order.update">
                 <button
                   type="button"
-                  onClick={() => handleStatusChange(ORDER_STATUS.CANCELLED)}
+                  onClick={() =>
+                    confirm({
+                      title: "确认取消",
+                      description: "确定取消该订单？此操作可能影响库存与支付。",
+                      confirmText: "取消订单",
+                      danger: true,
+                      onConfirm: () => handleStatusChange(ORDER_STATUS.CANCELLED),
+                    })
+                  }
                   disabled={isCancelled || isRefund}
                   className="rounded-lg border border-destructive/30 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 disabled:opacity-40 disabled:cursor-not-allowed col-span-2"
-                >取消订单</button>
+                ><Tx>取消订单</Tx></button>
               </PermissionGate>
             </div>
           </div>
 
           <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 space-y-3 theme-shadow">
-            <h3 className="text-sm font-semibold text-foreground">订单文本预览</h3>
+            <h3 className="text-sm font-semibold text-foreground"><Tx>订单文本预览</Tx></h3>
             <div className="rounded-lg bg-secondary p-3 text-xs text-foreground leading-relaxed whitespace-pre-line">{orderText}</div>
             <div className="flex gap-2">
               <button onClick={handleSendWhatsApp} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700">

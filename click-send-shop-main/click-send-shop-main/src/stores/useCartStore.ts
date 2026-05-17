@@ -4,6 +4,7 @@ import { isLoggedIn } from "@/utils/token";
 import type { Product, ProductVariant } from "@/types/product";
 import type { CartItem } from "@/types/cart";
 import * as cartService from "@/services/cartService";
+import { normalizeCartItem, normalizeCartItems } from "@/utils/cartNormalize";
 
 export const LOCAL_ONLY_CART_PRODUCT_PREFIX = "demo-micro-interactions:" as const;
 
@@ -83,7 +84,7 @@ export const useCartStore = create<CartState>()(
         if (!isLoggedIn()) return;
         set({ loading: true, error: null });
         try {
-          const items = await cartService.fetchCart();
+          const items = normalizeCartItems(await cartService.fetchCart());
           set((s) => ({ items, selection: mergeSelection(s.selection, items), loading: false }));
         } catch (e) {
           set({ loading: false, error: e instanceof Error ? e.message : "加载购物车失败" });
@@ -107,14 +108,14 @@ export const useCartStore = create<CartState>()(
           throw new Error("库存不足");
         }
         const lineKey = cartLineKey(product.id, variant?.id);
-        const lineItem: CartItem = {
+        const lineItem = normalizeCartItem({
           product,
           variant_id: variant?.id,
           sku_code: variant?.sku_code ?? undefined,
           variant_name: variant?.title,
           unit_price: variant?.price ?? product.price,
           qty,
-        };
+        });
         const beforeSnapshot = { items: get().items, selection: get().selection };
 
         set((state) => {
@@ -226,6 +227,11 @@ export const useCartStore = create<CartState>()(
     {
       name: "cart-storage",
       partialize: (s) => ({ items: s.items, selection: s.selection, buyNowItem: s.buyNowItem }),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        state.items = normalizeCartItems(state.items || []);
+        if (state.buyNowItem) state.buyNowItem = normalizeCartItem(state.buyNowItem);
+      },
     },
   ),
 );

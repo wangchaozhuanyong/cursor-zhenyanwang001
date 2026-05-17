@@ -8,14 +8,11 @@ import Pagination from "@/components/admin/Pagination";
 import * as notificationService from "@/services/admin/notificationService";
 import type { Notification } from "@/types/notification";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { labelNotificationType, NOTIFICATION_TYPE_LABELS } from "@/utils/adminDisplayLabels";
+import { Tx } from "@/components/admin/AdminText";
+import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 
-const typeLabels: Record<string, string> = {
-  system: "系统通知",
-  order: "订单通知",
-  promotion: "促销活动",
-  points: "积分变动",
-  reward: "返现通知",
-};
+const typeLabels = NOTIFICATION_TYPE_LABELS;
 
 export default function AdminNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -132,12 +129,16 @@ export default function AdminNotifications() {
   };
 
   const handleDelete = (id: string) => {
-    notificationService.deleteNotification(id)
-      .then(() => {
-        toast.success("已删除");
-        loadData();
-      })
-      .catch((e) => toast.error(toastErrorMessage(e, "删除失败")));
+    const n = notifications.find((item) => String(item.id) === id);
+    adminConfirmDelete(confirm, n?.title || "该通知", () =>
+      notificationService
+        .deleteNotification(id)
+        .then(() => {
+          toast.success("已删除");
+          loadData();
+        })
+        .catch((e) => toast.error(toastErrorMessage(e, "删除失败"))),
+    );
   };
 
   const toggleTriggerRule = (key: string) => {
@@ -175,23 +176,23 @@ export default function AdminNotifications() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-foreground">通知管理</h1>
-          <p className="text-sm text-muted-foreground">向用户推送通知和公告（列表为数据库实时数据，无前端写死演示项）。</p>
+          <h1 className="text-xl font-bold text-foreground"><Tx>通知管理</Tx></h1>
+          <p className="text-sm text-muted-foreground"><Tx>向用户推送通知和公告（列表为数据库实时数据，无前端写死演示项）。</Tx></p>
         </div>
         <PermissionGate permission="notification.manage">
           <button onClick={() => setShowForm(true)} className="flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-primary-foreground active:scale-[0.98]">
-            <Plus size={16} /> 新建通知
-          </button>
+            <Plus size={16} /><Tx> 新建通知
+          </Tx></button>
         </PermissionGate>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-2xl border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-muted-foreground"><Bell size={16} /><span className="text-xs">总通知</span></div>
+          <div className="flex items-center gap-2 text-muted-foreground"><Bell size={16} /><span className="text-xs"><Tx>总通知</Tx></span></div>
           <p className="mt-1 text-xl font-bold text-foreground">{notifications.length}</p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-muted-foreground"><Bell size={16} /><span className="text-xs">未读</span></div>
+          <div className="flex items-center gap-2 text-muted-foreground"><Bell size={16} /><span className="text-xs"><Tx>未读</Tx></span></div>
           <p className="mt-1 text-xl font-bold text-foreground">{notifications.filter((n) => !n.is_read).length}</p>
         </div>
       </div>
@@ -202,22 +203,22 @@ export default function AdminNotifications() {
             <div>
               <div className="flex items-center gap-2">
                 <Settings size={17} className="text-gold" />
-                <h2 className="text-sm font-bold text-foreground">自动触发通知设置</h2>
+                <h2 className="text-sm font-bold text-foreground"><Tx>自动触发通知设置</Tx></h2>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="mt-1 text-xs text-muted-foreground"><Tx>
                 控制订单、支付、售后等业务操作是否自动向客户端通知中心推送消息。可为每条规则单独填写标题与正文；留空则使用默认话术（见输入框占位提示）。
-              </p>
+              </Tx></p>
             </div>
             <LoadingButton
               type="button"
               variant="gold"
               state={savingTriggers ? "loading" : "normal"}
               loadingText="保存中..."
-              onClick={() => void handleSaveTriggerRules()}
+              onClick={() => adminConfirmSave(confirm, "自动触发规则", () => handleSaveTriggerRules())}
               className="rounded-xl px-4 py-2.5 text-xs font-bold"
-            >
+            ><Tx>
               保存规则
-            </LoadingButton>
+            </Tx></LoadingButton>
           </div>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {triggerRules.map((rule) => (
@@ -267,26 +268,26 @@ export default function AdminNotifications() {
       <div className="grid grid-cols-1 gap-2 rounded-2xl border border-border bg-card p-3 md:grid-cols-5">
         <input value={filters.keyword} onChange={(e) => updateFilter("keyword", e.target.value)} placeholder="关键词筛选" className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
         <select value={filters.type} onChange={(e) => updateFilter("type", e.target.value)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
-          <option value="">全部类型</option>
+          <option value=""><Tx>全部类型</Tx></option>
           {Object.entries(typeLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
         <select value={filters.send_status} onChange={(e) => updateFilter("send_status", e.target.value)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
-          <option value="">全部发送状态</option>
-          <option value="draft">草稿</option>
-          <option value="scheduled">定时中</option>
-          <option value="sent">已发送</option>
-          <option value="cancelled">已撤回</option>
+          <option value=""><Tx>全部发送状态</Tx></option>
+          <option value="draft"><Tx>草稿</Tx></option>
+          <option value="scheduled"><Tx>定时中</Tx></option>
+          <option value="sent"><Tx>已发送</Tx></option>
+          <option value="cancelled"><Tx>已撤回</Tx></option>
         </select>
         <select value={filters.audience_type} onChange={(e) => updateFilter("audience_type", e.target.value)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
-          <option value="">全部受众</option>
-          <option value="all">全部用户</option>
-          <option value="single">单用户</option>
+          <option value=""><Tx>全部受众</Tx></option>
+          <option value="all"><Tx>全部用户</Tx></option>
+          <option value="single"><Tx>单用户</Tx></option>
         </select>
         <select value={filters.workflow_status} onChange={(e) => updateFilter("workflow_status", e.target.value)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
-          <option value="">全部流转状态</option>
-          <option value="draft">草稿</option>
-          <option value="published">已发布</option>
-          <option value="cancelled">已取消</option>
+          <option value=""><Tx>全部流转状态</Tx></option>
+          <option value="draft"><Tx>草稿</Tx></option>
+          <option value="published"><Tx>已发布</Tx></option>
+          <option value="cancelled"><Tx>已取消</Tx></option>
         </select>
       </div>
 
@@ -310,18 +311,18 @@ export default function AdminNotifications() {
             </div>
             <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">{n.content}</p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">{typeLabels[n.type] || n.type}</span>
+              <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">{labelNotificationType(n.type)}</span>
               <span className="text-[11px] text-muted-foreground">{n.created_at ? new Date(n.created_at).toLocaleString("zh-CN") : "—"}</span>
             </div>
             <PermissionGate permission="notification.manage">
               <button type="button" onClick={() => handleDelete(String(n.id))} className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1 rounded-xl border border-destructive/30 py-2 text-sm text-destructive active:bg-destructive/10">
-                <Trash2 size={16} /> 删除
-              </button>
+                <Trash2 size={16} /><Tx> 删除
+              </Tx></button>
             </PermissionGate>
           </div>
         ))}
         {!loading && notifications.length === 0 && (
-          <div className="py-12 text-center text-sm text-muted-foreground">暂无通知</div>
+          <div className="py-12 text-center text-sm text-muted-foreground"><Tx>暂无通知</Tx></div>
         )}
         <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
       </div>
@@ -338,13 +339,13 @@ export default function AdminNotifications() {
           theadClassName="border-b border-border bg-secondary/50"
           thead={(
             <tr>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">标题</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">内容</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">类型</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">发送状态</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">受众/已读</th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground">时间</th>
-              <th className="px-4 py-3 text-center font-medium text-muted-foreground">操作</th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground"><Tx>标题</Tx></th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground"><Tx>内容</Tx></th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground"><Tx>类型</Tx></th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground"><Tx>发送状态</Tx></th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground"><Tx>受众/已读</Tx></th>
+              <th className="px-4 py-3 text-left font-medium text-muted-foreground"><Tx>时间</Tx></th>
+              <th className="px-4 py-3 text-center font-medium text-muted-foreground"><Tx>操作</Tx></th>
             </tr>
           )}
           footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
@@ -356,7 +357,7 @@ export default function AdminNotifications() {
               <td className="px-4 py-3 text-muted-foreground max-w-[200px] truncate">{n.content}</td>
               <td className="px-4 py-3">
                 <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                  {typeLabels[n.type] || n.type}
+                  {labelNotificationType(n.type)}
                 </span>
               </td>
               <td className="px-4 py-3">
@@ -379,7 +380,19 @@ export default function AdminNotifications() {
                   <PermissionGate permission="notification.manage">
                     <div className="flex items-center gap-1">
                       {n.workflow_status === "draft" && (
-                        <button type="button" onClick={() => handlePublish(String(n.id))} className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-emerald-600" title="发布">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            confirm({
+                              title: "确认发布",
+                              description: `确定发布通知「${n.title}」？`,
+                              confirmText: "发布",
+                              onConfirm: () => handlePublish(String(n.id)),
+                            })
+                          }
+                          className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-emerald-600"
+                          title="发布"
+                        >
                           <Send size={14} />
                         </button>
                       )}
@@ -397,7 +410,7 @@ export default function AdminNotifications() {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowForm(false)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl space-y-4">
-            <h3 className="font-bold text-foreground">新建通知</h3>
+            <h3 className="font-bold text-foreground"><Tx>新建通知</Tx></h3>
             <input
               placeholder="通知标题"
               value={formData.title}
@@ -416,7 +429,7 @@ export default function AdminNotifications() {
               onChange={(e) => applyTemplate(e.target.value)}
               className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none"
             >
-              <option value="">选择模板（可选）</option>
+              <option value=""><Tx>选择模板（可选）</Tx></option>
               {templates.map((t) => (
                 <option key={t.code} value={t.code}>{t.name}</option>
               ))}
@@ -435,12 +448,12 @@ export default function AdminNotifications() {
               onChange={(e) => setFormData({ ...formData, audience_type: e.target.value as "all" | "single" })}
               className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none"
             >
-              <option value="all">发送给全部用户</option>
-              <option value="single">发送给单个用户（填用户ID）</option>
+              <option value="all"><Tx>发送给全部用户</Tx></option>
+              <option value="single"><Tx>发送给单个用户（填用户ID）</Tx></option>
             </select>
             {formData.audience_type === "single" && (
               <input
-                placeholder="用户ID（user.id）"
+                placeholder="用户手机号或昵称（定向发送时）"
                 value={formData.user_id}
                 onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
                 className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold"
@@ -457,11 +470,27 @@ export default function AdminNotifications() {
               onChange={(v) => setFormData({ ...formData, scheduled_at: v })}
               className="w-full [&>div]:rounded-xl [&>div]:border-border [&>div]:bg-background [&>div]:px-4 [&>div]:py-3"
             />
-            <p className="text-[11px] text-muted-foreground">留空=立即发送；填写后到时间自动对用户可见。</p>
+            <p className="text-[11px] text-muted-foreground"><Tx>留空=立即发送；填写后到时间自动对用户可见。</Tx></p>
             <PermissionGate permission="notification.manage">
               <div className="grid grid-cols-2 gap-2">
-                <LoadingButton type="button" variant="outline" state={formSubmitting ? "loading" : "normal"} loadingText="保存中..." onClick={() => void handleSaveDraft()} className="w-full rounded-xl py-2.5 text-sm font-bold">保存草稿</LoadingButton>
-                <LoadingButton type="button" variant="gold" state={formSubmitting ? "loading" : "normal"} loadingText="发布中..." onClick={() => void handleSend()} className="w-full rounded-xl py-2.5 text-sm font-bold">立即发布</LoadingButton>
+                <LoadingButton type="button" variant="outline" state={formSubmitting ? "loading" : "normal"} loadingText="保存中..." onClick={() => adminConfirmSave(confirm, "通知草稿", () => handleSaveDraft())} className="w-full rounded-xl py-2.5 text-sm font-bold"><Tx>保存草稿</Tx></LoadingButton>
+                <LoadingButton
+                  type="button"
+                  variant="gold"
+                  state={formSubmitting ? "loading" : "normal"}
+                  loadingText="发布中..."
+                  onClick={() =>
+                    confirm({
+                      title: "确认发送",
+                      description: "确定立即发送该通知？发送后用户将收到推送。",
+                      confirmText: "发送",
+                      onConfirm: () => handleSend(),
+                    })
+                  }
+                  className="w-full rounded-xl py-2.5 text-sm font-bold"
+                >
+                  <Tx>立即发布</Tx>
+                </LoadingButton>
               </div>
             </PermissionGate>
           </div>

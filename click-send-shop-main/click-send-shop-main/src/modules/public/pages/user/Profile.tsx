@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+﻿import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import {
   Bell,
   Camera,
@@ -17,6 +17,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import logoWebp from "@/assets/logo.webp";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { isLoggedIn } from "@/utils/token";
@@ -36,7 +37,12 @@ import * as inviteService from "@/services/inviteService";
 import * as rewardService from "@/services/rewardService";
 import * as uploadService from "@/services/uploadService";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
-import { getMemberCardClassName } from "@/utils/themeVisuals";
+import { getMemberCardClassName, THEME_ACCENT_ICON_CLASS, THEME_ACCENT_ICON_SHELL_CLASS } from "@/utils/themeVisuals";
+import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
+
+const ProfileWechatBindSection = THIRD_PARTY_LOGIN_ENABLED
+  ? lazy(() => import("./ProfileWechatBindSection"))
+  : null;
 
 const CARD_CLASS = "rounded-[26px] bg-[var(--theme-surface)] shadow-[var(--theme-shadow)]";
 const SECTION_PADDING = "p-4";
@@ -111,16 +117,16 @@ function ProfileHeroCard({
   );
 }
 
-/** 邀请横幅右侧礼物标识（与「立即邀请」按钮上下排列，固定尺寸避免重叠） */
+/** 邀请横幅右侧礼物标识（与「立即邀请」按钮横向排列，控制整体高度） */
 function InviteGiftBadge() {
   return (
     <div
-      className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[linear-gradient(155deg,#fff9ed_0%,#f4ddb2_48%,#e8c078_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,.7),0_8px_16px_rgba(120,78,20,.14)] ring-1 ring-[#cf9f4d]/35"
+      className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[linear-gradient(155deg,#fff9ed_0%,#f4ddb2_48%,#e8c078_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,.7),0_6px_12px_rgba(120,78,20,.12)] ring-1 ring-[#cf9f4d]/35"
       aria-hidden
     >
-      <span className="absolute -top-px left-1/2 h-2 w-[18px] -translate-x-1/2 rounded-[3px] bg-[#d4a24c]" />
-      <span className="absolute top-1 left-1/2 h-[7px] w-[7px] -translate-x-1/2 rounded-full bg-[#f5e6c8] ring-1 ring-[#c89a3f]/45" />
-      <Gift className="relative z-[1] text-[#9a6318]" size={22} strokeWidth={2.25} />
+      <span className="absolute -top-px left-1/2 h-1.5 w-4 -translate-x-1/2 rounded-[2px] bg-[#d4a24c]" />
+      <span className="absolute top-0.5 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-[#f5e6c8] ring-1 ring-[#c89a3f]/45" />
+      <Gift className="relative z-[1] text-[#9a6318]" size={18} strokeWidth={2.25} />
     </div>
   );
 }
@@ -132,7 +138,7 @@ export default function Profile() {
   const siteName = siteInfo.siteName || "真烟网";
   const logoSrc = siteInfo.logoUrl || logoWebp;
   const authStore = useAuthStore();
-  const { nickname, avatar, pointsBalance, inviteCode, memberLevel, loadProfile } = useUserStore();
+  const { nickname, avatar, pointsBalance, inviteCode, memberLevel, wechatLogin, loadProfile } = useUserStore();
   const { orders, loadOrders } = useOrderStore();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const favoriteCount = useFavoritesStore((s) => s.favoriteIds.length);
@@ -204,8 +210,20 @@ export default function Profile() {
   return (
     <div className="store-page store-bottom-safe min-h-screen text-[var(--theme-text)]">
       <StorePageHeader
-        title="我的"
-        subtitle={loggedIn ? "账号、订单、积分和优惠券" : "登录后查看订单、积分和会员权益"}
+        title={
+          <span className="inline-flex min-w-0 items-center gap-2.5">
+            <img
+              src={logoSrc}
+              alt=""
+              width={28}
+              height={28}
+              className="h-7 w-7 shrink-0 rounded-md object-contain"
+              loading="eager"
+              decoding="async"
+            />
+            <span className="truncate">个人中心</span>
+          </span>
+        }
         rightSlot={(
           <>
             {loggedIn ? <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} /> : null}
@@ -252,6 +270,16 @@ export default function Profile() {
                 memberCardStyle={themeConfig.memberCardStyle}
               />
               <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+              {ProfileWechatBindSection ? (
+                <Suspense fallback={null}>
+                  <ProfileWechatBindSection
+                    wechatLogin={wechatLogin}
+                    onNavigateSettings={() => navigate("/settings")}
+                    cardClass={CARD_CLASS}
+                    menuTapClass={MENU_TAP}
+                  />
+                </Suspense>
+              ) : null}
             </>
           )}
         </section>
@@ -280,22 +308,22 @@ export default function Profile() {
               className="relative overflow-hidden rounded-[22px] border border-[#ead8ad] px-4 py-3.5"
               style={{ background: "linear-gradient(110deg,#f7edd3,#efdcb8)" }}
             >
-              <div className="flex items-stretch gap-3">
+              <div className="flex items-center gap-3">
                 <div className="min-w-0 flex-1 pr-1">
                   <p className="truncate text-base font-bold text-[#2e2417]">邀请好友得奖励</p>
-                  <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#5b4a30]">
-                    {loggedIn ? "好友注册/下单后可获得积分返现" : "登录后邀请好友获得积分返现"}
+                  <p className="mt-1 line-clamp-2 text-xs leading-snug text-[#5b4a30]">
+                    {loggedIn ? "好友注册/下单后可获得现金返现" : "登录后邀请好友获得现金返现"}
                   </p>
                   <p className="mt-1 truncate text-xs text-[#5b4a30]">
                     {loggedIn ? `已邀请 ${inviteCount} 人，累计返现 RM ${rewardBalance.toFixed(2)}` : "登录后查看邀请奖励"}
                   </p>
                 </div>
-                <div className="flex w-[76px] shrink-0 flex-col items-center justify-between gap-2.5 py-0.5">
+                <div className="flex shrink-0 items-center gap-2">
                   <InviteGiftBadge />
                   <button
                     type="button"
                     onClick={() => (loggedIn ? gateNavigate(navigate, "/invite", true) : navigate("/login", { state: { from: "/profile" } }))}
-                    className="w-full whitespace-nowrap rounded-full bg-[linear-gradient(135deg,#2f2d2a,#141414)] px-2 py-1.5 text-xs font-semibold text-[#f5e4bc] shadow-[0_6px_14px_rgba(0,0,0,.22)]"
+                    className="whitespace-nowrap rounded-full bg-[linear-gradient(135deg,#2f2d2a,#141414)] px-3.5 py-2 text-xs font-semibold text-[#f5e4bc] shadow-[0_6px_14px_rgba(0,0,0,.22)]"
                   >
                     {loggedIn ? "立即邀请" : "去登录"}
                   </button>
@@ -318,8 +346,8 @@ export default function Profile() {
               : guestOrderItems.map((it) => ({ ...it, value: 0, path: "/orders" }))).map((item) => (
               <button key={item.label} type="button" onClick={() => gateNavigate(navigate, item.path, true)} className={`relative rounded-2xl bg-[var(--theme-bg)] px-1 py-3 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_65%,transparent)] ${MENU_TAP}`}>
                 {item.value > 0 ? <span className="absolute right-3 top-2 min-w-[1rem] rounded-full bg-[var(--theme-danger)] px-1 text-[10px] text-[var(--theme-danger-foreground)]">{item.value}</span> : null}
-                <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--theme-secondary)_10%,var(--theme-surface))] text-[var(--theme-secondary)]">
-                  <item.icon size={17} />
+                <span className={cn("mx-auto flex h-9 w-9 items-center justify-center rounded-2xl", THEME_ACCENT_ICON_SHELL_CLASS)}>
+                  <item.icon size={17} strokeWidth={2} />
                 </span>
                 <p className="mt-2 text-xs font-medium">{item.label}</p>
               </button>
@@ -341,7 +369,9 @@ export default function Profile() {
               { label: "我的收藏", icon: Heart, path: "/favorites", auth: false },
             ].map((item) => (
               <button key={item.label} type="button" onClick={() => gateNavigate(navigate, item.path, item.auth)} className={`min-h-[76px] rounded-2xl bg-[var(--theme-bg)] px-1 py-2 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_60%,transparent)] ${MENU_TAP}`}>
-                <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--theme-secondary)_12%,var(--theme-surface))] text-[var(--theme-secondary)]"><item.icon size={16} /></span>
+                <span className={cn("mx-auto flex h-9 w-9 items-center justify-center rounded-2xl", THEME_ACCENT_ICON_SHELL_CLASS)}>
+                  <item.icon size={16} strokeWidth={2} />
+                </span>
                 <p className="mt-1 text-[11px] leading-4">{item.label}</p>
               </button>
             ))}
@@ -356,7 +386,7 @@ export default function Profile() {
               { title: "安全支付", desc: "加密保护", icon: Wallet },
             ].map((item) => (
               <div key={item.title} className="rounded-2xl bg-[var(--theme-bg)] px-2 py-3 text-center">
-                <item.icon size={17} className="mx-auto text-[var(--theme-secondary)]" />
+                <item.icon size={17} strokeWidth={2} className={cn("mx-auto", THEME_ACCENT_ICON_CLASS)} />
                 <p className="mt-1 text-xs font-semibold">{item.title}</p>
                 <p className="mt-0.5 truncate text-[10px] text-[var(--theme-text-muted-on-surface)]">{item.desc}</p>
               </div>

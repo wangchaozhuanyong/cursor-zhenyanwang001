@@ -3,6 +3,7 @@ import StoreBadge from "@/components/ui/StoreBadge";
 import StorePrice from "@/components/ui/StorePrice";
 import type { ThemeConfig } from "@/types/theme";
 import { previewProduct } from "./themePreviewData";
+import { Tx } from "@/components/admin/AdminText";
 
 function PreviewBtn({
   children,
@@ -44,8 +45,8 @@ export default function ProductDetailPreview({ config }: { config: ThemeConfig }
         </div>
         <div>
           <div className="mb-2 flex flex-wrap gap-1">
-            <StoreBadge type="hot">热销</StoreBadge>
-            <StoreBadge type="sale">包邮</StoreBadge>
+            <StoreBadge type="hot"><Tx>热销</Tx></StoreBadge>
+            <StoreBadge type="sale"><Tx>包邮</Tx></StoreBadge>
           </div>
           <h3 className="text-sm font-semibold text-[var(--theme-text)]">{previewProduct.name}</h3>
           <div className="mt-2">
@@ -53,7 +54,7 @@ export default function ProductDetailPreview({ config }: { config: ThemeConfig }
           </div>
         </div>
         <div className="store-card space-y-2 p-3">
-          <p className="text-xs font-medium text-[var(--theme-text)]">规格</p>
+          <p className="text-xs font-medium text-[var(--theme-text)]"><Tx>规格</Tx></p>
           <div className="flex flex-wrap gap-2">
             {["标准装", "家庭装"].map((s, i) => (
               <button
@@ -69,7 +70,7 @@ export default function ProductDetailPreview({ config }: { config: ThemeConfig }
               </button>
             ))}
           </div>
-          <p className="text-xs font-medium text-[var(--theme-text)]">数量</p>
+          <p className="text-xs font-medium text-[var(--theme-text)]"><Tx>数量</Tx></p>
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -90,15 +91,15 @@ export default function ProductDetailPreview({ config }: { config: ThemeConfig }
           type="button"
           className="flex w-full items-center justify-center gap-1 rounded-lg border border-[var(--theme-border)] py-2 text-xs text-[var(--theme-text-muted)]"
         >
-          <Heart size={14} /> 收藏
-        </button>
+          <Heart size={14} /><Tx> 收藏
+        </Tx></button>
       </div>
       <div
         className="sticky bottom-0 left-0 right-0 z-10 flex gap-2 border-t border-[var(--theme-border)] bg-[var(--theme-surface)] p-3"
         data-testid="product-detail-preview-action-bar"
       >
-        <PreviewBtn variant="secondary">加入购物车</PreviewBtn>
-        <PreviewBtn variant="primary">立即购买</PreviewBtn>
+        <PreviewBtn variant="secondary"><Tx>加入购物车</Tx></PreviewBtn>
+        <PreviewBtn variant="primary"><Tx>立即购买</Tx></PreviewBtn>
       </div>
     </div>
   );

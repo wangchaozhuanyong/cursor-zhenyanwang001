@@ -6,9 +6,12 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import * as bannerService from "@/services/admin/bannerService";
 import * as uploadService from "@/services/uploadService";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { Tx } from "@/components/admin/AdminText";
 import { LoadingButton } from "@/modules/micro-interactions";
+import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 
 export default function AdminBanners() {
+  const { confirm } = useAdminConfirm();
   const [banners, setBanners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -124,8 +127,8 @@ export default function AdminBanners() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Banner 管理</h1>
-          <p className="text-sm text-muted-foreground">管理首页轮播图</p>
+          <h1 className="text-xl font-bold text-foreground"><Tx>Banner 管理</Tx></h1>
+          <p className="text-sm text-muted-foreground"><Tx>管理首页轮播图</Tx></p>
         </div>
         <PermissionGate permission="banner.manage">
           <button
@@ -136,18 +139,18 @@ export default function AdminBanners() {
             }}
             className="flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-primary-foreground"
           >
-            <Plus size={16} /> 添加 Banner
-          </button>
+            <Plus size={16} /><Tx> 添加 Banner
+          </Tx></button>
         </PermissionGate>
       </div>
 
       <div className="rounded-xl border border-gold/25 bg-gold/[0.06] px-4 py-3 text-sm dark:bg-gold/10">
-        <p className="font-semibold text-foreground">轮播图上传规范</p>
+        <p className="font-semibold text-foreground"><Tx>轮播图上传规范</Tx></p>
         <ul className="mt-2 list-disc space-y-1.5 pl-5 text-[13px] leading-relaxed text-muted-foreground">
-          <li>比例建议固定为 2.34:1。</li>
-          <li>推荐尺寸：1170×500、1500×640、2340×1000。</li>
-          <li>支持 JPG/PNG/WebP/GIF，单张不超过 15MB。</li>
-          <li>Banner 由服务器单次处理：最长边 2560，WebP quality 92（无浏览器二次压缩）。</li>
+          <li><Tx>比例建议固定为 2.34:1。</Tx></li>
+          <li><Tx>推荐尺寸：1170×500、1500×640、2340×1000。</Tx></li>
+          <li><Tx>支持 JPG/PNG/WebP/GIF，单张不超过 15MB。</Tx></li>
+          <li><Tx>Banner 由服务器单次处理：最长边 2560，WebP quality 92（无浏览器二次压缩）。</Tx></li>
         </ul>
       </div>
 
@@ -191,10 +194,25 @@ export default function AdminBanners() {
                 <button onClick={() => openEdit(b)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-gold" title="编辑">
                   <Pencil size={16} />
                 </button>
-                <button onClick={() => toggleBanner(b.id)} className={`rounded-lg p-2 transition-colors ${b.enabled ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" : "text-muted-foreground hover:bg-secondary"}`}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    confirm({
+                      title: b.enabled ? "确认隐藏" : "确认显示",
+                      description: `确定${b.enabled ? "隐藏" : "显示"} Banner「${b.title || b.id}」？`,
+                      confirmText: b.enabled ? "隐藏" : "显示",
+                      onConfirm: () => toggleBanner(b.id),
+                    })
+                  }
+                  className={`rounded-lg p-2 transition-colors ${b.enabled ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" : "text-muted-foreground hover:bg-secondary"}`}
+                >
                   {b.enabled ? <Eye size={16} /> : <EyeOff size={16} />}
                 </button>
-                <button onClick={() => handleDelete(b.id)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-destructive">
+                <button
+                  type="button"
+                  onClick={() => adminConfirmDelete(confirm, b.title || b.id, () => handleDelete(b.id))}
+                  className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-destructive"
+                >
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -213,7 +231,7 @@ export default function AdminBanners() {
               ) : (
                 <>
                   <Image size={32} className="text-muted-foreground" />
-                  <p className="mt-2 text-xs font-medium text-foreground">点击上传轮播图</p>
+                  <p className="mt-2 text-xs font-medium text-foreground"><Tx>点击上传轮播图</Tx></p>
                 </>
               )}
               <input
@@ -241,7 +259,7 @@ export default function AdminBanners() {
                 variant="gold"
                 state={saving ? "loading" : "normal"}
                 loadingText="保存中..."
-                onClick={() => void handleSave()}
+                onClick={() => adminConfirmSave(confirm, editingId ? "Banner 修改" : "新 Banner", () => handleSave())}
                 className="w-full rounded-xl py-3 text-sm font-bold"
               >
                 {editingId ? "保存修改" : "确认添加"}

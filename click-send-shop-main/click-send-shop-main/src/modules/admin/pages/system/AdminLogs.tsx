@@ -8,6 +8,7 @@ import { fetchAuditLogs } from "@/services/admin/logService";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import type { AuditLogRow } from "@/services/admin/logService";
 import { buildAuditChangeSummary, zhActionType, zhObjectType } from "@/utils/auditLogI18n";
+import { Tx } from "@/components/admin/AdminText";
 
 export default function AdminLogs() {
   const can = useAdminPermissionStore((s) => s.can);
@@ -71,8 +72,8 @@ export default function AdminLogs() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-xl font-bold text-foreground">审计日志</h1>
-          <p className="text-sm text-muted-foreground">你无权查看审计日志。</p>
+          <h1 className="text-xl font-bold text-foreground"><Tx>审计日志</Tx></h1>
+          <p className="text-sm text-muted-foreground"><Tx>你无权查看审计日志。</Tx></p>
         </div>
       </div>
     );
@@ -81,20 +82,20 @@ export default function AdminLogs() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-foreground">审计日志</h1>
+        <h1 className="text-xl font-bold text-foreground"><Tx>审计日志</Tx></h1>
         <p className="text-sm text-muted-foreground flex items-center gap-2">
-          <Shield size={16} className="shrink-0 text-[var(--theme-price)]" />
+          <Shield size={16} className="shrink-0 text-[var(--theme-price)]" /><Tx>
           管理端操作审计（含失败记录与前后快照）
-        </p>
+        </Tx></p>
       </div>
 
       <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
         <div className="min-w-0 flex-1">
-          <label className="mb-1 block text-xs text-muted-foreground">关键词</label>
+          <label className="mb-1 block text-xs text-muted-foreground"><Tx>关键词</Tx></label>
           <div className="flex items-center gap-1.5 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
             <Search size={14} className="text-muted-foreground shrink-0" />
             <input
-              placeholder="摘要 / 操作人 / 动作 / 对象 ID / 错误信息"
+              placeholder="摘要 / 操作人 / 动作 / 对象编号 / 错误信息"
               value={auditKeyword}
               onChange={(e) => setAuditKeyword(e.target.value)}
               className="min-w-0 flex-1 bg-transparent text-sm outline-none"
@@ -102,21 +103,21 @@ export default function AdminLogs() {
           </div>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-muted-foreground">结果</label>
+          <label className="mb-1 block text-xs text-muted-foreground"><Tx>结果</Tx></label>
           <select
             value={auditResult}
             onChange={(e) => setAuditResult(e.target.value as "" | "success" | "failure")}
             className="w-full min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
           >
-            <option value="">全部</option>
-            <option value="success">成功</option>
-            <option value="failure">失败</option>
+            <option value=""><Tx>全部</Tx></option>
+            <option value="success"><Tx>成功</Tx></option>
+            <option value="failure"><Tx>失败</Tx></option>
           </select>
         </div>
         <div>
-          <label htmlFor="audit-date-from" className="mb-1 block text-xs text-muted-foreground">
+          <label htmlFor="audit-date-from" className="mb-1 block text-xs text-muted-foreground"><Tx>
             开始日期
-          </label>
+          </Tx></label>
           <SegmentedDateInput
             id="audit-date-from"
             value={dateFrom}
@@ -125,9 +126,9 @@ export default function AdminLogs() {
           />
         </div>
         <div>
-          <label htmlFor="audit-date-to" className="mb-1 block text-xs text-muted-foreground">
+          <label htmlFor="audit-date-to" className="mb-1 block text-xs text-muted-foreground"><Tx>
             结束日期
-          </label>
+          </Tx></label>
           <SegmentedDateInput
             id="audit-date-to"
             value={dateTo}
@@ -140,9 +141,9 @@ export default function AdminLogs() {
           onClick={handleAuditSearch}
           className="min-h-[44px] theme-rounded px-5 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]"
           style={{ background: "var(--theme-gradient)" }}
-        >
+        ><Tx>
           查询
-        </button>
+        </Tx></button>
       </div>
 
       <div className="space-y-3 md:hidden">
@@ -167,15 +168,17 @@ export default function AdminLogs() {
             <p className="mt-2 text-sm font-medium text-foreground">{row.operator_name || "—"}</p>
             <p className="text-xs text-muted-foreground">{row.operator_role || ""}</p>
             <p className="mt-2 text-xs font-semibold text-foreground">{zhActionType(row.action_type)}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{zhObjectType(row.object_type)}{row.object_id ? ` · ${row.object_id}` : ""}</p>
+            <p className="mt-1 text-xs text-muted-foreground" title={row.object_id || undefined}>
+              {zhObjectType(row.object_type)}{row.object_id ? " · 已关联对象" : ""}
+            </p>
             <p className="mt-2 line-clamp-3 text-xs text-foreground">{row.summary}</p>
-            <button type="button" onClick={() => setDetail(row)} className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1 theme-rounded border border-[var(--theme-border)] py-2 text-sm text-[var(--theme-price)]">
-              详情 <ChevronRight size={16} />
+            <button type="button" onClick={() => setDetail(row)} className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1 theme-rounded border border-[var(--theme-border)] py-2 text-sm text-[var(--theme-price)]"><Tx>
+              详情 </Tx><ChevronRight size={16} />
             </button>
           </div>
         ))}
         {!auditLoading && auditList.length === 0 && (
-          <div className="py-12 text-center text-sm text-muted-foreground">暂无审计记录</div>
+          <div className="py-12 text-center text-sm text-muted-foreground"><Tx>暂无审计记录</Tx></div>
         )}
         <Pagination
           total={auditTotal}
@@ -198,12 +201,12 @@ export default function AdminLogs() {
           theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
           thead={(
             <tr>
-              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground whitespace-nowrap">时间</th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground">操作人</th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground">动作</th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground">对象</th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground">摘要</th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground">结果</th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground whitespace-nowrap"><Tx>时间</Tx></th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground"><Tx>操作人</Tx></th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground"><Tx>动作</Tx></th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground"><Tx>对象</Tx></th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground"><Tx>摘要</Tx></th>
+              <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground"><Tx>结果</Tx></th>
               <th className="px-3 py-3 w-10" />
             </tr>
           )}
@@ -230,7 +233,9 @@ export default function AdminLogs() {
               <td className="px-3 py-2 text-xs font-semibold text-foreground">{zhActionType(row.action_type)}</td>
               <td className="px-3 py-2 text-xs">
                 <span className="text-muted-foreground">{zhObjectType(row.object_type)}</span>
-                {row.object_id && <div className="font-mono text-[10px] truncate max-w-[120px]">{row.object_id}</div>}
+                {row.object_id ? (
+                  <div className="text-[10px] text-muted-foreground" title={row.object_id}><Tx>已关联</Tx></div>
+                ) : null}
               </td>
               <td className="px-3 py-2 text-xs text-foreground max-w-[200px] truncate">{row.summary}</td>
               <td className="px-3 py-2">
@@ -254,13 +259,13 @@ export default function AdminLogs() {
             onClick={(e) => e.stopPropagation()}
             className="max-h-[85vh] w-full max-w-lg overflow-y-auto theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow"
           >
-            <h3 className="text-sm font-bold text-foreground mb-3">审计详情</h3>
+            <h3 className="text-sm font-bold text-foreground mb-3"><Tx>审计详情</Tx></h3>
             <dl className="space-y-2 text-xs">
-              <div className="flex justify-between gap-2"><dt className="text-muted-foreground">动作</dt><dd className="text-right font-semibold">{zhActionType(detail.action_type)}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-muted-foreground">对象</dt><dd className="text-right">{zhObjectType(detail.object_type)}{detail.object_id ? ` · ${detail.object_id}` : ""}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-muted-foreground">路径</dt><dd className="text-right break-all">{detail.request_method} {detail.request_path}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-muted-foreground">IP</dt><dd>{detail.ip || "—"}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-muted-foreground">UA</dt><dd className="text-right break-all max-w-[70%]">{detail.user_agent || "—"}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-muted-foreground"><Tx>动作</Tx></dt><dd className="text-right font-semibold">{zhActionType(detail.action_type)}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-muted-foreground"><Tx>对象</Tx></dt><dd className="text-right" title={detail.object_id || undefined}>{zhObjectType(detail.object_type)}{detail.object_id ? " · 已关联" : ""}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-muted-foreground"><Tx>路径</Tx></dt><dd className="text-right break-all">{detail.request_method} {detail.request_path}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-muted-foreground"><Tx>IP 地址</Tx></dt><dd>{detail.ip || "—"}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-muted-foreground"><Tx>浏览器标识</Tx></dt><dd className="text-right break-all max-w-[70%]">{detail.user_agent || "—"}</dd></div>
               {detail.result === "failure" && detail.error_message && (
                 <div className="rounded-lg bg-destructive/10 p-2 text-destructive">{detail.error_message}</div>
               )}
@@ -269,7 +274,7 @@ export default function AdminLogs() {
                 if (!changes.length) return null;
                 return (
                   <div className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)]/40 p-2">
-                    <dt className="text-muted-foreground mb-1">变更摘要</dt>
+                    <dt className="text-muted-foreground mb-1"><Tx>变更摘要</Tx></dt>
                     <div className="space-y-1 text-[11px]">
                       {changes.map((c) => (
                         <div key={c.key} className="flex flex-wrap items-baseline justify-between gap-2">
@@ -284,15 +289,15 @@ export default function AdminLogs() {
                 );
               })()}
               <div>
-                <dt className="text-muted-foreground mb-1">变更前</dt>
+                <dt className="text-muted-foreground mb-1"><Tx>变更前</Tx></dt>
                 <pre className="max-h-40 overflow-auto rounded-lg bg-secondary p-2 text-[10px]">{detail.before_json != null ? JSON.stringify(detail.before_json, null, 2) : "—"}</pre>
               </div>
               <div>
-                <dt className="text-muted-foreground mb-1">变更后</dt>
+                <dt className="text-muted-foreground mb-1"><Tx>变更后</Tx></dt>
                 <pre className="max-h-40 overflow-auto rounded-lg bg-secondary p-2 text-[10px]">{detail.after_json != null ? JSON.stringify(detail.after_json, null, 2) : "—"}</pre>
               </div>
             </dl>
-            <button type="button" onClick={() => setDetail(null)} className="mt-4 w-full theme-rounded border border-[var(--theme-border)] py-2 text-sm">关闭</button>
+            <button type="button" onClick={() => setDetail(null)} className="mt-4 w-full theme-rounded border border-[var(--theme-border)] py-2 text-sm"><Tx>关闭</Tx></button>
           </div>
         </div>
       )}

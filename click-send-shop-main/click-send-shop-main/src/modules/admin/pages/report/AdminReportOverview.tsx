@@ -3,7 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import ReportFilterBar from "@/components/admin/report/ReportFilterBar";
 import { fetchReportOverview } from "@/services/admin/reportService";
 import { toast } from "sonner";
-import { toastErrorMessage } from "@/utils/errorMessage";
+impimport { Tx } from "@/components/admin/AdminText";
+ort { toastErrorMessage } from "@/utils/errorMessage";
 
 export default function AdminReportOverview() {
   const [searchParams] = useSearchParams();
@@ -33,7 +34,7 @@ export default function AdminReportOverview() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-foreground">经营总览</h1>
+      <h1 className="text-xl font-bold text-foreground"><Tx>经营总览</Tx></h1>
       <ReportFilterBar />
       {loading ? (
         <>
@@ -68,11 +69,11 @@ export default function AdminReportOverview() {
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
-              <p className="mb-2 text-sm font-semibold">热销商品 TOP 10</p>
+              <p className="mb-2 text-sm font-semibold"><Tx>热销商品 TOP 10</Tx></p>
               <div className="space-y-1 text-xs">{topHot.map((r: Record<string, unknown>, i: number) => <div key={i}>{i + 1}. {String(r.product_name || "-")} / {String(r.sales_qty || 0)}</div>)}</div>
             </div>
             <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
-              <p className="mb-2 text-sm font-semibold">滞销商品 TOP 10</p>
+              <p className="mb-2 text-sm font-semibold"><Tx>滞销商品 TOP 10</Tx></p>
               <div className="space-y-1 text-xs">{topSlow.map((r: Record<string, unknown>, i: number) => <div key={i}>{i + 1}. {String(r.product_name || "-")} / {String(r.sales_qty || 0)}</div>)}</div>
             </div>
           </div>

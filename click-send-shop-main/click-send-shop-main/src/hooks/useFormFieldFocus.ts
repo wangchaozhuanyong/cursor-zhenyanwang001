@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 
 function isFormField(el: Element | null): boolean {
-  return (
-    el instanceof HTMLInputElement
-    || el instanceof HTMLTextAreaElement
-    || el instanceof HTMLSelectElement
-  );
+  if (el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) return true;
+  if (!(el instanceof HTMLInputElement)) return false;
+  const type = (el.type || "text").toLowerCase();
+  return !["checkbox", "radio", "button", "submit", "reset", "file", "hidden", "image"].includes(type);
 }
 
 /** 页面内是否有表单控件获得焦点（用于键盘弹起时暂停轮播、收起占位区等） */

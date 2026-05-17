@@ -86,8 +86,15 @@ function replaceViteClientPlaceholders(): Plugin {
   };
 }
 
+const thirdPartyLoginEnabled = process.env.VITE_THIRD_PARTY_LOGIN_ENABLED === "true";
+
 // https://vitejs.dev/config/
 export default defineConfig(() => ({
+  define: {
+    "import.meta.env.VITE_THIRD_PARTY_LOGIN_ENABLED": JSON.stringify(
+      thirdPartyLoginEnabled ? "true" : "false",
+    ),
+  },
   server: {
     host: "::",
     port: 8080,

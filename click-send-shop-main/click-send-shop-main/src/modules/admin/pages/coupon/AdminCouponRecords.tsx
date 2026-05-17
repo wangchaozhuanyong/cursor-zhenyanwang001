@@ -7,6 +7,8 @@ import { usePagination } from "@/hooks/usePagination";
 import { toast } from "sonner";
 import { fetchCouponRecords } from "@/services/admin/couponService";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import { formatUserDisplay, labelimport { Tx } from "@/components/admin/AdminText";
+CouponRecordStatus } from "@/utils/adminDisplayLabels";
 
 const statusLabels: Record<string, { label: string; color: string }> = {
   available: { label: "未使用", color: "bg-gold/10 text-gold" },
@@ -49,15 +51,15 @@ export default function AdminCouponRecords() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3"><h2 className="text-lg font-semibold text-foreground">领券记录</h2></div>
+      <div className="flex items-center gap-3"><h2 className="text-lg font-semibold text-foreground"><Tx>领券记录</Tx></h2></div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="min-w-0 flex-1"><SearchBar placeholder="搜索用户/优惠券..." value={search} onChange={(v) => { setSearch(v); setPage(1); }} /></div>
         <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="min-h-[44px] w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground outline-none sm:w-auto">
-          <option value="">全部状态</option>
-          <option value="available">未使用</option>
-          <option value="used">已使用</option>
-          <option value="expired">已过期</option>
+          <option value=""><Tx>全部状态</Tx></option>
+          <option value="available"><Tx>未使用</Tx></option>
+          <option value="used"><Tx>已使用</Tx></option>
+          <option value="expired"><Tx>已过期</Tx></option>
         </select>
       </div>
 
@@ -74,22 +76,21 @@ export default function AdminCouponRecords() {
           ))
           : null}
         {!loading && paginatedData.map((r) => {
-          const st = statusLabels[r.status] ?? { label: r.status, color: "" };
+          const st = statusLabels[r.status] ?? { label: labelCouponRecordStatus(r.status), color: "" };
           return (
             <div key={r.id} className="rounded-xl border border-border bg-card p-4">
               <div className="flex items-start justify-between gap-2">
-                <p className="font-medium text-foreground">{r.coupon_title || r.coupon_id?.slice(0, 12) || "—"}</p>
+                <p className="font-medium text-foreground">{r.coupon_title || "未命名优惠券"}</p>
                 <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${st.color}`}>{st.label}</span>
               </div>
-              <p className="mt-2 text-sm text-foreground">{r.nickname || r.user_id?.slice(0, 12) || "—"}</p>
-              <p className="mt-1 text-xs text-muted-foreground">手机号：{formatPhone(r.phone)}</p>
+              <p className="mt-2 text-sm text-foreground">{formatUserDisplay(r.nickname, r.phone)}</p>
               <p className="mt-2 text-[11px] text-muted-foreground">领取 {r.claimed_at ? new Date(r.claimed_at).toLocaleString("zh-CN") : "—"}</p>
               <p className="mt-1 text-[11px] text-muted-foreground">使用 {r.used_at ? new Date(r.used_at).toLocaleString("zh-CN") : "—"}</p>
             </div>
           );
         })}
         {!loading && paginatedData.length === 0 && (
-          <div className="py-12 text-center text-sm text-muted-foreground">无匹配记录</div>
+          <div className="py-12 text-center text-sm text-muted-foreground"><Tx>无匹配记录</Tx></div>
         )}
         <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
       </div>
@@ -115,12 +116,12 @@ export default function AdminCouponRecords() {
           emptyIcon={ClipboardList}
           emptyTitle="无匹配记录"
           renderRow={(r) => {
-            const st = statusLabels[r.status] ?? { label: r.status, color: "" };
+            const st = statusLabels[r.status] ?? { label: labelCouponRecordStatus(r.status), color: "" };
             return (
               <>
-                <td className="px-4 py-3 text-foreground">{r.nickname || r.user_id?.slice(0, 12) || "—"}</td>
+                <td className="px-4 py-3 text-foreground">{formatUserDisplay(r.nickname, r.phone)}</td>
                 <td className="px-4 py-3 text-foreground">{formatPhone(r.phone)}</td>
-                <td className="px-4 py-3 text-foreground">{r.coupon_title || r.coupon_id?.slice(0, 12) || "—"}</td>
+                <td className="px-4 py-3 text-foreground">{r.coupon_title || "未命名优惠券"}</td>
                 <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{r.claimed_at ? new Date(r.claimed_at).toLocaleString("zh-CN") : "—"}</td>
                 <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${st.color}`}>{st.label}</span></td>
                 <td className="px-4 py-3 text-xs text-muted-foreground">{r.used_at ? new Date(r.used_at).toLocaleString("zh-CN") : "—"}</td>

@@ -5,7 +5,9 @@ import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as shippingService from "@/services/admin/shippingService";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { Tx } from "@/components/admin/AdminText";
 import { LoadingButton } from "@/modules/micro-interactions";
+import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 
 interface Template {
   id: number;
@@ -18,6 +20,7 @@ interface Template {
 }
 
 export default function AdminShipping() {
+  const { confirm } = useAdminConfirm();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [editing, setEditing] = useState<Template | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -93,13 +96,13 @@ export default function AdminShipping() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-foreground">运费规则设置</h1>
-          <p className="text-sm text-muted-foreground">配置配送区域和运费模板</p>
+          <h1 className="text-xl font-bold text-foreground"><Tx>运费规则设置</Tx></h1>
+          <p className="text-sm text-muted-foreground"><Tx>配置配送区域和运费模板</Tx></p>
         </div>
         <PermissionGate permission="shipping.manage">
           <button onClick={() => { setEditing(null); setForm({ name: "", regions: "", baseFee: 0, freeAbove: 0, extraPerKg: 0 }); setShowForm(true); }} className="flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-primary-foreground">
-            <Plus size={16} /> 新建模板
-          </button>
+            <Plus size={16} /><Tx> 新建模板
+          </Tx></button>
         </PermissionGate>
       </div>
 
@@ -133,27 +136,42 @@ export default function AdminShipping() {
             </div>
             <div className="mt-3 grid grid-cols-3 gap-2 text-center">
               <div className="rounded-xl bg-secondary p-2">
-                <p className="text-xs text-muted-foreground">基础运费</p>
+                <p className="text-xs text-muted-foreground"><Tx>基础运费</Tx></p>
                 <p className="font-bold text-foreground">RM {t.baseFee}</p>
               </div>
               <div className="rounded-xl bg-secondary p-2">
-                <p className="text-xs text-muted-foreground">包邮门槛</p>
+                <p className="text-xs text-muted-foreground"><Tx>包邮门槛</Tx></p>
                 <p className="font-bold text-foreground">RM {t.freeAbove}</p>
               </div>
               <div className="rounded-xl bg-secondary p-2">
-                <p className="text-xs text-muted-foreground">续重/kg</p>
+                <p className="text-xs text-muted-foreground"><Tx>续重/kg</Tx></p>
                 <p className="font-bold text-foreground">RM {t.extraPerKg}</p>
               </div>
             </div>
             <PermissionGate permission="shipping.manage">
               <div className="mt-4 flex gap-2">
                 <button onClick={() => openEdit(t)} className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border py-2 text-xs font-medium text-muted-foreground hover:bg-secondary">
-                  <Edit2 size={12} /> 编辑
-                </button>
-                <button onClick={() => handleDelete(t.id)} className="flex items-center justify-center rounded-xl border border-border px-3 py-2 text-muted-foreground hover:text-destructive hover:bg-secondary">
+                  <Edit2 size={12} /><Tx> 编辑
+                </Tx></button>
+                <button
+                  type="button"
+                  onClick={() => adminConfirmDelete(confirm, t.name, () => handleDelete(t.id))}
+                  className="flex items-center justify-center rounded-xl border border-border px-3 py-2 text-muted-foreground hover:text-destructive hover:bg-secondary"
+                >
                   <Trash2 size={12} />
                 </button>
-                <button onClick={() => handleToggle(t.id)} className="flex-1 rounded-xl border border-border py-2 text-xs font-medium text-muted-foreground hover:bg-secondary">
+                <button
+                  type="button"
+                  onClick={() =>
+                    confirm({
+                      title: t.enabled ? "确认停用" : "确认启用",
+                      description: `确定${t.enabled ? "停用" : "启用"}运费模板「${t.name}」？`,
+                      confirmText: t.enabled ? "停用" : "启用",
+                      onConfirm: () => handleToggle(t.id),
+                    })
+                  }
+                  className="flex-1 rounded-xl border border-border py-2 text-xs font-medium text-muted-foreground hover:bg-secondary"
+                >
                   {t.enabled ? "停用" : "启用"}
                 </button>
               </div>
@@ -161,7 +179,7 @@ export default function AdminShipping() {
           </div>
         ))}
         {templates.length === 0 && (
-          <div className="col-span-2 py-12 text-center text-sm text-muted-foreground">暂无运费模板，点击上方按钮创建</div>
+          <div className="col-span-2 py-12 text-center text-sm text-muted-foreground"><Tx>暂无运费模板，点击上方按钮创建</Tx></div>
         )}
       </div>
 
@@ -170,14 +188,23 @@ export default function AdminShipping() {
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl space-y-4">
             <h3 className="font-bold text-foreground">{editing ? "编辑运费模板" : "新建运费模板"}</h3>
             <input placeholder="模板名称" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-            <input placeholder="适用区域（如：Selangor, KL）" value={form.regions} onChange={(e) => setForm({ ...form, regions: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+            <input placeholder="适用区域（如：雪兰莪、吉隆坡）" value={form.regions} onChange={(e) => setForm({ ...form, regions: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
             <div className="grid grid-cols-3 gap-3">
-              <label className="block"><span className="text-xs text-muted-foreground">基础运费</span><input type="number" value={form.baseFee} onChange={(e) => setForm({ ...form, baseFee: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>
-              <label className="block"><span className="text-xs text-muted-foreground">包邮门槛</span><input type="number" value={form.freeAbove} onChange={(e) => setForm({ ...form, freeAbove: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>
-              <label className="block"><span className="text-xs text-muted-foreground">续重/kg</span><input type="number" value={form.extraPerKg} onChange={(e) => setForm({ ...form, extraPerKg: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>
+              <label className="block"><span className="text-xs text-muted-foreground"><Tx>基础运费</Tx></span><input type="number" value={form.baseFee} onChange={(e) => setForm({ ...form, baseFee: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>
+              <label className="block"><span className="text-xs text-muted-foreground"><Tx>包邮门槛</Tx></span><input type="number" value={form.freeAbove} onChange={(e) => setForm({ ...form, freeAbove: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>
+              <label className="block"><span className="text-xs text-muted-foreground"><Tx>续重/kg</Tx></span><input type="number" value={form.extraPerKg} onChange={(e) => setForm({ ...form, extraPerKg: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>
             </div>
             <PermissionGate permission="shipping.manage">
-              <LoadingButton type="button" variant="gold" state={saving ? "loading" : "normal"} loadingText="保存中..." onClick={() => void handleSave()} className="w-full rounded-xl py-3 text-sm font-bold">保存</LoadingButton>
+              <LoadingButton
+                type="button"
+                variant="gold"
+                state={saving ? "loading" : "normal"}
+                loadingText="保存中..."
+                onClick={() => adminConfirmSave(confirm, editing ? "运费模板修改" : "新运费模板", () => handleSave())}
+                className="w-full rounded-xl py-3 text-sm font-bold"
+              >
+                <Tx>保存</Tx>
+              </LoadingButton>
             </PermissionGate>
           </div>
         </div>

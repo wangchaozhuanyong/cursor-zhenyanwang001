@@ -9,7 +9,9 @@ import { fetchReferralRules, updateReferralRule } from "@/services/admin/inviteS
 import type { RewardRecord, RewardStats, RewardStatus } from "@/types/reward";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
+import { formatUserDisplay, labelRewardStatus } from "@/utils/adminDisplayLabels";
+import { AnimatedTablimport { Tx } from "@/components/admin/AdminText";
+e, LoadingButton } from "@/modules/micro-interactions";
 
 const statusOptions: Array<{ value: "" | RewardStatus; label: string }> = [
   { value: "", label: "全部状态" },
@@ -120,14 +122,14 @@ export default function AdminRewardRecords() {
     { label: "累计入账", value: `RM ${money(stats.settledAmount)}`, icon: TrendingUp, className: "text-[var(--theme-price)]" },
     { label: "累计冲正", value: `RM ${money(stats.reversedAmount)}`, icon: TrendingDown, className: "text-destructive" },
     { label: "返现记录", value: String(stats.totalRecords || 0), icon: RotateCcw, className: "text-[var(--theme-price)]" },
-    { label: "获奖用户", value: String(stats.rewardedUsers || 0), icon: Users, className: "text-[var(--theme-secondary)]" },
+    { label: "获奖用户", value: String(stats.rewardedUsers || 0), icon: Users, className: "text-[var(--theme-primary)]" },
   ];
 
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-foreground">返现记录</h1>
-        <p className="text-sm text-muted-foreground">查看邀请返现入账、冲正和结算状态，用于查账和争议处理</p>
+        <h1 className="text-xl font-bold text-foreground"><Tx>返现记录</Tx></h1>
+        <p className="text-sm text-muted-foreground"><Tx>查看邀请返现入账、冲正和结算状态，用于查账和争议处理</Tx></p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -144,8 +146,8 @@ export default function AdminRewardRecords() {
 
       <section className="rounded-xl border border-[var(--theme-border)] bg-theme-surface p-4 theme-shadow">
         <div className="mb-3">
-          <h2 className="text-sm font-semibold text-[var(--theme-text-on-surface)]">返现规则</h2>
-          <p className="text-xs text-theme-muted">返现规则与返现记录同页维护，修改后点击保存。</p>
+          <h2 className="text-sm font-semibold text-[var(--theme-text-on-surface)]"><Tx>返现规则</Tx></h2>
+          <p className="text-xs text-theme-muted"><Tx>返现规则与返现记录同页维护，修改后点击保存。</Tx></p>
         </div>
         {rulesLoading ? (
           <div className="space-y-3">
@@ -160,7 +162,7 @@ export default function AdminRewardRecords() {
             ))}
           </div>
         ) : rules.length === 0 ? (
-          <div className="py-8 text-center text-sm text-theme-muted">暂无返现规则</div>
+          <div className="py-8 text-center text-sm text-theme-muted"><Tx>暂无返现规则</Tx></div>
         ) : (
           <div className="space-y-3">
             {rules.map((rule) => (
@@ -177,9 +179,9 @@ export default function AdminRewardRecords() {
                         className="accent-[var(--theme-price)]"
                         checked={rule.enabled}
                         onChange={(e) => updateRuleField(rule.id, "enabled", e.target.checked)}
-                      />
+                      /><Tx>
                       启用
-                    </label>
+                    </Tx></label>
                   </PermissionGate>
                   <PermissionGate permission="referral.manage">
                     <div className="flex items-center gap-1">
@@ -203,9 +205,9 @@ export default function AdminRewardRecords() {
                 loadingText="保存中..."
                 onClick={() => void saveRules()}
                 className="rounded-lg px-4 py-2 text-xs font-semibold"
-              >
+              ><Tx>
                 保存返现规则
-              </LoadingButton>
+              </Tx></LoadingButton>
             </PermissionGate>
           </div>
         )}
@@ -214,7 +216,7 @@ export default function AdminRewardRecords() {
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <div className="flex-1">
           <SearchBar
-            placeholder="搜索订单号 / 用户ID..."
+            placeholder="搜索订单号 / 昵称 / 手机号..."
             value={keyword}
             onChange={(v) => { setKeyword(v); setPage(1); }}
           />
@@ -250,12 +252,16 @@ export default function AdminRewardRecords() {
         emptyIcon={RotateCcw}
         emptyTitle="暂无返现记录"
         renderRow={(record) => {
-          const label = statusLabels[record.status] || { label: record.status, className: "bg-muted text-muted-foreground" };
+          const label = statusLabels[record.status] || {
+            label: labelRewardStatus(record.status),
+            className: "bg-muted text-muted-foreground",
+          };
           return (
             <>
-              <td className="px-4 py-3">
-                <p className="text-[var(--theme-text-on-surface)]">{record.user_nickname || record.user_phone || record.user_id}</p>
-                <p className="font-mono text-[10px] text-theme-muted">{record.user_id}</p>
+              <td className="px-4 py-3" title={record.user_id || undefined}>
+                <p className="text-[var(--theme-text-on-surface)]">
+                  {formatUserDisplay(record.user_nickname, record.user_phone)}
+                </p>
               </td>
               <td className="px-4 py-3 font-mono text-xs text-[var(--theme-text-on-surface)]">{record.order_no || "—"}</td>
               <td className="px-4 py-3 text-theme-muted">L{record.level || 1}</td>

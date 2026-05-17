@@ -9,7 +9,9 @@ import { fetchAdminPointsRecords, fetchPointsRules, updatePointsRule } from "@/s
 import type { PointsAction, PointsRecord, PointsStats } from "@/types/points";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
+import { formatUserDisplay, labelPointsAction } from "@/utils/adminDisplayLabels";
+import { AnimatedTablimport { Tx } from "@/components/admin/AdminText";
+e, LoadingButton } from "@/modules/micro-interactions";
 
 const actionOptions: Array<{ value: "" | PointsAction; label: string }> = [
   { value: "", label: "全部类型" },
@@ -131,21 +133,21 @@ export default function AdminPointsRecords() {
     { label: "累计增加", value: String(intValue(stats.totalEarned)), icon: TrendingUp, className: "text-[var(--theme-price)]" },
     { label: "累计扣减/回滚", value: String(intValue(stats.totalDeducted)), icon: TrendingDown, className: "text-destructive" },
     { label: "流水总数", value: String(intValue(stats.totalRecords)), icon: Star, className: "text-[var(--theme-price)]" },
-    { label: "涉及用户", value: String(intValue(stats.activeUsers)), icon: Users, className: "text-[var(--theme-secondary)]" },
+    { label: "涉及用户", value: String(intValue(stats.activeUsers)), icon: Users, className: "text-[var(--theme-primary)]" },
   ];
 
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-foreground">积分明细</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-xl font-bold text-foreground"><Tx>积分明细</Tx></h1>
+        <p className="text-sm text-muted-foreground"><Tx>
           查看积分发放、扣减、订单退款回滚和管理员调整流水。列表与统计均来自数据库实时查询，无内置演示数据。
-        </p>
+        </Tx></p>
         <p className="mt-1 text-xs text-muted-foreground">
           若需清空联调/演示环境产生的流水，请在备份后使用 server 目录{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-[11px]">WIPE_CONFIRM=YES_I_UNDERSTAND node scripts/wipe-business-data.js</code>
+          <code className="rounded bg-muted px-1 py-0.5 text-[11px]">WIPE_CONFIRM=YES_I_UNDERSTAND node scripts/wipe-business-data.js</code><Tx>
           （会一并清空订单等业务表）；生产环境请勿对单表随意 DELETE，以免积分余额与账本不一致。
-        </p>
+        </Tx></p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -162,8 +164,8 @@ export default function AdminPointsRecords() {
 
       <section className="rounded-xl border border-[var(--theme-border)] bg-theme-surface p-4 theme-shadow">
         <div className="mb-3">
-          <h2 className="text-sm font-semibold text-[var(--theme-text-on-surface)]">积分规则</h2>
-          <p className="text-xs text-theme-muted">规则与明细同页管理，修改后点击保存立即生效。</p>
+          <h2 className="text-sm font-semibold text-[var(--theme-text-on-surface)]"><Tx>积分规则</Tx></h2>
+          <p className="text-xs text-theme-muted"><Tx>规则与明细同页管理，修改后点击保存立即生效。</Tx></p>
         </div>
         {rulesLoading ? (
           <div className="space-y-3">
@@ -178,7 +180,7 @@ export default function AdminPointsRecords() {
             ))}
           </div>
         ) : rules.length === 0 ? (
-          <div className="py-8 text-center text-sm text-theme-muted">暂无积分规则</div>
+          <div className="py-8 text-center text-sm text-theme-muted"><Tx>暂无积分规则</Tx></div>
         ) : (
           <div className="space-y-3">
             {rules.map((rule) => (
@@ -195,9 +197,9 @@ export default function AdminPointsRecords() {
                         className="accent-[var(--theme-price)]"
                         checked={rule.enabled}
                         onChange={(e) => updateRuleField(rule.id, "enabled", e.target.checked)}
-                      />
+                      /><Tx>
                       启用
-                    </label>
+                    </Tx></label>
                   </PermissionGate>
                   <PermissionGate permission="points.manage">
                     <input
@@ -218,9 +220,9 @@ export default function AdminPointsRecords() {
                 loadingText="保存中..."
                 onClick={() => void saveRules()}
                 className="rounded-lg px-4 py-2 text-xs font-semibold"
-              >
+              ><Tx>
                 保存积分规则
-              </LoadingButton>
+              </Tx></LoadingButton>
             </PermissionGate>
           </div>
         )}
@@ -229,7 +231,7 @@ export default function AdminPointsRecords() {
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <div className="flex-1">
           <SearchBar
-            placeholder="搜索订单号 / 描述 / 用户ID..."
+            placeholder="搜索订单号 / 描述 / 昵称 / 手机号..."
             value={keyword}
             onChange={(v) => { setKeyword(v); setPage(1); }}
           />
@@ -268,11 +270,12 @@ export default function AdminPointsRecords() {
           const amount = intValue(record.amount);
           return (
             <>
-              <td className="px-4 py-3">
-                <p className="text-[var(--theme-text-on-surface)]">{record.user_nickname || record.user_phone || record.user_id}</p>
-                <p className="font-mono text-[10px] text-theme-muted">{record.user_id}</p>
+              <td className="px-4 py-3" title={record.user_id || undefined}>
+                <p className="text-[var(--theme-text-on-surface)]">
+                  {formatUserDisplay(record.user_nickname, record.user_phone)}
+                </p>
               </td>
-              <td className="px-4 py-3 text-theme-muted">{actionLabels[record.action] || record.action}</td>
+              <td className="px-4 py-3 text-theme-muted">{labelPointsAction(record.action)}</td>
               <td className="px-4 py-3 font-mono text-xs text-[var(--theme-text-on-surface)]">{record.order_no || "—"}</td>
               <td className={`px-4 py-3 font-semibold ${amount >= 0 ? "text-[var(--theme-price)]" : "text-destructive"}`}>
                 {amount > 0 ? "+" : ""}{amount}

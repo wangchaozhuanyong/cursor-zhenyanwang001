@@ -9,7 +9,8 @@ import { fetchContentPages, updateContentPage } from "@/services/admin/contentSe
 import { fetchSiteSettings, updateSiteSettings } from "@/services/admin/settingsService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import type { HelpCenterCategory, HelpCenterConfig, HelpCenterFaq } from "@/types/content";
-import { AdminContentPageSkeleton } from "@/components/admin/AdminLoadingSkeletons";
+import { AdminContentPageSkeimport { Tx } from "@/components/admin/AdminText";
+leton } from "@/components/admin/AdminLoadingSkeletons";
 
 interface ContentItem {
   id: string;
@@ -118,8 +119,8 @@ export default function AdminContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-foreground">内容管理</h1>
-        <p className="text-sm text-muted-foreground">政策页与帮助中心配置分开管理。</p>
+        <h1 className="text-xl font-bold text-foreground"><Tx>内容管理</Tx></h1>
+        <p className="text-sm text-muted-foreground"><Tx>政策页与帮助中心配置分开管理。</Tx></p>
       </div>
 
       {loading ? (
@@ -127,22 +128,22 @@ export default function AdminContent() {
       ) : (
       <>
       <div className="rounded-2xl border border-border bg-card p-4">
-        <div className="mb-3 flex items-center gap-2"><HelpCircle size={18} className="text-gold" /><h3 className="font-semibold">帮助中心管理</h3></div>
-        <p className="mb-3 text-xs text-muted-foreground">可视化维护 FAQ 分类、问题、答案、排序与启用状态，前台 Help 优先读取这里。</p>
+        <div className="mb-3 flex items-center gap-2"><HelpCircle size={18} className="text-gold" /><h3 className="font-semibold"><Tx>帮助中心管理</Tx></h3></div>
+        <p className="mb-3 text-xs text-muted-foreground"><Tx>可视化维护 FAQ 分类、问题、答案、排序与启用状态，前台 Help 优先读取这里。</Tx></p>
         <div className="space-y-4">
           <div className="grid gap-3 md:grid-cols-2">
-            <label className="text-xs text-muted-foreground">
+            <label className="text-xs text-muted-foreground"><Tx>
               工作时间
-              <input
+              </Tx><input
                 value={helpForm.workingHours}
                 onChange={(e) => setHelpForm((prev) => ({ ...prev, workingHours: e.target.value }))}
                 className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
                 placeholder="例如：每天 9:00 - 22:00"
               />
             </label>
-            <label className="text-xs text-muted-foreground">
+            <label className="text-xs text-muted-foreground"><Tx>
               客服联系方式说明
-              <input
+              </Tx><input
                 value={helpForm.contactNote || ""}
                 onChange={(e) => setHelpForm((prev) => ({ ...prev, contactNote: e.target.value }))}
                 className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
@@ -153,10 +154,10 @@ export default function AdminContent() {
 
           <div className="rounded-xl border border-border p-3">
             <div className="mb-2 flex items-center justify-between">
-              <h4 className="text-sm font-semibold">FAQ 分类</h4>
+              <h4 className="text-sm font-semibold"><Tx>FAQ 分类</Tx></h4>
               <div className="flex items-center gap-2">
-                <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => ({ ...x, enabled: true })) }))} className="rounded-lg border border-border px-2 py-1 text-xs">全部启用</button>
-                <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => ({ ...x, enabled: false })) }))} className="rounded-lg border border-border px-2 py-1 text-xs">全部禁用</button>
+                <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => ({ ...x, enabled: true })) }))} className="rounded-lg border border-border px-2 py-1 text-xs"><Tx>全部启用</Tx></button>
+                <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => ({ ...x, enabled: false })) }))} className="rounded-lg border border-border px-2 py-1 text-xs"><Tx>全部禁用</Tx></button>
                 <button
                   type="button"
                   onClick={() => setHelpForm((prev) => ({
@@ -165,8 +166,8 @@ export default function AdminContent() {
                   }))}
                   className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs"
                 >
-                  <Plus size={12} /> 新增分类
-                </button>
+                  <Plus size={12} /><Tx> 新增分类
+                </Tx></button>
               </div>
             </div>
             <div className="space-y-2">
@@ -176,20 +177,20 @@ export default function AdminContent() {
                   <input value={cat.name} onChange={(e) => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => x.id === cat.id ? { ...x, name: e.target.value } : x) }))} placeholder="分类名称" className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-gold" />
                   <button type="button" onClick={() => reorderCategories(cat.id, categories[Math.max(0, categories.findIndex((c) => c.id === cat.id) - 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowUp size={14} /></button>
                   <button type="button" onClick={() => reorderCategories(cat.id, categories[Math.min(categories.length - 1, categories.findIndex((c) => c.id === cat.id) + 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowDown size={14} /></button>
-                  <label className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1.5 text-xs"><input type="checkbox" checked={cat.enabled} onChange={(e) => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => x.id === cat.id ? { ...x, enabled: e.target.checked } : x) }))} />启用</label>
+                  <label className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1.5 text-xs"><input type="checkbox" checked={cat.enabled} onChange={(e) => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => x.id === cat.id ? { ...x, enabled: e.target.checked } : x) }))} /><Tx>启用</Tx></label>
                   <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, categories: prev.categories.filter((x) => x.id !== cat.id), faqs: prev.faqs.filter((f) => f.categoryId !== cat.id) }))} className="inline-flex items-center justify-center rounded-lg border border-border bg-card text-destructive"><Trash2 size={14} /></button>
                 </div>
               ))}
-              {categories.length === 0 ? <p className="text-xs text-muted-foreground">暂无分类，请先新增分类。</p> : null}
+              {categories.length === 0 ? <p className="text-xs text-muted-foreground"><Tx>暂无分类，请先新增分类。</Tx></p> : null}
             </div>
           </div>
 
           <div className="rounded-xl border border-border p-3">
             <div className="mb-2 flex items-center justify-between">
-              <h4 className="text-sm font-semibold">FAQ 列表</h4>
+              <h4 className="text-sm font-semibold"><Tx>FAQ 列表</Tx></h4>
               <div className="flex items-center gap-2">
-                <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => ({ ...x, enabled: true })) }))} className="rounded-lg border border-border px-2 py-1 text-xs">全部启用</button>
-                <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => ({ ...x, enabled: false })) }))} className="rounded-lg border border-border px-2 py-1 text-xs">全部禁用</button>
+                <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => ({ ...x, enabled: true })) }))} className="rounded-lg border border-border px-2 py-1 text-xs"><Tx>全部启用</Tx></button>
+                <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => ({ ...x, enabled: false })) }))} className="rounded-lg border border-border px-2 py-1 text-xs"><Tx>全部禁用</Tx></button>
                 <button
                   type="button"
                   onClick={() => setHelpForm((prev) => ({
@@ -198,8 +199,8 @@ export default function AdminContent() {
                   }))}
                   className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs"
                 >
-                  <Plus size={12} /> 新增问题
-                </button>
+                  <Plus size={12} /><Tx> 新增问题
+                </Tx></button>
               </div>
             </div>
             <div className="space-y-2">
@@ -208,27 +209,27 @@ export default function AdminContent() {
                   <div className={`grid gap-2 ${collapsedCategoryIds[faq.categoryId] ? "hidden" : "md:grid-cols-[1fr,100px,56px,56px,80px,56px]"}`}>
                     <input value={faq.question} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, question: e.target.value } : x) }))} placeholder="问题" className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-gold" />
                     <select value={faq.categoryId} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, categoryId: e.target.value } : x) }))} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-gold">
-                      <option value="">未分类</option>
+                      <option value=""><Tx>未分类</Tx></option>
                       {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name || "未命名分类"}</option>)}
                     </select>
                     <button type="button" onClick={() => reorderFaqs(faq.id, faqs[Math.max(0, faqs.findIndex((f) => f.id === faq.id) - 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowUp size={14} /></button>
                     <button type="button" onClick={() => reorderFaqs(faq.id, faqs[Math.min(faqs.length - 1, faqs.findIndex((f) => f.id === faq.id) + 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowDown size={14} /></button>
-                    <label className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1.5 text-xs"><input type="checkbox" checked={faq.enabled} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, enabled: e.target.checked } : x) }))} />启用</label>
+                    <label className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1.5 text-xs"><input type="checkbox" checked={faq.enabled} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, enabled: e.target.checked } : x) }))} /><Tx>启用</Tx></label>
                     <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.filter((x) => x.id !== faq.id) }))} className="inline-flex items-center justify-center rounded-lg border border-border bg-card text-destructive"><Trash2 size={14} /></button>
                   </div>
                   {!collapsedCategoryIds[faq.categoryId] ? <textarea value={faq.answer} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, answer: e.target.value } : x) }))} rows={3} placeholder="答案" className="w-full rounded-lg border border-border bg-card px-2 py-2 text-xs outline-none focus:border-gold" /> : null}
                 </div>
               ))}
-              {faqs.length === 0 ? <p className="text-xs text-muted-foreground">暂无问题，请新增 FAQ。</p> : null}
+              {faqs.length === 0 ? <p className="text-xs text-muted-foreground"><Tx>暂无问题，请新增 FAQ。</Tx></p> : null}
             </div>
           </div>
 
           <div className="rounded-xl border border-border p-3">
-            <div className="mb-2 text-xs font-semibold text-muted-foreground">JSON 预览 / 导入（可选）</div>
+            <div className="mb-2 text-xs font-semibold text-muted-foreground"><Tx>JSON 预览 / 导入（可选）</Tx></div>
             <textarea value={helpJson} onChange={(e) => setHelpJson(e.target.value)} rows={8} className="w-full rounded-xl border border-border bg-background px-3 py-3 font-mono text-xs outline-none focus:border-gold" />
             <div className="mt-2 flex gap-2">
-              <button type="button" onClick={() => setHelpJson(JSON.stringify(normalizeHelpConfig(helpForm), null, 2))} className="rounded-lg border border-border px-3 py-1.5 text-xs">从表单生成 JSON</button>
-              <button type="button" onClick={() => { try { const parsed = normalizeHelpConfig(JSON.parse(helpJson)); setHelpForm(parsed); toast.success("已从 JSON 导入到表单"); } catch (e) { toast.error(e instanceof Error ? e.message : "JSON 格式错误"); } }} className="rounded-lg border border-border px-3 py-1.5 text-xs">从 JSON 导入表单</button>
+              <button type="button" onClick={() => setHelpJson(JSON.stringify(normalizeHelpConfig(helpForm), null, 2))} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>从表单生成 JSON</Tx></button>
+              <button type="button" onClick={() => { try { const parsed = normalizeHelpConfig(JSON.parse(helpJson)); setHelpForm(parsed); toast.success("已从 JSON 导入到表单"); } catch (e) { toast.error(e instanceof Error ? e.message : "JSON 格式错误"); } }} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>从 JSON 导入表单</Tx></button>
             </div>
           </div>
         </div>
@@ -240,9 +241,9 @@ export default function AdminContent() {
             loadingText="保存中..."
             onClick={() => void handleSaveHelp()}
             className="mt-3 rounded-xl px-4 py-2 text-sm font-bold"
-          >
+          ><Tx>
             保存帮助中心配置
-          </LoadingButton>
+          </Tx></LoadingButton>
         </PermissionGate>
       </div>
 
@@ -253,7 +254,7 @@ export default function AdminContent() {
             <div className="flex-1 min-w-0">
               <h4 className="font-medium text-foreground text-sm">{item.title}</h4>
               <p className="text-xs text-muted-foreground mt-0.5 truncate">{item.content || "暂无内容"}</p>
-              <p className="text-[10px] text-muted-foreground mt-1">前台路径: <Link to={`/content/${item.slug}`} className="text-gold underline-offset-2 hover:underline" target="_blank" rel="noreferrer">/content/{item.slug}</Link></p>
+              <p className="text-[10px] text-muted-foreground mt-1"><Tx>前台路径: </Tx><Link to={`/content/${item.slug}`} className="text-gold underline-offset-2 hover:underline" target="_blank" rel="noreferrer">/content/{item.slug}</Link></p>
             </div>
             <PermissionGate permission="content.manage"><button onClick={() => openEdit(item)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"><Edit2 size={14} /></button></PermissionGate>
           </div>
@@ -276,9 +277,9 @@ export default function AdminContent() {
                 loadingText="保存中..."
                 onClick={() => void handleSave()}
                 className="w-full rounded-xl py-3 text-sm font-bold"
-              >
+              ><Tx>
                 保存
-              </LoadingButton>
+              </Tx></LoadingButton>
             </PermissionGate>
           </div>
         </div>

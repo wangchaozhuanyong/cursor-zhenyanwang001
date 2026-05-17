@@ -1,4 +1,4 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -11,7 +11,8 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import type { PointsRecord } from "@/types/points";
 import type { UserTag } from "@/types/user";
 import { productTagBadgeClass } from "@/utils/productTagBadge";
-import { AdminDetailGridSkeleton } from "@/components/admin/AdminLoadingSkeletons";
+import { AdminDetailGridSkeimport { Tx } from "@/components/admin/AdminText";
+leton } from "@/components/admin/AdminLoadingSkeletons";
 
 export default function AdminUserDetail() {
   const navigate = useNavigate();
@@ -115,15 +116,15 @@ export default function AdminUserDetail() {
         <button type="button" onClick={goBack}>
           <ArrowLeft size={20} className="text-foreground" />
         </button>
-        <h2 className="text-lg font-semibold text-foreground">用户详情</h2>
+        <h2 className="text-lg font-semibold text-foreground"><Tx>用户详情</Tx></h2>
       </div>
 
       {loading && <AdminDetailGridSkeleton />}
 
       {!loading && !user && (
         <div className="py-16 text-center text-muted-foreground">
-          <p>用户不存在</p>
-          <button type="button" onClick={goBack} className="mt-4 text-[var(--theme-price)] underline">返回</button>
+          <p><Tx>用户不存在</Tx></p>
+          <button type="button" onClick={goBack} className="mt-4 text-[var(--theme-price)] underline"><Tx>返回</Tx></button>
         </div>
       )}
 
@@ -131,7 +132,7 @@ export default function AdminUserDetail() {
       <>
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="theme-shadow rounded-xl border border-[var(--theme-border)] bg-theme-surface p-6 space-y-4">
-          <h3 className="text-sm font-semibold text-foreground">基本信息</h3>
+          <h3 className="text-sm font-semibold text-foreground"><Tx>基本信息</Tx></h3>
           <div className="flex items-center gap-4">
             {user.avatar ? (
               <img src={user.avatar} alt="" className="h-16 w-16 rounded-full object-cover" />
@@ -142,7 +143,7 @@ export default function AdminUserDetail() {
             )}
             <div>
               <p className="font-semibold text-foreground">{user.nickname || user.phone}</p>
-              <p className="text-xs text-muted-foreground">ID: {user.id?.slice(0, 12)}</p>
+              {user.phone ? <p className="text-xs text-muted-foreground">手机 {user.phone}</p> : null}
             </div>
           </div>
           {[
@@ -162,13 +163,13 @@ export default function AdminUserDetail() {
             </div>
           ))}
           <div className="border-t border-[var(--theme-border)] pt-4 space-y-3">
-            <h3 className="text-sm font-semibold text-foreground">账号绑定</h3>
+            <h3 className="text-sm font-semibold text-foreground"><Tx>账号绑定</Tx></h3>
             {[
               { label: "微信绑定状态", value: wechatAuth?.bound ? "已绑定" : "未绑定" },
               { label: "微信昵称", value: wechatAuth?.nickname || "—" },
-              { label: "AppID", value: wechatAuth?.appid || "—" },
-              { label: "OpenID", value: wechatAuth?.openid || "—" },
-              { label: "UnionID", value: wechatAuth?.unionid || "—" },
+              { label: "微信应用 ID", value: wechatAuth?.appid || "—" },
+              { label: "微信 OpenID", value: wechatAuth?.openid || "—" },
+              { label: "微信 UnionID", value: wechatAuth?.unionid || "—" },
               {
                 label: "绑定时间",
                 value: wechatAuth?.bound_at ? new Date(wechatAuth.bound_at).toLocaleString("zh-CN") : "—",
@@ -181,7 +182,7 @@ export default function AdminUserDetail() {
             ))}
             {wechatAuth?.avatar_url ? (
               <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">微信头像</span>
+                <span className="text-sm text-muted-foreground"><Tx>微信头像</Tx></span>
                 <img src={wechatAuth.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
               </div>
             ) : null}
@@ -197,13 +198,13 @@ export default function AdminUserDetail() {
                 </button>
               ) : null}
             </PermissionGate>
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
+            <p className="text-[11px] leading-relaxed text-muted-foreground"><Tx>
               若发现重复账号，请核对手机号与微信绑定记录后人工合并；系统暂未开放自动合并。
-            </p>
+            </Tx></p>
           </div>
           <div className="border-t border-[var(--theme-border)] pt-4">
             <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">用户标签</h3>
+              <h3 className="text-sm font-semibold text-foreground"><Tx>用户标签</Tx></h3>
               {tagSaving && <Loader2 className="h-4 w-4 animate-spin text-[var(--theme-price)]" />}
             </div>
             <div className="mb-3 flex flex-wrap gap-2">
@@ -211,11 +212,11 @@ export default function AdminUserDetail() {
                 <span key={tag.id} className={`rounded-full border px-2.5 py-1 text-xs font-medium ${productTagBadgeClass(tag.color)}`}>
                   {tag.name}
                 </span>
-              )) : <span className="text-xs text-muted-foreground">暂无标签</span>}
+              )) : <span className="text-xs text-muted-foreground"><Tx>暂无标签</Tx></span>}
             </div>
             <PermissionGate
               permission="user.update"
-              fallback={<p className="text-xs text-muted-foreground">你仅有查看权限，无法调整标签。</p>}
+              fallback={<p className="text-xs text-muted-foreground"><Tx>你仅有查看权限，无法调整标签。</Tx></p>}
             >
               <div className="flex flex-wrap gap-2">
                 {allTags.map((tag) => {
@@ -232,7 +233,7 @@ export default function AdminUserDetail() {
                     </button>
                   );
                 })}
-                {allTags.length === 0 && <span className="text-xs text-muted-foreground">请先在用户列表创建标签</span>}
+                {allTags.length === 0 && <span className="text-xs text-muted-foreground"><Tx>请先在用户列表创建标签</Tx></span>}
               </div>
             </PermissionGate>
           </div>
@@ -240,14 +241,14 @@ export default function AdminUserDetail() {
 
         <div className="space-y-4">
           <div className="theme-shadow rounded-xl border border-[var(--theme-border)] bg-theme-surface p-6 space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">积分管理</h3>
+            <h3 className="text-sm font-semibold text-foreground"><Tx>积分管理</Tx></h3>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">当前积分余额</span>
+              <span className="text-muted-foreground"><Tx>当前积分余额</Tx></span>
               <span className="text-lg font-bold text-[var(--theme-price)]">{user.points_balance ?? 0}</span>
             </div>
             <PermissionGate
               permission="user.points"
-              fallback={<p className="text-xs text-muted-foreground">你仅有查看权限，无法调整积分。</p>}
+              fallback={<p className="text-xs text-muted-foreground"><Tx>你仅有查看权限，无法调整积分。</Tx></p>}
             >
               <div className="space-y-2">
                 <input
@@ -263,31 +264,31 @@ export default function AdminUserDetail() {
                   placeholder="调整原因（可选）"
                   className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                 />
-                <button type="button" onClick={handleAdjustPoints} className="w-full rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)]">
+                <button type="button" onClick={handleAdjustPoints} className="w-full rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-price-foreground)]"><Tx>
                   确认调整
-                </button>
+                </Tx></button>
               </div>
             </PermissionGate>
           </div>
           <div className="theme-shadow rounded-xl border border-[var(--theme-border)] bg-theme-surface p-6 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">最近积分流水</h3>
+              <h3 className="text-sm font-semibold text-foreground"><Tx>最近积分流水</Tx></h3>
               <button
                 type="button"
                 onClick={() => navigate(`/admin/points/records?userId=${user.id}`)}
                 className="text-xs text-[var(--theme-price)] hover:underline"
-              >
+              ><Tx>
                 查看全部
-              </button>
+              </Tx></button>
             </div>
             {recordsLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-5 w-5 animate-spin text-[var(--theme-price)]" />
               </div>
             ) : pointsRecords.length === 0 ? (
-              <div className="rounded-lg bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))] p-4 text-center text-sm text-theme-muted">
+              <div className="rounded-lg bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))] p-4 text-center text-sm text-theme-muted"><Tx>
                 暂无积分流水
-              </div>
+              </Tx></div>
             ) : (
               <div className="space-y-2">
                 {pointsRecords.map((record) => {

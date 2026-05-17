@@ -9,8 +9,18 @@ import * as paymentAdmin from "@/services/admin/paymentAdminService";
 import type { PaymentReconciliationRow } from "@/types/adminPayment";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import {
+  labelChannelCode,
+  labelProvider,
+  labelReconciliationStatus,
+  PAYMENT_CHANNEL_FILTER_OPTIONS,
+  PAYMENT_PROVIDER_FILTER_OPTIONS,
+} from "@/utils/paymentAdminLabels";
 
 export default function AdminPaymentReconciliations() {
+  const { confirm } = useAdminConfirm();
   const [list, setList] = useState<PaymentReconciliationRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -64,17 +74,17 @@ export default function AdminPaymentReconciliations() {
     <PermissionGate permission="payment.manage">
       <div className="p-4 md:p-6">
         <div className="mb-2">
-          <h1 className="text-xl font-bold text-foreground">支付管理</h1>
-          <p className="text-sm text-muted-foreground">按日 / 渠道汇总实收与差异（手续费来自渠道 JSON 配置）</p>
+          <h1 className="text-xl font-bold text-foreground"><Tx>支付管理</Tx></h1>
+          <p className="text-sm text-muted-foreground"><Tx>按日 / 渠道汇总实收与差异（手续费来自渠道 JSON 配置）</Tx></p>
         </div>
         <PaymentAdminSubnav />
 
         <div className="theme-rounded mb-6 border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
-          <h2 className="mb-3 text-sm font-semibold text-foreground">新建对账草稿</h2>
+          <h2 className="mb-3 text-sm font-semibold text-foreground"><Tx>新建对账草稿</Tx></h2>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            <label className="text-xs text-muted-foreground">
+            <label className="text-xs text-muted-foreground"><Tx>
               对账日期
-              <div className="mt-1">
+              </Tx><div className="mt-1">
                 <SegmentedDateInput
                   value={reconcileDate}
                   onChange={setReconcileDate}
@@ -82,26 +92,37 @@ export default function AdminPaymentReconciliations() {
                 />
               </div>
             </label>
-            <label className="text-xs text-muted-foreground">
-              Provider
-              <input
+            <label className="text-xs text-muted-foreground"><Tx>
+              支付网关
+              </Tx><select
                 value={provider}
                 onChange={(e) => setProvider(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              />
+              >
+                {PAYMENT_PROVIDER_FILTER_OPTIONS.filter((o) => o.value).map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
             </label>
-            <label className="text-xs text-muted-foreground">
-              渠道 code（可选）
-              <input
+            <label className="text-xs text-muted-foreground"><Tx>
+              支付渠道（可选）
+              </Tx><select
                 value={channelCode}
                 onChange={(e) => setChannelCode(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                placeholder="stripe_checkout"
-              />
+              >
+                {PAYMENT_CHANNEL_FILTER_OPTIONS.map((o) => (
+                  <option key={o.value || "any"} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
             </label>
-            <label className="text-xs text-muted-foreground">
+            <label className="text-xs text-muted-foreground"><Tx>
               差异金额（可选）
-              <input
+              </Tx><input
                 value={diffAmount}
                 onChange={(e) => setDiffAmount(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
@@ -109,9 +130,9 @@ export default function AdminPaymentReconciliations() {
               />
             </label>
           </div>
-          <label className="mt-3 block text-xs text-muted-foreground">
+          <label className="mt-3 block text-xs text-muted-foreground"><Tx>
             备注
-            <input
+            </Tx><input
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
@@ -119,11 +140,18 @@ export default function AdminPaymentReconciliations() {
           </label>
           <button
             type="button"
-            onClick={() => void create()}
+            onClick={() =>
+              confirm({
+                title: "确认创建",
+                description: `确定创建 ${reconcileDate} 的对账草稿？`,
+                confirmText: "创建",
+                onConfirm: () => create(),
+              })
+            }
             className="mt-4 inline-flex items-center gap-2 rounded-full bg-[var(--theme-price)] px-5 py-2.5 text-sm font-semibold text-white"
           >
-            <Plus size={16} /> 创建草稿
-          </button>
+            <Plus size={16} /><Tx> 创建草稿
+          </Tx></button>
         </div>
 
         <AnimatedTable
@@ -137,13 +165,13 @@ export default function AdminPaymentReconciliations() {
           theadClassName="bg-secondary/50 text-xs text-muted-foreground"
           thead={(
             <tr>
-              <th className="px-3 py-2">日期</th>
-              <th className="px-3 py-2">Provider</th>
-              <th className="px-3 py-2">渠道</th>
-              <th className="px-3 py-2">笔数</th>
-              <th className="px-3 py-2">成功金额</th>
-              <th className="px-3 py-2">差异</th>
-              <th className="px-3 py-2">状态</th>
+              <th className="px-3 py-2"><Tx>日期</Tx></th>
+              <th className="px-3 py-2"><Tx>支付网关</Tx></th>
+              <th className="px-3 py-2"><Tx>支付渠道</Tx></th>
+              <th className="px-3 py-2"><Tx>笔数</Tx></th>
+              <th className="px-3 py-2"><Tx>成功金额</Tx></th>
+              <th className="px-3 py-2"><Tx>差异</Tx></th>
+              <th className="px-3 py-2"><Tx>状态</Tx></th>
             </tr>
           )}
           footer={<Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={() => {}} />}
@@ -152,12 +180,12 @@ export default function AdminPaymentReconciliations() {
           renderRow={(r) => (
             <>
               <td className="px-3 py-2">{r.reconcile_date}</td>
-              <td className="px-3 py-2">{r.provider}</td>
-              <td className="px-3 py-2">{r.channel_code || "—"}</td>
+              <td className="px-3 py-2">{labelProvider(r.provider)}</td>
+              <td className="px-3 py-2">{r.channel_code ? labelChannelCode(r.channel_code) : "—"}</td>
               <td className="px-3 py-2">{r.order_count}</td>
               <td className="px-3 py-2">RM {Number(r.success_amount).toFixed(2)}</td>
               <td className="px-3 py-2">RM {Number(r.diff_amount).toFixed(2)}</td>
-              <td className="px-3 py-2">{r.status}</td>
+              <td className="px-3 py-2">{labelReconciliationStatus(r.status)}</td>
             </>
           )}
         />

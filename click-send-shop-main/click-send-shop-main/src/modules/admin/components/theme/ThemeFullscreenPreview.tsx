@@ -7,6 +7,7 @@ import ProductDetailPreview from "./ProductDetailPreview";
 import StoreHomePreview from "./StoreHomePreview";
 import type { FullscreenPreviewMode, PreviewDevice } from "./themeStudioConstants";
 import { DEVICE_WIDTH, PREVIEW_DEVICE_LABELS } from "./themeStudioConstants";
+import { Tx } from "@/components/admin/AdminText";
 
 const FULLSCREEN_MODES: { id: FullscreenPreviewMode; label: string }[] = [
   { id: "home", label: "前台首页" },
@@ -43,15 +44,15 @@ export default function ThemeFullscreenPreview({ open, config, onClose }: Props)
       case "cart":
         return (
           <div className="store-card p-4 text-sm">
-            <p className="font-semibold">购物车</p>
-            <p className="mt-2 text-[var(--theme-text-muted)]">2 件商品 · 合计 RM 176</p>
+            <p className="font-semibold"><Tx>购物车</Tx></p>
+            <p className="mt-2 text-[var(--theme-text-muted)]"><Tx>2 件商品 · 合计 RM 176</Tx></p>
           </div>
         );
       case "profile":
         return (
           <div className="store-card p-4">
-            <p className="font-semibold">我的页面</p>
-            <p className="text-xs text-[var(--theme-text-muted)]">订单 / 优惠券 / 设置</p>
+            <p className="font-semibold"><Tx>我的页面</Tx></p>
+            <p className="text-xs text-[var(--theme-text-muted)]"><Tx>订单 / 优惠券 / 设置</Tx></p>
           </div>
         );
       case "admin_home":
@@ -71,7 +72,7 @@ export default function ThemeFullscreenPreview({ open, config, onClose }: Props)
       className="fixed inset-0 z-[100] flex flex-col bg-black/60 backdrop-blur-sm"
     >
       <header className="flex shrink-0 items-center gap-3 border-b border-white/10 bg-neutral-900 px-4 py-3 text-white">
-        <p className="text-sm font-semibold">全屏预览</p>
+        <p className="text-sm font-semibold"><Tx>全屏预览</Tx></p>
         <div className="flex flex-1 flex-wrap gap-1 overflow-x-auto">
           {FULLSCREEN_MODES.map((m) => (
             <button

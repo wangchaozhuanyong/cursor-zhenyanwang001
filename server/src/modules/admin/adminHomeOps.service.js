@@ -1,5 +1,6 @@
 const { generateId } = require('../../utils/helpers');
 const repo = require('./adminHomeOps.repository');
+const homeModuleSettings = require('./homeModuleSettings');
 
 function trimString(value, max = 512) {
   return String(value ?? '').trim().slice(0, max);
@@ -103,9 +104,21 @@ async function deleteNavItem(id) {
   return { data: null, message: '删除成功' };
 }
 
+async function getHomeOpsSettings() {
+  return homeModuleSettings.getHomeModuleSettings();
+}
+
+async function updateHomeOpsSettings(body, adminUserId, req) {
+  const data = await homeModuleSettings.saveHomeModuleSettings(body, adminUserId, req);
+  return { data, message: '首页模块配置已保存' };
+}
+
 async function getPublicHomeOps() {
-  const navItems = await listNavItems({ publicOnly: true });
-  return { navItems };
+  const [navItems, moduleSettings] = await Promise.all([
+    listNavItems({ publicOnly: true }),
+    homeModuleSettings.getHomeModuleSettings(),
+  ]);
+  return { navItems, moduleSettings };
 }
 
 module.exports = {
@@ -113,5 +126,7 @@ module.exports = {
   createNavItem,
   updateNavItem,
   deleteNavItem,
+  getHomeOpsSettings,
+  updateHomeOpsSettings,
   getPublicHomeOps,
 };

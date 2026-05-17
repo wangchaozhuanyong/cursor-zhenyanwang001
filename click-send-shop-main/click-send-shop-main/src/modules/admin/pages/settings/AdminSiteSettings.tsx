@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { Loader2, Upload, X, Image as ImageIcon } from "lucide-react";
 import { LoadingButton } from "@/modules/micro-interactions";
 import PermissionGate from "@/components/admin/PermissionGate";
+import { Tx } from "@/components/admin/AdminText";
+import { adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import {
   fetchSiteSettings,
   updateSiteSettings,
@@ -305,6 +307,7 @@ const SECTIONS: Section[] = [
 ];
 
 export default function AdminSiteSettings() {
+  const { confirm } = useAdminConfirm();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<SiteSettings>(EMPTY);
@@ -409,13 +412,13 @@ export default function AdminSiteSettings() {
     <div className="space-y-6 pb-24">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground">站点设置</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-xl font-bold text-foreground"><Tx>站点设置</Tx></h1>
+          <p className="text-sm text-muted-foreground"><Tx>
             配置全站通用信息：品牌、联系方式、SEO、页脚等。所有字段实时驱动前台展示。
-          </p>
+          </Tx></p>
         </div>
         <div className="rounded-xl border border-border bg-card p-2 lg:sticky lg:top-20">
-          <div className="mb-2 px-2 text-xs font-medium text-muted-foreground">功能导航</div>
+          <div className="mb-2 px-2 text-xs font-medium text-muted-foreground"><Tx>功能导航</Tx></div>
           <div className="flex flex-wrap gap-2">
             {Object.entries(CATEGORY_LABELS).map(([key, label]) => {
               const isActive = activeCategory === key;
@@ -444,17 +447,17 @@ export default function AdminSiteSettings() {
       <>
       <div className="grid max-w-5xl gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-border bg-card p-4 text-xs text-muted-foreground lg:col-span-2">
-          <p className="font-medium text-foreground">字段生效提示（避免“设置后看起来没同步”）</p>
-          <p className="mt-2">1) 标题规则：客户端内页 =「页面名 · 站点名称」，首页优先用「SEO 标题」。</p>
-          <p className="mt-1">2) 浏览器标签图标：读取「Favicon」，首屏静态图标与运行时图标会统一更新。</p>
+          <p className="font-medium text-foreground"><Tx>字段生效提示（避免“设置后看起来没同步”）</Tx></p>
+          <p className="mt-2"><Tx>1) 标题规则：客户端内页 =「页面名 · 站点名称」，首页优先用「SEO 标题」。</Tx></p>
+          <p className="mt-1"><Tx>2) 浏览器标签图标：读取「Favicon」，首屏静态图标与运行时图标会统一更新。</Tx></p>
           <p className="mt-1">
             3) 未登录首页底部「政策与说明」等：读取政策路径 +{" "}
-            <Link to="/admin/content" className="font-medium text-gold underline-offset-2 hover:underline">
+            <Link to="/admin/content" className="font-medium text-gold underline-offset-2 hover:underline"><Tx>
               内容管理
-            </Link>
+            </Tx></Link><Tx>
             中的正文；页脚公司名/版权等同站点设置。
-          </p>
-          <p className="mt-1">4) 首屏静态 Title 仅是兜底，进入页面后会被运行时标题策略接管。</p>
+          </Tx></p>
+          <p className="mt-1"><Tx>4) 首屏静态 Title 仅是兜底，进入页面后会被运行时标题策略接管。</Tx></p>
         </div>
         {visibleSections.map((section) => (
           <div
@@ -588,8 +591,8 @@ export default function AdminSiteSettings() {
                               onClick={() => setField(field.key, "")}
                               className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-destructive"
                             >
-                              <X size={12} /> 清除
-                            </button>
+                              <X size={12} /><Tx> 清除
+                            </Tx></button>
                           )}
                         </div>
                       </div>
@@ -628,20 +631,20 @@ export default function AdminSiteSettings() {
       {/* Sticky save bar */}
       <div className="sticky bottom-0 -mx-6 border-t border-border bg-background/95 px-6 py-4 backdrop-blur-md">
         <div className="flex max-w-5xl items-center justify-between">
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground"><Tx>
             提示：保存后前端 5 分钟缓存会立即失效，刷新页面即可看到新内容。
-          </p>
+          </Tx></p>
           <PermissionGate permission="settings.manage">
             <LoadingButton
               type="button"
               variant="gold"
               state={saving ? "loading" : "normal"}
               loadingText="保存中..."
-              onClick={() => void handleSave()}
+              onClick={() => adminConfirmSave(confirm, "站点设置", () => handleSave())}
               className="rounded-lg px-6 py-2.5 text-sm font-semibold shadow-lg shadow-gold/20"
-            >
+            ><Tx>
               保存设置
-            </LoadingButton>
+            </Tx></LoadingButton>
           </PermissionGate>
         </div>
       </div>

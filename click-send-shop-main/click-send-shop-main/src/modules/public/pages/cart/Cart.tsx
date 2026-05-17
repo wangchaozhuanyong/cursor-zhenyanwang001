@@ -3,13 +3,12 @@ import { Minus, Plus, Trash2, ShoppingBag, Loader2, Check } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import { cartLineKey, useCartStore } from "@/stores/useCartStore";
-import { productCoverForList } from "@/utils/uploadImageVariant";
+import ProductCoverImage from "@/components/ProductCoverImage";
 import { isLoggedIn } from "@/utils/token";
 import EmptyState from "@/components/EmptyState";
 import TrustInfo from "@/components/TrustInfo";
 import { motion, AnimatePresence } from "framer-motion";
-import { PRODUCT_BLUR_PLACEHOLDER } from "@/constants/productBlurPlaceholder";
-import { AnimatedNumber, BottomSheetConfirm, ProgressiveImage, SquishButton } from "@/modules/micro-interactions";
+import { AnimatedNumber, BottomSheetConfirm, SquishButton } from "@/modules/micro-interactions";
 import { toast } from "sonner";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
@@ -44,12 +43,15 @@ export default function Cart() {
   const allSelected = items.length > 0 && selectedCount === items.length;
   const someSelected = selectedCount > 0;
   const totalQty = items.reduce((s, i) => s + i.qty, 0);
-  const cartSubtitle =
-    items.length === 0
-      ? "空空如也"
-      : someSelected
-        ? `已选 ${selectedCount} 件 / 共 ${totalQty} 件`
-        : `共 ${totalQty} 件`;
+  const selectedQty = totalItemsSelected();
+  const checkoutLabel =
+    selectedQty > 0 ? (
+      <>
+        去结算<span className="ml-0.5 text-[0.85em] font-semibold opacity-90">({selectedQty})</span>
+      </>
+    ) : (
+      "去结算"
+    );
 
   useEffect(() => {
     loadCart();
@@ -67,8 +69,15 @@ export default function Cart() {
   return (
     <div className="store-bottom-cart-space min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
       <StorePageHeader
-        title="购物车"
-        subtitle={cartSubtitle}
+        title={
+          <>
+            购物车
+            {totalQty > 0 ? (
+              <span className="ml-1.5 text-sm font-normal text-[var(--theme-text-muted)]">({totalQty})</span>
+            ) : null}
+          </>
+        }
+        subtitle={items.length === 0 ? "空空如也" : undefined}
         rightSlot={
           items.length > 0 ? (
             <button
@@ -182,12 +191,13 @@ export default function Cart() {
                         className="h-24 w-24 flex-shrink-0 cursor-pointer overflow-hidden rounded-xl border-0 bg-transparent p-0 md:h-28 md:w-28"
                         aria-label={`查看 ${item.product.name}`}
                       >
-                        <ProgressiveImage
-                          src={productCoverForList(item.product.cover_image)}
-                          blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
+                        <ProductCoverImage
+                          url={item.product.cover_image}
                           alt={item.product.name}
-                          className="h-full w-full bg-transparent"
+                          className="h-full w-full"
                           imgClassName="h-full w-full rounded-xl object-cover"
+                          loading="eager"
+                          fetchPriority="high"
                         />
                       </button>
                       <div className="flex flex-1 flex-col justify-between py-0.5">
@@ -312,10 +322,10 @@ export default function Cart() {
                   type="button"
                   variant="gold"
                   onClick={handleCheckout}
-                  disabled={totalItemsSelected() === 0}
+                  disabled={selectedQty === 0}
                   className="mt-5 w-full rounded-full py-3.5 text-sm font-bold transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
                 >
-                  去结算
+                  {checkoutLabel}
                 </SquishButton>
                 <div className="mt-4">
                   <TrustInfo />
@@ -365,10 +375,10 @@ export default function Cart() {
                 type="button"
                 variant="gold"
                 onClick={handleCheckout}
-                disabled={totalItemsSelected() === 0}
+                disabled={selectedQty === 0}
                 className="rounded-full px-8 py-3.5 text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
               >
-                去结算
+                {checkoutLabel}
               </SquishButton>
             </div>
           </div>

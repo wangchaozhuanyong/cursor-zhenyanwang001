@@ -8,8 +8,18 @@ import * as paymentAdmin from "@/services/admin/paymentAdminService";
 import type { PaymentEventAdminRow } from "@/types/adminPayment";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import {
+  labelPaymentEventType,
+  labelProcessingResult,
+  labelProvider,
+  labelVerifyStatus,
+  PAYMENT_PROVIDER_FILTER_OPTIONS,
+} from "@/utils/paymentAdminLabels";
 
 export default function AdminPaymentEvents() {
+  const { confirm } = useAdminConfirm();
   const [list, setList] = useState<PaymentEventAdminRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -51,31 +61,36 @@ export default function AdminPaymentEvents() {
     <PermissionGate permission="payment.manage">
       <div className="p-4 md:p-6">
         <div className="mb-2">
-          <h1 className="text-xl font-bold text-foreground">支付管理</h1>
-          <p className="text-sm text-muted-foreground">Webhook 与内部支付事件审计</p>
+          <h1 className="text-xl font-bold text-foreground"><Tx>支付管理</Tx></h1>
+          <p className="text-sm text-muted-foreground"><Tx>支付回调与内部事件审计</Tx></p>
         </div>
         <PaymentAdminSubnav />
 
         <div className="mb-4 flex flex-wrap gap-3">
-          <input
+          <select
             value={provider}
-            onChange={(e) => setProvider(e.target.value)}
-            placeholder="provider：stripe / manual / internal"
-            className="min-w-[160px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
-          />
+            onChange={(e) => { setPage(1); setProvider(e.target.value); }}
+            className="min-w-[180px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          >
+            {PAYMENT_PROVIDER_FILTER_OPTIONS.map((o) => (
+              <option key={o.value || "all"} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
           <input
             value={orderId}
             onChange={(e) => setOrderId(e.target.value)}
-            placeholder="订单 ID"
+            placeholder="订单号或内部编号（可选）"
             className="min-w-[200px] flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
           />
           <button
             type="button"
             onClick={() => { setPage(1); void load(); }}
             className="rounded-full border border-border px-4 py-2 text-sm font-medium"
-          >
+          ><Tx>
             查询
-          </button>
+          </Tx></button>
         </div>
 
         <AnimatedTable
@@ -89,12 +104,12 @@ export default function AdminPaymentEvents() {
           theadClassName="bg-secondary/50 text-xs text-muted-foreground"
           thead={(
             <tr>
-              <th className="px-3 py-2">时间</th>
-              <th className="px-3 py-2">Provider</th>
-              <th className="px-3 py-2">类型</th>
-              <th className="px-3 py-2">验签/处理</th>
-              <th className="px-3 py-2">订单</th>
-              <th className="px-3 py-2">操作</th>
+              <th className="px-3 py-2"><Tx>时间</Tx></th>
+              <th className="px-3 py-2"><Tx>支付网关</Tx></th>
+              <th className="px-3 py-2"><Tx>事件类型</Tx></th>
+              <th className="px-3 py-2"><Tx>验签 / 处理</Tx></th>
+              <th className="px-3 py-2"><Tx>订单</Tx></th>
+              <th className="px-3 py-2"><Tx>操作</Tx></th>
             </tr>
           )}
           footer={<Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={() => {}} />}
@@ -103,14 +118,28 @@ export default function AdminPaymentEvents() {
           renderRow={(r) => (
             <>
               <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</td>
-              <td className="px-3 py-2">{r.provider}</td>
-              <td className="px-3 py-2 text-xs">{r.event_type}</td>
-              <td className="px-3 py-2 text-xs">{r.verify_status} / {r.processing_result}</td>
-              <td className="px-3 py-2 font-mono text-xs">{r.order_id?.slice(0, 8) ?? "—"}…</td>
+              <td className="px-3 py-2">{labelProvider(r.provider)}</td>
+              <td className="px-3 py-2 text-xs" title={r.event_type}>{labelPaymentEventType(r.event_type)}</td>
+              <td className="px-3 py-2 text-xs">
+                {labelVerifyStatus(r.verify_status)} / {labelProcessingResult(r.processing_result)}
+              </td>
+              <td className="px-3 py-2 text-xs text-muted-foreground">{r.order_id ? "已关联订单" : "—"}</td>
               <td className="px-3 py-2">
-                <button type="button" onClick={() => void replay(r.id)} className="inline-flex items-center gap-1 text-xs font-medium text-[var(--theme-price)]">
-                  <RotateCcw size={12} /> 重放记录
-                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    confirm({
+                      title: "确认重放",
+                      description: "确定重放该支付事件？可能影响订单支付状态，请谨慎操作。",
+                      confirmText: "重放",
+                      danger: true,
+                      onConfirm: () => replay(r.id),
+                    })
+                  }
+                  className="inline-flex items-center gap-1 text-xs font-medium text-[var(--theme-price)]"
+                >
+                  <RotateCcw size={12} /><Tx> 重放记录
+                </Tx></button>
               </td>
             </>
           )}

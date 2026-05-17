@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import * as rbacService from "@/services/admin/rbacService";
 import type { RbacAdminUserRow } from "@/services/admin/rbacService";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { Tx } from "@/components/admin/AdminText";
 
 const ROLE_BADGE: Record<string, { cls: string; text: string }> = {
   super_admin: { cls: "bg-red-500/10 text-red-600", text: "超级管理员" },
@@ -94,21 +95,21 @@ export default function AdminAccounts() {
         </div>
         <PermissionGate permission="role.manage">
           <button type="button" onClick={() => setShowCreate(true)} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded px-4 py-2.5 text-sm font-semibold text-white active:opacity-90" style={{ background: "var(--theme-gradient)" }}>
-            <Plus size={16} /> 创建管理员
-          </button>
+            <Plus size={16} /><Tx> 创建管理员
+          </Tx></button>
         </PermissionGate>
       </div>
 
       <div className="theme-rounded border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-xs text-foreground/90 leading-relaxed">
-        <p className="font-medium text-amber-800 dark:text-amber-200/90">管理员与超级管理员</p>
-        <p className="mt-1 text-muted-foreground">
-          拥有「角色权限」权限的账号可在此新增、禁用、重置密码、删除<strong className="text-foreground/80">普通管理员</strong>（不可删除超级管理员）。
-          若数据库里<strong className="text-foreground/80">没有任何 super_admin</strong>，无法把别人设为超级管理员时，请 SSH 到服务器，在{" "}
+        <p className="font-medium text-amber-800 dark:text-amber-200/90"><Tx>管理员与超级管理员</Tx></p>
+        <p className="mt-1 text-muted-foreground"><Tx>
+          拥有「角色权限」权限的账号可在此新增、禁用、重置密码、删除</Tx><strong className="text-foreground/80"><Tx>普通管理员</Tx></strong><Tx>（不可删除超级管理员）。
+          若数据库里</Tx><strong className="text-foreground/80"><Tx>没有任何 super_admin</Tx></strong>，无法把别人设为超级管理员时，请 SSH 到服务器，在{" "}
           <code className="rounded bg-muted px-1 py-0.5 text-[11px]">server</code>{" "}
           目录执行：{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-[11px]">node scripts/set-admin-role.js 手机号 super_admin</code>
+          <code className="rounded bg-muted px-1 py-0.5 text-[11px]"><Tx>node scripts/set-admin-role.js 手机号 super_admin</Tx></code>
           （详见该脚本文件顶部说明）；无可用账号时可执行{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-[11px]">node scripts/create-admin.js 手机号 密码 super</code>。
+          <code className="rounded bg-muted px-1 py-0.5 text-[11px]"><Tx>node scripts/create-admin.js 手机号 密码 super</Tx></code>。
         </p>
       </div>
 
@@ -156,22 +157,22 @@ export default function AdminAccounts() {
                   </div>
                   <p className="text-xs text-muted-foreground">{a.phone}</p>
                   <p className="text-[11px] text-muted-foreground">创建: {a.created_at ? new Date(a.created_at).toLocaleString("zh-CN") : "—"}</p>
-                  <p className="text-[11px] text-muted-foreground">最后登录: {a.last_login_at ? new Date(a.last_login_at).toLocaleString("zh-CN") : <span className="italic text-muted-foreground/60">从未登录</span>}</p>
+                  <p className="text-[11px] text-muted-foreground">最后登录: {a.last_login_at ? new Date(a.last_login_at).toLocaleString("zh-CN") : <span className="italic text-muted-foreground/60"><Tx>从未登录</Tx></span>}</p>
                   <PermissionGate permission="role.manage">
                     <div className="flex flex-wrap gap-2 pt-1">
                       {a.role !== "super_admin" && (
                         <>
                         <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation min-h-[40px] theme-rounded border border-[var(--theme-border)] px-3 py-1.5 text-xs hover:bg-[var(--theme-bg)]">
-                            {a.role === "disabled" ? <><ToggleRight size={12} className="mr-1 inline text-green-600" />启用</> : <><ToggleLeft size={12} className="mr-1 inline" />禁用</>}
+                            {a.role === "disabled" ? <><ToggleRight size={12} className="mr-1 inline text-green-600" /><Tx>启用</Tx></> : <><ToggleLeft size={12} className="mr-1 inline" /><Tx>禁用</Tx></>}
                           </button>
                           {(a.role !== "super_admin" || isSuperAdminViewer) && (
                           <button type="button" onClick={() => { setResetTarget(a); setNewPassword(""); }} className="touch-manipulation min-h-[40px] theme-rounded border border-[var(--theme-border)] px-3 py-1.5 text-xs hover:bg-[var(--theme-bg)]">
-                            <KeyRound size={12} className="mr-1 inline" />重置密码
-                          </button>
+                            <KeyRound size={12} className="mr-1 inline" /><Tx>重置密码
+                          </Tx></button>
                           )}
                           <button type="button" onClick={() => setConfirmDelete(a)} className="touch-manipulation min-h-[40px] theme-rounded border border-[var(--theme-border)] px-3 py-1.5 text-xs text-destructive hover:bg-[var(--theme-bg)]">
-                            <Trash2 size={12} className="mr-1 inline" />删除
-                          </button>
+                            <Trash2 size={12} className="mr-1 inline" /><Tx>删除
+                          </Tx></button>
                         </>
                       )}
                     </div>
@@ -181,7 +182,7 @@ export default function AdminAccounts() {
             </div>
           );
         })}
-        {!loading && paginatedData.length === 0 && <div className="py-12 text-center text-sm text-muted-foreground">暂无管理员</div>}
+        {!loading && paginatedData.length === 0 && <div className="py-12 text-center text-sm text-muted-foreground"><Tx>暂无管理员</Tx></div>}
         <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
       </div>
 
@@ -220,7 +221,7 @@ export default function AdminAccounts() {
                 <td className="px-4 py-3 text-foreground">{a.phone}</td>
                 <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>{badge.text}</span></td>
                 <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{a.created_at ? new Date(a.created_at).toLocaleString("zh-CN") : "—"}</td>
-                <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{a.last_login_at ? new Date(a.last_login_at).toLocaleString("zh-CN") : <span className="italic text-muted-foreground/60">从未登录</span>}</td>
+                <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{a.last_login_at ? new Date(a.last_login_at).toLocaleString("zh-CN") : <span className="italic text-muted-foreground/60"><Tx>从未登录</Tx></span>}</td>
                 <td className="px-4 py-3">
                   <PermissionGate permission="role.manage">
                     <div className="flex gap-1">
@@ -240,7 +241,7 @@ export default function AdminAccounts() {
                         </>
                       )}
                       {a.role === "super_admin" && (
-                        <span className="flex items-center gap-1 text-xs text-muted-foreground"><Shield size={12} /> 不可操作</span>
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground"><Shield size={12} /><Tx> 不可操作</Tx></span>
                       )}
                     </div>
                   </PermissionGate>
@@ -254,13 +255,13 @@ export default function AdminAccounts() {
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowCreate(false)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md theme-rounded bg-[var(--theme-surface)] p-6 theme-shadow space-y-4">
-            <h3 className="flex items-center gap-2 font-bold text-foreground"><UserCog size={18} /> 创建管理员</h3>
+            <h3 className="flex items-center gap-2 font-bold text-foreground"><UserCog size={18} /><Tx> 创建管理员</Tx></h3>
             <input placeholder="手机号 *" value={createForm.phone} onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
             <input placeholder="密码 *（至少6位）" type="password" value={createForm.password} onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
             <input placeholder="昵称（可选）" value={createForm.nickname} onChange={(e) => setCreateForm({ ...createForm, nickname: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setShowCreate(false)} className="theme-rounded border border-[var(--theme-border)] px-4 py-2.5 text-sm hover:bg-[var(--theme-bg)]">取消</button>
-              <button type="button" onClick={handleCreate} className="theme-rounded px-4 py-2.5 text-sm font-semibold text-white" style={{ background: "var(--theme-gradient)" }}>创建</button>
+              <button type="button" onClick={() => setShowCreate(false)} className="theme-rounded border border-[var(--theme-border)] px-4 py-2.5 text-sm hover:bg-[var(--theme-bg)]"><Tx>取消</Tx></button>
+              <button type="button" onClick={handleCreate} className="theme-rounded px-4 py-2.5 text-sm font-semibold text-white" style={{ background: "var(--theme-gradient)" }}><Tx>创建</Tx></button>
             </div>
           </div>
         </div>
@@ -270,12 +271,12 @@ export default function AdminAccounts() {
       {resetTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setResetTarget(null)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4">
-            <h3 className="font-bold text-foreground">重置密码</h3>
+            <h3 className="font-bold text-foreground"><Tx>重置密码</Tx></h3>
             <p className="text-sm text-muted-foreground">为 {resetTarget.nickname || resetTarget.phone} 设置新密码</p>
             <input placeholder="新密码（至少6位）" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setResetTarget(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary">取消</button>
-              <button type="button" onClick={handleReset} disabled={!newPassword || newPassword.length < 6} className="rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">确认重置</button>
+              <button type="button" onClick={() => setResetTarget(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
+              <button type="button" onClick={handleReset} disabled={!newPassword || newPassword.length < 6} className="rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"><Tx>确认重置</Tx></button>
             </div>
           </div>
         </div>
@@ -286,11 +287,11 @@ export default function AdminAccounts() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDelete(null)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4 text-center">
             <AlertTriangle size={40} className="mx-auto text-destructive" />
-            <h3 className="font-bold text-foreground">确认删除管理员</h3>
+            <h3 className="font-bold text-foreground"><Tx>确认删除管理员</Tx></h3>
             <p className="text-sm text-muted-foreground">将禁用 {confirmDelete.nickname || confirmDelete.phone} 的管理员权限。</p>
             <div className="flex justify-center gap-3">
-              <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary">取消</button>
-              <button type="button" onClick={handleDelete} className="rounded-xl bg-destructive px-4 py-2.5 text-sm font-semibold text-white">确认删除</button>
+              <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
+              <button type="button" onClick={handleDelete} className="rounded-xl bg-destructive px-4 py-2.5 text-sm font-semibold text-white"><Tx>确认删除</Tx></button>
             </div>
           </div>
         </div>

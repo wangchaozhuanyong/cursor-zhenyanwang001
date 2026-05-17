@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import * as activityService from "@/services/admin/activityService";
 import * as couponService from "@/services/admin/couponService";
 import { fetchAdminPointsRecords } from "@/services/admin/pointsService";
-import { fetchAdminRewardRecords } from "@/services/admin/rewardService";
+import { fetchAdminimport { Tx } from "@/components/admin/AdminText";
+RewardRecords } from "@/services/admin/rewardService";
 
 export default function AdminMarketingDashboard() {
   const navigate = useNavigate();
@@ -42,8 +43,8 @@ export default function AdminMarketingDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-foreground">活动管理 / 活动总览</h1>
-        <p className="mt-1 text-sm text-muted-foreground">营销活动、优惠券、积分与返现的一体化运营视图。</p>
+        <h1 className="text-xl font-bold text-foreground"><Tx>活动管理 / 活动总览</Tx></h1>
+        <p className="mt-1 text-sm text-muted-foreground"><Tx>营销活动、优惠券、积分与返现的一体化运营视图。</Tx></p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -51,15 +52,15 @@ export default function AdminMarketingDashboard() {
       </div>
 
       <div className="rounded-xl border border-border bg-card p-4">
-        <h2 className="mb-3 text-sm font-semibold">快捷入口</h2>
+        <h2 className="mb-3 text-sm font-semibold"><Tx>快捷入口</Tx></h2>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          <button onClick={() => navigate("/admin/marketing/activities/new?type=flash_sale")} className="rounded-lg border border-border px-3 py-2 text-sm text-left"><CalendarClock className="inline mr-2 h-4 w-4" />新建秒杀活动</button>
-          <button onClick={() => navigate("/admin/marketing/activities/new?type=full_reduction")} className="rounded-lg border border-border px-3 py-2 text-sm text-left"><BarChart3 className="inline mr-2 h-4 w-4" />新建满减活动</button>
-          <button onClick={() => navigate("/admin/marketing/coupons/new")} className="rounded-lg border border-border px-3 py-2 text-sm text-left"><Ticket className="inline mr-2 h-4 w-4" />新建优惠券</button>
-          <button onClick={() => navigate("/admin/marketing/points")} className="rounded-lg border border-border px-3 py-2 text-sm text-left"><Star className="inline mr-2 h-4 w-4" />积分管理</button>
-          <button onClick={() => navigate("/admin/marketing/rewards")} className="rounded-lg border border-border px-3 py-2 text-sm text-left"><Gift className="inline mr-2 h-4 w-4" />返现管理</button>
-          <button onClick={() => navigate("/admin/marketing/invites")} className="rounded-lg border border-border px-3 py-2 text-sm text-left"><Link2 className="inline mr-2 h-4 w-4" />邀请奖励</button>
-          <button onClick={() => navigate("/admin/marketing/activities/new")} className="rounded-lg border border-border px-3 py-2 text-sm text-left"><PlusCircle className="inline mr-2 h-4 w-4" />新建活动</button>
+          <button onClick={() => navigate("/admin/marketing/activities/new?type=flash_sale")} className="rounded-lg border border-border px-3 py-2 text-sm text-left"><CalendarClock className="inline mr-2 h-4 w-4" /><Tx>新建秒杀活动</Tx></button>
+          <button onClick={() => navigate("/admin/marketing/activities/new?type=full_reduction")} className="rounded-lg border border-border px-3 py-2 text-sm text-left"><BarChart3 className="inline mr-2 h-4 w-4" /><Tx>新建满减活动</Tx></button>
+          <button onClick={() => navigate("/admin/marketing/coupons/new")} className="rounded-lg border border-border px-3 py-2 text-sm text-left"><Ticket className="inline mr-2 h-4 w-4" /><Tx>新建优惠券</Tx></button>
+          <button onClick={() => navigate("/admin/marketing/points")} className="rounded-lg border border-border px-3 py-2 text-sm text-left"><Star className="inline mr-2 h-4 w-4" /><Tx>积分管理</Tx></button>
+          <button onClick={() => navigate("/admin/marketing/rewards")} className="rounded-lg border border-border px-3 py-2 text-sm text-left"><Gift className="inline mr-2 h-4 w-4" /><Tx>返现管理</Tx></button>
+          <button onClick={() => navigate("/admin/marketing/invites")} className="rounded-lg border border-border px-3 py-2 text-sm text-left"><Link2 className="inline mr-2 h-4 w-4" /><Tx>邀请奖励</Tx></button>
+          <button onClick={() => navigate("/admin/marketing/activities/new")} className="rounded-lg border border-border px-3 py-2 text-sm text-left"><PlusCircle className="inline mr-2 h-4 w-4" /><Tx>新建活动</Tx></button>
         </div>
       </div>
     </div>

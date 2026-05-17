@@ -7,10 +7,20 @@ import { ResponsiveSheet } from "@/modules/micro-interactions";
 export default function SkinPickerDialog({
   trigger,
   title = "更换皮肤",
+  description = "请选择一个皮肤以切换主题样式。",
+  loadingText = "皮肤加载中...",
+  currentSkinHint = "当前皮肤",
+  switchHint = "点击切换",
+  selectedBadge = "已选",
   className,
 }: {
   trigger: ReactNode;
   title?: string;
+  description?: string;
+  loadingText?: string;
+  currentSkinHint?: string;
+  switchHint?: string;
+  selectedBadge?: string;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -42,13 +52,13 @@ export default function SkinPickerDialog({
             {title}
           </span>
         }
-        description="请选择一个皮肤以切换主题样式。"
+        description={description}
         height="auto"
         dialogClassName={cn("max-w-lg", className)}
       >
         <div className="grid gap-2 pb-2 sm:grid-cols-2">
           {pickerSkins.length === 0 ? (
-            <p className="col-span-full text-sm text-muted-foreground">皮肤加载中...</p>
+            <p className="col-span-full text-sm text-muted-foreground">{loadingText}</p>
           ) : (
             pickerSkins.map((skin) => {
               const primary = skin.config.primaryColor;
@@ -76,7 +86,7 @@ export default function SkinPickerDialog({
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold">{skin.name}</span>
                     <span className="mt-0.5 block text-[10px] text-muted-foreground">
-                      {active ? "当前皮肤" : "点击切换"}
+                      {active ? currentSkinHint : switchHint}
                     </span>
                   </span>
                   {active ? (
@@ -84,7 +94,7 @@ export default function SkinPickerDialog({
                       aria-hidden
                       className="rounded-full bg-[var(--theme-price)]/15 px-2 py-1 text-[10px] font-bold text-[var(--theme-price)]"
                     >
-                      已选
+                      {selectedBadge}
                     </span>
                   ) : null}
                 </button>

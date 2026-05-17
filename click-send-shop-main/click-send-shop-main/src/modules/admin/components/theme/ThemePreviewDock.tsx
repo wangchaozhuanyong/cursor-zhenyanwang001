@@ -4,6 +4,7 @@ import ThemeHealthCheck from "./ThemeHealthCheck";
 import ThemePreviewCanvas from "./ThemePreviewCanvas";
 import ThemePreviewToolbar from "./ThemePreviewToolbar";
 import type { PreviewDevice, PreviewMode } from "./themeStudioConstants";
+import { Tx } from "@/components/admin/AdminText";
 
 export type ThemePreviewDockProps = {
   config: ThemeConfig;
@@ -42,9 +43,9 @@ export default function ThemePreviewDock({
             type="button"
             className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-medium text-foreground hover:bg-secondary/50"
             onClick={() => setHealthOpen((v) => !v)}
-          >
+          ><Tx>
             皮肤健康检查
-            <span className="text-muted-foreground">{healthOpen ? "收起" : "展开"}</span>
+            </Tx><span className="text-muted-foreground">{healthOpen ? "收起" : "展开"}</span>
           </button>
           {healthOpen ? (
             <div className="max-h-36 overflow-y-auto px-2 pb-2">

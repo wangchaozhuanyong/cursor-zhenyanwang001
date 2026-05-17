@@ -8,7 +8,8 @@ import { usePagination } from "@/hooks/usePagination";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchInviteRecords } from "@/services/admin/inviteService";
-import { AnimatedTable } from "@/modules/micro-interactions";
+importimport { Tx } from "@/components/admin/AdminText";
+ { AnimatedTable } from "@/modules/micro-interactions";
 
 export default function AdminInvites() {
   const navigate = useNavigate();
@@ -73,17 +74,17 @@ export default function AdminInvites() {
               </div>
               <span className="text-[10px] text-muted-foreground">{inv.created_at ? new Date(inv.created_at).toLocaleString("zh-CN") : "—"}</span>
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">邀请人 <span className="text-foreground">{inv.inviter_nickname || "—"}</span></p>
+            <p className="mt-2 text-xs text-muted-foreground"><Tx>邀请人 </Tx><span className="text-foreground">{inv.inviter_nickname || "—"}</span></p>
             <p className="mt-1 font-mono text-xs text-muted-foreground">码 {inv.parent_invite_code || "—"}</p>
             <PermissionGate permission="user.view" fallback={<span className="mt-3 block text-xs text-muted-foreground">—</span>}>
-              <button type="button" onClick={() => navigate(`/admin/users/${inv.id}`)} className="mt-3 w-full min-h-[44px] rounded-lg border border-gold/40 py-2.5 text-sm font-medium text-gold active:bg-secondary">
+              <button type="button" onClick={() => navigate(`/admin/users/${inv.id}`)} className="mt-3 w-full min-h-[44px] rounded-lg border border-gold/40 py-2.5 text-sm font-medium text-gold active:bg-secondary"><Tx>
                 查看用户
-              </button>
+              </Tx></button>
             </PermissionGate>
           </div>
         ))}
         {!loading && paginatedData.length === 0 && (
-          <div className="py-12 text-center text-sm text-muted-foreground">暂无邀请记录</div>
+          <div className="py-12 text-center text-sm text-muted-foreground"><Tx>暂无邀请记录</Tx></div>
         )}
         <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
       </div>
@@ -117,7 +118,7 @@ export default function AdminInvites() {
               <td className="px-4 py-3 text-xs text-muted-foreground">{inv.created_at ? new Date(inv.created_at).toLocaleString("zh-CN") : "—"}</td>
               <td className="px-4 py-3">
                 <PermissionGate permission="user.view" fallback={<span className="text-xs text-muted-foreground">—</span>}>
-                  <button type="button" onClick={() => navigate(`/admin/users/${inv.id}`)} className="text-xs text-gold hover:underline">查看用户</button>
+                  <button type="button" onClick={() => navigate(`/admin/users/${inv.id}`)} className="text-xs text-gold hover:underline"><Tx>查看用户</Tx></button>
                 </PermissionGate>
               </td>
             </>

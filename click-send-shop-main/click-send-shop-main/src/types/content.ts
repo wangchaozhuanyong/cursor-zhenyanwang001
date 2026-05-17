@@ -1,3 +1,5 @@
+import type { HomeModuleSettings } from "@/constants/homeModules";
+
 /** CMS 页面与站点信息（与后端 /content 一致） */
 export interface ContentPage {
   id: string;
@@ -127,4 +129,5 @@ export interface HomeNavItem {
 
 export interface HomeOpsConfig {
   navItems: HomeNavItem[];
+  moduleSettings?: HomeModuleSettings;
 }

@@ -18,8 +18,7 @@ import {
   getLockedInviteCode,
   syncLockedInviteCodeBySearch,
 } from "@/utils/inviteReferral";
-import { getPublicApiRoot } from "@/utils/apiRoot";
-import WeChatIcon from "@/components/icons/WeChatIcon";
+import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 import { useFormFieldFocus } from "@/hooks/useFormFieldFocus";
 import { cn } from "@/lib/utils";
 import { FormFieldShake } from "@/modules/micro-interactions";
@@ -73,7 +72,6 @@ export default function Login() {
   const [otpSending, setOtpSending] = useState(false);
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [smsOtpLoginEnabled, setSmsOtpLoginEnabled] = useState(true);
-  const [wechatLoginEnabled, setWechatLoginEnabled] = useState(false);
   const hasLockedInviteCode = !!inviteCode;
   const formFocused = useFormFieldFocus();
   const [shakeKey, setShakeKey] = useState(0);
@@ -116,7 +114,6 @@ export default function Login() {
         if (cancelled) return;
         const enabled = features.smsOtpLoginEnabled !== false;
         setSmsOtpLoginEnabled(enabled);
-        setWechatLoginEnabled(features.wechatLoginEnabled === true);
         if (!enabled) setCredentialMode("password");
       })
       .catch(() => {
@@ -128,6 +125,7 @@ export default function Login() {
   }, []);
 
   useEffect(() => {
+    if (!THIRD_PARTY_LOGIN_ENABLED) return;
     const params = new URLSearchParams(location.search);
     const oauthErr = params.get("oauthError");
     const wechatErr = params.get("wechatError");
@@ -196,12 +194,6 @@ export default function Login() {
   }, [location.search, navigate, from, fromState]);
 
   const loading = authStore.loading;
-
-  const openWechatLogin = () => {
-    const root = getPublicApiRoot();
-    const redirect = encodeURIComponent("/login");
-    window.location.href = `${root}/auth/wechat/login?redirect=${redirect}`;
-  };
 
   const handleSendOtp = async () => {
     if (!smsOtpLoginEnabled) {
@@ -302,10 +294,12 @@ export default function Login() {
           ? e.message
           : (fallback ?? (mode === "login" ? "登录失败" : "注册失败"));
       /* 仅当服务端未返回具体说明时才用泛化文案，避免本地排障时看不到真实 500 原因（如数据库未连上） */
-      if (e instanceof ApiError && e.code === 500) {
+      if (e instanceof ApiError && (e.code === 500 || e.code === 502 || e.code === 503 || e.code === 504)) {
         const vague =
-          msg === "请求失败 (500)" || msg === "服务器内部错误" || msg.trim() === "";
-        if (vague) msg = "服务暂时不可用，请稍后再试";
+          msg.startsWith("Request failed (")
+          || msg === "服务器内部错误"
+          || msg.trim() === "";
+        if (vague && e.code === 500) msg = "服务暂时不可用，请稍后再试";
       }
       toast.error(msg);
     }
@@ -369,8 +363,14 @@ export default function Login() {
       </header>
 
       {/* 聚焦输入时收起轮播，避免软键盘 + 动画导致整页闪动 */}
-      {!formFocused && banners.length > 0 ? (
-        <div className="mt-2 shrink-0 px-5">
+      {banners.length > 0 ? (
+        <div
+          className={cn(
+            "mt-2 shrink-0 px-5 overflow-hidden transition-[max-height,opacity,margin] duration-300 ease-out",
+            formFocused ? "max-h-0 opacity-0 mt-0 pointer-events-none" : "max-h-[280px] opacity-100",
+          )}
+          aria-hidden={formFocused}
+        >
           <LoginBannerCarousel banners={banners} paused={formFocused} />
         </div>
       ) : null}
@@ -570,29 +570,6 @@ export default function Login() {
             ) : mode === "login" ? "登 录" : "注 册"}
           </button>
         </FormFieldShake>
-
-        {/* ══════════════ Divider ══════════════ */}
-        {mode === "login" && wechatLoginEnabled && (
-          <div className="my-7 flex items-center gap-4">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-xs text-muted-foreground whitespace-nowrap">其他登录方式</span>
-            <div className="h-px flex-1 bg-border" />
-          </div>
-        )}
-
-        {/* ══════════════ OAuth ══════════════ */}
-        {mode === "login" && wechatLoginEnabled && (
-          <div className="mb-8">
-            <button
-              type="button"
-              onClick={openWechatLogin}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[#07C160]/30 bg-[#07C160]/10 py-3.5 text-sm font-semibold text-[#07C160] active:scale-[0.98] transition-transform"
-            >
-              <WeChatIcon size={22} />
-              微信扫码登录
-            </button>
-          </div>
-        )}
 
         {showReset && (
           <FormFieldShake shake={shakeKey} className="mb-6 rounded-2xl border border-border bg-card p-4 shadow-sm">

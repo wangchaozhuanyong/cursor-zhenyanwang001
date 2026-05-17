@@ -1,7 +1,8 @@
 const { generateId, formatProduct } = require('../../utils/helpers');
 const { BusinessError } = require('../../errors/BusinessError');
 const { logAdminAction } = require('../../utils/adminAudit');
-const { rowsToCsv, parseCsv, parseBool } = require('../../utils/csv');
+const { parseCsv, parseBool } = require('../../utils/csv');
+const { rowsToCsvLocalized, normalizeCsvImportRows } = require('../../utils/adminCsvLabels');
 const { buildSearchKeywords, normalizeSearchKeyword } = require('../../utils/searchKeywords');
 const repo = require('./adminProduct.repository');
 const variantRepo = require('./adminProductVariant.repository');
@@ -538,12 +539,13 @@ async function exportProductsCsv(query) {
       images: imagesStr,
     };
   });
-  const csv = rowsToCsv(EXPORT_HEADERS, data);
+  const csv = rowsToCsvLocalized(EXPORT_HEADERS, data);
   return { csv, filename: `products_${Date.now()}.csv` };
 }
 
 async function importProductsCsv(text, adminUserId) {
-  const { rows } = parseCsv(text);
+  const { rows: rawRows } = parseCsv(text);
+  const rows = normalizeCsvImportRows(rawRows);
   if (!rows.length) throw new BusinessError(400, 'CSV 无数据行');
 
   let created = 0;

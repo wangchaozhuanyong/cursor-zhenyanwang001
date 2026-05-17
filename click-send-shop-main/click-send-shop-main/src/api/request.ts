@@ -13,7 +13,18 @@ import { startGlobalLoadingDeferred, stopGlobalLoading } from "@/lib/loadingProg
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
+function gatewayErrorMessage(status: number): string | null {
+  if (status === 502) {
+    return "服务暂时不可用（网关未连上后端），请稍后重试；若持续出现请联系管理员检查 API 服务是否运行。";
+  }
+  if (status === 503) return "服务维护中，请稍后再试";
+  if (status === 504) return "服务响应超时，请稍后再试";
+  return null;
+}
+
 function extractResponseMessage(body: Record<string, unknown>, status: number): string {
+  const gateway = gatewayErrorMessage(status);
+  if (gateway) return gateway;
   const candidates = [
     body.message,
     body.error,

@@ -11,9 +11,10 @@ import { useAdminUsersStore } from "@/stores/useAdminUsersStore";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { productTagBadgeClass } from "@/utils/productTagBadge";
 import type { UserTag } from "@/types/user";
+import { Tx } from "@/components/admin/AdminText";
 
 function UserTagBadges({ tags }: { tags?: UserTag[] }) {
-  if (!tags?.length) return <span className="text-xs text-muted-foreground">无标签</span>;
+  if (!tags?.length) return <span className="text-xs text-muted-foreground"><Tx>无标签</Tx></span>;
   return (
     <div className="flex flex-wrap gap-1">
       {tags.map((tag) => (
@@ -44,11 +45,11 @@ export default function AdminUsers() {
   const setPageSize = useAdminUsersStore((s) => s.setPageSize);
   const loadUsers = useAdminUsersStore((s) => s.loadUsers);
   const resetUsersStore = useAdminUsersStore((s) => s.reset);
-  const [tags, setTags] = useState<UserTag[]>([]);
+  const [tags, setTags] = useState<UserTag[]><Tx>([]);
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState("金色");
   const [tagSaving, setTagSaving] = useState(false);
-  const [tagDeleteId, setTagDeleteId] = useState<string | null>(null);
+  const [tagDeleteId, setTagDeleteId] = useState</Tx><string | null>(null);
 
   useLayoutEffect(() => {
     useAdminUsersStore.setState({ loading: true });
@@ -159,7 +160,7 @@ export default function AdminUsers() {
           onChange={(e) => handleTagFilterChange(e.target.value)}
           className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm text-foreground outline-none"
         >
-          <option value="">全部标签</option>
+          <option value=""><Tx>全部标签</Tx></option>
           {tags.map((tag) => (
             <option key={tag.id} value={tag.id}>{tag.name}</option>
           ))}
@@ -169,23 +170,23 @@ export default function AdminUsers() {
           onChange={(e) => handleWechatFilterChange(e.target.value)}
           className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm text-foreground outline-none"
         >
-          <option value="">微信绑定（全部）</option>
-          <option value="1">已绑定微信</option>
-          <option value="0">未绑定微信</option>
+          <option value=""><Tx>微信绑定（全部）</Tx></option>
+          <option value="1"><Tx>已绑定微信</Tx></option>
+          <option value="0"><Tx>未绑定微信</Tx></option>
         </select>
         <select
           value={phoneBoundFilter}
           onChange={(e) => handlePhoneFilterChange(e.target.value)}
           className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm text-foreground outline-none"
         >
-          <option value="">手机号（全部）</option>
-          <option value="1">已绑定手机号</option>
-          <option value="0">未绑定手机号</option>
+          <option value=""><Tx>手机号（全部）</Tx></option>
+          <option value="1"><Tx>已绑定手机号</Tx></option>
+          <option value="0"><Tx>未绑定手机号</Tx></option>
         </select>
         <PermissionGate permission="user.view">
           <button type="button" onClick={handleExportCsv} className="touch-manipulation flex min-h-[44px] shrink-0 items-center gap-1.5 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2.5 text-sm text-foreground hover:bg-[var(--theme-bg)] sm:self-center">
-            <Download size={16} /> 导出
-          </button>
+            <Download size={16} /><Tx> 导出
+          </Tx></button>
         </PermissionGate>
       </div>
 
@@ -193,8 +194,8 @@ export default function AdminUsers() {
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h3 className="text-sm font-semibold text-foreground">用户标签管理</h3>
-              <p className="mt-1 text-xs text-muted-foreground">可用于手动分群，后续营销优惠券可按标签定向发放。</p>
+              <h3 className="text-sm font-semibold text-foreground"><Tx>用户标签管理</Tx></h3>
+              <p className="mt-1 text-xs text-muted-foreground"><Tx>可用于手动分群，后续营销优惠券可按标签定向发放。</Tx></p>
             </div>
             <div className="flex flex-wrap items-end gap-2">
               <input
@@ -208,10 +209,10 @@ export default function AdminUsers() {
                 onChange={(e) => setNewTagColor(e.target.value)}
                 className="min-h-[40px] rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none"
               >
-                <option>红色</option>
-                <option>绿色</option>
-                <option>蓝色</option>
-                <option>金色</option>
+                <option><Tx>红色</Tx></option>
+                <option><Tx>绿色</Tx></option>
+                <option><Tx>蓝色</Tx></option>
+                <option><Tx>金色</Tx></option>
               </select>
               <LoadingButton
                 type="button"
@@ -220,9 +221,9 @@ export default function AdminUsers() {
                 loadingText="添加中..."
                 onClick={() => void handleCreateTag()}
                 className="min-h-[40px] rounded-lg px-3 py-2 text-sm font-semibold"
-              >
+              ><Tx>
                 添加
-              </LoadingButton>
+              </Tx></LoadingButton>
             </div>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -235,7 +236,7 @@ export default function AdminUsers() {
                 </button>
               </span>
             ))}
-            {tags.length === 0 && <span className="text-xs text-muted-foreground">暂无标签</span>}
+            {tags.length === 0 && <span className="text-xs text-muted-foreground"><Tx>暂无标签</Tx></span>}
           </div>
         </div>
       </PermissionGate>
@@ -284,20 +285,20 @@ export default function AdminUsers() {
                 </div>
                 <p className="text-sm text-muted-foreground">{u.phone || "—"}</p>
                 <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground sm:grid-cols-2">
-                  <span>邀请码 <span className="font-mono text-foreground">{u.invite_code || "—"}</span></span>
-                  <span>上级 <span className="font-mono text-foreground">{u.parent_invite_code || "—"}</span></span>
+                  <span><Tx>邀请码 </Tx><span className="font-mono text-foreground">{u.invite_code || "—"}</span></span>
+                  <span><Tx>上级 </Tx><span className="font-mono text-foreground">{u.parent_invite_code || "—"}</span></span>
                 </div>
                 <UserTagBadges tags={u.tags} />
                 <p className="text-[11px] text-muted-foreground">{u.created_at ? new Date(u.created_at).toLocaleString("zh-CN") : "—"}</p>
-                <button type="button" onClick={() => navigate(`/admin/users/${u.id}`)} className="touch-manipulation min-h-[44px] w-full theme-rounded border border-[var(--theme-price)]/40 py-2.5 text-sm font-medium text-[var(--theme-price)] active:bg-[var(--theme-bg)]">
+                <button type="button" onClick={() => navigate(`/admin/users/${u.id}`)} className="touch-manipulation min-h-[44px] w-full theme-rounded border border-[var(--theme-price)]/40 py-2.5 text-sm font-medium text-[var(--theme-price)] active:bg-[var(--theme-bg)]"><Tx>
                   查看详情
-                </button>
+                </Tx></button>
               </div>
             </div>
           </div>
         ))}
         {!loading && users.length === 0 && (
-          <div className="py-12 text-center text-sm text-muted-foreground">暂无用户</div>
+          <div className="py-12 text-center text-sm text-muted-foreground"><Tx>暂无用户</Tx></div>
         )}
         <Pagination total={total} page={page} pageSize={pageSize} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
       </div>
@@ -345,7 +346,7 @@ export default function AdminUsers() {
               <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{u.parent_invite_code || "—"}</td>
               <td className="px-4 py-3 text-foreground">{u.points_balance ?? 0}</td>
               <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{u.created_at ? new Date(u.created_at).toLocaleString("zh-CN") : "—"}</td>
-              <td className="px-4 py-3"><button type="button" onClick={() => navigate(`/admin/users/${u.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">详情</button></td>
+              <td className="px-4 py-3"><button type="button" onClick={() => navigate(`/admin/users/${u.id}`)} className="text-xs text-[var(--theme-price)] hover:underline"><Tx>详情</Tx></button></td>
             </>
           )}
         />

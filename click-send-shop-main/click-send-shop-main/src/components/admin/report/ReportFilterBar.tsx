@@ -1,4 +1,4 @@
-﻿import { useMemo } from "react";
+import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 
 type Props = {
@@ -114,9 +114,9 @@ export default function ReportFilterBar({ categoryOptions = [], onChange }: Prop
           <option value="">全部分类</option>
           {categoryOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
-        <input value={productId} onChange={(e) => update({ product_id: e.target.value })} placeholder="商品ID" className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-xs" />
-        <input value={activityId} onChange={(e) => update({ activity_id: e.target.value })} placeholder="活动ID" className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-xs" />
-        <input value={couponId} onChange={(e) => update({ coupon_id: e.target.value })} placeholder="优惠券ID" className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-xs" />
+        <input value={productId} onChange={(e) => update({ product_id: e.target.value })} placeholder="商品编号（可选）" className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-xs" />
+        <input value={activityId} onChange={(e) => update({ activity_id: e.target.value })} placeholder="活动编号（可选）" className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-xs" />
+        <input value={couponId} onChange={(e) => update({ coupon_id: e.target.value })} placeholder="优惠券编号（可选）" className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-xs" />
         <select value={orderStatus} onChange={(e) => update({ order_status: e.target.value })} className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-xs">
           <option value="">全部订单状态</option>
           <option value="pending">待付款</option>
@@ -135,7 +135,7 @@ export default function ReportFilterBar({ categoryOptions = [], onChange }: Prop
         </select>
         <select value={paymentMethod} onChange={(e) => update({ payment_method: e.target.value })} className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-xs">
           <option value="">全部支付方式</option>
-          <option value="fpx">FPX</option>
+          <option value="fpx">FPX 网上银行</option>
           <option value="card">银行卡</option>
           <option value="wallet">电子钱包</option>
           <option value="cod">货到付款</option>

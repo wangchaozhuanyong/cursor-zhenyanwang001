@@ -153,7 +153,31 @@ app.post(
 
 // 涓?multer 瑙嗛涓婇檺 50MB銆丯ginx client_max_body_size 瀵归綈锛沵ultipart 鐢?multer 瑙ｆ瀽锛屾鏉′富瑕侀伩鍏嶅ぇ JSON 鎰忓 413
 app.use(express.json({ limit: '60mb' }));
-app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+
+const uploadsDir = path.join(__dirname, '../public/uploads');
+/** 历史商品可能仅有 full.webp，无 -card/-detail；缺失变体时回退 full，避免客户端 404 二次请求 */
+app.use('/uploads', (req, res, next) => {
+  const rel = decodeURIComponent(String(req.path || ''));
+  const variantMatch = rel.match(/^\/([a-f0-9]{32})-(card|detail)(\.webp)$/i);
+  if (!variantMatch) return next();
+  const fullRel = `/${variantMatch[1]}${variantMatch[3]}`;
+  const fullDisk = path.join(uploadsDir, fullRel.replace(/^\//, ''));
+  if (!fs.existsSync(fullDisk)) return next();
+  res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+  return res.sendFile(fullDisk);
+});
+app.use(
+  '/uploads',
+  express.static(uploadsDir, {
+    maxAge: '7d',
+    immutable: true,
+    setHeaders(res, filePath) {
+      if (filePath.endsWith('.webp')) {
+        res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+      }
+    },
+  }),
+);
 app.use(seoRoutes);
 
 const authLimiter = rateLimit({

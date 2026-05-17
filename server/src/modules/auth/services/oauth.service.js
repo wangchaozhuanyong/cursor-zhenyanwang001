@@ -86,7 +86,12 @@ function buildGoogleAuthorizeUrl(plainState) {
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 }
 
+function isThirdPartyLoginEnabled() {
+  return process.env.THIRD_PARTY_LOGIN_ENABLED === '1';
+}
+
 async function startOAuth(provider, redirectRaw) {
+  if (!isThirdPartyLoginEnabled()) throw new ValidationError('第三方登录暂未开放');
   assertProvider(provider);
   const redirectAfter = sanitizeRedirectAfter(redirectRaw);
 
@@ -236,6 +241,7 @@ function errorRedirect(message) {
 }
 
 async function handleOAuthCallback(provider, query) {
+  if (!isThirdPartyLoginEnabled()) return errorRedirect('第三方登录暂未开放');
   assertProvider(provider);
 
   if (query.error) {
@@ -280,6 +286,7 @@ async function handleOAuthCallback(provider, query) {
 }
 
 async function exchangeTicket(body) {
+  if (!isThirdPartyLoginEnabled()) throw new ValidationError('第三方登录暂未开放');
   const provider = String(body.provider || '').toLowerCase();
   assertProvider(provider);
   const code = String(body.code || '').trim();

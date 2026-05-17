@@ -27,6 +27,8 @@ import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { buildPersonalizedRecommendations } from "@/utils/personalizedRecommendations";
 import { isLoggedIn } from "@/utils/token";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
+import { isHomeModuleEnabled } from "@/constants/homeModules";
 
 function Header({ title, icon: Icon, subtitle }: { title: string; icon?: React.ElementType; subtitle?: string }) {
   return (
@@ -61,6 +63,7 @@ export default function MemberHome() {
   const [claimingCouponId, setClaimingCouponId] = useState<string | null>(null);
   const { banners, loading: bannersLoading } = useHomeBanners();
   const { themeConfig } = useThemeRuntime();
+  const { settings: homeModules } = useHomeModuleSettings();
   const homeLayout = themeConfig.homeLayout ?? "classic";
   const isPremiumLayout = homeLayout === "premium";
   const isDealLayout = homeLayout === "deal";
@@ -92,8 +95,8 @@ export default function MemberHome() {
   );
   const [hotBatchIndex, setHotBatchIndex] = useState(0);
   const [recBatchIndex, setRecBatchIndex] = useState(0);
-  const HOT_BATCH_SIZE = 4;
-  const REC_BATCH_SIZE = 4;
+  const HOT_BATCH_SIZE = homeModules.hotBatchSize;
+  const REC_BATCH_SIZE = homeModules.recBatchSize;
 
   const hotList = useMemo(() => hotProducts.slice(0, 16), [hotProducts]);
   const recList = useMemo(() => {
@@ -118,17 +121,24 @@ export default function MemberHome() {
     <div className={`store-bottom-safe min-h-screen text-[var(--theme-text)] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_90%,black)]" : "bg-[var(--theme-bg)]"}`} data-theme-home-layout={themeConfig.homeLayout}>
       <StoreTabHeader searchMode="navigate" />
       <main className="mx-auto max-w-screen-xl px-4 pt-4">
-        <AnimatedSection>
-          <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
-            <BannerCarousel banners={banners} loading={bannersLoading} themeConfigOverride={themeConfig} />
-          </div>
-        </AnimatedSection>
-        <AnimatedSection delay={0.05}>
-          <HomeTrustBar className="mt-3" />
-        </AnimatedSection>
-        <AnimatedSection delay={0.08} className="-mx-4 mt-3">
-          <HomeOpsBlocks />
-        </AnimatedSection>
+        {isHomeModuleEnabled(homeModules, "banner", "member") ? (
+          <AnimatedSection>
+            <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
+              <BannerCarousel banners={banners} loading={bannersLoading} themeConfigOverride={themeConfig} />
+            </div>
+          </AnimatedSection>
+        ) : null}
+        {isHomeModuleEnabled(homeModules, "trust_bar", "member") ? (
+          <AnimatedSection delay={0.05}>
+            <HomeTrustBar className="mt-3" />
+          </AnimatedSection>
+        ) : null}
+        {isHomeModuleEnabled(homeModules, "nav_grid", "member") ? (
+          <AnimatedSection delay={0.08} className="-mx-4 mt-3">
+            <HomeOpsBlocks />
+          </AnimatedSection>
+        ) : null}
+        {isHomeModuleEnabled(homeModules, "member_coupons", "member") ? (
         <AnimatedSection delay={0.1} className="mt-section">
         <section>
           <Header title="会员专属礼包" icon={Ticket} />
@@ -192,6 +202,8 @@ export default function MemberHome() {
           ) : null}
         </section>
         </AnimatedSection>
+        ) : null}
+        {isHomeModuleEnabled(homeModules, "new_arrivals", "member") ? (
         <AnimatedSection delay={0.12}>
         <NewArrivalOpsSection
           products={newProducts}
@@ -207,6 +219,8 @@ export default function MemberHome() {
           homeLayout={themeConfig.homeLayout}
         />
         </AnimatedSection>
+        ) : null}
+        {isHomeModuleEnabled(homeModules, "hot_sales", "member") ? (
         <AnimatedSection delay={0.14} className="mt-section">
         <section>
           <div className="mb-4 flex items-center justify-between">
@@ -231,6 +245,8 @@ export default function MemberHome() {
           </div>
         </section>
         </AnimatedSection>
+        ) : null}
+        {isHomeModuleEnabled(homeModules, "recommend", "member") ? (
         <AnimatedSection delay={0.16} className="mt-section">
         <section>
           <div className="mb-4 flex items-center justify-between">
@@ -257,6 +273,7 @@ export default function MemberHome() {
           </div>
         </section>
         </AnimatedSection>
+        ) : null}
       </main>
     </div>
   );

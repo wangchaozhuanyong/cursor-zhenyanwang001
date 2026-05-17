@@ -15,7 +15,8 @@ import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_PRODUCT_LAYOUT } from "@/const
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { flattenCategories } from "@/utils/categoryTree";
 import type { ProductTag } from "@/types/product";
-import { AnimatedConfirmDialog, LoadingButton, UploadDropZone } from "@/modules/micro-interactions";
+import { AnimatedConfirmDialog, LoadingButtoimport { Tx } from "@/components/admin/AdminText";
+n, UploadDropZone } from "@/modules/micro-interactions";
 
 export default function AdminProductForm() {
   const navigate = useNavigate();
@@ -306,21 +307,21 @@ export default function AdminProductForm() {
       <PermissionGate
         permission="product.manage"
         fallback={
-          <p className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
+          <p className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground"><Tx>
             你仅有查看权限，无法编辑或新建商品。
-          </p>
+          </Tx></p>
         }
       >
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <div className="rounded-xl border border-border bg-card p-6">
-            <h3 className="mb-4 text-sm font-semibold text-foreground">商品图片</h3>
+            <h3 className="mb-4 text-sm font-semibold text-foreground"><Tx>商品图片</Tx></h3>
             <p className="mb-4 text-[11px] leading-relaxed text-muted-foreground">
               {IMAGE_UPLOAD_HINT_API} {IMAGE_UPLOAD_HINT_PRODUCT_LAYOUT}
             </p>
             <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">封面图</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>封面图</Tx></label>
                 <UploadDropZone
                   disabled={uploadingCover}
                   className={`relative flex h-40 w-40 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border ${uploadingCover ? "cursor-not-allowed opacity-80" : "cursor-pointer hover:border-gold/50"}`}
@@ -334,13 +335,13 @@ export default function AdminProductForm() {
                   ) : (
                     <div className="text-center">
                       <Upload size={24} className="mx-auto text-muted-foreground" />
-                      <span className="mt-1 block text-xs text-muted-foreground">上传封面</span>
+                      <span className="mt-1 block text-xs text-muted-foreground"><Tx>上传封面</Tx></span>
                     </div>
                   )}
                   {uploadingCover ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/45 text-white">
                       <Loader2 className="h-5 w-5 animate-spin" />
-                      <span className="mt-2 text-xs">图片上传中...</span>
+                      <span className="mt-2 text-xs"><Tx>图片上传中...</Tx></span>
                       {uploadProgress !== null ? <span className="text-[11px]">{uploadProgress}%</span> : null}
                     </div>
                   ) : null}
@@ -348,7 +349,7 @@ export default function AdminProductForm() {
                 </UploadDropZone>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">轮播图（最多 6 张）</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>轮播图（最多 6 张）</Tx></label>
                 <div className="flex flex-wrap gap-3">
                   {form.images.map((img, i) => (
                     <div key={i} className="relative h-24 w-24 rounded-lg overflow-hidden border border-border">
@@ -359,7 +360,7 @@ export default function AdminProductForm() {
                   {uploadingGallery && (
                     <div className="flex h-24 w-24 flex-col items-center justify-center rounded-lg border border-border bg-secondary/60 text-xs text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="mt-1">上传中...</span>
+                      <span className="mt-1"><Tx>上传中...</Tx></span>
                       {uploadProgress !== null ? <span className="text-[10px]">{uploadProgress}%</span> : null}
                     </div>
                   )}
@@ -381,17 +382,17 @@ export default function AdminProductForm() {
               <div className="rounded-xl border border-border bg-background/50 p-4">
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-muted-foreground">详情视频（可选）</label>
-                    <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
+                    <label className="block text-xs font-medium text-muted-foreground"><Tx>详情视频（可选）</Tx></label>
+                    <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground"><Tx>
                       仅在商品详情页图集展示，商品卡不展示。支持 MP4 / WebM / MOV，单个视频最大 50MB；建议使用 H.264 MP4 以获得最佳兼容性。
-                      <span className="mt-0.5 block">
-                        画面比例请与「站点外观 → 商品图比例」一致（常见为 <strong className="font-medium text-foreground/80">1:1</strong>，如{" "}
+                      </Tx><span className="mt-0.5 block"><Tx>
+                        画面比例请与「站点外观 → 商品图比例」一致（常见为 </Tx><strong className="font-medium text-foreground/80">1:1</strong>，如{" "}
                         <strong className="font-medium text-foreground/80">1080×1080</strong> /{" "}
-                        <strong className="font-medium text-foreground/80">720×720</strong>；若为 3:4 则如 1080×1440）。码率约 5–8 Mbps，时长 1 分钟内更易压在 50MB 内。
-                        详情页图集主区域固定为当前主题的 <strong className="font-medium text-foreground/80">商品图比例</strong>，视频在区域内{" "}
-                        <strong className="font-medium text-foreground/80">object-contain</strong>
+                        <strong className="font-medium text-foreground/80">720×720</strong><Tx>；若为 3:4 则如 1080×1440）。码率约 5–8 Mbps，时长 1 分钟内更易压在 50MB 内。
+                        详情页图集主区域固定为当前主题的 </Tx><strong className="font-medium text-foreground/80"><Tx>商品图比例</Tx></strong>，视频在区域内{" "}
+                        <strong className="font-medium text-foreground/80">object-contain</strong><Tx>
                         ：与主题同比例导出时黑边最少、与图片切换不跳变；横屏或与主题不一致时可能出现上下或左右留黑。下方预览与前台使用同一比例变量。
-                      </span>
+                      </Tx></span>
                     </p>
                   </div>
                   {form.video_url && (
@@ -399,9 +400,9 @@ export default function AdminProductForm() {
                       type="button"
                       onClick={() => setForm((f) => ({ ...f, video_url: "" }))}
                       className="shrink-0 text-xs text-destructive hover:underline"
-                    >
+                    ><Tx>
                       清除
-                    </button>
+                    </Tx></button>
                   )}
                 </div>
                 <div className="grid gap-3 md:grid-cols-[1fr_auto]">
@@ -412,9 +413,9 @@ export default function AdminProductForm() {
                     className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                   />
                   <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-3 text-sm font-medium text-foreground hover:border-gold/50 hover:bg-secondary">
-                    <Video size={16} />
+                    <Video size={16} /><Tx>
                     上传视频
-                    <input
+                    </Tx><input
                       type="file"
                       accept="video/mp4,video/webm,video/quicktime,video/x-m4v,.mp4,.webm,.mov,.m4v"
                       className="hidden"
@@ -440,36 +441,36 @@ export default function AdminProductForm() {
           </div>
 
           <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">基本信息</h3>
+            <h3 className="text-sm font-semibold text-foreground"><Tx>基本信息</Tx></h3>
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">商品名称</label>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>商品名称</Tx></label>
               <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="输入商品名称" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">售价 (RM)</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>售价 (RM)</Tx></label>
                 <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="0.00" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">划线原价 (RM)</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>划线原价 (RM)</Tx></label>
                 <input value={form.original_price} onChange={(e) => setForm({ ...form, original_price: e.target.value })} placeholder="留空则不展示" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
-                <p className="mt-1 text-[10px] text-muted-foreground">仅当大于售价时，前台商品卡/详情页才会以删除线显示。</p>
+                <p className="mt-1 text-[10px] text-muted-foreground"><Tx>仅当大于售价时，前台商品卡/详情页才会以删除线显示。</Tx></p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">库存（默认规格）</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>库存（默认规格）</Tx></label>
                 <input type="number" min={0} value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder="0" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
-                <p className="mt-1 text-[10px] text-muted-foreground">保存时写入默认 SKU；大批量入库仍建议在库存中心操作。</p>
+                <p className="mt-1 text-[10px] text-muted-foreground"><Tx>保存时写入默认 SKU；大批量入库仍建议在库存中心操作。</Tx></p>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">积分值</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>积分值</Tx></label>
                 <input value={form.points} onChange={(e) => setForm({ ...form, points: e.target.value })} placeholder="与售价相同" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">销量</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>销量</Tx></label>
                 <input
                   type="number"
                   value={form.sales_count}
@@ -477,15 +478,15 @@ export default function AdminProductForm() {
                   placeholder="0"
                   className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                 />
-                <p className="mt-1 text-[10px] text-muted-foreground">订单付款后由系统自动累加；可手动修正起步销量。</p>
+                <p className="mt-1 text-[10px] text-muted-foreground"><Tx>订单付款后由系统自动累加；可手动修正起步销量。</Tx></p>
               </div>
               <div />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">分类</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>分类</Tx></label>
                 <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none">
-                  <option value="">选择分类</option>
+                  <option value=""><Tx>选择分类</Tx></option>
                   {categoryOptions.map((c: any) => (
                     <option key={c.id} value={c.id}>
                       {"　".repeat(c.level)}
@@ -495,7 +496,7 @@ export default function AdminProductForm() {
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">排序</label>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>排序</Tx></label>
                 <input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: e.target.value })} placeholder="0" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
               </div>
             </div>
@@ -503,7 +504,7 @@ export default function AdminProductForm() {
 
           <div className="rounded-xl border border-border bg-card p-6 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-foreground">规格 / SKU</h3>
+              <h3 className="text-sm font-semibold text-foreground"><Tx>规格 / SKU</Tx></h3>
               <button
                 type="button"
                 onClick={() =>
@@ -524,21 +525,21 @@ export default function AdminProductForm() {
                 }
                 className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary"
               >
-                <Plus size={14} /> 添加规格
-              </button>
+                <Plus size={14} /><Tx> 添加规格
+              </Tx></button>
             </div>
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
+            <p className="text-[11px] text-muted-foreground leading-relaxed"><Tx>
               可在此维护各规格库存与价格；保存后同步到商品总库存。
-            </p>
+            </Tx></p>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[520px] text-xs">
                 <thead>
                   <tr className="border-b border-border text-left text-muted-foreground">
-                    <th className="pb-2 pr-2 w-10">默认</th>
-                    <th className="pb-2 pr-2">规格名</th>
+                    <th className="pb-2 pr-2 w-10"><Tx>默认</Tx></th>
+                    <th className="pb-2 pr-2"><Tx>规格名</Tx></th>
                     <th className="pb-2 pr-2">SKU</th>
-                    <th className="pb-2 pr-2">价格</th>
-                    <th className="pb-2 pr-2">库存</th>
+                    <th className="pb-2 pr-2"><Tx>价格</Tx></th>
+                    <th className="pb-2 pr-2"><Tx>库存</Tx></th>
                     <th className="pb-2 w-10" />
                   </tr>
                 </thead>
@@ -652,12 +653,12 @@ export default function AdminProductForm() {
           </div>
 
           <div className="rounded-xl border border-border bg-card p-6 space-y-3">
-            <h3 className="text-sm font-semibold text-foreground">自定义标签</h3>
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
+            <h3 className="text-sm font-semibold text-foreground"><Tx>自定义标签</Tx></h3>
+            <p className="text-[11px] leading-relaxed text-muted-foreground"><Tx>
               标签在「标签管理」中维护；勾选后关联本商品，前台商品列表与详情页会与「热销 / 新品」徽章一并展示。
-            </p>
+            </Tx></p>
             {allTags.length === 0 ? (
-              <p className="text-xs text-muted-foreground">暂无可用标签，请先到「标签管理」新建。</p>
+              <p className="text-xs text-muted-foreground"><Tx>暂无可用标签，请先到「标签管理」新建。</Tx></p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {allTags.map((t) => {
@@ -691,7 +692,7 @@ export default function AdminProductForm() {
           </div>
 
           <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">商品描述</h3>
+            <h3 className="text-sm font-semibold text-foreground"><Tx>商品描述</Tx></h3>
             <textarea
               rows={4}
               value={form.description}
@@ -704,9 +705,9 @@ export default function AdminProductForm() {
 
         <div className="space-y-4">
           <div className="rounded-xl border border-border bg-card p-6 space-y-3">
-            <h3 className="text-sm font-semibold text-foreground">状态设置</h3>
+            <h3 className="text-sm font-semibold text-foreground"><Tx>状态设置</Tx></h3>
             <div className="rounded-lg border border-border p-3">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">销售状态</label>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>销售状态</Tx></label>
               <select
                 value={form.status}
                 onChange={(e) =>
@@ -714,11 +715,11 @@ export default function AdminProductForm() {
                 }
                 className="w-full rounded-lg bg-secondary px-3 py-2.5 text-sm text-foreground outline-none"
               >
-                <option value="draft">草稿（前台不可见）</option>
-                <option value="active">上架</option>
-                <option value="inactive">下架</option>
+                <option value="draft"><Tx>草稿（前台不可见）</Tx></option>
+                <option value="active"><Tx>上架</Tx></option>
+                <option value="inactive"><Tx>下架</Tx></option>
               </select>
-              <p className="mt-1 text-[10px] text-muted-foreground">草稿可用于先录入资料，确认后再上架。</p>
+              <p className="mt-1 text-[10px] text-muted-foreground"><Tx>草稿可用于先录入资料，确认后再上架。</Tx></p>
             </div>
             {[
               { label: "热门", desc: "显示热门标签", key: "is_hot" },
@@ -743,7 +744,7 @@ export default function AdminProductForm() {
           </div>
 
           <div className="rounded-xl border border-border bg-card p-6">
-            <h3 className="mb-3 text-sm font-semibold text-foreground">预览</h3>
+            <h3 className="mb-3 text-sm font-semibold text-foreground"><Tx>预览</Tx></h3>
             <div className="rounded-lg border border-border p-3">
               {form.cover_image ? (
                 <img src={form.cover_image} alt="" className="mb-2 h-32 w-full rounded-md object-cover" />
@@ -783,9 +784,9 @@ export default function AdminProductForm() {
               loadingText="保存中..."
               onClick={() => void handleSave(false)}
               className="w-full rounded-lg px-6 py-3 text-sm font-semibold"
-            >
+            ><Tx>
               保存
-            </LoadingButton>
+            </Tx></LoadingButton>
             <LoadingButton
               type="button"
               variant="outline"
@@ -794,9 +795,9 @@ export default function AdminProductForm() {
               disabled={saving}
               onClick={() => void handleSave(true)}
               className="w-full rounded-lg border border-gold bg-gold/10 px-6 py-3 text-sm font-semibold text-gold"
-            >
+            ><Tx>
               保存并上架
-            </LoadingButton>
+            </Tx></LoadingButton>
             {!isNew && (
               <LoadingButton
                 type="button"
@@ -806,11 +807,11 @@ export default function AdminProductForm() {
                 disabled={deleting || saving}
                 onClick={() => setDeleteConfirmOpen(true)}
                 className="w-full rounded-lg border border-destructive/40 px-6 py-3 text-sm font-semibold text-destructive hover:bg-destructive/10"
-              >
+              ><Tx>
                 删除商品
-              </LoadingButton>
+              </Tx></LoadingButton>
             )}
-            <button onClick={goBack} className="w-full rounded-lg border border-border px-6 py-3 text-sm text-muted-foreground">取消</button>
+            <button onClick={goBack} className="w-full rounded-lg border border-border px-6 py-3 text-sm text-muted-foreground"><Tx>取消</Tx></button>
           </div>
         </div>
       </div>

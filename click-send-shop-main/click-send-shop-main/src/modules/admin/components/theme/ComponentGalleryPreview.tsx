@@ -4,6 +4,7 @@ import StoreBadge from "@/components/ui/StoreBadge";
 import StorePrice from "@/components/ui/StorePrice";
 import type { ThemeConfig } from "@/types/theme";
 import { previewProduct } from "./themePreviewData";
+import { Tx } from "@/components/admin/AdminText";
 
 function Btn({ label, variant = "primary" }: { label: string; variant?: "primary" | "secondary" | "danger" | "ghost" | "success" }) {
   const styles: Record<string, string> = {
@@ -24,7 +25,7 @@ export default function ComponentGalleryPreview({ config: _config }: { config: T
   return (
     <div className="space-y-4 text-[var(--theme-text)]">
       <section>
-        <p className="mb-2 text-xs font-semibold text-[var(--theme-text-muted)]">按钮</p>
+        <p className="mb-2 text-xs font-semibold text-[var(--theme-text-muted)]"><Tx>按钮</Tx></p>
         <div className="flex flex-wrap gap-2">
           <Btn label="主按钮" />
           <Btn label="次按钮" variant="secondary" />
@@ -34,19 +35,19 @@ export default function ComponentGalleryPreview({ config: _config }: { config: T
         </div>
       </section>
       <section>
-        <p className="mb-2 text-xs font-semibold text-[var(--theme-text-muted)]">输入</p>
+        <p className="mb-2 text-xs font-semibold text-[var(--theme-text-muted)]"><Tx>输入</Tx></p>
         <input className="mb-2 h-9 w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-xs" placeholder="输入框" />
         <div className="flex h-9 items-center gap-2 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3">
           <span className="text-[var(--theme-text-muted)]">🔍</span>
-          <span className="text-xs text-[var(--theme-text-muted)]">搜索框</span>
+          <span className="text-xs text-[var(--theme-text-muted)]"><Tx>搜索框</Tx></span>
         </div>
       </section>
       <section>
-        <p className="mb-2 text-xs font-semibold text-[var(--theme-text-muted)]">标签 / 徽章</p>
+        <p className="mb-2 text-xs font-semibold text-[var(--theme-text-muted)]"><Tx>标签 / 徽章</Tx></p>
         <div className="flex flex-wrap gap-2">
-          <StoreBadge type="hot">热销</StoreBadge>
-          <StoreBadge type="sale">促销</StoreBadge>
-          <StoreBadge type="danger">危险</StoreBadge>
+          <StoreBadge type="hot"><Tx>热销</Tx></StoreBadge>
+          <StoreBadge type="sale"><Tx>促销</Tx></StoreBadge>
+          <StoreBadge type="danger"><Tx>危险</Tx></StoreBadge>
         </div>
       </section>
       <StorePrice price={79} originalPrice={99} />
@@ -59,18 +60,18 @@ export default function ComponentGalleryPreview({ config: _config }: { config: T
         scopeText="适用范围：全场商品"
         actionLabel="去使用"
       />
-      <div className="store-card p-2 text-xs">会员卡骨架预览</div>
+      <div className="store-card p-2 text-xs"><Tx>会员卡骨架预览</Tx></div>
       <ProductCard product={previewProduct} />
-      <div className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-2 text-xs">Toast / 提示样式区域</div>
+      <div className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-2 text-xs"><Tx>Toast / 提示样式区域</Tx></div>
       <div className="rounded-t-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-xs shadow-lg">
         <p className="font-medium">Bottom Sheet</p>
-        <p className="mt-1 text-[var(--theme-text-muted)]">从底部上滑的弹层示例</p>
+        <p className="mt-1 text-[var(--theme-text-muted)]"><Tx>从底部上滑的弹层示例</Tx></p>
       </div>
       <div className="h-8 animate-pulse rounded-lg bg-[var(--theme-border)]/40" />
       <table className="w-full border-collapse text-[10px]">
         <tbody>
           <tr className="border-b border-[var(--theme-border)]">
-            <td className="py-1">表格行 A</td>
+            <td className="py-1"><Tx>表格行 A</Tx></td>
             <td>RM 10</td>
           </tr>
         </tbody>

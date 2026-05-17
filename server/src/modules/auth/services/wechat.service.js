@@ -51,7 +51,12 @@ function wechatClient() {
   return { appId, appSecret };
 }
 
+function isThirdPartyLoginEnabled() {
+  return process.env.THIRD_PARTY_LOGIN_ENABLED === '1';
+}
+
 function isWechatLoginEnabled() {
+  if (!isThirdPartyLoginEnabled()) return false;
   const appId = (process.env.WECHAT_OPEN_APP_ID || '').trim();
   const appSecret = (process.env.WECHAT_OPEN_APP_SECRET || '').trim();
   return Boolean(appId && appSecret);

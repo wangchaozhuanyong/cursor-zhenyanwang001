@@ -104,6 +104,31 @@ describe('OTP auth API', () => {
   });
 });
 
+describe('WeChat auth API', () => {
+  test('GET /api/auth/features includes wechatLoginEnabled', async () => {
+    const res = await request(app).get('/api/auth/features').expect(200);
+    assert.equal(res.body.code, 0);
+    assert.equal(typeof res.body.data?.wechatLoginEnabled, 'boolean');
+    assert.equal(typeof res.body.data?.smsOtpLoginEnabled, 'boolean');
+  });
+
+  test('GET /api/auth/wechat/login without config returns redirect with error', async () => {
+    const prevId = process.env.WECHAT_OPEN_APP_ID;
+    const prevSecret = process.env.WECHAT_OPEN_APP_SECRET;
+    delete process.env.WECHAT_OPEN_APP_ID;
+    delete process.env.WECHAT_OPEN_APP_SECRET;
+    try {
+      const res = await request(app)
+        .get('/api/auth/wechat/login?redirect=%2Flogin')
+        .expect(302);
+      assert.match(String(res.headers.location || ''), /wechatError=/);
+    } finally {
+      if (prevId !== undefined) process.env.WECHAT_OPEN_APP_ID = prevId;
+      if (prevSecret !== undefined) process.env.WECHAT_OPEN_APP_SECRET = prevSecret;
+    }
+  });
+});
+
 describe('OAuth ticket exchange', () => {
   test('POST /api/auth/oauth/exchange', async () => {
     const p = `5${Date.now().toString().slice(-8)}`;

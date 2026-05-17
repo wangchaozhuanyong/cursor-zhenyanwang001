@@ -264,6 +264,8 @@ router.patch('/activities/:id/status', adminAuth, requirePermission('activity.ma
 router.delete('/activities/:id', adminAuth, requirePermission('activity.manage'), activityCtrl.remove);
 
 /* ---- Home Ops（首页导航 / 公告）---- */
+router.get('/home-ops/settings', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.getSettings);
+router.put('/home-ops/settings', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.updateSettings);
 router.get('/home-ops/nav-items', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.listNavItems);
 router.post('/home-ops/nav-items', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.createNavItem);
 router.put('/home-ops/nav-items/:id', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.updateNavItem);

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Camera, Lock, ChevronRight, ShieldCheck, Trash2 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import WeChatIcon from "@/components/icons/WeChatIcon";
+import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 import * as meService from "@/services/meService";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
@@ -48,10 +49,12 @@ export default function Settings() {
   };
 
   useEffect(() => {
+    if (!THIRD_PARTY_LOGIN_ENABLED) return;
     loadWechatBinding();
   }, []);
 
   useEffect(() => {
+    if (!THIRD_PARTY_LOGIN_ENABLED) return;
     const bindResult = searchParams.get("wechatBind");
     const wechatErr = searchParams.get("wechatError");
     if (wechatErr) {
@@ -182,7 +185,7 @@ export default function Settings() {
           </div>
         </section>
 
-        {wechatLoginEnabled && (
+        {THIRD_PARTY_LOGIN_ENABLED && wechatLoginEnabled && (
           <section className={CARD}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -247,7 +250,7 @@ export default function Settings() {
                   value={field.value}
                   readOnly={"readOnly" in field && field.readOnly}
                   onChange={(e) => field.onChange(e.target.value)}
-                  className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm outline-none ring-1 ring-[var(--theme-border)] focus:ring-2 focus:ring-[var(--theme-secondary)] disabled:opacity-70"
+                  className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm outline-none ring-1 ring-[var(--theme-border)] focus:ring-2 focus:ring-[var(--theme-primary)] disabled:opacity-70"
                 />
               </label>
             ))}
@@ -262,14 +265,14 @@ export default function Settings() {
 
         <section className={CARD}>
           <button onClick={() => setShowPwdForm(!showPwdForm)} className="flex w-full items-center justify-between">
-            <div className="flex items-center gap-3"><Lock size={18} className="text-[var(--theme-secondary)]" /><span className="text-sm font-medium">修改密码</span></div>
+            <div className="flex items-center gap-3"><Lock size={18} className="text-[var(--theme-primary)]" strokeWidth={2} /><span className="text-sm font-medium">修改密码</span></div>
             <ArrowLeft size={14} className={`text-[var(--theme-muted)] transition-transform ${showPwdForm ? "rotate-90" : "-rotate-90"}`} />
           </button>
           {showPwdForm && (
             <div className="mt-4 space-y-3">
-              <input type="password" value={oldPwd} onChange={(e) => setOldPwd(e.target.value)} placeholder="当前密码" className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-secondary)]" />
-              <input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} placeholder="新密码（至少6位）" className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-secondary)]" />
-              <input type="password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} placeholder="确认新密码" className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-secondary)]" />
+              <input type="password" value={oldPwd} onChange={(e) => setOldPwd(e.target.value)} placeholder="当前密码" className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
+              <input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} placeholder="新密码（至少6位）" className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
+              <input type="password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} placeholder="确认新密码" className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
               <button onClick={handleChangePwd} disabled={pwdSaving} className="w-full rounded-full bg-[var(--theme-primary)] py-3 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">{pwdSaving ? "修改中…" : "确认修改密码"}</button>
             </div>
           )}
@@ -289,7 +292,7 @@ export default function Settings() {
           {showCancelForm && (
             <div className="mt-4 space-y-3">
               <p className="text-xs leading-5 text-[var(--theme-muted)]">此操作会软删账号、清空地址，并脱敏历史订单中的收货姓名、电话、地址和备注。</p>
-              <input value={cancelConfirmText} onChange={(e) => setCancelConfirmText(e.target.value)} placeholder="输入“注销账号”确认" className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-secondary)]" />
+              <input value={cancelConfirmText} onChange={(e) => setCancelConfirmText(e.target.value)} placeholder="输入“注销账号”确认" className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
               <button onClick={handleCancelAccount} disabled={cancelSaving} className="w-full rounded-full bg-[var(--theme-danger)] py-3 text-sm font-semibold text-white disabled:opacity-60">{cancelSaving ? "注销中…" : "确认注销账号"}</button>
             </div>
           )}

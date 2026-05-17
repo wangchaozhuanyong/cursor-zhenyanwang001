@@ -5,6 +5,7 @@ import type { AutoColorAction } from "@/utils/themeStudioAuto";
 import ColorField from "./ColorField";
 import ThemeHealthCheck from "./ThemeHealthCheck";
 import {
+import { Tx } from "@/components/admin/AdminText";
   EDITOR_GROUP_LABELS,
   enumOptions,
   enumValueLabels,
@@ -48,9 +49,9 @@ function EditorSection({
               }}
               onKeyDown={(e) => e.key === "Enter" && onReset()}
               className="rounded border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-secondary"
-            >
+            ><Tx>
               重置分组
-            </span>
+            </Tx></span>
           ) : null}
           <ChevronDown size={16} className={`transition ${open ? "rotate-180" : ""}`} />
         </span>
@@ -132,29 +133,29 @@ export default function ThemeEditorPanel({
   return (
     <section className="min-h-0 min-w-0 flex-1 overflow-y-auto rounded-xl border border-border bg-card/50 p-3 lg:max-h-[calc(100vh-110px)]">
       <div className="mb-3 space-y-2">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground"><Tx>
           编辑皮肤参数，右侧实时预览当前皮肤。「保存草稿」仅写入配置；「保存并应用到全站」会同时设为系统生效皮肤。
-        </p>
+        </Tx></p>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => onAutoColor("secondary")} className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] hover:bg-secondary">
-            <Sparkles size={12} /> 自动生成辅色
-          </button>
+            <Sparkles size={12} /><Tx> 自动生成辅色
+          </Tx></button>
           <button type="button" onClick={() => onAutoColor("accent")} className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] hover:bg-secondary">
-            <Sparkles size={12} /> 自动生成强调色
-          </button>
+            <Sparkles size={12} /><Tx> 自动生成强调色
+          </Tx></button>
           <button type="button" onClick={() => onAutoColor("border")} className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] hover:bg-secondary">
-            <Sparkles size={12} /> 自动生成边框色
-          </button>
+            <Sparkles size={12} /><Tx> 自动生成边框色
+          </Tx></button>
           <button type="button" onClick={() => onAutoColor("textContrast")} className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] hover:bg-secondary">
-            <Sparkles size={12} /> 优化文字对比度
-          </button>
+            <Sparkles size={12} /><Tx> 优化文字对比度
+          </Tx></button>
           <button type="button" onClick={() => onAutoColor("foreground")} className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] hover:bg-secondary">
-            <Sparkles size={12} /> 生成前景色变量
-          </button>
+            <Sparkles size={12} /><Tx> 生成前景色变量
+          </Tx></button>
           {canUndoOptimize ? (
             <button type="button" onClick={onUndoOptimize} className="inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-900">
-              <Undo2 size={12} /> 撤销优化
-            </button>
+              <Undo2 size={12} /><Tx> 撤销优化
+            </Tx></button>
           ) : null}
         </div>
       </div>
@@ -163,7 +164,7 @@ export default function ThemeEditorPanel({
         <EditorSection id="basic" title={EDITOR_GROUP_LABELS.basic} defaultOpen>
           <div className="grid gap-3 md:grid-cols-2">
             <label className="space-y-1 md:col-span-2">
-              <span className="text-xs text-muted-foreground">皮肤名称</span>
+              <span className="text-xs text-muted-foreground"><Tx>皮肤名称</Tx></span>
               <input
                 value={selectedSkin?.name || ""}
                 onChange={(e) => onSkinMetaChange({ name: e.target.value })}
@@ -171,7 +172,7 @@ export default function ThemeEditorPanel({
               />
             </label>
             <label className="space-y-1 md:col-span-2">
-              <span className="text-xs text-muted-foreground">皮肤描述</span>
+              <span className="text-xs text-muted-foreground"><Tx>皮肤描述</Tx></span>
               <textarea
                 value={selectedSkin?.description || ""}
                 onChange={(e) => onSkinMetaChange({ description: e.target.value })}
@@ -180,7 +181,7 @@ export default function ThemeEditorPanel({
               />
             </label>
             <label className="space-y-1">
-              <span className="text-xs text-muted-foreground">适合场景</span>
+              <span className="text-xs text-muted-foreground"><Tx>适合场景</Tx></span>
               <p className="text-[10px] leading-snug text-muted-foreground/80">{FIELD_HELP_TEXTS.sceneTag}</p>
               <select
                 value={selectedSkin?.sceneTag || "default"}
@@ -200,16 +201,16 @@ export default function ThemeEditorPanel({
                   type="checkbox"
                   checked={selectedSkin?.clientEnabled !== false}
                   onChange={(e) => onSkinMetaChange({ clientEnabled: e.target.checked })}
-                />
+                /><Tx>
                 前台可切换
-              </span>
+              </Tx></span>
               <p className="pl-5 text-[10px] leading-snug text-muted-foreground/80">{FIELD_HELP_TEXTS.clientEnabled}</p>
             </label>
             <label className="flex flex-col gap-1 text-xs md:col-span-2">
               <span className="flex items-center gap-2">
-                <input type="checkbox" checked={isDefaultSkin} onChange={(e) => onSetDefaultToggle(e.target.checked)} />
+                <input type="checkbox" checked={isDefaultSkin} onChange={(e) => onSetDefaultToggle(e.target.checked)} /><Tx>
                 设为默认皮肤
-              </span>
+              </Tx></span>
               <p className="pl-5 text-[10px] leading-snug text-muted-foreground/80">{FIELD_HELP_TEXTS.isDefaultSkin}</p>
             </label>
           </div>
@@ -242,7 +243,7 @@ export default function ThemeEditorPanel({
             <SelectRow fieldKey="buttonStyle" label="按钮风格" value={themeConfig.buttonStyle} options={enumOptions.buttonStyle} onChange={(v) => onConfigChange("buttonStyle", v)} />
             <SelectRow fieldKey="navStyle" label="底部导航" value={themeConfig.navStyle} options={enumOptions.navStyle} onChange={(v) => onConfigChange("navStyle", v)} />
             <label className="space-y-1">
-              <span className="text-xs text-muted-foreground">圆角 radius</span>
+              <span className="text-xs text-muted-foreground"><Tx>圆角 radius</Tx></span>
               <p className="text-[10px] leading-snug text-muted-foreground/80">{FIELD_HELP_TEXTS.radius}</p>
               <input value={themeConfig.radius} onChange={(e) => onConfigChange("radius", e.target.value)} className="h-9 w-full rounded-lg border border-border px-2 text-xs" />
             </label>
@@ -279,13 +280,13 @@ export default function ThemeEditorPanel({
           <div className="grid gap-3 md:grid-cols-2">
             <SelectRow fieldKey="adminThemeMode" label="后台主题模式" value={themeConfig.adminThemeMode} options={enumOptions.adminThemeMode} onChange={(v) => onConfigChange("adminThemeMode", v)} />
             <label className="space-y-1">
-              <span className="text-xs text-muted-foreground">字体</span>
+              <span className="text-xs text-muted-foreground"><Tx>字体</Tx></span>
               <p className="text-[10px] leading-snug text-muted-foreground/80">{FIELD_HELP_TEXTS.fontFamily}</p>
               <input value={themeConfig.fontFamily} onChange={(e) => onConfigChange("fontFamily", e.target.value)} className="h-9 w-full rounded-lg border border-border px-2 text-xs" />
             </label>
-            <p className="md:col-span-2 rounded-lg border border-border bg-secondary/30 px-3 py-2 text-[11px] text-muted-foreground">
+            <p className="md:col-span-2 rounded-lg border border-border bg-secondary/30 px-3 py-2 text-[11px] text-muted-foreground"><Tx>
               自定义 CSS 变量由系统自动从配色生成（--theme-primary 等）。保存后客户端与管理后台同步生效。
-            </p>
+            </Tx></p>
           </div>
         </EditorSection>
 

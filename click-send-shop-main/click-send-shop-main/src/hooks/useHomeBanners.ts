@@ -31,7 +31,7 @@ export function useHomeBanners(opts?: UseHomeBannersOpts) {
         writeBannerCache(next);
       })
       .catch(() => {
-        if (!cancelled) setBanners([]);
+        /* 请求失败时保留缓存/已有数据，避免轮播区闪灭 */
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

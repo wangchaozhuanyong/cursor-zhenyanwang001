@@ -9,7 +9,7 @@
 const { generateId } = require('../../utils/helpers');
 const { BusinessError, NotFoundError, ValidationError } = require('../../errors');
 const { logAdminAction } = require('../../utils/adminAudit');
-const { rowsToCsv } = require('../../utils/csv');
+const { rowsToCsvLocalized } = require('../../utils/adminCsvLabels');
 const userModule = require('../user');
 const orderModule = require('../order');
 const { getResolvedTriggerCopy } = require('./notificationTriggerSettings.service');
@@ -411,7 +411,7 @@ async function exportOrdersCsv(query) {
     note: (o.note || '').replace(/\r\n/g, ' '),
     created_at: o.created_at ? new Date(o.created_at).toISOString() : '',
   }));
-  const csv = rowsToCsv(ORDER_EXPORT_HEADERS, data);
+  const csv = rowsToCsvLocalized(ORDER_EXPORT_HEADERS, data);
   return { csv, filename: `orders_${Date.now()}.csv` };
 }
 

@@ -12,11 +12,17 @@ function listWhere(query = {}) {
     where += ' AND a.title LIKE ?';
     params.push(`%${query.keyword}%`);
   }
-  if (query.status === 'disabled') where += " AND (a.status = 'disabled' OR a.disabled = 1)";
-  else if (query.status === 'not_started') where += " AND a.status = 'scheduled'";
-  else if (query.status === 'active') where += " AND a.status = 'active'";
-  else if (query.status === 'ended') where += " AND a.status = 'ended'";
-  else if (query.status === 'draft') where += " AND a.status = 'draft'";
+  if (query.status === 'disabled') {
+    where += " AND (a.status = 'disabled' OR a.disabled = 1)";
+  } else if (query.status === 'scheduled' || query.status === 'not_started') {
+    where += " AND a.disabled = 0 AND a.status NOT IN ('disabled', 'draft') AND a.start_at > NOW()";
+  } else if (query.status === 'active') {
+    where += " AND a.disabled = 0 AND a.status NOT IN ('disabled', 'draft') AND a.start_at <= NOW() AND a.end_at >= NOW()";
+  } else if (query.status === 'ended') {
+    where += " AND a.end_at < NOW()";
+  } else if (query.status === 'draft') {
+    where += " AND a.status = 'draft'";
+  }
   return { where, params };
 }
 

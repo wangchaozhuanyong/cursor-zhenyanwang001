@@ -29,10 +29,13 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
       .finally(() => setLoading(false));
   }, [open, keyword]);
 
-  if (!open) return null;
+  const filtered = useMemo(
+    () => list.filter((p) => !existingIds.includes(p.id)),
+    [list, existingIds],
+  );
+  const selectedList = useMemo(() => Object.values(selected), [selected]);
 
-  const filtered = useMemo(() => list.filter((p) => !existingIds.includes(p.id)), [list, existingIds]);
-  const selectedList = Object.values(selected);
+  if (!open) return null;
 
   const toggle = (p: ActivityProductOption) => {
     setSelected((prev) => {
@@ -78,7 +81,7 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
             <input
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              placeholder="搜索商品名称 / ID"
+              placeholder="搜索商品名称"
               className="w-full rounded-lg bg-secondary px-3 py-2 text-sm"
             />
           </div>

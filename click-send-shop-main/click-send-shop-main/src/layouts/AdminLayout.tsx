@@ -39,132 +39,147 @@ import {
   Palette,
   CreditCard,
   Crown,
+  Languages,
 } from "lucide-react";
 import SkinPickerDialog from "@/components/SkinPickerDialog";
+import { useAdminT } from "@/hooks/useAdminT";
+import type { AdminLocale } from "@/i18n/admin";
 import { isAdminAuthenticated, adminLogout, fetchAdminProfile } from "@/services/admin/accountService";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { canAccessAdminPath, getFirstAllowedAdminPath } from "@/config/adminNavAccess";
+import { AdminConfirmProvider } from "@/modules/admin/context/AdminConfirmContext";
 
 type NavPerm = string | { anyOf: string[] };
 
 interface NavChild {
   icon: LucideIcon;
-  label: string;
+  labelKey: string;
   path: string;
   permission?: NavPerm;
 }
 
 interface NavItem {
   icon: LucideIcon;
-  label: string;
+  labelKey: string;
   path: string;
   permission?: NavPerm;
   children?: NavChild[];
 }
 
+type ResolvedNavChild = NavChild & { label: string };
+type ResolvedNavItem = Omit<NavItem, "children"> & { label: string; children?: ResolvedNavChild[] };
+
 const navItemsRaw: NavItem[] = [
-  { icon: LayoutDashboard, label: "仪表盘", path: "/admin", permission: "dashboard.view" },
+  { icon: LayoutDashboard, labelKey: "nav.dashboard", path: "/admin", permission: "dashboard.view" },
   {
     icon: Package,
-    label: "商品管理",
+    labelKey: "nav.products",
     path: "/admin/products",
     permission: "product.view",
     children: [
-      { icon: FolderTree, label: "分类管理", path: "/admin/categories", permission: "product.view" },
-      { icon: Package, label: "库存管理", path: "/admin/inventory", permission: "inventory.manage" },
-      { icon: Tags, label: "标签管理", path: "/admin/tags", permission: "product.view" },
+      { icon: FolderTree, labelKey: "nav.categories", path: "/admin/categories", permission: "product.view" },
+      { icon: Package, labelKey: "nav.inventory", path: "/admin/inventory", permission: "inventory.manage" },
+      { icon: Tags, labelKey: "nav.tags", path: "/admin/tags", permission: "product.view" },
     ],
   },
   {
     icon: ShoppingCart,
-    label: "订单管理",
+    labelKey: "nav.orders",
     path: "/admin/orders",
     permission: "order.view",
     children: [
-      { icon: ShoppingCart, label: "订单列表", path: "/admin/orders", permission: "order.view" },
-      { icon: ClipboardList, label: "未完成结算", path: "/admin/orders/unfinished", permission: "order.view" },
+      { icon: ShoppingCart, labelKey: "nav.orderList", path: "/admin/orders", permission: "order.view" },
+      { icon: ClipboardList, labelKey: "nav.unfinishedCheckout", path: "/admin/orders/unfinished", permission: "order.view" },
     ],
   },
   {
     icon: CreditCard,
-    label: "支付管理",
+    labelKey: "nav.payments",
     path: "/admin/payments/channels",
     permission: "payment.manage",
     children: [
-      { icon: CreditCard, label: "渠道配置", path: "/admin/payments/channels", permission: "payment.manage" },
-      { icon: ClipboardList, label: "支付流水", path: "/admin/payments/orders", permission: "payment.manage" },
-      { icon: ScrollText, label: "Webhook / 事件", path: "/admin/payments/events", permission: "payment.manage" },
-      { icon: BarChart3, label: "对账中心", path: "/admin/payments/reconciliations", permission: "payment.manage" },
+      { icon: CreditCard, labelKey: "nav.paymentChannels", path: "/admin/payments/channels", permission: "payment.manage" },
+      { icon: ClipboardList, labelKey: "nav.paymentOrders", path: "/admin/payments/orders", permission: "payment.manage" },
+      { icon: ScrollText, labelKey: "nav.paymentEvents", path: "/admin/payments/events", permission: "payment.manage" },
+      { icon: BarChart3, labelKey: "nav.paymentReconciliations", path: "/admin/payments/reconciliations", permission: "payment.manage" },
     ],
   },
-  { icon: RotateCcw, label: "售后管理", path: "/admin/returns", permission: "return.view" },
-  { icon: MessageSquareMore, label: "评论管理", path: "/admin/reviews", permission: "review.manage" },
+  { icon: RotateCcw, labelKey: "nav.returns", path: "/admin/returns", permission: "return.view" },
+  { icon: MessageSquareMore, labelKey: "nav.reviews", path: "/admin/reviews", permission: "review.manage" },
   {
     icon: Users,
-    label: "用户管理",
+    labelKey: "nav.users",
     path: "/admin/users",
     permission: "user.view",
     children: [
-      { icon: Users, label: "用户列表", path: "/admin/users", permission: "user.view" },
-      { icon: Crown, label: "会员等级", path: "/admin/member-levels", permission: "member_level.manage" },
+      { icon: Users, labelKey: "nav.userList", path: "/admin/users", permission: "user.view" },
+      { icon: Crown, labelKey: "nav.memberLevels", path: "/admin/member-levels", permission: "member_level.manage" },
     ],
   },
   {
     icon: Megaphone,
-    label: "活动管理",
+    labelKey: "nav.marketing",
     path: "/admin/marketing",
     permission: { anyOf: ["activity.manage", "coupon.view", "points.manage", "referral.manage", "invite.view"] },
     children: [
-      { icon: LayoutGrid, label: "活动总览", path: "/admin/marketing", permission: { anyOf: ["activity.manage", "coupon.view", "points.manage", "referral.manage", "invite.view"] } },
-      { icon: Megaphone, label: "营销活动", path: "/admin/marketing/activities", permission: "activity.manage" },
-      { icon: PlusCircle, label: "新建活动", path: "/admin/marketing/activities/new", permission: "activity.manage" },
-      { icon: Ticket, label: "优惠券管理", path: "/admin/marketing/coupons", permission: "coupon.view" },
-      { icon: ClipboardList, label: "领券记录", path: "/admin/marketing/coupons/records", permission: "coupon.view" },
-      { icon: Star, label: "积分管理", path: "/admin/marketing/points", permission: "points.manage" },
-      { icon: Gift, label: "返现管理", path: "/admin/marketing/rewards", permission: "referral.manage" },
-      { icon: Link2, label: "邀请奖励", path: "/admin/marketing/invites", permission: "invite.view" },
+      { icon: LayoutGrid, labelKey: "nav.marketingOverview", path: "/admin/marketing", permission: { anyOf: ["activity.manage", "coupon.view", "points.manage", "referral.manage", "invite.view"] } },
+      { icon: Megaphone, labelKey: "nav.activities", path: "/admin/marketing/activities", permission: "activity.manage" },
+      { icon: PlusCircle, labelKey: "nav.newActivity", path: "/admin/marketing/activities/new", permission: "activity.manage" },
+      { icon: Ticket, labelKey: "nav.coupons", path: "/admin/marketing/coupons", permission: "coupon.view" },
+      { icon: ClipboardList, labelKey: "nav.couponRecords", path: "/admin/marketing/coupons/records", permission: "coupon.view" },
+      { icon: Star, labelKey: "nav.points", path: "/admin/marketing/points", permission: "points.manage" },
+      { icon: Gift, labelKey: "nav.rewards", path: "/admin/marketing/rewards", permission: "referral.manage" },
+      { icon: Link2, labelKey: "nav.invites", path: "/admin/marketing/invites", permission: "invite.view" },
     ],
   },
-  { icon: Bell, label: "通知管理", path: "/admin/notifications", permission: "notification.manage" },
-  { icon: Image, label: "Banner管理", path: "/admin/banners", permission: "banner.manage" },
-  { icon: Megaphone, label: "首页运营", path: "/admin/home-ops", permission: "home_ops.manage" },
+  { icon: Bell, labelKey: "nav.notifications", path: "/admin/notifications", permission: "notification.manage" },
+  { icon: Image, labelKey: "nav.banners", path: "/admin/banners", permission: "banner.manage" },
+  { icon: Megaphone, labelKey: "nav.homeOps", path: "/admin/home-ops", permission: "home_ops.manage" },
   {
     icon: BarChart3,
-    label: "数据中心",
+    labelKey: "nav.reports",
     path: "/admin/reports/overview",
     permission: "report.view",
     children: [
-      { icon: LayoutDashboard, label: "经营总览", path: "/admin/reports/overview", permission: "report.view" },
-      { icon: BarChart3, label: "销售日报", path: "/admin/reports/daily", permission: "report.view" },
-      { icon: BarChart3, label: "销售月报", path: "/admin/reports/monthly", permission: "report.view" },
-      { icon: Package, label: "商品分析", path: "/admin/reports/products", permission: "report.view" },
-      { icon: FolderTree, label: "分类分析", path: "/admin/reports/categories", permission: "report.view" },
-      { icon: ShoppingCart, label: "订单分析", path: "/admin/reports/orders", permission: "report.view" },
-      { icon: Users, label: "客户分析", path: "/admin/reports/customers", permission: "report.view" },
-      { icon: Megaphone, label: "活动分析", path: "/admin/reports/activities", permission: "report.view" },
-      { icon: Ticket, label: "优惠券分析", path: "/admin/reports/coupons", permission: "report.view" },
-      { icon: Package, label: "库存分析", path: "/admin/reports/inventory", permission: "report.view" },
-      { icon: Search, label: "搜索分析", path: "/admin/reports/search", permission: "report.view" },
-      { icon: FileText, label: "导出中心", path: "/admin/exports", permission: "report.export" }
+      { icon: LayoutDashboard, labelKey: "nav.reportOverview", path: "/admin/reports/overview", permission: "report.view" },
+      { icon: BarChart3, labelKey: "nav.reportDaily", path: "/admin/reports/daily", permission: "report.view" },
+      { icon: BarChart3, labelKey: "nav.reportMonthly", path: "/admin/reports/monthly", permission: "report.view" },
+      { icon: Package, labelKey: "nav.reportProducts", path: "/admin/reports/products", permission: "report.view" },
+      { icon: FolderTree, labelKey: "nav.reportCategories", path: "/admin/reports/categories", permission: "report.view" },
+      { icon: ShoppingCart, labelKey: "nav.reportOrders", path: "/admin/reports/orders", permission: "report.view" },
+      { icon: Users, labelKey: "nav.reportCustomers", path: "/admin/reports/customers", permission: "report.view" },
+      { icon: Megaphone, labelKey: "nav.reportActivities", path: "/admin/reports/activities", permission: "report.view" },
+      { icon: Ticket, labelKey: "nav.reportCoupons", path: "/admin/reports/coupons", permission: "report.view" },
+      { icon: Package, labelKey: "nav.reportInventory", path: "/admin/reports/inventory", permission: "report.view" },
+      { icon: Search, labelKey: "nav.reportSearch", path: "/admin/reports/search", permission: "report.view" },
+      { icon: FileText, labelKey: "nav.exports", path: "/admin/exports", permission: "report.export" },
     ],
   },
   {
     icon: Settings,
-    label: "系统设置",
+    labelKey: "nav.settings",
     path: "/admin/settings/site",
     children: [
-      { icon: Settings, label: "站点设置", path: "/admin/settings/site", permission: "settings.manage" },
-      { icon: Palette, label: "皮肤/视觉设置", path: "/admin/settings/theme", permission: "settings.manage" },
-      { icon: Truck, label: "运费规则", path: "/admin/settings/shipping", permission: "shipping.manage" },
-      { icon: UserCog, label: "账号设置", path: "/admin/account", permission: "dashboard.view" },
-      { icon: FileText, label: "内容管理", path: "/admin/content", permission: "content.manage" },
-      { icon: ScrollText, label: "审计日志", path: "/admin/logs", permission: "audit.view" },
-      { icon: Shield, label: "角色权限", path: "/admin/settings/roles", permission: "role.manage" },
-      { icon: UserCog, label: "管理员管理", path: "/admin/accounts", permission: "role.manage" },
-      { icon: RotateCcw, label: "回收站", path: "/admin/recycle-bin", permission: "recycle_bin.manage" },
+      { icon: Settings, labelKey: "nav.siteSettings", path: "/admin/settings/site", permission: "settings.manage" },
+      { icon: Palette, labelKey: "nav.themeSettings", path: "/admin/settings/theme", permission: "settings.manage" },
+      { icon: Truck, labelKey: "nav.shipping", path: "/admin/settings/shipping", permission: "shipping.manage" },
+      { icon: UserCog, labelKey: "nav.accountSettings", path: "/admin/account", permission: "dashboard.view" },
+      { icon: FileText, labelKey: "nav.content", path: "/admin/content", permission: "content.manage" },
+      { icon: ScrollText, labelKey: "nav.auditLogs", path: "/admin/logs", permission: "audit.view" },
+      { icon: Shield, labelKey: "nav.roles", path: "/admin/settings/roles", permission: "role.manage" },
+      { icon: UserCog, labelKey: "nav.adminAccounts", path: "/admin/accounts", permission: "role.manage" },
+      { icon: RotateCcw, labelKey: "nav.recycleBin", path: "/admin/recycle-bin", permission: "recycle_bin.manage" },
     ],
   },
 ];
+
+function resolveNavLabels(items: NavItem[], t: (key: string) => string): ResolvedNavItem[] {
+  return items.map((item) => ({
+    ...item,
+    label: t(item.labelKey),
+    children: item.children?.map((c) => ({ ...c, label: t(c.labelKey) })),
+  }));
+}
 
 function passNavPerm(
   p: NavPerm | undefined,
@@ -218,12 +233,16 @@ function AdminSidebarNav({
   onNavigate,
   onLogout,
   scrollMode,
+  layoutTitle,
+  logoutLabel,
 }: {
-  navItems: NavItem[];
+  navItems: ResolvedNavItem[];
   pathname: string;
   onNavigate: (path: string) => void;
   onLogout: () => void;
   scrollMode: "inline" | "overlay";
+  layoutTitle: string;
+  logoutLabel: string;
 }) {
   const listClassName =
     scrollMode === "overlay"
@@ -236,7 +255,7 @@ function AdminSidebarNav({
     >
       <div className="safe-area-pt flex shrink-0 items-center gap-2 border-b border-border px-5 py-4">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--theme-primary)] text-sm font-bold text-[var(--theme-primary-foreground)]">A</div>
-        <span className="font-display text-lg font-bold text-foreground">管理后台</span>
+        <span className="font-display text-lg font-bold text-foreground">{layoutTitle}</span>
       </div>
 
       <div className={listClassName}>
@@ -303,7 +322,7 @@ function AdminSidebarNav({
           className="flex min-h-[48px] w-full items-center gap-3 rounded-xl px-3 py-3 text-[15px] text-muted-foreground hover:bg-secondary active:bg-secondary/80"
         >
           <LogOut size={20} />
-          退出登录
+          {logoutLabel}
         </button>
       </div>
     </nav>
@@ -335,9 +354,10 @@ function AdminNavTab({
   );
 }
 
-export default function AdminLayout() {
+function AdminLayoutContent() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t, locale, setLocale } = useAdminT();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const [topSearch, setTopSearch] = useState("");
@@ -347,8 +367,8 @@ export default function AdminLayout() {
   const canAny = useAdminPermissionStore((s) => s.canAny);
 
   const navItems = useMemo(
-    () => filterNav(navItemsRaw, can, canAny),
-    [can, canAny],
+    () => resolveNavLabels(filterNav(navItemsRaw, can, canAny), t),
+    [can, canAny, t],
   );
 
   useEffect(() => {
@@ -418,6 +438,7 @@ export default function AdminLayout() {
   const showNotifTab = can("notification.manage");
 
   return (
+    <AdminConfirmProvider>
     <div className="flex min-h-[100dvh] items-start bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <aside className="hidden w-[260px] shrink-0 border-r border-[var(--theme-border)] bg-[var(--theme-card)] lg:block">
         <AdminSidebarNav
@@ -426,6 +447,8 @@ export default function AdminLayout() {
           pathname={location.pathname}
           onNavigate={handleSidebarNavigate}
           onLogout={handleSidebarLogout}
+          layoutTitle={t("layout.title")}
+          logoutLabel={t("layout.logout")}
         />
       </aside>
 
@@ -434,7 +457,7 @@ export default function AdminLayout() {
         <div className="fixed inset-0 z-50 lg:hidden">
           <motion.button
             type="button"
-            aria-label="关闭菜单"
+            aria-label={t("layout.closeMenu")}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -454,6 +477,8 @@ export default function AdminLayout() {
               pathname={location.pathname}
               onNavigate={handleSidebarNavigate}
               onLogout={handleSidebarLogout}
+              layoutTitle={t("layout.title")}
+              logoutLabel={t("layout.logout")}
             />
           </motion.aside>
         </div>
@@ -465,20 +490,20 @@ export default function AdminLayout() {
           <div className="flex min-h-[48px] items-center gap-2 px-3 py-2 sm:px-4 lg:px-6">
             <button
               type="button"
-              aria-label="打开菜单"
+              aria-label={t("layout.openMenu")}
               className="touch-manipulation flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-foreground hover:bg-secondary lg:hidden"
               onClick={() => setSidebarOpen(true)}
             >
               <Menu size={22} />
             </button>
             <h2 className="min-w-0 truncate text-sm font-semibold text-foreground sm:text-base">
-              {currentNav?.label ?? "管理后台"}
+              {currentNav?.label ?? t("layout.title")}
             </h2>
             <div className="flex-1" />
             <div className="hidden items-center gap-2 rounded-xl bg-secondary px-3 py-2 md:flex">
               <Search size={16} className="shrink-0 text-muted-foreground" />
               <input
-                placeholder="搜索菜单..."
+                placeholder={t("layout.searchMenu")}
                 value={topSearch}
                 onChange={(e) => setTopSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleTopSearch()}
@@ -488,7 +513,7 @@ export default function AdminLayout() {
             {showNotifTab && (
               <button
                 type="button"
-                aria-label="通知"
+                aria-label={t("layout.notifications")}
                 className="touch-manipulation relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-secondary"
                 onClick={() => navigate("/admin/notifications")}
               >
@@ -496,22 +521,10 @@ export default function AdminLayout() {
                 <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive" />
               </button>
             )}
-            <SkinPickerDialog
-              title="切换系统皮肤"
-              trigger={(
-                <button
-                  type="button"
-                  aria-label="切换皮肤"
-                  className="touch-manipulation flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-secondary"
-                >
-                  <Palette size={19} />
-                </button>
-              )}
-            />
             <div ref={avatarRef} className="relative shrink-0">
               <button
                 type="button"
-                aria-label="账号"
+                aria-label={t("layout.account")}
                 className="touch-manipulation flex h-11 min-w-[44px] items-center gap-1 rounded-xl px-1 hover:bg-secondary"
                 onClick={() => setAvatarMenuOpen(!avatarMenuOpen)}
               >
@@ -519,13 +532,54 @@ export default function AdminLayout() {
                 <ChevronDown size={14} className={`hidden text-muted-foreground transition-transform sm:block ${avatarMenuOpen ? "rotate-180" : ""}`} />
               </button>
               {avatarMenuOpen && (
-                <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-border bg-card py-1 shadow-lg">
+                <motion.div className="absolute right-0 top-full z-50 mt-1 w-56 rounded-xl border border-border bg-card py-1 shadow-lg">
+                  <SkinPickerDialog
+                    title={t("skin.titleSystem")}
+                    description={t("skin.description")}
+                    loadingText={t("skin.loading")}
+                    currentSkinHint={t("skin.currentSkin")}
+                    switchHint={t("skin.switchHint")}
+                    selectedBadge={t("skin.selected")}
+                    trigger={(
+                      <button
+                        type="button"
+                        className="flex min-h-[44px] w-full items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-secondary"
+                      >
+                        <Palette size={16} />
+                        {t("layout.changeSkin")}
+                      </button>
+                    )}
+                  />
+                  <div className="px-4 py-2">
+                    <p className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                      <Languages size={14} />
+                      {t("layout.language")}
+                    </p>
+                    <div className="flex gap-2">
+                      {(["zh", "en"] as AdminLocale[]).map((loc) => (
+                        <button
+                          key={loc}
+                          type="button"
+                          onClick={() => { setLocale(loc); setAvatarMenuOpen(false); }}
+                          className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
+                            locale === loc
+                              ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
+                              : "bg-secondary text-foreground hover:opacity-90"
+                          }`}
+                        >
+                          {loc === "zh" ? t("layout.languageZh") : t("layout.languageEn")}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mx-3 my-1 h-px bg-border" />
                   <button
                     type="button"
                     onClick={() => { navigate("/admin/account"); setAvatarMenuOpen(false); }}
                     className="flex min-h-[44px] w-full items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-secondary"
                   >
-                    <User size={16} /> 账号设置
+                    <User size={16} />
+                    {t("layout.accountSettings")}
                   </button>
                   <div className="mx-3 my-1 h-px bg-border" />
                   <button
@@ -533,9 +587,10 @@ export default function AdminLayout() {
                     onClick={() => { adminLogout(); navigate("/admin/login"); setAvatarMenuOpen(false); }}
                     className="flex min-h-[44px] w-full items-center gap-2 px-4 py-3 text-sm text-destructive hover:bg-secondary"
                   >
-                    <LogOut size={16} /> 退出登录
+                    <LogOut size={16} />
+                    {t("layout.logout")}
                   </button>
-                </div>
+                </motion.div>
               )}
             </div>
           </div>
@@ -544,7 +599,7 @@ export default function AdminLayout() {
             <div className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2.5">
               <Search size={16} className="shrink-0 text-muted-foreground" />
               <input
-                placeholder="搜索菜单..."
+                placeholder={t("layout.searchMenu")}
                 value={topSearch}
                 onChange={(e) => setTopSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleTopSearch()}
@@ -564,38 +619,38 @@ export default function AdminLayout() {
 
         <nav
           className="safe-area-pb fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--theme-border)] bg-[var(--theme-card)]/95 backdrop-blur-md lg:hidden"
-          aria-label="主导航"
+          aria-label={t("layout.mainNav")}
         >
           <div className="flex h-14 max-w-lg mx-auto items-stretch justify-between px-1">
             <AdminNavTab
               icon={LayoutDashboard}
-              label="首页"
+              label={t("layout.mobileHome")}
               active={tab === "dash"}
               onClick={() => navigate("/admin")}
             />
             <AdminNavTab
               icon={Package}
-              label="商品"
+              label={t("layout.mobileProducts")}
               active={tab === "products"}
               onClick={() => navigate("/admin/products")}
             />
             <AdminNavTab
               icon={ShoppingCart}
-              label="订单"
+              label={t("layout.mobileOrders")}
               active={tab === "orders"}
               onClick={() => navigate("/admin/orders")}
             />
             {showNotifTab ? (
               <AdminNavTab
                 icon={Bell}
-                label="通知"
+                label={t("layout.mobileNotifications")}
                 active={tab === "notifications"}
                 onClick={() => navigate("/admin/notifications")}
               />
             ) : null}
             <AdminNavTab
               icon={LayoutGrid}
-              label="更多"
+              label={t("layout.mobileMore")}
               active={tab === "more"}
               onClick={() => setSidebarOpen(true)}
             />
@@ -603,8 +658,8 @@ export default function AdminLayout() {
         </nav>
       </div>
     </div>
+    </AdminConfirmProvider>
   );
 }
 
-
-
+export default AdminLayoutContent;

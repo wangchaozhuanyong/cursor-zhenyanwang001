@@ -27,7 +27,11 @@ export default function NewArrivals() {
     <div className="store-bottom-safe min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <StorePageHeader
         title="新品上市"
-        subtitle="最新上架好物，第一时间发现"
+        titleInlineSlot={
+          <span className="truncate text-xs font-normal text-[var(--theme-text-muted)]">
+            最新上架好物，第一时间发现
+          </span>
+        }
         bottomSlot={<ProductSortBar value={sort} onChange={setSort} />}
       />
 

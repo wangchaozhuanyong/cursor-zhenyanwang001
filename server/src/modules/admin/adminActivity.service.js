@@ -1,22 +1,27 @@
 const { generateId } = require('../../utils/helpers');
 const { BusinessError } = require('../../errors/BusinessError');
 const { writeAuditLog } = require('../../utils/auditLog');
-const productModule = require('../product');
 const repo = require('./adminActivity.repository');
 
-const productApi = /** @type {any} */ (productModule).api || {};
-
-function requireProductApi(name) {
-  const fn = productApi[name];
-  if (typeof fn !== 'function') {
-    throw new Error(`Product 模块 API 未暴露方法: ${name}`);
+function parseJsonField(value, fallback) {
+  if (value == null || value === '') return fallback;
+  if (typeof value === 'object') return value;
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return fallback;
+    }
   }
-  return fn;
+  return fallback;
 }
 
 function bumpCatalogCache() {
   try {
-    requireProductApi('clearCatalogCache')();
+    const productApi = require('../product')?.api;
+    if (typeof productApi?.clearCatalogCache === 'function') {
+      productApi.clearCatalogCache();
+    }
   } catch (e) {
     console.warn(`[adminActivity] clear catalog cache: ${e?.message || e}`);
   }
@@ -149,8 +154,8 @@ function formatActivity(row, items = undefined, scopes = undefined) {
     allow_coupon_stack: !!row.allow_coupon_stack,
     allow_points_stack: !!row.allow_points_stack,
     allow_reward: !!row.allow_reward,
-    display_positions: row.display_positions ? JSON.parse(row.display_positions) : [],
-    activity_config: row.activity_config ? JSON.parse(row.activity_config) : null,
+    display_positions: parseJsonField(row.display_positions, []),
+    activity_config: parseJsonField(row.activity_config, null),
     status,
     status_label: statusLabel(status),
   };

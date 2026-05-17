@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import { CreditCard, Save } from "lucide-react";
+import { CreditCard } from "lucide-react";
+import StripeChannelConfigForm from "./StripeChannelConfigForm";
+import { formatChannelSubtitle, labelPaymentEnvironment } from "@/utils/paymentAdminLabels";
 import PermissionGate from "@/components/admin/PermissionGate";
 import PaymentAdminSubnav from "./PaymentAdminSubnav";
 import * as paymentAdmin from "@/services/admin/paymentAdminService";
 import type { PaymentChannelRow } from "@/types/adminPayment";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { Tx } from "@/components/admin/AdminText";
 
 function parseConfig(row: PaymentChannelRow): Record<string, unknown> {
   const c = row.config_json;
@@ -73,8 +76,8 @@ export default function AdminPaymentChannels() {
     <PermissionGate permission="payment.manage">
       <div className="p-4 md:p-6">
         <div className="mb-2">
-          <h1 className="text-xl font-bold text-foreground">支付管理</h1>
-          <p className="text-sm text-muted-foreground">渠道启停、排序与扩展配置（Stripe 手续费等可写入 JSON）</p>
+          <h1 className="text-xl font-bold text-foreground"><Tx>支付管理</Tx></h1>
+          <p className="text-sm text-muted-foreground"><Tx>渠道启停、排序与扩展配置（手续费率等可在下方表单填写）</Tx></p>
         </div>
         <PaymentAdminSubnav />
 
@@ -102,23 +105,21 @@ export default function AdminPaymentChannels() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="font-semibold text-foreground">{row.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {row.code} · {row.provider} · {row.country_code}/{row.currency}
-                    </p>
+                    <p className="text-xs text-muted-foreground">{formatChannelSubtitle(row)}</p>
                   </div>
                   <label className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"
                       checked={!!row.enabled}
                       onChange={(e) => void saveRow(row.id, { enabled: e.target.checked })}
-                    />
+                    /><Tx>
                     启用
-                  </label>
+                  </Tx></label>
                 </div>
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
-                  <label className="text-xs text-muted-foreground">
+                  <label className="text-xs text-muted-foreground"><Tx>
                     排序
-                    <input
+                    </Tx><input
                       type="number"
                       className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       defaultValue={row.sort_order}
@@ -129,43 +130,31 @@ export default function AdminPaymentChannels() {
                       }}
                     />
                   </label>
-                  <label className="text-xs text-muted-foreground">
+                  <label className="text-xs text-muted-foreground"><Tx>
                     环境
-                    <select
+                    </Tx><select
                       className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                       value={row.environment}
                       onChange={(e) => void saveRow(row.id, { environment: e.target.value as "live" | "sandbox" })}
                     >
-                      <option value="live">生产 live</option>
-                      <option value="sandbox">沙箱 sandbox</option>
+                      <option value="live">{labelPaymentEnvironment("live")}</option>
+                      <option value="sandbox">{labelPaymentEnvironment("sandbox")}</option>
                     </select>
                   </label>
                 </div>
                 {row.provider === "stripe" && (
-                  <div className="mt-3">
-                    <p className="mb-1 text-xs text-muted-foreground">
-                      扩展 JSON（可选）：如 {"{"}"fee_rate_percent": 2.9, "fee_fixed": 1.0{"}"} 用于对账手续费估算
-                    </p>
-                    <textarea
-                      className="min-h-[100px] w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
-                      value={configDraft[row.id] ?? "{}"}
-                      onChange={(e) => setConfigDraft((d) => ({ ...d, [row.id]: e.target.value }))}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => void saveConfigJson(row)}
-                      className="mt-2 inline-flex items-center gap-1 rounded-full bg-[var(--theme-price)]/15 px-3 py-1.5 text-xs font-medium text-[var(--theme-price)]"
-                    >
-                      <Save size={14} /> 保存 JSON
-                    </button>
-                  </div>
+                  <StripeChannelConfigForm
+                    draft={configDraft[row.id] ?? "{}"}
+                    onDraftChange={(next) => setConfigDraft((d) => ({ ...d, [row.id]: next }))}
+                    onSave={() => void saveConfigJson(row)}
+                  />
                 )}
               </div>
             ))}
             {rows.length === 0 && (
               <div className="py-12 text-center">
                 <CreditCard className="mx-auto h-10 w-10 text-muted-foreground/30" />
-                <p className="mt-3 text-sm text-muted-foreground">暂无渠道，请执行数据库迁移 028。</p>
+                <p className="mt-3 text-sm text-muted-foreground"><Tx>暂无支付渠道，请联系技术人员初始化支付配置。</Tx></p>
               </div>
             )}
           </div>

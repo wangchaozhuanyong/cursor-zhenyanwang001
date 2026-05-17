@@ -1,6 +1,17 @@
 import * as homeOpsApi from "@/api/admin/homeOps";
+import type { HomeModuleSettings } from "@/constants/homeModules";
 import type { HomeNavItem } from "@/types/content";
 import { unwrapList } from "@/services/responseNormalize";
+
+export async function fetchHomeOpsSettings(): Promise<HomeModuleSettings> {
+  const res = await homeOpsApi.getHomeOpsSettings();
+  return res.data;
+}
+
+export async function updateHomeOpsSettings(data: Partial<HomeModuleSettings>): Promise<HomeModuleSettings> {
+  const res = await homeOpsApi.updateHomeOpsSettings(data);
+  return res.data;
+}
 
 export async function fetchHomeNavItems(): Promise<HomeNavItem[]> {
   const res = await homeOpsApi.getHomeNavItems();

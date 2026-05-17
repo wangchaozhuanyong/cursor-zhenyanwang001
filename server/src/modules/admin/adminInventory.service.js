@@ -1,7 +1,7 @@
 ﻿const { generateId } = require('../../utils/helpers');
 const { BusinessError } = require('../../errors/BusinessError');
 const { writeAuditLog } = require('../../utils/auditLog');
-const { rowsToCsv } = require('../../utils/csv');
+const { rowsToCsvLocalized, labelInventoryChangeType } = require('../../utils/adminCsvLabels');
 const repo = require('./adminInventory.repository');
 
 const CHANGE_TYPES = new Set(['in', 'out', 'adjust']);
@@ -320,10 +320,11 @@ async function listStockRecords(query) {
 async function exportSkusCsv(query) {
   const { where, params } = buildSkuWhere(query);
   const rows = await repo.selectSkuExportRows(where, params, buildSortSql(query.sort));
-  const csv = rowsToCsv([
+  const skuColumns = [
     'product_id', 'product_name', 'variant_id', 'variant_title', 'sku_code', 'category_name', 'lifecycle_status',
     'stock', 'reserved_stock', 'available_stock', 'stock_warning_threshold', 'updated_at',
-  ], rows.map((r) => ({
+  ];
+  const csv = rowsToCsvLocalized(skuColumns, rows.map((r) => ({
     product_id: r.product_id,
     product_name: r.product_name,
     variant_id: r.variant_id,
@@ -343,15 +344,16 @@ async function exportSkusCsv(query) {
 async function exportRecordsCsv(query) {
   const { where, params } = buildRecordWhere(query);
   const rows = await repo.selectStockRecordsPage(where, params, 50000, 0);
-  const csv = rowsToCsv([
+  const recordColumns = [
     'created_at', 'product_name', 'variant_name', 'sku_code', 'change_type', 'quantity_delta', 'before_stock',
     'after_stock', 'reason', 'remark', 'source_no', 'order_no', 'operator_name',
-  ], rows.map((r) => ({
+  ];
+  const csv = rowsToCsvLocalized(recordColumns, rows.map((r) => ({
     created_at: r.created_at ? new Date(r.created_at).toISOString() : '',
     product_name: r.product_name_snapshot || r.product_name || '',
     variant_name: r.variant_name_snapshot || r.variant_title || '',
     sku_code: r.sku_code_snapshot || r.variant_sku_code || '',
-    change_type: r.change_type,
+    change_type: labelInventoryChangeType(r.change_type),
     quantity_delta: Number(r.quantity_delta || 0),
     before_stock: Number(r.before_stock || 0),
     after_stock: Number(r.after_stock || 0),

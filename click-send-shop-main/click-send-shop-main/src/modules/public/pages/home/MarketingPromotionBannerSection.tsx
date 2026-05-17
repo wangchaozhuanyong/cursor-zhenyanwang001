@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as marketingService from "@/services/marketingService";
+import * as homeService from "@/services/homeService";
 import type { MarketingActivitySummary } from "@/services/marketingService";
 import { AnimatedSection } from "@/modules/micro-interactions";
 
@@ -10,8 +11,19 @@ export default function MarketingPromotionBannerSection({ delay = 0 }: { delay?:
 
   useEffect(() => {
     let cancelled = false;
-    marketingService.fetchMarketingNotices("promotion_banner").then((data) => {
-      if (!cancelled) setBanners(data);
+    const cached = homeService.getCachedHomeBootstrap();
+    if (Array.isArray(cached?.marketing?.promotionBanners)) {
+      setBanners(cached.marketing.promotionBanners as MarketingActivitySummary[]);
+    }
+    homeService.fetchHomeBootstrap().then((bootstrap) => {
+      if (cancelled) return;
+      if (Array.isArray(bootstrap?.marketing?.promotionBanners)) {
+        setBanners(bootstrap.marketing.promotionBanners as MarketingActivitySummary[]);
+        return;
+      }
+      return marketingService.fetchMarketingNotices("promotion_banner").then((data) => {
+        if (!cancelled) setBanners(data);
+      });
     });
     return () => {
       cancelled = true;

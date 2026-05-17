@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Percent } from "lucide-react";
 import * as marketingService from "@/services/marketingService";
+import * as homeService from "@/services/homeService";
 import type { MarketingActivitySummary } from "@/services/marketingService";
 import { AnimatedSection } from "@/modules/micro-interactions";
 
@@ -11,8 +12,19 @@ export default function MarketingFullReductionSection({ delay = 0 }: { delay?: n
 
   useEffect(() => {
     let cancelled = false;
-    marketingService.fetchFullReductionNotices().then((data) => {
-      if (!cancelled) setList(data);
+    const cached = homeService.getCachedHomeBootstrap();
+    if (Array.isArray(cached?.marketing?.fullReductionNotices)) {
+      setList(cached?.marketing?.fullReductionNotices as MarketingActivitySummary[]);
+    }
+    homeService.fetchHomeBootstrap().then((bootstrap) => {
+      if (cancelled) return;
+      if (Array.isArray(bootstrap?.marketing?.fullReductionNotices)) {
+        setList(bootstrap.marketing.fullReductionNotices as MarketingActivitySummary[]);
+        return;
+      }
+      return marketingService.fetchFullReductionNotices().then((data) => {
+        if (!cancelled) setList(data);
+      });
     });
     return () => {
       cancelled = true;

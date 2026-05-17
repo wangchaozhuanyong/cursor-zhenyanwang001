@@ -37,7 +37,16 @@ import * as inviteService from "@/services/inviteService";
 import * as rewardService from "@/services/rewardService";
 import * as uploadService from "@/services/uploadService";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
-import { getMemberCardClassName, THEME_ACCENT_ICON_CLASS, THEME_ACCENT_ICON_SHELL_CLASS } from "@/utils/themeVisuals";
+import {
+  THEME_ACCENT_ICON_CLASS,
+  THEME_ACCENT_ICON_SHELL_CLASS,
+  THEME_GIFT_BADGE_SHELL,
+  THEME_INVITE_PROMO_CTA,
+  THEME_INVITE_PROMO_MUTED,
+  THEME_INVITE_PROMO_SHELL,
+  THEME_MEMBER_CARD_MUTED,
+  THEME_MEMBER_CARD_SHELL,
+} from "@/utils/themeVisuals";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 
 const ProfileWechatBindSection = THIRD_PARTY_LOGIN_ENABLED
@@ -77,7 +86,6 @@ function ProfileHeroCard({
   memberLevelName,
   code,
   onAvatarClick,
-  memberCardStyle,
 }: {
   logoSrc: string;
   avatar?: string;
@@ -85,18 +93,19 @@ function ProfileHeroCard({
   memberLevelName: string;
   code: string;
   onAvatarClick: () => void;
-  memberCardStyle: "light" | "gold" | "blackGold" | "fresh";
 }) {
-  const heroStyle = getMemberCardClassName(memberCardStyle);
-
-  const mutedClass = memberCardStyle === "light" ? "text-[#d7c18f]" : "opacity-85";
-
   return (
-    <section className={`relative overflow-hidden rounded-[30px] px-4 py-5 shadow-[var(--theme-shadow)] ${heroStyle}`}>
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-28 bg-[linear-gradient(90deg,transparent,rgba(255,226,166,.16))]" />
+    <section className={`relative overflow-hidden rounded-[30px] px-4 py-5 shadow-[var(--theme-shadow)] ${THEME_MEMBER_CARD_SHELL}`}>
+      <div
+        className="pointer-events-none absolute inset-y-0 right-0 w-28"
+        style={{ background: "var(--theme-member-card-sheen)" }}
+      />
       <div className="relative flex min-h-[112px] items-center gap-4">
         <button type="button" onClick={onAvatarClick} className="relative shrink-0" aria-label="更换头像">
-          <span className="flex h-[76px] w-[76px] items-center justify-center rounded-full border-2 border-[#d6b774] bg-black/30 p-1">
+          <span
+            className="flex h-[76px] w-[76px] items-center justify-center rounded-full border-2 bg-black/30 p-1"
+            style={{ borderColor: "var(--theme-member-card-avatar-ring)" }}
+          >
             <img src={avatar || logoSrc} alt={userName} className="h-full w-full rounded-full object-cover" />
           </span>
           <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]">
@@ -106,9 +115,17 @@ function ProfileHeroCard({
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <p className="max-w-full truncate text-2xl font-bold leading-tight">{userName}</p>
-            <span className="shrink-0 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-[#2d2720] shadow-[0_4px_14px_rgba(0,0,0,.18)]">{memberLevelName}</span>
+            <span
+              className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold shadow-md"
+              style={{
+                backgroundColor: "var(--theme-member-card-badge-bg)",
+                color: "var(--theme-member-card-badge-fg)",
+              }}
+            >
+              {memberLevelName}
+            </span>
           </div>
-          <p className={`mt-2 inline-flex max-w-full rounded-full bg-black/15 px-3 py-1 text-sm font-semibold ${mutedClass}`}>
+          <p className={`mt-2 inline-flex max-w-full rounded-full bg-black/15 px-3 py-1 text-sm font-semibold ${THEME_MEMBER_CARD_MUTED}`}>
             <span className="truncate">邀请码：{code}</span>
           </p>
         </div>
@@ -121,12 +138,10 @@ function ProfileHeroCard({
 function InviteGiftBadge() {
   return (
     <div
-      className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[linear-gradient(155deg,#fff9ed_0%,#f4ddb2_48%,#e8c078_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,.7),0_6px_12px_rgba(120,78,20,.12)] ring-1 ring-[#cf9f4d]/35"
+      className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${THEME_GIFT_BADGE_SHELL} ring-[var(--theme-gift-badge-ring)]`}
       aria-hidden
     >
-      <span className="absolute -top-px left-1/2 h-1.5 w-4 -translate-x-1/2 rounded-[2px] bg-[#d4a24c]" />
-      <span className="absolute top-0.5 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-[#f5e6c8] ring-1 ring-[#c89a3f]/45" />
-      <Gift className="relative z-[1] text-[#9a6318]" size={18} strokeWidth={2.25} />
+      <Gift className="relative z-[1]" size={18} strokeWidth={2.25} />
     </div>
   );
 }
@@ -267,7 +282,6 @@ export default function Profile() {
                 memberLevelName={memberLevelName}
                 code={code}
                 onAvatarClick={() => avatarInputRef.current?.click()}
-                memberCardStyle={themeConfig.memberCardStyle}
               />
               <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
               {ProfileWechatBindSection ? (
@@ -304,17 +318,14 @@ export default function Profile() {
             </div>
           </div>
           <div className="mx-4 mb-4 border-t border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] pt-3">
-            <div
-              className="relative overflow-hidden rounded-[22px] border border-[#ead8ad] px-4 py-3.5"
-              style={{ background: "linear-gradient(110deg,#f7edd3,#efdcb8)" }}
-            >
+            <div className={`relative overflow-hidden rounded-[22px] px-4 py-3.5 ${THEME_INVITE_PROMO_SHELL}`}>
               <div className="flex items-center gap-3">
                 <div className="min-w-0 flex-1 pr-1">
-                  <p className="truncate text-base font-bold text-[#2e2417]">邀请好友得奖励</p>
-                  <p className="mt-1 line-clamp-2 text-xs leading-snug text-[#5b4a30]">
+                  <p className="truncate text-base font-bold">邀请好友得奖励</p>
+                  <p className={`mt-1 line-clamp-2 text-xs leading-snug ${THEME_INVITE_PROMO_MUTED}`}>
                     {loggedIn ? "好友注册/下单后可获得现金返现" : "登录后邀请好友获得现金返现"}
                   </p>
-                  <p className="mt-1 truncate text-xs text-[#5b4a30]">
+                  <p className={`mt-1 truncate text-xs ${THEME_INVITE_PROMO_MUTED}`}>
                     {loggedIn ? `已邀请 ${inviteCount} 人，累计返现 RM ${rewardBalance.toFixed(2)}` : "登录后查看邀请奖励"}
                   </p>
                 </div>
@@ -323,7 +334,8 @@ export default function Profile() {
                   <button
                     type="button"
                     onClick={() => (loggedIn ? gateNavigate(navigate, "/invite", true) : navigate("/login", { state: { from: "/profile" } }))}
-                    className="whitespace-nowrap rounded-full bg-[linear-gradient(135deg,#2f2d2a,#141414)] px-3.5 py-2 text-xs font-semibold text-[#f5e4bc] shadow-[0_6px_14px_rgba(0,0,0,.22)]"
+                    className={`whitespace-nowrap rounded-full px-3.5 py-2 ${THEME_INVITE_PROMO_CTA}`}
+                    style={{ background: "var(--theme-invite-promo-cta-bg)", color: "var(--theme-invite-promo-cta-fg)" }}
                   >
                     {loggedIn ? "立即邀请" : "去登录"}
                   </button>

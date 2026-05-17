@@ -1,294 +1,333 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useCallback, useEffect, useLayoutEffect, useState } from "react";
-import { Eye, CheckCircle, XCircle, Search, RotateCcw } from "lucide-react";
-import { AnimatedTable } from "@/modules/micro-interactions";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import Pagination from "@/components/admin/Pagination";
+import { Eye } from "lucide-react";
 import * as returnService from "@/services/admin/returnService";
 import PermissionGate from "@/components/admin/PermissionGate";
-import { Tx } from "@/components/admin/AdminText";
-import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import Pagination from "@/components/admin/Pagination";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import {
-  RETURN_STATUS,
-  RETURN_STATUS_FILTER_OPTIONS,
-  getReturnStatusBadgeClass,
-  getReturnStatusLabel,
-} from "@/constants/statusDictionary";
-import { internalIdTitle, labelReturnType } from "@/utils/adminDisplayLabels";
+import { RETURN_STATUS, RETURN_STATUS_FILTER_OPTIONS, getReturnStatusBadgeClass, getReturnStatusLabel } from "@/constants/statusDictionary";
+import type { ApproveReturnParams, ReturnRequest } from "@/types/return";
+
+type ReturnDetail = ReturnRequest & {
+  order_info?: { total_amount?: number; payment_status?: string; status?: string };
+  item_info?: { product_name?: string; sku_code?: string; request_qty?: number };
+  refund_records?: Array<{ id: string; event_type: string; processing_result: string; created_at: string }>;
+  inventory_restore_records?: Array<{ id: string; quantity_delta: number; created_at: string }>;
+  operation_logs?: Array<{ id: string; summary?: string; created_at: string; result?: string }>;
+};
+
+const defaultApproveForm: ApproveReturnParams = {
+  refund_amount: 0,
+  admin_remark: "",
+  refund_mode: "none",
+  restore_stock: false,
+  restore_coupon: false,
+  reverse_points: false,
+  reverse_rewards: false,
+};
 
 export default function AdminReturns() {
-  const { confirm } = useAdminConfirm();
-  const [returns, setReturns] = useState<any[]>([]);
+  const [list, setList] = useState<ReturnRequest[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>("all");
-  const [searchInput, setSearchInput] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [detail, setDetail] = useState<any | null>(null);
+  const [keyword, setKeyword] = useState("");
+  const [status, setStatus] = useState("all");
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const t = window.setTimeout(() => setDebouncedSearch(searchInput.trim()), 400);
-    return () => window.clearTimeout(t);
-  }, [searchInput]);
+  const [detail, setDetail] = useState<ReturnDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
-  /** 关键词变化时须先回到第 1 页，且要在 loadData 的 effect 之前完成，避免仍用旧 page 请求 */
-  useLayoutEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
+  const [approveTarget, setApproveTarget] = useState<ReturnDetail | null>(null);
+  const [approveForm, setApproveForm] = useState<ApproveReturnParams>(defaultApproveForm);
+  const [rejectTarget, setRejectTarget] = useState<ReturnDetail | null>(null);
+  const [rejectRemark, setRejectRemark] = useState("");
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const params: Record<string, string> = { page: String(page), pageSize: String(pageSize) };
-      if (filter !== "all") params.status = filter;
-      if (debouncedSearch) params.keyword = debouncedSearch;
-      const p = await returnService.fetchReturnRequests(params as any);
-      setReturns(p.list);
-      setTotal(p.total);
+      const res = await returnService.fetchReturnRequests({
+        page,
+        pageSize,
+        keyword: keyword.trim() || undefined,
+        status: status === "all" ? undefined : status,
+      } as any);
+      setList(res.list);
+      setTotal(res.total);
     } catch (e) {
-      toast.error(toastErrorMessage(e, "加载数据失败"));
+      toast.error(toastErrorMessage(e, "加载售后列表失败"));
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, filter, debouncedSearch]);
+  }, [keyword, page, pageSize, status]);
 
-  useEffect(() => { void loadData(); }, [loadData]);
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
-  const paginatedData = returns;
+  const fetchDetail = useCallback(async (id: string) => {
+    setDetailLoading(true);
+    try {
+      const data = await returnService.fetchReturnById(id);
+      setDetail(data as ReturnDetail);
+      return data as ReturnDetail;
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "加载售后详情失败"));
+      return null;
+    } finally {
+      setDetailLoading(false);
+    }
+  }, []);
 
-  const runAction = (id: string, action: "approve" | "reject") => {
-    const promise = action === "approve"
-      ? returnService.approveReturn(id)
-      : returnService.rejectReturn(id, "管理员拒绝");
-
-    promise
-      .then(() => {
-        toast.success(`售后 ${id.slice(0, 8)}… 已${action === "approve" ? "通过" : "拒绝"}`);
-        setDetail(null);
-        void loadData();
-      })
-      .catch((e) => toast.error(toastErrorMessage(e, "操作失败")));
-  };
-
-  const handleAction = (id: string, action: "approve" | "reject") => {
-    confirm({
-      title: action === "approve" ? "确认通过" : "确认拒绝",
-      description: action === "approve" ? "确定通过该售后申请？" : "确定拒绝该售后申请？",
-      confirmText: action === "approve" ? "通过" : "拒绝",
-      danger: action === "reject",
-      onConfirm: () => runAction(id, action),
+  const openApprove = async (row: ReturnRequest) => {
+    const d = await fetchDetail(row.id);
+    if (!d) return;
+    const orderTotal = Number(d.order_info?.total_amount || 0);
+    setApproveTarget(d);
+    setApproveForm({
+      ...defaultApproveForm,
+      refund_amount: Math.max(0, Number(d.refund_amount || 0)),
+      admin_remark: d.admin_remark || "",
+      refund_mode: orderTotal > 0 ? "manual" : "none",
     });
   };
 
+  const openReject = async (row: ReturnRequest) => {
+    const d = await fetchDetail(row.id);
+    if (!d) return;
+    setRejectTarget(d);
+    setRejectRemark(d.admin_remark || "");
+  };
+
+  const orderTotal = useMemo(() => Number(approveTarget?.order_info?.total_amount || 0), [approveTarget]);
+
+  const submitApprove = async () => {
+    if (!approveTarget) return;
+    if (!Number.isFinite(approveForm.refund_amount) || approveForm.refund_amount < 0) {
+      toast.error("退款金额必须大于等于 0");
+      return;
+    }
+    if (approveForm.refund_amount > orderTotal) {
+      toast.error("退款金额不能超过订单实付金额");
+      return;
+    }
+    try {
+      await returnService.approveReturn(approveTarget.id, approveForm);
+      toast.success("售后已通过");
+      setApproveTarget(null);
+      setApproveForm(defaultApproveForm);
+      await loadData();
+      if (detail?.id === approveTarget.id) {
+        await fetchDetail(approveTarget.id);
+      }
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "售后通过失败"));
+    }
+  };
+
+  const submitReject = async () => {
+    if (!rejectTarget) return;
+    if (!rejectRemark.trim()) {
+      toast.error("拒绝原因不能为空");
+      return;
+    }
+    try {
+      await returnService.rejectReturn(rejectTarget.id, rejectRemark.trim());
+      toast.success("售后已拒绝");
+      setRejectTarget(null);
+      setRejectRemark("");
+      await loadData();
+      if (detail?.id === rejectTarget.id) {
+        await fetchDetail(rejectTarget.id);
+      }
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "售后拒绝失败"));
+    }
+  };
+
   return (
-    <div className="space-y-6" aria-busy={loading}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-foreground"><Tx>退款/售后管理</Tx></h1>
-          <p className="text-sm text-muted-foreground"><Tx>处理用户退货退款申请</Tx></p>
-        </div>
-        <div className="flex items-center gap-2 text-xs">
-          <span className="rounded-full bg-amber-100 px-2.5 py-1 font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-            {returns.filter((r) => r.status === RETURN_STATUS.PENDING).length} 待处理
-          </span>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="flex min-h-[44px] w-full items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 sm:w-auto sm:min-w-[240px]">
-          <Search size={14} className="shrink-0 text-muted-foreground" />
-          <input
-            placeholder="搜索售后单号 / 订单号"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          />
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {RETURN_STATUS_FILTER_OPTIONS.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => { setFilter(f.key); setPage(1); }}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                filter === f.key ? "bg-gold text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 移动端：卡片 */}
-      <div className="space-y-3 md:hidden">
-        {loading
-          ? Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-2xl border border-border bg-card p-4">
-              <div className="space-y-2">
-                <div className="skeleton-base skeleton-shimmer h-3 w-24 rounded" />
-                <div className="skeleton-base skeleton-shimmer h-4 w-32 rounded" />
-                <div className="skeleton-base skeleton-shimmer h-10 w-full rounded-xl" />
-              </div>
-            </div>
-          ))
-          : null}
-        {!loading && paginatedData.map((r) => (
-          <div key={r.id} className="rounded-2xl border border-border bg-card p-4">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="text-sm font-medium text-gold" title={internalIdTitle(r.id, "售后内部编号")}>
-                  {r.order_no || "无订单号"}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  申请 {new Date(r.created_at).toLocaleString("zh-CN")}
-                </p>
-              </div>
-              <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${getReturnStatusBadgeClass(r.status)}`}>
-                {getReturnStatusLabel(r.status)}
-              </span>
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${r.type === "refund" ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"}`}>
-                {labelReturnType(r.type)}
-              </span>
-              <span className="font-semibold text-gold">{r.refund_amount ? `RM ${parseFloat(r.refund_amount).toFixed(2)}` : "—"}</span>
-            </div>
-            <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{r.reason || "—"}</p>
-            <p className="mt-2 text-[11px] text-muted-foreground">{new Date(r.created_at).toLocaleString("zh-CN")}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" onClick={() => setDetail(r)} className="touch-manipulation flex min-h-[44px] flex-1 items-center justify-center gap-1 rounded-xl border border-border py-2 text-sm">
-                <Eye size={16} /><Tx> 详情
-              </Tx></button>
-              {r.status === RETURN_STATUS.PENDING && (
-                <PermissionGate permission="return.handle">
-                  <>
-                    <button type="button" onClick={() => handleAction(r.id, "approve")} className="touch-manipulation min-h-[44px] flex-1 rounded-xl bg-emerald-600 py-2 text-sm font-medium text-white"><Tx>
-                      通过
-                    </Tx></button>
-                    <button type="button" onClick={() => handleAction(r.id, "reject")} className="touch-manipulation min-h-[44px] flex-1 rounded-xl border border-red-500/50 py-2 text-sm font-medium text-red-600"><Tx>
-                      拒绝
-                    </Tx></button>
-                  </>
-                </PermissionGate>
-              )}
-            </div>
-          </div>
-        ))}
-        {!loading && paginatedData.length === 0 && (
-          <div className="py-12 text-center text-sm text-muted-foreground"><Tx>暂无售后记录</Tx></div>
-        )}
-        <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
-      </div>
-
-      <div className="hidden md:block">
-        <AnimatedTable
-          loading={loading}
-          rows={paginatedData}
-          rowKey={(r) => r.id}
-          skeletonRows={8}
-          skeletonCols={8}
-          className="overflow-hidden rounded-2xl border border-border bg-card"
-          tableClassName="w-full min-w-[900px] text-sm"
-          theadClassName="border-b border-border bg-secondary/50"
-          thead={(
-            <tr>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground"><Tx>申请日期</Tx></th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground"><Tx>关联订单</Tx></th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground"><Tx>类型</Tx></th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground"><Tx>退款金额</Tx></th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground"><Tx>原因</Tx></th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground"><Tx>状态</Tx></th>
-              <th className="px-4 py-3 text-left font-medium text-muted-foreground"><Tx>申请时间</Tx></th>
-              <th className="px-4 py-3 text-center font-medium text-muted-foreground"><Tx>操作</Tx></th>
-            </tr>
-          )}
-          footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
-          emptyIcon={RotateCcw}
-          emptyTitle="暂无售后记录"
-          renderRow={(r) => (
-            <>
-              <td className="px-4 py-3 text-xs text-muted-foreground" title={internalIdTitle(r.id, "售后内部编号")}>
-                {new Date(r.created_at).toLocaleDateString("zh-CN")}
-              </td>
-              <td className="px-4 py-3 text-sm font-medium text-gold">{r.order_no || "—"}</td>
-              <td className="px-4 py-3">
-                <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${r.type === "refund" ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"}`}>
-                  {labelReturnType(r.type)}
-                </span>
-              </td>
-              <td className="px-4 py-3 font-semibold text-gold">{r.refund_amount ? `RM ${parseFloat(r.refund_amount).toFixed(2)}` : "—"}</td>
-              <td className="px-4 py-3 text-xs text-muted-foreground max-w-[150px] truncate">{r.reason}</td>
-              <td className="px-4 py-3">
-                <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${getReturnStatusBadgeClass(r.status)}`}>
-                  {getReturnStatusLabel(r.status)}
-                </span>
-              </td>
-              <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{new Date(r.created_at).toLocaleString("zh-CN")}</td>
-              <td className="px-4 py-3">
-                <div className="flex items-center justify-center gap-1">
-                  <button type="button" onClick={() => setDetail(r)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground">
-                    <Eye size={14} />
-                  </button>
-                  {r.status === RETURN_STATUS.PENDING && (
-                    <PermissionGate permission="return.handle">
-                      <>
-                        <button type="button" onClick={() => handleAction(r.id, "approve")} className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
-                          <CheckCircle size={14} />
-                        </button>
-                        <button type="button" onClick={() => handleAction(r.id, "reject")} className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
-                          <XCircle size={14} />
-                        </button>
-                      </>
-                    </PermissionGate>
-                  )}
-                </div>
-              </td>
-            </>
-          )}
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          value={keyword}
+          onChange={(e) => { setKeyword(e.target.value); setPage(1); }}
+          placeholder="搜索售后单号/订单号"
+          className="h-10 w-64 rounded border border-border px-3 text-sm"
         />
+        <select
+          value={status}
+          onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+          className="h-10 rounded border border-border px-3 text-sm"
+        >
+          {RETURN_STATUS_FILTER_OPTIONS.map((s) => (
+            <option key={s.key} value={s.key}>{s.label}</option>
+          ))}
+        </select>
       </div>
-      {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDetail(null)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-foreground"><Tx>售后详情</Tx></h3>
-              <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${getReturnStatusBadgeClass(detail.status)}`}>
-                {getReturnStatusLabel(detail.status)}
-              </span>
-            </div>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground"><Tx>关联订单</Tx></span><span className="text-gold">{detail.order_no || "—"}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground"><Tx>类型</Tx></span><span>{labelReturnType(detail.type)}</span></div>
-              {detail.refund_amount && <div className="flex justify-between"><span className="text-muted-foreground"><Tx>退款金额</Tx></span><span className="font-bold text-gold">RM {parseFloat(detail.refund_amount).toFixed(2)}</span></div>}
-              <div className="flex justify-between"><span className="text-muted-foreground"><Tx>原因</Tx></span><span>{detail.reason}</span></div>
-              {detail.description && <div><span className="text-muted-foreground text-xs"><Tx>描述：</Tx></span><p className="text-xs mt-1">{detail.description}</p></div>}
-              {detail.admin_remark && <div><span className="text-muted-foreground text-xs"><Tx>管理员备注：</Tx></span><p className="text-xs mt-1">{detail.admin_remark}</p></div>}
-              {Array.isArray(detail.images) && detail.images.length > 0 && (
-                <div>
-                  <span className="text-muted-foreground text-xs"><Tx>凭证图片</Tx></span>
-                  <div className="flex gap-2 mt-1">
-                    {detail.images.map((img: string, i: number) => (
-                      <img key={i} src={img} alt="" className="h-16 w-16 rounded-lg object-cover border border-border" />
-                    ))}
+
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <table className="w-full text-sm">
+          <thead className="bg-secondary/40 text-left">
+            <tr>
+              <th className="px-3 py-2">售后单</th>
+              <th className="px-3 py-2">订单号</th>
+              <th className="px-3 py-2">类型</th>
+              <th className="px-3 py-2">退款金额</th>
+              <th className="px-3 py-2">状态</th>
+              <th className="px-3 py-2">创建时间</th>
+              <th className="px-3 py-2 text-center">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.map((r) => (
+              <tr key={r.id} className="border-t border-border">
+                <td className="px-3 py-2">{r.id.slice(0, 8)}</td>
+                <td className="px-3 py-2">{r.order_no || "-"}</td>
+                <td className="px-3 py-2">{r.type}</td>
+                <td className="px-3 py-2">{Number(r.refund_amount || 0).toFixed(2)}</td>
+                <td className="px-3 py-2">
+                  <span className={`rounded-full px-2 py-0.5 text-xs ${getReturnStatusBadgeClass(r.status)}`}>
+                    {getReturnStatusLabel(r.status)}
+                  </span>
+                </td>
+                <td className="px-3 py-2">{new Date(r.created_at).toLocaleString("zh-CN")}</td>
+                <td className="px-3 py-2">
+                  <div className="flex items-center justify-center gap-2">
+                    <button
+                      className="rounded border border-border px-2 py-1 text-xs"
+                      onClick={() => { void fetchDetail(r.id); }}
+                    >
+                      <Eye size={14} />
+                    </button>
+                    {r.status === RETURN_STATUS.PENDING ? (
+                      <PermissionGate permission="return.handle">
+                        <div className="flex items-center gap-2">
+                          <button className="rounded bg-emerald-600 px-2 py-1 text-xs text-white" onClick={() => { void openApprove(r); }}>通过</button>
+                          <button className="rounded border border-red-300 px-2 py-1 text-xs text-red-600" onClick={() => { void openReject(r); }}>拒绝</button>
+                        </div>
+                      </PermissionGate>
+                    ) : null}
                   </div>
-                </div>
-              )}
+                </td>
+              </tr>
+            ))}
+            {!loading && list.length === 0 ? (
+              <tr><td className="px-3 py-8 text-center text-muted-foreground" colSpan={7}>暂无售后记录</td></tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+
+      <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+
+      {detail ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDetail(null)}>
+          <div className="max-h-[85vh] w-full max-w-2xl overflow-auto rounded-xl bg-card p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 text-base font-semibold">售后详情</div>
+            {detailLoading ? <div className="text-sm text-muted-foreground">加载中...</div> : null}
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>用户：{(detail as any).user_info?.name || "-"}</div>
+              <div>手机号：{(detail as any).user_info?.phone || "-"}</div>
+              <div>订单号：{(detail as any).order_info?.order_no || detail.order_no || "-"}</div>
+              <div>支付状态：{(detail as any).order_info?.payment_status || "-"}</div>
+              <div>商品：{(detail as any).item_info?.product_name || "-"}</div>
+              <div>SKU：{(detail as any).item_info?.sku_code || "-"}</div>
+              <div>申请数量：{(detail as any).item_info?.request_qty || detail.quantity || 0}</div>
+              <div>退款金额：{Number(detail.refund_amount || 0).toFixed(2)}</div>
+              <div className="col-span-2">申请原因：{detail.reason || "-"}</div>
+              <div className="col-span-2">管理员备注：{detail.admin_remark || "-"}</div>
             </div>
-            {detail.status === RETURN_STATUS.PENDING && (
-              <PermissionGate permission="return.handle">
-                <div className="flex gap-2 pt-2">
-                  <button type="button" onClick={() => handleAction(detail.id, "approve")} className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-sm font-bold text-white"><Tx>通过</Tx></button>
-                  <button type="button" onClick={() => handleAction(detail.id, "reject")} className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-bold text-white"><Tx>拒绝</Tx></button>
-                </div>
-              </PermissionGate>
-            )}
-            <button onClick={() => setDetail(null)} className="w-full rounded-xl border border-border py-2.5 text-sm text-muted-foreground hover:bg-secondary"><Tx>关闭</Tx></button>
+            <div className="mt-4 text-sm font-medium">退款记录</div>
+            <div className="space-y-1 text-xs text-muted-foreground">
+              {(detail as any).refund_records?.length ? (detail as any).refund_records.map((x: any) => (
+                <div key={x.id}>{x.event_type} / {x.processing_result} / {new Date(x.created_at).toLocaleString("zh-CN")}</div>
+              )) : <div>暂无</div>}
+            </div>
+            <div className="mt-4 text-sm font-medium">库存恢复记录</div>
+            <div className="space-y-1 text-xs text-muted-foreground">
+              {(detail as any).inventory_restore_records?.length ? (detail as any).inventory_restore_records.map((x: any) => (
+                <div key={x.id}>Δ{x.quantity_delta} / {new Date(x.created_at).toLocaleString("zh-CN")}</div>
+              )) : <div>暂无</div>}
+            </div>
+            <div className="mt-4 text-sm font-medium">操作日志</div>
+            <div className="space-y-1 text-xs text-muted-foreground">
+              {(detail as any).operation_logs?.length ? (detail as any).operation_logs.map((x: any) => (
+                <div key={x.id}>{x.summary || x.result} / {new Date(x.created_at).toLocaleString("zh-CN")}</div>
+              )) : <div>暂无</div>}
+            </div>
           </div>
         </div>
-      )}
+      ) : null}
+
+      {approveTarget ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setApproveTarget(null)}>
+          <div className="w-full max-w-lg rounded-xl bg-card p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 text-base font-semibold">售后通过处理</div>
+            <div className="space-y-2 text-sm">
+              <label className="block">
+                <span>退款金额</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={orderTotal}
+                  value={approveForm.refund_amount}
+                  onChange={(e) => setApproveForm((s) => ({ ...s, refund_amount: Number(e.target.value) }))}
+                  className="mt-1 h-10 w-full rounded border border-border px-3"
+                />
+              </label>
+              <label className="block">
+                <span>管理员备注</span>
+                <textarea
+                  value={approveForm.admin_remark || ""}
+                  onChange={(e) => setApproveForm((s) => ({ ...s, admin_remark: e.target.value }))}
+                  className="mt-1 w-full rounded border border-border p-2"
+                />
+              </label>
+              <label className="block">
+                <span>退款模式</span>
+                <select
+                  value={approveForm.refund_mode}
+                  onChange={(e) => setApproveForm((s) => ({ ...s, refund_mode: e.target.value as any }))}
+                  className="mt-1 h-10 w-full rounded border border-border px-3"
+                >
+                  <option value="none">none</option>
+                  <option value="manual">manual</option>
+                  <option value="provider">provider</option>
+                </select>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <label><input type="checkbox" checked={approveForm.restore_stock} onChange={(e) => setApproveForm((s) => ({ ...s, restore_stock: e.target.checked }))} /> 恢复库存</label>
+                <label><input type="checkbox" checked={approveForm.restore_coupon} onChange={(e) => setApproveForm((s) => ({ ...s, restore_coupon: e.target.checked }))} /> 恢复优惠券</label>
+                <label><input type="checkbox" checked={approveForm.reverse_points} onChange={(e) => setApproveForm((s) => ({ ...s, reverse_points: e.target.checked }))} /> 回滚积分</label>
+                <label><input type="checkbox" checked={approveForm.reverse_rewards} onChange={(e) => setApproveForm((s) => ({ ...s, reverse_rewards: e.target.checked }))} /> 冲正返现</label>
+              </div>
+              <div className="text-xs text-muted-foreground">订单实付金额：{orderTotal.toFixed(2)}</div>
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button className="rounded border border-border px-3 py-1.5 text-sm" onClick={() => setApproveTarget(null)}>取消</button>
+              <button className="rounded bg-emerald-600 px-3 py-1.5 text-sm text-white" onClick={() => { void submitApprove(); }}>确认通过</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {rejectTarget ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setRejectTarget(null)}>
+          <div className="w-full max-w-lg rounded-xl bg-card p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 text-base font-semibold">拒绝售后</div>
+            <textarea
+              value={rejectRemark}
+              onChange={(e) => setRejectRemark(e.target.value)}
+              placeholder="请输入拒绝原因（必填）"
+              className="w-full rounded border border-border p-2"
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <button className="rounded border border-border px-3 py-1.5 text-sm" onClick={() => setRejectTarget(null)}>取消</button>
+              <button className="rounded bg-red-600 px-3 py-1.5 text-sm text-white" onClick={() => { void submitReject(); }}>确认拒绝</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

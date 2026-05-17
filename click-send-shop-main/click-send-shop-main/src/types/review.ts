@@ -10,6 +10,17 @@ export interface Review {
   created_at: string;
   likes_count: number;
   liked: boolean;
+  admin_reply?: string | null;
+  admin_reply_at?: string | null;
+  is_verified_purchase?: boolean;
+  sku_text?: string | null;
+}
+
+export interface ProductReviewStats {
+  total: number;
+  avg_rating: number;
+  rating_distribution: Record<1 | 2 | 3 | 4 | 5, number>;
+  image_review_count: number;
 }
 
 /**

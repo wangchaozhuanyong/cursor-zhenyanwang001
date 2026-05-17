@@ -7,6 +7,7 @@ const router = Router();
   payWithRewardWallet: (...args) => require('./payments.service').payWithRewardWallet(...args),
   createStripeCheckoutForOrder: (...args) =>
     require('./payments.service').createStripeCheckoutForOrder(...args),
+  recordRefundByAdmin: (...args) => require('./payments.service').recordRefundByAdmin(...args),
 };
 
 router.use('/payment', require('./paymentPublic.routes'));

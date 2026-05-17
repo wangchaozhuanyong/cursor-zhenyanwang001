@@ -12,7 +12,8 @@ import { useUserStore } from "@/stores/useUserStore";
 import { useCouponStore } from "@/stores/useCouponStore";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
-import type { Order } from "@/types/order";
+import type { Order, SubmitOrderParams } from "@/types/order";
+import type { OrderPreviewResult } from "@/types/orderPreview";
 import type { PaymentMethod } from "@/components/PaymentMethodPicker";
 import { useShippingStore, calcShippingFee, estimateCartWeightKg } from "@/stores/useShippingStore";
 import { useCheckoutPickerCoupons } from "@/hooks/useCheckoutPickerCoupons";
@@ -109,6 +110,7 @@ export function useCheckoutPage() {
   const [shippingQuoteLoading, setShippingQuoteLoading] = useState(false);
   const [shippingQuoteError, setShippingQuoteError] = useState<string | null>(null);
   const [checkoutAbandonmentId, setCheckoutAbandonmentId] = useState<string | null>(null);
+  const [orderPreview, setOrderPreview] = useState<OrderPreviewResult | null>(null);
   const checkoutAbandonmentIdRef = useRef<string | null>(null);
   const checkoutSnapshotTimerRef = useRef<number | null>(null);
   const beginCheckoutTrackedRef = useRef("");
@@ -169,15 +171,17 @@ export function useCheckoutPage() {
   const previewShippingFee = selectedTemplate
     ? calcShippingFee(selectedTemplate, rawTotal, { totalWeightKg: weightKg })
     : 0;
-  const shippingFee = serverShippingFee ?? previewShippingFee;
-  const discountAmount = selectedCoupon
+  const shippingFee = orderPreview?.shipping_fee ?? serverShippingFee ?? previewShippingFee;
+  const clientCouponDiscount = selectedCoupon
     ? selectedCoupon.discountType === "percent"
       ? Math.min(rawTotal, Math.floor(rawTotal * selectedCoupon.discount / 100))
       : selectedCoupon.discountType === "shipping"
         ? Math.min(shippingFee, selectedCoupon.discount > 0 ? selectedCoupon.discount : shippingFee)
         : Math.min(rawTotal, selectedCoupon.discount)
     : 0;
-  const finalTotal = Math.max(0, rawTotal - discountAmount + shippingFee);
+  const discountAmount = orderPreview?.discount_amount ?? clientCouponDiscount;
+  const discountLines = orderPreview?.discount_lines ?? [];
+  const finalTotal = orderPreview?.final_amount ?? Math.max(0, rawTotal - clientCouponDiscount + shippingFee);
   const preferredCouponId = searchParams.get("coupon_id");
 
   const sstCfg = parseSstFromSiteInfo(siteInfo);
@@ -298,6 +302,52 @@ export function useCheckoutPage() {
       cancelled = true;
     };
   }, [selectedTemplateId, rawTotal, weightKg]);
+
+  useEffect(() => {
+    if (!items.length || submittedOrder) {
+      setOrderPreview(null);
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      const payload: SubmitOrderParams = {
+        items: items.map((i) => ({
+          product_id: i.product.id,
+          variant_id: i.variant_id || undefined,
+          qty: i.qty,
+        })),
+        contact_name: name.trim() || "结算预览",
+        contact_phone: phone.trim() || "60000000000",
+        address: address.trim() || "MY",
+        coupon_id: selectedCoupon?.id,
+        shipping_template_id: selectedTemplateId ?? undefined,
+        shipping_name: selectedTemplate?.name,
+        estimated_weight_kg: weightKg,
+      };
+      void orderService
+        .previewOrder(payload)
+        .then((data) => {
+          if (!cancelled) setOrderPreview(data);
+        })
+        .catch(() => {
+          if (!cancelled) setOrderPreview(null);
+        });
+    }, 400);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [
+    items,
+    name,
+    phone,
+    address,
+    selectedCoupon?.id,
+    selectedTemplateId,
+    selectedTemplate?.name,
+    weightKg,
+    submittedOrder,
+  ]);
 
   useEffect(() => {
     return () => { clearBuyNow(); };
@@ -604,6 +654,7 @@ export function useCheckoutPage() {
     shippingRulesError,
     shippingFee,
     discountAmount,
+    discountLines,
     finalTotal,
     totalPointsValue: totalPoints(),
     sstCfg,

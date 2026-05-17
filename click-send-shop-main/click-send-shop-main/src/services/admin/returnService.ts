@@ -1,5 +1,5 @@
 import * as returnApi from "@/api/admin/return";
-import type { ReturnRequest } from "@/types/return";
+import type { ApproveReturnParams, ReturnRequest } from "@/types/return";
 import type { PaginatedData, PaginationParams } from "@/types/common";
 import { unwrapPaginated } from "@/services/responseNormalize";
 
@@ -13,8 +13,8 @@ export async function fetchReturnById(id: string) {
   return res.data;
 }
 
-export async function approveReturn(id: string, remark?: string) {
-  const res = await returnApi.approveReturn(id, remark);
+export async function approveReturn(id: string, payload: ApproveReturnParams) {
+  const res = await returnApi.approveReturn(id, payload);
   return res.data;
 }
 

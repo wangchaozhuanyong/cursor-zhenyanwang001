@@ -41,7 +41,7 @@ export default function History() {
             <button
               type="button"
               onClick={() => navigate("/login", { state: { from: "/history" } })}
-              className="font-semibold text-gold ml-1"
+              className="font-semibold text-theme-price ml-1"
             >
               登录
             </button>
@@ -74,7 +74,7 @@ export default function History() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
                     <p className="mt-1 text-xs text-muted-foreground line-clamp-1">{product.description}</p>
-                    <p className="mt-1 text-sm font-bold text-gold">RM {product.price}</p>
+                    <p className="mt-1 text-sm font-bold text-theme-price">RM {product.price}</p>
                   </div>
                 </motion.div>
               ))}

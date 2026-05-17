@@ -86,7 +86,7 @@ export default function AdminLogin() {
               type="button"
               onClick={handleLogin}
               disabled={loading}
-              className="touch-manipulation mt-2 min-h-[48px] w-full rounded-xl bg-gold py-3 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 active:opacity-95 disabled:opacity-50 sm:text-sm"
+              className="touch-manipulation mt-2 min-h-[48px] w-full rounded-xl btn-theme-price py-3 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 active:opacity-95 disabled:opacity-50 sm:text-sm"
             >
               {loading ? t("login.submitting") : t("login.submit")}
             </button>

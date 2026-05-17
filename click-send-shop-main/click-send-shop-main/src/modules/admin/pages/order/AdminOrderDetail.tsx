@@ -1,541 +1,292 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { ArrowLeft, MessageSquare, Copy, Check, Loader2, Truck, RefreshCw, MapPin } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+﻿import { ArrowLeft, Loader2, Truck, Check, XCircle, ReceiptText } from "lucide-react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useGoBack } from "@/hooks/useGoBack";
-import { fetchOrderById, updateOrderStatus, shipOrder, refreshOrderLogistics } from "@/services/admin/orderService";
+import { fetchOrderById, updateOrderStatus, shipOrder } from "@/services/admin/orderService";
+import { getAuditLogs, type AuditLogRow } from "@/api/admin/audit";
+import { markAdminOrderPaid } from "@/services/admin/paymentAdminService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { Tx } from "@/components/admin/AdminText";
-import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
-import { copyToClipboard } from "@/utils/clipboard";
 import {
   ORDER_STATUS,
   PAYMENT_STATUS,
-  ORDER_STATUS_PROGRESS,
   getOrderStatusLabel,
   getPaymentStatusLabel,
 } from "@/constants/statusDictionary";
-import { labelOrderPaymentMethod } from "@/utils/adminDisplayLabels";
-import { labelChannelCode } from "@/utils/paymentAdminLabels";
-import { OrderSstLines } from "@/components/OrderSstLines";
-import { AdminOrderDetailSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import type { Order } from "@/types/order";
 
-function canShipByState(order: { status?: string; payment_status?: string }) {
-  return order.status === ORDER_STATUS.PAID
-    && (order.payment_status ?? PAYMENT_STATUS.PENDING) === PAYMENT_STATUS.PAID;
+const ORDER_STATUS_PROGRESS = [
+  ORDER_STATUS.PENDING,
+  ORDER_STATUS.PAID,
+  ORDER_STATUS.SHIPPED,
+  ORDER_STATUS.COMPLETED,
+] as const;
+
+function canShipByState(order: Order) {
+  return order.status === ORDER_STATUS.PAID && (order.payment_status ?? PAYMENT_STATUS.PENDING) === PAYMENT_STATUS.PAID;
 }
 
-const allStatuses = ORDER_STATUS_PROGRESS;
-
 export default function AdminOrderDetail() {
-  const { confirm } = useAdminConfirm();
   const navigate = useNavigate();
   const goBack = useGoBack("/admin/orders");
-  const { id } = useParams();
+  const { id = "" } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
-  const [order, setOrder] = useState<any>(null);
+  const [order, setOrder] = useState<Order | null>(null);
+  const [logs, setLogs] = useState<AuditLogRow[]>([]);
+  const [busy, setBusy] = useState(false);
   const [showShipForm, setShowShipForm] = useState(false);
   const [trackingNo, setTrackingNo] = useState("");
   const [carrier, setCarrier] = useState("J&T Express");
-  const [refreshingLogistics, setRefreshingLogistics] = useState(false);
 
-  useEffect(() => {
+  const reload = async () => {
     if (!id) return;
     setLoading(true);
-    fetchOrderById(id)
-      .then((data) => setOrder(data))
-      .catch((e) => toast.error(toastErrorMessage(e, "加载订单详情失败")))
-      .finally(() => setLoading(false));
-  }, [id]);
-
-  const reload = () => {
-    if (!id) return;
-    fetchOrderById(id).then(setOrder).catch((e) => toast.error(toastErrorMessage(e, "刷新订单失败")));
+    try {
+      const data = await fetchOrderById(id);
+      setOrder(data);
+      try {
+        const logRes = await getAuditLogs({
+          page: 1,
+          pageSize: 20,
+          objectType: "order",
+          objectId: data.id,
+          sortBy: "created_at",
+          sortOrder: "desc",
+        });
+        const payload = logRes.data as unknown as { list?: AuditLogRow[] };
+        setLogs(Array.isArray(payload?.list) ? payload.list : []);
+      } catch {
+        setLogs([]);
+      }
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "加载订单详情失败"));
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleStatusChange = async (newStatus: string) => {
+  useEffect(() => { void reload(); }, [id]);
+
+  useEffect(() => {
+    if (!order) return;
+    const action = searchParams.get("action");
+    if (action === "ship" && canShipByState(order)) setShowShipForm(true);
+  }, [order, searchParams]);
+
+  const statusIndex = ORDER_STATUS_PROGRESS.indexOf((order?.status || "") as (typeof ORDER_STATUS_PROGRESS)[number]);
+  const nextStatus = statusIndex >= 0 && statusIndex < ORDER_STATUS_PROGRESS.length - 1
+    ? ORDER_STATUS_PROGRESS[statusIndex + 1]
+    : null;
+
+  const discountLines = useMemo(() => {
+    const src = order as unknown as {
+      flash_sale_discount?: number;
+      full_reduction_discount?: number;
+      coupon_discount?: number;
+      discount_lines?: Array<{ label?: string; amount?: number }>;
+    };
+    const list: Array<{ label: string; amount: number }> = [];
+    const flash = Number(src.flash_sale_discount || 0);
+    const fullReduction = Number(src.full_reduction_discount || 0);
+    const coupon = Number(src.coupon_discount || 0);
+    if (flash > 0) list.push({ label: "秒杀优惠", amount: flash });
+    if (fullReduction > 0) list.push({ label: "满减优惠", amount: fullReduction });
+    if (coupon > 0) list.push({ label: "优惠券优惠", amount: coupon });
+    if (Array.isArray(src.discount_lines)) {
+      for (const it of src.discount_lines) {
+        const amount = Number(it?.amount || 0);
+        if (amount > 0 && it?.label) list.push({ label: it.label, amount });
+      }
+    }
+    return list;
+  }, [order]);
+
+  const handleStatus = async (target: string) => {
+    if (!id) return;
+    setBusy(true);
     try {
-      await updateOrderStatus(id!, newStatus);
-      reload();
-      toast.success(`订单状态已更新为「${getOrderStatusLabel(newStatus)}」`);
+      await updateOrderStatus(id, target);
+      toast.success(`订单状态已更新为「${getOrderStatusLabel(target)}」`);
+      await reload();
+      setSearchParams({});
     } catch (e) {
-      toast.error(toastErrorMessage(e, "更新状态失败"));
+      toast.error(toastErrorMessage(e, "状态更新失败"));
+    } finally {
+      setBusy(false);
     }
   };
 
   const handleShip = async () => {
-    if (!trackingNo.trim()) { toast.error("请输入快递单号"); return; }
+    if (!id) return;
+    if (!trackingNo.trim()) return toast.error("请填写快递单号");
+    setBusy(true);
     try {
-      await shipOrder(id!, trackingNo.trim(), carrier);
-      reload();
+      await shipOrder(id, trackingNo.trim(), carrier);
+      toast.success("已发货");
       setShowShipForm(false);
-      toast.success("发货成功");
+      await reload();
+      setSearchParams({});
     } catch (e) {
       toast.error(toastErrorMessage(e, "发货失败"));
-    }
-  };
-
-  const handleRefreshLogistics = async () => {
-    if (!id) return;
-    setRefreshingLogistics(true);
-    try {
-      const data = await refreshOrderLogistics(id);
-      setOrder((prev: any) => prev ? { ...prev, ...data } : prev);
-      toast.success("物流轨迹已刷新");
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "刷新物流失败"));
     } finally {
-      setRefreshingLogistics(false);
+      setBusy(false);
     }
   };
 
-  const items = order?.items || [];
-  const logisticsTimeline = order?.logistics_timeline || [];
-  const isCancelled = order?.status === ORDER_STATUS.CANCELLED;
-  const isRefund = order?.status === ORDER_STATUS.REFUNDING || order?.status === ORDER_STATUS.REFUNDED;
-  const currentStatusIdx = allStatuses.indexOf(order?.status as (typeof allStatuses)[number]);
-  const canAdvance = !isCancelled && !isRefund && currentStatusIdx >= 0 && currentStatusIdx < allStatuses.length - 1;
-  const nextStatus = canAdvance ? allStatuses[currentStatusIdx + 1] : null;
-  const showShip = order && canShipByState(order);
-
-  const orderText = order
-    ? (() => {
-        const lines = [
-          `📦 订单号: ${order.order_no}`,
-          `👤 ${order.contact_name || ""} (${order.contact_phone || ""})`,
-          `📍 ${order.address || ""}`,
-          "---",
-          ...items.map((it: any) => `✦ ${it.product?.name || it.name} x${it.qty} = RM ${((it.product?.price || it.price || 0) * it.qty).toFixed(2)}`),
-          "---",
-          `💰 ${order.tax_mode === "inclusive" ? "商品总额（含税）" : "商品合计"}: RM ${parseFloat(order.raw_amount || order.total_amount || 0).toFixed(2)}`,
-        ];
-        if (parseFloat(order.discount_amount || 0) > 0) {
-          lines.push(`🎫 优惠: -RM ${parseFloat(order.discount_amount).toFixed(2)}`);
-        }
-        if (
-          order.tax_mode === "inclusive"
-          && order.taxable_amount != null
-          && order.tax_amount != null
-          && order.tax_rate != null
-        ) {
-          const tl = order.tax_label || "SST";
-          lines.push(`📋 应税商品（含税）: RM ${parseFloat(order.taxable_amount).toFixed(2)}`);
-          if (order.tax_exclusive_amount != null) {
-            lines.push(`📋 商品不含税净额: RM ${parseFloat(order.tax_exclusive_amount).toFixed(2)}`);
-          }
-          lines.push(`📋 ${tl}（${order.tax_rate}%）: RM ${parseFloat(order.tax_amount).toFixed(2)}`);
-        }
-        const ship = parseFloat(order.shipping_fee || 0);
-        lines.push(ship > 0 ? `🚚 运费（不计税）: RM ${ship.toFixed(2)}` : "🚚 运费: 包邮（不计税）");
-        lines.push(`💰 应付: RM ${parseFloat(order.total_amount || 0).toFixed(2)}`);
-        return lines.join("\n");
-      })()
-    : "";
-
-  const handleCopyText = async () => {
-    const copied = await copyToClipboard(orderText);
-    if (copied) {
-      toast.success("订单文本已复制到剪贴板");
-    } else {
-      toast.error("复制失败，请手动复制订单文本");
+  const handleMarkPaid = async () => {
+    if (!id || !order) return;
+    const payment_channel = window.prompt("收款渠道", "offline_transfer") || "offline_transfer";
+    const admin_remark = window.prompt("收款备注", "") || "";
+    const payment_reference = window.prompt("交易凭证编号（可选）", "") || "";
+    setBusy(true);
+    try {
+      await markAdminOrderPaid(order.id, {
+        payment_channel,
+        admin_remark,
+        payment_reference,
+        reason: admin_remark,
+      });
+      toast.success("已补记为已支付");
+      await reload();
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "确认收款失败"));
+    } finally {
+      setBusy(false);
     }
   };
 
-  const handleSendWhatsApp = () => {
-    const encoded = encodeURIComponent(orderText);
-    const phone = (order?.contact_phone || "").replace(/[^0-9]/g, "");
-    window.open(`https://wa.me/${phone}?text=${encoded}`, "_blank");
-  };
+  if (loading) {
+    return <div className="p-6 text-sm text-muted-foreground">加载中...</div>;
+  }
+
+  if (!order) {
+    return <div className="p-6">订单不存在</div>;
+  }
+
+  const isReadonly = [ORDER_STATUS.COMPLETED, ORDER_STATUS.CANCELLED, ORDER_STATUS.REFUNDED].includes(order.status);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <button type="button" onClick={goBack}>
-          <ArrowLeft size={20} className="text-foreground" />
-        </button>
-        <h2 className="text-lg font-semibold text-foreground"><Tx>订单详情</Tx></h2>
-        {loading ? (
-          <>
-            <span className="skeleton-base skeleton-shimmer h-5 w-16 rounded-full" />
-            <span className="skeleton-base skeleton-shimmer h-5 w-20 rounded-full" />
-          </>
-        ) : !order ? null : (
-          <>
-            <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              isCancelled || isRefund ? "bg-red-500/10 text-red-500"
-              : order.status === ORDER_STATUS.COMPLETED ? "bg-green-500/10 text-green-500"
-              : "bg-[var(--theme-price)]/10 text-[var(--theme-price)]"
-            }`}>{getOrderStatusLabel(order.status)}</span>
-            <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-              支付：{getPaymentStatusLabel(order.payment_status ?? PAYMENT_STATUS.PENDING)}
-            </span>
-          </>
-        )}
+        <button type="button" onClick={goBack}><ArrowLeft size={18} /></button>
+        <h2 className="text-lg font-semibold">订单详情</h2>
+        <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">{getOrderStatusLabel(order.status)}</span>
+        <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">支付：{getPaymentStatusLabel(order.payment_status ?? PAYMENT_STATUS.PENDING)}</span>
       </div>
 
-      {loading && <AdminOrderDetailSkeleton />}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="space-y-4">
+          <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+            <h3 className="font-semibold">收货信息</h3>
+            <div className="text-sm">姓名：{order.contact_name || "-"}</div>
+            <div className="text-sm">电话：{order.contact_phone || "-"}</div>
+            <div className="text-sm">地址：{order.address || "-"}</div>
+          </div>
 
-      {!loading && !order && (
-        <div className="py-16 text-center text-muted-foreground">
-          <p><Tx>订单不存在</Tx></p>
-          <button type="button" onClick={goBack} className="mt-4 text-[var(--theme-price)] underline"><Tx>返回</Tx></button>
-        </div>
-      )}
-
-      {!loading && order && (
-      <>
-      {/* Status timeline */}
-      <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 theme-shadow">
-        <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
-          <h3 className="text-sm font-semibold text-foreground"><Tx>订单状态流转</Tx></h3>
-          {nextStatus === ORDER_STATUS.SHIPPED && (
-            <PermissionGate permission="order.ship">
-              <button type="button" onClick={() => setShowShipForm(true)} className="flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white">
-                <Truck size={12} /><Tx> 标记发货
-              </Tx></button>
-            </PermissionGate>
-          )}
-          {nextStatus && nextStatus !== ORDER_STATUS.SHIPPED && (
-            <PermissionGate permission="order.update">
-              <button
-                type="button"
-                onClick={() =>
-                  confirm({
-                    title: "确认更新状态",
-                    description: `确定将订单状态更新为「${getOrderStatusLabel(nextStatus)}」？`,
-                    onConfirm: () => handleStatusChange(nextStatus),
-                  })
-                }
-                className="flex items-center gap-1 theme-rounded px-3 py-1.5 text-xs font-semibold text-white"
-                style={{ background: "var(--theme-gradient)" }}
-              >
-                <Check size={12} /> 推进到「{getOrderStatusLabel(nextStatus)}」
-              </button>
-            </PermissionGate>
-          )}
-        </div>
-        <div className="flex items-center gap-2 overflow-x-auto pb-2">
-          {allStatuses.map((s, i) => (
-            <div key={s} className="flex items-center gap-2">
-              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
-                isCancelled || isRefund ? "bg-muted text-muted-foreground"
-                : i <= currentStatusIdx ? "bg-[var(--theme-price)] text-white" : "bg-secondary text-muted-foreground"
-              }`}>{i + 1}</div>
-              <span className={`whitespace-nowrap text-xs ${!isCancelled && !isRefund && i <= currentStatusIdx ? "font-medium text-foreground" : "text-muted-foreground"}`}>{getOrderStatusLabel(s)}</span>
-              {i < allStatuses.length - 1 && (
-                <div className={`h-0.5 w-8 ${!isCancelled && !isRefund && i < currentStatusIdx ? "bg-[var(--theme-price)]" : "bg-border"}`} />
+          <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+            <h3 className="font-semibold">快捷操作</h3>
+            <div className="flex flex-wrap gap-2">
+              {order.status === ORDER_STATUS.PENDING && (
+                <>
+                  <PermissionGate permission="payment.manage">
+                    <button type="button" disabled={busy} onClick={handleMarkPaid} className="rounded-lg border border-emerald-500/40 px-3 py-2 text-xs text-emerald-600">确认线下收款</button>
+                  </PermissionGate>
+                  <PermissionGate permission="order.update">
+                    <button type="button" disabled={busy} onClick={() => void handleStatus(ORDER_STATUS.CANCELLED)} className="rounded-lg border border-red-500/40 px-3 py-2 text-xs text-red-600">取消订单</button>
+                  </PermissionGate>
+                </>
               )}
-            </div>
-          ))}
-        </div>
-        {isCancelled && (
-          <div className="mt-3 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive"><Tx>该订单已被取消</Tx></div>
-        )}
-        {isRefund && (
-          <div className="mt-3 rounded-lg bg-orange-500/10 px-3 py-2 text-xs text-orange-600"><Tx>该订单处于退款流程中</Tx></div>
-        )}
-      </div>
 
-      {/* Ship form modal */}
-      {showShipForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowShipForm(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md theme-rounded bg-[var(--theme-surface)] p-6 theme-shadow space-y-4">
-            <h3 className="font-bold text-foreground flex items-center gap-2"><Truck size={18} className="text-blue-600" /><Tx> 发货信息</Tx></h3>
-            <div>
-              <label className="mb-1 block text-xs text-muted-foreground"><Tx>快递公司</Tx></label>
-              <select value={carrier} onChange={(e) => setCarrier(e.target.value)} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]">
-                {["J&T Express", "Pos Laju", "DHL eCommerce", "Ninja Van", "GD Express", "City-Link Express", "顺丰速运", "其他"].map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
+              {order.status === ORDER_STATUS.PAID && (
+                <PermissionGate permission="order.ship">
+                  <button type="button" disabled={busy} onClick={() => setShowShipForm(true)} className="rounded-lg border border-blue-500/40 px-3 py-2 text-xs text-blue-600">发货</button>
+                </PermissionGate>
+              )}
+
+              {order.status === ORDER_STATUS.SHIPPED && (
+                <PermissionGate permission="order.update">
+                  <button type="button" disabled={busy} onClick={() => void handleStatus(ORDER_STATUS.COMPLETED)} className="rounded-lg border border-[var(--theme-border)] px-3 py-2 text-xs">标记完成</button>
+                </PermissionGate>
+              )}
+
+              {isReadonly && <span className="text-xs text-muted-foreground">当前状态只读</span>}
             </div>
-            <div>
-              <label className="mb-1 block text-xs text-muted-foreground"><Tx>快递单号</Tx></label>
-              <input value={trackingNo} onChange={(e) => setTrackingNo(e.target.value)} placeholder="输入快递单号" className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
-            </div>
-            <PermissionGate permission="order.ship">
-              <button
-                type="button"
-                onClick={() =>
-                  confirm({
-                    title: "确认发货",
-                    description: "确定提交发货信息？提交后订单将进入已发货状态。",
-                    confirmText: "确认发货",
-                    onConfirm: () => handleShip(),
-                  })
-                }
-                className="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white"
-              >
-                <Tx>确认发货</Tx>
-              </button>
-            </PermissionGate>
+
+            {nextStatus && nextStatus !== ORDER_STATUS.SHIPPED && !isReadonly && (
+              <div className="text-xs text-muted-foreground">
+                下一步建议状态：{getOrderStatusLabel(nextStatus)}
+              </div>
+            )}
           </div>
         </div>
-      )}
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left - user info */}
-        <div className="space-y-4">
-          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 space-y-3 theme-shadow">
-            <h3 className="text-sm font-semibold text-foreground"><Tx>收货信息</Tx></h3>
-            {[
-              { label: "姓名", value: order.contact_name || "—" },
-              { label: "电话", value: order.contact_phone || "—" },
-              { label: "地址", value: order.address || "—" },
-              { label: "备注", value: order.note || "—" },
-            ].map((r) => (
-              <div key={r.label} className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{r.label}</span>
-                <span className="text-right text-foreground max-w-[60%] truncate">{r.value}</span>
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <h3 className="font-semibold">商品清单</h3>
+          {(order.items || []).map((item, idx) => {
+            const p = item.product || item;
+            return (
+              <div key={idx} className="flex items-center justify-between rounded-lg border border-border p-2">
+                <div className="text-sm">{p.name} x{item.qty}</div>
+                <div className="text-sm font-semibold">RM {((p.price || 0) * item.qty).toFixed(2)}</div>
+              </div>
+            );
+          })}
+
+          <div className="border-t border-border pt-2 space-y-1 text-sm">
+            <div className="flex justify-between"><span>商品原价</span><span>RM {Number(order.raw_amount || 0).toFixed(2)}</span></div>
+            {discountLines.map((d, i) => (
+              <div key={i} className="flex justify-between text-red-600"><span>{d.label}</span><span>-RM {Number(d.amount).toFixed(2)}</span></div>
+            ))}
+            {!!Number(order.total_points || 0) && <div className="flex justify-between text-red-600"><span>积分抵扣</span><span>-{order.total_points} 分</span></div>}
+            <div className="flex justify-between"><span>运费</span><span>{Number(order.shipping_fee || 0) > 0 ? `RM ${Number(order.shipping_fee).toFixed(2)}` : "包邮"}</span></div>
+            <div className="flex justify-between"><span>SST</span><span>RM {Number(order.tax_amount || 0).toFixed(2)}</span></div>
+            <div className="flex justify-between border-t border-border pt-1 font-bold"><span>实付金额</span><span>RM {Number(order.total_amount || 0).toFixed(2)}</span></div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <h3 className="inline-flex items-center gap-2 font-semibold"><ReceiptText size={16} />操作记录</h3>
+          <div className="max-h-[420px] space-y-2 overflow-auto pr-1">
+            {logs.length === 0 && <div className="text-xs text-muted-foreground">暂无操作记录</div>}
+            {logs.map((log) => (
+              <div key={log.id} className="rounded-lg border border-border p-2 text-xs">
+                <div className="font-medium">{log.action_type}</div>
+                <div className="text-muted-foreground">操作人：{log.operator_name || "系统"}</div>
+                <div className="text-muted-foreground">时间：{new Date(log.created_at).toLocaleString("zh-CN")}</div>
+                <div className="text-muted-foreground">备注：{log.summary || "-"}</div>
+                <div className="text-muted-foreground">before: {JSON.stringify(log.before_json)}</div>
+                <div className="text-muted-foreground">after: {JSON.stringify(log.after_json)}</div>
               </div>
             ))}
           </div>
-
-          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 space-y-3 theme-shadow">
-            <h3 className="text-sm font-semibold text-foreground"><Tx>订单信息</Tx></h3>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground"><Tx>订单号</Tx></span>
-              <span className="font-mono text-foreground">{order.order_no}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground"><Tx>下单时间</Tx></span>
-              <span className="text-foreground">{new Date(order.created_at).toLocaleString("zh-CN")}</span>
-            </div>
-            {order.tracking_no && (
-              <>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground"><Tx>快递公司</Tx></span>
-                  <span className="text-foreground">{order.carrier || "—"}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground"><Tx>快递单号</Tx></span>
-                  <span className="font-mono text-foreground">{order.tracking_no}</span>
-                </div>
-                {order.logistics_provider?.tracking_url && (
-                  <a
-                    href={order.logistics_provider.tracking_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block text-right text-xs text-[var(--theme-price)] underline"
-                  ><Tx>
-                    打开承运商官网查询
-                  </Tx></a>
-                )}
-              </>
-            )}
-          </div>
-
-          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 space-y-4 theme-shadow">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold text-foreground"><Tx>物流轨迹</Tx></h3>
-              {order.tracking_no && (
-                <PermissionGate permission="order.ship">
-                  <button
-                    type="button"
-                    onClick={handleRefreshLogistics}
-                    disabled={refreshingLogistics}
-                    className="flex items-center gap-1 rounded-lg border border-[var(--theme-border)] px-2.5 py-1.5 text-xs text-foreground hover:bg-[var(--theme-bg)] disabled:opacity-50"
-                  >
-                    <RefreshCw size={12} className={refreshingLogistics ? "animate-spin" : ""} /><Tx>
-                    刷新
-                  </Tx></button>
-                </PermissionGate>
-              )}
-            </div>
-            {logisticsTimeline.length > 0 ? (
-              <div className="space-y-4">
-                {logisticsTimeline.map((track: any, idx: number) => (
-                  <div key={track.id || idx} className="relative pl-5">
-                    <span className="absolute left-0 top-1.5 h-2.5 w-2.5 rounded-full bg-[var(--theme-price)]" />
-                    {idx < logisticsTimeline.length - 1 && <span className="absolute left-1 top-4 h-full w-px bg-[var(--theme-border)]" />}
-                    <p className="text-sm font-medium text-foreground">{track.title}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{track.description}</p>
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                      <span>{new Date(track.event_time).toLocaleString("en-MY")}</span>
-                      {track.location && (
-                        <span className="inline-flex items-center gap-1">
-                          <MapPin size={11} /> {track.location}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                {order.tracking_no ? "暂无轨迹，请点击刷新获取。" : "发货并填写运单号后可查看物流轨迹。"}
-              </p>
-            )}
-          </div>
-
-          {/* 支付信息 */}
-          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 space-y-3 theme-shadow">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground"><Tx>支付信息</Tx></h3>
-              <span
-                className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                  (order.payment_status ?? PAYMENT_STATUS.PENDING) === PAYMENT_STATUS.PAID
-                    ? "bg-green-500/10 text-green-600"
-                    : (order.payment_status ?? PAYMENT_STATUS.PENDING) === PAYMENT_STATUS.REFUNDED
-                    ? "bg-orange-500/10 text-orange-600"
-                    : "bg-secondary text-muted-foreground"
-                }`}
-              >
-                {getPaymentStatusLabel(order.payment_status ?? PAYMENT_STATUS.PENDING)}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground"><Tx>支付方式</Tx></span>
-              <span className="text-foreground">
-                {labelOrderPaymentMethod(order.payment_method)}
-              </span>
-            </div>
-            {order.payment_channel && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground"><Tx>支付渠道</Tx></span>
-                <span className="text-foreground">{labelChannelCode(order.payment_channel)}</span>
-              </div>
-            )}
-            {order.payment_time && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground"><Tx>支付时间</Tx></span>
-                <span className="text-foreground">{new Date(order.payment_time).toLocaleString("zh-CN")}</span>
-              </div>
-            )}
-            {order.payment_transaction_no && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground"><Tx>交易号</Tx></span>
-                <span className="font-mono text-foreground text-xs break-all max-w-[60%] text-right">
-                  {order.payment_transaction_no}
-                </span>
-              </div>
-            )}
-            {order.payment_channel === "stripe" && order.payment_transaction_no && (
-              <a
-                href={`https://dashboard.stripe.com/payments/${order.payment_transaction_no}`}
-                target="_blank"
-                rel="noreferrer"
-                className="block text-xs text-[var(--theme-price)] underline text-right"
-              ><Tx>
-                在 Stripe Dashboard 查看 →
-              </Tx></a>
-            )}
-            {!order.payment_time && (
-              <p className="text-xs text-muted-foreground"><Tx>尚未支付</Tx></p>
-            )}
-          </div>
-        </div>
-
-        {/* Center - items */}
-        <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 theme-shadow">
-          <h3 className="mb-4 text-sm font-semibold text-foreground"><Tx>商品清单</Tx></h3>
-          <div className="space-y-3">
-            {items.map((item: any, idx: number) => {
-              const product = item.product || item;
-              return (
-                <div key={idx} className="flex items-center justify-between theme-rounded border border-[var(--theme-border)] p-3">
-                  <div className="flex items-center gap-3">
-                    {product.cover_image && <img src={product.cover_image} alt="" className="h-10 w-10 rounded-lg object-cover" />}
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{product.name}</p>
-                      <p className="text-xs text-muted-foreground">x{item.qty}</p>
-                    </div>
-                  </div>
-                  <span className="text-sm font-semibold text-foreground">RM {((product.price || 0) * item.qty).toFixed(2)}</span>
-                </div>
-              );
-            })}
-          </div>
-          <div className="mt-4 space-y-2 border-t border-border pt-4">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {order.tax_mode === "inclusive" ? "商品合计（含税）" : "商品合计"}
-              </span>
-              <span className="text-foreground">RM {parseFloat(order.raw_amount || order.total_amount || 0).toFixed(2)}</span>
-            </div>
-            {parseFloat(order.discount_amount || 0) > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">优惠券（{order.coupon_title}）</span>
-                <span className="text-destructive">-RM {parseFloat(order.discount_amount).toFixed(2)}</span>
-              </div>
-            )}
-            <OrderSstLines order={order as Order} />
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">运费{order.tax_mode === "inclusive" ? "（不计税）" : ""}</span>
-              <span className="text-foreground">{parseFloat(order.shipping_fee || 0) === 0 ? "包邮" : `RM ${parseFloat(order.shipping_fee).toFixed(2)}`}</span>
-            </div>
-            <div className="flex justify-between text-sm font-bold border-t border-[var(--theme-border)] pt-2">
-              <span className="text-foreground"><Tx>实付金额</Tx></span>
-              <span className="text-[var(--theme-price)]">RM {parseFloat(order.total_amount || 0).toFixed(2)}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Right - actions */}
-        <div className="space-y-4">
-          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 space-y-3 theme-shadow">
-            <h3 className="text-sm font-semibold text-foreground"><Tx>快捷操作</Tx></h3>
-            <div className="grid grid-cols-2 gap-2">
-              <PermissionGate permission="order.ship">
-                <button
-                  type="button"
-                  onClick={() => setShowShipForm(true)}
-                  disabled={isCancelled || isRefund || !showShip}
-                  className="theme-rounded border border-[var(--theme-border)] px-3 py-2 text-sm text-foreground hover:bg-[var(--theme-bg)] disabled:opacity-40 disabled:cursor-not-allowed"
-                ><Tx>标记发货</Tx></button>
-              </PermissionGate>
-              <PermissionGate permission="order.update">
-                <button
-                  type="button"
-                  onClick={() =>
-                    confirm({
-                      title: "确认完成",
-                      description: "确定将订单标记为已完成？",
-                      onConfirm: () => handleStatusChange(ORDER_STATUS.COMPLETED),
-                    })
-                  }
-                  disabled={isCancelled || isRefund || order.status === ORDER_STATUS.COMPLETED}
-                  className="theme-rounded border border-[var(--theme-border)] px-3 py-2 text-sm text-foreground hover:bg-[var(--theme-bg)] disabled:opacity-40 disabled:cursor-not-allowed"
-                ><Tx>标记完成</Tx></button>
-              </PermissionGate>
-              <PermissionGate permission="order.update">
-                <button
-                  type="button"
-                  onClick={() =>
-                    confirm({
-                      title: "确认取消",
-                      description: "确定取消该订单？此操作可能影响库存与支付。",
-                      confirmText: "取消订单",
-                      danger: true,
-                      onConfirm: () => handleStatusChange(ORDER_STATUS.CANCELLED),
-                    })
-                  }
-                  disabled={isCancelled || isRefund}
-                  className="rounded-lg border border-destructive/30 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 disabled:opacity-40 disabled:cursor-not-allowed col-span-2"
-                ><Tx>取消订单</Tx></button>
-              </PermissionGate>
-            </div>
-          </div>
-
-          <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 space-y-3 theme-shadow">
-            <h3 className="text-sm font-semibold text-foreground"><Tx>订单文本预览</Tx></h3>
-            <div className="rounded-lg bg-secondary p-3 text-xs text-foreground leading-relaxed whitespace-pre-line">{orderText}</div>
-            <div className="flex gap-2">
-              <button onClick={handleSendWhatsApp} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700">
-                <MessageSquare size={14} /> WhatsApp
-              </button>
-              <button onClick={handleCopyText} className="theme-rounded border border-[var(--theme-border)] p-2 text-muted-foreground hover:bg-[var(--theme-bg)]">
-                <Copy size={14} />
-              </button>
-            </div>
-          </div>
         </div>
       </div>
-      </>
+
+      {showShipForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowShipForm(false)}>
+          <div className="w-full max-w-md rounded-xl bg-card p-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold"><Truck size={14} />填写发货信息</h3>
+            <div className="space-y-2">
+              <input value={carrier} onChange={(e) => setCarrier(e.target.value)} placeholder="物流公司" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+              <input value={trackingNo} onChange={(e) => setTrackingNo(e.target.value)} placeholder="快递单号" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+              <PermissionGate permission="order.ship">
+                <button type="button" disabled={busy} onClick={handleShip} className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-sm text-white">
+                  {busy ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} 确认发货
+                </button>
+              </PermissionGate>
+              <button type="button" onClick={() => setShowShipForm(false)} className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-border px-3 py-2 text-sm">
+                <XCircle size={14} /> 取消
+              </button>
+            </div>
+          </div>
+        </div>
       )}
+
+      <div className="pt-2">
+        <button type="button" onClick={() => navigate('/admin/orders')} className="text-xs text-[var(--theme-price)] underline">返回订单列表</button>
+      </div>
     </div>
   );
 }

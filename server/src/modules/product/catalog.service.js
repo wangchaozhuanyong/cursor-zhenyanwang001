@@ -308,16 +308,21 @@ async function getHomeProducts() {
 }
 
 async function loadHomeProducts() {
+  const siteSettings = await repo.selectSiteSettingValues([
+    'newArrivalDisplayCount',
+    'newArrivalOnlyInStock',
+  ]);
   const limit = 8;
+  const newArrivalLimit = Math.min(16, Math.max(1, Number(siteSettings.newArrivalDisplayCount) || limit));
+  const newArrivalOnlyInStock = String(siteSettings.newArrivalOnlyInStock ?? '1') !== '0';
   const [hotManual, newArrivals, recommendedManual, fallbackBySales, fallbackByRecommend, fallbackByNew] =
     await Promise.all([
       repo.selectActiveProductsByFlag('is_hot', limit),
-      repo.selectActiveProductsByFlag('is_new', limit),
+      repo.selectActiveProductsByFlag('is_new', newArrivalLimit),
       repo.selectActiveProductsByFlag('is_recommended', limit),
       repo.selectActiveProductsFallback('sales_count DESC, sort_order ASC, created_at DESC', 64),
       repo.selectActiveProductsFallback('is_recommended DESC, sales_count DESC, sort_order ASC, created_at DESC', 64),
-      // 无 is_new 标记、或新品已在热销区展示时，用最近上架商品补足
-      repo.selectActiveProductsFallback('created_at DESC, sort_order ASC, id DESC', 64),
+      repo.selectActiveProductsRecent(14, 64, newArrivalOnlyInStock),
     ]);
 
   const pickUnique = (primary, fallback, target, excludeIds = new Set()) => {
@@ -340,7 +345,7 @@ async function loadHomeProducts() {
 
   const hot = pickUnique(hotManual, fallbackBySales, limit);
   const hotIdSet = new Set(hot.map((p) => p.id));
-  const newArrivalsUnique = pickUnique(newArrivals, fallbackByNew, limit, hotIdSet);
+  const newArrivalsUnique = pickUnique(newArrivals, fallbackByNew, newArrivalLimit, hotIdSet);
   const homeUsedIdSet = new Set([...hot, ...newArrivalsUnique].map((p) => p.id));
   const recommended = pickUnique(recommendedManual, fallbackByRecommend, limit, homeUsedIdSet);
 
@@ -352,7 +357,7 @@ async function loadHomeProducts() {
   ]);
   const defaultVariantMap = new Map(defaultVariants.map((v) => [v.product_id, formatVariant(v)]));
   const activityMap = await activityRepo.selectActiveActivitiesByProductIds(allIds).catch((e) => {
-    console.warn(`[catalog] activity lookup failed: ${e?.message || e}`);
+    console.warn('[catalog] activity lookup failed: ' + (e?.message || e));
     return new Map();
   });
   const fmt = (rows) => rows.map((r) => attachActivity({ ...formatProduct(r), tags: tagMap.get(r.id) || [], default_variant: defaultVariantMap.get(r.id) || null }, activityMap.get(r.id)));

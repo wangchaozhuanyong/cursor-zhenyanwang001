@@ -1,10 +1,11 @@
 const { Router } = require('express');
 const ctrl = require('./invite.controller');
 const auth = require('../../middleware/auth');
+const { guardByAction } = require('../../middleware/accountStatusGuard');
 
 const router = Router();
 
-router.get('/stats', auth, ctrl.getStats);
-router.get('/records', auth, ctrl.getRecords);
+router.get('/stats', auth, guardByAction('invite'), ctrl.getStats);
+router.get('/records', auth, guardByAction('invite'), ctrl.getRecords);
 
 module.exports = router;

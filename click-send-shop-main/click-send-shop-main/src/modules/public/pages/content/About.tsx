@@ -135,7 +135,7 @@ export default function About() {
                 const it = item as { icon: typeof Phone; label: string };
                 return (
                   <div key={it.label} className="flex items-center gap-3">
-                    <it.icon size={16} className="text-gold flex-shrink-0" />
+                    <it.icon size={16} className="text-theme-price flex-shrink-0" />
                     <span className="text-sm text-muted-foreground">{it.label}</span>
                   </div>
                 );

@@ -1,224 +1,128 @@
-﻿import { useState, useEffect } from "react";
-import { ArrowLeft, Package, Clock, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useOrderStore } from "@/stores/useOrderStore";
-import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
-import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import * as returnService from "@/services/returnService";
-import type { ReturnRequest, ReturnStatus } from "@/types/return";
-import { ORDER_STATUS, RETURN_STATUS, RETURN_STATUS_META } from "@/constants/statusDictionary";
+import type { ReturnRequest, ReturnType } from "@/types/return";
 
-const statusConfig: Record<ReturnStatus, { label: string; color: string; icon: React.ElementType }> = {
-  pending: { label: RETURN_STATUS_META.pending.label, color: "text-yellow-500 bg-yellow-500/10", icon: Clock },
-  approved: { label: RETURN_STATUS_META.approved.label, color: "text-blue-500 bg-blue-500/10", icon: CheckCircle2 },
-  processing: { label: RETURN_STATUS_META.processing.label, color: "text-[var(--theme-price)] bg-[var(--theme-price)]/10", icon: Package },
-  completed: { label: RETURN_STATUS_META.completed.label, color: "text-green-500 bg-green-500/10", icon: CheckCircle2 },
-  rejected: { label: RETURN_STATUS_META.rejected.label, color: "text-destructive bg-destructive/10", icon: AlertCircle },
-};
-
-const steps = ["提交申请", "商家审核", "寄回商品", "退款完成"];
+const RETURN_TYPES: ReturnType[] = ["refund", "return_refund", "exchange", "repair"];
 
 export default function Returns() {
-  const navigate = useNavigate();
   const goBack = useGoBack();
   const { orders, loadOrders } = useOrderStore();
+  const [list, setList] = useState<ReturnRequest[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState("");
+  const [orderId, setOrderId] = useState("");
+  const [orderItemId, setOrderItemId] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [type, setType] = useState<ReturnType>("refund");
   const [reason, setReason] = useState("");
-  const [returns, setReturns] = useState<ReturnRequest[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
+  const [description, setDescription] = useState("");
+  const [images, setImages] = useState<string>("");
 
   useEffect(() => {
-    loadOrders();
-    returnService.fetchReturnRequests().then((data) => {
-      setReturns(data.list);
-      setLoading(false);
-    }).catch(() => {
-      toast.error("加载退换货记录失败");
-      setLoading(false);
-    });
+    void loadOrders();
+    void returnService.fetchReturnRequests().then((r) => setList(r.list)).catch(() => {});
   }, [loadOrders]);
 
-  const handleSubmit = async () => {
-    if (!selectedOrder || !reason.trim()) {
-      toast.error("请选择订单并填写原因");
+  const selectedOrder = useMemo(
+    () => orders.find((o) => o.id === orderId),
+    [orders, orderId],
+  );
+  const selectedItem = useMemo(
+    () => selectedOrder?.items?.find((i) => i.id === orderItemId),
+    [selectedOrder, orderItemId],
+  );
+
+  const submit = async () => {
+    if (!orderId || !orderItemId) {
+      toast.error("请先选择订单和商品");
       return;
     }
-    if (submitting) return;
-    setSubmitting(true);
-    try {
-      const newReturn = await returnService.createReturn({
-        order_id: selectedOrder,
-        type: "refund",
-        reason,
-        description: reason,
-      });
-      setReturns((prev) => [newReturn, ...prev]);
-      toast.success("退换货申请已提交", toastPresetQuickSuccess);
-      setShowForm(false);
-      setSelectedOrder("");
-      setReason("");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "提交失败，请重试");
-    } finally {
-      setSubmitting(false);
+    if (!reason.trim()) {
+      toast.error("请填写售后原因");
+      return;
     }
-  };
-
-  const getStepIndex = (status: ReturnStatus) => {
-    switch (status) {
-      case RETURN_STATUS.PENDING: return 0;
-      case RETURN_STATUS.APPROVED: return 1;
-      case RETURN_STATUS.PROCESSING: return 2;
-      case RETURN_STATUS.COMPLETED: return 3;
-      case RETURN_STATUS.REJECTED: return -1;
-      default: return 0;
+    const maxQty = Number(selectedItem?.qty || 0);
+    if (quantity < 1 || quantity > maxQty) {
+      toast.error("售后数量不能超过购买数量");
+      return;
+    }
+    const imageList = images
+      .split("\n")
+      .map((x) => x.trim())
+      .filter(Boolean);
+    try {
+      const row = await returnService.createReturn({
+        order_id: orderId,
+        order_item_id: orderItemId,
+        quantity,
+        type,
+        reason: reason.trim(),
+        description: description.trim(),
+        images: imageList,
+      });
+      setList((prev) => [row, ...prev]);
+      toast.success("售后申请已提交");
+      setShowForm(false);
+      setOrderId("");
+      setOrderItemId("");
+      setQuantity(1);
+      setType("refund");
+      setReason("");
+      setDescription("");
+      setImages("");
+    } catch (e: any) {
+      toast.error(e?.message || "提交失败");
     }
   };
 
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-6">
-      <header className="sticky top-0 z-40 bg-[var(--theme-surface)]/95 backdrop-blur-md border-b border-[var(--theme-border)]">
-        <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <button onClick={goBack} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)]">
-              <ArrowLeft size={20} className="text-foreground" />
-            </button>
-            <h1 className="text-base font-semibold text-foreground">退换货</h1>
-          </div>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="rounded-full px-4 py-2 text-xs font-bold text-white active:scale-95 transition-transform"
-            style={{ background: "var(--theme-gradient)" }}
-          >
-            申请退换
-          </button>
+    <div className="mx-auto max-w-xl p-4">
+      <div className="mb-4 flex items-center gap-2">
+        <button onClick={goBack} className="rounded-full p-2 hover:bg-secondary"><ArrowLeft size={18} /></button>
+        <h1 className="text-lg font-semibold">售后申请</h1>
+      </div>
+
+      <button className="mb-4 rounded bg-primary px-3 py-2 text-sm text-primary-foreground" onClick={() => setShowForm((v) => !v)}>
+        {showForm ? "收起申请表" : "发起售后申请"}
+      </button>
+
+      {showForm ? (
+        <div className="space-y-3 rounded border border-border p-3">
+          <select className="h-10 w-full rounded border border-border px-3" value={orderId} onChange={(e) => { setOrderId(e.target.value); setOrderItemId(""); }}>
+            <option value="">选择订单</option>
+            {orders.map((o) => <option value={o.id} key={o.id}>{o.order_no}</option>)}
+          </select>
+          <select className="h-10 w-full rounded border border-border px-3" value={orderItemId} onChange={(e) => setOrderItemId(e.target.value)}>
+            <option value="">选择商品行</option>
+            {selectedOrder?.items?.map((it) => (
+              <option value={it.id} key={it.id}>{it.name} / SKU:{it.sku_code || "-"} / 可售后:{it.qty}</option>
+            ))}
+          </select>
+          <input className="h-10 w-full rounded border border-border px-3" type="number" min={1} value={quantity} onChange={(e) => setQuantity(Number(e.target.value || 1))} />
+          <select className="h-10 w-full rounded border border-border px-3" value={type} onChange={(e) => setType(e.target.value as ReturnType)}>
+            {RETURN_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+          <input className="h-10 w-full rounded border border-border px-3" placeholder="售后原因" value={reason} onChange={(e) => setReason(e.target.value)} />
+          <textarea className="w-full rounded border border-border p-2" rows={3} placeholder="问题描述" value={description} onChange={(e) => setDescription(e.target.value)} />
+          <textarea className="w-full rounded border border-border p-2" rows={3} placeholder="凭证图片 URL（一行一条）" value={images} onChange={(e) => setImages(e.target.value)} />
+          <button className="rounded bg-primary px-3 py-2 text-sm text-primary-foreground" onClick={() => { void submit(); }}>提交申请</button>
         </div>
-      </header>
+      ) : null}
 
-      <main className="mx-auto max-w-lg px-4">
-        {/* Form */}
-        <AnimatePresence>
-          {showForm && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
-            >
-              <div className="mb-4 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
-                <h3 className="text-sm font-semibold text-foreground mb-4">新建退换货申请</h3>
-
-                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">选择订单</label>
-                <select
-                  value={selectedOrder}
-                  onChange={(e) => setSelectedOrder(e.target.value)}
-                  className="mb-3 w-full rounded-xl bg-secondary px-4 py-3 text-sm text-foreground outline-none focus:ring-2 ring-gold"
-                >
-                  <option value="">请选择订单</option>
-                  {orders.filter((o) => o.status === ORDER_STATUS.COMPLETED || o.status === ORDER_STATUS.SHIPPED).map((o) => (
-                    <option key={o.id} value={o.id}>{o.order_no} - RM {o.total_amount}</option>
-                  ))}
-                </select>
-
-                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">退换原因</label>
-                <div className="mb-3 flex flex-wrap gap-2">
-                  {["商品破损", "尺寸不对", "质量问题", "不想要了", "其他原因"].map((r) => (
-                    <button
-                      key={r}
-                      onClick={() => setReason(r)}
-                      className={`rounded-full px-3 py-1.5 text-xs transition-all ${
-                        reason === r ? "bg-[var(--theme-price)] text-white" : "bg-[var(--theme-bg)] text-muted-foreground"
-                      }`}
-                    >
-                      {r}
-                    </button>
-                  ))}
-                </div>
-                <textarea
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  placeholder="详细描述问题..."
-                  rows={2}
-                  className="w-full rounded-xl bg-secondary px-4 py-3 text-sm text-foreground outline-none focus:ring-2 ring-gold placeholder:text-muted-foreground resize-none"
-                />
-
-                <button
-                  onClick={handleSubmit}
-                  disabled={submitting}
-                  className="mt-4 w-full rounded-full py-3.5 text-sm font-bold text-white active:scale-[0.98] transition-transform disabled:cursor-not-allowed disabled:opacity-60"
-                  style={{ background: "var(--theme-gradient)" }}
-                >
-                  {submitting ? "提交中..." : "提交申请"}
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Returns list */}
-        {loading ? (
-          <div className="flex flex-col items-center py-20 text-muted-foreground">
-            <Loader2 size={24} className="animate-spin mb-3" />
-            <p className="text-sm">加载中…</p>
+      <div className="mt-6 space-y-2">
+        {list.map((r) => (
+          <div key={r.id} className="rounded border border-border p-3 text-sm">
+            <div>售后单: {r.id.slice(0, 8)} / 订单: {r.order_no}</div>
+            <div>类型: {r.type} / 状态: {r.status}</div>
+            <div>数量: {r.quantity || 0} / 退款: {Number(r.refund_amount || 0).toFixed(2)}</div>
+            <div>原因: {r.reason}</div>
+            {r.admin_remark ? <div>处理备注: {r.admin_remark}</div> : null}
           </div>
-        ) : returns.length === 0 ? (
-          <div className="flex flex-col items-center py-20 text-muted-foreground">
-            <Package size={48} className="mb-3 opacity-30" />
-            <p className="text-sm">暂无退换货记录</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {returns.map((item, i) => {
-              const config = statusConfig[item.status as ReturnStatus] ?? statusConfig.pending;
-              const Icon = config.icon;
-              const stepIdx = getStepIndex(item.status as ReturnStatus);
-              return (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-mono text-muted-foreground">{item.order_no}</span>
-                    <span className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${config.color}`}>
-                      <Icon size={12} /> {config.label}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{item.reason}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">{item.description}</p>
-                    </div>
-                  </div>
-
-                  {/* Progress steps */}
-                  {item.status !== RETURN_STATUS.REJECTED && (
-                    <div className="mt-4 flex items-center gap-1">
-                      {steps.map((step, si) => (
-                        <div key={step} className="flex flex-1 flex-col items-center">
-                          <div className={`h-1.5 w-full rounded-full ${si <= stepIdx ? "bg-[var(--theme-price)]" : "bg-[var(--theme-border)]"}`} />
-                          <span className={`mt-1.5 text-[10px] ${si <= stepIdx ? "text-[var(--theme-price)] font-medium" : "text-muted-foreground"}`}>
-                            {step}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <p className="mt-3 text-[11px] text-muted-foreground/60">申请时间: {new Date(item.created_at).toLocaleDateString("zh-CN")}</p>
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
-      </main>
+        ))}
+      </div>
     </div>
   );
 }

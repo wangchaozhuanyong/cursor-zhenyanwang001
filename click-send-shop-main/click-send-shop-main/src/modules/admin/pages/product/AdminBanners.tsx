@@ -191,7 +191,7 @@ export default function AdminBanners() {
             </div>
             <PermissionGate permission="banner.manage">
               <div className="flex flex-shrink-0 items-center gap-2">
-                <button onClick={() => openEdit(b)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-gold" title="编辑">
+                <button onClick={() => openEdit(b)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-theme-price" title="编辑">
                   <Pencil size={16} />
                 </button>
                 <button

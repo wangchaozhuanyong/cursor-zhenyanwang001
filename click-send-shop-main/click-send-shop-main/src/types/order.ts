@@ -1,4 +1,5 @@
 import type { CartItem } from "./cart";
+import type { OrderDiscountLine } from "./orderPreview";
 
 export type OrderStatus =
   | "pending"
@@ -23,6 +24,11 @@ export interface Order {
   items: CartItem[];
   raw_amount: number;
   discount_amount: number;
+  discount_meta?: Record<string, unknown> | null;
+  discount_lines?: OrderDiscountLine[];
+  flash_sale_discount?: number;
+  full_reduction_discount?: number;
+  coupon_discount?: number;
   coupon_title: string;
   shipping_fee: number;
   shipping_name: string;
@@ -101,10 +107,15 @@ export interface SubmitOrderParams {
 
 export interface OrderListParams {
   status?: OrderStatus;
-  /** 管理端：支付状态筛选 */
   paymentStatus?: PaymentStatus;
-  /** 管理端：订单号 / 联系人模糊 */
   keyword?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  payment_method?: string;
+  payment_channel?: string;
+  shipping_name?: string;
+  amountMin?: number;
+  amountMax?: number;
   page?: number;
   pageSize?: number;
 }
@@ -148,4 +159,15 @@ export interface CheckoutAbandonmentPayload {
   payment_method?: string;
   contact_name?: string;
   contact_phone?: string;
+}
+
+
+export interface AdminOrderSummary {
+  pending: number;
+  paid: number;
+  shipped: number;
+  completed: number;
+  cancelled: number;
+  refunding: number;
+  refunded: number;
 }

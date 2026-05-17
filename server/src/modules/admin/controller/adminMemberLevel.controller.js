@@ -20,3 +20,18 @@ exports.remove = asyncRoute(async (req, res) => {
   const r = await svc.deleteLevel(req, req.params.id);
   res.success(r.data, r.message);
 });
+
+exports.recalcUserLevel = asyncRoute(async (req, res) => {
+  const r = await svc.recalcUserLevel(req, req.params.userId);
+  res.success(r.data, r.message);
+});
+
+exports.recalcAllUserLevels = asyncRoute(async (req, res) => {
+  const r = await svc.recalcAllUserLevels(req);
+  res.success(r.data, r.message);
+});
+
+exports.assignUserLevel = asyncRoute(async (req, res) => {
+  const r = await svc.assignUserLevel(req, req.params.userId, req.body?.memberLevelId || req.body?.member_level_id);
+  res.success(r.data, r.message);
+});

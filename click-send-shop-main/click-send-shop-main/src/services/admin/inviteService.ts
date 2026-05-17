@@ -1,11 +1,12 @@
-import * as inviteApi from "@/api/admin/invite";
+﻿import * as inviteApi from "@/api/admin/invite";
 import type { InviteRecord, ReferralRule } from "@/types/invite";
 import type { PaginatedData, PaginationParams } from "@/types/common";
 import { unwrapList, unwrapPaginated } from "@/services/responseNormalize";
 
-export async function fetchInviteRecords(params?: PaginationParams): Promise<PaginatedData<InviteRecord>> {
+export async function fetchInviteRecords(params?: PaginationParams & { keyword?: string; dateFrom?: string; dateTo?: string }): Promise<PaginatedData<InviteRecord> & { summary?: Record<string, number> }> {
   const res = await inviteApi.getInviteRecords(params);
-  return unwrapPaginated<InviteRecord>(res.data);
+  const base = unwrapPaginated<InviteRecord>(res.data);
+  return { ...base, summary: (res.data as any)?.summary || {} };
 }
 
 export async function fetchReferralRules(): Promise<ReferralRule[]> {

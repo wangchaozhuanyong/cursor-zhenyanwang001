@@ -10,7 +10,7 @@ export default function AdminMarketingPoints() {
     <div className="space-y-4">
       <h1 className="text-xl font-bold text-foreground"><Tx>活动管理 / 积分管理</Tx></h1>
       <div className="flex gap-2">
-        {tabs.map((t) => <button key={t} onClick={() => setTab(t)} className={`rounded-lg px-3 py-1.5 text-sm ${tab === t ? "bg-gold/15 text-gold" : "bg-secondary text-muted-foreground"}`}>{t}</button>)}
+        {tabs.map((t) => <button key={t} onClick={() => setTab(t)} className={`rounded-lg px-3 py-1.5 text-sm ${tab === t ? "bg-gold/15 text-theme-price" : "bg-secondary text-muted-foreground"}`}>{t}</button>)}
       </div>
       {tab === "积分规则" ? <div className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground"><Tx>积分规则维护请在本页规则区编辑；此处预留独立规则配置面板。</Tx></div> : null}
       {tab === "积分明细" ? <AdminPointsRecords /> : null}

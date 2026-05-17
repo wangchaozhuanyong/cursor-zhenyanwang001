@@ -1,5 +1,19 @@
-﻿import { useEffect } from "react";
-import { ArrowLeft, Bell, Package, Ticket, Megaphone, Check, Loader2, Gift } from "lucide-react";
+﻿import { useEffect, useState } from "react";
+import {
+  ArrowLeft,
+  Bell,
+  Package,
+  Ticket,
+  Megaphone,
+  Check,
+  Loader2,
+  Gift,
+  CreditCard,
+  Truck,
+  RotateCcw,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,7 +22,12 @@ import type { NotificationType } from "@/types/notification";
 
 const typeConfig: Record<NotificationType, { icon: typeof Bell; color: string }> = {
   order: { icon: Package, color: "bg-blue-500/10 text-blue-500" },
-  promotion: { icon: Megaphone, color: "bg-gold/10 text-gold" },
+  shipping: { icon: Truck, color: "bg-cyan-500/10 text-cyan-500" },
+  payment: { icon: CreditCard, color: "bg-emerald-500/10 text-emerald-500" },
+  refund: { icon: RotateCcw, color: "bg-rose-500/10 text-rose-500" },
+  after_sale: { icon: ShieldCheck, color: "bg-purple-500/10 text-purple-500" },
+  promotion: { icon: Megaphone, color: "bg-gold/10 text-theme-price" },
+  coupon: { icon: Ticket, color: "bg-amber-500/10 text-amber-500" },
   points: { icon: Ticket, color: "bg-green-500/10 text-green-500" },
   reward: { icon: Gift, color: "bg-orange-500/10 text-orange-500" },
   system: { icon: Bell, color: "bg-primary/10 text-foreground" },
@@ -21,15 +40,26 @@ export default function Notifications() {
   const goBack = useGoBack();
   const { notifications, unreadCount, loading, error, loadNotifications, markAsRead, markAllAsRead } =
     useNotificationStore();
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const active = notifications.find((n) => n.id === activeId) || null;
 
   useEffect(() => {
     loadNotifications();
   }, [loadNotifications]);
 
+  const handleOpenNotification = async (id: string, linkUrl?: string | null) => {
+    await markAsRead(id);
+    if (linkUrl) {
+      navigate(linkUrl);
+      return;
+    }
+    setActiveId(id);
+  };
+
   if (loading && notifications.length === 0) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-gold" />
+        <Loader2 size={32} className="animate-spin text-theme-price" />
       </div>
     );
   }
@@ -40,7 +70,7 @@ export default function Notifications() {
         <p className="text-sm text-destructive">{error}</p>
         <button
           onClick={() => loadNotifications()}
-          className="rounded-full bg-gold px-6 py-2.5 text-sm font-bold text-primary-foreground"
+          className="rounded-full btn-theme-price px-6 py-2.5 text-sm font-bold text-primary-foreground"
         >
           重试
         </button>
@@ -59,14 +89,14 @@ export default function Notifications() {
             <h1 className="text-base font-semibold text-foreground">
               消息通知
               {unreadCount > 0 && (
-                <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1.5 text-[10px] font-bold text-primary-foreground">
+                <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full btn-theme-price px-1.5 text-[10px] font-bold text-primary-foreground">
                   {unreadCount}
                 </span>
               )}
             </h1>
           </div>
           {unreadCount > 0 && (
-            <button onClick={markAllAsRead} className="flex items-center gap-1 text-xs text-gold active:opacity-70">
+            <button onClick={markAllAsRead} className="flex items-center gap-1 text-xs text-theme-price active:opacity-70">
               <Check size={14} /> 全部已读
             </button>
           )}
@@ -91,7 +121,7 @@ export default function Notifications() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.04 }}
-                  onClick={() => markAsRead(n.id)}
+                  onClick={() => handleOpenNotification(n.id, n.link_url)}
                   className={`relative rounded-2xl border p-4 transition-all active:bg-muted ${
                     n.is_read ? "border-border bg-card" : "border-gold/20 bg-gold/[0.03]"
                   }`}
@@ -117,6 +147,23 @@ export default function Notifications() {
           </AnimatePresence>
         </div>
       </main>
+
+      {active ? (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/45 md:items-center md:justify-center" onClick={() => setActiveId(null)}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-h-[82vh] overflow-y-auto rounded-t-2xl bg-card p-4 md:max-w-lg md:rounded-2xl"
+          >
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <h3 className="text-base font-semibold text-foreground">{active.title}</h3>
+              <button type="button" className="rounded-lg p-1 text-muted-foreground hover:bg-secondary" onClick={() => setActiveId(null)}>
+                <X size={16} />
+              </button>
+            </div>
+            <div className="whitespace-pre-wrap break-words text-sm leading-6 text-foreground">{active.content}</div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

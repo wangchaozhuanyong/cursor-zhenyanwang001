@@ -162,7 +162,7 @@ export default function AdminHomeOps() {
                 )}
               >
                 <span className="flex items-center gap-2 text-sm font-semibold">
-                  <Icon size={16} className={active ? "text-gold" : ""} />
+                  <Icon size={16} className={active ? "text-theme-price" : ""} />
                   {tab.label}
                 </span>
                 <span className="mt-0.5 hidden text-[10px] leading-snug lg:block">{tab.desc}</span>
@@ -177,7 +177,7 @@ export default function AdminHomeOps() {
           {activeTab === "nav" ? (
 <section className="rounded-2xl border border-border bg-card p-4">
         <div className="mb-4 flex items-center gap-2">
-          <Grid3X3 size={18} className="text-gold" />
+          <Grid3X3 size={18} className="text-theme-price" />
           <div>
             <h2 className="font-semibold text-foreground"><Tx>金刚区导航</Tx></h2>
             <p className="text-xs text-muted-foreground"><Tx>图标支持本地上传、URL、站内路径或 Emoji；排序越小越靠前</Tx></p>
@@ -341,7 +341,7 @@ export default function AdminHomeOps() {
               <PermissionGate permission="home_ops.manage">
                 <button
                   type="button"
-                  className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-gold"
+                  className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-theme-price"
                   onClick={() => {
                     setEditingNavId(item.id);
                     setNavForm({

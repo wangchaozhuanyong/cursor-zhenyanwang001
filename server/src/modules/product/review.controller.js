@@ -1,5 +1,12 @@
 const reviewService = require('./review.service');
 
+exports.getProductReviewStats = async (req, res, next) => {
+  try {
+    const data = await reviewService.getProductReviewStats(req.params.productId);
+    res.success(data);
+  } catch (err) { next(err); }
+};
+
 exports.getProductReviews = async (req, res, next) => {
   try {
     const { list, total, page, pageSize } = await reviewService.getProductReviews(req);
@@ -9,8 +16,9 @@ exports.getProductReviews = async (req, res, next) => {
 
 exports.toggleLike = async (req, res, next) => {
   try {
-    const data = await reviewService.toggleLike(req.user.id, req.params.id);
-    res.success(data);
+    const result = await reviewService.toggleLike(req.user.id, req.params.id);
+    if (result.error) return res.fail(result.error.code, result.error.message);
+    res.success({ liked: result.liked, likes_count: result.likes_count });
   } catch (err) { next(err); }
 };
 

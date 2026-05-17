@@ -15,6 +15,7 @@ const sstTax = require('./sstTax');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
 const logisticsModule = require('../logistics');
 const orderDb = repo.getPool();
+const orderPricing = require('./order.pricing');
 const userApi = /** @type {any} */ (userModule).api || {};
 const paymentsApi = /** @type {any} */ (paymentsModule).api || {};
 const logisticsApi = /** @type {any} */ (logisticsModule).api || {};
@@ -163,11 +164,12 @@ async function createOrder(userId, body) {
     const defaultVariants = await repo.selectDefaultVariantsForProducts(conn, productIds);
     const variantById = new Map(requestedVariants.map((v) => [v.id, v]));
     const defaultVariantByProductId = new Map(defaultVariants.map((v) => [v.product_id, v]));
-    const activityRows = await repo.selectActiveActivityItemsForUpdate(conn, productIds);
+    const activityRows = await repo.selectFlashSaleActivityItemsForUpdate(conn, productIds);
     const activityMap = new Map();
     for (const row of activityRows) {
       if (!activityMap.has(row.product_id)) activityMap.set(row.product_id, row);
     }
+    const fullReductionActivities = await repo.selectActiveFullReductionActivitiesForUpdate(conn);
 
     for (const item of items) {
       const p = productMap[item.product_id];
@@ -213,11 +215,9 @@ async function createOrder(userId, body) {
         ? variantById.get(item.variant_id)
         : defaultVariantByProductId.get(item.product_id);
       const activity = activityMap.get(item.product_id);
-      const price = activity && activity.type === 'full_reduction'
-        ? parseFloat(variant?.price ?? p.price)
-        : activity
-          ? parseFloat(activity.activity_price)
-          : parseFloat(variant?.price ?? p.price);
+      const price = activity
+        ? parseFloat(activity.activity_price)
+        : parseFloat(variant?.price ?? p.price);
       rawAmount += price * item.qty;
       totalPoints += p.points * item.qty;
       return {
@@ -235,7 +235,11 @@ async function createOrder(userId, body) {
       };
     });
 
-    const fullReductionDiscount = computeFullReductionDiscount(orderItems, activityMap);
+    const fullReductionDiscount = orderPricing.computeFullReductionDiscount(
+      orderItems,
+      productMap,
+      fullReductionActivities,
+    );
     const goodsAmountAfterFullReduction = Math.max(0, rawAmount - fullReductionDiscount);
 
     let shippingFee = 0;
@@ -249,6 +253,11 @@ async function createOrder(userId, body) {
       }
     }
 
+    const flashSaleDiscount = orderPricing.computeFlashSaleSavings(orderItems, activityMap, productMap);
+    const hasActivityDiscount = flashSaleDiscount > 0 || fullReductionDiscount > 0;
+    const activityAllowsCoupon = fullReductionActivities.every((a) => !!a.allow_coupon_stack)
+      && [...activityMap.values()].every((f) => f.allow_coupon_stack !== 0);
+
     let discountAmount = fullReductionDiscount;
     let usedCouponUcId = null;
     let usedCouponTitle = coupon_title;
@@ -260,29 +269,21 @@ async function createOrder(userId, body) {
         await conn.rollback();
         throw new ValidationError('优惠券不存在、已使用或不可用');
       }
-      const minAmount = parseFloat(uc.min_amount);
-      if (goodsAmountAfterFullReduction < minAmount) {
+      try {
+        couponDiscountValue = orderPricing.assertCouponUsableOnOrder({
+          uc,
+          goodsAmountAfterFullReduction,
+          shippingFee,
+          orderItems,
+          productMap,
+          hasActivityDiscount,
+          activityAllowsCoupon,
+        });
+      } catch (e) {
         await conn.rollback();
-        throw new ValidationError(`订单金额未满 RM ${minAmount}，无法使用该优惠券`);
-      }
-      if (uc.scope_type === 'category') {
-        const allowedCategoryIds = await repo.selectCouponCategoryIds(conn, uc.id);
-        if (allowedCategoryIds.length > 0) {
-          const orderCategoryIds = [...new Set(orderItems.map((oi) => productMap[oi.productId]?.category_id).filter(Boolean))];
-          const matched = orderCategoryIds.some((cid) => allowedCategoryIds.includes(cid));
-          if (!matched) {
-            await conn.rollback();
-            throw new ValidationError('该优惠券不适用于当前商品分类');
-          }
-        }
-      }
-      const couponDiscount = calculateCouponDiscount(uc, goodsAmountAfterFullReduction, shippingFee);
-      if (couponDiscount <= 0) {
-        await conn.rollback();
-        throw new ValidationError(uc.type === 'shipping' ? '当前订单无可抵扣运费，无法使用该运费券' : '该优惠券当前不可抵扣');
+        throw e;
       }
       couponType = uc.type;
-      couponDiscountValue = couponDiscount;
       discountAmount += couponDiscountValue;
       await repo.updateUserCouponUsed(conn, uc.uc_id);
       usedCouponUcId = uc.uc_id;
@@ -300,6 +301,18 @@ async function createOrder(userId, body) {
     const taxSnap = sstTax.buildOrderTaxSnapshot(sstSettings, goodsInclusiveTaxable);
 
     const totalAmount = Math.max(0, rawAmount - discountAmount + shippingFee);
+    const discountMeta = {
+      flash_sale_discount: flashSaleDiscount,
+      full_reduction_discount: fullReductionDiscount,
+      coupon_discount: couponDiscountValue,
+      lines: [
+        flashSaleDiscount > 0 ? { type: 'flash_sale', label: '秒杀优惠', amount: flashSaleDiscount } : null,
+        fullReductionDiscount > 0 ? { type: 'full_reduction', label: '满减优惠', amount: fullReductionDiscount } : null,
+        couponDiscountValue > 0
+          ? { type: 'coupon', label: usedCouponTitle ? `优惠券（${usedCouponTitle}）` : '优惠券抵扣', amount: couponDiscountValue }
+          : null,
+      ].filter(Boolean),
+    };
     const orderId = generateId();
     const orderNo = generateOrderNo();
     const normalizedAddress = normalizeMalaysiaAddress(address, contact_name, contact_phone);
@@ -310,6 +323,7 @@ async function createOrder(userId, body) {
       orderNo,
       rawAmount,
       discountAmount,
+      discountMeta,
       couponTitle: usedCouponTitle,
       shippingFee,
       shippingName: shipping_name,
@@ -584,8 +598,27 @@ async function confirmReceive(userId, orderId) {
   }
 }
 
+async function previewOrder(userId, body) {
+  const pricing = await orderPricing.buildOrderPricing(userId, body, null);
+  return {
+    data: {
+      goods_amount: pricing.rawAmount,
+      flash_sale_discount: pricing.flashSaleDiscount,
+      full_reduction_discount: pricing.fullReductionDiscount,
+      coupon_discount: pricing.couponDiscount,
+      discount_amount: pricing.discountAmount,
+      shipping_fee: pricing.shippingFee,
+      final_amount: pricing.finalTotal,
+      total_points: pricing.totalPoints,
+      discount_lines: pricing.discount_lines,
+      tax: pricing.taxSnap,
+    },
+  };
+}
+
 module.exports = {
   createOrder,
+  previewOrder,
   getOrders,
   getOrderById,
   cancelOrder,

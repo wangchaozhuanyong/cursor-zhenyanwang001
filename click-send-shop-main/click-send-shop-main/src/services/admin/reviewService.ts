@@ -1,9 +1,14 @@
 import * as reviewApi from "@/api/admin/review";
-import type { AdminReview, ReviewListParams } from "@/api/admin/review";
+import type {
+  AdminReview,
+  ReviewListParams,
+  ReviewDetailPayload,
+  ComplaintStatus,
+} from "@/api/admin/review";
 import { unwrapPaginated } from "@/services/responseNormalize";
 import type { PaginatedData } from "@/types/common";
 
-export type { AdminReview, ReviewListParams };
+export type { AdminReview, ReviewListParams, ReviewDetailPayload, ComplaintStatus };
 
 export async function fetchReviews(
   params: ReviewListParams,
@@ -12,8 +17,21 @@ export async function fetchReviews(
   return unwrapPaginated<AdminReview>(res.data);
 }
 
+export async function fetchReviewDetail(id: string): Promise<ReviewDetailPayload> {
+  const res = await reviewApi.getReviewDetail(id);
+  return res.data;
+}
+
 export async function toggleVisibility(id: string) {
   await reviewApi.toggleReviewVisibility(id);
+}
+
+export async function approveReview(id: string) {
+  await reviewApi.approveReview(id);
+}
+
+export async function rejectReview(id: string) {
+  await reviewApi.rejectReview(id);
 }
 
 export async function toggleFeatured(id: string) {
@@ -22,6 +40,14 @@ export async function toggleFeatured(id: string) {
 
 export async function replyReview(id: string, reply: string) {
   await reviewApi.replyReview(id, reply);
+}
+
+export async function updateComplaint(
+  id: string,
+  complaint_status: ComplaintStatus,
+  complaint_note?: string,
+) {
+  await reviewApi.updateReviewComplaint(id, { complaint_status, complaint_note });
 }
 
 export async function deleteReview(id: string) {

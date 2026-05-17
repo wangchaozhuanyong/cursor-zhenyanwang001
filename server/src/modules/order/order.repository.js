@@ -1,5 +1,5 @@
 /**
- * 订单域数据访问（SQL 集中于此，便于审计与单测 mock�? * @param {import('mysql2/promise').Pool|import('mysql2/promise').PoolConnection} q
+ * ????????SQL ???????????? mock�? * @param {import('mysql2/promise').Pool|import('mysql2/promise').PoolConnection} q
  */
 const db = require('../../config/db');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
@@ -50,10 +50,7 @@ async function selectDefaultVariantsForProducts(q, productIds) {
   return rows;
 }
 
-async function selectActiveActivityItemsForUpdate(q, productIds) {
-  if (!productIds.length) return [];
-  const [rows] = await q.query(
-    `SELECT
+const ACTIVITY_SELECT_FIELDS = `
        ap.product_id,
        ap.activity_id,
        ap.activity_price,
@@ -64,13 +61,50 @@ async function selectActiveActivityItemsForUpdate(q, productIds) {
        a.type,
        a.threshold_amount,
        a.discount_amount,
+       a.activity_config,
+       a.scope_type,
+       a.allow_coupon_stack,
+       a.allow_points_stack,
+       a.allow_reward,
        a.start_at,
-       a.end_at
+       a.end_at`;
+
+async function selectProductsByIds(q, productIds) {
+  if (!productIds.length) return [];
+  const [rows] = await q.query(
+    `SELECT * FROM products WHERE id IN (${productIds.map(() => '?').join(',')}) AND lifecycle_status = 1`,
+    productIds,
+  );
+  return rows;
+}
+
+async function selectVariantsByIds(q, variantIds) {
+  const ids = [...new Set((variantIds || []).filter(Boolean))];
+  if (!ids.length) return [];
+  const [rows] = await q.query(
+    `SELECT v.*, p.name AS product_name, p.cover_image, p.points, p.category_id, p.lifecycle_status
+     FROM product_variants v
+     JOIN products p ON p.id = v.product_id
+     WHERE v.id IN (${ids.map(() => '?').join(',')}) AND p.lifecycle_status = 1`,
+    ids,
+  );
+  return rows;
+}
+
+async function selectDefaultVariantsForProductsRead(q, productIds) {
+  return selectDefaultVariantsForProducts(q, productIds);
+}
+
+async function selectFlashSaleActivityItemsForUpdate(q, productIds) {
+  if (!productIds.length) return [];
+  const [rows] = await q.query(
+    `SELECT ${ACTIVITY_SELECT_FIELDS}
      FROM marketing_activity_products ap
      JOIN marketing_activities a ON a.id = ap.activity_id
      WHERE ap.product_id IN (${productIds.map(() => '?').join(',')})
        AND a.deleted_at IS NULL
        AND a.disabled = 0
+       AND a.type = 'flash_sale'
        AND NOW() BETWEEN a.start_at AND a.end_at
        AND ap.activity_price > 0
        AND ap.activity_stock > ap.sold_count
@@ -79,6 +113,89 @@ async function selectActiveActivityItemsForUpdate(q, productIds) {
     productIds,
   );
   return rows;
+}
+
+async function selectFlashSaleActivityItemsRead(q, productIds) {
+  if (!productIds.length) return [];
+  const [rows] = await q.query(
+    `SELECT ${ACTIVITY_SELECT_FIELDS}
+     FROM marketing_activity_products ap
+     JOIN marketing_activities a ON a.id = ap.activity_id
+     WHERE ap.product_id IN (${productIds.map(() => '?').join(',')})
+       AND a.deleted_at IS NULL
+       AND a.disabled = 0
+       AND a.type = 'flash_sale'
+       AND NOW() BETWEEN a.start_at AND a.end_at
+       AND ap.activity_price > 0
+       AND ap.activity_stock > ap.sold_count
+     ORDER BY ap.product_id ASC, ap.activity_price ASC, a.sort_order ASC, a.start_at DESC`,
+    productIds,
+  );
+  return rows;
+}
+
+/** @deprecated ?? selectFlashSaleActivityItemsForUpdate */
+async function selectActiveActivityItemsForUpdate(q, productIds) {
+  return selectFlashSaleActivityItemsForUpdate(q, productIds);
+}
+
+async function loadActivityScopes(q, activityIds) {
+  if (!activityIds.length) return new Map();
+  const [rows] = await q.query(
+    `SELECT activity_id, scope_type, scope_id FROM marketing_activity_scopes
+     WHERE activity_id IN (${activityIds.map(() => '?').join(',')})`,
+    activityIds,
+  );
+  const map = new Map();
+  for (const r of rows) {
+    const list = map.get(r.activity_id) || [];
+    list.push({ scope_type: r.scope_type, scope_id: r.scope_id });
+    map.set(r.activity_id, list);
+  }
+  return map;
+}
+
+async function selectActiveFullReductionActivitiesForUpdate(q) {
+  const [rows] = await q.query(
+    `SELECT a.id AS activity_id, a.title, a.type, a.threshold_amount, a.discount_amount,
+            a.activity_config, a.scope_type, a.allow_coupon_stack, a.allow_points_stack, a.allow_reward
+     FROM marketing_activities a
+     WHERE a.deleted_at IS NULL
+       AND a.disabled = 0
+       AND a.type = 'full_reduction'
+       AND NOW() BETWEEN a.start_at AND a.end_at
+     ORDER BY a.sort_order ASC, a.start_at DESC
+     FOR UPDATE`,
+  );
+  const scopeMap = await loadActivityScopes(q, rows.map((r) => r.activity_id));
+  return rows.map((r) => ({ ...r, scopes: scopeMap.get(r.activity_id) || [] }));
+}
+
+async function selectActiveFullReductionActivitiesRead(q) {
+  const [rows] = await q.query(
+    `SELECT a.id AS activity_id, a.title, a.type, a.threshold_amount, a.discount_amount,
+            a.activity_config, a.scope_type, a.allow_coupon_stack, a.allow_points_stack, a.allow_reward
+     FROM marketing_activities a
+     WHERE a.deleted_at IS NULL
+       AND a.disabled = 0
+       AND a.type = 'full_reduction'
+       AND NOW() BETWEEN a.start_at AND a.end_at
+     ORDER BY a.sort_order ASC, a.start_at DESC`,
+  );
+  const scopeMap = await loadActivityScopes(q, rows.map((r) => r.activity_id));
+  return rows.map((r) => ({ ...r, scopes: scopeMap.get(r.activity_id) || [] }));
+}
+
+async function selectUserCouponRead(q, ucId, userId) {
+  const [[row]] = await q.query(
+    `SELECT uc.id AS uc_id, c.* FROM user_coupons uc
+     JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
+     WHERE uc.id = ? AND uc.user_id = ? AND uc.status = 'available'
+       AND c.end_date >= CURDATE() AND c.start_date <= CURDATE()
+       AND c.status = 'available'`,
+    [ucId, userId],
+  );
+  return row || null;
 }
 
 async function incrementActivitySold(q, activityId, productId, qty) {
@@ -133,7 +250,7 @@ async function updateUserCouponUsed(q, ucId) {
 
 async function insertOrder(q, params) {
   const {
-    id, userId, orderNo, rawAmount, discountAmount, couponTitle,
+    id, userId, orderNo, rawAmount, discountAmount, discountMeta, couponTitle,
     shippingFee, shippingName, totalAmount, totalPoints,
     note, contactName, contactPhone, address, paymentMethod,
     taxMode, taxRate, taxLabel, taxableAmount, taxAmount, taxExclusiveAmount,
@@ -141,16 +258,18 @@ async function insertOrder(q, params) {
   } = params;
   await q.query(
     `INSERT INTO orders
-       (id, user_id, order_no, raw_amount, discount_amount, coupon_title,
+       (id, user_id, order_no, raw_amount, discount_amount, discount_meta, coupon_title,
         shipping_fee, shipping_name, total_amount,
         tax_mode, tax_rate, tax_label, taxable_amount, tax_amount, tax_exclusive_amount,
         total_points, status, payment_status,
         note, contact_name, contact_phone, shipping_phone, address,
         address_line1, address_line2, address_city, address_state, address_postcode, address_country,
         payment_method)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
-      id, userId, orderNo, rawAmount, discountAmount, couponTitle || '',
+      id, userId, orderNo, rawAmount, discountAmount,
+      discountMeta ? JSON.stringify(discountMeta) : null,
+      couponTitle || '',
       shippingFee,
       shippingName || '',
       totalAmount,
@@ -252,7 +371,7 @@ async function deductVariantStock(q, variantId, qty, meta = {}) {
         -qty,
         beforeStock,
         afterStock,
-        meta.reason || '订单下单扣减 SKU 库存',
+        meta.reason || '?????? SKU ??',
         meta.refType || 'order',
         meta.refId || '',
         meta.operatorId || null,
@@ -392,6 +511,14 @@ async function selectOrderByIdForUpdate(q, orderId) {
   return row || null;
 }
 
+async function selectOrderByIdOrOrderNoForUpdate(q, orderIdOrNo) {
+  const [[row]] = await q.query(
+    'SELECT * FROM orders WHERE id = ? OR order_no = ? LIMIT 1 FOR UPDATE',
+    [orderIdOrNo, orderIdOrNo],
+  );
+  return row || null;
+}
+
 async function selectOrderItems(q, orderId) {
   const [rows] = await q.query('SELECT * FROM order_items WHERE order_id = ?', [orderId]);
   return rows;
@@ -451,7 +578,7 @@ async function restoreVariantStock(q, variantId, qty, meta = {}) {
       qty,
       beforeStock,
       afterStock,
-      meta.reason || '订单取消释放 SKU 库存',
+      meta.reason || '?????? SKU ??',
       meta.refType || 'order',
       meta.refId || '',
       meta.operatorId || null,
@@ -654,9 +781,17 @@ module.exports = {
   getPool,
   getConnection,
   selectProductsForUpdate,
+  selectProductsByIds,
   selectVariantsForUpdate,
+  selectVariantsByIds,
   selectDefaultVariantsForProducts,
+  selectDefaultVariantsForProductsRead,
   selectActiveActivityItemsForUpdate,
+  selectFlashSaleActivityItemsForUpdate,
+  selectFlashSaleActivityItemsRead,
+  selectActiveFullReductionActivitiesForUpdate,
+  selectActiveFullReductionActivitiesRead,
+  selectUserCouponRead,
   incrementActivitySold,
   decrementActivitySold,
   selectShippingTemplate,
@@ -678,6 +813,7 @@ module.exports = {
   selectOrderByIdAndUser,
   selectOrderByIdAndUserForUpdate,
   selectOrderByIdForUpdate,
+  selectOrderByIdOrOrderNoForUpdate,
   selectOrderItems,
   updateOrderStatus,
   updateOrderCancelled,

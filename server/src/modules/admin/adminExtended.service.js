@@ -1,7 +1,8 @@
-const { generateId, parseProductImages } = require('../../utils/helpers');
+﻿const { generateId, parseProductImages } = require('../../utils/helpers');
 const repo = require('./adminExtended.repository');
 const productModule = require('../product');
 const orderModule = require('../order');
+const paymentModule = require('../payment');
 const { writeAuditLog } = require('../../utils/auditLog');
 const { ORDER_STATUS, RETURN_STATUS } = require('../../constants/status');
 const { getResolvedTriggerCopy } = require('./notificationTriggerSettings.service');
@@ -13,18 +14,19 @@ const userApi = /** @type {any} */ (userModule).api || {};
 const productApi = /** @type {any} */ (productModule).api || {};
 const myinvoisApi = /** @type {any} */ (myinvoisModule).api || {};
 const orderApi = /** @type {any} */ (orderModule).api || {};
+const paymentApi = /** @type {any} */ (paymentModule).api || {};
 
 const COLOR_PRESETS = {
-  红色: { bg_color: '#FEE2E2', text_color: '#B91C1C' },
-  绿色: { bg_color: '#DCFCE7', text_color: '#15803D' },
-  蓝色: { bg_color: '#DBEAFE', text_color: '#1D4ED8' },
-  金色: { bg_color: '#FEF3C7', text_color: '#92400E' },
+  red: { bg_color: '#FEE2E2', text_color: '#B91C1C' },
+  green: { bg_color: '#DCFCE7', text_color: '#15803D' },
+  blue: { bg_color: '#DBEAFE', text_color: '#1D4ED8' },
+  gold: { bg_color: '#FEF3C7', text_color: '#92400E' },
 };
 
 function normalizeTagVisual(body = {}) {
-  const preset = COLOR_PRESETS[body.color] || COLOR_PRESETS.金色;
+  const preset = COLOR_PRESETS[body.color] || COLOR_PRESETS.gold;
   return {
-    color: body.color || '金色',
+    color: body.color || 'gold',
     bg_color: body.bg_color || preset.bg_color,
     text_color: body.text_color || preset.text_color,
     sort_order: Number.isFinite(Number(body.sort_order)) ? Number(body.sort_order) : 0,
@@ -33,12 +35,12 @@ function normalizeTagVisual(body = {}) {
 }
 
 function formatTag(row) {
-  const preset = COLOR_PRESETS[row.color] || COLOR_PRESETS.金色;
+  const preset = COLOR_PRESETS[row.color] || COLOR_PRESETS.gold;
   return {
     id: row.id,
     name: row.name,
     sort_order: Number(row.sort_order) || 0,
-    color: row.color || '金色',
+    color: row.color || 'gold',
     bg_color: row.bg_color || preset.bg_color,
     text_color: row.text_color || preset.text_color,
     enabled: row.enabled !== undefined ? !!row.enabled : true,
@@ -49,7 +51,7 @@ function formatTag(row) {
 function requireUserApi(name) {
   const fn = userApi[name];
   if (typeof fn !== 'function') {
-    throw new Error(`User 模块 API 未暴露方法: ${name}`);
+    throw new Error(`User 妯″潡 API 鏈毚闇叉柟娉? ${name}`);
   }
   return fn;
 }
@@ -57,7 +59,7 @@ function requireUserApi(name) {
 function requireProductApi(name) {
   const fn = productApi[name];
   if (typeof fn !== 'function') {
-    throw new Error(`Product 模块 API 未暴露方法: ${name}`);
+    throw new Error(`Product 妯″潡 API 鏈毚闇叉柟娉? ${name}`);
   }
   return fn;
 }
@@ -65,7 +67,7 @@ function requireProductApi(name) {
 function requireMyinvoisApi(name) {
   const fn = myinvoisApi[name];
   if (typeof fn !== 'function') {
-    throw new Error(`MyInvois 模块 API 未暴露方法: ${name}`);
+    throw new Error(`MyInvois 妯″潡 API 鏈毚闇叉柟娉? ${name}`);
   }
   return fn;
 }
@@ -73,11 +75,24 @@ function requireMyinvoisApi(name) {
 function requireOrderApi(name) {
   const fn = orderApi[name];
   if (typeof fn !== 'function') {
-    throw new Error(`Order 模块 API 未暴露方法: ${name}`);
+    throw new Error(`Order 妯″潡 API 鏈毚闇叉柟娉? ${name}`);
   }
   return fn;
 }
 
+function requirePaymentApi(name) {
+  const fn = paymentApi[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`Payment 模块 API 未暴露方法: ${name}`);
+  }
+  return fn;
+}
+
+function hasPermission(req, code) {
+  if (!req?.user) return false;
+  if (req.user.isSuperAdmin) return true;
+  return Array.isArray(req.user.permissions) && req.user.permissions.includes(code);
+}
 function buildReturnListWhere(query) {
   let where = 'WHERE 1=1';
   const params = [];
@@ -134,13 +149,13 @@ async function listBanners() {
 
 async function createBanner(body, adminUserId, req) {
   const { title, image, link, sort_order, enabled, publish_status } = body;
-  if (!image) return { error: { code: 400, message: '图片地址必填' } };
+  if (!image) return { error: { code: 400, message: '鍥剧墖鍦板潃蹇呭～' } };
   const id = generateId();
   await repo.insertBanner({ id, title, image, link, sort_order, enabled: enabled !== false ? 1 : 0, publish_status: publish_status || 'published', last_modified_by: adminUserId });
   const row = await repo.selectBannerById(id);
   requireProductApi('clearCatalogCache')();
-  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'banner.create', objectType: 'banner', objectId: id, summary: `创建Banner ${title || id}`, after: { title, image }, result: 'success' });
-  return { data: row, message: '创建成功' };
+  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'banner.create', objectType: 'banner', objectId: id, summary: `鍒涘缓Banner ${title || id}`, after: { title, image }, result: 'success' });
+  return { data: row, message: '鍒涘缓鎴愬姛' };
 }
 
 async function updateBanner(id, body, adminUserId, req) {
@@ -154,17 +169,17 @@ async function updateBanner(id, body, adminUserId, req) {
   if (body.publish_status !== undefined) { setFragments.push('publish_status = ?'); values.push(body.publish_status); }
   setFragments.push('last_modified_by = ?'); values.push(adminUserId);
   setFragments.push('last_modified_at = NOW()');
-  if (setFragments.length === 0) return { error: { code: 400, message: '没有需要更新的字段' } };
+  if (setFragments.length === 0) return { error: { code: 400, message: '娌℃湁闇€瑕佹洿鏂扮殑瀛楁' } };
   await repo.updateBannerByFields(setFragments, values, id);
   requireProductApi('clearCatalogCache')();
-  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'banner.update', objectType: 'banner', objectId: id, summary: `更新Banner ${id}`, after: body, result: 'success' });
-  return { message: '更新成功' };
+  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'banner.update', objectType: 'banner', objectId: id, summary: `鏇存柊Banner ${id}`, after: body, result: 'success' });
+  return { message: '鏇存柊鎴愬姛' };
 }
 
 async function deleteBanner(id, adminUserId, req) {
   await repo.deleteBanner(id, adminUserId);
   requireProductApi('clearCatalogCache')();
-  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'banner.delete', objectType: 'banner', objectId: id, summary: `删除Banner ${id}`, result: 'success' });
+  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'banner.delete', objectType: 'banner', objectId: id, summary: `鍒犻櫎Banner ${id}`, result: 'success' });
   return { message: '已删除' };
 }
 
@@ -175,14 +190,14 @@ async function listProductTags() {
 
 async function createProductTag(body, adminUserId, req) {
   const { name } = body;
-  if (!name) return { error: { code: 400, message: '标签名称必填' } };
+  if (!name) return { error: { code: 400, message: '鏍囩鍚嶇О蹇呭～' } };
   try {
     const id = generateId();
     const visual = normalizeTagVisual(body);
     await repo.insertProductTag(id, name, visual.color, visual.bg_color, visual.text_color, visual.sort_order, visual.enabled);
-    await writeAuditLog({ req, operatorId: adminUserId, actionType: 'tag.create', objectType: 'product_tag', objectId: id, summary: `创建标签 ${name}`, result: 'success' });
+    await writeAuditLog({ req, operatorId: adminUserId, actionType: 'tag.create', objectType: 'product_tag', objectId: id, summary: `鍒涘缓鏍囩 ${name}`, result: 'success' });
     const row = await repo.selectProductTagById(id);
-    return { data: formatTag(row || { id, name, ...visual }), message: '创建成功' };
+    return { data: formatTag(row || { id, name, ...visual }), message: '鍒涘缓鎴愬姛' };
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') return { error: { code: 400, message: '标签已存在' } };
     throw err;
@@ -194,7 +209,7 @@ async function updateProductTag(id, body, adminUserId, req) {
   const values = [];
   const visual = normalizeTagVisual(body);
   if (body.name !== undefined) {
-    if (!body.name) return { error: { code: 400, message: '标签名称必填' } };
+    if (!body.name) return { error: { code: 400, message: '鏍囩鍚嶇О蹇呭～' } };
     fields.push('name = ?');
     values.push(body.name);
   }
@@ -204,24 +219,61 @@ async function updateProductTag(id, body, adminUserId, req) {
       values.push(value);
     }
   }
-  if (!fields.length) return { error: { code: 400, message: '没有需要更新的字段' } };
+  if (!fields.length) return { error: { code: 400, message: '娌℃湁闇€瑕佹洿鏂扮殑瀛楁' } };
   await repo.updateProductTag(id, fields, values);
-  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'tag.update', objectType: 'product_tag', objectId: id, summary: `更新标签 ${id}`, after: body, result: 'success' });
+  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'tag.update', objectType: 'product_tag', objectId: id, summary: `鏇存柊鏍囩 ${id}`, after: body, result: 'success' });
   const row = await repo.selectProductTagById(id);
   return { data: formatTag(row), message: '已保存' };
 }
 
 async function deleteProductTag(id, adminUserId, req) {
   await repo.deleteProductTag(id);
-  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'tag.delete', objectType: 'product_tag', objectId: id, summary: `删除标签 ${id}`, result: 'success' });
+  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'tag.delete', objectType: 'product_tag', objectId: id, summary: `鍒犻櫎鏍囩 ${id}`, result: 'success' });
   return { message: '已删除' };
 }
 
 async function getReturnById(id) {
-  const row = await repo.selectReturnById(id);
+  const row = await repo.selectReturnDetailById(id);
   if (!row) return { error: { code: 404, message: '售后单不存在' } };
   row.images = parseProductImages(row.images);
-  return { data: row };
+  const paymentRecords = row.order_id ? await repo.selectPaymentEventsByOrderId(row.order_id) : [];
+  const inventoryRecords = await repo.selectInventoryRecordsByReturnId(row.id, row.order_id);
+  const operationLogs = await repo.selectAuditLogsByReturnId(row.id);
+  return {
+    data: {
+      ...row,
+      user_info: {
+        id: row.user_id,
+        name: row.user_name || '',
+        email: row.user_email || '',
+        phone: row.user_phone || '',
+      },
+      order_info: {
+        id: row.order_id,
+        order_no: row.order_no_snapshot || row.order_no || '',
+        total_amount: Number(row.order_total_amount || 0),
+        payment_status: row.order_payment_status || '',
+        status: row.order_status || '',
+        refund_status: row.order_refund_status || '',
+        created_at: row.order_created_at || null,
+      },
+      item_info: {
+        order_item_id: row.order_item_id || '',
+        product_id: row.product_id || '',
+        variant_id: row.variant_id || '',
+        product_name: row.order_item_product_name || row.product_name || '',
+        product_image: row.order_item_product_image || '',
+        unit_price: Number(row.order_item_price || 0),
+        purchased_qty: Number(row.order_item_qty || 0),
+        request_qty: Number(row.quantity || 0),
+        variant_name: row.order_item_variant_name || row.variant_title || '',
+        sku_code: row.order_item_sku_code || row.variant_sku_code || row.sku_code || '',
+      },
+      refund_records: paymentRecords,
+      inventory_restore_records: inventoryRecords,
+      operation_logs: operationLogs,
+    },
+  };
 }
 
 async function approveReturn(id, body, adminUserId, req) {
@@ -229,82 +281,151 @@ async function approveReturn(id, body, adminUserId, req) {
   const conn = await repo.getConnection();
   try {
     await conn.beginTransaction();
-    const { refund_amount, admin_remark } = body;
+    const {
+      refund_amount,
+      admin_remark,
+      refund_mode = 'none',
+      restore_stock = false,
+      restore_coupon = false,
+      reverse_points = false,
+      reverse_rewards = false,
+    } = body || {};
 
     const ret = await repo.selectReturnByIdConn(conn, id);
     if (!ret) {
       await conn.rollback();
-      await writeAuditLog({ req, operatorId: adminUserId, actionType: 'return.approve', objectType: 'return_request', objectId: id, summary: '售后批准失败', result: 'failure', errorMessage: '售后单不存在' });
       return { error: { code: 404, message: '售后单不存在' } };
     }
-
     if (ret.status !== RETURN_STATUS.PENDING) {
       await conn.rollback();
-      const msg = `售后单当前状态为「${ret.status}」，只能在 ${RETURN_STATUS.PENDING} 状态下批准`;
-      await writeAuditLog({ req, operatorId: adminUserId, actionType: 'return.approve', objectType: 'return_request', objectId: id, summary: '重复/非法批准被拦截', before: { status: ret.status }, result: 'failure', errorMessage: msg });
-      return { error: { code: 400, message: msg } };
+      return { error: { code: 400, message: `售后单当前状态为「${ret.status}」，仅允许在 ${RETURN_STATUS.PENDING} 状态下批准` } };
     }
 
-    await repo.updateReturnApprovedConn(conn, refund_amount, admin_remark, id);
-
     const order = await repo.selectOrderByIdConn(conn, ret.order_id);
-    if (order) {
-      await repo.updateOrderStatusConn(conn, ORDER_STATUS.REFUNDED, order.id);
-      await requireUserApi('syncStatsAfterRefund')(order.user_id, order.id, conn);
-      await requireUserApi('reverseOrderPoints')(conn, order, '售后退款批准，积分回滚', {
+    if (!order) {
+      await conn.rollback();
+      return { error: { code: 404, message: '关联订单不存在' } };
+    }
+
+    const orderTotal = Number(order.total_amount || 0);
+    const refundAmount = Number(refund_amount ?? 0);
+    if (!Number.isFinite(refundAmount) || refundAmount < 0) {
+      await conn.rollback();
+      return { error: { code: 400, message: '退款金额必须大于等于 0' } };
+    }
+    if (refundAmount > orderTotal) {
+      await conn.rollback();
+      return { error: { code: 400, message: '退款金额不能超过订单实付金额' } };
+    }
+
+    if (refundAmount > 0 && !hasPermission(req, 'payment.manage')) {
+      await conn.rollback();
+      return { error: { code: 403, message: '无 payment.manage 权限，不能执行退款记录' } };
+    }
+    if (restore_stock && !(hasPermission(req, 'inventory.update') || hasPermission(req, 'inventory.manage'))) {
+      await conn.rollback();
+      return { error: { code: 403, message: '无 inventory.update 权限，不能执行库存恢复' } };
+    }
+
+    const nextReturnStatus = refundAmount > 0 ? RETURN_STATUS.REFUND_PENDING : RETURN_STATUS.APPROVED;
+    await repo.updateReturnByFieldsConn(
+      conn,
+      ['status = ?', 'refund_amount = ?', 'admin_remark = ?'],
+      [nextReturnStatus, refundAmount, admin_remark || ''],
+      id,
+    );
+
+    if (restore_stock) {
+      const qty = Math.max(0, Number(ret.quantity || 0));
+      if (qty > 0) {
+        if (ret.variant_id) {
+          await repo.restoreVariantStockByReturnConn(conn, ret.variant_id, qty, {
+            returnId: id,
+            operatorId: adminUserId,
+            orderNo: order.order_no,
+            reason: `售后恢复库存 ${id}`,
+            remark: admin_remark || '',
+          });
+        } else if (ret.product_id) {
+          await repo.addProductStockFallbackConn(conn, ret.product_id, qty);
+        }
+      }
+    }
+
+    if (restore_coupon && order.coupon_uc_id) {
+      await repo.restoreUserCouponConn(conn, order.coupon_uc_id);
+    }
+    if (reverse_points) {
+      await requireUserApi('reverseOrderPoints')(conn, order, `售后单 ${id} 审核通过，积分回滚`, {
         operatorId: adminUserId,
         trigger: 'return_approved',
       });
-      await requireUserApi('reverseOrderRewards')(conn, order, '售后退款批准，返现冲正', {
+    }
+    if (reverse_rewards) {
+      await requireUserApi('reverseOrderRewards')(conn, order, `售后单 ${id} 审核通过，返现冲正`, {
         operatorId: adminUserId,
         trigger: 'return_approved',
       });
-
-      const orderItems = await repo.selectOrderItemsConn(conn, order.id);
-      for (const oi of orderItems) {
-        await repo.addProductStockConn(conn, oi.product_id, oi.qty);
-      }
-
-      if (order.coupon_uc_id) {
-        await repo.restoreUserCouponConn(conn, order.coupon_uc_id);
-      }
-
-      const retCopy = await getResolvedTriggerCopy('return_approved', {
-        order_no: order.order_no,
-        refund_amount: String(refund_amount ?? order.total_amount ?? ''),
-      });
-      if (retCopy) {
-        await repo.insertNotificationConn(
-          conn,
-          generateId(),
-          order.user_id,
-          'order',
-          retCopy.title,
-          retCopy.content,
-        );
-      }
     }
 
     await conn.commit();
+
+    if (refundAmount > 0) {
+      await requirePaymentApi('recordRefundByAdmin')(req, order.id, {
+        amount: refundAmount,
+        mode: refund_mode === 'provider' ? 'provider' : 'manual',
+        reason: admin_remark || `售后单 ${id} 退款`,
+        refund_reference: `return_${id}_${Date.now()}`,
+      });
+      await repo.updateReturnRequestByFields(['status = ?'], [RETURN_STATUS.REFUNDED], id);
+    }
+
+    const retCopy = await getResolvedTriggerCopy('return_approved', {
+      order_no: order.order_no,
+      refund_amount: String(refundAmount),
+    });
+    if (retCopy) {
+      await repo.insertNotificationConn(
+        null,
+        generateId(),
+        order.user_id,
+        'order',
+        retCopy.title,
+        retCopy.content,
+      );
+    }
+
     await writeAuditLog({
       req,
       operatorId: adminUserId,
       actionType: 'return.approve',
       objectType: 'return_request',
       objectId: id,
-      summary: `售后批准退款 订单 ${ret.order_id}`,
+      summary: `售后批准处理 ${ret.order_id}`,
       before: beforeSnapRow ? { status: beforeSnapRow.status } : { status: ret.status },
-      after: { status: RETURN_STATUS.APPROVED, refund_amount: refund_amount ?? null },
+      after: {
+        status: refundAmount > 0 ? RETURN_STATUS.REFUNDED : RETURN_STATUS.APPROVED,
+        refund_amount: refundAmount,
+        refund_mode,
+        restore_stock,
+        restore_coupon,
+        reverse_points,
+        reverse_rewards,
+      },
       result: 'success',
     });
-    try {
-      await requireMyinvoisApi('enqueueRefundCreditNoteIfEnabled')({
-        returnId: id,
-        refundAmount: refund_amount,
-      }, 'return_approved');
-    } catch (e) {
-      console.error('[MyInvois] enqueue credit note after return approval failed:', e?.message || e);
+
+    if (refundAmount > 0) {
+      try {
+        await requireMyinvoisApi('enqueueRefundCreditNoteIfEnabled')({
+          returnId: id,
+          refundAmount,
+        }, 'return_approved');
+      } catch (e) {
+        console.error('[MyInvois] enqueue credit note after return approval failed:', e?.message || e);
+      }
     }
+
     return { message: '已批准' };
   } catch (err) {
     await conn.rollback();
@@ -323,9 +444,11 @@ async function approveReturn(id, body, adminUserId, req) {
     conn.release();
   }
 }
-
 async function rejectReturn(id, body, adminUserId, req) {
-  const { admin_remark } = body;
+  const { admin_remark } = body || {};
+  if (!admin_remark || !String(admin_remark).trim()) {
+    return { error: { code: 400, message: '拒绝原因不能为空' } };
+  }
   const beforeSnapRow = await repo.selectReturnById(id);
   try {
     if (!beforeSnapRow) {
@@ -333,11 +456,11 @@ async function rejectReturn(id, body, adminUserId, req) {
       return { error: { code: 404, message: '售后单不存在' } };
     }
     if (beforeSnapRow.status !== RETURN_STATUS.PENDING) {
-      const msg = `售后单当前状态为「${beforeSnapRow.status}」，只能在 ${RETURN_STATUS.PENDING} 状态下拒绝`;
+      const msg = `售后单当前状态为「${beforeSnapRow.status}」，仅允许在 ${RETURN_STATUS.PENDING} 状态下拒绝`;
       await writeAuditLog({ req, operatorId: adminUserId, actionType: 'return.reject', objectType: 'return_request', objectId: id, summary: '重复/非法拒绝被拦截', before: { status: beforeSnapRow.status }, result: 'failure', errorMessage: msg });
       return { error: { code: 400, message: msg } };
     }
-    await repo.updateReturnRejected(id, admin_remark);
+    await repo.updateReturnRejected(id, String(admin_remark).trim());
     await writeAuditLog({
       req,
       operatorId: adminUserId,
@@ -346,7 +469,7 @@ async function rejectReturn(id, body, adminUserId, req) {
       objectId: id,
       summary: '售后已拒绝',
       before: { status: beforeSnapRow.status },
-      after: { status: RETURN_STATUS.REJECTED, admin_remark: admin_remark || '' },
+      after: { status: RETURN_STATUS.REJECTED, admin_remark: String(admin_remark).trim() },
       result: 'success',
     });
     return { message: '已拒绝' };
@@ -380,10 +503,10 @@ async function listShippingTemplates() {
 
 async function createShippingTemplate(body, adminUserId, req) {
   const { name, regions, baseFee, freeAbove, extraPerKg, enabled } = body;
-  if (!name) return { error: { code: 400, message: '名称必填' } };
+  if (!name) return { error: { code: 400, message: '鍚嶇О蹇呭～' } };
   const insertId = await repo.insertShippingTemplate([name, regions || '', baseFee || 0, freeAbove || 0, extraPerKg || 0, enabled !== false ? 1 : 0]);
-  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'shipping_template.create', objectType: 'shipping_template', objectId: String(insertId), summary: `创建运费模板 ${name}`, result: 'success' });
-  return { data: { id: insertId, name }, message: '创建成功' };
+  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'shipping_template.create', objectType: 'shipping_template', objectId: String(insertId), summary: `鍒涘缓杩愯垂妯℃澘 ${name}`, result: 'success' });
+  return { data: { id: insertId, name }, message: '鍒涘缓鎴愬姛' };
 }
 
 async function updateShippingTemplate(id, body, adminUserId, req) {
@@ -394,15 +517,15 @@ async function updateShippingTemplate(id, body, adminUserId, req) {
     if (body[k] !== undefined) { setFragments.push(`${col} = ?`); values.push(body[k]); }
   }
   if (body.enabled !== undefined) { setFragments.push('enabled = ?'); values.push(body.enabled ? 1 : 0); }
-  if (setFragments.length === 0) return { error: { code: 400, message: '没有需要更新的字段' } };
+  if (setFragments.length === 0) return { error: { code: 400, message: '娌℃湁闇€瑕佹洿鏂扮殑瀛楁' } };
   await repo.updateShippingTemplateByFields(setFragments, values, id);
-  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'shipping_template.update', objectType: 'shipping_template', objectId: String(id), summary: `更新运费模板 ${id}`, after: body, result: 'success' });
-  return { message: '更新成功' };
+  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'shipping_template.update', objectType: 'shipping_template', objectId: String(id), summary: `鏇存柊杩愯垂妯℃澘 ${id}`, after: body, result: 'success' });
+  return { message: '鏇存柊鎴愬姛' };
 }
 
 async function deleteShippingTemplate(id, adminUserId, req) {
   await repo.deleteShippingTemplate(id);
-  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'shipping_template.delete', objectType: 'shipping_template', objectId: String(id), summary: `删除运费模板 ${id}`, result: 'success' });
+  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'shipping_template.delete', objectType: 'shipping_template', objectId: String(id), summary: `鍒犻櫎杩愯垂妯℃澘 ${id}`, result: 'success' });
   return { message: '已删除' };
 }
 
@@ -424,9 +547,9 @@ async function updatePointsRule(id, body, adminUserId, req) {
   if (name !== undefined) { setFragments.push('name = ?'); values.push(name); }
   if (points !== undefined) { setFragments.push('points = ?'); values.push(points); }
   if (enabled !== undefined) { setFragments.push('enabled = ?'); values.push(enabled ? 1 : 0); }
-  if (setFragments.length === 0) return { error: { code: 400, message: '没有需要更新的字段' } };
+  if (setFragments.length === 0) return { error: { code: 400, message: '娌℃湁闇€瑕佹洿鏂扮殑瀛楁' } };
   await repo.updatePointsRuleByFields(setFragments, values, id);
-  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'points_rule.update', objectType: 'points_rule', objectId: String(id), summary: `更新积分规则 ${name || id}`, after: body, result: 'success' });
+  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'points_rule.update', objectType: 'points_rule', objectId: String(id), summary: `鏇存柊绉垎瑙勫垯 ${name || id}`, after: body, result: 'success' });
   return { message: '规则已更新' };
 }
 
@@ -448,9 +571,9 @@ async function updateReferralRule(id, body, adminUserId, req) {
   if (name !== undefined) { setFragments.push('name = ?'); values.push(name); }
   if (rewardPercent !== undefined) { setFragments.push('reward_percent = ?'); values.push(rewardPercent); }
   if (enabled !== undefined) { setFragments.push('enabled = ?'); values.push(enabled ? 1 : 0); }
-  if (setFragments.length === 0) return { error: { code: 400, message: '没有需要更新的字段' } };
+  if (setFragments.length === 0) return { error: { code: 400, message: '娌℃湁闇€瑕佹洿鏂扮殑瀛楁' } };
   await repo.updateReferralRuleByFields(setFragments, values, id);
-  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'referral_rule.update', objectType: 'referral_rule', objectId: String(id), summary: `更新返现规则 ${name || id}`, after: body, result: 'success' });
+  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'referral_rule.update', objectType: 'referral_rule', objectId: String(id), summary: `鏇存柊杩旂幇瑙勫垯 ${name || id}`, after: body, result: 'success' });
   return { message: '规则已更新' };
 }
 
@@ -475,7 +598,7 @@ async function updateContentPage(id, body, adminUserId, req) {
       actionType: 'content.publish',
       objectType: 'content_page',
       objectId: id,
-      summary: '内容更新失败',
+      summary: '鍐呭鏇存柊澶辫触',
       result: 'failure',
       errorMessage: '页面不存在',
     });
@@ -506,11 +629,11 @@ async function updateContentPage(id, body, adminUserId, req) {
       actionType: 'content.publish',
       objectType: 'content_page',
       objectId: id,
-      summary: '内容更新失败',
+      summary: '鍐呭鏇存柊澶辫触',
       result: 'failure',
-      errorMessage: '没有需要更新的字段',
+      errorMessage: '娌℃湁闇€瑕佹洿鏂扮殑瀛楁',
     });
-    return { error: { code: 400, message: '没有需要更新的字段' } };
+    return { error: { code: 400, message: '娌℃湁闇€瑕佹洿鏂扮殑瀛楁' } };
   }
 
   try {
@@ -521,7 +644,7 @@ async function updateContentPage(id, body, adminUserId, req) {
       actionType: 'content.publish',
       objectType: 'content_page',
       objectId: id,
-      summary: `更新内容页 ${before.slug || id}`,
+      summary: `鏇存柊鍐呭椤?${before.slug || id}`,
       before: { title: before.title, content_len: before.content_len },
       after: {
         title: title !== undefined ? title : before.title,
@@ -537,7 +660,7 @@ async function updateContentPage(id, body, adminUserId, req) {
       actionType: 'content.publish',
       objectType: 'content_page',
       objectId: id,
-      summary: '内容更新失败',
+      summary: '鍐呭鏇存柊澶辫触',
       before: { title: before.title, content_len: before.content_len },
       result: 'failure',
       errorMessage: err.message || String(err),
@@ -571,3 +694,5 @@ module.exports = {
   listContentPages,
   updateContentPage,
 };
+
+

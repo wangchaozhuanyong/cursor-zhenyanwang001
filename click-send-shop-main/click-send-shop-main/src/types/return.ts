@@ -1,16 +1,18 @@
 export type ReturnStatus =
   | "pending"
-  | "requested"
-  | "needs_evidence"
+  | "need_evidence"
   | "approved"
   | "rejected"
   | "processing"
+  | "waiting_return"
   | "return_in_transit"
   | "received"
+  | "refund_pending"
   | "refunded"
+  | "exchange_shipping"
   | "completed";
 
-export type ReturnType = "refund" | "exchange" | "repair";
+export type ReturnType = "refund" | "return_refund" | "exchange" | "repair";
 
 export interface ReturnRequest {
   id: string;
@@ -34,13 +36,20 @@ export interface ReturnRequest {
 
 export interface CreateReturnParams {
   order_id: string;
-  order_item_id?: string;
-  quantity?: number;
+  order_item_id: string;
+  quantity: number;
   type: ReturnType;
   reason: string;
   description: string;
   images?: string[];
   proof_images?: string[];
+}
+
+export interface ApproveReturnParams {
+  refund_amount: number;
+  admin_remark?: string;
+  restore_inventory: boolean;
+  rollback_points_rewards: boolean;
 }
 
 export interface ReturnListParams {

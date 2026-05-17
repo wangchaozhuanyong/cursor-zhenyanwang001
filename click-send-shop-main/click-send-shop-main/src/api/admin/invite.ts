@@ -2,8 +2,8 @@
 import type { InviteRecord, ReferralRule } from "@/types/invite";
 import type { PaginatedData, PaginationParams } from "@/types/common";
 
-export function getInviteRecords(params?: PaginationParams) {
-  return get<PaginatedData<InviteRecord>>("/admin/invites", params as Record<string, string>);
+export function getInviteRecords(params?: PaginationParams & { keyword?: string; dateFrom?: string; dateTo?: string }) {
+  return get<PaginatedData<InviteRecord> & { summary?: Record<string, number> }>("/admin/invites", params as Record<string, string>);
 }
 
 export function getReferralRules() {
@@ -13,4 +13,3 @@ export function getReferralRules() {
 export function updateReferralRule(id: string, data: Partial<ReferralRule>) {
   return put<ReferralRule>(`/admin/referral-rules/${id}`, data);
 }
-

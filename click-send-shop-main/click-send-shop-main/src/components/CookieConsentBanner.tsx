@@ -74,7 +74,7 @@ export default function CookieConsentBanner() {
             <p className="text-sm font-semibold text-foreground">Cookie / 同意管理</p>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
               我们会使用必要 Cookie 保持网站正常运行。只有在你同意后，才会加载分析或广告追踪脚本。详细说明可查看{" "}
-              <Link to={siteInfo.privacyPolicyPath || "/content/privacy-policy"} className="font-medium text-gold underline-offset-2 hover:underline">
+              <Link to={siteInfo.privacyPolicyPath || "/content/privacy-policy"} className="font-medium text-theme-price underline-offset-2 hover:underline">
                 隐私政策
               </Link>
               。
@@ -87,7 +87,7 @@ export default function CookieConsentBanner() {
             <button type="button" onClick={() => setExpanded((v) => !v)} className="rounded-full border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-secondary">
               自定义
             </button>
-            <button type="button" onClick={acceptAll} className="rounded-full bg-gold px-4 py-2 text-xs font-semibold text-primary-foreground shadow-lg shadow-gold/20">
+            <button type="button" onClick={acceptAll} className="rounded-full btn-theme-price px-4 py-2 text-xs font-semibold text-primary-foreground shadow-lg shadow-gold/20">
               接受全部
             </button>
           </div>

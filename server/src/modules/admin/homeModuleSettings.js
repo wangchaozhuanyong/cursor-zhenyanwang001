@@ -15,6 +15,11 @@ const MODULE_KEYS = [
   'hot_sales',
   'recommend',
   'guest_recommend',
+  'flash_sale_section',
+  'coupon_center',
+  'new_user_gift',
+  'full_reduction_notice',
+  'promotion_banner',
 ];
 
 const DEFAULT_MODULES = Object.fromEntries(MODULE_KEYS.map((k) => [k, true]));

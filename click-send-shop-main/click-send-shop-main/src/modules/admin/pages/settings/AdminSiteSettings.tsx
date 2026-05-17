@@ -61,6 +61,11 @@ const EMPTY: SiteSettings = {
   newArrivalHeroTitle: "",
   newArrivalHeroSubtitle: "",
   newArrivalHeroCtaText: "",
+  newArrivalSectionTitle: "",
+  newArrivalSectionSubtitle: "",
+  newArrivalDisplayCount: "8",
+  newArrivalShowPrice: "1",
+  newArrivalOnlyInStock: "1",
   ga4Enabled: "0",
   ga4MeasurementId: "",
   metaPixelEnabled: "0",
@@ -130,6 +135,28 @@ const SECTIONS: Section[] = [
       { key: "newArrivalHeroTitle", label: "主视觉标题", placeholder: "新品限时上新，错过再等一季" },
       { key: "newArrivalHeroSubtitle", label: "主视觉副标题", placeholder: "每周精选，支持快速发货" },
       { key: "newArrivalHeroCtaText", label: "按钮文案", placeholder: "前往新品上市" },
+      { key: "newArrivalSectionTitle", label: "新版模块标题", placeholder: "新品上市", hint: "横滑商品区左上角标题；为空时使用默认标题" },
+      { key: "newArrivalSectionSubtitle", label: "新版模块副标题", placeholder: "最近上架好物，第一时间发现" },
+      { key: "newArrivalDisplayCount", label: "新版展示数量", placeholder: "8", hint: "建议 4-12，服务端默认最多 16" },
+      {
+        key: "newArrivalShowPrice",
+        label: "新版显示价格",
+        type: "select",
+        options: [
+          { value: "1", label: "显示" },
+          { value: "0", label: "隐藏" },
+        ],
+      },
+      {
+        key: "newArrivalOnlyInStock",
+        label: "新品补位仅库存",
+        type: "select",
+        options: [
+          { value: "1", label: "是" },
+          { value: "0", label: "否" },
+        ],
+        hint: "当 is_new 商品不足时，是否只用有库存的最近上架商品补足首页新品位",
+      },
     ],
   },
   {
@@ -429,7 +456,7 @@ export default function AdminSiteSettings() {
                   onClick={() => setActiveCategory(key as SectionCategory)}
                   className={`rounded-lg px-3 py-1.5 text-xs transition-colors ${
                     isActive
-                      ? "bg-gold text-primary-foreground"
+                      ? "btn-theme-price"
                       : "bg-secondary text-foreground hover:bg-secondary/80"
                   }`}
                 >
@@ -452,7 +479,7 @@ export default function AdminSiteSettings() {
           <p className="mt-1"><Tx>2) 浏览器标签图标：读取「Favicon」，首屏静态图标与运行时图标会统一更新。</Tx></p>
           <p className="mt-1">
             3) 未登录首页底部「政策与说明」等：读取政策路径 +{" "}
-            <Link to="/admin/content" className="font-medium text-gold underline-offset-2 hover:underline"><Tx>
+            <Link to="/admin/content" className="font-medium text-theme-price underline-offset-2 hover:underline"><Tx>
               内容管理
             </Tx></Link><Tx>
             中的正文；页脚公司名/版权等同站点设置。

@@ -54,7 +54,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="inline-flex items-center gap-2 rounded-full bg-gold px-6 py-3 text-sm font-bold text-primary-foreground"
+              className="inline-flex items-center gap-2 rounded-full btn-theme-price px-6 py-3 text-sm font-bold text-primary-foreground"
             >
               <RefreshCw size={16} /> 刷新页面
             </button>

@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { parseSstEnabled } from "@/utils/sstTax";
+import MarketingPositionNotices from "@/modules/public/components/marketing/MarketingPositionNotices";
 
 export default function Cart() {
   useDocumentTitle("购物车");
@@ -95,6 +96,7 @@ export default function Cart() {
         {/* 桌面端：左商品列表 / 右结算摘要 */}
         <div className="md:grid md:grid-cols-[1fr_360px] md:gap-8">
           <div>
+            <MarketingPositionNotices position="cart_notice" className="mb-3" />
             {!isLoggedIn() && (
               <div className="mb-3 theme-rounded border border-[var(--theme-price)]/30 bg-[var(--theme-price)]/5 px-4 py-3 text-xs text-[var(--theme-text)]">
                 <span className="text-muted-foreground">当前未登录，购物车仅保存在本机；</span>
@@ -147,7 +149,7 @@ export default function Cart() {
                     <span
                       className={`flex h-5 w-5 items-center justify-center rounded border-2 ${
                         allSelected
-                          ? "border-gold bg-gold text-primary-foreground"
+                          ? "border-gold btn-theme-price"
                           : someSelected
                             ? "border-gold/60 bg-gold/10"
                             : "border-muted-foreground/40"
@@ -178,7 +180,7 @@ export default function Cart() {
                         onClick={() => toggleSelect(item.product.id, item.variant_id)}
                         className={`mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md border-2 !p-0 transition-colors ${
                           isSelected(item.product.id, item.variant_id)
-                            ? "border-gold bg-gold text-primary-foreground"
+                            ? "border-gold btn-theme-price"
                             : "border-muted-foreground/40 bg-background"
                         }`}
                         aria-label={isSelected(item.product.id, item.variant_id) ? "取消勾选" : "勾选结算"}
@@ -204,7 +206,7 @@ export default function Cart() {
                         <div>
                           <h3
                             onClick={() => navigate(`/product/${item.product.id}`)}
-                            className="cursor-pointer text-[13px] font-medium leading-tight text-foreground line-clamp-2 hover:text-gold md:text-sm"
+                            className="cursor-pointer text-[13px] font-medium leading-tight text-foreground line-clamp-2 hover:text-theme-price md:text-sm"
                           >
                             {item.product.name}
                           </h3>
@@ -213,7 +215,7 @@ export default function Cart() {
                           </p>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-base font-bold text-gold md:text-lg">
+                          <span className="text-base font-bold text-theme-price md:text-lg">
                             RM {item.product.price}
                           </span>
                           <div className="flex items-center gap-3">
@@ -348,7 +350,7 @@ export default function Cart() {
               <span
                 className={`flex h-5 w-5 items-center justify-center rounded border-2 ${
                   allSelected
-                    ? "border-gold bg-gold text-primary-foreground"
+                    ? "border-gold btn-theme-price"
                     : someSelected
                       ? "border-gold/60 bg-gold/10"
                       : "border-muted-foreground/40"

@@ -230,9 +230,11 @@ router.get('/checkout-abandonments/reminders/due', adminAuth, requirePermission(
 router.post('/checkout-abandonments/:id/reminders/sent', adminAuth, requirePermission('order.update'), checkoutAbandonmentCtrl.markReminderSent);
 router.get('/checkout-abandonments', adminAuth, requirePermission('order.view'), checkoutAbandonmentCtrl.list);
 router.get('/orders', adminAuth, requirePermission('order.view'), orderCtrl.list);
+router.get('/orders/pending-shipments', adminAuth, requirePermission('order.ship'), orderCtrl.listPendingShipments);
 router.get('/orders/:id', adminAuth, requirePermission('order.view'), orderCtrl.getById);
 router.put('/orders/:id/status', adminAuth, requirePermission('order.update'), orderCtrl.updateStatus);
 router.put('/orders/:id/ship', adminAuth, requirePermission('order.ship'), orderCtrl.ship);
+router.post('/orders/batch-ship', adminAuth, requirePermission('order.ship'), orderCtrl.batchShip);
 router.post('/orders/:id/logistics/refresh', adminAuth, requirePermission('order.ship'), logisticsCtrl.refreshOrderTracking);
 
 /* ---- Inventory Center（SKU 维度）---- */
@@ -276,6 +278,9 @@ router.get('/member-levels', adminAuth, requirePermission('member_level.manage')
 router.post('/member-levels', adminAuth, requirePermission('member_level.manage'), memberLevelCtrl.create);
 router.put('/member-levels/:id', adminAuth, requirePermission('member_level.manage'), memberLevelCtrl.update);
 router.delete('/member-levels/:id', adminAuth, requirePermission('member_level.manage'), memberLevelCtrl.remove);
+router.post('/member-levels/recalculate', adminAuth, requirePermission('member_level.manage'), memberLevelCtrl.recalcAllUserLevels);
+router.post('/member-levels/recalculate/:userId', adminAuth, requirePermission('member_level.manage'), memberLevelCtrl.recalcUserLevel);
+router.put('/users/:userId/member-level', adminAuth, requirePermission('member_level.manage'), memberLevelCtrl.assignUserLevel);
 
 /* ---- Users ---- */
 router.get('/users/export', adminAuth, requirePermission('user.view'), userCtrl.exportCsv);
@@ -289,6 +294,7 @@ router.post('/users/:id/reset-password', adminAuth, requirePermission('user.upda
 router.post('/users/:id/unbind-wechat', adminAuth, requirePermission('user.update'), userCtrl.unbindWechat);
 router.get('/users/:id', adminAuth, requirePermission('user.view'), userQueryLimiter, userCtrl.getById);
 router.put('/users/:id', adminAuth, requirePermission('user.update'), userCtrl.update);
+router.put('/users/:id/status', adminAuth, requirePermission('user.update'), userCtrl.updateStatus);
 router.put('/users/:id/subordinate', adminAuth, requirePermission('user.update'), userCtrl.updateSubordinate);
 router.put('/users/:userId/points', adminAuth, requirePermission('user.points'), userCtrl.adjustPoints);
 
@@ -315,15 +321,25 @@ router.put('/returns/:id/approve', adminAuth, requirePermission('return.handle')
 router.put('/returns/:id/reject', adminAuth, requirePermission('return.handle'), returnCtrl.reject);
 
 /* ---- Reviews ---- */
-router.get('/reviews', adminAuth, requirePermission('review.manage'), reviewCtrl.list);
-router.put('/reviews/:id/toggle', adminAuth, requirePermission('review.manage'), reviewCtrl.toggleVisibility);
-router.put('/reviews/:id/feature', adminAuth, requirePermission('review.manage'), reviewCtrl.toggleFeatured);
-router.put('/reviews/:id/reply', adminAuth, requirePermission('review.manage'), reviewCtrl.reply);
-router.delete('/reviews/:id', adminAuth, requirePermission('review.manage'), reviewCtrl.remove);
-router.put('/reviews/:id/restore', adminAuth, requirePermission('review.manage'), reviewCtrl.restore);
-router.delete('/reviews/:id/permanent', adminAuth, requirePermission('review.manage'), reviewCtrl.permanentDelete);
-router.post('/reviews/batch-hide', adminAuth, requirePermission('review.manage'), reviewCtrl.batchHide);
-router.post('/reviews/batch-delete', adminAuth, requirePermission('review.manage'), reviewCtrl.batchDelete);
+const reviewView = requireAnyPermission(['review.view', 'review.manage']);
+const reviewReply = requireAnyPermission(['review.reply', 'review.manage']);
+const reviewModerate = requireAnyPermission(['review.moderate', 'review.manage']);
+const reviewFeature = requireAnyPermission(['review.feature', 'review.manage']);
+const reviewDelete = requireAnyPermission(['review.delete', 'review.manage']);
+
+router.get('/reviews', adminAuth, reviewView, reviewCtrl.list);
+router.get('/reviews/:id', adminAuth, reviewView, reviewCtrl.getDetail);
+router.put('/reviews/:id/toggle', adminAuth, reviewModerate, reviewCtrl.toggleVisibility);
+router.put('/reviews/:id/approve', adminAuth, reviewModerate, reviewCtrl.approve);
+router.put('/reviews/:id/reject', adminAuth, reviewModerate, reviewCtrl.reject);
+router.put('/reviews/:id/feature', adminAuth, reviewFeature, reviewCtrl.toggleFeatured);
+router.put('/reviews/:id/reply', adminAuth, reviewReply, reviewCtrl.reply);
+router.put('/reviews/:id/complaint', adminAuth, reviewModerate, reviewCtrl.updateComplaint);
+router.delete('/reviews/:id', adminAuth, reviewDelete, reviewCtrl.remove);
+router.put('/reviews/:id/restore', adminAuth, reviewDelete, reviewCtrl.restore);
+router.delete('/reviews/:id/permanent', adminAuth, reviewDelete, reviewCtrl.permanentDelete);
+router.post('/reviews/batch-hide', adminAuth, reviewModerate, reviewCtrl.batchHide);
+router.post('/reviews/batch-delete', adminAuth, reviewDelete, reviewCtrl.batchDelete);
 
 /* ---- Banners ---- */
 router.get('/banners', adminAuth, requirePermission('banner.manage'), bannerCtrl.list);
@@ -332,14 +348,19 @@ router.put('/banners/:id', adminAuth, requirePermission('banner.manage'), banner
 router.delete('/banners/:id', adminAuth, requirePermission('banner.manage'), bannerCtrl.remove);
 
 /* ---- Notifications ---- */
-router.get('/notifications', adminAuth, requirePermission('notification.manage'), notificationCtrl.list);
-router.post('/notifications', adminAuth, requirePermission('notification.manage'), notificationCtrl.send);
-router.post('/notifications/drafts', adminAuth, requirePermission('notification.manage'), notificationCtrl.draft);
-router.put('/notifications/:id/publish', adminAuth, requirePermission('notification.manage'), notificationCtrl.publish);
-router.get('/notifications/templates', adminAuth, requirePermission('notification.manage'), notificationCtrl.templates);
-router.get('/notifications/trigger-settings', adminAuth, requirePermission('notification.manage'), notificationCtrl.triggerSettings);
-router.put('/notifications/trigger-settings', adminAuth, requirePermission('notification.manage'), notificationCtrl.updateTriggerSettings);
-router.delete('/notifications/:id', adminAuth, requirePermission('notification.manage'), notificationCtrl.remove);
+router.get('/notifications', adminAuth, requireAnyPermission(['notification.view', 'notification.manage']), notificationCtrl.list);
+router.get('/notifications/summary', adminAuth, requireAnyPermission(['notification.view', 'notification.manage']), notificationCtrl.summary);
+router.get('/notifications/user-candidates', adminAuth, requireAnyPermission(['notification.create', 'notification.send', 'notification.manage']), notificationCtrl.userCandidates);
+router.post('/notifications', adminAuth, requireAnyPermission(['notification.send', 'notification.manage']), notificationCtrl.send);
+router.post('/notifications/drafts', adminAuth, requireAnyPermission(['notification.create', 'notification.manage']), notificationCtrl.draft);
+router.put('/notifications/:id/publish', adminAuth, requireAnyPermission(['notification.send', 'notification.manage']), notificationCtrl.publish);
+router.get('/notifications/templates', adminAuth, requireAnyPermission(['notification.template', 'notification.manage']), notificationCtrl.templates);
+router.get('/notifications/trigger-settings', adminAuth, requireAnyPermission(['notification.trigger', 'notification.manage']), notificationCtrl.triggerSettings);
+router.put('/notifications/trigger-settings', adminAuth, requireAnyPermission(['notification.trigger', 'notification.manage']), notificationCtrl.updateTriggerSettings);
+router.delete('/notifications/:id', adminAuth, requireAnyPermission(['notification.manage', 'notification.create']), notificationCtrl.remove);
+router.delete('/notifications/:id/draft', adminAuth, requireAnyPermission(['notification.create', 'notification.manage']), notificationCtrl.deleteDraft);
+router.put('/notifications/:id/cancel', adminAuth, requireAnyPermission(['notification.send', 'notification.manage']), notificationCtrl.cancelScheduled);
+router.put('/notifications/:id/revoke', adminAuth, requireAnyPermission(['notification.revoke', 'notification.manage']), notificationCtrl.revokeSent);
 
 /* ---- Invites ---- */
 router.get('/invites', adminAuth, requirePermission('invite.view'), inviteCtrl.list);
@@ -411,7 +432,3 @@ router.get('/audit-logs', adminAuth, requirePermission('audit.view'), logCtrl.li
 router.get('/logs', adminAuth, requirePermission('admin_log.view'), logCtrl.listAdminLogs);
 
 module.exports = router;
-
-
-
-

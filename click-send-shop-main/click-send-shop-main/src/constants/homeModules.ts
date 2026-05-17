@@ -8,7 +8,12 @@ export type HomeModuleKey =
   | "new_arrivals"
   | "hot_sales"
   | "recommend"
-  | "guest_recommend";
+  | "guest_recommend"
+  | "flash_sale_section"
+  | "coupon_center"
+  | "new_user_gift"
+  | "full_reduction_notice"
+  | "promotion_banner";
 
 export type HomeModuleSettings = {
   modules: Record<HomeModuleKey, boolean>;
@@ -82,6 +87,41 @@ export const HOME_MODULE_DEFINITIONS: HomeModuleDefinition[] = [
     audiences: ["guest"],
     category: "guest",
   },
+  {
+    key: "flash_sale_section",
+    label: "首页秒杀专区",
+    description: "展示限时秒杀活动与倒计时",
+    audiences: ["member", "guest"],
+    category: "common",
+  },
+  {
+    key: "coupon_center",
+    label: "首页领券中心",
+    description: "优惠券活动领取入口",
+    audiences: ["member", "guest"],
+    category: "common",
+  },
+  {
+    key: "new_user_gift",
+    label: "首页新人礼包",
+    description: "新用户优惠券包展示",
+    audiences: ["member", "guest"],
+    category: "common",
+  },
+  {
+    key: "full_reduction_notice",
+    label: "满减活动提示",
+    description: "首页满减活动横幅/说明",
+    audiences: ["member", "guest"],
+    category: "common",
+  },
+  {
+    key: "promotion_banner",
+    label: "促销横幅",
+    description: "通用营销活动横幅位",
+    audiences: ["member", "guest"],
+    category: "common",
+  },
 ];
 
 export const DEFAULT_HOME_MODULE_SETTINGS: HomeModuleSettings = {
@@ -94,6 +134,11 @@ export const DEFAULT_HOME_MODULE_SETTINGS: HomeModuleSettings = {
     hot_sales: true,
     recommend: true,
     guest_recommend: true,
+    flash_sale_section: true,
+    coupon_center: true,
+    new_user_gift: true,
+    full_reduction_notice: true,
+    promotion_banner: true,
   },
   hotBatchSize: 4,
   recBatchSize: 4,

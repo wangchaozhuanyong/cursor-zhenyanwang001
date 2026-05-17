@@ -5,8 +5,11 @@ function buildUserListWhere(keyword, tagId, filters = {}) {
   let where = 'WHERE u.deleted_at IS NULL';
   const params = [];
   if (keyword) {
-    where += ' AND (u.nickname LIKE ? OR u.phone LIKE ?)';
-    params.push(`%${keyword}%`, `%${keyword}%`);
+    where += ` AND (
+      u.nickname LIKE ? OR u.phone LIKE ? OR u.wechat LIKE ? OR u.whatsapp LIKE ?
+      OR u.invite_code LIKE ? OR u.parent_invite_code LIKE ? OR u.id LIKE ?
+    )`;
+    params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
   }
   if (tagId) {
     where += ' AND EXISTS (SELECT 1 FROM user_tag_assignments uta WHERE uta.user_id = u.id AND uta.tag_id = ?)';
@@ -28,6 +31,54 @@ function buildUserListWhere(keyword, tagId, filters = {}) {
   } else if (filters.phoneBound === '1' || filters.phoneBound === true) {
     where += ' AND u.phone IS NOT NULL AND TRIM(u.phone) <> \'\'';
   }
+  if (filters.memberLevelId) {
+    where += ' AND u.member_level_id = ?';
+    params.push(filters.memberLevelId);
+  }
+  if (filters.accountStatus) {
+    where += ' AND u.account_status = ?';
+    params.push(filters.accountStatus);
+  }
+  if (filters.dateFrom) {
+    where += ' AND u.created_at >= ?';
+    params.push(filters.dateFrom);
+  }
+  if (filters.dateTo) {
+    where += ' AND u.created_at < DATE_ADD(?, INTERVAL 1 DAY)';
+    params.push(filters.dateTo);
+  }
+  if (filters.totalSpentMin !== undefined && filters.totalSpentMin !== '') {
+    where += ' AND COALESCE(us.total_spent, 0) >= ?';
+    params.push(Number(filters.totalSpentMin) || 0);
+  }
+  if (filters.totalSpentMax !== undefined && filters.totalSpentMax !== '') {
+    where += ' AND COALESCE(us.total_spent, 0) <= ?';
+    params.push(Number(filters.totalSpentMax) || 0);
+  }
+  if (filters.orderCountMin !== undefined && filters.orderCountMin !== '') {
+    where += ' AND COALESCE(us.valid_order_count, 0) >= ?';
+    params.push(Number(filters.orderCountMin) || 0);
+  }
+  if (filters.orderCountMax !== undefined && filters.orderCountMax !== '') {
+    where += ' AND COALESCE(us.valid_order_count, 0) <= ?';
+    params.push(Number(filters.orderCountMax) || 0);
+  }
+  if (filters.pointsMin !== undefined && filters.pointsMin !== '') {
+    where += ' AND COALESCE(u.points_balance, 0) >= ?';
+    params.push(Number(filters.pointsMin) || 0);
+  }
+  if (filters.pointsMax !== undefined && filters.pointsMax !== '') {
+    where += ' AND COALESCE(u.points_balance, 0) <= ?';
+    params.push(Number(filters.pointsMax) || 0);
+  }
+  if (filters.refundRateMin !== undefined && filters.refundRateMin !== '') {
+    where += ' AND COALESCE(us.refund_rate, 0) >= ?';
+    params.push(Number(filters.refundRateMin) || 0);
+  }
+  if (filters.refundRateMax !== undefined && filters.refundRateMax !== '') {
+    where += ' AND COALESCE(us.refund_rate, 0) <= ?';
+    params.push(Number(filters.refundRateMax) || 0);
+  }
   return { where, params };
 }
 
@@ -37,7 +88,7 @@ async function getConnection() {
 
 async function countUsers(where, params) {
   const [[{ total }]] = await db.query(
-    `SELECT COUNT(*) AS total FROM users u ${where}`,
+    `SELECT COUNT(*) AS total FROM users u LEFT JOIN user_statistics us ON us.user_id = u.id ${where}`,
     params,
   );
   return total;
@@ -56,6 +107,7 @@ async function selectUsersPage(where, params, pageSize, offset, options = {}) {
   const [rows] = await db.query(
     `SELECT u.id, u.phone, u.nickname, u.avatar, u.invite_code, u.parent_invite_code,
             u.points_balance, u.subordinate_enabled, u.wechat, u.whatsapp, u.created_at,
+            u.account_status,
             COALESCE(us.total_spent, 0) AS total_spent,
             COALESCE(us.valid_order_count, 0) AS valid_order_count,
             COALESCE(us.average_order_value, 0) AS average_order_value,
@@ -84,6 +136,7 @@ async function selectUsersForExport(where, params) {
   const [rows] = await db.query(
     `SELECT u.id, u.phone, u.nickname, u.avatar, u.invite_code, u.parent_invite_code,
             u.points_balance, u.subordinate_enabled, u.wechat, u.whatsapp, u.created_at,
+            u.account_status,
             ml.name AS member_level_name
      FROM users u
      LEFT JOIN member_levels ml ON ml.id = u.member_level_id
@@ -141,6 +194,7 @@ async function selectUserSummaryById(userId) {
   const [[user]] = await db.query(
     `SELECT u.id, u.phone, u.password_hash, u.nickname, u.avatar, u.invite_code, u.parent_invite_code,
             u.points_balance, u.subordinate_enabled, u.wechat, u.whatsapp, u.created_at,
+            u.account_status,
             ml.id AS member_level_id,
             ml.name AS member_level_name,
             ml.description AS member_level_description,
@@ -176,6 +230,89 @@ async function sumUserSpentExcludingCancelled(userId) {
 
 async function updateUserDynamic(setFragments, values, userId) {
   await db.query(`UPDATE users SET ${setFragments.join(', ')} WHERE id = ?`, [...values, userId]);
+}
+
+async function selectUserSummaryMetrics(where, params) {
+  const [[row]] = await db.query(
+    `SELECT
+      SUM(CASE WHEN DATE(u.created_at) = CURDATE() THEN 1 ELSE 0 END) AS todayNew,
+      SUM(CASE WHEN u.phone IS NOT NULL AND TRIM(u.phone) <> '' THEN 1 ELSE 0 END) AS phoneBound,
+      SUM(CASE WHEN EXISTS (SELECT 1 FROM user_auth_identities uai WHERE uai.user_id = u.id AND uai.provider = 'wechat_open') THEN 1 ELSE 0 END) AS wechatBound,
+      SUM(CASE WHEN u.parent_invite_code IS NOT NULL AND TRIM(u.parent_invite_code) <> '' THEN 1 ELSE 0 END) AS invitedUsers,
+      SUM(CASE WHEN u.account_status = 'disabled' THEN 1 ELSE 0 END) AS disabledUsers,
+      SUM(CASE WHEN u.account_status = 'blacklisted' THEN 1 ELSE 0 END) AS blacklistedUsers
+     FROM users u
+     LEFT JOIN user_statistics us ON us.user_id = u.id
+     ${where}`,
+    params,
+  );
+  return row || {};
+}
+
+async function updateUserStatus(userId, accountStatus, bumpRefreshTokenVersion = false) {
+  const sql = bumpRefreshTokenVersion
+    ? 'UPDATE users SET account_status = ?, refresh_token_version = refresh_token_version + 1 WHERE id = ? AND deleted_at IS NULL'
+    : 'UPDATE users SET account_status = ? WHERE id = ? AND deleted_at IS NULL';
+  const [r] = await db.query(sql, [accountStatus, userId]);
+  return (r.affectedRows || 0) > 0;
+}
+
+async function selectUserDetailRelations(userId) {
+  const [orders] = await db.query(
+    `SELECT id, order_no, status, payment_status, total_amount, created_at
+     FROM orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 10`,
+    [userId],
+  );
+  const [addresses] = await db.query(
+    `SELECT id, name, phone, address, is_default, created_at
+     FROM addresses WHERE user_id = ? ORDER BY is_default DESC, created_at DESC LIMIT 20`,
+    [userId],
+  );
+  const [[couponStats]] = await db.query(
+    `SELECT COUNT(*) AS total, SUM(CASE WHEN status = 'used' THEN 1 ELSE 0 END) AS usedCount
+     FROM coupon_records WHERE user_id = ?`,
+    [userId],
+  ).catch(() => [[{ total: 0, usedCount: 0 }]]);
+  const [pointsRecords] = await db.query(
+    `SELECT id, action, amount, balance_after, description, created_at
+     FROM points_records WHERE user_id = ? ORDER BY created_at DESC LIMIT 20`,
+    [userId],
+  );
+  const [cashbackRecords] = await db.query(
+    `SELECT id, order_no, type, amount, status, reason, created_at
+     FROM reward_transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 20`,
+    [userId],
+  );
+  const [[inviteRelation]] = await db.query(
+    `SELECT u.parent_invite_code,
+            p.id AS parent_user_id, p.nickname AS parent_nickname, p.phone AS parent_phone
+     FROM users u
+     LEFT JOIN users p ON p.invite_code = u.parent_invite_code
+     WHERE u.id = ?`,
+    [userId],
+  );
+  const [directInvites] = await db.query(
+    `SELECT id, nickname, phone, created_at FROM users WHERE parent_invite_code = (SELECT invite_code FROM users WHERE id = ?) ORDER BY created_at DESC LIMIT 50`,
+    [userId],
+  );
+  const [returns] = await db.query(
+    `SELECT id, order_id, status, reason, created_at FROM return_requests WHERE user_id = ? ORDER BY created_at DESC LIMIT 20`,
+    [userId],
+  ).catch(() => [[]]);
+  const [reviews] = await db.query(
+    `SELECT id, product_id, rating, status, content, created_at FROM product_reviews WHERE user_id = ? ORDER BY created_at DESC LIMIT 20`,
+    [userId],
+  );
+  return {
+    recent_orders: orders,
+    addresses,
+    coupon_stats: { total: Number(couponStats?.total || 0), used: Number(couponStats?.usedCount || 0) },
+    points_records: pointsRecords,
+    cashback_records: cashbackRecords,
+    invite_relation: { parent: inviteRelation || null, direct_invites: directInvites || [] },
+    after_sales: returns || [],
+    review_records: reviews || [],
+  };
 }
 
 async function findPhoneDuplicateByPhones(userId, phones) {
@@ -274,4 +411,7 @@ module.exports = {
   replaceUserTagAssignments,
   updateSubordinateEnabled,
   updateUserPasswordHash,
+  selectUserSummaryMetrics,
+  updateUserStatus,
+  selectUserDetailRelations,
 };

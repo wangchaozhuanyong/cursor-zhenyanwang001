@@ -88,7 +88,7 @@ export default function Points() {
           <button
             onClick={handleSignIn}
             disabled={signingIn || (signInAward ? !signInAward.enabled : false)}
-            className="mx-auto mt-4 flex items-center gap-2 rounded-full bg-gold px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg transition-all active:scale-95 disabled:opacity-60"
+            className="mx-auto mt-4 flex items-center gap-2 rounded-full btn-theme-price px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg transition-all active:scale-95 disabled:opacity-60"
           >
             <CalendarCheck size={16} />
             {signingIn

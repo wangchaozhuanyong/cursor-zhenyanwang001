@@ -82,7 +82,7 @@ export default function Help() {
             </div>
           </div>
           <div className="mt-4 flex gap-3">
-            {whatsappUrl && <button onClick={() => window.open(whatsappUrl, "_blank", "noopener,noreferrer")} className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-[var(--theme-gradient-foreground)] theme-shadow" style={{ background: "var(--theme-gradient)" }}><MessageCircle size={16} /> WhatsApp</button>}
+            {whatsappUrl && <button onClick={() => window.open(whatsappUrl, "_blank", "noopener,noreferrer")} className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-[var(--theme-gradient-foreground)] theme-shadow"><MessageCircle size={16} /> WhatsApp</button>}
             {wechatId && <button onClick={async () => { const [{ toast }, copied] = await Promise.all([import("sonner"), copyToClipboard(wechatId)]); if (copied) toast.success("客服微信号已复制", toastPresetQuickSuccess); else toast.error("复制失败，请手动复制微信号"); }} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[var(--theme-price)] py-3 text-sm font-bold text-[var(--theme-price-foreground)] theme-shadow"><Phone size={16} /> 微信客服</button>}
           </div>
           <div className={`mt-3 flex items-center justify-center gap-1.5 ${THEME_ACCENT_HERO_SUBTLE}`}>
@@ -91,9 +91,9 @@ export default function Help() {
         </div>
 
         <div className="no-scrollbar mt-8 flex gap-2 overflow-x-auto">
-          <button onClick={() => setActiveCategory(null)} className={`flex-shrink-0 rounded-full px-4 py-2 text-xs font-medium ${!activeCategory ? "bg-gold text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>全部</button>
+          <button onClick={() => setActiveCategory(null)} className={`flex-shrink-0 rounded-full px-4 py-2 text-xs font-medium ${!activeCategory ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}>全部</button>
           {categories.map((cat) => (
-            <button key={cat} onClick={() => setActiveCategory(activeCategory === cat ? null : cat)} className={`flex-shrink-0 rounded-full px-4 py-2 text-xs font-medium ${activeCategory === cat ? "bg-gold text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>{cat}</button>
+            <button key={cat} onClick={() => setActiveCategory(activeCategory === cat ? null : cat)} className={`flex-shrink-0 rounded-full px-4 py-2 text-xs font-medium ${activeCategory === cat ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}>{cat}</button>
           ))}
         </div>
 
@@ -102,7 +102,7 @@ export default function Help() {
             <motion.div key={faq.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }} className="overflow-hidden rounded-2xl border border-border bg-card">
               <button onClick={() => setOpenId(openId === faq.id ? null : faq.id)} className="flex w-full items-center justify-between px-4 py-4 text-left">
                 <span className="pr-3 text-sm font-medium text-foreground">{faq.question}</span>
-                {openId === faq.id ? <ChevronUp size={16} className="text-gold" /> : <ChevronDown size={16} className="text-muted-foreground" />}
+                {openId === faq.id ? <ChevronUp size={16} className="text-theme-price" /> : <ChevronDown size={16} className="text-muted-foreground" />}
               </button>
               <AnimatePresence>
                 {openId === faq.id && (

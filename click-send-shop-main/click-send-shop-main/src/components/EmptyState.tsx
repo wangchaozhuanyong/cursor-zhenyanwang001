@@ -19,7 +19,7 @@ export default function EmptyState({ icon: Icon, title, description, action }: E
       {action && (
         <button
           onClick={action.onClick}
-          className="mt-4 rounded-full bg-gold px-6 py-2 text-sm font-semibold text-primary-foreground"
+          className="mt-4 rounded-full btn-theme-price px-6 py-2 text-sm font-semibold text-primary-foreground"
         >
           {action.label}
         </button>

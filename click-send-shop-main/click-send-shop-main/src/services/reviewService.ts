@@ -1,7 +1,12 @@
 import * as reviewApi from "@/api/modules/review";
 import type { PaginatedData } from "@/types/common";
-import type { Review, FeaturedReview } from "@/types/review";
+import type { Review, FeaturedReview, ProductReviewStats } from "@/types/review";
 import * as uploadService from "@/services/uploadService";
+
+export async function fetchProductReviewStats(productId: string): Promise<ProductReviewStats> {
+  const res = await reviewApi.getProductReviewStats(productId);
+  return res.data;
+}
 
 export async function fetchProductReviews(productId: string, page = 1) {
   const res = await reviewApi.getProductReviews(productId, page);
@@ -14,7 +19,8 @@ export async function fetchFeaturedReviews(limit = 6): Promise<FeaturedReview[]>
 }
 
 export async function submitReview(params: {
-  product_id: string;
+  product_id?: string;
+  order_item_id?: string;
   rating: number;
   content: string;
   images?: string[];

@@ -19,3 +19,8 @@ export async function createReturn(params: CreateReturnParams): Promise<ReturnRe
   });
   return res.data;
 }
+
+export async function fetchReturnById(id: string): Promise<ReturnRequest> {
+  const res = await returnApi.getReturnById(id);
+  return res.data;
+}

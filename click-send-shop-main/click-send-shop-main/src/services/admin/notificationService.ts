@@ -16,6 +16,11 @@ export async function fetchNotifications(params?: NotificationQueryParams): Prom
   return unwrapPaginated<Notification>(res.data);
 }
 
+export async function fetchNotificationSummary() {
+  const res = await notificationApi.getNotificationSummary();
+  return res.data;
+}
+
 export async function sendNotification(data: notificationApi.NotificationPayload) {
   const res = await notificationApi.sendNotification(data);
   return res.data;
@@ -50,4 +55,16 @@ export async function saveNotificationTriggerSettings(rules: NotificationTrigger
 
 export async function deleteNotification(id: string) {
   await notificationApi.deleteNotification(id);
+}
+
+export async function deleteDraftNotification(id: string) {
+  await notificationApi.deleteDraftNotification(id);
+}
+
+export async function cancelScheduledNotification(id: string) {
+  await notificationApi.cancelScheduledNotification(id);
+}
+
+export async function revokeSentNotification(id: string) {
+  await notificationApi.revokeSentNotification(id);
 }

@@ -525,7 +525,7 @@ export default function Login() {
                 type="button"
                 onClick={handleSendOtp}
                 disabled={otpSending || otpCooldown > 0}
-                className="w-full rounded-2xl border border-gold/40 bg-gold/10 py-3 text-xs font-semibold text-gold disabled:opacity-50"
+                className="w-full rounded-2xl border border-gold/40 bg-gold/10 py-3 text-xs font-semibold text-theme-price disabled:opacity-50"
               >
                 {otpCooldown > 0 ? `${otpCooldown}s 后可重发` : otpSending ? "发送中…" : "发送验证码"}
               </button>
@@ -546,7 +546,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowReset(true)}
-                className="text-xs text-gold font-medium active:opacity-70"
+                className="text-xs text-theme-price font-medium active:opacity-70"
               >
                 忘记密码？
               </button>
@@ -557,7 +557,7 @@ export default function Login() {
             type="button"
             onClick={handleSubmit}
             disabled={loading}
-            className="w-full rounded-2xl bg-gold py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98] disabled:opacity-60"
+            className="w-full rounded-2xl btn-theme-price py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98] disabled:opacity-60"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -593,7 +593,7 @@ export default function Login() {
               type="button"
               onClick={handleRequestReset}
               disabled={resetLoading}
-              className="w-full rounded-xl border border-gold/30 bg-gold/10 py-2.5 text-xs font-semibold text-gold disabled:opacity-60"
+              className="w-full rounded-xl border border-gold/30 bg-gold/10 py-2.5 text-xs font-semibold text-theme-price disabled:opacity-60"
             >
               {resetLoading ? "处理中..." : "发送重置令牌"}
             </button>
@@ -623,7 +623,7 @@ export default function Login() {
                 type="button"
                 onClick={handleConfirmReset}
                 disabled={resetLoading}
-                className="w-full rounded-xl bg-gold py-2.5 text-xs font-bold text-primary-foreground disabled:opacity-60"
+                className="w-full rounded-xl btn-theme-price py-2.5 text-xs font-bold text-primary-foreground disabled:opacity-60"
               >
                 确认重置密码
               </button>
@@ -638,9 +638,9 @@ export default function Login() {
         {/* ══════════════ Agreement ══════════════ */}
         <p className="pb-8 pb-safe text-center text-[11px] leading-relaxed text-muted-foreground">
           登录即代表您同意
-          <button onClick={() => navigate("/about")} className="text-gold mx-0.5">《用户协议》</button>
+          <button onClick={() => navigate("/about")} className="text-theme-price mx-0.5">《用户协议》</button>
           和
-          <button onClick={() => navigate("/help")} className="text-gold mx-0.5">《隐私政策》</button>
+          <button onClick={() => navigate("/help")} className="text-theme-price mx-0.5">《隐私政策》</button>
         </p>
       </main>
     </div>

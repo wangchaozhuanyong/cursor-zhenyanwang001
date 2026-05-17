@@ -124,7 +124,7 @@ export default function AdminShipping() {
           <div key={t.id} className={`rounded-2xl border bg-card p-5 transition-all ${t.enabled ? "border-border" : "border-border opacity-60"}`}>
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
-                <Truck size={18} className="text-gold" />
+                <Truck size={18} className="text-theme-price" />
                 <h3 className="font-bold text-foreground">{t.name}</h3>
               </div>
               <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${t.enabled ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}>

@@ -1,6 +1,11 @@
 const { generateId } = require('../../utils/helpers');
 const { BusinessError } = require('../../errors/BusinessError');
 const { writeAuditLog } = require('../../utils/auditLog');
+const {
+  PUBLISHABLE_ACTIVITY_TYPES,
+  WIP_ACTIVITY_TYPES,
+  normalizeDisplayPositions,
+} = require('../../constants/marketingDisplayPositions');
 const repo = require('./adminActivity.repository');
 
 function parseJsonField(value, fallback) {
@@ -58,6 +63,28 @@ function assertPublishRules(payload) {
   if (!payload.start_at || !payload.end_at) throw new BusinessError(400, '开始时间和结束时间必填');
   if (new Date(payload.end_at).getTime() <= new Date(payload.start_at).getTime()) {
     throw new BusinessError(400, '结束时间必须晚于开始时间');
+  }
+  if (WIP_ACTIVITY_TYPES.includes(payload.type)) {
+    throw new BusinessError(400, '该活动类型尚在开发中，暂不可发布');
+  }
+  if (!PUBLISHABLE_ACTIVITY_TYPES.includes(payload.type)) {
+    throw new BusinessError(400, '不支持的活动类型');
+  }
+  const positions = normalizeDisplayPositions(payload.display_positions);
+  if (!positions.length) throw new BusinessError(400, '请至少选择一个展示位置');
+  payload.display_positions = positions;
+
+  if (payload.type === 'coupon_activity') {
+    const couponIds = payload?.activity_config?.coupon_ids;
+    if (!Array.isArray(couponIds) || !couponIds.length) {
+      throw new BusinessError(400, '优惠券活动必须关联 coupons 表中的优惠券');
+    }
+  }
+  if (payload.type === 'new_user_gift') {
+    const pack = payload?.activity_config?.coupon_ids;
+    if (!Array.isArray(pack) || !pack.length) {
+      throw new BusinessError(400, '新人礼包必须关联至少一张优惠券');
+    }
   }
   if (payload.type === 'flash_sale') {
     if (!payload.items.length) throw new BusinessError(400, '秒杀活动必须选择商品');
@@ -136,7 +163,9 @@ function normalizePayload(body, partial = false) {
   if (body.publish_at !== undefined || !partial) out.publish_at = body.publish_at ? String(body.publish_at).replace('T', ' ') : null;
   if (body.internal_note !== undefined || !partial) out.internal_note = String(body.internal_note || '').trim();
   if (body.activity_config !== undefined || !partial) out.activity_config = body.activity_config || null;
-  if (body.display_positions !== undefined || !partial) out.display_positions = Array.isArray(body.display_positions) ? body.display_positions : [];
+  if (body.display_positions !== undefined || !partial) {
+    out.display_positions = normalizeDisplayPositions(body.display_positions);
+  }
   if (body.status !== undefined || !partial) out.status = String(body.status || 'draft');
   return out;
 }
@@ -224,9 +253,14 @@ async function createActivity(body, adminUserId, req) {
   const { scopeType, scopes } = normalizeScopes(body);
   const targetStatus = body.status === 'active' || body.status === 'scheduled' ? body.status : 'draft';
   const finalPayload = { ...payload, items, scope_type: scopeType, status: targetStatus };
+  if (WIP_ACTIVITY_TYPES.includes(finalPayload.type) && targetStatus !== 'draft') {
+    throw new BusinessError(400, '该活动类型尚在开发中，仅可保存草稿');
+  }
   if (targetStatus !== 'draft') {
     assertPublishRules(finalPayload);
-    await validateProductsForFlashSale(items, payload.start_at, payload.end_at);
+    if (finalPayload.type === 'flash_sale') {
+      await validateProductsForFlashSale(items, payload.start_at, payload.end_at);
+    }
   }
   const id = generateId();
   await repo.insertActivity({ ...finalPayload, id, adminUserId });
@@ -260,6 +294,9 @@ async function updateActivity(id, body, adminUserId, req) {
     items: items ?? await repo.selectActivityItems(id),
     scope_type: scopesNormalized?.scopeType || existing.scope_type,
   };
+  if (WIP_ACTIVITY_TYPES.includes(merged.type) && payload.status && payload.status !== 'draft') {
+    throw new BusinessError(400, '该活动类型尚在开发中，仅可保存草稿');
+  }
   if (payload.status && payload.status !== 'draft') {
     assertPublishRules(merged);
     if (merged.type === 'flash_sale') {

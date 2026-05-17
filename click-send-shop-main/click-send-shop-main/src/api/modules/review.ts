@@ -1,7 +1,11 @@
 ﻿import { get, post } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
-import type { Review, FeaturedReview } from "@/types/review";
-export type { Review, FeaturedReview };
+import type { Review, FeaturedReview, ProductReviewStats } from "@/types/review";
+export type { Review, FeaturedReview, ProductReviewStats };
+
+export function getProductReviewStats(productId: string) {
+  return get<ProductReviewStats>(`/reviews/product/${productId}/stats`);
+}
 
 export function getProductReviews(productId: string, page = 1) {
   return get<PaginatedData<Review>>(`/reviews/product/${productId}`, {
@@ -14,7 +18,8 @@ export function getFeaturedReviews(limit = 6) {
 }
 
 export function createReview(params: {
-  product_id: string;
+  product_id?: string;
+  order_item_id?: string;
   rating: number;
   content: string;
   images?: string[];
@@ -25,4 +30,3 @@ export function createReview(params: {
 export function toggleReviewLike(reviewId: string) {
   return post<{ liked: boolean; likes_count: number }>(`/reviews/${reviewId}/like`);
 }
-

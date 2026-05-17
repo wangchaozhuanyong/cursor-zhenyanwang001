@@ -3,5 +3,6 @@ const svc = require('../adminInvite.service');
 
 exports.list = asyncRoute(async (req, res) => {
   const r = await svc.listInvites(req.query);
-  res.paginate(r.list, r.total, r.page, r.pageSize);
+  const totalPages = r.total === 0 ? 0 : Math.ceil(r.total / r.pageSize);
+  res.success({ list: r.list, total: r.total, page: r.page, pageSize: r.pageSize, totalPages, summary: r.summary });
 });

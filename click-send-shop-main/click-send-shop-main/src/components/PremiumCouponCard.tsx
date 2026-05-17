@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import StoreButton from "@/components/ui/StoreButton";
 import {
+  THEME_COUPON_ICON_ON_DEAL_CLASS,
   THEME_COUPON_ICON_ON_LIGHT_CLASS,
   THEME_COUPON_ICON_ON_SURFACE_CLASS,
 } from "@/utils/themeVisuals";
@@ -119,9 +120,21 @@ export default function PremiumCouponCard({
   };
 
   const lightCouponBg = couponStyle === "premium" || couponStyle === "deal";
-  const couponTitleClass = lightCouponBg ? "text-[#1a1612]" : "text-[var(--theme-text-on-surface)]";
-  const couponMutedClass = lightCouponBg ? "text-[#5c5348]" : "text-[var(--theme-muted)]";
-  const couponIconClass = lightCouponBg ? THEME_COUPON_ICON_ON_LIGHT_CLASS : THEME_COUPON_ICON_ON_SURFACE_CLASS;
+  const couponTitleClass = lightCouponBg
+    ? couponStyle === "deal"
+      ? "text-[var(--theme-coupon-card-deal-fg)]"
+      : "text-[var(--theme-coupon-card-premium-fg)]"
+    : "text-[var(--theme-text-on-surface)]";
+  const couponMutedClass = lightCouponBg
+    ? couponStyle === "deal"
+      ? "text-[var(--theme-coupon-card-deal-muted)]"
+      : "text-[var(--theme-coupon-card-premium-muted)]"
+    : "text-[var(--theme-text-muted-on-surface)]";
+  const couponIconClass = lightCouponBg
+    ? couponStyle === "deal"
+      ? THEME_COUPON_ICON_ON_DEAL_CLASS
+      : THEME_COUPON_ICON_ON_LIGHT_CLASS
+    : THEME_COUPON_ICON_ON_SURFACE_CLASS;
 
   const dense = compact || homeCompact;
   const amountSize = homeCompact ? "text-2xl leading-none sm:text-3xl" : compact ? "text-2xl" : "text-3xl";

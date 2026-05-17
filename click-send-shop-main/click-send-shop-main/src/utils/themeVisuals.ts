@@ -13,9 +13,25 @@ export const THEME_ACCENT_ICON_SHELL_CLASS =
 export const THEME_ACCENT_CHIP_CLASS =
   "rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-surface))] px-2 py-0.5 text-[10px] font-semibold text-[var(--theme-primary)]";
 
-/** 优惠券等浅色渐变底上的行内图标 */
+/** 价格色强调文字（等同 text-theme-price，语义更清晰） */
+export const THEME_TEXT_PRICE = "text-theme-price";
+
+/** 价格色实心按钮 */
+export const THEME_BTN_PRICE = "btn-theme-price";
+
+/** 品牌渐变实心按钮 */
+export const THEME_BTN_GRADIENT = "btn-theme-gradient";
+
+/** 选中 Chip / Tab（价格色底） */
+export const THEME_CHIP_PRICE_ACTIVE = "btn-theme-price";
+
+/** 优惠券 premium 浅色底上的行内图标 */
 export const THEME_COUPON_ICON_ON_LIGHT_CLASS =
-  "text-[color-mix(in_srgb,var(--theme-secondary)_75%,#1a1612)]";
+  "text-[color-mix(in_srgb,var(--theme-secondary)_75%,var(--theme-coupon-card-premium-fg))]";
+
+/** 优惠券 deal 浅色底上的行内图标 */
+export const THEME_COUPON_ICON_ON_DEAL_CLASS =
+  "text-[color-mix(in_srgb,var(--theme-danger)_70%,var(--theme-coupon-card-deal-fg))]";
 
 /** 深色/渐变券面上的行内图标 */
 export const THEME_COUPON_ICON_ON_SURFACE_CLASS =
@@ -23,13 +39,13 @@ export const THEME_COUPON_ICON_ON_SURFACE_CLASS =
 
 /**
  * 优惠券/积分/返现等页顶部强调卡片。
- * 背景/文字由 ThemeRuntimeProvider → generateThemePalette 写入的
- * --theme-coupon-accent-*（按渐变中位色算对比度），换肤自动适配。
+ * 背景/文字由 generateThemePalette 写入 --theme-coupon-accent-*。
  */
 export const THEME_ACCENT_HERO_SHELL = "theme-accent-hero bg-theme-coupon-accent";
 
-/** 品牌主渐变 Hero（与后台「主色+辅色」渐变一致） */
+/** 品牌主渐变 Hero */
 export const THEME_GRADIENT_HERO_SHELL = "theme-accent-hero bg-theme-gradient";
+
 export const THEME_ACCENT_HERO_LABEL =
   "theme-hero-accent-label text-xs font-medium uppercase tracking-wider";
 export const THEME_ACCENT_HERO_VALUE = "theme-hero-accent-value font-bold";
@@ -39,18 +55,17 @@ export const THEME_ACCENT_HERO_ICON_WRAP =
   "theme-hero-accent-icon-wrap flex items-center justify-center rounded-2xl backdrop-blur-sm";
 export const THEME_ACCENT_HERO_ICON = "theme-hero-accent-icon";
 
-export function getMemberCardClassName(style: ThemeConfig["memberCardStyle"]): string {
-  switch (style) {
-    case "blackGold":
-      return "bg-[linear-gradient(110deg,#0d0b08,#1e1812_45%,#2b2016)] text-[#f7e6be]";
-    case "gold":
-      return "bg-[linear-gradient(110deg,#f4e7c8,#dec08b)] text-[#2f2415]";
-    case "fresh":
-      return "bg-[linear-gradient(110deg,#edf9f4,#d8efe4)] text-[#173429]";
-    case "light":
-    default:
-      return "bg-[linear-gradient(110deg,#191714,#2a241d)] text-[#f2deab]";
-  }
+/** 个人中心会员卡（随 memberCardStyle + 主题色自动算对比度） */
+export const THEME_MEMBER_CARD_SHELL = "bg-theme-member-card";
+export const THEME_MEMBER_CARD_MUTED = "theme-member-card-muted";
+export const THEME_INVITE_PROMO_SHELL = "bg-theme-invite-promo border";
+export const THEME_INVITE_PROMO_MUTED = "theme-invite-promo-muted";
+export const THEME_INVITE_PROMO_CTA = "btn-theme-gradient text-xs font-semibold shadow-md";
+export const THEME_GIFT_BADGE_SHELL = "bg-theme-gift-badge ring-1";
+
+/** @deprecated 使用 THEME_MEMBER_CARD_SHELL */
+export function getMemberCardClassName(_style: ThemeConfig["memberCardStyle"]): string {
+  return THEME_MEMBER_CARD_SHELL;
 }
 
 export function getCategoryIconShellClassName(style: ThemeConfig["categoryIconStyle"]): string {

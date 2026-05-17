@@ -118,6 +118,31 @@ async function insertUserCoupon(id, userId, couponId) {
   );
 }
 
+async function countUserClaimsForCoupon(userId, couponId) {
+  const [[row]] = await db.query(
+    'SELECT COUNT(*) AS cnt FROM user_coupons WHERE BINARY user_id = BINARY ? AND BINARY coupon_id = BINARY ?',
+    [userId, couponId],
+  );
+  return Number(row?.cnt || 0);
+}
+
+async function countTotalClaimsForCoupon(couponId) {
+  const [[row]] = await db.query(
+    'SELECT COUNT(*) AS cnt FROM user_coupons WHERE BINARY coupon_id = BINARY ?',
+    [couponId],
+  );
+  return Number(row?.cnt || 0);
+}
+
+async function selectUserOrderCount(userId) {
+  const [[row]] = await db.query(
+    `SELECT COUNT(*) AS cnt FROM orders
+     WHERE user_id = ? AND deleted_at IS NULL AND status NOT IN ('cancelled')`,
+    [userId],
+  );
+  return Number(row?.cnt || 0);
+}
+
 module.exports = {
   countUserCoupons,
   selectUserCouponsPage,
@@ -126,4 +151,7 @@ module.exports = {
   selectCouponByCodeOrId,
   findUserCoupon,
   insertUserCoupon,
+  countUserClaimsForCoupon,
+  countTotalClaimsForCoupon,
+  selectUserOrderCount,
 };

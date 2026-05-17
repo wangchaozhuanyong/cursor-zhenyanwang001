@@ -17,6 +17,7 @@ import { CheckoutSubmitBar } from "./components/CheckoutSubmitBar";
 import { useCheckoutPage } from "./hooks/useCheckoutPage";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { submitCtaLabel } from "./utils/checkoutText";
+import MarketingPositionNotices from "@/modules/public/components/marketing/MarketingPositionNotices";
 
 export default function Checkout() {
   useDocumentTitle("结算");
@@ -77,6 +78,7 @@ export default function Checkout() {
       <main className="mx-auto w-full max-w-screen-xl px-4 py-4 md:px-6 md:py-6">
         <div className="md:grid md:grid-cols-[1fr_380px] md:items-start md:gap-8">
           <div className="space-y-4">
+            <MarketingPositionNotices position="checkout_notice" />
             <CheckoutAddressCard
               name={checkout.name}
               phone={checkout.phone}
@@ -126,6 +128,7 @@ export default function Checkout() {
               <CheckoutPriceSummary
                 rawTotal={checkout.rawTotal}
                 discountAmount={checkout.discountAmount}
+                discountLines={checkout.discountLines}
                 shippingFee={checkout.shippingFee}
                 totalPoints={checkout.totalPointsValue}
                 finalTotal={checkout.finalTotal}
@@ -142,6 +145,7 @@ export default function Checkout() {
               <CheckoutPriceSummary
                 rawTotal={checkout.rawTotal}
                 discountAmount={checkout.discountAmount}
+                discountLines={checkout.discountLines}
                 shippingFee={checkout.shippingFee}
                 totalPoints={checkout.totalPointsValue}
                 finalTotal={checkout.finalTotal}
@@ -154,7 +158,7 @@ export default function Checkout() {
                 onClick={checkout.handleSubmit}
                 disabled={checkout.submitting}
                 variant="solid"
-                className="mt-5 w-full rounded-full py-3.5 text-sm font-bold text-white theme-shadow !min-h-0 [background:var(--theme-gradient)]"
+                className="mt-5 w-full rounded-full py-3.5 text-sm font-bold btn-theme-gradient theme-shadow !min-h-0"
                 loadingText={submitCtaLabel(checkout.paymentMethod, true)}
               >
                 {submitCtaLabel(checkout.paymentMethod, false)}

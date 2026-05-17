@@ -94,7 +94,7 @@ export default function AdminAccounts() {
           <SearchBar placeholder="搜索管理员手机号/昵称..." value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
         </div>
         <PermissionGate permission="role.manage">
-          <button type="button" onClick={() => setShowCreate(true)} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded px-4 py-2.5 text-sm font-semibold text-white active:opacity-90" style={{ background: "var(--theme-gradient)" }}>
+          <button type="button" onClick={() => setShowCreate(true)} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded px-4 py-2.5 text-sm font-semibold btn-theme-gradient active:opacity-90">
             <Plus size={16} /><Tx> 创建管理员
           </Tx></button>
         </PermissionGate>
@@ -147,7 +147,7 @@ export default function AdminAccounts() {
           return (
             <div key={a.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
               <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--theme-gradient)" }}>
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold btn-theme-gradient">
                   {(a.nickname || a.phone || "?")[0]}
                 </div>
                 <div className="min-w-0 flex-1 space-y-1.5">
@@ -212,7 +212,7 @@ export default function AdminAccounts() {
               <>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: "var(--theme-gradient)" }}>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold btn-theme-gradient">
                       {(a.nickname || a.phone || "?")[0]}
                     </div>
                     <span className="font-medium text-foreground">{a.nickname || "—"}</span>
@@ -261,7 +261,7 @@ export default function AdminAccounts() {
             <input placeholder="昵称（可选）" value={createForm.nickname} onChange={(e) => setCreateForm({ ...createForm, nickname: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => setShowCreate(false)} className="theme-rounded border border-[var(--theme-border)] px-4 py-2.5 text-sm hover:bg-[var(--theme-bg)]"><Tx>取消</Tx></button>
-              <button type="button" onClick={handleCreate} className="theme-rounded px-4 py-2.5 text-sm font-semibold text-white" style={{ background: "var(--theme-gradient)" }}><Tx>创建</Tx></button>
+              <button type="button" onClick={handleCreate} className="theme-rounded px-4 py-2.5 text-sm font-semibold btn-theme-gradient"><Tx>创建</Tx></button>
             </div>
           </div>
         </div>
@@ -291,7 +291,7 @@ export default function AdminAccounts() {
             <p className="text-sm text-muted-foreground">将禁用 {confirmDelete.nickname || confirmDelete.phone} 的管理员权限。</p>
             <div className="flex justify-center gap-3">
               <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
-              <button type="button" onClick={handleDelete} className="rounded-xl bg-destructive px-4 py-2.5 text-sm font-semibold text-white"><Tx>确认删除</Tx></button>
+              <button type="button" onClick={handleDelete} className="rounded-xl bg-destructive px-4 py-2.5 text-sm font-semibold btn-theme-gradient"><Tx>确认删除</Tx></button>
             </div>
           </div>
         </div>

@@ -230,7 +230,7 @@ export default function AdminInventory() {
                   <div className="flex justify-end gap-2">
                     <button type="button" onClick={() => openAdjust(s, "in")} className="rounded-lg bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-600"><Tx>入库</Tx></button>
                     <button type="button" onClick={() => openAdjust(s, "out")} className="rounded-lg bg-orange-500/10 px-3 py-1.5 text-xs text-orange-600"><Tx>出库</Tx></button>
-                    <button type="button" onClick={() => openAdjust(s, "adjust")} className="rounded-lg bg-gold/10 px-3 py-1.5 text-xs text-gold"><Tx>盘点</Tx></button>
+                    <button type="button" onClick={() => openAdjust(s, "adjust")} className="rounded-lg bg-gold/10 px-3 py-1.5 text-xs text-theme-price"><Tx>盘点</Tx></button>
                   </div>
                 </td>
               </>

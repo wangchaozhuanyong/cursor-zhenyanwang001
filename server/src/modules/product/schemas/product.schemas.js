@@ -47,11 +47,13 @@ const productReviewProductParamSchema = z.object({
 const reviewIdParamSchema = z.object({ id: idParam });
 
 const createReviewBodySchema = z.object({
-  product_id: idParam,
-  order_id: idParam.optional(),
+  product_id: idParam.optional(),
+  order_item_id: idParam.optional(),
   rating: z.coerce.number().int().min(1).max(5),
   content: z.string().trim().min(1, '请填写评价内容').max(1000),
   images: z.array(z.string().trim().max(512)).max(10).optional(),
+}).refine((d) => d.product_id || d.order_item_id, {
+  message: '请指定评价商品或订单商品',
 });
 
 const categoryIdParamSchema = z.object({ id: idParam });

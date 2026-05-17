@@ -92,8 +92,8 @@ export default function Orders() {
             <p className="text-sm text-destructive mb-3">{error}</p>
             <button
               onClick={() => loadOrders({ page: 1 })}
-              className="rounded-full px-6 py-2.5 text-sm font-semibold text-white"
-              style={{ background: "var(--theme-gradient)" }}
+              className="rounded-full px-6 py-2.5 text-sm font-semibold btn-theme-gradient"
+             
             >
               重试
             </button>
@@ -108,8 +108,8 @@ export default function Orders() {
             </p>
             <button
               onClick={() => navigate("/")}
-              className="mt-4 rounded-full px-6 py-2.5 text-sm font-semibold text-white"
-              style={{ background: "var(--theme-gradient)" }}
+              className="mt-4 rounded-full px-6 py-2.5 text-sm font-semibold btn-theme-gradient"
+             
             >
               去逛逛
             </button>

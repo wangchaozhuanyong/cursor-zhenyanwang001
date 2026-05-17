@@ -82,7 +82,7 @@ export default function PaymentMethodPicker({
               <opt.icon
                 size={22}
                 className={`mt-0.5 flex-shrink-0 ${
-                  isActive ? "text-gold" : "text-muted-foreground"
+                  isActive ? "text-theme-price" : "text-muted-foreground"
                 }`}
               />
               <div className="flex-1 min-w-0">
@@ -91,7 +91,7 @@ export default function PaymentMethodPicker({
                     {opt.title}
                   </p>
                   {opt.recommended && !isDisabled && (
-                    <span className="rounded-full bg-gold/10 px-2 py-0.5 text-[10px] font-bold text-gold">
+                    <span className="rounded-full bg-gold/10 px-2 py-0.5 text-[10px] font-bold text-theme-price">
                       推荐
                     </span>
                   )}
@@ -126,7 +126,7 @@ export default function PaymentMethodPicker({
                             : "border-border bg-background text-muted-foreground"
                         }`}
                       >
-                        <Icon size={15} className={selected ? "text-gold" : "text-muted-foreground"} />
+                        <Icon size={15} className={selected ? "text-theme-price" : "text-muted-foreground"} />
                         <span className="min-w-0 flex-1 truncate font-semibold">{channel.name}</span>
                       </button>
                     );

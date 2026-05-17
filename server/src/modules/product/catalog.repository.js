@@ -140,6 +140,33 @@ async function selectActiveProductsFallback(orderBySql, limit) {
   );
 }
 
+async function selectActiveProductsRecent(days, limit, onlyInStock = false) {
+  const recentDays = Math.max(1, Number(days) || 14);
+  const stockWhere = onlyInStock ? ' AND stock > 0' : '';
+  return publicRows(
+    `products:recent:${recentDays}:${onlyInStock ? 'instock' : 'all'}`,
+    `SELECT * FROM products
+     WHERE ${ACTIVE_PRODUCT_WHERE}
+       AND created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+       ${stockWhere}
+     ORDER BY created_at DESC, sort_order ASC, id DESC
+     LIMIT ?`,
+    [recentDays, limit],
+  );
+}
+
+async function selectSiteSettingValues(keys) {
+  const validKeys = Array.isArray(keys) ? keys.filter(Boolean) : [];
+  if (validKeys.length === 0) return {};
+  const [rows] = await db.query(
+    `SELECT setting_key, setting_value FROM site_settings WHERE setting_key IN (${validKeys.map(() => '?').join(',')})`,
+    validKeys,
+  );
+  const out = {};
+  for (const row of rows) out[row.setting_key] = row.setting_value;
+  return out;
+}
+
 async function selectPublicProductTags(limit = 12) {
   const lim = Math.min(50, Math.max(1, Number(limit) || 12));
   const [rows] = await db.query(
@@ -203,6 +230,8 @@ module.exports = {
   selectHomeProductBlocks,
   selectActiveProductsByFlag,
   selectActiveProductsFallback,
+  selectActiveProductsRecent,
+  selectSiteSettingValues,
   selectPublicProductTags,
   selectProductCategoryId,
   selectRelatedByCategory,

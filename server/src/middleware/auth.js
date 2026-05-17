@@ -1,4 +1,4 @@
-const { verifyToken } = require('../utils/helpers');
+﻿const { verifyToken } = require('../utils/helpers');
 const authRepo = require('../modules/auth/auth.repository');
 const { getAccessTokenFromRequest } = require('../utils/authCookies');
 
@@ -15,6 +15,9 @@ module.exports = async function authMiddleware(req, res, next) {
     const user = await authRepo.selectIdAndRoleByUserId(payload.userId);
     if (!user || user.role === 'disabled') {
       return res.fail(401, '账号不存在或已注销');
+    }
+    if (user.account_status === 'disabled' || user.account_status === 'blacklisted') {
+      return res.fail(403, '账号已被限制使用');
     }
     req.user = { id: payload.userId };
     next();

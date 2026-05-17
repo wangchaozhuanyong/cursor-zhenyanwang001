@@ -46,6 +46,17 @@ async function countOrdersAdmin(where, params) {
   return total;
 }
 
+async function selectOrderStatusSummary(where, params) {
+  const [rows] = await db.query(
+    `SELECT o.status, COUNT(*) AS count
+     FROM orders o
+     ${where}
+     GROUP BY o.status`,
+    params,
+  );
+  return rows;
+}
+
 async function selectOrdersAdminPage(where, params, pageSize, offset) {
   const [orders] = await db.query(
     `SELECT o.* FROM orders o ${where} ORDER BY o.created_at DESC LIMIT ? OFFSET ?`,
@@ -312,6 +323,7 @@ module.exports = {
   selectOrderItemsWithProduct,
   selectOrderItemsBatch,
   countOrdersAdmin,
+  selectOrderStatusSummary,
   selectOrdersAdminPage,
   selectOrdersForExport,
   selectOrderById,
@@ -334,4 +346,34 @@ module.exports = {
   incrementUserPoints,
   insertPointsRecord,
   insertOrderNotification,
+  countPendingShipmentOrders,
+  selectPendingShipmentOrdersPage,
+  selectOrdersByIds,
 };
+
+
+async function countPendingShipmentOrders() {
+  const [[{ total }]] = await db.query(
+    'SELECT COUNT(*) AS total FROM orders WHERE status = ? AND (payment_status = ? OR payment_status = ?)',
+    [ORDER_STATUS.PAID, 'paid', 'partially_refunded'],
+  );
+  return total;
+}
+
+async function selectPendingShipmentOrdersPage(pageSize, offset) {
+  const [rows] = await db.query(
+    'SELECT * FROM orders WHERE status = ? AND (payment_status = ? OR payment_status = ?) ORDER BY created_at DESC LIMIT ? OFFSET ?',
+    [ORDER_STATUS.PAID, 'paid', 'partially_refunded', pageSize, offset],
+  );
+  return rows;
+}
+
+async function selectOrdersByIds(orderIds = []) {
+  if (!orderIds.length) return [];
+  const placeholders = orderIds.map(() => '?').join(',');
+  const [rows] = await db.query(
+    'SELECT * FROM orders WHERE id IN (' + placeholders + ')',
+    orderIds,
+  );
+  return rows;
+}

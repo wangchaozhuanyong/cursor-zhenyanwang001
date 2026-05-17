@@ -37,8 +37,8 @@ export default function Dashboard() {
         <button
           type="button"
           onClick={() => loadStats()}
-          className="rounded-full px-5 py-2 text-sm font-semibold text-white"
-          style={{ background: "var(--theme-gradient)" }}
+          className="rounded-full px-5 py-2 text-sm font-semibold btn-theme-gradient"
+         
         ><Tx>
           重试
         </Tx></button>

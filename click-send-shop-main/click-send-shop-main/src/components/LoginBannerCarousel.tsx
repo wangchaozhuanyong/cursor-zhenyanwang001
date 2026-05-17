@@ -84,7 +84,7 @@ export default function LoginBannerCarousel({ banners, paused = false }: LoginBa
           {/* Title */}
           {banners[current].title && (
             <div className="absolute bottom-3 left-4 right-12">
-              <p className="text-sm font-semibold text-white drop-shadow-md">{banners[current].title}</p>
+              <p className="text-sm font-semibold btn-theme-gradient drop-shadow-md">{banners[current].title}</p>
             </div>
           )}
         </motion.div>

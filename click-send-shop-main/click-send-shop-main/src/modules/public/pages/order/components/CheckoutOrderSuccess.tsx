@@ -5,6 +5,7 @@ import { getCartLinePrice } from "@/stores/useCartStore";
 import type { Order } from "@/types/order";
 import { ORDER_STATUS } from "@/constants/statusDictionary";
 import { OrderSstLines } from "@/components/OrderSstLines";
+import { OrderDiscountLines } from "./OrderDiscountLines";
 
 /* ----- Order Success Page ----- */
 export function CheckoutOrderSuccess({
@@ -95,7 +96,7 @@ export function CheckoutOrderSuccess({
   const statusBadge = isPaid ? "已支付" : isPending ? "待支付" : "处理中";
   const primaryActionClass = isPaid
     ? "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
-    : "bg-gold text-primary-foreground shadow-lg shadow-gold/20";
+    : "btn-theme-price shadow-lg shadow-gold/20";
 
   return (
     <div className="min-h-screen bg-background">
@@ -117,7 +118,7 @@ export function CheckoutOrderSuccess({
             transition={{ type: "spring", bounce: 0.5, delay: 0.1 }}
             className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-gold-light"
           >
-            <CheckCircle2 size={40} className="text-gold" />
+            <CheckCircle2 size={40} className="text-theme-price" />
           </motion.div>
           <h2 className="font-display text-2xl font-bold text-foreground">{mainHeading}</h2>
           <div className="mt-3">
@@ -211,7 +212,7 @@ export function CheckoutOrderSuccess({
                     type="button"
                     onClick={onWhatsApp}
                     className="flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-[var(--theme-gradient-foreground)] theme-shadow"
-                    style={{ background: "var(--theme-gradient)" }}
+                   
                   >
                     <Phone size={16} /> 联系客服下单
                   </button>
@@ -272,7 +273,7 @@ export function CheckoutOrderSuccess({
                 type="button"
                 onClick={onWhatsApp}
                 className="flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold text-[var(--theme-gradient-foreground)] theme-shadow transition-all active:scale-[0.98]"
-                style={{ background: "var(--theme-gradient)" }}
+               
               >
                 <Phone size={18} /> 发送到 WhatsApp
               </button>
@@ -370,7 +371,7 @@ export function CheckoutOrderSuccess({
                 <p className="text-[13px] font-medium text-foreground truncate">{item.product.name}</p>
                 <p className="text-xs text-muted-foreground">x{item.qty}</p>
               </div>
-              <span className="text-sm font-bold text-gold flex-shrink-0">RM {getCartLinePrice(item)}</span>
+              <span className="text-sm font-bold text-theme-price flex-shrink-0">RM {getCartLinePrice(item)}</span>
             </div>
           ))}
           <div className="mt-4 border-t border-border pt-4 space-y-2">
@@ -380,12 +381,7 @@ export function CheckoutOrderSuccess({
               </span>
               <span className="font-medium text-foreground">RM {order.raw_amount}</span>
             </div>
-            {order.discount_amount > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">优惠券（{order.coupon_title}）</span>
-                <span className="font-medium text-destructive">-RM {order.discount_amount}</span>
-              </div>
-            )}
+            <OrderDiscountLines order={order} />
             <OrderSstLines order={order} />
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">
@@ -397,7 +393,7 @@ export function CheckoutOrderSuccess({
             </div>
             <div className="flex justify-between text-sm border-t border-border pt-2">
               <span className="text-foreground font-medium">应付金额</span>
-              <span className="text-lg font-bold text-gold">RM {order.total_amount}</span>
+              <span className="text-lg font-bold text-theme-price">RM {order.total_amount}</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">获得积分</span>

@@ -8,6 +8,9 @@ import { useCouponStore } from "@/stores/useCouponStore";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import type { UserCoupon } from "@/types/coupon";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
+import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
+import { cn } from "@/lib/utils";
 import {
   THEME_ACCENT_HERO_ICON,
   THEME_ACCENT_HERO_ICON_WRAP,
@@ -16,6 +19,7 @@ import {
   THEME_ACCENT_HERO_SHELL,
   THEME_ACCENT_HERO_SUBTLE,
   THEME_ACCENT_HERO_VALUE,
+  THEME_BTN_PRICE,
 } from "@/utils/themeVisuals";
 
 type DisplayStatus = "available" | "claimed" | "used" | "expired";
@@ -57,6 +61,8 @@ type Tab = "available" | "mine";
 
 export default function Coupons() {
   const goBack = useGoBack();
+  const { themeConfig } = useThemeRuntime();
+  const headerSurface = getStoreHeaderSurfaceClass(themeConfig);
   const { coupons: rawCoupons, loading, error, loadCoupons, claimCoupon } = useCouponStore();
   const [tab, setTab] = useState<Tab>("available");
   const [claimingId, setClaimingId] = useState<string | null>(null);
@@ -88,19 +94,20 @@ export default function Coupons() {
 
   if (loading && rawCoupons.length === 0) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 size={32} className="animate-spin text-gold" />
+      <div className="store-page flex min-h-screen items-center justify-center">
+        <Loader2 size={32} className="animate-spin text-theme-price" />
       </div>
     );
   }
 
   if (error && rawCoupons.length === 0) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
-        <p className="text-sm text-destructive">{error}</p>
+      <div className="store-page flex min-h-screen flex-col items-center justify-center gap-3 px-4">
+        <p className="text-sm text-[var(--theme-danger)]">{error}</p>
         <button
+          type="button"
           onClick={() => loadCoupons()}
-          className="rounded-full bg-gold px-6 py-2.5 text-sm font-bold text-primary-foreground"
+          className={cn("rounded-full px-6 py-2.5 text-sm font-bold", THEME_BTN_PRICE)}
         >
           重试
         </button>
@@ -109,19 +116,27 @@ export default function Coupons() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-6">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
+    <div className="store-page min-h-screen pb-6">
+      <header
+        className={cn(
+          "sticky top-0 z-40 border-b backdrop-blur-md",
+          headerSurface,
+          "bg-[var(--theme-bg)]/92",
+        )}
+      >
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
-          <button onClick={goBack} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
-            <ArrowLeft size={20} className="text-foreground" />
+          <button
+            type="button"
+            onClick={goBack}
+            className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))]"
+          >
+            <ArrowLeft size={20} className="text-[var(--theme-text)]" />
           </button>
-          <h1 className="text-base font-semibold text-foreground">优惠券</h1>
+          <h1 className="text-base font-semibold text-[var(--theme-text)]">优惠券</h1>
         </div>
       </header>
 
       <main className="mx-auto max-w-lg px-4">
-        {/* Hero summary */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -153,41 +168,46 @@ export default function Coupons() {
           </div>
         </motion.div>
 
-        {/* Tabs */}
-        <div className="mt-5 flex rounded-2xl bg-secondary p-1">
+        <div className="mt-5 flex rounded-2xl bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] p-1 ring-1 ring-[var(--theme-border)]">
           {([
             { key: "available" as Tab, label: "领券中心", count: available.length },
             { key: "mine" as Tab, label: "我的券", count: mine.length },
           ]).map((t) => (
             <button
               key={t.key}
+              type="button"
               onClick={() => setTab(t.key)}
-              className={`relative flex-1 rounded-xl py-3 text-sm font-medium transition-all ${
+              className={cn(
+                "relative flex-1 rounded-xl py-3 text-sm font-medium transition-all",
                 tab === t.key
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground"
-              }`}
+                  ? "bg-[var(--theme-surface)] text-[var(--theme-text-on-surface)] shadow-[var(--theme-shadow)]"
+                  : "text-[var(--theme-text-muted)]",
+              )}
             >
               {t.label}
-              {t.count > 0 && (
-                <span className={`ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold ${
-                  tab === t.key ? "bg-gold text-primary-foreground" : "bg-muted-foreground/20 text-muted-foreground"
-                }`}>
+              {t.count > 0 ? (
+                <span
+                  className={cn(
+                    "ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold",
+                    tab === t.key
+                      ? THEME_BTN_PRICE
+                      : "bg-[color-mix(in_srgb,var(--theme-text-muted)_18%,transparent)] text-[var(--theme-text-muted)]",
+                  )}
+                >
                   {t.count}
                 </span>
-              )}
+              ) : null}
             </button>
           ))}
         </div>
 
-        {/* Coupon list */}
         <div className="mt-4 space-y-3">
           <AnimatePresence mode="popLayout">
             {list.length === 0 && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex flex-col items-center py-16 text-muted-foreground"
+                className="flex flex-col items-center py-16 text-[var(--theme-text-muted)]"
               >
                 <Ticket size={48} className="mb-3 opacity-20" />
                 <p className="text-sm">暂无优惠券</p>

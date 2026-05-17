@@ -1,4 +1,14 @@
-export type NotificationType = "system" | "order" | "promotion" | "points" | "reward";
+export type NotificationType =
+  | "system"
+  | "order"
+  | "shipping"
+  | "payment"
+  | "refund"
+  | "after_sale"
+  | "promotion"
+  | "coupon"
+  | "points"
+  | "reward";
 
 export interface Notification {
   id: string;

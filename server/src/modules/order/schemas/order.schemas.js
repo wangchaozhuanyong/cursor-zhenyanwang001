@@ -1,4 +1,4 @@
-const { z } = require('zod');
+﻿const { z } = require('zod');
 
 const idParam = z.string().trim().min(1);
 
@@ -31,7 +31,7 @@ const addressObjectSchema = z.object({
 const createOrderBodySchema = z.object({
   items: z.array(orderItemSchema).min(1, '订单商品不能为空'),
   contact_name: z.string().trim().min(1, '联系人姓名不能为空').max(64),
-  contact_phone: z.string().trim().min(6, '联系人电话不正确').max(20),
+  contact_phone: z.string().trim().min(6, '鑱旂郴浜虹數璇濅笉姝ｇ‘').max(20),
   address: z.union([z.string().trim().max(512), addressObjectSchema]).optional(),
   note: z.string().trim().max(512).optional(),
   coupon_id: idParam.optional(),
@@ -84,10 +84,12 @@ const payOrderBodySchema = z.object({
 
 const createReturnBodySchema = z.object({
   order_id: idParam,
-  order_item_id: idParam.optional(),
-  quantity: z.coerce.number().int().min(1).max(9999).optional(),
-  reason: z.string().trim().min(1, '请填写退款原因').max(512),
-  type: z.enum(['refund', 'return_refund']).default('refund'),
+  order_item_id: idParam,
+  quantity: z.coerce.number().int().min(1).max(9999),
+  reason: z.string().trim().min(1, '请填写售后原因').max(512),
+  type: z.enum(['refund', 'return_refund', 'exchange', 'repair']).default('refund'),
+  description: z.string().trim().max(1000).optional(),
+  images: z.array(z.string().trim().max(512)).max(20).optional(),
   amount: z.coerce.number().nonnegative().optional(),
   contact_phone: z.string().trim().max(20).optional(),
   proof_images: z.array(z.string().trim().max(512)).max(20).optional(),
@@ -98,12 +100,16 @@ const listReturnsQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(50).default(10),
 });
 
+const previewOrderBodySchema = createOrderBodySchema;
+
 module.exports = {
   orderIdParamSchema,
   createOrderBodySchema,
+  previewOrderBodySchema,
   checkoutAbandonmentBodySchema,
   listOrdersQuerySchema,
   payOrderBodySchema,
   createReturnBodySchema,
   listReturnsQuerySchema,
 };
+

@@ -31,6 +31,9 @@ const initialState = {
   selectedTagId: "",
   wechatBoundFilter: "",
   phoneBoundFilter: "",
+  memberLevelIdFilter: "",
+  accountStatusFilter: "",
+  summary: {} as Record<string, number>,
 };
 
 interface AdminUsersState {
@@ -43,10 +46,15 @@ interface AdminUsersState {
   selectedTagId: string;
   wechatBoundFilter: string;
   phoneBoundFilter: string;
+  memberLevelIdFilter: string;
+  accountStatusFilter: string;
+  summary: Record<string, number>;
   setSearch: (v: string) => void;
   setSelectedTagId: (v: string) => void;
   setWechatBoundFilter: (v: string) => void;
   setPhoneBoundFilter: (v: string) => void;
+  setMemberLevelIdFilter: (v: string) => void;
+  setAccountStatusFilter: (v: string) => void;
   setPage: (v: number) => void;
   setPageSize: (v: number) => void;
   loadUsers: (params?: {
@@ -56,6 +64,8 @@ interface AdminUsersState {
     tagId?: string;
     wechatBound?: string;
     phoneBound?: string;
+    memberLevelId?: string;
+    accountStatus?: string;
   }) => Promise<void>;
   reset: () => void;
 }
@@ -67,6 +77,8 @@ export const useAdminUsersStore = create<AdminUsersState>((set) => ({
   setSelectedTagId: (selectedTagId) => set({ selectedTagId }),
   setWechatBoundFilter: (wechatBoundFilter) => set({ wechatBoundFilter }),
   setPhoneBoundFilter: (phoneBoundFilter) => set({ phoneBoundFilter }),
+  setMemberLevelIdFilter: (memberLevelIdFilter) => set({ memberLevelIdFilter }),
+  setAccountStatusFilter: (accountStatusFilter) => set({ accountStatusFilter }),
   setPage: (page) => set({ page }),
   setPageSize: (pageSize) => set({ pageSize }),
 
@@ -82,6 +94,8 @@ export const useAdminUsersStore = create<AdminUsersState>((set) => ({
       const tagId = params.tagId ?? state.selectedTagId;
       const wechatBound = params.wechatBound ?? state.wechatBoundFilter;
       const phoneBound = params.phoneBound ?? state.phoneBoundFilter;
+      const memberLevelId = params.memberLevelId ?? state.memberLevelIdFilter;
+      const accountStatus = params.accountStatus ?? state.accountStatusFilter;
       const p = await userService.fetchUsers({
         page,
         pageSize,
@@ -89,12 +103,15 @@ export const useAdminUsersStore = create<AdminUsersState>((set) => ({
         tagId: tagId || undefined,
         wechatBound: wechatBound || undefined,
         phoneBound: phoneBound || undefined,
+        memberLevelId: memberLevelId || undefined,
+        accountStatus: accountStatus || undefined,
       });
       set({
         users: p.list as AdminUserListItem[],
         total: p.total,
         page: p.page,
         pageSize: p.pageSize,
+        summary: p.summary || {},
         loading: false,
       });
     } catch {

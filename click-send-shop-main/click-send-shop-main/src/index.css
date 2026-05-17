@@ -266,11 +266,24 @@
   .theme-shadow {
     box-shadow: var(--theme-shadow);
   }
-  .text-gold {
+  .text-gold,
+  .text-theme-price {
     color: var(--theme-price, hsl(var(--gold)));
+  }
+  .fill-gold,
+  .fill-theme-price {
+    fill: var(--theme-price, hsl(var(--gold)));
   }
   .bg-gold {
     background-color: var(--theme-price, hsl(var(--gold)));
+  }
+  .btn-theme-price {
+    background-color: var(--theme-price);
+    color: var(--theme-price-foreground);
+  }
+  .btn-theme-gradient {
+    background: var(--theme-gradient);
+    color: var(--theme-gradient-foreground);
   }
   .bg-gold-light {
     background-color: hsl(var(--gold-light));
@@ -299,8 +312,36 @@
   .bg-theme-gradient .text-white,
   .bg-theme-gradient .text-primary-foreground,
   .bg-theme-gradient.text-white,
-  .bg-theme-gradient.text-primary-foreground {
+  .bg-theme-gradient.text-primary-foreground,
+  .btn-theme-gradient.text-white {
     color: var(--theme-gradient-foreground) !important;
+  }
+
+  .bg-theme-member-card {
+    background: var(--theme-member-card-bg);
+    color: var(--theme-member-card-foreground);
+  }
+
+  .bg-theme-member-card .theme-member-card-muted {
+    color: var(--theme-member-card-muted);
+  }
+
+  .bg-theme-invite-promo {
+    background: var(--theme-invite-promo-bg);
+    color: var(--theme-invite-promo-foreground);
+    border-color: var(--theme-invite-promo-border);
+  }
+
+  .bg-theme-invite-promo .theme-invite-promo-muted {
+    color: var(--theme-invite-promo-muted);
+  }
+
+  .bg-theme-gift-badge {
+    background: var(--theme-gift-badge-bg);
+    color: var(--theme-gift-badge-foreground);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--theme-gift-badge-foreground) 45%, transparent),
+      0 6px 12px color-mix(in srgb, var(--theme-price) 18%, transparent);
   }
 
   .theme-product-card {

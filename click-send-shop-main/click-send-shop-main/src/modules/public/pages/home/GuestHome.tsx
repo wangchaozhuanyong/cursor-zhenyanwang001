@@ -13,7 +13,12 @@ import { useHomeBanners } from "@/hooks/useHomeBanners";
 import { useProductStore } from "@/stores/useProductStore";
 import GuestMobileFooter from "@/components/GuestMobileFooter";
 import HomeOpsBlocks from "./HomeOpsBlocks";
-import NewArrivalOpsSection from "./NewArrivalOpsSection";
+import NewArrivalSection from "./NewArrivalOpsSection";
+import FlashSaleSection from "./FlashSaleSection";
+import MarketingCouponCenterSection from "./MarketingCouponCenterSection";
+import MarketingNewUserGiftSection from "./MarketingNewUserGiftSection";
+import MarketingFullReductionSection from "./MarketingFullReductionSection";
+import MarketingPromotionBannerSection from "./MarketingPromotionBannerSection";
 import type { Product } from "@/types/product";
 import type { FooterNavItem } from "@/types/content";
 import { ROUTES } from "@/constants/routes";
@@ -179,19 +184,44 @@ export default function GuestHome() {
 
         {isHomeModuleEnabled(homeModules, "new_arrivals", "guest") ? (
         <AnimatedSection delay={0.1} className="mt-4">
-          <NewArrivalOpsSection
+          <NewArrivalSection
             products={newProducts}
             loading={homeLoading}
-            hero={{
-              image: siteInfo.newArrivalHeroImage,
-              title: siteInfo.newArrivalHeroTitle,
-              subtitle: siteInfo.newArrivalHeroSubtitle,
-              ctaText: siteInfo.newArrivalHeroCtaText,
-              brandColor: siteInfo.brandColor,
-              siteSlogan: siteInfo.siteSlogan,
-            }}
-            homeLayout={themeConfig.homeLayout}
+            title={siteInfo.newArrivalSectionTitle}
+            subtitle={siteInfo.newArrivalSectionSubtitle}
+            displayCount={Number(siteInfo.newArrivalDisplayCount || 8)}
+            showPrice={siteInfo.newArrivalShowPrice !== "0"}
           />
+        </AnimatedSection>
+        ) : null}
+
+        {isHomeModuleEnabled(homeModules, "promotion_banner", "guest") ? (
+        <AnimatedSection delay={0.105} className="mt-4">
+          <MarketingPromotionBannerSection />
+        </AnimatedSection>
+        ) : null}
+
+        {isHomeModuleEnabled(homeModules, "flash_sale_section", "guest") ? (
+        <AnimatedSection delay={0.11} className="mt-4">
+          <FlashSaleSection />
+        </AnimatedSection>
+        ) : null}
+
+        {isHomeModuleEnabled(homeModules, "full_reduction_notice", "guest") ? (
+        <AnimatedSection delay={0.111} className="mt-2">
+          <MarketingFullReductionSection />
+        </AnimatedSection>
+        ) : null}
+
+        {isHomeModuleEnabled(homeModules, "coupon_center", "guest") ? (
+        <AnimatedSection delay={0.112}>
+          <MarketingCouponCenterSection />
+        </AnimatedSection>
+        ) : null}
+
+        {isHomeModuleEnabled(homeModules, "new_user_gift", "guest") ? (
+        <AnimatedSection delay={0.113}>
+          <MarketingNewUserGiftSection />
         </AnimatedSection>
         ) : null}
 
@@ -280,6 +310,5 @@ export default function GuestHome() {
     </div>
   );
 }
-
 
 

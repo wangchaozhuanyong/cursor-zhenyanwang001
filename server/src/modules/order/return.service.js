@@ -1,4 +1,4 @@
-const { generateId, parseProductImages } = require('../../utils/helpers');
+﻿const { generateId, parseProductImages } = require('../../utils/helpers');
 const { BusinessError } = require('../../errors/BusinessError');
 const repo = require('./return.repository');
 const { ORDER_STATUS, RETURN_STATUS } = require('../../constants/status');
@@ -25,30 +25,30 @@ async function getReturnRequests(userId, query) {
 
 async function getReturnById(userId, returnId) {
   const row = await repo.selectReturnByIdAndUser(returnId, userId);
-  if (!row) throw new BusinessError(404, '退换货记录不存在');
+  if (!row) throw new BusinessError(404, '售后记录不存在');
   return { data: formatReturnRow(row) };
 }
 
 async function createReturn(userId, body) {
   const { order_id, order_item_id, quantity, type, reason, description, images } = body;
-  if (!order_id || !reason) throw new BusinessError(400, '请提供订单ID和退换原因');
+  if (!order_id || !order_item_id || !reason) throw new BusinessError(400, '请提供订单、商品行和售后原因');
+  if (!['refund', 'return_refund', 'exchange', 'repair'].includes(type || 'refund')) {
+    throw new BusinessError(400, '不支持的售后类型');
+  }
 
   const order = await repo.selectOrderForReturn(order_id, userId);
   if (!order) throw new BusinessError(404, '订单不存在');
-  let orderItem = null;
-  if (order_item_id) {
-    orderItem = await repo.selectOrderItemForReturn(order_id, order_item_id);
-    if (!orderItem) throw new BusinessError(404, '订单商品行不存在');
-    if ((quantity || 1) > Number(orderItem.qty || 0)) {
-      throw new BusinessError(400, '售后数量不能超过购买数量');
-    }
+  const orderItem = await repo.selectOrderItemForReturn(order_id, order_item_id);
+  if (!orderItem) throw new BusinessError(404, '订单商品行不存在');
+  if ((quantity || 1) < 1 || (quantity || 1) > Number(orderItem.qty || 0)) {
+    throw new BusinessError(400, '售后数量不能超过购买数量');
   }
   const activeCount = await repo.countActiveReturnRequests(order_id, userId, order_item_id);
   if (activeCount > 0) {
-    throw new BusinessError(409, '该订单已有未关闭的退换货申请，请勿重复提交');
+    throw new BusinessError(409, '该订单商品已有未完成售后，请勿重复提交');
   }
   if (![ORDER_STATUS.SHIPPED, ORDER_STATUS.COMPLETED].includes(order.status)) {
-    throw new BusinessError(400, '仅已发货或已完成的订单可申请退换货');
+    throw new BusinessError(400, '仅已发货或已完成订单可申请售后');
   }
 
   const id = generateId();
@@ -70,7 +70,7 @@ async function createReturn(userId, body) {
   });
 
   const row = await repo.selectReturnById(id);
-  return { data: formatReturnRow(row), message: '退换货申请已提交' };
+  return { data: formatReturnRow(row), message: '售后申请已提交' };
 }
 
 module.exports = {
@@ -78,3 +78,4 @@ module.exports = {
   getReturnById,
   createReturn,
 };
+

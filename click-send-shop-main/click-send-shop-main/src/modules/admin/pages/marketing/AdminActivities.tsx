@@ -10,6 +10,8 @@ import type { ActivityStatus, ActivityType, MarketingActivity } from "@/types/ac
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatAdminDateTime } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
+import { labelDisplayPositions } from "@/constants/marketingDisplayPositions";
+import { labelActivityType } from "@/utils/adminDisplayLabels";
 import { AnimatedConfirmDialog, AnimatedTable } from "@/modules/micro-interactions";
 
 const TABS: Array<{ key: "" | ActivityStatus; label: string }> = [
@@ -51,7 +53,6 @@ export default function AdminActivities() {
     { label: "秒杀", to: "/admin/marketing/activities/new?type=flash_sale" },
     { label: "满减", to: "/admin/marketing/activities/new?type=full_reduction" },
     { label: "优惠券", to: "/admin/marketing/coupons/new" },
-    { label: "新人礼包", to: "/admin/marketing/activities/new?type=new_user_gift" },
   ], []);
 
   return (
@@ -68,7 +69,7 @@ export default function AdminActivities() {
 
       <div className="flex flex-wrap gap-2">{quickButtons.map((b) => <button key={b.label} onClick={() => navigate(b.to)} className="rounded-lg border border-border px-3 py-1.5 text-sm">{b.label}</button>)}</div>
 
-      <div className="flex flex-wrap gap-2">{TABS.map((t) => <button key={t.label} onClick={() => { setStatus(t.key); setPage(1); }} className={`rounded-lg px-3 py-1.5 text-sm ${status === t.key ? "bg-gold/15 text-gold" : "bg-secondary text-muted-foreground"}`}>{t.label}</button>)}</div>
+      <div className="flex flex-wrap gap-2">{TABS.map((t) => <button key={t.label} onClick={() => { setStatus(t.key); setPage(1); }} className={`rounded-lg px-3 py-1.5 text-sm ${status === t.key ? "bg-gold/15 text-theme-price" : "bg-secondary text-muted-foreground"}`}>{t.label}</button>)}</div>
 
       <div className="grid gap-3 md:grid-cols-[1fr_160px_auto]">
         <SearchBar placeholder="搜索活动名称" value={keyword} onChange={setKeyword} />
@@ -104,7 +105,7 @@ export default function AdminActivities() {
           renderRow={(a) => (
             <>
               <td className="px-4 py-3"><p className="font-medium">{a.title}</p><p className="text-xs text-muted-foreground line-clamp-1">{a.description || "-"}</p></td>
-              <td className="px-4 py-3">{a.type === "flash_sale" ? "限时秒杀" : "满减活动"}</td>
+              <td className="px-4 py-3">{labelActivityType(a.type)}</td>
               <td className="px-4 py-3 text-xs">{a.status_label}</td>
               <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                 {formatAdminDateTime(a.start_at)}
@@ -113,7 +114,7 @@ export default function AdminActivities() {
               </td>
               <td className="px-4 py-3 text-xs text-muted-foreground">商品 {a.product_count || 0}<br />库存 {a.activity_stock_total || 0} / 已售 {a.sold_count_total || 0}</td>
               <td className="px-4 py-3 text-xs text-muted-foreground"><Tx>参与数据预留</Tx></td>
-              <td className="px-4 py-3 text-xs text-muted-foreground"><Tx>首页活动位</Tx></td>
+              <td className="px-4 py-3 text-xs text-muted-foreground max-w-[200px]">{labelDisplayPositions(a.display_positions)}</td>
               <td className="px-4 py-3">
                 <div className="flex flex-wrap gap-2 text-xs">
                   <button type="button" onClick={() => navigate(`/admin/marketing/activities/${a.id}/edit`)} className="rounded border border-border px-2 py-1"><Tx>编辑</Tx></button>

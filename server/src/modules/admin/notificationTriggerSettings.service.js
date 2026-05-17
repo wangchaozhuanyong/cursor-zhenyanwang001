@@ -1,4 +1,5 @@
 const repo = require('./notificationTriggerSettings.repository');
+const { BusinessError } = require('../../errors/BusinessError');
 
 /** 各自动通知的默认标题/正文模板；留空未配置时使用此处。占位符用 {order_no} 形式 */
 const TRIGGER_DEFAULT_COPY = {
@@ -148,6 +149,17 @@ async function updateNotificationTriggerSettings(rules) {
     const enabled = item.enabled === true;
     const title = typeof item.title === 'string' ? item.title.trim() : '';
     const content = typeof item.content === 'string' ? item.content.trim() : '';
+    const allowedPlaceholders = new Set(PLACEHOLDERS_BY_KEY[item.key] || []);
+    const bad = [];
+    for (const src of [title, content]) {
+      for (const m of src.matchAll(/\{([a-zA-Z0-9_]+)\}/g)) {
+        const token = m[1];
+        if (!allowedPlaceholders.has(token)) bad.push(token);
+      }
+    }
+    if (bad.length) {
+      throw new BusinessError(400, `规则 ${item.key} 存在未知占位符: ${[...new Set(bad)].join(', ')}`);
+    }
 
     if (!enabled && !title && !content) {
       next[item.key] = false;

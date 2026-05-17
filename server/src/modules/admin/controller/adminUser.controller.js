@@ -3,7 +3,8 @@ const svc = require('../adminUser.service');
 
 exports.list = asyncRoute(async (req, res) => {
   const r = await svc.listUsers(req.query);
-  res.paginate(r.list, r.total, r.page, r.pageSize);
+  const totalPages = r.total === 0 ? 0 : Math.ceil(r.total / r.pageSize);
+  res.success({ list: r.list, total: r.total, page: r.page, pageSize: r.pageSize, totalPages, summary: r.summary });
 });
 
 exports.exportCsv = asyncRoute(async (req, res) => {
@@ -44,7 +45,12 @@ exports.setTags = asyncRoute(async (req, res) => {
 });
 
 exports.update = asyncRoute(async (req, res) => {
-  const r = await svc.updateUser(req.params.id, req.body);
+  const r = await svc.updateUser(req.params.id, req.body, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
+exports.updateStatus = asyncRoute(async (req, res) => {
+  const r = await svc.updateUserStatus(req.params.id, req.body, req.user?.id, req);
   res.success(r.data, r.message);
 });
 

@@ -105,7 +105,7 @@ const navItemsRaw: NavItem[] = [
     ],
   },
   { icon: RotateCcw, labelKey: "nav.returns", path: "/admin/returns", permission: "return.view" },
-  { icon: MessageSquareMore, labelKey: "nav.reviews", path: "/admin/reviews", permission: "review.manage" },
+  { icon: MessageSquareMore, labelKey: "nav.reviews", path: "/admin/reviews", permission: { anyOf: ["review.view", "review.manage"] } },
   {
     icon: Users,
     labelKey: "nav.users",
@@ -132,7 +132,7 @@ const navItemsRaw: NavItem[] = [
       { icon: Link2, labelKey: "nav.invites", path: "/admin/marketing/invites", permission: "invite.view" },
     ],
   },
-  { icon: Bell, labelKey: "nav.notifications", path: "/admin/notifications", permission: "notification.manage" },
+  { icon: Bell, labelKey: "nav.notifications", path: "/admin/notifications", permission: { anyOf: ["notification.view", "notification.manage"] } },
   { icon: Image, labelKey: "nav.banners", path: "/admin/banners", permission: "banner.manage" },
   { icon: Megaphone, labelKey: "nav.homeOps", path: "/admin/home-ops", permission: "home_ops.manage" },
   {
@@ -435,7 +435,7 @@ function AdminLayoutContent() {
 
   const tab = mobileBottomTab(location.pathname);
 
-  const showNotifTab = can("notification.manage");
+  const showNotifTab = can("notification.manage") || can("notification.view");
 
   return (
     <AdminConfirmProvider>

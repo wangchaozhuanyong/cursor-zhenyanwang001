@@ -2,13 +2,27 @@
 import type { MemberLevel, UserProfile, UserTag } from "@/types/user";
 import type { PaginatedData, PaginationParams } from "@/types/common";
 
-export function getUsers(params?: PaginationParams & {
+export interface AdminUserQuery extends PaginationParams {
   keyword?: string;
   tagId?: string;
   wechatBound?: string;
   phoneBound?: string;
-}) {
-  return get<PaginatedData<UserProfile>>("/admin/users", params as Record<string, string>);
+  memberLevelId?: string;
+  accountStatus?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  totalSpentMin?: string;
+  totalSpentMax?: string;
+  orderCountMin?: string;
+  orderCountMax?: string;
+  pointsMin?: string;
+  pointsMax?: string;
+  refundRateMin?: string;
+  refundRateMax?: string;
+}
+
+export function getUsers(params?: AdminUserQuery) {
+  return get<PaginatedData<UserProfile> & { summary?: Record<string, number> }>("/admin/users", params as Record<string, string>);
 }
 
 export function unbindUserWechat(id: string) {
@@ -21,6 +35,14 @@ export function getUserById(id: string) {
 
 export function updateUser(id: string, data: Partial<UserProfile>) {
   return put<UserProfile>(`/admin/users/${id}`, data);
+}
+
+export function updateUserStatus(id: string, accountStatus: string) {
+  return put<void>(`/admin/users/${id}/status`, { accountStatus });
+}
+
+export function resetUserPassword(id: string) {
+  return post<{ password: string }>(`/admin/users/${id}/reset-password`);
 }
 
 export function getUserTags() {
@@ -69,3 +91,14 @@ export function deleteMemberLevel(id: string) {
   return del<void>(`/admin/member-levels/${id}`);
 }
 
+export function recalculateAllMemberLevels() {
+  return post<{ total: number; changed: number }>('/admin/member-levels/recalculate');
+}
+
+export function recalculateUserMemberLevel(userId: string) {
+  return post(`/admin/member-levels/recalculate/${userId}`);
+}
+
+export function assignUserMemberLevel(userId: string, memberLevelId: string) {
+  return put<void>(`/admin/users/${userId}/member-level`, { memberLevelId });
+}

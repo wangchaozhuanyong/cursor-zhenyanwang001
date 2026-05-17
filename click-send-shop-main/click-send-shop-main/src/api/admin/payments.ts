@@ -26,7 +26,13 @@ export function getAdminPaymentEvents(params?: Record<string, string>) {
   return get<PaginatedData<PaymentEventAdminRow>>("/admin/payments/events", params as Record<string, unknown>);
 }
 
-export function postAdminMarkOrderPaid(orderId: string, body: { reason?: string; channel_code?: string }) {
+export function postAdminMarkOrderPaid(orderId: string, body: {
+  reason?: string;
+  channel_code?: string;
+  payment_channel?: string;
+  payment_reference?: string;
+  admin_remark?: string;
+}) {
   return post<null>(`/admin/payments/orders/${orderId}/mark-paid`, body);
 }
 

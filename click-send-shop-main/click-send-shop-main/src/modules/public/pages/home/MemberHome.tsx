@@ -17,7 +17,12 @@ import HomeTrustBar from "@/components/HomeTrustBar";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
 import HomeOpsBlocks from "./HomeOpsBlocks";
 import { AnimatedSection } from "@/modules/micro-interactions";
-import NewArrivalOpsSection from "./NewArrivalOpsSection";
+import NewArrivalSection from "./NewArrivalOpsSection";
+import FlashSaleSection from "./FlashSaleSection";
+import MarketingCouponCenterSection from "./MarketingCouponCenterSection";
+import MarketingNewUserGiftSection from "./MarketingNewUserGiftSection";
+import MarketingFullReductionSection from "./MarketingFullReductionSection";
+import MarketingPromotionBannerSection from "./MarketingPromotionBannerSection";
 import type { UserCoupon } from "@/types/coupon";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import StoreTabHeader from "@/components/store/StoreTabHeader";
@@ -162,7 +167,6 @@ export default function MemberHome() {
                 >
                   <PremiumCouponCard
                     homeCompact
-                    className="shadow-lg"
                     title={display.title}
                     amountPrefix={display.amountPrefix}
                     amount={display.amount}
@@ -204,20 +208,40 @@ export default function MemberHome() {
         </AnimatedSection>
         ) : null}
         {isHomeModuleEnabled(homeModules, "new_arrivals", "member") ? (
-        <AnimatedSection delay={0.12}>
-        <NewArrivalOpsSection
+        <AnimatedSection delay={0.12} className="mt-section">
+        <NewArrivalSection
           products={newProducts}
           loading={homeLoading}
-          hero={{
-            image: siteInfo.newArrivalHeroImage,
-            title: siteInfo.newArrivalHeroTitle,
-            subtitle: siteInfo.newArrivalHeroSubtitle,
-            ctaText: siteInfo.newArrivalHeroCtaText,
-            brandColor: siteInfo.brandColor,
-            siteSlogan: siteInfo.siteSlogan,
-          }}
-          homeLayout={themeConfig.homeLayout}
+          title={siteInfo.newArrivalSectionTitle}
+          subtitle={siteInfo.newArrivalSectionSubtitle}
+          displayCount={Number(siteInfo.newArrivalDisplayCount || 8)}
+          showPrice={siteInfo.newArrivalShowPrice !== "0"}
         />
+        </AnimatedSection>
+        ) : null}
+        {isHomeModuleEnabled(homeModules, "promotion_banner", "member") ? (
+        <AnimatedSection delay={0.125}>
+          <MarketingPromotionBannerSection />
+        </AnimatedSection>
+        ) : null}
+        {isHomeModuleEnabled(homeModules, "flash_sale_section", "member") ? (
+        <AnimatedSection delay={0.13}>
+          <FlashSaleSection />
+        </AnimatedSection>
+        ) : null}
+        {isHomeModuleEnabled(homeModules, "full_reduction_notice", "member") ? (
+        <AnimatedSection delay={0.131}>
+          <MarketingFullReductionSection />
+        </AnimatedSection>
+        ) : null}
+        {isHomeModuleEnabled(homeModules, "coupon_center", "member") ? (
+        <AnimatedSection delay={0.132}>
+          <MarketingCouponCenterSection />
+        </AnimatedSection>
+        ) : null}
+        {isHomeModuleEnabled(homeModules, "new_user_gift", "member") ? (
+        <AnimatedSection delay={0.133}>
+          <MarketingNewUserGiftSection />
         </AnimatedSection>
         ) : null}
         {isHomeModuleEnabled(homeModules, "hot_sales", "member") ? (
@@ -287,6 +311,5 @@ function toBatches<T>(list: T[], size: number): T[][] {
   }
   return out;
 }
-
 
 

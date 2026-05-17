@@ -59,7 +59,18 @@ function requireOrderApi(name) {
 function buildAdminOrderListWhere(query) {
   let where = 'WHERE 1=1';
   const params = [];
-  const { status, paymentStatus, keyword } = query;
+  const {
+    status,
+    paymentStatus,
+    payment_method: paymentMethod,
+    payment_channel: paymentChannel,
+    shipping_name: shippingName,
+    keyword,
+    dateFrom,
+    dateTo,
+    amountMin,
+    amountMax,
+  } = query;
   if (status) {
     where += ' AND o.status = ?';
     params.push(status);
@@ -68,11 +79,60 @@ function buildAdminOrderListWhere(query) {
     where += ' AND o.payment_status = ?';
     params.push(paymentStatus);
   }
+  if (paymentMethod) {
+    where += ' AND o.payment_method = ?';
+    params.push(paymentMethod);
+  }
+  if (paymentChannel) {
+    where += ' AND o.payment_channel = ?';
+    params.push(paymentChannel);
+  }
+  if (shippingName) {
+    where += ' AND o.shipping_name = ?';
+    params.push(shippingName);
+  }
   if (keyword) {
-    where += ' AND (o.order_no LIKE ? OR o.contact_name LIKE ?)';
-    params.push(`%${keyword}%`, `%${keyword}%`);
+    where += ' AND (o.order_no LIKE ? OR o.contact_name LIKE ? OR o.contact_phone LIKE ? OR COALESCE(o.shipping_phone, "") LIKE ?)';
+    params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
+  }
+  if (dateFrom) {
+    where += ' AND o.created_at >= ?';
+    params.push(dateFrom);
+  }
+  if (dateTo) {
+    where += ' AND o.created_at < DATE_ADD(?, INTERVAL 1 DAY)';
+    params.push(dateTo);
+  }
+  const min = Number(amountMin);
+  if (Number.isFinite(min)) {
+    where += ' AND o.total_amount >= ?';
+    params.push(min);
+  }
+  const max = Number(amountMax);
+  if (Number.isFinite(max)) {
+    where += ' AND o.total_amount <= ?';
+    params.push(max);
   }
   return { where, params };
+}
+
+function normalizeOrderSummary(summaryRows = []) {
+  const base = {
+    pending: 0,
+    paid: 0,
+    shipped: 0,
+    completed: 0,
+    cancelled: 0,
+    refunding: 0,
+    refunded: 0,
+  };
+  for (const row of summaryRows) {
+    const key = String(row.status || '');
+    if (Object.prototype.hasOwnProperty.call(base, key)) {
+      base[key] = Number(row.count) || 0;
+    }
+  }
+  return base;
 }
 
 function attachItemsAndAmounts(order, items) {
@@ -101,7 +161,10 @@ async function listOrders(query) {
   const { where, params } = buildAdminOrderListWhere(query);
   const total = await repo.countOrdersAdmin(where, params);
   const offset = (page - 1) * pageSize;
-  const orders = await repo.selectOrdersAdminPage(where, params, pageSize, offset);
+  const [orders, summaryRows] = await Promise.all([
+    repo.selectOrdersAdminPage(where, params, pageSize, offset),
+    repo.selectOrderStatusSummary(where, params),
+  ]);
 
   if (orders.length > 0) {
     const orderIds = orders.map((o) => o.id);
@@ -116,7 +179,14 @@ async function listOrders(query) {
     }
   }
 
-  return { kind: 'paginate', list: orders, total, page, pageSize };
+  return {
+    kind: 'paginate',
+    list: orders,
+    total,
+    page,
+    pageSize,
+    summary: normalizeOrderSummary(summaryRows),
+  };
 }
 
 async function getOrderById(orderId) {
@@ -415,12 +485,82 @@ async function exportOrdersCsv(query) {
   return { csv, filename: `orders_${Date.now()}.csv` };
 }
 
+async function listPendingShipmentOrders(query) {
+  const page = Math.max(1, parseInt(query.page, 10) || 1);
+  const pageSize = Math.min(100, Math.max(1, parseInt(query.pageSize, 10) || 20));
+  const total = await repo.countPendingShipmentOrders();
+  const offset = (page - 1) * pageSize;
+  const list = await repo.selectPendingShipmentOrdersPage(pageSize, offset);
+  return { kind: 'paginate', list, total, page, pageSize };
+}
+
+async function batchShipOrders(payload = {}, adminUserId, req) {
+  const orderIds = Array.isArray(payload.order_ids) ? payload.order_ids.filter(Boolean) : [];
+  const carrier = String(payload.carrier || '').trim();
+  const trackingMap = payload.tracking_map && typeof payload.tracking_map === 'object' ? payload.tracking_map : {};
+  if (!orderIds.length) throw new ValidationError('order_ids 不能为空');
+  if (!carrier) throw new ValidationError('carrier 不能为空');
+
+  const orders = await repo.selectOrdersByIds(orderIds);
+  const orderById = new Map(orders.map((o) => [o.id, o]));
+  let shipped = 0;
+  const failed = [];
+  for (const orderId of orderIds) {
+    const row = orderById.get(orderId);
+    if (!row) {
+      failed.push({ order_id: orderId, reason: '订单不存在' });
+      continue;
+    }
+    if (!requireOrderApi('canShip')(row)) {
+      failed.push({ order_id: orderId, reason: `状态不允许发货: ${row.status}/${row.payment_status || PAYMENT_STATUS.PENDING}` });
+      continue;
+    }
+    const trackingNo = String(trackingMap[orderId] || '').trim();
+    if (!trackingNo) {
+      failed.push({ order_id: orderId, reason: '缺少 tracking_no' });
+      continue;
+    }
+    await repo.updateOrderShipped(orderId, trackingNo, carrier);
+    shipped += 1;
+    try {
+      const copy = await getResolvedTriggerCopy('order_ship', {
+        order_no: row.order_no,
+        carrier: carrier || '',
+        tracking_no: trackingNo || '',
+      });
+      if (copy) {
+        await requireUserApi('insertUserNotification')({
+          id: generateId(),
+          userId: row.user_id,
+          type: 'order',
+          title: copy.title,
+          content: copy.content,
+        });
+      }
+    } catch {
+      // noop
+    }
+  }
+
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'order.batch_ship',
+    objectType: 'order',
+    objectId: '',
+    summary: `批量发货 ${shipped}/${orderIds.length}`,
+    after: { carrier, shipped, failed_count: failed.length },
+    result: 'success',
+  });
+  return { data: { shipped, failed }, message: `批量发货完成：成功 ${shipped}，失败 ${failed.length}` };
+}
+
 module.exports = {
   listOrders,
   getOrderById,
   updateOrderStatus,
   shipOrder,
   exportOrdersCsv,
+  listPendingShipmentOrders,
+  batchShipOrders,
 };
-
-

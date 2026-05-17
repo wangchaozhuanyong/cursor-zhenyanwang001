@@ -18,9 +18,16 @@ const PAYMENT_STATUS = Object.freeze({
 
 const RETURN_STATUS = Object.freeze({
   PENDING: 'pending',
+  NEED_EVIDENCE: 'need_evidence',
   APPROVED: 'approved',
   REJECTED: 'rejected',
   PROCESSING: 'processing',
+  WAITING_RETURN: 'waiting_return',
+  RETURN_IN_TRANSIT: 'return_in_transit',
+  RECEIVED: 'received',
+  REFUND_PENDING: 'refund_pending',
+  REFUNDED: 'refunded',
+  EXCHANGE_SHIPPING: 'exchange_shipping',
   COMPLETED: 'completed',
   CANCELLED: 'cancelled',
 });

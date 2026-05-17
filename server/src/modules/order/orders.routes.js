@@ -1,9 +1,11 @@
 const { Router } = require('express');
 const ctrl = require('./order.controller');
 const auth = require('../../middleware/auth');
+const { guardByAction } = require('../../middleware/accountStatusGuard');
 const { validate } = require('../../middleware/validate');
 const {
   createOrderBodySchema,
+  previewOrderBodySchema,
   checkoutAbandonmentBodySchema,
   listOrdersQuerySchema,
   orderIdParamSchema,
@@ -13,9 +15,11 @@ const {
 const router = Router();
 
 router.use(auth);
+router.use(guardByAction('order'));
 
 router.get('/', validate({ query: listOrdersQuerySchema }), ctrl.getOrders);
 router.post('/checkout-abandonments', validate({ body: checkoutAbandonmentBodySchema }), ctrl.recordCheckoutAbandonment);
+router.post('/preview', validate({ body: previewOrderBodySchema }), ctrl.previewOrder);
 router.post('/', validate({ body: createOrderBodySchema }), ctrl.createOrder);
 
 router.get('/:id', validate({ params: orderIdParamSchema }), ctrl.getOrderById);

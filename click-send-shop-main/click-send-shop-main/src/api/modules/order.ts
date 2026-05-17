@@ -1,5 +1,6 @@
 ﻿import { get, post } from "@/api/request";
 import type { Order, SubmitOrderParams, OrderListParams, CheckoutAbandonmentPayload } from "@/types/order";
+import type { OrderPreviewResult } from "@/types/orderPreview";
 import type { PaginatedData } from "@/types/common";
 
 export function getOrders(params?: OrderListParams) {
@@ -12,6 +13,10 @@ export function getOrderById(id: string) {
 
 export function submitOrder(params: SubmitOrderParams) {
   return post<Order>("/orders", params);
+}
+
+export function previewOrder(params: SubmitOrderParams) {
+  return post<OrderPreviewResult>("/orders/preview", params);
 }
 
 export function recordCheckoutAbandonment(params: CheckoutAbandonmentPayload) {

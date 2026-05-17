@@ -75,6 +75,13 @@ async function register(body) {
     }
   }
 
+  try {
+    const newUserGift = require('../marketing/newUserGift.service');
+    await newUserGift.issueNewUserGiftPack(id);
+  } catch (e) {
+    console.warn(`[auth.register] new user gift issue skipped: ${e?.message || e}`);
+  }
+
   const token = signToken(id, 0);
   return { data: { token, userId: id }, message: '注册成功' };
 }
@@ -123,6 +130,9 @@ function buildLoginResult(userRow) {
     ? Number(userRow.refresh_token_version)
     : 0;
   const token = signToken(uid, rv);
+  if (userRow.account_status === 'disabled' || userRow.account_status === 'blacklisted') {
+    throw new AuthError('账号已被限制使用');
+  }
   return {
     data: {
       token,

@@ -12,6 +12,7 @@ const search = require('../modules/search');
 const myinvois = require('../modules/myinvois');
 const privacy = require('../modules/privacy');
 const analytics = require('../modules/analytics');
+const marketing = require('../modules/marketing');
 const seoRoutes = require('../modules/seo/seo.routes');
 
 const router = Router();
@@ -27,6 +28,7 @@ router.use(order);
 router.use(payment);
 router.use(myinvois);
 router.use(analytics);
+router.use(marketing);
 router.use(admin);
 /** 涓庢牴璺緞 SEO 鍚屾簮閫昏緫锛屼究浜庣粺涓€璧?/api 鍓嶇紑锛堢埇铏粛鍙娇鐢?/robots.txt锛?*/
 router.use('/seo', seoRoutes);

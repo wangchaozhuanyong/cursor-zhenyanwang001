@@ -11,7 +11,7 @@ import { Tx } from "@/components/admin/AdminText";
 import { formatUserDisplay, labelCouponRecordStatus } from "@/utils/adminDisplayLabels";
 
 const statusLabels: Record<string, { label: string; color: string }> = {
-  available: { label: "未使用", color: "bg-gold/10 text-gold" },
+  available: { label: "未使用", color: "bg-gold/10 text-theme-price" },
   used: { label: "已使用", color: "bg-green-500/10 text-green-500" },
   expired: { label: "已过期", color: "bg-muted text-muted-foreground" },
 };

@@ -116,7 +116,7 @@ export default function AdminPaymentOrders() {
                   onConfirm: () => markPaid(),
                 })
               }
-              className="rounded-full bg-[var(--theme-price)] px-5 py-2.5 text-sm font-semibold text-white"
+              className="rounded-full bg-[var(--theme-price)] px-5 py-2.5 text-sm font-semibold btn-theme-gradient"
             ><Tx>
               确认补单
             </Tx></button>

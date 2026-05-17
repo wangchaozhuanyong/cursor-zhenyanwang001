@@ -24,7 +24,7 @@ export function CheckoutSubmitBar({ finalTotal, paymentMethod, submitting, onSub
           onClick={onSubmit}
           disabled={submitting}
           variant="solid"
-          className="rounded-full px-8 py-3.5 text-sm font-bold text-white theme-shadow !min-h-0 [background:var(--theme-gradient)]"
+          className="rounded-full px-8 py-3.5 text-sm font-bold btn-theme-gradient theme-shadow !min-h-0"
           loadingText={submitCtaLabel(paymentMethod, true)}
         >
           {submitCtaLabel(paymentMethod, false)}

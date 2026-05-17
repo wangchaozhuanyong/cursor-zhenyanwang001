@@ -71,7 +71,7 @@ const pointsListQuerySchema = paginationQuerySchema;
 const notificationIdParamSchema = z.object({ id: idParam });
 
 const notificationListQuerySchema = paginationQuerySchema.extend({
-  type: z.enum(['order', 'system', 'marketing', 'invite']).optional(),
+  type: z.enum(['system', 'order', 'shipping', 'payment', 'refund', 'after_sale', 'promotion', 'coupon', 'points', 'reward']).optional(),
 });
 
 const claimCouponBodySchema = z

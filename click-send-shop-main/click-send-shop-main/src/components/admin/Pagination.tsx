@@ -72,7 +72,7 @@ export default function Pagination({
               onClick={() => onPageChange(p)}
               className={`touch-manipulation flex min-h-11 min-w-[44px] items-center justify-center rounded-xl px-2 text-sm font-medium transition-colors ${
                 p === safeP
-                  ? "bg-gold text-primary-foreground"
+                  ? "btn-theme-price"
                   : "text-muted-foreground hover:bg-secondary hover:text-foreground"
               }`}
             >

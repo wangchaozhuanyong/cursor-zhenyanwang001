@@ -1,5 +1,6 @@
 import * as orderApi from "@/api/modules/order";
 import type { Order, SubmitOrderParams, OrderListParams, CheckoutAbandonmentPayload } from "@/types/order";
+import type { OrderPreviewResult } from "@/types/orderPreview";
 import type { PaginatedData } from "@/types/common";
 import { unwrapPaginated } from "@/services/responseNormalize";
 
@@ -15,6 +16,11 @@ export async function fetchOrderById(id: string) {
 
 export async function submitOrder(params: SubmitOrderParams) {
   const res = await orderApi.submitOrder(params);
+  return res.data;
+}
+
+export async function previewOrder(params: SubmitOrderParams): Promise<OrderPreviewResult> {
+  const res = await orderApi.previewOrder(params);
   return res.data;
 }
 

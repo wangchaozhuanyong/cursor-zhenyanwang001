@@ -195,7 +195,7 @@ export default function AdminRecycleBin() {
             <p className="text-sm text-muted-foreground"><Tx>此操作不可恢复！</Tx><br />{confirmDelete.type_label}: {confirmDelete.name}</p>
             <div className="flex justify-center gap-3">
               <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
-              <button type="button" onClick={handlePermanentDelete} className="rounded-xl bg-destructive px-4 py-2.5 text-sm font-semibold text-white"><Tx>确认删除</Tx></button>
+              <button type="button" onClick={handlePermanentDelete} className="rounded-xl bg-destructive px-4 py-2.5 text-sm font-semibold btn-theme-gradient"><Tx>确认删除</Tx></button>
             </div>
           </div>
         </div>

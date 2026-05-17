@@ -1,18 +1,16 @@
-import * as userApi from "@/api/admin/user";
+﻿import * as userApi from "@/api/admin/user";
 import type { MemberLevelPayload } from "@/api/admin/user";
-import type { PaginatedData, PaginationParams } from "@/types/common";
+import type { PaginatedData } from "@/types/common";
 import type { MemberLevel, UserProfile, UserTag } from "@/types/user";
 import { downloadAdminCsv } from "@/utils/adminCsvDownload";
 import { unwrapList, unwrapPaginated } from "@/services/responseNormalize";
 
-export async function fetchUsers(params?: PaginationParams & {
-  keyword?: string;
-  tagId?: string;
-  wechatBound?: string;
-  phoneBound?: string;
-}): Promise<PaginatedData<UserProfile>> {
+export type UserListQuery = Parameters<typeof userApi.getUsers>[0];
+
+export async function fetchUsers(params?: UserListQuery): Promise<PaginatedData<UserProfile> & { summary?: Record<string, number> }> {
   const res = await userApi.getUsers(params);
-  return unwrapPaginated<UserProfile>(res.data);
+  const base = unwrapPaginated<UserProfile>(res.data);
+  return { ...base, summary: (res.data as any)?.summary || {} };
 }
 
 export async function fetchUserById(id: string) {
@@ -22,6 +20,19 @@ export async function fetchUserById(id: string) {
 
 export async function unbindUserWechat(id: string) {
   await userApi.unbindUserWechat(id);
+}
+
+export async function updateUserProfile(id: string, data: Partial<UserProfile>) {
+  await userApi.updateUser(id, data);
+}
+
+export async function updateUserStatus(id: string, accountStatus: string) {
+  await userApi.updateUserStatus(id, accountStatus);
+}
+
+export async function resetUserPassword(id: string): Promise<string> {
+  const res = await userApi.resetUserPassword(id);
+  return (res.data as any)?.password || "";
 }
 
 export async function toggleSubordinate(id: string, enabled: boolean) {
@@ -72,10 +83,24 @@ export async function deleteMemberLevel(id: string) {
   await userApi.deleteMemberLevel(id);
 }
 
-export async function exportUsersCsv(params?: { keyword?: string; tagId?: string }) {
+export async function recalculateAllMemberLevels() {
+  const res = await userApi.recalculateAllMemberLevels();
+  return res.data as any;
+}
+
+export async function recalculateUserMemberLevel(userId: string) {
+  await userApi.recalculateUserMemberLevel(userId);
+}
+
+export async function assignUserMemberLevel(userId: string, memberLevelId: string) {
+  await userApi.assignUserMemberLevel(userId, memberLevelId);
+}
+
+export async function exportUsersCsv(params?: UserListQuery) {
   const qs = new URLSearchParams();
-  if (params?.keyword) qs.set("keyword", params.keyword);
-  if (params?.tagId) qs.set("tagId", params.tagId);
+  Object.entries(params || {}).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && String(v) !== "") qs.set(k, String(v));
+  });
   const q = qs.toString();
   await downloadAdminCsv(`/admin/users/export${q ? `?${q}` : ""}`, "users.csv");
 }

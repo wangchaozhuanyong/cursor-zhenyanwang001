@@ -128,7 +128,7 @@ export default function AdminContent() {
       ) : (
       <>
       <div className="rounded-2xl border border-border bg-card p-4">
-        <div className="mb-3 flex items-center gap-2"><HelpCircle size={18} className="text-gold" /><h3 className="font-semibold"><Tx>帮助中心管理</Tx></h3></div>
+        <div className="mb-3 flex items-center gap-2"><HelpCircle size={18} className="text-theme-price" /><h3 className="font-semibold"><Tx>帮助中心管理</Tx></h3></div>
         <p className="mb-3 text-xs text-muted-foreground"><Tx>可视化维护 FAQ 分类、问题、答案、排序与启用状态，前台 Help 优先读取这里。</Tx></p>
         <div className="space-y-4">
           <div className="grid gap-3 md:grid-cols-2">
@@ -254,7 +254,7 @@ export default function AdminContent() {
             <div className="flex-1 min-w-0">
               <h4 className="font-medium text-foreground text-sm">{item.title}</h4>
               <p className="text-xs text-muted-foreground mt-0.5 truncate">{item.content || "暂无内容"}</p>
-              <p className="text-[10px] text-muted-foreground mt-1"><Tx>前台路径: </Tx><Link to={`/content/${item.slug}`} className="text-gold underline-offset-2 hover:underline" target="_blank" rel="noreferrer">/content/{item.slug}</Link></p>
+              <p className="text-[10px] text-muted-foreground mt-1"><Tx>前台路径: </Tx><Link to={`/content/${item.slug}`} className="text-theme-price underline-offset-2 hover:underline" target="_blank" rel="noreferrer">/content/{item.slug}</Link></p>
             </div>
             <PermissionGate permission="content.manage"><button onClick={() => openEdit(item)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"><Edit2 size={14} /></button></PermissionGate>
           </div>

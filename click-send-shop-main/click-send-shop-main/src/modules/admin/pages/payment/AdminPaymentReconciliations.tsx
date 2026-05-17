@@ -148,7 +148,7 @@ export default function AdminPaymentReconciliations() {
                 onConfirm: () => create(),
               })
             }
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-[var(--theme-price)] px-5 py-2.5 text-sm font-semibold text-white"
+            className="mt-4 inline-flex items-center gap-2 rounded-full bg-[var(--theme-price)] px-5 py-2.5 text-sm font-semibold btn-theme-gradient"
           >
             <Plus size={16} /><Tx> 创建草稿
           </Tx></button>

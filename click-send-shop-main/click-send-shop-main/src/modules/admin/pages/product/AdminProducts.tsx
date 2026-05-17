@@ -152,7 +152,7 @@ export default function AdminProducts() {
             </label>
           </PermissionGate>
           <PermissionGate permission="product.manage">
-            <button type="button" onClick={() => navigate("/admin/products/new")} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded px-4 py-2.5 text-sm font-semibold text-white active:opacity-90" style={{ background: "var(--theme-gradient)" }}><Plus size={16} /><Tx> 新增</Tx></button>
+            <button type="button" onClick={() => navigate("/admin/products/new")} className="touch-manipulation flex min-h-[44px] items-center gap-1.5 theme-rounded px-4 py-2.5 text-sm font-semibold btn-theme-gradient active:opacity-90"><Plus size={16} /><Tx> 新增</Tx></button>
           </PermissionGate>
         </div>
       </div>

@@ -34,7 +34,13 @@ export async function fetchAdminPaymentEvents(
   return unwrapPaginated<PaymentEventAdminRow>(res.data);
 }
 
-export async function markAdminOrderPaid(orderId: string, body: { reason?: string; channel_code?: string }) {
+export async function markAdminOrderPaid(orderId: string, body: {
+  reason?: string;
+  channel_code?: string;
+  payment_channel?: string;
+  payment_reference?: string;
+  admin_remark?: string;
+}) {
   await api.postAdminMarkOrderPaid(orderId, body);
 }
 

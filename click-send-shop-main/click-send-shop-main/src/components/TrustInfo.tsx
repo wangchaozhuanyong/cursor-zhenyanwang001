@@ -44,7 +44,7 @@ export default function TrustInfo({ className = "", variant = "row" }: Props) {
       >
         {items.map((it) => (
           <div key={it.title} className="flex items-start gap-2">
-            <it.icon size={18} className="mt-0.5 flex-shrink-0 text-gold" />
+            <it.icon size={18} className="mt-0.5 flex-shrink-0 text-theme-price" />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground">{it.title}</p>
               <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{it.desc}</p>

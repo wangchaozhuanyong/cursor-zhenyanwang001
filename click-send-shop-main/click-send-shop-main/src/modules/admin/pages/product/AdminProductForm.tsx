@@ -772,7 +772,7 @@ export default function AdminProductForm() {
                   })}
               </div>
               <p className="text-sm font-medium text-foreground">{form.name || "商品名称"}</p>
-              <p className="mt-1 text-sm font-bold text-gold">RM {form.price || "0.00"}</p>
+              <p className="mt-1 text-sm font-bold text-theme-price">RM {form.price || "0.00"}</p>
             </div>
           </div>
 
@@ -794,7 +794,7 @@ export default function AdminProductForm() {
               loadingText="保存中..."
               disabled={saving}
               onClick={() => void handleSave(true)}
-              className="w-full rounded-lg border border-gold bg-gold/10 px-6 py-3 text-sm font-semibold text-gold"
+              className="w-full rounded-lg border border-gold bg-gold/10 px-6 py-3 text-sm font-semibold text-theme-price"
             ><Tx>
               保存并上架
             </Tx></LoadingButton>

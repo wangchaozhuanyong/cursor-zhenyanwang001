@@ -6,9 +6,16 @@
   exclusiveAmount: number;
 }
 
+export type CheckoutDiscountLine = {
+  type: string;
+  label: string;
+  amount: number;
+};
+
 interface CheckoutPriceSummaryProps {
   rawTotal: number;
   discountAmount: number;
+  discountLines?: CheckoutDiscountLine[];
   shippingFee: number;
   totalPoints: number;
   finalTotal: number;
@@ -20,6 +27,7 @@ interface CheckoutPriceSummaryProps {
 export function CheckoutPriceSummary({
   rawTotal,
   discountAmount,
+  discountLines = [],
   shippingFee,
   totalPoints,
   finalTotal,
@@ -39,12 +47,19 @@ export function CheckoutPriceSummary({
         <span className="text-muted-foreground">{sstShowInCatalog ? "商品总额（含税）" : "商品总额"}</span>
         <span className="font-medium text-foreground">RM {rawTotal}</span>
       </div>
-      {discountAmount > 0 && (
-        <div className="mt-2 flex justify-between text-sm">
-          <span className="text-muted-foreground">优惠券抵扣</span>
-          <span className="font-medium text-destructive">-RM {discountAmount}</span>
-        </div>
-      )}
+      {discountLines.length > 0
+        ? discountLines.map((line) => (
+            <div key={`${line.type}-${line.label}`} className="mt-2 flex justify-between text-sm">
+              <span className="text-muted-foreground">{line.label}</span>
+              <span className="font-medium text-destructive">-RM {line.amount}</span>
+            </div>
+          ))
+        : discountAmount > 0 ? (
+          <div className="mt-2 flex justify-between text-sm">
+            <span className="text-muted-foreground">优惠抵扣</span>
+            <span className="font-medium text-destructive">-RM {discountAmount}</span>
+          </div>
+        ) : null}
       {sstPreview ? (
         <>
           <div className="mt-2 flex justify-between text-sm">

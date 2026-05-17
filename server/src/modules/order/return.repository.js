@@ -58,7 +58,7 @@ async function countActiveReturnRequests(orderId, userId, orderItemId) {
     `SELECT COUNT(*) AS total
      FROM return_requests
       WHERE order_id = ? AND user_id = ?${itemClause}
-        AND status IN ('pending', 'approved', 'processing', 'requested', 'needs_evidence', 'return_in_transit', 'received')`,
+        AND status IN ('pending', 'need_evidence', 'approved', 'processing', 'waiting_return', 'return_in_transit', 'received', 'refund_pending', 'exchange_shipping')`,
     params,
   );
   return Number(rows?.[0]?.total || 0);

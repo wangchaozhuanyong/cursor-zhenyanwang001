@@ -10,8 +10,10 @@ export type NotificationPayload = {
   title: string;
   content: string;
   type: string;
-  audience_type: "all" | "single";
+  audience_type: "all" | "single" | "specific" | "user_tag" | "member_level" | "has_order" | "no_order";
   user_id?: string;
+  user_ids?: string[];
+  audience_value?: string;
   scheduled_at?: string;
   link_url?: string;
   template_code?: string;
@@ -27,6 +29,19 @@ export function saveNotificationDraft(data: NotificationPayload) {
 
 export function publishNotification(id: string, data?: { scheduled_at?: string }) {
   return put<Notification>(`/admin/notifications/${id}/publish`, data || {});
+}
+
+export function getNotificationSummary() {
+  return get<{
+    totalBatches: number;
+    draftCount: number;
+    scheduledCount: number;
+    sentCount: number;
+    cancelledCount: number;
+    totalRecipients: number;
+    totalRead: number;
+    readRate: number;
+  }>("/admin/notifications/summary");
 }
 
 export function getNotificationTemplates() {
@@ -57,5 +72,17 @@ export function updateNotificationTriggerSettings(rules: NotificationTriggerRule
 
 export function deleteNotification(id: string) {
   return del<void>(`/admin/notifications/${id}`);
+}
+
+export function deleteDraftNotification(id: string) {
+  return del<void>(`/admin/notifications/${id}/draft`);
+}
+
+export function cancelScheduledNotification(id: string) {
+  return put<void>(`/admin/notifications/${id}/cancel`, {});
+}
+
+export function revokeSentNotification(id: string) {
+  return put<void>(`/admin/notifications/${id}/revoke`, {});
 }
 

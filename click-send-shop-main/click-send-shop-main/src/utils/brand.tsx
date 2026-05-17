@@ -19,7 +19,7 @@ export function renderBrandTitle(name?: string): ReactNode {
     return (
       <>
         {head}
-        <span className="text-gold">{tail}</span>
+        <span className="text-theme-price">{tail}</span>
       </>
     );
   }

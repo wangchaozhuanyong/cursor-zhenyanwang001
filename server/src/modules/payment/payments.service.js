@@ -703,18 +703,24 @@ async function listPaymentEventsAdmin(query) {
 }
 
 async function markOrderPaidByAdmin(req, orderId, body) {
-  const { reason, channel_code: channelCode } = body;
+  const {
+    reason,
+    channel_code: channelCode,
+    payment_channel: paymentChannel,
+    payment_reference: paymentReference,
+    admin_remark: adminRemark,
+  } = body || {};
   const adminUserId = req.user?.id;
   const conn = await payRepo.getConnection();
   try {
     await conn.beginTransaction();
-    const order = await orderRepo.selectOrderByIdForUpdate(conn, orderId);
+    const order = await orderRepo.selectOrderByIdOrOrderNoForUpdate(conn, orderId);
     if (!order) throw new NotFoundError('订单不存在');
     if (order.status !== ORDER_STATUS.PENDING || (order.payment_status || PAYMENT_STATUS.PENDING) !== PAYMENT_STATUS.PENDING) {
       throw new ValidationError('订单状态不允许补记为已支付');
     }
 
-    const chCode = channelCode || 'manual_bank';
+    const chCode = paymentChannel || channelCode || 'manual_bank';
     const channel = await payRepo.selectChannelByCode(conn, chCode);
     const paymentOrderId = generateId();
     const total = toMoney(order.total_amount);
@@ -735,7 +741,7 @@ async function markOrderPaidByAdmin(req, orderId, body) {
       metadata: { admin_mark: true },
     });
 
-    const txNo = `ADM-${Date.now()}`;
+    const txNo = paymentReference || `ADM-${Date.now()}`;
     const paidUpdated = await orderRepo.updateOrderPaid(conn, order.id, {
       paymentTime: new Date(),
       paymentChannel: 'manual',
@@ -759,7 +765,12 @@ async function markOrderPaidByAdmin(req, orderId, body) {
     await payRepo.updatePaymentOrderPaid(conn, paymentOrderId, {
       payment_transaction_no: txNo,
       payment_time: new Date(),
-      metadata: { admin_mark: true, reason: reason || '' },
+      metadata: {
+        admin_mark: true,
+        reason: reason || '',
+        admin_remark: adminRemark || '',
+        payment_reference: txNo,
+      },
     });
 
     await payRepo.insertPaymentFee(conn, {
@@ -780,7 +791,12 @@ async function markOrderPaidByAdmin(req, orderId, body) {
       event_type: 'admin_mark_paid',
       verify_status: 'success',
       processing_result: 'success',
-      payload_json: { reason: reason || '', operator_id: adminUserId },
+      payload_json: {
+        reason: reason || '',
+        operator_id: adminUserId,
+        admin_remark: adminRemark || '',
+        payment_reference: txNo,
+      },
       error_message: '',
     });
 
@@ -798,7 +814,12 @@ async function markOrderPaidByAdmin(req, orderId, body) {
       objectType: 'order',
       objectId: orderId,
       summary: `管理端补记已支付: ${reason || '无备注'}`,
-      after: { payment_order_id: paymentOrderId, channel_code: chCode },
+      after: {
+        payment_order_id: paymentOrderId,
+        channel_code: chCode,
+        payment_reference: txNo,
+        admin_remark: adminRemark || '',
+      },
       result: 'success',
     });
 

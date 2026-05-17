@@ -76,6 +76,11 @@ export interface SiteInfo {
   newArrivalHeroTitle?: string;
   newArrivalHeroSubtitle?: string;
   newArrivalHeroCtaText?: string;
+  newArrivalSectionTitle?: string;
+  newArrivalSectionSubtitle?: string;
+  newArrivalDisplayCount?: string;
+  newArrivalShowPrice?: string;
+  newArrivalOnlyInStock?: string;
 
   /* ─ Cookie 同意后的分析 / 广告追踪 ─ */
   ga4Enabled?: string;

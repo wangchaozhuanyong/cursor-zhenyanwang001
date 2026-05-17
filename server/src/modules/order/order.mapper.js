@@ -29,13 +29,54 @@ function formatOrderItem(row) {
   };
 }
 
+function parseDiscountMeta(raw) {
+  if (!raw) return null;
+  if (typeof raw === 'object') return raw;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function buildDiscountLines(row, meta) {
+  if (meta?.lines?.length) return meta.lines;
+  const lines = [];
+  const flash = Number(meta?.flash_sale_discount || 0);
+  const fullRed = Number(meta?.full_reduction_discount || 0);
+  const coupon = Number(meta?.coupon_discount || 0);
+  if (flash > 0) lines.push({ type: 'flash_sale', label: '秒杀优惠', amount: flash });
+  if (fullRed > 0) lines.push({ type: 'full_reduction', label: '满减优惠', amount: fullRed });
+  if (coupon > 0) {
+    lines.push({
+      type: 'coupon',
+      label: row.coupon_title ? `优惠券（${row.coupon_title}）` : '优惠券抵扣',
+      amount: coupon,
+    });
+  }
+  if (!lines.length && Number(row.discount_amount || 0) > 0) {
+    lines.push({
+      type: 'coupon',
+      label: row.coupon_title ? `优惠券（${row.coupon_title}）` : '优惠抵扣',
+      amount: parseFloat(row.discount_amount),
+    });
+  }
+  return lines;
+}
+
 function formatOrder(row, items) {
+  const discountMeta = parseDiscountMeta(row.discount_meta);
   return {
     id: row.id,
     order_no: row.order_no,
     items,
     raw_amount: parseFloat(row.raw_amount),
     discount_amount: parseFloat(row.discount_amount),
+    discount_meta: discountMeta,
+    discount_lines: buildDiscountLines(row, discountMeta),
+    flash_sale_discount: Number(discountMeta?.flash_sale_discount || 0),
+    full_reduction_discount: Number(discountMeta?.full_reduction_discount || 0),
+    coupon_discount: Number(discountMeta?.coupon_discount ?? 0),
     coupon_title: row.coupon_title,
     shipping_fee: parseFloat(row.shipping_fee),
     shipping_name: normalizeKnownMojibakeText(row.shipping_name),

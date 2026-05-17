@@ -7,6 +7,12 @@ exports.list = asyncRoute(async (req, res) => {
   res.paginate(r.list, r.total, r.page, r.pageSize);
 });
 
+exports.getDetail = asyncRoute(async (req, res) => {
+  const r = await svc.getReviewDetail(req.params.id);
+  if (r.error) return res.fail(r.error.code, r.error.message);
+  res.success(r.data);
+});
+
 exports.toggleVisibility = asyncRoute(async (req, res) => {
   const r = await svc.toggleVisibility(req.params.id, req.user?.id, req);
   if (r.error) return res.fail(r.error.code, r.error.message);
@@ -19,8 +25,26 @@ exports.toggleFeatured = asyncRoute(async (req, res) => {
   res.success(r.data || null, r.message);
 });
 
+exports.approve = asyncRoute(async (req, res) => {
+  const r = await svc.approveReview(req.params.id, req.user?.id, req);
+  if (r.error) return res.fail(r.error.code, r.error.message);
+  res.success(null, r.message);
+});
+
+exports.reject = asyncRoute(async (req, res) => {
+  const r = await svc.rejectReview(req.params.id, req.user?.id, req);
+  if (r.error) return res.fail(r.error.code, r.error.message);
+  res.success(null, r.message);
+});
+
 exports.reply = asyncRoute(async (req, res) => {
   const r = await svc.replyReview(req.params.id, req.body, req.user?.id, req);
+  if (r.error) return res.fail(r.error.code, r.error.message);
+  res.success(null, r.message);
+});
+
+exports.updateComplaint = asyncRoute(async (req, res) => {
+  const r = await svc.updateComplaint(req.params.id, req.body, req.user?.id, req);
   if (r.error) return res.fail(r.error.code, r.error.message);
   res.success(null, r.message);
 });
@@ -47,12 +71,12 @@ exports.batchHide = asyncRoute(async (req, res) => {
   const { ids } = req.body;
   if (!Array.isArray(ids) || ids.length === 0) throw new ValidationError('请选择评论');
   const r = await svc.batchHide(ids, req.user?.id, req);
-  res.success(null, r.message);
+  res.success(r.data || null, r.message);
 });
 
 exports.batchDelete = asyncRoute(async (req, res) => {
   const { ids } = req.body;
   if (!Array.isArray(ids) || ids.length === 0) throw new ValidationError('请选择评论');
   const r = await svc.batchDelete(ids, req.user?.id, req);
-  res.success(null, r.message);
+  res.success(r.data || null, r.message);
 });

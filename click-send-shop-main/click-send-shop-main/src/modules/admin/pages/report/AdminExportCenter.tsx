@@ -173,7 +173,7 @@ export default function AdminExportCenter() {
             <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{t.finished_at ? new Date(t.finished_at).toLocaleString("zh-CN") : "-"}</td>
             <td className="px-4 py-3">
               {t.status === EXPORT_TASK_STATUS.SUCCESS ? (
-                <button type="button" onClick={() => handleDownload(t)} className="touch-manipulation rounded-lg border border-border p-1.5 text-gold hover:bg-secondary" title="下载">
+                <button type="button" onClick={() => handleDownload(t)} className="touch-manipulation rounded-lg border border-border p-1.5 text-theme-price hover:bg-secondary" title="下载">
                   <Download size={14} />
                 </button>
               ) : t.status === EXPORT_TASK_STATUS.PENDING ? <Loader2 size={14} className="animate-spin text-muted-foreground" /> : <span className="text-xs text-muted-foreground">-</span>}

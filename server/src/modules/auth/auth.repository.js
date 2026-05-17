@@ -140,7 +140,7 @@ async function updatePasswordHash(userId, hash) {
 
 async function selectRefreshVersion(userId) {
   const [[row]] = await db.query(
-    'SELECT id, refresh_token_version, role FROM users WHERE id = ? AND deleted_at IS NULL',
+    'SELECT id, refresh_token_version, role, account_status FROM users WHERE id = ? AND deleted_at IS NULL',
     [userId],
   );
   return row || null;
@@ -152,7 +152,7 @@ async function incrementRefreshTokenVersion(userId) {
 
 /** 中间件等场景：校验用户是否存在及角色 */
 async function selectIdAndRoleByUserId(userId) {
-  const [[row]] = await db.query('SELECT id, role FROM users WHERE id = ? AND deleted_at IS NULL', [userId]);
+  const [[row]] = await db.query('SELECT id, role, account_status FROM users WHERE id = ? AND deleted_at IS NULL', [userId]);
   return row || null;
 }
 

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Order, OrderStatus, PaymentStatus } from "@/types/order";
+import type { AdminOrderSummary, Order, OrderStatus, PaymentStatus } from "@/types/order";
 import * as orderService from "@/services/admin/orderService";
 
 const initialState = {
@@ -8,6 +8,25 @@ const initialState = {
   statusFilter: "",
   paymentFilter: "" as "" | PaymentStatus,
   search: "",
+  dateFrom: "",
+  dateTo: "",
+  paymentMethod: "",
+  paymentChannel: "",
+  shippingName: "",
+  amountMin: "",
+  amountMax: "",
+  page: 1,
+  pageSize: 20,
+  total: 0,
+  summary: {
+    pending: 0,
+    paid: 0,
+    shipped: 0,
+    completed: 0,
+    cancelled: 0,
+    refunding: 0,
+    refunded: 0,
+  },
 };
 
 /**
@@ -20,15 +39,33 @@ interface AdminOrdersState {
   statusFilter: string;
   paymentFilter: "" | PaymentStatus;
   search: string;
+  dateFrom: string;
+  dateTo: string;
+  paymentMethod: string;
+  paymentChannel: string;
+  shippingName: string;
+  amountMin: string;
+  amountMax: string;
+  page: number;
+  pageSize: number;
+  total: number;
+  summary: AdminOrderSummary;
 
   setStatusFilter: (v: string) => void;
   setPaymentFilter: (v: "" | PaymentStatus) => void;
   setSearch: (v: string) => void;
+  setDateFrom: (v: string) => void;
+  setDateTo: (v: string) => void;
+  setPaymentMethod: (v: string) => void;
+  setPaymentChannel: (v: string) => void;
+  setShippingName: (v: string) => void;
+  setAmountMin: (v: string) => void;
+  setAmountMax: (v: string) => void;
+  setPage: (v: number) => void;
+  setPageSize: (v: number) => void;
 
   loadOrders: () => Promise<void>;
-  /** 本地同步一行状态（接口已成功之后由 Page 调用，或在此与 API 组合） */
   applyOrderStatus: (orderId: string, status: OrderStatus) => void;
-  /** 离开列表路由时清空，避免全局缓存干扰其它入口 */
   reset: () => void;
 }
 
@@ -38,21 +75,58 @@ export const useAdminOrdersStore = create<AdminOrdersState>((set, get) => ({
   setStatusFilter: (statusFilter) => set({ statusFilter }),
   setPaymentFilter: (paymentFilter) => set({ paymentFilter }),
   setSearch: (search) => set({ search }),
+  setDateFrom: (dateFrom) => set({ dateFrom }),
+  setDateTo: (dateTo) => set({ dateTo }),
+  setPaymentMethod: (paymentMethod) => set({ paymentMethod }),
+  setPaymentChannel: (paymentChannel) => set({ paymentChannel }),
+  setShippingName: (shippingName) => set({ shippingName }),
+  setAmountMin: (amountMin) => set({ amountMin }),
+  setAmountMax: (amountMax) => set({ amountMax }),
+  setPage: (page) => set({ page }),
+  setPageSize: (pageSize) => set({ pageSize }),
 
   reset: () => set({ ...initialState }),
 
   loadOrders: async () => {
     set({ loading: true });
-    const { statusFilter, paymentFilter, search } = get();
     try {
+      const {
+        statusFilter,
+        paymentFilter,
+        search,
+        dateFrom,
+        dateTo,
+        paymentMethod,
+        paymentChannel,
+        shippingName,
+        amountMin,
+        amountMax,
+        page,
+        pageSize,
+      } = get();
       const p = await orderService.fetchOrders({
-        page: 1,
-        pageSize: 500,
+        page,
+        pageSize,
         status: (statusFilter || undefined) as OrderStatus | undefined,
         paymentStatus: paymentFilter || undefined,
         keyword: search.trim() || undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        payment_method: paymentMethod || undefined,
+        payment_channel: paymentChannel || undefined,
+        shipping_name: shippingName || undefined,
+        amountMin: amountMin ? Number(amountMin) : undefined,
+        amountMax: amountMax ? Number(amountMax) : undefined,
       });
-      set({ orders: p.list as Order[], loading: false });
+      const summary = (p as unknown as { summary?: AdminOrderSummary }).summary;
+      set({
+        orders: p.list as Order[],
+        total: p.total,
+        page: p.page,
+        pageSize: p.pageSize,
+        summary: summary || initialState.summary,
+        loading: false,
+      });
     } catch {
       set({ loading: false });
       throw new Error("LOAD_ADMIN_ORDERS_FAILED");

@@ -262,8 +262,10 @@ function ensureReadableForeground(background: RGB | string, preferred?: string, 
   return fg;
 }
 
+type GradientSurfaceTokens = ReturnType<typeof paletteForGradientSurface>;
+
 /** 渐变/双色块上的可读前景：按渐变中位色计算，而非单色 price/primary */
-function paletteForGradientSurface(start: RGB, end: RGB, midWeight = 0.42) {
+function paletteForGradientSurface(start: RGB, end: RGB, midWeight = 0.42): GradientSurfaceTokens {
   const mid = mixColors(start, end, midWeight);
   const fg = ensureReadableForeground(mid);
   const fgRgb = parseColor(fg);
@@ -275,6 +277,90 @@ function paletteForGradientSurface(start: RGB, end: RGB, midWeight = 0.42) {
     icon: rgbToCss(mixColors(fgRgb, start, 0.1)),
     iconWrap: rgbToCss(mixColors(fgRgb, mid, 0.16)),
   };
+}
+
+function buildMemberCardSurface(
+  style: ThemeConfig["memberCardStyle"],
+  colors: { primary: RGB; secondary: RGB; price: RGB; success: RGB; bg: RGB; surface: RGB },
+): GradientSurfaceTokens & { bg: string; badgeBg: string; badgeFg: string; avatarRing: string; sheen: string } {
+  let start: RGB;
+  let end: RGB;
+  switch (style) {
+    case "gold":
+      start = mixColors(colors.price, colors.surface, 0.22);
+      end = mixColors(colors.price, colors.bg, 0.52);
+      break;
+    case "blackGold":
+      start = mixColors(colors.primary, BLACK, 0.9);
+      end = mixColors(colors.price, colors.primary, 0.38);
+      break;
+    case "fresh":
+      start = mixColors(colors.success, colors.surface, 0.18);
+      end = mixColors(colors.success, colors.bg, 0.42);
+      break;
+    case "light":
+    default:
+      start = mixColors(colors.primary, BLACK, 0.9);
+      end = mixColors(colors.primary, colors.secondary, 0.32);
+      break;
+  }
+  const surface = paletteForGradientSurface(start, end, 0.42);
+  const mid = parseColor(surface.midCss);
+  return {
+    ...surface,
+    bg: `linear-gradient(110deg, ${rgbToCss(start)}, ${rgbToCss(end)})`,
+    badgeBg: rgbToCss(mixColors(WHITE, mid, 0.82)),
+    badgeFg: ensureReadableForeground(mixColors(WHITE, mid, 0.82)),
+    avatarRing: rgbToCss(mixColors(colors.price, parseColor(surface.foreground), 0.42)),
+    sheen: `linear-gradient(90deg, transparent, color-mix(in srgb, ${surface.foreground} 16%, transparent))`,
+  };
+}
+
+function buildInvitePromoSurface(colors: {
+  secondary: RGB;
+  price: RGB;
+  surface: RGB;
+  primary: RGB;
+}): GradientSurfaceTokens & { bg: string; border: string; ctaBg: string; ctaFg: string } {
+  const start = mixColors(colors.secondary, colors.surface, 0.28);
+  const end = mixColors(colors.price, colors.surface, 0.48);
+  const surface = paletteForGradientSurface(start, end, 0.45);
+  const ctaEnd = mixColors(colors.primary, BLACK, 0.88);
+  const cta = paletteForGradientSurface(colors.primary, ctaEnd, 0.5);
+  return {
+    ...surface,
+    bg: `linear-gradient(110deg, ${rgbToCss(start)}, ${rgbToCss(end)})`,
+    border: rgbToCss(mixColors(colors.price, parseColor(surface.midCss), 0.35)),
+    ctaBg: `linear-gradient(135deg, ${rgbToCss(colors.primary)}, ${rgbToCss(ctaEnd)})`,
+    ctaFg: cta.foreground,
+  };
+}
+
+function buildGiftBadgeSurface(price: RGB, surface: RGB): GradientSurfaceTokens & { bg: string; ring: string } {
+  const start = mixColors(price, WHITE, 0.86);
+  const end = mixColors(price, surface, 0.62);
+  const tokens = paletteForGradientSurface(start, end, 0.48);
+  return {
+    ...tokens,
+    bg: `linear-gradient(155deg, ${rgbToCss(mixColors(price, WHITE, 0.92))}, ${rgbToCss(start)}, ${rgbToCss(end)})`,
+    ring: rgbToCss(mixColors(price, parseColor(tokens.foreground), 0.38)),
+  };
+}
+
+function buildCouponCardLightSurface(
+  variant: "premium" | "deal",
+  colors: { primary: RGB; secondary: RGB; danger: RGB; warning: RGB },
+): { fg: string; muted: string; midCss: string } {
+  const start =
+    variant === "deal"
+      ? mixColors(colors.danger, WHITE, 0.82)
+      : mixColors(colors.secondary, WHITE, 0.78);
+  const end =
+    variant === "deal"
+      ? mixColors(colors.warning, WHITE, 0.84)
+      : mixColors(colors.primary, WHITE, 0.9);
+  const surface = paletteForGradientSurface(start, end, 0.5);
+  return { fg: surface.foreground, muted: surface.muted, midCss: surface.midCss };
 }
 
 export function generateThemePalette(adminConfig: ThemeConfig) {
@@ -342,6 +428,18 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
   );
   const couponAccentSurface = paletteForGradientSurface(price, couponAccentEnd, 0.4);
   const couponAccentEndCss = rgbToCss(couponAccentEnd);
+  const memberCardSurface = buildMemberCardSurface(adminConfig.memberCardStyle, {
+    primary,
+    secondary,
+    price,
+    success,
+    bg,
+    surface,
+  });
+  const invitePromoSurface = buildInvitePromoSurface({ secondary, price, surface, primary });
+  const giftBadgeSurface = buildGiftBadgeSurface(price, surface);
+  const couponCardPremiumLight = buildCouponCardLightSurface("premium", { primary, secondary, danger, warning });
+  const couponCardDealLight = buildCouponCardLightSurface("deal", { primary, secondary, danger, warning });
 
   return {
     "--theme-primary": primaryCss,
@@ -374,6 +472,29 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     "--theme-coupon-accent-subtle": couponAccentSurface.subtle,
     "--theme-coupon-accent-icon": couponAccentSurface.icon,
     "--theme-coupon-accent-icon-wrap": couponAccentSurface.iconWrap,
+    "--theme-member-card-bg": memberCardSurface.bg,
+    "--theme-member-card-mid": memberCardSurface.midCss,
+    "--theme-member-card-foreground": memberCardSurface.foreground,
+    "--theme-member-card-muted": memberCardSurface.muted,
+    "--theme-member-card-subtle": memberCardSurface.subtle,
+    "--theme-member-card-badge-bg": memberCardSurface.badgeBg,
+    "--theme-member-card-badge-fg": memberCardSurface.badgeFg,
+    "--theme-member-card-avatar-ring": memberCardSurface.avatarRing,
+    "--theme-member-card-sheen": memberCardSurface.sheen,
+    "--theme-invite-promo-bg": invitePromoSurface.bg,
+    "--theme-invite-promo-mid": invitePromoSurface.midCss,
+    "--theme-invite-promo-border": invitePromoSurface.border,
+    "--theme-invite-promo-foreground": invitePromoSurface.foreground,
+    "--theme-invite-promo-muted": invitePromoSurface.muted,
+    "--theme-invite-promo-cta-bg": invitePromoSurface.ctaBg,
+    "--theme-invite-promo-cta-fg": invitePromoSurface.ctaFg,
+    "--theme-gift-badge-bg": giftBadgeSurface.bg,
+    "--theme-gift-badge-ring": giftBadgeSurface.ring,
+    "--theme-gift-badge-foreground": giftBadgeSurface.foreground,
+    "--theme-coupon-card-premium-fg": couponCardPremiumLight.fg,
+    "--theme-coupon-card-premium-muted": couponCardPremiumLight.muted,
+    "--theme-coupon-card-deal-fg": couponCardDealLight.fg,
+    "--theme-coupon-card-deal-muted": couponCardDealLight.muted,
     "--theme-bg": bgCss,
     "--theme-surface": surfaceCss,
     "--theme-border": rgbToCss(border),
@@ -546,6 +667,20 @@ export function getThemeHealthChecks(adminConfig: ThemeConfig): ThemeHealthCheck
       label: "优惠券强调区文字对比度",
       foreground: palette["--theme-coupon-accent-foreground"],
       background: palette["--theme-coupon-accent-mid"],
+      minRatio: 4.5,
+    },
+    {
+      id: "member_card_text",
+      label: "会员卡文字对比度",
+      foreground: palette["--theme-member-card-foreground"],
+      background: palette["--theme-member-card-mid"],
+      minRatio: 4.5,
+    },
+    {
+      id: "invite_promo_text",
+      label: "邀请横幅文字对比度",
+      foreground: palette["--theme-invite-promo-foreground"],
+      background: palette["--theme-invite-promo-mid"],
       minRatio: 4.5,
     },
     {

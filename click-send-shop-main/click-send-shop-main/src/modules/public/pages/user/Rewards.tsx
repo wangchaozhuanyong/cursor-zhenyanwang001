@@ -100,7 +100,7 @@ export default function Rewards() {
           <button
             onClick={handleWithdraw}
             disabled={withdrawing || balance <= 0}
-            className="mx-auto mt-4 flex items-center gap-2 rounded-full bg-gold px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg transition-all active:scale-95 disabled:opacity-60"
+            className="mx-auto mt-4 flex items-center gap-2 rounded-full btn-theme-price px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg transition-all active:scale-95 disabled:opacity-60"
           >
             <Wallet size={16} />
             {withdrawing ? "提交中..." : "申请提现"}
@@ -119,7 +119,7 @@ export default function Rewards() {
               <button
                 type="button"
                 onClick={() => loadData()}
-                className="rounded-full bg-gold px-5 py-2 text-sm font-semibold text-primary-foreground active:scale-95 transition-transform"
+                className="rounded-full btn-theme-price px-5 py-2 text-sm font-semibold text-primary-foreground active:scale-95 transition-transform"
               >
                 重试
               </button>

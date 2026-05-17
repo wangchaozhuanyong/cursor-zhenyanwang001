@@ -1,6 +1,7 @@
 ﻿import { getCartLinePrice } from "@/stores/useCartStore";
 import type { Order } from "@/types/order";
 import type { PaymentMethod } from "@/components/PaymentMethodPicker";
+import { appendOrderDiscountTextLines } from "@/utils/orderDiscount";
 
 export function generateOrderText(order: Order) {
   const itemsText = order.items
@@ -15,9 +16,7 @@ export function generateOrderText(order: Order) {
     `------------------------`,
     `${order.tax_mode === "inclusive" ? "商品总额（含税）" : "商品总额"}：RM ${order.raw_amount}`,
   ];
-  if (order.discount_amount > 0) {
-    lines.push(`优惠券（${order.coupon_title}）：-RM ${order.discount_amount}`);
-  }
+  appendOrderDiscountTextLines(order, lines);
   if (
     order.tax_mode === "inclusive"
     && order.taxable_amount != null

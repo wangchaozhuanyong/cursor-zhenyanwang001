@@ -1,12 +1,20 @@
 import * as orderApi from "@/api/admin/order";
-import type { CheckoutAbandonment, CheckoutAbandonmentStatus, Order, OrderListParams } from "@/types/order";
+import type { AdminOrderSummary, CheckoutAbandonment, CheckoutAbandonmentStatus, Order, OrderListParams } from "@/types/order";
 import type { PaginatedData } from "@/types/common";
 import { downloadAdminCsv } from "@/utils/adminCsvDownload";
 import { unwrapPaginated } from "@/services/responseNormalize";
 
-export async function fetchOrders(params?: OrderListParams): Promise<PaginatedData<Order>> {
+export async function fetchOrders(params?: OrderListParams): Promise<PaginatedData<Order> & { summary?: AdminOrderSummary }> {
   const res = await orderApi.getOrders(params);
-  return unwrapPaginated<Order>(res.data);
+  const page = unwrapPaginated<Order>(res.data);
+  const summary = (
+    res.data &&
+    typeof res.data === "object" &&
+    "summary" in (res.data as Record<string, unknown>)
+  )
+    ? ((res.data as Record<string, unknown>).summary as AdminOrderSummary)
+    : undefined;
+  return { ...page, summary };
 }
 
 export async function fetchOrderById(id: string) {

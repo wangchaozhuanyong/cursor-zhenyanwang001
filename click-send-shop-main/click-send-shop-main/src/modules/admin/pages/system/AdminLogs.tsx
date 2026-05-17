@@ -148,7 +148,7 @@ export default function AdminLogs() {
           type="button"
           onClick={handleAuditSearch}
           className="min-h-[44px] theme-rounded px-5 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]"
-          style={{ background: "var(--theme-gradient)" }}
+         
         ><Tx>
           查询
         </Tx></button>

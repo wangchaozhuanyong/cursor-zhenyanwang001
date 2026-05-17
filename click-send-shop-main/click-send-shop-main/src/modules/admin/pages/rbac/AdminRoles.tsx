@@ -136,9 +136,9 @@ export default function AdminRoles() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <button onClick={() => setTab("assign")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "assign" ? "bg-[var(--theme-price)] text-white" : "bg-secondary text-muted-foreground"}`}><Tx>用户角色分配</Tx></button>
-        <button onClick={() => setTab("manage")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "manage" ? "bg-[var(--theme-price)] text-white" : "bg-secondary text-muted-foreground"}`}><Tx>角色管理</Tx></button>
-        <button onClick={() => setTab("admins")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "admins" ? "bg-[var(--theme-price)] text-white" : "bg-secondary text-muted-foreground"}`}><Tx>管理员账号</Tx></button>
+        <button onClick={() => setTab("assign")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "assign" ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}><Tx>用户角色分配</Tx></button>
+        <button onClick={() => setTab("manage")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "manage" ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}><Tx>角色管理</Tx></button>
+        <button onClick={() => setTab("admins")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "admins" ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}><Tx>管理员账号</Tx></button>
       </div>
 
       {loading ? (
@@ -192,7 +192,7 @@ export default function AdminRoles() {
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground"><Tx>管理角色定义和权限配置。系统内置角色不可删除。</Tx></p>
             <PermissionGate permission="role.manage">
-              <button onClick={openRoleCreate} className="flex items-center gap-1 theme-rounded px-3 py-2 text-xs font-medium text-white" style={{ background: "var(--theme-gradient)" }}>
+              <button onClick={openRoleCreate} className="flex items-center gap-1 theme-rounded px-3 py-2 text-xs font-medium btn-theme-gradient">
                 <Plus size={14} /><Tx> 新建角色
               </Tx></button>
             </PermissionGate>
@@ -225,7 +225,7 @@ export default function AdminRoles() {
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground"><Tx>管理管理员账号。拥有「角色权限」权限即可创建/禁用/重置密码；删除与普通管理员管理规则同「账号管理」页（不可删除超级管理员）。</Tx></p>
             <PermissionGate permission="role.manage">
-              <button onClick={() => { setAdminForm({ phone: "", password: "", nickname: "" }); setShowAdminModal(true); }} className="flex items-center gap-1 theme-rounded px-3 py-2 text-xs font-medium text-white" style={{ background: "var(--theme-gradient)" }}>
+              <button onClick={() => { setAdminForm({ phone: "", password: "", nickname: "" }); setShowAdminModal(true); }} className="flex items-center gap-1 theme-rounded px-3 py-2 text-xs font-medium btn-theme-gradient">
                 <Plus size={14} /><Tx> 新增管理员
               </Tx></button>
             </PermissionGate>
@@ -332,7 +332,7 @@ export default function AdminRoles() {
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm theme-rounded bg-[var(--theme-surface)] p-6 theme-shadow space-y-4">
             <h3 className="font-bold text-foreground"><Tx>重置密码</Tx></h3>
             <input type="password" value={resetPw} onChange={(e) => setResetPw(e.target.value)} placeholder="输入新密码（至少6位）" className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" />
-            <button onClick={async () => { if (resetPw.length < 6) { toast.error("密码至少6位"); return; } try { await rbacService.resetAdminPassword(showResetModal, resetPw); toast.success("密码已重置"); setShowResetModal(null); } catch (e) { toast.error(toastErrorMessage(e, "重置失败")); } }} disabled={resetPw.length < 6} className="w-full theme-rounded py-3 text-sm font-semibold text-white disabled:opacity-50" style={{ background: "var(--theme-gradient)" }}><Tx>确认重置</Tx></button>
+            <button onClick={async () => { if (resetPw.length < 6) { toast.error("密码至少6位"); return; } try { await rbacService.resetAdminPassword(showResetModal, resetPw); toast.success("密码已重置"); setShowResetModal(null); } catch (e) { toast.error(toastErrorMessage(e, "重置失败")); } }} disabled={resetPw.length < 6} className="w-full theme-rounded py-3 text-sm font-semibold btn-theme-gradient disabled:opacity-50"><Tx>确认重置</Tx></button>
           </div>
         </div>
       )}

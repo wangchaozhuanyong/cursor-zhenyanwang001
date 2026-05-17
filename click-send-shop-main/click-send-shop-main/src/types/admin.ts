@@ -103,6 +103,11 @@ export interface SiteSettings {
   newArrivalHeroTitle?: string;
   newArrivalHeroSubtitle?: string;
   newArrivalHeroCtaText?: string;
+  newArrivalSectionTitle?: string;
+  newArrivalSectionSubtitle?: string;
+  newArrivalDisplayCount?: string;
+  newArrivalShowPrice?: string;
+  newArrivalOnlyInStock?: string;
 
   /* 分析 / 广告埋点配置：脚本仍受 Cookie 同意状态控制 */
   ga4Enabled?: string;

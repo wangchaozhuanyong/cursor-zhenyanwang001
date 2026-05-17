@@ -107,7 +107,7 @@ export default function ProductCard({ product, index = 0 }: Props) {
           <ProductTagList tags={product.tags} max={2} />
         </div>
         {soldOut ? (
-          <span className="absolute inset-0 flex items-center justify-center bg-black/35 text-sm font-semibold text-white">
+          <span className="absolute inset-0 flex items-center justify-center bg-black/35 text-sm font-semibold btn-theme-gradient">
             已售罄
           </span>
         ) : null}

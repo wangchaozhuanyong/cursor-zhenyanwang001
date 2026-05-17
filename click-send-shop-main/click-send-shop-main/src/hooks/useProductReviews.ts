@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import * as reviewService from "@/services/reviewService";
-import type { Review } from "@/types/review";
+import type { Review, ProductReviewStats } from "@/types/review";
 import { isLoggedIn } from "@/utils/token";
 
 export function timeAgoReview(dateStr: string): string {
@@ -13,9 +13,17 @@ export function timeAgoReview(dateStr: string): string {
   return `${Math.floor(days / 30)}个月前`;
 }
 
+const DEFAULT_STATS: ProductReviewStats = {
+  total: 0,
+  avg_rating: 5,
+  rating_distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+  image_review_count: 0,
+};
+
 /** 商品评价：由 ProductDetail 调用 → reviewService → API */
 export function useProductReviews(productId: string) {
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [stats, setStats] = useState<ProductReviewStats>(DEFAULT_STATS);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [rating, setRating] = useState(0);
@@ -29,15 +37,19 @@ export function useProductReviews(productId: string) {
     if (!productId) {
       setLoading(false);
       setReviews([]);
+      setStats(DEFAULT_STATS);
       return;
     }
     let cancelled = false;
     setLoading(true);
-    reviewService
-      .fetchProductReviews(productId)
-      .then((data) => {
+    Promise.all([
+      reviewService.fetchProductReviews(productId),
+      reviewService.fetchProductReviewStats(productId),
+    ])
+      .then(([data, reviewStats]) => {
         if (cancelled) return;
         setReviews(data.list);
+        setStats(reviewStats);
         const liked = new Set<string>();
         data.list.forEach((r) => {
           if (r.liked) liked.add(r.id);
@@ -53,8 +65,8 @@ export function useProductReviews(productId: string) {
     };
   }, [productId]);
 
-  const avgRating =
-    reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 5;
+  const avgRating = stats.avg_rating || 5;
+  const reviewTotal = stats.total;
 
   const handleLike = async (id: string) => {
     try {
@@ -103,18 +115,23 @@ export function useProductReviews(productId: string) {
     }
     setSubmitting(true);
     try {
-      const created = await reviewService.submitReview({
+      await reviewService.submitReview({
         product_id: productId,
         rating,
         content,
         images: reviewImages,
       });
-      setReviews((prev) => [created, ...prev]);
-      toast.success("评价提交成功！");
+      toast.success("评价已提交");
       setShowForm(false);
       setRating(0);
       setContent("");
       setReviewImages([]);
+      const [data, reviewStats] = await Promise.all([
+        reviewService.fetchProductReviews(productId),
+        reviewService.fetchProductReviewStats(productId),
+      ]);
+      setReviews(data.list);
+      setStats(reviewStats);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "提交失败");
     } finally {
@@ -124,6 +141,8 @@ export function useProductReviews(productId: string) {
 
   return {
     reviews,
+    stats,
+    reviewTotal,
     loading,
     showForm,
     setShowForm,

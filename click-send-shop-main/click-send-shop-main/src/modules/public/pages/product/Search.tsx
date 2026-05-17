@@ -206,7 +206,7 @@ export default function Search() {
                 {hotTerms.length > 0 && (
                   <section>
                     <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                      <TrendingUp size={14} className="text-gold" /> 热门搜索
+                      <TrendingUp size={14} className="text-theme-price" /> 热门搜索
                     </h3>
                     <div className="space-y-2">
                       {hotTerms.slice(0, 8).map((term, idx) => (
@@ -269,7 +269,7 @@ export default function Search() {
             {hotTerms.length > 0 && (
               <section>
                 <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                  <TrendingUp size={14} className="text-gold" /> 热门搜索
+                  <TrendingUp size={14} className="text-theme-price" /> 热门搜索
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {hotTerms.map((term) => (

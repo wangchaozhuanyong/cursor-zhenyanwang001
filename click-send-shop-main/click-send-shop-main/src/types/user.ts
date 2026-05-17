@@ -4,6 +4,10 @@ export interface MemberLevel {
   description?: string;
   min_spent?: number;
   min_orders?: number;
+  discount_rate?: number;
+  points_multiplier?: number;
+  coupon_pack_id?: string | null;
+  free_shipping_enabled?: boolean;
   sort_order?: number;
   enabled?: boolean;
   is_default?: boolean;
@@ -39,6 +43,9 @@ export interface UserProfile {
   member_level_description?: string;
   member_level_min_spent?: number;
   member_level_min_orders?: number;
+  account_status?: string;
+  related?: any;
+  operation_logs?: any[];
 }
 
 export interface UserTag {

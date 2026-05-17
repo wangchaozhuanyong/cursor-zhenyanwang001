@@ -24,6 +24,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
     likedIds,
     imgInputRef,
     avgRating,
+    reviewTotal,
     handleLike,
     handleImageUpload,
     handleSubmit,
@@ -36,7 +37,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-foreground">商品评价</h3>
-          <span className="text-xs text-muted-foreground">({reviews.length})</span>
+          <span className="text-xs text-muted-foreground">({reviewTotal})</span>
         </div>
         <button
           type="button"
@@ -48,21 +49,21 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
             }
             setShowForm(!showForm);
           }}
-          className="rounded-full bg-gold/10 px-3 py-1.5 text-xs font-medium text-gold active:scale-95 transition-transform"
+          className="rounded-full bg-gold/10 px-3 py-1.5 text-xs font-medium text-theme-price active:scale-95 transition-transform"
         >
           {canReview ? "写评价" : "登录后评价"}
         </button>
       </div>
 
       <div className="mt-4 flex items-center gap-3 rounded-xl bg-secondary p-3 md:p-4">
-        <span className="text-3xl font-bold text-gold">{avgRating.toFixed(1)}</span>
+        <span className="text-3xl font-bold text-theme-price">{avgRating.toFixed(1)}</span>
         <div>
           <div className="flex gap-0.5">
             {[1, 2, 3, 4, 5].map((s) => (
-              <Star key={s} size={14} className={s <= Math.round(avgRating) ? "fill-gold text-gold" : "text-border"} />
+              <Star key={s} size={14} className={s <= Math.round(avgRating) ? "fill-theme-price text-theme-price" : "text-border"} />
             ))}
           </div>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">{reviews.length} 条评价</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">{reviewTotal} 条评价</p>
         </div>
       </div>
 
@@ -79,7 +80,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <button key={s} type="button" onClick={() => setRating(s)} className="touch-target p-0.5">
-                    <Star size={24} className={`transition-colors ${s <= rating ? "fill-gold text-gold" : "text-border"}`} />
+                    <Star size={24} className={`transition-colors ${s <= rating ? "fill-theme-price text-theme-price" : "text-border"}`} />
                   </button>
                 ))}
               </div>
@@ -153,12 +154,15 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
                   <p className="text-xs font-medium text-foreground">{review.nickname || "用户"}</p>
                   <div className="flex gap-0.5">
                     {[1, 2, 3, 4, 5].map((s) => (
-                      <Star key={s} size={10} className={s <= review.rating ? "fill-gold text-gold" : "text-border"} />
+                      <Star key={s} size={10} className={s <= review.rating ? "fill-theme-price text-theme-price" : "text-border"} />
                     ))}
                   </div>
                 </div>
                 <span className="text-[11px] text-muted-foreground">{timeAgo(review.created_at)}</span>
               </div>
+              {review.is_verified_purchase && (
+                <span className="mt-1 inline-block rounded bg-gold/10 px-1.5 py-0.5 text-[10px] text-theme-price">已购评价</span>
+              )}
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{review.content}</p>
               {review.images && review.images.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -167,12 +171,18 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
                   ))}
                 </div>
               )}
+              {review.admin_reply?.trim() ? (
+                <motion.div className="mt-3 rounded-xl border border-border bg-secondary/40 p-3">
+                  <p className="text-xs font-semibold text-theme-price">商家回复</p>
+                  <p className="mt-1 text-sm leading-relaxed text-foreground">{review.admin_reply}</p>
+                </motion.div>
+              ) : null}
               <button
                 type="button"
                 onClick={() => handleLike(review.id)}
-                className={`mt-2 flex items-center gap-1 text-xs transition-colors ${likedIds.has(review.id) ? "text-gold" : "text-muted-foreground"}`}
+                className={`mt-2 flex items-center gap-1 text-xs transition-colors ${likedIds.has(review.id) ? "text-theme-price" : "text-muted-foreground"}`}
               >
-                <ThumbsUp size={13} className={likedIds.has(review.id) ? "fill-gold" : ""} />
+                <ThumbsUp size={13} className={likedIds.has(review.id) ? "fill-theme-price" : ""} />
                 {review.likes_count || 0}
               </button>
             </motion.div>

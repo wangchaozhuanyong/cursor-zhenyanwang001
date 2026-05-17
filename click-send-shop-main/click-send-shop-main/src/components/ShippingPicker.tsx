@@ -57,7 +57,7 @@ function ShippingOptionButton({
       )}
     >
       <div>
-        <p className={cn("text-sm font-medium", isActive ? "text-gold" : "text-foreground")}>{template.name}</p>
+        <p className={cn("text-sm font-medium", isActive ? "text-theme-price" : "text-foreground")}>{template.name}</p>
         <p className="text-xs text-muted-foreground">{formatRegions(template.regions)}</p>
         {template.freeAbove > 0 ? (
           <p className="mt-0.5 text-[10px] text-muted-foreground">
@@ -182,7 +182,7 @@ export default function ShippingPicker({
         <div className={cn("mb-3 flex items-center", hideHeading ? "justify-end" : "justify-between")}>
           {!hideHeading ? <h3 className="text-sm font-semibold text-foreground">配送方式</h3> : null}
           {enabledTemplates.length > 1 ? (
-            <button type="button" onClick={() => setExpanded(!expanded)} className="flex items-center gap-1 text-xs text-gold">
+            <button type="button" onClick={() => setExpanded(!expanded)} className="flex items-center gap-1 text-xs text-theme-price">
               {expanded ? "收起" : "更多选项"}
               {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
             </button>

@@ -16,6 +16,11 @@ type HeroForm = {
   newArrivalHeroTitle: string;
   newArrivalHeroSubtitle: string;
   newArrivalHeroCtaText: string;
+  newArrivalSectionTitle: string;
+  newArrivalSectionSubtitle: string;
+  newArrivalDisplayCount: string;
+  newArrivalShowPrice: string;
+  newArrivalOnlyInStock: string;
 };
 
 const empty: HeroForm = {
@@ -23,6 +28,11 @@ const empty: HeroForm = {
   newArrivalHeroTitle: "",
   newArrivalHeroSubtitle: "",
   newArrivalHeroCtaText: "",
+  newArrivalSectionTitle: "",
+  newArrivalSectionSubtitle: "",
+  newArrivalDisplayCount: "8",
+  newArrivalShowPrice: "1",
+  newArrivalOnlyInStock: "1",
 };
 
 export default function AdminHomeOpsNewArrivalPanel() {
@@ -42,6 +52,11 @@ export default function AdminHomeOpsNewArrivalPanel() {
           newArrivalHeroTitle: data?.newArrivalHeroTitle ?? "",
           newArrivalHeroSubtitle: data?.newArrivalHeroSubtitle ?? "",
           newArrivalHeroCtaText: data?.newArrivalHeroCtaText ?? "",
+          newArrivalSectionTitle: data?.newArrivalSectionTitle ?? "",
+          newArrivalSectionSubtitle: data?.newArrivalSectionSubtitle ?? "",
+          newArrivalDisplayCount: data?.newArrivalDisplayCount ?? "8",
+          newArrivalShowPrice: data?.newArrivalShowPrice ?? "1",
+          newArrivalOnlyInStock: data?.newArrivalOnlyInStock ?? "1",
         });
       })
       .catch((e) => toast.error(toastErrorMessage(e, "加载新品主视觉失败")))

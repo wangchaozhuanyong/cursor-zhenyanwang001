@@ -30,7 +30,7 @@ export default function CategoryTabs({ categories, activeId, onChange }: Categor
           onClick={() => onChange(cat.id)}
           className={`flex-shrink-0 rounded-full px-4 py-2 text-xs font-medium transition-colors ${
             activeId === cat.id
-              ? "bg-gold text-primary-foreground"
+              ? "btn-theme-price"
               : "bg-secondary text-muted-foreground"
           }`}
         >

@@ -150,7 +150,7 @@ export default function BindWechatPhone() {
             type="button"
             onClick={handleSendOtp}
             disabled={otpSending || otpCooldown > 0}
-            className="w-full rounded-2xl border border-gold/40 bg-gold/10 py-3 text-xs font-semibold text-gold disabled:opacity-50"
+            className="w-full rounded-2xl border border-gold/40 bg-gold/10 py-3 text-xs font-semibold text-theme-price disabled:opacity-50"
           >
             {otpCooldown > 0 ? `${otpCooldown}s 后可重发` : otpSending ? "发送中…" : "获取验证码"}
           </button>
@@ -159,7 +159,7 @@ export default function BindWechatPhone() {
             type="button"
             onClick={handleSubmit}
             disabled={authStore.loading}
-            className="w-full rounded-2xl bg-gold py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98] disabled:opacity-60"
+            className="w-full rounded-2xl btn-theme-price py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98] disabled:opacity-60"
           >
             {authStore.loading ? "处理中…" : "绑定并登录"}
           </button>

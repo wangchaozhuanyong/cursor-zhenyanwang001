@@ -293,7 +293,7 @@ export default function Settings() {
             <div className="mt-4 space-y-3">
               <p className="text-xs leading-5 text-[var(--theme-muted)]">此操作会软删账号、清空地址，并脱敏历史订单中的收货姓名、电话、地址和备注。</p>
               <input value={cancelConfirmText} onChange={(e) => setCancelConfirmText(e.target.value)} placeholder="输入“注销账号”确认" className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
-              <button onClick={handleCancelAccount} disabled={cancelSaving} className="w-full rounded-full bg-[var(--theme-danger)] py-3 text-sm font-semibold text-white disabled:opacity-60">{cancelSaving ? "注销中…" : "确认注销账号"}</button>
+              <button onClick={handleCancelAccount} disabled={cancelSaving} className="w-full rounded-full bg-[var(--theme-danger)] py-3 text-sm font-semibold btn-theme-gradient disabled:opacity-60">{cancelSaving ? "注销中…" : "确认注销账号"}</button>
             </div>
           )}
         </section>

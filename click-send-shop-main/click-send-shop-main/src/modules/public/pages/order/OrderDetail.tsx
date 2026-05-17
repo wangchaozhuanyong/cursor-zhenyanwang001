@@ -20,9 +20,11 @@ import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { motion } from "framer-motion";
 import type { Order } from "@/types/order";
+import { appendOrderDiscountTextLines } from "@/utils/orderDiscount";
+import { OrderDiscountLines } from "./components/OrderDiscountLines";
 import { copyToClipboard } from "@/utils/clipboard";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import { ORDER_STATUS, ORDER_STATUS_META, ORDER_STATUS_PROGRESS } from "@/constants/statusDictionary";
+import { ORDER_STATUS, ORDER_STATUS_META } from "@/constants/statusDictionary";
 import TrustInfo from "@/components/TrustInfo";
 import { OrderSstLines } from "@/components/OrderSstLines";
 import { trackPurchase } from "@/utils/tracking";
@@ -49,6 +51,12 @@ const statusColorMap: Record<string, string> = {
   refunded: "text-muted-foreground",
 };
 
+const ORDER_STATUS_PROGRESS = [
+  ORDER_STATUS.PENDING,
+  ORDER_STATUS.PAID,
+  ORDER_STATUS.SHIPPED,
+  ORDER_STATUS.COMPLETED,
+] as const;
 const steps = ORDER_STATUS_PROGRESS.map((status) => ORDER_STATUS_META[status].label);
 
 function generateOrderText(order: Order) {
@@ -63,9 +71,7 @@ function generateOrderText(order: Order) {
     "━━━━━━━━━━━━",
     `💰 ${order.tax_mode === "inclusive" ? "商品总额（含税）" : "商品总额"}：RM ${order.raw_amount}`,
   ];
-  if ((order.discount_amount ?? 0) > 0) {
-    lines.push(`🎫 优惠券（${order.coupon_title}）：-RM ${order.discount_amount}`);
-  }
+  appendOrderDiscountTextLines(order, lines);
   if (
     order.tax_mode === "inclusive"
     && order.taxable_amount != null
@@ -177,7 +183,7 @@ export default function OrderDetail() {
           <p className="text-sm">{error || "订单不存在或已被删除"}</p>
           <button
             onClick={() => navigate("/orders")}
-            className="mt-4 rounded-full bg-gold px-6 py-2.5 text-sm font-bold text-primary-foreground"
+            className="mt-4 rounded-full btn-theme-price px-6 py-2.5 text-sm font-bold text-primary-foreground"
           >
             查看所有订单
           </button>
@@ -368,12 +374,7 @@ export default function OrderDetail() {
             </span>
             <span className="font-medium text-foreground">RM {order.raw_amount ?? order.total_amount}</span>
           </div>
-          {(order.discount_amount ?? 0) > 0 && (
-            <div className="mt-2 flex justify-between text-sm">
-              <span className="text-muted-foreground">优惠券（{order.coupon_title}）</span>
-              <span className="font-medium text-destructive">-RM {order.discount_amount}</span>
-            </div>
-          )}
+          <OrderDiscountLines order={order} />
           <OrderSstLines order={order} />
           <div className="mt-2 flex justify-between text-sm">
             <span className="text-muted-foreground">
@@ -438,8 +439,8 @@ export default function OrderDetail() {
                   type="button"
                   onClick={handlePayOnline}
                   disabled={stripeRedirecting}
-                  className="flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-bold text-white theme-shadow transition-all active:scale-[0.98] disabled:opacity-60"
-                  style={{ background: "var(--theme-gradient)" }}
+                  className="flex w-full items-center justify-center gap-2 rounded-full py-4 text-base font-bold btn-theme-gradient theme-shadow transition-all active:scale-[0.98] disabled:opacity-60"
+                 
                 >
                   <CreditCard size={18} /> {stripeRedirecting ? "跳转中…" : "立即支付"}
                 </button>
@@ -456,7 +457,7 @@ export default function OrderDetail() {
             <button
               onClick={openWhatsApp}
               className="flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold text-[var(--theme-gradient-foreground)] theme-shadow transition-all active:scale-[0.98]"
-              style={{ background: "var(--theme-gradient)" }}
+             
             >
               <Phone size={16} /> 发送到 WhatsApp 联系客服
             </button>
@@ -464,8 +465,8 @@ export default function OrderDetail() {
           {order.status === ORDER_STATUS.SHIPPED && (
             <button
               onClick={() => setReceiveConfirmOpen(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold text-white theme-shadow transition-all active:scale-[0.98]"
-              style={{ background: "var(--theme-gradient)" }}
+              className="flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold btn-theme-gradient theme-shadow transition-all active:scale-[0.98]"
+             
             >
               <CheckCircle2 size={16} /> 确认收货
             </button>

@@ -142,7 +142,7 @@ export default function ProductDetail() {
           <p>{error ?? "商品不存在"}</p>
           <button
             onClick={() => id && loadProductDetail(id)}
-            className="mt-4 rounded-full bg-gold px-6 py-2.5 text-sm font-bold text-primary-foreground"
+            className="mt-4 rounded-full btn-theme-price px-6 py-2.5 text-sm font-bold text-primary-foreground"
           >
             重试
           </button>

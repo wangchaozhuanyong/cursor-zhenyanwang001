@@ -87,6 +87,8 @@ export interface ProductListParams {
   is_recommended?: boolean | number;
   is_new?: boolean | number;
   is_hot?: boolean | number;
+  home_new_arrivals_rule?: boolean | number;
+  new_arrivals_only_in_stock?: boolean | number;
   tag_id?: string;
   min_price?: number;
   max_price?: number;

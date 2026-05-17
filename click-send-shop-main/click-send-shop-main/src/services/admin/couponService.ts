@@ -33,3 +33,8 @@ export async function fetchCouponRecords(
   const res = await couponApi.getAllCouponRecords(params);
   return unwrapPaginated(res.data);
 }
+
+export async function issueCouponByTag(couponId: string, tagIds: string[]) {
+  const res = await couponApi.issueCouponByTag(couponId, tagIds);
+  return res.data as any;
+}

@@ -134,6 +134,59 @@ async function selectCouponRecordsPage(couponId, pageSize, offset) {
   return rows;
 }
 
+async function selectCouponBaseById(couponId) {
+  const [[row]] = await db.query(
+    `SELECT id, title, code, status, start_date, end_date, deleted_at
+     FROM coupons
+     WHERE BINARY id = BINARY ? LIMIT 1`,
+    [couponId],
+  );
+  return row || null;
+}
+
+async function selectUserIdsByTagIds(tagIds) {
+  if (!Array.isArray(tagIds) || !tagIds.length) return [];
+  const placeholders = tagIds.map(() => '?').join(',');
+  const [rows] = await db.query(
+    `SELECT DISTINCT u.id
+     FROM users u
+     INNER JOIN user_tag_assignments uta ON uta.user_id = u.id
+     WHERE u.deleted_at IS NULL
+       AND (u.account_status IS NULL OR u.account_status = 'normal')
+       AND uta.tag_id IN (${placeholders})`,
+    tagIds,
+  );
+  return rows.map((r) => r.id);
+}
+
+async function batchIssueCouponToUsers(couponId, userIds, genId) {
+  if (!Array.isArray(userIds) || !userIds.length) return 0;
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+    let affected = 0;
+    for (const userId of userIds) {
+      const [exists] = await conn.query(
+        'SELECT id FROM user_coupons WHERE BINARY user_id = BINARY ? AND BINARY coupon_id = BINARY ? LIMIT 1',
+        [userId, couponId],
+      );
+      if (Array.isArray(exists) && exists.length) continue;
+      const [r] = await conn.query(
+        'INSERT INTO user_coupons (id, user_id, coupon_id, claimed_at, status) VALUES (?,?,?,NOW(),?)',
+        [genId(), userId, couponId, 'available'],
+      );
+      affected += Number(r?.affectedRows || 0);
+    }
+    await conn.commit();
+    return affected;
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
 module.exports = {
   countCoupons,
   selectCouponsPage,
@@ -148,4 +201,7 @@ module.exports = {
   selectAllCouponRecordsPage,
   countUserCouponsByCouponId,
   selectCouponRecordsPage,
+  selectCouponBaseById,
+  selectUserIdsByTagIds,
+  batchIssueCouponToUsers,
 };

@@ -5,23 +5,31 @@ import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import ProductSortBar from "@/components/ProductSortBar";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useProductStore } from "@/stores/useProductStore";
 import type { ProductSortType } from "@/types/product";
+import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { getProductGridClassName } from "@/utils/productGridClasses";
 
 export default function NewArrivals() {
+  const { themeConfig } = useThemeRuntime();
+  const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
   useDocumentTitle("新品上市");
   const navigate = useNavigate();
+  const siteInfo = useSiteInfo();
   const { products, loading, error, loadProducts } = useProductStore();
   const [sort, setSort] = useState<ProductSortType>("default");
 
   useEffect(() => {
     loadProducts({
       is_new: true,
+      home_new_arrivals_rule: 1,
+      new_arrivals_only_in_stock: siteInfo.newArrivalOnlyInStock !== "0" ? 1 : 0,
       sort: sort === "default" || sort === "newest" ? undefined : sort,
       page: 1,
       pageSize: 50,
     });
-  }, [loadProducts, sort]);
+  }, [loadProducts, siteInfo.newArrivalOnlyInStock, sort]);
 
   return (
     <div className="store-bottom-safe min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
@@ -46,7 +54,7 @@ export default function NewArrivals() {
           </div>
         ) : null}
 
-        <section className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        <section className={`mt-4 ${productGridClass}`}>
           {loading
             ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
             : products.map((product, index) => (

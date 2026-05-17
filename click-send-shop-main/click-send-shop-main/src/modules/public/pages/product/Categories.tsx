@@ -19,8 +19,11 @@ import type { Category } from "@/types/category";
 import { findCategoryById, findImmediateParentId, findRootCategoryIdForActive, isCategoryOrDescendantActive } from "@/utils/categoryTree";
 import { trackEvent } from "@/services/analyticsService";
 import { toast } from "sonner";
+import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { getProductGridClassName, getProductGridEmptyColSpan } from "@/utils/productGridClasses";
 
 export default function Categories() {
+  const { themeConfig } = useThemeRuntime();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [activeCat, setActiveCat] = useState(searchParams.get("cat") || "all");
@@ -269,10 +272,10 @@ export default function Categories() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.18 }}
-                  className="grid grid-cols-2 gap-4 pt-1 md:grid-cols-3 lg:grid-cols-4"
+                  className={getProductGridClassName(themeConfig.productCardVariant)}
                 >
                 {loading ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />) : products.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
-                {!loading && products.length === 0 ? <div className="col-span-2 py-12 text-center text-muted-foreground md:col-span-3 lg:col-span-4"><p>{activeFilterCount > 0 || debouncedQuery ? "当前筛选条件无结果" : activeCat !== "all" ? "当前分类暂无商品" : categories.length > 0 ? "暂无商品上架" : "后台还没有配置商品"}</p>{(activeFilterCount > 0 || debouncedQuery) ? <button type="button" onClick={clearFilters} className="mt-3 rounded-full border border-[var(--theme-border)] px-4 py-2 text-xs">清空筛选</button> : null}</div> : null}
+                {!loading && products.length === 0 ? <div className={cn(getProductGridEmptyColSpan(themeConfig.productCardVariant), "py-12 text-center text-muted-foreground")}><p>{activeFilterCount > 0 || debouncedQuery ? "当前筛选条件无结果" : activeCat !== "all" ? "当前分类暂无商品" : categories.length > 0 ? "暂无商品上架" : "后台还没有配置商品"}</p>{(activeFilterCount > 0 || debouncedQuery) ? <button type="button" onClick={clearFilters} className="mt-3 rounded-full border border-[var(--theme-border)] px-4 py-2 text-xs">清空筛选</button> : null}</div> : null}
                 </motion.div>
               </AnimatePresence>
             </section>

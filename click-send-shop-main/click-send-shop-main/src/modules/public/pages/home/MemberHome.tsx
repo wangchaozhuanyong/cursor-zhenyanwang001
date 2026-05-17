@@ -28,16 +28,18 @@ import PremiumCouponCard from "@/components/PremiumCouponCard";
 import StoreTabHeader from "@/components/store/StoreTabHeader";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import { toast } from "sonner";
+import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { getProductGridClassName } from "@/utils/productGridClasses";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { buildPersonalizedRecommendations } from "@/utils/personalizedRecommendations";
 import { isLoggedIn } from "@/utils/token";
-import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
 import { isHomeModuleEnabled } from "@/constants/homeModules";
+import { HOME_HERO_STACK_CLASS, HOME_PAGE_MAIN_CLASS } from "@/constants/homeLayout";
 
 function Header({ title, icon: Icon, subtitle }: { title: string; icon?: React.ElementType; subtitle?: string }) {
   return (
-    <div className="mb-4">
+    <div className="mb-3 md:mb-4">
       <h2 className="flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text-on-surface)]">
         {Icon && <Icon className="h-5 w-5 text-[var(--theme-price)]" />}
         {title}
@@ -50,6 +52,8 @@ function Header({ title, icon: Icon, subtitle }: { title: string; icon?: React.E
 export default function MemberHome() {
   useDocumentTitle(undefined);
   const navigate = useNavigate();
+  const { themeConfig } = useThemeRuntime();
+  const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
   const { hotProducts, newProducts, recommendedProducts, loading: homeLoading, loadHomeData } = useProductStore();
   const siteInfo = useSiteInfo();
   const couponLoading = useCouponStore((s) => s.loading);
@@ -67,7 +71,6 @@ export default function MemberHome() {
   const loadOrders = useOrderStore((s) => s.loadOrders);
   const [claimingCouponId, setClaimingCouponId] = useState<string | null>(null);
   const { banners, loading: bannersLoading } = useHomeBanners();
-  const { themeConfig } = useThemeRuntime();
   const { settings: homeModules } = useHomeModuleSettings();
   const homeLayout = themeConfig.homeLayout ?? "classic";
   const isPremiumLayout = homeLayout === "premium";
@@ -125,7 +128,7 @@ export default function MemberHome() {
   return (
     <div className={`store-bottom-safe min-h-screen text-[var(--theme-text)] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_90%,black)]" : "bg-[var(--theme-bg)]"}`} data-theme-home-layout={themeConfig.homeLayout}>
       <StoreTabHeader searchMode="navigate" />
-      <main className="mx-auto max-w-screen-xl px-4 pt-4">
+      <main className={HOME_PAGE_MAIN_CLASS}>
         {isHomeModuleEnabled(homeModules, "banner", "member") ? (
           <AnimatedSection>
             <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
@@ -135,16 +138,16 @@ export default function MemberHome() {
         ) : null}
         {isHomeModuleEnabled(homeModules, "trust_bar", "member") ? (
           <AnimatedSection delay={0.05}>
-            <HomeTrustBar className="mt-3" />
+            <HomeTrustBar />
           </AnimatedSection>
         ) : null}
         {isHomeModuleEnabled(homeModules, "nav_grid", "member") ? (
-          <AnimatedSection delay={0.08} className="-mx-4 mt-3">
+          <AnimatedSection delay={0.08} className="-mx-4">
             <HomeOpsBlocks />
           </AnimatedSection>
         ) : null}
         {isHomeModuleEnabled(homeModules, "member_coupons", "member") ? (
-        <AnimatedSection delay={0.1} className="mt-section">
+        <AnimatedSection delay={0.1}>
         <section>
           <Header title="会员专属礼包" icon={Ticket} />
           <div className="no-scrollbar -mx-4 flex items-stretch gap-3 overflow-x-auto overflow-y-hidden px-4 pb-2 snap-x snap-mandatory md:mx-0 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 md:pb-0 md:snap-none lg:gap-4">
@@ -208,12 +211,11 @@ export default function MemberHome() {
         </AnimatedSection>
         ) : null}
         {isHomeModuleEnabled(homeModules, "new_arrivals", "member") ? (
-        <AnimatedSection delay={0.12} className="mt-section">
+        <AnimatedSection delay={0.12}>
         <NewArrivalSection
           products={newProducts}
           loading={homeLoading}
           title={siteInfo.newArrivalSectionTitle}
-          subtitle={siteInfo.newArrivalSectionSubtitle}
           displayCount={Number(siteInfo.newArrivalDisplayCount || 8)}
           showPrice={siteInfo.newArrivalShowPrice !== "0"}
         />
@@ -245,9 +247,9 @@ export default function MemberHome() {
         </AnimatedSection>
         ) : null}
         {isHomeModuleEnabled(homeModules, "hot_sales", "member") ? (
-        <AnimatedSection delay={0.14} className="mt-section">
+        <AnimatedSection delay={0.14}>
         <section>
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-3 flex items-center justify-between md:mb-4">
             <h2 className="flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text-on-surface)]">
               <Flame className="h-5 w-5 text-[var(--theme-price)]" />
               今日热销
@@ -262,7 +264,7 @@ export default function MemberHome() {
                 换一批              </button>
             ) : null}
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className={productGridClass}>
             {homeLoading
               ? Array.from({ length: HOT_BATCH_SIZE }).map((_, i) => <ProductCardSkeleton key={i} />)
               : hot.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
@@ -271,9 +273,9 @@ export default function MemberHome() {
         </AnimatedSection>
         ) : null}
         {isHomeModuleEnabled(homeModules, "recommend", "member") ? (
-        <AnimatedSection delay={0.16} className="mt-section">
+        <AnimatedSection delay={0.16}>
         <section>
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-3 flex items-center justify-between md:mb-4">
             <div>
               <h2 className="flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text-on-surface)]">
                 <Star className="h-5 w-5 text-[var(--theme-price)]" />
@@ -290,7 +292,7 @@ export default function MemberHome() {
                 换一批              </button>
             ) : null}
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className={productGridClass}>
             {homeLoading
               ? Array.from({ length: REC_BATCH_SIZE }).map((_, i) => <ProductCardSkeleton key={i} />)
               : rec.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}

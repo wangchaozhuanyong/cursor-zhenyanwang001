@@ -298,6 +298,28 @@ export default function Profile() {
           )}
         </section>
 
+        <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
+          <SectionTitle title="我的订单" rightLabel="查看全部" onRightClick={() => gateNavigate(navigate, "/orders", true)} />
+          <div className="grid grid-cols-4 gap-2">
+            {(loggedIn
+              ? [
+                  { label: "待付款", icon: Wallet, value: orderPending, path: "/orders" },
+                  { label: "待发货", icon: Package, value: orderShipping, path: "/orders" },
+                  { label: "待收货", icon: Truck, value: orderReceiving, path: "/orders" },
+                  { label: "售后", icon: CircleHelp, value: 0, path: "/returns" },
+                ]
+              : guestOrderItems.map((it) => ({ ...it, value: 0, path: "/orders" }))).map((item) => (
+              <button key={item.label} type="button" onClick={() => gateNavigate(navigate, item.path, true)} className={`relative rounded-2xl bg-[var(--theme-bg)] px-1 py-3 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_65%,transparent)] ${MENU_TAP}`}>
+                {item.value > 0 ? <span className="absolute right-3 top-2 min-w-[1rem] rounded-full bg-[var(--theme-danger)] px-1 text-[10px] text-[var(--theme-danger-foreground)]">{item.value}</span> : null}
+                <span className={cn("mx-auto flex h-9 w-9 items-center justify-center rounded-2xl", THEME_ACCENT_ICON_SHELL_CLASS)}>
+                  <item.icon size={17} strokeWidth={2} />
+                </span>
+                <p className="mt-2 text-xs font-medium">{item.label}</p>
+              </button>
+            ))}
+          </div>
+        </section>
+
         <section className={`${CARD_CLASS} overflow-hidden`}>
           <div className="p-4">
             <SectionTitle title="我的权益" />
@@ -342,28 +364,6 @@ export default function Profile() {
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-
-        <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
-          <SectionTitle title="我的订单" rightLabel="查看全部" onRightClick={() => gateNavigate(navigate, "/orders", true)} />
-          <div className="grid grid-cols-4 gap-2">
-            {(loggedIn
-              ? [
-                  { label: "待付款", icon: Wallet, value: orderPending, path: "/orders" },
-                  { label: "待发货", icon: Package, value: orderShipping, path: "/orders" },
-                  { label: "待收货", icon: Truck, value: orderReceiving, path: "/orders" },
-                  { label: "售后", icon: CircleHelp, value: 0, path: "/returns" },
-                ]
-              : guestOrderItems.map((it) => ({ ...it, value: 0, path: "/orders" }))).map((item) => (
-              <button key={item.label} type="button" onClick={() => gateNavigate(navigate, item.path, true)} className={`relative rounded-2xl bg-[var(--theme-bg)] px-1 py-3 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_65%,transparent)] ${MENU_TAP}`}>
-                {item.value > 0 ? <span className="absolute right-3 top-2 min-w-[1rem] rounded-full bg-[var(--theme-danger)] px-1 text-[10px] text-[var(--theme-danger-foreground)]">{item.value}</span> : null}
-                <span className={cn("mx-auto flex h-9 w-9 items-center justify-center rounded-2xl", THEME_ACCENT_ICON_SHELL_CLASS)}>
-                  <item.icon size={17} strokeWidth={2} />
-                </span>
-                <p className="mt-2 text-xs font-medium">{item.label}</p>
-              </button>
-            ))}
           </div>
         </section>
 

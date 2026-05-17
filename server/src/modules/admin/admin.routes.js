@@ -288,8 +288,10 @@ router.get('/users', adminAuth, requirePermission('user.view'), userQueryLimiter
 router.get('/user-tags', adminAuth, requirePermission('user.view'), userQueryLimiter, userCtrl.listTags);
 router.post('/user-tags', adminAuth, requirePermission('user.update'), userCtrl.createTag);
 router.put('/user-tags/:tagId', adminAuth, requirePermission('user.update'), userCtrl.updateTag);
+router.get('/user-tags/:tagId/impact', adminAuth, requirePermission('user.view'), userCtrl.tagImpact);
 router.delete('/user-tags/:tagId', adminAuth, requirePermission('user.update'), userCtrl.deleteTag);
 router.put('/users/:id/tags', adminAuth, requirePermission('user.update'), userCtrl.setTags);
+router.put('/users/tags/batch', adminAuth, requirePermission('user.update'), userCtrl.batchSetTag);
 router.post('/users/:id/reset-password', adminAuth, requirePermission('user.update'), userCtrl.resetPassword);
 router.post('/users/:id/unbind-wechat', adminAuth, requirePermission('user.update'), userCtrl.unbindWechat);
 router.get('/users/:id', adminAuth, requirePermission('user.view'), userQueryLimiter, userCtrl.getById);
@@ -310,6 +312,7 @@ router.get('/coupons', adminAuth, requirePermission('coupon.view'), couponCtrl.l
 router.post('/coupons', adminAuth, requirePermission('coupon.manage'), couponCtrl.create);
 router.put('/coupons/:id', adminAuth, requirePermission('coupon.manage'), couponCtrl.update);
 router.delete('/coupons/:id', adminAuth, requirePermission('coupon.manage'), couponCtrl.remove);
+router.post('/coupons/:id/issue-by-tag', adminAuth, requirePermission('coupon.manage'), couponCtrl.issueByTag);
 router.get('/coupon-records', adminAuth, requirePermission('coupon.view'), couponCtrl.listAllRecords);
 router.get('/coupons/:couponId/records', adminAuth, requirePermission('coupon.view'), couponCtrl.listRecordsByCoupon);
 
@@ -351,12 +354,18 @@ router.delete('/banners/:id', adminAuth, requirePermission('banner.manage'), ban
 router.get('/notifications', adminAuth, requireAnyPermission(['notification.view', 'notification.manage']), notificationCtrl.list);
 router.get('/notifications/summary', adminAuth, requireAnyPermission(['notification.view', 'notification.manage']), notificationCtrl.summary);
 router.get('/notifications/user-candidates', adminAuth, requireAnyPermission(['notification.create', 'notification.send', 'notification.manage']), notificationCtrl.userCandidates);
+router.post('/notifications/resolve-users', adminAuth, requireAnyPermission(['notification.create', 'notification.send', 'notification.manage']), notificationCtrl.resolveUsers);
+router.post('/notifications/audience-estimate', adminAuth, requireAnyPermission(['notification.create', 'notification.send', 'notification.manage']), notificationCtrl.estimateAudience);
+router.get('/notifications/:id', adminAuth, requireAnyPermission(['notification.view', 'notification.manage']), notificationCtrl.detail);
+router.get('/notifications/:id/recipients/export', adminAuth, requireAnyPermission(['notification.view', 'notification.manage']), notificationCtrl.exportRecipientsCsv);
 router.post('/notifications', adminAuth, requireAnyPermission(['notification.send', 'notification.manage']), notificationCtrl.send);
 router.post('/notifications/drafts', adminAuth, requireAnyPermission(['notification.create', 'notification.manage']), notificationCtrl.draft);
 router.put('/notifications/:id/publish', adminAuth, requireAnyPermission(['notification.send', 'notification.manage']), notificationCtrl.publish);
 router.get('/notifications/templates', adminAuth, requireAnyPermission(['notification.template', 'notification.manage']), notificationCtrl.templates);
 router.get('/notifications/trigger-settings', adminAuth, requireAnyPermission(['notification.trigger', 'notification.manage']), notificationCtrl.triggerSettings);
 router.put('/notifications/trigger-settings', adminAuth, requireAnyPermission(['notification.trigger', 'notification.manage']), notificationCtrl.updateTriggerSettings);
+router.post('/notifications/trigger-settings/preview', adminAuth, requireAnyPermission(['notification.trigger', 'notification.manage']), notificationCtrl.previewTriggerRule);
+router.post('/notifications/trigger-settings/test-send', adminAuth, requireAnyPermission(['notification.trigger', 'notification.manage']), notificationCtrl.testSendTriggerRule);
 router.delete('/notifications/:id', adminAuth, requireAnyPermission(['notification.manage', 'notification.create']), notificationCtrl.remove);
 router.delete('/notifications/:id/draft', adminAuth, requireAnyPermission(['notification.create', 'notification.manage']), notificationCtrl.deleteDraft);
 router.put('/notifications/:id/cancel', adminAuth, requireAnyPermission(['notification.send', 'notification.manage']), notificationCtrl.cancelScheduled);

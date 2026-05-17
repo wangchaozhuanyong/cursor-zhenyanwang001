@@ -11,6 +11,7 @@ import {
   getMemberCardClassName,
 } from "@/utils/themeVisuals";
 import { previewBanner, previewProduct } from "./themePreviewData";
+import { getProductGridClassName } from "@/utils/productGridClasses";
 
 const categories = ["美食", "生活", "签证", "好物", "促销"];
 
@@ -56,7 +57,7 @@ export default function StoreHomePreview({ config }: { config: ThemeConfig }) {
       </div>
       <div>
         <p className="mb-2 text-sm font-semibold text-[var(--theme-text)]"><Tx>热门推荐</Tx></p>
-        <div className="grid grid-cols-2 gap-2">
+        <div className={getProductGridClassName(config.productCardVariant)}>
           <ProductCard product={previewProduct} />
           <ProductCard product={{ ...previewProduct, id: "preview-2", name: "限时特惠商品" }} />
         </div>

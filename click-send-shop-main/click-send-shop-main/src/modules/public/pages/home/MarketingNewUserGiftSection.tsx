@@ -36,7 +36,7 @@ export default function MarketingNewUserGiftSection() {
   if (!payload?.coupons?.length) return null;
 
   return (
-    <section className="mx-auto max-w-screen-xl px-4 py-2">
+    <section className="w-full">
       <div className={`mb-3 rounded-2xl p-4 ${THEME_INVITE_PROMO_SHELL}`}>
         <div className="flex items-start gap-3">
           <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${THEME_GIFT_BADGE_SHELL}`}>

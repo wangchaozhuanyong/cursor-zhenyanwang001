@@ -10,6 +10,8 @@ import { Clock, Search as SearchIcon, TrendingUp, X } from "lucide-react";
 import { flattenCategories } from "@/utils/categoryTree";
 import { fetchHotSearchTerms, fetchSearchSuggestions, trackSearchKeyword } from "@/services/searchService";
 import type { HotSearchTerm, SearchSuggestion } from "@/types/search";
+import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { getProductGridClassName } from "@/utils/productGridClasses";
 
 const HISTORY_KEY = "search_history";
 const MAX_HISTORY = 10;
@@ -26,6 +28,8 @@ function saveHistory(list: string[]) {
 }
 
 export default function Search() {
+  const { themeConfig } = useThemeRuntime();
+  const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [activeCat, setActiveCat] = useState("all");
@@ -315,7 +319,7 @@ export default function Search() {
 
         {!shouldShowDiscovery && (
           <>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            <div className={productGridClass}>
               {loading
                 ? Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)
                 : products.map((product) => (

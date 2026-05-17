@@ -34,7 +34,7 @@ export default function MarketingCouponCenterSection() {
   if (!payload?.coupons?.length) return null;
 
   return (
-    <section className="mx-auto max-w-screen-xl px-4 py-4">
+    <section className="w-full">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-base font-bold text-[var(--theme-text-on-surface)]">
           <Ticket className="h-5 w-5 text-[var(--theme-primary)]" />

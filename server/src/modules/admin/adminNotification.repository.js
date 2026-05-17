@@ -218,7 +218,7 @@ async function selectBatchById(batchId) {
   return row || null;
 }
 
-async function selectBatchRecipientStats(batchId) {
+async function selectBatchStats(batchId) {
   const [[row]] = await db.query(
     `SELECT COUNT(*) AS recipient_count, SUM(CASE WHEN is_read = 1 THEN 1 ELSE 0 END) AS read_count
      FROM notifications
@@ -229,6 +229,136 @@ async function selectBatchRecipientStats(batchId) {
     recipient_count: Number(row?.recipient_count || 0),
     read_count: Number(row?.read_count || 0),
   };
+}
+
+async function selectBatchRecipients(batchId, { readStatus, page = 1, pageSize = 20 } = {}) {
+  let where = 'WHERE n.batch_id = ? AND n.deleted_at IS NULL';
+  const params = [batchId];
+  if (readStatus === 'read') where += ' AND n.is_read = 1';
+  if (readStatus === 'unread') where += ' AND n.is_read = 0';
+  const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total FROM notifications n ${where}`, params);
+  const offset = (Math.max(1, Number(page) || 1) - 1) * Math.max(1, Number(pageSize) || 20);
+  const [list] = await db.query(
+    `SELECT n.id, n.user_id, n.is_read, n.created_at, n.sent_at, n.scheduled_at, u.nickname, u.phone, u.whatsapp
+       FROM notifications n
+       LEFT JOIN users u ON u.id = n.user_id
+      ${where}
+      ORDER BY n.created_at DESC
+      LIMIT ? OFFSET ?`,
+    [...params, Math.max(1, Number(pageSize) || 20), offset],
+  );
+  return { list, total: Number(total || 0), page: Math.max(1, Number(page) || 1), pageSize: Math.max(1, Number(pageSize) || 20) };
+}
+
+async function selectBatchAuditLogs(batchId, limit = 100) {
+  const [rows] = await db.query(
+    `SELECT id, operator_id, operator_name, action_type, summary, result, created_at
+       FROM audit_logs
+      WHERE object_type = 'notification_batch' AND object_id = ?
+      ORDER BY created_at DESC
+      LIMIT ?`,
+    [batchId, Math.max(1, Number(limit) || 100)],
+  );
+  return rows;
+}
+
+async function selectBatchRecipientsForExport(batchId, readStatus) {
+  let where = 'WHERE n.batch_id = ? AND n.deleted_at IS NULL';
+  const params = [batchId];
+  if (readStatus === 'read') where += ' AND n.is_read = 1';
+  if (readStatus === 'unread') where += ' AND n.is_read = 0';
+  const [rows] = await db.query(
+    `SELECT n.user_id, n.is_read, n.created_at, n.sent_at, u.nickname, u.phone, u.whatsapp
+       FROM notifications n
+       LEFT JOIN users u ON u.id = n.user_id
+      ${where}
+      ORDER BY n.created_at DESC`,
+    params,
+  );
+  return rows;
+}
+
+async function selectUsersByAudience({ audienceType, audienceValue, userId, userIds }) {
+  if (audienceType === 'single') {
+    const id = userId || audienceValue;
+    if (!id) return [];
+    return (await selectUsersByAudience({ audienceType: 'specific', userIds: [id] }));
+  }
+  if (audienceType === 'specific') {
+    const ids = Array.isArray(userIds) ? userIds.filter(Boolean) : [];
+    if (!ids.length) return [];
+    const placeholders = ids.map(() => '?').join(',');
+    const [rows] = await db.query(
+      `SELECT id
+         FROM users
+        WHERE id IN (${placeholders})
+          AND deleted_at IS NULL
+          AND (account_status IS NULL OR account_status = 'normal')`,
+      ids,
+    );
+    return rows.map((r) => r.id);
+  }
+  if (audienceType === 'user_tag') {
+    if (!audienceValue) return [];
+    const [rows] = await db.query(
+      `SELECT u.id
+         FROM users u
+         JOIN user_tag_assignments uta ON uta.user_id = u.id
+        WHERE uta.tag_id = ?
+          AND u.deleted_at IS NULL
+          AND (u.account_status IS NULL OR u.account_status = 'normal')`,
+      [audienceValue],
+    );
+    return rows.map((r) => r.id);
+  }
+  if (audienceType === 'member_level') {
+    if (!audienceValue) return [];
+    const [rows] = await db.query(
+      `SELECT id
+         FROM users
+        WHERE member_level_id = ?
+          AND deleted_at IS NULL
+          AND (account_status IS NULL OR account_status = 'normal')`,
+      [audienceValue],
+    );
+    return rows.map((r) => r.id);
+  }
+  if (audienceType === 'has_order') {
+    const [rows] = await db.query(
+      `SELECT DISTINCT u.id
+         FROM users u
+         JOIN orders o ON o.user_id = u.id
+        WHERE u.deleted_at IS NULL
+          AND (u.account_status IS NULL OR u.account_status = 'normal')`,
+    );
+    return rows.map((r) => r.id);
+  }
+  if (audienceType === 'no_order') {
+    const [rows] = await db.query(
+      `SELECT u.id
+         FROM users u
+        WHERE u.deleted_at IS NULL
+          AND (u.account_status IS NULL OR u.account_status = 'normal')
+          AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id)`,
+    );
+    return rows.map((r) => r.id);
+  }
+  return selectAllUserIds();
+}
+
+async function resolveUsersByIdentifiers(identifiers) {
+  const values = Array.isArray(identifiers) ? identifiers.map((x) => String(x || '').trim()).filter(Boolean) : [];
+  if (!values.length) return [];
+  const placeholders = values.map(() => '?').join(',');
+  const [rows] = await db.query(
+    `SELECT id, nickname, phone, whatsapp
+       FROM users
+      WHERE deleted_at IS NULL
+        AND (account_status IS NULL OR account_status = 'normal')
+        AND (id IN (${placeholders}) OR phone IN (${placeholders}))`,
+    [...values, ...values],
+  );
+  return rows;
 }
 
 async function markBatchDeleted(batchId) {
@@ -356,8 +486,13 @@ module.exports = {
   findValidUserById,
   searchUserCandidates,
   selectAllUserIds,
+  selectUsersByAudience,
+  resolveUsersByIdentifiers,
   selectBatchById,
-  selectBatchRecipientStats,
+  selectBatchStats,
+  selectBatchRecipients,
+  selectBatchAuditLogs,
+  selectBatchRecipientsForExport,
   markBatchDeleted,
   cancelScheduledBatch,
   revokeSentBatch,

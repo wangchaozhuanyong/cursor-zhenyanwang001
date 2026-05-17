@@ -23,6 +23,7 @@ import type { Product } from "@/types/product";
 import type { FooterNavItem } from "@/types/content";
 import { ROUTES } from "@/constants/routes";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { getProductGridClassName } from "@/utils/productGridClasses";
 import { AnimatedSection } from "@/modules/micro-interactions";
 import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
 import { isHomeModuleEnabled } from "@/constants/homeModules";
@@ -76,6 +77,7 @@ export default function GuestHome() {
   const description = siteInfo.siteDescription || "精选全球好物，品质生活购物平台";
   const { banners } = useHomeBanners();
   const { themeConfig } = useThemeRuntime();
+  const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
   const { settings: homeModules } = useHomeModuleSettings();
   const guestGridMax = homeModules.guestRecommendMax;
   const {
@@ -188,7 +190,6 @@ export default function GuestHome() {
             products={newProducts}
             loading={homeLoading}
             title={siteInfo.newArrivalSectionTitle}
-            subtitle={siteInfo.newArrivalSectionSubtitle}
             displayCount={Number(siteInfo.newArrivalDisplayCount || 8)}
             showPrice={siteInfo.newArrivalShowPrice !== "0"}
           />
@@ -245,7 +246,7 @@ export default function GuestHome() {
             </div>
           )}
           {homeLoading && !homeError && (
-            <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className={`mt-4 ${productGridClass}`}>
               {Array.from({ length: guestGridMax }).map((_, i) => (
                 <ProductCardSkeleton key={i} />
               ))}
@@ -275,7 +276,7 @@ export default function GuestHome() {
             </div>
           )}
           {!homeLoading && !homeError && gridProducts.length > 0 && (
-            <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className={`mt-4 ${productGridClass}`}>
               {gridProducts.map((p, i) => (
                 <ProductCard key={p.id} product={p} index={i} />
               ))}

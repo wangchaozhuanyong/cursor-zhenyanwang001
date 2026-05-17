@@ -56,10 +56,19 @@ export async function updateUserTag(id: string, data: Partial<UserTag>) {
 export async function deleteUserTag(id: string) {
   await userApi.deleteUserTag(id);
 }
+export async function fetchUserTagImpact(id: string): Promise<number> {
+  const res = await userApi.getUserTagImpact(id);
+  return Number((res.data as any)?.affectedUsers || 0);
+}
 
 export async function setUserTags(id: string, tagIds: string[]) {
   const res = await userApi.setUserTags(id, tagIds);
   return unwrapList<UserTag>(res.data);
+}
+
+export async function batchSetUserTag(tagId: string, userIds: string[]) {
+  const res = await userApi.batchSetUserTag(tagId, userIds);
+  return Number((res.data as any)?.affected || 0);
 }
 
 export async function adjustUserPoints(userId: string, points: number, reason?: string) {

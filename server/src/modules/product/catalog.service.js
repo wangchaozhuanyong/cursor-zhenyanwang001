@@ -122,6 +122,8 @@ function buildProductListQuery(query, categoryIds) {
   const tagId = query.tag_id || query.tagId || query.tag;
   const isHot = parseBool(query.is_hot);
   const isNew = parseBool(query.is_new);
+  const useHomeNewArrivalsRule = parseBool(query.home_new_arrivals_rule) === true;
+  const newArrivalsOnlyInStock = parseBool(query.new_arrivals_only_in_stock);
   const isRecommended = parseBool(query.is_recommended);
   const inStock = parseBool(query.in_stock);
   const minPrice = Number(query.min_price);
@@ -169,8 +171,15 @@ function buildProductListQuery(query, categoryIds) {
     params.push(isHot ? 1 : 0);
   }
   if (isNew !== undefined) {
-    where += ' AND is_new = ?';
-    params.push(isNew ? 1 : 0);
+    if (isNew && useHomeNewArrivalsRule) {
+      where += ' AND (is_new = 1 OR created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY))';
+      if (newArrivalsOnlyInStock !== undefined) {
+        where += newArrivalsOnlyInStock ? ' AND stock > 0' : '';
+      }
+    } else {
+      where += ' AND is_new = ?';
+      params.push(isNew ? 1 : 0);
+    }
   }
   if (isRecommended !== undefined) {
     where += ' AND is_recommended = ?';

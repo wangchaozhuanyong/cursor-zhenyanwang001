@@ -39,8 +39,18 @@ exports.deleteTag = asyncRoute(async (req, res) => {
   res.success(r.data, r.message);
 });
 
+exports.tagImpact = asyncRoute(async (req, res) => {
+  const r = await svc.getUserTagImpact(req.params.tagId);
+  res.success(r.data);
+});
+
 exports.setTags = asyncRoute(async (req, res) => {
   const r = await svc.setUserTags(req.params.id, req.body, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
+exports.batchSetTag = asyncRoute(async (req, res) => {
+  const r = await svc.batchSetUserTag(req.body, req.user?.id, req);
   res.success(r.data, r.message);
 });
 

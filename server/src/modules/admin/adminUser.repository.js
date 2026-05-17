@@ -353,6 +353,14 @@ async function deleteUserTag(tagId) {
   await db.query('DELETE FROM user_tags WHERE id = ?', [tagId]);
 }
 
+async function countUsersByTagId(tagId) {
+  const [[row]] = await db.query(
+    'SELECT COUNT(DISTINCT user_id) AS total FROM user_tag_assignments WHERE tag_id = ?',
+    [tagId],
+  );
+  return Number(row?.total || 0);
+}
+
 async function selectExistingTagIds(tagIds) {
   if (!Array.isArray(tagIds) || tagIds.length === 0) return [];
   const placeholders = tagIds.map(() => '?').join(',');
@@ -370,6 +378,29 @@ async function replaceUserTagAssignments(userId, tagIds) {
       await conn.query('INSERT INTO user_tag_assignments (user_id, tag_id) VALUES ?', [values]);
     }
     await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+}
+
+async function batchAssignTag(userIds, tagId) {
+  if (!Array.isArray(userIds) || userIds.length === 0) return 0;
+  const conn = await getConnection();
+  try {
+    await conn.beginTransaction();
+    let affected = 0;
+    for (const userId of userIds) {
+      const [r] = await conn.query(
+        'INSERT IGNORE INTO user_tag_assignments (user_id, tag_id) VALUES (?,?)',
+        [userId, tagId],
+      );
+      affected += Number(r?.affectedRows || 0);
+    }
+    await conn.commit();
+    return affected;
   } catch (err) {
     await conn.rollback();
     throw err;
@@ -407,8 +438,10 @@ module.exports = {
   insertUserTag,
   updateUserTagDynamic,
   deleteUserTag,
+  countUsersByTagId,
   selectExistingTagIds,
   replaceUserTagAssignments,
+  batchAssignTag,
   updateSubordinateEnabled,
   updateUserPasswordHash,
   selectUserSummaryMetrics,

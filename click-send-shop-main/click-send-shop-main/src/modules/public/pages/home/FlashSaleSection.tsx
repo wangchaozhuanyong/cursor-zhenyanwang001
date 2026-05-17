@@ -45,7 +45,7 @@ export default function FlashSaleSection() {
   if (!activity?.items?.length) return null;
 
   return (
-    <section className="mx-auto max-w-screen-xl px-4 py-4">
+    <section className="w-full">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="min-w-0">
           <h2 className="truncate text-base font-bold text-[var(--theme-text)]">{activity.title}</h2>

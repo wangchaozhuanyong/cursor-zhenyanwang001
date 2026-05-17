@@ -100,6 +100,7 @@ const AdminMarketingRewards = lazy(() => import("@/modules/admin/pages/marketing
 
 const AdminReviews = lazy(() => import("@/modules/admin/pages/review/AdminReviews"));
 const AdminNotifications = lazy(() => import("@/modules/admin/pages/notification/AdminNotifications"));
+const AdminNotificationDetail = lazy(() => import("@/modules/admin/pages/notification/AdminNotificationDetail"));
 
 const AdminReports = lazy(() => import("@/modules/admin/pages/report/AdminReports"));
 const AdminReportOverview = lazy(() => import("@/modules/admin/pages/report/AdminReportOverview"));
@@ -356,6 +357,7 @@ function AppRoutes() {
                 <Route path="reviews" element={<AdminReviews />} />
                 <Route path="returns" element={<AdminReturns />} />
                 <Route path="notifications" element={<AdminNotifications />} />
+                <Route path="notifications/:id" element={<AdminNotificationDetail />} />
                 <Route path="account" element={<AdminAccount />} />
                 <Route path="banners" element={<AdminBanners />} />
                 <Route path="reports" element={<AdminReports />} />

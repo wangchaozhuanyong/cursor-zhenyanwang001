@@ -14,6 +14,7 @@ export type NotificationPayload = {
   user_id?: string;
   user_ids?: string[];
   audience_value?: string;
+  user_tag_ids?: string[];
   scheduled_at?: string;
   link_url?: string;
   template_code?: string;
@@ -44,6 +45,49 @@ export function getNotificationSummary() {
   }>("/admin/notifications/summary");
 }
 
+export function estimateNotificationAudience(data: NotificationPayload) {
+  return post<{ audience_type: string; estimated_recipients: number }>("/admin/notifications/audience-estimate", data);
+}
+
+export function getNotificationDetail(id: string, params?: { read_status?: "read" | "unread"; page?: number; pageSize?: number }) {
+  return get<{
+    id: string;
+    title: string;
+    content: string;
+    type: string;
+    audience_type: string;
+    audience_value?: string | null;
+    send_status: string;
+    workflow_status: string;
+    link_url?: string | null;
+    scheduled_at?: string | null;
+    sent_at?: string | null;
+    created_at: string;
+    recipient_count: number;
+    read_count: number;
+    read_rate: number;
+    recipients: {
+      list: Array<{ id: string; user_id: string; nickname?: string; phone?: string; whatsapp?: string; is_read: 0 | 1 }>;
+      total: number;
+      page: number;
+      pageSize: number;
+    };
+    logs: Array<{ id: string; operator_name?: string; action_type: string; summary?: string; result?: string; created_at: string }>;
+  }>(`/admin/notifications/${id}`, params as Record<string, string>);
+}
+
+export function resolveNotificationUsers(identifiers: string[]) {
+  return post<{ list: Array<{ id: string; nickname?: string; phone?: string; whatsapp?: string }>; unresolved: string[] }>(
+    "/admin/notifications/resolve-users",
+    { identifiers },
+  );
+}
+
+export function getNotificationRecipientsExportPath(id: string, readStatus?: "read" | "unread" | "") {
+  const qs = readStatus ? `?read_status=${readStatus}` : "";
+  return `/admin/notifications/${id}/recipients/export${qs}`;
+}
+
 export function getNotificationTemplates() {
   return get<Array<{ code: string; name: string; type: string; title: string; content: string }>>("/admin/notifications/templates");
 }
@@ -68,6 +112,14 @@ export function getNotificationTriggerSettings() {
 
 export function updateNotificationTriggerSettings(rules: NotificationTriggerRule[]) {
   return put<NotificationTriggerRule[]>("/admin/notifications/trigger-settings", { rules });
+}
+
+export function previewNotificationTriggerRule(data: { key: string; vars?: Record<string, string> }) {
+  return post<{ title: string; content: string }>("/admin/notifications/trigger-settings/preview", data);
+}
+
+export function testSendNotificationTriggerRule(data: { key: string; vars?: Record<string, string> }) {
+  return post<{ batch_id: string; key: string }>("/admin/notifications/trigger-settings/test-send", data);
 }
 
 export function deleteNotification(id: string) {

@@ -13,20 +13,17 @@ interface NewArrivalSectionProps {
   loading?: boolean;
   className?: string;
   title?: string;
-  subtitle?: string;
   displayCount?: number;
   showPrice?: boolean;
 }
 
 const DEFAULT_TITLE = "新品上市";
-const DEFAULT_SUBTITLE = "最近上架好物，第一时间发现";
 
 export default function NewArrivalSection({
   products,
   loading = false,
   className = "",
   title = DEFAULT_TITLE,
-  subtitle = DEFAULT_SUBTITLE,
   displayCount = 8,
   showPrice = true,
 }: NewArrivalSectionProps) {
@@ -74,7 +71,6 @@ export default function NewArrivalSection({
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-base font-bold tracking-wide text-[var(--theme-text-on-surface)]">{title || DEFAULT_TITLE}</h2>
-          <p className="mt-0.5 truncate text-xs text-[var(--theme-text-muted)]">{subtitle || DEFAULT_SUBTITLE}</p>
         </div>
         <button
           type="button"

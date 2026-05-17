@@ -60,9 +60,16 @@ export function updateUserTag(id: string, data: Partial<UserTag>) {
 export function deleteUserTag(id: string) {
   return del<void>(`/admin/user-tags/${id}`);
 }
+export function getUserTagImpact(id: string) {
+  return get<{ affectedUsers: number }>(`/admin/user-tags/${id}/impact`);
+}
 
 export function setUserTags(id: string, tagIds: string[]) {
   return put<UserTag[]>(`/admin/users/${id}/tags`, { tagIds });
+}
+
+export function batchSetUserTag(tagId: string, userIds: string[]) {
+  return put<{ affected: number }>(`/admin/users/tags/batch`, { tagId, userIds });
 }
 
 export function toggleSubordinate(id: string, enabled: boolean) {

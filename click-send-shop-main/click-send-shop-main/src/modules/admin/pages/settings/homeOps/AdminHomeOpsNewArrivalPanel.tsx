@@ -8,10 +8,9 @@ import { LoadingButton } from "@/modules/micro-interactions";
 import { fetchSiteSettings, updateSiteSettings } from "@/services/admin/settingsService";
 import * as uploadService from "@/services/uploadService";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { Tx } from "@/components/admin/AdminText";
 import { adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 
-type HeroForm = {
+type NewArrivalForm = {
   newArrivalHeroImage: string;
   newArrivalHeroTitle: string;
   newArrivalHeroSubtitle: string;
@@ -23,7 +22,7 @@ type HeroForm = {
   newArrivalOnlyInStock: string;
 };
 
-const empty: HeroForm = {
+const empty: NewArrivalForm = {
   newArrivalHeroImage: "",
   newArrivalHeroTitle: "",
   newArrivalHeroSubtitle: "",
@@ -37,7 +36,7 @@ const empty: HeroForm = {
 
 export default function AdminHomeOpsNewArrivalPanel() {
   const { confirm } = useAdminConfirm();
-  const [form, setForm] = useState<HeroForm>(empty);
+  const [form, setForm] = useState<NewArrivalForm>(empty);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -59,7 +58,7 @@ export default function AdminHomeOpsNewArrivalPanel() {
           newArrivalOnlyInStock: data?.newArrivalOnlyInStock ?? "1",
         });
       })
-      .catch((e) => toast.error(toastErrorMessage(e, "加载新品主视觉失败")))
+      .catch((e) => toast.error(toastErrorMessage(e, "加载新品配置失败")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -84,7 +83,7 @@ export default function AdminHomeOpsNewArrivalPanel() {
     setSaving(true);
     try {
       await updateSiteSettings(form);
-      toast.success("新品主视觉已保存");
+      toast.success("新品配置已保存");
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败"));
     } finally {
@@ -95,15 +94,13 @@ export default function AdminHomeOpsNewArrivalPanel() {
   return (
     <section className="rounded-2xl border border-border bg-card p-4">
       <div className="mb-4">
-        <h2 className="font-semibold text-foreground"><Tx>新品专区主视觉</Tx></h2>
-        <p className="mt-1 text-xs text-muted-foreground"><Tx>
-          用于首页「新品专区」左侧氛围图与文案；需同时开启「新品专区」模块开关。
-        </Tx></p>
+        <h2 className="font-semibold text-foreground">新品配置</h2>
+        <p className="mt-1 text-xs text-muted-foreground">保留旧版主视觉字段兼容，同时支持新版横滑新品区配置。</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="flex flex-col gap-2 md:col-span-2">
-          <span className="text-xs font-medium text-muted-foreground"><Tx>主视觉图片（推荐 1200×1200）</Tx></span>
+          <span className="text-xs font-medium text-muted-foreground">旧版主视觉图片</span>
           <div className="flex flex-wrap items-center gap-2">
             <input
               className="min-w-0 flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm"
@@ -122,38 +119,48 @@ export default function AdminHomeOpsNewArrivalPanel() {
               {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               上传
             </button>
-            {form.newArrivalHeroImage ? (
-              <img src={form.newArrivalHeroImage} alt="" className="h-16 w-16 rounded-lg object-cover" />
-            ) : null}
           </div>
           <p className="text-[10px] text-muted-foreground">{IMAGE_UPLOAD_HINT_API}</p>
         </label>
+
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted-foreground"><Tx>标题</Tx></span>
-          <input
-            className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-            disabled={loading}
-            value={form.newArrivalHeroTitle}
-            onChange={(e) => setForm((f) => ({ ...f, newArrivalHeroTitle: e.target.value }))}
-          />
+          <span className="text-xs font-medium text-muted-foreground">旧版主视觉标题</span>
+          <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm" disabled={loading} value={form.newArrivalHeroTitle} onChange={(e) => setForm((f) => ({ ...f, newArrivalHeroTitle: e.target.value }))} />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted-foreground"><Tx>副标题</Tx></span>
-          <input
-            className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-            disabled={loading}
-            value={form.newArrivalHeroSubtitle}
-            onChange={(e) => setForm((f) => ({ ...f, newArrivalHeroSubtitle: e.target.value }))}
-          />
+          <span className="text-xs font-medium text-muted-foreground">旧版主视觉副标题</span>
+          <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm" disabled={loading} value={form.newArrivalHeroSubtitle} onChange={(e) => setForm((f) => ({ ...f, newArrivalHeroSubtitle: e.target.value }))} />
         </label>
         <label className="flex flex-col gap-1 md:col-span-2">
-          <span className="text-xs font-medium text-muted-foreground"><Tx>按钮文案</Tx></span>
-          <input
-            className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-            disabled={loading}
-            value={form.newArrivalHeroCtaText}
-            onChange={(e) => setForm((f) => ({ ...f, newArrivalHeroCtaText: e.target.value }))}
-          />
+          <span className="text-xs font-medium text-muted-foreground">旧版按钮文案</span>
+          <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm" disabled={loading} value={form.newArrivalHeroCtaText} onChange={(e) => setForm((f) => ({ ...f, newArrivalHeroCtaText: e.target.value }))} />
+        </label>
+
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-muted-foreground">新版模块标题</span>
+          <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm" disabled={loading} value={form.newArrivalSectionTitle} onChange={(e) => setForm((f) => ({ ...f, newArrivalSectionTitle: e.target.value }))} placeholder="新品上市" />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-muted-foreground">新版模块副标题</span>
+          <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm" disabled={loading} value={form.newArrivalSectionSubtitle} onChange={(e) => setForm((f) => ({ ...f, newArrivalSectionSubtitle: e.target.value }))} placeholder="最近上架好物，第一时间发现" />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-muted-foreground">新版展示数量</span>
+          <input className="rounded-xl border border-border bg-background px-3 py-2 text-sm" disabled={loading} value={form.newArrivalDisplayCount} onChange={(e) => setForm((f) => ({ ...f, newArrivalDisplayCount: e.target.value }))} placeholder="8" />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-medium text-muted-foreground">新版显示价格</span>
+          <select className="rounded-xl border border-border bg-background px-3 py-2 text-sm" disabled={loading} value={form.newArrivalShowPrice} onChange={(e) => setForm((f) => ({ ...f, newArrivalShowPrice: e.target.value }))}>
+            <option value="1">显示</option>
+            <option value="0">隐藏</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 md:col-span-2">
+          <span className="text-xs font-medium text-muted-foreground">新品补位仅库存</span>
+          <select className="rounded-xl border border-border bg-background px-3 py-2 text-sm" disabled={loading} value={form.newArrivalOnlyInStock} onChange={(e) => setForm((f) => ({ ...f, newArrivalOnlyInStock: e.target.value }))}>
+            <option value="1">是</option>
+            <option value="0">否</option>
+          </select>
         </label>
       </div>
 
@@ -165,11 +172,11 @@ export default function AdminHomeOpsNewArrivalPanel() {
             state={saving ? "loading" : "normal"}
             loadingText="保存中..."
             disabled={loading}
-            onClick={() => adminConfirmSave(confirm, "新品主视觉", () => save())}
+            onClick={() => adminConfirmSave(confirm, "新品配置", () => save())}
             className="rounded-xl px-5 py-2.5 text-sm font-bold"
-          ><Tx>
-            保存主视觉
-          </Tx></LoadingButton>
+          >
+            保存
+          </LoadingButton>
         </div>
       </PermissionGate>
     </section>

@@ -154,6 +154,29 @@ async function getCouponRecords(couponId, query) {
   return { kind: 'paginate', list, total, page, pageSize };
 }
 
+async function issueCouponByTag(couponId, body, adminUserId, req) {
+  const coupon = await repo.selectCouponBaseById(couponId);
+  if (!coupon || coupon.deleted_at) throw new BusinessError(404, '优惠券不存在');
+  const tagIds = Array.isArray(body?.tagIds)
+    ? [...new Set(body.tagIds.map((x) => String(x).trim()).filter(Boolean))]
+    : [];
+  if (!tagIds.length) throw new BusinessError(400, 'tagIds不能为空');
+  const userIds = await repo.selectUserIdsByTagIds(tagIds);
+  if (!userIds.length) throw new BusinessError(400, '当前标签下无可发放用户');
+  const affected = await repo.batchIssueCouponToUsers(couponId, userIds, generateId);
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'coupon.issue_by_tag',
+    objectType: 'coupon',
+    objectId: couponId,
+    summary: `按标签发放优惠券 ${coupon.title || couponId}`,
+    after: { tagIds, userCount: userIds.length, issued: affected },
+    result: 'success',
+  });
+  return { data: { issued: affected, targetUsers: userIds.length }, message: '发放完成' };
+}
+
 module.exports = {
   listCoupons,
   createCoupon,
@@ -161,4 +184,5 @@ module.exports = {
   deleteCoupon,
   getAllCouponRecords,
   getCouponRecords,
+  issueCouponByTag,
 };

@@ -21,7 +21,7 @@ export default function MarketingPromotionBannerSection() {
   if (!banner) return null;
 
   return (
-    <section className="mx-auto max-w-screen-xl px-4 py-2">
+    <section className="w-full">
       <button
         type="button"
         onClick={() => navigate(banner.link_url || "/categories")}

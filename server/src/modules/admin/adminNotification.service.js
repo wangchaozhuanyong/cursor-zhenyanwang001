@@ -3,6 +3,7 @@ const { BusinessError } = require('../../errors/BusinessError');
 const repo = require('./adminNotification.repository');
 const { writeAuditLog } = require('../../utils/auditLog');
 const triggerSettings = require('./notificationTriggerSettings.service');
+const { rowsToCsv } = require('../../utils/csv');
 
 const NOTIFICATION_TYPES = new Set([
   'system', 'order', 'shipping', 'payment', 'refund', 'after_sale', 'promotion', 'coupon', 'points', 'reward',
@@ -32,6 +33,9 @@ async function resolveAudience(body) {
   const audienceType = body.audience_type || (body.user_id ? 'single' : 'all');
   let targetUserIds = [];
   let audienceValue = null;
+  const userTagIds = Array.isArray(body?.user_tag_ids)
+    ? [...new Set(body.user_tag_ids.map((x) => String(x || '').trim()).filter(Boolean))]
+    : [];
 
   if (audienceType === 'single') {
     if (!body.user_id) throw new BusinessError(400, '单用户发送必须选择用户');
@@ -47,9 +51,23 @@ async function resolveAudience(body) {
     targetUserIds = await repo.selectAllUserIds();
     audienceValue = 'all';
   } else {
-    // advanced audience types暂以 audience_value 为条件标识，先允许存草稿与批次，发送时回落到全量可扩展
-    targetUserIds = await repo.selectAllUserIds();
-    audienceValue = body.audience_value || null;
+    if (audienceType === 'user_tag') {
+      const tagId = userTagIds[0] || String(body.audience_value || '').trim();
+      if (!tagId) throw new BusinessError(400, '按标签发送必须选择标签');
+      targetUserIds = await repo.selectUsersByAudience({ audienceType: 'user_tag', audienceValue: tagId });
+      audienceValue = tagId;
+    } else if (audienceType === 'member_level') {
+      const levelId = String(body.audience_value || '').trim();
+      if (!levelId) throw new BusinessError(400, '按会员等级发送必须选择等级');
+      targetUserIds = await repo.selectUsersByAudience({ audienceType: 'member_level', audienceValue: levelId });
+      audienceValue = levelId;
+    } else if (audienceType === 'has_order' || audienceType === 'no_order') {
+      targetUserIds = await repo.selectUsersByAudience({ audienceType });
+      audienceValue = audienceType;
+    } else {
+      targetUserIds = await repo.selectAllUserIds();
+      audienceValue = body.audience_value || null;
+    }
   }
 
   if (!targetUserIds.length) {
@@ -80,26 +98,63 @@ async function searchUsers(query) {
   return { data, message: 'ok' };
 }
 
+async function resolveUsers(body) {
+  const identifiers = Array.isArray(body?.identifiers) ? body.identifiers : [];
+  if (!identifiers.length) return { data: { list: [], unresolved: [] }, message: 'ok' };
+  const rows = await repo.resolveUsersByIdentifiers(identifiers);
+  const byId = new Set(rows.map((r) => String(r.id)));
+  const byPhone = new Set(rows.map((r) => String(r.phone || '')));
+  const unresolved = identifiers
+    .map((x) => String(x || '').trim())
+    .filter(Boolean)
+    .filter((x) => !byId.has(x) && !byPhone.has(x));
+  return { data: { list: rows, unresolved }, message: 'ok' };
+}
+
 async function estimateAudience(body) {
-  const { audienceType, audienceValue, targetUserIds } = await resolveAudience(body);
+  const { audienceType, targetUserIds } = await resolveAudience(body);
+  return { data: { audience_type: audienceType, estimated_recipients: targetUserIds.length }, message: 'ok' };
+}
+
+async function getNotificationDetail(batchId, query = {}) {
+  const batch = await repo.selectBatchById(batchId);
+  if (!batch) throw new BusinessError(404, '通知批次不存在');
+  const stats = await repo.selectBatchStats(batchId);
+  const recipients = await repo.selectBatchRecipients(batchId, {
+    readStatus: query.read_status,
+    page: query.page,
+    pageSize: query.pageSize,
+  });
+  const logs = await repo.selectBatchAuditLogs(batchId, 100);
   return {
     data: {
-      audience_type: audienceType,
-      audience_value: audienceValue,
-      estimated_count: targetUserIds.length,
+      ...batch,
+      recipient_count: stats.recipient_count,
+      read_count: stats.read_count,
+      read_rate: stats.recipient_count > 0 ? Number((stats.read_count / stats.recipient_count).toFixed(4)) : 0,
+      recipients,
+      logs,
     },
     message: 'ok',
   };
 }
 
-async function getNotificationDetail(batchId, _query = {}) {
+async function exportBatchRecipientsCsv(batchId, query = {}) {
   const batch = await repo.selectBatchById(batchId);
   if (!batch) throw new BusinessError(404, '通知批次不存在');
-  const stats = await repo.selectBatchRecipientStats(batchId);
-  return {
-    data: { batch, stats },
-    message: 'ok',
-  };
+  const rows = await repo.selectBatchRecipientsForExport(batchId, query.read_status);
+  const headers = ['用户ID', '昵称', '手机号', 'WhatsApp', '是否已读', '创建时间', '发送时间'];
+  const csvRows = rows.map((r) => ({
+    用户ID: r.user_id,
+    昵称: r.nickname || '',
+    手机号: r.phone || '',
+    WhatsApp: r.whatsapp || '',
+    是否已读: r.is_read ? '是' : '否',
+    创建时间: r.created_at || '',
+    发送时间: r.sent_at || '',
+  }));
+  const csv = rowsToCsv(headers, csvRows);
+  return { csv, filename: `notification-${batchId}-recipients.csv` };
 }
 
 async function sendNotification(body, adminUserId, req) {
@@ -298,6 +353,49 @@ async function updateTriggerSettings(body, adminUserId, req) {
   return { data, message: '自动触发规则已保存' };
 }
 
+async function previewTriggerRule(body) {
+  const key = String(body?.key || '').trim();
+  if (!key) throw new BusinessError(400, '缺少规则key');
+  const vars = body?.vars && typeof body.vars === 'object' ? body.vars : {};
+  const resolved = await triggerSettings.getResolvedTriggerCopy(key, vars);
+  if (!resolved) throw new BusinessError(400, '规则未启用或不存在');
+  return { data: resolved, message: 'ok' };
+}
+
+async function testSendTriggerRule(body, adminUserId, req) {
+  const key = String(body?.key || '').trim();
+  if (!key) throw new BusinessError(400, '缺少规则key');
+  const resolved = await triggerSettings.getResolvedTriggerCopy(key, body?.vars || {});
+  if (!resolved) throw new BusinessError(400, '规则未启用或不存在');
+  const me = await repo.findValidUserById(adminUserId);
+  if (!me) throw new BusinessError(400, '当前管理员没有可接收通知的用户身份');
+  const batchId = generateId();
+  await repo.insertNotification({
+    id: generateId(),
+    batchId,
+    userId: me.id,
+    type: 'system',
+    title: resolved.title,
+    content: resolved.content,
+    audienceType: 'single',
+    audienceValue: me.id,
+    sendStatus: 'sent',
+    workflowStatus: 'published',
+    publishStatus: 'published',
+    sentAt: new Date(),
+  });
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'notification.trigger.test_send',
+    objectType: 'notification_batch',
+    objectId: batchId,
+    summary: `测试发送触发规则 ${key}`,
+    result: 'success',
+  });
+  return { data: { batch_id: batchId, key }, message: '测试通知已发送给自己' };
+}
+
 async function deleteDraft(batchId, adminUserId, req) {
   const batch = await repo.selectBatchById(batchId);
   if (!batch) throw new BusinessError(404, '通知不存在');
@@ -345,14 +443,18 @@ module.exports = {
   listNotifications,
   getSummary,
   searchUsers,
+  resolveUsers,
   estimateAudience,
   getNotificationDetail,
+  exportBatchRecipientsCsv,
   sendNotification,
   createDraft,
   publishDraft,
   listTemplates,
   listTriggerSettings,
   updateTriggerSettings,
+  previewTriggerRule,
+  testSendTriggerRule,
   deleteDraft,
   cancelScheduled,
   revokeSent,

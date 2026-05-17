@@ -30,3 +30,8 @@ exports.listRecordsByCoupon = asyncRoute(async (req, res) => {
   const r = await svc.getCouponRecords(req.params.couponId, req.query);
   res.paginate(r.list, r.total, r.page, r.pageSize);
 });
+
+exports.issueByTag = asyncRoute(async (req, res) => {
+  const r = await svc.issueCouponByTag(req.params.id, req.body, req.user?.id, req);
+  res.success(r.data, r.message);
+});

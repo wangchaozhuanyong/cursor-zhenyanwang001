@@ -30,6 +30,8 @@ import { useGoBack } from "@/hooks/useGoBack";
 import { copyToClipboard } from "@/utils/clipboard";
 import { trackAddToCart, trackProductView } from "@/utils/tracking";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { getProductGridClassName } from "@/utils/productGridClasses";
 import { trackEvent } from "@/services/analyticsService";
 import { buildProductSharePayload } from "@/utils/productShare";
 
@@ -67,6 +69,8 @@ export default function ProductDetail() {
 
   const reviewsVm = useProductReviews(id ?? "");
   const siteInfo = useSiteInfo();
+  const { themeConfig } = useThemeRuntime();
+  const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
 
   useDocumentTitle(product?.name);
 
@@ -511,7 +515,7 @@ export default function ProductDetail() {
             <h3 className="mb-4 text-sm font-semibold text-foreground md:mb-5 md:text-lg">
               同类推荐
             </h3>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-5 lg:grid-cols-5">
+            <div className={`${productGridClass} md:gap-5`}>
               {relatedProducts.map((p, i) => (
                 <ProductCard key={p.id} product={p} index={i} />
               ))}

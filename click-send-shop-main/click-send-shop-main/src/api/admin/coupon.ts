@@ -32,3 +32,7 @@ export function getAllCouponRecords(params?: PaginationParams) {
   );
 }
 
+export function issueCouponByTag(couponId: string, tagIds: string[]) {
+  return post<{ issued: number; targetUsers: number }>(`/admin/coupons/${couponId}/issue-by-tag`, { tagIds });
+}
+

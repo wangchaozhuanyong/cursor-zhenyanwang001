@@ -14,9 +14,9 @@ export default function ProductCardSkeleton() {
           <div className="flex-1 space-y-2">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-3/5" />
-            <div className="pt-3 flex items-center justify-between">
-              <Skeleton className="h-5 w-16" />
-              <Skeleton className="h-8 w-8 rounded-full" />
+            <div className="mt-auto space-y-1.5">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-3 w-12" />
             </div>
           </div>
         </div>

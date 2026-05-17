@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+﻿/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, ClipboardList, Ticket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -7,6 +7,7 @@ import Pagination from "@/components/admin/Pagination";
 import { usePagination } from "@/hooks/usePagination";
 import { toast } from "sonner";
 import * as couponService from "@/services/admin/couponService";
+import * as userService from "@/services/admin/userService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { labelCouponStatus, labelCouponType } from "@/utils/adminDisplayLabels";
@@ -31,6 +32,9 @@ export default function AdminCoupons() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [tags, setTags] = useState<Array<{ id: string; name: string }>>([]);
+  const [issueCouponId, setIssueCouponId] = useState<string | null>(null);
+  const [issueTagId, setIssueTagId] = useState("");
 
   const filteredCoupons = coupons.filter((c) => {
     if (!search) return true;
@@ -44,15 +48,25 @@ export default function AdminCoupons() {
       .then((p) => setCoupons(p.list))
       .catch((e) => toast.error(toastErrorMessage(e, "加载数据失败")))
       .finally(() => setLoading(false));
+    userService.fetchUserTags().then((rows) => setTags(rows.map((t) => ({ id: t.id, name: t.name })))).catch(() => {});
   }, []);
 
   const handleDelete = (id: string) => {
     couponService.deleteCoupon(id)
-      .then(() => {
-        setCoupons(coupons.filter((c) => c.id !== id));
-        toast.success("已删除");
-      })
+      .then(() => { setCoupons(coupons.filter((c) => c.id !== id)); toast.success("已删除"); })
       .catch((e) => toast.error(toastErrorMessage(e, "删除失败")));
+  };
+
+  const handleIssueByTag = async (couponId: string, tagIds: string[]) => {
+    if (!tagIds.length) return;
+    try {
+      const r = await couponService.issueCouponByTag(couponId, tagIds);
+      toast.success(`发放完成：${r?.issued || 0}/${r?.targetUsers || 0}`);
+      setIssueCouponId(null);
+      setIssueTagId("");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "发放失败"));
+    }
   };
 
   return (
@@ -86,7 +100,7 @@ export default function AdminCoupons() {
             <th className="px-4 py-3"><Tx>标题</Tx></th>
             <th className="px-4 py-3"><Tx>类型</Tx></th>
             <th className="px-4 py-3"><Tx>编码</Tx></th>
-            <th className="px-4 py-3"><Tx>面值</Tx></th>
+            <th className="px-4 py-3"><Tx>面额</Tx></th>
             <th className="px-4 py-3"><Tx>门槛</Tx></th>
             <th className="px-4 py-3"><Tx>有效期</Tx></th>
             <th className="px-4 py-3"><Tx>状态</Tx></th>
@@ -103,13 +117,12 @@ export default function AdminCoupons() {
             <td className="px-4 py-3 text-xs text-muted-foreground">{c.code}</td>
             <td className="px-4 py-3">{c.value}</td>
             <td className="px-4 py-3">{c.min_amount}</td>
-            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-              {formatAdminDateRange(c.start_date, c.end_date)}
-            </td>
+            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{formatAdminDateRange(c.start_date, c.end_date)}</td>
             <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs ${statusLabels[c.status]?.color || "bg-secondary text-foreground"}`}>{statusLabels[c.status]?.label || labelCouponStatus(c.status)}</span></td>
             <td className="px-4 py-3">
               <div className="flex gap-2">
                 <button type="button" onClick={() => navigate(`/admin/marketing/coupons/${c.id}`)} className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground" title="编辑"><Pencil size={13} /></button>
+                <PermissionGate permission="coupon.manage"><button type="button" onClick={() => setIssueCouponId(c.id)} className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground" title="按标签发券">发券</button></PermissionGate>
                 <PermissionGate permission="coupon.manage"><button type="button" onClick={() => setDeleteId(c.id)} className="rounded-md border border-destructive/40 p-1.5 text-destructive hover:bg-destructive/10" title="删除"><Trash2 size={13} /></button></PermissionGate>
               </div>
             </td>
@@ -127,6 +140,28 @@ export default function AdminCoupons() {
           if (!deleteId) return;
           handleDelete(deleteId);
           setDeleteId(null);
+        }}
+      />
+      <AnimatedConfirmDialog
+        open={!!issueCouponId}
+        onOpenChange={(open) => { if (!open) { setIssueCouponId(null); setIssueTagId(""); } }}
+        title="按标签发券"
+        description={(
+          <div className="space-y-2 text-sm">
+            <p>选择一个用户标签，系统将向该标签用户批量发放当前优惠券。</p>
+            <select value={issueTagId} onChange={(e) => setIssueTagId(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
+              <option value="">请选择标签</option>
+              {tags.map((tag) => <option key={tag.id} value={tag.id}>{tag.name}</option>)}
+            </select>
+          </div>
+        ) as any}
+        confirmText="确认发放"
+        onConfirm={() => {
+          if (!issueCouponId || !issueTagId) {
+            toast.error("请先选择标签");
+            return;
+          }
+          void handleIssueByTag(issueCouponId, [issueTagId]);
         }}
       />
     </div>

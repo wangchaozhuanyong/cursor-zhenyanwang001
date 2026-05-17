@@ -141,9 +141,15 @@ async function updateUserTag(tagId, body, adminUserId, req) {
 }
 
 async function deleteUserTag(tagId, adminUserId, req) {
+  const affectedUsers = await repo.countUsersByTagId(tagId);
   await repo.deleteUserTag(tagId);
-  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'user_tag.delete', objectType: 'user_tag', objectId: tagId, summary: `删除用户标签 ${tagId}`, result: 'success' });
+  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'user_tag.delete', objectType: 'user_tag', objectId: tagId, summary: `删除用户标签 ${tagId}`, after: { affectedUsers }, result: 'success' });
   return { data: null, message: '已删除' };
+}
+
+async function getUserTagImpact(tagId) {
+  const affectedUsers = await repo.countUsersByTagId(tagId);
+  return { data: { affectedUsers } };
 }
 
 async function setUserTags(userId, body, adminUserId, req) {
@@ -158,6 +164,27 @@ async function setUserTags(userId, body, adminUserId, req) {
   const tagsByUserId = await repo.selectTagsForUserIds([userId]);
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'user.tags_update', objectType: 'user', objectId: userId, summary: `更新用户标签 ${userId}`, after: { tagIds }, result: 'success' });
   return { data: tagsByUserId[userId] || [], message: '标签已更新' };
+}
+
+async function batchSetUserTag(body, adminUserId, req) {
+  const tagId = String(body?.tagId || body?.tag_id || '').trim();
+  const userIds = Array.isArray(body?.userIds) ? body.userIds.map((x) => String(x).trim()).filter(Boolean) : [];
+  if (!tagId) throw new BusinessError(400, 'tagId必填');
+  if (!userIds.length) throw new BusinessError(400, 'userIds不能为空');
+  const existingTagIds = await repo.selectExistingTagIds([tagId]);
+  if (!existingTagIds.length) throw new BusinessError(400, '标签不存在');
+  const affected = await repo.batchAssignTag(userIds, tagId);
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'user.tags_batch_assign',
+    objectType: 'user_tag',
+    objectId: tagId,
+    summary: `批量打标签 ${tagId}`,
+    after: { userCount: userIds.length, affected },
+    result: 'success',
+  });
+  return { data: { affected }, message: '批量打标成功' };
 }
 
 async function updateUser(userId, body, adminUserId, req) {
@@ -276,6 +303,8 @@ module.exports = {
   updateUserTag,
   deleteUserTag,
   setUserTags,
+  batchSetUserTag,
+  getUserTagImpact,
   updateUser,
   updateSubordinate,
   adjustUserPoints,

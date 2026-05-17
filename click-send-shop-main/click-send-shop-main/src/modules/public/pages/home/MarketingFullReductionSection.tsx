@@ -21,7 +21,7 @@ export default function MarketingFullReductionSection() {
   if (!list.length) return null;
 
   return (
-    <section className="mx-auto max-w-screen-xl px-4 py-3">
+    <section className="w-full">
       <h2 className="mb-2 flex items-center gap-2 text-sm font-bold text-[var(--theme-text)]">
         <Percent size={16} className="text-[var(--theme-primary)]" />
         满减特惠

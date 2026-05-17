@@ -16,6 +16,28 @@ exports.userCandidates = asyncRoute(async (req, res) => {
   res.success(r.data, r.message);
 });
 
+exports.resolveUsers = asyncRoute(async (req, res) => {
+  const r = await svc.resolveUsers(req.body);
+  res.success(r.data, r.message);
+});
+
+exports.estimateAudience = asyncRoute(async (req, res) => {
+  const r = await svc.estimateAudience(req.body);
+  res.success(r.data, r.message);
+});
+
+exports.detail = asyncRoute(async (req, res) => {
+  const r = await svc.getNotificationDetail(req.params.id, req.query);
+  res.success(r.data, r.message);
+});
+
+exports.exportRecipientsCsv = asyncRoute(async (req, res) => {
+  const { csv, filename } = await svc.exportBatchRecipientsCsv(req.params.id, req.query);
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+  res.send(`\uFEFF${csv}`);
+});
+
 exports.send = asyncRoute(async (req, res) => {
   const r = await svc.sendNotification(req.body, req.user?.id, req);
   res.success(r.data, r.message);
@@ -43,6 +65,16 @@ exports.triggerSettings = asyncRoute(async (_req, res) => {
 
 exports.updateTriggerSettings = asyncRoute(async (req, res) => {
   const r = await svc.updateTriggerSettings(req.body, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
+exports.previewTriggerRule = asyncRoute(async (req, res) => {
+  const r = await svc.previewTriggerRule(req.body);
+  res.success(r.data, r.message);
+});
+
+exports.testSendTriggerRule = asyncRoute(async (req, res) => {
+  const r = await svc.testSendTriggerRule(req.body, req.user?.id, req);
   res.success(r.data, r.message);
 });
 

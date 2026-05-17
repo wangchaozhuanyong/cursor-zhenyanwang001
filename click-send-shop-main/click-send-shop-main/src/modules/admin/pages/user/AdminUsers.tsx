@@ -44,11 +44,16 @@ export default function AdminUsers() {
   const [newTagColor, setNewTagColor] = useState("金色");
   const [tagSaving, setTagSaving] = useState(false);
   const [tagDeleteId, setTagDeleteId] = useState<string | null>(null);
+  const [tagDeleteImpact, setTagDeleteImpact] = useState(0);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [batchTagId, setBatchTagId] = useState("");
+  const [batchTagSaving, setBatchTagSaving] = useState(false);
 
   useLayoutEffect(() => { useAdminUsersStore.setState({ loading: true }); }, []);
   useEffect(() => { loadUsers().catch((e) => toast.error(toastErrorMessage(e, "加载失败"))); }, [loadUsers]);
   useEffect(() => { userService.fetchUserTags().then(setTags).catch((e) => toast.error(toastErrorMessage(e, "加载标签失败"))); }, []);
   useEffect(() => () => resetUsersStore(), [resetUsersStore]);
+  useEffect(() => { setSelectedUserIds([]); }, [users, page, pageSize, search, selectedTagId, wechatBoundFilter, phoneBoundFilter, accountStatusFilter]);
 
   const queryBase = { keyword: search || undefined, tagId: selectedTagId || undefined, wechatBound: wechatBoundFilter || undefined, phoneBound: phoneBoundFilter || undefined, accountStatus: accountStatusFilter || undefined };
 
@@ -85,14 +90,49 @@ export default function AdminUsers() {
             <select value={newTagColor} onChange={(e) => setNewTagColor(e.target.value)} className="min-h-[40px] rounded-lg bg-secondary px-3 py-2 text-sm"><option>红色</option><option>绿色</option><option>蓝色</option><option>金色</option></select>
             <LoadingButton type="button" variant="gold" state={tagSaving ? "loading" : "normal"} onClick={async () => { if (!newTagName.trim()) return; setTagSaving(true); try { await userService.createUserTag({ name: newTagName.trim(), color: newTagColor }); setNewTagName(""); await reloadTags(); toast.success("标签已创建"); } catch (e) { toast.error(toastErrorMessage(e, "创建标签失败")); } finally { setTagSaving(false); } }} className="min-h-[40px] rounded-lg px-3 py-2 text-sm font-semibold">添加</LoadingButton>
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">{tags.map((tag) => <span key={tag.id} className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${productTagBadgeClass(tag.color)}`}>{tag.name}<span className="opacity-70">({tag.count ?? 0})</span><button type="button" onClick={() => setTagDeleteId(tag.id)} className="ml-1 rounded-full p-0.5 hover:bg-black/10" aria-label={`删除${tag.name}`}><Trash2 size={12} /></button></span>)}</div>
+          <div className="mt-3 flex flex-wrap gap-2">{tags.map((tag) => <span key={tag.id} className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${productTagBadgeClass(tag.color)}`}>{tag.name}<span className="opacity-70">({tag.count ?? 0})</span><button type="button" onClick={async () => { try { const impact = await userService.fetchUserTagImpact(tag.id); setTagDeleteImpact(impact); } catch { setTagDeleteImpact(tag.count || 0); } setTagDeleteId(tag.id); }} className="ml-1 rounded-full p-0.5 hover:bg-black/10" aria-label={`删除${tag.name}`}><Trash2 size={12} /></button></span>)}</div>
+        </div>
+      </PermissionGate>
+
+      <PermissionGate permission="user.update">
+        <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">已选 {selectedUserIds.length} 人</span>
+            <select value={batchTagId} onChange={(e) => setBatchTagId(e.target.value)} className="min-h-[40px] rounded-lg bg-secondary px-3 py-2 text-sm">
+              <option value="">选择要批量打的标签</option>
+              {tags.map((tag) => <option key={tag.id} value={tag.id}>{tag.name}</option>)}
+            </select>
+            <LoadingButton
+              type="button"
+              variant="gold"
+              state={batchTagSaving ? "loading" : "normal"}
+              onClick={async () => {
+                if (!batchTagId) { toast.error("请先选择标签"); return; }
+                if (!selectedUserIds.length) { toast.error("请先勾选用户"); return; }
+                setBatchTagSaving(true);
+                try {
+                  const affected = await userService.batchSetUserTag(batchTagId, selectedUserIds);
+                  toast.success(`批量打标完成：${affected}/${selectedUserIds.length}`);
+                  await loadUsers();
+                  setSelectedUserIds([]);
+                } catch (e) {
+                  toast.error(toastErrorMessage(e, "批量打标失败"));
+                } finally {
+                  setBatchTagSaving(false);
+                }
+              }}
+              className="min-h-[40px] rounded-lg px-3 py-2 text-sm font-semibold"
+            >
+              批量打标
+            </LoadingButton>
+          </div>
         </div>
       </PermissionGate>
 
       <div className="hidden md:block">
-        <AnimatedTable loading={loading} rows={users} rowKey={(u) => u.id} skeletonRows={8} skeletonCols={9} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto" tableClassName="min-w-[920px] w-full text-sm" theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70" thead={(<tr>{["用户", "手机号", "会员等级", "标签", "邀请码", "上级邀请码", "积分", "注册时间", "操作"].map((h) => <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>)}</tr>)} footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={(nextPage) => { setPage(nextPage); loadUsers({ page: nextPage }).catch((e) => toast.error(toastErrorMessage(e, "加载失败"))); }} onPageSizeChange={(nextPageSize) => { setPageSize(nextPageSize); setPage(1); loadUsers({ page: 1, pageSize: nextPageSize }).catch((e) => toast.error(toastErrorMessage(e, "加载失败"))); }} />} emptyIcon={Users} emptyTitle="暂无用户" renderRow={(u) => (<><td className="px-4 py-3"><span className="font-medium text-foreground">{u.nickname || u.phone}</span></td><td className="px-4 py-3 text-foreground whitespace-nowrap">{u.phone}</td><td className="px-4 py-3 whitespace-nowrap">{u.member_level_name || "普通会员"}</td><td className="px-4 py-3"><UserTagBadges tags={u.tags} /></td><td className="px-4 py-3 font-mono text-xs text-foreground">{u.invite_code || "-"}</td><td className="px-4 py-3 font-mono text-xs text-muted-foreground">{u.parent_invite_code || "-"}</td><td className="px-4 py-3 text-foreground">{u.points_balance ?? 0}</td><td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{u.created_at ? new Date(u.created_at).toLocaleString("zh-CN") : "-"}</td><td className="px-4 py-3"><button type="button" onClick={() => navigate(`/admin/users/${u.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">详情</button></td></>)} />
+        <AnimatedTable loading={loading} rows={users} rowKey={(u) => u.id} skeletonRows={8} skeletonCols={10} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto" tableClassName="min-w-[980px] w-full text-sm" theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70" thead={(<tr><th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap"><input type="checkbox" checked={users.length > 0 && selectedUserIds.length === users.length} onChange={(e) => setSelectedUserIds(e.target.checked ? users.map((x) => x.id) : [])} /></th>{["用户", "手机号", "会员等级", "标签", "邀请码", "上级邀请码", "积分", "注册时间", "操作"].map((h) => <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>)}</tr>)} footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={(nextPage) => { setPage(nextPage); loadUsers({ page: nextPage }).catch((e) => toast.error(toastErrorMessage(e, "加载失败"))); }} onPageSizeChange={(nextPageSize) => { setPageSize(nextPageSize); setPage(1); loadUsers({ page: 1, pageSize: nextPageSize }).catch((e) => toast.error(toastErrorMessage(e, "加载失败"))); }} />} emptyIcon={Users} emptyTitle="暂无用户" renderRow={(u) => (<><td className="px-4 py-3"><input type="checkbox" checked={selectedUserIds.includes(u.id)} onChange={(e) => setSelectedUserIds((prev) => e.target.checked ? [...prev, u.id] : prev.filter((id) => id !== u.id))} /></td><td className="px-4 py-3"><span className="font-medium text-foreground">{u.nickname || u.phone}</span></td><td className="px-4 py-3 text-foreground whitespace-nowrap">{u.phone}</td><td className="px-4 py-3 whitespace-nowrap">{u.member_level_name || "普通会员"}</td><td className="px-4 py-3"><UserTagBadges tags={u.tags} /></td><td className="px-4 py-3 font-mono text-xs text-foreground">{u.invite_code || "-"}</td><td className="px-4 py-3 font-mono text-xs text-muted-foreground">{u.parent_invite_code || "-"}</td><td className="px-4 py-3 text-foreground">{u.points_balance ?? 0}</td><td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{u.created_at ? new Date(u.created_at).toLocaleString("zh-CN") : "-"}</td><td className="px-4 py-3"><button type="button" onClick={() => navigate(`/admin/users/${u.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">详情</button></td></>)} />
       </div>
-      <AnimatedConfirmDialog open={!!tagDeleteId} onOpenChange={(open) => !open && setTagDeleteId(null)} danger title="删除标签" description="删除标签会移除所有用户上的该标签，确认删除？" confirmText="删除" onConfirm={async () => { if (!tagDeleteId) return; try { await userService.deleteUserTag(tagDeleteId); await reloadTags(); await loadUsers(); setTagDeleteId(null); toast.success("标签已删除"); } catch (e) { toast.error(toastErrorMessage(e, "删除失败")); } }} />
+      <AnimatedConfirmDialog open={!!tagDeleteId} onOpenChange={(open) => !open && setTagDeleteId(null)} danger title="删除标签" description={`该标签当前影响 ${tagDeleteImpact} 位用户，删除后会同步移除其标签关系，确认继续？`} confirmText="删除" onConfirm={async () => { if (!tagDeleteId) return; try { await userService.deleteUserTag(tagDeleteId); await reloadTags(); await loadUsers(); setTagDeleteId(null); toast.success("标签已删除"); } catch (e) { toast.error(toastErrorMessage(e, "删除失败")); } }} />
     </div>
   );
 }

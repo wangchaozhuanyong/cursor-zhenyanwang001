@@ -40,7 +40,7 @@ function VerticalActionLabel({ label }: { label: string }) {
   return (
     <span className="inline-flex flex-col items-center justify-center gap-0.5 leading-none tracking-tight">
       {chars.map((ch, i) => (
-        <span key={`${ch}-${i}`} className="block text-[13px] font-semibold">
+        <span key={`${ch}-${i}`} className="block text-xs font-semibold">
           {ch}
         </span>
       ))}
@@ -64,19 +64,19 @@ function CouponInfoRow({
   titleClass?: string;
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-1.5">
+    <div className="flex min-w-0 items-center gap-1">
       <span
-        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-[var(--theme-border)] bg-[var(--theme-bg)]"
+        className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border border-[var(--theme-border)] bg-[var(--theme-bg)]"
         aria-hidden
       >
-        <Icon size={13} className={iconClass} strokeWidth={1.75} />
+        <Icon size={10} className={iconClass} strokeWidth={1.75} />
       </span>
       <p
         className={cn(
-          "min-w-0 flex-1 leading-tight",
+          "min-w-0 flex-1 leading-none",
           prominent
-            ? cn("line-clamp-2 text-sm font-bold", titleClass)
-            : cn("truncate text-xs", mutedClass),
+            ? cn("line-clamp-2 text-[13px] font-bold", titleClass)
+            : cn("truncate text-[11px]", mutedClass),
         )}
       >
         {children}
@@ -137,7 +137,7 @@ export default function PremiumCouponCard({
     : THEME_COUPON_ICON_ON_SURFACE_CLASS;
 
   const dense = compact || homeCompact;
-  const amountSize = homeCompact ? "text-2xl leading-none sm:text-3xl" : compact ? "text-2xl" : "text-3xl";
+  const amountSize = homeCompact ? "text-xl leading-none sm:text-2xl" : compact ? "text-xl" : "text-2xl";
 
   const actionButton = actionLabel ? (
     <StoreButton
@@ -148,7 +148,7 @@ export default function PremiumCouponCard({
         e.stopPropagation();
         onAction?.();
       }}
-      className="flex h-full min-h-0 w-full min-w-[2.75rem] max-w-[3.25rem] flex-col items-center justify-center self-stretch !rounded-lg px-1 py-2"
+      className="flex w-full min-w-[2.5rem] max-w-[3rem] flex-col items-center justify-center self-center !rounded-lg px-1 py-1.5"
     >
       {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <VerticalActionLabel label={actionLabel} />}
     </StoreButton>
@@ -158,7 +158,7 @@ export default function PremiumCouponCard({
     <div
       data-theme-coupon-style={couponStyle}
       className={cn(
-        "relative grid w-full items-stretch gap-0 overflow-hidden rounded-xl border border-[var(--theme-border)] p-2",
+        "relative grid w-full items-center gap-0 overflow-hidden rounded-xl border border-[var(--theme-border)] p-1.5",
         homeCompact
           ? "grid-cols-[minmax(4.75rem,24%)_minmax(0,1fr)_minmax(2.75rem,3.25rem)]"
           : "grid-cols-[minmax(5.5rem,26%)_minmax(0,1fr)_minmax(2.75rem,3.25rem)]",
@@ -168,14 +168,14 @@ export default function PremiumCouponCard({
         className,
       )}
     >
-      <div className="flex min-h-0 flex-col items-center justify-center rounded-lg border border-dashed border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-center">
+      <div className="flex flex-col items-center justify-center self-center rounded-lg border border-dashed border-[var(--theme-border)] bg-[var(--theme-bg)] px-1.5 py-1 text-center">
         <p className={cn(amountSize, "font-black tracking-tight text-[var(--theme-price)]")}>{leftValue}</p>
       </div>
 
       <div
         className={cn(
           "flex min-w-0 flex-col justify-center border-x border-dashed border-[var(--theme-border)]",
-          homeCompact ? "gap-0.5 px-2 py-1" : "gap-0.5 px-2.5 py-1",
+          homeCompact ? "gap-px px-1.5 py-0.5" : "gap-px px-2 py-0.5",
         )}
       >
         <CouponInfoRow icon={Tag} prominent titleClass={couponTitleClass} mutedClass={couponMutedClass} iconClass={couponIconClass}>
@@ -192,7 +192,7 @@ export default function PremiumCouponCard({
         </CouponInfoRow>
       </div>
 
-      {actionButton ? <div className="flex items-stretch justify-center pl-1">{actionButton}</div> : null}
+      {actionButton ? <div className="flex items-center justify-center self-center pl-0.5">{actionButton}</div> : null}
     </div>
   );
 

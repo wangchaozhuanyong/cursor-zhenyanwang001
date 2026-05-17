@@ -1,0 +1,35 @@
+﻿{
+  "displayPositions": [
+    "home_flash_sale",
+    "home_coupon_center",
+    "home_new_user_gift",
+    "product_detail",
+    "category_badge",
+    "cart_notice",
+    "checkout_notice",
+    "profile_center",
+    "promotion_banner"
+  ],
+  "displayPositionLabels": {
+    "home_flash_sale": "首页秒杀专区",
+    "home_coupon_center": "首页领券中心",
+    "home_new_user_gift": "首页新人礼包",
+    "product_detail": "商品详情",
+    "category_badge": "分类角标",
+    "cart_notice": "购物车提示",
+    "checkout_notice": "结算页提示",
+    "profile_center": "个人中心",
+    "promotion_banner": "营销横幅"
+  },
+  "publishableActivityTypes": [
+    "flash_sale",
+    "full_reduction",
+    "coupon_activity",
+    "new_user_gift"
+  ],
+  "wipActivityTypes": [
+    "member_activity",
+    "points_bonus",
+    "cashback_activity"
+  ]
+}

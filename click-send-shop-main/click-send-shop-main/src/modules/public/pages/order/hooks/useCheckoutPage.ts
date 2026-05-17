@@ -173,7 +173,7 @@ export function useCheckoutPage() {
     : 0;
   const shippingFee = orderPreview?.shipping_fee ?? serverShippingFee ?? previewShippingFee;
   const clientCouponDiscount = selectedCoupon
-    ? selectedCoupon.discountType === "percent"
+    ? selectedCoupon.discountType === "percentage"
       ? Math.min(rawTotal, Math.floor(rawTotal * selectedCoupon.discount / 100))
       : selectedCoupon.discountType === "shipping"
         ? Math.min(shippingFee, selectedCoupon.discount > 0 ? selectedCoupon.discount : shippingFee)
@@ -220,7 +220,7 @@ export function useCheckoutPage() {
   }, [submittedOrder]);
 
   const estimateCouponDiscount = useCallback((coupon: CheckoutPickerCoupon) => {
-    if (coupon.discountType === "percent") {
+    if (coupon.discountType === "percentage") {
       return Math.min(rawTotal, Math.floor((rawTotal * coupon.discount) / 100));
     }
     if (coupon.discountType === "shipping") {
@@ -684,3 +684,4 @@ export function useCheckoutPage() {
     goNotifications: () => navigate("/notifications"),
   };
 }
+

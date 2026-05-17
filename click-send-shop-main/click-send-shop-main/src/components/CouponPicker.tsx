@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Ticket, ChevronRight, Check, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
@@ -18,13 +18,13 @@ interface CouponPickerProps {
 
 function useCouponHelpers(totalAmount: number, shippingFee: number) {
   const getDiscountAmount = (c: CheckoutPickerCoupon) => {
-    if (c.discountType === "percent") return Math.min(totalAmount, Math.floor((totalAmount * c.discount) / 100));
+    if (c.discountType === "percentage") return Math.min(totalAmount, Math.floor((totalAmount * c.discount) / 100));
     if (c.discountType === "shipping") return Math.min(shippingFee, c.discount > 0 ? c.discount : shippingFee);
     return Math.min(totalAmount, c.discount);
   };
   const isUsable = (c: CheckoutPickerCoupon) => totalAmount >= c.condition && (c.discountType !== "shipping" || shippingFee > 0);
   const getAmountParts = (c: CheckoutPickerCoupon) => {
-    if (c.discountType === "percent") return { amountPrefix: "", amount: `${c.discount}%` };
+    if (c.discountType === "percentage") return { amountPrefix: "", amount: `${c.discount}%` };
     if (c.discountType === "shipping" && c.discount <= 0) return { amountPrefix: "", amount: "免运" };
     return { amountPrefix: "", amount: `RM ${c.discount}` };
   };
@@ -112,7 +112,7 @@ export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCou
   const usableCount = coupons.filter(isUsable).length;
   const close = () => setOpen(false);
   const listProps = { coupons, selectedCouponId, selected, totalAmount, onSelect, onClose: close, getDiscountAmount, isUsable, getAmountParts, getMinSpendText };
-  const statusLabel = loading ? "???..." : selected ? `-RM ${getDiscountAmount(selected)}` : usableCount > 0 ? `${usableCount} ???` : "???";
+  const statusLabel = loading ? "加载中..." : selected ? `-RM ${getDiscountAmount(selected)}` : usableCount > 0 ? `${usableCount} 张可用` : "暂无可用";
 
   return (
     <div className={embedded ? "" : "store-card overflow-hidden rounded-2xl border border-[var(--theme-border)]"}>
@@ -143,9 +143,9 @@ export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCou
               ) : selected ? (
                 <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-price)_14%,var(--theme-surface))] px-3 py-1 text-sm font-bold text-theme-price">-RM {getDiscountAmount(selected)}</span>
               ) : usableCount > 0 ? (
-                <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-danger)_12%,var(--theme-surface))] px-2.5 py-1 text-[11px] font-medium text-[var(--theme-danger)]">{usableCount} ???</span>
+                <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-danger)_12%,var(--theme-surface))] px-2.5 py-1 text-[11px] font-medium text-[var(--theme-danger)]">{usableCount} 张可用</span>
               ) : (
-                <span className="text-xs text-[var(--theme-text-muted-on-surface)]">???</span>
+                <span className="text-xs text-[var(--theme-text-muted-on-surface)]">暂无可用</span>
               )}
               <ChevronRight size={16} className={`text-[var(--theme-text-muted-on-surface)] transition-transform duration-200 ${!isMobileSheet && open ? "rotate-90" : ""}`} />
             </div>
@@ -154,7 +154,7 @@ export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCou
       </button>
 
       {isMobileSheet ? (
-        <ResponsiveSheet open={open} onClose={close} title="?????" height="85vh">
+        <ResponsiveSheet open={open} onClose={close} title="选择优惠券" height="85vh">
           <CouponListBody {...listProps} />
         </ResponsiveSheet>
       ) : (

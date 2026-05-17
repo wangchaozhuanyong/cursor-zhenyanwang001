@@ -1,4 +1,4 @@
-{
+﻿{
   "compilerOptions": {
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
@@ -10,7 +10,7 @@
     ],
     "module": "ESNext",
     "moduleDetection": "force",
-    "moduleResolution": "bundler",
+    "moduleResolution": "bundler",`r`n    "resolveJsonModule": true,
     "noEmit": true,
     "noFallthroughCasesInSwitch": false,
     "noImplicitAny": false,

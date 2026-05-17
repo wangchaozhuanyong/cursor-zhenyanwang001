@@ -1,32 +1,9 @@
-/** 营销活动展示位（与前台模块、页面区块对应） */
-const DISPLAY_POSITIONS = [
-  'home_flash_sale',
-  'home_coupon_center',
-  'home_new_user_gift',
-  'product_detail',
-  'category_badge',
-  'cart_notice',
-  'checkout_notice',
-  'profile_center',
-  'promotion_banner',
-];
+﻿const marketingDisplayData = require('../../../click-send-shop-main/click-send-shop-main/src/constants/marketingDisplayPositions.data.json');
 
-const DISPLAY_POSITION_LABELS = {
-  home_flash_sale: '首页秒杀专区',
-  home_coupon_center: '首页领券中心',
-  home_new_user_gift: '首页新人礼包',
-  product_detail: '商品详情',
-  category_badge: '分类角标',
-  cart_notice: '购物车提示',
-  checkout_notice: '结算页提示',
-  profile_center: '个人中心',
-  promotion_banner: '促销横幅',
-};
-
-const PUBLISHABLE_ACTIVITY_TYPES = ['flash_sale', 'full_reduction', 'coupon_activity', 'new_user_gift'];
-
-/** 尚未实现运行时逻辑的活动类型（仅可草稿） */
-const WIP_ACTIVITY_TYPES = ['member_activity', 'points_bonus', 'cashback_activity'];
+const DISPLAY_POSITIONS = marketingDisplayData.displayPositions;
+const DISPLAY_POSITION_LABELS = marketingDisplayData.displayPositionLabels;
+const PUBLISHABLE_ACTIVITY_TYPES = marketingDisplayData.publishableActivityTypes;
+const WIP_ACTIVITY_TYPES = marketingDisplayData.wipActivityTypes;
 
 function isValidDisplayPosition(value) {
   return DISPLAY_POSITIONS.includes(String(value || '').trim());

@@ -1,31 +1,33 @@
-import type { UserCoupon } from "@/types/coupon";
+﻿import type { UserCoupon } from "@/types/coupon";
 import type { MarketingCouponPublic } from "@/services/marketingService";
 import { formatDate } from "@/utils/formatDateTime";
 
-/** 最低消费金额行（中间第二行） */
+function normalizeCouponType(type: string | undefined) {
+  if (type === "percent") return "percentage";
+  return type;
+}
+
 export function formatCouponMinSpendText(c: UserCoupon["coupon"]) {
-  if (c.type === "shipping") {
-    return c.min_amount > 0 ? `满 RM ${c.min_amount} 免/减运费` : "无门槛运费券";
+  if (normalizeCouponType(c.type) === "shipping") {
+    return c.min_amount > 0 ? `满 RM ${c.min_amount} 包邮` : "无门槛运费券";
   }
   return c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛可用";
 }
 
-/** 有效期行（中间第三行，含前缀） */
 export function formatCouponExpireText(endDate: string | undefined) {
   if (!endDate) return "有效期待定";
   const date = formatDate(endDate);
-  return date === "—" ? "有效期待定" : `有效期至：${date}`;
+  return date === "--" ? "有效期待定" : `有效期至：${date}`;
 }
 
-/** 左侧大号面额/折扣（图3：单行，如 95% / RM 20） */
 export function formatCouponLeftAmount(c: UserCoupon["coupon"]) {
-  if (c.type === "shipping") {
+  const type = normalizeCouponType(c.type);
+  if (type === "shipping") {
     return c.value <= 0 ? "免运" : `RM ${c.value}`;
   }
-  if (c.type === "percentage") {
+  if (type === "percentage") {
     const v = Number(c.value);
     if (!Number.isFinite(v)) return `${c.value}%`;
-    // 9.5折 → 左侧展示 95%
     if (c.title.includes("折") && v > 0 && v < 20) {
       return `${Math.round(v * 10)}%`;
     }
@@ -34,25 +36,25 @@ export function formatCouponLeftAmount(c: UserCoupon["coupon"]) {
   return `RM ${c.value}`;
 }
 
-/** 营销 API 公开券 → PremiumCouponCard 字段 */
 export function marketingCouponToPremiumDisplay(c: MarketingCouponPublic) {
-  if (c.type === "percent" || c.type === "percentage") {
+  const type = normalizeCouponType(c.type);
+  if (type === "percentage") {
     return {
       title: c.title,
       amountPrefix: "",
       amount: `${c.value}%`,
-      minSpendText: c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛",
+      minSpendText: c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛可用",
       expireText: formatCouponExpireText(c.end_date),
       scopeText: "适用范围：全场商品",
       code: c.code,
     };
   }
-  if (c.type === "shipping" && c.value <= 0) {
+  if (type === "shipping" && c.value <= 0) {
     return {
       title: c.title,
       amountPrefix: "",
       amount: "免运",
-      minSpendText: c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛",
+      minSpendText: c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛可用",
       expireText: formatCouponExpireText(c.end_date),
       scopeText: "适用范围：全场商品",
       code: c.code,
@@ -62,14 +64,13 @@ export function marketingCouponToPremiumDisplay(c: MarketingCouponPublic) {
     title: c.title,
     amountPrefix: "",
     amount: `RM ${c.value}`,
-    minSpendText: c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛",
+    minSpendText: c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛可用",
     expireText: formatCouponExpireText(c.end_date),
     scopeText: "适用范围：全场商品",
     code: c.code,
   };
 }
 
-/** 供 PremiumCouponCard 使用的展示字段（与图3 会员礼包一致） */
 export function userCouponToPremiumDisplay(uc: UserCoupon) {
   const c = uc.coupon;
   const minSpendText = formatCouponMinSpendText(c);

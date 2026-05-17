@@ -1,4 +1,4 @@
-import type { SiteInfo } from "@/types/content";
+﻿import type { SiteInfo } from "@/types/content";
 
 export function parseSstEnabled(v: string | undefined): boolean {
   if (v == null || v === "") return false;
@@ -25,7 +25,7 @@ export function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
-/** 含税金额反算税额（与后端 sstTax.splitInclusiveTax 一致） */
+/** 鍚◣閲戦鍙嶇畻绋庨锛堜笌鍚庣 sstTax.splitInclusiveTax 涓€鑷达級 */
 export function splitInclusiveTax(taxableInclusive: number, ratePercent: number) {
   const gross = Math.max(0, taxableInclusive);
   const rate = Math.max(0, ratePercent);
@@ -37,12 +37,13 @@ export function splitInclusiveTax(taxableInclusive: number, ratePercent: number)
   return { taxAmount, exclusiveAmount };
 }
 
-/** 结算预览：运费券不计入应税商品含税基数 */
+/** 缁撶畻棰勮锛氳繍璐瑰埜涓嶈鍏ュ簲绋庡晢鍝佸惈绋庡熀鏁?*/
 export function goodsTaxableInclusivePreview(
   rawTotal: number,
   discountAmount: number,
-  couponDiscountType: "percent" | "fixed" | "shipping" | null | undefined,
+  couponDiscountType: "percentage" | "fixed" | "shipping" | null | undefined,
 ): number {
   const nonShipping = couponDiscountType === "shipping" ? 0 : discountAmount;
   return Math.max(0, rawTotal - nonShipping);
 }
+

@@ -21,11 +21,12 @@ export async function fetchAvailableCoupons(orderAmount: number): Promise<UserCo
 
 function mapUserCouponToCheckoutPicker(uc: UserCoupon, idx: number): CheckoutPickerCoupon {
   const c = uc.coupon;
+  const normalizedType = c.type === "percent" ? "percentage" : c.type;
   return {
     id: uc.id,
     title: c.title,
     discount: c.value,
-    discountType: c.type === "percentage" ? "percent" : c.type === "shipping" ? "shipping" : "fixed",
+    discountType: normalizedType === "percentage" ? "percentage" : normalizedType === "shipping" ? "shipping" : "fixed",
     condition: c.min_amount,
     expire: typeof c.end_date === "string" ? c.end_date.slice(0, 10) : "",
     variantIndex: idx,
@@ -50,7 +51,7 @@ export async function fetchCheckoutPickerCoupons(
   const valid = rows.filter((uc) => {
     if (uc.status !== "available") return false;
     const c = uc.coupon;
-    if (!c || (c.type !== "fixed" && c.type !== "percentage" && c.type !== "shipping")) return false;
+    if (!c || (c.type !== "fixed" && c.type !== "percentage" && c.type !== "percent" && c.type !== "shipping")) return false;
     if (!isCouponInValidPeriod(c.end_date, c.start_date)) return false;
     return true;
   });

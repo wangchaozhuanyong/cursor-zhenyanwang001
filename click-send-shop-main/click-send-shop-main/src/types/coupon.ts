@@ -46,7 +46,7 @@ export interface CheckoutPickerCoupon {
   id: string;
   title: string;
   discount: number;
-  discountType: "fixed" | "percent" | "shipping";
+  discountType: "fixed" | "percentage" | "shipping";
   condition: number;
   expire: string;
   /** 用于轮换配色与图标，由映射时序号决定 */

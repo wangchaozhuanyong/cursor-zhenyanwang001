@@ -130,5 +130,8 @@ export interface ContentPage {
   slug: string;
   title: string;
   content: string;
+  publish_status?: "published" | "draft";
+  sort_order?: number;
   updated_at: string;
+  updatedAt?: string;
 }

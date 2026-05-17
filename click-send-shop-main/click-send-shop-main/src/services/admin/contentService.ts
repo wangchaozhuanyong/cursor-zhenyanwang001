@@ -7,6 +7,11 @@ export async function fetchContentPages(): Promise<ContentPage[]> {
   return unwrapList<ContentPage>(res.data);
 }
 
+export async function createContentPage(data: Partial<ContentPage>) {
+  const res = await contentApi.createContentPage(data);
+  return res.data;
+}
+
 export async function updateContentPage(id: string, data: Partial<ContentPage>) {
   const res = await contentApi.updateContentPage(id, data);
   return res.data;

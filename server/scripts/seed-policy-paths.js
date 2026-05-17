@@ -15,7 +15,7 @@ const settingsRepo = require("../src/modules/admin/adminSiteSettings.repository"
 
 const DEFAULT_PATHS = [
   { key: "privacyPolicyPath", value: "/content/privacy-policy" },
-  { key: "termsPath", value: "/content/terms" },
+  { key: "termsPath", value: "/content/terms-of-service" },
   { key: "refundPolicyPath", value: "/content/refund-policy" },
   { key: "shippingPolicyPath", value: "/content/shipping-policy" },
 ];
@@ -58,4 +58,3 @@ main()
     console.error(e);
     process.exit(1);
   });
-

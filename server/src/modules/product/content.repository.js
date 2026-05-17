@@ -17,6 +17,6 @@ exports.getContentPageBySlug = (slug) =>
        body AS content,
        last_modified_at AS updated_at
      FROM content_pages
-     WHERE slug = ? AND deleted_at IS NULL`,
+     WHERE slug = ? AND deleted_at IS NULL AND publish_status = 'published'`,
     [slug]
   );

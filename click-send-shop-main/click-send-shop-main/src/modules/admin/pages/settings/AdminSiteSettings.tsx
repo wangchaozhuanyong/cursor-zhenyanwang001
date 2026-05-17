@@ -278,7 +278,7 @@ const SECTIONS: Section[] = [
     desc: "填写前台路由（一般为 /content/ + 内容管理里的 slug）。用户点击「隐私政策」「服务条款」等会进入站内页面展示你在内容管理里保存的正文。",
     fields: [
       { key: "privacyPolicyPath", label: "隐私政策路径", placeholder: "/content/privacy-policy", hint: "与内容管理中该页的 slug 一致，例如 slug 为 privacy-policy" },
-      { key: "termsPath", label: "服务条款 / 用户协议路径", placeholder: "/content/terms-of-service", hint: "例如 slug terms-of-service" },
+      { key: "termsPath", label: "服务条款 / 用户协议路径", placeholder: "/content/terms-of-service", hint: "正文在「内容管理」编辑，slug 建议使用 terms-of-service" },
       { key: "refundPolicyPath", label: "退款政策路径", placeholder: "/content/refund-policy" },
       { key: "shippingPolicyPath", label: "配送政策路径", placeholder: "/content/shipping-policy" },
     ],
@@ -296,7 +296,7 @@ const SECTIONS: Section[] = [
   {
     title: "页脚自定义导航 (高级)",
     category: "content",
-    desc: "JSON 格式 [{label,path}]。配置后将完全覆盖默认页脚导航；不填则使用内置默认（关于我们 / 帮助中心 / 隐私 / 协议 / 退款 / 配送）",
+    desc: "JSON 格式 [{label,path,section?}]。配置后将完全覆盖默认页脚导航；section 可选：support / policy。未填 section 时默认前 4 条为 support，其余为 policy。",
     fields: [
       {
         key: "footerNav",
@@ -344,6 +344,9 @@ export default function AdminSiteSettings() {
         for (const item of parsed) {
           if (!item || typeof item.label !== "string" || typeof item.path !== "string") {
             throw new Error("每个条目必须包含 label 与 path 字段");
+          }
+          if (item.section !== undefined && item.section !== "support" && item.section !== "policy") {
+            throw new Error("section 仅允许 support 或 policy");
           }
         }
       } catch (e) {

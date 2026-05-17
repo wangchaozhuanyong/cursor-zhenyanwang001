@@ -27,7 +27,11 @@ import { getProductGridClassName } from "@/utils/productGridClasses";
 import { AnimatedSection } from "@/modules/micro-interactions";
 import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
 import { isHomeModuleEnabled } from "@/constants/homeModules";
-import { HOME_HERO_STACK_CLASS, HOME_PAGE_MAIN_CLASS } from "@/constants/homeLayout";
+import {
+  HOME_GUEST_FOOTER_WRAP_CLASS,
+  HOME_GUEST_MAIN_CLASS,
+  HOME_HERO_STACK_CLASS,
+} from "@/constants/homeLayout";
 import { cn } from "@/lib/utils";
 
 function mergeHomeProductsForGuest(hot: Product[], recommended: Product[], max: number): Product[] {
@@ -51,7 +55,10 @@ function parseFooterNav(json?: string): FooterNavItem[] | null {
     if (!Array.isArray(parsed)) return null;
     const items = parsed.filter(
       (it): it is FooterNavItem =>
-        it && typeof it.label === "string" && typeof it.path === "string",
+        it &&
+        typeof it.label === "string" &&
+        typeof it.path === "string" &&
+        (it.section === undefined || it.section === "support" || it.section === "policy"),
     );
     return items.length > 0 ? items : null;
   } catch {
@@ -107,7 +114,11 @@ export default function GuestHome() {
   const customNav = useMemo(() => parseFooterNav(siteInfo.footerNav), [siteInfo.footerNav]);
 
   const supportNav = useMemo(() => {
-    if (customNav?.length) return dedupeFooterNav(customNav.slice(0, 4));
+    if (customNav?.length) {
+      const withSection = customNav.filter((it) => it.section === "support");
+      if (withSection.length) return dedupeFooterNav(withSection);
+      return dedupeFooterNav(customNav.slice(0, 4));
+    }
     return dedupeFooterNav([
       { label: "首页", path: "/" },
       { label: "全部分类", path: "/categories" },
@@ -117,13 +128,16 @@ export default function GuestHome() {
   }, [customNav]);
 
   const policyNav = useMemo(() => {
-    const base: FooterNavItem[] =
-      customNav && customNav.length > 4
-        ? customNav.slice(4)
-        : [
-            { label: "常见问题", path: "/help" },
-            { label: "关于我们", path: "/about" },
-          ];
+    if (customNav?.length) {
+      const withSection = customNav.filter((it) => it.section === "policy");
+      if (withSection.length) return dedupeFooterNav(withSection);
+      return dedupeFooterNav(customNav.slice(4));
+    }
+
+    const base: FooterNavItem[] = [
+      { label: "常见问题", path: "/help" },
+      { label: "关于我们", path: "/about" },
+    ];
     const extra: FooterNavItem[] = [];
     if (siteInfo.privacyPolicyPath) extra.push({ label: "隐私政策", path: siteInfo.privacyPolicyPath });
     if (siteInfo.termsPath) extra.push({ label: "服务条款", path: siteInfo.termsPath });
@@ -169,7 +183,7 @@ export default function GuestHome() {
 
       <main
         className={cn(
-          HOME_PAGE_MAIN_CLASS,
+          HOME_GUEST_MAIN_CLASS,
           isMagazineLayout && "bg-[color-mix(in_srgb,var(--theme-bg)_88%,black)]",
         )}
       >
@@ -289,7 +303,7 @@ export default function GuestHome() {
         </AnimatedSection>
         ) : null}
 
-        <div className="-mx-4 mt-14">
+        <div className={HOME_GUEST_FOOTER_WRAP_CLASS}>
           <GuestMobileFooter
             siteName={siteName}
             slogan={slogan}
@@ -307,6 +321,9 @@ export default function GuestHome() {
             facebookUrl={siteInfo.facebookUrl}
             tiktokUrl={siteInfo.tiktokUrl}
             xhsUrl={siteInfo.xhsUrl}
+            footerCompanyName={siteInfo.footerCompanyName}
+            footerCopyright={siteInfo.footerCopyright}
+            footerIcpNo={siteInfo.footerIcpNo}
             onNavigate={handleFooterNavigate}
           />
         </div>
@@ -314,5 +331,4 @@ export default function GuestHome() {
     </div>
   );
 }
-
 

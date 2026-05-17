@@ -262,8 +262,35 @@ async function updateReferralRuleByFields(setFragments, values, id) {
 }
 
 async function selectContentPages() {
-  const [rows] = await db.query('SELECT * FROM content_pages WHERE deleted_at IS NULL ORDER BY id ASC');
+  const [rows] = await db.query(
+    `SELECT * FROM content_pages
+     WHERE deleted_at IS NULL
+     ORDER BY last_modified_at DESC, id ASC`,
+  );
   return rows;
+}
+
+async function selectContentPageBySlug(slug) {
+  const [[row]] = await db.query(
+    'SELECT id, slug, title, publish_status FROM content_pages WHERE slug = ? AND deleted_at IS NULL LIMIT 1',
+    [slug],
+  );
+  return row || null;
+}
+
+async function insertContentPage(params) {
+  await db.query(
+    `INSERT INTO content_pages (id, slug, title, body, publish_status, last_modified_by, last_modified_at)
+     VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+    [
+      params.id,
+      params.slug,
+      params.title,
+      params.body || '',
+      params.publish_status || 'published',
+      params.last_modified_by || null,
+    ],
+  );
 }
 
 /** 内容页更新前审计快照（仅 id / title / slug / content 长度） */
@@ -541,6 +568,8 @@ module.exports = {
   selectReferralRules,
   updateReferralRuleByFields,
   selectContentPages,
+  selectContentPageBySlug,
+  insertContentPage,
   selectContentPageAuditSnapshotById,
   updateContentPageByFields,
   selectReturnByIdConn,

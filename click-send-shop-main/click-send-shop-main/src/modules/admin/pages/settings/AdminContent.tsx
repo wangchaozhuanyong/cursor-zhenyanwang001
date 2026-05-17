@@ -5,7 +5,7 @@ import { FileText, Edit2, Shield, HelpCircle, Plus, Trash2, ChevronDown, Chevron
 import { LoadingButton } from "@/modules/micro-interactions";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
-import { fetchContentPages, updateContentPage } from "@/services/admin/contentService";
+import { createContentPage, fetchContentPages, updateContentPage } from "@/services/admin/contentService";
 import { fetchSiteSettings, updateSiteSettings } from "@/services/admin/settingsService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import type { HelpCenterCategory, HelpCenterConfig, HelpCenterFaq } from "@/types/content";
@@ -26,7 +26,15 @@ export default function AdminContent() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<ContentItem | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [form, setForm] = useState({ title: "", content: "" });
+  const [createForm, setCreateForm] = useState({
+    title: "",
+    slug: "",
+    content: "",
+    publish_status: "published" as "published" | "draft",
+    sort_order: "",
+  });
   const [saving, setSaving] = useState(false);
   const [helpForm, setHelpForm] = useState<HelpCenterConfig>(buildDefaultHelpConfig());
   const [helpSaving, setHelpSaving] = useState(false);
@@ -89,6 +97,45 @@ export default function AdminContent() {
     setShowForm(true);
   };
 
+  const handleCreate = async () => {
+    const title = createForm.title.trim();
+    const slug = createForm.slug.trim().toLowerCase();
+    const content = createForm.content.trim();
+    if (!title || !slug || !content) {
+      toast.error("请填写标题、slug 和正文");
+      return;
+    }
+    if (!/^[a-z0-9-]+$/.test(slug)) {
+      toast.error("slug 仅允许小写字母、数字和中横线");
+      return;
+    }
+    setSaving(true);
+    try {
+      const created = await createContentPage({
+        title,
+        slug,
+        content,
+        publish_status: createForm.publish_status,
+        sort_order: createForm.sort_order ? Number(createForm.sort_order) : undefined,
+      });
+      const next = {
+        id: created.id || `${Date.now()}`,
+        title,
+        slug,
+        content,
+        updatedAt: new Date().toISOString(),
+      } as ContentItem;
+      setItems((prev) => [next, ...prev]);
+      setShowCreateForm(false);
+      setCreateForm({ title: "", slug: "", content: "", publish_status: "published", sort_order: "" });
+      toast.success("内容页已创建");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "创建失败"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const iconForSlug = (slug: string) => (slug === "privacy" ? <Shield size={18} className="text-muted-foreground" /> : <FileText size={18} className="text-muted-foreground" />);
   const categories = [...helpForm.categories].sort((a, b) => a.sortOrder - b.sortOrder);
   const faqs = [...helpForm.faqs].sort((a, b) => a.sortOrder - b.sortOrder);
@@ -122,6 +169,17 @@ export default function AdminContent() {
       <div>
         <h1 className="text-xl font-bold text-foreground"><Tx>内容管理</Tx></h1>
         <p className="text-sm text-muted-foreground"><Tx>政策页与帮助中心配置分开管理。</Tx></p>
+        <div className="mt-3">
+          <PermissionGate permission="content.manage">
+            <button
+              type="button"
+              onClick={() => setShowCreateForm(true)}
+              className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"
+            >
+              <Plus size={14} /> 新增内容页
+            </button>
+          </PermissionGate>
+        </div>
       </div>
 
       {loading ? (
@@ -281,6 +339,34 @@ export default function AdminContent() {
               ><Tx>
                 保存
               </Tx></LoadingButton>
+            </PermissionGate>
+          </div>
+        </div>
+      )}
+
+      {showCreateForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowCreateForm(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg max-h-[80vh] overflow-y-auto rounded-2xl bg-card p-6 shadow-xl space-y-4">
+            <h3 className="font-bold text-foreground">新增内容页</h3>
+            <input value={createForm.title} onChange={(e) => setCreateForm((p) => ({ ...p, title: e.target.value }))} placeholder="标题" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+            <input value={createForm.slug} onChange={(e) => setCreateForm((p) => ({ ...p, slug: e.target.value }))} placeholder="slug（如 terms-of-service）" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+            <select value={createForm.publish_status} onChange={(e) => setCreateForm((p) => ({ ...p, publish_status: e.target.value as "published" | "draft" }))} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold">
+              <option value="published">已发布</option>
+              <option value="draft">草稿</option>
+            </select>
+            <input value={createForm.sort_order} onChange={(e) => setCreateForm((p) => ({ ...p, sort_order: e.target.value }))} placeholder="排序（可选）" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+            <textarea rows={10} value={createForm.content} onChange={(e) => setCreateForm((p) => ({ ...p, content: e.target.value }))} placeholder="正文内容" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold resize-none" />
+            <PermissionGate permission="content.manage">
+              <LoadingButton
+                type="button"
+                variant="gold"
+                state={saving ? "loading" : "normal"}
+                loadingText="创建中..."
+                onClick={() => void handleCreate()}
+                className="w-full rounded-xl py-3 text-sm font-bold"
+              >
+                创建
+              </LoadingButton>
             </PermissionGate>
           </div>
         </div>

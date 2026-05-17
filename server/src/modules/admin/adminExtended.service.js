@@ -584,8 +584,59 @@ async function listContentPages() {
     title: r.title,
     slug: r.slug,
     content: r.body || '',
+    publish_status: r.publish_status || 'published',
     updatedAt: r.last_modified_at || null,
   }));
+}
+
+async function createContentPage(body, adminUserId, req) {
+  const title = String(body?.title || '').trim();
+  const slug = String(body?.slug || '').trim().toLowerCase();
+  const content = String(body?.content || '').trim();
+  const publishStatus = body?.publish_status === 'draft' ? 'draft' : 'published';
+
+  if (!title) return { error: { code: 400, message: '标题不能为空' } };
+  if (!content) return { error: { code: 400, message: '正文不能为空' } };
+  if (!slug) return { error: { code: 400, message: 'slug 不能为空' } };
+  if (!/^[a-z0-9-]+$/.test(slug)) {
+    return { error: { code: 400, message: 'slug 仅允许小写字母、数字和中横线' } };
+  }
+
+  const exists = await repo.selectContentPageBySlug(slug);
+  if (exists) return { error: { code: 409, message: 'slug 已存在' } };
+
+  const id = generateId();
+  await repo.insertContentPage({
+    id,
+    slug,
+    title,
+    body: content,
+    publish_status: publishStatus,
+    last_modified_by: adminUserId || null,
+  });
+
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'content.create',
+    objectType: 'content_page',
+    objectId: id,
+    summary: `创建内容页 ${slug}`,
+    after: { slug, title, publish_status: publishStatus },
+    result: 'success',
+  });
+
+  return {
+    data: {
+      id,
+      slug,
+      title,
+      content,
+      publish_status: publishStatus,
+      updatedAt: new Date().toISOString(),
+    },
+    message: '内容页已创建',
+  };
 }
 
 async function updateContentPage(id, body, adminUserId, req) {
@@ -692,6 +743,7 @@ module.exports = {
   listReferralRules,
   updateReferralRule,
   listContentPages,
+  createContentPage,
   updateContentPage,
 };
 

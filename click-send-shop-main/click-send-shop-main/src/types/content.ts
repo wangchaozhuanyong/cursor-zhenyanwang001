@@ -115,6 +115,7 @@ export interface HelpCenterConfig {
 export interface FooterNavItem {
   label: string;
   path: string;
+  section?: "support" | "policy";
 }
 
 export interface HomeNavItem {

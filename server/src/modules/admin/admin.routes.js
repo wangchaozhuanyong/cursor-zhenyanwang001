@@ -393,6 +393,7 @@ router.post(
 router.put('/system/theme', adminAuth, requirePermission('settings.manage'), themeCtrl.updateTheme);
 router.put('/system/theme/skins', adminAuth, requirePermission('settings.manage'), themeCtrl.updateThemeSkins);
 router.get('/content', adminAuth, requirePermission('content.manage'), settingsCtrl.listContent);
+router.post('/content', adminAuth, requirePermission('content.manage'), settingsCtrl.createContent);
 router.put('/content/:id', adminAuth, requirePermission('content.manage'), settingsCtrl.updateContent);
 
 /* ---- Shipping ---- */

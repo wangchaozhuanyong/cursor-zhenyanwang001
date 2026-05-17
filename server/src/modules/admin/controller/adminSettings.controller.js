@@ -36,6 +36,12 @@ exports.listContent = asyncRoute(async (_req, res) => {
   res.success(await adminExtended.listContentPages());
 });
 
+exports.createContent = asyncRoute(async (req, res) => {
+  const r = await adminExtended.createContentPage(req.body, req.user?.id, req);
+  if (r.error) return res.fail(r.error.code, r.error.message);
+  res.success(r.data, r.message);
+});
+
 exports.updateContent = asyncRoute(async (req, res) => {
   const r = await adminExtended.updateContentPage(req.params.id, req.body, req.user?.id, req);
   if (r.error) return res.fail(r.error.code, r.error.message);

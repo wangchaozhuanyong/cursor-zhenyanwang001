@@ -20,11 +20,7 @@ export type SiteSocialLinksProps = Pick<
 
 function buildSocialEntries(site: SiteSocialLinksProps) {
   const wechatId = site.wechatId?.trim();
-  const wa =
-    (site.whatsappUrl || "").trim() ||
-    (site.contactWhatsApp
-      ? `https://wa.me/${site.contactWhatsApp.replace(/\D/g, "")}`
-      : "");
+  const wa = (site.whatsappUrl || "").trim();
   return [
     { label: "WhatsApp", url: wa, isWechat: false as const },
     { label: "WeChat", url: "", isWechat: true as const },

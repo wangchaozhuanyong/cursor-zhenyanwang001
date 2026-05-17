@@ -231,6 +231,7 @@ async function selectBatchStats(batchId) {
   };
 }
 
+/** @param {string} batchId @param {{ readStatus?: string; page?: number; pageSize?: number }} [query] */
 async function selectBatchRecipients(batchId, { readStatus, page = 1, pageSize = 20 } = {}) {
   let where = 'WHERE n.batch_id = ? AND n.deleted_at IS NULL';
   const params = [batchId];
@@ -278,6 +279,7 @@ async function selectBatchRecipientsForExport(batchId, readStatus) {
   return rows;
 }
 
+/** @param {{ audienceType: string; audienceValue?: string|null; userId?: string|null; userIds?: string[] }} params */
 async function selectUsersByAudience({ audienceType, audienceValue, userId, userIds }) {
   if (audienceType === 'single') {
     const id = userId || audienceValue;

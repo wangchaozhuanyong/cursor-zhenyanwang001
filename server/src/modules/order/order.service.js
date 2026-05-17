@@ -312,7 +312,7 @@ async function createOrder(userId, body) {
       use_reward_cash,
       reward_cash_amount,
     }, conn);
-    const loyalty = pricing.loyalty || {};
+    const loyalty = /** @type {Record<string, number>} */ (pricing.loyalty || {});
     const totalAmount = Number(pricing.finalTotal || Math.max(0, rawAmount - discountAmount + shippingFee));
     totalPoints = Number(loyalty.earned_points || totalPoints || 0);
     const discountMeta = {

@@ -1,3 +1,4 @@
+import { useThemeStudioLabel } from "@/hooks/useThemeStudioLabel";
 import type { PreviewDevice, PreviewMode } from "./themeStudioConstants";
 import { PREVIEW_DEVICE_LABELS, PREVIEW_MODE_LABELS } from "./themeStudioConstants";
 
@@ -9,6 +10,7 @@ type Props = {
 };
 
 export default function ThemePreviewToolbar({ mode, device, onModeChange, onDeviceChange }: Props) {
+  const tl = useThemeStudioLabel();
   return (
     <div className="shrink-0 space-y-2 border-b border-border p-3">
       <div className="flex flex-wrap gap-1">
@@ -21,7 +23,7 @@ export default function ThemePreviewToolbar({ mode, device, onModeChange, onDevi
               mode === m ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]" : "bg-secondary text-muted-foreground"
             }`}
           >
-            {PREVIEW_MODE_LABELS[m]}
+            {tl(PREVIEW_MODE_LABELS[m])}
           </button>
         ))}
       </div>
@@ -35,7 +37,7 @@ export default function ThemePreviewToolbar({ mode, device, onModeChange, onDevi
               device === d ? "bg-secondary font-semibold text-foreground" : "text-muted-foreground"
             }`}
           >
-            {PREVIEW_DEVICE_LABELS[d]}
+            {tl(PREVIEW_DEVICE_LABELS[d])}
           </button>
         ))}
       </div>

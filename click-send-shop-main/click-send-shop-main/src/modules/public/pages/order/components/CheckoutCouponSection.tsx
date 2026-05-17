@@ -10,6 +10,9 @@ interface CheckoutCouponSectionProps {
   onSelect: (coupon: CheckoutPickerCoupon | null) => void;
 }
 
+const SECTION_SHELL =
+  "theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow";
+
 export function CheckoutCouponSection({
   rawTotal,
   shippingFee,
@@ -19,11 +22,10 @@ export function CheckoutCouponSection({
   onSelect,
 }: CheckoutCouponSectionProps) {
   return (
-    <>
-      <div className="px-1">
-        <p className="mb-2 text-sm font-semibold text-foreground">3. 优惠券</p>
-      </div>
+    <div className={SECTION_SHELL}>
+      <h3 className="mb-3 text-sm font-semibold text-foreground">3. 优惠券</h3>
       <CouponPicker
+        embedded
         totalAmount={rawTotal}
         shippingFee={shippingFee}
         selectedCouponId={selectedCoupon?.id ?? null}
@@ -31,6 +33,6 @@ export function CheckoutCouponSection({
         coupons={coupons}
         loading={loading}
       />
-    </>
+    </div>
   );
 }

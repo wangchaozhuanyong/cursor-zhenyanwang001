@@ -28,6 +28,7 @@ export default function AdminCouponForm() {
   const goBack = useGoBack("/admin/marketing/coupons");
   const { id } = useParams();
   const isNew = id === "new";
+  const isEdit = !isNew;
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);

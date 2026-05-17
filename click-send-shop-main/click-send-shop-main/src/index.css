@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -243,6 +243,15 @@
   .auth-page-shell {
     min-height: 100dvh;
     min-height: 100svh;
+  }
+
+  /* 移动端表单字号 ≥16px，避免 iOS Safari 聚焦输入时自动缩放页面 */
+  @media (max-width: 767px) {
+    .auth-page-shell input:not([type="checkbox"]):not([type="radio"]),
+    .auth-page-shell select,
+    .auth-page-shell textarea {
+      font-size: 16px;
+    }
   }
 
   .theme-rounded {

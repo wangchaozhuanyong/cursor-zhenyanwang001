@@ -24,8 +24,9 @@ import { cn } from "@/lib/utils";
 import { FormFieldShake } from "@/modules/micro-interactions";
 
 const REMEMBER_KEY = "login_remembered_phone";
+/** text-base(16px) 避免 iOS 聚焦时自动缩放视口导致整页闪动 */
 const INPUT_CLASS =
-  "w-full rounded-2xl border border-border bg-card py-3.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-[border-color,box-shadow]";
+  "w-full rounded-2xl border border-border bg-card py-3.5 text-base text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-[border-color,box-shadow]";
 const REMEMBER_COUNTRY_CODE_KEY = "login_remembered_country_code";
 const COUNTRY_CODE_OPTIONS = [
   { value: "+60", label: "🇲🇾 +60" },
@@ -362,21 +363,20 @@ export default function Login() {
         </div>
       </header>
 
-      {/* 聚焦输入时收起轮播，避免软键盘 + 动画导致整页闪动 */}
-      {banners.length > 0 ? (
-        <div
-          className={cn(
-            "mt-2 shrink-0 px-5 overflow-hidden transition-[max-height,opacity,margin] duration-300 ease-out",
-            formFocused ? "max-h-0 opacity-0 mt-0 pointer-events-none" : "max-h-[280px] opacity-100",
-          )}
-          aria-hidden={formFocused}
-        >
+      {/* 聚焦时立即隐藏轮播，避免与软键盘叠加造成闪动 */}
+      {banners.length > 0 && !formFocused ? (
+        <div className="mt-2 shrink-0 px-5">
           <LoginBannerCarousel banners={banners} paused={formFocused} />
         </div>
       ) : null}
 
       {/* ══════════════ Main Content ══════════════ */}
-      <main className="mx-auto mt-6 w-full max-w-lg flex-1 min-h-0 overflow-y-auto overscroll-y-contain px-5 pb-safe">
+      <main
+        className={cn(
+          "mx-auto w-full max-w-lg flex-1 min-h-0 px-5 pb-safe",
+          formFocused ? "mt-4 overflow-y-visible overscroll-none" : "mt-6 overflow-y-auto overscroll-y-contain",
+        )}
+      >
         {/* Welcome text */}
         <div className="mb-6">
           <h2 className="font-display text-2xl font-bold text-foreground">
@@ -464,7 +464,7 @@ export default function Login() {
             <select
               value={countryCode}
               onChange={(e) => setCountryCode(e.target.value)}
-              className="rounded-2xl border border-border bg-card px-3 py-3.5 text-sm text-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
+              className="rounded-2xl border border-border bg-card px-3 py-3.5 text-base text-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
             >
               {COUNTRY_CODE_OPTIONS.map((item) => (
                 <option key={item.value} value={item.value}>
@@ -481,7 +481,7 @@ export default function Login() {
                 placeholder="手机号"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value.replace(/[^\d\s\-()]/g, ""))}
-                className={cn(INPUT_CLASS, "pl-12 pr-4")}
+                className={cn(INPUT_CLASS, "scroll-mt-4 pl-12 pr-4")}
               />
             </div>
           </div>

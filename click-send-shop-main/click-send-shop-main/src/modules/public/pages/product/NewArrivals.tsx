@@ -12,12 +12,12 @@ export default function NewArrivals() {
   useDocumentTitle("新品上市");
   const navigate = useNavigate();
   const { products, loading, error, loadProducts } = useProductStore();
-  const [sort, setSort] = useState<ProductSortType>("newest");
+  const [sort, setSort] = useState<ProductSortType>("default");
 
   useEffect(() => {
     loadProducts({
       is_new: true,
-      sort: sort === "default" ? undefined : sort,
+      sort: sort === "default" || sort === "newest" ? undefined : sort,
       page: 1,
       pageSize: 50,
     });
@@ -28,11 +28,15 @@ export default function NewArrivals() {
       <StorePageHeader
         title="新品上市"
         titleInlineSlot={
-          <span className="truncate text-xs font-normal text-[var(--theme-text-muted)]">
-            最新上架好物，第一时间发现
-          </span>
+          <div className="flex min-w-0 flex-1 justify-end">
+            <ProductSortBar
+              hideNewest
+              value={sort === "newest" ? "default" : sort}
+              onChange={(next) => setSort(next === "newest" ? "default" : next)}
+              className="w-full max-w-[min(100%,20rem)]"
+            />
+          </div>
         }
-        bottomSlot={<ProductSortBar value={sort} onChange={setSort} />}
       />
 
       <main className="mx-auto max-w-screen-xl px-4 pb-6 pt-4">

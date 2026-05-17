@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { FormFieldShake } from "@/modules/micro-interactions";
 
 const INPUT_CLASS =
-  "w-full rounded-2xl border border-border bg-card py-3.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-[border-color,box-shadow]";
+  "w-full rounded-2xl border border-border bg-card py-3.5 text-base text-foreground placeholder:text-muted-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 transition-[border-color,box-shadow]";
 
 const COUNTRY_CODE_OPTIONS = [
   { value: "+60", label: "🇲🇾 +60" },
@@ -110,7 +110,7 @@ export default function BindWechatPhone() {
             <select
               value={countryCode}
               onChange={(e) => setCountryCode(e.target.value)}
-              className="rounded-2xl border border-border bg-card px-3 py-3.5 text-sm text-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
+              className="rounded-2xl border border-border bg-card px-3 py-3.5 text-base text-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
             >
               {COUNTRY_CODE_OPTIONS.map((item) => (
                 <option key={item.value} value={item.value}>

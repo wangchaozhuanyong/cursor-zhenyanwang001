@@ -22,24 +22,27 @@ function cyclePriceSort(current: ProductSortType): ProductSortType {
 interface ProductSortBarProps {
   value: ProductSortType;
   onChange: (value: ProductSortType) => void;
+  /** 新品上市等已按上新筛选的列表：隐藏「最新」，避免与页面语义重复 */
+  hideNewest?: boolean;
   className?: string;
 }
 
 /** 分类 / 新品列表：顶部横向排序，直接切换（不用底部上拉） */
-export default function ProductSortBar({ value, onChange, className }: ProductSortBarProps) {
+export default function ProductSortBar({ value, onChange, hideNewest = false, className }: ProductSortBarProps) {
   const isPriceAsc = value === "price-asc";
   const isPriceDesc = value === "price-desc";
   const isPriceActive = isPriceAsc || isPriceDesc;
+  const sortItems = hideNewest ? baseSortItems.filter((item) => item.value !== "newest") : baseSortItems;
 
   return (
     <div
       className={cn(
-        "no-scrollbar flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2.5 py-2 sm:gap-2 sm:px-3",
+        "no-scrollbar flex min-w-0 items-center gap-1.5 overflow-x-auto rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 py-1.5 sm:gap-2 sm:px-2.5 sm:py-2",
         className,
       )}
     >
       <SlidersHorizontal size={14} className="shrink-0 text-muted-foreground" aria-hidden />
-      {baseSortItems.map((item) => (
+      {sortItems.map((item) => (
         <button
           key={item.value}
           type="button"

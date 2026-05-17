@@ -1,4 +1,4 @@
-import { Copy, Maximize2, Plus, Star, Trash2 } from "lucide-react";
+import { Copy, Maximize2, Plus, Sparkles, Star, Trash2 } from "lucide-react";
 import { LoadingButton } from "@/modules/micro-interactions";
 import PermissionGate from "@/components/admin/PermissionGate";
 import StoreBadge from "@/components/ui/StoreBadge";
@@ -14,6 +14,8 @@ export type ThemeStudioHeaderProps = {
   onSaveAndApply: () => void;
   onCopy: () => void;
   onAdd: () => void;
+  starterQuickAdds?: Array<{ id: string; label: string }>;
+  onAddStarter?: (starterId: string) => void;
   onSetDefault: () => void;
   canDelete?: boolean;
   onDelete: () => void;
@@ -30,6 +32,8 @@ export default function ThemeStudioHeader({
   onSaveAndApply,
   onCopy,
   onAdd,
+  starterQuickAdds,
+  onAddStarter,
   onSetDefault,
   canDelete = true,
   onDelete,
@@ -67,6 +71,19 @@ export default function ThemeStudioHeader({
             <Plus size={14} /><Tx>
             新建
           </Tx></button>
+          {onAddStarter && starterQuickAdds?.length
+            ? starterQuickAdds.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onAddStarter(item.id)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-[var(--theme-primary)]/35 bg-[color-mix(in_srgb,var(--theme-primary)_8%,transparent)] px-3 py-1.5 text-xs font-medium text-[var(--theme-primary)] hover:bg-[color-mix(in_srgb,var(--theme-primary)_14%,transparent)]"
+                >
+                  <Sparkles size={14} />
+                  <Tx>添加</Tx>「{item.label}」
+                </button>
+              ))
+            : null}
           <button type="button" onClick={onCopy} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
             <Copy size={14} /><Tx>
             复制

@@ -6,6 +6,7 @@ import {
   ADMIN_SAFE_THEME_OVERRIDES,
   DEFAULT_SKIN_ID,
   PROMO_ADMIN_BG_OVERRIDES,
+  PROMO_SKIN_ID,
   THEME_PRESETS,
 } from "@/constants/themePresets";
 import { THEME_REVISION_KEY } from "@/lib/themeRevision";
@@ -49,7 +50,7 @@ function resolveThemeConfigForScope(config: ThemeConfig, skinId: string, inAdmin
   if (config.adminThemeMode === "fixed") {
     return normalizeThemeConfig({ ...config, ...ADMIN_SAFE_THEME_OVERRIDES });
   }
-  if (skinId === "promo_red_orange") {
+  if (skinId === PROMO_SKIN_ID) {
     return normalizeThemeConfig({ ...config, ...PROMO_ADMIN_BG_OVERRIDES });
   }
   return config;

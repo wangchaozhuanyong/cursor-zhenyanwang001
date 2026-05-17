@@ -13,6 +13,8 @@ interface CouponPickerProps {
   onSelect: (coupon: CheckoutPickerCoupon | null) => void;
   coupons: CheckoutPickerCoupon[];
   loading: boolean;
+  /** 结算页内嵌：无独立外框，触发区样式与支付方式一致 */
+  embedded?: boolean;
 }
 
 function useCouponHelpers(totalAmount: number, shippingFee: number) {
@@ -133,6 +135,7 @@ export default function CouponPicker({
   onSelect,
   coupons,
   loading,
+  embedded = false,
 }: CouponPickerProps) {
   const [open, setOpen] = useState(false);
   const isMobileSheet = useMediaSheetMode();
@@ -157,38 +160,68 @@ export default function CouponPicker({
     getMinSpendText,
   };
 
+  const statusLabel = loading
+    ? "加载中..."
+    : selected
+      ? `-RM ${getDiscountAmount(selected)}`
+      : usableCount > 0
+        ? `${usableCount} 张可用`
+        : "无可用";
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card">
+    <div className={embedded ? "" : "overflow-hidden rounded-2xl border border-border bg-card"}>
       <button
         type="button"
         onClick={() => (isMobileSheet ? setOpen(true) : setOpen((v) => !v))}
-        className="flex w-full items-center justify-between p-5"
+        className={
+          embedded
+            ? "flex w-full items-center justify-between gap-3 rounded-xl bg-secondary px-4 py-3.5 text-left"
+            : "flex w-full items-center justify-between p-5"
+        }
       >
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold/10">
-            <Ticket size={16} className="text-gold" />
-          </div>
-          <h3 className="text-sm font-semibold text-foreground">优惠券</h3>
-        </div>
-        <div className="flex items-center gap-2">
-          {loading ? (
-            <Loader2 size={14} className="animate-spin text-muted-foreground" />
-          ) : selected ? (
-            <span className="rounded-full bg-gold/10 px-3 py-1 text-sm font-bold text-gold">
-              -RM {getDiscountAmount(selected)}
-            </span>
-          ) : usableCount > 0 ? (
-            <span className="rounded-full bg-destructive/10 px-2.5 py-1 text-[11px] font-medium text-destructive">
-              {usableCount} 张可用
-            </span>
-          ) : (
-            <span className="text-xs text-muted-foreground">无可用</span>
-          )}
-          <ChevronRight
-            size={16}
-            className={`text-muted-foreground transition-transform duration-200 ${!isMobileSheet && open ? "rotate-90" : ""}`}
-          />
-        </div>
+        {embedded ? (
+          <>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground">
+                {selected ? selected.title : "选择优惠券"}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{statusLabel}</p>
+            </div>
+            {loading ? (
+              <Loader2 size={18} className="shrink-0 animate-spin text-muted-foreground" />
+            ) : (
+              <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
+            )}
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold/10">
+                <Ticket size={16} className="text-gold" />
+              </div>
+              <h3 className="text-sm font-semibold text-foreground">优惠券</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              {loading ? (
+                <Loader2 size={14} className="animate-spin text-muted-foreground" />
+              ) : selected ? (
+                <span className="rounded-full bg-gold/10 px-3 py-1 text-sm font-bold text-gold">
+                  -RM {getDiscountAmount(selected)}
+                </span>
+              ) : usableCount > 0 ? (
+                <span className="rounded-full bg-destructive/10 px-2.5 py-1 text-[11px] font-medium text-destructive">
+                  {usableCount} 张可用
+                </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">无可用</span>
+              )}
+              <ChevronRight
+                size={16}
+                className={`text-muted-foreground transition-transform duration-200 ${!isMobileSheet && open ? "rotate-90" : ""}`}
+              />
+            </div>
+          </>
+        )}
       </button>
 
       {isMobileSheet ? (

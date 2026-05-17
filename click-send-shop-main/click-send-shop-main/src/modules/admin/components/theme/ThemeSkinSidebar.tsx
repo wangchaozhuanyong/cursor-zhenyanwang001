@@ -1,5 +1,6 @@
 import { Copy, Plus, Search, Star, Trash2 } from "lucide-react";
 import type { ThemeSceneTag, ThemeSkin } from "@/types/theme";
+import { useThemeStudioLabel } from "@/hooks/useThemeStudioLabel";
 import { SCENE_FILTER_OPTIONS, SCENE_TAG_LABELS } from "./themeStudioConstants";
 import { Tx } from "@/components/admin/AdminText";
 
@@ -38,6 +39,7 @@ export default function ThemeSkinSidebar({
   onDelete,
   onSetDefault,
 }: ThemeSkinSidebarProps) {
+  const tl = useThemeStudioLabel();
   const q = search.trim().toLowerCase();
   const filtered = skins.filter((skin) => {
     const matchScene = sceneFilter === "all" || skin.sceneTag === sceneFilter || (sceneFilter === "default" && skin.id === defaultSkinId);
@@ -68,7 +70,7 @@ export default function ThemeSkinSidebar({
           <input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="搜索皮肤..."
+            placeholder={tl("搜索皮肤...")}
             className="min-w-0 flex-1 bg-transparent text-xs outline-none"
           />
         </div>
@@ -82,7 +84,7 @@ export default function ThemeSkinSidebar({
                 sceneFilter === opt.id ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]" : "bg-secondary text-muted-foreground"
               }`}
             >
-              {opt.label}
+              {tl(opt.label)}
             </button>
           ))}
         </div>
@@ -113,7 +115,7 @@ export default function ThemeSkinSidebar({
                     {selected ? <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-800"><Tx>编辑中</Tx></span> : null}
                     {skin.sceneTag ? (
                       <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                        {SCENE_TAG_LABELS[skin.sceneTag]}
+                        {tl(SCENE_TAG_LABELS[skin.sceneTag])}
                       </span>
                     ) : null}
                   </div>

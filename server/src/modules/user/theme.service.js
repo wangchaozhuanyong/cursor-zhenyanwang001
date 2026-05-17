@@ -1,6 +1,6 @@
 ﻿const repo = require('./theme.repository');
 const { DEFAULT_THEME_CONFIG } = require('./theme.default');
-const { DEFAULT_SKIN_ID, THEME_PRESETS } = require('./theme.presets');
+const { DEFAULT_SKIN_ID, FALLBACK_THEME_SKIN } = require('./theme.presets');
 const { writeAuditLog } = require('../../utils/auditLog');
 
 const ENUMS = {
@@ -175,11 +175,13 @@ function normalizeThemeSkinsPayload(rawPayload) {
       });
     });
   } else {
-    skins = THEME_PRESETS.map((skin) => ({
-      ...skin,
-      clientEnabled: skin.clientEnabled !== false,
-      config: normalizeThemeConfig(skin.config),
-    }));
+    skins = [
+      {
+        ...FALLBACK_THEME_SKIN,
+        clientEnabled: FALLBACK_THEME_SKIN.clientEnabled !== false,
+        config: normalizeThemeConfig(FALLBACK_THEME_SKIN.config),
+      },
+    ];
   }
 
   skins = skins.slice(0, MAX_SKINS);

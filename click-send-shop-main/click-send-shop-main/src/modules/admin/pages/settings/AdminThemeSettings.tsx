@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { DEFAULT_SKIN_ID, THEME_PRESETS } from "@/constants/themePresets";
+import { DEFAULT_SKIN_ID, FALLBACK_THEME_SKIN, THEME_PRESETS } from "@/constants/themePresets";
+import { STARTER_THEME_SKIN_MAP, STARTER_THEME_SKINS } from "@/constants/starterThemeSkins";
 import { notifyGlobalThemeUpdated } from "@/lib/themeRevision";
 import { AnimatedConfirmDialog } from "@/modules/micro-interactions";
 import ThemeEditorPanel from "@/modules/admin/components/theme/ThemeEditorPanel";
@@ -20,7 +21,8 @@ import {
   resetThemeGroup,
   type AutoColorAction,
 } from "@/utils/themeStudioAuto";
-const presetMap = new Map(THEME_PRESETS.map((skin) => [skin.id, skin]));
+/** 重置分组时：若当前皮肤曾是历史预设 ID，仍可按 ID 找回；否则用兜底默认 */
+const presetMap = new Map<string, ThemeSkin>([[FALLBACK_THEME_SKIN.id, FALLBACK_THEME_SKIN]]);
 
 export default function AdminThemeSettings() {
   const [loading, setLoading] = useState(true);
@@ -149,6 +151,28 @@ export default function AdminThemeSettings() {
       return;
     }
     applySkinSwitch(id);
+  };
+
+  const onAddStarterSkin = (starterId: string) => {
+    const starter = STARTER_THEME_SKIN_MAP.get(starterId);
+    if (!starter) return;
+    const exists = skins.some((s) => s.id === starterId);
+    if (exists) {
+      setSelectedSkinId(starterId);
+      setThemeConfig(normalizeThemeConfig(skins.find((s) => s.id === starterId)?.config));
+      toast.info("该推荐皮肤已存在，已为你选中");
+      return;
+    }
+    if (skins.length >= 20) return toast.info("最多保留 20 套皮肤");
+    const normalized = {
+      ...starter,
+      config: normalizeThemeConfig(starter.config),
+    };
+    setSkins((prev) => [...prev, normalized]);
+    setSelectedSkinId(starterId);
+    setThemeConfig(normalized.config);
+    setDirty(true);
+    toast.success("已添加推荐皮肤，请保存后在前台生效");
   };
 
   const onAddSkin = () => {
@@ -288,6 +312,8 @@ export default function AdminThemeSettings() {
         onSaveAndApply={() => void onSaveAndApply()}
         onCopy={() => onCopySkin()}
         onAdd={onAddSkin}
+        starterQuickAdds={STARTER_THEME_SKINS.map((s) => ({ id: s.id, label: s.name }))}
+        onAddStarter={onAddStarterSkin}
         onSetDefault={() => void onSetDefault(selectedSkinId)}
         canDelete={canDeleteThemeSkin(selectedSkinId, defaultSkinId, skins.length).ok}
         onDelete={() => {

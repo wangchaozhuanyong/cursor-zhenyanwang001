@@ -11,6 +11,8 @@ interface ShippingPickerProps {
   selectedId: number | null;
   /** 外层已有「配送方式」标题时隐藏卡片内重复标题 */
   hideHeading?: boolean;
+  /** 结算页内嵌：无独立外框，触发区样式与支付方式一致 */
+  embedded?: boolean;
   onSelect: (template: ShippingTemplate, fee: number) => void;
 }
 
@@ -77,13 +79,20 @@ function ShippingOptionButton({
 function ShippingSummary({
   template,
   totalAmount,
+  flat = false,
 }: {
   template: ShippingTemplate;
   totalAmount: number;
+  flat?: boolean;
 }) {
   const fee = calcShippingFee(template, totalAmount);
   return (
-    <div className="flex items-center justify-between rounded-xl bg-secondary p-3">
+    <div
+      className={cn(
+        "flex w-full items-center justify-between",
+        !flat && "rounded-xl bg-secondary p-3",
+      )}
+    >
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-foreground">{template.name}</p>
         <p className="text-xs text-muted-foreground">{formatRegions(template.regions)}</p>
@@ -102,7 +111,13 @@ function ShippingSummary({
   );
 }
 
-export default function ShippingPicker({ totalAmount, selectedId, hideHeading = false, onSelect }: ShippingPickerProps) {
+export default function ShippingPicker({
+  totalAmount,
+  selectedId,
+  hideHeading = false,
+  embedded = false,
+  onSelect,
+}: ShippingPickerProps) {
   const [expanded, setExpanded] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const isMobileSheet = useMediaSheetMode();
@@ -130,17 +145,23 @@ export default function ShippingPicker({ totalAmount, selectedId, hideHeading = 
     </div>
   );
 
+  const shellClass = embedded ? "" : "rounded-2xl border border-border bg-card p-5";
+
   if (isMobileSheet) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-5">
-        {!hideHeading ? <h3 className="mb-3 text-sm font-semibold text-foreground">配送方式</h3> : null}
+      <div className={shellClass}>
+        {!hideHeading && !embedded ? <h3 className="mb-3 text-sm font-semibold text-foreground">配送方式</h3> : null}
         <button
           type="button"
-          onClick={() => setSheetOpen(true)}
-          className="flex w-full items-center gap-2 text-left"
+          onClick={() => (enabledTemplates.length > 1 ? setSheetOpen(true) : undefined)}
+          className={
+            embedded
+              ? "flex w-full items-center justify-between gap-3 rounded-xl bg-secondary px-4 py-3.5 text-left"
+              : "flex w-full items-center gap-2 text-left"
+          }
         >
           <div className="min-w-0 flex-1">
-            <ShippingSummary template={selected} totalAmount={totalAmount} />
+            <ShippingSummary template={selected} totalAmount={totalAmount} flat={embedded} />
           </div>
           {enabledTemplates.length > 1 ? (
             <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
@@ -156,7 +177,7 @@ export default function ShippingPicker({ totalAmount, selectedId, hideHeading = 
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
+    <div className={shellClass}>
       {(enabledTemplates.length > 1 || !hideHeading) && (
         <div className={cn("mb-3 flex items-center", hideHeading ? "justify-end" : "justify-between")}>
           {!hideHeading ? <h3 className="text-sm font-semibold text-foreground">配送方式</h3> : null}
@@ -169,7 +190,11 @@ export default function ShippingPicker({ totalAmount, selectedId, hideHeading = 
         </div>
       )}
 
-      {!expanded ? <ShippingSummary template={selected} totalAmount={totalAmount} /> : optionList}
+      {!expanded ? (
+        <ShippingSummary template={selected} totalAmount={totalAmount} flat={embedded} />
+      ) : (
+        optionList
+      )}
     </div>
   );
 }

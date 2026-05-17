@@ -1,6 +1,7 @@
 import { ChevronDown, RotateCcw, Sparkles, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Tx } from "@/components/admin/AdminText";
+import { useThemeStudioLabel } from "@/hooks/useThemeStudioLabel";
 import type { ThemeConfig, ThemeSceneTag, ThemeSkin } from "@/types/theme";
 import type { AutoColorAction } from "@/utils/themeStudioAuto";
 import ColorField from "./ColorField";
@@ -87,7 +88,8 @@ function SelectRow<T extends string>({
   fieldKey?: string;
   description?: string;
 }) {
-  const toLabel = (option: string) => enumValueLabels[option] || option;
+  const tl = useThemeStudioLabel();
+  const toLabel = (option: string) => tl(enumValueLabels[option] || option);
   const help = description ?? (fieldKey ? FIELD_HELP_TEXTS[fieldKey] : undefined);
   return (
     <label className="space-y-1">
@@ -141,6 +143,7 @@ export default function ThemeEditorPanel({
   canUndoOptimize,
   onUndoOptimize,
 }: ThemeEditorPanelProps) {
+  const tl = useThemeStudioLabel();
   const panelRef = useRef<HTMLElement>(null);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     colors: true,
@@ -221,7 +224,7 @@ export default function ThemeEditorPanel({
       <div className="space-y-3">
         <EditorSection
           id="basic"
-          title={EDITOR_GROUP_LABELS.basic}
+          title={tl(EDITOR_GROUP_LABELS.basic)}
           open={sectionOpen("basic", true)}
           onOpenChange={setSectionOpen("basic")}
         >
@@ -245,7 +248,7 @@ export default function ThemeEditorPanel({
             </label>
             <label className="space-y-1">
               <span className="text-xs text-muted-foreground"><Tx>适合场景</Tx></span>
-              <p className="text-[10px] leading-snug text-muted-foreground/80">{FIELD_HELP_TEXTS.sceneTag}</p>
+              <p className="text-[10px] leading-snug text-muted-foreground/80">{tl(FIELD_HELP_TEXTS.sceneTag)}</p>
               <select
                 value={selectedSkin?.sceneTag || "default"}
                 onChange={(e) => onSkinMetaChange({ sceneTag: e.target.value as ThemeSceneTag })}
@@ -253,7 +256,7 @@ export default function ThemeEditorPanel({
               >
                 {Object.entries(SCENE_TAG_LABELS).map(([k, label]) => (
                   <option key={k} value={k}>
-                    {label}
+                    {tl(label)}
                   </option>
                 ))}
               </select>
@@ -267,14 +270,14 @@ export default function ThemeEditorPanel({
                 /><Tx>
                 前台可切换
               </Tx></span>
-              <p className="pl-5 text-[10px] leading-snug text-muted-foreground/80">{FIELD_HELP_TEXTS.clientEnabled}</p>
+              <p className="pl-5 text-[10px] leading-snug text-muted-foreground/80">{tl(FIELD_HELP_TEXTS.clientEnabled)}</p>
             </label>
             <label className="flex flex-col gap-1 text-xs md:col-span-2">
               <span className="flex items-center gap-2">
                 <input type="checkbox" checked={isDefaultSkin} onChange={(e) => onSetDefaultToggle(e.target.checked)} /><Tx>
                 设为默认皮肤
               </Tx></span>
-              <p className="pl-5 text-[10px] leading-snug text-muted-foreground/80">{FIELD_HELP_TEXTS.isDefaultSkin}</p>
+              <p className="pl-5 text-[10px] leading-snug text-muted-foreground/80">{tl(FIELD_HELP_TEXTS.isDefaultSkin)}</p>
             </label>
           </div>
         </EditorSection>
@@ -283,7 +286,7 @@ export default function ThemeEditorPanel({
           <EditorSection
             key={group}
             id={group}
-            title={EDITOR_GROUP_LABELS[group]}
+            title={tl(EDITOR_GROUP_LABELS[group])}
             open={sectionOpen(group, group === "colors")}
             onOpenChange={setSectionOpen(group)}
             onReset={() => onResetGroup(group)}
@@ -305,7 +308,7 @@ export default function ThemeEditorPanel({
 
         <EditorSection
           id="buttons"
-          title={EDITOR_GROUP_LABELS.buttons}
+          title={tl(EDITOR_GROUP_LABELS.buttons)}
           open={sectionOpen("buttons")}
           onOpenChange={setSectionOpen("buttons")}
           onReset={() => onResetGroup("buttons")}
@@ -315,7 +318,7 @@ export default function ThemeEditorPanel({
             <SelectRow fieldKey="navStyle" label="底部导航" value={themeConfig.navStyle} options={enumOptions.navStyle} onChange={(v) => onConfigChange("navStyle", v)} />
             <label className="space-y-1">
               <span className="text-xs text-muted-foreground"><Tx>圆角 radius</Tx></span>
-              <p className="text-[10px] leading-snug text-muted-foreground/80">{FIELD_HELP_TEXTS.radius}</p>
+              <p className="text-[10px] leading-snug text-muted-foreground/80">{tl(FIELD_HELP_TEXTS.radius)}</p>
               <input value={themeConfig.radius} onChange={(e) => onConfigChange("radius", e.target.value)} className="h-9 w-full rounded-lg border border-border px-2 text-xs" />
             </label>
             <SelectRow fieldKey="shadowStyle" label="阴影" value={themeConfig.shadowStyle} options={enumOptions.shadowStyle} onChange={(v) => onConfigChange("shadowStyle", v)} />
@@ -326,7 +329,7 @@ export default function ThemeEditorPanel({
 
         <EditorSection
           id="card"
-          title={EDITOR_GROUP_LABELS.card}
+          title={tl(EDITOR_GROUP_LABELS.card)}
           open={sectionOpen("card")}
           onOpenChange={setSectionOpen("card")}
           onReset={() => onResetGroup("card")}
@@ -343,7 +346,7 @@ export default function ThemeEditorPanel({
 
         <EditorSection
           id="marketing"
-          title={EDITOR_GROUP_LABELS.marketing}
+          title={tl(EDITOR_GROUP_LABELS.marketing)}
           open={sectionOpen("marketing")}
           onOpenChange={setSectionOpen("marketing")}
           onReset={() => onResetGroup("marketing")}
@@ -361,7 +364,7 @@ export default function ThemeEditorPanel({
 
         <EditorSection
           id="advanced"
-          title={EDITOR_GROUP_LABELS.advanced}
+          title={tl(EDITOR_GROUP_LABELS.advanced)}
           open={sectionOpen("advanced")}
           onOpenChange={setSectionOpen("advanced")}
           onReset={() => onResetGroup("advanced")}
@@ -370,7 +373,7 @@ export default function ThemeEditorPanel({
             <SelectRow fieldKey="adminThemeMode" label="后台主题模式" value={themeConfig.adminThemeMode} options={enumOptions.adminThemeMode} onChange={(v) => onConfigChange("adminThemeMode", v)} />
             <label className="space-y-1">
               <span className="text-xs text-muted-foreground"><Tx>字体</Tx></span>
-              <p className="text-[10px] leading-snug text-muted-foreground/80">{FIELD_HELP_TEXTS.fontFamily}</p>
+              <p className="text-[10px] leading-snug text-muted-foreground/80">{tl(FIELD_HELP_TEXTS.fontFamily)}</p>
               <input value={themeConfig.fontFamily} onChange={(e) => onConfigChange("fontFamily", e.target.value)} className="h-9 w-full rounded-lg border border-border px-2 text-xs" />
             </label>
             <p className="md:col-span-2 rounded-lg border border-border bg-secondary/30 px-3 py-2 text-[11px] text-muted-foreground"><Tx>
@@ -381,7 +384,7 @@ export default function ThemeEditorPanel({
 
         <EditorSection
           id="health"
-          title={EDITOR_GROUP_LABELS.health}
+          title={tl(EDITOR_GROUP_LABELS.health)}
           open={sectionOpen("health", true)}
           onOpenChange={setSectionOpen("health")}
         >

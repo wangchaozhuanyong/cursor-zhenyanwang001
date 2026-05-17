@@ -1,4 +1,4 @@
-import { DEFAULT_LIFE_GREEN_CONFIG, DEFAULT_SKIN_ID, THEME_PRESETS } from "@/constants/themePresets";
+import { DEFAULT_LIFE_GREEN_CONFIG, DEFAULT_SKIN_ID, FALLBACK_THEME_SKIN } from "@/constants/themePresets";
 import type {
   ThemeSceneTag,
   AdminThemeMode,
@@ -230,10 +230,12 @@ export function normalizeThemeSkinsPayload(payload: {
   const skins =
     normalizedIncoming.length > 0
       ? normalizedIncoming
-      : THEME_PRESETS.map((preset) => ({
-          ...preset,
-          config: normalizeThemeConfig(preset.config),
-        }));
+      : [
+          {
+            ...FALLBACK_THEME_SKIN,
+            config: normalizeThemeConfig(FALLBACK_THEME_SKIN.config),
+          },
+        ];
 
   const { defaultSkinId, activeSkinId } = resolveThemeSkinIds(
     skins,

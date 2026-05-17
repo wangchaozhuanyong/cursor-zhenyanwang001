@@ -1,7 +1,8 @@
-import { Home, Search, ShoppingBag, User } from "lucide-react";
+import { Home, ShoppingBag, User } from "lucide-react";
 import BannerCarousel from "@/components/BannerCarousel";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import ProductCard from "@/components/ProductCard";
+import StoreTabHeader from "@/components/store/StoreTabHeader";
 import type { ThemeConfig } from "@/types/theme";
 import { Tx } from "@/components/admin/AdminText";
 import {
@@ -18,9 +19,8 @@ const categories = ["美食", "生活", "签证", "好物", "促销"];
 export default function StoreHomePreview({ config }: { config: ThemeConfig }) {
   return (
     <div className="relative space-y-3 pb-14" data-theme-home-layout={config.homeLayout}>
-      <div className="flex items-center gap-2 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
-        <Search size={16} className="text-[var(--theme-text-muted)]" />
-        <span className="text-xs text-[var(--theme-text-muted)]"><Tx>搜索商品、服务...</Tx></span>
+      <div className="-mx-3 pointer-events-none">
+        <StoreTabHeader searchMode="navigate" position="sticky" className="!static !border-b-0" />
       </div>
       <div className="overflow-hidden rounded-xl border border-[var(--theme-border)]">
         <BannerCarousel banners={[previewBanner]} themeConfigOverride={config} />

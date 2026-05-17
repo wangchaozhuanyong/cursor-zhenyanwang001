@@ -12,7 +12,6 @@ function normalizeLevel(row) {
     min_orders: Number(row.min_orders || 0),
     discount_rate: Number(row.discount_rate || 1),
     points_multiplier: Number(row.points_multiplier || 1),
-    coupon_pack_id: row.coupon_pack_id || null,
     free_shipping_enabled: Boolean(row.free_shipping_enabled),
     sort_order: Number(row.sort_order || 0),
     enabled: Boolean(row.enabled),

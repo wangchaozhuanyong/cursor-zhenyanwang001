@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import * as reviewService from "@/services/reviewService";
-import type { Review, ProductReviewStats } from "@/types/review";
+import type { Review, ProductReviewStats, ReviewEligibility } from "@/types/review";
 import { isLoggedIn } from "@/utils/token";
 
 export function timeAgoReview(dateStr: string): string {
@@ -20,61 +20,60 @@ const DEFAULT_STATS: ProductReviewStats = {
   image_review_count: 0,
 };
 
-/** 商品评价：由 ProductDetail 调用 → reviewService → API */
+const DEFAULT_ELIGIBILITY: ReviewEligibility = {
+  can_review: false,
+  reason: isLoggedIn() ? "purchase_required" : "login_required",
+  message: "购买并确认收货后可评价",
+  pending_items: [],
+  reviewed_count: 0,
+};
+
 export function useProductReviews(productId: string) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [stats, setStats] = useState<ProductReviewStats>(DEFAULT_STATS);
+  const [eligibility, setEligibility] = useState<ReviewEligibility>(DEFAULT_ELIGIBILITY);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [rating, setRating] = useState(0);
-  const [content, setContent] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [reviewImages, setReviewImages] = useState<string[]>([]);
+  const [showComposer, setShowComposer] = useState(false);
+  const [showSelector, setShowSelector] = useState(false);
+  const [selectedOrderItemId, setSelectedOrderItemId] = useState<string>("");
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const imgInputRef = useRef<HTMLInputElement>(null);
+
+  const reload = async () => {
+    if (!productId) return;
+    const [data, reviewStats, eligibilityData] = await Promise.all([
+      reviewService.fetchProductReviews(productId),
+      reviewService.fetchProductReviewStats(productId),
+      reviewService.fetchProductReviewEligibility(productId),
+    ]);
+    setReviews(data.list);
+    setStats(reviewStats);
+    setEligibility(eligibilityData);
+    const liked = new Set<string>();
+    data.list.forEach((r) => r.liked && liked.add(r.id));
+    setLikedIds(liked);
+  };
 
   useEffect(() => {
     if (!productId) {
       setLoading(false);
       setReviews([]);
       setStats(DEFAULT_STATS);
+      setEligibility(DEFAULT_ELIGIBILITY);
       return;
     }
     let cancelled = false;
     setLoading(true);
-    Promise.all([
-      reviewService.fetchProductReviews(productId),
-      reviewService.fetchProductReviewStats(productId),
-    ])
-      .then(([data, reviewStats]) => {
-        if (cancelled) return;
-        setReviews(data.list);
-        setStats(reviewStats);
-        const liked = new Set<string>();
-        data.list.forEach((r) => {
-          if (r.liked) liked.add(r.id);
-        });
-        setLikedIds(liked);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+    reload().catch(() => {}).finally(() => !cancelled && setLoading(false));
+    return () => { cancelled = true; };
   }, [productId]);
-
-  const avgRating = stats.avg_rating || 5;
-  const reviewTotal = stats.total;
 
   const handleLike = async (id: string) => {
     try {
       const { liked, likes_count } = await reviewService.toggleReviewLike(id);
       setLikedIds((prev) => {
         const next = new Set(prev);
-        if (liked) next.add(id);
-        else next.delete(id);
+        if (liked) next.add(id); else next.delete(id);
         return next;
       });
       setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, likes_count, liked } : r)));
@@ -83,84 +82,54 @@ export function useProductReviews(productId: string) {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
-    if (reviewImages.length + files.length > 5) {
-      toast.error("最多上传5张图片");
-      return;
-    }
-    try {
-      const uploaded = await reviewService.uploadReviewImages(files);
-      setReviewImages((prev) => [...prev, ...uploaded.map((u) => u.url)]);
-    } catch {
-      toast.error("图片上传失败");
-    }
-    if (imgInputRef.current) imgInputRef.current.value = "";
-  };
-
-  const handleSubmit = async () => {
+  const openReview = () => {
     if (!isLoggedIn()) {
-      toast.error("请先登录，购买并确认收货后可评价");
+      window.location.href = "/login";
       return;
     }
-    if (!productId) return;
-    if (rating === 0) {
-      toast.error("请选择评分");
+    if (!eligibility.can_review) {
+      toast.error(eligibility.message || "购买并确认收货后可评价");
       return;
     }
-    if (!content.trim()) {
-      toast.error("请填写评价内容");
+    if (!eligibility.pending_items.length) {
+      toast.error("暂无可评价订单");
       return;
     }
-    setSubmitting(true);
-    try {
-      await reviewService.submitReview({
-        product_id: productId,
-        rating,
-        content,
-        images: reviewImages,
-      });
-      toast.success("评价已提交");
-      setShowForm(false);
-      setRating(0);
-      setContent("");
-      setReviewImages([]);
-      const [data, reviewStats] = await Promise.all([
-        reviewService.fetchProductReviews(productId),
-        reviewService.fetchProductReviewStats(productId),
-      ]);
-      setReviews(data.list);
-      setStats(reviewStats);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "提交失败");
-    } finally {
-      setSubmitting(false);
+    if (eligibility.pending_items.length === 1) {
+      setSelectedOrderItemId(eligibility.pending_items[0].order_item_id);
+      setShowComposer(true);
+      return;
     }
+    setShowSelector(true);
   };
 
   return {
     reviews,
     stats,
-    reviewTotal,
+    reviewTotal: stats.total,
     loading,
-    showForm,
-    setShowForm,
-    rating,
-    setRating,
-    content,
-    setContent,
-    submitting,
-    reviewImages,
-    setReviewImages,
     likedIds,
     imgInputRef,
-    avgRating,
+    avgRating: stats.avg_rating || 5,
     handleLike,
-    handleImageUpload,
-    handleSubmit,
     timeAgo: timeAgoReview,
-    canReview: isLoggedIn(),
+    eligibility,
+    canReview: eligibility.can_review,
+    reviewCtaText: !isLoggedIn()
+      ? "登录后评价"
+      : eligibility.can_review
+        ? "写评价"
+        : eligibility.reason === "already_reviewed"
+          ? "已评价"
+          : "购买后评价",
+    showComposer,
+    setShowComposer,
+    showSelector,
+    setShowSelector,
+    selectedOrderItemId,
+    setSelectedOrderItemId,
+    openReview,
+    reload,
   };
 }
 

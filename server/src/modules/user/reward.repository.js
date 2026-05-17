@@ -215,6 +215,17 @@ async function markRewardRecordReversed(conn, rewardRecordId, remark) {
   );
 }
 
+async function selectTransactionsByRewardRecord(conn, rewardRecordId) {
+  const [rows] = await conn.query(
+    `SELECT *
+     FROM reward_transactions
+     WHERE reward_record_id = ?
+     ORDER BY created_at ASC`,
+    [rewardRecordId],
+  );
+  return rows || [];
+}
+
 async function sumUserRewardTransactions(conn, userId) {
   const [[row]] = await conn.query(
     `SELECT COALESCE(SUM(amount), 0) AS balance
@@ -295,6 +306,7 @@ module.exports = {
   insertSettlementRecord,
   insertTransaction,
   selectRewardRecordsByOrderForUpdate,
+  selectTransactionsByRewardRecord,
   markRewardRecordReversed,
   sumUserRewardTransactions,
   countRecordsLegacy,

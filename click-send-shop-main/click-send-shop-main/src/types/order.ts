@@ -188,3 +188,13 @@ export interface AdminOrderSummary {
   refunding: number;
   refunded: number;
 }
+
+export interface OrderSummary {
+  pending_payment: number;
+  pending_ship: number;
+  pending_receive: number;
+  pending_review: number;
+  after_sale: number;
+  completed: number;
+  cancelled: number;
+}

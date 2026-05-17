@@ -44,6 +44,7 @@ export interface CouponListParams {
 /** 结算页优惠券选择器展示（由 couponService 从 UserCoupon 映射） */
 export interface CheckoutPickerCoupon {
   id: string;
+  couponId?: string;
   title: string;
   discount: number;
   discountType: "fixed" | "percentage" | "shipping";

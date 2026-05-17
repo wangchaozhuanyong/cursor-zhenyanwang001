@@ -1,183 +1,40 @@
-import { formatDateTime } from "@/utils/formatDateTime";
-Ôªøimport { useEffect, useRef } from "react";
-import { ArrowLeft, Loader2, Package } from "lucide-react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useGoBack } from "@/hooks/useGoBack";
 import { useOrderStore } from "@/stores/useOrderStore";
-import StatusBadge from "@/components/StatusBadge";
-import { motion, AnimatePresence } from "framer-motion";
-import type { OrderStatus } from "@/types/order";
-import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import { ORDER_STATUS_TAB_LABELS } from "@/constants/statusDictionary";
-
-const tabs: { key: OrderStatus | "all"; label: string }[] = [
-  { key: "all", label: "ÂÖ®ÈÉ®" },
-  { key: "pending", label: ORDER_STATUS_TAB_LABELS.pending },
-  { key: "paid", label: ORDER_STATUS_TAB_LABELS.paid },
-  { key: "shipped", label: ORDER_STATUS_TAB_LABELS.shipped },
-  { key: "completed", label: ORDER_STATUS_TAB_LABELS.completed },
-  { key: "cancelled", label: ORDER_STATUS_TAB_LABELS.cancelled },
-];
 
 export default function Orders() {
-  useDocumentTitle("ÊàëÁöÑËÆ¢Âçï");
   const navigate = useNavigate();
-  const goBack = useGoBack();
-  const {
-    orders,
-    loading,
-    error,
-    pagination,
-    filterStatus,
-    setFilterStatus,
-    loadOrders,
-  } = useOrderStore();
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const { orders, loading, error, loadOrders } = useOrderStore();
 
   useEffect(() => {
-    loadOrders({ page: 1 });
-  }, [loadOrders, filterStatus]);
-
-  useEffect(() => {
-    if (!sentinelRef.current) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !loading && pagination.page < pagination.totalPages) {
-          loadOrders({ page: pagination.page + 1 });
-        }
-      },
-      { rootMargin: "200px" },
-    );
-    obs.observe(sentinelRef.current);
-    return () => obs.disconnect();
-  }, [loading, pagination, loadOrders]);
-
-  const switchTab = (key: OrderStatus | "all") => {
-    setFilterStatus(key);
-  };
+    void loadOrders({ page: 1 });
+  }, [loadOrders]);
 
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] pb-6">
-      <header className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
-          <button
-            onClick={goBack}
-            className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target"
-          >
-            <ArrowLeft size={20} className="text-foreground" />
-          </button>
-          <h1 className="text-base font-semibold text-foreground">ÊàëÁöÑËÆ¢Âçï</h1>
-        </div>
-        <div className="mx-auto max-w-lg overflow-x-auto px-4 pb-3">
-          <div className="flex gap-1.5 rounded-xl bg-[var(--theme-bg)] p-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => switchTab(tab.key)}
-                className={`flex-shrink-0 rounded-lg px-3 py-2 text-xs font-medium transition-all ${
-                  filterStatus === tab.key
-                    ? "bg-[var(--theme-surface)] text-[var(--theme-primary)] shadow-[var(--theme-shadow)]"
-                    : "text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-lg px-4 py-4">
-        {error && !loading && (
-          <div className="flex flex-col items-center py-20">
-            <p className="mb-3 text-sm text-[var(--theme-danger)]">{error}</p>
-            <button
-              onClick={() => loadOrders({ page: 1 })}
-              className="rounded-full px-6 py-2.5 text-sm font-semibold btn-theme-gradient"
-             
-            >
-              ÈáçËØï
-            </button>
-          </div>
-        )}
-
-        {!error && !loading && orders.length === 0 && (
-          <div className="flex flex-col items-center py-20">
-            <Package size={48} className="text-muted-foreground/30 mb-3" />
-            <p className="text-sm text-muted-foreground">
-              {filterStatus === "all" ? "ÊöÇÊó†ËÆ¢Âçï" : "ËØ•Áä∂ÊÄÅ‰∏ãÊöÇÊó†ËÆ¢Âçï"}
-            </p>
-            <button
-              onClick={() => navigate("/")}
-              className="mt-4 rounded-full px-6 py-2.5 text-sm font-semibold btn-theme-gradient"
-             
-            >
-              ÂéªÈÄõÈÄõ
-            </button>
-          </div>
-        )}
-
-        <AnimatePresence mode="wait">
-          {orders.length > 0 && (
-            <motion.div
-              key={filterStatus}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="space-y-4"
-            >
-              {orders.map((order, i) => (
-                <motion.div
-                  key={order.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.03 }}
-                  onClick={() => navigate(`/orders/${order.id}`)}
-                  className="cursor-pointer rounded-2xl bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)] transition-colors active:bg-[var(--theme-bg)]"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-muted-foreground font-mono">
-                      {order.order_no}
-                    </span>
-                    <StatusBadge status={order.status} />
-                  </div>
-                  <div className="mt-3 flex gap-2 overflow-x-auto">
-                    {order.items.map((item) => (
-                      <img
-                        key={item.product.id}
-                        src={item.product.cover_image}
-                        alt={item.product.name}
-                        className="h-16 w-16 flex-shrink-0 rounded-lg object-cover"
-                      />
-                    ))}
-                  </div>
-                  <div className="mt-3 flex items-center justify-between border-t border-[var(--theme-border)] pt-3">
-                    <span className="text-xs text-muted-foreground">
-                      {formatDateTime(order.created_at)} ¬∑ ÂÖ±{" "}
-                      {order.items.reduce((s, i) => s + i.qty, 0)} ‰ª∂
-                    </span>
-                    <span className="text-base font-bold text-[var(--theme-price)]">
-                      RM {order.total_amount}
-                    </span>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {loading && (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 size={24} className="animate-spin text-[var(--theme-price)]" />
-          </div>
-        )}
-
-        <div ref={sentinelRef} className="h-1" />
-
-        {!loading && orders.length > 0 && pagination.page >= pagination.totalPages && (
-          <p className="py-6 text-center text-xs text-muted-foreground">‚Äî Ê≤°ÊúâÊõ¥Â§öËÆ¢Âçï‰∫Ü ‚Äî</p>
-        )}
-      </main>
+    <div className="min-h-screen bg-background p-4">
+      <h1 className="mb-4 text-lg font-semibold">Œ“µƒ∂©µ•</h1>
+      {loading && <p>º”‘ÿ÷–...</p>}
+      {error && <p className="text-sm text-red-500">{error}</p>}
+      <div className="space-y-3">
+        {orders.map((order) => {
+          const pendingCount = order.status === "completed" ? order.items.filter((i) => i.can_review).length : 0;
+          return (
+            <div key={order.id} className="rounded-xl border p-3" onClick={() => navigate(`/orders/${order.id}`)}>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">{order.order_no}</p>
+                <p className="text-xs">{order.status}</p>
+              </div>
+              <p className="mt-2 text-sm">RM {order.total_amount}</p>
+              {pendingCount > 0 && (
+                <div className="mt-2 text-xs text-[var(--theme-price)]">
+                  ”– {pendingCount} º˛…Ã∆∑¥˝∆¿º€
+                  <button className="ml-2 underline" onClick={(e) => { e.stopPropagation(); navigate(`/orders/${order.id}?review=1`); }}>»•∆¿º€</button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

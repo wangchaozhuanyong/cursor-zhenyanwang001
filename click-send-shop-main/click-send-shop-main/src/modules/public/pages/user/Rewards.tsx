@@ -2,7 +2,9 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Gift, TrendingUp, TrendingDown, Loader2, Wallet } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
+import { useNavigate } from "react-router-dom";
 import * as rewardService from "@/services/rewardService";
+import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import type { RewardTransaction } from "@/types/reward";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
@@ -20,6 +22,8 @@ import {
 
 export default function Rewards() {
   const goBack = useGoBack();
+  const navigate = useNavigate();
+  const { config: loyaltyConfig, loading: loyaltyLoading } = useLoyaltyVisibility();
   const [records, setRecords] = useState<RewardTransaction[]>([]);
   const [balance, setBalance] = useState(0);
   const [pendingAmount, setPendingAmount] = useState(0);
@@ -65,6 +69,11 @@ export default function Rewards() {
     }
     setLoadingMore(false);
   };
+
+  useEffect(() => {
+    if (loyaltyLoading) return;
+    if (loyaltyConfig && !loyaltyConfig.reward.displayEnabled) navigate("/profile", { replace: true });
+  }, [loyaltyConfig, loyaltyLoading, navigate]);
 
   useEffect(() => {
     loadData();
@@ -153,3 +162,4 @@ export default function Rewards() {
     </div>
   );
 }
+

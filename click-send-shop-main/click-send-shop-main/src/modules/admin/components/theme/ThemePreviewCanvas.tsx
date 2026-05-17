@@ -8,6 +8,8 @@ import StoreHomePreview from "./StoreHomePreview";
 import type { PreviewDevice, PreviewMode } from "./themeStudioConstants";
 import { DEVICE_WIDTH } from "./themeStudioConstants";
 import { Tx } from "@/components/admin/AdminText";
+import InvitePromoCard from "@/components/store/InvitePromoCard";
+import { getMemberCardClassName, THEME_MEMBER_CARD_MUTED } from "@/utils/themeVisuals";
 
 type Props = {
   config: ThemeConfig;
@@ -16,19 +18,22 @@ type Props = {
   skinKey: string;
 };
 
-function MobileProfilePreview() {
+function MobileProfilePreview({ config }: { config: ThemeConfig }) {
   return (
     <div className="space-y-3 pb-16">
       <div className="store-card p-4">
         <p className="text-sm font-semibold"><Tx>我的</Tx></p>
         <p className="text-xs text-[var(--theme-text-muted)]"><Tx>会员 · 订单 · 设置</Tx></p>
       </div>
-      <div className="store-card divide-y divide-[var(--theme-border)] text-xs">
-        {["我的订单", "收货地址", "优惠券", "客服"].map((item) => (
-          <p key={item} className="py-2.5">
-            {item}
-          </p>
-        ))}
+      <div className="store-card overflow-hidden p-0">
+        <InvitePromoCard loggedIn inviteCount={0} rewardBalance={0} />
+      </div>
+      <div
+        className={`store-card rounded-xl p-3 ${getMemberCardClassName(config.memberCardStyle)}`}
+        data-theme-member-card-style={config.memberCardStyle}
+      >
+        <p className="text-sm font-semibold"><Tx>会员卡 · 金卡会员</Tx></p>
+        <p className={`mt-1 text-xs ${THEME_MEMBER_CARD_MUTED}`}><Tx>积分 2,580 · 优惠券 3 张</Tx></p>
       </div>
     </div>
   );
@@ -47,7 +52,7 @@ export default function ThemePreviewCanvas({ config, mode, device, skinKey }: Pr
           <p className="text-[10px] font-medium text-[var(--theme-text-muted)]"><Tx>商品详情</Tx></p>
           <ProductDetailPreview config={config} />
           <p className="text-[10px] font-medium text-[var(--theme-text-muted)]"><Tx>我的</Tx></p>
-          <MobileProfilePreview />
+          <MobileProfilePreview config={config} />
         </div>
       );
     }

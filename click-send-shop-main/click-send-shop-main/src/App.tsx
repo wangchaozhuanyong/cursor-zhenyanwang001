@@ -27,6 +27,7 @@ import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { StoreOutletFallback } from "@/components/AppRouteFallback";
 import { useAdminTOptional } from "@/hooks/useAdminT";
 import { AdminI18nProvider } from "@/contexts/AdminI18nProvider";
+import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 
 /* ---------- Public（前台）页面，按业务域组织 ---------- */
 const MemberHome = lazy(() => import("@/modules/public/pages/home/MemberHome"));
@@ -45,6 +46,7 @@ const Checkout = lazy(() => import("@/modules/public/pages/order/Checkout"));
 const Orders = lazy(() => import("@/modules/public/pages/order/Orders"));
 const OrderDetail = lazy(() => import("@/modules/public/pages/order/OrderDetail"));
 const Returns = lazy(() => import("@/modules/public/pages/order/Returns"));
+const PendingReviews = lazy(() => import("@/modules/public/pages/review/PendingReviews"));
 
 const Profile = lazy(() => import("@/modules/public/pages/user/Profile"));
 const Settings = lazy(() => import("@/modules/public/pages/user/Settings"));
@@ -257,6 +259,25 @@ function HomeRoute() {
   return isLoggedIn() ? <MemberHome /> : <GuestHome />;
 }
 
+function LoyaltyRouteGuard({
+  feature,
+  children,
+}: {
+  feature: "points" | "reward" | "referral";
+  children: ReactNode;
+}) {
+  const { config, loading } = useLoyaltyVisibility();
+  const enabled =
+    feature === "points"
+      ? Boolean(config?.points?.displayEnabled)
+      : feature === "reward"
+        ? Boolean(config?.reward?.displayEnabled)
+        : Boolean(config?.reward?.referralEnabled);
+  if (loading) return <AppRouteFallback />;
+  if (!enabled) return <Navigate to="/profile" replace />;
+  return <>{children}</>;
+}
+
 function AppRoutes() {
   const location = useLocation();
   return (
@@ -300,13 +321,41 @@ function AppRoutes() {
               <Route path="/settings/upload-verify" element={<ProtectedRoute><UploadVerify /></ProtectedRoute>} />
               <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
               <Route path="/orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
-              <Route path="/invite" element={<ProtectedRoute><Invite /></ProtectedRoute>} />
-              <Route path="/points" element={<ProtectedRoute><Points /></ProtectedRoute>} />
-              <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
+              <Route
+                path="/invite"
+                element={
+                  <ProtectedRoute>
+                    <LoyaltyRouteGuard feature="referral">
+                      <Invite />
+                    </LoyaltyRouteGuard>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/points"
+                element={
+                  <ProtectedRoute>
+                    <LoyaltyRouteGuard feature="points">
+                      <Points />
+                    </LoyaltyRouteGuard>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/rewards"
+                element={
+                  <ProtectedRoute>
+                    <LoyaltyRouteGuard feature="reward">
+                      <Rewards />
+                    </LoyaltyRouteGuard>
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/address" element={<ProtectedRoute><AddressManage /></ProtectedRoute>} />
               <Route path="/coupons" element={<ProtectedRoute><Coupons /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               <Route path="/returns" element={<ProtectedRoute><Returns /></ProtectedRoute>} />
+              <Route path="/reviews/pending" element={<ProtectedRoute><PendingReviews /></ProtectedRoute>} />
               {/* 与购物车/收藏一致：未登录可读取本地持久化浏览记录 */}
               <Route path="/history" element={<History />} />
 

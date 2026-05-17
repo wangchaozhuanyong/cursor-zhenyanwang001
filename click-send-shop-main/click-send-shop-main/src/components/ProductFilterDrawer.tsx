@@ -55,7 +55,7 @@ export default function ProductFilterDrawer({ activeFilterCount, onReset, onConf
         open={open}
         onClose={() => setOpen(false)}
         title="筛选商品"
-        height="85vh"
+        height="90vh"
         stickyFooter
         footer={footer}
       >

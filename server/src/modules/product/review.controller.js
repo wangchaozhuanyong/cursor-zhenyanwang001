@@ -36,3 +36,18 @@ exports.getFeaturedReviews = async (req, res, next) => {
     res.success(list);
   } catch (err) { next(err); }
 };
+
+exports.getPendingReviewItems = async (req, res, next) => {
+  try {
+    const list = await reviewService.getPendingReviewItems(req.user.id);
+    res.success(list);
+  } catch (err) { next(err); }
+};
+
+exports.getProductReviewEligibility = async (req, res, next) => {
+  try {
+    const userId = req.user?.id || null;
+    const data = await reviewService.getProductReviewEligibility(req.params.productId, userId);
+    res.success(data);
+  } catch (err) { next(err); }
+};

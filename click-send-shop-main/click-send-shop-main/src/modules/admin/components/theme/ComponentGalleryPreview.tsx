@@ -52,13 +52,14 @@ export default function ComponentGalleryPreview({ config: _config }: { config: T
       </section>
       <StorePrice price={79} originalPrice={99} />
       <PremiumCouponCard
-        layout="default"
-        title="会员专享券"
-        amount="10"
-        minSpendText="满 RM 50 可用"
-        expireText="2026-12-31"
+        layout="home"
+        title="中秋9.5折"
+        amount="95%"
+        amountPrefix=""
+        minSpendText="满 RM 100 可用"
+        expireText="2027-05-09"
         scopeText="适用范围：全场商品"
-        actionLabel="去使用"
+        actionLabel="立即领取"
       />
       <div className="store-card p-2 text-xs"><Tx>会员卡骨架预览</Tx></div>
       <ProductCard product={previewProduct} />

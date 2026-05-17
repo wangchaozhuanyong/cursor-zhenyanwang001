@@ -29,7 +29,6 @@ function normalizeInput(body) {
     minOrders: Math.floor(toNumber(body?.min_orders ?? body?.minOrders, '累计订单数')),
     discountRate: Number(body?.discount_rate ?? body?.discountRate ?? 1) || 1,
     pointsMultiplier: Number(body?.points_multiplier ?? body?.pointsMultiplier ?? 1) || 1,
-    couponPackId: body?.coupon_pack_id ?? body?.couponPackId ?? null,
     freeShippingEnabled: body?.free_shipping_enabled === true || body?.freeShippingEnabled === true || body?.free_shipping_enabled === 1,
     sortOrder: Math.floor(Number(body?.sort_order ?? body?.sortOrder ?? 0) || 0),
     enabled: body?.enabled !== false && body?.enabled !== 0,

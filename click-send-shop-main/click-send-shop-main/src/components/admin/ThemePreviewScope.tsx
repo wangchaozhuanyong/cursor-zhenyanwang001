@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { ThemeRuntimeOverrideProvider } from "@/contexts/ThemeRuntimeProvider";
 import type { ThemeConfig } from "@/types/theme";
 import { generateThemePalette } from "@/utils/themeContrast";
@@ -32,10 +32,14 @@ export default function ThemePreviewScope({
   config: ThemeConfig;
   children: ReactNode;
   className?: string;
-  style?: React.CSSProperties;
+  style?: CSSProperties;
 }) {
   const style = useMemo(
-    () => ({ ...generateThemePalette(config), ...(styleOverride || {}) }),
+    () => ({
+      ...generateThemePalette(config),
+      ...(styleOverride || {}),
+      isolation: "isolate",
+    } as CSSProperties),
     [config, styleOverride],
   );
   const dataAttrs = toDataAttrs(config);

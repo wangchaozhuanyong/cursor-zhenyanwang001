@@ -37,10 +37,11 @@ export default function AdminUserDetail() {
     setLoadError(null);
     try {
       const [u, tags, memberLevels] = await Promise.all([
-        fetchUserById(id, { signal: controller.signal }),
+        fetchUserById(id),
         fetchUserTags(),
         fetchMemberLevels(),
       ]);
+      if (controller.signal.aborted) return;
       if (seq !== loadSeqRef.current) return;
       setUser(u);
       setAllTags(tags);
@@ -154,7 +155,7 @@ export default function AdminUserDetail() {
             {allTags.map((tag) => <button key={tag.id} className={`rounded border px-2 py-1 text-xs ${userTagIds.has(tag.id) ? "bg-secondary" : ""}`} onClick={async () => {
               const ids = Array.from(userTagIds);
               const next = userTagIds.has(tag.id) ? ids.filter((x) => x !== tag.id) : [...ids, tag.id];
-              const nextTags = await setUserTags(id!, next);
+              const nextTags = await setUserTags(id!, next as string[]);
               setUser((u: any) => ({ ...u, tags: nextTags }));
             }}>{tag.name}</button>)}
           </div>
@@ -178,3 +179,4 @@ function List({ rows, onAll }: { rows?: any[]; onAll?: () => void }) {
     </div>
   );
 }
+

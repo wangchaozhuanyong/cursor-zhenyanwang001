@@ -2,9 +2,11 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Star, TrendingUp, TrendingDown, Loader2, CalendarCheck } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
+import { useNavigate } from "react-router-dom";
 import { useUserStore } from "@/stores/useUserStore";
 import { usePointsStore } from "@/stores/usePointsStore";
 import { fetchPointsConfig, signIn } from "@/services/pointsService";
+import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import {
@@ -22,11 +24,19 @@ import {
 
 export default function Points() {
   const goBack = useGoBack();
+  const navigate = useNavigate();
   const { pointsBalance, loadProfile } = useUserStore();
   const { records, loading, loadingMore, error, hasMore, loadPointsData, loadMore } = usePointsStore();
   const [signingIn, setSigningIn] = useState(false);
   const [pointsHint, setPointsHint] = useState<string>("");
   const [signInAward, setSignInAward] = useState<{ points: number; enabled: boolean; disabledReason?: string | null } | null>(null);
+
+  const { config: loyaltyConfig, loading: loyaltyLoading } = useLoyaltyVisibility();
+
+  useEffect(() => {
+    if (loyaltyLoading) return;
+    if (loyaltyConfig && !loyaltyConfig.points.displayEnabled) navigate("/profile", { replace: true });
+  }, [loyaltyConfig, loyaltyLoading, navigate]);
 
   useEffect(() => {
     fetchPointsConfig()
@@ -126,3 +136,4 @@ export default function Points() {
     </div>
   );
 }
+

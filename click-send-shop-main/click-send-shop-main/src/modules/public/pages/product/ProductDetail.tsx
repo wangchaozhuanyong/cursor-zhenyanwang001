@@ -173,6 +173,25 @@ export default function ProductDetail() {
     : displayStock;
   const maxQty = Math.max(0, Math.min(displayStock, activityRemaining, activityLimit));
   const soldOut = maxQty <= 0;
+  const salesCount =
+    typeof product.sales_count === "number" && product.sales_count > 0 ? product.sales_count : null;
+  const statusBadges: { key: string; label: string; className: string }[] = [];
+  if (product.is_hot) {
+    statusBadges.push({
+      key: "hot",
+      label: "热销",
+      className: "theme-rounded bg-[var(--theme-price)] px-2 py-0.5 text-[10px] font-bold leading-none text-[var(--theme-price-foreground)]",
+    });
+  }
+  if (product.is_new) {
+    statusBadges.push({
+      key: "new",
+      label: "新品",
+      className:
+        "theme-rounded bg-[var(--theme-primary)] px-2 py-0.5 text-[10px] font-bold leading-none text-[var(--theme-primary-foreground)]",
+    });
+  }
+  const showPriceMeta = salesCount !== null || statusBadges.length > 0;
   const detailSections = buildDetailSections(product.description);
   const galleryImages = Array.from(new Set([...(Array.isArray(product.images) && product.images.length ? product.images : []), ...(product.cover_image ? [product.cover_image] : [])].filter((url): url is string => typeof url === "string" && url.trim().length > 0)));
 
@@ -276,7 +295,7 @@ export default function ProductDetail() {
       url,
       siteInfo.siteName,
     );
-    void trackEvent({ event_type: "share", module: "product_detail", product_id: product.id });
+    void trackEvent({ event_type: "activity_click", module: "product_detail", product_id: product.id });
 
     if (navigator.share) {
       try {
@@ -340,8 +359,8 @@ export default function ProductDetail() {
                   : undefined
               }
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                     <span className="text-2xl font-bold tabular-nums text-[var(--theme-price)] md:text-3xl">
                       RM {displayPrice}
@@ -354,30 +373,20 @@ export default function ProductDetail() {
                       )}
                   </div>
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-1.5">
-                  {typeof product.sales_count === "number" && product.sales_count > 0 ? (
-                    <span className="text-xs tabular-nums text-[var(--theme-text-muted)]">
-                      已售 {product.sales_count.toLocaleString()} 件
-                    </span>
-                  ) : null}
-                  <div className="flex flex-wrap justify-end gap-1">
-                    {product.is_hot ? (
-                      <span className="theme-rounded bg-[var(--theme-price)] px-2 py-0.5 text-[10px] font-bold text-[var(--theme-price-foreground)]">
-                        热销
+                {showPriceMeta ? (
+                  <div className="flex shrink-0 flex-nowrap items-center justify-end gap-x-2">
+                    {statusBadges.map((badge) => (
+                      <span key={badge.key} className={`inline-flex shrink-0 whitespace-nowrap ${badge.className}`}>
+                        {badge.label}
                       </span>
-                    ) : null}
-                    {product.is_new ? (
-                      <span className="theme-rounded bg-[var(--theme-primary)] px-2 py-0.5 text-[10px] font-bold text-[var(--theme-primary-foreground)]">
-                        新品
-                      </span>
-                    ) : null}
-                    {activeActivity ? (
-                      <span className="theme-rounded bg-[var(--theme-danger)] px-2 py-0.5 text-[10px] font-bold text-[var(--theme-danger-foreground)]">
-                        {activeActivity.type === "flash_sale" ? "限时秒杀" : "满减"}
+                    ))}
+                    {salesCount !== null ? (
+                      <span className="shrink-0 whitespace-nowrap text-xs tabular-nums leading-none text-[var(--theme-text-muted)]">
+                        已售 {salesCount.toLocaleString()} 件
                       </span>
                     ) : null}
                   </div>
-                </div>
+                ) : null}
               </div>
               <h1 className="mt-3 font-display text-lg font-semibold leading-snug text-foreground md:text-2xl md:leading-tight">
                 {product.name}
@@ -572,4 +581,5 @@ function buildDetailSections(description: string): string[] {
     .filter(Boolean);
   return parts.length > 0 ? parts : [raw];
 }
+
 

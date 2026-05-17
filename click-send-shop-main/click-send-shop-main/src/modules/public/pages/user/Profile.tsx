@@ -9,6 +9,7 @@ import {
   Heart,
   LogOut,
   MapPin,
+  MessageSquare,
   Package,
   Palette,
   Settings,
@@ -34,17 +35,16 @@ import { useNotificationStore } from "@/stores/useNotificationStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useUserStore } from "@/stores/useUserStore";
 import * as inviteService from "@/services/inviteService";
+import * as orderService from "@/services/orderService";
 import * as rewardService from "@/services/rewardService";
 import * as loyaltyService from "@/services/loyaltyService";
 import * as uploadService from "@/services/uploadService";
+import type { OrderSummary } from "@/types/order";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import InvitePromoCard from "@/components/store/InvitePromoCard";
 import {
   THEME_ACCENT_ICON_CLASS,
   THEME_ACCENT_ICON_SHELL_CLASS,
-  THEME_GIFT_BADGE_SHELL,
-  THEME_INVITE_PROMO_CTA,
-  THEME_INVITE_PROMO_MUTED,
-  THEME_INVITE_PROMO_SHELL,
   THEME_MEMBER_CARD_MUTED,
   THEME_MEMBER_CARD_SHELL,
 } from "@/utils/themeVisuals";
@@ -135,18 +135,6 @@ function ProfileHeroCard({
   );
 }
 
-/** 邀请横幅右侧礼物标识（位于「立即邀请」按钮上方） */
-function InviteGiftBadge() {
-  return (
-    <div
-      className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${THEME_GIFT_BADGE_SHELL} ring-[var(--theme-gift-badge-ring)]`}
-      aria-hidden
-    >
-      <Gift className="relative z-[1]" size={18} strokeWidth={2.25} />
-    </div>
-  );
-}
-
 export default function Profile() {
   const navigate = useNavigate();
   const loggedIn = isLoggedIn();
@@ -164,6 +152,7 @@ export default function Profile() {
 
   const [inviteCount, setInviteCount] = useState(0);
   const [rewardBalance, setRewardBalance] = useState(0);
+  const [orderSummary, setOrderSummary] = useState<OrderSummary | null>(null);
   const [loyaltyConfig, setLoyaltyConfig] = useState<loyaltyService.LoyaltyConfig | null>(null);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -178,6 +167,7 @@ export default function Profile() {
     useNotificationStore.getState().fetchUnreadCount();
     inviteService.fetchInviteStats().then((s) => setInviteCount(s.directCount || 0)).catch(() => {});
     rewardService.fetchRewardBalance().then((res) => setRewardBalance(Number(res.balance || 0))).catch(() => setRewardBalance(0));
+    orderService.fetchOrderSummary().then((res) => setOrderSummary(res)).catch(() => setOrderSummary(null));
   }, [loadCoupons, loadFavorites, loadOrders, loadProfile, loggedIn]);
   useEffect(() => {
     let cancelled = false;
@@ -217,9 +207,11 @@ export default function Profile() {
   const code = inviteCode?.trim() || "暂无";
   const couponCount = useMemo(() => coupons.filter((c) => !c.used_at).length, [coupons]);
 
-  const orderPending = useMemo(() => orders.filter((o) => o.status === "pending" || o.payment_status === "pending").length, [orders]);
-  const orderShipping = useMemo(() => orders.filter((o) => (o.status === "paid" || o.payment_status === "paid") && o.status !== "shipped" && o.status !== "completed").length, [orders]);
+  const orderPending = useMemo(() => orders.filter((o) => o.status === "pending" && o.payment_status !== "paid").length, [orders]);
+  const orderShipping = useMemo(() => orders.filter((o) => o.status === "paid" || (o.payment_status === "paid" && o.status !== "shipped" && o.status !== "completed" && o.status !== "cancelled" && o.status !== "refunding" && o.status !== "refunded")).length, [orders]);
   const orderReceiving = useMemo(() => orders.filter((o) => o.status === "shipped").length, [orders]);
+  const pendingReviewCount = useMemo(() => orders.reduce((acc, o) => acc + (o.status === "completed" ? o.items.filter((i) => i.can_review).length : 0), 0), [orders]);
+  const afterSaleCount = useMemo(() => orders.filter((o) => o.status === "refunding" || o.status === "refunded").length, [orders]);
 
   const pointsEnabled = loyaltyConfig?.points?.displayEnabled ?? true;
   const rewardsEnabled = loyaltyConfig?.reward?.displayEnabled ?? true;
@@ -233,13 +225,41 @@ export default function Profile() {
     (item.label !== "积分" || pointsEnabled)
     && (item.label !== "返现" || rewardsEnabled)
   ));
+  const assetGridClass = assetItems.length <= 2
+    ? "grid-cols-2"
+    : assetItems.length === 3
+      ? "grid-cols-3"
+      : "grid-cols-4";
 
-  const guestOrderItems = [
-    { label: "待付款", icon: Wallet },
-    { label: "待发货", icon: Package },
-    { label: "待收货", icon: Truck },
-    { label: "售后", icon: CircleHelp },
-  ];
+  const orderFeatureFlags = {
+    pendingPayment: true,
+    pendingShip: true,
+    pendingReceive: true,
+    pendingReview: false,
+    afterSale: false,
+  };
+  const orderActions = (loggedIn
+    ? [
+      orderFeatureFlags.pendingPayment ? { label: "待付款", icon: Wallet, count: orderSummary?.pending_payment ?? orderPending, path: "/orders?status=pending", auth: true } : null,
+      orderFeatureFlags.pendingShip ? { label: "待发货", icon: Package, count: orderSummary?.pending_ship ?? orderShipping, path: "/orders?status=paid", auth: true } : null,
+      orderFeatureFlags.pendingReceive ? { label: "待收货", icon: Truck, count: orderSummary?.pending_receive ?? orderReceiving, path: "/orders?status=shipped", auth: true } : null,
+      orderFeatureFlags.pendingReview ? { label: "待评价", icon: MessageSquare, count: orderSummary?.pending_review ?? pendingReviewCount, path: "/reviews/pending", auth: true } : null,
+      orderFeatureFlags.afterSale ? { label: "退款/售后", icon: CircleHelp, count: orderSummary?.after_sale ?? afterSaleCount, path: "/returns", auth: true } : null,
+    ].filter(Boolean)
+    : [
+      { label: "待付款", icon: Wallet, count: 0, path: "/orders?status=pending", auth: true },
+      { label: "待发货", icon: Package, count: 0, path: "/orders?status=paid", auth: true },
+      { label: "待收货", icon: Truck, count: 0, path: "/orders?status=shipped", auth: true },
+    ]) as Array<{ label: string; icon: typeof Wallet; count?: number; path: string; auth: boolean }>;
+  const orderGridClass = orderActions.length >= 5
+    ? "grid-cols-5"
+    : orderActions.length === 4
+      ? "grid-cols-4"
+      : orderActions.length === 3
+        ? "grid-cols-3"
+        : orderActions.length === 2
+          ? "grid-cols-2"
+          : "grid-cols-1";
 
   return (
     <div className="store-page store-bottom-safe min-h-screen text-[var(--theme-text)]">
@@ -319,17 +339,10 @@ export default function Profile() {
 
         <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
           <SectionTitle title="我的订单" rightLabel="查看全部" onRightClick={() => gateNavigate(navigate, "/orders", true)} />
-          <div className="grid grid-cols-4 gap-2">
-            {(loggedIn
-              ? [
-                  { label: "待付款", icon: Wallet, value: orderPending, path: "/orders" },
-                  { label: "待发货", icon: Package, value: orderShipping, path: "/orders" },
-                  { label: "待收货", icon: Truck, value: orderReceiving, path: "/orders" },
-                  { label: "售后", icon: CircleHelp, value: 0, path: "/returns" },
-                ]
-              : guestOrderItems.map((it) => ({ ...it, value: 0, path: "/orders" }))).map((item) => (
-              <button key={item.label} type="button" onClick={() => gateNavigate(navigate, item.path, true)} className={`relative rounded-2xl bg-[var(--theme-bg)] px-1 py-3 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_65%,transparent)] ${MENU_TAP}`}>
-                {item.value > 0 ? <span className="absolute right-3 top-2 min-w-[1rem] rounded-full bg-[var(--theme-danger)] px-1 text-[10px] text-[var(--theme-danger-foreground)]">{item.value}</span> : null}
+          <div className={cn("grid gap-2", orderGridClass)}>
+            {orderActions.map((item) => (
+              <button key={item.label} type="button" onClick={() => gateNavigate(navigate, item.path, item.auth)} className={`relative rounded-2xl bg-[var(--theme-bg)] px-1 py-3 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_65%,transparent)] ${MENU_TAP}`}>
+                {Number(item.count || 0) > 0 ? <span className="absolute right-3 top-2 min-w-[1rem] rounded-full bg-[var(--theme-danger)] px-1 text-[10px] text-[var(--theme-danger-foreground)]">{item.count}</span> : null}
                 <span className={cn("mx-auto flex h-9 w-9 items-center justify-center rounded-2xl", THEME_ACCENT_ICON_SHELL_CLASS)}>
                   <item.icon size={17} strokeWidth={2} />
                 </span>
@@ -341,7 +354,7 @@ export default function Profile() {
 
         <section className={`${CARD_CLASS} overflow-hidden`}>
           <div className="px-4 pt-4 pb-0">
-            <div className="grid grid-cols-4 rounded-2xl bg-[var(--theme-bg)] px-2 py-3.5 ring-1 ring-[color-mix(in_srgb,var(--theme-border)_65%,transparent)]">
+            <div className={cn("grid rounded-2xl bg-[var(--theme-bg)] px-2 py-3.5 ring-1 ring-[color-mix(in_srgb,var(--theme-border)_65%,transparent)]", assetGridClass)}>
               {assetItems.map((item) => (
                 <button
                   key={item.label}
@@ -359,30 +372,14 @@ export default function Profile() {
           </div>
           {inviteEnabled ? (
           <div className="mx-4 mb-4 border-t border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] pt-3">
-            <div className={`relative overflow-hidden rounded-[22px] px-4 py-3.5 ${THEME_INVITE_PROMO_SHELL}`}>
-              <div className="flex items-center gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-base font-bold leading-snug">邀请好友得奖励</p>
-                  <p className={`mt-1 text-xs leading-relaxed ${THEME_INVITE_PROMO_MUTED}`}>
-                    {loggedIn ? "好友下单即可获得现金返现" : "登录后邀请好友获得现金返现"}
-                  </p>
-                  <p className={`mt-1.5 text-xs leading-snug ${THEME_INVITE_PROMO_MUTED}`}>
-                    {loggedIn ? `已邀请 ${inviteCount} 人，累计返现 RM ${rewardBalance.toFixed(2)}` : "登录后查看邀请奖励"}
-                  </p>
-                </div>
-                <div className="flex w-[5.25rem] shrink-0 flex-col items-center justify-center gap-2">
-                  <InviteGiftBadge />
-                  <button
-                    type="button"
-                    onClick={() => (loggedIn ? gateNavigate(navigate, "/invite", true) : navigate("/login", { state: { from: "/profile" } }))}
-                    className={`w-full whitespace-nowrap rounded-full px-2 py-2 text-center text-xs font-semibold ${THEME_INVITE_PROMO_CTA}`}
-                    style={{ background: "var(--theme-invite-promo-cta-bg)", color: "var(--theme-invite-promo-cta-fg)" }}
-                  >
-                    {loggedIn ? "立即邀请" : "去登录"}
-                  </button>
-                </div>
-              </div>
-            </div>
+            <InvitePromoCard
+              loggedIn={loggedIn}
+              inviteCount={inviteCount}
+              rewardBalance={rewardBalance}
+              onAction={() =>
+                loggedIn ? gateNavigate(navigate, "/invite", true) : navigate("/login", { state: { from: "/profile" } })
+              }
+            />
           </div>
           ) : null}
         </section>

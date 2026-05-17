@@ -164,6 +164,74 @@ async function selectOrderItemForReview(userId, orderItemId) {
   return row;
 }
 
+async function selectPendingReviewItems(userId) {
+  const [rows] = await db.query(
+    `SELECT
+       o.id AS order_id,
+       o.order_no,
+       oi.id AS order_item_id,
+       oi.product_id,
+       oi.product_name,
+       oi.product_image,
+       oi.variant_id,
+       oi.variant_name,
+       oi.sku_code,
+       oi.qty,
+       o.updated_at,
+       o.created_at,
+       o.completed_at
+     FROM orders o
+     JOIN order_items oi ON oi.order_id = o.id
+     LEFT JOIN product_reviews pr ON pr.order_item_id = oi.id
+     WHERE o.user_id = ?
+       AND o.status = ?
+       AND pr.id IS NULL
+     ORDER BY COALESCE(o.updated_at, o.created_at) DESC, o.created_at DESC`,
+    [userId, ORDER_STATUS.COMPLETED],
+  );
+  return rows;
+}
+
+async function selectPendingReviewItemsByProduct(userId, productId) {
+  const [rows] = await db.query(
+    `SELECT
+       o.id AS order_id,
+       o.order_no,
+       oi.id AS order_item_id,
+       oi.product_id,
+       oi.product_name,
+       oi.product_image,
+       oi.variant_id,
+       oi.variant_name,
+       oi.sku_code,
+       oi.qty,
+       o.updated_at,
+       o.created_at,
+       o.completed_at
+     FROM orders o
+     JOIN order_items oi ON oi.order_id = o.id
+     LEFT JOIN product_reviews pr ON pr.order_item_id = oi.id
+     WHERE o.user_id = ?
+       AND oi.product_id = ?
+       AND o.status = ?
+       AND pr.id IS NULL
+     ORDER BY COALESCE(o.updated_at, o.created_at) DESC, o.created_at DESC`,
+    [userId, productId, ORDER_STATUS.COMPLETED],
+  );
+  return rows;
+}
+
+async function countReviewedProductItems(userId, productId) {
+  const [[row]] = await db.query(
+    `SELECT COUNT(*) AS reviewed_count
+     FROM product_reviews r
+     JOIN orders o ON o.id = r.order_id
+     WHERE r.user_id = ? AND r.product_id = ? AND o.user_id = ?`,
+    [userId, productId, userId],
+  );
+  return Number(row?.reviewed_count || 0);
+}
+
 async function findReviewByOrderItemId(orderItemId) {
   const [[row]] = await db.query(
     'SELECT id FROM product_reviews WHERE order_item_id = ? LIMIT 1',
@@ -261,6 +329,9 @@ module.exports = {
   incrementLikesCount,
   hasCompletedPurchase,
   selectOrderItemForReview,
+  selectPendingReviewItems,
+  selectPendingReviewItemsByProduct,
+  countReviewedProductItems,
   findReviewByOrderItemId,
   findUserProductReview,
   selectUserNicknameAvatar,

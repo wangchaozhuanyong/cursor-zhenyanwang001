@@ -1,4 +1,4 @@
-import * as contentApi from "@/api/modules/content";
+﻿import * as contentApi from "@/api/modules/content";
 import type { ContentPage, HomeOpsConfig, SiteInfo } from "@/types/content";
 import { ApiError } from "@/types/common";
 
@@ -12,7 +12,7 @@ export async function fetchContentBySlug(slug: string): Promise<ContentPage | un
     const res = await contentApi.getContentBySlug(slug);
     return res.data;
   } catch (e) {
-    if (e instanceof ApiError && e.status === 404) return undefined;
+    if (e instanceof ApiError && e.code === 404) return undefined;
     throw e;
   }
 }
@@ -24,3 +24,4 @@ export async function fetchHomeOps(): Promise<HomeOpsConfig> {
     moduleSettings: res.data?.moduleSettings,
   };
 }
+

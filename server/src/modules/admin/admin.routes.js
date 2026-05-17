@@ -353,19 +353,19 @@ router.delete('/banners/:id', adminAuth, requirePermission('banner.manage'), ban
 /* ---- Notifications ---- */
 router.get('/notifications', adminAuth, requireAnyPermission(['notification.view', 'notification.manage']), notificationCtrl.list);
 router.get('/notifications/summary', adminAuth, requireAnyPermission(['notification.view', 'notification.manage']), notificationCtrl.summary);
+router.get('/notifications/templates', adminAuth, requireAnyPermission(['notification.template', 'notification.manage']), notificationCtrl.templates);
+router.get('/notifications/trigger-settings', adminAuth, requireAnyPermission(['notification.trigger', 'notification.manage']), notificationCtrl.triggerSettings);
 router.get('/notifications/user-candidates', adminAuth, requireAnyPermission(['notification.create', 'notification.send', 'notification.manage']), notificationCtrl.userCandidates);
 router.post('/notifications/resolve-users', adminAuth, requireAnyPermission(['notification.create', 'notification.send', 'notification.manage']), notificationCtrl.resolveUsers);
 router.post('/notifications/audience-estimate', adminAuth, requireAnyPermission(['notification.create', 'notification.send', 'notification.manage']), notificationCtrl.estimateAudience);
-router.get('/notifications/:id', adminAuth, requireAnyPermission(['notification.view', 'notification.manage']), notificationCtrl.detail);
-router.get('/notifications/:id/recipients/export', adminAuth, requireAnyPermission(['notification.view', 'notification.manage']), notificationCtrl.exportRecipientsCsv);
-router.post('/notifications', adminAuth, requireAnyPermission(['notification.send', 'notification.manage']), notificationCtrl.send);
-router.post('/notifications/drafts', adminAuth, requireAnyPermission(['notification.create', 'notification.manage']), notificationCtrl.draft);
-router.put('/notifications/:id/publish', adminAuth, requireAnyPermission(['notification.send', 'notification.manage']), notificationCtrl.publish);
-router.get('/notifications/templates', adminAuth, requireAnyPermission(['notification.template', 'notification.manage']), notificationCtrl.templates);
-router.get('/notifications/trigger-settings', adminAuth, requireAnyPermission(['notification.trigger', 'notification.manage']), notificationCtrl.triggerSettings);
 router.put('/notifications/trigger-settings', adminAuth, requireAnyPermission(['notification.trigger', 'notification.manage']), notificationCtrl.updateTriggerSettings);
 router.post('/notifications/trigger-settings/preview', adminAuth, requireAnyPermission(['notification.trigger', 'notification.manage']), notificationCtrl.previewTriggerRule);
 router.post('/notifications/trigger-settings/test-send', adminAuth, requireAnyPermission(['notification.trigger', 'notification.manage']), notificationCtrl.testSendTriggerRule);
+router.post('/notifications', adminAuth, requireAnyPermission(['notification.send', 'notification.manage']), notificationCtrl.send);
+router.post('/notifications/drafts', adminAuth, requireAnyPermission(['notification.create', 'notification.manage']), notificationCtrl.draft);
+router.get('/notifications/:id', adminAuth, requireAnyPermission(['notification.view', 'notification.manage']), notificationCtrl.detail);
+router.get('/notifications/:id/recipients/export', adminAuth, requireAnyPermission(['notification.view', 'notification.manage']), notificationCtrl.exportRecipientsCsv);
+router.put('/notifications/:id/publish', adminAuth, requireAnyPermission(['notification.send', 'notification.manage']), notificationCtrl.publish);
 router.delete('/notifications/:id', adminAuth, requireAnyPermission(['notification.manage', 'notification.create']), notificationCtrl.remove);
 router.delete('/notifications/:id/draft', adminAuth, requireAnyPermission(['notification.create', 'notification.manage']), notificationCtrl.deleteDraft);
 router.put('/notifications/:id/cancel', adminAuth, requireAnyPermission(['notification.send', 'notification.manage']), notificationCtrl.cancelScheduled);

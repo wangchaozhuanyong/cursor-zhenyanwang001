@@ -14,6 +14,7 @@ export type MarketingCouponPublic = {
   scope_type: string;
   display_badge: string;
   category_ids: string[];
+  category_names?: string[];
 };
 
 export type MarketingActivitySummary = {

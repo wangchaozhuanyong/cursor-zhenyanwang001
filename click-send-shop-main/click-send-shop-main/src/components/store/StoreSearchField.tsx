@@ -7,6 +7,9 @@ type StoreSearchFieldProps = {
   value?: string;
   onValueChange?: (value: string) => void;
   onNavigate?: () => void;
+  /** filter 模式下按 Enter 触发 */
+  onSubmit?: () => void;
+  autoFocus?: boolean;
   className?: string;
 };
 
@@ -19,6 +22,8 @@ export default function StoreSearchField({
   value = "",
   onValueChange,
   onNavigate,
+  onSubmit,
+  autoFocus,
   className,
 }: StoreSearchFieldProps) {
   return (
@@ -32,8 +37,19 @@ export default function StoreSearchField({
         value={mode === "filter" ? value : undefined}
         placeholder={placeholder}
         onChange={mode === "filter" ? (e) => onValueChange?.(e.target.value) : undefined}
+        onKeyDown={
+          mode === "filter" && onSubmit
+            ? (e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  onSubmit();
+                }
+              }
+            : undefined
+        }
         onFocus={mode === "navigate" ? onNavigate : undefined}
         onClick={mode === "navigate" ? onNavigate : undefined}
+        autoFocus={mode === "filter" ? autoFocus : undefined}
         className={cn(fieldClass, mode === "navigate" && "cursor-pointer")}
         aria-label={placeholder}
       />

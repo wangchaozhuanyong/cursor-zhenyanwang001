@@ -1,6 +1,7 @@
-const { generateId } = require('../../utils/helpers');
+﻿const { generateId } = require('../../utils/helpers');
 const repo = require('./reward.repository');
 const { REWARD_STATUS } = require('../../constants/status');
+const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
 
 function toMoney(value) {
   const n = parseFloat(value);
@@ -20,6 +21,19 @@ function calculateRewardPoints(orderAmount, pointsPercent, fixedPoints) {
   const fixed = Math.max(0, Math.floor(Number(fixedPoints || 0)));
   const byPercent = amount > 0 && percent > 0 ? Math.floor((amount * percent) / 100) : 0;
   return Math.max(byPercent, fixed);
+}
+
+function shouldSettleByTiming(timing, order, trigger = '') {
+  const t = String(timing || 'order_completed').toLowerCase();
+  const trig = String(trigger || '').toLowerCase();
+  const paid = (order?.payment_status || '').toLowerCase() === PAYMENT_STATUS.PAID;
+  const completed = (order?.status || '').toLowerCase() === ORDER_STATUS.COMPLETED;
+  const shipped = (order?.status || '').toLowerCase() === ORDER_STATUS.SHIPPED;
+
+  if (t === 'immediate') return true;
+  if (t === 'order_paid' || t === 'payment_success') return paid || trig.includes('paid') || completed;
+  if (t === 'order_shipped') return shipped || trig.includes('ship') || completed;
+  return completed || trig.includes('completed') || trig.includes('confirm_receive');
 }
 
 async function getInviteAncestors(conn, buyerUserId, maxLevel) {
@@ -47,6 +61,7 @@ async function settleOrderRewards(conn, order, options = {}) {
 
   const ruleByLevel = new Map(rules.map((r) => [Number(r.level), r]));
   const orderAmount = toMoney(order.total_amount);
+  const trigger = options.trigger || '';
   let settled = 0;
 
   for (const ancestor of ancestors) {
@@ -55,7 +70,7 @@ async function settleOrderRewards(conn, order, options = {}) {
 
     const rewardType = String(rule.reward_type || 'cash').toLowerCase();
     const settlementTiming = String(rule.settlement_timing || 'order_completed').toLowerCase();
-    if (settlementTiming !== 'order_completed') continue;
+    if (!shouldSettleByTiming(settlementTiming, order, trigger)) continue;
 
     const cashAmount = rewardType === 'points' ? 0 : calculateRewardAmount(orderAmount, rule.reward_percent);
     const pointsAmount = rewardType === 'cash' ? 0 : calculateRewardPoints(orderAmount, rule.points_percent, rule.fixed_points);
@@ -73,13 +88,14 @@ async function settleOrderRewards(conn, order, options = {}) {
       level: ancestor.level,
       status: REWARD_STATUS.APPROVED,
       sourceType: 'order_completion',
-      remark: `订单完成返现 ${order.order_no}`,
+      remark: `璁㈠崟瀹屾垚杩旂幇 ${order.order_no}`,
       metadata: {
         buyerUserId: order.user_id,
         rewardType,
         rewardPoints: pointsAmount,
+        settlementTiming,
         operatorId: options.operatorId || null,
-        trigger: options.trigger || 'order_completed',
+        trigger: trigger || 'order_completed',
       },
     });
 
@@ -95,7 +111,7 @@ async function settleOrderRewards(conn, order, options = {}) {
         type: 'settle',
         amount: cashAmount,
         status: 'success',
-        reason: `订单完成返现 Level ${ancestor.level}`,
+        reason: `璁㈠崟瀹屾垚杩旂幇 Level ${ancestor.level}`,
         operatorId: options.operatorId,
         metadata: { buyerUserId: order.user_id, rate: rule.reward_percent, rewardType, rewardPoints: pointsAmount },
       });
@@ -111,7 +127,7 @@ async function settleOrderRewards(conn, order, options = {}) {
         type: 'settle_points',
         amount: pointsAmount,
         status: 'success',
-        reason: `订单完成邀请积分结算 Level ${ancestor.level}`,
+        reason: `璁㈠崟瀹屾垚閭€璇风Н鍒嗙粨绠?Level ${ancestor.level}`,
         operatorId: options.operatorId,
         metadata: { buyerUserId: order.user_id, pointsPercent: rule.points_percent, fixedPoints: rule.fixed_points },
       });
@@ -129,26 +145,50 @@ async function reverseOrderRewards(conn, order, reason, options = {}) {
   let reversed = 0;
   for (const record of records) {
     const amount = toMoney(record.amount);
-    if (amount <= 0) continue;
-    await repo.insertTransaction(conn, {
-      id: generateId(),
-      rewardRecordId: record.id,
-      userId: record.user_id,
-      orderId: record.order_id,
-      orderNo: record.order_no,
-      type: 'reverse',
-      amount: -amount,
-      status: 'success',
-      reason: reason || '订单退款/取消冲正',
-      operatorId: options.operatorId,
-      metadata: { trigger: options.trigger || 'order_reversal' },
-    });
+    const txs = await repo.selectTransactionsByRewardRecord(conn, record.id);
+    const hasReverse = txs.some((t) => String(t.type) === 'reverse' || String(t.type) === 'reverse_points');
+    if (hasReverse) continue;
+
+    if (amount > 0) {
+      await repo.insertTransaction(conn, {
+        id: generateId(),
+        rewardRecordId: record.id,
+        userId: record.user_id,
+        orderId: record.order_id,
+        orderNo: record.order_no,
+        type: 'reverse',
+        amount: -amount,
+        status: 'success',
+        reason: reason || '订单退款/取消冲正',
+        operatorId: options.operatorId,
+        metadata: { trigger: options.trigger || 'order_reversal' },
+      });
+    }
+
+    const pointsSettled = txs
+      .filter((t) => String(t.type) === 'settle_points' && String(t.status || '') === 'success')
+      .reduce((sum, t) => sum + Math.max(0, Number(t.amount || 0)), 0);
+    if (pointsSettled > 0) {
+      await repo.insertTransaction(conn, {
+        id: generateId(),
+        rewardRecordId: record.id,
+        userId: record.user_id,
+        orderId: record.order_id,
+        orderNo: record.order_no,
+        type: 'reverse_points',
+        amount: -pointsSettled,
+        status: 'success',
+        reason: reason || '订单退款/取消冲正（积分）',
+        operatorId: options.operatorId,
+        metadata: { trigger: options.trigger || 'order_reversal' },
+      });
+    }
+
     await repo.markRewardRecordReversed(conn, record.id, reason || '订单退款/取消冲正');
     reversed += 1;
   }
   return { reversed, skipped: reversed === 0 };
 }
-
 async function getRecords(userId, query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const pageSize = Math.min(50, Math.max(1, parseInt(query.pageSize, 10) || 20));
@@ -187,7 +227,7 @@ async function getAdminRecords(query) {
 async function withdraw(userId, body) {
   const amount = parseFloat(body.amount);
   if (!amount || amount <= 0 || !Number.isFinite(amount)) {
-    return { error: { code: 400, message: '提现金额必须大于0' } };
+    return { error: { code: 400, message: '鎻愮幇閲戦蹇呴』澶т簬0' } };
   }
 
   const conn = await repo.getConnection();
@@ -196,7 +236,7 @@ async function withdraw(userId, body) {
     const available = await repo.sumAvailableForWithdraw(conn, userId);
     if (available < amount) {
       await conn.rollback();
-      return { error: { code: 400, message: '余额不足' } };
+      return { error: { code: 400, message: '浣欓涓嶈冻' } };
     }
     const id = generateId();
     await repo.insertWithdrawRecord(conn, id, userId, amount);
@@ -240,3 +280,4 @@ module.exports = {
   sumRewardTransactionsBalance,
   insertRewardTransaction,
 };
+

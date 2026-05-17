@@ -154,7 +154,7 @@ export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCou
       </button>
 
       {isMobileSheet ? (
-        <ResponsiveSheet open={open} onClose={close} title="选择优惠券" height="85vh">
+        <ResponsiveSheet open={open} onClose={close} title="选择优惠券" height="90vh">
           <CouponListBody {...listProps} />
         </ResponsiveSheet>
       ) : (

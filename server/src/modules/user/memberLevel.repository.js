@@ -7,7 +7,7 @@ function getPool() {
 
 async function selectEnabledLevels(q) {
   const [rows] = await q.query(
-    `SELECT id, name, description, min_spent, min_orders, discount_rate, points_multiplier, coupon_pack_id, free_shipping_enabled, sort_order, enabled, is_default, created_at, updated_at
+    `SELECT id, name, description, min_spent, min_orders, discount_rate, points_multiplier, free_shipping_enabled, sort_order, enabled, is_default, created_at, updated_at
      FROM member_levels
      WHERE enabled = 1
      ORDER BY sort_order ASC, min_spent ASC, min_orders ASC, created_at ASC`,
@@ -17,7 +17,7 @@ async function selectEnabledLevels(q) {
 
 async function selectAllLevels(q) {
   const [rows] = await q.query(
-    `SELECT id, name, description, min_spent, min_orders, discount_rate, points_multiplier, coupon_pack_id, free_shipping_enabled, sort_order, enabled, is_default, created_at, updated_at
+    `SELECT id, name, description, min_spent, min_orders, discount_rate, points_multiplier, free_shipping_enabled, sort_order, enabled, is_default, created_at, updated_at
      FROM member_levels
      ORDER BY sort_order ASC, min_spent ASC, min_orders ASC, created_at ASC`,
   );
@@ -26,7 +26,7 @@ async function selectAllLevels(q) {
 
 async function selectLevelById(q, id) {
   const [[row]] = await q.query(
-    `SELECT id, name, description, min_spent, min_orders, discount_rate, points_multiplier, coupon_pack_id, free_shipping_enabled, sort_order, enabled, is_default, created_at, updated_at
+    `SELECT id, name, description, min_spent, min_orders, discount_rate, points_multiplier, free_shipping_enabled, sort_order, enabled, is_default, created_at, updated_at
      FROM member_levels WHERE id = ?`,
     [id],
   );
@@ -35,7 +35,7 @@ async function selectLevelById(q, id) {
 
 async function selectDefaultLevel(q) {
   const [[row]] = await q.query(
-    `SELECT id, name, description, min_spent, min_orders, discount_rate, points_multiplier, coupon_pack_id, free_shipping_enabled, sort_order, enabled, is_default, created_at, updated_at
+    `SELECT id, name, description, min_spent, min_orders, discount_rate, points_multiplier, free_shipping_enabled, sort_order, enabled, is_default, created_at, updated_at
      FROM member_levels
      WHERE enabled = 1
      ORDER BY is_default DESC, sort_order ASC, min_spent ASC, min_orders ASC, created_at ASC
@@ -46,7 +46,7 @@ async function selectDefaultLevel(q) {
 
 async function selectUserCurrentLevel(q, userId) {
   const [[row]] = await q.query(
-    `SELECT ml.id, ml.name, ml.description, ml.min_spent, ml.min_orders, ml.discount_rate, ml.points_multiplier, ml.coupon_pack_id, ml.free_shipping_enabled, ml.sort_order, ml.enabled, ml.is_default
+    `SELECT ml.id, ml.name, ml.description, ml.min_spent, ml.min_orders, ml.discount_rate, ml.points_multiplier, ml.free_shipping_enabled, ml.sort_order, ml.enabled, ml.is_default
      FROM users u
      LEFT JOIN member_levels ml ON ml.id = u.member_level_id
      WHERE u.id = ?`,

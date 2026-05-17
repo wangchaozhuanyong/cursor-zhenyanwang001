@@ -194,7 +194,7 @@ export default function SegmentedDateTimeInput({
           aria-label="年（4 位）"
           className="w-[4.25ch] min-w-0 bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
           onChange={(e) => {
-            const v = digitOnly(e.target.value, 4);
+            const v = segmentDigits(e.target.value, 4);
             setY(v);
             if (v.length === 4) mRef.current?.focus();
             tryEmit(v, m, d, h, mi);
@@ -290,7 +290,7 @@ export default function SegmentedDateTimeInput({
           aria-label="时（0–23，2 位）"
           className="w-[2.75ch] min-w-0 bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
           onChange={(e) => {
-            const v = digitOnly(e.target.value, 2);
+            const v = segmentDigits(e.target.value, 2);
             setH(v);
             if (v.length === 2) miRef.current?.focus();
             tryEmit(y, m, d, v, mi);

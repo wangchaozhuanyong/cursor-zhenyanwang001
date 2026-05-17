@@ -24,6 +24,7 @@ function mapUserCouponToCheckoutPicker(uc: UserCoupon, idx: number): CheckoutPic
   const normalizedType = c.type;
   return {
     id: uc.id,
+    couponId: c.id,
     title: c.title,
     discount: c.value,
     discountType: normalizedType === "percentage" ? "percentage" : normalizedType === "shipping" ? "shipping" : "fixed",

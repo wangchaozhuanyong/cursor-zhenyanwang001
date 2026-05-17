@@ -56,7 +56,7 @@ export default function AdminUsers() {
   useEffect(() => () => resetUsersStore(), [resetUsersStore]);
   useEffect(() => { setSelectedUserIds([]); }, [users, page, pageSize, search, selectedTagId, wechatBoundFilter, phoneBoundFilter, accountStatusFilter]);
 
-  const queryBase = { keyword: search || undefined, tagId: selectedTagId || undefined, wechatBound: wechatBoundFilter || undefined, phoneBound: phoneBoundFilter || undefined, accountStatus: accountStatusFilter || undefined };
+  const queryBase = { page, pageSize, keyword: search || undefined, tagId: selectedTagId || undefined, wechatBound: wechatBoundFilter || undefined, phoneBound: phoneBoundFilter || undefined, accountStatus: accountStatusFilter || undefined };
 
   const handleExportCsv = async () => {
     try {
@@ -137,3 +137,4 @@ export default function AdminUsers() {
     </div>
   );
 }
+

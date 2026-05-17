@@ -72,7 +72,12 @@ export default function ThemePreviewDock({
       <ThemePreviewToolbar mode={mode} device={device} onModeChange={onModeChange} onDeviceChange={onDeviceChange} />
 
       <div className="p-2 xl:min-h-0 xl:flex-1 xl:overflow-hidden">
-        <ThemePreviewCanvas config={config} mode={mode} device={device} skinKey={skinKey} />
+            <ThemePreviewCanvas
+              config={config}
+              mode={mode}
+              device={device}
+              skinKey={`${skinKey}-${config.couponStyle}-${config.memberCardStyle}-${config.primaryColor}`}
+            />
       </div>
 
       <div className="border-t border-border p-2">

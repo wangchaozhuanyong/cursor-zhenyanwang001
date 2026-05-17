@@ -36,8 +36,22 @@ export function formatCouponLeftAmount(c: UserCoupon["coupon"]) {
   return `RM ${c.value}`;
 }
 
+function formatCouponScopeText(scopeType?: string, categoryNames?: string[], categoryIds?: string[]) {
+  if (scopeType === "category") {
+    if (Array.isArray(categoryNames) && categoryNames.length > 0) {
+      return `适用范围：${categoryNames.join("、")}`;
+    }
+    if (Array.isArray(categoryIds) && categoryIds.length > 0) {
+      return `适用范围：指定分类（${categoryIds.length}个）`;
+    }
+    return "适用范围：指定分类";
+  }
+  return "适用范围：全场商品";
+}
+
 export function marketingCouponToPremiumDisplay(c: MarketingCouponPublic) {
   const type = normalizeCouponType(c.type);
+  const scopeText = formatCouponScopeText(c.scope_type, c.category_names, c.category_ids);
   if (type === "percentage") {
     return {
       title: c.title,
@@ -45,7 +59,7 @@ export function marketingCouponToPremiumDisplay(c: MarketingCouponPublic) {
       amount: `${c.value}%`,
       minSpendText: c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛可用",
       expireText: formatCouponExpireText(c.end_date),
-      scopeText: "适用范围：全场商品",
+      scopeText,
       code: c.code,
     };
   }
@@ -56,7 +70,7 @@ export function marketingCouponToPremiumDisplay(c: MarketingCouponPublic) {
       amount: "免运",
       minSpendText: c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛可用",
       expireText: formatCouponExpireText(c.end_date),
-      scopeText: "适用范围：全场商品",
+      scopeText,
       code: c.code,
     };
   }
@@ -66,7 +80,7 @@ export function marketingCouponToPremiumDisplay(c: MarketingCouponPublic) {
     amount: `RM ${c.value}`,
     minSpendText: c.min_amount > 0 ? `满 RM ${c.min_amount} 可用` : "无门槛可用",
     expireText: formatCouponExpireText(c.end_date),
-    scopeText: "适用范围：全场商品",
+    scopeText,
     code: c.code,
   };
 }
@@ -74,10 +88,7 @@ export function marketingCouponToPremiumDisplay(c: MarketingCouponPublic) {
 export function userCouponToPremiumDisplay(uc: UserCoupon) {
   const c = uc.coupon;
   const minSpendText = formatCouponMinSpendText(c);
-  const scopeText =
-    c.scope_type === "category" && c.category_names?.length
-      ? `适用范围：${c.category_names.join("、")}`
-      : "适用范围：全场商品";
+  const scopeText = formatCouponScopeText(c.scope_type, c.category_names, c.category_ids);
 
   return {
     title: c.title,

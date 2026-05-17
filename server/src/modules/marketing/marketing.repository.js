@@ -104,7 +104,13 @@ async function selectCouponsByIds(couponIds) {
             (
               SELECT GROUP_CONCAT(cc.category_id ORDER BY cc.category_id SEPARATOR ',')
               FROM coupon_categories cc WHERE BINARY cc.coupon_id = BINARY c.id
-            ) AS category_ids
+            ) AS category_ids,
+            (
+              SELECT GROUP_CONCAT(cat.name ORDER BY cat.sort_order SEPARATOR ',')
+              FROM coupon_categories cc
+              JOIN categories cat ON BINARY cat.id = BINARY cc.category_id
+              WHERE BINARY cc.coupon_id = BINARY c.id
+            ) AS category_names
      FROM coupons c
      WHERE c.deleted_at IS NULL
        AND c.status = 'available'
@@ -132,6 +138,9 @@ function mapPublicCoupon(row) {
     display_badge: row.display_badge || '',
     category_ids: typeof row.category_ids === 'string' && row.category_ids
       ? row.category_ids.split(',').filter(Boolean)
+      : [],
+    category_names: typeof row.category_names === 'string' && row.category_names
+      ? row.category_names.split(',').filter(Boolean)
       : [],
   };
 }

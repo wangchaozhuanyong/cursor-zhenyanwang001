@@ -12,7 +12,7 @@ import type { InviteStats, InviteRecord } from "@/types/invite";
 import { copyToClipboard } from "@/utils/clipboard";
 import { motion } from "framer-motion";
 import { useMotionConfig } from "@/modules/micro-interactions";
-import { fetchLoyaltyConfig } from "@/services/loyaltyService";
+import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 
 function readThemeCssVar(name: string, fallback: string): string {
   const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -26,17 +26,19 @@ export default function Invite() {
   const { inviteCode, parentInviteCode, loadProfile } = useUserStore();
   const [stats, setStats] = useState<InviteStats | null>(null);
   const [records, setRecords] = useState<InviteRecord[]>([]);
+  const { config: loyaltyConfig, loading: loyaltyLoading } = useLoyaltyVisibility();
 
   useEffect(() => {
-    fetchLoyaltyConfig().then((cfg) => {
-      if (!cfg.reward.referralEnabled) navigate("/profile", { replace: true });
-    }).catch(() => {});
+    if (!loyaltyLoading && loyaltyConfig && !loyaltyConfig.reward.referralEnabled) {
+      navigate("/profile", { replace: true });
+      return;
+    }
     loadProfile();
     Promise.all([
       inviteService.fetchInviteStats().then(setStats),
       inviteService.fetchInviteRecords().then((d) => setRecords(d.list)),
     ]).catch(() => toast.error("加载失败"));
-  }, [loadProfile, navigate]);
+  }, [loadProfile, loyaltyConfig, loyaltyLoading, navigate]);
 
   const inviteLink = `${window.location.origin}/login?ref=${encodeURIComponent(inviteCode || "")}`;
   const qrRef = useRef<HTMLCanvasElement>(null);
@@ -238,3 +240,4 @@ function Stat({ title, value }: { title: string; value: string }) {
     </div>
   );
 }
+

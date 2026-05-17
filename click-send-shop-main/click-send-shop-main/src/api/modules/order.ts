@@ -2,9 +2,14 @@ import { get, post } from "@/api/request";
 import type { Order, SubmitOrderParams, OrderListParams, CheckoutAbandonmentPayload } from "@/types/order";
 import type { OrderPreviewResult } from "@/types/orderPreview";
 import type { PaginatedData } from "@/types/common";
+import type { OrderSummary } from "@/types/order";
 
 export function getOrders(params?: OrderListParams) {
   return get<PaginatedData<Order>>("/orders", params as unknown as Record<string, unknown>);
+}
+
+export function getOrderSummary() {
+  return get<OrderSummary>("/orders/summary");
 }
 
 export function getOrderById(id: string) {
@@ -39,4 +44,3 @@ export function createStripeCheckoutSession(id: string) {
 export function payOrder(id: string, channel: string) {
   return post<void>(`/orders/${id}/pay`, { channel });
 }
-

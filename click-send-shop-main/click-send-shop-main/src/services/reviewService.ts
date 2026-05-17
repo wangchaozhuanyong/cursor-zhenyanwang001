@@ -1,6 +1,6 @@
 import * as reviewApi from "@/api/modules/review";
 import type { PaginatedData } from "@/types/common";
-import type { Review, FeaturedReview, ProductReviewStats } from "@/types/review";
+import type { Review, FeaturedReview, ProductReviewStats, PendingReviewItem, ReviewEligibility } from "@/types/review";
 import * as uploadService from "@/services/uploadService";
 
 export async function fetchProductReviewStats(productId: string): Promise<ProductReviewStats> {
@@ -36,4 +36,14 @@ export async function toggleReviewLike(reviewId: string) {
 
 export async function uploadReviewImages(files: File[]) {
   return uploadService.uploadMultiple(files);
+}
+
+export async function fetchPendingReviewItems(): Promise<PendingReviewItem[]> {
+  const res = await reviewApi.getPendingReviewItems();
+  return Array.isArray(res.data) ? res.data : [];
+}
+
+export async function fetchProductReviewEligibility(productId: string): Promise<ReviewEligibility> {
+  const res = await reviewApi.getProductReviewEligibility(productId);
+  return res.data;
 }

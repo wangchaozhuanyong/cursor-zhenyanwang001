@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const ctrl = require('./review.controller');
 const auth = require('../../middleware/auth');
+const authOptional = require('../../middleware/authOptional');
 const { guardByAction } = require('../../middleware/accountStatusGuard');
 const { validate } = require('../../middleware/validate');
 const {
@@ -13,6 +14,13 @@ const {
 const router = Router();
 
 router.get('/featured', ctrl.getFeaturedReviews);
+router.get('/pending-items', auth, ctrl.getPendingReviewItems);
+router.get(
+  '/product/:productId/eligibility',
+  authOptional,
+  validate({ params: productReviewProductParamSchema }),
+  ctrl.getProductReviewEligibility,
+);
 router.get(
   '/product/:productId/stats',
   validate({ params: productReviewProductParamSchema }),

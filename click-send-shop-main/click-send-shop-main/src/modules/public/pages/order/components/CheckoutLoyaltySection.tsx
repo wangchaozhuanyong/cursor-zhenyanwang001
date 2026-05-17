@@ -51,14 +51,30 @@ export function CheckoutLoyaltySection({
           </label>
           <p className="mt-1 text-xs text-muted-foreground">可用 {availablePoints}，本单最多 {maxPoints}</p>
           {usePoints ? (
-            <input
-              className="mt-2 w-full rounded-lg border border-[var(--theme-border)] bg-transparent px-3 py-2 text-sm"
-              type="number"
-              min={0}
-              max={maxPoints}
-              value={pointsToUse}
-              onChange={(e) => onPointsToUseChange(Math.max(0, Math.min(maxPoints, Number(e.target.value || 0))))}
-            />
+            <div className="mt-2 space-y-2">
+              <input
+                className="w-full"
+                type="range"
+                min={0}
+                max={maxPoints}
+                step={1}
+                value={Math.max(0, Math.min(maxPoints, pointsToUse))}
+                onChange={(e) => onPointsToUseChange(Math.max(0, Math.min(maxPoints, Number(e.target.value || 0))))}
+              />
+              <div className="flex items-center gap-2">
+                <input
+                  className="w-full rounded-lg border border-[var(--theme-border)] bg-transparent px-3 py-2 text-sm"
+                  type="number"
+                  min={0}
+                  max={maxPoints}
+                  value={pointsToUse}
+                  onChange={(e) => onPointsToUseChange(Math.max(0, Math.min(maxPoints, Number(e.target.value || 0))))}
+                />
+                <button type="button" className="rounded-lg border border-[var(--theme-border)] px-3 py-2 text-xs" onClick={() => onPointsToUseChange(maxPoints)}>
+                  全部
+                </button>
+              </div>
+            </div>
           ) : null}
         </div>
       ) : null}
@@ -71,15 +87,31 @@ export function CheckoutLoyaltySection({
           </label>
           <p className="mt-1 text-xs text-muted-foreground">可用 RM {availableReward.toFixed(2)}，本单最多 RM {maxReward.toFixed(2)}</p>
           {useRewardCash ? (
-            <input
-              className="mt-2 w-full rounded-lg border border-[var(--theme-border)] bg-transparent px-3 py-2 text-sm"
-              type="number"
-              min={0}
-              max={maxReward}
-              step="0.01"
-              value={rewardCashAmount}
-              onChange={(e) => onRewardCashAmountChange(Math.max(0, Math.min(maxReward, Number(e.target.value || 0))))}
-            />
+            <div className="mt-2 space-y-2">
+              <input
+                className="w-full"
+                type="range"
+                min={0}
+                max={maxReward}
+                step="0.01"
+                value={Math.max(0, Math.min(maxReward, rewardCashAmount))}
+                onChange={(e) => onRewardCashAmountChange(Math.max(0, Math.min(maxReward, Number(e.target.value || 0))))}
+              />
+              <div className="flex items-center gap-2">
+                <input
+                  className="w-full rounded-lg border border-[var(--theme-border)] bg-transparent px-3 py-2 text-sm"
+                  type="number"
+                  min={0}
+                  max={maxReward}
+                  step="0.01"
+                  value={rewardCashAmount}
+                  onChange={(e) => onRewardCashAmountChange(Math.max(0, Math.min(maxReward, Number(e.target.value || 0))))}
+                />
+                <button type="button" className="rounded-lg border border-[var(--theme-border)] px-3 py-2 text-xs" onClick={() => onRewardCashAmountChange(maxReward)}>
+                  全部
+                </button>
+              </div>
+            </div>
           ) : null}
         </div>
       ) : null}

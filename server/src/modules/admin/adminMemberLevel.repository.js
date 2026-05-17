@@ -10,7 +10,7 @@ async function getConnection() {
 
 async function selectLevels(q) {
   const [rows] = await q.query(
-    `SELECT id, name, description, min_spent, min_orders, discount_rate, points_multiplier, coupon_pack_id, free_shipping_enabled, sort_order, enabled, is_default, created_at, updated_at
+    `SELECT id, name, description, min_spent, min_orders, discount_rate, points_multiplier, free_shipping_enabled, sort_order, enabled, is_default, created_at, updated_at
      FROM member_levels
      ORDER BY sort_order ASC, min_spent ASC, min_orders ASC, created_at ASC`,
   );
@@ -19,7 +19,7 @@ async function selectLevels(q) {
 
 async function selectLevelById(q, id) {
   const [[row]] = await q.query(
-    `SELECT id, name, description, min_spent, min_orders, discount_rate, points_multiplier, coupon_pack_id, free_shipping_enabled, sort_order, enabled, is_default, created_at, updated_at
+    `SELECT id, name, description, min_spent, min_orders, discount_rate, points_multiplier, free_shipping_enabled, sort_order, enabled, is_default, created_at, updated_at
      FROM member_levels WHERE id = ?`,
     [id],
   );
@@ -37,25 +37,25 @@ async function clearDefault(q) {
 
 async function insertLevel(q, params) {
   const {
-    id, name, description, minSpent, minOrders, discountRate, pointsMultiplier, couponPackId, freeShippingEnabled, sortOrder, enabled, isDefault,
+    id, name, description, minSpent, minOrders, discountRate, pointsMultiplier, freeShippingEnabled, sortOrder, enabled, isDefault,
   } = params;
   await q.query(
     `INSERT INTO member_levels
-       (id, name, description, min_spent, min_orders, discount_rate, points_multiplier, coupon_pack_id, free_shipping_enabled, sort_order, enabled, is_default)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, name, description, minSpent, minOrders, discountRate, pointsMultiplier, couponPackId || null, freeShippingEnabled ? 1 : 0, sortOrder, enabled ? 1 : 0, isDefault ? 1 : 0],
+       (id, name, description, min_spent, min_orders, discount_rate, points_multiplier, free_shipping_enabled, sort_order, enabled, is_default)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, name, description, minSpent, minOrders, discountRate, pointsMultiplier, freeShippingEnabled ? 1 : 0, sortOrder, enabled ? 1 : 0, isDefault ? 1 : 0],
   );
 }
 
 async function updateLevel(q, id, params) {
   const {
-    name, description, minSpent, minOrders, discountRate, pointsMultiplier, couponPackId, freeShippingEnabled, sortOrder, enabled, isDefault,
+    name, description, minSpent, minOrders, discountRate, pointsMultiplier, freeShippingEnabled, sortOrder, enabled, isDefault,
   } = params;
   const [result] = await q.query(
     `UPDATE member_levels
-     SET name = ?, description = ?, min_spent = ?, min_orders = ?, discount_rate = ?, points_multiplier = ?, coupon_pack_id = ?, free_shipping_enabled = ?, sort_order = ?, enabled = ?, is_default = ?
+     SET name = ?, description = ?, min_spent = ?, min_orders = ?, discount_rate = ?, points_multiplier = ?, free_shipping_enabled = ?, sort_order = ?, enabled = ?, is_default = ?
      WHERE id = ?`,
-    [name, description, minSpent, minOrders, discountRate, pointsMultiplier, couponPackId || null, freeShippingEnabled ? 1 : 0, sortOrder, enabled ? 1 : 0, isDefault ? 1 : 0, id],
+    [name, description, minSpent, minOrders, discountRate, pointsMultiplier, freeShippingEnabled ? 1 : 0, sortOrder, enabled ? 1 : 0, isDefault ? 1 : 0, id],
   );
   return result.affectedRows > 0;
 }

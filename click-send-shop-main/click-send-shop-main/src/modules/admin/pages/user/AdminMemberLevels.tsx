@@ -7,7 +7,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
 import { THEME_BORDER_DANGER_SOFT, THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 
-type Draft = Omit<MemberLevel, "id" | "created_at" | "updated_at"> & { id?: string; discount_rate?: number; points_multiplier?: number; coupon_pack_id?: string; free_shipping_enabled?: boolean };
+type Draft = Omit<MemberLevel, "id" | "created_at" | "updated_at"> & { id?: string; discount_rate?: number; points_multiplier?: number; free_shipping_enabled?: boolean };
 
 const emptyDraft: Draft = {
   name: "",
@@ -16,7 +16,6 @@ const emptyDraft: Draft = {
   min_orders: 0,
   discount_rate: 1,
   points_multiplier: 1,
-  coupon_pack_id: "",
   free_shipping_enabled: false,
   sort_order: 0,
   enabled: true,
@@ -31,7 +30,6 @@ function toPayload(draft: Draft) {
     min_orders: Number(draft.min_orders || 0),
     discount_rate: Number(draft.discount_rate || 1),
     points_multiplier: Number(draft.points_multiplier || 1),
-    coupon_pack_id: draft.coupon_pack_id || null,
     free_shipping_enabled: draft.free_shipping_enabled === true,
     sort_order: Number(draft.sort_order || 0),
     enabled: draft.enabled !== false,
@@ -70,7 +68,6 @@ export default function AdminMemberLevels() {
           <input type="number" value={newLevel.min_orders || 0} onChange={(e) => setNewLevel((s) => ({ ...s, min_orders: Number(e.target.value) }))} placeholder="累计订单" className="rounded border px-2 py-1" />
           <input type="number" step="0.01" value={newLevel.discount_rate || 1} onChange={(e) => setNewLevel((s) => ({ ...s, discount_rate: Number(e.target.value) }))} placeholder="折扣率" className="rounded border px-2 py-1" />
           <input type="number" step="0.01" value={newLevel.points_multiplier || 1} onChange={(e) => setNewLevel((s) => ({ ...s, points_multiplier: Number(e.target.value) }))} placeholder="积分倍率" className="rounded border px-2 py-1" />
-          <input value={newLevel.coupon_pack_id || ""} onChange={(e) => setNewLevel((s) => ({ ...s, coupon_pack_id: e.target.value }))} placeholder="券包ID" className="rounded border px-2 py-1" />
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={newLevel.free_shipping_enabled || false} onChange={(e) => setNewLevel((s) => ({ ...s, free_shipping_enabled: e.target.checked }))} />免邮</label>
         </div>
         <LoadingButton className="mt-3" type="button" variant="gold" state={savingId === "new" ? "loading" : "normal"} onClick={async () => { if (!newLevel.name?.trim()) return; setSavingId("new"); try { await userService.createMemberLevel(toPayload(newLevel) as any); setNewLevel(emptyDraft); await loadLevels(); toast.success("已创建"); } catch (e) { toast.error(toastErrorMessage(e, "创建失败")); } finally { setSavingId(null); } }}>新增</LoadingButton>
@@ -85,7 +82,6 @@ export default function AdminMemberLevels() {
             <input type="number" value={level.min_orders || 0} onChange={(e) => updateLocal(level.id, { min_orders: Number(e.target.value) })} className="rounded border px-2 py-1" />
             <input type="number" step="0.01" value={level.discount_rate || 1} onChange={(e) => updateLocal(level.id, { discount_rate: Number(e.target.value) })} className="rounded border px-2 py-1" />
             <input type="number" step="0.01" value={level.points_multiplier || 1} onChange={(e) => updateLocal(level.id, { points_multiplier: Number(e.target.value) })} className="rounded border px-2 py-1" />
-            <input value={level.coupon_pack_id || ""} onChange={(e) => updateLocal(level.id, { coupon_pack_id: e.target.value })} className="rounded border px-2 py-1" />
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!level.free_shipping_enabled} onChange={(e) => updateLocal(level.id, { free_shipping_enabled: e.target.checked })} />免邮</label>
           </div>
           <div className="flex gap-2">

@@ -197,6 +197,10 @@ export function useCheckoutPage() {
   const discountLines = orderPreview?.discount_lines ?? [];
   const finalTotal = orderPreview?.final_amount ?? Math.max(0, rawTotal - clientCouponDiscount + shippingFee);
   const preferredCouponId = searchParams.get("coupon_id");
+  const matchesPreferredCoupon = useCallback(
+    (coupon: CheckoutPickerCoupon, preferredId: string) => coupon.id === preferredId || coupon.couponId === preferredId,
+    [],
+  );
 
   const sstCfg = parseSstFromSiteInfo(siteInfo);
   const goodsTaxablePreview = goodsTaxableInclusivePreview(
@@ -250,11 +254,11 @@ export function useCheckoutPage() {
     const candidates = pickerCoupons.filter((c) => rawTotal >= c.condition && (c.discountType !== "shipping" || shippingFee > 0));
 
     if (preferredCouponId) {
-      const preferred = candidates.find((c) => c.id === preferredCouponId) ?? null;
+      const preferred = candidates.find((c) => matchesPreferredCoupon(c, preferredCouponId)) ?? null;
       if (preferred) {
         setSelectedCoupon(preferred);
       } else {
-        const exists = pickerCoupons.some((c) => c.id === preferredCouponId);
+        const exists = pickerCoupons.some((c) => matchesPreferredCoupon(c, preferredCouponId));
         toast.error(exists ? "该优惠券暂不满足使用条件" : "优惠券不存在或已失效");
       }
       const nextParams = new URLSearchParams(searchParams);
@@ -271,7 +275,7 @@ export function useCheckoutPage() {
       setSelectedCoupon(best);
     }
     setCouponInitDone(true);
-  }, [couponInitDone, pickerCouponsLoading, pickerCoupons, preferredCouponId, rawTotal, shippingFee, searchParams, setSearchParams, estimateCouponDiscount]);
+  }, [couponInitDone, pickerCouponsLoading, pickerCoupons, preferredCouponId, rawTotal, shippingFee, searchParams, setSearchParams, estimateCouponDiscount, matchesPreferredCoupon]);
 
   useEffect(() => {
     if (!selectedCoupon) return;
@@ -282,6 +286,15 @@ export function useCheckoutPage() {
       setSelectedCoupon(null);
     }
   }, [pickerCoupons, rawTotal, selectedCoupon, shippingFee]);
+
+  useEffect(() => {
+    const maxPoints = Math.max(0, Math.floor(Number(orderPreview?.max_usable_points || 0)));
+    const maxRewardCash = Math.max(0, Number(orderPreview?.max_usable_reward_cash || 0));
+    if (pointsToUse > maxPoints) setPointsToUse(maxPoints);
+    if (rewardCashAmount > maxRewardCash) setRewardCashAmount(maxRewardCash);
+    if (usePoints && maxPoints <= 0) setUsePoints(false);
+    if (useRewardCash && maxRewardCash <= 0) setUseRewardCash(false);
+  }, [orderPreview?.max_usable_points, orderPreview?.max_usable_reward_cash, pointsToUse, rewardCashAmount, usePoints, useRewardCash]);
 
   const selectedTemplateId = selectedTemplate?.id ?? null;
 

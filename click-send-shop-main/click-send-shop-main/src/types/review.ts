@@ -40,3 +40,25 @@ export interface FeaturedReview {
   product_name: string;
   product_cover: string;
 }
+
+export interface PendingReviewItem {
+  order_id: string;
+  order_no: string;
+  order_item_id: string;
+  product_id: string;
+  product_name: string;
+  product_image: string;
+  variant_id?: string | null;
+  variant_name?: string;
+  sku_code?: string;
+  qty: number;
+  completed_at: string;
+}
+
+export interface ReviewEligibility {
+  can_review: boolean;
+  reason: "login_required" | "purchase_required" | "already_reviewed" | "";
+  message: string;
+  pending_items: PendingReviewItem[];
+  reviewed_count: number;
+}

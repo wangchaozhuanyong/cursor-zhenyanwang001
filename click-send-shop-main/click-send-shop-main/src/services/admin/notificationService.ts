@@ -13,7 +13,7 @@ export type NotificationQueryParams = PaginationParams & {
 };
 
 export async function fetchNotifications(params?: NotificationQueryParams): Promise<PaginatedData<Notification>> {
-  const res = await notificationApi.getNotifications(params);
+  const res = await notificationApi.getNotifications(params as unknown as Record<string, unknown>);
   return unwrapPaginated<Notification>(res.data);
 }
 
@@ -30,9 +30,8 @@ export async function estimateNotificationAudience(data: notificationApi.Notific
 export async function fetchNotificationDetail(
   id: string,
   params?: { read_status?: "read" | "unread"; page?: number; pageSize?: number },
-  options?: { signal?: AbortSignal },
 ) {
-  const res = await notificationApi.getNotificationDetail(id, params, options);
+  const res = await notificationApi.getNotificationDetail(id, params);
   return res.data;
 }
 

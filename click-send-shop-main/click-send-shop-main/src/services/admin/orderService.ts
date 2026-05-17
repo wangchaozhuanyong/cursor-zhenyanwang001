@@ -17,8 +17,8 @@ export async function fetchOrders(params?: OrderListParams): Promise<PaginatedDa
   return { ...page, summary };
 }
 
-export async function fetchOrderById(id: string, options?: { signal?: AbortSignal }) {
-  const res = await orderApi.getOrderById(id, options);
+export async function fetchOrderById(id: string) {
+  const res = await orderApi.getOrderById(id);
   return res.data;
 }
 

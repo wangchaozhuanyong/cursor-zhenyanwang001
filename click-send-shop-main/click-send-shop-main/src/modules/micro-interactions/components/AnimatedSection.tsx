@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { useMotionConfig } from "../hooks/useMotionConfig";
 import { sectionTransition } from "../motionConfig";
 
-type AnimatedSectionAs = "section" | "motion.div";
+type AnimatedSectionAs = "section" | "motion.div" | "div";
 
 type AnimatedSectionProps = HTMLAttributes<HTMLElement> & {
   children: ReactNode;
@@ -68,7 +68,7 @@ export function AnimatedSection({
       initial={motionProps.initial}
       animate={visible ? motionProps.animate : motionProps.initial}
       transition={motionProps.transition}
-      {...rest}
+      {...(rest as any)}
     >
       {children}
     </MotionTag>

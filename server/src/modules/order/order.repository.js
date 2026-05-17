@@ -1,5 +1,5 @@
 /**
- * ????????SQL ???????????? mock? * @param {import('mysql2/promise').Pool|import('mysql2/promise').PoolConnection} q
+ * ????????SQL ???????????? mock? * @param {import('mysql2/promise').Pool|import('mysql2/promise').PoolConnection} q
  */
 const db = require('../../config/db');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
@@ -495,7 +495,10 @@ async function selectOrdersPage(q, userId, status, pageSize, offset) {
 async function selectOrderItemsByOrderIds(q, orderIds) {
   if (!orderIds.length) return [];
   const [rows] = await q.query(
-    `SELECT * FROM order_items WHERE order_id IN (${orderIds.map(() => '?').join(',')})`,
+    `SELECT oi.*, pr.id AS review_id, pr.status AS review_status
+     FROM order_items oi
+     LEFT JOIN product_reviews pr ON pr.order_item_id = oi.id
+     WHERE oi.order_id IN (${orderIds.map(() => '?').join(',')})`,
     orderIds,
   );
   return rows;
@@ -531,7 +534,13 @@ async function selectOrderByIdOrOrderNoForUpdate(q, orderIdOrNo) {
 }
 
 async function selectOrderItems(q, orderId) {
-  const [rows] = await q.query('SELECT * FROM order_items WHERE order_id = ?', [orderId]);
+  const [rows] = await q.query(
+    `SELECT oi.*, pr.id AS review_id, pr.status AS review_status
+     FROM order_items oi
+     LEFT JOIN product_reviews pr ON pr.order_item_id = oi.id
+     WHERE oi.order_id = ?`,
+    [orderId],
+  );
   return rows;
 }
 
@@ -847,3 +856,4 @@ module.exports = {
   selectExpiredPendingOrderIds,
   selectDueShippedOrderIds,
 };
+

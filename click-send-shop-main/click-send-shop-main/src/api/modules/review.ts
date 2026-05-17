@@ -1,7 +1,7 @@
 ﻿import { get, post } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
-import type { Review, FeaturedReview, ProductReviewStats } from "@/types/review";
-export type { Review, FeaturedReview, ProductReviewStats };
+import type { Review, FeaturedReview, ProductReviewStats, PendingReviewItem, ReviewEligibility } from "@/types/review";
+export type { Review, FeaturedReview, ProductReviewStats, PendingReviewItem, ReviewEligibility };
 
 export function getProductReviewStats(productId: string) {
   return get<ProductReviewStats>(`/reviews/product/${productId}/stats`);
@@ -29,4 +29,12 @@ export function createReview(params: {
 
 export function toggleReviewLike(reviewId: string) {
   return post<{ liked: boolean; likes_count: number }>(`/reviews/${reviewId}/like`);
+}
+
+export function getPendingReviewItems() {
+  return get<PendingReviewItem[]>("/reviews/pending-items");
+}
+
+export function getProductReviewEligibility(productId: string) {
+  return get<ReviewEligibility>(`/reviews/product/${productId}/eligibility`);
 }

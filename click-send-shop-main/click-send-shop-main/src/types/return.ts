@@ -48,8 +48,13 @@ export interface CreateReturnParams {
 export interface ApproveReturnParams {
   refund_amount: number;
   admin_remark?: string;
-  restore_inventory: boolean;
-  rollback_points_rewards: boolean;
+  restore_inventory?: boolean;
+  rollback_points_rewards?: boolean;
+  refund_mode?: "none" | "manual" | "provider";
+  restore_stock?: boolean;
+  restore_coupon?: boolean;
+  reverse_points?: boolean;
+  reverse_rewards?: boolean;
 }
 
 export interface ReturnListParams {

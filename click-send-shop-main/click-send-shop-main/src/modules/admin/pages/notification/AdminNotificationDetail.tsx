@@ -17,11 +17,10 @@ export default function AdminNotificationDetail() {
 
   const { data, loading, error } = useAsyncResource(
     [id, readFilter, page, pageSize],
-    (signal) =>
+    () =>
       notificationService.fetchNotificationDetail(
         id,
         { read_status: readFilter || undefined, page, pageSize },
-        { signal },
       ),
     {
       enabled: Boolean(id),

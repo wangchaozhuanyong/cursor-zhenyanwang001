@@ -6,7 +6,6 @@ export interface MemberLevel {
   min_orders?: number;
   discount_rate?: number;
   points_multiplier?: number;
-  coupon_pack_id?: string | null;
   free_shipping_enabled?: boolean;
   sort_order?: number;
   enabled?: boolean;

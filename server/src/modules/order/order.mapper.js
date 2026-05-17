@@ -3,6 +3,8 @@ const { normalizeKnownMojibakeText } = require('../../utils/textNormalize');
 
 function formatOrderItem(row) {
   return {
+    id: row.id,
+    order_item_id: row.id,
     product: {
       id: row.product_id,
       name: row.product_name,
@@ -26,6 +28,10 @@ function formatOrderItem(row) {
     unit_price: parseFloat(row.price),
     subtotal: row.subtotal != null ? parseFloat(row.subtotal) : parseFloat(row.price) * Number(row.qty || 0),
     qty: row.qty,
+    review_id: row.review_id || null,
+    review_status: row.review_status || null,
+    is_reviewed: !!row.review_id,
+    can_review: Boolean(row.can_review),
   };
 }
 

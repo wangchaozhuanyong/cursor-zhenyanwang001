@@ -7,8 +7,8 @@ import { usePagination } from "@/hooks/usePagination";
 import { toast } from "sonner";
 import { fetchCouponRecords } from "@/services/admin/couponService";
 import { AnimatedTable } from "@/modules/micro-interactions";
-import { formatUserDisplay, labelimport { Tx } from "@/components/admin/AdminText";
-CouponRecordStatus } from "@/utils/adminDisplayLabels";
+import { Tx } from "@/components/admin/AdminText";
+import { formatUserDisplay, labelCouponRecordStatus } from "@/utils/adminDisplayLabels";
 
 const statusLabels: Record<string, { label: string; color: string }> = {
   available: { label: "未使用", color: "bg-gold/10 text-gold" },

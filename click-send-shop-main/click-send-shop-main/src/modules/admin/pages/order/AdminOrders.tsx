@@ -10,8 +10,8 @@ import * as orderService from "@/services/admin/orderService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import type { OrderStatus, PaymentStatus } from "@/types/order";
 import { useAdminOrdersStore } from "@/stores/useAdminOrdersStore";
-import { toastimport { Tx } from "@/components/admin/AdminText";
-ErrorMessage } from "@/utils/errorMessage";
+import { Tx } from "@/components/admin/AdminText";
+import { toastErrorMessage } from "@/utils/errorMessage";
 import {
   ORDER_STATUS,
   PAYMENT_STATUS,

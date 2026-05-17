@@ -4,7 +4,6 @@ import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { Tx } from "@/components/admin/AdminText";
-";
 import Pagination from "@/components/admin/Pagination";
 import {
   adjustInventorySkuStock,

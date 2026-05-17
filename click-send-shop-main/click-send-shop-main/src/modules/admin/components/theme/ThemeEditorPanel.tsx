@@ -1,10 +1,11 @@
 import { ChevronDown, RotateCcw, Sparkles, Undo2 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Tx } from "@/components/admin/AdminText";
 import type { ThemeConfig, ThemeSceneTag, ThemeSkin } from "@/types/theme";
 import type { AutoColorAction } from "@/utils/themeStudioAuto";
 import ColorField from "./ColorField";
 import ThemeHealthCheck from "./ThemeHealthCheck";
-import { Tx } from "@/components/admin/AdminText";
+import type { ThemeHealthFixTarget } from "./themeHealthFixMeta";
 import {
   EDITOR_GROUP_LABELS,
   enumOptions,
@@ -19,18 +20,28 @@ function EditorSection({
   id,
   title,
   defaultOpen,
+  open: openProp,
+  onOpenChange,
   children,
   onReset,
 }: {
   id: string;
   title: string;
   defaultOpen?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   children: React.ReactNode;
   onReset?: () => void;
 }) {
-  const [open, setOpen] = useState(defaultOpen ?? false);
+  const [internalOpen, setInternalOpen] = useState(defaultOpen ?? false);
+  const open = openProp ?? internalOpen;
+  const setOpen = (next: boolean | ((v: boolean) => boolean)) => {
+    const value = typeof next === "function" ? next(open) : next;
+    onOpenChange?.(value);
+    if (openProp === undefined) setInternalOpen(value);
+  };
   return (
-    <div className="rounded-xl border border-border bg-card">
+    <div id={`theme-editor-section-${id}`} className="scroll-mt-4 rounded-xl border border-border bg-card">
       <button
         type="button"
         className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left"
@@ -130,13 +141,60 @@ export default function ThemeEditorPanel({
   canUndoOptimize,
   onUndoOptimize,
 }: ThemeEditorPanelProps) {
+  const panelRef = useRef<HTMLElement>(null);
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    colors: true,
+    health: true,
+  });
+  const [highlightField, setHighlightField] = useState<ColorFieldKey | null>(null);
+  const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimer.current) clearTimeout(highlightTimer.current);
+    };
+  }, []);
+
+  const goToFix = useCallback(
+    (target: ThemeHealthFixTarget) => {
+      if (target.sectionId === "toolbar") {
+        if (target.autoAction) onAutoColor(target.autoAction);
+        panelRef.current?.querySelector("#theme-auto-toolbar")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+      const sectionsToOpen: Record<string, boolean> = { [target.sectionId]: true };
+      if (target.fieldKeys?.includes("surfaceColor")) sectionsToOpen.colors = true;
+      setOpenSections((prev) => ({ ...prev, ...sectionsToOpen }));
+      const field = target.fieldKeys?.[0];
+      if (field) {
+        setHighlightField(field);
+        if (highlightTimer.current) clearTimeout(highlightTimer.current);
+        highlightTimer.current = setTimeout(() => setHighlightField(null), 4000);
+      }
+      window.requestAnimationFrame(() => {
+        const section = panelRef.current?.querySelector(`#theme-editor-section-${target.sectionId}`);
+        section?.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (field) {
+          panelRef.current?.querySelector(`#theme-field-${field}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      });
+    },
+    [onAutoColor],
+  );
+
+  const sectionOpen = (id: string, defaultOpen?: boolean) => openSections[id] ?? defaultOpen ?? false;
+  const setSectionOpen = (id: string) => (open: boolean) => setOpenSections((prev) => ({ ...prev, [id]: open }));
+
   return (
-    <section className="min-h-0 min-w-0 flex-1 overflow-y-auto rounded-xl border border-border bg-card/50 p-3 lg:max-h-[calc(100vh-110px)]">
+    <section
+      ref={panelRef}
+      className="min-h-0 min-w-0 flex-1 overflow-y-auto rounded-xl border border-border bg-card/50 p-3 lg:max-h-[calc(100vh-110px)]"
+    >
       <div className="mb-3 space-y-2">
         <p className="text-sm text-muted-foreground"><Tx>
           编辑皮肤参数，右侧实时预览当前皮肤。「保存草稿」仅写入配置；「保存并应用到全站」会同时设为系统生效皮肤。
         </Tx></p>
-        <div className="flex flex-wrap gap-2">
+        <div id="theme-auto-toolbar" className="flex flex-wrap gap-2 scroll-mt-4">
           <button type="button" onClick={() => onAutoColor("secondary")} className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] hover:bg-secondary">
             <Sparkles size={12} /><Tx> 自动生成辅色
           </Tx></button>
@@ -161,7 +219,12 @@ export default function ThemeEditorPanel({
       </div>
 
       <div className="space-y-3">
-        <EditorSection id="basic" title={EDITOR_GROUP_LABELS.basic} defaultOpen>
+        <EditorSection
+          id="basic"
+          title={EDITOR_GROUP_LABELS.basic}
+          open={sectionOpen("basic", true)}
+          onOpenChange={setSectionOpen("basic")}
+        >
           <div className="grid gap-3 md:grid-cols-2">
             <label className="space-y-1 md:col-span-2">
               <span className="text-xs text-muted-foreground"><Tx>皮肤名称</Tx></span>
@@ -221,7 +284,8 @@ export default function ThemeEditorPanel({
             key={group}
             id={group}
             title={EDITOR_GROUP_LABELS[group]}
-            defaultOpen={group === "colors"}
+            open={sectionOpen(group, group === "colors")}
+            onOpenChange={setSectionOpen(group)}
             onReset={() => onResetGroup(group)}
           >
             <div className="grid gap-3 md:grid-cols-2">
@@ -231,6 +295,7 @@ export default function ThemeEditorPanel({
                   field={field}
                   value={themeConfig[field]}
                   config={themeConfig}
+                  highlighted={highlightField === field}
                   onChange={(v) => onConfigChange(field, v)}
                 />
               ))}
@@ -238,7 +303,13 @@ export default function ThemeEditorPanel({
           </EditorSection>
         ))}
 
-        <EditorSection id="buttons" title={EDITOR_GROUP_LABELS.buttons} onReset={() => onResetGroup("buttons")}>
+        <EditorSection
+          id="buttons"
+          title={EDITOR_GROUP_LABELS.buttons}
+          open={sectionOpen("buttons")}
+          onOpenChange={setSectionOpen("buttons")}
+          onReset={() => onResetGroup("buttons")}
+        >
           <div className="grid gap-3 md:grid-cols-2">
             <SelectRow fieldKey="buttonStyle" label="按钮风格" value={themeConfig.buttonStyle} options={enumOptions.buttonStyle} onChange={(v) => onConfigChange("buttonStyle", v)} />
             <SelectRow fieldKey="navStyle" label="底部导航" value={themeConfig.navStyle} options={enumOptions.navStyle} onChange={(v) => onConfigChange("navStyle", v)} />
@@ -253,7 +324,13 @@ export default function ThemeEditorPanel({
           </div>
         </EditorSection>
 
-        <EditorSection id="card" title={EDITOR_GROUP_LABELS.card} onReset={() => onResetGroup("card")}>
+        <EditorSection
+          id="card"
+          title={EDITOR_GROUP_LABELS.card}
+          open={sectionOpen("card")}
+          onOpenChange={setSectionOpen("card")}
+          onReset={() => onResetGroup("card")}
+        >
           <div className="grid gap-3 md:grid-cols-2">
             <SelectRow fieldKey="productCardVariant" label="商品卡变体" value={themeConfig.productCardVariant} options={enumOptions.productCardVariant} onChange={(v) => onConfigChange("productCardVariant", v)} />
             <SelectRow fieldKey="cardStyle" label="卡片风格" value={themeConfig.cardStyle} options={enumOptions.cardStyle} onChange={(v) => onConfigChange("cardStyle", v)} />
@@ -264,7 +341,13 @@ export default function ThemeEditorPanel({
           </div>
         </EditorSection>
 
-        <EditorSection id="marketing" title={EDITOR_GROUP_LABELS.marketing} onReset={() => onResetGroup("marketing")}>
+        <EditorSection
+          id="marketing"
+          title={EDITOR_GROUP_LABELS.marketing}
+          open={sectionOpen("marketing")}
+          onOpenChange={setSectionOpen("marketing")}
+          onReset={() => onResetGroup("marketing")}
+        >
           <div className="grid gap-3 md:grid-cols-2">
             <SelectRow fieldKey="homeLayout" label="首页布局" value={themeConfig.homeLayout} options={enumOptions.homeLayout} onChange={(v) => onConfigChange("homeLayout", v)} />
             <SelectRow fieldKey="headerStyle" label="头部风格" value={themeConfig.headerStyle} options={enumOptions.headerStyle} onChange={(v) => onConfigChange("headerStyle", v)} />
@@ -276,7 +359,13 @@ export default function ThemeEditorPanel({
           </div>
         </EditorSection>
 
-        <EditorSection id="advanced" title={EDITOR_GROUP_LABELS.advanced} onReset={() => onResetGroup("advanced")}>
+        <EditorSection
+          id="advanced"
+          title={EDITOR_GROUP_LABELS.advanced}
+          open={sectionOpen("advanced")}
+          onOpenChange={setSectionOpen("advanced")}
+          onReset={() => onResetGroup("advanced")}
+        >
           <div className="grid gap-3 md:grid-cols-2">
             <SelectRow fieldKey="adminThemeMode" label="后台主题模式" value={themeConfig.adminThemeMode} options={enumOptions.adminThemeMode} onChange={(v) => onConfigChange("adminThemeMode", v)} />
             <label className="space-y-1">
@@ -290,8 +379,13 @@ export default function ThemeEditorPanel({
           </div>
         </EditorSection>
 
-        <EditorSection id="health" title={EDITOR_GROUP_LABELS.health}>
-          <ThemeHealthCheck config={themeConfig} />
+        <EditorSection
+          id="health"
+          title={EDITOR_GROUP_LABELS.health}
+          open={sectionOpen("health", true)}
+          onOpenChange={setSectionOpen("health")}
+        >
+          <ThemeHealthCheck config={themeConfig} onGoToFix={goToFix} />
         </EditorSection>
       </div>
     </section>

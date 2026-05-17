@@ -9,6 +9,7 @@ type ColorFieldProps = {
   value: string;
   config: ThemeConfig;
   onChange: (value: string) => void;
+  highlighted?: boolean;
 };
 
 function contrastLabel(field: ColorFieldKey, config: ThemeConfig, value: string) {
@@ -27,7 +28,7 @@ function contrastLabel(field: ColorFieldKey, config: ThemeConfig, value: string)
   return { text: `${level} ${ratio.toFixed(2)}:1`, tone };
 }
 
-export default function ColorField({ field, value, config, onChange }: ColorFieldProps) {
+export default function ColorField({ field, value, config, onChange, highlighted }: ColorFieldProps) {
   const meta = COLOR_FIELD_META[field];
   const color = /^#[0-9a-f]{6}$/i.test(value) ? value : "#000000";
   const contrast = contrastLabel(field, config, value);
@@ -42,7 +43,12 @@ export default function ColorField({ field, value, config, onChange }: ColorFiel
   };
 
   return (
-    <div className="rounded-lg border border-border bg-background/60 p-3">
+    <div
+      id={`theme-field-${field}`}
+      className={`rounded-lg border bg-background/60 p-3 transition-shadow ${
+        highlighted ? "border-amber-400 ring-2 ring-amber-400/60" : "border-border"
+      }`}
+    >
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-sm font-medium text-foreground">{meta.label}</p>

@@ -8,8 +8,8 @@ import { usePagination } from "@/hooks/usePagination";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchInviteRecords } from "@/services/admin/inviteService";
-importimport { Tx } from "@/components/admin/AdminText";
- { AnimatedTable } from "@/modules/micro-interactions";
+import { Tx } from "@/components/admin/AdminText";
+import { AnimatedTable } from "@/modules/micro-interactions";
 
 export default function AdminInvites() {
   const navigate = useNavigate();

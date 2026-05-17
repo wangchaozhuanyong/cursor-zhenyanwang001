@@ -45,11 +45,11 @@ export default function AdminUsers() {
   const setPageSize = useAdminUsersStore((s) => s.setPageSize);
   const loadUsers = useAdminUsersStore((s) => s.loadUsers);
   const resetUsersStore = useAdminUsersStore((s) => s.reset);
-  const [tags, setTags] = useState<UserTag[]><Tx>([]);
+  const [tags, setTags] = useState<UserTag[]>([]);
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState("金色");
   const [tagSaving, setTagSaving] = useState(false);
-  const [tagDeleteId, setTagDeleteId] = useState</Tx><string | null>(null);
+  const [tagDeleteId, setTagDeleteId] = useState<string | null>(null);
 
   useLayoutEffect(() => {
     useAdminUsersStore.setState({ loading: true });

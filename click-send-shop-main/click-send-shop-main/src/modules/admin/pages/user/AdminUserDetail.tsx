@@ -11,8 +11,8 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import type { PointsRecord } from "@/types/points";
 import type { UserTag } from "@/types/user";
 import { productTagBadgeClass } from "@/utils/productTagBadge";
-import { AdminDetailGridSkeimport { Tx } from "@/components/admin/AdminText";
-leton } from "@/components/admin/AdminLoadingSkeletons";
+import { Tx } from "@/components/admin/AdminText";
+import { AdminDetailGridSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 
 export default function AdminUserDetail() {
   const navigate = useNavigate();

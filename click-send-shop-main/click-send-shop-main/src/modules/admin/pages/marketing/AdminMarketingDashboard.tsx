@@ -4,8 +4,8 @@ import { useNavigate } from "react-router-dom";
 import * as activityService from "@/services/admin/activityService";
 import * as couponService from "@/services/admin/couponService";
 import { fetchAdminPointsRecords } from "@/services/admin/pointsService";
-import { fetchAdminimport { Tx } from "@/components/admin/AdminText";
-RewardRecords } from "@/services/admin/rewardService";
+import { Tx } from "@/components/admin/AdminText";
+import { fetchAdminRewardRecords } from "@/services/admin/rewardService";
 
 export default function AdminMarketingDashboard() {
   const navigate = useNavigate();

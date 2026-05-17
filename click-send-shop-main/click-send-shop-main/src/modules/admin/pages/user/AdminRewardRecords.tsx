@@ -10,8 +10,8 @@ import type { RewardRecord, RewardStats, RewardStatus } from "@/types/reward";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatUserDisplay, labelRewardStatus } from "@/utils/adminDisplayLabels";
-import { AnimatedTablimport { Tx } from "@/components/admin/AdminText";
-e, LoadingButton } from "@/modules/micro-interactions";
+import { Tx } from "@/components/admin/AdminText";
+import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 
 const statusOptions: Array<{ value: "" | RewardStatus; label: string }> = [
   { value: "", label: "全部状态" },

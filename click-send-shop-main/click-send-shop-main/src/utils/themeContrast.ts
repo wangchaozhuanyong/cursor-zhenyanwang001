@@ -416,7 +416,6 @@ export type ThemeHealthCheck = {
   minRatio: number;
   status: ThemeHealthStatus;
   message?: string;
-  suggestion?: string;
 };
 
 function healthStatus(ratio: number, min: number, warnGap = 0.35): ThemeHealthStatus {
@@ -446,7 +445,6 @@ export function getThemeHealthChecks(adminConfig: ThemeConfig): ThemeHealthCheck
       foreground: palette["--theme-primary-foreground"],
       background: palette["--theme-primary"],
       minRatio: 4.5,
-      suggestion: "主按钮文字对比度不足，建议自动切换为深色或浅色文字。",
     },
     {
       id: "danger_button",
@@ -454,7 +452,6 @@ export function getThemeHealthChecks(adminConfig: ThemeConfig): ThemeHealthCheck
       foreground: palette["--theme-danger-foreground"],
       background: palette["--theme-danger"],
       minRatio: 4.5,
-      suggestion: "危险按钮文字对比度不足，请加深背景或调整前景色。",
     },
     {
       id: "body_on_page",
@@ -462,7 +459,6 @@ export function getThemeHealthChecks(adminConfig: ThemeConfig): ThemeHealthCheck
       foreground: palette["--theme-text"],
       background: palette["--theme-bg"],
       minRatio: 4.5,
-      suggestion: "正文色与页面背景对比不足，建议使用「自动优化文字对比度」。",
     },
     {
       id: "body_on_card",
@@ -470,7 +466,6 @@ export function getThemeHealthChecks(adminConfig: ThemeConfig): ThemeHealthCheck
       foreground: palette["--theme-text-on-surface"],
       background: palette["--theme-surface"],
       minRatio: 4.5,
-      suggestion: "卡片正文对比不足，请调整 textColor 或 surfaceColor。",
     },
     {
       id: "muted_on_page",
@@ -478,15 +473,13 @@ export function getThemeHealthChecks(adminConfig: ThemeConfig): ThemeHealthCheck
       foreground: palette["--theme-text-muted"],
       background: palette["--theme-bg"],
       minRatio: 3,
-      suggestion: "次文字颜色过浅，移动端阅读可能吃力。",
     },
     {
       id: "border_distinct",
-      label: "边框与背景区分度",
+      label: "边框与页面背景区分度",
       foreground: palette["--theme-border"],
       background: palette["--theme-bg"],
       minRatio: 0.08,
-      suggestion: "边框颜色过淡，后台表格可能看不清。",
     },
     {
       id: "price_on_card",
@@ -494,7 +487,6 @@ export function getThemeHealthChecks(adminConfig: ThemeConfig): ThemeHealthCheck
       foreground: palette["--theme-price"],
       background: palette["--theme-surface"],
       minRatio: 3,
-      suggestion: "价格色在卡片上不够醒目，请加深 priceColor。",
     },
     {
       id: "table_border",
@@ -502,7 +494,6 @@ export function getThemeHealthChecks(adminConfig: ThemeConfig): ThemeHealthCheck
       foreground: palette["--theme-border"],
       background: palette["--theme-surface"],
       minRatio: 0.1,
-      suggestion: "表格边框过淡，请加深 borderColor。",
     },
     {
       id: "dark_input",
@@ -510,7 +501,6 @@ export function getThemeHealthChecks(adminConfig: ThemeConfig): ThemeHealthCheck
       foreground: inputBorder,
       background: inputBg,
       minRatio: 0.12,
-      suggestion: "深色皮肤下输入框边界不够清楚，请提高边框对比。",
     },
     {
       id: "light_button_text",
@@ -518,7 +508,6 @@ export function getThemeHealthChecks(adminConfig: ThemeConfig): ThemeHealthCheck
       foreground: palette["--theme-primary-foreground"],
       background: palette["--theme-primary"],
       minRatio: 4.5,
-      suggestion: "浅色皮肤下按钮文字可能不清楚，请检查主色亮度。",
     },
   ];
 
@@ -558,7 +547,6 @@ export function getThemeHealthChecks(adminConfig: ThemeConfig): ThemeHealthCheck
         status === "pass"
           ? undefined
           : `${row.label} ${ratio}${row.id.includes("border") ? "" : `:1`}（建议 ≥ ${minRatio}${row.id.includes("border") ? "" : ":1"}）`,
-      suggestion: status === "pass" ? undefined : row.suggestion,
     };
   });
 }

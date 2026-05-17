@@ -11,8 +11,8 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { labelCouponStatus, labelCouponType } from "@/utils/adminDisplayLabels";
 import { formatAdminDateRange } from "@/utils/formatDateTime";
-import { AnimatedConfirmDialimport { Tx } from "@/components/admin/AdminText";
-og, AnimatedTable } from "@/modules/micro-interactions";
+import { Tx } from "@/components/admin/AdminText";
+import { AnimatedConfirmDialog, AnimatedTable } from "@/modules/micro-interactions";
 
 const typeLabels: Record<string, { label: string; color: string }> = {
   fixed: { label: "满减券", color: "bg-red-500/10 text-red-500" },

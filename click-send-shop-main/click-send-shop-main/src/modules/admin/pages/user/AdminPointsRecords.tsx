@@ -10,8 +10,8 @@ import type { PointsAction, PointsRecord, PointsStats } from "@/types/points";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatUserDisplay, labelPointsAction } from "@/utils/adminDisplayLabels";
-import { AnimatedTablimport { Tx } from "@/components/admin/AdminText";
-e, LoadingButton } from "@/modules/micro-interactions";
+import { Tx } from "@/components/admin/AdminText";
+import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 
 const actionOptions: Array<{ value: "" | PointsAction; label: string }> = [
   { value: "", label: "全部类型" },

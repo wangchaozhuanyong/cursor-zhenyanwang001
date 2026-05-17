@@ -23,9 +23,9 @@ export default function AdminActivityForm() {
   const [saving, setSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
-  const [pendingPublishStatus, setPendingPublishStatus] = useState<ActivityStatus | null><Tx>(null);
+  const [pendingPublishStatus, setPendingPublishStatus] = useState<ActivityStatus | null>(null);
   const [statusLabel, setStatusLabel] = useState("草稿");
-  const [form, setForm] = useState</Tx><ActivityPayload>({
+  const [form, setForm] = useState<ActivityPayload>({
     type: (search.get("type") as ActivityType) || "flash_sale",
     title: "",
     subtitle: "",
@@ -132,9 +132,9 @@ export default function AdminActivityForm() {
     }
   };
 
-  const previewHint = useMemo(() =><Tx> (localValidate() ? "请完成活动规则后预览" : "配置完整，可发布"), [form]);
+  const previewHint = useMemo(() => (localValidate() ? "请完成活动规则后预览" : "配置完整，可发布"), [form]);
 
-  const updateItem = (idx: number, patch: Partial</Tx><ActivityProductItem>) => {
+  const updateItem = (idx: number, patch: Partial<ActivityProductItem>) => {
     setForm((prev) => {
       const next = [...prev.items];
       next[idx] = { ...next[idx], ...patch };

@@ -9,8 +9,8 @@ import { fetchContentPages, updateContentPage } from "@/services/admin/contentSe
 import { fetchSiteSettings, updateSiteSettings } from "@/services/admin/settingsService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import type { HelpCenterCategory, HelpCenterConfig, HelpCenterFaq } from "@/types/content";
-import { AdminContentPageSkeimport { Tx } from "@/components/admin/AdminText";
-leton } from "@/components/admin/AdminLoadingSkeletons";
+import { Tx } from "@/components/admin/AdminText";
+import { AdminContentPageSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 
 interface ContentItem {
   id: string;

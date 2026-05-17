@@ -1,13 +1,13 @@
 ﻿import { useMemo, useState } from "react";
-import AdminPointsRecords from "@/moimport { Tx } from "@/components/admin/AdminText";
-dules/admin/pages/user/AdminPointsRecords";
+import { Tx } from "@/components/admin/AdminText";
+import AdminPointsRecords from "@/modules/admin/pages/user/AdminPointsRecords";
 
 export default function AdminMarketingPoints() {
-  const tabs = useMemo(() =><Tx> ["积分规则", "积分明细", "手动调整"], []);
+  const tabs = useMemo(() => ["积分规则", "积分明细", "手动调整"], []);
   const [tab, setTab] = useState(tabs[1]);
 
   return (
-    </Tx><div className="space-y-4">
+    <div className="space-y-4">
       <h1 className="text-xl font-bold text-foreground"><Tx>活动管理 / 积分管理</Tx></h1>
       <div className="flex gap-2">
         {tabs.map((t) => <button key={t} onClick={() => setTab(t)} className={`rounded-lg px-3 py-1.5 text-sm ${tab === t ? "bg-gold/15 text-gold" : "bg-secondary text-muted-foreground"}`}>{t}</button>)}

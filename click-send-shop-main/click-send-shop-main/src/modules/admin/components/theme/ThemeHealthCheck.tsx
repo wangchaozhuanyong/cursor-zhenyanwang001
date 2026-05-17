@@ -1,6 +1,7 @@
-import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle2, XCircle } from "lucide-react";
 import type { ThemeConfig } from "@/types/theme";
 import { getThemeHealthChecks, type ThemeHealthStatus } from "@/utils/themeContrast";
+import { getThemeHealthFixHint, getThemeHealthFixTarget, type ThemeHealthFixTarget } from "./themeHealthFixMeta";
 
 const statusIcon: Record<ThemeHealthStatus, typeof CheckCircle2> = {
   pass: CheckCircle2,
@@ -14,7 +15,12 @@ const statusTone: Record<ThemeHealthStatus, string> = {
   fail: "text-red-600",
 };
 
-export default function ThemeHealthCheck({ config }: { config: ThemeConfig }) {
+type Props = {
+  config: ThemeConfig;
+  onGoToFix?: (target: ThemeHealthFixTarget) => void;
+};
+
+export default function ThemeHealthCheck({ config, onGoToFix }: Props) {
   const checks = getThemeHealthChecks(config);
   const failCount = checks.filter((c) => c.status === "fail").length;
   const warnCount = checks.filter((c) => c.status === "warn").length;
@@ -24,11 +30,13 @@ export default function ThemeHealthCheck({ config }: { config: ThemeConfig }) {
       <div className="rounded-lg border border-border bg-secondary/30 px-3 py-2 text-xs text-muted-foreground">
         {failCount === 0 && warnCount === 0
           ? "全部检查通过，皮肤在前后台可读性良好。"
-          : `共 ${checks.length} 项检查：${failCount} 项失败，${warnCount} 项警告。`}
+          : `共 ${checks.length} 项检查：${failCount} 项失败，${warnCount} 项警告。点击下方「定位修改」可跳转到左侧对应分组。`}
       </div>
       <ul className="space-y-2">
         {checks.map((item) => {
           const Icon = statusIcon[item.status];
+          const fixHint = item.status !== "pass" ? getThemeHealthFixHint(item.id) : null;
+          const target = item.status !== "pass" ? getThemeHealthFixTarget(item.id) : undefined;
           return (
             <li
               key={item.id}
@@ -38,8 +46,20 @@ export default function ThemeHealthCheck({ config }: { config: ThemeConfig }) {
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-foreground">{item.label}</p>
                 {item.message ? <p className="mt-0.5 text-muted-foreground">{item.message}</p> : null}
-                {item.suggestion && item.status !== "pass" ? (
-                  <p className="mt-1 text-[11px] text-amber-700">{item.suggestion}</p>
+                {fixHint ? (
+                  <p className="mt-1.5 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] leading-relaxed text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">
+                    {fixHint}
+                  </p>
+                ) : null}
+                {item.status !== "pass" && onGoToFix && target ? (
+                  <button
+                    type="button"
+                    onClick={() => onGoToFix(target)}
+                    className="mt-2 inline-flex items-center gap-1 rounded-md border border-[var(--theme-primary)]/40 bg-[color-mix(in_srgb,var(--theme-primary)_10%,transparent)] px-2 py-1 text-[11px] font-medium text-[var(--theme-primary)] hover:bg-[color-mix(in_srgb,var(--theme-primary)_16%,transparent)]"
+                  >
+                    定位修改
+                    <ArrowRight size={12} />
+                  </button>
                 ) : null}
               </div>
             </li>

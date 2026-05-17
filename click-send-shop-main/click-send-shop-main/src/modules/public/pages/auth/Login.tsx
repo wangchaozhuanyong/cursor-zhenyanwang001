@@ -61,7 +61,8 @@ export default function Login() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [nickname, setNickname] = useState("");
-  const [inviteCode, setInviteCode] = useState(getLockedInviteCode());
+  const [lockedInviteCode, setLockedInviteCode] = useState(getLockedInviteCode());
+  const [inviteCode, setInviteCode] = useState(lockedInviteCode);
   const [showPwd, setShowPwd] = useState(false);
   const [remember, setRemember] = useState(false);
   const [showReset, setShowReset] = useState(false);
@@ -73,8 +74,8 @@ export default function Login() {
   const [otpSending, setOtpSending] = useState(false);
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [smsOtpLoginEnabled, setSmsOtpLoginEnabled] = useState(true);
-  const hasLockedInviteCode = !!inviteCode;
-  const { keyboardOpen, formCompact } = useFormFieldFocus();
+  const hasLockedInviteCode = !!lockedInviteCode;
+  const { formCompact } = useFormFieldFocus();
   const [shakeKey, setShakeKey] = useState(0);
   const failValidation = (message: string) => {
     setShakeKey((k) => k + 1);
@@ -96,6 +97,7 @@ export default function Login() {
     const normalized = syncLockedInviteCodeBySearch(location.search);
     if (!normalized) return;
     setMode("register");
+    setLockedInviteCode(normalized);
     setInviteCode(normalized);
   }, [location.search]);
 
@@ -363,8 +365,8 @@ export default function Login() {
         </div>
       </header>
 
-      {/* 软键盘弹起时收起轮播；国家代码下拉不隐藏 */}
-      {banners.length > 0 && !keyboardOpen ? (
+      {/* 表单聚焦时只暂停轮播，避免输入时顶部内容突然消失造成页面跳动。 */}
+      {banners.length > 0 ? (
         <div className="mt-2 shrink-0 px-5">
           <LoginBannerCarousel banners={banners} paused={formCompact} />
         </div>
@@ -374,7 +376,7 @@ export default function Login() {
       <main
         className={cn(
           "mx-auto w-full max-w-lg flex-1 min-h-0 px-5 pb-safe",
-          formCompact ? "mt-4 overflow-y-visible overscroll-none" : "mt-6 overflow-y-auto overscroll-y-contain",
+          "mt-6 overflow-y-auto overscroll-y-contain",
         )}
       >
         {/* Welcome text */}

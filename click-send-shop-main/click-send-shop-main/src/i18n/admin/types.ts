@@ -42,6 +42,9 @@ export type AdminMessages = {
     description: string;
     loading: string;
     current: string;
+    currentSkin: string;
+    switchHint: string;
+    selected: string;
   };
   nav: Record<string, string>;
   routeTitles: Record<string, string>;

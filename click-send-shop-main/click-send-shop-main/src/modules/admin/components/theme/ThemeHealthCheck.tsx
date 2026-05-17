@@ -30,7 +30,7 @@ export default function ThemeHealthCheck({ config, onGoToFix }: Props) {
       <div className="rounded-lg border border-border bg-secondary/30 px-3 py-2 text-xs text-muted-foreground">
         {failCount === 0 && warnCount === 0
           ? "全部检查通过，皮肤在前后台可读性良好。"
-          : `共 ${checks.length} 项检查：${failCount} 项失败，${warnCount} 项警告。点击下方「定位修改」可跳转到左侧对应分组。`}
+          : `共 ${checks.length} 项检查：${failCount} 项失败，${warnCount} 项警告。可点击“定位修改”快速跳转。`}
       </div>
       <ul className="space-y-2">
         {checks.map((item) => {
@@ -38,19 +38,12 @@ export default function ThemeHealthCheck({ config, onGoToFix }: Props) {
           const fixHint = item.status !== "pass" ? getThemeHealthFixHint(item.id) : null;
           const target = item.status !== "pass" ? getThemeHealthFixTarget(item.id) : undefined;
           return (
-            <li
-              key={item.id}
-              className="flex gap-2 rounded-lg border border-border bg-background/50 px-3 py-2 text-xs"
-            >
+            <li key={item.id} className="flex gap-2 rounded-lg border border-border bg-background/50 px-3 py-2 text-xs">
               <Icon size={16} className={`mt-0.5 shrink-0 ${statusTone[item.status]}`} />
               <div className="min-w-0 flex-1">
                 <p className="font-medium text-foreground">{item.label}</p>
                 {item.message ? <p className="mt-0.5 text-muted-foreground">{item.message}</p> : null}
-                {fixHint ? (
-                  <p className="mt-1.5 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] leading-relaxed text-amber-950 dark:bg-amber-950/30 dark:text-amber-100">
-                    {fixHint}
-                  </p>
-                ) : null}
+                {fixHint ? <p className="mt-1.5 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] leading-relaxed text-amber-950">{fixHint}</p> : null}
                 {item.status !== "pass" && onGoToFix && target ? (
                   <button
                     type="button"

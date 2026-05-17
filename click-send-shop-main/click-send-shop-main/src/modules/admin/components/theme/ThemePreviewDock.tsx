@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { Maximize2, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { ThemeConfig } from "@/types/theme";
 import ThemeHealthCheck from "./ThemeHealthCheck";
+import ThemeHealthSummary from "./ThemeHealthSummary";
 import ThemePreviewCanvas from "./ThemePreviewCanvas";
 import ThemePreviewToolbar from "./ThemePreviewToolbar";
 import type { PreviewDevice, PreviewMode } from "./themeStudioConstants";
-import { Tx } from "@/components/admin/AdminText";
 
 export type ThemePreviewDockProps = {
   config: ThemeConfig;
@@ -13,8 +14,8 @@ export type ThemePreviewDockProps = {
   device: PreviewDevice;
   onModeChange: (m: PreviewMode) => void;
   onDeviceChange: (d: PreviewDevice) => void;
-  showHealth?: boolean;
-  healthExpanded?: boolean;
+  onFullscreen?: () => void;
+  onOptimizeTextContrast?: () => void;
 };
 
 export default function ThemePreviewDock({
@@ -24,36 +25,69 @@ export default function ThemePreviewDock({
   device,
   onModeChange,
   onDeviceChange,
-  showHealth = true,
-  healthExpanded = false,
+  onFullscreen,
+  onOptimizeTextContrast,
 }: ThemePreviewDockProps) {
-  const [healthOpen, setHealthOpen] = useState(healthExpanded);
+  const [collapsed, setCollapsed] = useState(false);
+  const [healthOpen, setHealthOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 1279px)");
+    const apply = () => setCollapsed(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  if (collapsed) {
+    return (
+      <button
+        type="button"
+        onClick={() => setCollapsed(false)}
+        className="fixed bottom-6 right-4 z-20 inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-3 text-xs shadow-md"
+      >
+        <PanelRightOpen size={14} />
+        打开预览
+      </button>
+    );
+  }
+
   return (
-    <aside
-      className="sticky top-[88px] z-10 flex h-[calc(100vh-110px)] w-full min-w-[420px] max-w-[520px] shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:w-[min(480px,38vw)]"
-      aria-label="实时预览"
-    >
+    <aside className="w-full shrink-0 rounded-2xl border border-border bg-card shadow-sm xl:sticky xl:top-[92px] xl:h-[calc(100vh-112px)] xl:w-[clamp(420px,30vw,520px)] xl:overflow-hidden">
+      <div className="flex items-center justify-between border-b border-border px-3 py-2">
+        <p className="text-sm font-semibold text-foreground">实时预览</p>
+        <div className="flex items-center gap-1">
+          {onFullscreen ? (
+            <button type="button" onClick={onFullscreen} className="rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title="全屏预览">
+              <Maximize2 size={14} />
+            </button>
+          ) : null}
+          <button type="button" onClick={() => setCollapsed(true)} className="rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title="收起预览">
+            <PanelRightClose size={14} />
+          </button>
+        </div>
+      </div>
+
       <ThemePreviewToolbar mode={mode} device={device} onModeChange={onModeChange} onDeviceChange={onDeviceChange} />
-      <div className="min-h-0 flex-1 overflow-hidden p-2">
+
+      <div className="p-2 xl:min-h-0 xl:flex-1 xl:overflow-hidden">
         <ThemePreviewCanvas config={config} mode={mode} device={device} skinKey={skinKey} />
       </div>
-      {showHealth ? (
-        <div className="shrink-0 border-t border-border">
-          <button
-            type="button"
-            className="flex w-full items-center justify-between px-3 py-2 text-left text-xs font-medium text-foreground hover:bg-secondary/50"
-            onClick={() => setHealthOpen((v) => !v)}
-          ><Tx>
-            皮肤健康检查
-            </Tx><span className="text-muted-foreground">{healthOpen ? "收起" : "展开"}</span>
-          </button>
-          {healthOpen ? (
-            <div className="max-h-36 overflow-y-auto px-2 pb-2">
-              <ThemeHealthCheck config={config} />
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+
+      <div className="border-t border-border p-2">
+        <ThemeHealthSummary
+          config={config}
+          onOptimizeTextContrast={onOptimizeTextContrast}
+          onToggleDetail={() => setHealthOpen((v) => !v)}
+          detailOpen={healthOpen}
+        />
+        {healthOpen ? (
+          <div className="mt-2 max-h-52 overflow-y-auto rounded-xl border border-border bg-background/50 p-2">
+            <ThemeHealthCheck config={config} />
+          </div>
+        ) : null}
+      </div>
     </aside>
   );
 }

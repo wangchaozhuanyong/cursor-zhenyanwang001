@@ -1,78 +1,20 @@
-import { ChevronDown, RotateCcw, Sparkles, Undo2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Tx } from "@/components/admin/AdminText";
-import { THEME_OUTLINE_WARNING } from "@/utils/themeVisuals";
-import { useThemeStudioLabel } from "@/hooks/useThemeStudioLabel";
+import { Sparkles, Undo2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ThemeConfig, ThemeSceneTag, ThemeSkin } from "@/types/theme";
 import type { AutoColorAction } from "@/utils/themeStudioAuto";
+import { THEME_OUTLINE_WARNING } from "@/utils/themeVisuals";
 import ColorField from "./ColorField";
 import ThemeHealthCheck from "./ThemeHealthCheck";
 import type { ThemeHealthFixTarget } from "./themeHealthFixMeta";
 import {
-  EDITOR_GROUP_LABELS,
-  enumOptions,
-  enumValueLabels,
+  EDITOR_TABS,
   FIELD_HELP_TEXTS,
   SCENE_TAG_LABELS,
+  enumOptions,
+  enumValueLabels,
   type ColorFieldKey,
-  type EditorGroupId,
+  type EditorTabId,
 } from "./themeStudioConstants";
-
-function EditorSection({
-  id,
-  title,
-  defaultOpen,
-  open: openProp,
-  onOpenChange,
-  children,
-  onReset,
-}: {
-  id: string;
-  title: string;
-  defaultOpen?: boolean;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  children: React.ReactNode;
-  onReset?: () => void;
-}) {
-  const [internalOpen, setInternalOpen] = useState(defaultOpen ?? false);
-  const open = openProp ?? internalOpen;
-  const setOpen = (next: boolean | ((v: boolean) => boolean)) => {
-    const value = typeof next === "function" ? next(open) : next;
-    onOpenChange?.(value);
-    if (openProp === undefined) setInternalOpen(value);
-  };
-  return (
-    <div id={`theme-editor-section-${id}`} className="scroll-mt-4 rounded-xl border border-border bg-card">
-      <button
-        type="button"
-        className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-      >
-        <span className="text-sm font-semibold">{title}</span>
-        <span className="flex items-center gap-2">
-          {onReset ? (
-            <span
-              role="button"
-              tabIndex={0}
-              onClick={(e) => {
-                e.stopPropagation();
-                onReset();
-              }}
-              onKeyDown={(e) => e.key === "Enter" && onReset()}
-              className="rounded border border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-secondary"
-            ><Tx>
-              重置分组
-            </Tx></span>
-          ) : null}
-          <ChevronDown size={16} className={`transition ${open ? "rotate-180" : ""}`} />
-        </span>
-      </button>
-      {open ? <div className="border-t border-border px-4 pb-4 pt-2">{children}</div> : null}
-    </div>
-  );
-}
 
 function SelectRow<T extends string>({
   label,
@@ -80,30 +22,22 @@ function SelectRow<T extends string>({
   options,
   onChange,
   fieldKey,
-  description,
 }: {
   label: string;
   value: T;
   options: readonly T[];
   onChange: (value: T) => void;
   fieldKey?: string;
-  description?: string;
 }) {
-  const tl = useThemeStudioLabel();
-  const toLabel = (option: string) => tl(enumValueLabels[option] || option);
-  const help = description ?? (fieldKey ? FIELD_HELP_TEXTS[fieldKey] : undefined);
+  const help = fieldKey ? FIELD_HELP_TEXTS[fieldKey] : undefined;
   return (
     <label className="space-y-1">
       <span className="text-xs text-muted-foreground">{label}</span>
       {help ? <p className="text-[10px] leading-snug text-muted-foreground/80">{help}</p> : null}
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value as T)}
-        className="h-9 w-full rounded-lg border border-border bg-background px-2 text-xs"
-      >
+      <select value={value} onChange={(e) => onChange(e.target.value as T)} className="h-10 w-full rounded-xl border border-border bg-background px-2 text-xs">
         {options.map((option) => (
           <option key={option} value={option}>
-            {toLabel(option)}
+            {enumValueLabels[option] || option}
           </option>
         ))}
       </select>
@@ -115,283 +49,222 @@ export type ThemeEditorPanelProps = {
   themeConfig: ThemeConfig;
   selectedSkin: ThemeSkin | undefined;
   isDefaultSkin: boolean;
-  presetConfig?: ThemeConfig;
   onConfigChange: <K extends keyof ThemeConfig>(field: K, value: ThemeConfig[K]) => void;
   onSkinMetaChange: (patch: Partial<Pick<ThemeSkin, "name" | "description" | "sceneTag" | "clientEnabled">>) => void;
-  onSetDefaultToggle: (checked: boolean) => void;
   onAutoColor: (action: AutoColorAction) => void;
-  onResetGroup: (group: string) => void;
   canUndoOptimize: boolean;
   onUndoOptimize: () => void;
 };
 
-const colorGroups: Record<string, ColorFieldKey[]> = {
-  colors: ["bgColor", "surfaceColor", "primaryColor", "secondaryColor", "accentColor", "priceColor"],
-  text: ["textColor", "mutedTextColor", "borderColor"],
-  status: ["successColor", "warningColor", "dangerColor"],
-};
+const colorTabSections: Array<{ title: string; fields: ColorFieldKey[] }> = [
+  { title: "品牌颜色", fields: ["primaryColor", "secondaryColor", "accentColor", "priceColor"] },
+  { title: "页面颜色", fields: ["bgColor", "surfaceColor", "borderColor"] },
+  { title: "文字颜色", fields: ["textColor", "mutedTextColor"] },
+  { title: "状态颜色", fields: ["successColor", "warningColor", "dangerColor"] },
+];
+
+function mapHealthSectionToTab(sectionId: ThemeHealthFixTarget["sectionId"]): EditorTabId {
+  if (sectionId === "toolbar" || sectionId === "colors" || sectionId === "text" || sectionId === "status") return "colors";
+  if (sectionId === "buttons") return "components";
+  if (sectionId === "card") return "product";
+  if (sectionId === "marketing") return "home";
+  return "advanced";
+}
 
 export default function ThemeEditorPanel({
   themeConfig,
   selectedSkin,
   isDefaultSkin,
-  presetConfig: _preset,
   onConfigChange,
   onSkinMetaChange,
-  onSetDefaultToggle,
   onAutoColor,
-  onResetGroup,
   canUndoOptimize,
   onUndoOptimize,
 }: ThemeEditorPanelProps) {
-  const tl = useThemeStudioLabel();
   const panelRef = useRef<HTMLElement>(null);
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    colors: true,
-    health: true,
-  });
+  const [activeTab, setActiveTab] = useState<EditorTabId>("basic");
   const [highlightField, setHighlightField] = useState<ColorFieldKey | null>(null);
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    return () => {
-      if (highlightTimer.current) clearTimeout(highlightTimer.current);
-    };
+  useEffect(() => () => {
+    if (highlightTimer.current) clearTimeout(highlightTimer.current);
   }, []);
 
   const goToFix = useCallback(
     (target: ThemeHealthFixTarget) => {
-      if (target.sectionId === "toolbar") {
-        if (target.autoAction) onAutoColor(target.autoAction);
-        panelRef.current?.querySelector("#theme-auto-toolbar")?.scrollIntoView({ behavior: "smooth", block: "center" });
-        return;
+      setActiveTab(mapHealthSectionToTab(target.sectionId));
+      if (target.autoAction) {
+        onAutoColor(target.autoAction);
       }
-      const sectionsToOpen: Record<string, boolean> = { [target.sectionId]: true };
-      if (target.fieldKeys?.includes("surfaceColor")) sectionsToOpen.colors = true;
-      setOpenSections((prev) => ({ ...prev, ...sectionsToOpen }));
-      const field = target.fieldKeys?.[0];
+      const field = target.fieldKeys?.[0] ?? null;
       if (field) {
         setHighlightField(field);
         if (highlightTimer.current) clearTimeout(highlightTimer.current);
-        highlightTimer.current = setTimeout(() => setHighlightField(null), 4000);
+        highlightTimer.current = setTimeout(() => setHighlightField(null), 3500);
       }
       window.requestAnimationFrame(() => {
-        const section = panelRef.current?.querySelector(`#theme-editor-section-${target.sectionId}`);
-        section?.scrollIntoView({ behavior: "smooth", block: "start" });
         if (field) {
           panelRef.current?.querySelector(`#theme-field-${field}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        } else {
+          panelRef.current?.scrollTo({ top: 0, behavior: "smooth" });
         }
       });
     },
     [onAutoColor],
   );
 
-  const sectionOpen = (id: string, defaultOpen?: boolean) => openSections[id] ?? defaultOpen ?? false;
-  const setSectionOpen = (id: string) => (open: boolean) => setOpenSections((prev) => ({ ...prev, [id]: open }));
+  const statusText = useMemo(() => {
+    if (isDefaultSkin) return "当前是默认皮肤。默认皮肤仅影响新用户默认看到的样式。";
+    return "当前不是默认皮肤。可在顶部或皮肤卡菜单设为默认。";
+  }, [isDefaultSkin]);
 
   return (
-    <section
-      ref={panelRef}
-      className="min-h-0 min-w-0 flex-1 overflow-y-auto rounded-xl border border-border bg-card/50 p-3 lg:max-h-[calc(100vh-110px)]"
-    >
-      <div className="mb-3 space-y-2">
-        <p className="text-sm text-muted-foreground"><Tx>
-          编辑皮肤参数，右侧实时预览当前皮肤。「保存草稿」仅写入配置；「保存并应用到全站」会同时设为系统生效皮肤。
-        </Tx></p>
-        <div id="theme-auto-toolbar" className="flex flex-wrap gap-2 scroll-mt-4">
-          <button type="button" onClick={() => onAutoColor("secondary")} className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] hover:bg-secondary">
-            <Sparkles size={12} /><Tx> 自动生成辅色
-          </Tx></button>
-          <button type="button" onClick={() => onAutoColor("accent")} className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] hover:bg-secondary">
-            <Sparkles size={12} /><Tx> 自动生成强调色
-          </Tx></button>
-          <button type="button" onClick={() => onAutoColor("border")} className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] hover:bg-secondary">
-            <Sparkles size={12} /><Tx> 自动生成边框色
-          </Tx></button>
-          <button type="button" onClick={() => onAutoColor("textContrast")} className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] hover:bg-secondary">
-            <Sparkles size={12} /><Tx> 优化文字对比度
-          </Tx></button>
-          <button type="button" onClick={() => onAutoColor("foreground")} className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] hover:bg-secondary">
-            <Sparkles size={12} /><Tx> 生成前景色变量
-          </Tx></button>
-          {canUndoOptimize ? (
-            <button type="button" onClick={onUndoOptimize} className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] ${THEME_OUTLINE_WARNING}`}>
-              <Undo2 size={12} /><Tx> 撤销优化
-            </Tx></button>
-          ) : null}
-        </div>
+    <section ref={panelRef} className="min-w-0 flex-1 rounded-2xl border border-border bg-card p-4 xl:h-[calc(100vh-112px)] xl:overflow-y-auto">
+      <div className="mb-4 flex flex-wrap gap-2 border-b border-border pb-3">
+        {EDITOR_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={`rounded-xl px-3 py-1.5 text-xs font-medium ${
+              activeTab === tab.id ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]" : "bg-secondary text-muted-foreground"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      <div className="space-y-3">
-        <EditorSection
-          id="basic"
-          title={tl(EDITOR_GROUP_LABELS.basic)}
-          open={sectionOpen("basic", true)}
-          onOpenChange={setSectionOpen("basic")}
-        >
-          <div className="grid gap-3 md:grid-cols-2">
-            <label className="space-y-1 md:col-span-2">
-              <span className="text-xs text-muted-foreground"><Tx>皮肤名称</Tx></span>
-              <input
-                value={selectedSkin?.name || ""}
-                onChange={(e) => onSkinMetaChange({ name: e.target.value })}
-                className="h-9 w-full rounded-lg border border-border px-2 text-sm"
-              />
-            </label>
-            <label className="space-y-1 md:col-span-2">
-              <span className="text-xs text-muted-foreground"><Tx>皮肤描述</Tx></span>
-              <textarea
-                value={selectedSkin?.description || ""}
-                onChange={(e) => onSkinMetaChange({ description: e.target.value })}
-                rows={2}
-                className="w-full rounded-lg border border-border px-2 py-1.5 text-xs"
-              />
-            </label>
-            <label className="space-y-1">
-              <span className="text-xs text-muted-foreground"><Tx>适合场景</Tx></span>
-              <p className="text-[10px] leading-snug text-muted-foreground/80">{tl(FIELD_HELP_TEXTS.sceneTag)}</p>
-              <select
-                value={selectedSkin?.sceneTag || "default"}
-                onChange={(e) => onSkinMetaChange({ sceneTag: e.target.value as ThemeSceneTag })}
-                className="h-9 w-full rounded-lg border border-border px-2 text-xs"
-              >
-                {Object.entries(SCENE_TAG_LABELS).map(([k, label]) => (
-                  <option key={k} value={k}>
-                    {tl(label)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1 text-xs md:col-span-2">
-              <span className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={selectedSkin?.clientEnabled !== false}
-                  onChange={(e) => onSkinMetaChange({ clientEnabled: e.target.checked })}
-                /><Tx>
-                前台可切换
-              </Tx></span>
-              <p className="pl-5 text-[10px] leading-snug text-muted-foreground/80">{tl(FIELD_HELP_TEXTS.clientEnabled)}</p>
-            </label>
-            <label className="flex flex-col gap-1 text-xs md:col-span-2">
-              <span className="flex items-center gap-2">
-                <input type="checkbox" checked={isDefaultSkin} onChange={(e) => onSetDefaultToggle(e.target.checked)} /><Tx>
-                设为默认皮肤
-              </Tx></span>
-              <p className="pl-5 text-[10px] leading-snug text-muted-foreground/80">{tl(FIELD_HELP_TEXTS.isDefaultSkin)}</p>
-            </label>
-          </div>
-        </EditorSection>
-
-        {(Object.entries(colorGroups) as [EditorGroupId, ColorFieldKey[]][]).map(([group, fields]) => (
-          <EditorSection
-            key={group}
-            id={group}
-            title={tl(EDITOR_GROUP_LABELS[group])}
-            open={sectionOpen(group, group === "colors")}
-            onOpenChange={setSectionOpen(group)}
-            onReset={() => onResetGroup(group)}
-          >
-            <div className="grid gap-3 md:grid-cols-2">
-              {fields.map((field) => (
-                <ColorField
-                  key={field}
-                  field={field}
-                  value={themeConfig[field]}
-                  config={themeConfig}
-                  highlighted={highlightField === field}
-                  onChange={(v) => onConfigChange(field, v)}
-                />
+      {activeTab === "basic" ? (
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="space-y-1 md:col-span-2">
+            <span className="text-xs text-muted-foreground">皮肤名称</span>
+            <input
+              value={selectedSkin?.name || ""}
+              onChange={(e) => onSkinMetaChange({ name: e.target.value })}
+              className="h-10 w-full rounded-xl border border-border px-3 text-sm"
+            />
+          </label>
+          <label className="space-y-1 md:col-span-2">
+            <span className="text-xs text-muted-foreground">皮肤描述</span>
+            <textarea
+              value={selectedSkin?.description || ""}
+              onChange={(e) => onSkinMetaChange({ description: e.target.value })}
+              rows={3}
+              className="w-full rounded-xl border border-border px-3 py-2 text-xs"
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs text-muted-foreground">适合场景</span>
+            <select
+              value={selectedSkin?.sceneTag || "default"}
+              onChange={(e) => onSkinMetaChange({ sceneTag: e.target.value as ThemeSceneTag })}
+              className="h-10 w-full rounded-xl border border-border px-2 text-xs"
+            >
+              {Object.entries(SCENE_TAG_LABELS).map(([k, label]) => (
+                <option key={k} value={k}>{label}</option>
               ))}
+            </select>
+          </label>
+          <label className="flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm">
+            <input
+              type="checkbox"
+              checked={selectedSkin?.clientEnabled !== false}
+              onChange={(e) => onSkinMetaChange({ clientEnabled: e.target.checked })}
+            />
+            前台可切换
+          </label>
+          <p className="rounded-xl bg-secondary/60 px-3 py-2 text-xs text-muted-foreground md:col-span-2">{statusText}</p>
+        </div>
+      ) : null}
+
+      {activeTab === "colors" ? (
+        <div className="space-y-4">
+          <div id="theme-auto-toolbar" className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => onAutoColor("secondary")} className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2 text-[11px] hover:bg-secondary"><Sparkles size={12} />自动生成辅色</button>
+            <button type="button" onClick={() => onAutoColor("accent")} className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2 text-[11px] hover:bg-secondary"><Sparkles size={12} />自动生成强调色</button>
+            <button type="button" onClick={() => onAutoColor("border")} className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2 text-[11px] hover:bg-secondary"><Sparkles size={12} />自动生成边框色</button>
+            <button type="button" onClick={() => onAutoColor("textContrast")} className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2 text-[11px] hover:bg-secondary"><Sparkles size={12} />优化文字对比度</button>
+            <button type="button" onClick={() => onAutoColor("foreground")} className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2 text-[11px] hover:bg-secondary"><Sparkles size={12} />生成前景色变量</button>
+            {canUndoOptimize ? (
+              <button type="button" onClick={onUndoOptimize} className={`inline-flex h-8 items-center gap-1 rounded-lg px-2 text-[11px] ${THEME_OUTLINE_WARNING}`}><Undo2 size={12} />撤销优化</button>
+            ) : null}
+          </div>
+
+          {colorTabSections.map((group) => (
+            <div key={group.title} className="space-y-2">
+              <h3 className="text-sm font-semibold text-foreground">{group.title}</h3>
+              <div className="grid gap-3 md:grid-cols-2">
+                {group.fields.map((field) => (
+                  <ColorField
+                    key={field}
+                    field={field}
+                    value={themeConfig[field]}
+                    config={themeConfig}
+                    highlighted={highlightField === field}
+                    onChange={(v) => onConfigChange(field, v)}
+                  />
+                ))}
+              </div>
             </div>
-          </EditorSection>
-        ))}
+          ))}
+        </div>
+      ) : null}
 
-        <EditorSection
-          id="buttons"
-          title={tl(EDITOR_GROUP_LABELS.buttons)}
-          open={sectionOpen("buttons")}
-          onOpenChange={setSectionOpen("buttons")}
-          onReset={() => onResetGroup("buttons")}
-        >
-          <div className="grid gap-3 md:grid-cols-2">
-            <SelectRow fieldKey="buttonStyle" label="按钮风格" value={themeConfig.buttonStyle} options={enumOptions.buttonStyle} onChange={(v) => onConfigChange("buttonStyle", v)} />
-            <SelectRow fieldKey="navStyle" label="底部导航" value={themeConfig.navStyle} options={enumOptions.navStyle} onChange={(v) => onConfigChange("navStyle", v)} />
-            <label className="space-y-1">
-              <span className="text-xs text-muted-foreground"><Tx>圆角 radius</Tx></span>
-              <p className="text-[10px] leading-snug text-muted-foreground/80">{tl(FIELD_HELP_TEXTS.radius)}</p>
-              <input value={themeConfig.radius} onChange={(e) => onConfigChange("radius", e.target.value)} className="h-9 w-full rounded-lg border border-border px-2 text-xs" />
-            </label>
-            <SelectRow fieldKey="shadowStyle" label="阴影" value={themeConfig.shadowStyle} options={enumOptions.shadowStyle} onChange={(v) => onConfigChange("shadowStyle", v)} />
-            <SelectRow fieldKey="motionLevel" label="动效" value={themeConfig.motionLevel} options={enumOptions.motionLevel} onChange={(v) => onConfigChange("motionLevel", v)} />
-            <SelectRow fieldKey="density" label="密度" value={themeConfig.density} options={enumOptions.density} onChange={(v) => onConfigChange("density", v)} />
-          </div>
-        </EditorSection>
+      {activeTab === "components" ? (
+        <div className="grid gap-3 md:grid-cols-2">
+          <SelectRow fieldKey="buttonStyle" label="按钮风格" value={themeConfig.buttonStyle} options={enumOptions.buttonStyle} onChange={(v) => onConfigChange("buttonStyle", v)} />
+          <SelectRow fieldKey="navStyle" label="底部导航" value={themeConfig.navStyle} options={enumOptions.navStyle} onChange={(v) => onConfigChange("navStyle", v)} />
+          <label className="space-y-1">
+            <span className="text-xs text-muted-foreground">圆角 radius</span>
+            <p className="text-[10px] leading-snug text-muted-foreground/80">{FIELD_HELP_TEXTS.radius}</p>
+            <input value={themeConfig.radius} onChange={(e) => onConfigChange("radius", e.target.value)} className="h-10 w-full rounded-xl border border-border px-2 text-xs" />
+          </label>
+          <SelectRow fieldKey="shadowStyle" label="阴影" value={themeConfig.shadowStyle} options={enumOptions.shadowStyle} onChange={(v) => onConfigChange("shadowStyle", v)} />
+          <SelectRow fieldKey="motionLevel" label="动效" value={themeConfig.motionLevel} options={enumOptions.motionLevel} onChange={(v) => onConfigChange("motionLevel", v)} />
+          <SelectRow fieldKey="density" label="密度" value={themeConfig.density} options={enumOptions.density} onChange={(v) => onConfigChange("density", v)} />
+        </div>
+      ) : null}
 
-        <EditorSection
-          id="card"
-          title={tl(EDITOR_GROUP_LABELS.card)}
-          open={sectionOpen("card")}
-          onOpenChange={setSectionOpen("card")}
-          onReset={() => onResetGroup("card")}
-        >
-          <div className="grid gap-3 md:grid-cols-2">
-            <SelectRow fieldKey="productCardVariant" label="商品卡变体" value={themeConfig.productCardVariant} options={enumOptions.productCardVariant} onChange={(v) => onConfigChange("productCardVariant", v)} />
-            <SelectRow fieldKey="cardStyle" label="卡片风格" value={themeConfig.cardStyle} options={enumOptions.cardStyle} onChange={(v) => onConfigChange("cardStyle", v)} />
-            <SelectRow fieldKey="cardTextAlign" label="文字对齐" value={themeConfig.cardTextAlign} options={enumOptions.cardTextAlign} onChange={(v) => onConfigChange("cardTextAlign", v)} />
-            <SelectRow fieldKey="imageRatio" label="图片比例" value={themeConfig.imageRatio} options={enumOptions.imageRatio} onChange={(v) => onConfigChange("imageRatio", v)} />
-            <SelectRow fieldKey="imageFit" label="图片填充" value={themeConfig.imageFit} options={enumOptions.imageFit} onChange={(v) => onConfigChange("imageFit", v)} />
-            <SelectRow fieldKey="priceStyle" label="价格样式" value={themeConfig.priceStyle} options={enumOptions.priceStyle} onChange={(v) => onConfigChange("priceStyle", v)} />
-          </div>
-        </EditorSection>
+      {activeTab === "product" ? (
+        <div className="grid gap-3 md:grid-cols-2">
+          <SelectRow fieldKey="productCardVariant" label="商品卡变体" value={themeConfig.productCardVariant} options={enumOptions.productCardVariant} onChange={(v) => onConfigChange("productCardVariant", v)} />
+          <SelectRow fieldKey="cardStyle" label="卡片风格" value={themeConfig.cardStyle} options={enumOptions.cardStyle} onChange={(v) => onConfigChange("cardStyle", v)} />
+          <SelectRow fieldKey="cardTextAlign" label="文字对齐" value={themeConfig.cardTextAlign} options={enumOptions.cardTextAlign} onChange={(v) => onConfigChange("cardTextAlign", v)} />
+          <SelectRow fieldKey="imageRatio" label="图片比例" value={themeConfig.imageRatio} options={enumOptions.imageRatio} onChange={(v) => onConfigChange("imageRatio", v)} />
+          <SelectRow fieldKey="imageFit" label="图片填充" value={themeConfig.imageFit} options={enumOptions.imageFit} onChange={(v) => onConfigChange("imageFit", v)} />
+          <SelectRow fieldKey="priceStyle" label="价格样式" value={themeConfig.priceStyle} options={enumOptions.priceStyle} onChange={(v) => onConfigChange("priceStyle", v)} />
+          <SelectRow fieldKey="badgeStyle" label="标签风格" value={themeConfig.badgeStyle} options={enumOptions.badgeStyle} onChange={(v) => onConfigChange("badgeStyle", v)} />
+        </div>
+      ) : null}
 
-        <EditorSection
-          id="marketing"
-          title={tl(EDITOR_GROUP_LABELS.marketing)}
-          open={sectionOpen("marketing")}
-          onOpenChange={setSectionOpen("marketing")}
-          onReset={() => onResetGroup("marketing")}
-        >
-          <div className="grid gap-3 md:grid-cols-2">
-            <SelectRow fieldKey="homeLayout" label="首页布局" value={themeConfig.homeLayout} options={enumOptions.homeLayout} onChange={(v) => onConfigChange("homeLayout", v)} />
-            <SelectRow fieldKey="headerStyle" label="头部风格" value={themeConfig.headerStyle} options={enumOptions.headerStyle} onChange={(v) => onConfigChange("headerStyle", v)} />
-            <SelectRow fieldKey="bannerStyle" label="Banner" value={themeConfig.bannerStyle} options={enumOptions.bannerStyle} onChange={(v) => onConfigChange("bannerStyle", v)} />
-            <SelectRow fieldKey="couponStyle" label="优惠券" value={themeConfig.couponStyle} options={enumOptions.couponStyle} onChange={(v) => onConfigChange("couponStyle", v)} />
-            <SelectRow fieldKey="memberCardStyle" label="会员卡" value={themeConfig.memberCardStyle} options={enumOptions.memberCardStyle} onChange={(v) => onConfigChange("memberCardStyle", v)} />
-            <SelectRow fieldKey="categoryIconStyle" label="分类图标" value={themeConfig.categoryIconStyle} options={enumOptions.categoryIconStyle} onChange={(v) => onConfigChange("categoryIconStyle", v)} />
-            <SelectRow fieldKey="badgeStyle" label="标签风格" value={themeConfig.badgeStyle} options={enumOptions.badgeStyle} onChange={(v) => onConfigChange("badgeStyle", v)} />
-          </div>
-        </EditorSection>
+      {activeTab === "home" ? (
+        <div className="grid gap-3 md:grid-cols-2">
+          <SelectRow fieldKey="homeLayout" label="首页布局" value={themeConfig.homeLayout} options={enumOptions.homeLayout} onChange={(v) => onConfigChange("homeLayout", v)} />
+          <SelectRow fieldKey="headerStyle" label="头部风格" value={themeConfig.headerStyle} options={enumOptions.headerStyle} onChange={(v) => onConfigChange("headerStyle", v)} />
+          <SelectRow fieldKey="bannerStyle" label="Banner" value={themeConfig.bannerStyle} options={enumOptions.bannerStyle} onChange={(v) => onConfigChange("bannerStyle", v)} />
+          <SelectRow fieldKey="couponStyle" label="优惠券" value={themeConfig.couponStyle} options={enumOptions.couponStyle} onChange={(v) => onConfigChange("couponStyle", v)} />
+          <SelectRow fieldKey="memberCardStyle" label="会员卡" value={themeConfig.memberCardStyle} options={enumOptions.memberCardStyle} onChange={(v) => onConfigChange("memberCardStyle", v)} />
+          <SelectRow fieldKey="categoryIconStyle" label="分类图标" value={themeConfig.categoryIconStyle} options={enumOptions.categoryIconStyle} onChange={(v) => onConfigChange("categoryIconStyle", v)} />
+        </div>
+      ) : null}
 
-        <EditorSection
-          id="advanced"
-          title={tl(EDITOR_GROUP_LABELS.advanced)}
-          open={sectionOpen("advanced")}
-          onOpenChange={setSectionOpen("advanced")}
-          onReset={() => onResetGroup("advanced")}
-        >
+      {activeTab === "advanced" ? (
+        <div className="space-y-4">
           <div className="grid gap-3 md:grid-cols-2">
             <SelectRow fieldKey="adminThemeMode" label="后台主题模式" value={themeConfig.adminThemeMode} options={enumOptions.adminThemeMode} onChange={(v) => onConfigChange("adminThemeMode", v)} />
             <label className="space-y-1">
-              <span className="text-xs text-muted-foreground"><Tx>字体</Tx></span>
-              <p className="text-[10px] leading-snug text-muted-foreground/80">{tl(FIELD_HELP_TEXTS.fontFamily)}</p>
-              <input value={themeConfig.fontFamily} onChange={(e) => onConfigChange("fontFamily", e.target.value)} className="h-9 w-full rounded-lg border border-border px-2 text-xs" />
+              <span className="text-xs text-muted-foreground">字体</span>
+              <p className="text-[10px] leading-snug text-muted-foreground/80">{FIELD_HELP_TEXTS.fontFamily}</p>
+              <input value={themeConfig.fontFamily} onChange={(e) => onConfigChange("fontFamily", e.target.value)} className="h-10 w-full rounded-xl border border-border px-2 text-xs" />
             </label>
-            <p className="md:col-span-2 rounded-lg border border-border bg-secondary/30 px-3 py-2 text-[11px] text-muted-foreground"><Tx>
-              自定义 CSS 变量由系统自动从配色生成（--theme-primary 等）。保存后客户端与管理后台同步生效。
-            </Tx></p>
           </div>
-        </EditorSection>
-
-        <EditorSection
-          id="health"
-          title={tl(EDITOR_GROUP_LABELS.health)}
-          open={sectionOpen("health", true)}
-          onOpenChange={setSectionOpen("health")}
-        >
+          <p className="rounded-xl border border-border bg-secondary/30 px-3 py-2 text-[11px] text-muted-foreground">
+            CSS 变量会由系统根据当前配置自动生成并同步，不需要手动维护。
+          </p>
           <ThemeHealthCheck config={themeConfig} onGoToFix={goToFix} />
-        </EditorSection>
-      </div>
+        </div>
+      ) : null}
     </section>
   );
 }

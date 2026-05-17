@@ -1,14 +1,15 @@
-import { Copy, Plus, Search, Star, Trash2 } from "lucide-react";
+import { MoreHorizontal, Plus, Search, Sparkles } from "lucide-react";
 import type { ThemeSceneTag, ThemeSkin } from "@/types/theme";
 import { useThemeStudioLabel } from "@/hooks/useThemeStudioLabel";
 import { SCENE_FILTER_OPTIONS, SCENE_TAG_LABELS } from "./themeStudioConstants";
-import { Tx } from "@/components/admin/AdminText";
-import { THEME_BADGE_PRIMARY, THEME_BADGE_SUCCESS, THEME_HOVER_BG_DANGER, THEME_TEXT_DANGER } from "@/utils/themeVisuals";
+
+type StarterTemplate = { id: string; label: string };
 
 export type ThemeSkinSidebarProps = {
   skins: ThemeSkin[];
   selectedSkinId: string;
   defaultSkinId: string;
+  activeSkinId?: string;
   search: string;
   sceneFilter: "all" | ThemeSceneTag;
   onSearchChange: (v: string) => void;
@@ -19,16 +20,19 @@ export type ThemeSkinSidebarProps = {
   canDeleteSkin: (id: string) => boolean;
   onDelete: (id: string) => void;
   onSetDefault: (id: string) => void;
+  onAddStarter?: (starterId: string) => void;
+  starterQuickAdds?: StarterTemplate[];
 };
 
 function colorDots(config: ThemeSkin["config"]) {
-  return [config.primaryColor, config.secondaryColor, config.priceColor, config.bgColor];
+  return [config.primaryColor, config.secondaryColor, config.accentColor, config.bgColor];
 }
 
 export default function ThemeSkinSidebar({
   skins,
   selectedSkinId,
   defaultSkinId,
+  activeSkinId,
   search,
   sceneFilter,
   onSearchChange,
@@ -39,42 +43,47 @@ export default function ThemeSkinSidebar({
   canDeleteSkin,
   onDelete,
   onSetDefault,
+  onAddStarter,
+  starterQuickAdds = [],
 }: ThemeSkinSidebarProps) {
   const tl = useThemeStudioLabel();
   const q = search.trim().toLowerCase();
   const filtered = skins.filter((skin) => {
-    const matchScene = sceneFilter === "all" || skin.sceneTag === sceneFilter || (sceneFilter === "default" && skin.id === defaultSkinId);
+    const matchScene =
+      sceneFilter === "all" || skin.sceneTag === sceneFilter || (sceneFilter === "default" && skin.id === defaultSkinId);
     const matchSearch =
       !q ||
       skin.name.toLowerCase().includes(q) ||
       (skin.description || "").toLowerCase().includes(q) ||
-      (skin.sceneTag && SCENE_TAG_LABELS[skin.sceneTag].includes(q));
+      (skin.sceneTag && SCENE_TAG_LABELS[skin.sceneTag].toLowerCase().includes(q));
     return matchScene && matchSearch;
   });
 
   return (
-    <aside className="flex h-[calc(100vh-110px)] w-[260px] shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-card">
-      <div className="shrink-0 space-y-2 border-b border-border p-3">
+    <aside className="w-full shrink-0 rounded-2xl border border-border bg-card p-4 xl:sticky xl:top-[92px] xl:h-[calc(100vh-112px)] xl:w-[280px] xl:overflow-hidden">
+      <div className="flex h-full flex-col gap-3">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold"><Tx>皮肤列表</Tx></p>
+          <p className="text-sm font-semibold text-foreground">皮肤库</p>
           <button
             type="button"
             onClick={onAdd}
-            className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] hover:bg-secondary"
+            className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2 text-xs hover:bg-secondary"
           >
-            <Plus size={12} /><Tx>
+            <Plus size={12} />
             新建
-          </Tx></button>
+          </button>
         </div>
-        <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-2 py-1.5">
+
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-2 py-2">
           <Search size={14} className="shrink-0 text-muted-foreground" />
           <input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={tl("搜索皮肤...")}
+            placeholder={tl("搜索皮肤")}
             className="min-w-0 flex-1 bg-transparent text-xs outline-none"
           />
         </div>
+
         <div className="flex flex-wrap gap-1">
           {SCENE_FILTER_OPTIONS.map((opt) => (
             <button
@@ -89,61 +98,97 @@ export default function ThemeSkinSidebar({
             </button>
           ))}
         </div>
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto p-2">
-        <div className="space-y-2">
+
+        {onAddStarter && starterQuickAdds.length ? (
+          <div className="rounded-xl border border-dashed border-border p-2">
+            <p className="mb-2 text-xs font-medium text-foreground">从模板新建</p>
+            <div className="grid grid-cols-1 gap-1">
+              {starterQuickAdds.slice(0, 6).map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onAddStarter(item.id)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1.5 text-left text-[11px] hover:bg-secondary"
+                >
+                  <Sparkles size={12} />
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
           {filtered.map((skin) => {
             const selected = skin.id === selectedSkinId;
             const isDefault = skin.id === defaultSkinId;
+            const isActive = skin.id === activeSkinId;
+            const deletable = canDeleteSkin(skin.id);
             return (
-              <div
+              <article
                 key={skin.id}
-                className={`rounded-lg border p-2 transition ${
-                  selected ? "border-[var(--theme-primary)] bg-[var(--theme-primary)]/5 shadow-sm" : "border-border"
+                className={`rounded-xl border p-3 transition ${
+                  selected ? "border-[var(--theme-primary)] bg-[var(--theme-primary)]/5 shadow-sm" : "border-border bg-background/60"
                 }`}
               >
                 <button type="button" className="w-full text-left" onClick={() => onSelect(skin.id)}>
-                  <div className="flex items-start justify-between gap-1">
-                    <p className="text-sm font-medium leading-snug">{skin.name}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="line-clamp-1 text-sm font-semibold text-foreground">{skin.name}</p>
                     <div className="flex shrink-0 gap-0.5">
-                      {colorDots(skin.config).map((c) => (
-                        <span key={c} className="h-3 w-3 rounded-full border border-black/10" style={{ background: c }} title={c} />
+                      {colorDots(skin.config).map((c, idx) => (
+                        <span key={`${skin.id}_${idx}`} className="h-3 w-3 rounded-full border border-black/10" style={{ background: c }} title={c} />
                       ))}
                     </div>
                   </div>
-                  <div className="mt-1.5 flex flex-wrap gap-1">
-                    {isDefault ? <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${THEME_BADGE_SUCCESS}`}><Tx>默认</Tx></span> : null}
-                    {selected ? <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${THEME_BADGE_PRIMARY}`}><Tx>编辑中</Tx></span> : null}
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {isDefault ? <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-700">默认</span> : null}
+                    {selected ? <span className="rounded-full bg-[var(--theme-primary)]/15 px-1.5 py-0.5 text-[10px] text-[var(--theme-primary)]">编辑中</span> : null}
+                    {isActive ? <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-700">当前生效</span> : null}
+                    {skin.clientEnabled !== false ? (
+                      <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">前台可切换</span>
+                    ) : null}
                     {skin.sceneTag ? (
-                      <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                        {tl(SCENE_TAG_LABELS[skin.sceneTag])}
-                      </span>
+                      <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">{tl(SCENE_TAG_LABELS[skin.sceneTag])}</span>
                     ) : null}
                   </div>
                 </button>
-                <div className="mt-2 flex items-center gap-1">
-                  {!isDefault ? (
-                    <button type="button" title="设为默认" onClick={() => onSetDefault(skin.id)} className="rounded border border-border p-1 hover:bg-secondary">
-                      <Star size={12} />
+
+                <details className="group relative mt-2">
+                  <summary className="flex h-7 w-full list-none cursor-pointer items-center justify-center gap-1 rounded-lg border border-border text-[11px] text-muted-foreground hover:bg-secondary">
+                    <MoreHorizontal size={12} />
+                    更多
+                  </summary>
+                  <div className="absolute right-0 z-10 mt-1 w-40 rounded-lg border border-border bg-card p-1 shadow-lg">
+                    <button type="button" onClick={() => onCopy(skin.id)} className="w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-secondary">
+                      复制
                     </button>
-                  ) : null}
-                  <button type="button" title="复制" onClick={() => onCopy(skin.id)} className="rounded border border-border p-1 hover:bg-secondary">
-                    <Copy size={12} />
-                  </button>
-                  {canDeleteSkin(skin.id) ? (
-                    <button type="button" title="删除" onClick={() => onDelete(skin.id)} className={`rounded border border-border p-1 ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`}>
-                      <Trash2 size={12} />
+                    {!isDefault ? (
+                      <button type="button" onClick={() => onSetDefault(skin.id)} className="w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-secondary">
+                        设为默认
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => onDelete(skin.id)}
+                      disabled={!deletable}
+                      className={`w-full rounded-md px-2 py-1.5 text-left text-xs ${deletable ? "text-red-600 hover:bg-red-50" : "text-muted-foreground"}`}
+                    >
+                      {deletable ? "删除" : "默认皮肤不可删除"}
                     </button>
-                  ) : (
-                    <span className="rounded border border-border px-1 py-0.5 text-[10px] text-muted-foreground" title="默认皮肤不可删除"><Tx>
-                      锁定
-                    </Tx></span>
-                  )}
-                </div>
-              </div>
+                  </div>
+                </details>
+              </article>
             );
           })}
-          {filtered.length === 0 ? <p className="py-8 text-center text-xs text-muted-foreground"><Tx>没有匹配的皮肤</Tx></p> : null}
+
+          {filtered.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border py-8 text-center">
+              <p className="text-sm text-muted-foreground">没有匹配的皮肤</p>
+              <button type="button" onClick={() => { onSearchChange(""); onSceneFilterChange("all"); }} className="mt-2 text-xs text-[var(--theme-primary)]">
+                清空筛选
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
     </aside>

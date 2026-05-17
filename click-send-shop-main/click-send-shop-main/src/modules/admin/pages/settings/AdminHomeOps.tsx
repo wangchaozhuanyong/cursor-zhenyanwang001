@@ -362,13 +362,7 @@ export default function AdminHomeOps() {
                   type="button"
                   className={`rounded-lg p-2 text-muted-foreground hover:bg-secondary ${THEME_HOVER_TEXT_DANGER}`}
                   onClick={() =>
-                    adminConfirmDelete(confirm, item.title || "该导航", () =>
-                      homeOpsService
-                        .deleteHomeNavItem(item.id)
-                        .then(reload)
-                        .then(() => toast.success("已删除"))
-                        .catch((e) => toast.error(toastErrorMessage(e, "删除失败"))),
-                    )
+                    adminConfirmDelete(confirm, item.title || "该导航", async () => { try { await homeOpsService.deleteHomeNavItem(item.id); await reload(); toast.success("已删除"); } catch (e) { toast.error(toastErrorMessage(e, "删除失败")); } })
                   }
                 >
                   <Trash2 size={15} />
@@ -394,3 +388,5 @@ function IconPreview({ value }: { value: string }) {
   }
   return <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary text-lg">{v.slice(0, 2)}</div>;
 }
+
+

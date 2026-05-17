@@ -23,6 +23,7 @@ const {
 } = require('../../errors');
 const crypto = require('crypto');
 const repo = require('./auth.repository');
+const wechatService = require('./services/wechat.service');
 const { formatUserResponse } = require('../../utils/formatUserResponse');
 const { normalizeIntlPhone, buildPhoneLookupCandidates } = require('../../utils/phone');
 
@@ -111,7 +112,7 @@ async function login(body) {
   }
   if (!user) throw new AuthError('密码错误，请重试');
 
-  return buildLoginResult(user);
+  return issueLoginForUserId(user.id, { loginMethod: 'phone_password' });
 }
 
 function buildLoginResult(userRow) {
@@ -132,17 +133,41 @@ function buildLoginResult(userRow) {
   };
 }
 
-async function issueLoginForUserId(userId) {
+async function issueLoginForUserId(userId, options = {}) {
   const row = await repo.selectRefreshVersion(userId);
   if (!row) throw new AuthError('用户不存在');
   await repo.updateLastLogin(userId);
+
+  const loginMethod = options.loginMethod;
+  if (loginMethod) {
+    const crypto = require('crypto');
+    let uaHash = null;
+    if (options.userAgent && typeof options.userAgent === 'string') {
+      uaHash = crypto.createHash('sha256').update(options.userAgent, 'utf8').digest('hex');
+    }
+    await repo.insertLoginAudit({
+      id: generateId(),
+      userId,
+      loginMethod,
+      ip: options.ip || null,
+      uaHash,
+    });
+  }
+
   return buildLoginResult(row);
 }
 
 async function getProfile(userId) {
   const user = await repo.selectProfileFields(userId);
   if (!user) throw new NotFoundError('用户不存在');
-  return { data: formatUserResponse(user, 'user') };
+  const wechatLogin = await wechatService.getWechatBindingForProfile(userId);
+  return {
+    data: formatUserResponse({
+      ...user,
+      wechat_login: wechatLogin,
+      wechatLoginEnabled: wechatService.isWechatLoginEnabled(),
+    }, 'user'),
+  };
 }
 
 async function updateProfile(userId, body) {

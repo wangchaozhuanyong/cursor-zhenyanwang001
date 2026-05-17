@@ -1,7 +1,10 @@
 name: Deploy gc-api (CI/CD)
 
+# 自动部署仅在 CI 成功后触发；手动 workflow_dispatch 不受此限制。
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
     inputs:
@@ -15,8 +18,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  gate:
+    name: Require CI success (auto deploy only)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    steps:
+      - run: echo "Deploy gate passed."
+
   check-secrets:
     name: Validate deploy secrets
+    needs: gate
     runs-on: ubuntu-latest
     steps:
       - name: Ensure DEPLOY_* secrets are non-empty

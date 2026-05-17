@@ -360,7 +360,10 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     "--theme-coupon-style": adminConfig.couponStyle || "ticket",
     "--theme-member-card-style": adminConfig.memberCardStyle || "light",
     "--theme-category-icon-style": adminConfig.categoryIconStyle || "circle",
-    "--theme-admin-mode": "follow_store",
+    "--theme-admin-mode": adminConfig.adminThemeMode || "follow_store",
+    "--theme-density-gap": adminConfig.density === "compact" ? "0.5rem" : "0.75rem",
+    "--theme-density-pad": adminConfig.density === "compact" ? "0.5rem" : "0.75rem",
+    "--theme-density-row": adminConfig.density === "compact" ? "2.25rem" : "2.75rem",
     ...getCardShellVariables(adminConfig.cardStyle, surfaceCss, borderCss, shadows["--theme-shadow"], shadows["--theme-shadow-hover"]),
 
     "--background": rgbToHslChannels(bg),

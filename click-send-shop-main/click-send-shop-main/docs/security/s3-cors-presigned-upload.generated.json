@@ -1,0 +1,33 @@
+﻿{
+    "CORSRules":  [
+                      {
+                          "ID":  "AllowBrowserPresignedUpload",
+                          "AllowedHeaders":  [
+                                                 "Content-Type",
+                                                 "Content-Length",
+                                                 "x-amz-content-sha256",
+                                                 "x-amz-date",
+                                                 "x-amz-security-token",
+                                                 "x-amz-acl",
+                                                 "x-amz-server-side-encryption"
+                                             ],
+                          "AllowedMethods":  [
+                                                 "PUT",
+                                                 "GET",
+                                                 "HEAD"
+                                             ],
+                          "ExposeHeaders":  [
+                                                "ETag"
+                                            ],
+                          "MaxAgeSeconds":  3600,
+                          "AllowedOrigins":  [
+                                                 "http://localhost:5173",
+                                                 "http://localhost:4173",
+                                                 "http://localhost:8080",
+                                                 "http://localhost:8081",
+                                                 "http://localhost:3000",
+                                                 "http://127.0.0.1:3000"
+                                             ]
+                      }
+                  ]
+}

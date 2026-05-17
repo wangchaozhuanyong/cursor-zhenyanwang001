@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Eye, EyeOff, Phone, Lock, User, KeyRound } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useUserStore } from "@/stores/useUserStore";
 import * as authService from "@/services/authService";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
@@ -18,6 +19,7 @@ import {
   syncLockedInviteCodeBySearch,
 } from "@/utils/inviteReferral";
 import { getPublicApiRoot } from "@/utils/apiRoot";
+import WeChatIcon from "@/components/icons/WeChatIcon";
 import { useFormFieldFocus } from "@/hooks/useFormFieldFocus";
 import { cn } from "@/lib/utils";
 import { FormFieldShake } from "@/modules/micro-interactions";
@@ -71,6 +73,7 @@ export default function Login() {
   const [otpSending, setOtpSending] = useState(false);
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [smsOtpLoginEnabled, setSmsOtpLoginEnabled] = useState(true);
+  const [wechatLoginEnabled, setWechatLoginEnabled] = useState(false);
   const hasLockedInviteCode = !!inviteCode;
   const formFocused = useFormFieldFocus();
   const [shakeKey, setShakeKey] = useState(0);
@@ -113,6 +116,7 @@ export default function Login() {
         if (cancelled) return;
         const enabled = features.smsOtpLoginEnabled !== false;
         setSmsOtpLoginEnabled(enabled);
+        setWechatLoginEnabled(features.wechatLoginEnabled === true);
         if (!enabled) setCredentialMode("password");
       })
       .catch(() => {
@@ -126,14 +130,47 @@ export default function Login() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const oauthErr = params.get("oauthError");
+    const wechatErr = params.get("wechatError");
+    const wechatLogin = params.get("wechatLogin");
     const oauthCode = params.get("oauthCode");
     const oauthProvider = params.get("oauthProvider");
-    if (oauthErr) {
-      toast.error(decodeURIComponent(oauthErr.replace(/\+/g, " ")));
+    if (oauthErr || wechatErr) {
+      const msg = decodeURIComponent((oauthErr || wechatErr || "").replace(/\+/g, " "));
+      toast.error(msg);
       navigate("/login", { replace: true });
       return;
     }
-    if (!oauthCode || (oauthProvider !== "google" && oauthProvider !== "facebook")) return;
+    if (wechatLogin === "1") {
+      let cancelled = false;
+      (async () => {
+        try {
+          const { useCartStore } = await import("@/stores/useCartStore");
+          const { useFavoritesStore } = await import("@/stores/useFavoritesStore");
+          const { useHistoryStore } = await import("@/stores/useHistoryStore");
+          const localCartSnapshot = [...useCartStore.getState().items];
+          const localFavoriteIds = [...useFavoritesStore.getState().favoriteIds];
+          const localFavoriteProducts = [...useFavoritesStore.getState().favoriteProducts];
+          const localHistorySnapshot = [...useHistoryStore.getState().history];
+          useAuthStore.setState({ isAuthenticated: true });
+          await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
+          await useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts);
+          await useHistoryStore.getState().mergeLocalThenSync(localHistorySnapshot).catch(() => {});
+          await useUserStore.getState().loadProfile();
+          if (cancelled) return;
+          toast.success("登录成功", { duration: 900, position: "top-center" });
+          navigate(from, { replace: true, state: fromState });
+        } catch (e) {
+          if (!cancelled) {
+            toast.error(e instanceof Error ? e.message : "登录失败");
+          }
+          navigate("/login", { replace: true });
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
+    if (!oauthCode || oauthProvider !== "google") return;
 
     let cancelled = false;
     (async () => {
@@ -160,10 +197,10 @@ export default function Login() {
 
   const loading = authStore.loading;
 
-  const openOAuth = (provider: "google" | "facebook") => {
+  const openWechatLogin = () => {
     const root = getPublicApiRoot();
     const redirect = encodeURIComponent("/login");
-    window.location.href = `${root}/auth/oauth/${provider}/start?redirect=${redirect}`;
+    window.location.href = `${root}/auth/wechat/login?redirect=${redirect}`;
   };
 
   const handleSendOtp = async () => {
@@ -535,40 +572,27 @@ export default function Login() {
         </FormFieldShake>
 
         {/* ══════════════ Divider ══════════════ */}
-        <div className="my-7 flex items-center gap-4">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs text-muted-foreground whitespace-nowrap">其他登录方式</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
+        {mode === "login" && wechatLoginEnabled && (
+          <div className="my-7 flex items-center gap-4">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs text-muted-foreground whitespace-nowrap">其他登录方式</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+        )}
 
         {/* ══════════════ OAuth ══════════════ */}
-        <div className="mb-8">
-          <div className="flex justify-center gap-6">
+        {mode === "login" && wechatLoginEnabled && (
+          <div className="mb-8">
             <button
               type="button"
-              onClick={() => openOAuth("google")}
-              className="flex min-w-[120px] flex-1 flex-col items-center gap-2 rounded-2xl border border-border bg-card py-3 active:scale-[0.98] transition-transform"
+              onClick={openWechatLogin}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[#07C160]/30 bg-[#07C160]/10 py-3.5 text-sm font-semibold text-[#07C160] active:scale-[0.98] transition-transform"
             >
-              <span className="text-2xl" aria-hidden>
-                G
-              </span>
-              <span className="text-[11px] font-medium text-foreground">Google</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => openOAuth("facebook")}
-              className="flex min-w-[120px] flex-1 flex-col items-center gap-2 rounded-2xl border border-border bg-card py-3 active:scale-[0.98] transition-transform"
-            >
-              <span className="text-2xl font-bold text-[#1877F2]" aria-hidden>
-                f
-              </span>
-              <span className="text-[11px] font-medium text-foreground">Facebook</span>
+              <WeChatIcon size={22} />
+              微信扫码登录
             </button>
           </div>
-          <p className="mt-3 text-center text-[10px] text-muted-foreground leading-relaxed">
-            跳转第三方完成授权；请在服务器配置 OAuth 客户端与回调地址（见 .env.example）
-          </p>
-        </div>
+        )}
 
         {showReset && (
           <FormFieldShake shake={shakeKey} className="mb-6 rounded-2xl border border-border bg-card p-4 shadow-sm">

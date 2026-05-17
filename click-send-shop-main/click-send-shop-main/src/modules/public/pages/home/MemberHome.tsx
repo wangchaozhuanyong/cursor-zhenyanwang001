@@ -116,7 +116,7 @@ export default function MemberHome() {
 
   return (
     <div className={`store-bottom-safe min-h-screen text-[var(--theme-text)] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_90%,black)]" : "bg-[var(--theme-bg)]"}`} data-theme-home-layout={themeConfig.homeLayout}>
-      <StoreTabHeader />
+      <StoreTabHeader searchMode="navigate" />
       <main className="mx-auto max-w-screen-xl px-4 pt-4">
         <AnimatedSection>
           <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>

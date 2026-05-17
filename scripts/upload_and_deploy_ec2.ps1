@@ -3,7 +3,8 @@ param(
   [string]$ServerUser = "ubuntu",
   [string]$RemoteProjectRoot = "/var/www/click-send-shop",
   [string]$IdentityFile = "",
-  [switch]$UploadArchive
+  [switch]$UploadArchive,
+  [switch]$UploadLocalFrontend
 )
 
 $ErrorActionPreference = "Stop"
@@ -49,6 +50,17 @@ if (-not $UploadArchive) {
     "set -euo pipefail; cd '${RemoteProjectRoot}'; export PROJECT_DIR='${RemoteProjectRoot}'; export PM2_APP='gc-api'; export AUTO_ROLLBACK='1'; git fetch origin main; bash deploy/ci-deploy.sh"
   ))
 
+  if ($UploadLocalFrontend) {
+    Write-Host "[+] Uploading locally built frontend dist ..."
+    & (Join-Path $PSScriptRoot "upload-frontend-dist-ec2.ps1") @(
+      "-ServerHost", $ServerHost,
+      "-ServerUser", $ServerUser,
+      "-RemoteProjectRoot", $RemoteProjectRoot,
+      "-IdentityFile", $IdentityFile,
+      "-SyncPublicFrontend"
+    )
+  }
+
   Write-Host "[3/3] Done."
   Write-Host "Project path on server: ${RemoteProjectRoot}"
   exit 0
@@ -92,6 +104,17 @@ Invoke-Native ssh ($sshOpts + @(
   "${ServerUser}@${ServerHost}",
   "set -euo pipefail; cd '${RemoteProjectRoot}'; chmod +x deploy/ci-deploy.sh; PROJECT_DIR='${RemoteProjectRoot}' PM2_APP='gc-api' AUTO_ROLLBACK='1' SKIP_GIT='1' bash deploy/ci-deploy.sh"
 ))
+
+if ($UploadLocalFrontend) {
+  Write-Host "[+] Uploading locally built frontend dist (server build may OOM) ..."
+  & (Join-Path $PSScriptRoot "upload-frontend-dist-ec2.ps1") @(
+    "-ServerHost", $ServerHost,
+    "-ServerUser", $ServerUser,
+    "-RemoteProjectRoot", $RemoteProjectRoot,
+    "-IdentityFile", $IdentityFile,
+    "-SyncPublicFrontend"
+  )
+}
 
 Write-Host "[Done] Deployment completed."
 Write-Host "Project path on server: ${RemoteProjectRoot}"

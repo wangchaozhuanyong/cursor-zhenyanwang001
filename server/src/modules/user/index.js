@@ -11,6 +11,7 @@ const { UserStatsService } = require('./userStats.service');
 const router = Router();
 
 router.use('/user', require('./user.routes'));
+router.use('/me', require('./me.routes'));
 router.use('/favorites', require('./favorites.routes'));
 router.use('/history', require('./history.routes'));
 router.use('/addresses', require('./addresses.routes'));

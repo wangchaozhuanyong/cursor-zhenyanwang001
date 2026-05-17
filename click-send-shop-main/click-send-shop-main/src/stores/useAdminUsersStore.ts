@@ -29,6 +29,8 @@ const initialState = {
   loading: true,
   search: "",
   selectedTagId: "",
+  wechatBoundFilter: "",
+  phoneBoundFilter: "",
 };
 
 interface AdminUsersState {
@@ -39,11 +41,22 @@ interface AdminUsersState {
   loading: boolean;
   search: string;
   selectedTagId: string;
+  wechatBoundFilter: string;
+  phoneBoundFilter: string;
   setSearch: (v: string) => void;
   setSelectedTagId: (v: string) => void;
+  setWechatBoundFilter: (v: string) => void;
+  setPhoneBoundFilter: (v: string) => void;
   setPage: (v: number) => void;
   setPageSize: (v: number) => void;
-  loadUsers: (params?: { page?: number; pageSize?: number; keyword?: string; tagId?: string }) => Promise<void>;
+  loadUsers: (params?: {
+    page?: number;
+    pageSize?: number;
+    keyword?: string;
+    tagId?: string;
+    wechatBound?: string;
+    phoneBound?: string;
+  }) => Promise<void>;
   reset: () => void;
 }
 
@@ -52,6 +65,8 @@ export const useAdminUsersStore = create<AdminUsersState>((set) => ({
 
   setSearch: (search) => set({ search }),
   setSelectedTagId: (selectedTagId) => set({ selectedTagId }),
+  setWechatBoundFilter: (wechatBoundFilter) => set({ wechatBoundFilter }),
+  setPhoneBoundFilter: (phoneBoundFilter) => set({ phoneBoundFilter }),
   setPage: (page) => set({ page }),
   setPageSize: (pageSize) => set({ pageSize }),
 
@@ -65,7 +80,16 @@ export const useAdminUsersStore = create<AdminUsersState>((set) => ({
       const pageSize = params.pageSize ?? state.pageSize;
       const keyword = params.keyword ?? state.search;
       const tagId = params.tagId ?? state.selectedTagId;
-      const p = await userService.fetchUsers({ page, pageSize, keyword: keyword || undefined, tagId: tagId || undefined });
+      const wechatBound = params.wechatBound ?? state.wechatBoundFilter;
+      const phoneBound = params.phoneBound ?? state.phoneBoundFilter;
+      const p = await userService.fetchUsers({
+        page,
+        pageSize,
+        keyword: keyword || undefined,
+        tagId: tagId || undefined,
+        wechatBound: wechatBound || undefined,
+        phoneBound: phoneBound || undefined,
+      });
       set({
         users: p.list as AdminUserListItem[],
         total: p.total,

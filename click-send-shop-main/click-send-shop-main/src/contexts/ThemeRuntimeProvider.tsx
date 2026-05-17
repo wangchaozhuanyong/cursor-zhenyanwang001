@@ -2,7 +2,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
-import { DEFAULT_SKIN_ID, PROMO_ADMIN_BG_OVERRIDES, THEME_PRESETS } from "@/constants/themePresets";
+import {
+  ADMIN_SAFE_THEME_OVERRIDES,
+  DEFAULT_SKIN_ID,
+  PROMO_ADMIN_BG_OVERRIDES,
+  THEME_PRESETS,
+} from "@/constants/themePresets";
 import { THEME_REVISION_KEY } from "@/lib/themeRevision";
 import { normalizeMediaUrls } from "@/utils/mediaUrl";
 import { generateThemePalette } from "@/utils/themeContrast";
@@ -40,7 +45,11 @@ function isAdminScope() {
 }
 
 function resolveThemeConfigForScope(config: ThemeConfig, skinId: string, inAdmin: boolean): ThemeConfig {
-  if (inAdmin && skinId === "promo_red_orange") {
+  if (!inAdmin) return config;
+  if (config.adminThemeMode === "fixed") {
+    return normalizeThemeConfig({ ...config, ...ADMIN_SAFE_THEME_OVERRIDES });
+  }
+  if (skinId === "promo_red_orange") {
     return normalizeThemeConfig({ ...config, ...PROMO_ADMIN_BG_OVERRIDES });
   }
   return config;
@@ -60,6 +69,7 @@ function applyThemeDataAttributes(root: HTMLElement, config: ThemeConfig) {
   root.setAttribute("data-theme-category-icon-style", config.categoryIconStyle);
   root.setAttribute("data-theme-motion-level", config.motionLevel);
   root.setAttribute("data-theme-density", config.density);
+  root.setAttribute("data-theme-admin-mode", config.adminThemeMode);
 }
 
 export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
@@ -285,6 +295,31 @@ function readCachedSkins(): ThemeSkin[] {
   } catch {
     return [];
   }
+}
+
+export function ThemeRuntimeOverrideProvider({
+  config,
+  children,
+}: {
+  config: ThemeConfig;
+  children: ReactNode;
+}) {
+  const parent = useThemeRuntime();
+  const previewConfig = useMemo(() => normalizeThemeConfig(config), [config]);
+
+  const value = useMemo(
+    () => ({
+      ...parent,
+      themeConfig: previewConfig,
+      skinId: `preview-${parent.skinId}`,
+      setSkinId: () => {},
+      themeReady: true,
+      themeSynced: true,
+    }),
+    [parent, previewConfig],
+  );
+
+  return <ThemeRuntimeContext.Provider value={value}>{children}</ThemeRuntimeContext.Provider>;
 }
 
 export function useThemeRuntime() {

@@ -143,7 +143,6 @@ export default function GuestHome() {
   return (
     <div className={`min-h-screen bg-[var(--theme-bg)] ${bottomNavSafe} text-[var(--theme-text)]`} data-theme-home-layout={themeConfig.homeLayout}>
       <StoreTabHeader
-        position="fixed"
         searchMode="none"
         showSiteNameMobile
         rightSlot={(
@@ -157,7 +156,7 @@ export default function GuestHome() {
         )}
       />
 
-      <main className={`store-tab-header-offset mx-auto max-w-screen-xl px-4 ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_88%,black)]" : ""}`}>
+      <main className={`mx-auto max-w-screen-xl px-4 pt-4 ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_88%,black)]" : ""}`}>
         <AnimatedSection>
           <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
             <BannerCarousel banners={banners} themeConfigOverride={themeConfig} />

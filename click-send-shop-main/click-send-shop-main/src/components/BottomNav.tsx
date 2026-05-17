@@ -2,8 +2,10 @@ import { Home, LayoutGrid, ShoppingCart, Sparkles, User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useCartStore } from "@/stores/useCartStore";
 import { isLoggedIn } from "@/utils/token";
+import { getBottomNavInnerClassName, getBottomNavShellClassName } from "@/utils/themeVisuals";
 
 const tabs = [
   { path: "/", label: "首页", icon: Home },
@@ -16,6 +18,8 @@ const tabs = [
 export default function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { themeConfig } = useThemeRuntime();
+  const navStyle = themeConfig.navStyle;
   const totalItems = useCartStore((s) => s.totalItems());
   const lastTouchNavAtRef = useRef(0);
   const [badgeBump, setBadgeBump] = useState(false);
@@ -51,10 +55,11 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="pointer-events-auto fixed bottom-0 left-0 right-0 z-bottom-nav border-t border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-[0_-8px_24px_rgba(0,0,0,0.08)]"
+      className={getBottomNavShellClassName(navStyle, "fixed")}
+      data-theme-nav-style={navStyle}
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0px)", touchAction: "manipulation" }}
     >
-      <div className="mx-auto max-w-lg">
+      <div className={getBottomNavInnerClassName(navStyle)}>
         <div className="grid h-[68px] grid-cols-5 items-center px-1">
           {tabs.map((tab) => {
             const isActive = location.pathname === tab.path;

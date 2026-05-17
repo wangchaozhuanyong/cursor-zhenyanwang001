@@ -141,6 +141,7 @@ export default function PremiumCouponCard({
 
   const wrapper = (
     <div
+      data-theme-coupon-style={couponStyle}
       className={cn(
         "relative grid w-full items-stretch gap-0 overflow-hidden rounded-xl border border-[var(--theme-border)] p-2",
         homeCompact

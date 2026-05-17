@@ -1,0 +1,23 @@
+{
+  "CORSRules": [
+    {
+      "ID": "AllowBrowserPresignedUpload",
+      "AllowedHeaders": [
+        "Content-Type",
+        "Content-Length",
+        "x-amz-content-sha256",
+        "x-amz-date",
+        "x-amz-security-token",
+        "x-amz-acl",
+        "x-amz-server-side-encryption"
+      ],
+      "AllowedMethods": ["PUT", "GET", "HEAD"],
+      "AllowedOrigins": [
+        "https://YOUR_PRODUCTION_DOMAIN",
+        "https://www.YOUR_PRODUCTION_DOMAIN"
+      ],
+      "ExposeHeaders": ["ETag"],
+      "MaxAgeSeconds": 3600
+    }
+  ]
+}

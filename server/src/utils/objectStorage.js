@@ -1,5 +1,13 @@
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const {
+  S3Client,
+  PutObjectCommand,
+  HeadObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const { NodeHttpHandler } = require('@smithy/node-http-handler');
+const crypto = require('crypto');
 
 let cachedClient = null;
 let cachedClientKey = '';
@@ -55,10 +63,9 @@ function getPublicUrlByKey(key) {
   return `${conf.publicBaseUrl}/${String(key || '').replace(/^\/+/, '')}`;
 }
 
-async function uploadBufferToS3({ key, body, contentType = 'application/octet-stream', cacheControl = 'public, max-age=31536000, immutable' }) {
+function getS3Client() {
   const conf = getS3Config();
   assertS3Config(conf);
-  const storageKey = buildStorageKey(key);
   const clientKey = JSON.stringify({
     endpoint: conf.endpoint || '',
     region: conf.region,
@@ -82,8 +89,14 @@ async function uploadBufferToS3({ key, body, contentType = 'application/octet-st
     });
     cachedClientKey = clientKey;
   }
+  return { client: cachedClient, conf };
+}
+
+async function uploadBufferToS3({ key, body, contentType = 'application/octet-stream', cacheControl = 'public, max-age=31536000, immutable' }) {
+  const storageKey = buildStorageKey(key);
+  const { client, conf } = getS3Client();
   try {
-    await cachedClient.send(
+    await client.send(
       new PutObjectCommand({
         Bucket: conf.bucket,
         Key: storageKey,
@@ -103,6 +116,98 @@ async function uploadBufferToS3({ key, body, contentType = 'application/octet-st
     key: storageKey,
     url: getPublicUrlByKey(storageKey),
   };
+}
+
+function presignExpiresSeconds() {
+  const raw = Number(process.env.UPLOAD_PRESIGN_EXPIRES_SEC || 300);
+  if (!Number.isFinite(raw)) return 300;
+  return Math.min(600, Math.max(60, Math.floor(raw)));
+}
+
+/**
+ * @param {{ key: string, contentType: string, contentLength?: number }} params
+ */
+async function createPresignedPutUrl({ key, contentType, contentLength }) {
+  if (!isS3StorageEnabled()) {
+    throw new Error('对象存储未启用，无法签发预签名上传');
+  }
+  const storageKey = buildStorageKey(key);
+  const { client, conf } = getS3Client();
+  const command = new PutObjectCommand({
+    Bucket: conf.bucket,
+    Key: storageKey,
+    ContentType: contentType,
+    ...(Number.isFinite(contentLength) && contentLength > 0 ? { ContentLength: contentLength } : {}),
+  });
+  const expiresIn = presignExpiresSeconds();
+  const uploadUrl = await getSignedUrl(client, command, { expiresIn });
+  return {
+    uploadUrl,
+    objectKey: storageKey,
+    expiresIn,
+    expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString(),
+  };
+}
+
+async function headS3Object(storageKey) {
+  const { client, conf } = getS3Client();
+  const out = await client.send(new HeadObjectCommand({
+    Bucket: conf.bucket,
+    Key: storageKey,
+  }));
+  return {
+    contentLength: Number(out.ContentLength || 0),
+    contentType: String(out.ContentType || ''),
+  };
+}
+
+async function getS3ObjectBuffer(storageKey) {
+  const { client, conf } = getS3Client();
+  const out = await client.send(new GetObjectCommand({
+    Bucket: conf.bucket,
+    Key: storageKey,
+  }));
+  const chunks = [];
+  for await (const chunk of out.Body) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+}
+
+async function deleteS3Object(storageKey) {
+  const { client, conf } = getS3Client();
+  await client.send(new DeleteObjectCommand({
+    Bucket: conf.bucket,
+    Key: storageKey,
+  }));
+}
+
+function buildRawUploadKey(userId, mimeType) {
+  const extByMime = {
+    'image/jpeg': '.jpg',
+    'image/png': '.png',
+    'image/webp': '.webp',
+  };
+  const ext = extByMime[mimeType] || '';
+  const id = crypto.randomBytes(16).toString('hex');
+  return `uploads/raw/${userId}/${id}${ext}`;
+}
+
+function assertRawObjectKeyOwnedByUser(storageKey, userId) {
+  const prefix = buildStorageKey(`uploads/raw/${userId}/`);
+  if (!String(storageKey || '').startsWith(prefix)) {
+    const err = new Error('无权访问该上传对象');
+    /** @type {any} */ (err).statusCode = 403;
+    /** @type {any} */ (err).expose = true;
+    throw err;
+  }
+}
+
+function isTrustedPublicAssetUrl(url) {
+  const conf = getS3Config();
+  if (!conf.publicBaseUrl) return false;
+  const normalized = String(url || '').trim();
+  return normalized.startsWith(`${conf.publicBaseUrl}/`);
 }
 
 function getStorageHealthReport() {
@@ -143,5 +248,14 @@ function getStorageHealthReport() {
 module.exports = {
   isS3StorageEnabled,
   uploadBufferToS3,
+  createPresignedPutUrl,
+  headS3Object,
+  getS3ObjectBuffer,
+  deleteS3Object,
+  buildRawUploadKey,
+  assertRawObjectKeyOwnedByUser,
+  isTrustedPublicAssetUrl,
+  getPublicUrlByKey,
+  buildStorageKey,
   getStorageHealthReport,
 };

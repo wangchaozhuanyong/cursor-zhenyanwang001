@@ -37,9 +37,17 @@ export interface OtpLoginParams {
 
 export interface AuthFeatures {
   smsOtpLoginEnabled: boolean;
+  wechatLoginEnabled?: boolean;
 }
 
 export interface OAuthExchangeParams {
-  provider: "google" | "facebook";
+  provider: "google";
   code: string;
+}
+
+export interface WechatBindPhoneParams {
+  phone: string;
+  countryCode: string;
+  smsCode: string;
+  pendingWechatToken: string;
 }

@@ -2,8 +2,8 @@
 import { ChevronDown } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
-import { useNotificationStore } from "@/stores/useNotificationStore";
-import StoreTabHeader from "@/components/store/StoreTabHeader";
+import StorePageHeader from "@/components/store/StorePageHeader";
+import StoreSearchField from "@/components/store/StoreSearchField";
 import ProductCard from "@/components/ProductCard";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMotionConfig } from "@/modules/micro-interactions";
@@ -21,7 +21,6 @@ import { trackEvent } from "@/services/analyticsService";
 import { toast } from "sonner";
 
 export default function Categories() {
-  const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [activeCat, setActiveCat] = useState(searchParams.get("cat") || "all");
@@ -41,7 +40,6 @@ export default function Categories() {
   const { products, categories, loading, error, loadProducts, loadCategories } = useProductStore();
 
   useEffect(() => { loadCategories(); }, [loadCategories]);
-  useEffect(() => { fetchUnreadCount(); }, [fetchUnreadCount]);
   useEffect(() => { productService.fetchProductTags(20).then(setQuickTags).catch(() => setQuickTags([])); }, []);
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedQuery(query.trim()), 300);
@@ -136,12 +134,56 @@ export default function Categories() {
     isRecommended ? "推荐" : "",
   ].filter(Boolean).join(" · ");
 
+  const filterDrawer = (
+    <ProductFilterDrawer
+      activeFilterCount={activeFilterCount}
+      onReset={clearFilters}
+      onConfirm={() => {
+        const min = minPrice ? Number(minPrice) : undefined;
+        const max = maxPrice ? Number(maxPrice) : undefined;
+        if (min !== undefined && max !== undefined && min > max) {
+          toast.error("最低价不能大于最高价");
+          return false;
+        }
+        syncQuery();
+      }}
+    >
+      <div className="space-y-3 text-sm">
+        <div>
+          <p className="mb-1 text-xs font-semibold text-[var(--theme-text)]">价格区间</p>
+          <div className="grid grid-cols-2 gap-2">
+            <input value={minPrice} onChange={(e) => setMinPrice(e.target.value.replace(/[^\d.]/g, ""))} placeholder="最低价" className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-xs text-[var(--theme-text)]" />
+            <input value={maxPrice} onChange={(e) => setMaxPrice(e.target.value.replace(/[^\d.]/g, ""))} placeholder="最高价" className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-xs text-[var(--theme-text)]" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          {[{ k: inStock, t: "只看有库存", f: setInStock }, { k: isNew, t: "新品", f: setIsNew }, { k: isHot, t: "热销", f: setIsHot }, { k: isRecommended, t: "推荐", f: setIsRecommended }].map((it) => (
+            <button key={it.t} type="button" onClick={() => it.f(!it.k)} className={`rounded-xl border px-3 py-2 text-xs ${it.k ? "border-[var(--theme-primary)] bg-[var(--theme-primary)]/10 text-[var(--theme-text)]" : "border-[var(--theme-border)] text-[var(--theme-text)]"}`}>{it.t}</button>
+          ))}
+        </div>
+        <div>
+          <p className="mb-1 text-xs font-semibold text-[var(--theme-text)]">商品标签</p>
+          {quickTags.length > 0 ? <div className="flex flex-wrap gap-2">{quickTags.map((tag) => { const active = activeTagId === tag.id; return <button key={tag.id} type="button" onClick={() => setActiveTagId(active ? "" : tag.id)} className={`rounded-full border px-3 py-1.5 text-xs ${active ? "ring-2 ring-[var(--theme-price)]/30" : ""}`} style={{ backgroundColor: active ? tag.bg_color || "#FEF3C7" : "var(--theme-surface)", borderColor: tag.bg_color || "var(--theme-border)", color: active ? tag.text_color || "#92400E" : "var(--theme-text)" }}>{tag.name}</button>; })}</div> : <p className="text-xs text-[var(--theme-text-muted)]">暂无可用标签，请先在后台给商品绑定标签</p>}
+        </div>
+      </div>
+    </ProductFilterDrawer>
+  );
+
   return (
     <div className="store-bottom-safe min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
-      <StoreTabHeader searchMode="filter" searchValue={query} onSearchChange={setQuery} searchPlaceholder="搜索商品..." />
+      <StorePageHeader
+        title="分类"
+        bottomSlot={(
+          <div className="space-y-2">
+            <StoreSearchField
+              mode="filter"
+              placeholder="搜索商品..."
+              value={query}
+              onValueChange={setQuery}
+              className="max-w-none flex-none"
+            />
+            <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto pb-0.5 md:hidden">
 
-      <main className="mx-auto max-w-screen-xl">
-        <div className="no-scrollbar flex gap-2 overflow-x-auto border-b border-[var(--theme-border)] px-4 py-3 md:hidden">
           {loading && categories.length === 0 ? Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-8 w-16 flex-shrink-0 rounded-full" />) : rootRow.map((item) => {
             if (item.kind === "all") {
               return (
@@ -176,58 +218,43 @@ export default function Categories() {
           })}
         </div>
 
-        {subCategories.length > 0 ? <div className="border-b border-[var(--theme-border)] px-4 py-3"><div className="flex flex-wrap gap-2">{subCategories.map((child) => (
-                <CategoryTabButton
-                  key={child.id}
-                  active={activeCat === child.id}
-                  onClick={() => handleSelectChild(expandedNode!.id, child.id)}
-                  layoutId="category-sub-tab"
-                  activeClassName="bg-[var(--theme-price)]"
-                  activeTextClass="text-[var(--theme-price-foreground)]"
-                  className="px-3"
-                >
-                  {child.name}
-                </CategoryTabButton>
-              ))}</div></div> : null}
+            {subCategories.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5 md:hidden">
+                {subCategories.map((child) => (
+                  <CategoryTabButton
+                    key={child.id}
+                    active={activeCat === child.id}
+                    onClick={() => handleSelectChild(expandedNode!.id, child.id)}
+                    layoutId="category-sub-tab"
+                    activeClassName="bg-[var(--theme-price)]"
+                    activeTextClass="text-[var(--theme-price-foreground)]"
+                    className="px-3"
+                  >
+                    {child.name}
+                  </CategoryTabButton>
+                ))}
+              </div>
+            ) : null}
+            <div className="flex items-center gap-2 md:hidden">
+              <div className="min-w-0 flex-1">
+                <ProductSortBar value={sort} onChange={setSort} />
+              </div>
+              {filterDrawer}
+            </div>
+          </div>
+        )}
+      />
 
+      <main className="mx-auto max-w-screen-xl">
         <div className="px-4 pb-6 pt-3 md:px-6">
           <div className="md:grid md:grid-cols-[260px,1fr] md:gap-6 lg:grid-cols-[288px,1fr]">
             <CategorySideTree categories={categories} activeCat={activeCat} expandedParentId={expandedParentId} onSelectAll={handleSelectAll} onRootClick={handleRootCategoryClick} onChildClick={handleSelectChild} />
             <section>
-              <div className="mb-3 flex items-center gap-3">
-                <ProductSortBar value={sort} onChange={setSort} />
-                <ProductFilterDrawer
-                  activeFilterCount={activeFilterCount}
-                  onReset={clearFilters}
-                  onConfirm={() => {
-                    const min = minPrice ? Number(minPrice) : undefined;
-                    const max = maxPrice ? Number(maxPrice) : undefined;
-                    if (min !== undefined && max !== undefined && min > max) {
-                      toast.error("最低价不能大于最高价");
-                      return false;
-                    }
-                    syncQuery();
-                  }}
-                >
-                  <div className="space-y-3 text-sm">
-                    <div>
-                      <p className="mb-1 text-xs font-semibold">价格区间</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        <input value={minPrice} onChange={(e) => setMinPrice(e.target.value.replace(/[^\d.]/g, ""))} placeholder="最低价" className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-xs" />
-                        <input value={maxPrice} onChange={(e) => setMaxPrice(e.target.value.replace(/[^\d.]/g, ""))} placeholder="最高价" className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-xs" />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[{ k: inStock, t: "只看有库存", f: setInStock }, { k: isNew, t: "新品", f: setIsNew }, { k: isHot, t: "热销", f: setIsHot }, { k: isRecommended, t: "推荐", f: setIsRecommended }].map((it) => (
-                        <button key={it.t} type="button" onClick={() => it.f(!it.k)} className={`rounded-xl border px-3 py-2 text-xs ${it.k ? "border-[var(--theme-primary)] bg-[var(--theme-primary)]/10" : "border-[var(--theme-border)]"}`}>{it.t}</button>
-                      ))}
-                    </div>
-                    <div>
-                      <p className="mb-1 text-xs font-semibold">商品标签</p>
-                      {quickTags.length > 0 ? <div className="flex flex-wrap gap-2">{quickTags.map((tag) => { const active = activeTagId === tag.id; return <button key={tag.id} type="button" onClick={() => setActiveTagId(active ? "" : tag.id)} className={`rounded-full border px-3 py-1.5 text-xs ${active ? "ring-2 ring-[var(--theme-price)]/30" : ""}`} style={{ backgroundColor: active ? tag.bg_color || "#FEF3C7" : "var(--theme-surface)", borderColor: tag.bg_color || "var(--theme-border)", color: active ? tag.text_color || "#92400E" : "var(--theme-text)" }}>{tag.name}</button>; })}</div> : <p className="text-xs text-[var(--theme-text-muted)]">暂无可用标签，请先在后台给商品绑定标签</p>}
-                    </div>
-                  </div>
-                </ProductFilterDrawer>
+              <div className="mb-3 hidden items-center gap-2 md:flex">
+                <div className="min-w-0 flex-1">
+                  <ProductSortBar value={sort} onChange={setSort} />
+                </div>
+                {filterDrawer}
               </div>
 
               {filterSummary ? <div className="mb-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">当前筛选：{filterSummary}</div> : null}

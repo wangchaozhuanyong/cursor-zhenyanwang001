@@ -11,6 +11,8 @@ const {
   oauthProviderParamSchema,
   oauthStartQuerySchema,
   oauthExchangeBodySchema,
+  wechatBindPhoneBodySchema,
+  wechatOtpSendBodySchema,
   otpSendBodySchema,
   otpLoginBodySchema,
 } = require('./schemas/auth.schemas');
@@ -27,6 +29,11 @@ router.get(
   validate({ params: oauthProviderParamSchema }),
   ctrl.oauthCallback,
 );
+
+router.get('/wechat/login', ctrl.wechatLoginStart);
+router.get('/wechat/callback', ctrl.wechatCallback);
+router.post('/wechat/bind-phone', validate({ body: wechatBindPhoneBodySchema }), ctrl.wechatBindPhone);
+router.post('/wechat/otp/send', validate({ body: wechatOtpSendBodySchema }), ctrl.wechatOtpSend);
 
 router.post('/register', validate({ body: registerBodySchema }), ctrl.register);
 router.post('/login', validate({ body: loginBodySchema }), ctrl.login);

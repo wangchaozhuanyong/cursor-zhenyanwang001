@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import StoreTabHeader from "@/components/store/StoreTabHeader";
+import { useNavigate } from "react-router-dom";
+import StorePageHeader from "@/components/store/StorePageHeader";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import ProductSortBar from "@/components/ProductSortBar";
@@ -9,6 +10,7 @@ import type { ProductSortType } from "@/types/product";
 
 export default function NewArrivals() {
   useDocumentTitle("新品上市");
+  const navigate = useNavigate();
   const { products, loading, error, loadProducts } = useProductStore();
   const [sort, setSort] = useState<ProductSortType>("newest");
 
@@ -23,22 +25,22 @@ export default function NewArrivals() {
 
   return (
     <div className="store-bottom-safe min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
-      <StoreTabHeader />
+      <StorePageHeader
+        title="新品上市"
+        subtitle="最新上架好物，第一时间发现"
+        bottomSlot={<ProductSortBar value={sort} onChange={setSort} />}
+      />
 
-      <main className="mx-auto max-w-lg px-4 py-4">
-        <section>
-          <ProductSortBar value={sort} onChange={setSort} />
-        </section>
-
+      <main className="mx-auto max-w-screen-xl px-4 pb-6 pt-4">
         {error ? (
-          <div className="mt-4 rounded-xl bg-destructive/10 p-3 text-center text-sm text-destructive">
+          <div className="mt-2 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-center text-sm text-[var(--theme-text-muted)]">
             {error}
           </div>
         ) : null}
 
-        <section className="mt-4 grid grid-cols-2 gap-4">
+        <section className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {loading
-            ? Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)
+            ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)
             : products.map((product, index) => (
                 <ProductCard key={product.id} product={product} index={index} />
               ))}
@@ -46,7 +48,7 @@ export default function NewArrivals() {
 
         {!loading && products.length === 0 ? (
           <section className="mt-4 rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-12 text-center">
-            <p className="text-sm font-semibold text-[var(--theme-text-on-surface)]">暂无新品上市</p>
+            <p className="text-sm font-semibold text-[var(--theme-text)]">暂无新品上市</p>
             <p className="mt-2 text-xs text-[var(--theme-text-muted)]">新品上架后会自动出现在这里。</p>
             <button
               type="button"

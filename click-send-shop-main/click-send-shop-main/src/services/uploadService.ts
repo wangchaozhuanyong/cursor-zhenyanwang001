@@ -5,8 +5,8 @@ import {
   type UploadRequestOptions,
 } from "@/api/modules/upload";
 
-export async function uploadSingle(file: File) {
-  return uploadFileApi(file);
+export async function uploadSingle(file: File, options: UploadRequestOptions = {}) {
+  return uploadFileApi(file, options);
 }
 
 export async function uploadSingleWithProgress(file: File, options: UploadRequestOptions = {}) {

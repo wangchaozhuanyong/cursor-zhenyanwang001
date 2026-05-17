@@ -8,6 +8,7 @@ import {
   EDITOR_GROUP_LABELS,
   enumOptions,
   enumValueLabels,
+  FIELD_HELP_TEXTS,
   SCENE_TAG_LABELS,
   type ColorFieldKey,
   type EditorGroupId,
@@ -64,16 +65,22 @@ function SelectRow<T extends string>({
   value,
   options,
   onChange,
+  fieldKey,
+  description,
 }: {
   label: string;
   value: T;
   options: readonly T[];
   onChange: (value: T) => void;
+  fieldKey?: string;
+  description?: string;
 }) {
   const toLabel = (option: string) => enumValueLabels[option] || option;
+  const help = description ?? (fieldKey ? FIELD_HELP_TEXTS[fieldKey] : undefined);
   return (
     <label className="space-y-1">
       <span className="text-xs text-muted-foreground">{label}</span>
+      {help ? <p className="text-[10px] leading-snug text-muted-foreground/80">{help}</p> : null}
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as T)}
@@ -125,7 +132,9 @@ export default function ThemeEditorPanel({
   return (
     <section className="min-h-0 min-w-0 flex-1 overflow-y-auto rounded-xl border border-border bg-card/50 p-3 lg:max-h-[calc(100vh-110px)]">
       <div className="mb-3 space-y-2">
-        <p className="text-sm text-muted-foreground">编辑皮肤参数，右侧实时预览。保存后应用到全站。</p>
+        <p className="text-sm text-muted-foreground">
+          编辑皮肤参数，右侧实时预览当前皮肤。「保存草稿」仅写入配置；「保存并应用到全站」会同时设为系统生效皮肤。
+        </p>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => onAutoColor("secondary")} className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] hover:bg-secondary">
             <Sparkles size={12} /> 自动生成辅色
@@ -172,6 +181,7 @@ export default function ThemeEditorPanel({
             </label>
             <label className="space-y-1">
               <span className="text-xs text-muted-foreground">适合场景</span>
+              <p className="text-[10px] leading-snug text-muted-foreground/80">{FIELD_HELP_TEXTS.sceneTag}</p>
               <select
                 value={selectedSkin?.sceneTag || "default"}
                 onChange={(e) => onSkinMetaChange({ sceneTag: e.target.value as ThemeSceneTag })}
@@ -184,17 +194,23 @@ export default function ThemeEditorPanel({
                 ))}
               </select>
             </label>
-            <label className="flex items-center gap-2 text-xs">
-              <input
-                type="checkbox"
-                checked={selectedSkin?.clientEnabled !== false}
-                onChange={(e) => onSkinMetaChange({ clientEnabled: e.target.checked })}
-              />
-              前台可切换
+            <label className="flex flex-col gap-1 text-xs md:col-span-2">
+              <span className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={selectedSkin?.clientEnabled !== false}
+                  onChange={(e) => onSkinMetaChange({ clientEnabled: e.target.checked })}
+                />
+                前台可切换
+              </span>
+              <p className="pl-5 text-[10px] leading-snug text-muted-foreground/80">{FIELD_HELP_TEXTS.clientEnabled}</p>
             </label>
-            <label className="flex items-center gap-2 text-xs md:col-span-2">
-              <input type="checkbox" checked={isDefaultSkin} onChange={(e) => onSetDefaultToggle(e.target.checked)} />
-              设为默认皮肤
+            <label className="flex flex-col gap-1 text-xs md:col-span-2">
+              <span className="flex items-center gap-2">
+                <input type="checkbox" checked={isDefaultSkin} onChange={(e) => onSetDefaultToggle(e.target.checked)} />
+                设为默认皮肤
+              </span>
+              <p className="pl-5 text-[10px] leading-snug text-muted-foreground/80">{FIELD_HELP_TEXTS.isDefaultSkin}</p>
             </label>
           </div>
         </EditorSection>
@@ -223,46 +239,48 @@ export default function ThemeEditorPanel({
 
         <EditorSection id="buttons" title={EDITOR_GROUP_LABELS.buttons} onReset={() => onResetGroup("buttons")}>
           <div className="grid gap-3 md:grid-cols-2">
-            <SelectRow label="按钮风格" value={themeConfig.buttonStyle} options={enumOptions.buttonStyle} onChange={(v) => onConfigChange("buttonStyle", v)} />
-            <SelectRow label="底部导航" value={themeConfig.navStyle} options={enumOptions.navStyle} onChange={(v) => onConfigChange("navStyle", v)} />
+            <SelectRow fieldKey="buttonStyle" label="按钮风格" value={themeConfig.buttonStyle} options={enumOptions.buttonStyle} onChange={(v) => onConfigChange("buttonStyle", v)} />
+            <SelectRow fieldKey="navStyle" label="底部导航" value={themeConfig.navStyle} options={enumOptions.navStyle} onChange={(v) => onConfigChange("navStyle", v)} />
             <label className="space-y-1">
               <span className="text-xs text-muted-foreground">圆角 radius</span>
+              <p className="text-[10px] leading-snug text-muted-foreground/80">{FIELD_HELP_TEXTS.radius}</p>
               <input value={themeConfig.radius} onChange={(e) => onConfigChange("radius", e.target.value)} className="h-9 w-full rounded-lg border border-border px-2 text-xs" />
             </label>
-            <SelectRow label="阴影" value={themeConfig.shadowStyle} options={enumOptions.shadowStyle} onChange={(v) => onConfigChange("shadowStyle", v)} />
-            <SelectRow label="动效" value={themeConfig.motionLevel} options={enumOptions.motionLevel} onChange={(v) => onConfigChange("motionLevel", v)} />
-            <SelectRow label="密度" value={themeConfig.density} options={enumOptions.density} onChange={(v) => onConfigChange("density", v)} />
+            <SelectRow fieldKey="shadowStyle" label="阴影" value={themeConfig.shadowStyle} options={enumOptions.shadowStyle} onChange={(v) => onConfigChange("shadowStyle", v)} />
+            <SelectRow fieldKey="motionLevel" label="动效" value={themeConfig.motionLevel} options={enumOptions.motionLevel} onChange={(v) => onConfigChange("motionLevel", v)} />
+            <SelectRow fieldKey="density" label="密度" value={themeConfig.density} options={enumOptions.density} onChange={(v) => onConfigChange("density", v)} />
           </div>
         </EditorSection>
 
         <EditorSection id="card" title={EDITOR_GROUP_LABELS.card} onReset={() => onResetGroup("card")}>
           <div className="grid gap-3 md:grid-cols-2">
-            <SelectRow label="商品卡变体" value={themeConfig.productCardVariant} options={enumOptions.productCardVariant} onChange={(v) => onConfigChange("productCardVariant", v)} />
-            <SelectRow label="卡片风格" value={themeConfig.cardStyle} options={enumOptions.cardStyle} onChange={(v) => onConfigChange("cardStyle", v)} />
-            <SelectRow label="文字对齐" value={themeConfig.cardTextAlign} options={enumOptions.cardTextAlign} onChange={(v) => onConfigChange("cardTextAlign", v)} />
-            <SelectRow label="图片比例" value={themeConfig.imageRatio} options={enumOptions.imageRatio} onChange={(v) => onConfigChange("imageRatio", v)} />
-            <SelectRow label="图片填充" value={themeConfig.imageFit} options={enumOptions.imageFit} onChange={(v) => onConfigChange("imageFit", v)} />
-            <SelectRow label="价格样式" value={themeConfig.priceStyle} options={enumOptions.priceStyle} onChange={(v) => onConfigChange("priceStyle", v)} />
+            <SelectRow fieldKey="productCardVariant" label="商品卡变体" value={themeConfig.productCardVariant} options={enumOptions.productCardVariant} onChange={(v) => onConfigChange("productCardVariant", v)} />
+            <SelectRow fieldKey="cardStyle" label="卡片风格" value={themeConfig.cardStyle} options={enumOptions.cardStyle} onChange={(v) => onConfigChange("cardStyle", v)} />
+            <SelectRow fieldKey="cardTextAlign" label="文字对齐" value={themeConfig.cardTextAlign} options={enumOptions.cardTextAlign} onChange={(v) => onConfigChange("cardTextAlign", v)} />
+            <SelectRow fieldKey="imageRatio" label="图片比例" value={themeConfig.imageRatio} options={enumOptions.imageRatio} onChange={(v) => onConfigChange("imageRatio", v)} />
+            <SelectRow fieldKey="imageFit" label="图片填充" value={themeConfig.imageFit} options={enumOptions.imageFit} onChange={(v) => onConfigChange("imageFit", v)} />
+            <SelectRow fieldKey="priceStyle" label="价格样式" value={themeConfig.priceStyle} options={enumOptions.priceStyle} onChange={(v) => onConfigChange("priceStyle", v)} />
           </div>
         </EditorSection>
 
         <EditorSection id="marketing" title={EDITOR_GROUP_LABELS.marketing} onReset={() => onResetGroup("marketing")}>
           <div className="grid gap-3 md:grid-cols-2">
-            <SelectRow label="首页布局" value={themeConfig.homeLayout} options={enumOptions.homeLayout} onChange={(v) => onConfigChange("homeLayout", v)} />
-            <SelectRow label="头部风格" value={themeConfig.headerStyle} options={enumOptions.headerStyle} onChange={(v) => onConfigChange("headerStyle", v)} />
-            <SelectRow label="Banner" value={themeConfig.bannerStyle} options={enumOptions.bannerStyle} onChange={(v) => onConfigChange("bannerStyle", v)} />
-            <SelectRow label="优惠券" value={themeConfig.couponStyle} options={enumOptions.couponStyle} onChange={(v) => onConfigChange("couponStyle", v)} />
-            <SelectRow label="会员卡" value={themeConfig.memberCardStyle} options={enumOptions.memberCardStyle} onChange={(v) => onConfigChange("memberCardStyle", v)} />
-            <SelectRow label="分类图标" value={themeConfig.categoryIconStyle} options={enumOptions.categoryIconStyle} onChange={(v) => onConfigChange("categoryIconStyle", v)} />
-            <SelectRow label="标签风格" value={themeConfig.badgeStyle} options={enumOptions.badgeStyle} onChange={(v) => onConfigChange("badgeStyle", v)} />
+            <SelectRow fieldKey="homeLayout" label="首页布局" value={themeConfig.homeLayout} options={enumOptions.homeLayout} onChange={(v) => onConfigChange("homeLayout", v)} />
+            <SelectRow fieldKey="headerStyle" label="头部风格" value={themeConfig.headerStyle} options={enumOptions.headerStyle} onChange={(v) => onConfigChange("headerStyle", v)} />
+            <SelectRow fieldKey="bannerStyle" label="Banner" value={themeConfig.bannerStyle} options={enumOptions.bannerStyle} onChange={(v) => onConfigChange("bannerStyle", v)} />
+            <SelectRow fieldKey="couponStyle" label="优惠券" value={themeConfig.couponStyle} options={enumOptions.couponStyle} onChange={(v) => onConfigChange("couponStyle", v)} />
+            <SelectRow fieldKey="memberCardStyle" label="会员卡" value={themeConfig.memberCardStyle} options={enumOptions.memberCardStyle} onChange={(v) => onConfigChange("memberCardStyle", v)} />
+            <SelectRow fieldKey="categoryIconStyle" label="分类图标" value={themeConfig.categoryIconStyle} options={enumOptions.categoryIconStyle} onChange={(v) => onConfigChange("categoryIconStyle", v)} />
+            <SelectRow fieldKey="badgeStyle" label="标签风格" value={themeConfig.badgeStyle} options={enumOptions.badgeStyle} onChange={(v) => onConfigChange("badgeStyle", v)} />
           </div>
         </EditorSection>
 
         <EditorSection id="advanced" title={EDITOR_GROUP_LABELS.advanced} onReset={() => onResetGroup("advanced")}>
           <div className="grid gap-3 md:grid-cols-2">
-            <SelectRow label="后台主题模式" value={themeConfig.adminThemeMode} options={enumOptions.adminThemeMode} onChange={(v) => onConfigChange("adminThemeMode", v)} />
+            <SelectRow fieldKey="adminThemeMode" label="后台主题模式" value={themeConfig.adminThemeMode} options={enumOptions.adminThemeMode} onChange={(v) => onConfigChange("adminThemeMode", v)} />
             <label className="space-y-1">
               <span className="text-xs text-muted-foreground">字体</span>
+              <p className="text-[10px] leading-snug text-muted-foreground/80">{FIELD_HELP_TEXTS.fontFamily}</p>
               <input value={themeConfig.fontFamily} onChange={(e) => onConfigChange("fontFamily", e.target.value)} className="h-9 w-full rounded-lg border border-border px-2 text-xs" />
             </label>
             <p className="md:col-span-2 rounded-lg border border-border bg-secondary/30 px-3 py-2 text-[11px] text-muted-foreground">

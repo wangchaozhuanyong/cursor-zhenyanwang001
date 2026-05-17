@@ -79,7 +79,7 @@ const resetPasswordBodySchema = z.object({
 });
 
 const oauthProviderParamSchema = z.object({
-  provider: z.enum(['google', 'facebook']),
+  provider: z.enum(['google']),
 });
 
 const oauthStartQuerySchema = z.object({
@@ -87,9 +87,25 @@ const oauthStartQuerySchema = z.object({
 });
 
 const oauthExchangeBodySchema = z.object({
-  provider: z.enum(['google', 'facebook']),
+  provider: z.enum(['google']),
   code: z.string({ message: '登录凭证无效' }).trim().min(16, '登录凭证无效').max(128, '登录凭证无效'),
 });
+
+const wechatBindPhoneBodySchema = z.object({
+  countryCode: countryCodeSchema,
+  phone: phoneSchema,
+  smsCode: z
+    .string({ message: '验证码不能为空' })
+    .trim()
+    .regex(/^\d{6}$/, '验证码须为 6 位数字'),
+  pendingWechatToken: z
+    .string({ message: '绑定凭证无效' })
+    .trim()
+    .min(16, '绑定凭证无效')
+    .max(128, '绑定凭证无效'),
+});
+
+const wechatOtpSendBodySchema = otpSendBodySchema;
 
 const otpSendBodySchema = z.object({
   countryCode: countryCodeSchema,
@@ -118,6 +134,8 @@ module.exports = {
   oauthProviderParamSchema,
   oauthStartQuerySchema,
   oauthExchangeBodySchema,
+  wechatBindPhoneBodySchema,
+  wechatOtpSendBodySchema,
   otpSendBodySchema,
   otpLoginBodySchema,
 };

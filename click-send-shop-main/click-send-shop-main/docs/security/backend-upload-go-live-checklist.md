@@ -5,12 +5,12 @@
 - Prevent upload path from becoming an attack path into app/database.
 
 ## Must Pass (P0)
-- [ ] Upload ticket endpoint requires auth.
-- [ ] Upload endpoint enforces mime allowlist (`image/jpeg`, `image/png`, `image/webp`).
-- [ ] Backend verifies magic bytes (not extension-only).
-- [ ] Max file size enforced server-side.
-- [ ] Max pixel dimensions / megapixels enforced.
-- [ ] Object key is server-generated UUID (no user filename injection).
+- [x] Upload ticket endpoint requires auth (`POST /api/upload/ticket`).
+- [x] Upload endpoint enforces mime allowlist (`image/jpeg`, `image/png`, `image/webp`).
+- [x] Backend verifies magic bytes (not extension-only).
+- [x] Max file size enforced server-side.
+- [x] Max pixel dimensions / megapixels enforced (~25MP).
+- [x] Object key is server-generated UUID (no user filename injection).
 - [ ] Raw uploads are private in S3.
 - [ ] Public delivery is through CloudFront only.
 - [ ] App only stores object keys / trusted URLs.
@@ -21,9 +21,10 @@
 - [ ] Strip EXIF / GPS metadata.
 - [ ] Rate limit by user/IP for upload endpoints.
 - [ ] Virus scanning or content scanning for raw files.
-- [ ] Structured audit logs enabled for upload actions.
+- [x] Structured audit logs enabled for upload actions (`upload.*` / `upload.presign_*`).
 
 ## S3 / CloudFront Hardening
+- [ ] Bucket CORS configured for browser `PUT` (see `S3-CORS-PRESIGNED-UPLOAD.md`).
 - [ ] Bucket `Block Public Access` enabled.
 - [ ] ACL disabled (`Bucket owner enforced`).
 - [ ] Bucket encryption enabled.

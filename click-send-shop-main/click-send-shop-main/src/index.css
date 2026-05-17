@@ -291,6 +291,22 @@
     box-shadow: var(--theme-card-shell-shadow-hover);
   }
 
+  [data-theme-density="compact"] .store-card {
+    padding: var(--theme-density-pad, 0.5rem);
+  }
+  [data-theme-density="compact"] .theme-product-card > .flex.gap-3 {
+    padding: var(--theme-density-pad, 0.5rem);
+    gap: var(--theme-density-gap, 0.5rem);
+  }
+  [data-theme-density="compact"] table th,
+  [data-theme-density="compact"] table td {
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+  }
+  [data-theme-density="compact"] .admin-table-row {
+    min-height: var(--theme-density-row, 2.25rem);
+  }
+
   /** 优惠券「金色」分区：随 --theme-price 变化 */
   .bg-theme-coupon-accent {
     background-image: linear-gradient(

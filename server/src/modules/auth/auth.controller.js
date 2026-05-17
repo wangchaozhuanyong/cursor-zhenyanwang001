@@ -1,6 +1,7 @@
 const authService = require('./auth.service');
 const authApiService = require('./services/auth.api.service');
 const oauthService = require('./services/oauth.service');
+const wechatService = require('./services/wechat.service');
 const otpService = require('./services/otp.service');
 const { asyncRoute } = require('../../middleware/asyncRoute');
 const { ValidationError } = require('../../errors');
@@ -25,6 +26,7 @@ exports.login = asyncRoute(async (req, res) => {
 exports.features = asyncRoute(async (req, res) => {
   res.success({
     smsOtpLoginEnabled: otpService.isOtpLoginAvailable(),
+    wechatLoginEnabled: wechatService.isWechatLoginEnabled(),
   });
 });
 
@@ -86,6 +88,44 @@ exports.oauthStart = asyncRoute(async (req, res, next) => {
 exports.oauthCallback = asyncRoute(async (req, res) => {
   const url = await oauthService.handleOAuthCallback(req.params.provider, req.query);
   res.redirect(302, url);
+});
+
+exports.wechatLoginStart = asyncRoute(async (req, res, next) => {
+  try {
+    const url = await wechatService.startWechatLogin(req.query.redirect);
+    res.redirect(302, url);
+  } catch (e) {
+    if (e instanceof ValidationError) {
+      const errRedirect = wechatService.redirectLoginWithWechatError(e.message);
+      return res.redirect(302, errRedirect.redirectUrl);
+    }
+    next(e);
+  }
+});
+
+exports.wechatCallback = asyncRoute(async (req, res) => {
+  const result = await wechatService.handleWechatCallback(req.query);
+  if (result.authToken) {
+    setAuthCookies(req, res, result.authToken);
+  }
+  res.redirect(302, result.redirectUrl);
+});
+
+exports.wechatBindPhone = asyncRoute(async (req, res) => {
+  const result = await wechatService.bindPhone(req.body, {
+    ip: req.ip,
+    userAgent: req.get('user-agent'),
+  });
+  setAuthCookies(req, res, result.data.token);
+  res.success(result.data, result.message);
+});
+
+exports.wechatOtpSend = asyncRoute(async (req, res) => {
+  const result = await otpService.sendOtpForWechatBind(req.body, {
+    ip: req.ip,
+    userAgent: req.get('user-agent'),
+  });
+  res.success(result.data, result.message);
 });
 
 exports.oauthExchange = asyncRoute(async (req, res) => {

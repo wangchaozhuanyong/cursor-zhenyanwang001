@@ -30,6 +30,7 @@ import { StoreOutletFallback } from "@/components/AppRouteFallback";
 const MemberHome = lazy(() => import("@/modules/public/pages/home/MemberHome"));
 const GuestHome = lazy(() => import("@/modules/public/pages/home/GuestHome"));
 const Login = lazy(() => import("@/modules/public/pages/auth/Login"));
+const BindWechatPhone = lazy(() => import("@/modules/public/pages/auth/BindWechatPhone"));
 
 const Categories = lazy(() => import("@/modules/public/pages/product/Categories"));
 const ProductDetail = lazy(() => import("@/modules/public/pages/product/ProductDetail"));
@@ -277,6 +278,7 @@ function AppRoutes() {
               {/* Public pages */}
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/login/bind-phone" element={<BindWechatPhone />} />
               <Route path="/help" element={<Help />} />
               <Route path="/about" element={<About />} />
               <Route path="/content/:slug" element={<ContentCmsPage />} />

@@ -26,10 +26,12 @@
     "test:flow": "node -r tsx/cjs --test test/flow-smoke.test.js",
     "test:smoke": "node -r tsx/cjs --test test/flow-smoke.test.js",
     "test:stripe": "node -r tsx/cjs --test test/stripe-amount.test.js",
-    "test:all": "node -r tsx/cjs --test --test-force-exit test/health.test.js test/auth-flow.test.js test/payment-channels.test.js test/flow-smoke.test.js test/stripe-amount.test.js test/order-state-machine.test.js test/return-state-machine.test.js"
+    "test:unit": "node -r tsx/cjs --test test/health.test.js test/stripe-amount.test.js test/order-state-machine.test.js test/return-state-machine.test.js test/file-magic.test.js test/upload-presign.test.js test/sms-otp-adapter.test.js",
+    "test:all": "node -r tsx/cjs --test --test-force-exit test/health.test.js test/auth-flow.test.js test/payment-channels.test.js test/flow-smoke.test.js test/stripe-amount.test.js test/order-state-machine.test.js test/return-state-machine.test.js test/file-magic.test.js test/sms-otp-adapter.test.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1044.0",
+    "@aws-sdk/s3-request-presigner": "^3.1048.0",
     "bcryptjs": "^3.0.3",
     "bullmq": "^5.76.6",
     "compression": "^1.8.1",

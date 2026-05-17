@@ -22,7 +22,7 @@ type StoreTabHeaderProps = {
   /** 是否在 Logo 旁显示站名（sm 及以上）；游客首页可在小屏也显示 */
   showSiteName?: boolean;
   showSiteNameMobile?: boolean;
-  /** sticky 用于 Tab/会员首页；fixed 用于游客首页（需配合 main 偏移） */
+  /** 首页顶栏统一 sticky；fixed 仅保留兼容旧用法 */
   position?: "sticky" | "fixed";
   className?: string;
 };

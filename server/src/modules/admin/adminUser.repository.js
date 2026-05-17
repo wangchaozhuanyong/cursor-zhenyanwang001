@@ -1,16 +1,32 @@
 const db = require('../../config/db');
 const { ORDER_STATUS } = require('../../constants/status');
 
-function buildUserListWhere(keyword, tagId) {
-  let where = 'WHERE 1=1';
+function buildUserListWhere(keyword, tagId, filters = {}) {
+  let where = 'WHERE u.deleted_at IS NULL';
   const params = [];
   if (keyword) {
-    where += ' AND (nickname LIKE ? OR phone LIKE ?)';
+    where += ' AND (u.nickname LIKE ? OR u.phone LIKE ?)';
     params.push(`%${keyword}%`, `%${keyword}%`);
   }
   if (tagId) {
-    where += ' AND EXISTS (SELECT 1 FROM user_tag_assignments uta WHERE uta.user_id = users.id AND uta.tag_id = ?)';
+    where += ' AND EXISTS (SELECT 1 FROM user_tag_assignments uta WHERE uta.user_id = u.id AND uta.tag_id = ?)';
     params.push(tagId);
+  }
+  if (filters.wechatBound === '1' || filters.wechatBound === true) {
+    where += ` AND EXISTS (
+      SELECT 1 FROM user_auth_identities uai
+      WHERE uai.user_id = u.id AND uai.provider = 'wechat_open'
+    )`;
+  } else if (filters.wechatBound === '0' || filters.wechatBound === false) {
+    where += ` AND NOT EXISTS (
+      SELECT 1 FROM user_auth_identities uai
+      WHERE uai.user_id = u.id AND uai.provider = 'wechat_open'
+    )`;
+  }
+  if (filters.phoneBound === '0' || filters.phoneBound === false) {
+    where += ' AND (u.phone IS NULL OR TRIM(u.phone) = \'\')';
+  } else if (filters.phoneBound === '1' || filters.phoneBound === true) {
+    where += ' AND u.phone IS NOT NULL AND TRIM(u.phone) <> \'\'';
   }
   return { where, params };
 }
@@ -20,7 +36,10 @@ async function getConnection() {
 }
 
 async function countUsers(where, params) {
-  const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total FROM users ${where}`, params);
+  const [[{ total }]] = await db.query(
+    `SELECT COUNT(*) AS total FROM users u ${where}`,
+    params,
+  );
   return total;
 }
 
@@ -99,9 +118,28 @@ async function selectTagsForUserIds(userIds) {
   }, {});
 }
 
+async function selectWechatIdentityByUserId(userId) {
+  const [[row]] = await db.query(
+    `SELECT id, provider_openid, provider_unionid, appid, nickname, avatar_url, bound_at
+     FROM user_auth_identities
+     WHERE user_id = ? AND provider = 'wechat_open'
+     LIMIT 1`,
+    [userId],
+  );
+  return row || null;
+}
+
+async function deleteWechatIdentityByUserId(userId) {
+  const [r] = await db.query(
+    `DELETE FROM user_auth_identities WHERE user_id = ? AND provider = 'wechat_open'`,
+    [userId],
+  );
+  return (r.affectedRows || 0) > 0;
+}
+
 async function selectUserSummaryById(userId) {
   const [[user]] = await db.query(
-    `SELECT u.id, u.phone, u.nickname, u.avatar, u.invite_code, u.parent_invite_code,
+    `SELECT u.id, u.phone, u.password_hash, u.nickname, u.avatar, u.invite_code, u.parent_invite_code,
             u.points_balance, u.subordinate_enabled, u.wechat, u.whatsapp, u.created_at,
             ml.id AS member_level_id,
             ml.name AS member_level_name,
@@ -221,6 +259,8 @@ module.exports = {
   selectUsersPage,
   selectUsersForExport,
   selectTagsForUserIds,
+  selectWechatIdentityByUserId,
+  deleteWechatIdentityByUserId,
   selectUserSummaryById,
   countOrdersByUserId,
   sumUserSpentExcludingCancelled,

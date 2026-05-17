@@ -2,8 +2,17 @@
 import type { MemberLevel, UserProfile, UserTag } from "@/types/user";
 import type { PaginatedData, PaginationParams } from "@/types/common";
 
-export function getUsers(params?: PaginationParams & { keyword?: string; tagId?: string }) {
+export function getUsers(params?: PaginationParams & {
+  keyword?: string;
+  tagId?: string;
+  wechatBound?: string;
+  phoneBound?: string;
+}) {
   return get<PaginatedData<UserProfile>>("/admin/users", params as Record<string, string>);
+}
+
+export function unbindUserWechat(id: string) {
+  return post<void>(`/admin/users/${id}/unbind-wechat`);
 }
 
 export function getUserById(id: string) {

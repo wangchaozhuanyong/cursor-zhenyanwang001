@@ -6,7 +6,13 @@ import { useCartStore } from "@/stores/useCartStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useHistoryStore } from "@/stores/useHistoryStore";
 import { useOrderStore } from "@/stores/useOrderStore";
-import type { LoginParams, RegisterParams, OtpLoginParams, OAuthExchangeParams } from "@/types/auth";
+import type {
+  LoginParams,
+  RegisterParams,
+  OtpLoginParams,
+  OAuthExchangeParams,
+  WechatBindPhoneParams,
+} from "@/types/auth";
 import type { CartItem } from "@/types/cart";
 import { registerAuthExpiredHandler } from "@/lib/authSessionBridge";
 
@@ -19,6 +25,7 @@ interface AuthState {
   register: (params: RegisterParams) => Promise<void>;
   loginWithOtp: (params: OtpLoginParams) => Promise<void>;
   completeOAuthLogin: (params: OAuthExchangeParams) => Promise<void>;
+  bindWechatPhone: (params: WechatBindPhoneParams) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
@@ -117,6 +124,29 @@ export const useAuthStore = create<AuthState>()(
           set({
             loading: false,
             error: e instanceof Error ? e.message : "登录失败",
+          });
+          throw e;
+        }
+      },
+
+      bindWechatPhone: async (params) => {
+        const localCartSnapshot: CartItem[] = [...useCartStore.getState().items];
+        const localFavoriteIds = [...useFavoritesStore.getState().favoriteIds];
+        const localFavoriteProducts = [...useFavoritesStore.getState().favoriteProducts];
+        const localHistorySnapshot = [...useHistoryStore.getState().history];
+        set({ loading: true, error: null });
+        try {
+          await authService.bindWechatPhone(params);
+          set({ isAuthenticated: true });
+          await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
+          await useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts);
+          await useHistoryStore.getState().mergeLocalThenSync(localHistorySnapshot).catch(() => {});
+          await useUserStore.getState().loadProfile();
+          set({ loading: false });
+        } catch (e) {
+          set({
+            loading: false,
+            error: e instanceof Error ? e.message : "绑定失败",
           });
           throw e;
         }

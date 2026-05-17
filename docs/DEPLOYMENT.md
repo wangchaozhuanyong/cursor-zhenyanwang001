@@ -47,7 +47,8 @@
 | 去宝塔化 | `docs/de-baota/README.md`（标准路径 `/var/www/click-send-shop`、系统 Nginx、certbot） |
 | 数据库备份脚本 | `scripts/backup-mysql.ps1`（Windows）、`scripts/backup-mysql.sh`（Linux/macOS） |
 | 反向代理示例 | `deploy/Caddyfile.example`、`deploy/nginx.example.conf` |
-| CI | `.github/workflows/ci.yml`（前端 typecheck + build；服务端 typecheck） |
+| CI | `.github/workflows/ci.yml`（前端 typecheck + build + 单元测试；服务端 typecheck + `test:unit`） |
+| 自动部署门禁 | `deploy.yml` 仅在 **CI 成功** 后触发（`workflow_run`）；手动 `workflow_dispatch` 不受限 |
 
 ## 推荐上线步骤（简版）
 

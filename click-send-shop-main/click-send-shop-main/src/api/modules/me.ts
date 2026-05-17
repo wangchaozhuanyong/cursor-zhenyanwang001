@@ -1,0 +1,21 @@
+import { get, post } from "@/api/request";
+
+export interface WechatLoginBinding {
+  bound: boolean;
+  nickname?: string | null;
+  avatarUrl?: string | null;
+  boundAt?: string;
+  wechatLoginEnabled?: boolean;
+}
+
+export function getWechatBinding() {
+  return get<WechatLoginBinding>("/me/wechat-binding");
+}
+
+export function bindWechat(redirect?: string) {
+  return post<{ authorizeUrl: string }>("/me/bind-wechat", redirect ? { redirect } : {});
+}
+
+export function unbindWechat() {
+  return post<void>("/me/unbind-wechat");
+}

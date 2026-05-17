@@ -89,13 +89,16 @@ const cspDirectives = {
     ...helmetCspDefaults['script-src'],
     'data:',
     'https://static.cloudflareinsights.com',
+    'https://js.stripe.com',
     ...viteInlineScriptHashes,
   ],
   'connect-src': [
     "'self'",
     'https://cloudflareinsights.com',
     'https://static.cloudflareinsights.com',
+    'https://api.stripe.com',
   ],
+  'frame-src': ["'self'", 'https://js.stripe.com', 'https://hooks.stripe.com'],
 };
 if (!useHttpsSite) {
   cspDirectives['upgrade-insecure-requests'] = null;
@@ -182,7 +185,10 @@ const oauthStartLimiter = rateLimit({
   message: { code: 429, message: 'OAuth 璇锋眰杩囦簬棰戠箒锛岃绋嶅悗鍐嶈瘯' },
 });
 app.use('/api/auth/oauth/google/start', oauthStartLimiter);
-app.use('/api/auth/oauth/facebook/start', oauthStartLimiter);
+app.use('/api/auth/wechat/login', oauthStartLimiter);
+app.use('/api/auth/wechat/bind-phone', authSensitiveLimiter);
+app.use('/api/auth/wechat/otp/send', authSensitiveLimiter);
+app.use('/api/me/bind-wechat', oauthStartLimiter);
 
 const uploadLimiter = rateLimit({
   windowMs: 60 * 1000,

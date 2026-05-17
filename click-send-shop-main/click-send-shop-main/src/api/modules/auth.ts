@@ -7,6 +7,7 @@ import type {
   OtpSendParams,
   OtpLoginParams,
   OAuthExchangeParams,
+  WechatBindPhoneParams,
 } from "@/types/auth";
 import type { UserProfile } from "@/types/user";
 
@@ -52,5 +53,13 @@ export function getAuthFeatures() {
 
 export function exchangeOAuthTicket(params: OAuthExchangeParams) {
   return post<LoginResult>("/auth/oauth/exchange", params);
+}
+
+export function sendWechatBindOtp(params: { phone: string; countryCode: string }) {
+  return post<{ devOtp?: string; expiresInSeconds?: number } | null>("/auth/wechat/otp/send", params);
+}
+
+export function bindWechatPhone(params: WechatBindPhoneParams) {
+  return post<LoginResult>("/auth/wechat/bind-phone", params);
 }
 

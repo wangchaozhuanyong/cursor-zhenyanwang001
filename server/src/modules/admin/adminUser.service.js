@@ -17,7 +17,7 @@ if (typeof adjustUserPointsFn !== 'function') {
 async function listUsers(query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const pageSize = Math.min(50, Math.max(1, parseInt(query.pageSize, 10) || 20));
-  const { keyword, tagId } = query;
+  const { keyword, tagId, wechatBound, phoneBound } = query;
   const sortByRaw = String(query.sortBy || query.sort_by || '').trim();
   const sortDirRaw = String(query.sortDir || query.sort_dir || '').trim().toLowerCase();
   const sortDir = sortDirRaw === 'asc' ? 'ASC' : 'DESC';
@@ -34,7 +34,7 @@ async function listUsers(query) {
   };
   const sortExpr = sortKeyToSql[sortByRaw] || 'u.created_at';
   const sortSql = `${sortExpr} ${sortDir}, u.created_at DESC`;
-  const { where, params } = repo.buildUserListWhere(keyword, tagId);
+  const { where, params } = repo.buildUserListWhere(keyword, tagId, { wechatBound, phoneBound });
   const total = await repo.countUsers(where, params);
   const offset = (page - 1) * pageSize;
   const list = await repo.selectUsersPage(where, params, pageSize, offset, { sortSql });
@@ -57,7 +57,47 @@ async function getUserById(userId) {
   user.orderCount = orderCount;
   user.totalSpent = parseFloat(totalSpentRaw);
   user.tags = tagsByUserId[userId] || [];
+  const wechatIdentity = await repo.selectWechatIdentityByUserId(userId);
+  user.wechat_auth = wechatIdentity
+    ? {
+      bound: true,
+      nickname: wechatIdentity.nickname || null,
+      avatar_url: wechatIdentity.avatar_url || null,
+      openid: wechatIdentity.provider_openid,
+      unionid: wechatIdentity.provider_unionid || null,
+      appid: wechatIdentity.appid || null,
+      bound_at: wechatIdentity.bound_at,
+    }
+    : { bound: false };
   return { data: formatUserResponse(user, 'admin') };
+}
+
+async function adminUnbindWechat(userId, adminUserId, req) {
+  const user = await repo.selectUserSummaryById(userId);
+  if (!user) throw new BusinessError(404, '用户不存在');
+
+  const identity = await repo.selectWechatIdentityByUserId(userId);
+  if (!identity) throw new BusinessError(400, '该用户未绑定微信');
+
+  const hasPhone = Boolean(user.phone && String(user.phone).trim());
+  const hasPassword = Boolean(user.password_hash && String(user.password_hash).trim());
+  if (!hasPhone && !hasPassword) {
+    throw new BusinessError(400, '该用户无手机号或密码登录方式，不允许解绑微信');
+  }
+
+  await repo.deleteWechatIdentityByUserId(userId);
+
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'user.unbind_wechat',
+    objectType: 'user',
+    objectId: userId,
+    summary: `管理员解绑用户微信 ${user.phone || userId}`,
+    result: 'success',
+  });
+
+  return { data: null, message: '微信已解绑' };
 }
 
 function normalizeTagInput(body) {
@@ -320,8 +360,8 @@ const USER_EXPORT_HEADERS = [
 ];
 
 async function exportUsersCsv(query) {
-  const { keyword, tagId } = query;
-  const { where, params } = repo.buildUserListWhere(keyword, tagId);
+  const { keyword, tagId, wechatBound, phoneBound } = query;
+  const { where, params } = repo.buildUserListWhere(keyword, tagId, { wechatBound, phoneBound });
   const rows = await repo.selectUsersForExport(where, params);
   const tagsByUserId = await repo.selectTagsForUserIds(rows.map((u) => u.id));
   const data = rows.map((u) => ({
@@ -353,5 +393,6 @@ module.exports = {
   updateSubordinate,
   adjustUserPoints,
   resetUserPassword,
+  adminUnbindWechat,
   exportUsersCsv,
 };

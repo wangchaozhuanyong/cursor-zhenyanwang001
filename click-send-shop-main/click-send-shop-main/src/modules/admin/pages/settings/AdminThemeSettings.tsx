@@ -215,40 +215,38 @@ export default function AdminThemeSettings() {
     }
   };
 
-  const onSetDefault = async (id: string) => {
-    if (id === defaultSkinId) return;
-    const nextDefault = id;
-    setDefaultSkinId(nextDefault);
-    setDirty(true);
-    if (!dirty) {
-      try {
-        await persist(skins, nextDefault, activeSkinId, "已设为默认皮肤");
-      } catch {
-        /* noop */
-      }
-    } else {
-      toast.info("已标记为默认，保存后生效");
-    }
+  const buildNextSkins = () => {
+    const name = selectedSkin?.name?.trim();
+    if (!name) return null;
+    return skins.map((s) => (s.id === selectedSkinId ? { ...s, config: themeConfig, name } : s));
   };
 
-  const onApplyCurrent = async (id: string) => {
-    if (id === activeSkinId) return toast.info("已是当前生效皮肤");
+  const onSetDefault = async (id: string) => {
+    if (id === defaultSkinId) return toast.info("已是默认皮肤");
+    const nextSkins = id === selectedSkinId ? buildNextSkins() : skins;
+    if (!nextSkins) return toast.error("皮肤名称不能为空");
     try {
-      await persist(skins, defaultSkinId, id, "已应用为当前系统皮肤，管理后台已更新");
+      await persist(nextSkins, id, activeSkinId, "已设为默认皮肤");
     } catch {
       /* noop */
     }
   };
 
-  const onSave = async () => {
-    const name = selectedSkin?.name?.trim();
-    if (!name) return toast.error("皮肤名称不能为空");
-    const nextSkins = skins.map((s) =>
-      s.id === selectedSkinId ? { ...s, config: themeConfig, name } : s,
-    );
-    const nextDefault = defaultSkinId;
+  const onSaveDraft = async () => {
+    const nextSkins = buildNextSkins();
+    if (!nextSkins) return toast.error("皮肤名称不能为空");
     try {
-      await persist(nextSkins, nextDefault, activeSkinId, "已保存，并已应用到全站");
+      await persist(nextSkins, defaultSkinId, activeSkinId, "已保存皮肤配置");
+    } catch {
+      /* 保留编辑 */
+    }
+  };
+
+  const onSaveAndApply = async () => {
+    const nextSkins = buildNextSkins();
+    if (!nextSkins) return toast.error("皮肤名称不能为空");
+    try {
+      await persist(nextSkins, defaultSkinId, selectedSkinId, "已保存，并已应用到全站");
     } catch {
       /* 保留编辑 */
     }
@@ -286,7 +284,8 @@ export default function AdminThemeSettings() {
         dirty={dirty}
         saving={saving}
         saveDisabled={!selectedSkin?.name?.trim()}
-        onSave={() => void onSave()}
+        onSaveDraft={() => void onSaveDraft()}
+        onSaveAndApply={() => void onSaveAndApply()}
         onCopy={() => onCopySkin()}
         onAdd={onAddSkin}
         onSetDefault={() => void onSetDefault(selectedSkinId)}
@@ -297,7 +296,6 @@ export default function AdminThemeSettings() {
           setPendingDeleteId(selectedSkinId);
         }}
         onFullscreen={() => setFullscreenOpen(true)}
-        onApplyAdmin={() => void onApplyCurrent(selectedSkinId)}
       />
 
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start">

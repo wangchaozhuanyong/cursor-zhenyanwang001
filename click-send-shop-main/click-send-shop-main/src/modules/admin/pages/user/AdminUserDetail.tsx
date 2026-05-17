@@ -3,7 +3,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { fetchUserById, adjustUserPoints, fetchUserTags, setUserTags } from "@/services/admin/userService";
+import { fetchUserById, adjustUserPoints, fetchUserTags, setUserTags, unbindUserWechat } from "@/services/admin/userService";
 import { fetchAdminPointsRecords } from "@/services/admin/pointsService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useGoBack } from "@/hooks/useGoBack";
@@ -25,6 +25,7 @@ export default function AdminUserDetail() {
   const [recordsLoading, setRecordsLoading] = useState(false);
   const [pointsInput, setPointsInput] = useState("");
   const [reason, setReason] = useState("");
+  const [wechatUnbinding, setWechatUnbinding] = useState(false);
 
   const loadUserPointsRecords = async (userId: string) => {
     setRecordsLoading(true);
@@ -83,6 +84,30 @@ export default function AdminUserDetail() {
 
   const userTags = user && Array.isArray(user.tags) ? user.tags as UserTag[] : [];
   const userTagIds = new Set(userTags.map((tag) => tag.id));
+  const wechatAuth = user?.wechat_auth as {
+    bound?: boolean;
+    nickname?: string | null;
+    avatar_url?: string | null;
+    openid?: string;
+    unionid?: string | null;
+    appid?: string | null;
+    bound_at?: string;
+  } | undefined;
+
+  const handleAdminUnbindWechat = async () => {
+    if (!id) return;
+    setWechatUnbinding(true);
+    try {
+      await unbindUserWechat(id);
+      const data = await fetchUserById(id);
+      setUser(data);
+      toast.success("微信已解绑");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "解绑失败"));
+    } finally {
+      setWechatUnbinding(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -136,6 +161,46 @@ export default function AdminUserDetail() {
               <span className="text-foreground">{r.value}</span>
             </div>
           ))}
+          <div className="border-t border-[var(--theme-border)] pt-4 space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">账号绑定</h3>
+            {[
+              { label: "微信绑定状态", value: wechatAuth?.bound ? "已绑定" : "未绑定" },
+              { label: "微信昵称", value: wechatAuth?.nickname || "—" },
+              { label: "AppID", value: wechatAuth?.appid || "—" },
+              { label: "OpenID", value: wechatAuth?.openid || "—" },
+              { label: "UnionID", value: wechatAuth?.unionid || "—" },
+              {
+                label: "绑定时间",
+                value: wechatAuth?.bound_at ? new Date(wechatAuth.bound_at).toLocaleString("zh-CN") : "—",
+              },
+            ].map((r) => (
+              <div key={r.label} className="flex justify-between gap-3 text-sm">
+                <span className="text-muted-foreground shrink-0">{r.label}</span>
+                <span className="text-foreground text-right break-all">{r.value}</span>
+              </div>
+            ))}
+            {wechatAuth?.avatar_url ? (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground">微信头像</span>
+                <img src={wechatAuth.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+              </div>
+            ) : null}
+            <PermissionGate permission="user.update">
+              {wechatAuth?.bound ? (
+                <button
+                  type="button"
+                  disabled={wechatUnbinding}
+                  onClick={handleAdminUnbindWechat}
+                  className="rounded-lg border border-destructive/30 px-3 py-2 text-xs font-semibold text-destructive disabled:opacity-60"
+                >
+                  {wechatUnbinding ? "解绑中…" : "解绑微信"}
+                </button>
+              ) : null}
+            </PermissionGate>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              若发现重复账号，请核对手机号与微信绑定记录后人工合并；系统暂未开放自动合并。
+            </p>
+          </div>
           <div className="border-t border-[var(--theme-border)] pt-4">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-foreground">用户标签</h3>

@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from "react";
 import { Minus, Plus, Trash2, ShoppingBag, Loader2, Check } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import StoreTabHeader from "@/components/store/StoreTabHeader";
+import StorePageHeader from "@/components/store/StorePageHeader";
 import { cartLineKey, useCartStore } from "@/stores/useCartStore";
 import { productCoverForList } from "@/utils/uploadImageVariant";
 import { isLoggedIn } from "@/utils/token";
@@ -43,6 +43,13 @@ export default function Cart() {
   const selectedCount = items.filter((i) => selection[cartLineKey(i.product.id, i.variant_id)] !== false).length;
   const allSelected = items.length > 0 && selectedCount === items.length;
   const someSelected = selectedCount > 0;
+  const totalQty = items.reduce((s, i) => s + i.qty, 0);
+  const cartSubtitle =
+    items.length === 0
+      ? "空空如也"
+      : someSelected
+        ? `已选 ${selectedCount} 件 / 共 ${totalQty} 件`
+        : `共 ${totalQty} 件`;
 
   useEffect(() => {
     loadCart();
@@ -59,18 +66,23 @@ export default function Cart() {
 
   return (
     <div className="store-bottom-cart-space min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
-      <StoreTabHeader />
+      <StorePageHeader
+        title="购物车"
+        subtitle={cartSubtitle}
+        rightSlot={
+          items.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setSelectAll(!allSelected)}
+              className="text-xs font-semibold text-[var(--theme-primary)]"
+            >
+              {allSelected ? "取消全选" : "全选"}
+            </button>
+          ) : null
+        }
+      />
 
-      <main className="mx-auto w-full max-w-screen-xl px-4 md:px-6 md:py-8">
-        <div className="flex flex-wrap items-baseline gap-2 pb-4 pt-4 md:pt-6">
-          <h1 className="text-base font-semibold text-foreground md:text-xl">购物车</h1>
-          {items.length > 0 ? (
-            <span className="text-xs text-muted-foreground">
-              ({someSelected ? `已选 ${selectedCount}/` : ""}
-              {items.reduce((s, i) => s + i.qty, 0)} 件)
-            </span>
-          ) : null}
-        </div>
+      <main className="mx-auto w-full max-w-screen-xl px-4 md:px-6 md:py-4">
         {/* 桌面端：左商品列表 / 右结算摘要 */}
         <div className="md:grid md:grid-cols-[1fr_360px] md:gap-8">
           <div>

@@ -153,6 +153,9 @@ router.post(
   productCtrl.batchUpdateStatus,
 );
 /** 管理端图片上传：已登录管理员即可（避免仅 banner/settings 权限角色无法上传） */
+const userUploadPresignCtrl = require('../user/uploadPresign.controller');
+router.post('/upload/ticket', adminAuth, userUploadPresignCtrl.createTicket);
+router.post('/upload/complete', adminAuth, userUploadPresignCtrl.completeUpload);
 router.post('/upload', adminAuth, userUploadCtrl.uploadMiddleware, userUploadCtrl.uploadFile);
 router.post('/upload/multiple', adminAuth, userUploadCtrl.uploadMultiple, userUploadCtrl.uploadFiles);
 
@@ -281,6 +284,7 @@ router.put('/user-tags/:tagId', adminAuth, requirePermission('user.update'), use
 router.delete('/user-tags/:tagId', adminAuth, requirePermission('user.update'), userCtrl.deleteTag);
 router.put('/users/:id/tags', adminAuth, requirePermission('user.update'), userCtrl.setTags);
 router.post('/users/:id/reset-password', adminAuth, requirePermission('user.update'), userCtrl.resetPassword);
+router.post('/users/:id/unbind-wechat', adminAuth, requirePermission('user.update'), userCtrl.unbindWechat);
 router.get('/users/:id', adminAuth, requirePermission('user.view'), userQueryLimiter, userCtrl.getById);
 router.put('/users/:id', adminAuth, requirePermission('user.update'), userCtrl.update);
 router.put('/users/:id/subordinate', adminAuth, requirePermission('user.update'), userCtrl.updateSubordinate);

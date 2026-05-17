@@ -12,7 +12,9 @@ exports.readiness = async (_req, res, next) => {
       return res.success(result.data);
     }
     /** 把 503 交由 errorHandler 统一格式化 */
-    const err = new ServiceUnavailableError('数据库不可用');
+    const err = new ServiceUnavailableError(
+      result.data?.database === false ? '数据库不可用' : 'Redis 不可用',
+    );
     err.details = result.data;
     throw err;
   } catch (err) {

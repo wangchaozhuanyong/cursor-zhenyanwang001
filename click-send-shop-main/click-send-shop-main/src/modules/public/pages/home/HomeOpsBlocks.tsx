@@ -1,6 +1,8 @@
 ﻿import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { fetchHomeOps } from "@/services/contentService";
+import { getCategoryIconShellClassName } from "@/utils/themeVisuals";
 import type { HomeNavItem } from "@/types/content";
 
 function openTarget(navigate: ReturnType<typeof useNavigate>, url: string) {
@@ -46,6 +48,8 @@ const fallbackNavItems: HomeNavItem[] = [
 
 export default function HomeOpsBlocks() {
   const navigate = useNavigate();
+  const { themeConfig } = useThemeRuntime();
+  const categoryIconClass = getCategoryIconShellClassName(themeConfig.categoryIconStyle);
   const [navItems, setNavItems] = useState<HomeNavItem[]>([]);
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
 
@@ -84,7 +88,10 @@ export default function HomeOpsBlocks() {
               onClick={() => openHomeNavTarget(navigate, item)}
               className="flex w-[72px] shrink-0 flex-col items-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-1 py-2 text-center transition-colors hover:bg-[var(--theme-bg)]/60 active:scale-[0.98]"
             >
-              <span className="flex h-[44px] w-[44px] items-center justify-center overflow-hidden rounded-2xl bg-[var(--theme-bg)] text-[var(--theme-price)] ring-1 ring-[var(--theme-border)]">
+              <span
+                className={`${categoryIconClass} h-[44px] w-[44px] overflow-hidden text-base`}
+                data-theme-category-icon-style={themeConfig.categoryIconStyle}
+              >
                 <IconView value={item.icon_url} />
               </span>
               <span className="w-full truncate px-1 text-[11px] font-medium leading-tight text-[var(--theme-text)]">

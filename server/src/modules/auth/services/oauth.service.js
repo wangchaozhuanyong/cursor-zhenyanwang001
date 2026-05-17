@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * Google / Facebook OAuth：授权跳转与回调签发短期 ticket，前端 exchange 换 JWT
+ * Google OAuth：授权跳转与回调签发短期 ticket，前端 exchange 换 JWT
  */
 const crypto = require('crypto');
 const {
@@ -57,22 +57,13 @@ function sanitizeRedirectAfter(raw) {
 }
 
 function assertProvider(p) {
-  if (p !== 'google' && p !== 'facebook') throw new ValidationError('不支持的 OAuth 提供商');
+  if (p !== 'google') throw new ValidationError('不支持的 OAuth 提供商');
 }
 
 function googleClient() {
   const clientId = (process.env.GOOGLE_OAUTH_CLIENT_ID || '').trim();
   const clientSecret = (process.env.GOOGLE_OAUTH_CLIENT_SECRET || '').trim();
   if (!clientId || !clientSecret) throw new ValidationError('Google 登录未配置');
-  return { clientId, clientSecret };
-}
-
-function facebookClient() {
-  const clientId = (process.env.FACEBOOK_OAUTH_APP_ID || process.env.FACEBOOK_OAUTH_CLIENT_ID || '').trim();
-  const clientSecret = (
-    process.env.FACEBOOK_OAUTH_APP_SECRET || process.env.FACEBOOK_OAUTH_CLIENT_SECRET || ''
-  ).trim();
-  if (!clientId || !clientSecret) throw new ValidationError('Facebook 登录未配置');
   return { clientId, clientSecret };
 }
 
@@ -95,17 +86,6 @@ function buildGoogleAuthorizeUrl(plainState) {
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 }
 
-function buildFacebookAuthorizeUrl(plainState) {
-  const { clientId } = facebookClient();
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirectUri('facebook'),
-    state: plainState,
-    scope: 'email,public_profile',
-  });
-  return `https://www.facebook.com/v20.0/dialog/oauth?${params.toString()}`;
-}
-
 async function startOAuth(provider, redirectRaw) {
   assertProvider(provider);
   const redirectAfter = sanitizeRedirectAfter(redirectRaw);
@@ -123,8 +103,7 @@ async function startOAuth(provider, redirectRaw) {
     expiresAt,
   });
 
-  if (provider === 'google') return buildGoogleAuthorizeUrl(plainState);
-  return buildFacebookAuthorizeUrl(plainState);
+  return buildGoogleAuthorizeUrl(plainState);
 }
 
 async function exchangeGoogleCode(code) {
@@ -162,49 +141,6 @@ async function exchangeGoogleCode(code) {
   };
 }
 
-async function exchangeFacebookCode(code) {
-  const { clientId, clientSecret } = facebookClient();
-  const tokenUrl = new URL('https://graph.facebook.com/v20.0/oauth/access_token');
-  tokenUrl.searchParams.set('client_id', clientId);
-  tokenUrl.searchParams.set('redirect_uri', redirectUri('facebook'));
-  tokenUrl.searchParams.set('client_secret', clientSecret);
-  tokenUrl.searchParams.set('code', code);
-
-  const res = await fetch(tokenUrl.toString());
-  const json = asObject(await res.json().catch(() => ({})));
-  if (!res.ok || json.error) {
-    const errObj = asObject(json.error);
-    throw new ValidationError(
-      strFrom(errObj.message) || strFrom(json.error_description) || 'Facebook 令牌交换失败',
-    );
-  }
-  const accessToken = strFrom(json.access_token);
-  if (!accessToken) throw new ValidationError('Facebook 授权响应无效');
-
-  const meUrl = new URL('https://graph.facebook.com/v20.0/me');
-  meUrl.searchParams.set('fields', 'id,name,email,picture.type(large)');
-  meUrl.searchParams.set('access_token', accessToken);
-  const meRes = await fetch(meUrl.toString());
-  const me = asObject(await meRes.json().catch(() => ({})));
-  if (!meRes.ok || me.error) {
-    const errObj = asObject(me.error);
-    throw new ValidationError(strFrom(errObj.message) || '获取 Facebook 用户信息失败');
-  }
-
-  const picture = asObject(me.picture);
-  const picData = asObject(picture.data);
-  const pic =
-    (typeof picData.url === 'string' && picData.url)
-    || (typeof picture.url === 'string' && picture.url)
-    || null;
-  return {
-    providerUserId: strFrom(me.id),
-    email: typeof me.email === 'string' ? me.email : null,
-    displayName: typeof me.name === 'string' ? me.name : null,
-    avatarUrl: pic,
-  };
-}
-
 async function ensureUserForOauth(provider, profile) {
   const { providerUserId, email, displayName, avatarUrl } = profile;
   if (!providerUserId) throw new ValidationError('第三方账号标识无效');
@@ -223,7 +159,7 @@ async function ensureUserForOauth(provider, profile) {
   const invite = generateInviteCode();
   const nickname = (displayName && String(displayName).trim())
     || (email && String(email).split('@')[0])
-    || (provider === 'google' ? 'Google 用户' : 'Facebook 用户');
+    || 'Google 用户';
 
   try {
     await repo.insertUser({
@@ -326,8 +262,7 @@ async function handleOAuthCallback(provider, query) {
 
   let profile;
   try {
-    if (provider === 'google') profile = await exchangeGoogleCode(String(code));
-    else profile = await exchangeFacebookCode(String(code));
+    profile = await exchangeGoogleCode(String(code));
   } catch (e) {
     const msg = e instanceof Error ? e.message : '授权失败';
     return errorRedirect(msg);

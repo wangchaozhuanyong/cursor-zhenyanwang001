@@ -3,6 +3,12 @@ import BannerCarousel from "@/components/BannerCarousel";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import ProductCard from "@/components/ProductCard";
 import type { ThemeConfig } from "@/types/theme";
+import {
+  getBottomNavInnerClassName,
+  getBottomNavShellClassName,
+  getCategoryIconShellClassName,
+  getMemberCardClassName,
+} from "@/utils/themeVisuals";
 import { previewBanner, previewProduct } from "./themePreviewData";
 
 const categories = ["美食", "生活", "签证", "好物", "促销"];
@@ -18,14 +24,10 @@ export default function StoreHomePreview({ config }: { config: ThemeConfig }) {
         <BannerCarousel banners={[previewBanner]} themeConfigOverride={config} />
       </div>
       <div className="grid grid-cols-5 gap-2">
-        {categories.map((label, i) => (
+        {categories.map((label) => (
           <div key={label} className="flex flex-col items-center gap-1 text-center">
             <div
-              className="flex h-10 w-10 items-center justify-center rounded-full text-xs font-semibold"
-              style={{
-                background: i % 2 ? "var(--theme-secondary)" : "var(--theme-primary)",
-                color: "var(--theme-primary-foreground)",
-              }}
+              className={getCategoryIconShellClassName(config.categoryIconStyle)}
               data-theme-category-icon-style={config.categoryIconStyle}
             >
               {label.slice(0, 1)}
@@ -45,9 +47,8 @@ export default function StoreHomePreview({ config }: { config: ThemeConfig }) {
         actionLabel="立即领取"
       />
       <div
-        className="store-card rounded-xl p-3"
+        className={`store-card rounded-xl p-3 ${getMemberCardClassName(config.memberCardStyle)}`}
         data-theme-member-card-style={config.memberCardStyle}
-        style={{ background: "var(--theme-gradient)", color: "var(--theme-gradient-foreground)" }}
       >
         <p className="text-sm font-semibold">会员卡 · 金卡会员</p>
         <p className="mt-1 text-xs opacity-90">积分 2,580 · 优惠券 3 张</p>
@@ -59,17 +60,22 @@ export default function StoreHomePreview({ config }: { config: ThemeConfig }) {
           <ProductCard product={{ ...previewProduct, id: "preview-2", name: "限时特惠商品" }} />
         </div>
       </div>
-      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-around border-t border-[var(--theme-border)] bg-[var(--theme-surface)] py-2 text-[10px]">
-        <span className="flex flex-col items-center gap-0.5 text-[var(--theme-primary)]">
-          <Home size={16} /> 首页
-        </span>
-        <span className="flex flex-col items-center gap-0.5 text-[var(--theme-text-muted)]">
-          <ShoppingBag size={16} /> 分类
-        </span>
-        <span className="flex flex-col items-center gap-0.5 text-[var(--theme-text-muted)]">
-          <User size={16} /> 我的
-        </span>
-      </div>
+      <nav
+        className={getBottomNavShellClassName(config.navStyle, "absolute")}
+        data-theme-nav-style={config.navStyle}
+      >
+        <div className={`${getBottomNavInnerClassName(config.navStyle)} flex items-center justify-around py-2 text-[10px]`}>
+          <span className="flex flex-col items-center gap-0.5 text-[var(--theme-primary)]">
+            <Home size={16} /> 首页
+          </span>
+          <span className="flex flex-col items-center gap-0.5 text-[var(--theme-text-muted)]">
+            <ShoppingBag size={16} /> 分类
+          </span>
+          <span className="flex flex-col items-center gap-0.5 text-[var(--theme-text-muted)]">
+            <User size={16} /> 我的
+          </span>
+        </div>
+      </nav>
     </div>
   );
 }

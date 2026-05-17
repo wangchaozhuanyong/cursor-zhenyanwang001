@@ -5,7 +5,12 @@ import type { MemberLevel, UserProfile, UserTag } from "@/types/user";
 import { downloadAdminCsv } from "@/utils/adminCsvDownload";
 import { unwrapList, unwrapPaginated } from "@/services/responseNormalize";
 
-export async function fetchUsers(params?: PaginationParams & { keyword?: string; tagId?: string }): Promise<PaginatedData<UserProfile>> {
+export async function fetchUsers(params?: PaginationParams & {
+  keyword?: string;
+  tagId?: string;
+  wechatBound?: string;
+  phoneBound?: string;
+}): Promise<PaginatedData<UserProfile>> {
   const res = await userApi.getUsers(params);
   return unwrapPaginated<UserProfile>(res.data);
 }
@@ -13,6 +18,10 @@ export async function fetchUsers(params?: PaginationParams & { keyword?: string;
 export async function fetchUserById(id: string) {
   const res = await userApi.getUserById(id);
   return res.data;
+}
+
+export async function unbindUserWechat(id: string) {
+  await userApi.unbindUserWechat(id);
 }
 
 export async function toggleSubordinate(id: string, enabled: boolean) {

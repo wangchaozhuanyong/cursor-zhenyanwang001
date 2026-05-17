@@ -25,7 +25,7 @@ import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import SkinPickerDialog from "@/components/SkinPickerDialog";
 import { BottomSheetConfirm } from "@/modules/micro-interactions";
 import NotificationIconButton from "@/components/NotificationIconButton";
-import StoreTabHeader from "@/components/store/StoreTabHeader";
+import StorePageHeader from "@/components/store/StorePageHeader";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useCouponStore } from "@/stores/useCouponStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
@@ -36,6 +36,7 @@ import * as inviteService from "@/services/inviteService";
 import * as rewardService from "@/services/rewardService";
 import * as uploadService from "@/services/uploadService";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { getMemberCardClassName } from "@/utils/themeVisuals";
 
 const CARD_CLASS = "rounded-[26px] bg-[var(--theme-surface)] shadow-[var(--theme-shadow)]";
 const SECTION_PADDING = "p-4";
@@ -80,14 +81,7 @@ function ProfileHeroCard({
   onAvatarClick: () => void;
   memberCardStyle: "light" | "gold" | "blackGold" | "fresh";
 }) {
-  const heroStyle =
-    memberCardStyle === "blackGold"
-      ? "bg-[linear-gradient(110deg,#0d0b08,#1e1812_45%,#2b2016)] text-[#f7e6be]"
-      : memberCardStyle === "gold"
-        ? "bg-[linear-gradient(110deg,#f4e7c8,#dec08b)] text-[#2f2415]"
-        : memberCardStyle === "fresh"
-          ? "bg-[linear-gradient(110deg,#edf9f4,#d8efe4)] text-[#173429]"
-          : "bg-[linear-gradient(110deg,#191714,#2a241d)] text-[#f2deab]";
+  const heroStyle = getMemberCardClassName(memberCardStyle);
 
   const mutedClass = memberCardStyle === "light" ? "text-[#d7c18f]" : "opacity-85";
 
@@ -209,11 +203,23 @@ export default function Profile() {
 
   return (
     <div className="store-page store-bottom-safe min-h-screen text-[var(--theme-text)]">
-      <StoreTabHeader
+      <StorePageHeader
+        title="我的"
+        subtitle={loggedIn ? "账号、订单、积分和优惠券" : "登录后查看订单、积分和会员权益"}
         rightSlot={(
           <>
             {loggedIn ? <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} /> : null}
-            <SkinPickerDialog trigger={<button type="button" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50 text-[var(--theme-text-muted-on-surface)]"><Palette size={16} /></button>} />
+            <SkinPickerDialog trigger={<button type="button" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50 text-[var(--theme-text-muted)]" aria-label="切换皮肤"><Palette size={16} /></button>} />
+            {loggedIn ? (
+              <button
+                type="button"
+                onClick={() => navigate("/settings")}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50 text-[var(--theme-text-muted)]"
+                aria-label="设置"
+              >
+                <Settings size={16} />
+              </button>
+            ) : null}
           </>
         )}
       />

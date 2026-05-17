@@ -374,6 +374,125 @@ async function tryConsumeOtpRow(id) {
   return (r.affectedRows || 0) === 1;
 }
 
+/** ─── 微信第三方身份 / 待绑定 / 登录审计（迁移 066）─── */
+
+async function selectAuthIdentityByOpenid(provider, openid) {
+  const [[row]] = await db.query(
+    `SELECT uai.*, u.id AS user_row_id, u.phone, u.password_hash, u.role, u.refresh_token_version
+     FROM user_auth_identities uai
+     JOIN users u ON BINARY u.id = BINARY uai.user_id
+     WHERE uai.provider = ? AND uai.provider_openid = ?
+       AND u.deleted_at IS NULL
+     LIMIT 1`,
+    [provider, openid],
+  );
+  return row || null;
+}
+
+async function selectAuthIdentityByUnionid(provider, unionid) {
+  if (!unionid || !String(unionid).trim()) return null;
+  const [[row]] = await db.query(
+    `SELECT uai.*, u.id AS user_row_id, u.phone, u.password_hash, u.role, u.refresh_token_version
+     FROM user_auth_identities uai
+     JOIN users u ON BINARY u.id = BINARY uai.user_id
+     WHERE uai.provider = ? AND uai.provider_unionid = ?
+       AND u.deleted_at IS NULL
+     LIMIT 1`,
+    [provider, String(unionid).trim()],
+  );
+  return row || null;
+}
+
+async function selectAuthIdentityByUserAndProvider(userId, provider) {
+  const [[row]] = await db.query(
+    `SELECT id, user_id, provider, provider_openid, provider_unionid, appid,
+            nickname, avatar_url, bound_at, created_at, updated_at
+     FROM user_auth_identities
+     WHERE BINARY user_id = BINARY ? AND provider = ?
+     LIMIT 1`,
+    [userId, provider],
+  );
+  return row || null;
+}
+
+async function insertAuthIdentity(params) {
+  const {
+    id, userId, provider, providerOpenid, providerUnionid, appid, nickname, avatarUrl,
+  } = params;
+  await db.query(
+    `INSERT INTO user_auth_identities
+       (id, user_id, provider, provider_openid, provider_unionid, appid, nickname, avatar_url, bound_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+    [
+      id, userId, provider, providerOpenid, providerUnionid || null,
+      appid || null, nickname || null, avatarUrl || null,
+    ],
+  );
+}
+
+async function deleteAuthIdentityById(id) {
+  await db.query('DELETE FROM user_auth_identities WHERE id = ?', [id]);
+}
+
+async function selectUserPhoneAndPassword(userId) {
+  const [[row]] = await db.query(
+    `SELECT id, phone, password_hash, role, refresh_token_version
+     FROM users WHERE id = ? AND deleted_at IS NULL`,
+    [userId],
+  );
+  return row || null;
+}
+
+async function updateUserPhone(userId, phone) {
+  await db.query('UPDATE users SET phone = ? WHERE id = ?', [phone, userId]);
+}
+
+async function insertPendingWechatLogin(params) {
+  const {
+    id, tokenHash, userId, providerOpenid, providerUnionid, appid, nickname, avatarUrl, expiresAt,
+  } = params;
+  await db.query(
+    `INSERT INTO pending_wechat_login
+       (id, token_hash, user_id, provider_openid, provider_unionid, appid, nickname, avatar_url, expires_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id, tokenHash, userId || null, providerOpenid, providerUnionid || null,
+      appid || null, nickname || null, avatarUrl || null, expiresAt,
+    ],
+  );
+}
+
+async function selectPendingWechatByHash(tokenHash) {
+  const [[row]] = await db.query(
+    `SELECT id, user_id, provider_openid, provider_unionid, appid, nickname, avatar_url,
+            expires_at, consumed_at
+     FROM pending_wechat_login
+     WHERE BINARY token_hash = BINARY ?
+       AND consumed_at IS NULL AND expires_at > NOW()
+     LIMIT 1`,
+    [tokenHash],
+  );
+  return row || null;
+}
+
+async function tryConsumePendingWechat(id) {
+  const [r] = await db.query(
+    `UPDATE pending_wechat_login SET consumed_at = NOW()
+     WHERE id = ? AND consumed_at IS NULL AND expires_at > NOW()`,
+    [id],
+  );
+  return (r.affectedRows || 0) === 1;
+}
+
+async function insertLoginAudit(params) {
+  const { id, userId, loginMethod, ip, uaHash } = params;
+  await db.query(
+    `INSERT INTO user_login_audits (id, user_id, login_method, ip, ua_hash)
+     VALUES (?, ?, ?, ?, ?)`,
+    [id, userId, loginMethod, ip || null, uaHash || null],
+  );
+}
+
 module.exports = {
   findUserIdByPhone,
   findUserIdByPhones,
@@ -414,4 +533,15 @@ module.exports = {
   insertOtpSendLog,
   selectOtpLogForVerify,
   tryConsumeOtpRow,
+  selectAuthIdentityByOpenid,
+  selectAuthIdentityByUnionid,
+  selectAuthIdentityByUserAndProvider,
+  insertAuthIdentity,
+  deleteAuthIdentityById,
+  selectUserPhoneAndPassword,
+  updateUserPhone,
+  insertPendingWechatLogin,
+  selectPendingWechatByHash,
+  tryConsumePendingWechat,
+  insertLoginAudit,
 };

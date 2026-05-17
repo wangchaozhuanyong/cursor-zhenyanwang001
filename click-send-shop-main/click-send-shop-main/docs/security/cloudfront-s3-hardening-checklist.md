@@ -19,6 +19,11 @@
 - [ ] `Referrer-Policy: strict-origin-when-cross-origin`
 - [ ] `Strict-Transport-Security` enabled on main domain
 
+## Browser CORS (presigned PUT)
+- [ ] Bucket CORS allows `PUT` from production site Origin(s) only (see `S3-CORS-PRESIGNED-UPLOAD.md` + `s3-cors-presigned-upload.json`).
+- [ ] `AllowedOrigins` matches `CORS_ORIGINS` / `PUBLIC_APP_URL` (no `*` on production bucket).
+- [ ] Dev/staging use separate bucket or temporary CORS rules with localhost origins.
+
 ## Upload Controls
 - [ ] Upload only via presigned URL from backend.
 - [ ] Presigned URL expiration <= 5 minutes.

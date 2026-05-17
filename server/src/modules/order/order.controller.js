@@ -2,10 +2,38 @@ const orderService = require('./order.service');
 const orderApiService = require('./services/order.api.service');
 const checkoutAbandonmentService = require('./checkoutAbandonment.service');
 const { asyncRoute } = require('../../middleware/asyncRoute');
+const { writeAuditLog } = require('../../utils/auditLog');
 
 exports.createOrder = asyncRoute(async (req, res) => {
-  const result = await orderApiService.createOrder(req.user.id, req.body);
-  res.success(result.data, result.message);
+  try {
+    const result = await orderApiService.createOrder(req.user.id, req.body);
+    await writeAuditLog({
+      req,
+      operatorId: req.user.id,
+      actionType: 'order.create',
+      objectType: 'order',
+      objectId: result.data?.id || null,
+      summary: `用户下单 ${result.data?.order_no || ''}`.trim(),
+      after: {
+        order_no: result.data?.order_no,
+        total_amount: result.data?.total_amount,
+        status: result.data?.status,
+      },
+      result: 'success',
+    });
+    res.success(result.data, result.message);
+  } catch (err) {
+    await writeAuditLog({
+      req,
+      operatorId: req.user?.id,
+      actionType: 'order.create',
+      objectType: 'order',
+      summary: '用户下单失败',
+      result: 'failure',
+      errorMessage: err?.message || String(err),
+    });
+    throw err;
+  }
 });
 
 exports.recordCheckoutAbandonment = asyncRoute(async (req, res) => {
@@ -24,8 +52,31 @@ exports.getOrderById = asyncRoute(async (req, res) => {
 });
 
 exports.cancelOrder = asyncRoute(async (req, res) => {
-  const result = await orderService.cancelOrder(req.user.id, req.params.id);
-  res.success(result.data, result.message);
+  try {
+    const result = await orderService.cancelOrder(req.user.id, req.params.id);
+    await writeAuditLog({
+      req,
+      operatorId: req.user.id,
+      actionType: 'order.cancel',
+      objectType: 'order',
+      objectId: req.params.id,
+      summary: `用户取消订单 ${req.params.id}`,
+      result: 'success',
+    });
+    res.success(result.data, result.message);
+  } catch (err) {
+    await writeAuditLog({
+      req,
+      operatorId: req.user?.id,
+      actionType: 'order.cancel',
+      objectType: 'order',
+      objectId: req.params.id,
+      summary: '用户取消订单失败',
+      result: 'failure',
+      errorMessage: err?.message || String(err),
+    });
+    throw err;
+  }
 });
 
 exports.payOrder = asyncRoute(async (req, res) => {
@@ -39,6 +90,29 @@ exports.createStripeCheckoutSession = asyncRoute(async (req, res) => {
 });
 
 exports.confirmReceive = asyncRoute(async (req, res) => {
-  const result = await orderService.confirmReceive(req.user.id, req.params.id);
-  res.success(result.data, result.message);
+  try {
+    const result = await orderService.confirmReceive(req.user.id, req.params.id);
+    await writeAuditLog({
+      req,
+      operatorId: req.user.id,
+      actionType: 'order.confirm_receive',
+      objectType: 'order',
+      objectId: req.params.id,
+      summary: `用户确认收货 ${req.params.id}`,
+      result: 'success',
+    });
+    res.success(result.data, result.message);
+  } catch (err) {
+    await writeAuditLog({
+      req,
+      operatorId: req.user?.id,
+      actionType: 'order.confirm_receive',
+      objectType: 'order',
+      objectId: req.params.id,
+      summary: '用户确认收货失败',
+      result: 'failure',
+      errorMessage: err?.message || String(err),
+    });
+    throw err;
+  }
 });

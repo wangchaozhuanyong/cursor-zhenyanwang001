@@ -9,14 +9,14 @@ export type ThemeStudioHeaderProps = {
   dirty: boolean;
   saving: boolean;
   saveDisabled?: boolean;
-  onSave: () => void;
+  onSaveDraft: () => void;
+  onSaveAndApply: () => void;
   onCopy: () => void;
   onAdd: () => void;
   onSetDefault: () => void;
   canDelete?: boolean;
   onDelete: () => void;
   onFullscreen: () => void;
-  onApplyAdmin?: () => void;
 };
 
 export default function ThemeStudioHeader({
@@ -25,14 +25,14 @@ export default function ThemeStudioHeader({
   dirty,
   saving,
   saveDisabled,
-  onSave,
+  onSaveDraft,
+  onSaveAndApply,
   onCopy,
   onAdd,
   onSetDefault,
   canDelete = true,
   onDelete,
   onFullscreen,
-  onApplyAdmin,
 }: ThemeStudioHeaderProps) {
   return (
     <header className="sticky top-0 z-20 -mx-3 mb-4 rounded-xl border border-border bg-[var(--theme-card)]/95 px-3 py-3 shadow-sm backdrop-blur-md sm:-mx-0 sm:px-4">
@@ -62,15 +62,6 @@ export default function ThemeStudioHeader({
             <Maximize2 size={14} />
             全屏预览
           </button>
-          {onApplyAdmin ? (
-            <button
-              type="button"
-              onClick={onApplyAdmin}
-              className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary"
-            >
-              应用到当前后台
-            </button>
-          ) : null}
           <button type="button" onClick={onAdd} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
             <Plus size={14} />
             新建
@@ -98,14 +89,25 @@ export default function ThemeStudioHeader({
           <PermissionGate permission="settings.manage">
             <LoadingButton
               type="button"
-              variant="solid"
+              variant="outline"
               state={saving ? "loading" : "normal"}
               loadingText="保存中..."
               disabled={saveDisabled}
-              onClick={onSave}
+              onClick={onSaveDraft}
+              className="inline-flex rounded-lg border border-border px-3 py-2 text-xs font-semibold"
+            >
+              保存草稿
+            </LoadingButton>
+            <LoadingButton
+              type="button"
+              variant="solid"
+              state={saving ? "loading" : "normal"}
+              loadingText="应用中..."
+              disabled={saveDisabled}
+              onClick={onSaveAndApply}
               className="inline-flex rounded-lg bg-[var(--theme-primary)] px-4 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]"
             >
-              保存
+              保存并应用到全站
             </LoadingButton>
           </PermissionGate>
         </div>

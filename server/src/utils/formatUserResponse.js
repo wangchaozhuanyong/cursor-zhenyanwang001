@@ -61,6 +61,11 @@ function formatUserResponse(user, role = 'user') {
     for (const k of INTERNAL_KEYS) {
       if (k in u) delete u[k];
     }
+
+    if (u.wechat_auth && typeof u.wechat_auth === 'object') {
+      const { openid, unionid, appid, ...safe } = u.wechat_auth;
+      u.wechat_auth = safe;
+    }
   }
 
   return u;

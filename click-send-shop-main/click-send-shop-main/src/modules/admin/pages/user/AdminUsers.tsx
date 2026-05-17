@@ -34,8 +34,12 @@ export default function AdminUsers() {
   const loading = useAdminUsersStore((s) => s.loading);
   const search = useAdminUsersStore((s) => s.search);
   const selectedTagId = useAdminUsersStore((s) => s.selectedTagId);
+  const wechatBoundFilter = useAdminUsersStore((s) => s.wechatBoundFilter);
+  const phoneBoundFilter = useAdminUsersStore((s) => s.phoneBoundFilter);
   const setSearch = useAdminUsersStore((s) => s.setSearch);
   const setSelectedTagId = useAdminUsersStore((s) => s.setSelectedTagId);
+  const setWechatBoundFilter = useAdminUsersStore((s) => s.setWechatBoundFilter);
+  const setPhoneBoundFilter = useAdminUsersStore((s) => s.setPhoneBoundFilter);
   const setPage = useAdminUsersStore((s) => s.setPage);
   const setPageSize = useAdminUsersStore((s) => s.setPageSize);
   const loadUsers = useAdminUsersStore((s) => s.loadUsers);
@@ -72,6 +76,18 @@ export default function AdminUsers() {
     setSelectedTagId(value);
     setPage(1);
     loadUsers({ page: 1, tagId: value }).catch((e) => toast.error(toastErrorMessage(e, "加载数据失败")));
+  };
+
+  const handleWechatFilterChange = (value: string) => {
+    setWechatBoundFilter(value);
+    setPage(1);
+    loadUsers({ page: 1, wechatBound: value }).catch((e) => toast.error(toastErrorMessage(e, "加载数据失败")));
+  };
+
+  const handlePhoneFilterChange = (value: string) => {
+    setPhoneBoundFilter(value);
+    setPage(1);
+    loadUsers({ page: 1, phoneBound: value }).catch((e) => toast.error(toastErrorMessage(e, "加载数据失败")));
   };
 
   const handlePageChange = (nextPage: number) => {
@@ -147,6 +163,24 @@ export default function AdminUsers() {
           {tags.map((tag) => (
             <option key={tag.id} value={tag.id}>{tag.name}</option>
           ))}
+        </select>
+        <select
+          value={wechatBoundFilter}
+          onChange={(e) => handleWechatFilterChange(e.target.value)}
+          className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm text-foreground outline-none"
+        >
+          <option value="">微信绑定（全部）</option>
+          <option value="1">已绑定微信</option>
+          <option value="0">未绑定微信</option>
+        </select>
+        <select
+          value={phoneBoundFilter}
+          onChange={(e) => handlePhoneFilterChange(e.target.value)}
+          className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm text-foreground outline-none"
+        >
+          <option value="">手机号（全部）</option>
+          <option value="1">已绑定手机号</option>
+          <option value="0">未绑定手机号</option>
         </select>
         <PermissionGate permission="user.view">
           <button type="button" onClick={handleExportCsv} className="touch-manipulation flex min-h-[44px] shrink-0 items-center gap-1.5 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2.5 text-sm text-foreground hover:bg-[var(--theme-bg)] sm:self-center">

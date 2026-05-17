@@ -31,6 +31,18 @@
 - **服务器（Linux）推荐**：在服务器仓库根目录执行 `bash deploy/ci-deploy.sh`（内部跑 `production-deploy.sh` + `verify-pm2.sh`）。
 - **Windows 发起 SSH 部署**：`powershell -ExecutionPolicy Bypass -File deploy/deploy-from-windows.ps1`（需设置 `EC2_HOST` / `SSH_KEY_PATH` 或传参）。
 
+## Redis 与就绪探针
+
+- 生产建议配置 `REDIS_URL`（或 `REDIS_HOST` + `REDIS_PASSWORD`）；未配置时启动会 `[WARN]`，且 `/api/health/ready` 返回 `redis: "not_configured"`。
+- 已配置 Redis 时，就绪探针会 ping Redis；连接失败则 **503**（`redis: false`）。
+
+## 上传安全
+
+- 图片仅允许 JPEG / PNG / WebP，服务端校验 **magic bytes** 与最大分辨率（约 25MP）。
+- 生产强烈建议 `STORAGE_DRIVER=s3` + CloudFront（见 `click-send-shop-main/.../docs/security/`）。
+- **上传方式（当前默认）**：`POST /api/upload` multipart 经 Node 转码存储；未启用 S3 时文件在 `public/uploads`。
+- **S3 预签名直传（可选，默认关闭）**：上线前配好域名与桶后，前端构建设 `VITE_UPLOAD_PRESIGN=1`，并配置 Bucket CORS（见 `docs/security/S3-CORS-PRESIGNED-UPLOAD.md`）。
+
 ## 上线后
 
 - 确认 HTTPS、HSTS（由 `PUBLIC_APP_URL` 为 https 触发 Helmet 行为）、Cookie 安全策略符合预期。

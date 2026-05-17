@@ -9,6 +9,13 @@ export interface MemberLevel {
   is_default?: boolean;
 }
 
+export interface WechatLoginBinding {
+  bound: boolean;
+  nickname?: string | null;
+  avatarUrl?: string | null;
+  boundAt?: string;
+}
+
 export interface UserProfile {
   id: string;
   nickname: string;
@@ -16,6 +23,7 @@ export interface UserProfile {
   phone: string;
   wechat: string;
   whatsapp: string;
+  wechatLogin?: WechatLoginBinding;
   inviteCode: string;
   parentInviteCode: string;
   pointsBalance: number;

@@ -62,3 +62,8 @@ exports.resetPassword = asyncRoute(async (req, res) => {
   const r = await svc.resetUserPassword(req.params.id, req.user?.id, req);
   res.success(r.data, r.message);
 });
+
+exports.unbindWechat = asyncRoute(async (req, res) => {
+  const r = await svc.adminUnbindWechat(req.params.id, req.user?.id, req);
+  res.success(r.data, r.message);
+});

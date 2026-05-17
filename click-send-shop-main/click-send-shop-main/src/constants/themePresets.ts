@@ -253,3 +253,27 @@ export const PROMO_ADMIN_BG_OVERRIDES: Pick<ThemeConfig, "bgColor" | "surfaceCol
   surfaceColor: "#FFFFFF",
   borderColor: "#E5E7EB",
 };
+
+/** 后台固定安全主题：不跟随促销/黑金等强视觉皮肤 */
+export const ADMIN_SAFE_THEME_OVERRIDES: Pick<
+  ThemeConfig,
+  | "bgColor"
+  | "surfaceColor"
+  | "borderColor"
+  | "textColor"
+  | "mutedTextColor"
+  | "primaryColor"
+  | "secondaryColor"
+  | "accentColor"
+  | "priceColor"
+> = {
+  bgColor: "#F5F7FA",
+  surfaceColor: "#FFFFFF",
+  borderColor: "#E5E7EB",
+  textColor: "#333333",
+  mutedTextColor: "#888888",
+  primaryColor: "#00B14F",
+  secondaryColor: "#E0F5E9",
+  accentColor: "#FFC107",
+  priceColor: "#FF5722",
+};

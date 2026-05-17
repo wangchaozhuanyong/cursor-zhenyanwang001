@@ -1,7 +1,9 @@
 ﻿import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useMotionConfig } from "@/modules/micro-interactions";
 import { useNavigate } from "react-router-dom";
+import { getBannerContainerClassName, getBannerOverlayClassName } from "@/utils/themeVisuals";
 import type { Banner } from "@/types/banner";
 import type { ThemeConfig } from "@/types/theme";
 
@@ -18,6 +20,10 @@ function resolveBannerLink(link: string): string {
 }
 
 export default function BannerCarousel({ banners, loading = false, themeConfigOverride }: BannerCarouselProps) {
+  const { themeConfig: runtimeConfig } = useThemeRuntime();
+  const bannerStyle = themeConfigOverride?.bannerStyle ?? runtimeConfig.bannerStyle;
+  const bannerContainerClass = getBannerContainerClassName(bannerStyle);
+  const bannerOverlayClass = getBannerOverlayClassName(bannerStyle);
   const { enabled: motionEnabled } = useMotionConfig();
   const [current, setCurrent] = useState(0);
   const navigate = useNavigate();
@@ -80,13 +86,15 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
 
   return (
     <div
-      className={`relative overflow-hidden theme-shadow ${bannerLink ? "cursor-pointer" : ""}`}
-      data-banner-style={themeConfigOverride?.bannerStyle}
-      style={{ aspectRatio: "2.34 / 1", borderRadius: "var(--theme-radius)" }}
+      className={`relative overflow-hidden theme-shadow ${bannerContainerClass} ${bannerLink ? "cursor-pointer" : ""}`}
+      data-banner-style={bannerStyle}
+      data-theme-banner-style={bannerStyle}
+      style={{ aspectRatio: "2.34 / 1", borderRadius: bannerStyle === "premium" || bannerStyle === "fresh" ? undefined : "var(--theme-radius)" }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onClick={handleOpenBanner}
     >
+      {bannerOverlayClass ? <div className={bannerOverlayClass} aria-hidden /> : null}
       {motionEnabled ? (
         <AnimatePresence initial={false} mode="wait">
           <motion.img

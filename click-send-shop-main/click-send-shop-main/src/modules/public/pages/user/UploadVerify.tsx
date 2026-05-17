@@ -60,7 +60,8 @@ export default function UploadVerify() {
             <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" disabled={uploading} />
           </label>
           <p className="mt-3 text-xs text-muted-foreground">
-            当前策略：{result?.mode ?? "s3"}。当策略为 s3 时，返回域名必须是 S3/CloudFront 或白名单域名。
+            当前策略：{result?.mode ?? "s3"}。上传走 multipart；上线启用预签名时设 VITE_UPLOAD_PRESIGN=1。
+            当策略为 s3 时，返回域名必须是 S3/CloudFront 或白名单域名。
           </p>
         </div>
 

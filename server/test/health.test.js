@@ -1,5 +1,4 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
-require('./_dbCleanup.test');
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 const request = require('supertest');
@@ -20,6 +19,7 @@ describe('GET /api/health/ready', () => {
     if (res.status === 200) {
       assert.equal(res.body.code, 0);
       assert.equal(res.body.data?.database, true);
+      assert.ok('redis' in (res.body.data || {}));
     }
   });
 });

@@ -41,12 +41,15 @@ Install-Deps "server"
 npm run typecheck
 Assert-LastExitCode "server typecheck"
 
+Write-Host "`n--- server: npm run test:unit (no DB required) ---" -ForegroundColor DarkCyan
+$env:NODE_ENV = "test"
+npm run test:unit
+Assert-LastExitCode "server test:unit"
+
 if ($WithDbTests) {
     Write-Host "`n--- server: npm run test:all (needs DB in server/.env) ---" -ForegroundColor DarkCyan
     npm run test:all
     Assert-LastExitCode "server test:all"
-} else {
-    Write-Host "`n--- skip integration tests (pass -WithDbTests for npm run test:all) ---" -ForegroundColor DarkGray
 }
 
 Write-Host "`n--- frontend: deps + typecheck + build (VITE_API_BASE_URL=/api) ---" -ForegroundColor DarkCyan
@@ -55,6 +58,8 @@ Set-Location $fe
 Install-Deps "frontend"
 npm run typecheck
 Assert-LastExitCode "frontend typecheck"
+npm run test
+Assert-LastExitCode "frontend test"
 $env:VITE_API_BASE_URL = "/api"
 npm run build
 Assert-LastExitCode "frontend build"

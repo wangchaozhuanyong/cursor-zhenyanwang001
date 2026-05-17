@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { ReactNode } from "react";
+import { ThemeRuntimeOverrideProvider } from "@/contexts/ThemeRuntimeProvider";
 import type { ThemeConfig } from "@/types/theme";
 import { generateThemePalette } from "@/utils/themeContrast";
 
@@ -18,6 +19,7 @@ function toDataAttrs(config: ThemeConfig) {
     "data-theme-category-icon-style": config.categoryIconStyle,
     "data-theme-motion-level": config.motionLevel,
     "data-theme-density": config.density,
+    "data-theme-admin-mode": config.adminThemeMode,
   };
 }
 
@@ -38,8 +40,10 @@ export default function ThemePreviewScope({
   );
   const dataAttrs = toDataAttrs(config);
   return (
-    <div className={className} style={style} {...dataAttrs}>
-      {children}
-    </div>
+    <ThemeRuntimeOverrideProvider config={config}>
+      <div className={className} style={style} {...dataAttrs}>
+        {children}
+      </div>
+    </ThemeRuntimeOverrideProvider>
   );
 }

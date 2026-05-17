@@ -3,7 +3,7 @@
  */
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
-const paymentService = require('../src/modules/order/payment.service');
+const paymentService = require('../src/modules/payment/payment.service');
 const { validatePaymentIntentAmount } = paymentService;
 const repo = require('../src/modules/order/order.repository');
 

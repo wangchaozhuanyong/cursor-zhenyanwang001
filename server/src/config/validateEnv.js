@@ -122,6 +122,38 @@ function validateEnv() {
       console.error('[FATAL] MYINVOIS_SUBMIT_ENABLED=1 时必须同时设置 MYINVOIS_ENABLED=1');
       process.exit(1);
     }
+
+    const redisConfigured = Boolean(
+      (process.env.REDIS_URL || process.env.REDIS_CONNECTION_STRING || '').trim()
+      || (process.env.REDIS_HOST || '').trim(),
+    );
+    if (!redisConfigured) {
+      console.warn(
+        '[WARN] 生产环境未配置 Redis（REDIS_URL 或 REDIS_HOST）；缓存、分布式锁与 BullMQ 队列将无法正常工作',
+      );
+    }
+
+    if (storageDriver !== 's3') {
+      console.warn(
+        '[WARN] 生产环境建议 STORAGE_DRIVER=s3，避免用户上传落在本地 public/uploads（见 docs/security/backend-upload-go-live-checklist.md）',
+      );
+    }
+
+    const smsLoginEnabled = ['1', 'true', 'yes', 'on'].includes(
+      String(process.env.SMS_LOGIN_ENABLED || '').toLowerCase(),
+    );
+    if (smsLoginEnabled) {
+      const hasSmsProvider = Boolean(
+        (process.env.SMS_PROVIDER || '').trim()
+        || process.env.TWILIO_ACCOUNT_SID
+        || process.env.SMS_HTTP_URL,
+      );
+      if (!hasSmsProvider) {
+        console.warn(
+          '[WARN] SMS_LOGIN_ENABLED=1 但未配置 SMS_PROVIDER / Twilio / SMS_HTTP_URL，OTP 发送将失败',
+        );
+      }
+    }
   } else if (!jwt) {
     console.warn('[WARN] JWT_SECRET 未设置；非生产环境会使用进程内临时随机密钥，重启后 token 会失效');
   } else if (jwt.length < 64 || hasPlaceholder(jwt) || jwt === 'change_me') {

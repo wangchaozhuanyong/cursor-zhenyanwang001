@@ -64,6 +64,9 @@ const REPORT_COLUMN_LABELS = {
   product_name: '商品名称',
   cover_image: '封面图',
   category_name: '分类',
+  category_path: '分类路径',
+  parent_category_id: '父分类',
+  parent_category_name: '父分类名称',
   sales_qty: '销量',
   sales_amount: '销售额',
   buyer_count: '购买用户',
@@ -160,4 +163,55 @@ function labelReportColumn(key) {
   return REPORT_COLUMN_LABELS[key] ?? humanizeColumnKey(key);
 }
 
-module.exports = { labelReportColumn, REPORT_COLUMN_LABELS };
+const STOCK_STATUS_LABELS = { low: '低库存', normal: '正常', out: '缺货' };
+const ACTIVITY_TYPE_LABELS = {
+  flash_sale: '限时秒杀',
+  full_reduction: '满减活动',
+  coupon_activity: '优惠券活动',
+  new_user_gift: '新人礼包',
+  member_activity: '会员活动',
+  points_bonus: '积分赠送',
+  cashback_activity: '返现活动',
+};
+const PAYMENT_STATUS_LABELS = {
+  pending: '待支付',
+  unpaid: '未支付',
+  paid: '已支付',
+  success: '支付成功',
+  refunded: '已退款',
+  failed: '支付失败',
+  cancelled: '已取消',
+};
+const ORDER_STATUS_LABELS = {
+  pending: '待处理',
+  paid: '已支付',
+  processing: '处理中',
+  shipped: '已发货',
+  completed: '已完成',
+  cancelled: '已取消',
+  refunded: '已退款',
+};
+
+function labelFromMap(map, value, fallback = value) {
+  if (value == null || value === '') return '';
+  return map[value] ?? fallback;
+}
+
+function labelReportCellValue(key, value) {
+  if (value === null || value === undefined || value === '') return '';
+  if (typeof value === 'boolean') return value ? '是' : '否';
+  const s = String(value);
+  if (key === 'stock_status') return labelFromMap(STOCK_STATUS_LABELS, s, s);
+  if (key === 'activity_type') return labelFromMap(ACTIVITY_TYPE_LABELS, s, s);
+  if (key === 'payment_status') return labelFromMap(PAYMENT_STATUS_LABELS, s, s);
+  if (key === 'status') return labelFromMap(ORDER_STATUS_LABELS, s, s);
+  if (key === 'type' && ACTIVITY_TYPE_LABELS[s]) return labelFromMap(ACTIVITY_TYPE_LABELS, s, s);
+  if (key.endsWith('_rate') && !Number.isNaN(Number(s))) return `${s}%`;
+  return s;
+}
+
+module.exports = {
+  labelReportColumn,
+  labelReportCellValue,
+  REPORT_COLUMN_LABELS,
+};

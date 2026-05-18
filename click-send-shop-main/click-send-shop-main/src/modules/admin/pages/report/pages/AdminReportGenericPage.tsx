@@ -44,7 +44,7 @@ export default function AdminReportGenericPage({ title, fetcher }: Props) {
         const data = await fetcher(p);
         setPayload(data || {});
       } catch (e) {
-        toast.error(toastErrorMessage(e, "鍔犺浇鎶ヨ〃澶辫触"));
+        toast.error(toastErrorMessage(e, "加载报表失败"));
       } finally {
         setLoading(false);
       }
@@ -54,10 +54,17 @@ export default function AdminReportGenericPage({ title, fetcher }: Props) {
 
   const list = Array.isArray(payload.list) ? (payload.list as unknown as Record<string, unknown>[]) : [];
   const summary = (payload.summary || {}) as unknown as Record<string, unknown>;
-  const columns = useMemo(
-    () => (list.length > 0 ? Object.keys(list[0]) : ["col1", "col2", "col3", "col4", "col5"]),
-    [list],
-  );
+  const columns = useMemo(() => {
+    if (list.length === 0) return ["col1", "col2", "col3", "col4", "col5"];
+    const keys = Object.keys(list[0]);
+    if (!keys.includes("category_path")) return keys;
+    const hidden = new Set(["category_name", "parent_category_id", "parent_category_name"]);
+    const rest = keys.filter((k) => k !== "category_path" && !hidden.has(k));
+    const idIdx = rest.indexOf("category_id");
+    if (idIdx >= 0) rest.splice(idIdx + 1, 0, "category_path");
+    else rest.unshift("category_path");
+    return rest;
+  }, [list]);
 
   const summaryEntries = Object.entries(summary).slice(0, 8);
 
@@ -99,7 +106,7 @@ export default function AdminReportGenericPage({ title, fetcher }: Props) {
           </tr>
         )}
         emptyIcon={FileSpreadsheet}
-        emptyTitle="鏆傛棤鏁版嵁"
+        emptyTitle="暂无数据"
         renderRow={(row) => (
           <>
             {columns.map((k) => (

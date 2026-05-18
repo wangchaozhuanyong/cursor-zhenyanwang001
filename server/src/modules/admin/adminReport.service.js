@@ -1,5 +1,5 @@
 ﻿const repo = require('./adminReport.repository');
-const { labelReportColumn } = require('../../utils/reportColumnLabels');
+const { labelReportColumn, labelReportCellValue } = require('../../utils/reportColumnLabels');
 
 function formatDate(date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
@@ -211,9 +211,13 @@ function buildCsv(headers, rows) {
 function buildCsvFromRecords(records) {
   if (!records?.length) return buildCsv([], []);
   const keys = Object.keys(records[0]);
+  const preferPath = keys.includes('category_path');
+  const exportKeys = preferPath
+    ? keys.filter((k) => !['category_name', 'parent_category_id', 'parent_category_name'].includes(k))
+    : keys;
   return buildCsv(
-    keys.map(labelReportColumn),
-    records.map((r) => keys.map((k) => r[k])),
+    exportKeys.map(labelReportColumn),
+    records.map((r) => exportKeys.map((k) => labelReportCellValue(k, r[k]))),
   );
 }
 

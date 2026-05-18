@@ -67,7 +67,7 @@ Run-Step "Push $ReleaseBranch" "git push origin $ReleaseBranch" $RepoRoot
 if ($Quick) {
   $RemoteCmd = "set -e; cd '$RemoteProjectDir'; git fetch origin '$ReleaseBranch'; git reset --hard origin/'$ReleaseBranch'; cd server; pm2 restart gc-api; pm2 save; echo QUICK_DEPLOY_OK"
 } else {
-  $RemoteCmd = "set -e; export PROJECT_DIR='$RemoteProjectDir'; export PM2_APP='gc-api'; export GIT_BRANCH='$ReleaseBranch'; export AUTO_ROLLBACK='1'; cd '$RemoteProjectDir'; bash deploy/release-deploy.sh"
+  $RemoteCmd = "set -e; export PROJECT_DIR='$RemoteProjectDir'; export PM2_APP='gc-api'; export GIT_BRANCH='$ReleaseBranch'; export AUTO_ROLLBACK='1'; export SKIP_FRONTEND_BUILD='1'; cd '$RemoteProjectDir'; bash deploy/release-deploy.sh"
 }
 
 Run-Step "Remote deploy on $ServerIp" "ssh -o StrictHostKeyChecking=accept-new -i `"$SshKeyPath`" $ServerUser@$ServerIp `"$RemoteCmd`""

@@ -13,6 +13,7 @@
 #   GIT_BRANCH        默认 main（git fetch / reset 的目标分支）
 #   FRONTEND_BUILD_HEAP_MB  vite build 时 Node V8 堆上限（MB），默认 1024；小内存机不要设太高，避免把系统打到 OOM
 #   DEPLOY_LOCK_FILE        部署锁文件，默认 $PROJECT_DIR/.deploy.lock
+#   SKIP_FRONTEND_BUILD=1   跳过服务器端前端构建；适用于本地/Codex 已构建并上传 dist 的流程
 #
 set -euo pipefail
 
@@ -131,47 +132,51 @@ else
   npm run verify-schema
 fi
 
-echo "🎨 构建前端..." | tee -a "$LOG_FILE"
-if [[ ! -d "$FRONTEND_DIR" ]]; then
-  echo "❌ 找不到前端目录: $FRONTEND_DIR" | tee -a "$LOG_FILE"
-  exit 1
-fi
-
-ASSET_BACKUP=""
-if [[ -d "$FRONTEND_DIR/dist/assets" ]]; then
-  ASSET_BACKUP="$(mktemp -d)"
-  cp -a "$FRONTEND_DIR/dist/assets/." "$ASSET_BACKUP/" 2>/dev/null || true
-fi
-
-cd "$FRONTEND_DIR" || exit 1
-npm_install_here
-echo "🎨 VITE_API_BASE_URL=$VITE_API_BASE_URL（若 API 不在同域 /api，请导出正确地址后重跑）" | tee -a "$LOG_FILE"
-_fe_heap="${FRONTEND_BUILD_HEAP_MB:-1024}"
-echo "ℹ️  vite build：heap 上限 ${_fe_heap}MB（FRONTEND_BUILD_HEAP_MB）；直接 node 调 vite，避免 npm 子进程未继承 NODE_OPTIONS 仍 ~512MB OOM" | tee -a "$LOG_FILE"
-(
-  export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--max-old-space-size=${_fe_heap}"
-  node ./node_modules/vite/bin/vite.js build
-)
-
-if [[ -n "$ASSET_BACKUP" && -d "$ASSET_BACKUP" ]]; then
-  echo "🧩 保留上一版 hashed assets，避免已打开页面刷新/懒加载时 chunk 404" | tee -a "$LOG_FILE"
-  mkdir -p "$FRONTEND_DIR/dist/assets"
-  cp -an "$ASSET_BACKUP/." "$FRONTEND_DIR/dist/assets/" 2>/dev/null || true
-  rm -rf "$ASSET_BACKUP"
-fi
-
-echo "🔎 校验前端 dist 资源引用一致性..." | tee -a "$LOG_FILE"
-node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$FRONTEND_DIR/dist" | tee -a "$LOG_FILE"
-
-echo "📤 同步 dist → $PUBLIC_FRONTEND（保持 Node dist 与 Nginx 静态目录一致）" | tee -a "$LOG_FILE"
-mkdir -p "$PUBLIC_FRONTEND"
-if command -v rsync >/dev/null 2>&1; then
-  rsync -a --delete "$FRONTEND_DIR/dist/" "$PUBLIC_FRONTEND/"
+if [[ "${SKIP_FRONTEND_BUILD:-0}" == "1" ]]; then
+  echo "⏭️  SKIP_FRONTEND_BUILD=1：跳过服务器端前端构建与 dist 同步（由本地/Codex 上传 dist）" | tee -a "$LOG_FILE"
 else
-  rm -rf "${PUBLIC_FRONTEND:?}/"*
-  cp -a "$FRONTEND_DIR/dist/." "$PUBLIC_FRONTEND/"
+  echo "🎨 构建前端..." | tee -a "$LOG_FILE"
+  if [[ ! -d "$FRONTEND_DIR" ]]; then
+    echo "❌ 找不到前端目录: $FRONTEND_DIR" | tee -a "$LOG_FILE"
+    exit 1
+  fi
+
+  ASSET_BACKUP=""
+  if [[ -d "$FRONTEND_DIR/dist/assets" ]]; then
+    ASSET_BACKUP="$(mktemp -d)"
+    cp -a "$FRONTEND_DIR/dist/assets/." "$ASSET_BACKUP/" 2>/dev/null || true
+  fi
+
+  cd "$FRONTEND_DIR" || exit 1
+  npm_install_here
+  echo "🎨 VITE_API_BASE_URL=$VITE_API_BASE_URL（若 API 不在同域 /api，请导出正确地址后重跑）" | tee -a "$LOG_FILE"
+  _fe_heap="${FRONTEND_BUILD_HEAP_MB:-1024}"
+  echo "ℹ️  vite build：heap 上限 ${_fe_heap}MB（FRONTEND_BUILD_HEAP_MB）；直接 node 调 vite，避免 npm 子进程未继承 NODE_OPTIONS 仍 ~512MB OOM" | tee -a "$LOG_FILE"
+  (
+    export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--max-old-space-size=${_fe_heap}"
+    node ./node_modules/vite/bin/vite.js build
+  )
+
+  if [[ -n "$ASSET_BACKUP" && -d "$ASSET_BACKUP" ]]; then
+    echo "🧩 保留上一版 hashed assets，避免已打开页面刷新/懒加载时 chunk 404" | tee -a "$LOG_FILE"
+    mkdir -p "$FRONTEND_DIR/dist/assets"
+    cp -an "$ASSET_BACKUP/." "$FRONTEND_DIR/dist/assets/" 2>/dev/null || true
+    rm -rf "$ASSET_BACKUP"
+  fi
+
+  echo "🔎 校验前端 dist 资源引用一致性..." | tee -a "$LOG_FILE"
+  node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$FRONTEND_DIR/dist" | tee -a "$LOG_FILE"
+
+  echo "📤 同步 dist → $PUBLIC_FRONTEND（保持 Node dist 与 Nginx 静态目录一致）" | tee -a "$LOG_FILE"
+  mkdir -p "$PUBLIC_FRONTEND"
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a --delete "$FRONTEND_DIR/dist/" "$PUBLIC_FRONTEND/"
+  else
+    rm -rf "${PUBLIC_FRONTEND:?}/"*
+    cp -a "$FRONTEND_DIR/dist/." "$PUBLIC_FRONTEND/"
+  fi
+  node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$PUBLIC_FRONTEND" | tee -a "$LOG_FILE"
 fi
-node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$PUBLIC_FRONTEND" | tee -a "$LOG_FILE"
 
 PM2_APP="${PM2_APP:-gc-api}"
 

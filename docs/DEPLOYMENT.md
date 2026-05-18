@@ -11,7 +11,8 @@
    通过后再 `git commit` / `push`。若本机已配好 `server/.env` 且 MySQL 可用，可加 `-WithDbTests` 跑 `npm run test:all`。
 2. **GitHub**：`push` 到 `main` 会触发 **CI**（`.github/workflows/ci.yml`：前端 build + 服务端 typecheck，无需数据库）。**自动上架**依赖 **Deploy** workflow，须先配好 Secrets（见下表）。
 3. **服务器**：代码目录必须是 **`git clone` 的标准路径**（默认 `/var/www/click-send-shop`），且存在 **`server/.env`**（生产 **禁止** `DB_USER=root`，脚本会拦截）。**唯一推荐上架入口**：`bash deploy/ci-deploy.sh`（与 GitHub Actions SSH 里调用的一致）；内部会执行 `production-deploy.sh`（迁移、前端带 `VITE_API_BASE_URL=/api` 构建、PM2、健康检查）。你在服务器上改的 **`server/ecosystem.config.cjs`** 在每次 `git reset` 前会自动 **stash / 恢复**，避免被覆盖。
-4. **不要用多种脚本混着来**：日常只记一条——本机校验 → push →（CI 绿）→ 服务器 `ci-deploy.sh` 或 Actions 自动 SSH。需要「仅快进拉代码、不动硬重置」时可用 `deploy/prod-update-safe.sh`（与 `production-deploy.sh` 略有差异，见脚本注释）。
+4. **Codex 主分支发布入口**：日常只记一条——在本机 `main` 直接改源码后执行 `powershell -ExecutionPolicy Bypass -File scripts/codex-deploy-main.ps1`。该脚本会校验、推送 `main`、让服务器拉取主分支并跳过服务器端前端构建，最后把本地构建好的 `dist` 上传到 EC2，避免 `t3.micro` 上 `vite build` OOM。
+5. **不要用多种脚本混着来**：日常优先使用上面的 Codex 入口。需要「仅快进拉代码、不动硬重置」时可用 `deploy/prod-update-safe.sh`（与 `production-deploy.sh` 略有差异，见脚本注释）。
 
 ### GitHub Actions 自动部署 Secrets（Repository secrets）
 
@@ -59,8 +60,8 @@
    - `bash deploy/preflight.sh`（可选，单独排查环境）
    - `bash deploy/production-deploy.sh`
    - 脚本会：**默认导出 `VITE_API_BASE_URL=/api` 再构建前端**（与 Node 同源托管一致），执行迁移、`pm2 reload`、健康检查与 `deploy/verify-pm2.sh`。
-5. **仅手动构建前端时**：在 `click-send-shop-main/click-send-shop-main` 执行 `VITE_API_BASE_URL=/api npm run build`（切勿省略，否则易出现页面能打开但接口请求错域/404）。
-6. **PM2 进程（生产环境唯一方式）**：`deploy/production-deploy.sh` 已包含 `pm2 reload gc-api`。**首次**部署或机器上尚无进程时再执行：
+6. **仅手动构建前端时**：在 `click-send-shop-main/click-send-shop-main` 执行 `VITE_API_BASE_URL=/api npm run build`（切勿省略，否则易出现页面能打开但接口请求错域/404）。
+7. **PM2 进程（生产环境唯一方式）**：`deploy/production-deploy.sh` 已包含 `pm2 reload gc-api`。**首次**部署或机器上尚无进程时再执行：
 
    ```bash
    cd server
@@ -92,7 +93,7 @@
 | 管理后台上传图片/Banner/**商品图**报 **413**、响应里是 `nginx/...` HTML | **Nginx 默认 `client_max_body_size` 仅 1m**，请求体在进 Node 前就被网关拒绝（与后端「单张 15MB」无关） | **推荐**：将 `deploy/nginx/conf.d-upload-body-global.conf` 安装为 `/etc/nginx/conf.d/90-upload-body-size.conf`（对**所有**站点生效），再 `sudo nginx -t && sudo systemctl reload nginx`。或在各 **`server { ... }`** 内写 `client_max_body_size 60m;`（需 ≥ 后端视频 50MB），模板见 `deploy/nginx/site.prod.example.conf` |
 | 更新后前台能开，登录/数据全挂 | 前端构建未带 `VITE_API_BASE_URL=/api`（或分域 API 未写入正确完整 URL） | 使用 `deploy/production-deploy.sh`（已默认 `/api`），或手动构建前 `export VITE_API_BASE_URL=/api` |
 | `production-deploy.sh` 一开始就报 git 错 | 服务器目录不是 `git clone` 出来的、没有 `.git` | 改用 `git clone` 到 `/var/www/click-send-shop`，或 `SKIP_GIT=1 bash deploy/production-deploy.sh` 并确保已用 rsync/手工同步最新代码 |
-| `vite build` / `npm run build` 退出 **134**、日志有 **heap out of memory** | 机器内存小，Node 默认堆约 512MB，不够完成前端打包 | `production-deploy.sh` 已对 `vite build` 设置 `--max-old-space-size`（默认 3072MB，可用 **`FRONTEND_BUILD_HEAP_MB`** 调整）；仍失败时请给 VPS **加 swap** 或升配内存 |
+| `vite build` / `npm run build` 退出 **134**、日志有 **heap out of memory** | 机器内存小，Node 默认堆约 512MB，不够完成前端打包 | 日常用 `scripts/codex-deploy-main.ps1` 在本地构建并上传；服务器端 `production-deploy.sh` 默认 heap 已降为 1024MB，并支持 `SKIP_FRONTEND_BUILD=1` 跳过服务器构建 |
 | `npm ci` / 依赖报错 | Node 版本低于 20、或锁文件与 package.json 不一致 | 升级 Node 20+；在 `server` 与前端目录分别重新 `npm ci` 或对齐锁文件后提交 |
 | 迁移失败 | 数据库账号权限、连接串、或 MySQL 未启动 | 看 `server/logs/pm2-error.log`；本地用 `.env` 连库试 `npm run migrate` |
 | `verify-pm2.sh` 不过 | `.env` 占位符未改、`JWT_SECRET` 过短、端口不是 3001、进程入口不是 `src/index.js` | 按脚本输出逐项修改后 `pm2 reload gc-api --update-env` |

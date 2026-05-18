@@ -14,7 +14,7 @@ import * as uploadService from "@/services/uploadService";
 import * as userService from "@/services/userService";
 import { IMAGE_UPLOAD_HINT_AVATAR } from "@/constants/imageUploadHints";
 
-const CARD = "rounded-2xl bg-[var(--theme-surface)] shadow-[var(--theme-shadow)] p-4";
+const CARD = "rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -155,8 +155,8 @@ export default function Settings() {
 
   return (
     <div className="store-page min-h-screen text-[var(--theme-text)]">
-      <header className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 px-4 py-3 backdrop-blur-md">
-        <div className="mx-auto flex max-w-lg items-center gap-3">
+      <header className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 px-[var(--store-page-x)] py-3 backdrop-blur-md sm:px-4">
+        <div className="mx-auto flex w-full items-center gap-3 sm:max-w-lg">
           <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target">
             <ArrowLeft size={20} />
           </button>
@@ -164,7 +164,7 @@ export default function Settings() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg space-y-3 px-4 py-4 pb-24">
+      <main className="mx-auto w-full space-y-3 px-[var(--store-page-x)] py-[var(--store-page-y)] pb-24 sm:max-w-lg sm:px-4 sm:py-4">
         <section className={CARD}>
           <div className="flex flex-col items-center py-2">
             <div className="relative">
@@ -279,7 +279,7 @@ export default function Settings() {
           )}
         </section>
 
-        <section className="rounded-2xl bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)] ring-1 ring-[color-mix(in_srgb,var(--theme-danger)_35%,transparent)]">
+        <section className="rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] ring-1 sm:p-4 ring-[color-mix(in_srgb,var(--theme-danger)_35%,transparent)]">
           <button type="button" onClick={() => setShowCancelForm(!showCancelForm)} className="flex w-full items-center justify-between">
             <div className="flex items-center gap-3">
               <Trash2 size={18} className="text-[var(--theme-danger)]" />

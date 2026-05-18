@@ -43,13 +43,13 @@ export default function AdminHomeOpsDisplayPanel() {
   };
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-4">
+    <section className="rounded-2xl border border-border bg-card p-3 sm:p-4">
       <div className="mb-4">
         <h2 className="font-semibold text-foreground"><Tx>展示规则</Tx></h2>
         <p className="mt-1 text-xs text-muted-foreground"><Tx>控制各商品区块每屏展示数量（2×2 网格时默认 4 个）。</Tx></p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
         <label className="flex flex-col gap-1">
           <span className="text-xs font-medium text-muted-foreground"><Tx>今日热销 · 每批数量</Tx></span>
           <input

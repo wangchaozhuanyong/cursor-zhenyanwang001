@@ -22,7 +22,7 @@ export default function Favorites() {
     <div className="store-bottom-safe min-h-screen bg-background">
       <PageHeader title="我的收藏" />
 
-      <main className="mx-auto max-w-lg px-4">
+      <main className="mx-auto w-full px-[var(--store-page-x)] sm:max-w-lg sm:px-4">
         {!isLoggedIn() && (
           <div className="mb-3 rounded-xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-warning)_10%,var(--theme-surface))] px-4 py-3 text-xs text-[var(--theme-text)]">
             未登录时收藏仅保存在本机，登录后可云端同步。

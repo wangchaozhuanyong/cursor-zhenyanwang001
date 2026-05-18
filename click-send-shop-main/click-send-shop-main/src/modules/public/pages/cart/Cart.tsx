@@ -93,7 +93,7 @@ export default function Cart() {
         }
       />
 
-      <main className="mx-auto w-full max-w-screen-xl px-4 md:px-6 md:py-4">
+      <main className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] md:px-6 md:py-4">
         {/* 桌面端：左商品列表 / 右结算摘要 */}
         <div className="md:grid md:grid-cols-[1fr_360px] md:gap-8">
           <div>
@@ -341,7 +341,7 @@ export default function Cart() {
       {/* 移动端：底部固定结算栏 */}
       {items.length > 0 && (
         <div className="fixed bottom-[calc(var(--store-bottom-nav-height,72px)+env(safe-area-inset-bottom,0px))] left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md md:hidden">
-          <div className="mx-auto flex max-w-lg flex-col gap-2 px-4 py-2.5">
+          <div className="mx-auto flex w-full flex-col gap-2 px-[var(--store-page-x)] py-2.5 sm:max-w-lg sm:px-4">
             <SquishButton
               type="button"
               variant="ghost"

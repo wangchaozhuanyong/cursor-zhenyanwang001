@@ -55,8 +55,8 @@ const ProfileWechatBindSection = THIRD_PARTY_LOGIN_ENABLED
   ? lazy(() => import("./ProfileWechatBindSection"))
   : null;
 
-const CARD_CLASS = "rounded-[26px] bg-[var(--theme-surface)] shadow-[var(--theme-shadow)]";
-const SECTION_PADDING = "p-4";
+const CARD_CLASS = "rounded-[22px] bg-[var(--theme-surface)] shadow-[var(--theme-shadow)]";
+const SECTION_PADDING = "px-[var(--store-card-x)] py-[var(--store-card-y)]";
 const MENU_TAP = "transition-transform active:scale-[0.97]";
 
 function gateNavigate(navigate: ReturnType<typeof useNavigate>, path: string, requireAuth = true) {
@@ -97,7 +97,7 @@ function ProfileHeroCard({
   onAvatarClick: () => void;
 }) {
   return (
-    <section className={`relative overflow-hidden rounded-[30px] px-4 py-5 shadow-[var(--theme-shadow)] ${THEME_MEMBER_CARD_SHELL}`}>
+    <section className={`relative overflow-hidden rounded-[24px] px-[var(--store-card-x)] py-5 shadow-[var(--theme-shadow)] ${THEME_MEMBER_CARD_SHELL}`}>
       <div
         className="pointer-events-none absolute inset-y-0 right-0 w-28"
         style={{ background: "var(--theme-member-card-sheen)" }}
@@ -282,10 +282,10 @@ const orderGridClass = "grid-cols-5";
           </>
         )}
       />
-      <main className="mx-auto max-w-lg space-y-4 px-4 pt-4">
+      <main className="mx-auto w-full space-y-3 px-[var(--store-page-x)] pt-[var(--store-page-y)] sm:max-w-lg sm:space-y-4 sm:px-4 sm:pt-4">
         <section className="space-y-3">
           {!loggedIn ? (
-            <div className={`${CARD_CLASS} relative overflow-hidden p-4`}>
+            <div className={`${CARD_CLASS} relative overflow-hidden ${SECTION_PADDING}`}>
               <div className="absolute inset-x-0 top-0 h-1 bg-[var(--theme-primary)]" />
               <div className="flex items-center gap-3">
                 <img src={logoSrc} alt={siteName} className="h-14 w-14 rounded-2xl object-cover ring-1 ring-[var(--theme-border)]" />
@@ -328,7 +328,7 @@ const orderGridClass = "grid-cols-5";
           <SectionTitle title="我的订单" rightLabel="查看全部" onRightClick={() => gateNavigate(navigate, "/orders", true)} />
           <div className={cn("grid gap-2", orderGridClass)}>
             {orderActions.map((item) => (
-              <button key={item.label} type="button" onClick={() => gateNavigate(navigate, item.path, item.auth)} className={`relative rounded-2xl bg-[var(--theme-bg)] px-1 py-3 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_65%,transparent)] ${MENU_TAP}`}>
+              <button key={item.label} type="button" onClick={() => gateNavigate(navigate, item.path, item.auth)} className={`relative rounded-2xl px-1 py-2.5 text-center ${MENU_TAP}`}>
                 {Number(item.count || 0) > 0 ? <span className="absolute right-3 top-2 min-w-[1rem] rounded-full bg-[var(--theme-danger)] px-1 text-[10px] text-[var(--theme-danger-foreground)]">{item.count}</span> : null}
                 <span className={cn("mx-auto flex h-9 w-9 items-center justify-center rounded-2xl", THEME_ACCENT_ICON_SHELL_CLASS)}>
                   <item.icon size={17} strokeWidth={2} />
@@ -340,8 +340,8 @@ const orderGridClass = "grid-cols-5";
         </section>
 
         <section className={`${CARD_CLASS} overflow-hidden`}>
-          <div className={cn("px-4 pt-4", inviteEnabled ? "pb-0" : "pb-4")}>
-            <div className={cn("grid rounded-2xl bg-[var(--theme-bg)] px-2 py-3.5 ring-1 ring-[color-mix(in_srgb,var(--theme-border)_65%,transparent)]", assetGridClass)}>
+          <div className={cn("px-[var(--store-card-x)] pt-[var(--store-card-y)]", inviteEnabled ? "pb-0" : "pb-[var(--store-card-y)]")}>
+            <div className={cn("grid px-1 py-1", assetGridClass)}>
               {assetItems.map((item) => (
                 <button
                   key={item.label}
@@ -358,7 +358,7 @@ const orderGridClass = "grid-cols-5";
             </div>
           </div>
           {inviteEnabled ? (
-          <div className="px-4 pb-4 pt-3">
+          <div className="px-[var(--store-card-x)] pb-[var(--store-card-y)] pt-3">
             <InvitePromoCard
               loggedIn={loggedIn}
               inviteCount={inviteCount}
@@ -403,7 +403,7 @@ const orderGridClass = "grid-cols-5";
               { title: "本地配送", desc: "快速发货", icon: Truck },
               { title: "安全支付", desc: "加密保护", icon: Wallet },
             ].map((item) => (
-              <div key={item.title} className="rounded-2xl bg-[var(--theme-bg)] px-2 py-3 text-center">
+              <div key={item.title} className="px-1 py-2 text-center">
                 <item.icon size={17} strokeWidth={2} className={cn("mx-auto", THEME_ACCENT_ICON_CLASS)} />
                 <p className="mt-1 text-xs font-semibold">{item.title}</p>
                 <p className="mt-0.5 truncate text-[10px] text-[var(--theme-text-muted-on-surface)]">{item.desc}</p>

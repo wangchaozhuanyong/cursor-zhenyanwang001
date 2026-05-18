@@ -42,8 +42,8 @@ export default function UploadVerify() {
 
   return (
     <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
-      <header className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 px-4 py-3 backdrop-blur-md">
-        <div className="mx-auto flex max-w-lg items-center gap-3">
+      <header className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 px-[var(--store-page-x)] py-3 backdrop-blur-md sm:px-4">
+        <div className="mx-auto flex w-full items-center gap-3 sm:max-w-lg">
           <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
@@ -51,7 +51,7 @@ export default function UploadVerify() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg px-4 py-6">
+      <main className="mx-auto w-full px-[var(--store-page-x)] py-4 sm:max-w-lg sm:px-4 sm:py-6">
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
           <label className="mb-3 block text-sm font-medium text-foreground">选择一张图片进行上传验证</label>
           <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--theme-border)] bg-secondary/30 px-4 py-6 text-sm text-foreground hover:bg-secondary/50">

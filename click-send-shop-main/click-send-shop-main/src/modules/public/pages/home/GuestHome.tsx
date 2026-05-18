@@ -202,7 +202,7 @@ export default function GuestHome() {
           </AnimatedSection>
         ) : null}
         {isHomeModuleEnabled(homeModules, "nav_grid", "guest") ? (
-          <AnimatedSection delay={0.08} className="-mx-4">
+          <AnimatedSection delay={0.08} className="-mx-[var(--store-page-x)] md:mx-0">
             <HomeOpsBlocks />
           </AnimatedSection>
         ) : null}

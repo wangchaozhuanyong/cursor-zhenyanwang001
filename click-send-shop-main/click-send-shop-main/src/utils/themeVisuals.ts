@@ -182,7 +182,7 @@ export function getBottomNavShellClassName(
   const base = `${position} bottom-0 left-0 right-0 z-bottom-nav pointer-events-auto`;
   switch (navStyle) {
     case "floating":
-      return `${base} border-0 bg-transparent px-3 pb-2 pt-1 shadow-none`;
+      return `${base} border-0 bg-transparent px-[var(--store-page-x)] pb-2 pt-1 shadow-none`;
     case "glass":
       return `${base} border-t border-[color-mix(in_srgb,var(--theme-border)_55%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_78%,transparent)] shadow-[0_-8px_24px_rgba(0,0,0,0.06)] backdrop-blur-md`;
     case "clean":
@@ -193,9 +193,9 @@ export function getBottomNavShellClassName(
 
 export function getBottomNavInnerClassName(navStyle: ThemeConfig["navStyle"]): string {
   if (navStyle === "floating") {
-    return "mx-auto max-w-lg overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-[0_8px_32px_rgba(0,0,0,0.14)]";
+    return "w-full overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-[0_8px_32px_rgba(0,0,0,0.14)] md:mx-auto md:max-w-lg";
   }
-  return "mx-auto max-w-lg";
+  return "w-full md:mx-auto md:max-w-lg";
 }
 
 export function getBannerContainerClassName(bannerStyle: ThemeConfig["bannerStyle"]): string {

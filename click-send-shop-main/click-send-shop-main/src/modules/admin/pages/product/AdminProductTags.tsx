@@ -113,7 +113,7 @@ export default function AdminProductTags() {
       </div>
 
       {showForm && (
-        <div className="rounded-xl border border-gold/30 bg-card p-4">
+        <div className="rounded-xl border border-gold/30 bg-card p-3 sm:p-4">
           <div className="flex flex-wrap items-end gap-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>标签名称</Tx></label>
@@ -161,7 +161,7 @@ export default function AdminProductTags() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="rounded-xl border border-border bg-card p-4 space-y-3">
+              <div key={i} className="rounded-xl border border-border bg-card p-3 sm:p-4 space-y-3">
                 <div className="skeleton-base skeleton-shimmer h-6 w-20 rounded-full" />
                 <div className="skeleton-base skeleton-shimmer h-3 w-24 rounded" />
                 <div className="skeleton-base skeleton-shimmer h-3 w-16 rounded" />
@@ -169,7 +169,7 @@ export default function AdminProductTags() {
             ))
           : null}
         {!loading && tags.map((tag) => (
-          <div key={tag.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
+          <div key={tag.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-3 sm:p-4">
             <div>
               <span
                 className="rounded-full border px-2.5 py-1 text-xs font-bold"

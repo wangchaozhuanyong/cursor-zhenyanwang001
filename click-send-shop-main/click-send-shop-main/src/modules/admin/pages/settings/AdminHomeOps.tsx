@@ -176,7 +176,7 @@ export default function AdminHomeOps() {
           {activeTab === "display" ? <AdminHomeOpsDisplayPanel /> : null}
           {activeTab === "newArrival" ? <AdminHomeOpsNewArrivalPanel /> : null}
           {activeTab === "nav" ? (
-<section className="rounded-2xl border border-border bg-card p-4">
+<section className="rounded-2xl border border-border bg-card p-3 sm:p-4">
         <div className="mb-4 flex items-center gap-2">
           <Grid3X3 size={18} className="text-theme-price" />
           <div>

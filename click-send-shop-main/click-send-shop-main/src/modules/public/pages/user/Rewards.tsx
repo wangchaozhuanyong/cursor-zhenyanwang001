@@ -98,8 +98,8 @@ export default function Rewards() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 bg-background/95 px-4 py-3 backdrop-blur-md">
-        <div className="mx-auto flex max-w-lg items-center gap-3">
+      <header className="sticky top-0 z-40 bg-background/95 px-[var(--store-page-x)] py-3 backdrop-blur-md sm:px-4">
+        <div className="mx-auto flex w-full items-center gap-3 sm:max-w-lg">
           <button onClick={goBack}>
             <ArrowLeft size={20} className="text-foreground" />
           </button>
@@ -107,7 +107,7 @@ export default function Rewards() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg px-4 py-6">
+      <main className="mx-auto w-full px-[var(--store-page-x)] py-4 sm:max-w-lg sm:px-4 sm:py-6">
         <div className={`rounded-xl p-6 text-center ${THEME_ACCENT_HERO_SHELL}`}>
           <Gift size={32} className={`mx-auto ${THEME_ACCENT_HERO_ICON}`} />
           <p className={`mt-2 ${THEME_ACCENT_HERO_LABEL} normal-case tracking-normal`}>可提现余额</p>
@@ -139,7 +139,7 @@ export default function Rewards() {
           ) : (
             <div className="space-y-2">
               {records.map((r) => (
-                <div key={r.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
+                <div key={r.id} className="flex items-center gap-3 rounded-xl border border-border bg-card px-[var(--store-card-x)] py-[var(--store-card-y)] sm:p-4">
                   <div className={`flex h-9 w-9 items-center justify-center rounded-full ${Number(r.amount) >= 0 ? THEME_ROW_ICON_POSITIVE : THEME_ROW_ICON_NEGATIVE}`}>
                     {Number(r.amount) >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                   </div>

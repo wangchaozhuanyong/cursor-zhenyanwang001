@@ -75,7 +75,7 @@ export default function Checkout() {
 
   return (
     <div className="store-bottom-action-space min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
-      <header className="sticky top-0 z-40 bg-[var(--theme-surface)]/95 px-4 py-3 backdrop-blur-md md:px-6 border-b border-[var(--theme-border)]">
+      <header className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 px-[var(--store-page-x)] py-3 backdrop-blur-md md:px-6 border-[var(--theme-border)]">
         <div className="mx-auto flex w-full max-w-screen-xl items-center gap-3">
           <button onClick={checkout.goBack} aria-label="返回购物车" className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target">
             <ArrowLeft size={20} className="text-foreground" />
@@ -85,7 +85,7 @@ export default function Checkout() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-screen-xl px-4 py-4 md:px-6 md:py-6">
+      <main className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] py-[var(--store-page-y)] md:px-6 md:py-6">
         <div className="md:grid md:grid-cols-[1fr_380px] md:items-start md:gap-8">
           <div className="space-y-4">
             <MarketingPositionNotices position="checkout_notice" />

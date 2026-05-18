@@ -94,7 +94,7 @@ export default function AdminCheckoutAbandonments() {
 
   return (
     <div className="space-y-4">
-      <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
+      <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow sm:p-4">
         <h1 className="text-lg font-semibold text-foreground"><Tx>未完成结算</Tx></h1>
         <p className="mt-1 text-sm text-muted-foreground"><Tx>仅做站内记录和后台查看，不触发邮件、短信或自动外呼。</Tx></p>
         <p className="mt-2 text-xs leading-relaxed text-muted-foreground"><Tx>
@@ -122,7 +122,7 @@ export default function AdminCheckoutAbandonments() {
       <div className="space-y-3 md:hidden">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
+            <div key={i} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow sm:p-4">
               <div className="space-y-2">
                 <div className="skeleton-base skeleton-shimmer h-4 w-24 rounded-full" />
                 <div className="skeleton-base skeleton-shimmer h-4 w-3/4 rounded" />
@@ -132,7 +132,7 @@ export default function AdminCheckoutAbandonments() {
           ))
           : null}
         {!loading && rows.map((row) => (
-          <div key={row.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
+          <div key={row.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow sm:p-4">
             <div className="flex items-center justify-between gap-3">
               <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[row.status]}`}>{STATUS_LABEL[row.status]}</span>
               <span className="text-xs text-muted-foreground">{formatDateTime(row.updated_at)}</span>

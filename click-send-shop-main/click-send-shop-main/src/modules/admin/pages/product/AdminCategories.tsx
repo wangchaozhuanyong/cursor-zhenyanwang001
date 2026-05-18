@@ -320,7 +320,7 @@ export default function AdminCategories() {
       </div>
 
       {showForm && (
-        <div className="rounded-xl border border-gold/30 bg-card p-4">
+        <div className="rounded-xl border border-gold/30 bg-card p-3 sm:p-4">
           <div className="grid gap-3 lg:grid-cols-[1fr_120px_1fr_180px_90px_120px_auto] lg:items-end">
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>分类名称</Tx></label>

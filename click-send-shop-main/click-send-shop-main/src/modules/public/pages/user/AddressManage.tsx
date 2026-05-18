@@ -10,7 +10,7 @@ import { formatAddressForDisplay } from "@/services/addressService";
 import { THEME_ACCENT_CHIP_CLASS } from "@/utils/themeVisuals";
 
 type AddressForm = Omit<Address, "id">;
-const CARD = "rounded-2xl bg-[var(--theme-surface)] shadow-[var(--theme-shadow)] p-4";
+const CARD = "rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
 
 const EMPTY_FORM: AddressForm = {
   recipient_name: "",
@@ -92,8 +92,8 @@ export default function AddressManage() {
 
   return (
     <div className="store-page min-h-screen text-[var(--theme-text)]">
-      <header className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 px-4 py-3 backdrop-blur-md">
-        <div className="mx-auto flex max-w-lg items-center justify-between">
+      <header className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 px-[var(--store-page-x)] py-3 backdrop-blur-md sm:px-4">
+        <div className="mx-auto flex w-full items-center justify-between sm:max-w-lg">
           <div className="flex items-center gap-3">
             <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)]"><ArrowLeft size={20} /></button>
             <h1 className="text-base font-semibold">收货地址</h1>
@@ -102,7 +102,7 @@ export default function AddressManage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg px-4 py-4 pb-24">
+      <main className="mx-auto w-full px-[var(--store-page-x)] py-[var(--store-page-y)] pb-24 sm:max-w-lg sm:px-4 sm:py-4">
         {addressLoading ? (
           <div className="flex flex-col items-center py-20 text-[var(--theme-muted)]"><Loader2 size={24} className="mb-3 animate-spin" /><p className="text-sm">加载中...</p></div>
         ) : addresses.length === 0 ? (

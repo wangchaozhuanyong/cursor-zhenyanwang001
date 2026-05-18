@@ -114,7 +114,7 @@ export default function ProductDetail() {
         <div className="relative">
           <Skeleton className="w-full" style={{ aspectRatio: "var(--theme-image-ratio)" }} />
         </div>
-        <div className="mx-auto w-full max-w-screen-xl px-4 pt-4 md:px-6 md:py-10">
+        <div className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] pt-[var(--store-page-y)] md:px-6 md:py-10">
           <div className="space-y-3 md:max-w-xl">
             <Skeleton className="h-8 w-24" />
             <Skeleton className="h-6 w-full" />
@@ -352,7 +352,7 @@ export default function ProductDetail() {
               aria-hidden
             />
             <div
-              className="px-4 pt-5 md:px-0 md:pt-0"
+              className="px-[var(--store-page-x)] pt-5 md:px-0 md:pt-0"
               style={
                 headerSolid
                   ? { scrollMarginTop: "calc(var(--store-tab-header-height, 3.5rem) + env(safe-area-inset-top, 0px))" }
@@ -397,7 +397,7 @@ export default function ProductDetail() {
                 </div>
               ) : null}
               <ProductTagList tags={product.tags} max={6} size="md" className="mt-3" />
-            <div className="mt-4 hidden px-4 md:block md:px-0">
+            <div className="mt-4 hidden px-[var(--store-page-x)] md:block md:px-0">
               <DetailPurchaseBar
                 soldOut={soldOut}
                 isFavorite={isFavorite}
@@ -410,12 +410,12 @@ export default function ProductDetail() {
             </div>
 
             {/* TrustInfo - 信任三件套（详情页使用 card 强转化样式） */}
-            <div className="mt-6 px-4 md:px-0">
+            <div className="mt-6 px-[var(--store-page-x)] md:px-0">
               <TrustInfo variant="card" />
             </div>
 
             {/* 描述 */}
-            <div className="mt-8 border-t border-[var(--theme-border)] px-4 pt-6 md:mt-10 md:theme-rounded md:border md:bg-[var(--theme-surface)]/40 md:p-6">
+            <div className="mt-8 border-t border-[var(--theme-border)] px-[var(--store-page-x)] pt-6 md:mt-10 md:theme-rounded md:border md:bg-[var(--theme-surface)]/40 md:p-6">
               <h3 className="mb-3 text-sm font-semibold text-foreground md:mb-4">商品详情</h3>
               <div className="space-y-3 text-sm leading-relaxed text-muted-foreground">
                 {detailSections.map((section, idx) => (
@@ -433,7 +433,7 @@ export default function ProductDetail() {
 
         {/* 同类推荐 */}
         {relatedProducts.length > 0 && (
-          <div className="border-t border-[var(--theme-border)] px-4 py-8 md:border-0 md:px-0 md:py-12">
+          <div className="border-t border-[var(--theme-border)] px-[var(--store-page-x)] py-8 md:border-0 md:px-0 md:py-12">
             <h3 className="mb-4 text-sm font-semibold text-foreground md:mb-5 md:text-lg">
               同类推荐
             </h3>
@@ -447,7 +447,7 @@ export default function ProductDetail() {
       </main>
       {/* 底部固定操作栏 - 仅移动端 */}
       <div className="fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
-        <div className="mx-auto max-w-lg px-4 py-3">
+        <div className="mx-auto w-full px-[var(--store-page-x)] py-3 sm:max-w-lg sm:px-4">
           <DetailPurchaseBar
             soldOut={soldOut}
             isFavorite={isFavorite}

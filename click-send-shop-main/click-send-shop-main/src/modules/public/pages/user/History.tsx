@@ -19,7 +19,7 @@ export default function History() {
   return (
     <div className="min-h-screen bg-background pb-6">
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
+        <div className="mx-auto flex w-full items-center justify-between px-[var(--store-page-x)] py-3 sm:max-w-lg sm:px-4">
           <div className="flex items-center gap-3">
             <button onClick={goBack} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
               <ArrowLeft size={20} className="text-foreground" />
@@ -34,7 +34,7 @@ export default function History() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg px-4">
+      <main className="mx-auto w-full px-[var(--store-page-x)] sm:max-w-lg sm:px-4">
         {!isLoggedIn() && (
           <div className="mb-3 rounded-xl border border-gold/30 bg-gold/5 px-4 py-3 text-xs text-foreground">
             <span className="text-muted-foreground">未登录时仅在本机记录浏览；</span>

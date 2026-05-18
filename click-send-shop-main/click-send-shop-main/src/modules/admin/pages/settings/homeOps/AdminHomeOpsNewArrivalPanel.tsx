@@ -65,7 +65,7 @@ export default function AdminHomeOpsNewArrivalPanel() {
   };
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-4">
+    <section className="rounded-2xl border border-border bg-card p-3 sm:p-4">
       <div className="mb-4">
         <h2 className="font-semibold text-foreground">新品配置</h2>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -73,7 +73,7 @@ export default function AdminHomeOpsNewArrivalPanel() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2 md:gap-4">
         <label className="flex flex-col gap-1">
           <span className="text-xs font-medium text-muted-foreground">模块标题</span>
           <input

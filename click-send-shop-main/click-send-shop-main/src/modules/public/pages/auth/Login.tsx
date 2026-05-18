@@ -19,7 +19,6 @@ import {
   syncLockedInviteCodeBySearch,
 } from "@/utils/inviteReferral";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
-import { useFormFieldFocus } from "@/hooks/useFormFieldFocus";
 import { cn } from "@/lib/utils";
 import { FormFieldShake } from "@/modules/micro-interactions";
 
@@ -75,7 +74,6 @@ export default function Login() {
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [smsOtpLoginEnabled, setSmsOtpLoginEnabled] = useState(true);
   const hasLockedInviteCode = !!lockedInviteCode;
-  const { formCompact } = useFormFieldFocus();
   const [shakeKey, setShakeKey] = useState(0);
   const failValidation = (message: string) => {
     setShakeKey((k) => k + 1);
@@ -351,7 +349,7 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-page-shell flex flex-col overflow-x-hidden bg-background">
+    <div className="auth-page-shell flex h-[100svh] flex-col overflow-hidden bg-background">
       {/* ══════════════ Top Brand Bar ══════════════ */}
       <header className="flex shrink-0 items-center gap-3 px-5 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
         <img src={logoSrc} alt={siteName} width={44} height={44} className="rounded-xl object-contain" loading="eager" decoding="async" />
@@ -368,15 +366,14 @@ export default function Login() {
       {/* 表单聚焦时只暂停轮播，避免输入时顶部内容突然消失造成页面跳动。 */}
       {banners.length > 0 ? (
         <div className="mt-2 shrink-0 px-5">
-          <LoginBannerCarousel banners={banners} paused={formCompact} />
+          <LoginBannerCarousel banners={banners} />
         </div>
       ) : null}
 
       {/* ══════════════ Main Content ══════════════ */}
       <main
         className={cn(
-          "mx-auto w-full max-w-lg flex-1 min-h-0 px-5 pb-safe",
-          "mt-6 overflow-y-auto overscroll-y-contain",
+          "mx-auto w-full max-w-lg flex-1 overflow-y-auto overscroll-contain px-[var(--store-page-x)] pb-safe pt-5",
         )}
       >
         {/* Welcome text */}

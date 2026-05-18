@@ -184,7 +184,7 @@ export default function AdminBanners() {
       <div className="space-y-2">
         {loading
           ? Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4">
+              <div key={i} className="flex items-center gap-4 rounded-2xl border border-border bg-card p-3 sm:p-4">
                 <div className="skeleton-base skeleton-shimmer aspect-[4/3] w-28 rounded-xl" />
                 <div className="flex-1 space-y-2">
                   <div className="skeleton-base skeleton-shimmer h-4 w-40 rounded" />

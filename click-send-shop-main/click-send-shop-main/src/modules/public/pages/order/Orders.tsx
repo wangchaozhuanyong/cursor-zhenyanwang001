@@ -1,8 +1,11 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import PageHeader from "@/components/PageHeader";
 import type { Order, OrderSummary, OrderTab } from "@/types/order";
+import type { ProductVariant } from "@/types/product";
 import { useOrderStore } from "@/stores/useOrderStore";
+import { useCartStore } from "@/stores/useCartStore";
 import * as orderService from "@/services/orderService";
 import { getBuyerOrderStatusText, hasPendingReview, matchOrderTab } from "@/utils/orderBuyerStatus";
 
@@ -56,11 +59,30 @@ function tabCount(summary: OrderSummary, tab: OrderTab): number | undefined {
   return undefined;
 }
 
+function buildVariantFromOrderItem(item: Order["items"][number]): ProductVariant | null {
+  if (!item.variant_id) return null;
+  const matched = item.product.variants?.find((v) => v.id === item.variant_id || v.sku_code === item.sku_code);
+  if (matched) return matched;
+  return {
+    id: item.variant_id,
+    sku_code: item.sku_code ?? null,
+    title: item.variant_name || item.sku_code || "默认规格",
+    price: Number(item.unit_price ?? item.product.price ?? 0),
+    stock: Number(item.product.stock ?? 999999),
+    sort_order: 0,
+    is_default: false,
+  };
+}
+
 export default function Orders() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = parseTab(searchParams);
+
   const { orders, loading, error, loadOrders, cancelOrder, confirmReceive } = useOrderStore();
+  const { addToCart, clearBuyNow, setSelectAll } = useCartStore();
+
   const [summary, setSummary] = useState<OrderSummary | null>(null);
   const [actingId, setActingId] = useState("");
 
@@ -81,7 +103,42 @@ export default function Orders() {
   const displayOrders = useMemo(() => orders.filter((o) => matchOrderTab(o, tab)), [orders, tab]);
   const currentSummary = summary || summaryFromOrders(orders);
 
-  const switchTab = (next: OrderTab) => setSearchParams(next === "all" ? {} : { tab: next });
+  const switchTab = (next: OrderTab) => {
+    setSearchParams(next === "all" ? {} : { tab: next }, { replace: true });
+  };
+
+  const openDetail = (order: Order) => {
+    navigate(`/orders/${order.id}`, {
+      state: { from: `/orders${location.search || ""}` },
+    });
+  };
+
+  const addOrderToCart = async (order: Order) => {
+    try {
+      for (const item of order.items) {
+        await addToCart(item.product, item.qty, buildVariantFromOrderItem(item));
+      }
+      toast.success("已加入购物车");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "加入购物车失败");
+    }
+  };
+
+  const repurchaseOrder = async (order: Order) => {
+    try {
+      clearBuyNow();
+      setSelectAll(false);
+      for (const item of order.items) {
+        await addToCart(item.product, item.qty, buildVariantFromOrderItem(item));
+      }
+      toast.success("已为你重新加入购物车");
+      navigate("/checkout", {
+        state: { from: `/orders/${order.id}`, repurchaseOrderId: order.id },
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "再买一单失败");
+    }
+  };
 
   const emptyText: Record<OrderTab, string> = {
     all: "暂无订单",
@@ -94,99 +151,118 @@ export default function Orders() {
     cancelled: "暂无已取消订单",
   };
 
-  const actionBtn = "rounded-full border border-[var(--theme-border)] px-3 py-1 text-xs";
+  const actionBtn = "rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1 text-xs whitespace-nowrap";
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <h1 className="mb-3 text-lg font-semibold">我的订单</h1>
+    <div className="min-h-screen bg-background">
+      <PageHeader title="我的订单" onBack={() => navigate("/profile", { replace: true })} />
+      <main className="mx-auto w-full px-[var(--store-page-x)] py-[var(--store-page-y)] sm:max-w-lg sm:p-4">
+        <div className="sticky top-0 z-10 -mx-[var(--store-page-x)] mb-3 border-b border-[var(--theme-border)] bg-background px-[var(--store-page-x)] py-2 sm:-mx-4 sm:px-4">
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {TABS.map((t) => {
+              const active = t.key === tab;
+              const count = tabCount(currentSummary, t.key);
+              return (
+                <button key={t.key} className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs ${active ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]" : "bg-[var(--theme-surface)] text-[var(--theme-text-muted)]"}`} onClick={() => switchTab(t.key)}>
+                  {t.label}{count && count > 0 ? ` ${count}` : ""}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-      <div className="sticky top-0 z-10 -mx-[var(--store-page-x)] mb-3 border-b border-[var(--theme-border)] bg-background px-[var(--store-page-x)] py-2 sm:-mx-4 sm:px-4">
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {TABS.map((t) => {
-            const active = t.key === tab;
-            const count = tabCount(currentSummary, t.key);
+        {loading ? <p className="text-sm text-muted-foreground">加载中...</p> : null}
+        {error ? <p className="text-sm text-red-500">{error}</p> : null}
+
+        {!loading && displayOrders.length === 0 ? (
+          <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 text-center text-sm text-[var(--theme-text-muted)]">
+            {emptyText[tab]}
+          </div>
+        ) : null}
+
+        <div className="space-y-3">
+          {displayOrders.map((order) => {
+            const shownItems = order.items.slice(0, 3);
+            const totalItems = order.items.reduce((s, i) => s + i.qty, 0);
             return (
-              <button
-                key={t.key}
-                className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs ${active ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]" : "bg-[var(--theme-surface)] text-[var(--theme-text-muted)]"}`}
-                onClick={() => switchTab(t.key)}
-              >
-                {t.label}{count && count > 0 ? ` ${count}` : ""}
-              </button>
+              <article key={order.id} className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3" onClick={() => openDetail(order)}>
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-sm font-medium">订单商品</span>
+                  <span className="text-xs text-[var(--theme-text-muted)]">{getBuyerOrderStatusText(order)}</span>
+                </div>
+
+                <div className="space-y-2">
+                  {shownItems.map((item) => (
+                    <div key={item.order_item_id || item.id || item.product.id} className="flex gap-2">
+                      <img src={item.product.cover_image} alt={item.product.name} className="h-[72px] w-[72px] rounded-lg object-cover" />
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-2 text-sm">{item.product.name}</p>
+                        <p className="mt-1 truncate text-xs text-[var(--theme-text-muted)]">{item.variant_name || item.sku_code || "默认规格"}</p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-medium">RM {Number(item.unit_price ?? item.product.price ?? 0).toFixed(2)}</p>
+                        <p className="mt-1 text-xs text-[var(--theme-text-muted)]">x{item.qty}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {order.items.length > 3 ? <p className="mt-2 text-xs text-[var(--theme-text-muted)]">共 {totalItems} 件商品</p> : null}
+
+                <div className="mt-3 flex justify-end text-sm">
+                  <span>共 {totalItems} 件商品　实付款 <span className="font-semibold text-[var(--theme-price)]">RM {Number(order.total_amount || 0).toFixed(2)}</span></span>
+                </div>
+
+                <div className="mt-3 flex justify-end gap-2 overflow-x-auto pb-1">
+                  {order.status === "pending" ? (
+                    <>
+                      <button className={actionBtn} disabled={actingId === order.id} onClick={(e) => { e.stopPropagation(); setActingId(order.id); cancelOrder(order.id).then(() => loadOrders({ page: 1, tab })).finally(() => setActingId("")); }}>取消订单</button>
+                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); toast.info("支付功能待接入"); }}>去付款</button>
+                    </>
+                  ) : null}
+
+                  {order.status === "paid" ? (
+                    <>
+                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void addOrderToCart(order); }}>加入购物车</button>
+                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void repurchaseOrder(order); }}>再买一单</button>
+                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate("/help"); }}>联系客服</button>
+                    </>
+                  ) : null}
+
+                  {order.status === "shipped" ? (
+                    <>
+                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); if (order.logistics_provider?.tracking_url) window.open(order.logistics_provider.tracking_url, "_blank"); else toast.info("暂无物流信息"); }}>查看物流</button>
+                      <button className={actionBtn} disabled={actingId === order.id} onClick={(e) => { e.stopPropagation(); setActingId(order.id); confirmReceive(order.id).then(() => loadOrders({ page: 1, tab })).finally(() => setActingId("")); }}>确认收货</button>
+                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void addOrderToCart(order); }}>加入购物车</button>
+                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void repurchaseOrder(order); }}>再买一单</button>
+                    </>
+                  ) : null}
+
+                  {order.status === "completed" ? (
+                    <>
+                      {hasPendingReview(order) ? <button className={actionBtn} onClick={(e) => { e.stopPropagation(); openDetail(order); }}>评价</button> : null}
+                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void addOrderToCart(order); }}>加入购物车</button>
+                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void repurchaseOrder(order); }}>再买一单</button>
+                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate("/returns"); }}>申请售后</button>
+                    </>
+                  ) : null}
+
+                  {order.status === "cancelled" ? (
+                    <>
+                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void addOrderToCart(order); }}>加入购物车</button>
+                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void repurchaseOrder(order); }}>再买一单</button>
+                    </>
+                  ) : null}
+
+                  {(order.status === "refunding" || order.status === "refunded") ? (
+                    <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate("/returns"); }}>查看售后</button>
+                  ) : null}
+                </div>
+              </article>
             );
           })}
         </div>
-      </div>
-
-      {loading ? <p className="text-sm text-muted-foreground">加载中...</p> : null}
-      {error ? <p className="text-sm text-red-500">{error}</p> : null}
-
-      {!loading && displayOrders.length === 0 ? (
-        <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 text-center text-sm text-[var(--theme-text-muted)]">
-          {emptyText[tab]}
-        </div>
-      ) : null}
-
-      <div className="space-y-3">
-        {displayOrders.map((order) => (
-          <div key={order.id} className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3" onClick={() => navigate(`/orders/${order.id}`)}>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-[var(--theme-text-muted)]">{order.order_no}</span>
-              <span className="text-xs text-[var(--theme-text)]">{getBuyerOrderStatusText(order)}</span>
-            </div>
-            <div className="mt-2 flex gap-2 overflow-x-auto">
-              {order.items.slice(0, 4).map((item) => (
-                <img key={item.order_item_id || item.id || item.product.id} src={item.product.cover_image} alt={item.product.name} className="h-14 w-14 rounded-lg object-cover" />
-              ))}
-            </div>
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-xs text-[var(--theme-text-muted)]">共 {order.items.reduce((s, i) => s + i.qty, 0)} 件商品</span>
-              <span className="text-sm font-semibold text-[var(--theme-price)]">RM {order.total_amount}</span>
-            </div>
-            <div className="mt-3 flex justify-end gap-2">
-              {order.status === "pending" ? (
-                <>
-                  <button className={actionBtn} disabled={actingId === order.id} onClick={(e) => { e.stopPropagation(); setActingId(order.id); cancelOrder(order.id).then(() => loadOrders({ page: 1, tab })).finally(() => setActingId("")); }}>取消订单</button>
-                  <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate(`/orders/${order.id}`); }}>去付款</button>
-                </>
-              ) : null}
-              {order.status === "paid" ? (
-                <>
-                  <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate("/help"); }}>联系客服</button>
-                  <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate(`/orders/${order.id}`); }}>查看详情</button>
-                </>
-              ) : null}
-              {order.status === "shipped" ? (
-                <>
-                  <button className={actionBtn} onClick={(e) => { e.stopPropagation(); if (order.logistics_provider?.tracking_url) window.open(order.logistics_provider.tracking_url, "_blank"); else toast.info("暂无物流信息"); }}>查看物流</button>
-                  <button className={actionBtn} disabled={actingId === order.id} onClick={(e) => { e.stopPropagation(); setActingId(order.id); confirmReceive(order.id).then(() => loadOrders({ page: 1, tab })).finally(() => setActingId("")); }}>确认收货</button>
-                </>
-              ) : null}
-              {order.status === "completed" && hasPendingReview(order) ? (
-                <>
-                  <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate(`/orders/${order.id}?review=1`); }}>评价</button>
-                  <button className={actionBtn} onClick={(e) => { e.stopPropagation(); const pid = order.items[0]?.product.id; if (pid) navigate(`/product/${pid}`); }}>再次购买</button>
-                </>
-              ) : null}
-              {order.status === "completed" && !hasPendingReview(order) ? (
-                <>
-                  <button className={actionBtn} onClick={(e) => { e.stopPropagation(); const pid = order.items[0]?.product.id; if (pid) navigate(`/product/${pid}`); }}>再次购买</button>
-                  <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate(`/orders/${order.id}`); }}>查看详情</button>
-                </>
-              ) : null}
-              {(order.status === "refunding" || order.status === "refunded") ? (
-                <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate("/returns"); }}>查看售后</button>
-              ) : null}
-              {order.status === "cancelled" ? (
-                <>
-                  <button className={actionBtn} onClick={(e) => { e.stopPropagation(); const pid = order.items[0]?.product.id; if (pid) navigate(`/product/${pid}`); }}>再次购买</button>
-                  <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate(`/orders/${order.id}`); }}>查看详情</button>
-                </>
-              ) : null}
-            </div>
-          </div>
-        ))}
-      </div>
+      </main>
     </div>
   );
 }

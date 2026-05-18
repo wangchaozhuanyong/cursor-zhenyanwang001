@@ -102,7 +102,7 @@ export default function Coupons() {
 
   if (error && rawCoupons.length === 0) {
     return (
-      <div className="store-page flex min-h-screen flex-col items-center justify-center gap-3 px-4">
+      <div className="store-page flex min-h-screen flex-col items-center justify-center gap-3 px-[var(--store-page-x)] sm:px-4">
         <p className="text-sm text-[var(--theme-danger)]">{error}</p>
         <button
           type="button"
@@ -124,7 +124,7 @@ export default function Coupons() {
           "bg-[var(--theme-bg)]/92",
         )}
       >
-        <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
+        <div className="mx-auto flex w-full items-center gap-3 px-[var(--store-page-x)] py-3 sm:max-w-lg sm:px-4">
           <button
             type="button"
             onClick={goBack}
@@ -136,7 +136,7 @@ export default function Coupons() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg px-4">
+      <main className="mx-auto w-full px-[var(--store-page-x)] sm:max-w-lg sm:px-4">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}

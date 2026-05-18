@@ -253,7 +253,7 @@ export default function Categories() {
       />
 
       <main className="mx-auto max-w-screen-xl">
-        <div className="px-4 pb-6 pt-3 md:px-6">
+        <div className="px-[var(--store-page-x)] pb-6 pt-[var(--store-page-y)] md:px-6">
           <div className="md:grid md:grid-cols-[260px,1fr] md:gap-6 lg:grid-cols-[288px,1fr]">
             <CategorySideTree categories={categories} activeCat={activeCat} onSelectAll={handleSelectAll} onRootClick={handleRootCategoryClick} onChildClick={handleSelectChild} />
             <section>

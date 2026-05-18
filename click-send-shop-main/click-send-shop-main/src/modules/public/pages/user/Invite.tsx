@@ -150,14 +150,14 @@ export default function Invite() {
 
   return (
     <div className="min-h-screen bg-[var(--theme-bg)]">
-      <header className="sticky top-0 z-40 bg-background/95 px-4 py-3 backdrop-blur-md">
-        <div className="mx-auto flex max-w-lg items-center gap-3">
+      <header className="sticky top-0 z-40 bg-background/95 px-[var(--store-page-x)] py-3 backdrop-blur-md sm:px-4">
+        <div className="mx-auto flex w-full items-center gap-3 sm:max-w-lg">
           <button onClick={goBack}><ArrowLeft size={20} className="text-foreground" /></button>
           <h1 className="text-base font-semibold text-foreground">邀请中心</h1>
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg px-4 py-6">
+      <main className="mx-auto w-full px-[var(--store-page-x)] py-4 sm:max-w-lg sm:px-4 sm:py-6">
         <div className="rounded-2xl border border-[var(--theme-border)] bg-[linear-gradient(110deg,color-mix(in_srgb,var(--theme-secondary)_16%,var(--theme-surface)),var(--theme-surface))] p-5">
           <div className="flex items-center gap-3">
             <div className="rounded-xl bg-[var(--theme-primary)]/15 p-2 text-[var(--theme-primary)]"><Gift size={22} /></div>
@@ -215,7 +215,7 @@ export default function Invite() {
           ) : (
             <div className="space-y-2">
               {records.map((r) => (
-                <div key={r.id} className="flex items-center gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
+                <div key={r.id} className="flex items-center gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] sm:p-4">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--theme-price)]/10 text-sm font-bold text-[var(--theme-price)]">{(r.invitee_nickname || "用户").charAt(0)}</div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-foreground">{r.invitee_nickname || "用户"}</p>

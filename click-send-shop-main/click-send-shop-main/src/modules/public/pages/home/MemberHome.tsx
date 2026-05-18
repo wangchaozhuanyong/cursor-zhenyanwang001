@@ -148,7 +148,7 @@ export default function MemberHome() {
           </AnimatedSection>
         ) : null}
         {isHomeModuleEnabled(homeModules, "nav_grid", "member") ? (
-          <AnimatedSection delay={0.08} className="-mx-4">
+          <AnimatedSection delay={0.08} className="-mx-[var(--store-page-x)] md:mx-0">
             <HomeOpsBlocks />
           </AnimatedSection>
         ) : null}
@@ -158,7 +158,7 @@ export default function MemberHome() {
         <AnimatedSection delay={0.1}>
         <section>
           <Header title="会员专属礼包" icon={Ticket} />
-          <div className="no-scrollbar -mx-4 flex items-stretch gap-3 overflow-x-auto overflow-y-hidden px-4 pb-2 snap-x snap-mandatory md:mx-0 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 md:pb-0 md:snap-none lg:gap-4">
+          <div className="no-scrollbar -mx-[var(--store-page-x)] flex items-stretch gap-3 overflow-x-auto overflow-y-hidden px-[var(--store-page-x)] pb-2 snap-x snap-mandatory md:mx-0 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 md:pb-0 md:snap-none lg:gap-4">
             {(couponLoading ? Array.from({ length: 4 }) : couponTop).map((c: UserCoupon | number, i) => {
               if (couponLoading || typeof c === "number") {
                 return (

@@ -162,7 +162,7 @@ export default function Search() {
           surfaceClass,
         )}
       >
-        <div className="mx-auto w-full max-w-screen-xl px-4">
+        <div className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] sm:px-4 md:px-6">
           <div className="flex h-[var(--store-tab-header-height)] items-center gap-2">
             <button
               type="button"
@@ -195,7 +195,7 @@ export default function Search() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-screen-xl px-4 py-4 md:px-6 md:py-6">
+      <main className="mx-auto max-w-screen-xl px-[var(--store-page-x)] py-[var(--store-page-y)] md:px-6 md:py-6">
         <div className="md:grid md:grid-cols-[280px,1fr] md:gap-6 lg:grid-cols-[320px,1fr]">
           <aside className="hidden md:block">
             {(history.length > 0 || hotTerms.length > 0) && (

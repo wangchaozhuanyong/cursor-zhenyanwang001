@@ -52,7 +52,7 @@ export default function NewArrivals() {
         }
       />
 
-      <main className="mx-auto max-w-screen-xl px-4 pb-6 pt-4">
+      <main className="mx-auto max-w-screen-xl px-[var(--store-page-x)] pb-6 pt-[var(--store-page-y)] md:px-6">
         {error ? (
           <div className="mt-2 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-center text-sm text-[var(--theme-text-muted)]">
             {error}

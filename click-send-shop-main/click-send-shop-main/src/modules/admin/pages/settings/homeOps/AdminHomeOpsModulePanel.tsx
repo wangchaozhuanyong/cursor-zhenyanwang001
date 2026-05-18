@@ -61,7 +61,7 @@ export default function AdminHomeOpsModulePanel() {
   const categories = ["common", "member", "guest"] as const;
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-4">
+    <section className="rounded-2xl border border-border bg-card p-3 sm:p-4">
       <div className="mb-4">
         <h2 className="font-semibold text-foreground"><Tx>首页内容模块开关</Tx></h2>
         <p className="mt-1 text-xs text-muted-foreground"><Tx>

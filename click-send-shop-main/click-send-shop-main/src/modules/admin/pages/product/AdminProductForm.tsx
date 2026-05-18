@@ -385,7 +385,7 @@ export default function AdminProductForm() {
                   )}
                 </div>
               </div>
-              <div className="rounded-xl border border-border bg-background/50 p-4">
+              <div className="rounded-xl border border-border bg-background/50 p-3 sm:p-4">
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <div>
                     <label className="block text-xs font-medium text-muted-foreground"><Tx>详情视频（可选）</Tx></label>

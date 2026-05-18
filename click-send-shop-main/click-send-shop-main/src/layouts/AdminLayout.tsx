@@ -488,7 +488,7 @@ function AdminLayoutContent() {
 
       <div className="flex min-h-[100dvh] min-w-0 flex-1 flex-col">
         <header className="safe-area-pt sticky top-0 z-30 flex flex-col border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md">
-          <div className="flex min-h-[48px] items-center gap-2 px-3 py-2 sm:px-4 lg:px-6">
+          <div className="flex min-h-[48px] items-center gap-2 px-[var(--admin-mobile-page-x)] py-2 sm:px-4 lg:px-6">
             <button
               type="button"
               aria-label={t("layout.openMenu")}
@@ -610,7 +610,7 @@ function AdminLayoutContent() {
           </div>
         </header>
 
-        <main className="admin-mobile-main flex-1 p-3 sm:p-4 lg:p-6">
+        <main className="admin-mobile-main flex-1 p-[var(--admin-mobile-page-x)] sm:p-4 lg:p-6">
           <Suspense fallback={<AdminOutletFallback />}>
             <AnimatedPage>
               <Outlet />
@@ -622,7 +622,7 @@ function AdminLayoutContent() {
           className="safe-area-pb fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--theme-border)] bg-[var(--theme-card)]/95 backdrop-blur-md lg:hidden"
           aria-label={t("layout.mainNav")}
         >
-          <div className="flex h-14 max-w-lg mx-auto items-stretch justify-between px-1">
+          <div className="flex h-14 w-full items-stretch justify-between px-1 md:mx-auto md:max-w-lg">
             <AdminNavTab
               icon={LayoutDashboard}
               label={t("layout.mobileHome")}

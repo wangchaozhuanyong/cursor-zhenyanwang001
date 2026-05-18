@@ -91,7 +91,7 @@ export default function Notifications() {
   return (
     <div className="min-h-screen bg-background pb-6">
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
+        <div className="mx-auto flex w-full items-center justify-between px-[var(--store-page-x)] py-3 sm:max-w-lg sm:px-4">
           <div className="flex items-center gap-3">
             <button onClick={goBack} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
               <ArrowLeft size={20} className="text-foreground" />
@@ -113,7 +113,7 @@ export default function Notifications() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg px-4">
+      <main className="mx-auto w-full px-[var(--store-page-x)] sm:max-w-lg sm:px-4">
         {!loading && notifications.length === 0 && (
           <div className="flex flex-col items-center py-20 text-muted-foreground">
             <Bell size={48} className="mb-3 opacity-20" />

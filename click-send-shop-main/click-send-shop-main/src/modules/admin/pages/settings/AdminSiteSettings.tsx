@@ -466,7 +466,7 @@ export default function AdminSiteSettings() {
       ) : (
       <>
       <div className="grid max-w-5xl gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-border bg-card p-4 text-xs text-muted-foreground lg:col-span-2">
+        <div className="rounded-xl border border-border bg-card p-3 sm:p-4 text-xs text-muted-foreground lg:col-span-2">
           <p className="font-medium text-foreground"><Tx>字段生效提示（避免“设置后看起来没同步”）</Tx></p>
           <p className="mt-2"><Tx>1) 标题规则：客户端内页 =「页面名 · 站点名称」，首页优先用「SEO 标题」。</Tx></p>
           <p className="mt-1"><Tx>2) 浏览器标签图标：读取「Favicon」，首屏静态图标与运行时图标会统一更新。</Tx></p>

@@ -254,7 +254,7 @@ export default function AdminThemeSettings() {
   };
 
   return (
-    <div className="mx-auto max-w-[1800px] bg-muted/20 p-4 pb-8">
+    <div className="w-full bg-muted/20 p-2 pb-8 sm:p-4">
       {loading ? (
         <AdminThemeStudioSkeleton />
       ) : (
@@ -281,7 +281,7 @@ export default function AdminThemeSettings() {
             }}
           />
 
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[280px_minmax(0,1fr)_clamp(420px,30vw,520px)] xl:items-start">
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-[280px_minmax(0,1fr)_clamp(420px,30vw,520px)] xl:items-start xl:gap-4">
             <ThemeSkinSidebar
               skins={skins}
               selectedSkinId={selectedSkinId}

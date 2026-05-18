@@ -1,13 +1,11 @@
 ﻿import { formatDateTime } from "@/utils/formatDateTime";
 ﻿import { useEffect, useState } from "react";
-import { ArrowLeft, Gift, TrendingUp, TrendingDown, Loader2, Wallet } from "lucide-react";
+import { ArrowLeft, Gift, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useNavigate } from "react-router-dom";
 import * as rewardService from "@/services/rewardService";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import type { RewardTransaction } from "@/types/reward";
-import { toast } from "sonner";
-import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import {
   THEME_ACCENT_HERO_ICON,
   THEME_ACCENT_HERO_LABEL,
@@ -30,7 +28,6 @@ export default function Rewards() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [withdrawing, setWithdrawing] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const PAGE_SIZE = 20;
@@ -79,22 +76,6 @@ export default function Rewards() {
     loadData();
   }, []);
 
-  const handleWithdraw = async () => {
-    if (balance <= 0) {
-      toast.error("暂无可提现余额");
-      return;
-    }
-    setWithdrawing(true);
-    try {
-      await rewardService.requestWithdraw(balance);
-      toast.success("提现申请已提交", toastPresetQuickSuccess);
-      loadData();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "提现失败");
-    } finally {
-      setWithdrawing(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -113,14 +94,7 @@ export default function Rewards() {
           <p className={`mt-2 ${THEME_ACCENT_HERO_LABEL} normal-case tracking-normal`}>可提现余额</p>
           <p className={`text-4xl ${THEME_ACCENT_HERO_VALUE}`}>RM {Number(balance).toFixed(2)}</p>
           {pendingAmount > 0 && <p className={`mt-1 ${THEME_ACCENT_HERO_SUBTLE}`}>待审核：RM {Number(pendingAmount).toFixed(2)}</p>}
-          <button
-            onClick={handleWithdraw}
-            disabled={withdrawing || balance <= 0}
-            className="mx-auto mt-4 flex items-center gap-2 rounded-full btn-theme-price px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg transition-all active:scale-95 disabled:opacity-60"
-          >
-            <Wallet size={16} />
-            {withdrawing ? "提交中..." : "申请提现"}
-          </button>
+          <p className={`mt-4 text-xs leading-5 ${THEME_ACCENT_HERO_SUBTLE}`}>{"\u8fd4\u73b0\u91d1\u989d\u4ec5\u53ef\u7528\u4e8e\u8d2d\u7269\u3002"}</p>
         </div>
 
         <div className="mt-6">
@@ -162,4 +136,3 @@ export default function Rewards() {
     </div>
   );
 }
-

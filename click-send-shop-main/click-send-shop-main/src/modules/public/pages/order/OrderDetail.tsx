@@ -7,13 +7,14 @@ import ReviewComposerSheet from "@/components/review/ReviewComposerSheet";
 import { BottomSheetConfirm } from "@/modules/micro-interactions";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useCartStore } from "@/stores/useCartStore";
+import type { Order } from "@/types/order";
 import type { ProductVariant } from "@/types/product";
 import { getBuyerOrderStatusText, getOrderProgressStep, hasPendingReview } from "@/utils/orderBuyerStatus";
 import { OrderDiscountLines } from "./components/OrderDiscountLines";
 
 const steps = ["待付款", "已付款", "已发货", "已完成"];
 
-function buildVariantFromOrderItem(item: any): ProductVariant | null {
+function buildVariantFromOrderItem(item: Order["items"][number]): ProductVariant | null {
   if (!item.variant_id) return null;
   const matched = item.product.variants?.find((v: ProductVariant) => v.id === item.variant_id || v.sku_code === item.sku_code);
   if (matched) return matched;
@@ -132,9 +133,9 @@ export default function OrderDetail() {
 
         <div className="rounded-2xl border border-border bg-card p-3">
           <p className="text-sm font-medium">订单信息</p>
-          <div className="mt-2 flex items-center justify-between text-sm">
+          <div className="mt-2 flex items-center justify-between gap-3 text-sm">
             <span className="text-muted-foreground">订单号</span>
-            <button className="inline-flex items-center gap-1" onClick={async () => { await navigator.clipboard.writeText(order.order_no); toast.success("订单号已复制"); }}>
+            <button className="inline-flex items-center gap-1 truncate rounded-full border border-[var(--theme-border)] px-2 py-1 text-xs" onClick={async () => { await navigator.clipboard.writeText(order.order_no); toast.success("订单号已复制"); }}>
               {order.order_no}<Copy size={12} />
             </button>
           </div>
@@ -151,11 +152,11 @@ export default function OrderDetail() {
           {order.status === "pending" ? (
             <>
               <button className="rounded-full border px-3 py-1 text-xs" onClick={async () => { await cancelOrder(order.id); await reload(); toast.success("订单已取消"); }}>取消订单</button>
-              <button className="rounded-full border px-3 py-1 text-xs" onClick={() => toast.info("支付功能待接入")}>去付款</button>
+              <button className="rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1 text-xs text-[var(--theme-primary-foreground)]" onClick={() => toast.info("支付功能待接入")}>去付款</button>
             </>
           ) : null}
           {order.status === "paid" ? <><button className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate("/help")}>联系客服</button></> : null}
-          {order.status === "shipped" ? <><button className="rounded-full border px-3 py-1 text-xs" onClick={() => order.logistics_provider?.tracking_url ? window.open(order.logistics_provider.tracking_url, "_blank") : toast.info("暂无物流信息")}>查看物流</button><button className="rounded-full border px-3 py-1 text-xs" onClick={async () => { await confirmReceive(order.id); await reload(); const next = (useOrderStore.getState().currentOrder?.items || []).filter((i) => i.can_review && i.order_item_id); if (next.length) { setFirstReviewableId(next[0].order_item_id!); setConfirmReviewOpen(true); } }}>确认收货</button></> : null}
+          {order.status === "shipped" ? <><button className="rounded-full border px-3 py-1 text-xs" onClick={() => order.logistics_provider?.tracking_url ? window.open(order.logistics_provider.tracking_url, "_blank") : toast.info("暂无物流信息")}>查看物流</button><button className="rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1 text-xs text-[var(--theme-primary-foreground)]" onClick={async () => { await confirmReceive(order.id); await reload(); const next = (useOrderStore.getState().currentOrder?.items || []).filter((i) => i.can_review && i.order_item_id); if (next.length) { setFirstReviewableId(next[0].order_item_id!); setConfirmReviewOpen(true); } }}>确认收货</button></> : null}
           {(order.status === "refunding" || order.status === "refunded") ? <button className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate("/returns")}>查看售后进度</button> : null}
         </div>
       </main>

@@ -217,13 +217,13 @@ export default function Profile() {
   const rewardsEnabled = loyaltyConfig?.reward?.displayEnabled ?? true;
   const inviteEnabled = loyaltyConfig?.reward?.referralEnabled ?? true;
   const assetItems = [
-    { label: "积分", value: String(pointsBalance), path: "/points", auth: true },
-    { label: "优惠券", value: String(couponCount), path: "/coupons", auth: true },
-    { label: "收藏", value: String(favoriteCount), path: "/favorites", auth: false },
-    { label: "返现", value: `RM ${rewardBalance.toFixed(2)}`, path: "/rewards", auth: true },
+    { key: "points", label: "我的积分", value: String(pointsBalance), path: "/points", auth: true },
+    { key: "favorites", label: "我的收藏", value: String(favoriteCount), path: "/favorites", auth: false },
+    { key: "coupons", label: "优惠礼券", value: String(couponCount), path: "/coupons", auth: true },
+    { key: "reward", label: "邀请返现", value: `RM ${rewardBalance.toFixed(2)}`, path: "/rewards", auth: true },
   ].filter((item) => (
-    (item.label !== "积分" || pointsEnabled)
-    && (item.label !== "返现" || rewardsEnabled)
+    (item.key !== "points" || pointsEnabled)
+    && (item.key !== "reward" || rewardsEnabled)
   ));
   const assetGridClass = assetItems.length <= 2
     ? "grid-cols-2"
@@ -237,14 +237,14 @@ export default function Profile() {
     { label: "待发货", icon: Package, count: orderSummary?.pending_ship ?? orderShipping, path: "/orders?tab=paid", auth: true },
     { label: "待收货", icon: Truck, count: orderSummary?.pending_receive ?? orderReceiving, path: "/orders?tab=shipped", auth: true },
     { label: "待评价", icon: MessageSquare, count: orderSummary?.pending_review ?? pendingReviewCount, path: "/orders?tab=pending_review", auth: true },
-    { label: "退款/售后", icon: CircleHelp, count: orderSummary?.after_sale ?? afterSaleCount, path: "/returns", auth: true },
+    { label: "退款售后", icon: CircleHelp, count: orderSummary?.after_sale ?? afterSaleCount, path: "/returns", auth: true },
   ]
   : [
     { label: "待付款", icon: Wallet, count: 0, path: "/orders?tab=pending_payment", auth: true },
     { label: "待发货", icon: Package, count: 0, path: "/orders?tab=paid", auth: true },
     { label: "待收货", icon: Truck, count: 0, path: "/orders?tab=shipped", auth: true },
     { label: "待评价", icon: MessageSquare, count: 0, path: "/orders?tab=pending_review", auth: true },
-    { label: "退款/售后", icon: CircleHelp, count: 0, path: "/returns", auth: true },
+    { label: "退款售后", icon: CircleHelp, count: 0, path: "/returns", auth: true },
   ]) as Array<{ label: string; icon: typeof Wallet; count?: number; path: string; auth: boolean }>;
 const orderGridClass = "grid-cols-5";
 
@@ -333,7 +333,7 @@ const orderGridClass = "grid-cols-5";
                 <span className={cn("mx-auto flex h-9 w-9 items-center justify-center rounded-2xl", THEME_ACCENT_ICON_SHELL_CLASS)}>
                   <item.icon size={17} strokeWidth={2} />
                 </span>
-                <p className="mt-2 text-xs font-medium">{item.label}</p>
+                <p className="mt-2 truncate whitespace-nowrap text-[11px] font-medium leading-none">{item.label}</p>
               </button>
             ))}
           </div>
@@ -344,15 +344,15 @@ const orderGridClass = "grid-cols-5";
             <div className={cn("grid px-1 py-1", assetGridClass)}>
               {assetItems.map((item) => (
                 <button
-                  key={item.label}
+                  key={item.key}
                   type="button"
                   onClick={() => gateNavigate(navigate, item.path, item.auth)}
-                  className={`min-w-0 px-1 py-1 text-center ${MENU_TAP}`}
+                  className={`flex min-h-[64px] min-w-0 flex-col items-center justify-center gap-1 px-1 py-1 text-center ${MENU_TAP}`}
                 >
-                  <p className="truncate text-xs font-semibold text-[var(--theme-text-muted-on-surface)]">{item.label}</p>
-                  <p className={`mt-2 truncate font-bold text-[var(--theme-text-on-surface)] ${item.label === "返现" ? "text-sm" : "text-base"}`}>
+                  <p className={`truncate font-bold leading-tight text-[var(--theme-text-on-surface)] ${item.key === "reward" ? "text-sm" : "text-base"}`}>
                     {item.value}
                   </p>
+                  <p className="truncate text-xs font-semibold leading-tight text-[var(--theme-text-muted-on-surface)]">{item.label}</p>
                 </button>
               ))}
             </div>
@@ -432,5 +432,3 @@ const orderGridClass = "grid-cols-5";
     </div>
   );
 }
-
-

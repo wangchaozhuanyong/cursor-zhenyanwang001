@@ -11,7 +11,8 @@
 #   VITE_API_BASE_URL  默认 /api（同源部署）；API 分域时请设为完整前缀，如 https://api.xxx.com
 #   SKIP_GIT=1        跳过 git pull（适用于 rsync 同步、无 .git 的发布目录；须自行保证代码最新）
 #   GIT_BRANCH        默认 main（git fetch / reset 的目标分支）
-#   FRONTEND_BUILD_HEAP_MB  vite build 时 Node V8 堆上限（MB），默认 3072；小内存机若仍 OOM 可试 4096 或给机器加 swap
+#   FRONTEND_BUILD_HEAP_MB  vite build 时 Node V8 堆上限（MB），默认 1024；小内存机不要设太高，避免把系统打到 OOM
+#   DEPLOY_LOCK_FILE        部署锁文件，默认 $PROJECT_DIR/.deploy.lock
 #
 set -euo pipefail
 
@@ -24,6 +25,7 @@ export FRONTEND_SUB
 FRONTEND_DIR="$PROJECT_DIR/$FRONTEND_SUB"
 BACKEND_DIR="$PROJECT_DIR/server"
 LOG_FILE="${LOG_FILE:-$PROJECT_DIR/deploy.log}"
+DEPLOY_LOCK_FILE="${DEPLOY_LOCK_FILE:-$PROJECT_DIR/.deploy.lock}"
 HEALTH_PORT="${HEALTH_PORT:-3001}"
 HEALTH_PATH="${HEALTH_PATH:-/api/health/live}"
 PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-$PROJECT_DIR/public-frontend}"
@@ -31,6 +33,12 @@ PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-$PROJECT_DIR/public-frontend}"
 export VITE_API_BASE_URL="${VITE_API_BASE_URL:-/api}"
 export SKIP_GIT="${SKIP_GIT:-0}"
 GIT_BRANCH="${GIT_BRANCH:-main}"
+
+exec 9>"$DEPLOY_LOCK_FILE"
+if ! flock -n 9; then
+  echo "⚠️  已有部署进程正在运行，退出以避免重复构建占满内存：$DEPLOY_LOCK_FILE" | tee -a "$LOG_FILE"
+  exit 1
+fi
 
 npm_install_here() {
   if [[ -f package-lock.json ]]; then
@@ -138,7 +146,7 @@ fi
 cd "$FRONTEND_DIR" || exit 1
 npm_install_here
 echo "🎨 VITE_API_BASE_URL=$VITE_API_BASE_URL（若 API 不在同域 /api，请导出正确地址后重跑）" | tee -a "$LOG_FILE"
-_fe_heap="${FRONTEND_BUILD_HEAP_MB:-3072}"
+_fe_heap="${FRONTEND_BUILD_HEAP_MB:-1024}"
 echo "ℹ️  vite build：heap 上限 ${_fe_heap}MB（FRONTEND_BUILD_HEAP_MB）；直接 node 调 vite，避免 npm 子进程未继承 NODE_OPTIONS 仍 ~512MB OOM" | tee -a "$LOG_FILE"
 (
   export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--max-old-space-size=${_fe_heap}"

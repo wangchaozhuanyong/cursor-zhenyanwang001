@@ -100,7 +100,7 @@ export default function Orders() {
     <div className="min-h-screen bg-background p-4">
       <h1 className="mb-3 text-lg font-semibold">我的订单</h1>
 
-      <div className="sticky top-0 z-10 -mx-4 mb-3 border-b border-[var(--theme-border)] bg-background px-4 py-2">
+      <div className="sticky top-0 z-10 -mx-[var(--store-page-x)] mb-3 border-b border-[var(--theme-border)] bg-background px-[var(--store-page-x)] py-2 sm:-mx-4 sm:px-4">
         <div className="flex gap-2 overflow-x-auto pb-1">
           {TABS.map((t) => {
             const active = t.key === tab;

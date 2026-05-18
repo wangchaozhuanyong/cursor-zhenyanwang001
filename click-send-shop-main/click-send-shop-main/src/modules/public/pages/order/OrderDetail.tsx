@@ -24,15 +24,15 @@ export default function OrderDetail() {
   const reviewableItems = useMemo(() => (order?.items || []).filter((i) => i.can_review && i.order_item_id), [order]);
   const step = order ? getOrderProgressStep(order) : 0;
 
-  if (loading) return <div className="min-h-screen bg-background"><PageHeader title="订单详情" /><div className="p-4 text-sm">加载中...</div></div>;
-  if (error || !order) return <div className="min-h-screen bg-background"><PageHeader title="订单详情" /><div className="p-4 text-sm">{error || "订单不存在"}</div></div>;
+  if (loading) return <div className="min-h-screen bg-background"><PageHeader title="订单详情" /><div className="px-[var(--store-page-x)] py-[var(--store-page-y)] text-sm">加载中...</div></div>;
+  if (error || !order) return <div className="min-h-screen bg-background"><PageHeader title="订单详情" /><div className="px-[var(--store-page-x)] py-[var(--store-page-y)] text-sm">{error || "订单不存在"}</div></div>;
 
   const reload = async () => { await loadOrderDetail(order.id); };
 
   return (
     <div className="min-h-screen bg-background">
       <PageHeader title="订单详情" />
-      <main className="mx-auto max-w-lg space-y-3 p-4 text-sm">
+      <main className="mx-auto w-full space-y-3 px-[var(--store-page-x)] py-[var(--store-page-y)] text-sm sm:max-w-lg sm:p-4">
         <div className="rounded-2xl border border-border bg-card p-3">
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">订单号：{order.order_no}</p>

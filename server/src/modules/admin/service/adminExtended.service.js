@@ -209,7 +209,7 @@ async function updateBanner(id, body, adminUserId, req) {
 async function deleteBanner(id, adminUserId, req) {
   await repo.deleteBanner(id, adminUserId);
   safeClearCatalogCache();
-  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'banner.delete', objectType: 'banner', objectId: id, summary: `鍒犻櫎Banner ${id}`, result: 'success' });
+  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'banner.delete', objectType: 'banner', objectId: id, summary: `删除Banner ${id}`, result: 'success' });
   return { message: '已删除' };
 }
 

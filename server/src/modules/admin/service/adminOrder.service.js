@@ -193,7 +193,7 @@ async function listOrders(query) {
 async function getOrderById(orderId) {
   const { formatOrder, formatOrderItem } = require('../../order/order.mapper');
   const order = await repo.selectOrderById(null, orderId);
-  if (!order) throw new NotFoundError('璁㈠崟涓嶅瓨鍦?');
+  if (!order) throw new NotFoundError('订单不存在');
   const rawItems = await repo.selectOrderItemsWithProduct(repo.getPool(), order.id);
   const items = rawItems.map((it) =>
     formatOrderItem({
@@ -213,11 +213,11 @@ async function getOrderById(orderId) {
 async function updateOrderStatus(orderId, body, adminUserId, req) {
   const { status, remark } = body;
   if (!ORDER_STATUS_LIST.includes(status)) {
-    throw new ValidationError(`鏃犳晥鐘舵€? ${status}`);
+    throw new ValidationError(`无效状态: ${status}`);
   }
 
   const orderRow = await repo.selectOrderStateById(orderId);
-  if (!orderRow) throw new NotFoundError('璁㈠崟涓嶅瓨鍦?');
+  if (!orderRow) throw new NotFoundError('订单不存在');
 
   const beforeSnap = {
     status: orderRow.status,
@@ -346,7 +346,7 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
       actionType: 'order.status_update',
       objectType: 'order',
       objectId: orderId,
-      summary: `璁㈠崟鐘舵€?${beforeSnap.status} -> ${status}`,
+      summary: `订单状态 ${beforeSnap.status} -> ${status}`,
       before: beforeSnap,
       after: { status, payment_status: newPayment },
       result: 'success',
@@ -365,7 +365,7 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
         console.error('[MyInvois] enqueue credit note after order refund failed:', e?.message || e);
       }
     }
-    return { data: null, message: '鐘舵€佸凡鏇存柊' };
+    return { data: null, message: '状态已更新' };
   } catch (err) {
     await writeAuditLog({
       req,
@@ -394,7 +394,7 @@ async function shipOrder(orderId, body, adminUserId, req) {
     : null;
 
   try {
-    if (!order) throw new NotFoundError('璁㈠崟涓嶅瓨鍦?');
+    if (!order) throw new NotFoundError('订单不存在');
     if (!requireOrderApi('canShip')(order)) {
         throw new BusinessError(
           400,
@@ -422,7 +422,7 @@ async function shipOrder(orderId, body, adminUserId, req) {
       });
     }
 
-    await logAdminAction(adminUserId, '璁㈠崟鍙戣揣', `${orderId} ${carrier} ${trackingNo}`);
+    await logAdminAction(adminUserId, '订单发货', `${orderId} ${carrier} ${trackingNo}`);
 
     await writeAuditLog({
       req,
@@ -430,12 +430,12 @@ async function shipOrder(orderId, body, adminUserId, req) {
       actionType: 'order.ship',
       objectType: 'order',
       objectId: orderId,
-      summary: `璁㈠崟鍙戣揣 ${order.order_no}`,
+      summary: `订单发货 ${order.order_no}`,
       before: beforeSnap,
       after: { status: ORDER_STATUS.SHIPPED, tracking_no: trackingNo, carrier },
       result: 'success',
     });
-    return { data: null, message: '宸插彂璐?' };
+    return { data: null, message: '已发货' };
   } catch (err) {
     await writeAuditLog({
       req,
@@ -443,7 +443,7 @@ async function shipOrder(orderId, body, adminUserId, req) {
       actionType: 'order.ship',
       objectType: 'order',
       objectId: orderId,
-      summary: '璁㈠崟鍙戣揣澶辫触',
+      summary: '订单发货失败',
       before: beforeSnap || undefined,
       result: 'failure',
       errorMessage: err.message || String(err),
@@ -522,7 +522,7 @@ async function batchShipOrders(payload = {}, adminUserId, req) {
       continue;
     }
     if (!requireOrderApi('canShip')(row)) {
-      failed.push({ order_id: orderId, reason: `鐘舵€佷笉鍏佽鍙戣揣: ${row.status}/${row.payment_status || PAYMENT_STATUS.PENDING}` });
+      failed.push({ order_id: orderId, reason: `状态不允许发货: ${row.status}/${row.payment_status || PAYMENT_STATUS.PENDING}` });
       continue;
     }
     const trackingNo = String(trackingMap[orderId] || '').trim();
@@ -558,11 +558,11 @@ async function batchShipOrders(payload = {}, adminUserId, req) {
     actionType: 'order.batch_ship',
     objectType: 'order',
     objectId: '',
-    summary: `鎵归噺鍙戣揣 ${shipped}/${orderIds.length}`,
+    summary: `批量发货 ${shipped}/${orderIds.length}`,
     after: { carrier, shipped, failed_count: failed.length },
     result: 'success',
   });
-  return { data: { shipped, failed }, message: `鎵归噺鍙戣揣瀹屾垚锛氭垚鍔?${shipped}锛屽け璐?${failed.length}` };
+  return { data: { shipped, failed }, message: `批量发货完成：成功 ${shipped}，失败 ${failed.length}` };
 }
 
 module.exports = {

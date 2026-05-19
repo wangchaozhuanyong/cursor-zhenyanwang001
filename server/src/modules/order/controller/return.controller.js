@@ -21,7 +21,7 @@ exports.createReturn = asyncRoute(async (req, res) => {
       actionType: 'return.create',
       objectType: 'return_request',
       objectId: result.data?.id || null,
-      summary: `鐢ㄦ埛鐢宠鍞悗 璁㈠崟 ${req.body?.order_id || ''}`.trim(),
+      summary: `用户申请售后 订单 ${req.body?.order_id || ''}`.trim(),
       after: { order_id: req.body?.order_id, type: req.body?.type, status: result.data?.status },
       result: 'success',
     });
@@ -32,7 +32,7 @@ exports.createReturn = asyncRoute(async (req, res) => {
       operatorId: req.user?.id,
       actionType: 'return.create',
       objectType: 'return_request',
-      summary: '鐢ㄦ埛鐢宠鍞悗澶辫触',
+      summary: '用户申请售后失败',
       result: 'failure',
       errorMessage: err?.message || String(err),
     });

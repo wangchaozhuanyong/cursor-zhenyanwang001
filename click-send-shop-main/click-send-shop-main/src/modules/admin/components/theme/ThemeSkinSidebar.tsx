@@ -60,7 +60,7 @@ export default function ThemeSkinSidebar({
   });
 
   return (
-    <aside className="w-full shrink-0 rounded-2xl border border-border bg-card p-4 shadow-sm 2xl:sticky 2xl:top-24 2xl:max-h-[calc(100vh-112px)] 2xl:w-[300px] 2xl:overflow-hidden">
+    <aside className="w-full shrink-0 rounded-2xl border border-border bg-card p-4 shadow-sm h-[calc(100vh-112px)] overflow-hidden 2xl:sticky 2xl:top-24 2xl:w-[320px]">
       <div className="flex h-full flex-col gap-3">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold text-foreground">皮肤库</p>
@@ -102,8 +102,8 @@ export default function ThemeSkinSidebar({
         {onAddStarter && starterQuickAdds.length ? (
           <div className="rounded-xl border border-dashed border-border p-2">
             <p className="mb-2 text-xs font-medium text-foreground">从模板新建</p>
-            <div className="grid grid-cols-1 gap-1">
-              {starterQuickAdds.slice(0, 6).map((item) => (
+            <div className="grid max-h-[220px] grid-cols-1 gap-1 overflow-y-auto pr-1">
+              {starterQuickAdds.slice(0, 20).map((item) => (
                 <button
                   key={item.id}
                   type="button"
@@ -136,13 +136,20 @@ export default function ThemeSkinSidebar({
                     <p className="line-clamp-1 text-sm font-semibold text-foreground">{skin.name}</p>
                     <div className="flex shrink-0 gap-0.5">
                       {colorDots(skin.config).map((c, idx) => (
-                        <span key={`${skin.id}_${idx}`} className="h-3 w-3 rounded-full border border-black/10" style={{ background: c }} title={c} />
+                        <span
+                          key={`${skin.id}_${idx}`}
+                          className="h-3 w-3 rounded-full border border-black/10"
+                          style={{ background: c }}
+                          title={c}
+                        />
                       ))}
                     </div>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {isDefault ? <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-700">默认</span> : null}
-                    {selected ? <span className="rounded-full bg-[var(--theme-primary)]/15 px-1.5 py-0.5 text-[10px] text-[var(--theme-primary)]">编辑中</span> : null}
+                    {selected ? (
+                      <span className="rounded-full bg-[var(--theme-primary)]/15 px-1.5 py-0.5 text-[10px] text-[var(--theme-primary)]">编辑中</span>
+                    ) : null}
                     {isActive ? <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-700">当前生效</span> : null}
                     {skin.clientEnabled !== false ? (
                       <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">前台可切换</span>
@@ -163,7 +170,11 @@ export default function ThemeSkinSidebar({
                       复制
                     </button>
                     {!isDefault ? (
-                      <button type="button" onClick={() => onSetDefault(skin.id)} className="w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-secondary">
+                      <button
+                        type="button"
+                        onClick={() => onSetDefault(skin.id)}
+                        className="w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-secondary"
+                      >
                         设为默认
                       </button>
                     ) : null}
@@ -184,7 +195,14 @@ export default function ThemeSkinSidebar({
           {filtered.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border py-8 text-center">
               <p className="text-sm text-muted-foreground">没有匹配的皮肤</p>
-              <button type="button" onClick={() => { onSearchChange(""); onSceneFilterChange("all"); }} className="mt-2 text-xs text-[var(--theme-primary)]">
+              <button
+                type="button"
+                onClick={() => {
+                  onSearchChange("");
+                  onSceneFilterChange("all");
+                }}
+                className="mt-2 text-xs text-[var(--theme-primary)]"
+              >
                 清空筛选
               </button>
             </div>
@@ -194,3 +212,4 @@ export default function ThemeSkinSidebar({
     </aside>
   );
 }
+

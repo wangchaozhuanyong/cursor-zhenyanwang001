@@ -36,6 +36,7 @@ export default function AdminThemeSettings() {
   const undoSnapshot = useRef<ThemeConfig | null>(null);
 
   const selectedSkin = useMemo(() => skins.find((s) => s.id === selectedSkinId), [skins, selectedSkinId]);
+
   useEffect(() => {
     setLoading(true);
     fetchThemeSkins()
@@ -102,15 +103,20 @@ export default function AdminThemeSettings() {
     }
   };
 
-  const updateConfig = useCallback(<K extends keyof ThemeConfig>(field: K, value: ThemeConfig[K]) => {
-    const next = normalizeThemeConfig({ ...themeConfig, [field]: value });
-    setThemeConfig(next);
-    setSkins((prev) => prev.map((skin) => (skin.id === selectedSkinId ? { ...skin, config: next } : skin)));
-    setDirty(true);
-  }, [themeConfig, selectedSkinId]);
+  const updateConfig = useCallback(
+    <K extends keyof ThemeConfig>(field: K, value: ThemeConfig[K]) => {
+      const next = normalizeThemeConfig({ ...themeConfig, [field]: value });
+      setThemeConfig(next);
+      setSkins((prev) => prev.map((skin) => (skin.id === selectedSkinId ? { ...skin, config: next } : skin)));
+      setDirty(true);
+    },
+    [themeConfig, selectedSkinId],
+  );
 
   const onSkinMetaChange = (patch: Partial<Pick<ThemeSkin, "name" | "description" | "sceneTag" | "clientEnabled">>) => {
-    setSkins((prev) => prev.map((skin) => (skin.id === selectedSkinId ? { ...skin, ...patch, name: patch.name ?? skin.name } : skin)));
+    setSkins((prev) =>
+      prev.map((skin) => (skin.id === selectedSkinId ? { ...skin, ...patch, name: patch.name ?? skin.name } : skin)),
+    );
     setDirty(true);
   };
 
@@ -155,7 +161,7 @@ export default function AdminThemeSettings() {
     const newId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `skin_${Date.now()}`;
     const newSkin: ThemeSkin = {
       id: newId,
-      name: `自定义皮肤 ${skins.length + 1}`,
+      name: `自定义皮肤${skins.length + 1}`,
       description: "基于当前皮肤创建",
       sceneTag: selectedSkin?.sceneTag || "default",
       clientEnabled: true,
@@ -351,7 +357,7 @@ export default function AdminThemeSettings() {
             open={!!pendingDeleteId}
             onOpenChange={(open) => !open && setPendingDeleteId(null)}
             title="删除皮肤"
-            description="删除后不可恢复。默认皮肤无法删除，请先将其它皮肤设为默认。"
+            description="删除后不可恢复。默认皮肤无法删除，请先将其他皮肤设为默认。"
             confirmText="删除"
             danger
             onConfirm={() => {
@@ -366,3 +372,4 @@ export default function AdminThemeSettings() {
     </div>
   );
 }
+

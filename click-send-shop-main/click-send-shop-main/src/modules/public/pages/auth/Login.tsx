@@ -21,6 +21,7 @@ import {
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 import { cn } from "@/lib/utils";
 import { FormFieldShake } from "@/modules/micro-interactions";
+import { authErrorMessage, validatePhoneForCountry, validateStrongPassword } from "@/utils/authValidation";
 
 const REMEMBER_KEY = "login_remembered_phone";
 /** text-base(16px) 避免 iOS 聚焦时自动缩放视口导致整页闪动 */
@@ -201,12 +202,9 @@ export default function Login() {
       failValidation("当前未开启短信验证码登录");
       return;
     }
-    if (!phone.trim()) {
-      failValidation("请填写手机号");
-      return;
-    }
-    if (!countryCode || (countryCode !== "+60" && countryCode !== "+86")) {
-      failValidation("请选择国家代码");
+    const phoneError = validatePhoneForCountry(phone, countryCode);
+    if (phoneError) {
+      failValidation(phoneError);
       return;
     }
     if (otpCooldown > 0 || otpSending) return;
@@ -214,47 +212,50 @@ export default function Login() {
     try {
       const data = await authService.sendOtp({ phone, countryCode });
       if (data?.devOtp) {
-        toast.message(`开发环境验证码：${data.devOtp}`, { duration: 12_000 });
+        toast.message("开发验证码：" + data.devOtp, { duration: 12_000 });
       }
       toast.success("验证码已发送", { ...toastPresetQuickSuccess, position: "top-center" });
       setOtpCooldown(60);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "发送失败");
+      toast.error(authErrorMessage(e, "发送验证码失败"));
     } finally {
       setOtpSending(false);
     }
   };
 
   const handleSubmit = async () => {
-    if (!phone) {
-      failValidation(mode === "login" && credentialMode === "otp" ? "请填写手机号" : "请填写手机号和密码");
+    const phoneError = validatePhoneForCountry(phone, countryCode);
+    if (phoneError) {
+      failValidation(phoneError);
       return;
     }
+
     if (mode === "login" && credentialMode === "otp") {
       if (!smsOtpLoginEnabled) {
         failValidation("当前未开启短信验证码登录");
         return;
       }
       if (!otpCode.trim() || !/^\d{6}$/.test(otpCode.trim())) {
-        failValidation("请填写 6 位验证码");
+        failValidation("请输入 6 位验证码");
         return;
       }
     } else if (!password) {
-      failValidation("请填写密码");
+      failValidation("请输入密码");
       return;
     }
-    if (!countryCode) {
-      failValidation("请选择国家代码");
-      return;
+
+    if (mode === "register") {
+      if (!hasLockedInviteCode && !nickname.trim()) {
+        failValidation("请输入昵称");
+        return;
+      }
+      const passwordError = validateStrongPassword(password);
+      if (passwordError) {
+        failValidation(passwordError);
+        return;
+      }
     }
-    if (countryCode !== "+60" && countryCode !== "+86") {
-      failValidation("仅支持 +60 或 +86 手机号");
-      return;
-    }
-    if (mode === "register" && !hasLockedInviteCode && !nickname.trim()) {
-      failValidation("请填写昵称");
-      return;
-    }
+
     try {
       if (mode === "login") {
         if (credentialMode === "password") {
@@ -289,26 +290,14 @@ export default function Login() {
       });
       navigate(from, { replace: true, state: fromState });
     } catch (e) {
-      const fallback = useAuthStore.getState().error;
-      let msg =
-        e instanceof Error
-          ? e.message
-          : (fallback ?? (mode === "login" ? "登录失败" : "注册失败"));
-      /* 仅当服务端未返回具体说明时才用泛化文案，避免本地排障时看不到真实 500 原因（如数据库未连上） */
-      if (e instanceof ApiError && (e.code === 500 || e.code === 502 || e.code === 503 || e.code === 504)) {
-        const vague =
-          msg.startsWith("Request failed (")
-          || msg === "服务器内部错误"
-          || msg.trim() === "";
-        if (vague && e.code === 500) msg = "服务暂时不可用，请稍后再试";
-      }
-      toast.error(msg);
+      toast.error(authErrorMessage(e, mode === "login" ? "登录失败" : "注册失败"));
     }
   };
 
   const handleRequestReset = async () => {
-    if (!phone.trim()) {
-      failValidation("请先填写手机号");
+    const phoneError = validatePhoneForCountry(phone, countryCode);
+    if (phoneError) {
+      failValidation(phoneError);
       return;
     }
     setResetLoading(true);
@@ -319,17 +308,22 @@ export default function Login() {
         setResetToken(data.resetToken);
         setDevResetToken(data.resetToken);
       }
-      toast.success(data?.resetToken ? "重置令牌已生成" : "如账号存在，重置指引已生成", toastPresetQuickSuccess);
+      toast.success(data?.resetToken ? "已生成重置口令" : "重置口令已发送（如已配置）", toastPresetQuickSuccess);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "申请重置失败");
+      toast.error(authErrorMessage(e, "请求重置失败"));
     } finally {
       setResetLoading(false);
     }
   };
 
   const handleConfirmReset = async () => {
-    if (!resetToken.trim() || !newPassword) {
-      failValidation("请填写重置令牌和新密码");
+    if (!resetToken.trim()) {
+      failValidation("请输入重置口令");
+      return;
+    }
+    const passwordError = validateStrongPassword(newPassword);
+    if (passwordError) {
+      failValidation(passwordError);
       return;
     }
     setResetLoading(true);
@@ -342,16 +336,16 @@ export default function Login() {
       setNewPassword("");
       setDevResetToken("");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "重置密码失败");
+      toast.error(authErrorMessage(e, "重置失败"));
     } finally {
       setResetLoading(false);
     }
   };
 
   return (
-    <div className="auth-page-shell flex h-[100svh] flex-col overflow-hidden bg-background">
+    <div className="auth-page-shell flex h-[100dvh] min-h-[100dvh] flex-col overflow-hidden bg-background">
       {/* ══════════════ Top Brand Bar ══════════════ */}
-      <header className="flex shrink-0 items-center gap-3 px-5 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
+      <header className="relative z-20 flex shrink-0 items-center gap-3 border-b border-transparent bg-background/95 px-5 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] backdrop-blur">
         <img src={logoSrc} alt={siteName} width={44} height={44} className="rounded-xl object-contain" loading="eager" decoding="async" />
         <div className="flex flex-col">
           <h1 className="font-display text-xl font-bold tracking-tight leading-tight text-foreground">
@@ -364,18 +358,18 @@ export default function Login() {
       </header>
 
       {/* 表单聚焦时只暂停轮播，避免输入时顶部内容突然消失造成页面跳动。 */}
-      {banners.length > 0 ? (
-        <div className="mt-2 shrink-0 px-5">
-          <LoginBannerCarousel banners={banners} />
-        </div>
-      ) : null}
-
       {/* ══════════════ Main Content ══════════════ */}
       <main
         className={cn(
-          "mx-auto w-full max-w-lg flex-1 overflow-y-auto overscroll-contain px-[var(--store-page-x)] pb-safe pt-5",
+          "mx-auto min-h-0 w-full max-w-lg flex-1 overflow-y-auto overscroll-contain px-[var(--store-page-x)] pb-safe pt-3",
         )}
       >
+        {banners.length > 0 ? (
+          <div className="mb-5">
+            <LoginBannerCarousel banners={banners} />
+          </div>
+        ) : null}
+
         {/* Welcome text */}
         <div className="mb-6">
           <h2 className="font-display text-2xl font-bold text-foreground">

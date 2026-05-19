@@ -1,6 +1,6 @@
-﻿import { formatDateTime } from "@/utils/formatDateTime";
-﻿import { useEffect, useState } from "react";
-import { ArrowLeft, Star, TrendingUp, TrendingDown, Loader2, CalendarCheck } from "lucide-react";
+import { formatDateTime } from "@/utils/formatDateTime";
+import { useEffect, useState } from "react";
+import { ArrowLeft, Star, TrendingDown, TrendingUp, Loader2, CalendarCheck } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "@/stores/useUserStore";
@@ -22,6 +22,28 @@ import {
   THEME_TEXT_SUCCESS,
 } from "@/utils/themeVisuals";
 
+const POINTS_HINT_FALLBACK = "订单支付完成后，将按后台当前积分规则发放积分。";
+
+const POINTS_DESCRIPTION_LABELS: Record<string, string> = {
+  "Daily sign-in points": "每日签到",
+  "Order points earned": "订单积分发放",
+  "Order points reversed": "订单积分回滚",
+  "Admin points adjustment": "后台积分调整",
+};
+
+const POINTS_ERROR_LABELS: Record<string, string> = {
+  "Already signed in today": "今天已经签到过了",
+  "Sign-in points rule is disabled": "每日签到积分规则已关闭",
+  "daily sign-in points must be at least 1": "每日签到积分必须至少为 1",
+};
+
+function normalizePointsText(value?: string | null) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (text === "Points are awarded after paid orders based on current rules.") return POINTS_HINT_FALLBACK;
+  return POINTS_DESCRIPTION_LABELS[text] || POINTS_ERROR_LABELS[text] || text;
+}
+
 export default function Points() {
   const goBack = useGoBack();
   const navigate = useNavigate();
@@ -41,11 +63,11 @@ export default function Points() {
   useEffect(() => {
     fetchPointsConfig()
       .then((cfg) => {
-        setPointsHint(cfg.orderPointsHint || "");
+        setPointsHint(normalizePointsText(cfg.orderPointsHint) || POINTS_HINT_FALLBACK);
         setSignInAward(cfg.signIn);
       })
       .catch(() => {
-        setPointsHint("订单支付完成后，按商品所设积分累计发放");
+        setPointsHint(POINTS_HINT_FALLBACK);
         setSignInAward(null);
       });
   }, []);
@@ -62,7 +84,7 @@ export default function Points() {
       loadProfile();
       loadPointsData();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "签到失败");
+      toast.error(e instanceof Error ? normalizePointsText(e.message) || "签到失败" : "签到失败");
     } finally {
       setSigningIn(false);
     }
@@ -84,7 +106,7 @@ export default function Points() {
           <Star size={36} className={`mx-auto ${THEME_ACCENT_HERO_ICON}`} />
           <p className={`mt-3 ${THEME_ACCENT_HERO_LABEL} normal-case tracking-normal`}>当前积分</p>
           <p className={`mt-1 text-5xl ${THEME_ACCENT_HERO_VALUE}`}>{pointsBalance}</p>
-          <p className={`mt-3 px-2 text-xs leading-relaxed ${THEME_ACCENT_HERO_MUTED}`}>{pointsHint || "订单支付完成后，按商品所设积分累计发放"}</p>
+          <p className={`mt-3 px-2 text-xs leading-relaxed ${THEME_ACCENT_HERO_MUTED}`}>{pointsHint || POINTS_HINT_FALLBACK}</p>
           {signInAward && (
             <p className={`mt-1 ${THEME_ACCENT_HERO_SUBTLE}`}>
               {signInAward.enabled ? `每日签到可获 ${signInAward.points} 积分（与后台规则一致）` : signInAward.disabledReason || "暂时无法签到"}
@@ -113,19 +135,29 @@ export default function Points() {
           ) : (
             <div className="space-y-2">
               {records.map((record) => (
-                <div key={record.id} className="flex items-center gap-3 rounded-xl border border-border bg-card px-[var(--store-card-x)] py-[var(--store-card-y)] sm:p-4">
+                <div
+                  key={record.id}
+                  className="flex items-center gap-3 rounded-xl border border-border bg-card px-[var(--store-card-x)] py-[var(--store-card-y)] sm:p-4"
+                >
                   <div className={`flex h-9 w-9 items-center justify-center rounded-full ${record.amount >= 0 ? THEME_ROW_ICON_POSITIVE : THEME_ROW_ICON_NEGATIVE}`}>
                     {record.amount >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{record.description}</p>
+                    <p className="text-sm font-medium text-foreground truncate">{normalizePointsText(record.description) || "积分变动"}</p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">{formatDateTime(record.created_at)}</p>
                   </div>
-                  <span className={`text-sm font-bold ${record.amount >= 0 ? THEME_TEXT_SUCCESS : THEME_TEXT_DANGER}`}>{record.amount > 0 ? "+" : ""}{record.amount}</span>
+                  <span className={`text-sm font-bold ${record.amount >= 0 ? THEME_TEXT_SUCCESS : THEME_TEXT_DANGER}`}>
+                    {record.amount > 0 ? "+" : ""}
+                    {record.amount}
+                  </span>
                 </div>
               ))}
               {hasMore && (
-                <button onClick={loadMore} disabled={loadingMore} className="w-full rounded-xl border border-border bg-card py-3 text-sm text-muted-foreground hover:bg-secondary transition-colors disabled:opacity-60">
+                <button
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="w-full rounded-xl border border-border bg-card py-3 text-sm text-muted-foreground hover:bg-secondary transition-colors disabled:opacity-60"
+                >
                   {loadingMore ? "加载中..." : "加载更多"}
                 </button>
               )}

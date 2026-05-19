@@ -4,44 +4,44 @@ const { BusinessError } = require('../../../errors/BusinessError');
 /** Default title/content templates used when trigger copy is not configured. */
 const TRIGGER_DEFAULT_COPY = {
   order_status_paid: {
-    title: 'Order {order_no}',
-    content: 'Your order has been paid.',
+    title: '订单 {order_no} 已支付',
+    content: '您的订单已支付成功，我们会尽快为您安排处理。',
   },
   order_status_shipped: {
-    title: 'Order {order_no}',
-    content: 'Your order has been shipped.',
+    title: '订单 {order_no} 已发货',
+    content: '您的订单已发货，请留意物流动态。',
   },
   order_status_completed: {
-    title: 'Order {order_no}',
-    content: 'Your order is completed. Thanks for your purchase.',
+    title: '订单 {order_no} 已完成',
+    content: '您的订单已完成，感谢您的购买。',
   },
   order_status_cancelled: {
-    title: 'Order {order_no}',
-    content: 'Your order has been cancelled.',
+    title: '订单 {order_no} 已取消',
+    content: '您的订单已取消，如有疑问请联系客服。',
   },
   order_status_refunding: {
-    title: 'Order {order_no}',
-    content: 'Your refund request is being processed.',
+    title: '订单 {order_no} 退款处理中',
+    content: '您的退款申请正在处理中，请耐心等待。',
   },
   order_status_refunded: {
-    title: 'Order {order_no}',
-    content: 'Your refund has been completed.',
+    title: '订单 {order_no} 已退款',
+    content: '您的退款已处理完成，请留意账户变动。',
   },
   order_ship: {
-    title: 'Order shipped',
-    content: 'Order {order_no} has shipped. Carrier: {carrier}, Tracking: {tracking_no}.',
+    title: '订单已发货',
+    content: '订单 {order_no} 已发货。承运商：{carrier}，物流单号：{tracking_no}。',
   },
   stripe_payment_success: {
-    title: 'Payment successful',
-    content: 'Order {order_no} was paid successfully via Stripe.',
+    title: '支付成功',
+    content: '订单 {order_no} 已通过 Stripe 支付成功。',
   },
   manual_order_mark_paid: {
-    title: 'Order marked paid',
-    content: 'Order {order_no} is marked as paid. Please follow shipment progress.',
+    title: '订单已确认收款',
+    content: '订单 {order_no} 已被管理员标记为已支付，请留意后续发货进度。',
   },
   return_approved: {
-    title: 'Refund approved',
-    content: 'Refund for order {order_no} is approved. Amount: RM {refund_amount}.',
+    title: '售后申请已通过',
+    content: '订单 {order_no} 的退款申请已通过，退款金额：RM {refund_amount}。',
   },
 };
 
@@ -58,17 +58,39 @@ const PLACEHOLDERS_BY_KEY = {
   return_approved: ['order_no', 'refund_amount'],
 };
 
+const LEGACY_ENGLISH_COPY = {
+  order_ship: {
+    title: ['Order shipped'],
+    content: [
+      'Order #{order_no} has shipped. Carrier: {carrier}, Tracking: {tracking_no}.',
+      'Order #{order_no} has shipped. Carrier: {carrier}. Tracking: {tracking_no}.',
+      'Order {order_no} has shipped. Carrier: {carrier}, Tracking: {tracking_no}.',
+      'Order {order_no} has shipped. Carrier: {carrier}. Tracking: {tracking_no}.',
+    ],
+  },
+};
+
+function isLegacyEnglishCopy(key, kind, value) {
+  if (!value) return false;
+  const cfg = LEGACY_ENGLISH_COPY[key];
+  if (!cfg) return false;
+  const pool = kind === 'title' ? cfg.title : cfg.content;
+  if (!Array.isArray(pool) || pool.length === 0) return false;
+  const normalized = String(value).trim().toLowerCase();
+  return pool.some((item) => String(item).trim().toLowerCase() === normalized);
+}
+
 const DEFAULT_NOTIFICATION_TRIGGERS = [
-  { key: 'order_status_paid', label: 'Order paid', description: 'Notify user when order is marked as paid.', enabled: true },
-  { key: 'order_status_shipped', label: 'Order shipped', description: 'Notify user when order status becomes shipped.', enabled: true },
-  { key: 'order_status_completed', label: 'Order completed', description: 'Notify user when order status becomes completed.', enabled: true },
-  { key: 'order_status_cancelled', label: 'Order cancelled', description: 'Notify user when order status becomes cancelled.', enabled: true },
-  { key: 'order_status_refunding', label: 'Order refunding', description: 'Notify user when order enters refund processing.', enabled: true },
-  { key: 'order_status_refunded', label: 'Order refunded', description: 'Notify user when order refund is completed.', enabled: true },
-  { key: 'order_ship', label: 'Shipping submitted', description: 'Notify user when shipping info is submitted.', enabled: true },
-  { key: 'stripe_payment_success', label: 'Stripe payment success', description: 'Notify user when Stripe payment callback succeeds.', enabled: true },
-  { key: 'manual_order_mark_paid', label: 'Manual paid mark', description: 'Notify user when admin manually marks order as paid.', enabled: true },
-  { key: 'return_approved', label: 'Refund approved', description: 'Notify user when return/refund is approved.', enabled: true },
+  { key: 'order_status_paid', label: '订单已支付', description: '订单被标记为已支付时通知用户。', enabled: true },
+  { key: 'order_status_shipped', label: '订单已发货', description: '订单状态变为已发货时通知用户。', enabled: true },
+  { key: 'order_status_completed', label: '订单已完成', description: '订单状态变为已完成时通知用户。', enabled: true },
+  { key: 'order_status_cancelled', label: '订单已取消', description: '订单状态变为已取消时通知用户。', enabled: true },
+  { key: 'order_status_refunding', label: '退款处理中', description: '订单进入退款处理流程时通知用户。', enabled: true },
+  { key: 'order_status_refunded', label: '订单已退款', description: '订单退款完成时通知用户。', enabled: true },
+  { key: 'order_ship', label: '物流信息已提交', description: '管理员提交物流信息后通知用户。', enabled: true },
+  { key: 'stripe_payment_success', label: 'Stripe 支付成功', description: 'Stripe 支付回调成功后通知用户。', enabled: true },
+  { key: 'manual_order_mark_paid', label: '手动确认收款', description: '管理员手动将订单标记为已支付时通知用户。', enabled: true },
+  { key: 'return_approved', label: '售后申请通过', description: '退货/退款申请审核通过时通知用户。', enabled: true },
 ];
 
 function applyTemplate(str, vars) {
@@ -112,6 +134,9 @@ function parseStoredEntry(key, stored, ruleDefault) {
     if (typeof stored.title === 'string') customTitle = stored.title;
     if (typeof stored.content === 'string') customContent = stored.content;
   }
+
+  if (isLegacyEnglishCopy(key, 'title', customTitle)) customTitle = '';
+  if (isLegacyEnglishCopy(key, 'content', customContent)) customContent = '';
 
   return {
     key,

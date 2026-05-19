@@ -5,7 +5,6 @@ import ProductCoverImage from "@/components/ProductCoverImage";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import ProductTagList from "@/components/ProductTagList";
 import StoreBadge from "@/components/ui/StoreBadge";
-import StorePrice from "@/components/ui/StorePrice";
 import { getProductSalesCount, hasProductSales, productSalesLabel } from "@/utils/productSales";
 import { trackEvent } from "@/services/analyticsService";
 import { cn } from "@/lib/utils";
@@ -68,32 +67,34 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
 
   const isThemeCompact = !isListRow && cardVariant === "compact";
   const isHorizontal = isListRow || isThemeCompact;
+  const priceNum = Number(product.price || 0);
+  const originalPriceNum = Number(product.original_price || 0);
+  const showOriginal = Number.isFinite(originalPriceNum) && originalPriceNum > priceNum;
+  const formatMoney = (v: number) => v.toFixed(2).replace(/\.00$/, "");
   const metaRow = (
-    <div
-      className={cn(
-        "flex w-full gap-2",
-        isHorizontal ? "flex-col items-start gap-1" : "items-end justify-between",
-        cardCenter && !isHorizontal ? "justify-center" : "",
-      )}
-    >
-      <StorePrice
-        price={product.price}
-        originalPrice={
-          !isListRow && (cardVariant === "deal" || cardVariant === "premium") ? product.original_price : undefined
-        }
-        size={isHorizontal ? "sm" : cardVariant === "deal" ? "lg" : cardVariant === "premium" ? "lg" : "md"}
-        className="min-w-0 max-w-full"
-      />
-      {showSales ? (
-        <span
-          className={cn(
-            "text-[11px] tabular-nums text-[var(--theme-text-muted)]",
-            isHorizontal ? "leading-tight" : "shrink-0",
-          )}
-        >
-          {productSalesLabel(salesCount)}
-        </span>
-      ) : null}
+    <div className={cn("w-full min-w-0", cardCenter && !isHorizontal ? "text-center" : "")}>
+      <p
+        className={cn(
+          "font-extrabold leading-none text-[var(--theme-price)]",
+          "whitespace-nowrap",
+          isHorizontal ? "text-base" : "text-[28px]",
+        )}
+        style={{ whiteSpace: "nowrap" }}
+      >
+        RM&nbsp;{formatMoney(priceNum)}
+      </p>
+      <div className={cn("mt-1 flex min-w-0 items-center justify-between gap-2")}>
+        {showOriginal ? (
+          <span className="truncate text-xs text-[var(--theme-muted)] line-through">
+            RM {formatMoney(originalPriceNum)}
+          </span>
+        ) : <span />}
+        {showSales ? (
+          <span className="shrink-0 text-xs tabular-nums text-[var(--theme-text-muted)]">
+            {productSalesLabel(salesCount)}
+          </span>
+        ) : null}
+      </div>
     </div>
   );
 

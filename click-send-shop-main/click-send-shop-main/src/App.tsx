@@ -58,7 +58,6 @@ const PendingReviews = lazy(() => import("@/modules/public/pages/review/PendingR
 
 const Profile = lazyWithPreload(() => import("@/modules/public/pages/user/Profile"));
 const Settings = lazy(() => import("@/modules/public/pages/user/Settings"));
-const UploadVerify = lazy(() => import("@/modules/public/pages/user/UploadVerify"));
 const AddressManage = lazy(() => import("@/modules/public/pages/user/AddressManage"));
 const Favorites = lazy(() => import("@/modules/public/pages/user/Favorites"));
 const History = lazy(() => import("@/modules/public/pages/user/History"));
@@ -371,7 +370,6 @@ function AppRoutes() {
               {/* Protected pages (require login) */}
               <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              <Route path="/settings/upload-verify" element={<ProtectedRoute><UploadVerify /></ProtectedRoute>} />
               <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
               <Route path="/orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
               <Route

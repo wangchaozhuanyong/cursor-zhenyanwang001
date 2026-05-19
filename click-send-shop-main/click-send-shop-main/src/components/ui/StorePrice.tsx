@@ -27,13 +27,13 @@ export default function StorePrice({
 }: StorePriceProps) {
   const { themeConfig } = useThemeRuntime();
   const style = priceStyle ?? themeConfig.priceStyle;
-  const sizeClass = size === "lg" ? "text-2xl" : size === "sm" ? "text-sm" : "text-lg";
+  const sizeClass = size === "lg" ? "text-lg" : size === "sm" ? "text-sm" : "text-sm";
   const weightClass = style === "normal" ? "font-semibold" : "font-extrabold";
 
   return (
-    <div className={cn("flex flex-wrap items-baseline gap-1.5", className)}>
-      <span className={cn(sizeClass, weightClass, "leading-none text-[var(--theme-price)]")}>
-        {showCurrency ? "RM " : ""}
+    <div className={cn("inline-flex max-w-full flex-nowrap items-baseline gap-1", className)} style={{ whiteSpace: "nowrap" }}>
+      <span className={cn(sizeClass, weightClass, "inline-flex whitespace-nowrap leading-none text-[var(--theme-price)]")} style={{ whiteSpace: "nowrap" }}>
+        {showCurrency ? "RM\u00A0" : ""}
         {toMoney(price)}
       </span>
       {originalPrice !== undefined && Number(originalPrice) > Number(price) && (

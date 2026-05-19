@@ -59,6 +59,7 @@ export interface Order {
   payment_transaction_no?: string;
   note: string;
   created_at: string;
+  shipped_at?: string | null;
   contact_name: string;
   contact_phone: string;
   /** 管理端：收货联系电话（兼容旧订单可为空，后端会回退到 contact_phone） */
@@ -100,6 +101,10 @@ export interface Order {
   payment_deadline_at?: string | null;
   /** 距截止剩余秒数（接口返回时快照，前端以 payment_deadline_at 为准倒计时） */
   payment_ttl_seconds?: number | null;
+  auto_confirm_receive_enabled?: boolean;
+  auto_confirm_receive_days?: number | null;
+  auto_confirm_receive_deadline_at?: string | null;
+  auto_confirm_receive_ttl_seconds?: number | null;
 }
 
 export interface SubmitOrderParams {

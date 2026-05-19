@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
+import { OrderAutoConfirmCountdown } from "@/components/order/OrderAutoConfirmCountdown";
 import ReviewComposerSheet from "@/components/review/ReviewComposerSheet";
 import { BottomSheetConfirm } from "@/modules/micro-interactions";
 import { useOrderStore } from "@/stores/useOrderStore";
@@ -40,6 +41,33 @@ export default function OrderDetail() {
   const [reviewItemId, setReviewItemId] = useState("");
   const [confirmReviewOpen, setConfirmReviewOpen] = useState(false);
   const [firstReviewableId, setFirstReviewableId] = useState("");
+
+  const handleViewLogistics = async () => {
+    if (!order) return;
+    if (order.logistics_provider?.tracking_url) {
+      window.open(order.logistics_provider.tracking_url, "_blank");
+      return;
+    }
+    const carrier = order.logistics_provider?.carrier || order.carrier || "";
+    const trackingNo = order.logistics_provider?.tracking_no || order.tracking_no || "";
+    if (carrier || trackingNo) {
+      const text = [carrier ? `物流公司：${carrier}` : "", trackingNo ? `单号：${trackingNo}` : ""]
+        .filter(Boolean)
+        .join("，");
+      if (trackingNo) {
+        try {
+          await navigator.clipboard.writeText(trackingNo);
+          toast.success(`${text}（单号已复制）`);
+          return;
+        } catch {
+          // ignore clipboard error and fallback to hint
+        }
+      }
+      toast.info(text);
+      return;
+    }
+    toast.info("暂无物流信息");
+  };
 
   useEffect(() => {
     if (id) void loadOrderDetail(id);
@@ -92,6 +120,11 @@ export default function OrderDetail() {
           <p className="mt-1 text-xs text-muted-foreground">
             {order.logistics_provider?.carrier || order.tracking_no ? `物流：${order.logistics_provider?.carrier || order.carrier || ""} ${order.logistics_provider?.tracking_no || order.tracking_no || ""}` : "暂无物流信息"}
           </p>
+          {order.status === "shipped" ? (
+            <div className="mt-2">
+              <OrderAutoConfirmCountdown order={order} />
+            </div>
+          ) : null}
           <div className="mt-3 grid grid-cols-4 gap-2 text-center text-[11px]">
             {steps.map((s, i) => (
               <div key={s}>
@@ -156,7 +189,7 @@ export default function OrderDetail() {
             </>
           ) : null}
           {order.status === "paid" ? <><button className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate("/help")}>联系客服</button></> : null}
-          {order.status === "shipped" ? <><button className="rounded-full border px-3 py-1 text-xs" onClick={() => order.logistics_provider?.tracking_url ? window.open(order.logistics_provider.tracking_url, "_blank") : toast.info("暂无物流信息")}>查看物流</button><button className="rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1 text-xs text-[var(--theme-primary-foreground)]" onClick={async () => { await confirmReceive(order.id); await reload(); const next = (useOrderStore.getState().currentOrder?.items || []).filter((i) => i.can_review && i.order_item_id); if (next.length) { setFirstReviewableId(next[0].order_item_id!); setConfirmReviewOpen(true); } }}>确认收货</button></> : null}
+          {order.status === "shipped" ? <><button className="rounded-full border px-3 py-1 text-xs" onClick={() => { void handleViewLogistics(); }}>查看物流</button><button className="rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1 text-xs text-[var(--theme-primary-foreground)]" onClick={async () => { await confirmReceive(order.id); await reload(); const next = (useOrderStore.getState().currentOrder?.items || []).filter((i) => i.can_review && i.order_item_id); if (next.length) { setFirstReviewableId(next[0].order_item_id!); setConfirmReviewOpen(true); } }}>确认收货</button></> : null}
           {(order.status === "refunding" || order.status === "refunded") ? <button className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate("/returns")}>查看售后进度</button> : null}
         </div>
       </main>

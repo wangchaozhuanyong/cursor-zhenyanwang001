@@ -285,6 +285,21 @@ function AdminSidebarNav({
   layoutTitle: string;
   logoutLabel: string;
 }) {
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    setExpandedGroups((prev) => {
+      const next = { ...prev };
+      for (const item of navItems) {
+        if (!item.children?.length) continue;
+        const active = pathname === item.path || (item.path !== "/admin" && pathname.startsWith(item.path));
+        const childActive = item.children.some((c) => pathname === c.path || pathname.startsWith(c.path));
+        if (active || childActive) next[item.path] = true;
+      }
+      return next;
+    });
+  }, [navItems, pathname]);
+
   const listClassName =
     scrollMode === "overlay"
       ? "min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-2 py-3"
@@ -303,12 +318,22 @@ function AdminSidebarNav({
         {navItems.map((item) => {
           const active = pathname === item.path || (item.path !== "/admin" && pathname.startsWith(item.path));
           const childActive = item.children?.some((c) => pathname === c.path || pathname.startsWith(c.path));
-          const isExpanded = active || childActive;
+          const isExpanded = !!expandedGroups[item.path];
           return (
             <div key={item.path}>
               <button
                 type="button"
-                onClick={() => onNavigate(item.path)}
+                onClick={() => {
+                  if (item.children?.length) {
+                    setExpandedGroups((prev) => {
+                      const next = { ...prev, [item.path]: !prev[item.path] };
+                      return next;
+                    });
+                    if (!isExpanded) onNavigate(item.path);
+                    return;
+                  }
+                  onNavigate(item.path);
+                }}
                 className={`flex min-h-[48px] w-full items-center gap-3 rounded-xl px-3 py-3 text-[15px] transition-colors active:bg-secondary/80 ${
                   active || childActive
                     ? "bg-[var(--theme-primary)] font-semibold text-[var(--theme-primary-foreground)]"

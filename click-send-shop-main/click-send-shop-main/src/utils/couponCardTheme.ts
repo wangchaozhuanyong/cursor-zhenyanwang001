@@ -113,7 +113,7 @@ export function getCouponCardPresentation(
     couponStyle,
     layout,
     useThemedMarketingShell,
-    shellClass: shellByStyle[couponStyle],
+    shellClass: useThemedMarketingShell ? "bg-theme-coupon-card-shell border" : shellByStyle[couponStyle],
     gridClass: gridByLayout[layout],
     titleClass,
     mutedClass,

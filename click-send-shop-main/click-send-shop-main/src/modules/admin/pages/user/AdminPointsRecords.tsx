@@ -26,6 +26,8 @@ const actionOptions: Array<{ value: "" | PointsAction; label: string }> = [
 ];
 
 const actionLabels: Record<string, string> = {
+  register: "注册奖励",
+  first_order: "首单奖励",
   order: "下单奖励(旧)",
   order_earn: "订单奖励",
   order_reverse: "订单回滚",
@@ -38,6 +40,11 @@ const actionLabels: Record<string, string> = {
   admin_adjust: "管理员调整",
   redeem: "积分抵扣",
 };
+
+function labelPointRuleAction(action: string) {
+  if (!action) return "通用规则";
+  return actionLabels[action] || "通用规则";
+}
 
 const emptyStats: PointsStats = {
   totalEarned: 0,
@@ -189,7 +196,7 @@ export default function AdminPointsRecords() {
               <div key={rule.id} className="flex items-center justify-between rounded-lg border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))] px-3 py-2.5">
                 <div>
                   <p className="text-sm font-medium text-[var(--theme-text-on-surface)]">{rule.name}</p>
-                  <p className="text-[11px] text-theme-muted">{actionLabels[rule.action] || rule.action || "通用规则"}</p>
+                  <p className="text-[11px] text-theme-muted">{labelPointRuleAction(rule.action)}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <PermissionGate permission="points.manage">

@@ -47,15 +47,15 @@ async function sendOtp(body, reqMeta) {
 async function loginWithOtp(body) {
   const { phone, countryCode, code } = body;
   const normalizedPhone = normalizeIntlPhone(phone, countryCode);
-  if (!normalizedPhone) throw new ValidationError('Invalid input');
-  if (!code || String(code).trim().length < 4) throw new ValidationError('Invalid input');
+  if (!normalizedPhone) throw new ValidationError('手机号格式不正确');
+  if (!code || String(code).trim().length < 4) throw new ValidationError('请填写验证码');
 
   const codeHash = hashOtp(code);
   const row = await repo.selectOtpLogForVerify(normalizedPhone, OTP_PURPOSE_LOGIN, codeHash);
-  if (!row) throw new AuthError('Authentication failed');
+  if (!row) throw new AuthError('验证码不正确或已过期');
 
   const consumed = await repo.tryConsumeOtpRow(row.id);
-  if (!consumed) throw new AuthError('Authentication failed');
+  if (!consumed) throw new AuthError('验证码已使用，请重新获取');
 
   const lookupPhones = buildPhoneLookupCandidates(phone, countryCode);
   let user = await repo.findUserByPhones(lookupPhones);
@@ -75,7 +75,7 @@ async function loginWithOtp(body) {
       });
     } catch (err) {
       if (err && (err.code === 'ER_DUP_ENTRY' || err.errno === 1062)) {
-        throw new ConflictError('Phone already registered');
+        throw new ConflictError('该手机号已注册，请直接登录');
       }
       throw err;
     }
@@ -89,7 +89,7 @@ async function loginWithOtp(body) {
     }
 
     user = await repo.findUserByPhones([normalizedPhone]);
-    if (!user) throw new AuthError('Authentication failed');
+    if (!user) throw new AuthError('登录失败，请稍后再试');
   }
 
   return getAuthService().issueLoginForUserId(user.id, { loginMethod: 'phone_sms' });
@@ -102,19 +102,19 @@ async function sendOtpForWechatBind(body, reqMeta) {
 async function sendOtpWithPurpose(body, reqMeta, purpose) {
   const { phone, countryCode } = body;
   const normalizedPhone = normalizeIntlPhone(phone, countryCode);
-  if (!normalizedPhone) throw new ValidationError('Invalid input');
+  if (!normalizedPhone) throw new ValidationError('手机号格式不正确');
 
   const now = Date.now();
   const hourAgo = new Date(now - 60 * 60 * 1000);
 
   const recent = await repo.countOtpSendsSince(normalizedPhone, hourAgo);
   if (recent >= OTP_MAX_PER_HOUR) {
-    throw new RateLimitError('Too many OTP sends. Try again in one hour.');
+    throw new RateLimitError('验证码发送过于频繁，请一小时后再试');
   }
 
   const recentByIp = await repo.countOtpRequestsByIpSince(reqMeta.ip || null, hourAgo);
   if (recentByIp >= OTP_MAX_PER_IP_PER_HOUR) {
-    throw new RateLimitError('Too many OTP requests. Try again in one hour.');
+    throw new RateLimitError('验证码请求过于频繁，请一小时后再试');
   }
 
   const latest = await repo.selectLatestOtpSend(normalizedPhone, purpose);
@@ -125,7 +125,7 @@ async function sendOtpWithPurpose(body, reqMeta, purpose) {
     && new Date(latest.expires_at).getTime() > now
     && new Date(latest.created_at).getTime() > now - OTP_RESEND_INTERVAL_MS
   ) {
-    throw new RateLimitError('Sending too frequently. Try again later.');
+    throw new RateLimitError('验证码发送过于频繁，请稍后再试');
   }
 
   const code = generateSixDigitCode();
@@ -172,21 +172,21 @@ async function sendOtpWithPurpose(body, reqMeta, purpose) {
 
   return {
     data: expose ? { devOtp: code, expiresInSeconds: Math.floor(OTP_TTL_MS / 1000) } : null,
-    message: expose ? 'Message' : 'OTP sent',
+    message: expose ? '验证码已发送' : '验证码已发送',
   };
 }
 
 async function verifyOtpForPurpose({ phone, countryCode, code, purpose }) {
   const normalizedPhone = normalizeIntlPhone(phone, countryCode);
-  if (!normalizedPhone) throw new ValidationError('Invalid input');
-  if (!code || String(code).trim().length < 4) throw new ValidationError('Invalid input');
+  if (!normalizedPhone) throw new ValidationError('手机号格式不正确');
+  if (!code || String(code).trim().length < 4) throw new ValidationError('请填写验证码');
 
   const codeHash = hashOtp(code);
   const row = await repo.selectOtpLogForVerify(normalizedPhone, purpose, codeHash);
-  if (!row) throw new AuthError('Authentication failed');
+  if (!row) throw new AuthError('验证码不正确或已过期');
 
   const consumed = await repo.tryConsumeOtpRow(row.id);
-  if (!consumed) throw new AuthError('Authentication failed');
+  if (!consumed) throw new AuthError('验证码已使用，请重新获取');
 
   return normalizedPhone;
 }

@@ -95,8 +95,32 @@ function buildPhoneLookupCandidates(phone, countryCode) {
   return [...set].filter(Boolean);
 }
 
+function normalizePhoneDigitsForCountry(phone, countryCode) {
+  const cc = normalizeCountryCode(countryCode);
+  let digits = toDigits(phone);
+  if (!cc || !digits) return { countryCode: cc, digits };
+  if (digits.startsWith(cc)) digits = digits.slice(cc.length);
+  digits = digits.replace(/^0+/, '');
+  return { countryCode: cc, digits };
+}
+
+function validatePhoneForCountry(phone, countryCode) {
+  const { countryCode: cc, digits } = normalizePhoneDigitsForCountry(phone, countryCode);
+  if (!cc) return '请选择正确的国家或地区代码';
+  if (!digits) return '请填写手机号';
+  if (cc === '60' && !/^1\d{8,9}$/.test(digits)) {
+    return '马来西亚手机号格式不正确，请输入 9-10 位本地手机号，例如 0123456789';
+  }
+  if (cc === '86' && !/^1[3-9]\d{9}$/.test(digits)) {
+    return '中国手机号格式不正确，请输入 11 位手机号';
+  }
+  return null;
+}
+
 module.exports = {
   normalizeCountryCode,
   normalizeIntlPhone,
   buildPhoneLookupCandidates,
+  normalizePhoneDigitsForCountry,
+  validatePhoneForCountry,
 };

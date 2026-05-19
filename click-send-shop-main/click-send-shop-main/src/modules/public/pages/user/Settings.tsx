@@ -1,6 +1,6 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Camera, Lock, ChevronRight, ShieldCheck, Trash2 } from "lucide-react";
+import { ArrowLeft, Camera, Lock, Trash2 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import WeChatIcon from "@/components/icons/WeChatIcon";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
@@ -12,7 +12,6 @@ import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import * as uploadService from "@/services/uploadService";
 import * as userService from "@/services/userService";
-import { IMAGE_UPLOAD_HINT_AVATAR } from "@/constants/imageUploadHints";
 
 const CARD = "rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
 
@@ -102,9 +101,9 @@ export default function Settings() {
       useUserStore.setState({ avatar: data.url });
       await useUserStore.getState().saveProfile();
       const storage = uploadService.getUploadStorageStatus(data.url);
-      toast.success(`头像已保存：${storage.host}${storage.isS3 ? "（S3）" : ""}`, toastPresetQuickSuccess);
-    } catch {
-      toast.error("头像上传或保存失败，请重试");
+      toast.success(`头像已保存：${storage.host}${storage.isS3 ? "（云存储）" : ""}`, toastPresetQuickSuccess);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "头像上传失败，请检查图片格式、大小或网络后重试");
     } finally {
       e.target.value = "";
     }
@@ -182,7 +181,6 @@ export default function Settings() {
               </button>
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
             </div>
-            <p className="mt-3 text-center text-[10px] leading-snug text-[var(--theme-muted)]">{IMAGE_UPLOAD_HINT_AVATAR}</p>
           </div>
         </section>
 
@@ -257,12 +255,6 @@ export default function Settings() {
             ))}
           </div>
         </section>
-
-        <button type="button" onClick={() => navigate("/settings/upload-verify")} className={`${CARD} flex w-full items-center justify-between`}>
-          <div className="flex items-center gap-3"><ShieldCheck size={18} className="text-[var(--theme-success)]" /><span className="text-sm font-medium">上传验收</span></div>
-          <span className="text-xs text-[var(--theme-muted)]">检查是否 S3</span>
-          <ChevronRight size={16} className="text-[var(--theme-muted)]" />
-        </button>
 
         <section className={CARD}>
           <button onClick={() => setShowPwdForm(!showPwdForm)} className="flex w-full items-center justify-between">

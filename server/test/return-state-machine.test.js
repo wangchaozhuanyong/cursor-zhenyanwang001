@@ -1,9 +1,10 @@
-﻿const { describe, it } = require('node:test');
+const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const {
   RETURN_TRANSITIONS,
   assertReturnTransition,
 } = require('../src/modules/order/returnStateMachine');
+const { BusinessError } = require('../src/errors');
 
 describe('Return State Machine', () => {
   it('should define transitions for all known statuses', () => {
@@ -39,28 +40,27 @@ describe('Return State Machine', () => {
     });
 
     it('rejected -> approved should throw', () => {
-      assert.throws(() => assertReturnTransition('rejected', 'approved'), /涓嶈兘浠庡敭鍚庣姸鎬?);
+      assert.throws(() => assertReturnTransition('rejected', 'approved'), BusinessError);
     });
 
     it('completed -> pending should throw', () => {
-      assert.throws(() => assertReturnTransition('completed', 'pending'), /涓嶈兘浠庡敭鍚庣姸鎬?);
+      assert.throws(() => assertReturnTransition('completed', 'pending'), BusinessError);
     });
 
     it('cancelled -> approved should throw', () => {
-      assert.throws(() => assertReturnTransition('cancelled', 'approved'), /涓嶈兘浠庡敭鍚庣姸鎬?);
+      assert.throws(() => assertReturnTransition('cancelled', 'approved'), BusinessError);
     });
 
     it('approved -> pending should throw (no backward transition)', () => {
-      assert.throws(() => assertReturnTransition('approved', 'pending'), /涓嶈兘浠庡敭鍚庣姸鎬?);
+      assert.throws(() => assertReturnTransition('approved', 'pending'), BusinessError);
     });
 
     it('pending -> completed should throw (skip intermediate state)', () => {
-      assert.throws(() => assertReturnTransition('pending', 'completed'), /涓嶈兘浠庡敭鍚庣姸鎬?);
+      assert.throws(() => assertReturnTransition('pending', 'completed'), BusinessError);
     });
 
     it('unknown status should throw', () => {
-      assert.throws(() => assertReturnTransition('unknown', 'approved'), /涓嶈兘浠庡敭鍚庣姸鎬?);
+      assert.throws(() => assertReturnTransition('unknown', 'approved'), BusinessError);
     });
   });
 });
-

@@ -9,6 +9,10 @@ const {
   enrichOrderWithPaymentDeadline,
   enrichOrdersWithPaymentDeadline,
 } = require('../orderPaymentDeadline');
+const {
+  enrichOrderWithAutoConfirmReceiveDeadline,
+  enrichOrdersWithAutoConfirmReceiveDeadline,
+} = require('../orderReceiveDeadline');
 const { canUserCancel } = require('../orderStateMachine');
 const repo = require('../repository/order.repository');
 const userModule = require('../../user');
@@ -544,7 +548,8 @@ async function createOrder(userId, body) {
       subtotal: oi.price * oi.qty,
     }));
     const orderRow = await repo.selectOrderById(orderDb, orderId);
-    const data = await enrichOrderWithPaymentDeadline(formatOrder(orderRow, formattedItems));
+    const withPaymentDeadline = await enrichOrderWithPaymentDeadline(formatOrder(orderRow, formattedItems));
+    const data = await enrichOrderWithAutoConfirmReceiveDeadline(withPaymentDeadline);
     return { data, message: '下单成功' };
   } catch (err) {
     try {
@@ -579,9 +584,10 @@ async function getOrders(userId, query) {
     itemMap[oi.order_id].push(oi);
   }
 
-  const list = await enrichOrdersWithPaymentDeadline(
+  const withPaymentDeadlines = await enrichOrdersWithPaymentDeadline(
     orders.map((o) => formatOrder(o, attachOrderItemReviewFlags(o, (itemMap[o.id] || []).map(formatOrderItem)))),
   );
+  const list = await enrichOrdersWithAutoConfirmReceiveDeadline(withPaymentDeadlines);
   return { kind: 'paginate', list, total, page, pageSize };
 }
 
@@ -596,6 +602,7 @@ async function getOrderById(userId, orderId) {
   let data = formatOrder(order, attachOrderItemReviewFlags(order, items.map(formatOrderItem)));
   await requireLogisticsApi('attachTracking')(data);
   data = await enrichOrderWithPaymentDeadline(data);
+  data = await enrichOrderWithAutoConfirmReceiveDeadline(data);
   return { data };
 }
 

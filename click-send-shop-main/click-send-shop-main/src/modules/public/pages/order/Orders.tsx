@@ -2,6 +2,8 @@
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
+import { OrderPaymentCountdown } from "@/components/order/OrderPaymentCountdown";
+import { OrderAutoConfirmCountdown } from "@/components/order/OrderAutoConfirmCountdown";
 import type { Order, OrderSummary, OrderTab } from "@/types/order";
 import type { ProductVariant } from "@/types/product";
 import { useOrderStore } from "@/stores/useOrderStore";
@@ -92,6 +94,32 @@ export default function Orders() {
 
   const [summary, setSummary] = useState<OrderSummary | null>(null);
   const [actingId, setActingId] = useState("");
+
+  const handleViewLogistics = async (order: Order) => {
+    if (order.logistics_provider?.tracking_url) {
+      window.open(order.logistics_provider.tracking_url, "_blank");
+      return;
+    }
+    const carrier = order.logistics_provider?.carrier || order.carrier || "";
+    const trackingNo = order.logistics_provider?.tracking_no || order.tracking_no || "";
+    if (carrier || trackingNo) {
+      const text = [carrier ? `物流公司：${carrier}` : "", trackingNo ? `单号：${trackingNo}` : ""]
+        .filter(Boolean)
+        .join("，");
+      if (trackingNo) {
+        try {
+          await navigator.clipboard.writeText(trackingNo);
+          toast.success(`${text}（单号已复制）`);
+          return;
+        } catch {
+          // ignore clipboard error and fallback to normal hint
+        }
+      }
+      toast.info(text);
+      return;
+    }
+    toast.info("暂无物流信息");
+  };
 
   useEffect(() => {
     void loadOrders({ page: 1, tab, status: undefined });
@@ -199,6 +227,23 @@ export default function Orders() {
                   <span className={`text-xs font-medium ${getStatusTone(order.status)}`}>{getBuyerOrderStatusText(order)}</span>
                 </div>
 
+                {order.status === "pending" ? (
+                  <div className="mb-2.5" onClick={(e) => e.stopPropagation()}>
+                    <OrderPaymentCountdown
+                      order={order}
+                      compact
+                      onExpired={() => {
+                        void loadOrders({ page: 1, tab, status: undefined });
+                      }}
+                    />
+                  </div>
+                ) : null}
+                {order.status === "shipped" ? (
+                  <div className="mb-2.5" onClick={(e) => e.stopPropagation()}>
+                    <OrderAutoConfirmCountdown order={order} compact />
+                  </div>
+                ) : null}
+
                 <div className="space-y-2">
                   {shownItems.map((item) => (
                     <div key={item.order_item_id || item.id || item.product.id} className="flex gap-2">
@@ -239,10 +284,14 @@ export default function Orders() {
 
                   {order.status === "shipped" ? (
                     <>
-                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); if (order.logistics_provider?.tracking_url) window.open(order.logistics_provider.tracking_url, "_blank"); else toast.info("暂无物流信息"); }}>查看物流</button>
-                      <button className={primaryActionBtn} disabled={actingId === order.id} onClick={(e) => { e.stopPropagation(); setActingId(order.id); confirmReceive(order.id).then(() => loadOrders({ page: 1, tab })).finally(() => setActingId("")); }}>确认收货</button>
-                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void addOrderToCart(order); }}>加入购物车</button>
-                      <button className={primaryActionBtn} onClick={(e) => { e.stopPropagation(); void repurchaseOrder(order); }}>再买一单</button>
+                      <div className="flex w-full justify-end gap-2">
+                        <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void addOrderToCart(order); }}>加入购物车</button>
+                        <button className={primaryActionBtn} onClick={(e) => { e.stopPropagation(); void repurchaseOrder(order); }}>再买一单</button>
+                      </div>
+                      <div className="flex w-full justify-end gap-2">
+                        <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void handleViewLogistics(order); }}>查看物流</button>
+                        <button className={primaryActionBtn} disabled={actingId === order.id} onClick={(e) => { e.stopPropagation(); setActingId(order.id); confirmReceive(order.id).then(() => loadOrders({ page: 1, tab })).finally(() => setActingId("")); }}>确认收货</button>
+                      </div>
                     </>
                   ) : null}
 

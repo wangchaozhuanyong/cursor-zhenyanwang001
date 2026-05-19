@@ -21,7 +21,6 @@ export function isOrderPaymentCountdownActive(order: CountdownOrder | null | und
   if (!order) return false;
   if (!order.payment_timeout_enabled || !order.payment_deadline_at) return false;
   if (order.status !== ORDER_STATUS.PENDING) return false;
-  if (order.payment_method !== "online") return false;
   if (order.payment_status && order.payment_status !== "pending") return false;
   return true;
 }

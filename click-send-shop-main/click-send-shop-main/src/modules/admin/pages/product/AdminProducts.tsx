@@ -207,7 +207,6 @@ export default function AdminProducts() {
                           )}
                           <div className="min-w-0">
                             <p className="truncate font-medium text-foreground">{p.name}</p>
-                            <p className="truncate text-xs text-muted-foreground">ID: {p.id}</p>
                           </div>
                         </div>
                       </td>

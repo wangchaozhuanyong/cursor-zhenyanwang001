@@ -20,6 +20,7 @@ import { useGoBack } from "@/hooks/useGoBack";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import type { NotificationType } from "@/types/notification";
+import { formatUnreadBadge } from "@/utils/notificationBadge";
 import {
   THEME_BADGE_ACCENT,
   THEME_BADGE_DANGER,
@@ -52,6 +53,7 @@ export default function Notifications() {
     useNotificationStore();
   const [activeId, setActiveId] = useState<string | null>(null);
   const active = notifications.find((n) => n.id === activeId) || null;
+  const unreadBadgeText = formatUnreadBadge(unreadCount);
 
   useEffect(() => {
     loadNotifications();
@@ -98,9 +100,9 @@ export default function Notifications() {
             </button>
             <h1 className="text-base font-semibold text-foreground">
               消息通知
-              {unreadCount > 0 && (
-                <span className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full btn-theme-price px-1.5 text-[10px] font-bold text-primary-foreground">
-                  {unreadCount}
+              {unreadBadgeText && (
+                <span className="ml-2 inline-flex h-5 min-w-[24px] items-center justify-center rounded-full btn-theme-price px-1.5 text-[10px] font-bold text-primary-foreground">
+                  {unreadBadgeText}
                 </span>
               )}
             </h1>

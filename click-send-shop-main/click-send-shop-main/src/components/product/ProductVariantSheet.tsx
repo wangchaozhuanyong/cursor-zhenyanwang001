@@ -1,4 +1,5 @@
 import { Minus, Plus } from "lucide-react";
+import { toast } from "sonner";
 import type { Product, ProductVariant } from "@/types/product";
 import { BottomSheet, SquishButton } from "@/modules/micro-interactions";
 import { cn } from "@/lib/utils";
@@ -48,12 +49,37 @@ export default function ProductVariantSheet({
   const lineTotal = unitPrice * Math.max(0, qty);
   const title = intent === "cart" ? "加入购物车" : "立即购买";
 
+  const clampQty = (value: number) => {
+    if (maxQty <= 0 || soldOut) return 0;
+    return Math.max(1, Math.min(value, maxQty));
+  };
+
+  const tryChangeQty = (next: number, source: "plus" | "minus" | "input") => {
+    if (soldOut || maxQty <= 0) {
+      toast.error("库存不足");
+      return;
+    }
+    if (!Number.isFinite(next)) return;
+    if (next > maxQty) {
+      onQtyChange(clampQty(next));
+      toast.error(source === "input" ? `最多可购买 ${maxQty} 件` : "已达到库存上限");
+      return;
+    }
+    if (next < 1) {
+      onQtyChange(1);
+      return;
+    }
+    onQtyChange(next);
+  };
+
   const matchVariantByValues = (valueIds: string[]) => {
     const wanted = new Set(valueIds.filter(Boolean));
-    return variants.find((variant) => {
-      const ids = variant.spec_value_ids ?? [];
-      return ids.length === specGroups.length && ids.every((id) => wanted.has(id));
-    }) ?? null;
+    return (
+      variants.find((variant) => {
+        const ids = variant.spec_value_ids ?? [];
+        return ids.length === specGroups.length && ids.every((id) => wanted.has(id));
+      }) ?? null
+    );
   };
 
   const selectSpecValue = (groupId: string, valueId: string) => {
@@ -191,17 +217,41 @@ export default function ProductVariantSheet({
             <button
               type="button"
               disabled={qty <= 1 || soldOut}
-              onClick={() => onQtyChange(Math.max(1, qty - 1))}
+              onClick={() => tryChangeQty(qty - 1, "minus")}
               className="flex h-9 w-9 items-center justify-center disabled:opacity-40"
               aria-label="减少"
             >
               <Minus size={16} />
             </button>
-            <span className="min-w-[2rem] text-center text-sm font-semibold tabular-nums">{qty}</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={qty > 0 ? String(qty) : ""}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/[^\d]/g, "");
+                if (!raw) {
+                  onQtyChange(1);
+                  return;
+                }
+                const parsed = Number.parseInt(raw, 10);
+                tryChangeQty(parsed, "input");
+              }}
+              onBlur={(e) => {
+                const parsed = Number.parseInt(e.target.value.replace(/[^\d]/g, ""), 10);
+                if (!Number.isFinite(parsed) || parsed < 1) {
+                  onQtyChange(1);
+                  return;
+                }
+                if (parsed > maxQty) onQtyChange(clampQty(parsed));
+              }}
+              className="h-9 min-w-[2.25rem] bg-transparent px-1 text-center text-sm font-semibold tabular-nums outline-none"
+              aria-label="数量"
+            />
             <button
               type="button"
               disabled={soldOut || qty >= maxQty}
-              onClick={() => onQtyChange(Math.min(maxQty, qty + 1))}
+              onClick={() => tryChangeQty(qty + 1, "plus")}
               className="flex h-9 w-9 items-center justify-center disabled:opacity-40"
               aria-label="增加"
             >
@@ -213,3 +263,4 @@ export default function ProductVariantSheet({
     </BottomSheet>
   );
 }
+

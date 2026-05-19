@@ -8,6 +8,51 @@ import { labelNotificationType } from "@/utils/adminDisplayLabels";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { useAsyncResource } from "@/hooks/useAsyncResource";
 
+const NOTIFICATION_STATUS_LABELS: Record<string, string> = {
+  draft: "草稿",
+  sent: "已发送",
+  scheduled: "定时发送",
+  cancelled: "已取消",
+  revoked: "已撤回",
+  published: "已发布",
+};
+
+const AUDIENCE_TYPE_LABELS: Record<string, string> = {
+  all: "全部用户",
+  single: "单个用户",
+  specific: "指定用户",
+  user_tag: "用户标签",
+  member_level: "会员等级",
+  has_order: "有订单用户",
+  no_order: "无订单用户",
+};
+
+const AUDIT_ACTION_LABELS: Record<string, string> = {
+  "notification.send": "发送通知",
+  "notification.draft.create": "保存草稿",
+  "notification.publish": "发布通知",
+  "notification.trigger_settings.update": "更新内容设定",
+  "notification.trigger.test_send": "测试发送",
+  "notification.delete": "删除草稿",
+  "notification.cancel": "取消定时通知",
+  "notification.revoke": "撤回通知",
+};
+
+function labelNotificationStatus(value?: string | null) {
+  if (!value) return "-";
+  return NOTIFICATION_STATUS_LABELS[value] || value;
+}
+
+function labelAudienceType(value?: string | null) {
+  if (!value) return "-";
+  return AUDIENCE_TYPE_LABELS[value] || value;
+}
+
+function labelAuditAction(value?: string | null) {
+  if (!value) return "-";
+  return AUDIT_ACTION_LABELS[value] || value;
+}
+
 export default function AdminNotificationDetail() {
   const navigate = useNavigate();
   const { id = "" } = useParams();
@@ -89,8 +134,8 @@ export default function AdminNotificationDetail() {
       <div className="rounded-2xl border border-border bg-card p-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
         <div><div className="text-xs text-muted-foreground">标题</div><div>{data.title}</div></div>
         <div><div className="text-xs text-muted-foreground">类型</div><div>{labelNotificationType(data.type)}</div></div>
-        <div><div className="text-xs text-muted-foreground">发送状态</div><div>{data.send_status}</div></div>
-        <div><div className="text-xs text-muted-foreground">受众</div><div>{data.audience_type}</div></div>
+        <div><div className="text-xs text-muted-foreground">发送状态</div><div>{labelNotificationStatus(data.send_status)}</div></div>
+        <div><div className="text-xs text-muted-foreground">受众</div><div>{labelAudienceType(data.audience_type)}</div></div>
         <div><div className="text-xs text-muted-foreground">接收人数</div><div>{data.recipient_count}</div></div>
         <div><div className="text-xs text-muted-foreground">已读人数</div><div>{data.read_count}</div></div>
         <div><div className="text-xs text-muted-foreground">已读率</div><div>{(data.read_rate * 100).toFixed(2)}%</div></div>
@@ -151,7 +196,7 @@ export default function AdminNotificationDetail() {
         <div className="rounded-xl border border-border overflow-hidden">
           <table className="w-full text-sm">
             <thead className="bg-secondary/60"><tr><th className="px-3 py-2 text-left">时间</th><th className="px-3 py-2 text-left">操作人</th><th className="px-3 py-2 text-left">动作</th><th className="px-3 py-2 text-left">摘要</th></tr></thead>
-            <tbody>{data.logs.map((l) => <tr key={l.id} className="border-t border-border"><td className="px-3 py-2">{formatDateTime(l.created_at)}</td><td className="px-3 py-2">{l.operator_name || "-"}</td><td className="px-3 py-2">{l.action_type}</td><td className="px-3 py-2">{l.summary || "-"}</td></tr>)}</tbody>
+            <tbody>{data.logs.map((l) => <tr key={l.id} className="border-t border-border"><td className="px-3 py-2">{formatDateTime(l.created_at)}</td><td className="px-3 py-2">{l.operator_name || "-"}</td><td className="px-3 py-2">{labelAuditAction(l.action_type)}</td><td className="px-3 py-2">{l.summary || "-"}</td></tr>)}</tbody>
           </table>
         </div>
       </div>

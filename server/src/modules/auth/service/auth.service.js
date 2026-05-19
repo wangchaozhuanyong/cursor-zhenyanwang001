@@ -33,14 +33,14 @@ function hashResetToken(token) {
 async function register(body) {
   const { phone, countryCode, password, nickname, inviteCode } = body;
   const normalizedPhone = normalizeIntlPhone(phone, countryCode);
-  if (!normalizedPhone) throw new ValidationError('Invalid input');
+  if (!normalizedPhone) throw new ValidationError('手机号格式不正确');
 
   const existing = await repo.findUserIdByPhones(buildPhoneLookupCandidates(phone, countryCode));
-  if (existing) throw new ConflictError('Phone already registered');
+  if (existing) throw new ConflictError('该手机号已注册，请直接登录');
   const parentInviteCode = String(inviteCode || '').trim().toUpperCase();
   if (parentInviteCode) {
     const inviter = await repo.selectUserIdByInviteCode(parentInviteCode);
-    if (!inviter) throw new ValidationError('Invalid input');
+    if (!inviter) throw new ValidationError('邀请码不存在或不可用');
   }
 
   const id = generateId();
@@ -58,7 +58,7 @@ async function register(body) {
     });
   } catch (err) {
     if (err && (err.code === 'ER_DUP_ENTRY' || err.errno === 1062)) {
-      throw new ConflictError('Phone already registered');
+      throw new ConflictError('该手机号已注册，请直接登录');
     }
     throw err;
   }
@@ -90,7 +90,7 @@ async function login(body) {
 
   const lookupPhones = buildPhoneLookupCandidates(phone, countryCode);
   const matchedUsers = await repo.findUsersByPhones(lookupPhones);
-  if (!matchedUsers.length) throw new AuthError('Authentication failed');
+  if (!matchedUsers.length) throw new AuthError('手机号或密码不正确');
 
   function coerceHash(hash) {
     let h = hash;
@@ -112,23 +112,23 @@ async function login(body) {
     }
   } catch (err) {
     console.error('[auth.login] bcrypt compare error', err);
-    throw new AuthError('Authentication failed');
+    throw new AuthError('手机号或密码不正确');
   }
-  if (!user) throw new AuthError('Authentication failed');
+  if (!user) throw new AuthError('手机号或密码不正确');
 
   return issueLoginForUserId(user.id, { loginMethod: 'phone_password' });
 }
 
 function buildLoginResult(userRow) {
   const uid = String(userRow.id ?? '');
-  if (!uid) throw new AuthError('Authentication failed');
+  if (!uid) throw new AuthError('登录状态无效，请重新登录');
 
   const rv = Number.isFinite(Number(userRow.refresh_token_version))
     ? Number(userRow.refresh_token_version)
     : 0;
   const token = signToken(uid, rv);
   if (userRow.account_status === 'disabled' || userRow.account_status === 'blacklisted') {
-    throw new AuthError('Authentication failed');
+    throw new AuthError('账号已被限制使用，请联系客服');
   }
   return {
     data: {
@@ -142,7 +142,7 @@ function buildLoginResult(userRow) {
 
 async function issueLoginForUserId(userId, options = {}) {
   const row = await repo.selectRefreshVersion(userId);
-  if (!row) throw new AuthError('Authentication failed');
+  if (!row) throw new AuthError('登录状态无效，请重新登录');
   await repo.updateLastLogin(userId);
 
   const loginMethod = options.loginMethod;
@@ -192,12 +192,12 @@ async function updateProfile(userId, body) {
   }
   if (phone !== undefined) {
     const normalizedPhone = normalizeIntlPhone(phone, countryCode);
-    if (!normalizedPhone) throw new ValidationError('Invalid input');
+    if (!normalizedPhone) throw new ValidationError('手机号格式不正确');
     const dup = await repo.findPhoneDuplicateByPhones(
       userId,
       buildPhoneLookupCandidates(phone, countryCode),
     );
-    if (dup) throw new ConflictError('Phone already registered');
+    if (dup) throw new ConflictError('该手机号已注册，请更换手机号');
     fragments.push('phone = ?');
     values.push(normalizedPhone);
   }
@@ -210,7 +210,7 @@ async function updateProfile(userId, body) {
     values.push(whatsapp);
   }
 
-  if (fragments.length === 0) throw new ValidationError('Invalid input');
+  if (fragments.length === 0) throw new ValidationError('没有需要更新的字段');
 
   await repo.updateUserProfile(userId, fragments, values);
 
@@ -228,11 +228,11 @@ async function changePassword(userId, body) {
   if (Buffer.isBuffer(stored)) stored = stored.toString('utf8');
   else if (stored != null && typeof stored !== 'string') stored = String(stored);
   if (typeof stored !== 'string' || !stored.trim()) {
-    throw new ValidationError('Invalid input');
+    throw new ValidationError('当前账号暂未设置密码');
   }
 
   const match = await comparePassword(oldPassword, stored);
-  if (!match) throw new ValidationError('Invalid input');
+  if (!match) throw new ValidationError('旧密码不正确');
 
   const hash = await hashPassword(newPassword);
   await repo.updatePasswordHash(userId, hash);
@@ -278,9 +278,9 @@ async function resetPassword(body) {
   const { token, newPassword } = body;
   const tokenHash = hashResetToken(token);
   const row = await repo.selectPasswordResetToken(tokenHash);
-  if (!row) throw new ValidationError('Invalid input');
-  if (row.used_at) throw new ValidationError('Invalid input');
-  if (new Date(row.expires_at).getTime() <= Date.now()) throw new ValidationError('Invalid input');
+  if (!row) throw new ValidationError('重置令牌无效，请重新申请');
+  if (row.used_at) throw new ValidationError('重置令牌已使用，请重新申请');
+  if (new Date(row.expires_at).getTime() <= Date.now()) throw new ValidationError('重置令牌已过期，请重新申请');
 
   const hash = await hashPassword(newPassword);
   await repo.updatePasswordHash(row.user_id, hash);
@@ -290,26 +290,26 @@ async function resetPassword(body) {
 }
 
 async function refresh(refreshToken) {
-  if (!refreshToken) throw new ValidationError('Invalid input');
+  if (!refreshToken) throw new ValidationError('登录状态无效，请重新登录');
 
   let payload;
   try {
     payload = verifyToken(refreshToken);
   } catch {
-    throw new AuthError('Authentication failed');
+    throw new AuthError('登录状态无效，请重新登录');
   }
 
-  if (typeof payload === 'string') throw new AuthError('Authentication failed');
-  if (payload.type !== 'refresh') throw new AuthError('Authentication failed');
+  if (typeof payload === 'string') throw new AuthError('登录状态无效，请重新登录');
+  if (payload.type !== 'refresh') throw new AuthError('登录状态无效，请重新登录');
 
   const user = await repo.selectRefreshVersion(payload.userId);
-  if (!user) throw new AuthError('Authentication failed');
+  if (!user) throw new AuthError('登录状态无效，请重新登录');
 
   const ver = Number.isFinite(Number(user.refresh_token_version)) ? Number(user.refresh_token_version) : 0;
   if (payload.rv === undefined) {
-    if (ver !== 0) throw new AuthError('Authentication failed');
+    if (ver !== 0) throw new AuthError('登录状态无效，请重新登录');
   } else if (Number(payload.rv) !== ver) {
-    throw new AuthError('Authentication failed');
+    throw new AuthError('登录状态无效，请重新登录');
   }
 
   const newToken = signToken(user.id, ver);

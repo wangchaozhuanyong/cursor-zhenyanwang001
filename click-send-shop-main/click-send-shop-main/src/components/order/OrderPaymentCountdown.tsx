@@ -52,14 +52,15 @@ export function OrderPaymentCountdown({
             <p className="font-medium text-foreground">
               请在 <span className="font-mono tabular-nums text-[var(--theme-price)]">{timeText}</span> 内完成支付
             </p>
-            {order.payment_timeout_minutes != null && !compact && (
+            {order.payment_timeout_minutes != null && !compact ? (
               <p className="mt-0.5 text-[11px] opacity-80">
                 超时未付款将自动取消订单并释放库存（限时 {order.payment_timeout_minutes} 分钟）。
               </p>
-            )}
+            ) : null}
           </>
         )}
       </div>
     </div>
   );
 }
+

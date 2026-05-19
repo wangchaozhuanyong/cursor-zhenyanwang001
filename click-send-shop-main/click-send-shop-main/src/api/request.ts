@@ -26,6 +26,18 @@ function gatewayErrorMessage(status: number): string | null {
   return null;
 }
 
+function translateApiMessage(message: string): string {
+  if (/^Authentication failed$/i.test(message)) return "手机号或密码不正确";
+  if (/phone already registered/i.test(message)) return "该手机号已注册，请直接登录";
+  if (/^Invalid input$/i.test(message)) return "填写信息不正确，请检查后重试";
+  if (/invalid phone/i.test(message)) return "手机号格式不正确";
+  if (/invalid invite/i.test(message)) return "邀请码不存在或不可用";
+  if (/password/i.test(message) && /uppercase|lowercase|digit|number|least/i.test(message)) {
+    return "密码至少 8 位，并包含大写字母、小写字母和数字";
+  }
+  return message;
+}
+
 function extractResponseMessage(body: Record<string, unknown>, status: number): string {
   const gateway = gatewayErrorMessage(status);
   if (gateway) return gateway;
@@ -37,7 +49,7 @@ function extractResponseMessage(body: Record<string, unknown>, status: number): 
     (body.data as Record<string, unknown> | undefined)?.error,
   ];
   const message = candidates.find((v) => typeof v === "string" && v.trim());
-  return typeof message === "string" ? message : `Request failed (${status})`;
+  return typeof message === "string" ? translateApiMessage(message) : `Request failed (${status})`;
 }
 
 export function toQueryString(params?: Record<string, unknown>): string {

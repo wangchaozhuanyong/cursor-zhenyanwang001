@@ -136,35 +136,35 @@ async function getClientPointsConfig() {
       disabledReason: !hasRule
         ? null
         : !enabled
-          ? 'Sign-in points rule is disabled by admin'
+          ? '每日签到积分规则已被后台关闭'
           : configInvalid
-            ? 'Sign-in points must be at least 1'
+            ? '每日签到积分必须至少为 1'
             : null,
     },
     /** 鐠併垹宕熺粔顖氬瀻閺夈儴鍤滈崯鍡楁惂閵嗗瞼袧閸掑棗鈧鈧秴鐡у▓纰夌礉閺€顖欑帛鐎瑰本鍨氶崥搴″弳鐠?*/
-    orderPointsHint: 'Points are awarded after paid orders based on current rules.',
+    orderPointsHint: '订单支付完成后，将按后台当前积分规则发放积分。',
   };
 }
 
 async function signIn(userId) {
   const today = new Date().toISOString().slice(0, 10);
   const existing = await repo.findSignInToday(userId, today);
-  if (existing) return { error: { code: 400, message: 'Already signed in today' } };
+  if (existing) return { error: { code: 400, message: '今天已经签到过了' } };
 
   const { points, enabled, hasRule } = await resolveSignInAward();
-  if (hasRule && !enabled) return { error: { code: 400, message: 'Sign-in points rule is disabled' } };
+  if (hasRule && !enabled) return { error: { code: 400, message: '每日签到积分规则已关闭' } };
   const grant = hasRule ? toInt(points) : 5;
-  if (grant < 1) return { error: { code: 400, message: 'daily sign-in points must be at least 1' } };
+  if (grant < 1) return { error: { code: 400, message: '每日签到积分必须至少为 1' } };
 
   await runInTransaction((conn) => changePoints(conn, {
     userId,
     amount: grant,
     action: 'sign_in',
-    description: 'Daily sign-in points',
+    description: '每日签到',
     sourceType: 'sign_in',
     relatedRecordId: `sign_in:${userId}:${today}`,
   }));
-  return { data: { points: grant }, message: 'Sign-in success' };
+  return { data: { points: grant }, message: '签到成功' };
 }
 
 async function adjustUserPoints(userId, amount, reason, operatorId) {
@@ -172,7 +172,7 @@ async function adjustUserPoints(userId, amount, reason, operatorId) {
     userId,
     amount,
     action: amount > 0 ? 'admin_add' : 'admin_deduct',
-    description: reason || 'Admin points adjustment',
+    description: reason || '后台积分调整',
     sourceType: 'admin_adjust',
     operatorId,
   }));
@@ -185,7 +185,7 @@ async function settleOrderPoints(conn, order, options = {}) {
     userId: order.user_id,
     amount,
     action: 'order_earn',
-    description: "Order points earned", 
+    description: '订单积分发放',
     orderId: order.id,
     orderNo: order.order_no,
     sourceType: 'order_completion',
@@ -204,7 +204,7 @@ async function reverseOrderPoints(conn, order, reason, options = {}) {
     userId: order.user_id,
     amount: -amount,
     action: 'order_reverse',
-    description: reason || "Order points reversed", 
+    description: reason || '订单积分回滚',
     orderId: order.id,
     orderNo: order.order_no,
     sourceType: 'order_reversal',

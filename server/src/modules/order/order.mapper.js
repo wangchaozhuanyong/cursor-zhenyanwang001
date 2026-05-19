@@ -116,6 +116,7 @@ function formatOrder(row, items) {
     carrier: row.carrier || '',
     note: row.note || '',
     created_at: row.created_at,
+    shipped_at: row.shipped_at || null,
     contact_name: row.contact_name,
     contact_phone: row.contact_phone,
     shipping_phone: row.shipping_phone || row.contact_phone,

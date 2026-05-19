@@ -1,5 +1,5 @@
 import { Home, LayoutGrid, ShoppingCart, Sparkles, User } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { type TouchEvent, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -8,12 +8,21 @@ import { isLoggedIn } from "@/utils/token";
 import { getBottomNavInnerClassName, getBottomNavShellClassName } from "@/utils/themeVisuals";
 
 const tabs = [
-  { path: "/", label: "首页", icon: Home },
-  { path: "/categories", label: "分类", icon: LayoutGrid },
-  { path: "/new-arrivals", label: "新品", icon: Sparkles },
-  { path: "/cart", label: "购物车", icon: ShoppingCart },
-  { path: "/profile", label: "我的", icon: User },
+  { path: "/", label: "\u9996\u9875", icon: Home },
+  { path: "/categories", label: "\u5206\u7c7b", icon: LayoutGrid },
+  { path: "/new-arrivals", label: "\u65b0\u54c1", icon: Sparkles },
+  { path: "/cart", label: "\u8d2d\u7269\u8f66", icon: ShoppingCart },
+  { path: "/profile", label: "\u6211\u7684", icon: User },
 ];
+
+const TAP_MOVE_THRESHOLD = 12;
+const TOUCH_CLICK_SUPPRESS_MS = 650;
+
+type TouchPoint = {
+  x: number;
+  y: number;
+  time: number;
+};
 
 export default function BottomNav() {
   const location = useLocation();
@@ -21,8 +30,8 @@ export default function BottomNav() {
   const { themeConfig } = useThemeRuntime();
   const navStyle = themeConfig.navStyle;
   const totalItems = useCartStore((s) => s.totalItems());
-  /** 触摸已在 pointerdown 处理，避免随后合成 click 重复跳转 */
-  const touchHandledPathRef = useRef<string | null>(null);
+  const touchStartRef = useRef<TouchPoint | null>(null);
+  const handledTouchRef = useRef<{ path: string; time: number } | null>(null);
   const [badgeBump, setBadgeBump] = useState(false);
 
   useEffect(() => {
@@ -54,36 +63,65 @@ export default function BottomNav() {
     navigate(path);
   };
 
+  const handleTouchStart = (event: TouchEvent<HTMLAnchorElement>) => {
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+  };
+
+  const handleTouchEnd = (event: TouchEvent<HTMLAnchorElement>, path: string) => {
+    const start = touchStartRef.current;
+    const touch = event.changedTouches[0];
+    touchStartRef.current = null;
+    if (!start || !touch) return;
+
+    const movedX = Math.abs(touch.clientX - start.x);
+    const movedY = Math.abs(touch.clientY - start.y);
+    if (movedX > TAP_MOVE_THRESHOLD || movedY > TAP_MOVE_THRESHOLD) return;
+
+    event.preventDefault();
+    handledTouchRef.current = { path, time: Date.now() };
+    handleNavigate(path);
+  };
+
   return (
     <nav
       className={getBottomNavShellClassName(navStyle, "fixed")}
       data-theme-nav-style={navStyle}
-      style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0px)", touchAction: "none" }}
+      style={{
+        paddingBottom: "max(env(safe-area-inset-bottom), 0px)",
+        touchAction: "manipulation",
+        WebkitTapHighlightColor: "transparent",
+      }}
     >
       <div className={getBottomNavInnerClassName(navStyle)}>
         <div className="grid h-[68px] grid-cols-5 items-center px-1">
           {tabs.map((tab) => {
             const isActive = location.pathname === tab.path;
             const Icon = tab.icon;
-            const activate = () => handleNavigate(tab.path);
             return (
-              <button
+              <a
                 key={tab.path}
-                type="button"
-                onPointerDown={(event) => {
-                  if (event.pointerType !== "touch") return;
-                  event.preventDefault();
-                  touchHandledPathRef.current = tab.path;
-                  activate();
+                href={tab.path}
+                aria-current={isActive ? "page" : undefined}
+                aria-label={tab.label}
+                onTouchStart={handleTouchStart}
+                onTouchCancel={() => {
+                  touchStartRef.current = null;
                 }}
-                onClick={() => {
-                  if (touchHandledPathRef.current === tab.path) {
-                    touchHandledPathRef.current = null;
+                onTouchEnd={(event) => handleTouchEnd(event, tab.path)}
+                onClick={(event) => {
+                  const handledTouch = handledTouchRef.current;
+                  if (handledTouch?.path === tab.path && Date.now() - handledTouch.time < TOUCH_CLICK_SUPPRESS_MS) {
+                    event.preventDefault();
+                    handledTouchRef.current = null;
                     return;
                   }
-                  activate();
+                  event.preventDefault();
+                  handleNavigate(tab.path);
                 }}
-                className="relative flex min-h-0 select-none flex-col items-center justify-center gap-1 bg-transparent px-1 py-2"
+                className="relative flex min-h-0 touch-manipulation select-none flex-col items-center justify-center gap-1 bg-transparent px-1 py-2 no-underline"
+                draggable={false}
               >
                 <span
                   className={`relative flex h-8 min-w-8 items-center justify-center rounded-full px-2 transition-transform duration-150 ${
@@ -116,7 +154,7 @@ export default function BottomNav() {
                 >
                   {tab.label}
                 </span>
-              </button>
+              </a>
             );
           })}
         </div>

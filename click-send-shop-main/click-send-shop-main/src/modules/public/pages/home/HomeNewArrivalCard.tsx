@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import type { Product } from "@/types/product";
 import { PRODUCT_BLUR_PLACEHOLDER } from "@/constants/productBlurPlaceholder";
 import { ProgressiveImage } from "@/modules/micro-interactions";
+import { resolveProductImageSrc } from "@/utils/uploadImageVariant";
 import { resolveNewArrivalImage } from "./newArrivalOps";
 
 interface HomeNewArrivalCardProps {
@@ -21,6 +22,7 @@ export default function HomeNewArrivalCard({
   registerImpression,
 }: HomeNewArrivalCardProps) {
   const image = resolveNewArrivalImage(product, index);
+  const { src: imageSrc, fallbackSrc } = resolveProductImageSrc(image, "card");
   const cardRef = useRef<HTMLAnchorElement | null>(null);
 
   useEffect(() => {
@@ -46,13 +48,14 @@ export default function HomeNewArrivalCard({
       ref={cardRef}
       to={`/product/${product.id}`}
       onClick={() => onClick?.(product, index)}
-      className="theme-rounded w-[132px] shrink-0 snap-start overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-bg)]"
+      className="theme-rounded w-[132px] shrink-0 snap-start overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-bg)] p-1.5"
       aria-label={`查看 ${product.name}`}
     >
-      <div className="relative aspect-square w-full overflow-hidden bg-[var(--theme-surface)]">
-        {image ? (
+      <div className="theme-rounded relative aspect-square w-full overflow-hidden bg-[var(--theme-surface)]">
+        {imageSrc ? (
           <ProgressiveImage
-            src={image}
+            src={imageSrc}
+            fallbackSrc={fallbackSrc}
             blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
             alt={product.name}
             className="h-full w-full"
@@ -63,9 +66,13 @@ export default function HomeNewArrivalCard({
           新品
         </span>
       </div>
-      <div className="px-2 py-2">
+      <div className="px-0.5 pb-1 pt-2">
         <p className="line-clamp-1 text-xs font-semibold text-[var(--theme-text-on-surface)]">{product.name}</p>
-        {showPrice ? <p className="mt-1 text-sm font-bold text-[var(--theme-price)]">RM {product.price}</p> : null}
+        {showPrice ? (
+          <p className="mt-1 whitespace-nowrap text-xs font-bold text-[var(--theme-price)]">
+            RM&nbsp;{product.price}
+          </p>
+        ) : null}
       </div>
     </Link>
   );

@@ -1,12 +1,13 @@
-ï»¿const { Router } = require('express');
+const { Router } = require('express');
 const orderStateMachine = require('./orderStateMachine');
 const returnStateMachine = require('./returnStateMachine');
-const checkoutAbandonmentRepo = require('./checkoutAbandonment.repository');
-const orderRepo = require('./order.repository');
+const checkoutAbandonmentRepo = require('./repository/checkoutAbandonment.repository');
+const orderRepo = require('./repository/order.repository');
+const orderService = require('./service/order.service');
 
 const router = Router();
 
-/** é¡»åœ¨æŒ‚è½½å­è·¯ç”±ä¹‹å‰æ³¨å†Œï¼Œé¿å… order â†” payment å¾ªç¯ä¾èµ–æ—¶ api å°šæœªå°±ç»ª */
+/** ĞëÔÚ¹ÒÔØ×ÓÂ·ÓÉÖ®Ç°×¢²á£¬±ÜÃâ order ? payment Ñ­»·ÒÀÀµÊ± api ÉĞÎ´¾ÍĞ÷ */
 /** @type {any} */ (router).api = {
   assertFulfillmentTransition: orderStateMachine.assertFulfillmentTransition,
   assertPaymentTransition: orderStateMachine.assertPaymentTransition,
@@ -30,9 +31,11 @@ const router = Router();
   incrementProductSales: orderRepo.incrementProductSales,
   insertOrderNotification: orderRepo.insertNotification,
   insertWebhookEventIfAbsent: orderRepo.insertWebhookEventIfAbsent,
+  cancelPendingOrderInTransaction: orderService.cancelPendingOrderInTransaction,
 };
 
-router.use('/orders', require('./orders.routes'));
-router.use('/returns', require('./returns.routes'));
+router.use('/orders', require('./routes/orders.routes'));
+router.use('/returns', require('./routes/returns.routes'));
 
 module.exports = router;
+

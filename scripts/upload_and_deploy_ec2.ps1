@@ -3,6 +3,8 @@ param(
   [string]$ServerUser = "ubuntu",
   [string]$RemoteProjectRoot = "/var/www/click-send-shop",
   [string]$IdentityFile = "",
+  [ValidateSet("0", "1")][string]$FastMode = "1",
+  [ValidateSet("0", "1")][string]$BuildFrontendOnServer = "0",
   [switch]$UploadArchive,
   [switch]$UploadLocalFrontend
 )
@@ -47,7 +49,7 @@ if (-not $UploadArchive) {
   Write-Host "[2/3] Running safe server-side deploy (git + ci-deploy.sh) ..."
   Invoke-Native ssh ($sshOpts + @(
     "${ServerUser}@${ServerHost}",
-    "set -euo pipefail; cd '${RemoteProjectRoot}'; export PROJECT_DIR='${RemoteProjectRoot}'; export PM2_APP='gc-api'; export AUTO_ROLLBACK='1'; git fetch origin main; bash deploy/ci-deploy.sh"
+    "set -euo pipefail; cd '${RemoteProjectRoot}'; export PROJECT_DIR='${RemoteProjectRoot}'; export PM2_APP='gc-api'; export AUTO_ROLLBACK='1'; export FAST_MODE='${FastMode}'; export BUILD_FRONTEND_ON_SERVER='${BuildFrontendOnServer}'; git fetch origin main; bash deploy/ci-deploy.sh"
   ))
 
   if ($UploadLocalFrontend) {
@@ -102,7 +104,7 @@ Write-Host "[5/5] Running safe CI deploy script ..."
 # Run deploy as SSH user so PM2 touches the same daemon as production (avoid root vs ubuntu mismatch).
 Invoke-Native ssh ($sshOpts + @(
   "${ServerUser}@${ServerHost}",
-  "set -euo pipefail; cd '${RemoteProjectRoot}'; chmod +x deploy/ci-deploy.sh; PROJECT_DIR='${RemoteProjectRoot}' PM2_APP='gc-api' AUTO_ROLLBACK='1' SKIP_GIT='1' bash deploy/ci-deploy.sh"
+  "set -euo pipefail; cd '${RemoteProjectRoot}'; chmod +x deploy/ci-deploy.sh; PROJECT_DIR='${RemoteProjectRoot}' PM2_APP='gc-api' AUTO_ROLLBACK='1' FAST_MODE='${FastMode}' BUILD_FRONTEND_ON_SERVER='${BuildFrontendOnServer}' SKIP_GIT='1' bash deploy/ci-deploy.sh"
 ))
 
 if ($UploadLocalFrontend) {

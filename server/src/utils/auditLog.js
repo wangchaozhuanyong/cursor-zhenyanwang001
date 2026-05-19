@@ -1,4 +1,4 @@
-const auditLogRepo = require('../modules/admin/auditLog.repository');
+﻿const auditLogRepo = require('../modules/admin/repository/auditLog.repository');
 const { generateId } = require('./helpers');
 
 const MAX_JSON_CHARS = 8000;
@@ -12,7 +12,7 @@ function truncateJson(obj) {
   try {
     const s = typeof obj === 'string' ? obj : JSON.stringify(obj);
     if (s.length <= MAX_JSON_CHARS) return s;
-    // 必须保持合法 JSON，否则 MySQL JSON 列写入失败（截断裸字符串会破坏引号/转义）
+    // Keep a valid JSON string for DB JSON columns when truncation is needed.
     return JSON.stringify({
       _truncated: true,
       _originalLength: s.length,
@@ -58,8 +58,7 @@ async function getOperatorMeta(userId) {
 }
 
 /**
- * 写入审计日志（失败时打控制台，不抛错阻断业务）
- * @param {{
+ * 鍐欏叆瀹¤鏃ュ織锛堝け璐ユ椂鎵撴帶鍒跺彴锛屼笉鎶涢敊闃绘柇涓氬姟锛? * @param {{
  *   req?: import('express').Request;
  *   operatorId?: string|null;
  *   operatorName?: string;
@@ -133,3 +132,4 @@ module.exports = {
   getOperatorMeta,
   truncateJson,
 };
+

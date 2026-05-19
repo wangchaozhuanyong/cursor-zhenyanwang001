@@ -276,10 +276,21 @@ export default function AdminBanners() {
                 className="hidden"
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
+                  e.currentTarget.value = "";
                   if (!file) return;
                   try {
-                    const { width, height } = await readImageSize(file);
-                    if (width > 0 && height > 0) {
+                    let size: { width: number; height: number } | null = null;
+                    try {
+                      size = await readImageSize(file);
+                    } catch {
+                      if (strictRatioCheck) {
+                        toast.error("读取图片尺寸失败，无法进行严格 4:3 校验。请关闭严格校验后重试，或换一张 JPG/PNG/WebP 图片。");
+                        return;
+                      }
+                      toast.warning("读取图片尺寸失败，已跳过比例提示并继续上传。");
+                    }
+                    if (size && size.width > 0 && size.height > 0) {
+                      const { width, height } = size;
                       const ratioOk = isAspectRatioWithinTolerance(width, height, BANNER_RATIO, BANNER_RATIO_TOLERANCE);
                       if (!ratioOk && strictRatioCheck) {
                         toast.error(`当前图片为 ${width}×${height}，不符合 4:3 比例，已阻止上传。`);

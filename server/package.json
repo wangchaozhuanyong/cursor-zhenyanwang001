@@ -9,6 +9,7 @@
     "dev:local": "nodemon --exec \"node -r tsx/cjs\" src/index.js",
     "typecheck": "tsc --noEmit",
     "check:service-layer": "node scripts/check-service-layer.js",
+    "check:module-structure": "node scripts/check-module-structure.js",
     "db:init": "node scripts/apply-sql.js",
     "admin:create": "node scripts/create-admin.js",
     "admin:role": "node scripts/set-admin-role.js",
@@ -27,7 +28,7 @@
     "test:flow": "node -r tsx/cjs --test test/flow-smoke.test.js",
     "test:smoke": "node -r tsx/cjs --test test/flow-smoke.test.js",
     "test:stripe": "node -r tsx/cjs --test test/stripe-amount.test.js",
-    "test:unit": "node -r tsx/cjs --test test/health.test.js test/stripe-amount.test.js test/order-state-machine.test.js test/return-state-machine.test.js test/file-magic.test.js test/upload-presign.test.js test/sms-otp-adapter.test.js",
+    "test:unit": "node -r tsx/cjs --test test/health.test.js test/stripe-amount.test.js test/order-state-machine.test.js test/return-state-machine.test.js test/file-magic.test.js test/upload-presign.test.js test/sms-otp-adapter.test.js test/auth-cookies.test.js test/manual-webhook-security.test.js test/cms-sanitize.test.js",
     "test:all": "node -r tsx/cjs --test --test-force-exit test/health.test.js test/auth-flow.test.js test/payment-channels.test.js test/flow-smoke.test.js test/stripe-amount.test.js test/order-state-machine.test.js test/return-state-machine.test.js test/file-magic.test.js test/sms-otp-adapter.test.js"
   },
   "dependencies": {

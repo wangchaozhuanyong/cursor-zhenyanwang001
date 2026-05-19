@@ -1,6 +1,6 @@
 const { Router } = require('express');
 
 const router = Router();
-router.use('/search', require('./search.routes'));
+router.use('/search', require('./routes/search.routes'));
 
 module.exports = router;

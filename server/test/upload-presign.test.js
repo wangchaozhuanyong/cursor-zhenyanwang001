@@ -1,4 +1,4 @@
-const { test, describe } = require('node:test');
+﻿const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 const {
   buildRawUploadKey,
@@ -21,7 +21,8 @@ describe('upload presign key ownership', () => {
     const storageKey = buildStorageKey(buildRawUploadKey('u42', 'image/jpeg'));
     assert.throws(
       () => assertRawObjectKeyOwnedByUser(storageKey, 'other'),
-      /无权访问/,
+      /鏃犳潈璁块棶/,
     );
   });
 });
+

@@ -46,7 +46,7 @@ export default function HomeNewArrivalCard({
       ref={cardRef}
       to={`/product/${product.id}`}
       onClick={() => onClick?.(product, index)}
-      className="w-[132px] shrink-0 snap-start overflow-hidden rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)]"
+      className="theme-rounded w-[132px] shrink-0 snap-start overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-bg)]"
       aria-label={`查看 ${product.name}`}
     >
       <div className="relative aspect-square w-full overflow-hidden bg-[var(--theme-surface)]">

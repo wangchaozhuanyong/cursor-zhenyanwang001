@@ -1,0 +1,219 @@
+import { useEffect, useState } from "react";
+import { User, Lock, Mail, Phone } from "lucide-react";
+import { LoadingButton } from "@/modules/micro-interactions";
+import { AdminTabsPanelSkeleton } from "@/components/admin/AdminLoadingSkeletons";
+import { toast } from "sonner";
+import { fetchAdminProfile, updateAdminProfile, changeAdminPassword } from "@/services/admin/accountService";
+import { Tx } from "@/components/admin/AdminText";
+import { toastErrorMessage } from "@/utils/errorMessage";
+
+export type AdminAccountTab = "profile" | "password";
+
+interface AdminAccountPanelProps {
+  initialTab?: AdminAccountTab;
+  embedded?: boolean;
+}
+
+export default function AdminAccountPanel({ initialTab = "profile", embedded = false }: AdminAccountPanelProps) {
+  const [activeTab, setActiveTab] = useState<AdminAccountTab>(initialTab);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [profile, setProfile] = useState({ name: "", email: "", phone: "" });
+  const [pwd, setPwd] = useState({ old: "", new1: "", new2: "" });
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
+  useEffect(() => {
+    setLoading(true);
+    fetchAdminProfile()
+      .then((data: { nickname?: string; username?: string; email?: string; phone?: string }) => {
+        setProfile({
+          name: data?.nickname || data?.username || "Admin",
+          email: data?.email ?? "",
+          phone: data?.phone ?? "",
+        });
+      })
+      .catch((e) => toast.error(toastErrorMessage(e, "加载数据失败")))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    try {
+      await updateAdminProfile({
+        nickname: profile.name,
+        email: profile.email,
+        phone: profile.phone,
+      });
+      toast.success("个人信息已更新");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "保存失败"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChangePwd = async () => {
+    if (!pwd.old || !pwd.new1 || !pwd.new2) {
+      toast.error("请填写完整");
+      return;
+    }
+    if (pwd.new1 !== pwd.new2) {
+      toast.error("两次密码不一致");
+      return;
+    }
+    if (pwd.new1.length < 6) {
+      toast.error("密码至少6位");
+      return;
+    }
+    setSaving(true);
+    try {
+      await changeAdminPassword(pwd.old, pwd.new1);
+      toast.success("密码已修改");
+      setPwd({ old: "", new1: "", new2: "" });
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "修改失败，请检查原密码"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const tabs = [
+    { key: "profile" as const, label: "个人信息", icon: User },
+    { key: "password" as const, label: "修改密码", icon: Lock },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {!embedded ? (
+        <div>
+          <h1 className="text-xl font-bold text-foreground">
+            <Tx>账号设置</Tx>
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            <Tx>管理您的账号信息</Tx>
+          </p>
+        </div>
+      ) : null}
+
+      <div className="flex gap-1 rounded-2xl bg-secondary p-1">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setActiveTab(t.key)}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium transition-all ${
+              activeTab === t.key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+            }`}
+          >
+            <t.icon size={16} /> {t.label}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <AdminTabsPanelSkeleton />
+      ) : activeTab === "profile" ? (
+        <div className="max-w-lg space-y-4 rounded-2xl border border-border bg-card p-6">
+          <div className="flex items-center gap-4 border-b border-border pb-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gold text-2xl font-bold text-primary-foreground">
+              {profile.name.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <h3 className="font-bold text-foreground">{profile.name}</h3>
+              <p className="text-sm text-muted-foreground">
+                <Tx>管理员</Tx>
+              </p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <label className="block">
+              <span className="text-xs font-medium text-muted-foreground">
+                <Tx>昵称</Tx>
+              </span>
+              <div className="relative mt-1">
+                <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={profile.name}
+                  onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                  className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm outline-none focus:border-gold"
+                />
+              </div>
+            </label>
+            <label className="block">
+              <span className="text-xs font-medium text-muted-foreground">
+                <Tx>邮箱</Tx>
+              </span>
+              <div className="relative mt-1">
+                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={profile.email}
+                  onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                  className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm outline-none focus:border-gold"
+                />
+              </div>
+            </label>
+            <label className="block">
+              <span className="text-xs font-medium text-muted-foreground">
+                <Tx>手机</Tx>
+              </span>
+              <div className="relative mt-1">
+                <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={profile.phone}
+                  onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                  className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm outline-none focus:border-gold"
+                />
+              </div>
+            </label>
+          </div>
+          <LoadingButton
+            variant="gold"
+            state={saving ? "loading" : "normal"}
+            loadingText="保存中..."
+            onClick={() => void handleSaveProfile()}
+            className="w-full rounded-xl py-3 text-sm font-bold"
+          >
+            <Tx>保存修改</Tx>
+          </LoadingButton>
+        </div>
+      ) : (
+        <div className="max-w-lg space-y-4 rounded-2xl border border-border bg-card p-6">
+          <h3 className="font-bold text-foreground">
+            <Tx>修改密码</Tx>
+          </h3>
+          {[
+            { label: "当前密码", key: "old" as const, placeholder: "请输入当前密码" },
+            { label: "新密码", key: "new1" as const, placeholder: "请输入新密码（至少6位）" },
+            { label: "确认密码", key: "new2" as const, placeholder: "请再次输入新密码" },
+          ].map((f) => (
+            <label key={f.key} className="block">
+              <span className="text-xs font-medium text-muted-foreground">{f.label}</span>
+              <div className="relative mt-1">
+                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="password"
+                  placeholder={f.placeholder}
+                  value={pwd[f.key]}
+                  onChange={(e) => setPwd({ ...pwd, [f.key]: e.target.value })}
+                  className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-4 text-sm outline-none focus:border-gold"
+                />
+              </div>
+            </label>
+          ))}
+          <LoadingButton
+            variant="gold"
+            state={saving ? "loading" : "normal"}
+            loadingText="提交中..."
+            onClick={() => void handleChangePwd()}
+            className="w-full rounded-xl py-3 text-sm font-bold"
+          >
+            <Tx>确认修改</Tx>
+          </LoadingButton>
+        </div>
+      )}
+    </div>
+  );
+}

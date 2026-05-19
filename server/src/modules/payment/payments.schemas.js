@@ -67,6 +67,9 @@ const webhookProviderBodySchema = z.object({
   channel_code: z.string().trim().max(64).optional(),
   secret: z.string().trim().optional(),
   signature: z.string().trim().optional(),
+  timestamp: z.union([z.string(), z.number()]).optional(),
+  ts: z.union([z.string(), z.number()]).optional(),
+  nonce: z.string().trim().optional(),
 }).passthrough();
 
 const adminChannelIdParamSchema = z.object({ id: z.string().trim().min(1) });

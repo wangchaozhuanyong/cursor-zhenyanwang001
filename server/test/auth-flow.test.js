@@ -1,14 +1,14 @@
-require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+﻿require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 require('./_dbCleanup.test');
 const { test, describe, before } = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('crypto');
 const request = require('supertest');
 const app = require('../src/app');
-const repo = require('../src/modules/auth/auth.repository');
+const repo = require('../src/modules/auth/repository/auth.repository');
 const { generateId } = require('../src/utils/helpers');
 
-/** 与 registerBodySchema 一致：需含 countryCode；与 normalizeIntlPhone 兼容 */
+/** 涓?registerBodySchema 涓€鑷达細闇€鍚?countryCode锛涗笌 normalizeIntlPhone 鍏煎 */
 const phone = `5${Date.now().toString().slice(-7)}`;
 const countryCode = '+60';
 process.env.EXPOSE_PASSWORD_RESET_TOKEN = 'true';
@@ -130,6 +130,10 @@ describe('WeChat auth API', () => {
 });
 
 describe('OAuth ticket exchange', () => {
+  before(() => {
+    process.env.THIRD_PARTY_LOGIN_ENABLED = '1';
+  });
+
   test('POST /api/auth/oauth/exchange', async () => {
     const p = `5${Date.now().toString().slice(-8)}`;
     const reg = await request(app)
@@ -161,3 +165,4 @@ describe('OAuth ticket exchange', () => {
     assert.notEqual(again.body.code, 0);
   });
 });
+

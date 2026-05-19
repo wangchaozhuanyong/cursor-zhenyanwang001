@@ -1,5 +1,5 @@
 ﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
-const svc = require('../adminInventory.service');
+const svc = require('../service/adminInventory.service');
 
 exports.summary = asyncRoute(async (req, res) => {
   const r = await svc.getSummary();
@@ -54,4 +54,5 @@ exports.exportRecordsCsv = asyncRoute(async (req, res) => {
   res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
   res.send(`\uFEFF${csv}`);
 });
+
 

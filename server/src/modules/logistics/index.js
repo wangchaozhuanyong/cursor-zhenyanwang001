@@ -1,5 +1,5 @@
-const { Router } = require('express');
-const logisticsService = require('./logistics.service');
+﻿const { Router } = require('express');
+const logisticsService = require('./service/logistics.service');
 
 const router = Router();
 

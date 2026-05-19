@@ -11,9 +11,31 @@ const variantInputSchema = z.object({
   title: z.string().max(255).optional(),
   sku_code: z.union([z.string().max(64), z.null()]).optional(),
   price: z.coerce.number().nonnegative(),
+  original_price: z.union([z.coerce.number().nonnegative(), z.null()]).optional(),
+  cost_price: z.union([z.coerce.number().nonnegative(), z.null()]).optional(),
   stock: z.coerce.number().int().nonnegative(),
+  stock_warning_threshold: z.coerce.number().int().nonnegative().optional(),
+  barcode: z.union([z.string().max(64), z.null()]).optional(),
+  image_url: z.union([z.string().max(500), z.null()]).optional(),
+  weight: z.union([z.coerce.number().nonnegative(), z.null()]).optional(),
+  enabled: z.boolean().optional(),
   sort_order: z.coerce.number().int().optional(),
   is_default: z.boolean().optional(),
+  spec_value_ids: z.array(z.string().max(36)).max(3).optional(),
+});
+
+const specValueInputSchema = z.object({
+  id: z.string().max(36).optional(),
+  value: z.string().trim().min(1).max(64),
+  image_url: z.union([z.string().max(500), z.null()]).optional(),
+  sort_order: z.coerce.number().int().optional(),
+});
+
+const specGroupInputSchema = z.object({
+  id: z.string().max(36).optional(),
+  name: z.string().trim().min(1).max(64),
+  sort_order: z.coerce.number().int().optional(),
+  values: z.array(specValueInputSchema).max(20).optional().default([]),
 });
 
 const adminProductListQuerySchema = z.object({
@@ -42,7 +64,8 @@ const adminProductCreateBodySchema = z.object({
   is_recommended: z.boolean().optional(),
   is_new: z.boolean().optional(),
   is_hot: z.boolean().optional(),
-  variants: z.array(variantInputSchema).max(30).optional(),
+  spec_groups: z.array(specGroupInputSchema).max(3).optional(),
+  variants: z.array(variantInputSchema).max(200).optional(),
   tag_ids: z.array(z.string().uuid()).max(30).optional(),
 });
 
@@ -64,7 +87,8 @@ const adminProductUpdateBodySchema = z.object({
   is_recommended: z.boolean().optional(),
   is_new: z.boolean().optional(),
   is_hot: z.boolean().optional(),
-  variants: z.array(variantInputSchema).max(30).optional(),
+  spec_groups: z.array(specGroupInputSchema).max(3).optional(),
+  variants: z.array(variantInputSchema).max(200).optional(),
   tag_ids: z.array(z.string().uuid()).max(30).optional(),
 }).refine((o) => Object.keys(o).length > 0, { message: '没有需要更新的字段' });
 
@@ -94,4 +118,6 @@ module.exports = {
   adminProductTagsBodySchema,
   adminProductIdParamsSchema,
   variantInputSchema,
+  specGroupInputSchema,
+  specValueInputSchema,
 };

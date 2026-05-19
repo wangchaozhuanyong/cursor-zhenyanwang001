@@ -1,5 +1,5 @@
-const { asyncRoute } = require('../../../middleware/asyncRoute');
-const checkoutAbandonmentService = require('../../order/checkoutAbandonment.service');
+﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const checkoutAbandonmentService = require('../../order/service/checkoutAbandonment.service');
 
 exports.list = asyncRoute(async (req, res) => {
   const r = await checkoutAbandonmentService.listAdminCheckoutAbandonments(req.query);
@@ -15,3 +15,5 @@ exports.markReminderSent = asyncRoute(async (req, res) => {
   const r = await checkoutAbandonmentService.markCheckoutReminderSent(req.params.id, req.body?.channel);
   res.success(r.data);
 });
+
+

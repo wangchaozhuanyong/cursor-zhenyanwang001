@@ -187,6 +187,8 @@ function buildRawUploadKey(userId, mimeType) {
     'image/jpeg': '.jpg',
     'image/png': '.png',
     'image/webp': '.webp',
+    'image/gif': '.gif',
+    'image/avif': '.avif',
   };
   const ext = extByMime[mimeType] || '';
   const id = crypto.randomBytes(16).toString('hex');

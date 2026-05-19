@@ -1,5 +1,5 @@
-const { asyncRoute } = require('../../../middleware/asyncRoute');
-const svc = require('../rbac.service');
+﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const svc = require('../service/rbac.service');
 
 exports.listPermissions = asyncRoute(async (_req, res) => {
   const r = await svc.listPermissions();
@@ -60,3 +60,4 @@ exports.removeAdminUser = asyncRoute(async (req, res) => {
   const r = await svc.deleteAdminUser(req.params.userId, req.user, req);
   res.success(r.data, r.message);
 });
+

@@ -18,6 +18,7 @@ interface Template {
   freeAbove: number;
   extraPerKg: number;
   enabled: boolean;
+  isDefault?: boolean;
 }
 
 export default function AdminShipping() {
@@ -51,8 +52,16 @@ export default function AdminShipping() {
         await shippingService.updateTemplate(editing.id, { name: form.name, regions: form.regions, baseFee: form.baseFee, freeAbove: form.freeAbove, extraPerKg: form.extraPerKg } as any);
         toast.success("运费模板已更新");
       } else {
-        await shippingService.createTemplate({ name: form.name, regions: form.regions, baseFee: form.baseFee, freeAbove: form.freeAbove, extraPerKg: form.extraPerKg, enabled: true } as any);
-        toast.success("运费模板已创建");
+        const makeDefault = templates.length === 0;
+        await shippingService.createTemplate({
+          name: form.name,
+          regions: form.regions,
+          baseFee: form.baseFee,
+          freeAbove: form.freeAbove,
+          extraPerKg: form.extraPerKg,
+          isDefault: makeDefault,
+        } as any);
+        toast.success(makeDefault ? "运费模板已创建并设为默认生效" : "运费模板已创建，可在列表中设为默认生效");
       }
       setShowForm(false);
       setEditing(null);
@@ -74,20 +83,20 @@ export default function AdminShipping() {
   const handleDelete = async (id: number) => {
     try {
       await shippingService.deleteTemplate(id);
-      setTemplates(templates.filter((t) => t.id !== id));
+      await loadData();
       toast.success("已删除");
     } catch (e) {
       toast.error(toastErrorMessage(e, "删除失败"));
     }
   };
 
-  const handleToggle = async (id: number) => {
+  const handleSetDefault = async (id: number) => {
     const t = templates.find((x) => x.id === id);
-    if (!t) return;
+    if (!t || t.isDefault) return;
     try {
-      await shippingService.updateTemplate(id, { enabled: !t.enabled } as any);
-      setTemplates(templates.map((x) => x.id === id ? { ...x, enabled: !x.enabled } : x));
-      toast.success(t.enabled ? "已停用" : "已启用");
+      await shippingService.updateTemplate(id, { isDefault: true } as any);
+      await loadData();
+      toast.success(`「${t.name}」已设为默认生效，其他模板已自动停用`);
     } catch (e) {
       toast.error(toastErrorMessage(e, "操作失败"));
     }
@@ -99,6 +108,9 @@ export default function AdminShipping() {
         <div>
           <h1 className="text-xl font-bold text-foreground"><Tx>运费规则设置</Tx></h1>
           <p className="text-sm text-muted-foreground"><Tx>配置配送区域和运费模板</Tx></p>
+          <p className="mt-1 max-w-xl text-xs text-muted-foreground">
+            <Tx>同一时间仅允许一个「默认生效」模板；设为默认后，结账与运费计算将使用该规则，其他模板自动停用。</Tx>
+          </p>
         </div>
         <PermissionGate permission="shipping.manage">
           <button onClick={() => { setEditing(null); setForm({ name: "", regions: "", baseFee: 0, freeAbove: 0, extraPerKg: 0 }); setShowForm(true); }} className="flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-primary-foreground">
@@ -122,14 +134,14 @@ export default function AdminShipping() {
             ))
           : null}
         {!loading && templates.map((t) => (
-          <div key={t.id} className={`rounded-2xl border bg-card p-5 transition-all ${t.enabled ? "border-border" : "border-border opacity-60"}`}>
+          <div key={t.id} className={`rounded-2xl border bg-card p-5 transition-all ${t.isDefault ? "border-gold/40 ring-1 ring-gold/20" : "border-border opacity-75"}`}>
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-2">
-                <Truck size={18} className="text-theme-price" />
+                <Truck size={18} className={t.isDefault ? "text-theme-price" : "text-muted-foreground"} />
                 <h3 className="font-bold text-foreground">{t.name}</h3>
               </div>
-              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${t.enabled ? THEME_BADGE_SUCCESS : THEME_BADGE_MUTED}`}>
-                {t.enabled ? "启用" : "停用"}
+              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${t.isDefault ? THEME_BADGE_SUCCESS : THEME_BADGE_MUTED}`}>
+                {t.isDefault ? "默认生效" : "未生效"}
               </span>
             </div>
             <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -161,20 +173,26 @@ export default function AdminShipping() {
                 >
                   <Trash2 size={12} />
                 </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    confirm({
-                      title: t.enabled ? "确认停用" : "确认启用",
-                      description: `确定${t.enabled ? "停用" : "启用"}运费模板「${t.name}」？`,
-                      confirmText: t.enabled ? "停用" : "启用",
-                      onConfirm: () => handleToggle(t.id),
-                    })
-                  }
-                  className="flex-1 rounded-xl border border-border py-2 text-xs font-medium text-muted-foreground hover:bg-secondary"
-                >
-                  {t.enabled ? "停用" : "启用"}
-                </button>
+                {!t.isDefault ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      confirm({
+                        title: "设为默认生效",
+                        description: `将「${t.name}」设为默认运费模板？当前默认模板将自动停用。`,
+                        confirmText: "设为默认",
+                        onConfirm: () => handleSetDefault(t.id),
+                      })
+                    }
+                    className="flex-1 rounded-xl border border-gold/40 bg-gold/10 py-2 text-xs font-semibold text-theme-price hover:bg-gold/20"
+                  >
+                    设为默认生效
+                  </button>
+                ) : (
+                  <span className="flex flex-1 items-center justify-center rounded-xl border border-border bg-secondary/50 py-2 text-xs text-muted-foreground">
+                    当前默认
+                  </span>
+                )}
               </div>
             </PermissionGate>
           </div>

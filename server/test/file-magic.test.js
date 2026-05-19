@@ -1,4 +1,4 @@
-const { test, describe } = require('node:test');
+﻿const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 const { bufferMatchesDeclaredMime } = require('../src/utils/fileMagic');
 
@@ -22,3 +22,4 @@ describe('fileMagic', () => {
     assert.equal(bufferMatchesDeclaredMime(Buffer.alloc(0), 'image/png'), false);
   });
 });
+

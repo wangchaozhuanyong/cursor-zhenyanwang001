@@ -1,5 +1,5 @@
-const { asyncRoute } = require('../../../middleware/asyncRoute');
-const svc = require('../adminOrder.service');
+﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const svc = require('../service/adminOrder.service');
 
 exports.list = asyncRoute(async (req, res) => {
   const r = await svc.listOrders(req.query);
@@ -45,3 +45,4 @@ exports.batchShip = asyncRoute(async (req, res) => {
   const r = await svc.batchShipOrders(req.body, req.user?.id, req);
   res.success(r.data, r.message);
 });
+

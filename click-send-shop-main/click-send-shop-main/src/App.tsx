@@ -9,6 +9,7 @@ import CookieConsentBanner from "@/components/CookieConsentBanner";
 import TrackingManager from "@/components/TrackingManager";
 
 import AdminLayout from "./layouts/AdminLayout";
+import { LegacyCouponRedirect } from "@/routes/adminLegacyRedirects";
 import FrontLayout from "./layouts/FrontLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -221,12 +222,32 @@ function AdminTitleSync() {
     const seoTitle = (siteInfo.seoTitle || "").trim();
     const routeTitleMap: Array<{ test: (path: string) => boolean; titleKey: string }> = [
       { test: (p) => p === "/admin" || p === "/admin/", titleKey: "routeTitles.admin" },
+      { test: (p) => p === "/admin/account", titleKey: "routeTitles.account" },
+      { test: (p) => p === "/admin/products/new", titleKey: "routeTitles.productNewFull" },
+      { test: (p) => /^\/admin\/products\/[^/]+$/.test(p), titleKey: "routeTitles.productEditFull" },
+      {
+        test: (p) => /^\/admin\/orders\/[^/]+$/.test(p) && !p.startsWith("/admin/orders/unfinished"),
+        titleKey: "routeTitles.orderDetailFull",
+      },
+      { test: (p) => /^\/admin\/users\/[^/]+$/.test(p), titleKey: "routeTitles.userDetailFull" },
+      { test: (p) => /^\/admin\/notifications\/[^/]+$/.test(p), titleKey: "routeTitles.notificationDetailFull" },
+      { test: (p) => p === "/admin/marketing/coupons/new", titleKey: "routeTitles.couponNewFull" },
+      {
+        test: (p) => /^\/admin\/marketing\/coupons\/[^/]+$/.test(p) && p !== "/admin/marketing/coupons/records",
+        titleKey: "routeTitles.couponEditFull",
+      },
       { test: (p) => p.startsWith("/admin/settings/site"), titleKey: "routeTitles.siteSettings" },
+      { test: (p) => p.startsWith("/admin/settings/theme"), titleKey: "routeTitles.theme" },
       { test: (p) => p.startsWith("/admin/home-ops"), titleKey: "routeTitles.homeOps" },
       { test: (p) => p.startsWith("/admin/banners"), titleKey: "routeTitles.banners" },
+      { test: (p) => p.startsWith("/admin/content"), titleKey: "routeTitles.content" },
+      { test: (p) => p.startsWith("/admin/payments"), titleKey: "routeTitles.payments" },
+      { test: (p) => p.startsWith("/admin/returns"), titleKey: "routeTitles.returns" },
+      { test: (p) => p.startsWith("/admin/reviews"), titleKey: "routeTitles.reviews" },
+      { test: (p) => p.startsWith("/admin/accounts") || p.startsWith("/admin/settings/roles"), titleKey: "routeTitles.staff" },
       { test: (p) => p === "/admin/marketing", titleKey: "routeTitles.marketing" },
-      { test: (p) => p.startsWith("/admin/marketing/activities/new"), titleKey: "routeTitles.marketingNew" },
-      { test: (p) => /^\/admin\/marketing\/activities\/[^/]+\/edit/.test(p), titleKey: "routeTitles.marketingEdit" },
+      { test: (p) => p === "/admin/marketing/activities/new", titleKey: "routeTitles.marketingNewFull" },
+      { test: (p) => /^\/admin\/marketing\/activities\/[^/]+\/edit$/.test(p), titleKey: "routeTitles.marketingEditFull" },
       { test: (p) => p.startsWith("/admin/marketing/activities"), titleKey: "routeTitles.marketingActivities" },
       { test: (p) => p.startsWith("/admin/marketing/coupons/records"), titleKey: "routeTitles.couponRecords" },
       { test: (p) => p.startsWith("/admin/marketing/coupons"), titleKey: "routeTitles.coupons" },
@@ -237,9 +258,12 @@ function AdminTitleSync() {
       { test: (p) => p.startsWith("/admin/member-levels"), titleKey: "routeTitles.memberLevels" },
       { test: (p) => p.startsWith("/admin/orders/unfinished"), titleKey: "routeTitles.unfinishedOrders" },
       { test: (p) => p.startsWith("/admin/orders"), titleKey: "routeTitles.orders" },
-      { test: (p) => p.startsWith("/admin/products"), titleKey: "routeTitles.products" },
+      { test: (p) => p.startsWith("/admin/products") || p.startsWith("/admin/categories") || p.startsWith("/admin/inventory") || p.startsWith("/admin/tags"), titleKey: "routeTitles.products" },
       { test: (p) => p.startsWith("/admin/reports"), titleKey: "routeTitles.reports" },
       { test: (p) => p.startsWith("/admin/exports"), titleKey: "routeTitles.exports" },
+      { test: (p) => p.startsWith("/admin/logs"), titleKey: "routeTitles.auditLogs" },
+      { test: (p) => p.startsWith("/admin/recycle-bin"), titleKey: "routeTitles.recycleBin" },
+      { test: (p) => p.startsWith("/admin/notifications"), titleKey: "routeTitles.notifications" },
     ];
     const match = routeTitleMap.find((item) => item.test(location.pathname));
     const pageTitle = t(match?.titleKey ?? "routeTitles.admin");
@@ -420,7 +444,7 @@ function AppRoutes() {
                 <Route path="coupons" element={<Navigate to="/admin/marketing/coupons" replace />} />
                 <Route path="coupons/new" element={<Navigate to="/admin/marketing/coupons/new" replace />} />
                 <Route path="coupons/records" element={<Navigate to="/admin/marketing/coupons/records" replace />} />
-                <Route path="coupons/:id" element={<Navigate to="/admin/marketing/coupons" replace />} />
+                <Route path="coupons/:id" element={<LegacyCouponRedirect />} />
                 <Route path="marketing" element={<AdminMarketingDashboard />} />
                 <Route path="marketing/activities" element={<AdminActivities />} />
                 <Route path="marketing/activities/new" element={<AdminActivityForm />} />

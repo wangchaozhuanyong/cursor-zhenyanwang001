@@ -15,7 +15,7 @@ export default function ProductCardSkeleton({ list = false }: ProductCardSkeleto
     return (
       <div className="theme-product-card overflow-hidden theme-rounded p-3">
         <div className="flex gap-3">
-          <Skeleton className={cn("shrink-0 rounded-xl", list ? "h-28 w-28" : "h-24 w-24")} />
+          <Skeleton className={cn("theme-rounded shrink-0", list ? "h-28 w-28" : "h-24 w-24")} />
           <div className="flex-1 space-y-2">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-3/5" />

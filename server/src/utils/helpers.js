@@ -45,14 +45,14 @@ async function comparePassword(plain, hash) {
  */
 function signToken(userId, refreshVersion = 0) {
   const secret = getJwtSecret();
-  const expiresIn = /** @type {import('jsonwebtoken').SignOptions['expiresIn']} */ (process.env.JWT_EXPIRES_IN || '7d');
+  const expiresIn = /** @type {import('jsonwebtoken').SignOptions['expiresIn']} */ (process.env.JWT_EXPIRES_IN || '30m');
   const accessToken = jwt.sign({ userId }, secret, { expiresIn });
   const refreshToken = jwt.sign(
     { userId, type: 'refresh', rv: refreshVersion },
     secret,
     { expiresIn: '30d' },
   );
-  return { accessToken, refreshToken, expiresIn: 7 * 24 * 3600 };
+  return { accessToken, refreshToken, expiresIn: 30 * 60 };
 }
 
 function verifyToken(token) {

@@ -29,6 +29,21 @@ const SIGNATURES = [
       && buf.slice(8, 12).toString('ascii') === 'WEBP',
   },
   {
+    mime: 'image/gif',
+    match: (buf) =>
+      buf.length >= 6
+      && (buf.slice(0, 6).toString('ascii') === 'GIF87a'
+        || buf.slice(0, 6).toString('ascii') === 'GIF89a'),
+  },
+  {
+    mime: 'image/avif',
+    match: (buf) =>
+      buf.length >= 12
+      && buf.slice(4, 8).toString('ascii') === 'ftyp'
+      && (buf.slice(8, 12).toString('ascii') === 'avif'
+        || buf.slice(8, 12).toString('ascii') === 'avis'),
+  },
+  {
     mime: 'video/mp4',
     match: (buf) => buf.length >= 12 && buf.slice(4, 8).toString('ascii') === 'ftyp',
   },

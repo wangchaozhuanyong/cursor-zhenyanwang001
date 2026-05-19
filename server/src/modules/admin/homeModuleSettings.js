@@ -1,8 +1,7 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 /**
- * 首页内容模块开关与展示参数（存 site_settings.home_module_settings JSON）
- */
-const siteSettingsRepo = require('./adminSiteSettings.repository');
+ * 棣栭〉鍐呭妯″潡寮€鍏充笌灞曠ず鍙傛暟锛堝瓨 site_settings.home_module_settings JSON锛? */
+const siteSettingsRepo = require('./repository/adminSiteSettings.repository');
 
 const SETTING_KEY = 'home_module_settings';
 
@@ -113,10 +112,10 @@ async function saveHomeModuleSettings(body, adminUserId, req) {
   await siteSettingsRepo.upsertSetting(SETTING_KEY, JSON.stringify(next));
 
   try {
-    const { clearCatalogCache } = require('../product/catalog.service');
+    const { clearCatalogCache } = require('../product/service/catalog.service');
     clearCatalogCache();
   } catch {
-    /* catalog 未加载时忽略 */
+    /* catalog 鏈姞杞芥椂蹇界暐 */
   }
 
   const { writeAuditLog } = require('../../utils/auditLog');
@@ -126,7 +125,7 @@ async function saveHomeModuleSettings(body, adminUserId, req) {
     actionType: 'home_ops.module_settings_update',
     objectType: 'site_settings',
     objectId: SETTING_KEY,
-    summary: '更新首页模块开关',
+    summary: 'Update home module settings',
     before: current,
     after: next,
     result: 'success',
@@ -143,3 +142,5 @@ module.exports = {
   getHomeModuleSettings,
   saveHomeModuleSettings,
 };
+
+

@@ -12,6 +12,7 @@ import type { PaymentStatus } from "@/types/order";
 import { useAdminOrdersStore } from "@/stores/useAdminOrdersStore";
 import { Tx } from "@/components/admin/AdminText";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import {
   ORDER_STATUS,
   PAYMENT_STATUS,
@@ -27,6 +28,7 @@ import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 
 export default function AdminOrders() {
   const navigate = useNavigate();
+  const { confirm } = useAdminConfirm();
   const {
     orders,
     loading,
@@ -107,6 +109,53 @@ export default function AdminOrders() {
     }
   };
 
+  const reloadAfterAction = async (message: string) => {
+    await loadOrders();
+    toast.success(message);
+  };
+
+  const confirmStatusChange = (
+    orderId: string,
+    nextStatus: string,
+    title: string,
+    description: string,
+    successMessage: string,
+    danger = false,
+  ) => {
+    confirm({
+      title,
+      description,
+      confirmText: title,
+      danger,
+      onConfirm: async () => {
+        try {
+          await orderService.updateOrderStatus(orderId, nextStatus);
+          await reloadAfterAction(successMessage);
+        } catch (e) {
+          toast.error(toastErrorMessage(e, "订单操作失败"));
+        }
+      },
+    });
+  };
+
+  const handleShipOrder = (orderId: string) => {
+    const trackingNo = window.prompt("请输入运单号（可留空）", "") ?? "";
+    const carrier = window.prompt("请输入承运商（可留空）", "") ?? "";
+    confirm({
+      title: "确认发货",
+      description: "确定将该订单标记为已发货？",
+      confirmText: "发货",
+      onConfirm: async () => {
+        try {
+          await orderService.shipOrder(orderId, trackingNo.trim(), carrier.trim());
+          await reloadAfterAction("订单已发货");
+        } catch (e) {
+          toast.error(toastErrorMessage(e, "发货失败"));
+        }
+      },
+    });
+  };
+
   const renderActions = (o: (typeof orders)[number]) => {
     if (o.status === ORDER_STATUS.PENDING) {
       return (
@@ -116,7 +165,13 @@ export default function AdminOrders() {
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/admin/orders/${o.id}?action=mark-paid`);
+                confirmStatusChange(
+                  o.id,
+                  ORDER_STATUS.PAID,
+                  "确认收款",
+                  `确定将订单「${o.order_no}」标记为已付款？`,
+                  "订单已确认收款",
+                );
               }}
               className={`rounded-md px-2 py-1 text-[11px] ${THEME_OUTLINE_SUCCESS}`}
             >
@@ -128,7 +183,14 @@ export default function AdminOrders() {
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/admin/orders/${o.id}?action=cancel`);
+                confirmStatusChange(
+                  o.id,
+                  ORDER_STATUS.CANCELLED,
+                  "取消订单",
+                  `确定取消订单「${o.order_no}」？取消后会释放库存并回滚相关权益。`,
+                  "订单已取消",
+                  true,
+                );
               }}
               className={`rounded-md px-2 py-1 text-[11px] ${THEME_OUTLINE_DANGER}`}
             >
@@ -146,7 +208,7 @@ export default function AdminOrders() {
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/admin/orders/${o.id}?action=ship`);
+              handleShipOrder(o.id);
             }}
             className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] ${THEME_OUTLINE_PRIMARY}`}
           >
@@ -163,7 +225,13 @@ export default function AdminOrders() {
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/admin/orders/${o.id}?action=complete`);
+              confirmStatusChange(
+                o.id,
+                ORDER_STATUS.COMPLETED,
+                "标记完成",
+                `确定将订单「${o.order_no}」标记为已完成？`,
+                "订单已完成",
+              );
             }}
             className="rounded-md border border-[var(--theme-border)] px-2 py-1 text-[11px]"
           >

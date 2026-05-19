@@ -1,5 +1,5 @@
-const { asyncRoute } = require('../../../middleware/asyncRoute');
-const svc = require('../adminExtended.service');
+﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const svc = require('../service/adminExtended.service');
 
 exports.list = asyncRoute(async (_req, res) => {
   res.success(await svc.listBanners());
@@ -21,3 +21,4 @@ exports.remove = asyncRoute(async (req, res) => {
   const r = await svc.deleteBanner(req.params.id, req.user?.id, req);
   res.success(null, r.message);
 });
+

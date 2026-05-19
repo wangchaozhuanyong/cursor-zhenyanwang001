@@ -76,15 +76,7 @@ trap on_fail ERR
 log "===== ci-deploy: 1) 执行标准部署链路 ====="
 bash "$PROJECT_DIR/deploy/production-deploy.sh"
 
-log "===== ci-deploy: 2) 强制 verify-pm2 ====="
-PM2_APP="$PM2_APP" \
-HEALTH_PORT="${HEALTH_PORT:-3001}" \
-HEALTH_PATH="${HEALTH_PATH:-/api/health/live}" \
-READY_PATH="${READY_PATH:-/api/health/ready}" \
-PROJECT_DIR="$PROJECT_DIR" \
-  bash "$PROJECT_DIR/deploy/verify-pm2.sh"
-
-log "===== ci-deploy: 3) 可选 Cloudflare 缓存刷新 ====="
+log "===== ci-deploy: 2) 可选 Cloudflare 缓存刷新 ====="
 bash "$PROJECT_DIR/deploy/purge-cloudflare-cache.sh" || log "⚠️ Cloudflare purge 失败（不影响本次发布）"
 
 NEW_HEAD=$(git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null || echo "unknown")

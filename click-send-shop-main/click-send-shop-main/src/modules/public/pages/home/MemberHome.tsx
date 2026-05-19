@@ -177,6 +177,7 @@ export default function MemberHome() {
                   className="snap-center w-[min(88vw,360px)] shrink-0 md:w-full"
                 >
                   <PremiumCouponCard
+                    colorScheme="invite"
                     layout="home"
                     title={display.title}
                     amountPrefix={display.amountPrefix}
@@ -311,7 +312,6 @@ function toBatches<T>(list: T[], size: number): T[][] {
   }
   return out;
 }
-
 
 
 

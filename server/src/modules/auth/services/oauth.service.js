@@ -1,6 +1,6 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 /**
- * Google OAuth：授权跳转与回调签发短期 ticket，前端 exchange 换 JWT
+ * Google OAuth锛氭巿鏉冭烦杞笌鍥炶皟绛惧彂鐭湡 ticket锛屽墠绔?exchange 鎹?JWT
  */
 const crypto = require('crypto');
 const {
@@ -12,8 +12,8 @@ const {
   AuthError,
   ConflictError,
 } = require('../../../errors');
-const repo = require('../auth.repository');
-const authService = require('../auth.service');
+const repo = require('../repository/auth.repository');
+const authService = require('../service/auth.service');
 
 /** @param {unknown} v @returns {Record<string, unknown>} */
 function asObject(v) {
@@ -57,13 +57,13 @@ function sanitizeRedirectAfter(raw) {
 }
 
 function assertProvider(p) {
-  if (p !== 'google') throw new ValidationError('不支持的 OAuth 提供商');
+  if (p !== 'google') throw new ValidationError('Invalid input');
 }
 
 function googleClient() {
   const clientId = (process.env.GOOGLE_OAUTH_CLIENT_ID || '').trim();
   const clientSecret = (process.env.GOOGLE_OAUTH_CLIENT_SECRET || '').trim();
-  if (!clientId || !clientSecret) throw new ValidationError('Google 登录未配置');
+  if (!clientId || !clientSecret) throw new ValidationError('Invalid input');
   return { clientId, clientSecret };
 }
 
@@ -91,7 +91,7 @@ function isThirdPartyLoginEnabled() {
 }
 
 async function startOAuth(provider, redirectRaw) {
-  if (!isThirdPartyLoginEnabled()) throw new ValidationError('第三方登录暂未开放');
+  if (!isThirdPartyLoginEnabled()) throw new ValidationError('Invalid input');
   assertProvider(provider);
   const redirectAfter = sanitizeRedirectAfter(redirectRaw);
 
@@ -127,16 +127,16 @@ async function exchangeGoogleCode(code) {
   });
   const json = asObject(await res.json().catch(() => ({})));
   if (!res.ok) {
-    throw new ValidationError(strFrom(json.error_description) || strFrom(json.error) || 'Google 令牌交换失败');
+    throw new ValidationError(strFrom(json.error_description) || strFrom(json.error) || 'Message');
   }
   const accessToken = strFrom(json.access_token);
-  if (!accessToken) throw new ValidationError('Google 授权响应无效');
+  if (!accessToken) throw new ValidationError('Invalid input');
 
   const ui = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   const profile = asObject(await ui.json().catch(() => ({})));
-  if (!ui.ok) throw new ValidationError(strFrom(profile.error_description) || '获取 Google 用户信息失败');
+  if (!ui.ok) throw new ValidationError(strFrom(profile.error_description) || 'Message');
 
   return {
     providerUserId: strFrom(profile.sub),
@@ -148,7 +148,7 @@ async function exchangeGoogleCode(code) {
 
 async function ensureUserForOauth(provider, profile) {
   const { providerUserId, email, displayName, avatarUrl } = profile;
-  if (!providerUserId) throw new ValidationError('第三方账号标识无效');
+  if (!providerUserId) throw new ValidationError('Invalid input');
 
   const existing = await repo.selectOauthAccount(provider, providerUserId);
   if (existing) {
@@ -164,7 +164,7 @@ async function ensureUserForOauth(provider, profile) {
   const invite = generateInviteCode();
   const nickname = (displayName && String(displayName).trim())
     || (email && String(email).split('@')[0])
-    || 'Google 用户';
+    || 'Message';
 
   try {
     await repo.insertUser({
@@ -177,7 +177,7 @@ async function ensureUserForOauth(provider, profile) {
     });
   } catch (err) {
     if (err && (err.code === 'ER_DUP_ENTRY' || err.errno === 1062)) {
-      throw new ConflictError('创建用户失败，请重试');
+      throw new ConflictError('Message');
     }
     throw err;
   }
@@ -241,26 +241,26 @@ function errorRedirect(message) {
 }
 
 async function handleOAuthCallback(provider, query) {
-  if (!isThirdPartyLoginEnabled()) return errorRedirect('第三方登录暂未开放');
+  if (!isThirdPartyLoginEnabled()) return errorRedirect('Third-party login is disabled');
   assertProvider(provider);
 
   if (query.error) {
-    const msg = String(query.error_description || query.error || '授权已取消');
+    const msg = String(query.error_description || query.error || 'Authorization cancelled');
     return errorRedirect(msg.slice(0, 200));
   }
 
   const code = query.code;
   const stateParam = query.state;
-  if (!code || !stateParam) return errorRedirect('授权参数不完整');
+  if (!code || !stateParam) return errorRedirect('Authorization params incomplete');
 
   const plain = String(stateParam).trim();
-  if (!plain) return errorRedirect('授权状态无效');
+  if (!plain) return errorRedirect('Authorization state invalid');
 
   const stateHash = hashToken(plain);
   const row = await repo.selectOauthStateByHash(stateHash);
-  if (!row || row.provider !== provider) return errorRedirect('授权状态无效或已过期');
-  if (row.consumed_at) return errorRedirect('授权状态已使用');
-  if (new Date(row.expires_at).getTime() <= Date.now()) return errorRedirect('授权状态已过期');
+  if (!row || row.provider !== provider) return errorRedirect('Authorization state invalid or expired');
+  if (row.consumed_at) return errorRedirect('Message');
+  if (new Date(row.expires_at).getTime() <= Date.now()) return errorRedirect('Message');
 
   await repo.markOauthStateConsumed(row.id);
 
@@ -270,7 +270,7 @@ async function handleOAuthCallback(provider, query) {
   try {
     profile = await exchangeGoogleCode(String(code));
   } catch (e) {
-    const msg = e instanceof Error ? e.message : '授权失败';
+    const msg = e instanceof Error ? e.message : 'Message';
     return errorRedirect(msg);
   }
 
@@ -278,7 +278,7 @@ async function handleOAuthCallback(provider, query) {
   try {
     userId = await ensureUserForOauth(provider, profile);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : '登录失败';
+    const msg = e instanceof Error ? e.message : 'Message';
     return errorRedirect(msg);
   }
 
@@ -286,18 +286,18 @@ async function handleOAuthCallback(provider, query) {
 }
 
 async function exchangeTicket(body) {
-  if (!isThirdPartyLoginEnabled()) throw new ValidationError('第三方登录暂未开放');
+  if (!isThirdPartyLoginEnabled()) throw new ValidationError('Invalid input');
   const provider = String(body.provider || '').toLowerCase();
   assertProvider(provider);
   const code = String(body.code || '').trim();
-  if (code.length < 16) throw new ValidationError('登录凭证无效');
+  if (code.length < 16) throw new ValidationError('Invalid input');
 
   const codeHash = hashToken(code);
   const row = await repo.selectAuthLoginTicketByHash(codeHash);
-  if (!row || String(row.provider) !== provider) throw new AuthError('登录凭证无效或已过期');
+  if (!row || String(row.provider) !== provider) throw new AuthError('Authentication failed');
 
   const ok = await repo.tryConsumeAuthLoginTicket(row.id);
-  if (!ok) throw new AuthError('登录凭证无效或已过期');
+  if (!ok) throw new AuthError('Authentication failed');
 
   return authService.issueLoginForUserId(row.user_id);
 }
@@ -308,6 +308,7 @@ module.exports = {
   exchangeTicket,
   oauthCallbackBaseUrl,
   sanitizeRedirectAfter,
-  /** 配置缺失等：浏览器跳转 GET /start 时返回 HTML 重定向而非 JSON */
+  /** 閰嶇疆缂哄け绛夛細娴忚鍣ㄨ烦杞?GET /start 鏃惰繑鍥?HTML 閲嶅畾鍚戣€岄潪 JSON */
   redirectLoginWithOAuthError: errorRedirect,
 };
+

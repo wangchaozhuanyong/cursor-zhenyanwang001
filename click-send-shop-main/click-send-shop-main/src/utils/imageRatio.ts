@@ -1,8 +1,20 @@
 export async function readImageSize(file: File): Promise<{ width: number; height: number }> {
+  if (typeof createImageBitmap === "function") {
+    try {
+      const bitmap = await createImageBitmap(file);
+      const size = { width: bitmap.width || 0, height: bitmap.height || 0 };
+      bitmap.close();
+      if (size.width > 0 && size.height > 0) return size;
+    } catch {
+      // Fall back to object URL image decoding below.
+    }
+  }
+
   const objectUrl = URL.createObjectURL(file);
   try {
     const image = await new Promise<HTMLImageElement>((resolve, reject) => {
       const img = new window.Image();
+      img.decoding = "async";
       img.onload = () => resolve(img);
       img.onerror = () => reject(new Error("读取图片尺寸失败"));
       img.src = objectUrl;

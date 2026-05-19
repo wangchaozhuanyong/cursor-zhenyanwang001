@@ -10,6 +10,7 @@ export type AdminMessages = {
     account: string;
     changeSkin: string;
     accountSettings: string;
+    changePassword: string;
     logout: string;
     language: string;
     languageZh: string;

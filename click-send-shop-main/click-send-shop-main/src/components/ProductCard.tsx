@@ -107,7 +107,7 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
         <div className={cn("flex", isListRow ? "gap-3 p-3" : "gap-2.5 p-2.5 sm:gap-3 sm:p-3")}>
           <div
             className={cn(
-              "relative shrink-0 overflow-hidden rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)]",
+              "theme-rounded relative shrink-0 overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-bg)]",
               isListRow ? "h-28 w-28 sm:h-[7.25rem] sm:w-[7.25rem]" : "h-[5.25rem] w-[5.25rem] sm:h-24 sm:w-24",
             )}
           >
@@ -156,7 +156,7 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
       onClick={() => openDetail("product_grid")}
     >
       <div
-        className="relative overflow-hidden bg-[var(--theme-bg)]"
+        className="theme-rounded relative overflow-hidden bg-[var(--theme-bg)]"
         style={{ aspectRatio: isPremium ? "1 / 1" : "var(--theme-image-ratio)" }}
       >
         <ProductCoverImage

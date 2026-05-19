@@ -13,16 +13,23 @@ function formatCellValue(key: string, value: unknown) {
   if (key === "month" && typeof value === "string") return value;
   if (key === "date") return formatAdminDate(String(value));
   if (
-    key.endsWith("_at") ||
-    key.endsWith("_date") ||
-    key === "start_date" ||
-    key === "end_date" ||
-    key === "start_at" ||
-    key === "end_at"
+    key.endsWith("_at")
+    || key.endsWith("_date")
+    || key === "start_date"
+    || key === "end_date"
+    || key === "start_at"
+    || key === "end_at"
   ) {
     return formatAdminDateTimeAuto(value);
   }
   return labelReportCellValue(key, value);
+}
+
+function hasValue(rows: Record<string, unknown>[], key: string) {
+  return rows.some((row) => {
+    const value = row[key];
+    return value !== null && value !== undefined && String(value).trim() !== "";
+  });
 }
 
 type Props = {
@@ -40,7 +47,9 @@ export default function AdminReportGenericPage({ title, fetcher }: Props) {
       setLoading(true);
       try {
         const p: Record<string, string> = {};
-        searchParams.forEach((v, k) => (p[k] = v));
+        searchParams.forEach((v, k) => {
+          p[k] = v;
+        });
         const data = await fetcher(p);
         setPayload(data || {});
       } catch (e) {
@@ -52,18 +61,46 @@ export default function AdminReportGenericPage({ title, fetcher }: Props) {
     void run();
   }, [fetcher, searchParams]);
 
-  const list = Array.isArray(payload.list) ? (payload.list as unknown as Record<string, unknown>[]) : [];
-  const summary = (payload.summary || {}) as unknown as Record<string, unknown>;
+  const list = Array.isArray(payload.list) ? (payload.list as Record<string, unknown>[]) : [];
+  const summary = (payload.summary || {}) as Record<string, unknown>;
   const columns = useMemo(() => {
     if (list.length === 0) return ["col1", "col2", "col3", "col4", "col5"];
     const keys = Object.keys(list[0]);
-    if (!keys.includes("category_path")) return keys;
-    const hidden = new Set(["category_name", "parent_category_id", "parent_category_name"]);
-    const rest = keys.filter((k) => k !== "category_path" && !hidden.has(k));
-    const idIdx = rest.indexOf("category_id");
-    if (idIdx >= 0) rest.splice(idIdx + 1, 0, "category_path");
-    else rest.unshift("category_path");
-    return rest;
+    const hidden = new Set<string>([
+      "parent_category_id",
+      "parent_category_name",
+      "category_name",
+      "category_id",
+      "product_id",
+      "order_id",
+      "user_id",
+      "activity_id",
+      "coupon_id",
+    ]);
+
+    const preferMap: Array<[string, string]> = [
+      ["category_path", "category_id"],
+      ["category_name", "category_id"],
+      ["product_name", "product_id"],
+      ["order_no", "order_id"],
+      ["nickname", "user_id"],
+      ["phone", "user_id"],
+      ["activity_title", "activity_id"],
+      ["coupon_title", "coupon_id"],
+    ];
+    for (const [preferField, idField] of preferMap) {
+      if (hasValue(list, preferField)) hidden.add(idField);
+    }
+
+    const result = keys.filter((k) => !hidden.has(k));
+    if (hasValue(list, "category_path")) {
+      const idx = result.indexOf("category_path");
+      if (idx > 0) {
+        result.splice(idx, 1);
+        result.unshift("category_path");
+      }
+    }
+    return result;
   }, [list]);
 
   const summaryEntries = Object.entries(summary).slice(0, 8);
@@ -118,3 +155,4 @@ export default function AdminReportGenericPage({ title, fetcher }: Props) {
     </div>
   );
 }
+

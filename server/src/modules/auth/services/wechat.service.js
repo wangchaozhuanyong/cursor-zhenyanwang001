@@ -1,7 +1,6 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 /**
- * 微信开放平台网站应用扫码登录（snsapi_login）
- * 手机号为主账号，微信为第三方身份绑定
+ * 寰俊寮€鏀惧钩鍙扮綉绔欏簲鐢ㄦ壂鐮佺櫥褰曪紙snsapi_login锛? * 鎵嬫満鍙蜂负涓昏处鍙凤紝寰俊涓虹涓夋柟韬唤缁戝畾
  */
 const crypto = require('crypto');
 const {
@@ -15,8 +14,8 @@ const {
 } = require('../../../errors');
 const { setCache, getCache, deleteCache } = require('../../../utils/cache');
 const { normalizeIntlPhone, buildPhoneLookupCandidates } = require('../../../utils/phone');
-const repo = require('../auth.repository');
-const authService = require('../auth.service');
+const repo = require('../repository/auth.repository');
+const authService = require('../service/auth.service');
 const otpService = require('./otp.service');
 
 const PROVIDER = 'wechat_open';
@@ -47,7 +46,7 @@ function oauthCallbackBaseUrl() {
 function wechatClient() {
   const appId = (process.env.WECHAT_OPEN_APP_ID || '').trim();
   const appSecret = (process.env.WECHAT_OPEN_APP_SECRET || '').trim();
-  if (!appId || !appSecret) throw new ValidationError('微信登录未配置');
+  if (!appId || !appSecret) throw new ValidationError('Invalid input');
   return { appId, appSecret };
 }
 
@@ -152,12 +151,12 @@ async function exchangeWechatCode(code) {
   const res = await fetch(tokenUrl.toString());
   const json = asObject(await res.json().catch(() => ({})));
   if (json.errcode) {
-    throw new ValidationError(strFrom(json.errmsg) || '微信令牌交换失败');
+    throw new ValidationError(strFrom(json.errmsg) || 'Message');
   }
 
   const accessToken = strFrom(json.access_token);
   const openid = strFrom(json.openid);
-  if (!accessToken || !openid) throw new ValidationError('微信授权响应无效');
+  if (!accessToken || !openid) throw new ValidationError('Invalid input');
 
   const unionidRaw = strFrom(json.unionid).trim();
   const unionid = unionidRaw || null;
@@ -170,7 +169,7 @@ async function exchangeWechatCode(code) {
   const uiRes = await fetch(infoUrl.toString());
   const profile = asObject(await uiRes.json().catch(() => ({})));
   if (profile.errcode) {
-    throw new ValidationError(strFrom(profile.errmsg) || '获取微信用户信息失败');
+    throw new ValidationError(strFrom(profile.errmsg) || 'Message');
   }
 
   const profileUnionid = strFrom(profile.unionid).trim() || unionid;
@@ -216,12 +215,12 @@ async function createPendingToken(profile, userId = null) {
 async function bindWechatToUser(userId, profile) {
   const existingForUser = await repo.selectAuthIdentityByUserAndProvider(userId, PROVIDER);
   if (existingForUser) {
-    throw new ConflictError('当前账号已绑定微信，请先解绑');
+    throw new ConflictError('Message');
   }
 
   const other = await findIdentityByWechat(profile);
   if (other && String(other.user_id) !== String(userId)) {
-    throw new ConflictError('该微信已绑定其他账号，请先解绑后再操作');
+    throw new ConflictError('Wechat account is already bound to another user');
   }
 
   await repo.insertAuthIdentity({
@@ -237,7 +236,7 @@ async function bindWechatToUser(userId, profile) {
 }
 
 async function startWechatLogin(redirectRaw) {
-  if (!isWechatLoginEnabled()) throw new ValidationError('微信登录未配置');
+  if (!isWechatLoginEnabled()) throw new ValidationError('Invalid input');
 
   const plainState = crypto.randomBytes(24).toString('hex');
   await saveOAuthState(plainState, {
@@ -249,8 +248,8 @@ async function startWechatLogin(redirectRaw) {
 }
 
 async function startWechatBind(userId, redirectRaw) {
-  if (!isWechatLoginEnabled()) throw new ValidationError('微信登录未配置');
-  if (!userId) throw new AuthError('请先登录');
+  if (!isWechatLoginEnabled()) throw new ValidationError('Invalid input');
+  if (!userId) throw new AuthError('Authentication failed');
 
   const plainState = crypto.randomBytes(24).toString('hex');
   await saveOAuthState(plainState, {
@@ -264,28 +263,28 @@ async function startWechatBind(userId, redirectRaw) {
 
 async function handleWechatCallback(query) {
   if (query.error || query.error_description) {
-    const msg = String(query.error_description || query.error || '授权已取消');
+    const msg = String(query.error_description || query.error || 'Authorization cancelled');
     return errorRedirect(msg.slice(0, 200));
   }
 
   const code = query.code;
   const stateParam = query.state;
-  if (!code || !stateParam) return errorRedirect('授权参数不完整');
+  if (!code || !stateParam) return errorRedirect('Authorization params incomplete');
 
   const plain = String(stateParam).trim();
   const stored = await loadOAuthState(plain);
-  if (!stored) return errorRedirect('授权状态无效或已过期');
+  if (!stored) return errorRedirect('Authorization state invalid or expired');
 
   await consumeOAuthState(stored.stateHash);
 
   const { purpose, userId, redirectAfter } = stored.payload || {};
-  if (purpose !== 'login' && purpose !== 'bind') return errorRedirect('授权状态无效');
+  if (purpose !== 'login' && purpose !== 'bind') return errorRedirect('Authorization state invalid');
 
   let profile;
   try {
     profile = await exchangeWechatCode(String(code));
   } catch (e) {
-    const msg = e instanceof Error ? e.message : '授权失败';
+    const msg = e instanceof Error ? e.message : 'Message';
     return errorRedirect(msg);
   }
 
@@ -293,7 +292,7 @@ async function handleWechatCallback(query) {
     try {
       await bindWechatToUser(userId, profile);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : '绑定失败';
+      const msg = e instanceof Error ? e.message : 'Message';
       return errorRedirect(msg);
     }
     const base = publicAppOrigin();
@@ -306,7 +305,7 @@ async function handleWechatCallback(query) {
   const identity = await findIdentityByWechat(profile);
   if (identity) {
     const user = await repo.selectUserPhoneAndPassword(identity.user_id);
-    if (!user) return errorRedirect('用户不存在');
+    if (!user) return errorRedirect('User not found');
 
     if (!user.phone || !String(user.phone).trim()) {
       const pendingToken = await createPendingToken(profile, identity.user_id);
@@ -329,17 +328,17 @@ async function handleWechatCallback(query) {
 async function bindPhone(body, reqMeta = {}) {
   const { phone, countryCode, smsCode, pendingWechatToken } = body;
   const normalizedPhone = normalizeIntlPhone(phone, countryCode);
-  if (!normalizedPhone) throw new ValidationError('手机号格式不正确');
+  if (!normalizedPhone) throw new ValidationError('Invalid input');
 
   const token = String(pendingWechatToken || '').trim();
-  if (token.length < 16) throw new ValidationError('绑定凭证无效');
+  if (token.length < 16) throw new ValidationError('Invalid input');
 
   const tokenHash = hashToken(token);
   const pending = await repo.selectPendingWechatByHash(tokenHash);
-  if (!pending) throw new AuthError('绑定凭证无效或已过期');
+  if (!pending) throw new AuthError('Authentication failed');
 
   const consumed = await repo.tryConsumePendingWechat(pending.id);
-  if (!consumed) throw new AuthError('绑定凭证无效或已过期');
+  if (!consumed) throw new AuthError('Authentication failed');
 
   await otpService.verifyOtpForPurpose({
     phone,
@@ -360,12 +359,12 @@ async function bindPhone(body, reqMeta = {}) {
   if (existingIdentity) {
     const boundUserId = existingIdentity.user_id;
     if (pending.user_id && String(pending.user_id) !== String(boundUserId)) {
-      throw new ConflictError('该微信已绑定其他账号，请先解绑后再操作');
+      throw new ConflictError('Wechat account is already bound to another user');
     }
     const lookupPhones = buildPhoneLookupCandidates(phone, countryCode);
     const phoneUser = await repo.findUserByPhones(lookupPhones);
     if (phoneUser && String(phoneUser.id) !== String(boundUserId)) {
-      throw new ConflictError('该手机号已绑定其他账号');
+      throw new ConflictError('Phone is bound to another account');
     }
     if (!phoneUser) {
       await repo.updateUserPhone(boundUserId, normalizedPhone);
@@ -387,7 +386,7 @@ async function bindPhone(body, reqMeta = {}) {
   if (phoneUser) {
     const otherWechat = await repo.selectAuthIdentityByUserAndProvider(phoneUser.id, PROVIDER);
     if (otherWechat) {
-      throw new ConflictError('该手机号账号已绑定其他微信');
+      throw new ConflictError('Phone account is bound to another Wechat account');
     }
     await bindWechatToUser(phoneUser.id, profile);
     return authService.issueLoginForUserId(phoneUser.id, {
@@ -398,14 +397,14 @@ async function bindPhone(body, reqMeta = {}) {
   }
 
   if (targetUser && targetUser.phone) {
-    throw new ConflictError('账号状态异常，请联系客服');
+    throw new ConflictError('Invalid account state');
   }
 
   if (!targetUser) {
     const userId = generateId();
     const invite = generateInviteCode();
     const nickname = (profile.nickname && String(profile.nickname).trim())
-      || `用户${normalizedPhone.replace(/\D/g, '').slice(-4) || '新'}`;
+      || `User${normalizedPhone.replace(/\D/g, '').slice(-4) || 'new'}`;
     try {
       await repo.insertUser({
         id: userId,
@@ -426,7 +425,7 @@ async function bindPhone(body, reqMeta = {}) {
             userAgent: reqMeta.userAgent,
           });
         }
-        throw new ConflictError('该手机号已注册');
+        throw new ConflictError('Phone already registered');
       }
       throw err;
     }
@@ -454,20 +453,20 @@ async function bindPhone(body, reqMeta = {}) {
 
 async function unbindWechatForUser(userId) {
   const identity = await repo.selectAuthIdentityByUserAndProvider(userId, PROVIDER);
-  if (!identity) throw new ValidationError('当前账号未绑定微信');
+  if (!identity) throw new ValidationError('Invalid input');
 
   const user = await repo.selectUserPhoneAndPassword(userId);
-  if (!user) throw new AuthError('用户不存在');
+  if (!user) throw new AuthError('Authentication failed');
 
   const hasPhone = Boolean(user.phone && String(user.phone).trim());
   const hasPassword = Boolean(user.password_hash && String(user.password_hash).trim());
 
   if (!hasPhone && !hasPassword) {
-    throw new ValidationError('解绑前请先绑定手机号或设置密码，避免无法登录');
+    throw new ValidationError('Invalid input');
   }
 
   await repo.deleteAuthIdentityById(identity.id);
-  return { data: null, message: '微信已解绑' };
+  return { data: null, message: 'Wechat unbound' };
 }
 
 async function getWechatIdentityForUser(userId) {
@@ -484,7 +483,7 @@ async function getWechatIdentityForUser(userId) {
   };
 }
 
-/** 用户端资料：不暴露 openid / unionid */
+/** 鐢ㄦ埛绔祫鏂欙細涓嶆毚闇?openid / unionid */
 async function getWechatBindingForProfile(userId) {
   const row = await repo.selectAuthIdentityByUserAndProvider(userId, PROVIDER);
   if (!row) return { bound: false };
@@ -508,3 +507,4 @@ module.exports = {
   getWechatBindingForProfile,
   redirectLoginWithWechatError: errorRedirect,
 };
+

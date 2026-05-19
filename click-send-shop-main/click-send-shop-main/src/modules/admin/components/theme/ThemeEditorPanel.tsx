@@ -106,7 +106,7 @@ export default function ThemeEditorPanel({
         if (field) {
           panelRef.current?.querySelector(`#theme-field-${field}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
         } else {
-          panelRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+          panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         }
       });
     },
@@ -119,13 +119,18 @@ export default function ThemeEditorPanel({
   }, [isDefaultSkin]);
 
   return (
-    <section ref={panelRef} className="min-w-0 flex-1 rounded-2xl border border-border bg-card p-4 xl:h-[calc(100vh-112px)] xl:overflow-y-auto">
-      <div className="mb-4 flex flex-wrap gap-2 border-b border-border pb-3">
+    <section ref={panelRef} className="min-w-0 flex-1 rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <div className="mb-5 rounded-2xl border border-border/70 bg-secondary/25 p-3">
+        <p className="mb-2 text-xs font-semibold text-muted-foreground">快速定位设置区</p>
+        <div className="flex flex-wrap gap-2">
         {EDITOR_TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => {
+              setActiveTab(tab.id);
+              window.requestAnimationFrame(() => panelRef.current?.querySelector(`#theme-section-${tab.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+            }}
             className={`rounded-xl px-3 py-1.5 text-xs font-medium ${
               activeTab === tab.id ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]" : "bg-secondary text-muted-foreground"
             }`}
@@ -133,9 +138,15 @@ export default function ThemeEditorPanel({
             {tab.label}
           </button>
         ))}
+        </div>
       </div>
 
-      {activeTab === "basic" ? (
+      <div className="space-y-5">
+      <section id="theme-section-basic" className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
+        <div className="mb-3">
+          <h2 className="text-base font-semibold text-foreground">基础信息</h2>
+          <p className="text-xs text-muted-foreground">皮肤名称、适用场景和前台可见状态。</p>
+        </div>
         <div className="grid gap-3 md:grid-cols-2">
           <label className="space-y-1 md:col-span-2">
             <span className="text-xs text-muted-foreground">皮肤名称</span>
@@ -176,9 +187,13 @@ export default function ThemeEditorPanel({
           </label>
           <p className="rounded-xl bg-secondary/60 px-3 py-2 text-xs text-muted-foreground md:col-span-2">{statusText}</p>
         </div>
-      ) : null}
+      </section>
 
-      {activeTab === "colors" ? (
+      <section id="theme-section-colors" className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
+        <div className="mb-3">
+          <h2 className="text-base font-semibold text-foreground">颜色系统</h2>
+          <p className="text-xs text-muted-foreground">品牌色、页面色、文字色和状态色会同步影响前台与预览。</p>
+        </div>
         <div className="space-y-4">
           <div id="theme-auto-toolbar" className="flex flex-wrap gap-2">
             <button type="button" onClick={() => onAutoColor("secondary")} className="inline-flex h-8 items-center gap-1 rounded-lg border border-border px-2 text-[11px] hover:bg-secondary"><Sparkles size={12} />自动生成辅色</button>
@@ -209,9 +224,13 @@ export default function ThemeEditorPanel({
             </div>
           ))}
         </div>
-      ) : null}
+      </section>
 
-      {activeTab === "components" ? (
+      <section id="theme-section-components" className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
+        <div className="mb-3">
+          <h2 className="text-base font-semibold text-foreground">组件风格</h2>
+          <p className="text-xs text-muted-foreground">按钮、导航、圆角、阴影、动效与页面密度。</p>
+        </div>
         <div className="grid gap-3 md:grid-cols-2">
           <SelectRow fieldKey="buttonStyle" label="按钮风格" value={themeConfig.buttonStyle} options={enumOptions.buttonStyle} onChange={(v) => onConfigChange("buttonStyle", v)} />
           <SelectRow fieldKey="navStyle" label="底部导航" value={themeConfig.navStyle} options={enumOptions.navStyle} onChange={(v) => onConfigChange("navStyle", v)} />
@@ -224,9 +243,13 @@ export default function ThemeEditorPanel({
           <SelectRow fieldKey="motionLevel" label="动效" value={themeConfig.motionLevel} options={enumOptions.motionLevel} onChange={(v) => onConfigChange("motionLevel", v)} />
           <SelectRow fieldKey="density" label="密度" value={themeConfig.density} options={enumOptions.density} onChange={(v) => onConfigChange("density", v)} />
         </div>
-      ) : null}
+      </section>
 
-      {activeTab === "product" ? (
+      <section id="theme-section-product" className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
+        <div className="mb-3">
+          <h2 className="text-base font-semibold text-foreground">商品展示</h2>
+          <p className="text-xs text-muted-foreground">商品卡片、图片比例、价格与徽标样式。</p>
+        </div>
         <div className="grid gap-3 md:grid-cols-2">
           <SelectRow fieldKey="productCardVariant" label="商品卡变体" value={themeConfig.productCardVariant} options={enumOptions.productCardVariant} onChange={(v) => onConfigChange("productCardVariant", v)} />
           <SelectRow fieldKey="cardStyle" label="卡片风格" value={themeConfig.cardStyle} options={enumOptions.cardStyle} onChange={(v) => onConfigChange("cardStyle", v)} />
@@ -236,9 +259,13 @@ export default function ThemeEditorPanel({
           <SelectRow fieldKey="priceStyle" label="价格样式" value={themeConfig.priceStyle} options={enumOptions.priceStyle} onChange={(v) => onConfigChange("priceStyle", v)} />
           <SelectRow fieldKey="badgeStyle" label="标签风格" value={themeConfig.badgeStyle} options={enumOptions.badgeStyle} onChange={(v) => onConfigChange("badgeStyle", v)} />
         </div>
-      ) : null}
+      </section>
 
-      {activeTab === "home" ? (
+      <section id="theme-section-home" className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
+        <div className="mb-3">
+          <h2 className="text-base font-semibold text-foreground">首页与营销</h2>
+          <p className="text-xs text-muted-foreground">首页布局、头部、Banner、优惠券、会员卡和分类图标。</p>
+        </div>
         <div className="grid gap-3 md:grid-cols-2">
           <SelectRow fieldKey="homeLayout" label="首页布局" value={themeConfig.homeLayout} options={enumOptions.homeLayout} onChange={(v) => onConfigChange("homeLayout", v)} />
           <SelectRow fieldKey="headerStyle" label="头部风格" value={themeConfig.headerStyle} options={enumOptions.headerStyle} onChange={(v) => onConfigChange("headerStyle", v)} />
@@ -247,9 +274,13 @@ export default function ThemeEditorPanel({
           <SelectRow fieldKey="memberCardStyle" label="会员卡" value={themeConfig.memberCardStyle} options={enumOptions.memberCardStyle} onChange={(v) => onConfigChange("memberCardStyle", v)} />
           <SelectRow fieldKey="categoryIconStyle" label="分类图标" value={themeConfig.categoryIconStyle} options={enumOptions.categoryIconStyle} onChange={(v) => onConfigChange("categoryIconStyle", v)} />
         </div>
-      ) : null}
+      </section>
 
-      {activeTab === "advanced" ? (
+      <section id="theme-section-advanced" className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
+        <div className="mb-3">
+          <h2 className="text-base font-semibold text-foreground">高级与体检</h2>
+          <p className="text-xs text-muted-foreground">后台主题模式、字体和可访问性体检建议。</p>
+        </div>
         <div className="space-y-4">
           <div className="grid gap-3 md:grid-cols-2">
             <SelectRow fieldKey="adminThemeMode" label="后台主题模式" value={themeConfig.adminThemeMode} options={enumOptions.adminThemeMode} onChange={(v) => onConfigChange("adminThemeMode", v)} />
@@ -264,7 +295,8 @@ export default function ThemeEditorPanel({
           </p>
           <ThemeHealthCheck config={themeConfig} onGoToFix={goToFix} />
         </div>
-      ) : null}
+      </section>
+      </div>
     </section>
   );
 }

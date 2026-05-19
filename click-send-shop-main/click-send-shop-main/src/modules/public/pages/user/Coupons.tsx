@@ -253,6 +253,7 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
       className="relative overflow-hidden rounded-2xl"
     >
       <PremiumCouponCard
+        colorScheme="invite"
         title={coupon.title}
         amountPrefix={coupon.amountPrefix}
         amount={coupon.amount}

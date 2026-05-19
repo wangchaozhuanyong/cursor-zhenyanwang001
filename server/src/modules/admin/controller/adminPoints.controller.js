@@ -1,3 +1,5 @@
-const pointsController = require('../../user/points.controller');
+﻿const pointsController = require('../../user/controller/points.controller');
 
 exports.listRecords = pointsController.adminListRecords;
+
+

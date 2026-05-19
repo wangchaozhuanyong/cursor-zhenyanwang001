@@ -1,5 +1,5 @@
-const { asyncRoute } = require('../../../middleware/asyncRoute');
-const svc = require('../adminCategory.service');
+﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const svc = require('../service/adminCategory.service');
 
 exports.list = asyncRoute(async (_req, res) => {
   const r = await svc.listCategories();
@@ -25,3 +25,4 @@ exports.remove = asyncRoute(async (req, res) => {
   const r = await svc.deleteCategory(req.params.id, req.user?.id, req);
   res.success(r.data, r.message);
 });
+

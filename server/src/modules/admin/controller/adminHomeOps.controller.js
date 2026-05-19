@@ -1,5 +1,5 @@
-const { asyncRoute } = require('../../../middleware/asyncRoute');
-const svc = require('../adminHomeOps.service');
+﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const svc = require('../service/adminHomeOps.service');
 
 function sendResult(res, result) {
   if (result?.error) return res.fail(result.error.code, result.error.message);
@@ -30,3 +30,4 @@ exports.updateSettings = asyncRoute(async (req, res) => {
   const result = await svc.updateHomeOpsSettings(req.body, req.user?.id, req);
   res.success(result.data, result.message);
 });
+

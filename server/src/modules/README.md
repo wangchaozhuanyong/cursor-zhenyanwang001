@@ -31,6 +31,21 @@
 
 标准分层：`routes -> controller -> service -> repository`
 
+## 固定目录划分（强制）
+
+每个模块目录下必须固定包含以下子目录：
+
+- `routes/`
+- `controller/`
+- `service/`
+- `repository/`
+
+说明：
+
+- 该结构已通过 `npm run check:module-structure` 强制校验。
+- 现有历史文件允许逐步迁移，但新代码必须优先进入上述固定目录。
+- 完成迁移后，模块内应仅保留入口文件（如 `index.js`）与非分层辅助目录（例如 `schemas/`）。
+
 - `routes`
   - 仅路由绑定、中间件绑定、参数校验绑定
   - 禁止业务逻辑

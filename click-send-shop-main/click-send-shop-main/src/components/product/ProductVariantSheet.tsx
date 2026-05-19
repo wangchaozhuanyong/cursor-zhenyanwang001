@@ -41,9 +41,48 @@ export default function ProductVariantSheet({
   onConfirm,
 }: ProductVariantSheetProps) {
   const selected = variants.find((v) => v.id === selectedVariantId) ?? null;
+  const specGroups = product.spec_groups ?? [];
+  const hasMatrix = specGroups.length > 0;
+  const selectedValueIds = new Set(selected?.spec_value_ids ?? []);
   const unitPrice = Number(selected?.price ?? product.price) || 0;
   const lineTotal = unitPrice * Math.max(0, qty);
   const title = intent === "cart" ? "加入购物车" : "立即购买";
+
+  const matchVariantByValues = (valueIds: string[]) => {
+    const wanted = new Set(valueIds.filter(Boolean));
+    return variants.find((variant) => {
+      const ids = variant.spec_value_ids ?? [];
+      return ids.length === specGroups.length && ids.every((id) => wanted.has(id));
+    }) ?? null;
+  };
+
+  const selectSpecValue = (groupId: string, valueId: string) => {
+    const nextByGroup = new Map<string, string>();
+    for (const spec of selected?.spec_values ?? []) nextByGroup.set(spec.group_id, spec.value_id);
+    nextByGroup.set(groupId, valueId);
+    const nextIds = specGroups.map((group) => nextByGroup.get(group.id)).filter((id): id is string => !!id);
+    const matched = matchVariantByValues(nextIds);
+    if (matched) {
+      onSelectVariant(matched.id);
+      return;
+    }
+    const partial = variants.find((variant) => nextIds.every((id) => (variant.spec_value_ids ?? []).includes(id)));
+    if (partial) onSelectVariant(partial.id);
+  };
+
+  const isValueAvailable = (groupId: string, valueId: string) => {
+    const nextByGroup = new Map<string, string>();
+    for (const spec of selected?.spec_values ?? []) {
+      if (spec.group_id !== groupId) nextByGroup.set(spec.group_id, spec.value_id);
+    }
+    nextByGroup.set(groupId, valueId);
+    const picked = [...nextByGroup.values()];
+    return variants.some((variant) => {
+      if (variant.enabled === false || variant.stock <= 0) return false;
+      const ids = variant.spec_value_ids ?? [];
+      return picked.every((id) => ids.includes(id));
+    });
+  };
 
   return (
     <BottomSheet
@@ -55,7 +94,7 @@ export default function ProductVariantSheet({
       footer={
         <div className="space-y-2">
           <div className="flex items-baseline justify-between gap-3 px-0.5">
-            <span className="text-sm text-[var(--theme-text-muted)]">共实付</span>
+            <span className="text-sm text-[var(--theme-text-muted)]">合计</span>
             <span className="text-xl font-bold tabular-nums text-[var(--theme-price)]">
               RM {formatMoney(lineTotal)}
             </span>
@@ -63,7 +102,7 @@ export default function ProductVariantSheet({
           <SquishButton
             type="button"
             variant="gold"
-            disabled={soldOut || maxQty <= 0}
+            disabled={soldOut || maxQty <= 0 || (hasMatrix && !selected)}
             onClick={onConfirm}
             className="min-h-12 w-full rounded-full text-sm font-semibold"
           >
@@ -79,13 +118,49 @@ export default function ProductVariantSheet({
             RM {formatMoney(unitPrice)}
           </p>
         </div>
-        {variants.length > 0 && (
+
+        {hasMatrix ? (
+          <div className="space-y-4">
+            {specGroups.map((group) => (
+              <div key={group.id}>
+                <p className="mb-2 text-xs font-medium text-[var(--theme-text-muted)]">{group.name}</p>
+                <div className="flex flex-wrap gap-2">
+                  {(group.values ?? []).map((value) => {
+                    const active = selectedValueIds.has(value.id);
+                    const disabled = !isValueAvailable(group.id, value.id);
+                    return (
+                      <button
+                        key={value.id}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => selectSpecValue(group.id, value.id)}
+                        className={cn(
+                          "min-h-10 rounded-full border px-4 py-2 text-sm disabled:opacity-35",
+                          active
+                            ? "border-[var(--theme-primary)] bg-[color-mix(in_srgb,var(--theme-primary)_12%,transparent)] font-semibold"
+                            : "border-[var(--theme-border)] bg-[var(--theme-bg)]",
+                        )}
+                      >
+                        {value.value}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            {selected ? (
+              <p className="text-xs text-[var(--theme-text-muted)]">
+                {selected.spec_text || selected.title || selected.sku_code || "默认规格"} · 库存 {selected.stock}
+              </p>
+            ) : null}
+          </div>
+        ) : variants.length > 0 ? (
           <div>
             <p className="mb-2 text-xs font-medium text-[var(--theme-text-muted)]">规格</p>
             <div className="grid grid-cols-2 gap-2">
               {variants.map((variant) => {
                 const active = variant.id === selectedVariantId;
-                const disabled = variant.stock <= 0;
+                const disabled = variant.enabled === false || variant.stock <= 0;
                 return (
                   <button
                     key={variant.id}
@@ -100,7 +175,7 @@ export default function ProductVariantSheet({
                     )}
                   >
                     <span className="block truncate font-semibold">
-                      {variant.title || variant.sku_code || "默认"}
+                      {variant.spec_text || variant.title || variant.sku_code || "默认"}
                     </span>
                     <span className="mt-1 block text-[var(--theme-text-muted)]">库存 {variant.stock}</span>
                   </button>
@@ -108,7 +183,8 @@ export default function ProductVariantSheet({
               })}
             </div>
           </div>
-        )}
+        ) : null}
+
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">数量</span>
           <div className="flex items-center gap-2 rounded-full border border-[var(--theme-border)]">

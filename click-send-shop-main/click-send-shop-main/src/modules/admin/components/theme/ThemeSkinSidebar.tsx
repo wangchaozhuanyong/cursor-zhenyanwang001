@@ -60,7 +60,7 @@ export default function ThemeSkinSidebar({
   });
 
   return (
-    <aside className="w-full shrink-0 rounded-2xl border border-border bg-card p-4 xl:sticky xl:top-[92px] xl:h-[calc(100vh-112px)] xl:w-[280px] xl:overflow-hidden">
+    <aside className="w-full shrink-0 rounded-2xl border border-border bg-card p-4 shadow-sm 2xl:sticky 2xl:top-24 2xl:max-h-[calc(100vh-112px)] 2xl:w-[300px] 2xl:overflow-hidden">
       <div className="flex h-full flex-col gap-3">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold text-foreground">皮肤库</p>

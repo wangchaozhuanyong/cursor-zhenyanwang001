@@ -1,6 +1,6 @@
-const { asyncRoute } = require('../../../middleware/asyncRoute');
-const adminExtended = require('../adminExtended.service');
-const adminSiteSettingsService = require('../adminSiteSettings.service');
+﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const adminExtended = require('../service/adminExtended.service');
+const adminSiteSettingsService = require('../service/adminSiteSettings.service');
 
 exports.listTemplates = asyncRoute(async (_req, res) => {
   res.success(await adminExtended.listShippingTemplates());
@@ -33,3 +33,4 @@ exports.updateSettings = asyncRoute(async (req, res) => {
   const r = await adminSiteSettingsService.updateShippingSettings(req.body, req.user?.id, req);
   res.success(r.data, r.message);
 });
+

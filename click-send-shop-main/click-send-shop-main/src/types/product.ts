@@ -10,9 +10,41 @@ export interface ProductVariant {
   sku_code?: string | null;
   title: string;
   price: number;
+  original_price?: number | null;
+  cost_price?: number | null;
   stock: number;
+  stock_warning_threshold?: number;
+  barcode?: string | null;
+  image_url?: string | null;
+  weight?: number | null;
+  enabled?: boolean;
   sort_order: number;
   is_default: boolean;
+  spec_value_ids?: string[];
+  spec_values?: Array<{
+    group_id: string;
+    group_name: string;
+    value_id: string;
+    value: string;
+  }>;
+  spec_text?: string;
+}
+
+export interface ProductSpecValue {
+  id: string;
+  product_id?: string;
+  group_id: string;
+  value: string;
+  image_url?: string | null;
+  sort_order: number;
+}
+
+export interface ProductSpecGroup {
+  id: string;
+  product_id?: string;
+  name: string;
+  sort_order: number;
+  values: ProductSpecValue[];
 }
 
 /** 后台「标签管理」关联到商品后，接口随商品返回 */
@@ -71,6 +103,8 @@ export interface Product {
   sort_order: number;
   /** 管理端：SKU / 规格（ storefront 仍以 SPU 主价格库存为准） */
   variants?: ProductVariant[];
+  spec_groups?: ProductSpecGroup[];
+  spec_values?: ProductSpecValue[];
   default_variant?: ProductVariant | null;
   description: string;
   is_recommended: boolean;

@@ -1,5 +1,5 @@
-const { asyncRoute } = require('../../../middleware/asyncRoute');
-const svc = require('../adminCoupon.service');
+﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const svc = require('../service/adminCoupon.service');
 
 exports.list = asyncRoute(async (req, res) => {
   const r = await svc.listCoupons(req.query);
@@ -35,3 +35,4 @@ exports.issueByTag = asyncRoute(async (req, res) => {
   const r = await svc.issueCouponByTag(req.params.id, req.body, req.user?.id, req);
   res.success(r.data, r.message);
 });
+

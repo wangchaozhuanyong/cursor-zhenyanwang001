@@ -2,13 +2,23 @@ const { PAYMENT_STATUS } = require('../../constants/status');
 const { normalizeKnownMojibakeText } = require('../../utils/textNormalize');
 
 function formatOrderItem(row) {
+  let specSnapshot = row.spec_snapshot || null;
+  if (typeof specSnapshot === 'string') {
+    try {
+      specSnapshot = JSON.parse(specSnapshot);
+    } catch {
+      specSnapshot = null;
+    }
+  }
+  const productName = row.product_name_snapshot || row.product_name;
+  const productImage = row.variant_image_snapshot || row.product_image_snapshot || row.product_image;
   return {
     id: row.id,
     order_item_id: row.id,
     product: {
       id: row.product_id,
-      name: row.product_name,
-      cover_image: row.product_image,
+      name: productName,
+      cover_image: productImage,
       images: [],
       price: parseFloat(row.price),
       points: row.points,
@@ -25,6 +35,7 @@ function formatOrderItem(row) {
     variant_id: row.variant_id || '',
     sku_code: row.sku_code || '',
     variant_name: row.variant_name || '',
+    spec_snapshot: specSnapshot,
     unit_price: parseFloat(row.price),
     subtotal: row.subtotal != null ? parseFloat(row.subtotal) : parseFloat(row.price) * Number(row.qty || 0),
     qty: row.qty,

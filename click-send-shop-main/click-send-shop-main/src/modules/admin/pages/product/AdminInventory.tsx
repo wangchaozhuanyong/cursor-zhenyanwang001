@@ -1,4 +1,4 @@
-import { formatDateTime } from "@/utils/formatDateTime";
+﻿import { formatDateTime } from "@/utils/formatDateTime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download, History, Loader2, Package, RefreshCcw, Search } from "lucide-react";
 import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
@@ -179,9 +179,9 @@ export default function AdminInventory() {
             rows={skus}
             rowKey={(s) => s.variant_id}
             skeletonRows={8}
-            skeletonCols={8}
+            skeletonCols={10}
             className="overflow-x-auto"
-            tableClassName="w-full min-w-[1100px] text-left text-sm"
+            tableClassName="w-full min-w-[1320px] text-left text-sm"
             theadClassName="border-b border-border text-xs text-muted-foreground"
             thead={(
               <tr>
@@ -307,4 +307,5 @@ export default function AdminInventory() {
     </PermissionGate>
   );
 }
+
 

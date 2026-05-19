@@ -41,6 +41,7 @@ export default function StoreHomePreview({ config }: { config: ThemeConfig }) {
         ))}
       </div>
       <PremiumCouponCard
+        colorScheme="invite"
         layout="home"
         title="中秋9.5折"
         amount="95%"

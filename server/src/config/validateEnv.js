@@ -17,6 +17,16 @@ function validateEnv() {
     placeholderMarkers.some((m) => s.includes(m));
 
   if (isProd) {
+    const dbUser = String(process.env.DB_USER || '').trim().toLowerCase();
+    if (!dbUser) {
+      console.error('[FATAL] 生产环境必须显式设置 DB_USER（禁止使用默认值）');
+      process.exit(1);
+    }
+    if (dbUser === 'root') {
+      console.error('[FATAL] 生产环境禁止使用 DB_USER=root，请改为最小权限应用账号');
+      process.exit(1);
+    }
+
     if (process.env.AUTO_PROMOTE_FIRST_USER_TO_ADMIN === '1') {
       console.error(
         '[FATAL] 生产环境禁止 AUTO_PROMOTE_FIRST_USER_TO_ADMIN=1（首个注册用户会成为管理员）；请改为 0 并使用 npm run admin:create',

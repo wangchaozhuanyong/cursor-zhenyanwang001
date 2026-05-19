@@ -349,10 +349,10 @@ const orderGridClass = "grid-cols-5";
                   onClick={() => gateNavigate(navigate, item.path, item.auth)}
                   className={`flex min-h-[64px] min-w-0 flex-col items-center justify-center gap-1 px-1 py-1 text-center ${MENU_TAP}`}
                 >
-                  <p className={`truncate font-bold leading-tight text-[var(--theme-text-on-surface)] ${item.key === "reward" ? "text-sm" : "text-base"}`}>
+                  <p className="truncate whitespace-nowrap font-bold leading-tight text-base tabular-nums text-[var(--theme-text-on-surface)]">
                     {item.value}
                   </p>
-                  <p className="truncate text-xs font-semibold leading-tight text-[var(--theme-text-muted-on-surface)]">{item.label}</p>
+                  <p className="min-h-[1rem] truncate text-xs font-semibold leading-tight text-[var(--theme-text-muted-on-surface)]">{item.label}</p>
                 </button>
               ))}
             </div>

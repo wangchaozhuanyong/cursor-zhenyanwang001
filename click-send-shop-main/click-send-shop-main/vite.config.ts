@@ -87,6 +87,7 @@ function replaceViteClientPlaceholders(): Plugin {
 }
 
 const thirdPartyLoginEnabled = process.env.VITE_THIRD_PARTY_LOGIN_ENABLED === "true";
+const legacyEnabled = process.env.VITE_LEGACY_BUILD === "1";
 
 // https://vitejs.dev/config/
 export default defineConfig(() => ({
@@ -116,11 +117,15 @@ export default defineConfig(() => ({
   plugins: [
     replaceViteClientPlaceholders(),
     react(),
-    legacy({
-      targets: ["Chrome >= 64", "Safari >= 12", "iOS >= 12", "Android >= 7", "not IE 11"],
-      modernPolyfills: true,
-      renderLegacyChunks: true,
-    }),
+    ...(legacyEnabled
+      ? [
+          legacy({
+            targets: ["Chrome >= 64", "Safari >= 12", "iOS >= 12", "Android >= 7", "not IE 11"],
+            modernPolyfills: true,
+            renderLegacyChunks: true,
+          }),
+        ]
+      : []),
     stripImportMetaResolveGuard(),
   ],
   build: {

@@ -1,19 +1,20 @@
-/**
- * Admin 域：管理端 API
+﻿/**
+ * Admin 鍩燂細绠＄悊绔?API
  */
 const { Router } = require('express');
 const triggerApi = require('./notificationTriggerApi');
-const homeOpsService = require('./adminHomeOps.service');
+const homeOpsService = require('./service/adminHomeOps.service');
 
 const router = Router();
 
-/** 须在挂载子路由之前注册，避免 product → admin 循环依赖时 api 尚未就绪 */
+/** 椤诲湪鎸傝浇瀛愯矾鐢变箣鍓嶆敞鍐岋紝閬垮厤 product 鈫?admin 寰幆渚濊禆鏃?api 灏氭湭灏辩华 */
 /** @type {any} */ (router).api = {
   isNotificationTriggerEnabled: triggerApi.isNotificationTriggerEnabled,
   getResolvedTriggerCopy: triggerApi.getResolvedTriggerCopy,
   getPublicHomeOps: homeOpsService.getPublicHomeOps,
 };
 
-router.use('/admin', require('./admin.routes'));
+router.use('/admin', require('./routes/admin.routes'));
 
 module.exports = router;
+

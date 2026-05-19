@@ -1,4 +1,4 @@
-const { describe, it } = require('node:test');
+﻿const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const {
   RETURN_TRANSITIONS,
@@ -39,27 +39,28 @@ describe('Return State Machine', () => {
     });
 
     it('rejected -> approved should throw', () => {
-      assert.throws(() => assertReturnTransition('rejected', 'approved'), /不能从售后状态/);
+      assert.throws(() => assertReturnTransition('rejected', 'approved'), /涓嶈兘浠庡敭鍚庣姸鎬?);
     });
 
     it('completed -> pending should throw', () => {
-      assert.throws(() => assertReturnTransition('completed', 'pending'), /不能从售后状态/);
+      assert.throws(() => assertReturnTransition('completed', 'pending'), /涓嶈兘浠庡敭鍚庣姸鎬?);
     });
 
     it('cancelled -> approved should throw', () => {
-      assert.throws(() => assertReturnTransition('cancelled', 'approved'), /不能从售后状态/);
+      assert.throws(() => assertReturnTransition('cancelled', 'approved'), /涓嶈兘浠庡敭鍚庣姸鎬?);
     });
 
     it('approved -> pending should throw (no backward transition)', () => {
-      assert.throws(() => assertReturnTransition('approved', 'pending'), /不能从售后状态/);
+      assert.throws(() => assertReturnTransition('approved', 'pending'), /涓嶈兘浠庡敭鍚庣姸鎬?);
     });
 
     it('pending -> completed should throw (skip intermediate state)', () => {
-      assert.throws(() => assertReturnTransition('pending', 'completed'), /不能从售后状态/);
+      assert.throws(() => assertReturnTransition('pending', 'completed'), /涓嶈兘浠庡敭鍚庣姸鎬?);
     });
 
     it('unknown status should throw', () => {
-      assert.throws(() => assertReturnTransition('unknown', 'approved'), /不能从售后状态/);
+      assert.throws(() => assertReturnTransition('unknown', 'approved'), /涓嶈兘浠庡敭鍚庣姸鎬?);
     });
   });
 });
+

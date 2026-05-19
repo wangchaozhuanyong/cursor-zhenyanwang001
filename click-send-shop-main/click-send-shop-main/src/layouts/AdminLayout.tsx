@@ -23,7 +23,6 @@ import {
   FolderTree,
   Tags,
   ClipboardList,
-  PlusCircle,
   Gift,
   RotateCcw,
   Image,
@@ -40,7 +39,12 @@ import {
   CreditCard,
   Crown,
   Languages,
+  Lock,
+  Paintbrush,
 } from "lucide-react";
+import AdminAccountSettingsDialog from "@/components/admin/AdminAccountSettingsDialog";
+import type { AdminAccountTab } from "@/components/admin/AdminAccountPanel";
+import { getHiddenAdminHeaderTitle, resolveAdminHeaderTitle } from "@/config/adminNavTitle";
 import SkinPickerDialog from "@/components/SkinPickerDialog";
 import { useAdminT } from "@/hooks/useAdminT";
 import type { AdminLocale } from "@/i18n/admin";
@@ -74,10 +78,11 @@ const navItemsRaw: NavItem[] = [
   { icon: LayoutDashboard, labelKey: "nav.dashboard", path: "/admin", permission: "dashboard.view" },
   {
     icon: Package,
-    labelKey: "nav.products",
+    labelKey: "nav.productCenter",
     path: "/admin/products",
     permission: "product.view",
     children: [
+      { icon: Package, labelKey: "nav.productManage", path: "/admin/products", permission: "product.view" },
       { icon: FolderTree, labelKey: "nav.categories", path: "/admin/categories", permission: "product.view" },
       { icon: Package, labelKey: "nav.inventory", path: "/admin/inventory", permission: "inventory.manage" },
       { icon: Tags, labelKey: "nav.tags", path: "/admin/tags", permission: "product.view" },
@@ -85,17 +90,17 @@ const navItemsRaw: NavItem[] = [
   },
   {
     icon: ShoppingCart,
-    labelKey: "nav.orders",
+    labelKey: "nav.orderCenter",
     path: "/admin/orders",
     permission: "order.view",
     children: [
-      { icon: ShoppingCart, labelKey: "nav.orderList", path: "/admin/orders", permission: "order.view" },
+      { icon: ShoppingCart, labelKey: "nav.orderManage", path: "/admin/orders", permission: "order.view" },
       { icon: ClipboardList, labelKey: "nav.unfinishedCheckout", path: "/admin/orders/unfinished", permission: "order.view" },
     ],
   },
   {
     icon: CreditCard,
-    labelKey: "nav.payments",
+    labelKey: "nav.paymentCenter",
     path: "/admin/payments/channels",
     permission: "payment.manage",
     children: [
@@ -105,27 +110,34 @@ const navItemsRaw: NavItem[] = [
       { icon: BarChart3, labelKey: "nav.paymentReconciliations", path: "/admin/payments/reconciliations", permission: "payment.manage" },
     ],
   },
-  { icon: RotateCcw, labelKey: "nav.returns", path: "/admin/returns", permission: "return.view" },
-  { icon: MessageSquareMore, labelKey: "nav.reviews", path: "/admin/reviews", permission: { anyOf: ["review.view", "review.manage"] } },
+  {
+    icon: RotateCcw,
+    labelKey: "nav.afterSaleCenter",
+    path: "/admin/returns",
+    permission: "return.view",
+    children: [
+      { icon: RotateCcw, labelKey: "nav.returns", path: "/admin/returns", permission: "return.view" },
+    ],
+  },
   {
     icon: Users,
-    labelKey: "nav.users",
+    labelKey: "nav.customerCenter",
     path: "/admin/users",
-    permission: "user.view",
+    permission: { anyOf: ["user.view", "member_level.manage", "review.view", "review.manage"] },
     children: [
-      { icon: Users, labelKey: "nav.userList", path: "/admin/users", permission: "user.view" },
+      { icon: Users, labelKey: "nav.userManage", path: "/admin/users", permission: "user.view" },
       { icon: Crown, labelKey: "nav.memberLevels", path: "/admin/member-levels", permission: "member_level.manage" },
+      { icon: MessageSquareMore, labelKey: "nav.reviews", path: "/admin/reviews", permission: { anyOf: ["review.view", "review.manage"] } },
     ],
   },
   {
     icon: Megaphone,
-    labelKey: "nav.marketing",
+    labelKey: "nav.marketingCenter",
     path: "/admin/marketing",
     permission: { anyOf: ["activity.manage", "coupon.view", "points.manage", "referral.manage", "invite.view"] },
     children: [
       { icon: LayoutGrid, labelKey: "nav.marketingOverview", path: "/admin/marketing", permission: { anyOf: ["activity.manage", "coupon.view", "points.manage", "referral.manage", "invite.view"] } },
       { icon: Megaphone, labelKey: "nav.activities", path: "/admin/marketing/activities", permission: "activity.manage" },
-      { icon: PlusCircle, labelKey: "nav.newActivity", path: "/admin/marketing/activities/new", permission: "activity.manage" },
       { icon: Ticket, labelKey: "nav.coupons", path: "/admin/marketing/coupons", permission: "coupon.view" },
       { icon: ClipboardList, labelKey: "nav.couponRecords", path: "/admin/marketing/coupons/records", permission: "coupon.view" },
       { icon: Star, labelKey: "nav.points", path: "/admin/marketing/points", permission: "points.manage" },
@@ -133,12 +145,30 @@ const navItemsRaw: NavItem[] = [
       { icon: Link2, labelKey: "nav.invites", path: "/admin/marketing/invites", permission: "invite.view" },
     ],
   },
-  { icon: Bell, labelKey: "nav.notifications", path: "/admin/notifications", permission: { anyOf: ["notification.view", "notification.manage"] } },
-  { icon: Image, labelKey: "nav.banners", path: "/admin/banners", permission: "banner.manage" },
-  { icon: Megaphone, labelKey: "nav.homeOps", path: "/admin/home-ops", permission: "home_ops.manage" },
+  {
+    icon: Paintbrush,
+    labelKey: "nav.designCenter",
+    path: "/admin/home-ops",
+    permission: { anyOf: ["home_ops.manage", "banner.manage", "settings.manage", "content.manage"] },
+    children: [
+      { icon: LayoutGrid, labelKey: "nav.homeDesign", path: "/admin/home-ops", permission: "home_ops.manage" },
+      { icon: Image, labelKey: "nav.banners", path: "/admin/banners", permission: "banner.manage" },
+      { icon: Palette, labelKey: "nav.themeSettings", path: "/admin/settings/theme", permission: "settings.manage" },
+      { icon: FileText, labelKey: "nav.content", path: "/admin/content", permission: "content.manage" },
+    ],
+  },
+  {
+    icon: Bell,
+    labelKey: "nav.notificationCenter",
+    path: "/admin/notifications",
+    permission: { anyOf: ["notification.view", "notification.manage"] },
+    children: [
+      { icon: Bell, labelKey: "nav.notifications", path: "/admin/notifications", permission: { anyOf: ["notification.view", "notification.manage"] } },
+    ],
+  },
   {
     icon: BarChart3,
-    labelKey: "nav.reports",
+    labelKey: "nav.dataCenter",
     path: "/admin/reports/overview",
     permission: "report.view",
     children: [
@@ -157,18 +187,23 @@ const navItemsRaw: NavItem[] = [
     ],
   },
   {
+    icon: UserCog,
+    labelKey: "nav.staffCenter",
+    path: "/admin/accounts",
+    permission: "role.manage",
+    children: [
+      { icon: UserCog, labelKey: "nav.staffAccounts", path: "/admin/accounts", permission: "role.manage" },
+      { icon: Shield, labelKey: "nav.roles", path: "/admin/settings/roles", permission: "role.manage" },
+    ],
+  },
+  {
     icon: Settings,
     labelKey: "nav.settings",
     path: "/admin/settings/site",
     children: [
       { icon: Settings, labelKey: "nav.siteSettings", path: "/admin/settings/site", permission: "settings.manage" },
-      { icon: Palette, labelKey: "nav.themeSettings", path: "/admin/settings/theme", permission: "settings.manage" },
       { icon: Truck, labelKey: "nav.shipping", path: "/admin/settings/shipping", permission: "shipping.manage" },
-      { icon: UserCog, labelKey: "nav.accountSettings", path: "/admin/account", permission: "dashboard.view" },
-      { icon: FileText, labelKey: "nav.content", path: "/admin/content", permission: "content.manage" },
       { icon: ScrollText, labelKey: "nav.auditLogs", path: "/admin/logs", permission: "audit.view" },
-      { icon: Shield, labelKey: "nav.roles", path: "/admin/settings/roles", permission: "role.manage" },
-      { icon: UserCog, labelKey: "nav.adminAccounts", path: "/admin/accounts", permission: "role.manage" },
       { icon: RotateCcw, labelKey: "nav.recycleBin", path: "/admin/recycle-bin", permission: "recycle_bin.manage" },
     ],
   },
@@ -215,7 +250,12 @@ function filterNav(
 /** 底部主导航四入口 +「更多」侧栏，与移动端拇指热区一致 */
 function mobileBottomTab(pathname: string): "dash" | "products" | "orders" | "notifications" | "more" {
   if (pathname === "/admin" || pathname === "/admin/") return "dash";
-  if (pathname.startsWith("/admin/products") || pathname.startsWith("/admin/categories") || pathname.startsWith("/admin/tags")) {
+  if (
+    pathname.startsWith("/admin/products") ||
+    pathname.startsWith("/admin/categories") ||
+    pathname.startsWith("/admin/tags") ||
+    pathname.startsWith("/admin/inventory")
+  ) {
     return "products";
   }
   if (pathname.startsWith("/admin/orders")) return "orders";
@@ -361,6 +401,8 @@ function AdminLayoutContent() {
   const { t, locale, setLocale } = useAdminT();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
+  const [accountDialogOpen, setAccountDialogOpen] = useState(false);
+  const [accountDialogTab, setAccountDialogTab] = useState<AdminAccountTab>("profile");
   const [topSearch, setTopSearch] = useState("");
   const avatarRef = useRef<HTMLDivElement>(null);
 
@@ -430,9 +472,17 @@ function AdminLayoutContent() {
     return <Navigate to="/admin/login" replace />;
   }
 
-  const currentNav = navItems.find(
-    (n) => location.pathname === n.path || (n.path !== "/admin" && location.pathname.startsWith(n.path)),
-  );
+  const headerTitle = useMemo(() => {
+    const hidden = getHiddenAdminHeaderTitle(location.pathname, t);
+    if (hidden) return hidden;
+    return resolveAdminHeaderTitle(navItems, location.pathname, t("layout.title"));
+  }, [navItems, location.pathname, t]);
+
+  const openAccountDialog = useCallback((tab: AdminAccountTab) => {
+    setAccountDialogTab(tab);
+    setAccountDialogOpen(true);
+    setAvatarMenuOpen(false);
+  }, []);
 
   const tab = mobileBottomTab(location.pathname);
 
@@ -498,7 +548,7 @@ function AdminLayoutContent() {
               <Menu size={22} />
             </button>
             <h2 className="min-w-0 truncate text-sm font-semibold text-foreground sm:text-base">
-              {currentNav?.label ?? t("layout.title")}
+              {headerTitle}
             </h2>
             <div className="flex-1" />
             <div className="hidden items-center gap-2 rounded-xl bg-secondary px-3 py-2 md:flex">
@@ -576,11 +626,19 @@ function AdminLayoutContent() {
                   <div className="mx-3 my-1 h-px bg-border" />
                   <button
                     type="button"
-                    onClick={() => { navigate("/admin/account"); setAvatarMenuOpen(false); }}
+                    onClick={() => openAccountDialog("profile")}
                     className="flex min-h-[44px] w-full items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-secondary"
                   >
                     <User size={16} />
                     {t("layout.accountSettings")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openAccountDialog("password")}
+                    className="flex min-h-[44px] w-full items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-secondary"
+                  >
+                    <Lock size={16} />
+                    {t("layout.changePassword")}
                   </button>
                   <div className="mx-3 my-1 h-px bg-border" />
                   <button
@@ -658,6 +716,11 @@ function AdminLayoutContent() {
           </div>
         </nav>
       </div>
+      <AdminAccountSettingsDialog
+        open={accountDialogOpen}
+        onOpenChange={setAccountDialogOpen}
+        initialTab={accountDialogTab}
+      />
     </div>
     </AdminConfirmProvider>
   );

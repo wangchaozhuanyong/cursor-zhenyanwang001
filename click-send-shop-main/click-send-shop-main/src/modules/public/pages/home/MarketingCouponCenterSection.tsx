@@ -57,6 +57,7 @@ export default function MarketingCouponCenterSection({ delay = 0 }: { delay?: nu
           return (
             <div key={c.id} className="w-[min(88vw,320px)] shrink-0 snap-center">
               <PremiumCouponCard
+                colorScheme="invite"
                 layout="home"
                 title={display.title}
                 amountPrefix={display.amountPrefix}

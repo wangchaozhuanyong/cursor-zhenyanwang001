@@ -52,6 +52,7 @@ export default function ComponentGalleryPreview({ config: _config }: { config: T
       </section>
       <StorePrice price={79} originalPrice={99} />
       <PremiumCouponCard
+        colorScheme="invite"
         layout="home"
         title="中秋9.5折"
         amount="95%"

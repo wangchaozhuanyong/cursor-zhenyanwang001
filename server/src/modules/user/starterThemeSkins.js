@@ -1,4 +1,4 @@
-﻿const STARTER_THEME_SKINS = require('../../../../click-send-shop-main/click-send-shop-main/src/constants/starterThemeSkins.data.json');
+const STARTER_THEME_SKINS = require('../../../../click-send-shop-main/click-send-shop-main/src/constants/starterThemeSkins.data.json');
 
 const byId = new Map(STARTER_THEME_SKINS.map((s) => [s.id, s]));
 
@@ -39,3 +39,4 @@ module.exports = {
   ORGANIC_SANDSTONE_SKIN,
   STARTER_THEME_SKINS,
 };
+

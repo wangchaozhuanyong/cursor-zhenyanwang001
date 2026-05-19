@@ -139,13 +139,11 @@ export default function Checkout() {
             />
 
             <CheckoutShippingSection
-              rawTotal={checkout.rawTotal}
-              shippingId={checkout.shippingId}
+              shippingName={checkout.selectedShippingName}
               shippingRulesLoading={checkout.shippingRulesLoading}
               shippingQuoteLoading={checkout.shippingQuoteLoading}
               shippingRulesError={checkout.shippingRulesError}
               shippingQuoteError={checkout.shippingQuoteError}
-              onSelectShipping={checkout.setShippingId}
             />
 
             <CheckoutItemsList items={checkout.items} />

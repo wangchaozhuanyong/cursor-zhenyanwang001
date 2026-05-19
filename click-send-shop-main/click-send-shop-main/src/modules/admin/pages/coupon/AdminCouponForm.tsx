@@ -170,11 +170,11 @@ export default function AdminCouponForm() {
     const normalizedUsableProductIds = [...new Set(form.usable_product_ids)];
 
     if (form.usable_scope_type === "category" && normalizedUsableCategoryIds.length === 0) {
-      toast.error("使用范围为指定分类时，请填写分类 ID");
+      toast.error("使用范围为指定分类时，请至少选择一个分类");
       return;
     }
     if (form.usable_scope_type === "product" && normalizedUsableProductIds.length === 0) {
-      toast.error("使用范围为指定商品时，请填写商品 ID");
+      toast.error("使用范围为指定商品时，请至少选择一个商品");
       return;
     }
 
@@ -221,7 +221,7 @@ export default function AdminCouponForm() {
   const filteredProducts = products.filter((p) => {
     const keyword = productKeyword.trim().toLowerCase();
     if (!keyword) return true;
-    return p.name.toLowerCase().includes(keyword) || String(p.id).toLowerCase().includes(keyword);
+    return p.name.toLowerCase().includes(keyword);
   });
 
   return (
@@ -362,7 +362,7 @@ export default function AdminCouponForm() {
                       setProductPage(1);
                     }}
                     className="w-full rounded-lg bg-card px-3 py-2 text-sm text-foreground outline-none"
-                    placeholder="搜索商品名或商品 ID"
+                    placeholder="搜索商品名"
                   />
                   <span className="whitespace-nowrap text-xs text-muted-foreground">已选 {form.usable_product_ids.length}</span>
                 </div>
@@ -407,7 +407,7 @@ export default function AdminCouponForm() {
                         />
                         <span className="min-w-0">
                           <span className="block truncate">{p.name}</span>
-                          <span className="block font-mono text-xs text-muted-foreground">{p.id}</span>
+                          <span className="block text-xs text-muted-foreground">库存 {p.stock} · 价格 RM {p.price}</span>
                         </span>
                       </label>
                     );

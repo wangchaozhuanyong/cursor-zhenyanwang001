@@ -19,7 +19,12 @@ export interface InventorySku {
   lifecycle_status: number;
   variant_id: string;
   variant_title: string;
+  spec_text?: string;
   sku_code: string;
+  barcode?: string;
+  price?: number;
+  cost_price?: number | null;
+  enabled?: boolean;
   stock: number;
   reserved_stock: number;
   available_stock: number;

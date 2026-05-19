@@ -1,7 +1,5 @@
-/**
- * 本地主流程联调：用户注册→商品→购物车→下单；DB 提升为 admin 后走后台订单列表与改状态。
- * 需：MySQL 已初始化 seed、.env 可连库。不依赖 HTTPS / Stripe Webhook。
- */
+﻿/**
+ * 鏈湴涓绘祦绋嬭仈璋冿細鐢ㄦ埛娉ㄥ唽鈫掑晢鍝佲啋璐墿杞︹啋涓嬪崟锛汥B 鎻愬崌涓?admin 鍚庤蛋鍚庡彴璁㈠崟鍒楄〃涓庢敼鐘舵€併€? * 闇€锛歁ySQL 宸插垵濮嬪寲 seed銆?env 鍙繛搴撱€備笉渚濊禆 HTTPS / Stripe Webhook銆? */
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 require('./_dbCleanup.test');
 const { test, describe, before, after } = require('node:test');
@@ -11,7 +9,7 @@ const { randomUUID } = require('crypto');
 const app = require('../src/app');
 const db = require('../src/config/db');
 
-/** 避免与其它测试或同毫秒重复注册导致 Duplicate entry phone */
+/** 閬垮厤涓庡叾瀹冩祴璇曟垨鍚屾绉掗噸澶嶆敞鍐屽鑷?Duplicate entry phone */
 const phone = `1${`${Date.now()}${process.pid}${Math.random().toString(36).slice(2, 9)}`.replace(/\D/g, '').slice(0, 10)}`;
 const countryCode = '+60';
 const storedPhone = `${countryCode}${phone.replace(/^0+/, '')}`;
@@ -88,7 +86,7 @@ describe('local flow smoke', () => {
         .expect(200);
       assert.equal(shipping.body.code, 0);
     }
-    assert.ok(shipping.body.data.length > 0, '运费模板列表不应为空');
+    assert.ok(shipping.body.data.length > 0, '杩愯垂妯℃澘鍒楄〃涓嶅簲涓虹┖');
     shippingTemplateId = shipping.body.data.some((t) => t.id === shippingTemplateId)
       ? shippingTemplateId
       : shipping.body.data[0].id;
@@ -110,9 +108,9 @@ describe('local flow smoke', () => {
 
     const orderBody = {
       items: [{ product_id: productId, qty: 1 }],
-      contact_name: '联调',
+      contact_name: '鑱旇皟',
       contact_phone: phone,
-      address: '本地联调地址',
+      address: '鏈湴鑱旇皟鍦板潃',
       payment_method: 'mock',
       note: 'smoke test',
     };
@@ -143,7 +141,7 @@ describe('local flow smoke', () => {
       .expect(200);
     assert.equal(list.body.code, 0);
     const found = list.body.data.list.some((o) => o.id === orderId);
-    assert.ok(found, '后台列表应包含刚创建订单');
+    assert.ok(found, '鍚庡彴鍒楄〃搴斿寘鍚垰鍒涘缓璁㈠崟');
 
     const upd = await request(app)
       .put(`/api/admin/orders/${orderId}/status`)
@@ -187,7 +185,7 @@ describe('local flow smoke', () => {
     assert.ok(Array.isArray(refresh.body.data.logistics_timeline));
     assert.ok(
       refresh.body.data.logistics_timeline.length > 0,
-      '刷新后应有物流轨迹节点',
+      '鍒锋柊鍚庡簲鏈夌墿娴佽建杩硅妭鐐?,
     );
     assert.ok(refresh.body.data.logistics_provider?.tracking_url);
 
@@ -199,7 +197,7 @@ describe('local flow smoke', () => {
     assert.ok(
       Array.isArray(userOrder.body.data.logistics_timeline)
         && userOrder.body.data.logistics_timeline.length > 0,
-      '用户订单详情应带上物流时间线',
+      '鐢ㄦ埛璁㈠崟璇︽儏搴斿甫涓婄墿娴佹椂闂寸嚎',
     );
   });
 
@@ -271,3 +269,4 @@ describe('local flow smoke', () => {
     }
   });
 });
+

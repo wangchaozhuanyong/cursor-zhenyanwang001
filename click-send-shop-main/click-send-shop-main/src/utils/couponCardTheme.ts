@@ -59,8 +59,9 @@ export type CouponCardPresentation = {
 export function getCouponCardPresentation(
   couponStyle: CouponStyle,
   layout: CouponCardLayout,
+  forceInvitePalette = false,
 ): CouponCardPresentation {
-  const useThemedMarketingShell = couponStyle === "premium" || couponStyle === "deal";
+  const useThemedMarketingShell = forceInvitePalette || couponStyle === "premium" || couponStyle === "deal";
 
   const shellByStyle: Record<CouponStyle, string> = {
     ticket: "bg-[var(--theme-surface)] border border-[var(--theme-border)]",

@@ -1,0 +1,386 @@
+﻿/**
+ * Auth Service锛氭敞鍐屻€佺櫥褰曘€佸埛鏂颁护鐗屻€佺櫥鍑恒€佽祫鏂欍€佹敼瀵? *
+ * 鍒嗗眰绾﹀畾锛? * - controller 浠呬紶鍏ャ€屽凡閫氳繃 schemas 鏍￠獙鐨?req.body / req.user銆? * - service 涓嶇洿鎺ユ嫾 SQL锛屾墍鏈?DB 璁块棶閫氳繃 `../repository/auth.repository`
+ * - service 鎶?AppError 瀛愮被锛圔usinessError/NotFoundError/...锛夛紝鐢?errorHandler 缁熶竴鏄犲皠
+ */
+const {
+  generateId,
+  generateInviteCode,
+  hashPassword,
+  comparePassword,
+  signToken,
+  verifyToken,
+} = require('../../../utils/helpers');
+const {
+  BusinessError,
+  AuthError,
+  NotFoundError,
+  ConflictError,
+  ValidationError,
+} = require('../../../errors');
+const crypto = require('crypto');
+const repo = require('../repository/auth.repository');
+const wechatService = require('../services/wechat.service');
+const { formatUserResponse } = require('../../../utils/formatUserResponse');
+const { normalizeIntlPhone, buildPhoneLookupCandidates } = require('../../../utils/phone');
+
+const PASSWORD_RESET_TOKEN_TTL_MINUTES = 30;
+
+function hashResetToken(token) {
+  return crypto.createHash('sha256').update(String(token)).digest('hex');
+}
+
+async function register(body) {
+  const { phone, countryCode, password, nickname, inviteCode } = body;
+  const normalizedPhone = normalizeIntlPhone(phone, countryCode);
+  if (!normalizedPhone) throw new ValidationError('Invalid input');
+
+  const existing = await repo.findUserIdByPhones(buildPhoneLookupCandidates(phone, countryCode));
+  if (existing) throw new ConflictError('Phone already registered');
+  const parentInviteCode = String(inviteCode || '').trim().toUpperCase();
+  if (parentInviteCode) {
+    const inviter = await repo.selectUserIdByInviteCode(parentInviteCode);
+    if (!inviter) throw new ValidationError('Invalid input');
+  }
+
+  const id = generateId();
+  const hash = await hashPassword(password);
+  const code = generateInviteCode();
+
+  try {
+    await repo.insertUser({
+      id,
+      phone: normalizedPhone,
+      passwordHash: hash,
+      nickname: nickname || 'Message',
+      inviteCode: code,
+      parentInviteCode,
+    });
+  } catch (err) {
+    if (err && (err.code === 'ER_DUP_ENTRY' || err.errno === 1062)) {
+      throw new ConflictError('Phone already registered');
+    }
+    throw err;
+  }
+
+  const autoPromoteFirstUser = process.env.AUTO_PROMOTE_FIRST_USER_TO_ADMIN === '1';
+  if (autoPromoteFirstUser) {
+    /** 浠呮樉寮忓紑鍚椂鍏佽棣栦釜娉ㄥ唽鐢ㄦ埛鎴愪负绠＄悊鍛橈紝閬垮厤鍏綉鏂板疄渚嬭鎶㈡敞鎺ョ銆?*/
+    const userCount = await repo.countUsers();
+    if (userCount === 1) {
+      await repo.setUserRole(id, 'admin');
+    }
+  }
+
+  try {
+    const newUserGift = require('../../marketing/service/newUserGift.service');
+    await newUserGift.issueNewUserGiftPack(id);
+  } catch (e) {
+    console.warn(`[auth.register] new user gift issue skipped: ${e?.message || e}`);
+  }
+
+  const token = signToken(id, 0);
+  return { data: { token, userId: id }, message: 'OK' };
+}
+
+async function login(body) {
+  const phone = body.phone || body.username;
+  const countryCode = body.countryCode;
+  const { password } = body;
+
+  const lookupPhones = buildPhoneLookupCandidates(phone, countryCode);
+  const matchedUsers = await repo.findUsersByPhones(lookupPhones);
+  if (!matchedUsers.length) throw new AuthError('Authentication failed');
+
+  function coerceHash(hash) {
+    let h = hash;
+    if (Buffer.isBuffer(h)) h = h.toString('utf8');
+    else if (h != null && typeof h !== 'string') h = String(h);
+    return typeof h === 'string' && h.trim() ? h : '';
+  }
+
+  let user = null;
+  try {
+    for (let i = 0; i < matchedUsers.length; i += 1) {
+      const cand = matchedUsers[i];
+      const stored = coerceHash(cand.password_hash);
+      if (!stored) continue;
+      if (await comparePassword(password, stored)) {
+        user = cand;
+        break;
+      }
+    }
+  } catch (err) {
+    console.error('[auth.login] bcrypt compare error', err);
+    throw new AuthError('Authentication failed');
+  }
+  if (!user) throw new AuthError('Authentication failed');
+
+  return issueLoginForUserId(user.id, { loginMethod: 'phone_password' });
+}
+
+function buildLoginResult(userRow) {
+  const uid = String(userRow.id ?? '');
+  if (!uid) throw new AuthError('Authentication failed');
+
+  const rv = Number.isFinite(Number(userRow.refresh_token_version))
+    ? Number(userRow.refresh_token_version)
+    : 0;
+  const token = signToken(uid, rv);
+  if (userRow.account_status === 'disabled' || userRow.account_status === 'blacklisted') {
+    throw new AuthError('Authentication failed');
+  }
+  return {
+    data: {
+      token,
+      userId: uid,
+      role: String(userRow.role || 'user'),
+    },
+    message: 'Message',
+  };
+}
+
+async function issueLoginForUserId(userId, options = {}) {
+  const row = await repo.selectRefreshVersion(userId);
+  if (!row) throw new AuthError('Authentication failed');
+  await repo.updateLastLogin(userId);
+
+  const loginMethod = options.loginMethod;
+  if (loginMethod) {
+    const crypto = require('crypto');
+    let uaHash = null;
+    if (options.userAgent && typeof options.userAgent === 'string') {
+      uaHash = crypto.createHash('sha256').update(options.userAgent, 'utf8').digest('hex');
+    }
+    await repo.insertLoginAudit({
+      id: generateId(),
+      userId,
+      loginMethod,
+      ip: options.ip || null,
+      uaHash,
+    });
+  }
+
+  return buildLoginResult(row);
+}
+
+async function getProfile(userId) {
+  const user = await repo.selectProfileFields(userId);
+  if (!user) throw new NotFoundError('Resource not found');
+  const wechatLogin = await wechatService.getWechatBindingForProfile(userId);
+  return {
+    data: formatUserResponse({
+      ...user,
+      wechat_login: wechatLogin,
+      wechatLoginEnabled: wechatService.isWechatLoginEnabled(),
+    }, 'user'),
+  };
+}
+
+async function updateProfile(userId, body) {
+  const { nickname, avatar, phone, countryCode, wechat, whatsapp } = body;
+  const fragments = [];
+  const values = [];
+
+  if (nickname !== undefined) {
+    fragments.push('nickname = ?');
+    values.push(nickname);
+  }
+  if (avatar !== undefined) {
+    fragments.push('avatar = ?');
+    values.push(avatar);
+  }
+  if (phone !== undefined) {
+    const normalizedPhone = normalizeIntlPhone(phone, countryCode);
+    if (!normalizedPhone) throw new ValidationError('Invalid input');
+    const dup = await repo.findPhoneDuplicateByPhones(
+      userId,
+      buildPhoneLookupCandidates(phone, countryCode),
+    );
+    if (dup) throw new ConflictError('Phone already registered');
+    fragments.push('phone = ?');
+    values.push(normalizedPhone);
+  }
+  if (wechat !== undefined) {
+    fragments.push('wechat = ?');
+    values.push(wechat);
+  }
+  if (whatsapp !== undefined) {
+    fragments.push('whatsapp = ?');
+    values.push(whatsapp);
+  }
+
+  if (fragments.length === 0) throw new ValidationError('Invalid input');
+
+  await repo.updateUserProfile(userId, fragments, values);
+
+  const user = await repo.selectProfileFields(userId);
+  return { data: formatUserResponse(user, 'user'), message: 'Profile updated' };
+}
+
+async function changePassword(userId, body) {
+  const { oldPassword, newPassword } = body;
+
+  const row = await repo.selectPasswordHash(userId);
+  if (!row) throw new NotFoundError('Resource not found');
+
+  let stored = row.password_hash;
+  if (Buffer.isBuffer(stored)) stored = stored.toString('utf8');
+  else if (stored != null && typeof stored !== 'string') stored = String(stored);
+  if (typeof stored !== 'string' || !stored.trim()) {
+    throw new ValidationError('Invalid input');
+  }
+
+  const match = await comparePassword(oldPassword, stored);
+  if (!match) throw new ValidationError('Invalid input');
+
+  const hash = await hashPassword(newPassword);
+  await repo.updatePasswordHash(userId, hash);
+  return { data: null, message: 'Password updated' };
+}
+
+async function requestPasswordReset(body) {
+  const { phone, countryCode } = body;
+  const lookupPhones = buildPhoneLookupCandidates(phone, countryCode);
+  const user = await repo.findUserByPhones(lookupPhones);
+  const generic = {
+    data: null,
+    message: 'Message',
+  };
+
+  if (!user) return generic;
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const tokenHash = hashResetToken(token);
+  const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MINUTES * 60 * 1000);
+
+  await repo.deleteUnusedPasswordResetTokens(user.id);
+  await repo.insertPasswordResetToken({
+    id: generateId(),
+    userId: user.id,
+    tokenHash,
+    expiresAt,
+  });
+
+  const exposeToken =
+    process.env.NODE_ENV !== 'production'
+    && String(process.env.EXPOSE_PASSWORD_RESET_TOKEN || '').toLowerCase() === 'true';
+
+  return {
+    data: exposeToken ? { resetToken: token, expiresInMinutes: PASSWORD_RESET_TOKEN_TTL_MINUTES } : null,
+    message: exposeToken
+      ? 'Message'
+      : generic.message,
+  };
+}
+
+async function resetPassword(body) {
+  const { token, newPassword } = body;
+  const tokenHash = hashResetToken(token);
+  const row = await repo.selectPasswordResetToken(tokenHash);
+  if (!row) throw new ValidationError('Invalid input');
+  if (row.used_at) throw new ValidationError('Invalid input');
+  if (new Date(row.expires_at).getTime() <= Date.now()) throw new ValidationError('Invalid input');
+
+  const hash = await hashPassword(newPassword);
+  await repo.updatePasswordHash(row.user_id, hash);
+  await repo.markPasswordResetTokenUsed(row.id);
+  await repo.incrementRefreshTokenVersion(row.user_id);
+  return { data: null, message: 'OK' };
+}
+
+async function refresh(refreshToken) {
+  if (!refreshToken) throw new ValidationError('Invalid input');
+
+  let payload;
+  try {
+    payload = verifyToken(refreshToken);
+  } catch {
+    throw new AuthError('Authentication failed');
+  }
+
+  if (typeof payload === 'string') throw new AuthError('Authentication failed');
+  if (payload.type !== 'refresh') throw new AuthError('Authentication failed');
+
+  const user = await repo.selectRefreshVersion(payload.userId);
+  if (!user) throw new AuthError('Authentication failed');
+
+  const ver = Number.isFinite(Number(user.refresh_token_version)) ? Number(user.refresh_token_version) : 0;
+  if (payload.rv === undefined) {
+    if (ver !== 0) throw new AuthError('Authentication failed');
+  } else if (Number(payload.rv) !== ver) {
+    throw new AuthError('Authentication failed');
+  }
+
+  const newToken = signToken(user.id, ver);
+  return { data: { accessToken: newToken.accessToken } };
+}
+
+async function logout(userId) {
+  if (userId) {
+    await repo.incrementRefreshTokenVersion(userId);
+  }
+  return { data: null, message: 'Logged out' };
+}
+
+/** 渚涘叾浠栧煙锛堝 admin锛夊湪璁よ瘉娴佺▼涓煡璇㈢敤鎴凤紝涓嶇粡杩?HTTP */
+async function findUserByPhone(phone) {
+  return repo.findUserByPhone(phone);
+}
+
+async function findUserByPhones(phones) {
+  return repo.findUserByPhones(phones);
+}
+
+async function findUsersByPhones(phones) {
+  return repo.findUsersByPhones(phones);
+}
+
+/** 浣胯鐢ㄦ埛 refresh 浠ょ墝澶辨晥锛堜笌 logout 鍐呴€昏緫涓€鑷达級 */
+async function bumpRefreshTokenVersion(userId) {
+  if (userId) await repo.incrementRefreshTokenVersion(userId);
+}
+
+async function updateLastLogin(userId) {
+  await repo.updateLastLogin(userId);
+}
+
+/** 渚涚鐞嗙绛夊煙鏍￠獙鎵嬫満鍙锋槸鍚﹀凡琚叾浠栫敤鎴峰崰鐢?*/
+async function findPhoneDuplicateForUser(userId, phone) {
+  return repo.findPhoneDuplicate(userId, phone);
+}
+
+/** 渚涚鐞嗙绛夊煙鎸夊吋瀹瑰彿鐮侀泦鍚堟牎楠岄噸澶?*/
+async function findPhoneDuplicateByPhonesForUser(userId, phones) {
+  return repo.findPhoneDuplicateByPhones(userId, phones);
+}
+
+async function getUserIdAndRole(userId) {
+  return repo.selectIdAndRoleByUserId(userId);
+}
+
+module.exports = {
+  register,
+  login,
+  buildLoginResult,
+  issueLoginForUserId,
+  getProfile,
+  updateProfile,
+  changePassword,
+  requestPasswordReset,
+  resetPassword,
+  refresh,
+  logout,
+  findUserByPhone,
+  findUserByPhones,
+  findUsersByPhones,
+  bumpRefreshTokenVersion,
+  updateLastLogin,
+  findPhoneDuplicateForUser,
+  findPhoneDuplicateByPhonesForUser,
+  getUserIdAndRole,
+};
+
+// 鍏煎鍘嗗彶锛氫繚鐣欏叿鍚嶅鍑?BusinessError 浠ラ槻鏈夊閮?require 璇ユā鍧楁椂浣跨敤
+module.exports.BusinessError = BusinessError;
+

@@ -153,7 +153,7 @@ export default function ProductDetail() {
   }
 
   const activeActivity = product.active_activity;
-  const availableVariants = (product.variants ?? []).filter((v) => v.id);
+  const availableVariants = (product.variants ?? []).filter((v) => v.id && v.enabled !== false);
   const selectedVariant = availableVariants.length
     ? selectedVariantId
       ? availableVariants.find((v) => v.id === selectedVariantId) ?? null
@@ -193,7 +193,7 @@ export default function ProductDetail() {
   }
   const showPriceMeta = salesCount !== null || statusBadges.length > 0;
   const detailSections = buildDetailSections(product.description);
-  const galleryImages = Array.from(new Set([...(Array.isArray(product.images) && product.images.length ? product.images : []), ...(product.cover_image ? [product.cover_image] : [])].filter((url): url is string => typeof url === "string" && url.trim().length > 0)));
+  const galleryImages = Array.from(new Set([...(selectedVariant?.image_url ? [selectedVariant.image_url] : []), ...(Array.isArray(product.images) && product.images.length ? product.images : []), ...(product.cover_image ? [product.cover_image] : [])].filter((url): url is string => typeof url === "string" && url.trim().length > 0)));
 
   const ensureVariantSelected = () => {
     if (availableVariants.length === 1 && !selectedVariantId) {
@@ -581,5 +581,4 @@ function buildDetailSections(description: string): string[] {
     .filter(Boolean);
   return parts.length > 0 ? parts : [raw];
 }
-
 

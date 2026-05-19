@@ -25,3 +25,7 @@ deploy.log
 
 # 本地回归/截图产物，不纳入版本库
 **/artifacts/
+
+server/public/uploads/*
+!server/public/uploads/.gitkeep
+

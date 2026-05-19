@@ -46,7 +46,7 @@ export default function ThemeStudioHeader({
   }, [dirty]);
 
   return (
-    <header className="sticky top-0 z-20 mb-4 rounded-2xl border border-border bg-card/95 p-4 shadow-sm backdrop-blur">
+    <header className="relative z-10 mb-4 rounded-2xl border border-border bg-card/95 p-4 shadow-sm backdrop-blur">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 space-y-1">
           <h1 className="text-xl font-bold text-foreground">皮肤设计</h1>

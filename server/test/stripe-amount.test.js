@@ -1,11 +1,11 @@
-/**
+﻿/**
  * Stripe webhook amount validation logic (unit test, no DB).
  */
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
-const paymentService = require('../src/modules/payment/payment.service');
+const paymentService = require('../src/modules/payment/service/payment.service');
 const { validatePaymentIntentAmount } = paymentService;
-const repo = require('../src/modules/order/order.repository');
+const repo = require('../src/modules/order/repository/order.repository');
 
 describe('validatePaymentIntentAmount', () => {
   test('passes when MYR amount matches order cents', () => {
@@ -83,3 +83,4 @@ describe('handleStripeEvent idempotency', () => {
     }
   });
 });
+

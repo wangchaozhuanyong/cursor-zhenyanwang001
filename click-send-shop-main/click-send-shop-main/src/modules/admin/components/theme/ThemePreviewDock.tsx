@@ -45,7 +45,7 @@ export default function ThemePreviewDock({
       <button
         type="button"
         onClick={() => setCollapsed(false)}
-        className="fixed bottom-6 right-4 z-20 inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-3 text-xs shadow-md"
+        className="fixed bottom-6 right-4 z-20 inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-3 text-xs shadow-md 2xl:hidden"
       >
         <PanelRightOpen size={14} />
         打开预览
@@ -54,7 +54,7 @@ export default function ThemePreviewDock({
   }
 
   return (
-    <aside className="w-full shrink-0 rounded-2xl border border-border bg-card shadow-sm xl:sticky xl:top-[92px] xl:h-[calc(100vh-112px)] xl:w-[clamp(420px,30vw,520px)] xl:overflow-hidden">
+    <aside className="w-full shrink-0 rounded-2xl border border-border bg-card shadow-sm 2xl:sticky 2xl:top-24 2xl:flex 2xl:h-[calc(100vh-112px)] 2xl:w-[clamp(430px,28vw,540px)] 2xl:flex-col 2xl:overflow-hidden">
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
         <p className="text-sm font-semibold text-foreground">实时预览</p>
         <div className="flex items-center gap-1">
@@ -71,7 +71,7 @@ export default function ThemePreviewDock({
 
       <ThemePreviewToolbar mode={mode} device={device} onModeChange={onModeChange} onDeviceChange={onDeviceChange} />
 
-      <div className="p-2 xl:min-h-0 xl:flex-1 xl:overflow-hidden">
+      <div className="p-2 2xl:min-h-0 2xl:flex-1 2xl:overflow-hidden">
             <ThemePreviewCanvas
               config={config}
               mode={mode}

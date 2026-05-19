@@ -9,6 +9,16 @@ import ContactUsContent from "./ContactUsContent";
 
 const CONTACT_US_SLUG = "contact-us";
 
+function sanitizeCmsHtml(html: string): string {
+  if (!html) return "";
+  return html
+    .replace(/<\s*(script|iframe|object|embed|form|input|button|meta|link|style)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
+    .replace(/<\s*(script|iframe|object|embed|form|input|button|meta|link|style)[^>]*\/?\s*>/gi, "")
+    .replace(/\son[a-z]+\s*=\s*(['"]).*?\1/gi, "")
+    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "")
+    .replace(/\s(href|src)\s*=\s*(['"])\s*(javascript:|data:text\/html)/gi, " $1=$2#");
+}
+
 /**
  * 通用 CMS 内容页：与后台「内容管理」slug 对应，路由为 /content/:slug
  * （站点设置里的 privacyPolicyPath / termsPath 等应指向此处）
@@ -73,7 +83,7 @@ export default function ContentCmsPage() {
         {page?.content && !loading && !error ? (
           <article
             className={`prose prose-sm max-w-none text-muted-foreground ${isContactUs ? "mb-4" : ""}`}
-            dangerouslySetInnerHTML={{ __html: page.content }}
+            dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(page.content) }}
           />
         ) : null}
         {showContactFallback ? (

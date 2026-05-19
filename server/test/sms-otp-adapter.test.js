@@ -1,4 +1,4 @@
-const assert = require('node:assert/strict');
+﻿const assert = require('node:assert/strict');
 const http = require('node:http');
 const test = require('node:test');
 
@@ -34,7 +34,7 @@ test('production SMS OTP is disabled unless explicitly enabled', async () => {
     async () => {
       await assert.rejects(
         () => smsOtp.sendLoginOtp({ phoneE164: '+60123456789', code: '123456' }),
-        /短信验证码登录未在生产环境启用/,
+        /鐭俊楠岃瘉鐮佺櫥褰曟湭鍦ㄧ敓浜х幆澧冨惎鐢?,
       );
     },
   );
@@ -82,3 +82,4 @@ test('production SMS OTP sends through generic HTTP provider', async () => {
   assert.match(receivedBody, /654321/);
   assert.match(receivedBody, /Code 654321 for \+60123456789/);
 });
+

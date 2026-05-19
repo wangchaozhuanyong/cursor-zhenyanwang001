@@ -20,6 +20,7 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import * as categoryService from "@/services/admin/categoryService";
 import * as uploadService from "@/services/uploadService";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { hasTransparentPixels } from "@/utils/imageTransparency";
 import type { Category } from "@/types/category";
 import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
 import {
@@ -157,6 +158,11 @@ export default function AdminCategories() {
 
   const uploadIcon = async (file: File, target: "create" | "edit") => {
     try {
+      const transparent = await hasTransparentPixels(file);
+      if (!transparent) {
+        toast.error("该图标没有透明通道，前台可能出现方形底。请上传透明 PNG/WebP。");
+        return;
+      }
       const res = await uploadService.uploadSingle(file, { mode: "thumb" });
       const url = res.url || "";
       if (!url) throw new Error("服务器未返回图片地址");

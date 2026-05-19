@@ -15,6 +15,16 @@ import {
   THEME_ACCENT_HERO_VALUE,
 } from "@/utils/themeVisuals";
 
+function sanitizeCmsHtml(html: string): string {
+  if (!html) return "";
+  return html
+    .replace(/<\s*(script|iframe|object|embed|form|input|button|meta|link|style)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
+    .replace(/<\s*(script|iframe|object|embed|form|input|button|meta|link|style)[^>]*\/?\s*>/gi, "")
+    .replace(/\son[a-z]+\s*=\s*(['"]).*?\1/gi, "")
+    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "")
+    .replace(/\s(href|src)\s*=\s*(['"])\s*(javascript:|data:text\/html)/gi, " $1=$2#");
+}
+
 export default function About() {
   const navigate = useNavigate();
   const goBack = useGoBack();
@@ -110,7 +120,7 @@ export default function About() {
             transition={{ delay: 0.35 }}
             className="mt-8 rounded-2xl border border-border bg-card p-5 md:mt-10"
           >
-            <div className="prose prose-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: cmsContent }} />
+            <div className="prose prose-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(cmsContent) }} />
           </motion.div>
         )}
 

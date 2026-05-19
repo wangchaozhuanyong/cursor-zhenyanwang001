@@ -213,7 +213,7 @@ function buildCsvFromRecords(records) {
   const keys = Object.keys(records[0]);
   const preferPath = keys.includes('category_path');
   const exportKeys = preferPath
-    ? keys.filter((k) => !['category_name', 'parent_category_id', 'parent_category_name'].includes(k))
+    ? keys.filter((k) => !['category_id', 'category_name', 'parent_category_id', 'parent_category_name'].includes(k))
     : keys;
   return buildCsv(
     exportKeys.map(labelReportColumn),

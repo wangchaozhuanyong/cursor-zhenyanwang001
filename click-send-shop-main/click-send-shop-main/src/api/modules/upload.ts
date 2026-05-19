@@ -12,7 +12,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 const IMAGE_MAX_SIZE = 15 * 1024 * 1024;
 const VIDEO_MAX_SIZE = 50 * 1024 * 1024;
 
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif", "image/avif"];
 const UPLOAD_STORAGE = ((import.meta.env.VITE_UPLOAD_STORAGE as string | undefined)?.toLowerCase() || "any") as
   | "s3"
   | "any";
@@ -99,7 +99,7 @@ function shouldTryPresign(file: File, options: UploadRequestOptions): boolean {
 function validateImageFile(file: File) {
   const mime = normalizeImageMime(file.type);
   if (!ALLOWED_IMAGE_TYPES.includes(mime) && !ALLOWED_IMAGE_TYPES.includes(file.type.toLowerCase())) {
-    throw new Error("仅支持 JPG、PNG、WebP 图片");
+    throw new Error("仅支持 JPG、PNG、WebP、GIF、AVIF 图片");
   }
   if (file.size > IMAGE_MAX_SIZE) {
     throw new Error("图片大小不能超过 15MB");

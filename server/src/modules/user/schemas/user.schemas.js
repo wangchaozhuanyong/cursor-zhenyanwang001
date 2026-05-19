@@ -1,4 +1,4 @@
-const { z } = require('zod');
+﻿const { z } = require('zod');
 
 const idParam = z.string().trim().min(1);
 
@@ -44,7 +44,7 @@ const updateAddressBodySchema = addressCreateInputSchema
       || v.detail !== undefined
       || v.isDefault !== undefined
       || v.is_default !== undefined,
-    { message: '没有需要更新的字段', path: [] },
+    { message: '娌℃湁闇€瑕佹洿鏂扮殑瀛楁', path: [] },
   )
   .transform(normalizeAddressPayload);
 const productIdParamSchema = z.object({ productId: idParam });
@@ -85,7 +85,7 @@ const claimCouponBodySchema = z
 
 const withdrawBodySchema = z
   .object({
-    amount: z.coerce.number().positive('金额必须大于 0'),
+    amount: z.coerce.number().positive('閲戦蹇呴』澶т簬 0'),
     method: z.string().trim().max(32).optional(),
     channel: z.string().trim().max(32).optional(),
     account: z.string().trim().max(128).optional(),
@@ -97,13 +97,13 @@ const withdrawBodySchema = z
   }));
 
 const shippingQuoteBodySchema = z.object({
-  shipping_template_id: z.coerce.string().trim().min(1),
-  raw_amount: z.coerce.number().nonnegative('raw_amount 无效'),
+  shipping_template_id: z.coerce.string().trim().min(1).optional(),
+  raw_amount: z.coerce.number().nonnegative('raw_amount 鏃犳晥'),
   estimated_weight_kg: z.coerce.number().nonnegative().optional(),
 });
 
 const cancelAccountBodySchema = z.object({
-  confirmText: z.string().trim().min(1, '请输入确认文字'),
+  confirmText: z.string().trim().min(1, 'Please enter confirmation text'),
 });
 
 module.exports = {
@@ -122,3 +122,4 @@ module.exports = {
   shippingQuoteBodySchema,
   cancelAccountBodySchema,
 };
+

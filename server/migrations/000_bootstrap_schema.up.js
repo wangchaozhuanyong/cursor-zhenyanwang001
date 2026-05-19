@@ -43,6 +43,8 @@ const STMTS = [
   address TEXT,
   payment_method VARCHAR(32) NOT NULL DEFAULT 'whatsapp',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  completed_at DATETIME DEFAULT NULL,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_orders_user (user_id),
   INDEX idx_orders_no (order_no)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
@@ -141,6 +143,8 @@ const STMTS = [
   phone VARCHAR(20) NOT NULL DEFAULT '',
   address VARCHAR(500) NOT NULL DEFAULT '',
   is_default TINYINT(1) NOT NULL DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_addr_user (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 

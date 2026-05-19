@@ -127,3 +127,36 @@ GIT_BRANCH=master bash deploy/production-deploy.sh
 ## 合规与法务
 
 用户协议、隐私政策、Cookie 提示、当地电商与支付法规需由运营方自行审核与更新页面文案。
+
+## 低内存服务器部署（推荐）
+
+### 推荐流程（默认）
+1. 在 GitHub Actions 或本地构建前端：
+   - `cd click-send-shop-main/click-send-shop-main`
+   - `npm ci`
+   - `npm run build`
+2. 将构建产物 `dist` 上传到服务器（例如 `$PROJECT_DIR/public-frontend` 或项目前端目录下 `dist`）。
+3. 服务器执行后端发布：
+   - `cd /var/www/click-send-shop`
+   - `bash deploy/production-deploy.sh`
+
+默认情况下，`production-deploy.sh` 不会在服务器构建前端，只会：
+- 拉代码
+- 后端 `npm ci --omit=dev`
+- 数据库迁移
+- 同步已有 `dist`
+- `pm2 reload`
+- 健康检查
+
+### 强制服务器构建（仅临时）
+- `BUILD_FRONTEND_ON_SERVER=1 FRONTEND_BUILD_HEAP_MB=768 VITE_LEGACY_BUILD=0 bash deploy/production-deploy.sh`
+
+说明：
+- `BUILD_FRONTEND_ON_SERVER=1` 时才会执行前端 `npm ci` 与 `vite build`。
+- 会应用低内存参数：`NODE_OPTIONS=--max-old-space-size=${FRONTEND_BUILD_HEAP_MB}`。
+- 若可用内存过低会给出警告。
+
+### 若仍 OOM
+- 增加 2GB swap
+- 改为 CI/本地构建 dist 再上传
+- 升级服务器内存

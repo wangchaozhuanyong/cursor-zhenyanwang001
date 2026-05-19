@@ -111,7 +111,6 @@ export function useCheckoutPage() {
   const [payingWallet, setPayingWallet] = useState(false);
   const [orderFinalizing, setOrderFinalizing] = useState(false);
   const [couponInitDone, setCouponInitDone] = useState(false);
-  const [shippingId, setShippingId] = useState<number | null>(null);
   const [serverShippingFee, setServerShippingFee] = useState<number | null>(null);
   const [shippingQuoteLoading, setShippingQuoteLoading] = useState(false);
   const [shippingQuoteError, setShippingQuoteError] = useState<string | null>(null);
@@ -180,7 +179,7 @@ export function useCheckoutPage() {
   const { coupons: pickerCoupons, loading: pickerCouponsLoading } = useCheckoutPickerCoupons(rawTotal);
   const { templates: shippingTemplates, loading: shippingRulesLoading, loadError: shippingRulesError } = useShippingStore();
   const enabledTemplates = shippingTemplates.filter((t) => t.enabled);
-  const selectedTemplate = (shippingId != null ? enabledTemplates.find((t) => t.id === shippingId) : null) ?? enabledTemplates[0] ?? null;
+  const selectedTemplate = enabledTemplates[0] ?? null;
   const weightKg = estimateCartWeightKg(items.map((i) => ({ qty: i.qty })));
   const previewShippingFee = selectedTemplate
     ? calcShippingFee(selectedTemplate, rawTotal, { totalWeightKg: weightKg })
@@ -489,7 +488,7 @@ export function useCheckoutPage() {
         note,
         coupon_id: selectedCoupon?.id,
         coupon_title: selectedCoupon?.title ?? "",
-        shipping_template_id: selectedTemplate?.id ?? shippingId,
+        shipping_template_id: selectedTemplate?.id,
         shipping_name: selectedTemplate?.name ?? "",
         payment_method: paymentMethod,
         estimated_weight_kg: weightKg,
@@ -710,8 +709,7 @@ export function useCheckoutPage() {
     setRewardCashAmount,
     orderPreview,
     payingWallet,
-    shippingId,
-    setShippingId,
+    selectedShippingName: selectedTemplate?.name || "平台默认运费模板",
     shippingQuoteLoading,
     shippingQuoteError,
     rawTotal,

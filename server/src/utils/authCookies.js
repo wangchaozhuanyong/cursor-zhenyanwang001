@@ -10,7 +10,13 @@ function parseCookies(req) {
     if (idx === -1) return acc;
     const key = part.slice(0, idx).trim();
     const value = part.slice(idx + 1).trim();
-    if (key) acc[key] = decodeURIComponent(value);
+    if (!key) return acc;
+    try {
+      acc[key] = decodeURIComponent(value);
+    } catch {
+      // Ignore malformed cookie values to avoid auth middleware 500/DoS.
+      acc[key] = value;
+    }
     return acc;
   }, {});
 }

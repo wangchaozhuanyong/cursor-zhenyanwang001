@@ -1,12 +1,12 @@
-/**
+﻿/**
  * Admin Auth/Account Controller
  *
- * 仅做：解析请求 → 调 service → 写响应。
- * 不做：业务规则、SQL、参数校验之外的逻辑。
+ * 浠呭仛锛氳В鏋愯姹?鈫?璋?service 鈫?鍐欏搷搴斻€?
+ * 涓嶅仛锛氫笟鍔¤鍒欍€丼QL銆佸弬鏁版牎楠屼箣澶栫殑閫昏緫銆?
  */
 const { asyncRoute } = require('../../../middleware/asyncRoute');
-const adminAuthService = require('../adminAuth.service');
-const adminAccountService = require('../adminAccount.service');
+const adminAuthService = require('../service/adminAuth.service');
+const adminAccountService = require('../service/adminAccount.service');
 const { setAuthCookies, clearAuthCookies, getRefreshTokenFromRequest } = require('../../../utils/authCookies');
 
 exports.login = asyncRoute(async (req, res) => {
@@ -60,3 +60,4 @@ exports.getRbacMe = asyncRoute(async (req, res) => {
     roleCodes: req.user.roleCodes,
   });
 });
+

@@ -1,5 +1,5 @@
 ﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
-const svc = require('../adminReport.service');
+const svc = require('../service/adminReport.service');
 
 exports.getOverview = asyncRoute(async (req, res) => {
   res.success(await svc.getOverview(req.query));
@@ -50,3 +50,4 @@ exports.getHomeEngagement = exports.getOverview;
 exports.exportSales = exports.exportByType;
 exports.exportUsers = exports.exportByType;
 exports.exportProducts = exports.exportByType;
+

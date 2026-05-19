@@ -1,6 +1,6 @@
-const { asyncRoute } = require('../../../middleware/asyncRoute');
-const adminLogService = require('../adminLog.service');
-const auditLogService = require('../auditLog.service');
+﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const adminLogService = require('../service/adminLog.service');
+const auditLogService = require('../service/auditLog.service');
 
 exports.listAdminLogs = asyncRoute(async (req, res) => {
   const r = await adminLogService.listLogs(req.query);
@@ -11,3 +11,4 @@ exports.listAuditLogs = asyncRoute(async (req, res) => {
   const r = await auditLogService.listAuditLogs(req.query);
   res.paginate(r.list, r.total, r.page, r.pageSize);
 });
+

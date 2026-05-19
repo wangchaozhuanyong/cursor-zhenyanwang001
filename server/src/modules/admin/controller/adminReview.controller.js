@@ -1,6 +1,6 @@
-const { asyncRoute } = require('../../../middleware/asyncRoute');
+﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
 const { ValidationError } = require('../../../errors');
-const svc = require('../adminReview.service');
+const svc = require('../service/adminReview.service');
 
 exports.list = asyncRoute(async (req, res) => {
   const r = await svc.listReviews(req.query);
@@ -69,14 +69,15 @@ exports.permanentDelete = asyncRoute(async (req, res) => {
 
 exports.batchHide = asyncRoute(async (req, res) => {
   const { ids } = req.body;
-  if (!Array.isArray(ids) || ids.length === 0) throw new ValidationError('请选择评论');
+  if (!Array.isArray(ids) || ids.length === 0) throw new ValidationError('璇烽€夋嫨璇勮');
   const r = await svc.batchHide(ids, req.user?.id, req);
   res.success(r.data || null, r.message);
 });
 
 exports.batchDelete = asyncRoute(async (req, res) => {
   const { ids } = req.body;
-  if (!Array.isArray(ids) || ids.length === 0) throw new ValidationError('请选择评论');
+  if (!Array.isArray(ids) || ids.length === 0) throw new ValidationError('璇烽€夋嫨璇勮');
   const r = await svc.batchDelete(ids, req.user?.id, req);
   res.success(r.data || null, r.message);
 });
+

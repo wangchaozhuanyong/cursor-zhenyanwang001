@@ -1,15 +1,15 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 require('dotenv').config();
 const { validateEnv } = require('./config/validateEnv');
 validateEnv();
 
 const app = require('./app');
 const { runPendingMigrations } = require('./db/migrateRunner');
-const { startCleanupScheduler } = require('./modules/admin/adminExport.service');
-const { startNotificationScheduler } = require('./modules/admin/adminNotification.service');
-const { startAutoConfirmReceiveScheduler } = require('./modules/order/orderAutoConfirm.service');
-const { startPaymentTimeoutScheduler } = require('./modules/order/orderPaymentTimeout.service');
-const { startMyInvoisRetryScheduler } = require('./modules/myinvois/myinvois.service');
+const { startCleanupScheduler } = require('./modules/admin/service/adminExport.service');
+const { startNotificationScheduler } = require('./modules/admin/service/adminNotification.service');
+const { startAutoConfirmReceiveScheduler } = require('./modules/order/service/orderAutoConfirm.service');
+const { startPaymentTimeoutScheduler } = require('./modules/order/service/orderPaymentTimeout.service');
+const { startMyInvoisRetryScheduler } = require('./modules/myinvois/service/myinvois.service');
 const { getStorageHealthReport } = require('./utils/objectStorage');
 
 const PORT = process.env.PORT || 3000;
@@ -44,9 +44,9 @@ bootPromise
     startMyInvoisRetryScheduler();
     app.listen(PORT, () => {
       if (process.env.NODE_ENV === 'production') {
-        console.log(`✅ Server listening (production), PORT=${PORT}`);
+        console.log(`鉁?Server listening (production), PORT=${PORT}`);
       } else {
-        console.log(`✅ Server running → http://localhost:${PORT}`);
+        console.log(`鉁?Server running 鈫?http://localhost:${PORT}`);
       }
     });
   })
@@ -54,3 +54,5 @@ bootPromise
     console.error('Startup precheck failed:', err);
     process.exit(1);
   });
+
+

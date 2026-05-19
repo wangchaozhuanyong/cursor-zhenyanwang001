@@ -1,5 +1,5 @@
-const { verifyToken } = require('../utils/helpers');
-const authRepo = require('../modules/auth/auth.repository');
+﻿const { verifyToken } = require('../utils/helpers');
+const authRepo = require('../modules/auth/repository/auth.repository');
 const { getAccessTokenFromRequest } = require('../utils/authCookies');
 
 module.exports = async function authOptional(req, _res, next) {

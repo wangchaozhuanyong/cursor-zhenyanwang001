@@ -4,6 +4,6 @@
 const { Router } = require('express');
 
 const router = Router();
-router.use('/health', require('./health.routes'));
+router.use('/health', require('./routes/health.routes'));
 
 module.exports = router;

@@ -138,7 +138,7 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
                     <img src={p.cover_image || ""} alt={p.name} className="h-12 w-12 rounded object-cover bg-secondary" />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">{p.name}</div>
-                      <div className="text-xs text-muted-foreground">ID {p.id} · 库存 {p.stock} · 原价 RM {p.price}</div>
+                      <div className="text-xs text-muted-foreground">库存 {p.stock} · 原价 RM {p.price}</div>
                     </div>
                   </button>
                 );

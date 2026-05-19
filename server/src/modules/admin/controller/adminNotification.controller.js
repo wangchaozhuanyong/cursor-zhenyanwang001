@@ -1,5 +1,5 @@
-const { asyncRoute } = require('../../../middleware/asyncRoute');
-const svc = require('../adminNotification.service');
+﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const svc = require('../service/adminNotification.service');
 
 exports.list = asyncRoute(async (req, res) => {
   const r = await svc.listNotifications(req.query);
@@ -97,3 +97,4 @@ exports.revokeSent = asyncRoute(async (req, res) => {
   const r = await svc.revokeSent(req.params.id, req.user?.id, req);
   res.success(r.data, r.message);
 });
+

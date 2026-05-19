@@ -1,10 +1,10 @@
-/**
- * Admin Product Controller（含 product-tags 子资源）
+﻿/**
+ * Admin Product Controller锛堝惈 product-tags 瀛愯祫婧愶級
  */
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 const { ValidationError } = require('../../../errors');
-const svc = require('../adminProduct.service');
-const adminExtended = require('../adminExtended.service');
+const svc = require('../service/adminProduct.service');
+const adminExtended = require('../service/adminExtended.service');
 
 exports.list = asyncRoute(async (req, res) => {
   const r = await svc.listProducts(req.query);
@@ -19,7 +19,7 @@ exports.exportCsv = asyncRoute(async (req, res) => {
 });
 
 exports.importCsv = asyncRoute(async (req, res) => {
-  if (!req.file || !req.file.buffer) throw new ValidationError('请上传 CSV 文件');
+  if (!req.file || !req.file.buffer) throw new ValidationError('璇蜂笂浼?CSV 鏂囦欢');
   const text = req.file.buffer.toString('utf8');
   const r = await svc.importProductsCsv(text, req.user?.id);
   res.success(r.data, r.message);
@@ -57,7 +57,7 @@ exports.batchUpdateStatus = asyncRoute(async (req, res) => {
   res.success(null, r.message);
 });
 
-/* ── tags ── */
+/* 鈹€鈹€ tags 鈹€鈹€ */
 
 exports.listTags = asyncRoute(async (_req, res) => {
   res.success(await adminExtended.listProductTags());
@@ -85,3 +85,4 @@ exports.updateProductTags = asyncRoute(async (req, res) => {
   if (r.error) return res.fail(r.error.code, r.error.message);
   res.success(r.data, r.message);
 });
+

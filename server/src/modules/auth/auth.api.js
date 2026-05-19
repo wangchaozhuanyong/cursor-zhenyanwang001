@@ -1,8 +1,6 @@
-/**
- * Auth 域对外（其他业务域）暴露的程序内 API。
- * 与 HTTP 路由 `/api/auth/*` 使用同一套 service 实现，避免其他模块直接依赖 repository。
- */
-const authService = require('./auth.service');
+﻿/**
+ * Auth 鍩熷澶栵紙鍏朵粬涓氬姟鍩燂級鏆撮湶鐨勭▼搴忓唴 API銆? * 涓?HTTP 璺敱 `/api/auth/*` 浣跨敤鍚屼竴濂?service 瀹炵幇锛岄伩鍏嶅叾浠栨ā鍧楃洿鎺ヤ緷璧?repository銆? */
+const authService = require('./service/auth.service');
 
 module.exports = {
   findUserByPhone: authService.findUserByPhone,

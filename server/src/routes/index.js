@@ -15,7 +15,7 @@ const analytics = require('../modules/analytics');
 const marketing = require('../modules/marketing');
 const loyalty = require('../modules/loyalty');
 const home = require('../modules/home');
-const seoRoutes = require('../modules/seo/seo.routes');
+const seoRoutes = require('../modules/seo/routes/seo.routes');
 
 const router = Router();
 

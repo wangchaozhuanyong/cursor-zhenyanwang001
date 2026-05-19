@@ -34,6 +34,7 @@ interface PremiumCouponCardProps {
   compact?: boolean;
   /** @deprecated 请使用 layout="home" */
   homeCompact?: boolean;
+  colorScheme?: "auto" | "invite";
   className?: string;
   onClick?: () => void;
   onAction?: () => void;
@@ -113,13 +114,14 @@ export default function PremiumCouponCard({
   layout: layoutProp,
   compact = false,
   homeCompact = false,
+  colorScheme = "auto",
   className = "",
   onClick,
   onAction,
 }: PremiumCouponCardProps) {
   const { themeConfig } = useThemeRuntime();
   const layout = resolveCouponCardLayout({ layout: layoutProp, compact, homeCompact });
-  const skin = getCouponCardPresentation(themeConfig.couponStyle, layout);
+  const skin = getCouponCardPresentation(themeConfig.couponStyle, layout, colorScheme === "invite");
 
   const minSpendText = minSpendTextProp ?? conditionText ?? "无门槛可用";
   const leftValue = `${amountPrefix}${amount}`.trim();

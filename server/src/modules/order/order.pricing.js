@@ -1,9 +1,9 @@
-const { ValidationError } = require('../../errors');
-const repo = require('./order.repository');
-const siteSettingsRepo = require('./siteSettings.repository');
-const loyaltyRepo = require('../loyalty/loyalty.repository');
-const pointsRepo = require('../user/points.repository');
-const rewardRepo = require('../user/reward.repository');
+﻿const { ValidationError } = require('../../errors');
+const repo = require('./repository/order.repository');
+const siteSettingsRepo = require('./repository/siteSettings.repository');
+const loyaltyRepo = require('../loyalty/repository/loyalty.repository');
+const pointsRepo = require('../user/repository/points.repository');
+const rewardRepo = require('../user/repository/reward.repository');
 const sstTax = require('./sstTax');
 const { computeShippingFee, estimateWeightFromItems } = require('../../utils/shippingFee');
 
@@ -88,7 +88,7 @@ function lineMatchesActivityScope(oi, product, activity, scopes) {
   return false;
 }
 
-/** 满减：按活动聚合，读取 activity_config 多档规则 */
+/** 婊″噺锛氭寜娲诲姩鑱氬悎锛岃鍙?activity_config 澶氭。瑙勫垯 */
 function computeFullReductionDiscount(orderItems, productMap, fullReductionActivities) {
   let sum = 0;
   for (const act of fullReductionActivities) {
@@ -147,7 +147,7 @@ function assertCouponUsableOnOrder({
 }) {
   const minAmount = parseFloat(uc.min_amount);
   if (goodsAmountAfterFullReduction < minAmount) {
-    throw new ValidationError(`订单金额未满 RM ${minAmount}，无法使用该优惠券`);
+    throw new ValidationError('Order amount below minimum requirement for coupon');
   }
 
   const usableScope = uc.usable_scope_type || uc.scope_type || 'all';
@@ -157,13 +157,13 @@ function assertCouponUsableOnOrder({
   if (usableScope === 'product' && usableProductIds.length) {
     const ids = orderItems.map((oi) => oi.productId);
     if (!ids.some((id) => usableProductIds.includes(id))) {
-      throw new ValidationError('该优惠券不适用于当前商品');
+      throw new ValidationError('Coupon is not applicable to current products');
     }
   }
   if (usableScope === 'category' && usableCategoryIds.length) {
     const cats = [...new Set(orderItems.map((oi) => productMap[oi.productId]?.category_id).filter(Boolean))];
     if (!cats.some((cid) => usableCategoryIds.includes(String(cid)))) {
-      throw new ValidationError('该优惠券不适用于当前商品分类');
+      throw new ValidationError('Coupon is not applicable to current product categories');
     }
   }
   if (uc.scope_type === 'category') {
@@ -171,28 +171,27 @@ function assertCouponUsableOnOrder({
     if (allowedCategoryIds.length) {
       const orderCategoryIds = [...new Set(orderItems.map((oi) => productMap[oi.productId]?.category_id).filter(Boolean))];
       if (!orderCategoryIds.some((cid) => allowedCategoryIds.includes(String(cid)))) {
-        throw new ValidationError('该优惠券不适用于当前商品分类');
+        throw new ValidationError('Coupon is not applicable to current product categories');
       }
     }
   }
 
   if (hasActivityDiscount && uc.stackable_with_activity === 0) {
-    throw new ValidationError('该优惠券不可与营销活动叠加使用');
+    throw new ValidationError('璇ヤ紭鎯犲埜涓嶅彲涓庤惀閿€娲诲姩鍙犲姞浣跨敤');
   }
   if (hasActivityDiscount && activityAllowsCoupon === false) {
-    throw new ValidationError('当前营销活动不可叠加优惠券');
+    throw new ValidationError('Current promotion cannot be stacked with coupon');
   }
 
   const couponDiscount = calculateCouponDiscount(uc, goodsAmountAfterFullReduction, shippingFee);
   if (couponDiscount <= 0) {
-    throw new ValidationError(uc.type === 'shipping' ? '当前订单无可抵扣运费，无法使用该运费券' : '该优惠券当前不可抵扣');
+    throw new ValidationError(uc.type === 'shipping' ? 'Current order has no shippable fee to deduct' : 'Coupon cannot be deducted for current order');
   }
   return couponDiscount;
 }
 
 /**
- * 构建订单金额（预览与下单共用）
- * @param {import('mysql2/promise').PoolConnection|null} conn
+ * 鏋勫缓璁㈠崟閲戦锛堥瑙堜笌涓嬪崟鍏辩敤锛? * @param {import('mysql2/promise').PoolConnection|null} conn
  */
 async function buildOrderPricing(userId, body, conn = null) {
   const q = conn || repo.getPool();
@@ -257,16 +256,18 @@ async function buildOrderPricing(userId, body, conn = null) {
   const goodsAmountAfterFullReduction = Math.max(0, rawAmount - fullReductionDiscount);
 
   let shippingFee = 0;
-  if (shipping_template_id) {
-    const tpl = conn
+  const tpl = shipping_template_id
+    ? (conn
       ? await repo.selectShippingTemplate(conn, shipping_template_id)
-      : await repo.selectShippingTemplate(q, shipping_template_id);
-    if (tpl) {
-      const w = estimated_weight_kg != null && Number.isFinite(Number(estimated_weight_kg))
-        ? Number(estimated_weight_kg)
-        : estimateWeightFromItems(items);
-      shippingFee = computeShippingFee(tpl, rawAmount, w);
-    }
+      : await repo.selectShippingTemplate(q, shipping_template_id))
+    : (conn
+      ? await repo.selectDefaultEnabledShippingTemplate(conn)
+      : await repo.selectDefaultEnabledShippingTemplate(q));
+  if (tpl) {
+    const w = estimated_weight_kg != null && Number.isFinite(Number(estimated_weight_kg))
+      ? Number(estimated_weight_kg)
+      : estimateWeightFromItems(items);
+    shippingFee = computeShippingFee(tpl, rawAmount, w);
   }
 
   const hasActivityDiscount = flashSaleDiscount > 0 || fullReductionDiscount > 0;
@@ -280,7 +281,7 @@ async function buildOrderPricing(userId, body, conn = null) {
     const uc = conn
       ? await repo.selectUserCouponForUpdate(conn, coupon_id, userId)
       : await repo.selectUserCouponRead(q, coupon_id, userId);
-    if (!uc) throw new ValidationError('优惠券不存在、已使用或不可用');
+    if (!uc) throw new ValidationError('浼樻儬鍒镐笉瀛樺湪銆佸凡浣跨敤鎴栦笉鍙敤');
     couponDiscount = assertCouponUsableOnOrder({
       uc,
       goodsAmountAfterFullReduction,
@@ -361,23 +362,23 @@ async function buildOrderPricing(userId, body, conn = null) {
 
   const discount_lines = [];
   if (flashSaleDiscount > 0) {
-    discount_lines.push({ type: 'flash_sale', label: '秒杀优惠', amount: flashSaleDiscount });
+    discount_lines.push({ type: 'flash_sale', label: '绉掓潃浼樻儬', amount: flashSaleDiscount });
   }
   if (fullReductionDiscount > 0) {
-    discount_lines.push({ type: 'full_reduction', label: '满减优惠', amount: fullReductionDiscount });
+    discount_lines.push({ type: 'full_reduction', label: '婊″噺浼樻儬', amount: fullReductionDiscount });
   }
   if (couponDiscount > 0) {
     discount_lines.push({
       type: 'coupon',
-      label: couponTitle ? `优惠券（${couponTitle}）` : '优惠券抵扣',
+      label: couponTitle ? `优惠券：${couponTitle}` : '优惠券折扣',
       amount: couponDiscount,
     });
   }
   if (points_discount_amount > 0) {
-    discount_lines.push({ type: 'points', label: '积分抵扣', amount: points_discount_amount });
+    discount_lines.push({ type: 'points', label: '绉垎鎶垫墸', amount: points_discount_amount });
   }
   if (reward_cash_discount_amount > 0) {
-    discount_lines.push({ type: 'reward_cash', label: '返现余额抵扣', amount: reward_cash_discount_amount });
+    discount_lines.push({ type: 'reward_cash', label: '杩旂幇浣欓鎶垫墸', amount: reward_cash_discount_amount });
   }
 
   return {
@@ -427,3 +428,6 @@ module.exports = {
   parseIdList,
   assertCouponUsableOnOrder,
 };
+
+
+

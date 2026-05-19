@@ -1,10 +1,10 @@
-const { Router } = require('express');
+﻿const { Router } = require('express');
 const adminAuth = require('../../middleware/adminAuth');
 const requirePermission = adminAuth.requirePermission;
 const { validate } = require('../../middleware/validate');
-const ctrl = require('./myinvois.controller');
+const ctrl = require('./controller/myinvois.controller');
 const schemas = require('./myinvois.schemas');
-const myinvoisService = require('./myinvois.service');
+const myinvoisService = require('./service/myinvois.service');
 
 const router = Router();
 

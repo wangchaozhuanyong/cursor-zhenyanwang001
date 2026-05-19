@@ -6,6 +6,8 @@ export interface ShippingTemplate {
   freeAbove: number;
   extraPerKg: number;
   enabled: boolean;
+  /** 当前唯一默认生效模板（与 enabled 联动，仅一条为 true） */
+  isDefault?: boolean;
 }
 
 export interface ShippingGlobalSettings {

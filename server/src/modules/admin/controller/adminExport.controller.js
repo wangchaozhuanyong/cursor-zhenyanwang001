@@ -1,6 +1,6 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const { asyncRoute } = require('../../../middleware/asyncRoute');
-const svc = require('../adminExport.service');
+const svc = require('../service/adminExport.service');
 
 exports.create = asyncRoute(async (req, res) => {
   const { type, params } = req.body;
@@ -23,3 +23,4 @@ exports.download = asyncRoute(async (req, res) => {
   );
   fs.createReadStream(r.filePath).pipe(res);
 });
+

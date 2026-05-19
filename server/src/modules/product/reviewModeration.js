@@ -1,6 +1,6 @@
-const siteSettingsRepo = require('../admin/adminSiteSettings.repository');
+﻿const siteSettingsRepo = require('../admin/repository/adminSiteSettings.repository');
 
-const DEFAULT_SENSITIVE_WORDS = ['微信', '二维码', '假货', '骗子', '投诉'];
+const DEFAULT_SENSITIVE_WORDS = ['wechat', 'qrcode', 'fake', 'scam', 'complaint'];
 
 function containsSensitive(text, words) {
   const t = String(text || '').toLowerCase();
@@ -43,7 +43,7 @@ function resolveInitialReviewStatus({ rating, images, content, settings }) {
   return 'normal';
 }
 
-/** 1-2 星差评待处理 */
+/** 1-2 鏄熷樊璇勫緟澶勭悊 */
 function resolveComplaintStatus(rating) {
   return Number(rating) <= 2 ? 'pending' : 'none';
 }
@@ -55,3 +55,6 @@ module.exports = {
   resolveComplaintStatus,
   DEFAULT_SENSITIVE_WORDS,
 };
+
+
+

@@ -1,4 +1,4 @@
-const { test, describe } = require('node:test');
+﻿const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 const {
   normalizeIntlPhone,
@@ -14,7 +14,7 @@ describe('normalizeIntlPhone +60/+86', () => {
     assert.equal(normalizeIntlPhone('0123456789', '+60'), '+60123456789');
   });
 
-  test('MY pasted national form 601… (fixes duplicate-country bug)', () => {
+  test('MY pasted national form 601鈥?(fixes duplicate-country bug)', () => {
     assert.equal(normalizeIntlPhone('60123456789', '+60'), '+60123456789');
   });
 
@@ -26,7 +26,7 @@ describe('normalizeIntlPhone +60/+86', () => {
     assert.equal(normalizeIntlPhone('13800138000', '+86'), '+8613800138000');
   });
 
-  test('CN pasted 86138…', () => {
+  test('CN pasted 86138鈥?, () => {
     assert.equal(normalizeIntlPhone('8613800138000', '+86'), '+8613800138000');
   });
 });
@@ -41,3 +41,4 @@ describe('buildPhoneLookupCandidates', () => {
     assert.ok(inter.includes('+60123456789'));
   });
 });
+

@@ -24,6 +24,63 @@ import {
   THEME_TEXT_DANGER,
 } from "@/utils/themeVisuals";
 
+type AdminSpecValue = {
+  id?: string;
+  value: string;
+  image_url?: string;
+  sort_order: number;
+};
+
+type AdminSpecGroup = {
+  id?: string;
+  name: string;
+  sort_order: number;
+  values: AdminSpecValue[];
+};
+
+type AdminVariantForm = {
+  id?: string;
+  title: string;
+  sku_code: string;
+  price: string;
+  original_price?: string;
+  cost_price?: string;
+  stock: string;
+  stock_warning_threshold?: string;
+  barcode?: string;
+  image_url?: string;
+  weight?: string;
+  enabled?: boolean;
+  sort_order: number;
+  is_default: boolean;
+  spec_value_ids?: string[];
+};
+
+const MAX_SPEC_GROUPS = 3;
+const MAX_SPEC_VALUES_PER_GROUP = 20;
+const MAX_SKU_MATRIX_SIZE = 200;
+
+const tempId = () => `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+function cartesianSpecValues(groups: AdminSpecGroup[]) {
+  const usable = groups
+    .map((group) => ({
+      ...group,
+      values: group.values.filter((value) => value.value.trim()),
+    }))
+    .filter((group) => group.name.trim() && group.values.length > 0);
+  if (!usable.length) return [];
+  return usable.reduce<Array<Array<{ group: AdminSpecGroup; value: AdminSpecValue }>>>((acc, group) => {
+    const entries = group.values.map((value) => ({ group, value }));
+    if (!acc.length) return entries.map((entry) => [entry]);
+    return acc.flatMap((combo) => entries.map((entry) => [...combo, entry]));
+  }, []);
+}
+
+function specComboKey(ids: string[]) {
+  return ids.filter(Boolean).join("|");
+}
+
 export default function AdminProductForm() {
   const navigate = useNavigate();
   const goBack = useGoBack("/admin/products");
@@ -57,17 +114,10 @@ export default function AdminProductForm() {
     is_new: false,
     is_recommended: false,
     tag_ids: [] as string[],
+    spec_groups: [] as AdminSpecGroup[],
     variants: [
       { title: "", sku_code: "", price: "", stock: "", sort_order: 0, is_default: true },
-    ] as Array<{
-      id?: string;
-      title: string;
-      sku_code: string;
-      price: string;
-      stock: string;
-      sort_order: number;
-      is_default: boolean;
-    }>,
+    ] as AdminVariantForm[],
   });
 
   useEffect(() => {
@@ -92,9 +142,17 @@ export default function AdminProductForm() {
                   title: v.title || "",
                   sku_code: (v.sku_code as string) || "",
                   price: String(v.price ?? ""),
+                  original_price: v.original_price != null ? String(v.original_price) : "",
+                  cost_price: v.cost_price != null ? String(v.cost_price) : "",
                   stock: String(v.stock ?? ""),
+                  stock_warning_threshold: v.stock_warning_threshold != null ? String(v.stock_warning_threshold) : "",
+                  barcode: v.barcode || "",
+                  image_url: v.image_url || "",
+                  weight: v.weight != null ? String(v.weight) : "",
+                  enabled: v.enabled !== false,
                   sort_order: v.sort_order ?? i,
                   is_default: !!v.is_default,
+                  spec_value_ids: Array.isArray(v.spec_value_ids) ? v.spec_value_ids : [],
                 })) :
                 [
                   {
@@ -104,6 +162,7 @@ export default function AdminProductForm() {
                     stock: data.stock?.toString() || "",
                     sort_order: 0,
                     is_default: true,
+                    enabled: true,
                   },
                 ];
             setForm({
@@ -125,6 +184,21 @@ export default function AdminProductForm() {
               is_new: !!data.is_new,
               is_recommended: !!data.is_recommended,
               tag_ids: Array.isArray(data.tags) ? data.tags.map((t: { id: string }) => t.id) : [],
+              spec_groups: Array.isArray(data.spec_groups)
+                ? data.spec_groups.map((g: any, gi: number) => ({
+                  id: g.id,
+                  name: g.name || "",
+                  sort_order: g.sort_order ?? gi,
+                  values: Array.isArray(g.values)
+                    ? g.values.map((v: any, vi: number) => ({
+                      id: v.id,
+                      value: v.value || "",
+                      image_url: v.image_url || "",
+                      sort_order: v.sort_order ?? vi,
+                    }))
+                    : [],
+                }))
+                : [],
               variants: vlist,
             });
           }
@@ -216,6 +290,92 @@ export default function AdminProductForm() {
     }
   };
 
+  const regenerateSkuMatrix = (nextGroups: AdminSpecGroup[]) => {
+    const combos = cartesianSpecValues(nextGroups);
+    if (!combos.length) {
+      setForm((f) => ({ ...f, spec_groups: nextGroups }));
+      return;
+    }
+    if (combos.length > MAX_SKU_MATRIX_SIZE) {
+      toast.error(`SKU 组合不能超过 ${MAX_SKU_MATRIX_SIZE} 个`);
+      return;
+    }
+    setForm((f) => {
+      const existingByKey = new Map(
+        f.variants
+          .filter((variant) => (variant.spec_value_ids ?? []).length > 0)
+          .map((variant) => [specComboKey(variant.spec_value_ids ?? []), variant]),
+      );
+      const nextVariants = combos.map((combo, index) => {
+        const ids = combo.map((item) => item.value.id || "").filter(Boolean);
+        const title = combo.map((item) => item.value.value.trim()).join(" / ");
+        const old = existingByKey.get(specComboKey(ids));
+        return {
+          id: old?.id,
+          title,
+          sku_code: old?.sku_code || "",
+          price: old?.price || f.price || "0",
+          original_price: old?.original_price || "",
+          cost_price: old?.cost_price || "",
+          stock: old?.stock || "0",
+          stock_warning_threshold: old?.stock_warning_threshold || "5",
+          barcode: old?.barcode || "",
+          image_url: old?.image_url || "",
+          weight: old?.weight || "",
+          enabled: old?.enabled !== false,
+          sort_order: index,
+          is_default: old?.is_default || index === 0,
+          spec_value_ids: ids,
+        };
+      });
+      if (!nextVariants.some((variant) => variant.is_default) && nextVariants[0]) {
+        nextVariants[0].is_default = true;
+      }
+      let seenDefault = false;
+      return {
+        ...f,
+        spec_groups: nextGroups,
+        variants: nextVariants.map((variant) => {
+          if (variant.is_default && !seenDefault) {
+            seenDefault = true;
+            return variant;
+          }
+          return { ...variant, is_default: false };
+        }),
+      };
+    });
+  };
+
+  const updateSpecGroups = (updater: (groups: AdminSpecGroup[]) => AdminSpecGroup[]) => {
+    setForm((f) => {
+      const next = updater(f.spec_groups);
+      window.setTimeout(() => regenerateSkuMatrix(next), 0);
+      return { ...f, spec_groups: next };
+    });
+  };
+
+  const convertToMatrixMode = () => {
+    const firstVariant = form.variants[0];
+    const valueId = tempId();
+    const group: AdminSpecGroup = {
+      id: tempId(),
+      name: "规格",
+      sort_order: 0,
+      values: [{ id: valueId, value: firstVariant?.title || "默认规格", image_url: "", sort_order: 0 }],
+    };
+    setForm((f) => ({
+      ...f,
+      spec_groups: [group],
+      variants: f.variants.slice(0, 1).map((variant) => ({
+        ...variant,
+        title: variant.title || "默认规格",
+        spec_value_ids: [valueId],
+        enabled: variant.enabled !== false,
+        is_default: true,
+      })),
+    }));
+  };
+
   const handleSave = async (publish = false) => {
     if (uploadingCover || uploadingGallery) {
       toast.error("图片仍在上传中，请等待上传完成后再保存商品。");
@@ -234,9 +394,17 @@ export default function AdminProductForm() {
         title: v.title,
         sku_code: v.sku_code.trim() || null,
         price: parseFloat(v.price) || 0,
+        original_price: v.original_price ? parseFloat(v.original_price) : null,
+        cost_price: v.cost_price ? parseFloat(v.cost_price) : null,
         stock: parseInt(v.stock, 10) || 0,
+        stock_warning_threshold: v.stock_warning_threshold ? parseInt(v.stock_warning_threshold, 10) || 0 : 5,
+        barcode: v.barcode?.trim() || null,
+        image_url: v.image_url?.trim() || null,
+        weight: v.weight ? parseFloat(v.weight) : null,
+        enabled: v.enabled !== false,
         sort_order: v.sort_order ?? i,
         is_default: v.is_default,
+        spec_value_ids: v.spec_value_ids ?? [],
       }));
       const defIdx = variantsPayload.findIndex((x) => x.is_default);
       if (defIdx >= 0) {
@@ -263,6 +431,17 @@ export default function AdminProductForm() {
         is_hot: form.is_hot,
         is_new: form.is_new,
         is_recommended: form.is_recommended,
+        spec_groups: form.spec_groups.map((group, gi) => ({
+          id: group.id,
+          name: group.name,
+          sort_order: group.sort_order ?? gi,
+          values: group.values.map((value, vi) => ({
+            id: value.id,
+            value: value.value,
+            image_url: value.image_url || null,
+            sort_order: value.sort_order ?? vi,
+          })),
+        })),
         variants: variantsPayload,
         tag_ids: form.tag_ids,
       };
@@ -537,6 +716,103 @@ export default function AdminProductForm() {
             <p className="text-[11px] text-muted-foreground leading-relaxed"><Tx>
               可在此维护各规格库存与价格；保存后同步到商品总库存。
             </Tx></p>
+            <div className="space-y-3 rounded-lg border border-border bg-background/40 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-xs font-semibold text-foreground">规格矩阵</p>
+                  <p className="mt-0.5 text-[10px] text-muted-foreground">
+                    最多 {MAX_SPEC_GROUPS} 组，每组 {MAX_SPEC_VALUES_PER_GROUP} 个值，自动生成 SKU 组合。
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  {form.spec_groups.length === 0 ? (
+                    <button
+                      type="button"
+                      onClick={convertToMatrixMode}
+                      className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
+                    >
+                      转为矩阵规格
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    disabled={form.spec_groups.length >= MAX_SPEC_GROUPS}
+                    onClick={() =>
+                      updateSpecGroups((groups) => [
+                        ...groups,
+                        { id: tempId(), name: `规格${groups.length + 1}`, sort_order: groups.length, values: [] },
+                      ])
+                    }
+                    className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary disabled:opacity-40"
+                  >
+                    添加规格组
+                  </button>
+                </div>
+              </div>
+              {form.spec_groups.map((group, groupIdx) => (
+                <div key={group.id || groupIdx} className="rounded-lg border border-border p-3">
+                  <div className="flex gap-2">
+                    <input
+                      value={group.name}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        updateSpecGroups((groups) => groups.map((g, i) => i === groupIdx ? { ...g, name: value } : g));
+                      }}
+                      placeholder="如：颜色"
+                      className="min-w-0 flex-1 rounded-md bg-secondary px-2 py-1.5 text-xs outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => updateSpecGroups((groups) => groups.filter((_, i) => i !== groupIdx))}
+                      className={THEME_TEXT_DANGER}
+                      title="删除规格组"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {group.values.map((value, valueIdx) => (
+                      <div key={value.id || valueIdx} className="flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-1">
+                        <input
+                          value={value.value}
+                          onChange={(e) => {
+                            const text = e.target.value;
+                            updateSpecGroups((groups) => groups.map((g, gi) => gi === groupIdx ? {
+                              ...g,
+                              values: g.values.map((v, vi) => vi === valueIdx ? { ...v, value: text } : v),
+                            } : g));
+                          }}
+                          placeholder="规格值"
+                          className="w-20 bg-transparent text-xs outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => updateSpecGroups((groups) => groups.map((g, gi) => gi === groupIdx ? {
+                            ...g,
+                            values: g.values.filter((_, vi) => vi !== valueIdx),
+                          } : g))}
+                          className={THEME_TEXT_DANGER}
+                          title="删除规格值"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      disabled={group.values.length >= MAX_SPEC_VALUES_PER_GROUP}
+                      onClick={() => updateSpecGroups((groups) => groups.map((g, gi) => gi === groupIdx ? {
+                        ...g,
+                        values: [...g.values, { id: tempId(), value: "", image_url: "", sort_order: g.values.length }],
+                      } : g))}
+                      className="rounded-full border border-dashed border-border px-3 py-1 text-xs text-muted-foreground hover:border-gold/50 disabled:opacity-40"
+                    >
+                      + 规格值
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[520px] text-xs">
                 <thead>
@@ -545,7 +821,13 @@ export default function AdminProductForm() {
                     <th className="pb-2 pr-2"><Tx>规格名</Tx></th>
                     <th className="pb-2 pr-2">SKU</th>
                     <th className="pb-2 pr-2"><Tx>价格</Tx></th>
+                    <th className="pb-2 pr-2">原价</th>
+                    <th className="pb-2 pr-2">成本</th>
                     <th className="pb-2 pr-2"><Tx>库存</Tx></th>
+                    <th className="pb-2 pr-2">预警</th>
+                    <th className="pb-2 pr-2">条码</th>
+                    <th className="pb-2 pr-2">图片</th>
+                    <th className="pb-2 pr-2">启用</th>
                     <th className="pb-2 w-10" />
                   </tr>
                 </thead>
@@ -600,17 +882,46 @@ export default function AdminProductForm() {
                         <input
                           type="number"
                           value={v.is_default ? form.price : v.price}
-                          disabled={v.is_default}
                           onChange={(e) => {
-                            if (v.is_default) return;
                             const t = e.target.value;
+                            if (v.is_default) setForm((f) => ({ ...f, price: t }));
                             setForm((f) => {
                               const nv = [...f.variants];
                               nv[idx] = { ...nv[idx], price: t };
                               return { ...f, variants: nv };
                             });
                           }}
-                          className="w-full min-w-[72px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none disabled:opacity-60"
+                          className="w-full min-w-[72px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
+                        />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <input
+                          type="number"
+                          value={v.original_price || ""}
+                          onChange={(e) => {
+                            const t = e.target.value;
+                            setForm((f) => {
+                              const nv = [...f.variants];
+                              nv[idx] = { ...nv[idx], original_price: t };
+                              return { ...f, variants: nv };
+                            });
+                          }}
+                          className="w-full min-w-[72px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
+                        />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <input
+                          type="number"
+                          value={v.cost_price || ""}
+                          onChange={(e) => {
+                            const t = e.target.value;
+                            setForm((f) => {
+                              const nv = [...f.variants];
+                              nv[idx] = { ...nv[idx], cost_price: t };
+                              return { ...f, variants: nv };
+                            });
+                          }}
+                          className="w-full min-w-[72px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
                         />
                       </td>
                       <td className="py-2 pr-2">
@@ -631,6 +942,66 @@ export default function AdminProductForm() {
                             });
                           }}
                           className="w-full min-w-[64px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
+                        />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <input
+                          type="number"
+                          min={0}
+                          value={v.stock_warning_threshold || ""}
+                          onChange={(e) => {
+                            const t = e.target.value;
+                            setForm((f) => {
+                              const nv = [...f.variants];
+                              nv[idx] = { ...nv[idx], stock_warning_threshold: t };
+                              return { ...f, variants: nv };
+                            });
+                          }}
+                          className="w-full min-w-[64px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
+                        />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <input
+                          value={v.barcode || ""}
+                          onChange={(e) => {
+                            const t = e.target.value;
+                            setForm((f) => {
+                              const nv = [...f.variants];
+                              nv[idx] = { ...nv[idx], barcode: t };
+                              return { ...f, variants: nv };
+                            });
+                          }}
+                          className="w-full min-w-[96px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
+                        />
+                      </td>
+                      <td className="py-2 pr-2">
+                        <input
+                          value={v.image_url || ""}
+                          onChange={(e) => {
+                            const t = e.target.value;
+                            setForm((f) => {
+                              const nv = [...f.variants];
+                              nv[idx] = { ...nv[idx], image_url: t };
+                              return { ...f, variants: nv };
+                            });
+                          }}
+                          placeholder="URL"
+                          className="w-full min-w-[120px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
+                        />
+                      </td>
+                      <td className="py-2 pr-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={v.enabled !== false}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setForm((f) => {
+                              const nv = [...f.variants];
+                              nv[idx] = { ...nv[idx], enabled: checked };
+                              return { ...f, variants: nv };
+                            });
+                          }}
+                          className="accent-gold"
                         />
                       </td>
                       <td className="py-2 align-middle">

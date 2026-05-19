@@ -1,6 +1,5 @@
-/**
- * 订单履约 / 支付状态机单测（不连库）
- */
+﻿/**
+ * 璁㈠崟灞ョ害 / 鏀粯鐘舵€佹満鍗曟祴锛堜笉杩炲簱锛? */
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 const {
@@ -56,3 +55,4 @@ describe('orderStateMachine', () => {
     assert.doesNotThrow(() => assertPaymentTransition('paid', 'refunded'));
   });
 });
+

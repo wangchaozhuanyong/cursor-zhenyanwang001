@@ -1,5 +1,5 @@
-const { asyncRoute } = require('../../../middleware/asyncRoute');
-const svc = require('../adminMemberLevel.service');
+﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const svc = require('../service/adminMemberLevel.service');
 
 exports.list = asyncRoute(async (_req, res) => {
   const list = await svc.listLevels();
@@ -35,3 +35,4 @@ exports.assignUserLevel = asyncRoute(async (req, res) => {
   const r = await svc.assignUserLevel(req, req.params.userId, req.body?.memberLevelId || req.body?.member_level_id);
   res.success(r.data, r.message);
 });
+

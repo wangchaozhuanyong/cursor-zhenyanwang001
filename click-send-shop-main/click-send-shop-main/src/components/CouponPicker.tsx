@@ -69,6 +69,7 @@ function CouponListBody(props: {
         return (
           <motion.div key={coupon.id} whileTap={usable ? { scale: 0.98 } : undefined} className="relative">
             <PremiumCouponCard
+              colorScheme="invite"
               layout="compact"
               title={coupon.title}
               amountPrefix={amountPrefix}

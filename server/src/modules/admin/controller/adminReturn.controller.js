@@ -1,5 +1,5 @@
-const { asyncRoute } = require('../../../middleware/asyncRoute');
-const svc = require('../adminExtended.service');
+﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const svc = require('../service/adminExtended.service');
 
 exports.list = asyncRoute(async (req, res) => {
   const { list, total, page, pageSize } = await svc.listReturns(req.query);
@@ -29,3 +29,4 @@ exports.reject = asyncRoute(async (req, res) => {
   if (r.error) return res.fail(r.error.code, r.error.message);
   res.success(null, r.message);
 });
+

@@ -1,4 +1,4 @@
-﻿import * as inviteApi from "@/api/admin/invite";
+import * as inviteApi from "@/api/admin/invite";
 import type { InviteRecord, ReferralRule } from "@/types/invite";
 import type { PaginatedData, PaginationParams } from "@/types/common";
 import { unwrapList, unwrapPaginated } from "@/services/responseNormalize";

@@ -1,4 +1,4 @@
-﻿import type { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { X } from "lucide-react";
 import type { ReviewDetailPayload } from "@/services/admin/reviewService";
 

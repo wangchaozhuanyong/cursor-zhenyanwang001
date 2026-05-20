@@ -1,4 +1,4 @@
-﻿const db = require('../../../config/db');
+const db = require('../../../config/db');
 const { EXPORT_TASK_STATUS } = require('../../../constants/status');
 
 async function insertTask(id, fileName, type, createdBy) {

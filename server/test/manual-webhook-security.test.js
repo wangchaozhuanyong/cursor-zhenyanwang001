@@ -1,4 +1,4 @@
-﻿const { test, describe } = require('node:test');
+const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 const paymentsService = require('../src/modules/payment/service/payments.service');
 const payRepo = require('../src/modules/payment/repository/payments.repository');

@@ -1,4 +1,4 @@
-﻿import * as meApi from "@/api/modules/me";
+import * as meApi from "@/api/modules/me";
 
 export type MeSummary = meApi.MeSummaryResponse;
 export type WechatLoginBinding = meApi.WechatLoginBinding;

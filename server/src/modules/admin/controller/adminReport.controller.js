@@ -1,4 +1,4 @@
-﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const { asyncRoute } = require('../../../middleware/asyncRoute');
 const svc = require('../service/adminReport.service');
 
 exports.getOverview = asyncRoute(async (req, res) => {
@@ -33,6 +33,9 @@ exports.getInventoryAnalysis = asyncRoute(async (req, res) => {
 });
 exports.getSearchAnalysis = asyncRoute(async (req, res) => {
   res.success(await svc.getSearchAnalysis(req.query));
+});
+exports.getTrafficAnalysis = asyncRoute(async (req, res) => {
+  res.success(await svc.getTrafficAnalysis(req.query));
 });
 
 exports.exportByType = asyncRoute(async (req, res) => {

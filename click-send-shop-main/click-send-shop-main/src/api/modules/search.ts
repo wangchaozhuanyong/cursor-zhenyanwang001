@@ -1,4 +1,4 @@
-﻿import { get, post } from "@/api/request";
+import { get, post } from "@/api/request";
 import type { HotSearchTerm, SearchSuggestion } from "@/types/search";
 
 export function getHotSearchTerms(limit = 10) {

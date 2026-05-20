@@ -1,4 +1,4 @@
-﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const { asyncRoute } = require('../../../middleware/asyncRoute');
 const service = require('../service/myinvois.service');
 
 exports.getStatus = asyncRoute(async (_req, res) => {

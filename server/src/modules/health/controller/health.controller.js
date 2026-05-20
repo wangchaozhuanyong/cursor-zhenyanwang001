@@ -1,4 +1,4 @@
-﻿const healthService = require('../service/health.service');
+const healthService = require('../service/health.service');
 const { ServiceUnavailableError } = require('../../../errors');
 
 exports.liveness = (_req, res) => {

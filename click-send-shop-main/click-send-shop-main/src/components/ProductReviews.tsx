@@ -1,4 +1,4 @@
-﻿import { Star, ThumbsUp, Loader2 } from "lucide-react";
+import { Star, ThumbsUp, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { ProductReviewsViewModel } from "@/hooks/useProductReviews";
 import ReviewComposerSheet from "@/components/review/ReviewComposerSheet";

@@ -1,4 +1,4 @@
-﻿import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { cn } from "@/lib/utils";
 

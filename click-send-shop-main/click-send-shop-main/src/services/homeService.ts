@@ -1,4 +1,4 @@
-﻿import * as homeApi from "@/api/modules/home";
+import * as homeApi from "@/api/modules/home";
 
 export type HomeBootstrap = homeApi.HomeBootstrap;
 

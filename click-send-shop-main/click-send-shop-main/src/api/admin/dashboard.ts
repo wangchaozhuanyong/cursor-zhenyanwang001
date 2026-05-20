@@ -1,4 +1,4 @@
-﻿import { get } from "@/api/request";
+import { get } from "@/api/request";
 import type { DashboardStats } from "@/types/admin";
 
 export function getDashboardStats() {

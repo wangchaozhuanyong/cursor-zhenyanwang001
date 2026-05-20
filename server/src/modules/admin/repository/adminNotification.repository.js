@@ -1,4 +1,4 @@
-﻿const db = require('../../../config/db');
+const db = require('../../../config/db');
 
 function buildBatchWhere(query) {
   let where = 'WHERE b.deleted_at IS NULL';

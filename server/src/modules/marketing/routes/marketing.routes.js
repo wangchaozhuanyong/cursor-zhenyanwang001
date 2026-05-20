@@ -1,4 +1,4 @@
-﻿const { Router } = require('express');
+const { Router } = require('express');
 const ctrl = require('../controller/marketing.controller');
 
 const router = Router();

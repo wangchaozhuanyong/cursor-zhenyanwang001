@@ -1,4 +1,4 @@
-﻿const service = require('../service/marketing.service');
+const service = require('../service/marketing.service');
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 
 exports.getFlashSale = asyncRoute(async (req, res) => {

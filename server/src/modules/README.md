@@ -1,4 +1,4 @@
-﻿# server/src/modules 架构说明（模块化单体 + 分层）
+# server/src/modules 架构说明（模块化单体 + 分层）
 
 本项目后端采用模块化单体（Modular Monolith），所有接口统一挂载在 `/api` 前缀下。
 

@@ -1,4 +1,5 @@
 import * as orderApi from "@/api/admin/order";
+import type { AdminOrderVoiceEvent } from "@/api/admin/order";
 import type { AdminOrderSummary, CheckoutAbandonment, CheckoutAbandonmentStatus, Order, OrderListParams } from "@/types/order";
 import type { PaginatedData } from "@/types/common";
 import { downloadAdminCsv } from "@/utils/adminCsvDownload";
@@ -35,6 +36,11 @@ export async function shipOrder(id: string, trackingNo: string, carrier: string)
 export async function refreshOrderLogistics(id: string) {
   const res = await orderApi.refreshOrderLogistics(id);
   return res.data;
+}
+
+export async function fetchRecentOrderEvents(since?: string): Promise<AdminOrderVoiceEvent[]> {
+  const res = await orderApi.getRecentOrderEvents(since);
+  return res.data.events;
 }
 
 export async function fetchCheckoutAbandonments(params?: {

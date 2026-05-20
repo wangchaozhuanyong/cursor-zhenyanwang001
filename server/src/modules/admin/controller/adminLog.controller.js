@@ -1,4 +1,4 @@
-﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const { asyncRoute } = require('../../../middleware/asyncRoute');
 const adminLogService = require('../service/adminLog.service');
 const auditLogService = require('../service/auditLog.service');
 

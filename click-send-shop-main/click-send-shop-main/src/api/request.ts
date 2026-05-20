@@ -1,4 +1,4 @@
-﻿import type { ApiResponse } from "@/types/common";
+import type { ApiResponse } from "@/types/common";
 import { ApiError } from "@/types/common";
 import {
   getAccessToken,

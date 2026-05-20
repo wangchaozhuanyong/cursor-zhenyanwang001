@@ -1,8 +1,10 @@
-﻿import { post } from "@/api/request";
+import { post } from "@/api/request";
 
 export type AnalyticsEventPayload = {
   event_type:
+    | "session_start"
     | "page_view"
+    | "page_leave"
     | "product_impression"
     | "product_click"
     | "product_view"
@@ -15,9 +17,16 @@ export type AnalyticsEventPayload = {
     | "search"
     | "category_click"
     | "banner_click"
-    | "activity_click";
+    | "activity_click"
+    | "contact_whatsapp_click"
+    | "language_check"
+    | "non_chinese_blocked"
+    | "error_404";
   module?: string;
   page?: string;
+  path?: string;
+  url?: string;
+  title?: string;
   product_id?: string;
   variant_id?: string;
   category_id?: string;
@@ -29,6 +38,24 @@ export type AnalyticsEventPayload = {
   quantity?: number;
   session_id?: string;
   anonymous_id?: string;
+  dedupe_key?: string;
+  referrer?: string;
+  referrer_domain?: string;
+  traffic_source?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  device?: string;
+  browser?: string;
+  os?: string;
+  browser_language?: string;
+  screen_width?: number;
+  screen_height?: number;
+  viewport_width?: number;
+  viewport_height?: number;
+  duration_ms?: number;
+  scroll_depth?: number;
 };
 
 export function trackAnalyticsEvent(payload: AnalyticsEventPayload) {

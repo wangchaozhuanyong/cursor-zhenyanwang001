@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Admin 路由聚合
  *
  * 仅做：声明路径 + 中间件 + 调用对应业务 controller
@@ -22,6 +22,7 @@ const authCtrl = require('../controller/adminAuth.controller');
 const dashboardCtrl = require('../controller/adminDashboard.controller');
 const productCtrl = require('../controller/adminProduct.controller');
 const orderCtrl = require('../controller/adminOrder.controller');
+const orderEventCtrl = require('../controller/adminOrderEvent.controller');
 const checkoutAbandonmentCtrl = require('../controller/adminCheckoutAbandonment.controller');
 const userCtrl = require('../controller/adminUser.controller');
 const categoryCtrl = require('../controller/adminCategory.controller');
@@ -42,6 +43,7 @@ const themeCtrl = require('../controller/adminTheme.controller');
 const exportCtrl = require('../controller/adminExport.controller');
 const recycleBinCtrl = require('../controller/adminRecycleBin.controller');
 const adminPayCtrl = require('../../payment/controller/adminPayments.controller');
+const telegramCtrl = require('../../telegram/telegram.controller');
 const logisticsCtrl = require('../../logistics/controller/logistics.controller');
 const inventoryCtrl = require('../controller/adminInventory.controller');
 const activityCtrl = require('../controller/adminActivity.controller');
@@ -226,6 +228,7 @@ router.post(
 );
 
 /* ---- Orders ---- */
+router.get('/order-events/recent', adminAuth, requirePermission('order.view'), orderEventCtrl.recent);
 router.get('/orders/export', adminAuth, requirePermission('order.view'), orderCtrl.exportCsv);
 router.get('/checkout-abandonments/reminders/due', adminAuth, requirePermission('order.view'), checkoutAbandonmentCtrl.listDueReminders);
 router.post('/checkout-abandonments/:id/reminders/sent', adminAuth, requirePermission('order.update'), checkoutAbandonmentCtrl.markReminderSent);
@@ -394,6 +397,9 @@ router.get('/points/records', adminAuth, requirePermission('points.manage'), poi
 router.post('/users/:userId/points', adminAuth, requirePermission('user.points'), userCtrl.adjustPoints);
 router.get('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.getSite);
 router.put('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.updateSite);
+router.get('/telegram/status', adminAuth, requirePermission('settings.manage'), telegramCtrl.getStatus);
+router.get('/telegram/logs', adminAuth, requirePermission('settings.manage'), telegramCtrl.listLogs);
+router.post('/telegram/test', adminAuth, requirePermission('settings.manage'), telegramCtrl.testSend);
 router.post(
   '/settings/assets/:key',
   adminAuth,
@@ -428,6 +434,7 @@ router.get('/reports/activities/analysis', adminAuth, requirePermission('report.
 router.get('/reports/coupons/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getCouponsAnalysis);
 router.get('/reports/inventory/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getInventoryAnalysis);
 router.get('/reports/search/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getSearchAnalysis);
+router.get('/reports/traffic', adminAuth, requirePermission('report.view'), reportCtrl.getTrafficAnalysis);
 
 // 兼容旧接口
 router.get('/reports/sales/export', adminAuth, requirePermission('report.export'), reportCtrl.exportByType);

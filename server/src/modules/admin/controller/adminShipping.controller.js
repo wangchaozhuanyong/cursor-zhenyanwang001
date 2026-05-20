@@ -1,4 +1,4 @@
-﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const { asyncRoute } = require('../../../middleware/asyncRoute');
 const adminExtended = require('../service/adminExtended.service');
 const adminSiteSettingsService = require('../service/adminSiteSettings.service');
 

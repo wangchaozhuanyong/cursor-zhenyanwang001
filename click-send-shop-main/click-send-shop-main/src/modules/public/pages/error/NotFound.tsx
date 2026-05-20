@@ -1,9 +1,15 @@
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { Home, SearchX } from "lucide-react";
 import { motion } from "framer-motion";
+import { trackEvent } from "@/services/analyticsService";
 
 export default function NotFound() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    void trackEvent({ event_type: "error_404", module: "router", path: window.location.pathname, url: window.location.href, title: "页面不存在" });
+  }, []);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">

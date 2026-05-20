@@ -1,4 +1,4 @@
-﻿import { create } from "zustand";
+import { create } from "zustand";
 import type { Product, ProductListParams } from "@/types/product";
 import type { Category } from "@/types/category";
 import * as productService from "@/services/productService";

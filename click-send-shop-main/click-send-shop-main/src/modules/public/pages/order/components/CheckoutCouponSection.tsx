@@ -1,4 +1,4 @@
-﻿import CouponPicker from "@/components/CouponPicker";
+import CouponPicker from "@/components/CouponPicker";
 import type { CheckoutPickerCoupon } from "@/types/coupon";
 
 interface CheckoutCouponSectionProps {

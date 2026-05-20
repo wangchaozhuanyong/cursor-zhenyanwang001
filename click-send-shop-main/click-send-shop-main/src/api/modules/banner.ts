@@ -1,4 +1,4 @@
-﻿import { get } from "@/api/request";
+import { get } from "@/api/request";
 import type { Banner } from "@/types/banner";
 
 export function getActiveBanners() {

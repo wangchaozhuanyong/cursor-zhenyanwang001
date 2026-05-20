@@ -1,4 +1,4 @@
-﻿import { get, post, del } from "@/api/request";
+import { get, post, del } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
 import type { HistoryItem } from "@/types/history";
 

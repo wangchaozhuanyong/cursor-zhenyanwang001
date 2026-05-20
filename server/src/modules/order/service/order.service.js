@@ -1,4 +1,4 @@
-﻿const { generateId, generateOrderNo } = require('../../../utils/helpers');
+const { generateId, generateOrderNo } = require('../../../utils/helpers');
 const { computeShippingFee, estimateWeightFromItems } = require('../../../utils/shippingFee');
 const {
   NotFoundError,

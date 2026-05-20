@@ -1,12 +1,12 @@
-﻿const db = require('../../../config/db');
+const db = require('../../../config/db');
 
 const TABLE_CONFIGS = {
-  products: { label: '鍟嗗搧', nameCol: 'name', selectCols: 'id, name, cover_image, deleted_at, deleted_by' },
-  categories: { label: '鍒嗙被', nameCol: 'name', selectCols: 'id, name, deleted_at, deleted_by' },
-  coupons: { label: 'Coupon', nameCol: 'title', selectCols: 'id, title AS name, deleted_at, deleted_by' },
-  banners: { label: 'Banner', nameCol: 'title', selectCols: 'id, title AS name, image AS cover_image, deleted_at, deleted_by' },
-  content_pages: { label: 'Content Page', nameCol: 'title', selectCols: 'id, title AS name, slug, deleted_at, deleted_by' },
-  product_reviews: { label: '璇勮', nameCol: 'content', selectCols: "id, CONCAT(LEFT(content, 50), '...') AS name, product_id, user_id, deleted_at, deleted_by" },
+  products: { label: '商品', nameCol: 'name', selectCols: 'id, name, cover_image, deleted_at, deleted_by' },
+  categories: { label: '分类', nameCol: 'name', selectCols: 'id, name, deleted_at, deleted_by' },
+  coupons: { label: '优惠券', nameCol: 'title', selectCols: 'id, title AS name, deleted_at, deleted_by' },
+  banners: { label: '轮播图', nameCol: 'title', selectCols: 'id, title AS name, image AS cover_image, deleted_at, deleted_by' },
+  content_pages: { label: '内容页', nameCol: 'title', selectCols: 'id, title AS name, slug, deleted_at, deleted_by' },
+  product_reviews: { label: '评论', nameCol: 'content', selectCols: "id, CONCAT(LEFT(content, 50), '...') AS name, product_id, user_id, deleted_at, deleted_by" },
 };
 
 async function listDeletedItems(type) {
@@ -60,6 +60,3 @@ module.exports = {
   restoreItem,
   permanentDeleteItem,
 };
-
-
-

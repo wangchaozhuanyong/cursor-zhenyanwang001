@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 /**
  * Google OAuth锛氭巿鏉冭烦杞笌鍥炶皟绛惧彂鐭湡 ticket锛屽墠绔?exchange 鎹?JWT
  */

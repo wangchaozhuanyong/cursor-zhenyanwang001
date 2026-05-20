@@ -1,4 +1,4 @@
-﻿const { Router } = require('express');
+const { Router } = require('express');
 const { z } = require('zod');
 const { validate } = require('../../../middleware/validate');
 const auth = require('../../../middleware/auth');

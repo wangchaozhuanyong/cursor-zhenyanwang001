@@ -1,4 +1,4 @@
-﻿import { get } from "@/api/request";
+import { get } from "@/api/request";
 import type { HomeOpsConfig, SiteInfo } from "@/types/content";
 import type { Category } from "@/types/category";
 import type { Product } from "@/types/product";

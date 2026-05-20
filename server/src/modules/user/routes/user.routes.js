@@ -1,4 +1,4 @@
-﻿const { Router } = require('express');
+const { Router } = require('express');
 const authCtrl = require('../../auth/controller/auth.controller');
 const privacyCtrl = require('../controller/privacy.controller');
 const auth = require('../../../middleware/auth');

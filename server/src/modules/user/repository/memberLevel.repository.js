@@ -1,4 +1,4 @@
-﻿const db = require('../../../config/db');
+const db = require('../../../config/db');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 
 function getPool() {

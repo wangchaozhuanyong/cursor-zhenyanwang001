@@ -1,4 +1,4 @@
-﻿const repo = require('../repository/loyalty.repository');
+const repo = require('../repository/loyalty.repository');
 
 function pickPaymentMethodEnabled(methods, code) {
   return methods.includes(code);

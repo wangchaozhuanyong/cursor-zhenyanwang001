@@ -1,4 +1,4 @@
-﻿const repo = require('../repository/adminRecycleBin.repository');
+const repo = require('../repository/adminRecycleBin.repository');
 const productModule = require('../../product');
 const { writeAuditLog } = require('../../../utils/auditLog');
 function getProductApi() {

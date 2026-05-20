@@ -1,4 +1,4 @@
-﻿import banner1Image from "@/assets/banner1.jpg";
+import banner1Image from "@/assets/banner1.jpg";
 import type { Banner } from "@/types/banner";
 import type { Product } from "@/types/product";
 

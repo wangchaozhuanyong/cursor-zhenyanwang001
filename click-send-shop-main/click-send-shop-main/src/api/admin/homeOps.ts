@@ -1,4 +1,4 @@
-﻿import { del, get, post, put } from "@/api/request";
+import { del, get, post, put } from "@/api/request";
 import type { HomeModuleSettings } from "@/constants/homeModules";
 import type { HomeNavItem } from "@/types/content";
 

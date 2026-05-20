@@ -1,4 +1,4 @@
-﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const { asyncRoute } = require('../../../middleware/asyncRoute');
 const service = require('../service/home.service');
 
 exports.getBootstrap = asyncRoute(async (_req, res) => {

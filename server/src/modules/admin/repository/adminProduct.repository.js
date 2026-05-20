@@ -1,4 +1,4 @@
-﻿const db = require('../../../config/db');
+const db = require('../../../config/db');
 
 async function countProducts(where, params) {
   const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total FROM products ${where}`, params);

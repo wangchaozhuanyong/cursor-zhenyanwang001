@@ -1,4 +1,4 @@
-﻿const returnService = require('../service/return.service');
+const returnService = require('../service/return.service');
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 const { writeAuditLog } = require('../../../utils/auditLog');
 

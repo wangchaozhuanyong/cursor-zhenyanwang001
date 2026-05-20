@@ -1,4 +1,4 @@
-﻿const repo = require('../repository/health.repository');
+const repo = require('../repository/health.repository');
 const { getRedisUrl, pingRedis } = require('../../../config/redis');
 
 function isRedisConfigured() {

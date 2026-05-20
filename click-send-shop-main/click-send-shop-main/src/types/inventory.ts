@@ -1,4 +1,4 @@
-﻿export type InventoryChangeType = "in" | "out" | "adjust" | "order_deduct" | "order_release";
+export type InventoryChangeType = "in" | "out" | "adjust" | "order_deduct" | "order_release";
 
 export interface InventorySummary {
   total_products: number;

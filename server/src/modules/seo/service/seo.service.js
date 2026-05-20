@@ -1,4 +1,4 @@
-﻿const seoRepo = require('../repository/seo.repository');
+const seoRepo = require('../repository/seo.repository');
 
 const { SITEMAP_MAX_URLS } = seoRepo;
 

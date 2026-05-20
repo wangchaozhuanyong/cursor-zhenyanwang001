@@ -1,4 +1,4 @@
-﻿/**
+/**
  * User 鍩燂細浼氬憳璧勬枡銆佹敹钘忎笌娴忚鍘嗗彶銆佸湴鍧€涓庤繍璐癸紙璇伙級銆佽惀閿€鐗规潈銆佺珯鍐呴€氱煡銆佷笂浼? */
 const { Router } = require('express');
 const pointsService = require('./service/points.service');

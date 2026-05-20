@@ -5,6 +5,7 @@ import PageHeader from "@/components/PageHeader";
 import SeoHead from "@/components/SeoHead";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { buildCanonical } from "@/utils/seo";
+import { trackEvent } from "@/services/analyticsService";
 import type { SiteInfo, SupportChannelType, SupportDownloadChannel, SupportDownloadConfig } from "@/types/content";
 
 type DeferredPromptEvent = Event & {
@@ -139,6 +140,11 @@ function ChannelCard({ channel, siteInfo }: { channel: SupportDownloadChannel; s
   const link = channelLink(channel, siteInfo);
   const account = clean(channel.account);
   const qrUrl = clean(channel.qrUrl);
+  const handleOpenLink = () => {
+    if (channel.type === "whatsapp") {
+      void trackEvent({ event_type: "contact_whatsapp_click", module: "support_download" });
+    }
+  };
   if (!account && !link && !qrUrl) return null;
 
   return (
@@ -173,7 +179,7 @@ function ChannelCard({ channel, siteInfo }: { channel: SupportDownloadChannel; s
       ) : null}
 
       {link ? (
-        <a href={link} target="_blank" rel="noreferrer" className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] py-3 text-sm font-semibold text-[var(--theme-primary-foreground)]">
+        <a href={link} target="_blank" rel="noreferrer" onClick={handleOpenLink} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] py-3 text-sm font-semibold text-[var(--theme-primary-foreground)]">
           <ExternalLink size={15} />
           打开外部 App
         </a>

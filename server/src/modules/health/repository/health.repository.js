@@ -1,4 +1,4 @@
-﻿const db = require('../../../config/db');
+const db = require('../../../config/db');
 
 async function ping() {
   await db.query('SELECT 1 AS ok');

@@ -1,4 +1,4 @@
-﻿const { generateId, parseProductImages } = require('../../../utils/helpers');
+const { generateId, parseProductImages } = require('../../../utils/helpers');
 const { BusinessError } = require('../../../errors/BusinessError');
 const repo = require('../repository/return.repository');
 const { ORDER_STATUS, RETURN_STATUS } = require('../../../constants/status');

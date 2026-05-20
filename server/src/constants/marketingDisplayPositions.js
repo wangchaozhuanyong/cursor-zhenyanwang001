@@ -1,4 +1,4 @@
-﻿const marketingDisplayData = require('../../../click-send-shop-main/click-send-shop-main/src/constants/marketingDisplayPositions.data.json');
+const marketingDisplayData = require('../../../click-send-shop-main/click-send-shop-main/src/constants/marketingDisplayPositions.data.json');
 
 const DISPLAY_POSITIONS = marketingDisplayData.displayPositions;
 const DISPLAY_POSITION_LABELS = marketingDisplayData.displayPositionLabels;

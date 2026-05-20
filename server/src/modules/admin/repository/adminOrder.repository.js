@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Admin Order Repository
  *
  * 浠呭仛鏁版嵁搴撹闂€傚嚱鏁板懡鍚嶄互銆屽姩浣?+ 琛ㄣ€嶄负涓伙細
@@ -141,6 +141,17 @@ async function selectOrderItemsBatch(orderIds) {
 async function updateOrderStatusAndPayment(q, orderId, status, paymentStatus) {
   await q.query(
     'UPDATE orders SET status = ?, payment_status = ? WHERE id = ?',
+    [status, paymentStatus, orderId],
+  );
+}
+
+async function updateOrderStatusPaymentAndPaidTime(q, orderId, status, paymentStatus) {
+  await q.query(
+    `UPDATE orders
+     SET status = ?, payment_status = ?,
+         payment_time = COALESCE(payment_time, NOW()),
+         paid_at = COALESCE(paid_at, NOW())
+     WHERE id = ?`,
     [status, paymentStatus, orderId],
   );
 }
@@ -332,6 +343,7 @@ module.exports = {
   touchOrderShippedAtIfNull,
 
   updateOrderStatusAndPayment,
+  updateOrderStatusPaymentAndPaidTime,
   appendAdminRemark,
   selectFullOrder,
   selectOrderItemPairs,

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Stripe webhook amount validation logic (unit test, no DB).
  */
 const { test, describe } = require('node:test');

@@ -1,4 +1,4 @@
-﻿const db = require('../../../config/db');
+const db = require('../../../config/db');
 
 const navFields = 'id, icon_url, title, link_url, target_type, target_category_id, sort_order, enabled, created_at, updated_at';
 

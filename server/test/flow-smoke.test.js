@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 鏈湴涓绘祦绋嬭仈璋冿細鐢ㄦ埛娉ㄥ唽鈫掑晢鍝佲啋璐墿杞︹啋涓嬪崟锛汥B 鎻愬崌涓?admin 鍚庤蛋鍚庡彴璁㈠崟鍒楄〃涓庢敼鐘舵€併€? * 闇€锛歁ySQL 宸插垵濮嬪寲 seed銆?env 鍙繛搴撱€備笉渚濊禆 HTTPS / Stripe Webhook銆? */
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 require('./_dbCleanup.test');
@@ -74,7 +74,7 @@ describe('local flow smoke', () => {
       .expect(200);
     assert.equal(shipping.body.code, 0);
     assert.ok(Array.isArray(shipping.body.data));
-    if (!shipping.body.data.length) {
+    assert.ok(shipping.body.data.length > 0, '运费模板列表不应为空');
       shippingTemplateId = randomUUID();
       await db.query(
         `INSERT INTO shipping_templates (id, name, regions, base_fee, free_above, extra_per_kg, enabled)
@@ -86,7 +86,7 @@ describe('local flow smoke', () => {
         .expect(200);
       assert.equal(shipping.body.code, 0);
     }
-    assert.ok(shipping.body.data.length > 0, '杩愯垂妯℃澘鍒楄〃涓嶅簲涓虹┖');
+    assert.ok(shipping.body.data.length > 0, '运费模板列表不应为空');
     shippingTemplateId = shipping.body.data.some((t) => t.id === shippingTemplateId)
       ? shippingTemplateId
       : shipping.body.data[0].id;

@@ -1,4 +1,4 @@
-﻿import type { PaymentMethod } from "@/components/PaymentMethodPicker";
+import type { PaymentMethod } from "@/components/PaymentMethodPicker";
 import { AnimatedNumber, LoadingButton } from "@/modules/micro-interactions";
 import { submitCtaLabel } from "../utils/checkoutText";
 

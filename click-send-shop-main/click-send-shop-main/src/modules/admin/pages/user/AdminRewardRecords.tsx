@@ -90,7 +90,7 @@ export default function AdminRewardRecords() {
         const normalized = (Array.isArray(data) ? data : []).map((r: any, idx) => ({
           id: String(r.id ?? idx),
           level: Number(r.level ?? idx + 1),
-          name: String(r.name ?? `Level ${idx + 1}`),
+          name: String(r.name ?? `等级 ${idx + 1}`),
           rewardPercent: Number(r.rewardPercent ?? 0),
           enabled: Boolean(r.enabled ?? true),
         }));

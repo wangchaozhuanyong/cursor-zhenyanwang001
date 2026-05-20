@@ -1,5 +1,6 @@
-﻿import * as reportApi from "@/api/admin/report";
+import * as reportApi from "@/api/admin/report";
 import type { ReportQuery } from "@/api/admin/report";
+import { downloadAdminCsv } from "@/utils/adminCsvDownload";
 
 export async function fetchReportOverview(params?: ReportQuery) {
   const res = await reportApi.getReportOverview(params);
@@ -45,3 +46,18 @@ export async function fetchSearchAnalysisReport(params?: ReportQuery) {
   const res = await reportApi.getSearchAnalysis(params);
   return res.data;
 }
+export async function fetchTrafficAnalysisReport(params?: ReportQuery) {
+  const res = await reportApi.getTrafficAnalysis(params);
+  return res.data;
+}
+
+export async function exportTrafficAnalysisCsv(params?: ReportQuery) {
+  const q = new URLSearchParams({ type: "traffic_analysis" });
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      q.set(key, String(value));
+    }
+  });
+  await downloadAdminCsv(`/admin/reports/export?${q.toString()}`, "traffic-analysis.csv");
+}
+

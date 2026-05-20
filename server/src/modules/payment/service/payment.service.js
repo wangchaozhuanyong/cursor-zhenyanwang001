@@ -1,6 +1,7 @@
 const { generateId } = require('../../../utils/helpers');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const paymentsService = require('./payments.service');
+const telegramService = require('../../telegram/telegram.service');
 
 function getOrderApi() {
   return /** @type {any} */ (require('../../order')).api || {};
@@ -26,7 +27,7 @@ function getMyinvoisApi() {
 function requireAdminApi(name) {
   const fn = getAdminApi()[name];
   if (typeof fn !== 'function') {
-    throw new Error(`Admin Ä£¿é API Î´±©Â¶·½·¨: ${name}`);
+    throw new Error(`Admin æ¨¡å— API æœªæš´éœ²æ–¹æ³•ï¼š${name}`);
   }
   return fn;
 }
@@ -34,7 +35,7 @@ function requireAdminApi(name) {
 function requireMyinvoisApi(name) {
   const fn = getMyinvoisApi()[name];
   if (typeof fn !== 'function') {
-    throw new Error(`MyInvois Ä£¿é API Î´±©Â¶·½·¨: ${name}`);
+    throw new Error(`MyInvois æ¨¡å— API æœªæš´éœ²æ–¹æ³•ï¼š${name}`);
   }
   return fn;
 }
@@ -42,7 +43,7 @@ function requireMyinvoisApi(name) {
 function requireOrderApi(name) {
   const fn = getOrderApi()[name];
   if (typeof fn !== 'function') {
-    throw new Error(`Order Ä£¿é API Î´±©Â¶·½·¨: ${name}`);
+    throw new Error(`Order æ¨¡å— API æœªæš´éœ²æ–¹æ³•ï¼š${name}`);
   }
   return fn;
 }
@@ -51,6 +52,14 @@ async function refreshMemberLevel(q, userId) {
   const userApi = getUserApi();
   if (typeof userApi.refreshUserMemberLevel !== 'function') return;
   await userApi.refreshUserMemberLevel(q, userId);
+}
+
+async function notifyTelegramOrderPaid(orderId, source) {
+  try {
+    await telegramService.notifyOrderPaid(orderId, source);
+  } catch (err) {
+    console.error('[Telegram] notify order paid failed:', err?.message || err);
+  }
 }
 
 function validatePaymentIntentAmount(order, pi) {
@@ -131,7 +140,7 @@ async function handleStripeEvent(event) {
       amount: pi.amount,
     });
   } catch (e) {
-    console.error('[stripe webhook] payment_orders ¼ÇÂ¼Ê§°Ü:', e?.message || e);
+      console.error('[stripe webhook] payment_orders è®°å½•å¤±è´¥:', e?.message || e);
   }
 
   try {
@@ -160,6 +169,7 @@ async function handleStripeEvent(event) {
   } catch (err) {
     console.error('[MyInvois] enqueue invoice after Stripe payment failed:', err?.message || err);
   }
+  await notifyTelegramOrderPaid(orderId, 'stripe');
   return { handled: true };
 }
 

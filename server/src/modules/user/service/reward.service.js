@@ -1,4 +1,4 @@
-﻿const { generateId } = require('../../../utils/helpers');
+const { generateId } = require('../../../utils/helpers');
 const repo = require('../repository/reward.repository');
 const { REWARD_STATUS } = require('../../../constants/status');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');

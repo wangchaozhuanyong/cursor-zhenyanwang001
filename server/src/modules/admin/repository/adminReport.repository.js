@@ -1,4 +1,4 @@
-﻿const db = require('../../../config/db');
+const db = require('../../../config/db');
 const { PAID_PAYMENT_STATUS_LIST } = require('../../../constants/status');
 
 const PAID_PAYMENT_SQL = PAID_PAYMENT_STATUS_LIST.map((s) => `'${s}'`).join(', ');
@@ -350,7 +350,244 @@ async function selectOverviewBehaviorSummary(dateFrom, dateTo) {
   );
 }
 
+function pageTypeSql(alias = 'ae') {
+  return `CASE
+    WHEN ${alias}.path IN ('', '/') THEN 'home'
+    WHEN ${alias}.path LIKE '/product/%' THEN 'product'
+    WHEN ${alias}.path LIKE '/categories%' THEN 'category'
+    WHEN ${alias}.path LIKE '/cart%' THEN 'cart'
+    WHEN ${alias}.path LIKE '/checkout%' THEN 'checkout'
+    WHEN ${alias}.path LIKE '/search%' THEN 'search'
+    ELSE 'other'
+  END`;
+}
+
+function buildTrafficWhere(dateFrom, dateTo, filters = {}, alias = 'ae') {
+  const where = [
+    `${rangeWhere(`DATE(DATE_ADD(${alias}.created_at, INTERVAL 8 HOUR))`)}`,
+    `COALESCE(NULLIF(${alias}.path,''), ${alias}.page, '') NOT LIKE '/admin%'`,
+  ];
+  const params = [dateFrom, dateTo];
+  if (filters.device) {
+    where.push(`${alias}.device = ?`);
+    params.push(filters.device);
+  }
+  if (filters.traffic_source) {
+    where.push(`${alias}.traffic_source = ?`);
+    params.push(filters.traffic_source);
+  }
+  if (filters.page_type) {
+    where.push(`${pageTypeSql(alias)} = ?`);
+    params.push(filters.page_type);
+  }
+  if (filters.visitor_type === 'new') {
+    where.push(`(
+      SELECT DATE(DATE_ADD(MIN(ae_first.created_at), INTERVAL 8 HOUR))
+      FROM analytics_events ae_first
+      WHERE ae_first.anonymous_id = ${alias}.anonymous_id AND ae_first.anonymous_id <> ''
+    ) BETWEEN ? AND ?`);
+    params.push(dateFrom, dateTo);
+  } else if (filters.visitor_type === 'returning') {
+    where.push(`(
+      SELECT DATE(DATE_ADD(MIN(ae_first.created_at), INTERVAL 8 HOUR))
+      FROM analytics_events ae_first
+      WHERE ae_first.anonymous_id = ${alias}.anonymous_id AND ae_first.anonymous_id <> ''
+    ) < ?`);
+    params.push(dateFrom);
+  }
+  return { where: where.join(' AND '), params };
+}
+
+async function selectTrafficSummary(dateFrom, dateTo, filters = {}) {
+  const { where, params } = buildTrafficWhere(dateFrom, dateTo, filters);
+  return queryOne(
+    `SELECT
+      SUM(CASE WHEN event_type='page_view' THEN 1 ELSE 0 END) AS pv,
+      COUNT(DISTINCT NULLIF(anonymous_id,'')) AS uv,
+      COUNT(DISTINCT NULLIF(session_id,'')) AS sessions,
+      COUNT(DISTINCT NULLIF(ip_hash,'')) AS unique_ip_count,
+      COUNT(DISTINCT CASE WHEN (
+        SELECT DATE(DATE_ADD(MIN(ae_first.created_at), INTERVAL 8 HOUR))
+        FROM analytics_events ae_first
+        WHERE ae_first.anonymous_id = ae.anonymous_id AND ae_first.anonymous_id <> ''
+      ) BETWEEN ? AND ? THEN NULLIF(ae.anonymous_id,'') END) AS new_visitors,
+      COUNT(DISTINCT CASE WHEN (
+        SELECT DATE(DATE_ADD(MIN(ae_first.created_at), INTERVAL 8 HOUR))
+        FROM analytics_events ae_first
+        WHERE ae_first.anonymous_id = ae.anonymous_id AND ae_first.anonymous_id <> ''
+      ) < ? THEN NULLIF(ae.anonymous_id,'') END) AS returning_visitors,
+      COALESCE(AVG(CASE WHEN event_type='page_leave' THEN duration_ms END),0) AS avg_duration_ms,
+      SUM(CASE WHEN event_type='product_view' THEN 1 ELSE 0 END) AS product_view_count,
+      SUM(CASE WHEN event_type='product_click' THEN 1 ELSE 0 END) AS product_click_count,
+      SUM(CASE WHEN event_type='add_to_cart' THEN 1 ELSE 0 END) AS add_to_cart_count,
+      SUM(CASE WHEN event_type='checkout_start' THEN 1 ELSE 0 END) AS checkout_start_count,
+      SUM(CASE WHEN event_type='order_submit' THEN 1 ELSE 0 END) AS order_submit_count,
+      SUM(CASE WHEN event_type='payment_success' THEN 1 ELSE 0 END) AS payment_success_count,
+      COALESCE(SUM(CASE WHEN event_type='payment_success' THEN COALESCE(amount,0) ELSE 0 END),0) AS paid_amount,
+      COUNT(DISTINCT CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE) THEN NULLIF(session_id,'') END) AS online_visitors
+     FROM analytics_events ae
+     WHERE ${where}`,
+    [dateFrom, dateTo, dateFrom, ...params],
+  );
+}
+
+async function selectTrafficBounce(dateFrom, dateTo, filters = {}) {
+  const { where, params } = buildTrafficWhere(dateFrom, dateTo, filters);
+  return queryOne(
+    `SELECT
+      COUNT(*) AS sessions,
+      SUM(CASE WHEN page_views <= 1 THEN 1 ELSE 0 END) AS bounce_sessions
+     FROM (
+       SELECT session_id, SUM(CASE WHEN event_type='page_view' THEN 1 ELSE 0 END) AS page_views
+       FROM analytics_events ae
+       WHERE ${where} AND session_id <> ''
+       GROUP BY session_id
+     ) x`,
+    params,
+  );
+}
+
+async function selectTrafficTrend(dateFrom, dateTo, filters = {}) {
+  const { where, params } = buildTrafficWhere(dateFrom, dateTo, filters);
+  const groupExpr = filters.granularity === 'month'
+    ? `DATE_FORMAT(DATE_ADD(ae.created_at, INTERVAL 8 HOUR),'%Y-%m')`
+    : filters.granularity === 'week'
+      ? `DATE_FORMAT(DATE_SUB(DATE_ADD(ae.created_at, INTERVAL 8 HOUR), INTERVAL WEEKDAY(DATE_ADD(ae.created_at, INTERVAL 8 HOUR)) DAY),'%Y-%m-%d')`
+      : `DATE(DATE_ADD(ae.created_at, INTERVAL 8 HOUR))`;
+  return queryList(
+    `SELECT
+      ${groupExpr} AS date,
+      SUM(CASE WHEN event_type='page_view' THEN 1 ELSE 0 END) AS pv,
+      COUNT(DISTINCT NULLIF(anonymous_id,'')) AS uv,
+      COUNT(DISTINCT NULLIF(session_id,'')) AS sessions,
+      SUM(CASE WHEN event_type='product_view' THEN 1 ELSE 0 END) AS product_views,
+      SUM(CASE WHEN event_type='add_to_cart' THEN 1 ELSE 0 END) AS add_to_cart,
+      SUM(CASE WHEN event_type='checkout_start' THEN 1 ELSE 0 END) AS checkout_start,
+      SUM(CASE WHEN event_type='order_submit' THEN 1 ELSE 0 END) AS order_submit,
+      SUM(CASE WHEN event_type='payment_success' THEN 1 ELSE 0 END) AS payment_success,
+      COALESCE(SUM(CASE WHEN event_type='payment_success' THEN COALESCE(amount,0) ELSE 0 END),0) AS paid_amount
+     FROM analytics_events ae
+     WHERE ${where}
+     GROUP BY ${groupExpr}
+     ORDER BY date ASC`,
+    params,
+  );
+}
+
+async function selectTrafficFunnel(dateFrom, dateTo, filters = {}) {
+  const { where, params } = buildTrafficWhere(dateFrom, dateTo, filters);
+  return queryOne(
+    `SELECT
+      COUNT(DISTINCT CASE WHEN event_type IN ('session_start','page_view') THEN NULLIF(session_id,'') END) AS visit_count,
+      SUM(CASE WHEN event_type='product_view' THEN 1 ELSE 0 END) AS product_view_count,
+      SUM(CASE WHEN event_type='product_click' THEN 1 ELSE 0 END) AS product_click_count,
+      SUM(CASE WHEN event_type='add_to_cart' THEN 1 ELSE 0 END) AS add_to_cart_count,
+      SUM(CASE WHEN event_type='checkout_start' THEN 1 ELSE 0 END) AS checkout_start_count,
+      SUM(CASE WHEN event_type='order_submit' THEN 1 ELSE 0 END) AS order_submit_count,
+      SUM(CASE WHEN event_type='payment_success' THEN 1 ELSE 0 END) AS payment_success_count
+     FROM analytics_events ae
+     WHERE ${where}`,
+    params,
+  );
+}
+
+async function selectTrafficTopPages(dateFrom, dateTo, filters = {}) {
+  const { where, params } = buildTrafficWhere(dateFrom, dateTo, filters);
+  return queryList(
+    `SELECT
+      COALESCE(NULLIF(path,''), page, '/') AS path,
+      COALESCE(NULLIF(MAX(title),''), COALESCE(NULLIF(path,''), page, '/')) AS title,
+      ${pageTypeSql('ae')} AS page_type,
+      SUM(CASE WHEN event_type='page_view' THEN 1 ELSE 0 END) AS pv,
+      COUNT(DISTINCT NULLIF(anonymous_id,'')) AS uv,
+      COALESCE(AVG(CASE WHEN event_type='page_leave' THEN duration_ms END),0) AS avg_duration_ms,
+      CASE
+        WHEN COUNT(DISTINCT CASE WHEN session_id <> '' THEN session_id END) > 0
+        THEN ROUND(
+          COUNT(DISTINCT CASE WHEN session_id <> '' AND session_total_page_views <= 1 THEN session_id END)
+          / COUNT(DISTINCT CASE WHEN session_id <> '' THEN session_id END) * 100,
+          2
+        )
+        ELSE 0
+      END AS bounce_rate,
+      SUM(CASE WHEN event_type='page_leave' THEN 1 ELSE 0 END) AS exit_count,
+      SUM(CASE WHEN event_type='add_to_cart' THEN 1 ELSE 0 END) AS add_to_cart_count,
+      SUM(CASE WHEN event_type='order_submit' THEN 1 ELSE 0 END) AS order_submit_count,
+      COALESCE(SUM(CASE WHEN event_type='payment_success' THEN COALESCE(amount,0) ELSE 0 END),0) AS paid_amount
+     FROM analytics_events ae
+     LEFT JOIN (
+       SELECT session_id, SUM(CASE WHEN event_type='page_view' THEN 1 ELSE 0 END) AS session_total_page_views
+       FROM analytics_events
+       WHERE DATE(DATE_ADD(created_at, INTERVAL 8 HOUR)) BETWEEN ? AND ?
+         AND session_id <> ''
+       GROUP BY session_id
+     ) session_stats ON session_stats.session_id = ae.session_id
+     WHERE ${where}
+     GROUP BY COALESCE(NULLIF(path,''), page, '/'), ${pageTypeSql('ae')}
+     ORDER BY pv DESC
+     LIMIT 100`,
+    [dateFrom, dateTo, ...params],
+  );
+}
+
+async function selectTrafficSources(dateFrom, dateTo, filters = {}) {
+  const { where, params } = buildTrafficWhere(dateFrom, dateTo, filters);
+  return queryList(
+    `SELECT
+      COALESCE(NULLIF(traffic_source,''), 'direct') AS traffic_source,
+      SUM(CASE WHEN event_type='page_view' THEN 1 ELSE 0 END) AS pv,
+      COUNT(DISTINCT NULLIF(anonymous_id,'')) AS uv,
+      COUNT(DISTINCT CASE WHEN (
+        SELECT DATE(DATE_ADD(MIN(ae_first.created_at), INTERVAL 8 HOUR))
+        FROM analytics_events ae_first
+        WHERE ae_first.anonymous_id = ae.anonymous_id AND ae_first.anonymous_id <> ''
+      ) BETWEEN ? AND ? THEN NULLIF(ae.anonymous_id,'') END) AS new_visitors,
+      SUM(CASE WHEN event_type='order_submit' THEN 1 ELSE 0 END) AS order_submit_count,
+      SUM(CASE WHEN event_type='payment_success' THEN 1 ELSE 0 END) AS payment_success_count,
+      COALESCE(SUM(CASE WHEN event_type='payment_success' THEN COALESCE(amount,0) ELSE 0 END),0) AS paid_amount
+     FROM analytics_events ae
+     WHERE ${where}
+     GROUP BY COALESCE(NULLIF(traffic_source,''), 'direct')
+     ORDER BY pv DESC
+     LIMIT 100`,
+    [dateFrom, dateTo, ...params],
+  );
+}
+
+async function selectTrafficDevices(dateFrom, dateTo, filters = {}) {
+  const { where, params } = buildTrafficWhere(dateFrom, dateTo, filters);
+  return queryList(
+    `SELECT
+      COALESCE(NULLIF(device,''), 'unknown') AS device,
+      COALESCE(NULLIF(os,''), 'unknown') AS os,
+      COALESCE(NULLIF(browser,''), 'unknown') AS browser,
+      COALESCE(NULLIF(browser_language,''), 'unknown') AS browser_language,
+      SUM(CASE WHEN event_type='page_view' THEN 1 ELSE 0 END) AS pv,
+      COUNT(DISTINCT NULLIF(anonymous_id,'')) AS uv,
+      COUNT(DISTINCT NULLIF(session_id,'')) AS sessions,
+      SUM(CASE WHEN event_type='payment_success' THEN 1 ELSE 0 END) AS payment_success_count,
+      COALESCE(SUM(CASE WHEN event_type='payment_success' THEN COALESCE(amount,0) ELSE 0 END),0) AS paid_amount
+     FROM analytics_events ae
+     WHERE ${where}
+     GROUP BY COALESCE(NULLIF(device,''), 'unknown'), COALESCE(NULLIF(os,''), 'unknown'), COALESCE(NULLIF(browser,''), 'unknown'), COALESCE(NULLIF(browser_language,''), 'unknown')
+     ORDER BY pv DESC
+     LIMIT 100`,
+    params,
+  );
+}
+
+async function selectTrafficLastUpdated(dateFrom, dateTo, filters = {}) {
+  const { where, params } = buildTrafficWhere(dateFrom, dateTo, filters);
+  return queryOne(
+    `SELECT MAX(created_at) AS last_updated_at
+     FROM analytics_events ae
+     WHERE ${where}`,
+    params,
+  );
+}
+
 module.exports = {
+  isAnalyticsEventsReady,
   selectOverviewSummary,
   selectOverviewTopProducts,
   selectSalesDaily,
@@ -364,7 +601,14 @@ module.exports = {
   selectSimpleInventoryAnalysis,
   selectSimpleSearchAnalysis,
   selectOverviewBehaviorSummary,
+  selectTrafficSummary,
+  selectTrafficBounce,
+  selectTrafficTrend,
+  selectTrafficFunnel,
+  selectTrafficTopPages,
+  selectTrafficSources,
+  selectTrafficDevices,
+  selectTrafficLastUpdated,
 };
-
 
 

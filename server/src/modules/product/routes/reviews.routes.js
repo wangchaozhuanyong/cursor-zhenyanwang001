@@ -1,4 +1,4 @@
-﻿const { Router } = require('express');
+const { Router } = require('express');
 const ctrl = require('../controller/review.controller');
 const auth = require('../../../middleware/auth');
 const authOptional = require('../../../middleware/authOptional');

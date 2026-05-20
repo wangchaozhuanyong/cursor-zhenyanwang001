@@ -1,4 +1,4 @@
-﻿const { generateId, parseProductImages } = require('../../../utils/helpers');
+const { generateId, parseProductImages } = require('../../../utils/helpers');
 const repo = require('../repository/adminExtended.repository');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { ORDER_STATUS, RETURN_STATUS } = require('../../../constants/status');

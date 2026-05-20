@@ -128,19 +128,29 @@ export default defineConfig(() => ({
         "favicon.svg",
         "favicon-32x32.png",
         "favicon.webp",
-        "apple-touch-icon.png",
         "offline.html",
       ],
       workbox: {
         swDest: "sw.js",
         navigateFallback: "/offline.html",
-        navigateFallbackDenylist: [/^\/admin(\/|$)/, /^\/api(\/|$)/],
+        navigateFallbackDenylist: [/^\/admin(\/|$)/, /^\/api(\/|$)/, /^\/manifest\.webmanifest$/, /^\/pwa-/],
         cleanupOutdatedCaches: true,
         clientsClaim: false,
         skipWaiting: false,
         runtimeCaching: [
           {
             urlPattern: /^https?:\/\/[^/]+\/api\/(admin|auth|user|orders|cart|checkout|payment|upload)(\/|$)/,
+            handler: "NetworkOnly",
+          },
+          {
+            urlPattern: /^https?:\/\/[^/]+\/api\/pwa(\/|$)/,
+            handler: "NetworkOnly",
+          },
+          {
+            urlPattern: ({ url }) =>
+              url.pathname === "/manifest.webmanifest"
+              || url.pathname === "/apple-touch-icon.png"
+              || url.pathname.startsWith("/pwa-"),
             handler: "NetworkOnly",
           },
           {
@@ -191,23 +201,8 @@ export default defineConfig(() => ({
           },
           {
             urlPattern: ({ url }) =>
-              url.pathname.endsWith(".webmanifest")
-              || url.pathname.includes("pwa-"),
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "pwa-brand-cache",
-              networkTimeoutSeconds: 3,
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60,
-              },
-            },
-          },
-          {
-            urlPattern: ({ url }) =>
               url.pathname === "/offline.html"
-              || url.pathname.includes("favicon")
-              || url.pathname.includes("apple-touch-icon"),
+              || url.pathname.includes("favicon"),
             handler: "StaleWhileRevalidate",
             options: {
               cacheName: "pwa-shell-cache",

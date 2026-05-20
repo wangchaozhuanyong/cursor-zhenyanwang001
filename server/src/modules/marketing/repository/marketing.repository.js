@@ -1,4 +1,4 @@
-﻿const db = require('../../../config/db');
+const db = require('../../../config/db');
 
 function parseJson(value, fallback) {
   if (value == null || value === '') return fallback;

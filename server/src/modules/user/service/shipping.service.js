@@ -1,4 +1,4 @@
-﻿const repo = require('../repository/shipping.repository');
+const repo = require('../repository/shipping.repository');
 const { BusinessError } = require('../../../errors/BusinessError');
 const { computeShippingFee } = require('../../../utils/shippingFee');
 const { normalizeKnownMojibakeText } = require('../../../utils/textNormalize');

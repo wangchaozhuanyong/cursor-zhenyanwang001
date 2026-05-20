@@ -1,4 +1,4 @@
-﻿const { Router } = require('express');
+const { Router } = require('express');
 const logisticsService = require('./service/logistics.service');
 
 const router = Router();

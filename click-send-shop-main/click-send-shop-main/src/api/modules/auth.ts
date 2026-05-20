@@ -1,4 +1,4 @@
-﻿import { post, get } from "@/api/request";
+import { post, get } from "@/api/request";
 import type {
   LoginParams,
   RegisterParams,

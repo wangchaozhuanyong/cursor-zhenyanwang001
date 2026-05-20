@@ -1,4 +1,4 @@
-﻿const siteSettingsRepo = require('../admin/repository/adminSiteSettings.repository');
+const siteSettingsRepo = require('../admin/repository/adminSiteSettings.repository');
 
 const DEFAULT_SENSITIVE_WORDS = ['wechat', 'qrcode', 'fake', 'scam', 'complaint'];
 

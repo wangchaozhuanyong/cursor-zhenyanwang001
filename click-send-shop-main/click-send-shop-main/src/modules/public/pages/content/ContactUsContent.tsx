@@ -1,4 +1,4 @@
-﻿import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 
 type Row = { icon: typeof Phone; label: string };

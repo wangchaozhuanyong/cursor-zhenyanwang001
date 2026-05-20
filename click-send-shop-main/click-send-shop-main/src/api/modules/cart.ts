@@ -1,4 +1,4 @@
-﻿import { get, post, put, del } from "@/api/request";
+import { get, post, put, del } from "@/api/request";
 import type { CartItem } from "@/types/cart";
 
 export function getCart() {

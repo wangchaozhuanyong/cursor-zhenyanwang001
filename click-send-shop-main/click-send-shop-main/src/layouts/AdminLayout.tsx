@@ -55,6 +55,7 @@ import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { canAccessAdminPath, getFirstAllowedAdminPath } from "@/config/adminNavAccess";
 import { AdminConfirmProvider } from "@/modules/admin/context/AdminConfirmContext";
 import AdminSiteLogo from "@/components/admin/AdminSiteLogo";
+import AdminOrderVoiceNotifier from "@/modules/admin/components/AdminOrderVoiceNotifier";
 
 type NavPerm = string | { anyOf: string[] };
 
@@ -206,6 +207,7 @@ const navItemsRaw: NavItem[] = [
     path: "/admin/settings/site",
     children: [
       { icon: Settings, labelKey: "nav.siteSettings", path: "/admin/settings/site", permission: "settings.manage" },
+      { icon: Bell, labelKey: "nav.telegramNotifications", path: "/admin/settings/telegram", permission: "settings.manage" },
       { icon: Truck, labelKey: "nav.shipping", path: "/admin/settings/shipping", permission: "shipping.manage" },
       { icon: ScrollText, labelKey: "nav.auditLogs", path: "/admin/logs", permission: "audit.view" },
       { icon: RotateCcw, labelKey: "nav.recycleBin", path: "/admin/recycle-bin", permission: "recycle_bin.manage" },
@@ -593,6 +595,7 @@ function AdminLayoutContent() {
                 <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive" />
               </button>
             )}
+            {can("order.view") && <AdminOrderVoiceNotifier />}
             <div ref={avatarRef} className="relative shrink-0">
               <button
                 type="button"

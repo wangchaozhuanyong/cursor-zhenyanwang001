@@ -1,4 +1,4 @@
-﻿const repo = require('../repository/adminReport.repository');
+const repo = require('../repository/adminReport.repository');
 const { labelReportColumn, labelReportCellValue } = require('../../../utils/reportColumnLabels');
 
 function formatDate(date) {
@@ -48,6 +48,82 @@ function resolveDateRange(query = {}) {
 function safeNumber(v, digits = 2) {
   const n = Number(v || 0);
   return Number.isFinite(n) ? Number(n.toFixed(digits)) : 0;
+}
+
+function normalizeTrafficFilters(query = {}) {
+  const clean = (value) => String(value || '').trim();
+  const allow = (value, allowed) => {
+    const v = clean(value);
+    return allowed.includes(v) ? v : '';
+  };
+  return {
+    granularity: allow(query.granularity, ['day', 'week', 'month']) || 'day',
+    device: allow(query.device, ['desktop', 'mobile', 'tablet']),
+    visitor_type: allow(query.visitor_type, ['new', 'returning']),
+    traffic_source: allow(query.traffic_source, ['direct', 'campaign', 'referral', 'organic', 'social', 'paid']),
+    page_type: allow(query.page_type, ['home', 'product', 'category', 'cart', 'checkout', 'search', 'other']),
+  };
+}
+
+function rate(part, total) {
+  const p = Number(part || 0);
+  const t = Number(total || 0);
+  return t > 0 ? safeNumber((p / t) * 100) : 0;
+}
+
+function buildTrafficFunnel(raw = {}) {
+  const steps = [
+    ['访问网站', raw.visit_count],
+    ['浏览商品', raw.product_view_count],
+    ['点击商品', raw.product_click_count],
+    ['加入购物车', raw.add_to_cart_count],
+    ['发起结算', raw.checkout_start_count],
+    ['提交订单', raw.order_submit_count],
+    ['支付成功', raw.payment_success_count],
+  ];
+  const first = Number(steps[0][1] || 0);
+  return steps.map(([name, countRaw], index) => {
+    const count = Number(countRaw || 0);
+    const previous = index === 0 ? count : Number(steps[index - 1][1] || 0);
+    return {
+      name,
+      count,
+      rate: index === 0 ? 100 : rate(count, first),
+      drop_rate: index === 0 ? 0 : safeNumber(100 - rate(count, previous)),
+    };
+  });
+}
+
+function emptyTrafficPayload(dateFrom, dateTo) {
+  return {
+    summary: {
+      pv: 0,
+      uv: 0,
+      sessions: 0,
+      unique_ip_count: 0,
+      online_visitors: 0,
+      new_visitors: 0,
+      returning_visitors: 0,
+      avg_duration_seconds: 0,
+      bounce_rate: 0,
+      product_view_count: 0,
+      product_click_count: 0,
+      add_to_cart_count: 0,
+      checkout_start_count: 0,
+      order_submit_count: 0,
+      payment_success_count: 0,
+      paid_amount: 0,
+      conversion_rate: 0,
+    },
+    trend: [],
+    funnel: buildTrafficFunnel({}),
+    topPages: [],
+    sources: [],
+    devices: [],
+    date_from: dateFrom,
+    date_to: dateTo,
+    last_updated_at: new Date().toISOString(),
+  };
 }
 
 async function getOverview(query) {
@@ -196,6 +272,103 @@ async function getSearchAnalysis(query) {
   return { summary: { 关键词数: list.length }, list, date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
 }
 
+async function getTrafficAnalysis(query = {}) {
+  const { dateFrom, dateTo } = resolveDateRange(query);
+  if (!(await repo.isAnalyticsEventsReady())) return emptyTrafficPayload(dateFrom, dateTo);
+
+  const filters = normalizeTrafficFilters(query);
+  const [summaryRaw, bounceRaw, trendRaw, funnelRaw, topPagesRaw, sourcesRaw, devicesRaw, lastUpdatedRaw] = await Promise.all([
+    repo.selectTrafficSummary(dateFrom, dateTo, filters),
+    repo.selectTrafficBounce(dateFrom, dateTo, filters),
+    repo.selectTrafficTrend(dateFrom, dateTo, filters),
+    repo.selectTrafficFunnel(dateFrom, dateTo, filters),
+    repo.selectTrafficTopPages(dateFrom, dateTo, filters),
+    repo.selectTrafficSources(dateFrom, dateTo, filters),
+    repo.selectTrafficDevices(dateFrom, dateTo, filters),
+    repo.selectTrafficLastUpdated(dateFrom, dateTo, filters),
+  ]);
+
+  const sessions = Number(summaryRaw.sessions || 0);
+  const paymentSuccess = Number(summaryRaw.payment_success_count || 0);
+  const summary = {
+    pv: Number(summaryRaw.pv || 0),
+    uv: Number(summaryRaw.uv || 0),
+    sessions,
+    unique_ip_count: Number(summaryRaw.unique_ip_count || 0),
+    online_visitors: Number(summaryRaw.online_visitors || 0),
+    new_visitors: Number(summaryRaw.new_visitors || 0),
+    returning_visitors: Number(summaryRaw.returning_visitors || 0),
+    avg_duration_seconds: safeNumber(Number(summaryRaw.avg_duration_ms || 0) / 1000),
+    bounce_rate: rate(Number(bounceRaw.bounce_sessions || 0), Number(bounceRaw.sessions || 0)),
+    product_view_count: Number(summaryRaw.product_view_count || 0),
+    product_click_count: Number(summaryRaw.product_click_count || 0),
+    add_to_cart_count: Number(summaryRaw.add_to_cart_count || 0),
+    checkout_start_count: Number(summaryRaw.checkout_start_count || 0),
+    order_submit_count: Number(summaryRaw.order_submit_count || 0),
+    payment_success_count: paymentSuccess,
+    paid_amount: safeNumber(summaryRaw.paid_amount),
+    conversion_rate: rate(paymentSuccess, sessions),
+  };
+
+  const trend = trendRaw.map((row) => ({
+    date: String(row.date || ''),
+    pv: Number(row.pv || 0),
+    uv: Number(row.uv || 0),
+    sessions: Number(row.sessions || 0),
+    product_views: Number(row.product_views || 0),
+    add_to_cart: Number(row.add_to_cart || 0),
+    checkout_start: Number(row.checkout_start || 0),
+    order_submit: Number(row.order_submit || 0),
+    payment_success: Number(row.payment_success || 0),
+    paid_amount: safeNumber(row.paid_amount),
+  }));
+  const topPages = topPagesRaw.map((row) => ({
+    ...row,
+    pv: Number(row.pv || 0),
+    uv: Number(row.uv || 0),
+    avg_duration_seconds: safeNumber(Number(row.avg_duration_ms || 0) / 1000),
+    bounce_rate: safeNumber(row.bounce_rate),
+    exit_count: Number(row.exit_count || 0),
+    add_to_cart_count: Number(row.add_to_cart_count || 0),
+    order_submit_count: Number(row.order_submit_count || 0),
+    paid_amount: safeNumber(row.paid_amount),
+  })).map(({ avg_duration_ms, ...row }) => row);
+  const sources = sourcesRaw.map((row) => {
+    const uv = Number(row.uv || 0);
+    const payment = Number(row.payment_success_count || 0);
+    return {
+      ...row,
+      pv: Number(row.pv || 0),
+      uv,
+      new_visitors: Number(row.new_visitors || 0),
+      order_submit_count: Number(row.order_submit_count || 0),
+      payment_success_count: payment,
+      paid_amount: safeNumber(row.paid_amount),
+      conversion_rate: rate(payment, uv),
+    };
+  });
+  const devices = devicesRaw.map((row) => ({
+    ...row,
+    pv: Number(row.pv || 0),
+    uv: Number(row.uv || 0),
+    sessions: Number(row.sessions || 0),
+    payment_success_count: Number(row.payment_success_count || 0),
+    paid_amount: safeNumber(row.paid_amount),
+  }));
+
+  return {
+    summary,
+    trend,
+    funnel: buildTrafficFunnel(funnelRaw),
+    topPages,
+    sources,
+    devices,
+    date_from: dateFrom,
+    date_to: dateTo,
+    last_updated_at: lastUpdatedRaw.last_updated_at || new Date().toISOString(),
+  };
+}
+
 function buildCsv(headers, rows) {
   const BOM = '\uFEFF';
   const esc = (value) => {
@@ -210,7 +383,10 @@ function buildCsv(headers, rows) {
 
 function buildCsvFromRecords(records) {
   if (!records?.length) return buildCsv([], []);
-  const keys = Object.keys(records[0]);
+  const keys = Array.from(records.reduce((set, record) => {
+    Object.keys(record || {}).forEach((key) => set.add(key));
+    return set;
+  }, new Set()));
   const preferPath = keys.includes('category_path');
   const exportKeys = preferPath
     ? keys.filter((k) => !['category_id', 'category_name', 'parent_category_id', 'parent_category_name'].includes(k))
@@ -272,6 +448,19 @@ async function exportByType(type, query) {
     const csv = buildCsvFromRecords(data.list);
     return { csv, filename: `search-analysis-${data.date_from}-${data.date_to}.csv` };
   }
+  if (type === 'traffic_analysis') {
+    const data = await getTrafficAnalysis(query);
+    const rows = [
+      ...Object.entries(data.summary || {}).map(([key, value]) => ({ type: '核心指标', name: labelReportColumn(key), value })),
+      ...data.trend.map((row) => ({ type: '趋势数据', ...row })),
+      ...data.funnel.map((row) => ({ type: '转化漏斗', ...row })),
+      ...data.topPages.map((row) => ({ type: '页面排行', ...row })),
+      ...data.sources.map((row) => ({ type: '来源排行', ...row })),
+      ...data.devices.map((row) => ({ type: '设备排行', ...row })),
+    ];
+    const csv = buildCsvFromRecords(rows);
+    return { csv, filename: `traffic-analysis-${data.date_from}-${data.date_to}.csv` };
+  }
   throw new Error(`不支持的报表类型: ${type}`);
 }
 
@@ -287,6 +476,7 @@ module.exports = {
   getCouponsAnalysis,
   getInventoryAnalysis,
   getSearchAnalysis,
+  getTrafficAnalysis,
   exportByType,
 };
 

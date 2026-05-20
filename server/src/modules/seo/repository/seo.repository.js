@@ -1,4 +1,4 @@
-﻿const db = require('../../../config/db');
+const db = require('../../../config/db');
 
 const SITEMAP_MAX_URLS = 50000;
 

@@ -1,4 +1,4 @@
-﻿const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
+const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const orderRepo = require('../repository/order.repository');
 const siteSettingsRepo = require('../repository/siteSettings.repository');
 

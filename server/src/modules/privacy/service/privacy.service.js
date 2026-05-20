@@ -1,4 +1,4 @@
-﻿const crypto = require('crypto');
+const crypto = require('crypto');
 const { generateId } = require('../../../utils/helpers');
 const repo = require('../repository/privacy.repository');
 

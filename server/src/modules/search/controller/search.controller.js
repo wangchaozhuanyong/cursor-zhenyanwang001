@@ -1,4 +1,4 @@
-﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const { asyncRoute } = require('../../../middleware/asyncRoute');
 const svc = require('../service/search.service');
 
 exports.track = asyncRoute(async (req, res) => {

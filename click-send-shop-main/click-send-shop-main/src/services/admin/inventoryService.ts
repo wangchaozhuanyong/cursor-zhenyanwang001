@@ -1,4 +1,4 @@
-﻿import * as inventoryApi from "@/api/admin/inventory";
+import * as inventoryApi from "@/api/admin/inventory";
 import type { InventoryChangeType, InventorySku, InventoryStockRecord, InventorySummary } from "@/types/inventory";
 import type { PaginatedData } from "@/types/common";
 import { unwrapPaginated } from "@/services/responseNormalize";

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 鐢ㄦ埛鏍囩锛氭湇鍔″眰鍐掔儫锛堥渶 MySQL 宸茶縼绉?037_user_tags銆乽sers 琛ㄦ湁鏁版嵁锛? */
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 require('./_dbCleanup.test');
@@ -12,7 +12,7 @@ const mockReq = {};
 describe('admin user tags', () => {
   test('listUserTags + create + setUserTags + listUsers filter + delete', async () => {
     const [[user]] = await db.query('SELECT id FROM users LIMIT 1');
-    assert.ok(user?.id, '闇€瑕佽嚦灏戜竴鏉?users 璁板綍');
+    assert.ok(user?.id, '需要至少一条 users 记录');
 
     const listed = await svc.listUserTags();
     assert.ok(Array.isArray(listed.data), 'listUserTags 搴旇繑鍥炴暟缁?data');

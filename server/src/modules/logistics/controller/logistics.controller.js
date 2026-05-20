@@ -1,4 +1,4 @@
-﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const { asyncRoute } = require('../../../middleware/asyncRoute');
 const logisticsService = require('../service/logistics.service');
 
 exports.refreshOrderTracking = asyncRoute(async (req, res) => {

@@ -1,4 +1,4 @@
-﻿const { Router } = require('express');
+const { Router } = require('express');
 const marketingRoutes = require('./routes/marketing.routes');
 
 const router = Router();

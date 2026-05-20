@@ -13,7 +13,7 @@ const fileFilter = (_req, file, cb) => {
   if (isImageFile(file) || isVideoFile(file)) {
     cb(null, true);
   } else {
-    cb(badRequest('仅支持图片或视频文件上传'));
+    cb(badRequest('浠呮敮鎸佸浘鐗囨垨瑙嗛鏂囦欢涓婁紶'));
   }
 };
 
@@ -34,8 +34,8 @@ async function auditUpload(req, result, errorMessage) {
     objectType: 'upload',
     objectId: result?.filename || null,
     summary: errorMessage
-      ? '用户上传失败'
-      : `用户上传 ${result?.filename || 'media'}`,
+      ? '鐢ㄦ埛涓婁紶澶辫触'
+      : `鐢ㄦ埛涓婁紶 ${result?.filename || 'media'}`,
     after: result ? { url: result.url, filename: result.filename } : undefined,
     result: errorMessage ? 'failure' : 'success',
     errorMessage,
@@ -43,7 +43,7 @@ async function auditUpload(req, result, errorMessage) {
 }
 
 exports.uploadFile = async (req, res) => {
-  if (!req.file || !req.file.buffer) return res.fail(400, '请选择要上传的文件');
+  if (!req.file || !req.file.buffer) return res.fail(400, '璇烽�夋嫨瑕佷笂浼犵殑鏂囦欢');
   try {
     const mode = String(req.body?.mode || req.query?.mode || 'product').toLowerCase();
     const result = await writeMediaFromFile(req.file, mode);
@@ -51,14 +51,14 @@ exports.uploadFile = async (req, res) => {
     return res.success(result);
   } catch (error) {
     const statusCode = Number(error?.statusCode || 500);
-    const message = error instanceof Error ? error.message : '文件处理失败';
+    const message = error instanceof Error ? error.message : '鏂囦欢澶勭悊澶辫触';
     await auditUpload(req, null, message);
     return res.fail(statusCode, message);
   }
 };
 
 exports.uploadFiles = async (req, res) => {
-  if (!req.files || !req.files.length) return res.fail(400, '请选择要上传的文件');
+  if (!req.files || !req.files.length) return res.fail(400, '璇烽�夋嫨瑕佷笂浼犵殑鏂囦欢');
   try {
     const mode = String(req.body?.mode || req.query?.mode || 'product').toLowerCase();
     const queue = [...req.files];
@@ -78,7 +78,7 @@ exports.uploadFiles = async (req, res) => {
       operatorId: req.user?.id,
       actionType: 'upload.media_batch',
       objectType: 'upload',
-      summary: `用户批量上传 ${result.length} 个文件`,
+      summary: `鐢ㄦ埛鎵归噺涓婁紶 ${result.length} 涓枃浠禶,
       after: { count: result.length },
       result: 'success',
     });
@@ -87,7 +87,7 @@ exports.uploadFiles = async (req, res) => {
     );
   } catch (error) {
     const statusCode = Number(error?.statusCode || 500);
-    const message = error instanceof Error ? error.message : '文件处理失败';
+    const message = error instanceof Error ? error.message : '鏂囦欢澶勭悊澶辫触';
     await auditUpload(req, null, message);
     return res.fail(statusCode, message);
   }

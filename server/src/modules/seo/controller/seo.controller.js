@@ -1,4 +1,4 @@
-﻿const seoService = require('../service/seo.service');
+const seoService = require('../service/seo.service');
 
 exports.robots = (req, res, next) => {
   try {

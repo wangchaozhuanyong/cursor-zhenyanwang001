@@ -1,4 +1,4 @@
-﻿import { get, post } from "@/api/request";
+import { get, post } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
 import type { Review, FeaturedReview, ProductReviewStats, PendingReviewItem, ReviewEligibility } from "@/types/review";
 export type { Review, FeaturedReview, ProductReviewStats, PendingReviewItem, ReviewEligibility };

@@ -1,4 +1,4 @@
-﻿const { before, after } = require('node:test');
+const { before, after } = require('node:test');
 const db = require('../src/config/db');
 const { runPendingMigrations } = require('../src/db/migrateRunner');
 

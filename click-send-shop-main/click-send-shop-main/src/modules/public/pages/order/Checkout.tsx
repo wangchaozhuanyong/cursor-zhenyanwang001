@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useMediaSheetMode } from "@/modules/micro-interactions";

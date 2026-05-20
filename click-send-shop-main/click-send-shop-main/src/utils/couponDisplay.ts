@@ -1,4 +1,4 @@
-﻿import type { UserCoupon } from "@/types/coupon";
+import type { UserCoupon } from "@/types/coupon";
 import type { MarketingCouponPublic } from "@/services/marketingService";
 import { formatDate } from "@/utils/formatDateTime";
 

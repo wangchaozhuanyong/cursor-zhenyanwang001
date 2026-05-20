@@ -1,4 +1,4 @@
-﻿const { generateId } = require('../../../utils/helpers');
+const { generateId } = require('../../../utils/helpers');
 const { NotFoundError, ValidationError } = require('../../../errors');
 const { PAYMENT_STATUS } = require('../../../constants/status');
 const repo = require('../repository/myinvois.repository');

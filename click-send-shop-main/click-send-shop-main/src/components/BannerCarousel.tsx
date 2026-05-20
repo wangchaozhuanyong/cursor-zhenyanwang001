@@ -1,9 +1,10 @@
-﻿import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useMotionConfig } from "@/modules/micro-interactions";
 import { useNavigate } from "react-router-dom";
 import { getBannerContainerClassName, getBannerOverlayClassName } from "@/utils/themeVisuals";
+import { trackEvent } from "@/services/analyticsService";
 import type { Banner } from "@/types/banner";
 import type { ThemeConfig } from "@/types/theme";
 
@@ -77,6 +78,7 @@ export default function BannerCarousel({ banners, loading = false, themeConfigOv
 
   const handleOpenBanner = () => {
     if (!bannerLink) return;
+    void trackEvent({ event_type: "banner_click", module: "home_banner", activity_id: banner.id });
     if (/^https?:\/\//i.test(bannerLink)) {
       window.open(bannerLink, "_blank", "noopener,noreferrer");
       return;

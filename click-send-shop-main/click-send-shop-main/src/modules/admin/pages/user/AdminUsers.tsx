@@ -1,4 +1,4 @@
-﻿import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Download, Trash2, Users } from "lucide-react";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { AnimatedConfirmDialog, AnimatedTable, LoadingButton } from "@/modules/micro-interactions";

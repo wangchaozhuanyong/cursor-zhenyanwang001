@@ -1,4 +1,4 @@
-﻿const { NotFoundError, ValidationError } = require('../../../errors');
+const { NotFoundError, ValidationError } = require('../../../errors');
 const repo = require('../repository/logistics.repository');
 const malaysiaCarrierAdapter = require('../adapters/malaysiaCarrierAdapter');
 

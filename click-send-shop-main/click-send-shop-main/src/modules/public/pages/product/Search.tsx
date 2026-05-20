@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ArrowLeft, Clock, Search as SearchIcon, TrendingUp, X } from "lucide-react";
 import CategoryTabs from "@/components/CategoryTabs";
 import StoreSearchField from "@/components/store/StoreSearchField";
@@ -17,6 +17,7 @@ import { getProductGridClassName } from "@/utils/productGridClasses";
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
+import { trackEvent } from "@/services/analyticsService";
 
 const HISTORY_KEY = "search_history";
 const MAX_HISTORY = 10;
@@ -119,6 +120,7 @@ export default function Search() {
     setShowHistory(false);
     setSuggestions([]);
     addToHistory(trimmed);
+    void trackEvent({ event_type: "search", module: "search_page", keyword: trimmed });
     trackSearchKeyword(trimmed).catch(() => {});
   }, [addToHistory]);
 

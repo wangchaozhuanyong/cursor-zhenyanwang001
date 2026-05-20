@@ -1,4 +1,4 @@
-﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const { asyncRoute } = require('../../../middleware/asyncRoute');
 const checkoutAbandonmentService = require('../../order/service/checkoutAbandonment.service');
 
 exports.list = asyncRoute(async (req, res) => {

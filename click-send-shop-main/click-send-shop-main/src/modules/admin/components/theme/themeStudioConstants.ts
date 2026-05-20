@@ -1,4 +1,4 @@
-﻿import type { ThemeConfig, ThemeSceneTag } from "@/types/theme";
+import type { ThemeConfig, ThemeSceneTag } from "@/types/theme";
 
 export type PreviewMode = "home" | "product" | "admin" | "components" | "mobile";
 export type PreviewDevice = "phone" | "tablet" | "desktop";

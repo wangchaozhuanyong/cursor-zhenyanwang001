@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 鏈敮浠樿鍗曚粯娆炬埅姝㈡椂闂达細涓?orderPaymentTimeout.service 鍏辩敤閰嶇疆銆? */
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../constants/status');
 const { loadPaymentTimeoutSettings } = require('./service/orderPaymentTimeout.service');

@@ -1,4 +1,4 @@
-﻿const { generateId } = require('../../../utils/helpers');
+const { generateId } = require('../../../utils/helpers');
 const repo = require('../repository/adminHomeOps.repository');
 const homeModuleSettings = require('../homeModuleSettings');
 

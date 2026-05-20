@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Tx } from "@/components/admin/AdminText";
 import AdminRewardRecords from "@/modules/admin/pages/user/AdminRewardRecords";
 

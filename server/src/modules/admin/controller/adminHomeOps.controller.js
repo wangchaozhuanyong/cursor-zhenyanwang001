@@ -1,4 +1,4 @@
-﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const { asyncRoute } = require('../../../middleware/asyncRoute');
 const svc = require('../service/adminHomeOps.service');
 
 function sendResult(res, result) {

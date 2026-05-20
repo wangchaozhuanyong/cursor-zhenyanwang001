@@ -1,4 +1,4 @@
-﻿const { generateId } = require('../../../utils/helpers');
+const { generateId } = require('../../../utils/helpers');
 const { BusinessError, NotFoundError, ValidationError } = require('../../../errors');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const repo = require('../repository/adminMemberLevel.repository');

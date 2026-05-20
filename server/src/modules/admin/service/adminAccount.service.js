@@ -1,4 +1,4 @@
-﻿const { BusinessError } = require('../../../errors/BusinessError');
+const { BusinessError } = require('../../../errors/BusinessError');
 const repo = require('../repository/adminAccount.repository');
 const authModule = require('../../auth');
 const { normalizeIntlPhone, buildPhoneLookupCandidates } = require('../../../utils/phone');

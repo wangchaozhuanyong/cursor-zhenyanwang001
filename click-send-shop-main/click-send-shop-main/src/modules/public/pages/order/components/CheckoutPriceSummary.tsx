@@ -1,4 +1,4 @@
-﻿export interface CheckoutSstPreview {
+export interface CheckoutSstPreview {
   label: string;
   ratePercent: number;
   taxable: number;

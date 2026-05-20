@@ -1,4 +1,4 @@
-﻿const db = require('../../../config/db');
+const db = require('../../../config/db');
 
 async function countAdminLogs() {
   const [[{ total }]] = await db.query('SELECT COUNT(*) AS total FROM admin_logs');

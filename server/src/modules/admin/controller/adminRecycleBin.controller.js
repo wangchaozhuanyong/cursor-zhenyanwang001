@@ -1,4 +1,4 @@
-﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const { asyncRoute } = require('../../../middleware/asyncRoute');
 const svc = require('../service/adminRecycleBin.service');
 
 exports.list = asyncRoute(async (req, res) => {

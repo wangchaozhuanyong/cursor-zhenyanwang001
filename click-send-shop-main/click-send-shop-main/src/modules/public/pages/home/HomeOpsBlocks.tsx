@@ -1,4 +1,4 @@
-﻿import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import HomeNavIcon from "@/components/store/HomeNavIcon";
 import type { HomeNavItem } from "@/types/content";
 import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";

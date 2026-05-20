@@ -1,4 +1,4 @@
-﻿import { getCartLinePrice } from "@/stores/useCartStore";
+import { getCartLinePrice } from "@/stores/useCartStore";
 import type { CartItem } from "@/types/cart";
 
 interface CheckoutItemsListProps {

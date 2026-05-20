@@ -1,4 +1,4 @@
-﻿const db = require('../../../config/db');
+const db = require('../../../config/db');
 
 async function upsertSearchTerm({ keyword, normalizedKeyword, resultCount }) {
   await db.query(

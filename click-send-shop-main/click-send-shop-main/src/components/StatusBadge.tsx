@@ -1,4 +1,4 @@
-﻿import { ORDER_STATUS_META } from "@/constants/statusDictionary";
+import { ORDER_STATUS_META } from "@/constants/statusDictionary";
 import { THEME_BADGE_PRIMARY, THEME_BADGE_SUCCESS } from "@/utils/themeVisuals";
 
 const statusConfig: Record<string, { label: string; className: string }> = {

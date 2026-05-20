@@ -1,4 +1,4 @@
-﻿const repo = require('./adminReport.repository');
+const repo = require('./adminReport.repository');
 const { labelReportColumn, labelReportCellValue } = require('../../utils/reportColumnLabels');
 
 function formatDate(date) {

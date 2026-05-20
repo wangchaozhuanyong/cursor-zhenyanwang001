@@ -1,4 +1,4 @@
-﻿const repo = require('../repository/marketing.repository');
+const repo = require('../repository/marketing.repository');
 const promo = require('../marketingPromo');
 
 function formatFlashSaleResponse(bundle) {

@@ -1,4 +1,4 @@
-﻿const { ValidationError } = require('../../errors');
+const { ValidationError } = require('../../errors');
 const repo = require('./repository/order.repository');
 const siteSettingsRepo = require('./repository/siteSettings.repository');
 const loyaltyRepo = require('../loyalty/repository/loyalty.repository');
@@ -178,7 +178,7 @@ function assertCouponUsableOnOrder({
   }
 
   if (hasActivityDiscount && uc.stackable_with_activity === 0) {
-    throw new ValidationError('璇ヤ紭鎯犲埜涓嶅彲涓庤惀閿€娲诲姩鍙犲姞浣跨敤');
+    throw new ValidationError('该优惠券不可与营销活动叠加使用');
   }
   if (hasActivityDiscount && activityAllowsCoupon === false) {
     throw new ValidationError('Current promotion cannot be stacked with coupon');
@@ -282,7 +282,7 @@ async function buildOrderPricing(userId, body, conn = null) {
     const uc = conn
       ? await repo.selectUserCouponForUpdate(conn, coupon_id, userId)
       : await repo.selectUserCouponRead(q, coupon_id, userId);
-    if (!uc) throw new ValidationError('浼樻儬鍒镐笉瀛樺湪銆佸凡浣跨敤鎴栦笉鍙敤');
+    if (!uc) throw new ValidationError('优惠券不存在、已使用或不可用');
     couponDiscount = assertCouponUsableOnOrder({
       uc,
       goodsAmountAfterFullReduction,

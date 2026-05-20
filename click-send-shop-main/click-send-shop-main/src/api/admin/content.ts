@@ -1,4 +1,4 @@
-﻿import { get, post, put } from "@/api/request";
+import { get, post, put } from "@/api/request";
 import type { ContentPage } from "@/types/admin";
 
 export function getContentPages() {

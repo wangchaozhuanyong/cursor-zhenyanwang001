@@ -1,4 +1,4 @@
-﻿const { generateId } = require('../../../utils/helpers');
+const { generateId } = require('../../../utils/helpers');
 const { BusinessError } = require('../../../errors/BusinessError');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { rowsToCsvLocalized, labelInventoryChangeType } = require('../../../utils/adminCsvLabels');
@@ -135,6 +135,7 @@ function formatSku(row) {
 
 function isLikelyMojibake(text) {
   const value = String(text || '');
+  // encoding-check: ignore-next-line
   return /�|锟|鍞|璁|绠|娑|鎵|搴||崟/.test(value);
 }
 

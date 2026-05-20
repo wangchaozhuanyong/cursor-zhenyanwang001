@@ -1,4 +1,4 @@
-﻿const { BusinessError } = require('../../../errors/BusinessError');
+const { BusinessError } = require('../../../errors/BusinessError');
 const { AuthError } = require('../../../errors');
 const authModule = require('../../auth');
 const { comparePassword, signToken, verifyToken } = require('../../../utils/helpers');

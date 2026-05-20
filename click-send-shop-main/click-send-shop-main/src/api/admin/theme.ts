@@ -1,4 +1,4 @@
-﻿import { get, put } from "@/api/request";
+import { get, put } from "@/api/request";
 import type { ThemeConfig } from "@/types/theme";
 
 export function getActiveTheme() {

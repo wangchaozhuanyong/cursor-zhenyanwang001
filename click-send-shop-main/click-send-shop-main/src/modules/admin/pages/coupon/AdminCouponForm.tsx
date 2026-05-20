@@ -1,4 +1,4 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ArrowLeft } from "lucide-react";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { AdminFormSectionsSkeleton } from "@/components/admin/AdminLoadingSkeletons";

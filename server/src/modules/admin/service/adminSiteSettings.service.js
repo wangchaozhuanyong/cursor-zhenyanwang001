@@ -1,4 +1,4 @@
-﻿const repo = require('../repository/adminSiteSettings.repository');
+const repo = require('../repository/adminSiteSettings.repository');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { invalidatePaymentTimeoutSettingsCache } = require('../../order/orderPaymentDeadline');
 const sharp = require('sharp');

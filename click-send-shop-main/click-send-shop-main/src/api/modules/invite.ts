@@ -1,4 +1,4 @@
-﻿import { get } from "@/api/request";
+import { get } from "@/api/request";
 import type { InviteRecord, InviteStats } from "@/types/invite";
 import type { PaginatedData } from "@/types/common";
 

@@ -133,6 +133,7 @@ const AdminExportCenter = lazy(() => import("@/modules/admin/pages/report/AdminE
 
 const AdminSiteSettings = lazy(() => import("@/modules/admin/pages/settings/AdminSiteSettings"));
 const AdminSupportDownload = lazy(() => import("@/modules/admin/pages/settings/AdminSupportDownload"));
+const AdminTelegramSettings = lazy(() => import("@/modules/admin/pages/settings/AdminTelegramSettings"));
 const AdminThemeSettings = lazy(() => import("@/modules/admin/pages/settings/AdminThemeSettings"));
 const AdminContent = lazy(() => import("@/modules/admin/pages/settings/AdminContent"));
 const AdminHomeOps = lazy(() => import("@/modules/admin/pages/settings/AdminHomeOps"));
@@ -246,6 +247,7 @@ function AdminTitleSync() {
         titleKey: "routeTitles.couponEditFull",
       },
       { test: (p) => p.startsWith("/admin/settings/site"), titleKey: "routeTitles.siteSettings" },
+      { test: (p) => p.startsWith("/admin/settings/telegram"), titleKey: "routeTitles.telegram" },
       { test: (p) => p.startsWith("/admin/settings/theme"), titleKey: "routeTitles.theme" },
       { test: (p) => p.startsWith("/admin/home-ops"), titleKey: "routeTitles.homeOps" },
       { test: (p) => p.startsWith("/admin/support-download"), titleKey: "routeTitles.supportDownload" },
@@ -453,6 +455,7 @@ function AppRoutes() {
                 <Route path="settings/points" element={<Navigate to="/admin/marketing/points" replace />} />
                 <Route path="settings/referral" element={<Navigate to="/admin/marketing/rewards" replace />} />
                 <Route path="settings/site" element={<AdminSiteSettings />} />
+                <Route path="settings/telegram" element={<AdminTelegramSettings />} />
                 <Route path="support-download" element={<AdminSupportDownload />} />
                 <Route path="settings/theme" element={<AdminThemeSettings />} />
                 <Route path="home-ops" element={<AdminHomeOps />} />

@@ -1,4 +1,4 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, ClipboardList, Ticket } from "lucide-react";
 import { useNavigate } from "react-router-dom";

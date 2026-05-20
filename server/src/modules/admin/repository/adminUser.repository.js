@@ -1,4 +1,4 @@
-﻿const db = require('../../../config/db');
+const db = require('../../../config/db');
 const { ORDER_STATUS } = require('../../../constants/status');
 
 const tableColumnCache = new Map();

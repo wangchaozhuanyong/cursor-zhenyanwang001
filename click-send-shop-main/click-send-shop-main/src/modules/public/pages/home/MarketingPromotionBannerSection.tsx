@@ -4,6 +4,7 @@ import * as marketingService from "@/services/marketingService";
 import * as homeService from "@/services/homeService";
 import type { MarketingActivitySummary } from "@/services/marketingService";
 import { AnimatedSection } from "@/modules/micro-interactions";
+import { trackEvent } from "@/services/analyticsService";
 
 export default function MarketingPromotionBannerSection({ delay = 0 }: { delay?: number }) {
   const navigate = useNavigate();
@@ -32,13 +33,17 @@ export default function MarketingPromotionBannerSection({ delay = 0 }: { delay?:
 
   const banner = banners[0];
   if (!banner) return null;
+  const openBanner = () => {
+    void trackEvent({ event_type: "activity_click", module: "promotion_banner", activity_id: banner.id });
+    navigate(banner.link_url || "/categories");
+  };
 
   return (
     <AnimatedSection delay={delay}>
     <section className="w-full">
       <button
         type="button"
-        onClick={() => navigate(banner.link_url || "/categories")}
+        onClick={openBanner}
         className="relative block w-full overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] text-left theme-shadow"
       >
         {banner.cover_image ? (

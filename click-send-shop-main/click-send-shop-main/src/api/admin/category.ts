@@ -1,4 +1,4 @@
-﻿import { get, post, put, del } from "@/api/request";
+import { get, post, put, del } from "@/api/request";
 import type { Category } from "@/types/category";
 
 export function getCategories() {

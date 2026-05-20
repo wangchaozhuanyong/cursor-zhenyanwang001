@@ -1,4 +1,4 @@
-﻿const { generateId } = require('../../../utils/helpers');
+const { generateId } = require('../../../utils/helpers');
 const marketingRepo = require('../repository/marketing.repository');
 const couponRepo = require('../../user/repository/coupon.repository');
 

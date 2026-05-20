@@ -1,4 +1,4 @@
-﻿const { generateId, formatProduct } = require('../../../utils/helpers');
+const { generateId, formatProduct } = require('../../../utils/helpers');
 const { NotFoundError, ValidationError } = require('../../../errors');
 const repo = require('../repository/cart.repository');
 

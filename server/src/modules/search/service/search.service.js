@@ -1,4 +1,4 @@
-﻿const repo = require('../repository/search.repository');
+const repo = require('../repository/search.repository');
 const { normalizeSearchKeyword, buildSearchKeywords } = require('../../../utils/searchKeywords');
 const analyticsModule = require('../../analytics');
 

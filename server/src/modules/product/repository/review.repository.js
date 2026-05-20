@@ -1,4 +1,4 @@
-﻿const db = require('../../../config/db');
+const db = require('../../../config/db');
 const { ORDER_STATUS } = require('../../../constants/status');
 
 /** 鍓嶅彴鍙锛氫粎 normal锛堝吋瀹瑰巻鍙?NULL锛?*/

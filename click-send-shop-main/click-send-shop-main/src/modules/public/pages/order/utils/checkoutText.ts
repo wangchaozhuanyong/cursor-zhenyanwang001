@@ -1,4 +1,4 @@
-﻿import { getCartLinePrice } from "@/stores/useCartStore";
+import { getCartLinePrice } from "@/stores/useCartStore";
 import type { Order } from "@/types/order";
 import { formatDateTime } from "@/utils/formatDateTime";
 import type { PaymentMethod } from "@/components/PaymentMethodPicker";

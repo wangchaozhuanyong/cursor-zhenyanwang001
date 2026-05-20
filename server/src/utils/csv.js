@@ -1,5 +1,5 @@
 /**
- * 轻量 CSV（RFC 4180 基础）：含逗号/换行字段用双引号包裹
+ * Lightweight CSV helpers (RFC 4180 basics): commas/newlines are wrapped in quotes.
  */
 
 function csvEscape(s) {
@@ -61,6 +61,25 @@ function parseCsv(text) {
   return { headers, rows };
 }
 
+function hasDecodeProblems(text) {
+  // encoding-check: ignore-next-line
+  return /�|锟|鍟嗗搧|鍒嗙被|璇勮|璇烽|璇蜂|鏂囦欢|闇€|浼樻儬|銆|锛/.test(text);
+}
+
+function decodeCsvBuffer(input) {
+  if (!Buffer.isBuffer(input)) return String(input || '');
+  if (input.length >= 3 && input[0] === 0xef && input[1] === 0xbb && input[2] === 0xbf) {
+    return input.subarray(3).toString('utf8');
+  }
+  const utf8 = input.toString('utf8');
+  if (!hasDecodeProblems(utf8)) return utf8;
+  try {
+    return new TextDecoder('gb18030').decode(input);
+  } catch {
+    return utf8;
+  }
+}
+
 function parseBool(v) {
   const s = String(v).trim().toLowerCase();
   return s === '1' || s === 'true' || s === 'yes';
@@ -72,4 +91,5 @@ module.exports = {
   parseCsv,
   parseCsvLine,
   parseBool,
+  decodeCsvBuffer,
 };

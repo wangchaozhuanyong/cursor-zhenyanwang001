@@ -1,4 +1,4 @@
-﻿const svc = require('../service/loyalty.service');
+const svc = require('../service/loyalty.service');
 
 exports.getConfig = async (req, res, next) => {
   try {

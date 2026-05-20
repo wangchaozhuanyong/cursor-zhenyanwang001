@@ -101,6 +101,7 @@ export const adminMessagesZh: AdminMessages = {
     staffAccounts: "员工账号",
     settings: "系统设置",
     siteSettings: "站点设置",
+    telegramNotifications: "Telegram 通知",
     shipping: "配送设置",
     content: "内容管理",
     auditLogs: "操作日志",
@@ -110,6 +111,7 @@ export const adminMessagesZh: AdminMessages = {
   routeTitles: {
     admin: "管理后台",
     siteSettings: "站点设置",
+    telegram: "系统设置 / Telegram 通知",
     homeOps: "页面装修 / 首页装修",
     banners: "页面装修 / 轮播图管理",
     supportDownload: "页面装修 / 客服下载",

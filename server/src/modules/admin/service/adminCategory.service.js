@@ -1,4 +1,4 @@
-﻿const { BusinessError } = require('../../../errors/BusinessError');
+const { BusinessError } = require('../../../errors/BusinessError');
 const repo = require('../repository/adminCategory.repository');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { generateId } = require('../../../utils/helpers');

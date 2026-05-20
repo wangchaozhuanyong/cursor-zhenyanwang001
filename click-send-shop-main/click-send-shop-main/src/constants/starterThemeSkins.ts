@@ -1,4 +1,4 @@
-﻿import type { ThemeSkin } from "@/types/theme";
+import type { ThemeSkin } from "@/types/theme";
 import starterThemeSkinsRaw from "./starterThemeSkins.data.json";
 
 const STARTER_THEME_SKINS_DATA = starterThemeSkinsRaw as ThemeSkin[];

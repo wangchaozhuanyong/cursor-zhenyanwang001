@@ -1,4 +1,4 @@
-﻿interface CheckoutShippingSectionProps {
+interface CheckoutShippingSectionProps {
   shippingName: string;
   shippingRulesLoading: boolean;
   shippingQuoteLoading: boolean;

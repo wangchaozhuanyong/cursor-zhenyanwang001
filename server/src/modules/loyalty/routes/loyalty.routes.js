@@ -1,4 +1,4 @@
-﻿const { Router } = require('express');
+const { Router } = require('express');
 const ctrl = require('../controller/loyalty.controller');
 
 const router = Router();

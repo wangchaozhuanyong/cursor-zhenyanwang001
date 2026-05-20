@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 import type { FooterNavItem } from "@/types/content";
 import { SiteSocialLinks, hasAnySocialLink } from "@/components/SiteSocialLinks";

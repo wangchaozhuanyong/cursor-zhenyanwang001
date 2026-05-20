@@ -1,4 +1,4 @@
-﻿import type { Order, OrderTab } from "@/types/order";
+import type { Order, OrderTab } from "@/types/order";
 
 export function hasPendingReview(order: Order): boolean {
   return order.status === "completed" && order.items.some((i) => i.can_review);

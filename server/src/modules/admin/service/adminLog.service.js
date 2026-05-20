@@ -1,4 +1,4 @@
-﻿const repo = require('../repository/adminLog.repository');
+const repo = require('../repository/adminLog.repository');
 
 async function listLogs(query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);

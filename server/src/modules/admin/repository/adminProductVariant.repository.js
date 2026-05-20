@@ -1,4 +1,4 @@
-﻿const db = require('../../../config/db');
+const db = require('../../../config/db');
 const { BusinessError } = require('../../../errors/BusinessError');
 
 async function selectVariantsByProductId(productId, opts = {}) {

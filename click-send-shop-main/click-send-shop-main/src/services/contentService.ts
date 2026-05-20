@@ -1,4 +1,4 @@
-﻿import * as contentApi from "@/api/modules/content";
+import * as contentApi from "@/api/modules/content";
 import type { ContentPage, HomeOpsConfig, SiteInfo } from "@/types/content";
 import { ApiError } from "@/types/common";
 

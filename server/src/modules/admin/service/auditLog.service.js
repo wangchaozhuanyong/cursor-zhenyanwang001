@@ -1,4 +1,4 @@
-﻿const repo = require('../repository/auditLog.repository');
+const repo = require('../repository/auditLog.repository');
 
 const SORTABLE = new Set(['created_at', 'action_type', 'result']);
 

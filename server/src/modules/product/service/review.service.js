@@ -58,7 +58,7 @@ async function getProductReviews(req) {
 async function toggleLike(userId, reviewId) {
   const review = await repo.selectReviewForLike(reviewId);
   if (!review) {
-    return { error: { code: 404, message: 'ÆÀÂÛ²»´æÔÚ»ò²»¿ÉµãÔŞ' } };
+    return { error: { code: 404, message: 'è¯„è®ºä¸å­˜åœ¨æˆ–ä¸å¯åˆ é™¤' } };
   }
 
   const existing = await repo.findLike(reviewId, userId);
@@ -101,7 +101,7 @@ function mapPendingItem(row) {
 
 async function createReview(userId, body) {
   const { product_id, order_item_id, rating, content, images } = body;
-  if (!content) return { error: { code: 400, message: 'ÇëÌîĞ´ÆÀ¼ÛÄÚÈİ' } };
+  if (!content) return { error: { code: 400, message: 'è¯·å¡«å†™è¯„è®ºå†…å®¹' } };
 
   const settings = await moderation.getReviewSettings();
   const initialStatus = moderation.resolveInitialReviewStatus({
@@ -118,10 +118,10 @@ async function createReview(userId, body) {
   if (order_item_id) {
     const orderItem = await repo.selectOrderItemForReview(userId, order_item_id);
     if (!orderItem) {
-      return { error: { code: 400, message: 'Ö»ÄÜÆÀ¼ÛÒÑ¹ºÂò²¢È·ÈÏÊÕ»õµÄ¶©µ¥ÉÌÆ·' } };
+      return { error: { code: 400, message: 'åªèƒ½è¯„ä»·å·²è´­ä¹°å¹¶ç¡®è®¤æ”¶è´§çš„è®¢å•å•†å“' } };
     }
     const dup = await repo.findReviewByOrderItemId(order_item_id);
-    if (dup) return { error: { code: 400, message: '¸Ã¶©µ¥ÉÌÆ·ÒÑÆÀ¼Û¹ı' } };
+    if (dup) return { error: { code: 400, message: 'è¯¥è®¢å•å•†å“å·²ç»è¯„ä»·è¿‡' } };
 
     await repo.insertReview({
       id,
@@ -141,11 +141,11 @@ async function createReview(userId, body) {
       complaintStatus,
     });
   } else {
-    if (!product_id) return { error: { code: 400, message: 'ÇëÖ¸¶¨ÆÀ¼ÛÉÌÆ·' } };
+    if (!product_id) return { error: { code: 400, message: 'è¯·æŒ‡å®šè¯„ä»·å•†å“' } };
     const pendingItems = await repo.selectPendingReviewItemsByProduct(userId, product_id);
     const candidate = pendingItems[0];
     if (!candidate) {
-      return { error: { code: 400, message: '¸ÃÉÌÆ·ÔİÎŞ¿ÉÆÀ¼Û¶©µ¥' } };
+      return { error: { code: 400, message: 'è¯¥å•†å“æš‚æ— å¯è¯„ä»·è®¢å•' } };
     }
 
     await repo.insertReview({
@@ -169,7 +169,7 @@ async function createReview(userId, body) {
 
   const row = await repo.selectReviewById(id);
   row.images = parseProductImages(row.images);
-  const msg = initialStatus === 'pending' ? 'ÆÀ¼ÛÒÑÌá½»£¬ÉóºËÍ¨¹ıºó½«Õ¹Ê¾' : 'ÆÀ¼Û³É¹¦';
+  const msg = initialStatus === 'pending' ? 'è¯„è®ºå·²æäº¤ï¼Œå®¡æ ¸é€šè¿‡åå±•ç¤º' : 'è¯„è®ºæˆåŠŸ';
   return { data: row, message: msg };
 }
 
@@ -183,7 +183,7 @@ async function getProductReviewEligibility(productId, userId) {
     return {
       can_review: false,
       reason: 'login_required',
-      message: 'ÇëÏÈµÇÂ¼ºóÆÀ¼Û',
+      message: 'è¯·å…ˆç™»å½•åæ“ä½œ',
       pending_items: [],
       reviewed_count: 0,
     };
@@ -194,7 +194,7 @@ async function getProductReviewEligibility(productId, userId) {
     return {
       can_review: true,
       reason: '',
-      message: '¿ÉÆÀ¼Û',
+      message: 'æ— æƒé™',
       pending_items: pendingRows.map(mapPendingItem),
       reviewed_count: await repo.countReviewedProductItems(userId, productId),
     };
@@ -205,7 +205,7 @@ async function getProductReviewEligibility(productId, userId) {
     return {
       can_review: false,
       reason: 'already_reviewed',
-      message: 'ÄúÒÑÆÀ¼Û¹ı¸ÃÉÌÆ·',
+      message: 'è¯·å‹¿é‡å¤è¯„ä»·è¯¥å•†å“',
       pending_items: [],
       reviewed_count: reviewedCount,
     };
@@ -214,7 +214,7 @@ async function getProductReviewEligibility(productId, userId) {
   return {
     can_review: false,
     reason: 'purchase_required',
-    message: '¹ºÂò²¢È·ÈÏÊÕ»õºó¿ÉÆÀ¼Û',
+    message: 'è¯·ç¡®è®¤æ”¶è´§åå†è¯„ä»·',
     pending_items: [],
     reviewed_count: 0,
   };

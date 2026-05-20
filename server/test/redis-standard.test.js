@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 
@@ -51,7 +51,7 @@ describe('Redis / cache / lock / queue standard modules', () => {
 
   it('cache + lock + queue with live Redis', async (t) => {
     if (!redisAvailable) {
-      t.skip('Redis 鏈繍琛屾垨涓嶅彲杈撅紙璁剧疆 SKIP_REDIS_INTEGRATION=1 鍙烦杩囨湰妫€娴嬶級');
+      t.skip('Redis 未运行或不可达（设置 SKIP_REDIS_INTEGRATION=1 可跳过本检查）');
       return;
     }
 

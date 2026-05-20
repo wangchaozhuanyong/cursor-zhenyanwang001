@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import * as reviewService from "@/services/reviewService";
 import type { Review, ProductReviewStats, ReviewEligibility } from "@/types/review";

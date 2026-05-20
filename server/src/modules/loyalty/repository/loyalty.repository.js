@@ -1,4 +1,4 @@
-﻿const db = require('../../../config/db');
+const db = require('../../../config/db');
 
 async function selectPointsSettings() {
   const [[row]] = await db.query('SELECT * FROM loyalty_points_settings WHERE id = 1 LIMIT 1');

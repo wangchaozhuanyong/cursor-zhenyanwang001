@@ -1,4 +1,4 @@
-﻿const repo = require('../repository/notificationTriggerSettings.repository');
+const repo = require('../repository/notificationTriggerSettings.repository');
 const { BusinessError } = require('../../../errors/BusinessError');
 
 /** Default title/content templates used when trigger copy is not configured. */

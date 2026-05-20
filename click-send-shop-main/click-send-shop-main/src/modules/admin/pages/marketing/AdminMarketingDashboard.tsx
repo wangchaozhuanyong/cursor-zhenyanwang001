@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BarChart3, CalendarClock, Gift, Link2, PlusCircle, Star, Ticket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import * as activityService from "@/services/admin/activityService";

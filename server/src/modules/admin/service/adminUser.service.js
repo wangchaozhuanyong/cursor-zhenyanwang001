@@ -1,4 +1,4 @@
-﻿const { BusinessError } = require('../../../errors/BusinessError');
+const { BusinessError } = require('../../../errors/BusinessError');
 const { rowsToCsvLocalized } = require('../../../utils/adminCsvLabels');
 const repo = require('../repository/adminUser.repository');
 const auditRepo = require('../repository/auditLog.repository');

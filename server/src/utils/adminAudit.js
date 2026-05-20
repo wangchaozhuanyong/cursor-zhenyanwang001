@@ -1,4 +1,4 @@
-﻿const adminLogRepo = require('../modules/admin/repository/adminLog.repository');
+const adminLogRepo = require('../modules/admin/repository/adminLog.repository');
 const { generateId } = require('./helpers');
 
 const UUID_RE =

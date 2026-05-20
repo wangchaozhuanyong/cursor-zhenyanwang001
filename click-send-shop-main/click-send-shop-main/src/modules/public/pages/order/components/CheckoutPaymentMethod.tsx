@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { ChevronRight, ShieldCheck } from "lucide-react";
 import PaymentMethodPicker, { type PaymentMethod } from "@/components/PaymentMethodPicker";
 import type { PublicPaymentChannel } from "@/services/paymentService";

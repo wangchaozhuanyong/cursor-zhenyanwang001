@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
@@ -14,6 +15,7 @@ import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getCategoryProductsGridClass } from "@/utils/productGridClasses";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
+import { useGoBack } from "@/hooks/useGoBack";
 
 export default function NewArrivals() {
   const { themeConfig } = useThemeRuntime();
@@ -22,6 +24,7 @@ export default function NewArrivals() {
   const isListView = viewMode === "list";
   useDocumentTitle("新品上市");
   const navigate = useNavigate();
+  const goBack = useGoBack("/");
   const siteInfo = useSiteInfo();
   const { products, loading, error, loadProducts } = useProductStore();
   const [sort, setSort] = useState<ProductSortType>("newest");
@@ -47,12 +50,22 @@ export default function NewArrivals() {
       />
       <StorePageHeader
         title="新品上市"
+        leftSlot={(
+          <button
+            type="button"
+            onClick={goBack}
+            aria-label="返回"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)] transition active:scale-95 touch-target"
+          >
+            <ArrowLeft size={20} strokeWidth={2.25} />
+          </button>
+        )}
         titleInlineSlot={(
           <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
             <ProductSortBar
               value={sort}
               onChange={setSort}
-              className="min-w-0 flex-1 max-w-[min(100%,18rem)]"
+              className="min-w-0 flex-1 max-w-[min(100%,16rem)]"
             />
             <ProductListViewToggle value={viewMode} onChange={setViewMode} />
           </div>

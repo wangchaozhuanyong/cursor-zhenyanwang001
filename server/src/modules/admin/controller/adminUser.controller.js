@@ -1,4 +1,4 @@
-﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const { asyncRoute } = require('../../../middleware/asyncRoute');
 const svc = require('../service/adminUser.service');
 
 exports.list = asyncRoute(async (req, res) => {

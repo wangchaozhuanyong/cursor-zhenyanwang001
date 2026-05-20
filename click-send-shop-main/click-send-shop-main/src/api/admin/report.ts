@@ -1,6 +1,7 @@
 import { get } from "@/api/request";
 
 export type ReportQuery = {
+  range_preset?: string;
   date_from?: string;
   date_to?: string;
   granularity?: "day" | "week" | "month";
@@ -12,6 +13,10 @@ export type ReportQuery = {
   payment_status?: string;
   order_status?: string;
   user_type?: string;
+  device?: string;
+  visitor_type?: string;
+  traffic_source?: string;
+  page_type?: string;
   page?: number;
   pageSize?: number;
   sort?: string;
@@ -49,4 +54,7 @@ export function getInventoryAnalysis(params?: ReportQuery) {
 }
 export function getSearchAnalysis(params?: ReportQuery) {
   return get<Record<string, unknown>>("/admin/reports/search/analysis", params as unknown as Record<string, unknown>);
+}
+export function getTrafficAnalysis(params?: ReportQuery) {
+  return get<Record<string, unknown>>("/admin/reports/traffic", params as unknown as Record<string, unknown>);
 }

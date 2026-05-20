@@ -1,4 +1,4 @@
-﻿import { get, put } from "@/api/request";
+import { get, put } from "@/api/request";
 import type { SiteSettings } from "@/types/admin";
 
 export function getSiteSettings() {

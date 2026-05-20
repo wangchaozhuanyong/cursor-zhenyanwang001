@@ -1,4 +1,4 @@
-﻿const db = require('../../../config/db');
+const db = require('../../../config/db');
 
 function buildInviteWhere(query = {}) {
   let where = `WHERE u.parent_invite_code != '' AND u.deleted_at IS NULL`;

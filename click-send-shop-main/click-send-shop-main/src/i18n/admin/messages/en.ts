@@ -101,6 +101,7 @@ export const adminMessagesEn: AdminMessages = {
     staffAccounts: "Staff accounts",
     settings: "System settings",
     siteSettings: "Site settings",
+    telegramNotifications: "Telegram notifications",
     shipping: "Shipping",
     content: "Content",
     auditLogs: "Audit logs",
@@ -110,6 +111,7 @@ export const adminMessagesEn: AdminMessages = {
   routeTitles: {
     admin: "Admin Console",
     siteSettings: "Site settings",
+    telegram: "System settings / Telegram notifications",
     homeOps: "Storefront design / Homepage",
     banners: "Storefront design / Carousels",
     supportDownload: "Storefront design / Support download",

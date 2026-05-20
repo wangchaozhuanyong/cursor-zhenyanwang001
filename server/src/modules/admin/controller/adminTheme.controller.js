@@ -1,4 +1,4 @@
-﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const { asyncRoute } = require('../../../middleware/asyncRoute');
 const themeService = require('../../user/service/theme.service');
 
 exports.updateTheme = asyncRoute(async (req, res) => {

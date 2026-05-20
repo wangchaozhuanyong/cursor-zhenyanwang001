@@ -1,4 +1,4 @@
-﻿const { verifyToken } = require('../utils/helpers');
+const { verifyToken } = require('../utils/helpers');
 const authRepo = require('../modules/auth/repository/auth.repository');
 const { getAccessTokenFromRequest } = require('../utils/authCookies');
 

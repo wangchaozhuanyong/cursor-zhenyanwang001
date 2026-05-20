@@ -1,4 +1,4 @@
-﻿const repo = require('../repository/adminInvite.repository');
+const repo = require('../repository/adminInvite.repository');
 
 async function listInvites(query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);

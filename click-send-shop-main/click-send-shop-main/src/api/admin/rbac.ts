@@ -1,4 +1,4 @@
-﻿import { get, put, post, del } from "@/api/request";
+import { get, put, post, del } from "@/api/request";
 
 export interface RbacRoleRow {
   id: number;

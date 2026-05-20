@@ -1,4 +1,4 @@
-﻿import marketingDisplayData from "./marketingDisplayPositions.data.json";
+import marketingDisplayData from "./marketingDisplayPositions.data.json";
 
 export const DISPLAY_POSITIONS = marketingDisplayData.displayPositions as readonly string[];
 

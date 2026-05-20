@@ -1,4 +1,4 @@
-﻿const { test, describe } = require('node:test');
+const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 const adminExtended = require('../src/modules/admin/service/adminExtended.service');
 

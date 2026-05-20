@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, type CSSProperties } from "react";
 import { Eye, EyeOff, Phone, Lock, User, KeyRound } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -32,6 +32,7 @@ const COUNTRY_CODE_OPTIONS = [
   { value: "+60", label: "🇲🇾 +60" },
   { value: "+86", label: "🇨🇳 +86" },
 ];
+const KEYBOARD_INSET_THRESHOLD = 24;
 
 type AuthMode = "login" | "register";
 type CredentialMode = "password" | "otp";
@@ -74,6 +75,8 @@ export default function Login() {
   const [otpSending, setOtpSending] = useState(false);
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [smsOtpLoginEnabled, setSmsOtpLoginEnabled] = useState(true);
+  const mainRef = useRef<HTMLElement | null>(null);
+  const [keyboardInset, setKeyboardInset] = useState(0);
   const hasLockedInviteCode = !!lockedInviteCode;
   const [shakeKey, setShakeKey] = useState(0);
   const failValidation = (message: string) => {
@@ -194,6 +197,58 @@ export default function Login() {
       cancelled = true;
     };
   }, [location.search, navigate, from, fromState]);
+
+  useEffect(() => {
+    const isKeyboardField = (el: Element | null) => {
+      if (el instanceof HTMLTextAreaElement) return true;
+      if (!(el instanceof HTMLInputElement)) return false;
+      return !["checkbox", "radio", "button", "submit", "reset", "file", "hidden", "image"].includes(
+        (el.type || "text").toLowerCase(),
+      );
+    };
+
+    const updateKeyboardInset = () => {
+      const viewport = window.visualViewport;
+      if (!viewport) {
+        setKeyboardInset(0);
+        return;
+      }
+
+      const inset = Math.max(0, Math.round(window.innerHeight - viewport.height - viewport.offsetTop));
+      setKeyboardInset(inset > KEYBOARD_INSET_THRESHOLD ? inset : 0);
+    };
+
+    const scrollFocusedFieldIntoView = () => {
+      const active = document.activeElement;
+      if (!isKeyboardField(active) || !mainRef.current?.contains(active)) return;
+
+      window.setTimeout(() => {
+        active.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+      }, 80);
+    };
+
+    const handleViewportChange = () => {
+      updateKeyboardInset();
+      scrollFocusedFieldIntoView();
+    };
+
+    const handleFocusIn = (event: FocusEvent) => {
+      if (!isKeyboardField(event.target as Element | null)) return;
+      updateKeyboardInset();
+      scrollFocusedFieldIntoView();
+    };
+
+    document.addEventListener("focusin", handleFocusIn);
+    window.visualViewport?.addEventListener("resize", handleViewportChange);
+    window.visualViewport?.addEventListener("scroll", handleViewportChange);
+    updateKeyboardInset();
+
+    return () => {
+      document.removeEventListener("focusin", handleFocusIn);
+      window.visualViewport?.removeEventListener("resize", handleViewportChange);
+      window.visualViewport?.removeEventListener("scroll", handleViewportChange);
+    };
+  }, []);
 
   const loading = authStore.loading;
 
@@ -360,8 +415,15 @@ export default function Login() {
       {/* 表单聚焦时只暂停轮播，避免输入时顶部内容突然消失造成页面跳动。 */}
       {/* ══════════════ Main Content ══════════════ */}
       <main
+        ref={mainRef}
+        style={
+          {
+            paddingBottom: `calc(max(env(safe-area-inset-bottom), 0.5rem) + ${keyboardInset}px)`,
+            scrollPaddingBottom: `calc(2rem + ${keyboardInset}px)`,
+          } satisfies CSSProperties
+        }
         className={cn(
-          "mx-auto min-h-0 w-full max-w-lg flex-1 overflow-y-auto overscroll-contain px-[var(--store-page-x)] pb-safe pt-3",
+          "mx-auto min-h-0 w-full max-w-lg flex-1 overflow-y-auto overscroll-contain px-[var(--store-page-x)] pt-3",
         )}
       >
         {banners.length > 0 ? (

@@ -1,4 +1,4 @@
-﻿import { get, post } from "@/api/request";
+import { get, post } from "@/api/request";
 import type { ShippingTemplate } from "@/types/shipping";
 
 export function getShippingTemplates() {

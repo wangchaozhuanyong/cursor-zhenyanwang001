@@ -1,4 +1,4 @@
-﻿const { asyncRoute } = require('../../../middleware/asyncRoute');
+const { asyncRoute } = require('../../../middleware/asyncRoute');
 const service = require('../service/privacy.service');
 
 exports.recordConsent = asyncRoute(async (req, res) => {

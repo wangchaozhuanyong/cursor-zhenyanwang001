@@ -1,4 +1,4 @@
-﻿const db = require('../../../config/db');
+const db = require('../../../config/db');
 
 async function countCoupons() {
   const [[{ total }]] = await db.query('SELECT COUNT(*) AS total FROM coupons WHERE deleted_at IS NULL');

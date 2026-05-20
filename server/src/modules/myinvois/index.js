@@ -1,4 +1,4 @@
-﻿const { Router } = require('express');
+const { Router } = require('express');
 const adminAuth = require('../../middleware/adminAuth');
 const requirePermission = adminAuth.requirePermission;
 const { validate } = require('../../middleware/validate');

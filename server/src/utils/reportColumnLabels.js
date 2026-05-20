@@ -82,6 +82,24 @@ const REPORT_COLUMN_LABELS = {
   created_at: '创建时间',
   updated_at: '更新时间',
   conversion_rate: '转化率',
+  path: '页面路径',
+  page_type: '页面类型',
+  pv: 'PV',
+  uv: 'UV',
+  sessions: '会话数',
+  unique_ip_count: '独立 IP 数',
+  online_visitors: '在线人数',
+  new_visitors: '新访客',
+  returning_visitors: '回访客',
+  avg_duration_seconds: '平均停留秒数',
+  bounce_rate: '跳出率',
+  exit_count: '退出次数',
+  traffic_source: '渠道',
+  device: '设备',
+  os: '操作系统',
+  browser: '浏览器',
+  browser_language: '浏览器语言',
+  payment_success_count: '支付成功次数',
   status: '状态',
   type: '类型',
   provider: '支付网关',
@@ -95,6 +113,7 @@ const REPORT_COLUMN_LABELS = {
   currency: '币种',
   code: '编码',
   title: '标题',
+  value: '数值',
   name: '名称',
   description: '说明',
   reason: '原因',
@@ -191,6 +210,29 @@ const ORDER_STATUS_LABELS = {
   cancelled: '已取消',
   refunded: '已退款',
 };
+const TRAFFIC_SOURCE_LABELS = {
+  direct: '直接访问',
+  campaign: '广告活动',
+  referral: '外部引荐',
+  organic: '自然搜索',
+  social: '社交媒体',
+  paid: '付费投放',
+};
+const PAGE_TYPE_LABELS = {
+  home: '首页',
+  product: '商品详情',
+  category: '分类页',
+  cart: '购物车',
+  checkout: '结算页',
+  search: '搜索页',
+  other: '其他页面',
+};
+const DEVICE_LABELS = {
+  desktop: '电脑',
+  mobile: '手机',
+  tablet: '平板',
+  unknown: '未知',
+};
 
 function labelFromMap(map, value, fallback = value) {
   if (value == null || value === '') return '';
@@ -206,6 +248,9 @@ function labelReportCellValue(key, value) {
   if (key === 'payment_status') return labelFromMap(PAYMENT_STATUS_LABELS, s, s);
   if (key === 'status') return labelFromMap(ORDER_STATUS_LABELS, s, s);
   if (key === 'type' && ACTIVITY_TYPE_LABELS[s]) return labelFromMap(ACTIVITY_TYPE_LABELS, s, s);
+  if (key === 'traffic_source') return labelFromMap(TRAFFIC_SOURCE_LABELS, s, s);
+  if (key === 'page_type') return labelFromMap(PAGE_TYPE_LABELS, s, s);
+  if (key === 'device') return labelFromMap(DEVICE_LABELS, s, s);
   if (key.endsWith('_rate') && !Number.isNaN(Number(s))) return `${s}%`;
   return s;
 }

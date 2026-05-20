@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import type { MouseEvent } from "react";
 import type { Product } from "@/types/product";
@@ -42,6 +43,8 @@ function ProductSoldOutOverlay({ compact = false }: { compact?: boolean }) {
 
 export default function ProductCard({ product, index = 0, displayMode = "theme" }: Props) {
   const navigate = useNavigate();
+  const impressionRef = useRef<HTMLDivElement | null>(null);
+  const impressionSentRef = useRef(false);
   const { themeConfig } = useThemeRuntime();
   const cardCenter = themeConfig.cardTextAlign === "center" && displayMode !== "list";
   const cardVariant = themeConfig.productCardVariant ?? "standard";
@@ -54,6 +57,20 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
   const isServiceLike = /服务|咨询|办理|申请|装修/.test(String(product.category_name || product.name || ""));
   const cardImageAlt = isServiceLike ? `${product.name} 服务展示图` : `${product.name} 商品图片`;
   const showNewBadge = isProductNewArrival(product);
+
+  useEffect(() => {
+    const node = impressionRef.current;
+    if (!node || impressionSentRef.current) return;
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.4);
+      if (!visible || impressionSentRef.current) return;
+      impressionSentRef.current = true;
+      void trackEvent({ event_type: "product_impression", module: "product_card", product_id: product.id });
+      observer.disconnect();
+    }, { threshold: [0.4] });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [product.id]);
 
   const openDetail = (module: string) => {
     void trackEvent({ event_type: "product_click", module, product_id: product.id });
@@ -114,7 +131,7 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
         className="theme-product-card group cursor-pointer overflow-hidden theme-rounded"
         onClick={() => openDetail("categories")}
       >
-        <div className={cn("flex", isListRow ? "gap-3 p-3" : "gap-2.5 p-2.5 sm:gap-3 sm:p-3")}>
+        <div ref={impressionRef} className={cn("flex", isListRow ? "gap-3 p-3" : "gap-2.5 p-2.5 sm:gap-3 sm:p-3")}>
           <div
             className={cn(
               "theme-rounded relative shrink-0 overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-bg)]",
@@ -170,6 +187,7 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
       onClick={() => openDetail("product_grid")}
     >
       <div
+        ref={impressionRef}
         className="theme-rounded relative overflow-hidden bg-[var(--theme-bg)]"
         style={{ aspectRatio: isPremium ? "1 / 1" : "var(--theme-image-ratio)" }}
       >

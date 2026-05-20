@@ -1,4 +1,4 @@
-﻿import { get, post, put, del } from "@/api/request";
+import { get, post, put, del } from "@/api/request";
 import type { Banner } from "@/types/banner";
 
 export function getBanners() {

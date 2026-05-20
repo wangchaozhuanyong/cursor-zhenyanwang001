@@ -102,9 +102,9 @@ async function anonymizeUser(conn, userId, anonymizedPhone, anonymizedInviteCode
 async function anonymizeOrders(conn, userId) {
   const [result] = await conn.query(
     `UPDATE orders
-     SET contact_name = '已匿�?,
+     SET contact_name = '已匿名,
          contact_phone = '',
-         address = '已匿�?,
+         address = '已匿名,
          note = ''
      WHERE user_id = ?`,
     [userId],

@@ -1,4 +1,4 @@
-﻿import type { SiteInfo } from "@/types/content";
+import type { SiteInfo } from "@/types/content";
 
 export function parseSstEnabled(v: string | undefined): boolean {
   if (v == null || v === "") return false;

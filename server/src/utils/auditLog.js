@@ -1,4 +1,4 @@
-﻿const auditLogRepo = require('../modules/admin/repository/auditLog.repository');
+const auditLogRepo = require('../modules/admin/repository/auditLog.repository');
 const { generateId } = require('./helpers');
 
 const MAX_JSON_CHARS = 8000;

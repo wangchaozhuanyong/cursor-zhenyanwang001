@@ -315,7 +315,7 @@ async function insertAnalyticsEvent(q, row) {
       row.user_id || null,
       row.anonymous_id || '',
       row.session_id || '',
-      dedupeKey,
+      dedupeKey || null,
       row.event_type,
       row.module || '',
       row.page || '',

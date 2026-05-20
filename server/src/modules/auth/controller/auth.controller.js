@@ -1,4 +1,4 @@
-﻿const authService = require('../service/auth.service');
+const authService = require('../service/auth.service');
 const authApiService = require('../services/auth.api.service');
 const oauthService = require('../services/oauth.service');
 const wechatService = require('../services/wechat.service');

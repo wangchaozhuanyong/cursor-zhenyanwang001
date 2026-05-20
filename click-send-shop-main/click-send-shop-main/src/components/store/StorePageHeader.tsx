@@ -5,6 +5,7 @@ import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 
 export type StorePageHeaderProps = {
   title: ReactNode;
+  leftSlot?: ReactNode;
   /** 与标题同一行、靠右伸展（如分类页搜索框） */
   titleInlineSlot?: ReactNode;
   subtitle?: string;
@@ -17,6 +18,7 @@ export type StorePageHeaderProps = {
 
 export default function StorePageHeader({
   title,
+  leftSlot,
   titleInlineSlot,
   subtitle,
   rightSlot,
@@ -41,6 +43,7 @@ export default function StorePageHeader({
     >
       <div className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] sm:px-4 md:px-6">
         <div className="flex min-h-14 items-center gap-3 py-2">
+          {leftSlot ? <div className="flex shrink-0 items-center">{leftSlot}</div> : null}
           <div className="min-w-0 flex-1">
             {titleInlineSlot ? (
               <div className="flex min-w-0 items-center gap-2 sm:gap-3">

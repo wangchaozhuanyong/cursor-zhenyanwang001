@@ -1,4 +1,4 @@
-﻿import type { OrderPreviewResult } from "@/types/orderPreview";
+import type { OrderPreviewResult } from "@/types/orderPreview";
 
 type Props = {
   pointsRedeemEnabled: boolean;

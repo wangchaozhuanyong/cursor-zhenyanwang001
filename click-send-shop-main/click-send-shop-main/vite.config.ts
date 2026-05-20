@@ -90,6 +90,13 @@ function replaceViteClientPlaceholders(): Plugin {
 const thirdPartyLoginEnabled = process.env.VITE_THIRD_PARTY_LOGIN_ENABLED === "true";
 const legacyEnabled = process.env.VITE_LEGACY_BUILD === "1";
 
+const networkOnlyApiPattern = /^\/api\/(admin|auth|user|orders|cart|checkout|payment|upload)(\/|$)/;
+const networkOnlyPagePattern = /^\/(admin|cart|checkout|orders|settings|profile|address|coupons|notifications|returns|reviews\/pending|points|rewards|invite)(\/|$)/;
+
+function isGetRequest(request: Request) {
+  return request.method === "GET";
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(() => ({
   define: {
@@ -119,7 +126,7 @@ export default defineConfig(() => ({
     replaceViteClientPlaceholders(),
     react(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       injectRegister: false,
       outDir: "dist",
       manifest: false,
@@ -133,41 +140,115 @@ export default defineConfig(() => ({
       workbox: {
         swDest: "sw.js",
         navigateFallback: undefined,
-        navigateFallbackDenylist: [/^\/admin(\/|$)/, /^\/api(\/|$)/, /^\/manifest\.webmanifest$/, /^\/pwa-/],
+        navigateFallbackDenylist: [
+          networkOnlyPagePattern,
+          /^\/api(\/|$)/,
+          /^\/manifest\.webmanifest$/,
+          /^\/pwa-/,
+          /^\/apple-touch-icon\.png$/,
+        ],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
-        skipWaiting: true,
+        skipWaiting: false,
         runtimeCaching: [
           {
-            urlPattern: /^https?:\/\/[^/]+\/api\/(admin|auth|user|orders|cart|checkout|payment|upload)(\/|$)/,
+            urlPattern: ({ url }) => networkOnlyApiPattern.test(url.pathname),
             handler: "NetworkOnly",
           },
           {
-            urlPattern: /^https?:\/\/[^/]+\/api\/pwa(\/|$)/,
+            urlPattern: ({ url }) => url.pathname.startsWith("/api/pwa/"),
             handler: "NetworkOnly",
           },
           {
-            urlPattern: ({ url }) =>
-              url.pathname === "/manifest.webmanifest"
-              || url.pathname === "/apple-touch-icon.png"
-              || url.pathname.startsWith("/pwa-"),
+            urlPattern: ({ url }) => url.pathname === "/manifest.webmanifest",
             handler: "NetworkOnly",
           },
           {
-            urlPattern: ({ url, request }) => request.mode === "navigate" && url.pathname.startsWith("/admin"),
+            urlPattern: ({ url, request }) => request.mode === "navigate" && networkOnlyPagePattern.test(url.pathname),
             handler: "NetworkOnly",
           },
           {
-            urlPattern: ({ request }) => request.destination === "document",
-            handler: "NetworkFirst",
+            urlPattern: ({ url, request }) =>
+              isGetRequest(request)
+              && (
+                url.pathname === "/api/home/bootstrap"
+                || url.pathname === "/api/content/site-info"
+                || url.pathname === "/api/content/home-ops"
+              ),
+            handler: "StaleWhileRevalidate",
             options: {
-              cacheName: "pages-cache",
-              networkTimeoutSeconds: 4,
+              cacheName: "public-home-cache",
               expiration: {
-                maxEntries: 40,
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 10,
+              },
+            },
+          },
+          {
+            urlPattern: ({ url, request }) =>
+              isGetRequest(request)
+              && (
+                url.pathname === "/api/categories"
+                || url.pathname.startsWith("/api/categories/")
+              ),
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "public-category-cache",
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 60 * 30,
+              },
+            },
+          },
+          {
+            urlPattern: ({ url, request }) =>
+              isGetRequest(request)
+              && (
+                url.pathname === "/api/products"
+                || url.pathname === "/api/products/home"
+                || url.pathname === "/api/products/tags"
+              ),
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "public-product-list-cache",
+              expiration: {
+                maxEntries: 80,
+                maxAgeSeconds: 60 * 5,
+              },
+            },
+          },
+          {
+            urlPattern: ({ url, request }) =>
+              isGetRequest(request)
+              && /^\/api\/products\/[^/]+(\/related)?$/.test(url.pathname),
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "public-product-detail-cache",
+              expiration: {
+                maxEntries: 120,
+                maxAgeSeconds: 60 * 10,
+              },
+            },
+          },
+          {
+            urlPattern: ({ url, request }) =>
+              isGetRequest(request)
+              && (
+                url.pathname.startsWith("/api/banners")
+                || url.pathname.startsWith("/api/content/")
+              ),
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "public-content-cache",
+              expiration: {
+                maxEntries: 80,
                 maxAgeSeconds: 60 * 60 * 24,
               },
             },
+          },
+          {
+            urlPattern: ({ request }) => request.mode === "navigate",
+            handler: "NetworkOnly",
           },
           {
             urlPattern: ({ request }) =>
@@ -187,15 +268,19 @@ export default defineConfig(() => ({
               && (
                 url.pathname.startsWith("/assets/")
                 || url.pathname.startsWith("/uploads/")
+                || url.pathname === "/apple-touch-icon.png"
+                || url.pathname.startsWith("/pwa-")
                 || url.pathname.includes("/banner")
+                || url.pathname.includes("/category")
                 || url.pathname.includes("/product")
+                || url.pathname.includes("/logo")
               ),
             handler: "CacheFirst",
             options: {
               cacheName: "image-cache",
               expiration: {
-                maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24 * 14,
+                maxEntries: 150,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
               },
             },
           },

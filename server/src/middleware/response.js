@@ -4,7 +4,7 @@ module.exports = function responseMiddleware(req, res, next) {
   const traceId = crypto.randomUUID();
   req.traceId = traceId;
 
-  res.success = (data = null, message = 'success') => {
+  res.success = (data = null, message = '成功') => {
     res.json({ code: 0, message, data, traceId });
   };
 
@@ -17,7 +17,7 @@ module.exports = function responseMiddleware(req, res, next) {
     const totalPages = total === 0 ? 0 : Math.ceil(total / pageSize);
     res.json({
       code: 0,
-      message: 'success',
+      message: '成功',
       data: { list, total, page, pageSize, totalPages },
       traceId,
     });

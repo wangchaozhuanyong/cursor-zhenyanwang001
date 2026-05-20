@@ -5,7 +5,12 @@ const assert = require('node:assert/strict');
 const request = require('supertest');
 const app = require('../src/app');
 
-const phone = `6${Date.now().toString().slice(-7)}`;
+function malaysiaTestPhone() {
+  return `01${String(Date.now()).slice(-8)}`;
+}
+
+const TEST_PASSWORD = 'Secret12';
+const phone = malaysiaTestPhone();
 const countryCode = '+60';
 
 describe('payments API', () => {
@@ -14,7 +19,7 @@ describe('payments API', () => {
   before(async () => {
     const reg = await request(app)
       .post('/api/auth/register')
-      .send({ phone, countryCode, password: 'secret12', nickname: 'pay-t' })
+      .send({ phone, countryCode, password: TEST_PASSWORD, nickname: 'pay-t' })
       .expect(200);
     assert.equal(reg.body.code, 0);
     accessToken = reg.body.data?.token?.accessToken;

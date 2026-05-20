@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Clock } from "lucide-react";
-import * as marketingApi from "@/api/modules/marketing";
 import * as homeService from "@/services/homeService";
-import type { FlashSaleHomeActivity } from "@/api/modules/marketing";
+import { fetchFlashSaleHome, type FlashSaleHomeActivity } from "@/services/marketingService";
 import { AnimatedSection } from "@/modules/micro-interactions";
 
 function formatCountdown(seconds: number) {
@@ -37,10 +36,10 @@ export default function FlashSaleSection({ delay = 0 }: { delay?: number }) {
           setCountdown(data?.countdown_seconds ?? 0);
           return;
         }
-        return marketingApi.getFlashSaleHome("home_flash_sale").then((res) => {
+        return fetchFlashSaleHome("home_flash_sale").then((data) => {
           if (cancelled) return;
-          setActivity(res.data ?? null);
-          setCountdown(res.data?.countdown_seconds ?? 0);
+          setActivity(data ?? null);
+          setCountdown(data?.countdown_seconds ?? 0);
         });
       })
       .catch(() => {

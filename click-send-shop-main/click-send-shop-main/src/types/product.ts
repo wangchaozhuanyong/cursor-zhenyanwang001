@@ -168,3 +168,44 @@ export interface ProductReview {
   images: string[];
   created_at: string;
 }
+
+export interface AdminProductSpecValueInput {
+  id?: string;
+  value: string;
+  image_url?: string | null;
+  sort_order: number;
+}
+
+export interface AdminProductSpecGroupInput {
+  id?: string;
+  name: string;
+  sort_order: number;
+  values: AdminProductSpecValueInput[];
+}
+
+export interface AdminProductVariantInput {
+  id?: string;
+  title: string;
+  sku_code?: string | null;
+  price: number;
+  original_price?: number | null;
+  cost_price?: number | null;
+  stock: number;
+  stock_warning_threshold?: number;
+  barcode?: string | null;
+  image_url?: string | null;
+  weight?: number | null;
+  enabled?: boolean;
+  sort_order: number;
+  is_default: boolean;
+  spec_value_ids?: string[];
+}
+
+/** 管理端商品保存提交体 */
+export type AdminProductUpsertPayload = Omit<Product, "id" | "variants" | "spec_groups"> & {
+  tag_ids?: string[];
+  stock?: number;
+  isNewArrival?: boolean;
+  spec_groups?: AdminProductSpecGroupInput[];
+  variants?: AdminProductVariantInput[];
+};

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Tx } from "@/components/admin/AdminText";
+import { AdminLabelWithHint, AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import {
   Check,
   ChevronDown,
@@ -312,8 +313,11 @@ export default function AdminCategories() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-foreground"><Tx>分类管理</Tx></h2>
-          <p className="mt-1 text-xs text-muted-foreground"><Tx>支持最多 3 级分类；有子分类或已关联商品的分类禁止删除。</Tx></p>
+          <AdminPageTitle
+            title={<Tx>分类管理</Tx>}
+            hint={<Tx>支持最多 3 级分类；有子分类或已关联商品的分类禁止删除。</Tx>}
+            className="text-lg [&_h1]:text-lg [&_h1]:font-semibold"
+          />
         </div>
         <PermissionGate permission="category.manage">
           <button
@@ -347,8 +351,10 @@ export default function AdminCategories() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>图标 URL</Tx></label>
-              <p className="mb-1 text-[11px] text-muted-foreground"><Tx>建议 128×128 正方形（PNG/WebP/SVG 均可），透明背景更佳。</Tx></p>
+              <AdminLabelWithHint
+                label={<Tx>图标 URL</Tx>}
+                hint={<Tx>建议 128×128 正方形（PNG/WebP/SVG 均可），透明背景更佳。</Tx>}
+              />
               <div className="flex gap-2">
                 <input
                   placeholder="可粘贴 URL 或上传"

@@ -25,3 +25,19 @@ export interface ReferralRule {
   description: string;
   enabled: boolean;
 }
+
+/** 邀请记录列表汇总卡片 */
+export interface InviteRecordsSummary {
+  totalRecords?: number;
+  inviterUsers?: number;
+  inviteeUsers?: number;
+}
+
+/** 返现规则编辑行（表单字段与 API commission_rate 映射） */
+export interface ReferralRuleEditRow {
+  id: string;
+  level: number;
+  name: string;
+  rewardPercent: number;
+  enabled: boolean;
+}

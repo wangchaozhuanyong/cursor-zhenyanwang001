@@ -99,7 +99,7 @@ function buildPointsSummary(row, discountLines, loyaltyMeta) {
   };
 }
 
-function formatOrder(row, items) {
+function formatOrder(row, items, returnMeta = null) {
   const discountMeta = parseDiscountMeta(row.discount_meta);
   const discountLines = buildDiscountLines(row, discountMeta);
   const loyaltyMeta = parseJsonObject(row.loyalty_meta);
@@ -151,6 +151,8 @@ function formatOrder(row, items) {
     shipping_phone: row.shipping_phone || row.contact_phone,
     address: row.address,
     payment_method: row.payment_method || 'whatsapp',
+    return_request_count: returnMeta ? Number(returnMeta.return_request_count || 0) : 0,
+    active_return_count: returnMeta ? Number(returnMeta.active_return_count || 0) : 0,
   };
 }
 

@@ -74,7 +74,7 @@ async function listReviews(query) {
 
 async function getReviewDetail(id) {
   const review = await repo.selectReviewDetail(id);
-  if (!review) return { error: { code: 404, message: 'Review not found' } };
+  if (!review) return { error: { code: 404, message: '评价不存在' } };
   const audit_logs = await repo.selectAuditLogsForReview(id);
   return {
     data: {
@@ -97,10 +97,10 @@ async function getReviewDetail(id) {
 
 async function toggleVisibility(id, adminUserId, req) {
   const review = await repo.selectReviewById(id);
-  if (!review) return { error: { code: 404, message: 'Review not found' } };
-  if (review.status === 'deleted') return { error: { code: 400, message: 'Deleted review cannot be modified' } };
+  if (!review) return { error: { code: 404, message: '评价不存在' } };
+  if (review.status === 'deleted') return { error: { code: 400, message: '已删除的评价不可修改' } };
   if (review.status === 'pending' || review.status === 'rejected') {
-    return { error: { code: 400, message: 'Pending or rejected review cannot toggle visibility' } };
+    return { error: { code: 400, message: '待审核或已驳回的评价不可切换展示状态' } };
   }
 
   const newStatus = review.status === 'hidden' ? 'normal' : 'hidden';
@@ -109,78 +109,78 @@ async function toggleVisibility(id, adminUserId, req) {
     req, operatorId: adminUserId,
     actionType: `review.${newStatus === 'hidden' ? 'hide' : 'show'}`,
     objectType: 'product_review', objectId: id,
-    summary: `Toggle review visibility ${id} -> ${newStatus}`,
+    summary: `切换评价 ${id} 展示状态为 ${newStatus === 'hidden' ? '隐藏' : '正常'}`,
     before: { status: review.status }, after: { status: newStatus },
     result: 'success',
   });
-  return { message: newStatus === 'hidden' ? 'Hidden' : 'Visible' };
+  return { message: newStatus === 'hidden' ? '已隐藏' : '已显示' };
 }
 
 async function approveReview(id, adminUserId, req) {
   const review = await repo.selectReviewById(id);
-  if (!review) return { error: { code: 404, message: 'Review not found' } };
+  if (!review) return { error: { code: 404, message: '评价不存在' } };
   if (review.status !== 'pending') {
-    return { error: { code: 400, message: 'Only pending reviews can be approved' } };
+    return { error: { code: 400, message: '仅待审核评价可通过' } };
   }
   await repo.updateReviewStatus(id, 'normal');
   await writeAuditLog({
     req, operatorId: adminUserId,
     actionType: 'review.approve',
     objectType: 'product_review', objectId: id,
-    summary: `Approve review ${id}`,
+    summary: `通过评价 ${id}`,
     before: { status: 'pending' }, after: { status: 'normal' },
     result: 'success',
   });
-  return { message: 'Approved' };
+  return { message: '已通过' };
 }
 
 async function rejectReview(id, adminUserId, req) {
   const review = await repo.selectReviewById(id);
-  if (!review) return { error: { code: 404, message: 'Review not found' } };
+  if (!review) return { error: { code: 404, message: '评价不存在' } };
   if (review.status !== 'pending') {
-    return { error: { code: 400, message: 'Only pending reviews can be rejected' } };
+    return { error: { code: 400, message: '仅待审核评价可驳回' } };
   }
   await repo.updateReviewStatus(id, 'rejected');
   await writeAuditLog({
     req, operatorId: adminUserId,
     actionType: 'review.reject',
     objectType: 'product_review', objectId: id,
-    summary: `Reject review ${id}`,
+    summary: `驳回评价 ${id}`,
     before: { status: 'pending' }, after: { status: 'rejected' },
     result: 'success',
   });
-  return { message: 'Rejected' };
+  return { message: '已驳回' };
 }
 
 async function replyReview(id, body, adminUserId, req) {
   const { reply } = body;
-  if (!reply || !reply.trim()) return { error: { code: 400, message: 'Reply content is required' } };
+  if (!reply || !reply.trim()) return { error: { code: 400, message: '请填写回复内容' } };
 
   const review = await repo.selectReviewById(id);
-  if (!review) return { error: { code: 404, message: 'Review not found' } };
-  if (review.status === 'deleted') return { error: { code: 400, message: 'Deleted review cannot be replied' } };
+  if (!review) return { error: { code: 404, message: '评价不存在' } };
+  if (review.status === 'deleted') return { error: { code: 400, message: '已删除的评价不可回复' } };
 
   await repo.updateAdminReply(id, reply.trim());
   await writeAuditLog({
     req, operatorId: adminUserId,
     actionType: 'review.reply',
     objectType: 'product_review', objectId: id,
-    summary: `Reply to review ${id}`,
+    summary: `回复评价 ${id}`,
     before: { admin_reply: review.admin_reply || null },
     after: { admin_reply: reply.trim() },
     result: 'success',
   });
-  return { message: 'Reply saved' };
+  return { message: '回复已保存' };
 }
 
 async function deleteReview(id, adminUserId, req) {
   const review = await repo.selectReviewById(id);
-  if (!review) return { error: { code: 404, message: 'Review not found' } };
+  if (!review) return { error: { code: 404, message: '评价不存在' } };
   if (review.status === 'deleted') {
-    return { error: { code: 400, message: 'Review already deleted' } };
+    return { error: { code: 400, message: '评价已删除' } };
   }
   if (!['normal', 'hidden', 'pending', 'rejected'].includes(review.status)) {
-    return { error: { code: 400, message: 'Current status cannot be deleted' } };
+    return { error: { code: 400, message: '当前状态不可删除' } };
   }
 
   await repo.softDeleteReview(id, adminUserId);
@@ -188,36 +188,36 @@ async function deleteReview(id, adminUserId, req) {
     req, operatorId: adminUserId,
     actionType: 'review.delete',
     objectType: 'product_review', objectId: id,
-    summary: `Soft delete review ${id}`,
+    summary: `软删除评价 ${id}`,
     before: { status: review.status },
     after: { status: 'deleted' },
     result: 'success',
   });
-  return { message: 'Deleted' };
+  return { message: '已删除' };
 }
 
 async function restoreReview(id, adminUserId, req) {
   const review = await repo.selectReviewById(id);
-  if (!review) return { error: { code: 404, message: 'Review not found' } };
-  if (review.status !== 'deleted') return { error: { code: 400, message: 'Review is not deleted' } };
+  if (!review) return { error: { code: 404, message: '评价不存在' } };
+  if (review.status !== 'deleted') return { error: { code: 400, message: '评价未删除' } };
 
   await repo.restoreReview(id);
   await writeAuditLog({
     req, operatorId: adminUserId,
     actionType: 'review.restore',
     objectType: 'product_review', objectId: id,
-    summary: `Restore review ${id}`,
+    summary: `恢复评价 ${id}`,
     before: { status: 'deleted' }, after: { status: 'normal' },
     result: 'success',
   });
-  return { message: 'Restored' };
+  return { message: '已恢复' };
 }
 
 async function permanentDelete(id, adminUserId, req) {
   const review = await repo.selectReviewById(id);
-  if (!review) return { error: { code: 404, message: 'Review not found' } };
+  if (!review) return { error: { code: 404, message: '评价不存在' } };
   if (review.status !== 'deleted') {
-    return { error: { code: 400, message: 'Only deleted review can be permanently removed' } };
+    return { error: { code: 400, message: '仅已删除评价可永久移除' } };
   }
 
   await repo.permanentDeleteReview(id);
@@ -225,11 +225,11 @@ async function permanentDelete(id, adminUserId, req) {
     req, operatorId: adminUserId,
     actionType: 'review.permanent_delete',
     objectType: 'product_review', objectId: id,
-    summary: `Permanently delete review ${id}`,
+    summary: `永久删除评价 ${id}`,
     before: { content: (review.content || '').slice(0, 200), rating: review.rating },
     result: 'success',
   });
-  return { message: 'Permanently deleted' };
+  return { message: '已永久删除' };
 }
 
 async function batchHide(ids, adminUserId, req) {
@@ -238,10 +238,10 @@ async function batchHide(ids, adminUserId, req) {
     req, operatorId: adminUserId,
     actionType: 'review.batch_hide',
     objectType: 'product_review', objectId: ids.join(','),
-    summary: `Batch hide ${affected} reviews`,
+    summary: `批量隐藏 ${affected} 条评价`,
     result: 'success',
   });
-  return { message: `Hidden ${affected} reviews`, data: { affected } };
+  return { message: `已隐藏 ${affected} 条评价`, data: { affected } };
 }
 
 async function batchDelete(ids, adminUserId, req) {
@@ -250,17 +250,17 @@ async function batchDelete(ids, adminUserId, req) {
     req, operatorId: adminUserId,
     actionType: 'review.batch_delete',
     objectType: 'product_review', objectId: ids.join(','),
-    summary: `Batch delete ${affected} reviews`,
+    summary: `批量删除 ${affected} 条评价`,
     result: 'success',
   });
-  return { message: `Deleted ${affected} reviews`, data: { affected } };
+  return { message: `已删除 ${affected} 条评价`, data: { affected } };
 }
 
 async function toggleFeatured(id, adminUserId, req) {
   const review = await repo.selectReviewById(id);
-  if (!review) return { error: { code: 404, message: 'Review not found' } };
+  if (!review) return { error: { code: 404, message: '评价不存在' } };
   if (review.status === 'deleted' || review.status === 'pending' || review.status === 'rejected') {
-    return { error: { code: 400, message: 'Current status cannot be featured' } };
+    return { error: { code: 400, message: '当前状态不可设为精选' } };
   }
 
   const wasFeatured = !!review.is_featured;
@@ -269,27 +269,27 @@ async function toggleFeatured(id, adminUserId, req) {
     req, operatorId: adminUserId,
     actionType: `review.${wasFeatured ? 'unfeature' : 'feature'}`,
     objectType: 'product_review', objectId: id,
-    summary: `${wasFeatured ? 'Unfeature' : 'Feature'} review ${id}`,
+    summary: `${wasFeatured ? '取消精选' : '设为精选'}评价 ${id}`,
     before: { is_featured: wasFeatured }, after: { is_featured: !wasFeatured },
     result: 'success',
   });
-  return { message: wasFeatured ? 'Unfeatured' : 'Featured', data: { is_featured: !wasFeatured } };
+  return { message: wasFeatured ? '已取消精选' : '已设为精选', data: { is_featured: !wasFeatured } };
 }
 
 async function updateComplaint(id, body, adminUserId, req) {
   const { complaint_status, complaint_note } = body;
   if (!COMPLAINT_STATUSES.has(complaint_status)) {
-    return { error: { code: 400, message: 'Invalid complaint status' } };
+    return { error: { code: 400, message: '投诉状态无效' } };
   }
   const review = await repo.selectReviewById(id);
-  if (!review) return { error: { code: 404, message: 'Review not found' } };
+  if (!review) return { error: { code: 404, message: '评价不存在' } };
 
   await repo.updateComplaint(id, complaint_status, complaint_note);
   await writeAuditLog({
     req, operatorId: adminUserId,
     actionType: 'review.complaint_update',
     objectType: 'product_review', objectId: id,
-    summary: `Update complaint status ${id}`,
+    summary: `更新评价 ${id} 投诉状态`,
     before: {
       complaint_status: review.complaint_status,
       complaint_note: review.complaint_note,
@@ -297,7 +297,7 @@ async function updateComplaint(id, body, adminUserId, req) {
     after: { complaint_status, complaint_note: complaint_note || null },
     result: 'success',
   });
-  return { message: 'Complaint status updated' };
+  return { message: '投诉状态已更新' };
 }
 
 module.exports = {

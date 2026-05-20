@@ -392,6 +392,7 @@ async function createProductTag(body, adminUserId, req) {
     await repo.insertProductTag(id, name, visual.color, visual.bg_color, visual.text_color, visual.sort_order, visual.enabled);
     await writeAuditLog({ req, operatorId: adminUserId, actionType: 'tag.create', objectType: 'product_tag', objectId: id, summary: `创建标签 ${name}`, result: 'success' });
     const row = await repo.selectProductTagById(id);
+    safeClearCatalogCache();
     return { data: formatTag(row || { id, name, ...visual }), message: '创建成功' };
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') return { error: { code: 400, message: '标签已存在' } };
@@ -418,12 +419,14 @@ async function updateProductTag(id, body, adminUserId, req) {
   await repo.updateProductTag(id, fields, values);
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'tag.update', objectType: 'product_tag', objectId: id, summary: `更新标签 ${id}`, after: body, result: 'success' });
   const row = await repo.selectProductTagById(id);
+  safeClearCatalogCache();
   return { data: formatTag(row), message: '已保存' };
 }
 
 async function deleteProductTag(id, adminUserId, req) {
   await repo.deleteProductTag(id);
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'tag.delete', objectType: 'product_tag', objectId: id, summary: `删除标签 ${id}`, result: 'success' });
+  safeClearCatalogCache();
   return { message: '已删除' };
 }
 

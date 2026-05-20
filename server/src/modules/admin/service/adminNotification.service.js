@@ -88,19 +88,19 @@ async function listNotifications(query) {
 }
 
 async function getSummary() {
-  return { data: await repo.selectSummary(), message: 'ok' };
+  return { data: await repo.selectSummary(), message: '成功' };
 }
 
 async function searchUsers(query) {
   const keyword = String(query.keyword || '').trim();
-  if (!keyword) return { data: [], message: 'ok' };
+  if (!keyword) return { data: [], message: '成功' };
   const data = await repo.searchUserCandidates(keyword, Math.min(50, Number(query.limit) || 20));
-  return { data, message: 'ok' };
+  return { data, message: '成功' };
 }
 
 async function resolveUsers(body) {
   const identifiers = Array.isArray(body?.identifiers) ? body.identifiers : [];
-  if (!identifiers.length) return { data: { list: [], unresolved: [] }, message: 'ok' };
+  if (!identifiers.length) return { data: { list: [], unresolved: [] }, message: '成功' };
   const rows = await repo.resolveUsersByIdentifiers(identifiers);
   const byId = new Set(rows.map((r) => String(r.id)));
   const byPhone = new Set(rows.map((r) => String(r.phone || '')));
@@ -108,12 +108,12 @@ async function resolveUsers(body) {
     .map((x) => String(x || '').trim())
     .filter(Boolean)
     .filter((x) => !byId.has(x) && !byPhone.has(x));
-  return { data: { list: rows, unresolved }, message: 'ok' };
+  return { data: { list: rows, unresolved }, message: '成功' };
 }
 
 async function estimateAudience(body) {
   const { audienceType, targetUserIds } = await resolveAudience(body);
-  return { data: { audience_type: audienceType, estimated_recipients: targetUserIds.length }, message: 'ok' };
+  return { data: { audience_type: audienceType, estimated_recipients: targetUserIds.length }, message: '成功' };
 }
 
 async function getNotificationDetail(batchId, query = {}) {
@@ -135,7 +135,7 @@ async function getNotificationDetail(batchId, query = {}) {
       recipients,
       logs,
     },
-    message: 'ok',
+    message: '成功',
   };
 }
 
@@ -330,12 +330,12 @@ async function publishDraft(batchId, body, adminUserId, req) {
 }
 
 function listTemplates() {
-  return { data: NOTIFICATION_TEMPLATES, message: 'ok' };
+  return { data: NOTIFICATION_TEMPLATES, message: '成功' };
 }
 
 async function listTriggerSettings() {
   const data = await triggerSettings.getNotificationTriggerSettings();
-  return { data, message: 'ok' };
+  return { data, message: '成功' };
 }
 
 async function updateTriggerSettings(body, adminUserId, req) {
@@ -359,7 +359,7 @@ async function previewTriggerRule(body) {
   const vars = body?.vars && typeof body.vars === 'object' ? body.vars : {};
   const resolved = await triggerSettings.getResolvedTriggerCopy(key, vars);
   if (!resolved) throw new BusinessError(400, '规则未启用或不存在');
-  return { data: resolved, message: 'ok' };
+  return { data: resolved, message: '成功' };
 }
 
 async function testSendTriggerRule(body, adminUserId, req) {

@@ -32,13 +32,26 @@ function normalizeText(value: string | undefined, fallback = ""): string {
 }
 
 const fallbackNavItems: HomeNavItem[] = [
-  { id: "fallback-1", title: "全部分类", icon_url: "📂", link_url: "/categories", target_type: "url", target_category_id: null, sort_order: 1, enabled: true },
-  { id: "fallback-2", title: "新品上市", icon_url: "🆕", link_url: "/new-arrivals", target_type: "url", target_category_id: null, sort_order: 2, enabled: true },
+  { id: "fallback-1", title: "全部分类", icon_url: "📚", link_url: "/categories", target_type: "url", target_category_id: null, sort_order: 1, enabled: true },
+  { id: "fallback-2", title: "新品上新", icon_url: "🆕", link_url: "/new-arrivals", target_type: "url", target_category_id: null, sort_order: 2, enabled: true },
   { id: "fallback-3", title: "热销好物", icon_url: "🔥", link_url: "/categories?sort=sales_desc", target_type: "url", target_category_id: null, sort_order: 3, enabled: true },
   { id: "fallback-4", title: "优惠券", icon_url: "🎟️", link_url: "/coupons", target_type: "url", target_category_id: null, sort_order: 4, enabled: true },
-  { id: "fallback-5", title: "我的订单", icon_url: "📦", link_url: "/orders", target_type: "url", target_category_id: null, sort_order: 5, enabled: true },
-  { id: "fallback-6", title: "联系客服", icon_url: "💬", link_url: "/content/contact-us", target_type: "url", target_category_id: null, sort_order: 6, enabled: true },
+  { id: "fallback-5", title: "我的订单", icon_url: "🧾", link_url: "/orders", target_type: "url", target_category_id: null, sort_order: 5, enabled: true },
+  { id: "fallback-6", title: "联系客服", icon_url: "📞", link_url: "/content/contact-us", target_type: "url", target_category_id: null, sort_order: 6, enabled: true },
 ];
+
+function withFallbackNavItems(items: HomeNavItem[], minCount = 5): HomeNavItem[] {
+  if (items.length >= minCount) return items;
+  const seen = new Set(items.map((item) => item.id));
+  const next = [...items];
+  for (const fallback of fallbackNavItems) {
+    if (next.length >= minCount) break;
+    if (seen.has(fallback.id)) continue;
+    next.push(fallback);
+    seen.add(fallback.id);
+  }
+  return next;
+}
 
 export default function HomeOpsBlocks() {
   const { settings: homeModules, navItems, ready } = useHomeModuleSettings();
@@ -47,23 +60,20 @@ export default function HomeOpsBlocks() {
   if (homeModules.modules.nav_grid === false) return null;
   if (!ready) return null;
 
-  const navSource = Array.isArray(navItems) && navItems.length > 0 ? navItems : fallbackNavItems;
+  const navSourceRaw = Array.isArray(navItems) && navItems.length > 0 ? navItems : fallbackNavItems;
+  const navSource = withFallbackNavItems(navSourceRaw, 5);
 
   if (!navSource.length) return null;
 
   return (
     <section className="border-y border-[color-mix(in_srgb,var(--theme-border)_80%,transparent)] bg-[var(--theme-surface)]">
-      <div
-        className="no-scrollbar flex snap-x snap-mandatory gap-1 overflow-x-auto overflow-y-hidden scroll-smooth px-3 py-3.5 [-webkit-overflow-scrolling:touch] sm:justify-around sm:gap-0 sm:overflow-x-visible sm:px-4"
-        role="navigation"
-        aria-label="快捷入口"
-      >
+      <div className="grid grid-cols-5 gap-x-1 gap-y-3 px-3 py-3.5 sm:grid-cols-6 sm:px-4" role="navigation" aria-label="快捷入口">
         {navSource.slice(0, 12).map((item) => (
           <button
             key={item.id}
             type="button"
             onClick={() => openHomeNavTarget(navigate, item)}
-            className={`${HOME_NAV_ITEM_CLASS} sm:flex-1 sm:max-w-[5.5rem]`}
+            className={`${HOME_NAV_ITEM_CLASS} w-full min-w-0`}
           >
             <span className={HOME_NAV_ICON_FRAME_CLASS}>
               <HomeNavIcon value={item.icon_url} />

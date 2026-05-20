@@ -84,9 +84,9 @@ async function getAvailableCoupons(userId) {
 }
 
 async function assertCouponClaimable(userId, coupon) {
-  if (!coupon) return { error: { code: 404, message: 'Coupon not found or unavailable in this period' } };
+  if (!coupon) return { error: { code: 404, message: '优惠券不存在或不在有效期内' } };
   if (coupon.status !== 'available') {
-    return { error: { code: 400, message: 'Coupon is not claimable' } };
+    return { error: { code: 400, message: '该优惠券暂不可领取' } };
   }
   if (coupon.auto_issue) {
     return { error: { code: 400, message: '该优惠券为系统自动发放，不可手动领取' } };
@@ -94,7 +94,7 @@ async function assertCouponClaimable(userId, coupon) {
   if (coupon.new_user_only) {
     const orderCount = await repo.selectUserOrderCount(userId);
     if (orderCount > 0) {
-      return { error: { code: 403, message: 'Coupon is for new users only' } };
+      return { error: { code: 403, message: '该优惠券仅限新用户' } };
     }
   }
   if (coupon.member_only) {
@@ -103,13 +103,13 @@ async function assertCouponClaimable(userId, coupon) {
   const perUserLimit = Math.max(1, Number(coupon.per_user_limit || 1));
   const userClaims = await repo.countUserClaimsForCoupon(userId, coupon.id);
   if (userClaims >= perUserLimit) {
-    return { error: { code: 409, message: 'Per-user claim limit reached' } };
+    return { error: { code: 409, message: '已达到每人领取上限' } };
   }
   const totalQty = Number(coupon.total_quantity || 0);
   if (totalQty > 0) {
     const totalClaims = await repo.countTotalClaimsForCoupon(coupon.id);
     if (totalClaims >= totalQty) {
-      return { error: { code: 409, message: 'Coupon exhausted' } };
+      return { error: { code: 409, message: '优惠券已领完' } };
     }
   }
   return null;
@@ -124,7 +124,7 @@ async function claimCoupon(userId, body) {
   if (claimErr) return claimErr;
 
   const existing = await repo.findUserCoupon(userId, coupon.id);
-  if (existing) return { error: { code: 409, message: 'Coupon already claimed' } };
+  if (existing) return { error: { code: 409, message: '您已领取过该优惠券' } };
 
   const id = generateId();
   await repo.insertUserCoupon(id, userId, coupon.id);

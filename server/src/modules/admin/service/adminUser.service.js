@@ -15,6 +15,30 @@ if (typeof adjustUserPointsFn !== 'function') {
   throw new Error('User module api.adjustUserPoints is required');
 }
 
+const ADMIN_USER_MESSAGE = '管理员账号请到“员工账号 / 角色权限”模块管理。';
+
+function isAdminAccountRow(user) {
+  if (!user) return false;
+  if (user.role === 'admin' || user.role === 'super_admin') return true;
+  return user.role === 'disabled' && Boolean(user.has_rbac_role);
+}
+
+async function assertTargetIsNormalUser(userId, preloadedUser = null) {
+  const user = preloadedUser || await repo.selectUserSummaryById(userId);
+  if (!user) throw new BusinessError(404, '用户不存在');
+  if (isAdminAccountRow(user)) throw new BusinessError(403, ADMIN_USER_MESSAGE);
+  if (user.role === 'disabled') {
+    const protectedIds = await repo.selectProtectedAdminUserIds([userId]);
+    if (protectedIds.length) throw new BusinessError(403, ADMIN_USER_MESSAGE);
+  }
+  return user;
+}
+
+async function assertBatchTargetsAreNormalUsers(userIds) {
+  const protectedIds = await repo.selectProtectedAdminUserIds(userIds);
+  if (protectedIds.length) throw new BusinessError(403, ADMIN_USER_MESSAGE);
+}
+
 async function listUsers(query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const pageSize = Math.min(50, Math.max(1, parseInt(query.pageSize, 10) || 20));
@@ -60,8 +84,7 @@ async function listUsers(query) {
 }
 
 async function getUserById(userId) {
-  const user = await repo.selectUserSummaryById(userId);
-  if (!user) throw new BusinessError(404, '用户不存在');
+  const user = await assertTargetIsNormalUser(userId);
   const orderCount = await repo.countOrdersByUserId(userId);
   const totalSpentRaw = await repo.sumUserSpentExcludingCancelled(userId);
   const tagsByUserId = await repo.selectTagsForUserIds([userId]);
@@ -108,8 +131,7 @@ async function buildStatusOverview(userId, baseUser) {
 }
 
 async function adminUnbindWechat(userId, adminUserId, req) {
-  const user = await repo.selectUserSummaryById(userId);
-  if (!user) throw new BusinessError(404, '用户不存在');
+  const user = await assertTargetIsNormalUser(userId);
   const identity = await repo.selectWechatIdentityByUserId(userId);
   if (!identity) throw new BusinessError(400, '该用户未绑定微信');
   const hasPhone = Boolean(user.phone && String(user.phone).trim());
@@ -176,8 +198,7 @@ async function getUserTagImpact(tagId) {
 }
 
 async function setUserTags(userId, body, adminUserId, req) {
-  const user = await repo.selectUserSummaryById(userId);
-  if (!user) throw new BusinessError(404, '用户不存在');
+  await assertTargetIsNormalUser(userId);
   const rawTagIds = Array.isArray(body.tagIds) ? body.tagIds : body.tag_ids;
   if (!Array.isArray(rawTagIds)) throw new BusinessError(400, '请选择标签');
   const tagIds = [...new Set(rawTagIds.map((id) => String(id).trim()).filter(Boolean))];
@@ -194,6 +215,7 @@ async function batchSetUserTag(body, adminUserId, req) {
   const userIds = Array.isArray(body?.userIds) ? body.userIds.map((x) => String(x).trim()).filter(Boolean) : [];
   if (!tagId) throw new BusinessError(400, 'tagId必填');
   if (!userIds.length) throw new BusinessError(400, 'userIds不能为空');
+  await assertBatchTargetsAreNormalUsers(userIds);
   const existingTagIds = await repo.selectExistingTagIds([tagId]);
   if (!existingTagIds.length) throw new BusinessError(400, '标签不存在');
   const affected = await repo.batchAssignTag(userIds, tagId);
@@ -211,8 +233,7 @@ async function batchSetUserTag(body, adminUserId, req) {
 }
 
 async function updateUser(userId, body, adminUserId, req) {
-  const beforeUser = await repo.selectUserSummaryById(userId);
-  if (!beforeUser) throw new BusinessError(404, '用户不存在');
+  const beforeUser = await assertTargetIsNormalUser(userId);
   const fields = [];
   const values = [];
   for (const f of ['nickname', 'avatar', 'wechat', 'whatsapp']) {
@@ -234,6 +255,7 @@ async function updateUser(userId, body, adminUserId, req) {
 }
 
 async function updateSubordinate(userId, body) {
+  await assertTargetIsNormalUser(userId);
   const subordinateEnabled = body.subordinateEnabled ?? body.enabled;
   await repo.updateSubordinateEnabled(userId, !!subordinateEnabled);
   return { data: null, message: '更新成功' };
@@ -241,8 +263,7 @@ async function updateSubordinate(userId, body) {
 
 async function adjustUserPoints(userId, body, adminUserId, req) {
   const { points, reason } = body;
-  const beforeUser = await repo.selectUserSummaryById(userId);
-  if (!beforeUser) throw new BusinessError(404, '用户不存在');
+  const beforeUser = await assertTargetIsNormalUser(userId);
   const beforeBal = beforeUser.points_balance ?? 0;
   if (points === undefined) throw new BusinessError(400, '请输入积分数值');
   const delta = Number(points);
@@ -262,8 +283,7 @@ function generateTempPassword8() {
 }
 
 async function resetUserPassword(userId, adminUserId, req) {
-  const user = await repo.selectUserSummaryById(userId);
-  if (!user) throw new BusinessError(404, '用户不存在');
+  const user = await assertTargetIsNormalUser(userId);
   const plain = generateTempPassword8();
   const hash = await bcrypt.hash(plain, 10);
   await repo.updateUserPasswordHash(userId, hash);
@@ -272,8 +292,7 @@ async function resetUserPassword(userId, adminUserId, req) {
 }
 
 async function updateUserStatus(userId, body, adminUserId, req) {
-  const beforeUser = await repo.selectUserSummaryById(userId);
-  if (!beforeUser) throw new BusinessError(404, '用户不存在');
+  const beforeUser = await assertTargetIsNormalUser(userId);
   const nextStatus = String(body?.accountStatus || body?.account_status || '').trim();
   const valid = ['normal', 'disabled', 'blacklisted', 'order_limited', 'coupon_limited', 'comment_limited'];
   if (!valid.includes(nextStatus)) throw new BusinessError(400, '账号状态不合法');
@@ -313,8 +332,7 @@ async function updateUserStatus(userId, body, adminUserId, req) {
 }
 
 async function updateUserAccountStatus(userId, body, adminUserId, req) {
-  const beforeUser = await repo.selectUserSummaryById(userId);
-  if (!beforeUser) throw new BusinessError(404, '用户不存在');
+  const beforeUser = await assertTargetIsNormalUser(userId);
   const nextStatus = String(body?.accountStatus || body?.account_status || '').trim();
   const reason = String(body?.reason || '').trim();
   const valid = ['normal', 'disabled', 'blacklisted'];
@@ -336,8 +354,7 @@ async function updateUserAccountStatus(userId, body, adminUserId, req) {
 }
 
 async function updateUserRestrictions(userId, body, adminUserId, req) {
-  const beforeUser = await repo.selectUserSummaryById(userId);
-  if (!beforeUser) throw new BusinessError(404, '用户不存在');
+  const beforeUser = await assertTargetIsNormalUser(userId);
   const reason = String(body?.reason || '').trim();
   const before = await repo.selectUserRestrictions(userId);
   const after = {
@@ -368,8 +385,7 @@ async function updateUserRestrictions(userId, body, adminUserId, req) {
 }
 
 async function getUserStatusOverview(userId) {
-  const user = await repo.selectUserSummaryById(userId);
-  if (!user) throw new BusinessError(404, '用户不存在');
+  const user = await assertTargetIsNormalUser(userId);
   return { data: await buildStatusOverview(userId, user) };
 }
 
@@ -430,6 +446,7 @@ module.exports = {
   updateUserAccountStatus,
   updateUserRestrictions,
   getUserStatusOverview,
+  assertTargetIsNormalUser,
 };
 
 

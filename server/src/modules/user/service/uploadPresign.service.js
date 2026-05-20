@@ -23,17 +23,17 @@ async function createUploadTicket(userId, body) {
   if (!isS3StorageEnabled()) {
     throw new BusinessError(
       503,
-      'Presigned upload is available only when STORAGE_DRIVER=s3 is enabled',
+      '预签名上传仅在 STORAGE_DRIVER=s3 时可用',
     );
   }
 
   const mimeType = String(body.mimeType || '').toLowerCase().trim();
   const size = Number(body.size);
   if (!allowedImageMimes.includes(mimeType)) {
-    throw new BusinessError(400, 'Only image/jpeg, image/png, image/webp, image/gif, image/avif are supported');
+    throw new BusinessError(400, '仅支持 JPEG、PNG、WebP、GIF、AVIF 图片');
   }
   if (!Number.isFinite(size) || size <= 0 || size > IMAGE_MAX_SIZE) {
-    throw new BusinessError(400, 'File size is invalid');
+    throw new BusinessError(400, '文件大小无效');
   }
 
   const logicalKey = buildRawUploadKey(userId, mimeType);
@@ -63,7 +63,7 @@ async function createUploadTicket(userId, body) {
  */
 async function completeUpload(userId, body) {
   if (!isS3StorageEnabled()) {
-    throw new BusinessError(503, 'Object storage is not enabled');
+    throw new BusinessError(503, '对象存储未启用');
   }
 
   const objectKey = String(body.objectKey || '').trim();
@@ -74,7 +74,7 @@ async function completeUpload(userId, body) {
   const head = await headS3Object(objectKey);
   const mimeType = String(body.mimeType || head.contentType || '').toLowerCase();
   if (!allowedImageMimes.includes(mimeType)) {
-    throw new BusinessError(400, 'Object mime type is not allowed');
+    throw new BusinessError(400, '文件类型不允许');
   }
   if (head.contentLength <= 0 || head.contentLength > IMAGE_MAX_SIZE) {
     throw new BusinessError(400, '对象大小无效');

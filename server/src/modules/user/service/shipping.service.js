@@ -41,7 +41,7 @@ async function quoteShipping(payload) {
   const tpl = shippingTemplateId
     ? await repo.selectTemplateById(shippingTemplateId)
     : await repo.selectDefaultEnabledTemplate();
-  if (!tpl) throw new BusinessError(404, 'Shipping template not found or disabled');
+  if (!tpl) throw new BusinessError(404, '运费模板不存在或已禁用');
 
   const shippingFee = computeShippingFee(tpl, rawAmount, estimatedWeightKg == null ? undefined : estimatedWeightKg);
   return {

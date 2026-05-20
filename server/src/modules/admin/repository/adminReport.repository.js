@@ -5,11 +5,36 @@ const PAID_PAYMENT_SQL = PAID_PAYMENT_STATUS_LIST.map((s) => `'${s}'`).join(', '
 
 /** 未执行 061 迁移时 analytics_events 不存在，报表需降级避免 500 */
 let analyticsEventsReady;
+const REQUIRED_ANALYTICS_COLUMNS = [
+  'created_at',
+  'event_type',
+  'path',
+  'page',
+  'title',
+  'anonymous_id',
+  'session_id',
+  'ip_hash',
+  'device',
+  'traffic_source',
+  'os',
+  'browser',
+  'browser_language',
+  'duration_ms',
+  'amount',
+];
 
 async function isAnalyticsEventsReady() {
   if (analyticsEventsReady !== undefined) return analyticsEventsReady;
   try {
     await db.query('SELECT 1 FROM analytics_events LIMIT 1');
+    const [columns] = await db.query('SHOW COLUMNS FROM analytics_events');
+    const columnSet = new Set((columns || []).map((c) => String(c.Field || '').toLowerCase()));
+    const missingColumns = REQUIRED_ANALYTICS_COLUMNS.filter((name) => !columnSet.has(name));
+    if (missingColumns.length > 0) {
+      console.warn(`[admin-report] analytics_events 缺少字段，流量分析已降级: ${missingColumns.join(', ')}`);
+      analyticsEventsReady = false;
+      return analyticsEventsReady;
+    }
     analyticsEventsReady = true;
   } catch (e) {
     if (e.code === 'ER_NO_SUCH_TABLE') {
@@ -610,5 +635,3 @@ module.exports = {
   selectTrafficDevices,
   selectTrafficLastUpdated,
 };
-
-

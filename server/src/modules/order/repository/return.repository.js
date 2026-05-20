@@ -1,4 +1,5 @@
 const db = require('../../../config/db');
+const { ACTIVE_RETURN_STATUS_LIST, ACTIVE_RETURN_SQL_IN } = require('../orderAfterSale');
 
 async function countReturnRequests(userId, status) {
   let where = 'WHERE user_id = ?';
@@ -58,10 +59,25 @@ async function countActiveReturnRequests(orderId, userId, orderItemId) {
     `SELECT COUNT(*) AS total
      FROM return_requests
       WHERE order_id = ? AND user_id = ?${itemClause}
-        AND status IN ('pending', 'need_evidence', 'approved', 'processing', 'waiting_return', 'return_in_transit', 'received', 'refund_pending', 'exchange_shipping')`,
-    params,
+        AND status IN (${ACTIVE_RETURN_SQL_IN})`,
+    [...params, ...ACTIVE_RETURN_STATUS_LIST],
   );
   return Number(rows?.[0]?.total || 0);
+}
+
+async function selectReturnSummaryByOrderIds(userId, orderIds = []) {
+  if (!orderIds.length) return [];
+  const placeholders = orderIds.map(() => '?').join(', ');
+  const [rows] = await db.query(
+    `SELECT rr.order_id,
+            COUNT(*) AS return_request_count,
+            SUM(CASE WHEN rr.status IN (${ACTIVE_RETURN_SQL_IN}) THEN 1 ELSE 0 END) AS active_return_count
+     FROM return_requests rr
+     WHERE rr.user_id = ? AND rr.order_id IN (${placeholders})
+     GROUP BY rr.order_id`,
+    [...ACTIVE_RETURN_STATUS_LIST, userId, ...orderIds],
+  );
+  return rows;
 }
 
 async function insertReturnRequest(params) {
@@ -95,6 +111,7 @@ module.exports = {
   countActiveReturnRequests,
   insertReturnRequest,
   selectReturnById,
+  selectReturnSummaryByOrderIds,
 };
 
 

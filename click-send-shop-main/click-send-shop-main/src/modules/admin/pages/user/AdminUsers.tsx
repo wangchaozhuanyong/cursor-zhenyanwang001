@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useState } from "react";
-import { Download, Trash2, Users } from "lucide-react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { Download, Trash2 } from "lucide-react";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { AnimatedConfirmDialog, AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 import { useNavigate } from "react-router-dom";
@@ -10,15 +10,24 @@ import * as userService from "@/services/admin/userService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useAdminUsersStore } from "@/stores/useAdminUsersStore";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
+import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import {
+  buildUserFilterChips,
+  hasActiveUserFilters,
+  removeUserFilterChip,
+} from "@/utils/adminUserFilters";
 import { productTagBadgeClass } from "@/utils/productTagBadge";
 import type { MemberLevel, UserTag } from "@/types/user";
+import type { AdminUserListItem } from "@/stores/useAdminUsersStore";
 
 function UserTagBadges({ tags }: { tags?: UserTag[] }) {
   if (!tags?.length) return <span className="text-xs text-muted-foreground">无标签</span>;
   return <div className="flex flex-wrap gap-1">{tags.map((tag) => <span key={tag.id} className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${productTagBadgeClass(tag.color)}`}>{tag.name}</span>)}</div>;
 }
 
-function UserStatusBadges({ user }: { user: any }) {
+function UserStatusBadges({ user }: { user: AdminUserListItem }) {
   const accountStatus = String(user.account_status || "normal");
   const items = [
     accountStatus === "disabled" ? "禁用登录" : null,
@@ -60,6 +69,7 @@ export default function AdminUsers() {
   const setPage = useAdminUsersStore((s) => s.setPage);
   const setPageSize = useAdminUsersStore((s) => s.setPageSize);
   const loadUsers = useAdminUsersStore((s) => s.loadUsers);
+  const clearFilters = useAdminUsersStore((s) => s.clearFilters);
   const resetUsersStore = useAdminUsersStore((s) => s.reset);
   const [tags, setTags] = useState<UserTag[]>([]);
   const [memberLevels, setMemberLevels] = useState<MemberLevel[]>([]);
@@ -78,6 +88,65 @@ export default function AdminUsers() {
   useEffect(() => { userService.fetchMemberLevels().then(setMemberLevels).catch(() => setMemberLevels([])); }, []);
   useEffect(() => () => resetUsersStore(), [resetUsersStore]);
   useEffect(() => { setSelectedUserIds([]); }, [users, page, pageSize, search, selectedTagId, wechatBoundFilter, phoneBoundFilter, memberLevelIdFilter, accountStatusFilter, orderRestrictedFilter, couponRestrictedFilter, commentRestrictedFilter]);
+
+  const filterState = {
+    search,
+    selectedTagId,
+    wechatBoundFilter,
+    phoneBoundFilter,
+    memberLevelIdFilter,
+    accountStatusFilter,
+    orderRestrictedFilter,
+    couponRestrictedFilter,
+    commentRestrictedFilter,
+  };
+  const selectedTagName = tags.find((t) => t.id === selectedTagId)?.name;
+  const selectedMemberLevelName = memberLevels.find((l) => l.id === memberLevelIdFilter)?.name;
+  const filterChips = useMemo(
+    () => buildUserFilterChips(filterState, {
+      tagName: selectedTagName,
+      memberLevelName: selectedMemberLevelName,
+    }),
+    [filterState, selectedTagName, selectedMemberLevelName],
+  );
+  const filtersActive = hasActiveUserFilters(filterState);
+  const usersEmptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.usersFiltered : ADMIN_EMPTY_GUIDES.users;
+
+  const reloadFromStore = (nextPage = 1) => {
+    const s = useAdminUsersStore.getState();
+    return loadUsers({
+      page: nextPage,
+      keyword: s.search || undefined,
+      tagId: s.selectedTagId || undefined,
+      wechatBound: s.wechatBoundFilter || undefined,
+      phoneBound: s.phoneBoundFilter || undefined,
+      memberLevelId: s.memberLevelIdFilter || undefined,
+      accountStatus: s.accountStatusFilter || undefined,
+      orderRestricted: s.orderRestrictedFilter || undefined,
+      couponRestricted: s.couponRestrictedFilter || undefined,
+      commentRestricted: s.commentRestrictedFilter || undefined,
+    });
+  };
+
+  const handleClearFilters = () => {
+    clearFilters();
+    void reloadFromStore(1).catch((e) => toast.error(toastErrorMessage(e, "加载失败")));
+  };
+
+  const handleRemoveFilterChip = (key: string) => {
+    const patch = removeUserFilterChip(filterState, key);
+    if ("search" in patch) setSearch(patch.search ?? "");
+    if ("selectedTagId" in patch) setSelectedTagId(patch.selectedTagId ?? "");
+    if ("wechatBoundFilter" in patch) setWechatBoundFilter(patch.wechatBoundFilter ?? "");
+    if ("phoneBoundFilter" in patch) setPhoneBoundFilter(patch.phoneBoundFilter ?? "");
+    if ("memberLevelIdFilter" in patch) setMemberLevelIdFilter(patch.memberLevelIdFilter ?? "");
+    if ("accountStatusFilter" in patch) setAccountStatusFilter(patch.accountStatusFilter ?? "");
+    if ("orderRestrictedFilter" in patch) setOrderRestrictedFilter(patch.orderRestrictedFilter ?? "");
+    if ("couponRestrictedFilter" in patch) setCouponRestrictedFilter(patch.couponRestrictedFilter ?? "");
+    if ("commentRestrictedFilter" in patch) setCommentRestrictedFilter(patch.commentRestrictedFilter ?? "");
+    setPage(1);
+    void reloadFromStore(1).catch((e) => toast.error(toastErrorMessage(e, "加载失败")));
+  };
 
   const queryBase = {
     page,
@@ -104,17 +173,26 @@ export default function AdminUsers() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="min-w-0 flex-1"><SearchBar placeholder="搜索昵称/手机号/微信/邀请码" value={search} onChange={(value) => { setSearch(value); setPage(1); loadUsers({ page: 1, keyword: value }).catch((e) => toast.error(toastErrorMessage(e, "加载失败"))); }} /></div>
-        <select value={selectedTagId} onChange={(e) => { setSelectedTagId(e.target.value); setPage(1); loadUsers({ page: 1, tagId: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">全部标签</option>{tags.map((tag) => <option key={tag.id} value={tag.id}>{tag.name}</option>)}</select>
-        <select value={wechatBoundFilter} onChange={(e) => { setWechatBoundFilter(e.target.value); setPage(1); loadUsers({ page: 1, wechatBound: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">微信绑定(全部)</option><option value="1">已绑定</option><option value="0">未绑定</option></select>
-        <select value={phoneBoundFilter} onChange={(e) => { setPhoneBoundFilter(e.target.value); setPage(1); loadUsers({ page: 1, phoneBound: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">手机号(全部)</option><option value="1">已绑定</option><option value="0">未绑定</option></select>
-        {memberLevels.length > 0 ? <select value={memberLevelIdFilter} onChange={(e) => { setMemberLevelIdFilter(e.target.value); setPage(1); loadUsers({ page: 1, memberLevelId: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">会员等级(全部)</option>{memberLevels.map((level) => <option key={level.id} value={level.id}>{level.name}{level.enabled === false ? "（已禁用）" : ""}</option>)}</select> : null}
-        <select value={accountStatusFilter} onChange={(e) => { setAccountStatusFilter(e.target.value); setPage(1); loadUsers({ page: 1, accountStatus: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">账号状态(全部)</option><option value="normal">正常</option><option value="disabled">禁用登录</option><option value="blacklisted">黑名单</option></select>
-        <select value={orderRestrictedFilter} onChange={(e) => { setOrderRestrictedFilter(e.target.value); setPage(1); loadUsers({ page: 1, orderRestricted: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">下单限制(全部)</option><option value="1">已限制</option><option value="0">未限制</option></select>
-        <select value={couponRestrictedFilter} onChange={(e) => { setCouponRestrictedFilter(e.target.value); setPage(1); loadUsers({ page: 1, couponRestricted: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">领券限制(全部)</option><option value="1">已限制</option><option value="0">未限制</option></select>
-        <select value={commentRestrictedFilter} onChange={(e) => { setCommentRestrictedFilter(e.target.value); setPage(1); loadUsers({ page: 1, commentRestricted: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">评论限制(全部)</option><option value="1">已限制</option><option value="0">未限制</option></select>
-        <PermissionGate permission="user.view"><button type="button" onClick={handleExportCsv} className="touch-manipulation flex min-h-[44px] shrink-0 items-center gap-1.5 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2.5 text-sm"><Download size={16} /> 导出</button></PermissionGate>
+      <div className="space-y-2">
+        <SearchBar placeholder="搜索昵称/手机号/微信/邀请码" value={search} onChange={(value) => { setSearch(value); setPage(1); loadUsers({ page: 1, keyword: value }).catch((e) => toast.error(toastErrorMessage(e, "加载失败"))); }} />
+        <AdminFilterSummaryBar chips={filterChips} onClearAll={handleClearFilters} onRemove={handleRemoveFilterChip} />
+        <details className="group theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
+          <summary className="cursor-pointer list-none text-sm font-medium text-foreground marker:content-none">
+            <span className="text-muted-foreground group-open:hidden">展开高级筛选</span>
+            <span className="hidden group-open:inline">收起高级筛选</span>
+          </summary>
+          <div className="mt-3 flex flex-col gap-3 border-t border-[var(--theme-border)] pt-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <select value={selectedTagId} onChange={(e) => { setSelectedTagId(e.target.value); setPage(1); loadUsers({ page: 1, tagId: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">全部标签</option>{tags.map((tag) => <option key={tag.id} value={tag.id}>{tag.name}</option>)}</select>
+            <select value={wechatBoundFilter} onChange={(e) => { setWechatBoundFilter(e.target.value); setPage(1); loadUsers({ page: 1, wechatBound: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">微信绑定(全部)</option><option value="1">已绑定</option><option value="0">未绑定</option></select>
+            <select value={phoneBoundFilter} onChange={(e) => { setPhoneBoundFilter(e.target.value); setPage(1); loadUsers({ page: 1, phoneBound: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">手机号(全部)</option><option value="1">已绑定</option><option value="0">未绑定</option></select>
+            {memberLevels.length > 0 ? <select value={memberLevelIdFilter} onChange={(e) => { setMemberLevelIdFilter(e.target.value); setPage(1); loadUsers({ page: 1, memberLevelId: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">会员等级(全部)</option>{memberLevels.map((level) => <option key={level.id} value={level.id}>{level.name}{level.enabled === false ? "（已禁用）" : ""}</option>)}</select> : null}
+            <select value={accountStatusFilter} onChange={(e) => { setAccountStatusFilter(e.target.value); setPage(1); loadUsers({ page: 1, accountStatus: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">账号状态(全部)</option><option value="normal">正常</option><option value="disabled">禁用登录</option><option value="blacklisted">黑名单</option></select>
+            <select value={orderRestrictedFilter} onChange={(e) => { setOrderRestrictedFilter(e.target.value); setPage(1); loadUsers({ page: 1, orderRestricted: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">下单限制(全部)</option><option value="1">已限制</option><option value="0">未限制</option></select>
+            <select value={couponRestrictedFilter} onChange={(e) => { setCouponRestrictedFilter(e.target.value); setPage(1); loadUsers({ page: 1, couponRestricted: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">领券限制(全部)</option><option value="1">已限制</option><option value="0">未限制</option></select>
+            <select value={commentRestrictedFilter} onChange={(e) => { setCommentRestrictedFilter(e.target.value); setPage(1); loadUsers({ page: 1, commentRestricted: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">评论限制(全部)</option><option value="1">已限制</option><option value="0">未限制</option></select>
+            <PermissionGate permission="user.view"><button type="button" onClick={handleExportCsv} className="touch-manipulation flex min-h-[44px] shrink-0 items-center gap-1.5 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2.5 text-sm"><Download size={16} /> 导出</button></PermissionGate>
+          </div>
+        </details>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">{[
@@ -170,7 +248,7 @@ export default function AdminUsers() {
       </PermissionGate>
 
       <div className="hidden md:block">
-        <AnimatedTable loading={loading} rows={users} rowKey={(u) => u.id} skeletonRows={8} skeletonCols={10} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto" tableClassName="min-w-[1080px] w-full text-sm" theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70" thead={(<tr><th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap"><input type="checkbox" checked={users.length > 0 && selectedUserIds.length === users.length} onChange={(e) => setSelectedUserIds(e.target.checked ? users.map((x) => x.id) : [])} /></th>{["用户", "手机号", "状态", "会员等级", "标签", "邀请码", "上级邀请码", "积分", "注册时间", "操作"].map((h) => <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>)}</tr>)} footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={(nextPage) => { setPage(nextPage); loadUsers({ page: nextPage }).catch((e) => toast.error(toastErrorMessage(e, "加载失败"))); }} onPageSizeChange={(nextPageSize) => { setPageSize(nextPageSize); setPage(1); loadUsers({ page: 1, pageSize: nextPageSize }).catch((e) => toast.error(toastErrorMessage(e, "加载失败"))); }} />} emptyIcon={Users} emptyTitle="暂无用户" renderRow={(u) => (<><td className="px-4 py-3"><input type="checkbox" checked={selectedUserIds.includes(u.id)} onChange={(e) => setSelectedUserIds((prev) => e.target.checked ? [...prev, u.id] : prev.filter((id) => id !== u.id))} /></td><td className="px-4 py-3"><span className="font-medium text-foreground">{u.nickname || u.phone}</span></td><td className="px-4 py-3 text-foreground whitespace-nowrap">{u.phone}</td><td className="px-4 py-3"><UserStatusBadges user={u} /></td><td className="px-4 py-3 whitespace-nowrap">{u.member_level_name || "普通会员"}</td><td className="px-4 py-3"><UserTagBadges tags={u.tags} /></td><td className="px-4 py-3 font-mono text-xs text-foreground">{u.invite_code || "-"}</td><td className="px-4 py-3 font-mono text-xs text-muted-foreground">{u.parent_invite_code || "-"}</td><td className="px-4 py-3 text-foreground">{u.points_balance ?? 0}</td><td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{u.created_at ? formatDateTime(u.created_at) : "-"}</td><td className="px-4 py-3"><button type="button" onClick={() => navigate(`/admin/users/${u.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">详情</button></td></>)} />
+        <AnimatedTable loading={loading} rows={users} rowKey={(u) => u.id} skeletonRows={8} skeletonCols={10} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto" tableClassName="min-w-[1080px] w-full text-sm" theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70" thead={(<tr><th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap"><input type="checkbox" checked={users.length > 0 && selectedUserIds.length === users.length} onChange={(e) => setSelectedUserIds(e.target.checked ? users.map((x) => x.id) : [])} /></th>{["用户", "手机号", "状态", "会员等级", "标签", "邀请码", "上级邀请码", "积分", "注册时间", "操作"].map((h) => <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>)}</tr>)} footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={(nextPage) => { setPage(nextPage); loadUsers({ page: nextPage }).catch((e) => toast.error(toastErrorMessage(e, "加载失败"))); }} onPageSizeChange={(nextPageSize) => { setPageSize(nextPageSize); setPage(1); loadUsers({ page: 1, pageSize: nextPageSize }).catch((e) => toast.error(toastErrorMessage(e, "加载失败"))); }} />} emptyIcon={usersEmptyGuide.icon} emptyTitle={usersEmptyGuide.title} emptyDescription={usersEmptyGuide.description} emptyAction={(<AdminEmptyGuideActions guide={usersEmptyGuide} showClearFilters={filtersActive} onClearFilters={handleClearFilters} />)} renderRow={(u) => (<><td className="px-4 py-3"><input type="checkbox" checked={selectedUserIds.includes(u.id)} onChange={(e) => setSelectedUserIds((prev) => e.target.checked ? [...prev, u.id] : prev.filter((id) => id !== u.id))} /></td><td className="px-4 py-3"><span className="font-medium text-foreground">{u.nickname || u.phone}</span></td><td className="px-4 py-3 text-foreground whitespace-nowrap">{u.phone}</td><td className="px-4 py-3"><UserStatusBadges user={u} /></td><td className="px-4 py-3 whitespace-nowrap">{u.member_level_name || "普通会员"}</td><td className="px-4 py-3"><UserTagBadges tags={u.tags} /></td><td className="px-4 py-3 font-mono text-xs text-foreground">{u.invite_code || "-"}</td><td className="px-4 py-3 font-mono text-xs text-muted-foreground">{u.parent_invite_code || "-"}</td><td className="px-4 py-3 text-foreground">{u.points_balance ?? 0}</td><td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{u.created_at ? formatDateTime(u.created_at) : "-"}</td><td className="px-4 py-3"><button type="button" onClick={() => navigate(`/admin/users/${u.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">详情</button></td></>)} />
       </div>
       <AnimatedConfirmDialog open={!!tagDeleteId} onOpenChange={(open) => !open && setTagDeleteId(null)} danger title="删除标签" description={`该标签当前影响 ${tagDeleteImpact} 位用户，删除后会同步移除其标签关系，确认继续？`} confirmText="删除" onConfirm={async () => { if (!tagDeleteId) return; try { await userService.deleteUserTag(tagDeleteId); await reloadTags(); await loadUsers(); setTagDeleteId(null); toast.success("标签已删除"); } catch (e) { toast.error(toastErrorMessage(e, "删除失败")); } }} />
     </div>

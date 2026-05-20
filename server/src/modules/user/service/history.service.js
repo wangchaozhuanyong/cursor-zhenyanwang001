@@ -28,12 +28,12 @@ async function addHistory(userId, body) {
     await repo.deleteOldest(userId, cnt - 100);
   }
 
-  return { data: { id }, message: 'History recorded' };
+  return { data: { id }, message: '浏览记录已保存' };
 }
 
 async function clearHistory(userId) {
   await repo.clearUser(userId);
-  return { message: 'History cleared' };
+  return { message: '浏览记录已清空' };
 }
 
 module.exports = {

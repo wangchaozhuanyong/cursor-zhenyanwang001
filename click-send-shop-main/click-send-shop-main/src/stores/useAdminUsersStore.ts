@@ -70,6 +70,7 @@ interface AdminUsersState {
   setCommentRestrictedFilter: (v: string) => void;
   setPage: (v: number) => void;
   setPageSize: (v: number) => void;
+  clearFilters: () => void;
   loadUsers: (params?: {
     page?: number;
     pageSize?: number;
@@ -100,6 +101,20 @@ export const useAdminUsersStore = create<AdminUsersState>((set) => ({
   setCommentRestrictedFilter: (commentRestrictedFilter) => set({ commentRestrictedFilter }),
   setPage: (page) => set({ page }),
   setPageSize: (pageSize) => set({ pageSize }),
+
+  clearFilters: () =>
+    set({
+      search: "",
+      selectedTagId: "",
+      wechatBoundFilter: "",
+      phoneBoundFilter: "",
+      memberLevelIdFilter: "",
+      accountStatusFilter: "",
+      orderRestrictedFilter: "",
+      couponRestrictedFilter: "",
+      commentRestrictedFilter: "",
+      page: 1,
+    }),
 
   reset: () => set({ ...initialState }),
 

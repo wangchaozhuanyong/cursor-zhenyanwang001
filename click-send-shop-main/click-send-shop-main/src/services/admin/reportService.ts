@@ -1,5 +1,7 @@
 import * as reportApi from "@/api/admin/report";
 import type { ReportQuery } from "@/api/admin/report";
+
+export type { ReportQuery };
 import { downloadAdminCsv } from "@/utils/adminCsvDownload";
 
 export async function fetchReportOverview(params?: ReportQuery) {

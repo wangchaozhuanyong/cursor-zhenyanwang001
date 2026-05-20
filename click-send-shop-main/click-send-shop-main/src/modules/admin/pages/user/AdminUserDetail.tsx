@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ArrowLeft, ShieldAlert, UserRound } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -18,12 +17,13 @@ import {
   fetchMemberLevels,
 } from "@/services/admin/userService";
 import PermissionGate from "@/components/admin/PermissionGate";
+import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { isAbortError } from "@/utils/asyncErrors";
-import type { UserTag } from "@/types/user";
+import type { MemberLevel, UserEditForm, UserProfile, UserStatusOverview, UserTag } from "@/types/user";
 
 const tabs = ["基础资料", "订单记录", "地址信息", "积分/优惠券", "邀请/返现", "售后记录", "评论记录", "操作日志"] as const;
 
@@ -39,12 +39,12 @@ export default function AdminUserDetail() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [tab, setTab] = useState<TabType>(tabs[0]);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [allTags, setAllTags] = useState<UserTag[]>([]);
   const [editOpen, setEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState<any>({});
-  const [levels, setLevels] = useState<any[]>([]);
-  const [statusOverview, setStatusOverview] = useState<any>(null);
+  const [editForm, setEditForm] = useState<UserEditForm>({});
+  const [levels, setLevels] = useState<MemberLevel[]>([]);
+  const [statusOverview, setStatusOverview] = useState<UserStatusOverview | null>(null);
   const [levelsLoadFailed, setLevelsLoadFailed] = useState(false);
   const capabilities = useSiteCapabilities();
   const hasMemberLevelPermission = useAdminPermissionStore((s) => s.can("member_level.manage"));
@@ -171,7 +171,7 @@ export default function AdminUserDetail() {
   }
   if (!user) return <div className="p-6">用户不存在</div>;
 
-  const userTagIds = new Set((user.tags || []).map((t: any) => t.id));
+  const userTagIds = new Set((user.tags || []).map((t) => t.id));
 
   return (
     <div className="space-y-4">
@@ -199,8 +199,9 @@ export default function AdminUserDetail() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-border bg-secondary/50 px-3 py-2 text-xs text-muted-foreground">
-            建议优先在「基础资料」核对状态，再处理限制类操作
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-2 text-xs text-foreground">
+            <span>操作提示</span>
+            <AdminFieldHint text="建议优先在「基础资料」核对状态，再处理限制类操作" />
           </div>
         </div>
         <div className="mt-3 grid gap-2 text-xs sm:grid-cols-4">
@@ -322,7 +323,7 @@ export default function AdminUserDetail() {
                 const ids = Array.from(userTagIds);
                 const next = userTagIds.has(tag.id) ? ids.filter((x) => x !== tag.id) : [...ids, tag.id];
                 const nextTags = await setUserTags(id, next as string[]);
-                setUser((u: any) => ({ ...u, tags: nextTags }));
+                setUser((u) => (u ? { ...u, tags: nextTags } : u));
               }}
             >
               {tag.name}
@@ -342,7 +343,7 @@ export default function AdminUserDetail() {
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   placeholder={f}
                   value={editForm[f] || ""}
-                  onChange={(e) => setEditForm((s: any) => ({ ...s, [f]: e.target.value }))}
+                  onChange={(e) => setEditForm((s) => ({ ...s, [f]: e.target.value }))}
                 />
               ))}
             </div>
@@ -383,7 +384,7 @@ function InfoCard({ title, value }: { title: string; value: string }) {
   );
 }
 
-function DataList({ title, rows, onAll }: { title: string; rows?: any[]; onAll?: () => void }) {
+function DataList({ title, rows, onAll }: { title: string; rows?: Record<string, unknown>[]; onAll?: () => void }) {
   const list = Array.isArray(rows) ? rows : [];
   return (
     <div className="space-y-2">
@@ -396,7 +397,7 @@ function DataList({ title, rows, onAll }: { title: string; rows?: any[]; onAll?:
       ) : (
         <div className="space-y-2">
           {list.slice(0, 8).map((row, i) => (
-            <article key={row?.id || i} className="rounded-lg border border-border bg-background p-3 text-xs leading-5 text-foreground">
+            <article key={String(row.id ?? i)} className="rounded-lg border border-border bg-background p-3 text-xs leading-5 text-foreground">
               <p className="break-all">{toReadableText(row)}</p>
             </article>
           ))}
@@ -407,7 +408,7 @@ function DataList({ title, rows, onAll }: { title: string; rows?: any[]; onAll?:
   );
 }
 
-function toReadableText(row: any) {
+function toReadableText(row: Record<string, unknown>) {
   if (!row || typeof row !== "object") return String(row ?? "-");
   const priority = ["order_no", "title", "status", "amount", "created_at", "updated_at", "remark", "reason", "name", "id"];
   const keys = [...priority.filter((k) => k in row), ...Object.keys(row).filter((k) => !priority.includes(k))].slice(0, 8);

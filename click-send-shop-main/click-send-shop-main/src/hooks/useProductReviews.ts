@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import * as reviewService from "@/services/reviewService";
 import type { Review, ProductReviewStats, ReviewEligibility } from "@/types/review";
@@ -39,7 +39,7 @@ export function useProductReviews(productId: string) {
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const imgInputRef = useRef<HTMLInputElement>(null);
 
-  const reload = async () => {
+  const reload = useCallback(async () => {
     if (!productId) return;
     const [data, reviewStats, eligibilityData] = await Promise.all([
       reviewService.fetchProductReviews(productId),
@@ -52,7 +52,7 @@ export function useProductReviews(productId: string) {
     const liked = new Set<string>();
     data.list.forEach((r) => r.liked && liked.add(r.id));
     setLikedIds(liked);
-  };
+  }, [productId]);
 
   useEffect(() => {
     if (!productId) {
@@ -66,7 +66,7 @@ export function useProductReviews(productId: string) {
     setLoading(true);
     reload().catch(() => {}).finally(() => !cancelled && setLoading(false));
     return () => { cancelled = true; };
-  }, [productId]);
+  }, [productId, reload]);
 
   const handleLike = async (id: string) => {
     try {

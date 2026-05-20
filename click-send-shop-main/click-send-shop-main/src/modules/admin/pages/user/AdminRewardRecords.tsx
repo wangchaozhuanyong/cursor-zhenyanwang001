@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { Loader2, RotateCcw, TrendingDown, TrendingUp, Users } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
@@ -7,12 +6,22 @@ import Pagination from "@/components/admin/Pagination";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchAdminRewardRecords } from "@/services/admin/rewardService";
 import { fetchReferralRules, updateReferralRule } from "@/services/admin/inviteService";
+import type { ReferralRule, ReferralRuleEditRow } from "@/types/invite";
 import type { RewardRecord, RewardStats, RewardStatus } from "@/types/reward";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatUserDisplay, labelRewardStatus } from "@/utils/adminDisplayLabels";
 import { Tx } from "@/components/admin/AdminText";
+import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
+import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
+import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import {
+  buildRewardRecordFilterChips,
+  hasActiveRewardRecordFilters,
+  removeRewardRecordFilterChip,
+} from "@/utils/adminRewardRecordFilters";
 import {
   THEME_BADGE_DANGER,
   THEME_BADGE_MUTED,
@@ -62,7 +71,7 @@ export default function AdminRewardRecords() {
   const [total, setTotal] = useState(0);
   const [rulesLoading, setRulesLoading] = useState(true);
   const [rulesSaving, setRulesSaving] = useState(false);
-  const [rules, setRules] = useState<Array<{ id: string; level: number; name: string; rewardPercent: number; enabled: boolean }>>([]);
+  const [rules, setRules] = useState<ReferralRuleEditRow[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,13 +94,13 @@ export default function AdminRewardRecords() {
     let cancelled = false;
     setRulesLoading(true);
     fetchReferralRules()
-      .then((data: any[]) => {
+      .then((data: ReferralRule[]) => {
         if (cancelled) return;
-        const normalized = (Array.isArray(data) ? data : []).map((r: any, idx) => ({
+        const normalized = data.map((r, idx) => ({
           id: String(r.id ?? idx),
           level: Number(r.level ?? idx + 1),
-          name: String(r.name ?? `等级 ${idx + 1}`),
-          rewardPercent: Number(r.rewardPercent ?? 0),
+          name: String(r.description || `等级 ${idx + 1}`),
+          rewardPercent: Number(r.commission_rate ?? 0),
           enabled: Boolean(r.enabled ?? true),
         }));
         setRules(normalized);
@@ -114,10 +123,10 @@ export default function AdminRewardRecords() {
     try {
       for (const rule of rules) {
         await updateReferralRule(rule.id, {
-          name: rule.name,
-          rewardPercent: rule.rewardPercent,
+          description: rule.name,
+          commission_rate: rule.rewardPercent,
           enabled: rule.enabled,
-        } as any);
+        });
       }
       toast.success("返现规则已保存");
     } catch (e) {
@@ -125,6 +134,24 @@ export default function AdminRewardRecords() {
     } finally {
       setRulesSaving(false);
     }
+  };
+
+  const filterState = { keyword, status };
+  const filterChips = useMemo(() => buildRewardRecordFilterChips(filterState), [keyword, status]);
+  const filtersActive = hasActiveRewardRecordFilters(filterState);
+  const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.rewardRecordsFiltered : ADMIN_EMPTY_GUIDES.rewardRecords;
+
+  const clearFilters = () => {
+    setKeyword("");
+    setStatus("");
+    setPage(1);
+  };
+
+  const handleRemoveFilterChip = (key: string) => {
+    const patch = removeRewardRecordFilterChip(key);
+    if ("keyword" in patch) setKeyword(patch.keyword ?? "");
+    if ("status" in patch) setStatus(patch.status ?? "");
+    setPage(1);
   };
 
   const cards = [
@@ -137,8 +164,10 @@ export default function AdminRewardRecords() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-foreground"><Tx>返现记录</Tx></h1>
-        <p className="text-sm text-muted-foreground"><Tx>查看邀请返现入账、冲正和结算状态，用于查账和争议处理</Tx></p>
+        <AdminPageTitle
+          title={<Tx>返现记录</Tx>}
+          hint={<Tx>查看邀请返现入账、冲正和结算状态，用于查账和争议处理</Tx>}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -222,23 +251,26 @@ export default function AdminRewardRecords() {
         )}
       </section>
 
-      <div className="flex flex-col gap-3 md:flex-row md:items-center">
-        <div className="flex-1">
-          <SearchBar
-            placeholder="搜索订单号 / 昵称 / 手机号..."
-            value={keyword}
-            onChange={(v) => { setKeyword(v); setPage(1); }}
-          />
+      <div className="space-y-2">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <div className="flex-1">
+            <SearchBar
+              placeholder="搜索订单号 / 昵称 / 手机号..."
+              value={keyword}
+              onChange={(v) => { setKeyword(v); setPage(1); }}
+            />
+          </div>
+          <select
+            value={status}
+            onChange={(e) => { setStatus(e.target.value as "" | RewardStatus); setPage(1); }}
+            className="min-h-[44px] rounded-xl border border-[var(--theme-border)] bg-theme-surface px-3 text-sm text-[var(--theme-text-on-surface)] outline-none"
+          >
+            {statusOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
         </div>
-        <select
-          value={status}
-          onChange={(e) => { setStatus(e.target.value as "" | RewardStatus); setPage(1); }}
-          className="min-h-[44px] rounded-xl border border-[var(--theme-border)] bg-theme-surface px-3 text-sm text-[var(--theme-text-on-surface)] outline-none"
-        >
-          {statusOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
+        <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
       </div>
 
       <AnimatedTable
@@ -258,8 +290,16 @@ export default function AdminRewardRecords() {
           </tr>
         )}
         footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
-        emptyIcon={RotateCcw}
-        emptyTitle="暂无返现记录"
+        emptyIcon={emptyGuide.icon}
+        emptyTitle={emptyGuide.title}
+        emptyDescription={emptyGuide.description}
+        emptyAction={(
+          <AdminEmptyGuideActions
+            guide={emptyGuide}
+            showClearFilters={filtersActive}
+            onClearFilters={clearFilters}
+          />
+        )}
         renderRow={(record) => {
           const label = statusLabels[record.status] || {
             label: labelRewardStatus(record.status),

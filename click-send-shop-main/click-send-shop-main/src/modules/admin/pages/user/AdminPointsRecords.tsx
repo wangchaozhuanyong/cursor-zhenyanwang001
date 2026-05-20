@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useSearchParams } from "react-router-dom";
 import { Loader2, Star, TrendingDown, TrendingUp, Users } from "lucide-react";
@@ -7,12 +6,22 @@ import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchAdminPointsRecords, fetchPointsRules, updatePointsRule } from "@/services/admin/pointsService";
-import type { PointsAction, PointsRecord, PointsStats } from "@/types/points";
+import type { PointsAction, PointsRecord, PointsRule, PointsRuleEditRow, PointsStats } from "@/types/points";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatUserDisplay, labelPointsAction } from "@/utils/adminDisplayLabels";
+import { formatPointsRecordLabel } from "@/utils/pointsDisplayLabels";
 import { Tx } from "@/components/admin/AdminText";
+import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
+import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
+import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import {
+  buildPointsRecordFilterChips,
+  hasActivePointsRecordFilters,
+  removePointsRecordFilterChip,
+} from "@/utils/adminPointsRecordFilters";
 import { THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 
 const actionOptions: Array<{ value: "" | PointsAction; label: string }> = [
@@ -70,7 +79,7 @@ export default function AdminPointsRecords() {
   const [total, setTotal] = useState(0);
   const [rulesLoading, setRulesLoading] = useState(true);
   const [rulesSaving, setRulesSaving] = useState(false);
-  const [rules, setRules] = useState<Array<{ id: string; name: string; action: string; points: number; enabled: boolean }>>([]);
+  const [rules, setRules] = useState<PointsRuleEditRow[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,13 +109,13 @@ export default function AdminPointsRecords() {
     let cancelled = false;
     setRulesLoading(true);
     fetchPointsRules()
-      .then((data: any[]) => {
+      .then((data: PointsRule[]) => {
         if (cancelled) return;
-        const normalized = (Array.isArray(data) ? data : []).map((r: any, idx) => ({
+        const normalized = data.map((r, idx) => ({
           id: String(r.id ?? idx),
           name: String(r.name ?? "积分规则"),
-          action: String(r.action ?? ""),
-          points: Number(r.points ?? r.sign_in_points ?? 0),
+          action: String((r as PointsRule & { action?: string }).action ?? ""),
+          points: Number((r as PointsRule & { points?: number }).points ?? r.sign_in_points ?? 0),
           enabled: Boolean(r.enabled ?? true),
         }));
         setRules(normalized);
@@ -128,7 +137,7 @@ export default function AdminPointsRecords() {
     setRulesSaving(true);
     try {
       for (const rule of rules) {
-        await updatePointsRule(rule.id, { name: rule.name, points: rule.points, enabled: rule.enabled } as any);
+        await updatePointsRule(rule.id, { name: rule.name, enabled: rule.enabled, sign_in_points: rule.points });
       }
       toast.success("积分规则已保存");
     } catch (e) {
@@ -136,6 +145,24 @@ export default function AdminPointsRecords() {
     } finally {
       setRulesSaving(false);
     }
+  };
+
+  const filterState = { keyword, action };
+  const filterChips = useMemo(() => buildPointsRecordFilterChips(filterState), [keyword, action]);
+  const filtersActive = hasActivePointsRecordFilters(filterState);
+  const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.pointsRecordsFiltered : ADMIN_EMPTY_GUIDES.pointsRecords;
+
+  const clearFilters = () => {
+    setKeyword("");
+    setAction("");
+    setPage(1);
+  };
+
+  const handleRemoveFilterChip = (key: string) => {
+    const patch = removePointsRecordFilterChip(key);
+    if ("keyword" in patch) setKeyword(patch.keyword ?? "");
+    if ("action" in patch) setAction(patch.action ?? "");
+    setPage(1);
   };
 
   const cards = [
@@ -148,15 +175,20 @@ export default function AdminPointsRecords() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-foreground"><Tx>积分明细</Tx></h1>
-        <p className="text-sm text-muted-foreground"><Tx>
-          查看积分发放、扣减、订单退款回滚和管理员调整流水。列表与统计均来自数据库实时查询，无内置演示数据。
-        </Tx></p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          若需清空联调/演示环境产生的流水，请在备份后使用 server 目录{" "}
-          <code className="rounded bg-muted px-1 py-0.5 text-[11px]">WIPE_CONFIRM=YES_I_UNDERSTAND node scripts/wipe-business-data.js</code><Tx>
-          （会一并清空订单等业务表）；生产环境请勿对单表随意 DELETE，以免积分余额与账本不一致。
-        </Tx></p>
+        <AdminPageTitle
+          title={<Tx>积分明细</Tx>}
+          hint={(
+            <>
+              <p><Tx>
+                查看积分发放、扣减、订单退款回滚和管理员调整流水。列表与统计均来自数据库实时查询，无内置演示数据。
+              </Tx></p>
+              <p className="mt-1"><Tx>
+                若需清空联调/演示环境产生的流水，请在备份后使用 server 目录 WIPE_CONFIRM=YES_I_UNDERSTAND node scripts/wipe-business-data.js（会一并清空订单等业务表）；生产环境请勿对单表随意 DELETE，以免积分余额与账本不一致。
+              </Tx></p>
+            </>
+          )}
+          hintContentClassName="max-w-md"
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -237,23 +269,26 @@ export default function AdminPointsRecords() {
         )}
       </section>
 
-      <div className="flex flex-col gap-3 md:flex-row md:items-center">
-        <div className="flex-1">
-          <SearchBar
-            placeholder="搜索订单号 / 描述 / 昵称 / 手机号..."
-            value={keyword}
-            onChange={(v) => { setKeyword(v); setPage(1); }}
-          />
+      <div className="space-y-2">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <div className="flex-1">
+            <SearchBar
+              placeholder="搜索订单号 / 描述 / 昵称 / 手机号..."
+              value={keyword}
+              onChange={(v) => { setKeyword(v); setPage(1); }}
+            />
+          </div>
+          <select
+            value={action}
+            onChange={(e) => { setAction(e.target.value as "" | PointsAction); setPage(1); }}
+            className="min-h-[44px] rounded-xl border border-[var(--theme-border)] bg-theme-surface px-3 text-sm text-[var(--theme-text-on-surface)] outline-none"
+          >
+            {actionOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
         </div>
-        <select
-          value={action}
-          onChange={(e) => { setAction(e.target.value as "" | PointsAction); setPage(1); }}
-          className="min-h-[44px] rounded-xl border border-[var(--theme-border)] bg-theme-surface px-3 text-sm text-[var(--theme-text-on-surface)] outline-none"
-        >
-          {actionOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
+        <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
       </div>
 
       <AnimatedTable
@@ -273,8 +308,16 @@ export default function AdminPointsRecords() {
           </tr>
         )}
         footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
-        emptyIcon={Star}
-        emptyTitle="暂无积分明细"
+        emptyIcon={emptyGuide.icon}
+        emptyTitle={emptyGuide.title}
+        emptyDescription={emptyGuide.description}
+        emptyAction={(
+          <AdminEmptyGuideActions
+            guide={emptyGuide}
+            showClearFilters={filtersActive}
+            onClearFilters={clearFilters}
+          />
+        )}
         renderRow={(record) => {
           const amount = intValue(record.amount);
           return (
@@ -291,7 +334,9 @@ export default function AdminPointsRecords() {
               </td>
               <td className="px-4 py-3 text-theme-muted">{record.balance_before ?? "—"}</td>
               <td className="px-4 py-3 text-[var(--theme-text-on-surface)]">{record.balance_after ?? "—"}</td>
-              <td className="max-w-[260px] truncate px-4 py-3 text-xs text-theme-muted">{record.description || "—"}</td>
+              <td className="max-w-[260px] truncate px-4 py-3 text-xs text-theme-muted" title={record.description || undefined}>
+                {formatPointsRecordLabel({ action: record.action, description: record.description }) || "—"}
+              </td>
               <td className="px-4 py-3 text-xs text-theme-muted">
                 {record.created_at ? formatDateTime(record.created_at) : "—"}
               </td>

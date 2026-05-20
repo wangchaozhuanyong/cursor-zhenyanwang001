@@ -1,4 +1,5 @@
 const db = require('../../../config/db');
+const { syncProductStockFromVariants } = require('../../product/productStockSync');
 
 function getPool() {
   return db;
@@ -9,16 +10,7 @@ async function getConnection() {
 }
 
 async function syncProductStockByProductId(conn, productId) {
-  await conn.query(
-    `UPDATE products p
-     SET p.stock = COALESCE((
-       SELECT SUM(v.stock)
-       FROM product_variants v
-       WHERE v.product_id = p.id AND v.deleted_at IS NULL
-     ), 0)
-     WHERE p.id = ?`,
-    [productId],
-  );
+  await syncProductStockFromVariants(conn, productId);
 }
 
 async function selectInventorySummary() {

@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { flushSync } from "react-dom";
-import { getCartLinePrice, useCartStore } from "@/stores/useCartStore";
+import { cartLineKey, getCartLinePrice, useCartStore } from "@/stores/useCartStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import * as orderService from "@/services/orderService";
@@ -42,13 +42,19 @@ export function useCheckoutPage() {
   const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
   const [searchParams, setSearchParams] = useSearchParams();
   const goBack = useGoBack("/cart");
-  const getSelectedItems = useCartStore((s) => s.getSelectedItems);
   const removeOrderedItems = useCartStore((s) => s.removeOrderedItems);
-  const { items: cartItems, buyNowItem, clearCart, clearBuyNow } = useCartStore();
+  const cartItems = useCartStore((s) => s.items);
+  const buyNowItem = useCartStore((s) => s.buyNowItem);
+  const selection = useCartStore((s) => s.selection);
+  const clearCart = useCartStore((s) => s.clearCart);
+  const clearBuyNow = useCartStore((s) => s.clearBuyNow);
   const isBuyNow = !!buyNowItem;
-  const items = isBuyNow ? [buyNowItem] : getSelectedItems();
+  const items = useMemo(() => {
+    if (buyNowItem) return [buyNowItem];
+    return cartItems.filter((i) => selection[cartLineKey(i.product.id, i.variant_id)] !== false);
+  }, [buyNowItem, cartItems, selection]);
   const totalAmount = () => items.reduce((s, i) => s + getCartLinePrice(i), 0);
-  const { submitOrder, submitting } = useOrderStore();
+  const { submitOrder, submitting, loadOrderDetail } = useOrderStore();
   const { getDefaultAddress, loadAddresses } = useUserStore();
   const loadCoupons = useCouponStore((s) => s.loadCoupons);
 
@@ -179,7 +185,10 @@ export function useCheckoutPage() {
 
   const rawTotal = totalAmount();
   const { coupons: pickerCouponsRaw, loading: pickerCouponsLoading } = useCheckoutPickerCoupons(rawTotal);
-  const pickerCoupons = capabilities.couponEnabled ? pickerCouponsRaw : [];
+  const pickerCoupons = useMemo(
+    () => (capabilities.couponEnabled ? pickerCouponsRaw : []),
+    [capabilities.couponEnabled, pickerCouponsRaw],
+  );
   const { templates: shippingTemplates, loading: shippingRulesLoading, loadError: shippingRulesError } = useShippingStore();
   const enabledTemplates = shippingTemplates.filter((t) => t.enabled);
   const selectedTemplate = enabledTemplates[0] ?? null;
@@ -261,7 +270,7 @@ export function useCheckoutPage() {
         setSelectedCoupon(preferred);
       } else {
         const exists = pickerCoupons.some((c) => matchesPreferredCoupon(c, preferredCouponId));
-        toast.error(exists ? "该优惠券暂不满足使用条件" : "优惠券不存在或已失效");
+        toast.message(exists ? "该优惠券当前不满足本次结算条件，请在结算页选择其他可用优惠券" : "该优惠券当前不可用，请在结算页重新选择可用优惠券");
       }
       const nextParams = new URLSearchParams(searchParams);
       nextParams.delete("coupon_id");
@@ -345,7 +354,7 @@ export function useCheckoutPage() {
           variant_id: i.variant_id || undefined,
           qty: i.qty,
         })),
-        contact_name: name.trim() || "结算预览",
+        contact_name: name.trim() || "缁撶畻棰勮",
         contact_phone: phone.trim() || "60000000000",
         address: address.trim() || "MY",
         coupon_id: capabilities.couponEnabled ? selectedCoupon?.id : undefined,
@@ -384,6 +393,8 @@ export function useCheckoutPage() {
     useRewardCash,
     rewardCashAmount,
     submittedOrder,
+    capabilities.couponEnabled,
+    capabilities.pointsEnabled,
   ]);
 
   useEffect(() => {
@@ -432,7 +443,7 @@ export function useCheckoutPage() {
         window.clearTimeout(checkoutSnapshotTimerRef.current);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- checkoutAbandonmentId 由 ref 提供
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- checkoutAbandonmentId 鐢?ref 鎻愪緵
   }, [items, rawTotal, discountAmount, shippingFee, finalTotal, paymentMethod, name, phone, submittedOrder, orderFinalizing]);
 
   useEffect(() => {
@@ -451,7 +462,7 @@ export function useCheckoutPage() {
       return;
     }
     if (shippingRulesLoading || shippingQuoteLoading) {
-      toast.error("运费规则加载中，请稍候再试");
+      toast.error("运费规则加载中，请稍后重试");
       return;
     }
     if (!selectedTemplate) {
@@ -530,7 +541,7 @@ export function useCheckoutPage() {
             return;
           }
           setPostSubmitOnlineNote(
-            intent.client_instructions || "未获取到跳转链接，请点击下方“继续支付”或前往“订单详情”完成付款。",
+            intent.client_instructions || "未获取到支付跳转链接，请点击下方“继续支付”，或前往“订单详情”完成付款。",
           );
           toast.success("订单已创建");
         } catch (err) {
@@ -545,6 +556,7 @@ export function useCheckoutPage() {
         try {
           await orderService.payOrder(order.id, "reward_wallet");
           const latest = await orderService.fetchOrderById(order.id);
+          await loadOrderDetail(latest.id);
           flushSync(() => {
             setSubmittedOrder(latest);
           });
@@ -557,7 +569,7 @@ export function useCheckoutPage() {
           const text = generateOrderText(latest);
           const copied = await copyToClipboard(text);
           if (copied) {
-            toast.success("订单内容已复制到剪贴板！", toastPresetQuickSuccess);
+            toast.success("订单内容已复制到剪贴板", toastPresetQuickSuccess);
           }
         } catch (err) {
           const msg = err instanceof Error ? err.message : "返现钱包支付失败";
@@ -575,7 +587,7 @@ export function useCheckoutPage() {
       const text = generateOrderText(order);
       const copied = await copyToClipboard(text);
       if (copied) {
-        toast.success("订单内容已复制到剪贴板！", toastPresetQuickSuccess);
+        toast.success("订单内容已复制到剪贴板", toastPresetQuickSuccess);
       }
     } catch (e) {
       setOrderFinalizing(false);
@@ -636,7 +648,7 @@ export function useCheckoutPage() {
       const latest = await orderService.fetchOrderById(submittedOrder.id);
       setSubmittedOrder(latest);
     } catch {
-      /* 静默：倒计时结束时仅作状态同步 */
+      /* 闈欓粯锛氬€掕鏃剁粨鏉熸椂浠呬綔鐘舵€佸悓姝?*/
     }
   }, [submittedOrder?.id]);
 
@@ -647,6 +659,7 @@ export function useCheckoutPage() {
     try {
       await orderService.payOrder(submittedOrder.id, "reward_wallet");
       const latest = await orderService.fetchOrderById(submittedOrder.id);
+      await loadOrderDetail(latest.id);
       setSubmittedOrder(latest);
       if (latest.status === ORDER_STATUS.PAID || latest.payment_status === "paid") {
         trackPurchase(latest);
@@ -742,3 +755,6 @@ export function useCheckoutPage() {
     goNotifications: () => navigate("/notifications"),
   };
 }
+
+
+

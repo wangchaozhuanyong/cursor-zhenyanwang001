@@ -466,7 +466,6 @@ export async function uploadFiles(
 ): Promise<UploadFileResult[]> {
   const results: UploadFileResult[] = [];
   for (const file of files) {
-    // eslint-disable-next-line no-await-in-loop
     results.push(await uploadFile(file, options));
   }
   return results;

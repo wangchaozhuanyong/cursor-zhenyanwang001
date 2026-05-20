@@ -93,9 +93,9 @@ async function autoCancelOneOrder(orderId, minutes) {
 
     await requireOrderApi('cancelPendingOrderInTransaction')(conn, order, {
       trigger: 'auto_cancel_unpaid_order',
-      cancelReason: `Auto-cancel unpaid order after ${minutes} minutes`,
-      stockReason: `Release stock for unpaid timeout order ${order.order_no}`,
-      pointReason: `Rollback points for unpaid timeout order ${order.order_no}`,
+      cancelReason: `未支付超时自动取消（${minutes} 分钟）订单 ${order.order_no}`,
+      stockReason: `未支付超时订单 ${order.order_no} 释放库存`,
+      pointReason: `未支付超时订单积分回滚（${order.order_no}）`,
     });
     await requireUserApi('syncStatsAfterOrderCancelled')(order.user_id, order.id, conn);
     await conn.commit();

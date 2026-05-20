@@ -334,7 +334,7 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
             description: `订单状态变更为 ${status}，执行回滚`,
           sourceType: `admin_order_${status}`,
         });
-        await requireUserApi('reverseOrderRewards')(conn, fullOrder, `Order status changed to ${status}, rewards reversed`, {
+        await requireUserApi('reverseOrderRewards')(conn, fullOrder, `订单状态变更为 ${status}，奖励已回滚`, {
           operatorId: adminUserId,
           trigger: `admin_order_${status}`,
         });
@@ -400,7 +400,7 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
       actionType: 'order.status_update',
       objectType: 'order',
       objectId: orderId,
-      summary: 'Order status update failed',
+      summary: '订单状态更新失败',
       before: beforeSnap,
       result: 'failure',
       errorMessage: err.message || String(err),
@@ -545,7 +545,7 @@ async function batchShipOrders(payload = {}, adminUserId, req) {
   for (const orderId of orderIds) {
     const row = orderById.get(orderId);
     if (!row) {
-      failed.push({ order_id: orderId, reason: 'Order not found' });
+      failed.push({ order_id: orderId, reason: '订单不存在' });
       continue;
     }
     if (!requireOrderApi('canShip')(row)) {

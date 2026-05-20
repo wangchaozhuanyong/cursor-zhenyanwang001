@@ -15,6 +15,8 @@ export interface RbacAdminUserRow {
   nickname: string;
   email: string;
   role: string;
+  account_status?: string;
+  roleCodes?: string[];
   created_at: string;
   last_login_at: string | null;
 }

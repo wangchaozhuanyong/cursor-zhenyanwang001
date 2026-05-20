@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { Users } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
@@ -8,24 +7,33 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchInviteRecords } from "@/services/admin/inviteService";
+import type { InviteRecord, InviteRecordsSummary } from "@/types/invite";
 import { Tx } from "@/components/admin/AdminText";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
+import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import {
+  buildInviteRecordFilterChips,
+  hasActiveInviteRecordFilters,
+  removeInviteRecordFilterChip,
+} from "@/utils/adminInviteRecordFilters";
 import { toastErrorMessage } from "@/utils/errorMessage";
 
 export default function AdminInvites() {
   const navigate = useNavigate();
-  const [invites, setInvites] = useState<any[]>([]);
+  const [invites, setInvites] = useState<InviteRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [total, setTotal] = useState(0);
-  const [summary, setSummary] = useState<any>({});
+  const [summary, setSummary] = useState<InviteRecordsSummary>({});
 
   useEffect(() => {
     setLoading(true);
     fetchInviteRecords({ page, pageSize, keyword: search || undefined })
-      .then((p: any) => {
+      .then((p) => {
         setInvites(p.list || []);
         setTotal(p.total || 0);
         setSummary(p.summary || {});
@@ -34,9 +42,28 @@ export default function AdminInvites() {
       .finally(() => setLoading(false));
   }, [page, pageSize, search]);
 
+  const filterState = { search };
+  const filterChips = useMemo(() => buildInviteRecordFilterChips(filterState), [search]);
+  const filtersActive = hasActiveInviteRecordFilters(filterState);
+  const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.invitesFiltered : ADMIN_EMPTY_GUIDES.invites;
+
+  const clearFilters = () => {
+    setSearch("");
+    setPage(1);
+  };
+
+  const handleRemoveFilterChip = (key: string) => {
+    const patch = removeInviteRecordFilterChip(key);
+    if ("search" in patch) setSearch(patch.search ?? "");
+    setPage(1);
+  };
+
   return (
     <div className="space-y-4">
-      <SearchBar placeholder="搜索邀请人 / 被邀请人 / 邀请码..." value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
+      <div className="space-y-2">
+        <SearchBar placeholder="搜索邀请人 / 被邀请人 / 邀请码..." value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
+        <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
+      </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         {[
           { label: "总邀请记录", value: String(summary.totalRecords || total || 0) },
@@ -67,8 +94,16 @@ export default function AdminInvites() {
             </tr>
           )}
           footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(v) => { setPageSize(v); setPage(1); }} />}
-          emptyIcon={Users}
-          emptyTitle="暂无邀请记录"
+          emptyIcon={emptyGuide.icon}
+          emptyTitle={emptyGuide.title}
+          emptyDescription={emptyGuide.description}
+          emptyAction={(
+            <AdminEmptyGuideActions
+              guide={emptyGuide}
+              showClearFilters={filtersActive}
+              onClearFilters={clearFilters}
+            />
+          )}
           renderRow={(inv) => (
             <>
               <td className="px-4 py-3 text-foreground">{inv.nickname || "-"}</td>

@@ -148,7 +148,7 @@ function assertCouponUsableOnOrder({
 }) {
   const minAmount = parseFloat(uc.min_amount);
   if (goodsAmountAfterFullReduction < minAmount) {
-    throw new ValidationError('Order amount below minimum requirement for coupon');
+    throw new ValidationError('订单金额未满足优惠券使用门槛');
   }
 
   const usableScope = uc.usable_scope_type || uc.scope_type || 'all';
@@ -158,13 +158,13 @@ function assertCouponUsableOnOrder({
   if (usableScope === 'product' && usableProductIds.length) {
     const ids = orderItems.map((oi) => oi.productId);
     if (!ids.some((id) => usableProductIds.includes(id))) {
-      throw new ValidationError('Coupon is not applicable to current products');
+      throw new ValidationError('优惠券不适用于当前商品');
     }
   }
   if (usableScope === 'category' && usableCategoryIds.length) {
     const cats = [...new Set(orderItems.map((oi) => productMap[oi.productId]?.category_id).filter(Boolean))];
     if (!cats.some((cid) => usableCategoryIds.includes(String(cid)))) {
-      throw new ValidationError('Coupon is not applicable to current product categories');
+      throw new ValidationError('优惠券不适用于当前商品分类');
     }
   }
   if (uc.scope_type === 'category') {
@@ -172,7 +172,7 @@ function assertCouponUsableOnOrder({
     if (allowedCategoryIds.length) {
       const orderCategoryIds = [...new Set(orderItems.map((oi) => productMap[oi.productId]?.category_id).filter(Boolean))];
       if (!orderCategoryIds.some((cid) => allowedCategoryIds.includes(String(cid)))) {
-        throw new ValidationError('Coupon is not applicable to current product categories');
+        throw new ValidationError('优惠券不适用于当前商品分类');
       }
     }
   }
@@ -181,12 +181,12 @@ function assertCouponUsableOnOrder({
     throw new ValidationError('该优惠券不可与营销活动叠加使用');
   }
   if (hasActivityDiscount && activityAllowsCoupon === false) {
-    throw new ValidationError('Current promotion cannot be stacked with coupon');
+    throw new ValidationError('当前活动不可与优惠券叠加');
   }
 
   const couponDiscount = calculateCouponDiscount(uc, goodsAmountAfterFullReduction, shippingFee);
   if (couponDiscount <= 0) {
-    throw new ValidationError(uc.type === 'shipping' ? 'Current order has no shippable fee to deduct' : 'Coupon cannot be deducted for current order');
+    throw new ValidationError(uc.type === 'shipping' ? '当前订单没有可抵扣的运费' : '优惠券无法用于当前订单');
   }
   return couponDiscount;
 }

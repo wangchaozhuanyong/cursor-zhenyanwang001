@@ -12,12 +12,12 @@ async function getNotifications(userId, query) {
 
 async function markAsRead(userId, id) {
   await repo.markRead(userId, id);
-  return { message: 'Marked as read' };
+  return { message: '??????' };
 }
 
 async function markAllAsRead(userId) {
   await repo.markAllRead(userId);
-  return { message: '全部已读' };
+  return { message: '????????' };
 }
 
 async function getUnreadCount(userId) {
@@ -25,7 +25,7 @@ async function getUnreadCount(userId) {
   return { count };
 }
 
-/** 系统/运营侧写入一条用户通知（供管理端、订单发货等跨域调用�?*/
+/** ??/????????????????????? */
 async function insertUserNotification({ id, userId, type, title, content }) {
   await repo.insertNotification({
     id,
@@ -43,6 +43,3 @@ module.exports = {
   getUnreadCount,
   insertUserNotification,
 };
-
-
-

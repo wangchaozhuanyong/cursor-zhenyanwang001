@@ -163,7 +163,7 @@ async function updateChannelAdmin(req, id, body) {
     after: body,
     result: 'success',
   });
-  return { message: 'Saved' };
+  return { message: '已保存' };
 }
 
 /**
@@ -173,16 +173,16 @@ async function payWithRewardWallet(userId, orderId) {
   try {
     await conn.beginTransaction();
     const lockedOrder = await orderRepo.selectOrderByIdAndUserForUpdate(conn, orderId, userId);
-    if (!lockedOrder) throw new NotFoundError('Order not found');
+    if (!lockedOrder) throw new NotFoundError('订单不存在');
     if (
       lockedOrder.status !== ORDER_STATUS.PENDING
       || (lockedOrder.payment_status || PAYMENT_STATUS.PENDING) !== PAYMENT_STATUS.PENDING
     ) {
-      throw new ValidationError('Order status does not allow reward wallet payment');
+      throw new ValidationError('当前订单状态不可使用返现钱包支付');
     }
     const payableAmount = toMoney(lockedOrder.total_amount);
     if (payableAmount <= 0) {
-      throw new ValidationError('Invalid order amount for reward wallet payment');
+      throw new ValidationError('订单金额无效，无法使用返现钱包支付');
     }
     const balance = await requireUserApi('sumRewardTransactionsBalance')(conn, userId);
     if (balance < payableAmount) {
@@ -228,7 +228,7 @@ async function payWithRewardWallet(userId, orderId) {
       paymentMethod: 'reward_wallet',
     });
     if (!paidUpdated) {
-      throw new ValidationError('Order status changed, please refresh and retry');
+      throw new ValidationError('订单状态已变更，请刷新后重试');
     }
     await requireUserApi('syncStatsAfterOrderPaid')(userId, payableAmount, lockedOrder.id, conn);
     await payRepo.insertAnalyticsEvent(conn, {
@@ -302,7 +302,7 @@ async function payWithRewardWallet(userId, orderId) {
 
 async function createStripeCheckoutForOrder(userId, orderId, returnUrlHint, idempotencyKey) {
   const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey) throw new BusinessError(503, 'Stripe 未配置 ?STRIPE_SECRET_KEY');
+  if (!secretKey) throw new BusinessError(503, 'Stripe 未配置：请设置 STRIPE_SECRET_KEY');
 
   const base = (process.env.PUBLIC_APP_URL || '').trim().replace(/\/$/, '');
   if (!base) {
@@ -313,9 +313,9 @@ async function createStripeCheckoutForOrder(userId, orderId, returnUrlHint, idem
   }
 
   const order = await orderRepo.selectOrderByIdAndUser(payDb, orderId, userId);
-  if (!order) throw new NotFoundError('Order not found');
+  if (!order) throw new NotFoundError('订单不存在');
   if (order.status !== ORDER_STATUS.PENDING || (order.payment_status || PAYMENT_STATUS.PENDING) !== PAYMENT_STATUS.PENDING) {
-    throw new ValidationError('Current order status does not allow payment');
+    throw new ValidationError('当前订单状态不可支付');
   }
   if (order.payment_method !== 'online') {
     throw new ValidationError('该订单非在线支付');
@@ -324,7 +324,7 @@ async function createStripeCheckoutForOrder(userId, orderId, returnUrlHint, idem
   const total = toMoney(order.total_amount);
   const amountCents = Math.round(total * 100);
   if (!Number.isFinite(amountCents) || amountCents < 200) {
-    throw new ValidationError('Order amount does not meet Stripe minimum payment requirement (about RM 2.00)');
+    throw new ValidationError('订单金额未达到 Stripe 最低支付要求（约 RM 2.00）');
   }
 
   const channel = await payRepo.selectChannelByCode(payDb, 'stripe_checkout');
@@ -373,7 +373,7 @@ async function createStripeCheckoutForOrder(userId, orderId, returnUrlHint, idem
     },
   });
 
-  if (!session.url) throw new BusinessError(500, 'Stripe did not return checkout URL');
+  if (!session.url) throw new BusinessError(500, 'Stripe 未返回支付链接');
 
   await payRepo.updatePaymentOrderMetadata(payDb, paymentOrderId, {
     stripe_checkout_session_id: session.id,
@@ -407,26 +407,26 @@ async function createIntent(userId, body) {
           redirect_url: existing.metadata?.url || null,
           reused: true,
         },
-        message: 'Idempotency hit, reused existing payment order',
+        message: '幂等命中，已复用现有支付单',
       };
     }
   }
 
   const channel = await payRepo.selectChannelByCode(payDb, channelCode);
-  if (!channel) throw new ValidationError('Payment channel unavailable');
+  if (!channel) throw new ValidationError('支付渠道不可用');
 
   if (channel.provider === 'internal' && channel.code === 'reward_wallet') {
-    throw new ValidationError('返现钱包请使用 ?POST /orders/:id/pay channel=reward_wallet');
+    throw new ValidationError('返现钱包请使用 POST /orders/:id/pay，channel=reward_wallet');
   }
 
   if (channel.provider === 'stripe') {
     const r = await createStripeCheckoutForOrder(userId, orderId, returnUrl, idempotencyKey);
-    return { data: { payment_order_id: r.data.payment_order_id, status: 'pending', redirect_url: r.data.url }, message: 'Redirect to payment' };
+    return { data: { payment_order_id: r.data.payment_order_id, status: 'pending', redirect_url: r.data.url }, message: '正在跳转支付' };
   }
 
   if (channel.provider === 'manual') {
     const order = await orderRepo.selectOrderByIdAndUser(payDb, orderId, userId);
-    if (!order) throw new NotFoundError('Order not found');
+    if (!order) throw new NotFoundError('订单不存在');
     if (order.status !== ORDER_STATUS.PENDING || (order.payment_status || PAYMENT_STATUS.PENDING) !== PAYMENT_STATUS.PENDING) {
       throw new ValidationError('当前订单状态无法创建支付单');
     }
@@ -456,13 +456,13 @@ async function createIntent(userId, body) {
         redirect_url: null,
         client_instructions: 'Please transfer according to order amount or contact support for confirmation.',
       },
-      message: 'Pending manual payment order created',
+      message: '已创建待处理的人工支付单',
     };
   }
 
   if (channel.provider === 'malaysia_local') {
     const order = await orderRepo.selectOrderByIdAndUser(payDb, orderId, userId);
-    if (!order) throw new NotFoundError('Order not found');
+    if (!order) throw new NotFoundError('订单不存在');
     if (order.status !== ORDER_STATUS.PENDING || (order.payment_status || PAYMENT_STATUS.PENDING) !== PAYMENT_STATUS.PENDING) {
       throw new ValidationError('当前订单状态无法创建支付单');
     }
@@ -470,7 +470,7 @@ async function createIntent(userId, body) {
       throw new ValidationError('该订单非在线支付');
     }
     const amount = toMoney(order.total_amount);
-    if (amount <= 0) throw new ValidationError('Invalid order amount');
+    if (amount <= 0) throw new ValidationError('订单金额无效');
     const paymentOrderId = generateId();
     const intent = await malaysiaLocalProvider.createIntent({
       channel,
@@ -506,13 +506,13 @@ async function createIntent(userId, body) {
         redirect_url: intent.redirectUrl,
         client_instructions: intent.redirectUrl
           ? '请跳转至本地支付网关完成付款'
-          : 'Payment order created, waiting for local gateway callback confirmation',
+          : '支付单已创建，等待本地网关回调确认',
       },
-      message: intent.redirectUrl ? 'Redirect to payment' : 'Local payment order created',
+      message: intent.redirectUrl ? '正在跳转支付' : '本地支付单已创建',
     };
   }
 
-  throw new ValidationError('Unsupported payment channel');
+  throw new ValidationError('不支持的支付渠道');
 }
 
 async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionNo, payloadSummary) {
@@ -749,7 +749,7 @@ async function markOrderPaidByAdmin(req, orderId, body) {
   try {
     await conn.beginTransaction();
     const order = await orderRepo.selectOrderByIdOrOrderNoForUpdate(conn, orderId);
-    if (!order) throw new NotFoundError('Order not found');
+    if (!order) throw new NotFoundError('订单不存在');
     if (order.status !== ORDER_STATUS.PENDING || (order.payment_status || PAYMENT_STATUS.PENDING) !== PAYMENT_STATUS.PENDING) {
       throw new ValidationError('订单状态不允许补记为已支付');
     }
@@ -785,7 +785,7 @@ async function markOrderPaidByAdmin(req, orderId, body) {
     providerPaymentId: txNo,
   });
     if (!paidUpdated) {
-      throw new ValidationError('Order status changed, please refresh and retry');
+      throw new ValidationError('订单状态已变更，请刷新后重试');
     }
     await requireUserApi('refreshUserMemberLevel')(conn, order.user_id);
 
@@ -848,7 +848,7 @@ async function markOrderPaidByAdmin(req, orderId, body) {
       actionType: 'payment.order_mark_paid',
       objectType: 'order',
       objectId: orderId,
-      summary: 'Admin marked order paid',
+      summary: '管理员标记订单已支付',
       after: {
         payment_order_id: paymentOrderId,
         channel_code: chCode,
@@ -869,7 +869,7 @@ async function markOrderPaidByAdmin(req, orderId, body) {
       });
     }
 
-    return { message: 'Manual payment marked as paid' };
+    return { message: '订单已标记为已支付' };
   } catch (e) {
     await conn.rollback();
     throw e;
@@ -880,18 +880,18 @@ async function markOrderPaidByAdmin(req, orderId, body) {
 
 async function recordRefundByAdmin(req, orderId, body) {
   const amount = toMoney(body.amount);
-  if (amount <= 0) throw new ValidationError('Refund amount must be greater than 0');
+  if (amount <= 0) throw new ValidationError('退款金额必须大于 0');
   const conn = await payRepo.getConnection();
   let order = null;
   try {
     await conn.beginTransaction();
     order = await orderRepo.selectOrderByIdForUpdate(conn, orderId);
-    if (!order) throw new NotFoundError('Order not found');
+    if (!order) throw new NotFoundError('订单不存在');
     if (!['paid', 'partially_refunded'].includes(order.payment_status || '')) {
-      throw new ValidationError('Only paid orders can record refund');
+      throw new ValidationError('仅已支付订单可记录退款');
     }
     const total = toMoney(order.total_amount);
-    if (amount > total) throw new ValidationError('Refund amount cannot exceed paid amount');
+    if (amount > total) throw new ValidationError('退款金额不能超过实付金额');
 
     const isFullRefund = amount >= total - 0.01;
     const paymentStatus = isFullRefund ? PAYMENT_STATUS.REFUNDED : PAYMENT_STATUS.PARTIALLY_REFUNDED;
@@ -948,7 +948,7 @@ async function recordRefundByAdmin(req, orderId, body) {
       actionType: 'payment.refund_record',
       objectType: 'order',
       objectId: orderId,
-      summary: 'Record refund failed',
+      summary: '记录退款失败',
       result: 'failure',
       errorMessage: err.message || String(err),
     }).catch(() => {});
@@ -967,11 +967,11 @@ async function replayEvent(req, eventId) {
     actionType: 'payment.event_replay',
     objectType: 'payment_event',
     objectId: eventId,
-    summary: 'Admin replay event (audit only)',
+    summary: '管理员触发支付事件重放（仅审计）',
     after: { event_type: ev.event_type, provider: ev.provider },
     result: 'success',
   });
-  return { data: { event: ev }, message: 'Replay operation recorded (use gateway API for actual replay)' };
+  return { data: { event: ev }, message: '重放操作已记录（实际重放请使用支付网关接口）' };
 }
 
 async function listReconciliations(query) {
@@ -1013,47 +1013,47 @@ async function createReconciliation(req, body) {
     after: body,
     result: 'success',
   });
-  return { data: { id }, message: 'Reconciliation record created' };
+  return { data: { id }, message: '对账记录已创建' };
 }
 
 async function handleManualWebhook(provider, body, headerSecret) {
   if (provider !== 'manual') {
-    throw new NotFoundError('?? provider');
+    throw new NotFoundError('未知支付渠道');
   }
   const expected = (process.env.PAYMENT_MANUAL_WEBHOOK_SECRET || '').trim();
   if (!expected) {
-    throw new BusinessError(503, '??? PAYMENT_MANUAL_WEBHOOK_SECRET');
+    throw new BusinessError(503, '未配置 PAYMENT_MANUAL_WEBHOOK_SECRET');
   }
   const timestamp = String(body?.timestamp || body?.ts || '').trim();
   const nonce = String(body?.nonce || '').trim();
   const signature = String(body?.signature || headerSecret || '').trim().toLowerCase();
   if (!timestamp || !nonce || !signature) {
-    throw new ValidationError('Webhook ?? timestamp / nonce / signature');
+    throw new ValidationError('Webhook 缺少 timestamp / nonce / signature');
   }
-  if (!/^\d{10,13}$/.test(timestamp)) throw new ValidationError('Webhook timestamp ??');
-  if (nonce.length < 8) throw new ValidationError('Webhook nonce ??');
+  if (!/^\d{10,13}$/.test(timestamp)) throw new ValidationError('Webhook timestamp 格式无效');
+  if (nonce.length < 8) throw new ValidationError('Webhook nonce 长度不足');
 
   const timestampMs = timestamp.length === 13 ? Number(timestamp) : Number(timestamp) * 1000;
   const maxSkewSec = Math.max(30, Number(process.env.PAYMENT_MANUAL_WEBHOOK_MAX_SKEW_SECONDS || 300));
   if (Math.abs(Date.now() - timestampMs) > maxSkewSec * 1000) {
-    throw new ValidationError('Webhook timestamp ????????');
+    throw new ValidationError('Webhook timestamp 超出允许时间窗口');
   }
 
   const payload = buildManualWebhookSigningPayload(body, timestamp, nonce);
   const expectedSignature = crypto.createHmac('sha256', expected).update(payload).digest('hex');
   if (!timingSafeHexEquals(signature, expectedSignature)) {
-    throw new ValidationError('Webhook ????');
+    throw new ValidationError('Webhook 签名校验失败');
   }
 
   const eventId = String(body?.event_id || '').trim();
-  if (!eventId) throw new ValidationError('event_id ??');
+  if (!eventId) throw new ValidationError('event_id 必填');
   const exists = await payRepo.selectPaymentEventByProviderEventId(payDb, 'manual', eventId);
   if (exists) {
-    return { data: { received: true, duplicate: true }, message: '???????' };
+    return { data: { received: true, duplicate: true }, message: '重复事件已忽略' };
   }
 
   const orderId = body?.order_id;
-  if (!orderId) throw new ValidationError('order_id ??');
+  if (!orderId) throw new ValidationError('order_id 必填');
 
   await payRepo.insertPaymentEvent(payDb, {
     id: generateId(),
@@ -1112,9 +1112,9 @@ async function handleMalaysiaLocalWebhook(provider, body, headers = {}) {
 
     const paymentOrder = await payRepo.selectPaymentOrderByIdForUpdate(conn, paymentOrderId);
     if (!paymentOrder) throw new NotFoundError('支付单不存在');
-    if (paymentOrder.provider !== 'malaysia_local') throw new ValidationError('Payment order provider mismatch');
+    if (paymentOrder.provider !== 'malaysia_local') throw new ValidationError('支付单渠道不匹配');
     const order = await orderRepo.selectOrderByIdForUpdate(conn, paymentOrder.order_id);
-    if (!order) throw new NotFoundError('Order not found');
+    if (!order) throw new NotFoundError('订单不存在');
 
     const webhookAmount = body.amount === undefined ? null : toMoney(body.amount);
     const webhookCurrency = String(body.currency || paymentOrder.currency || 'MYR').toUpperCase();
@@ -1198,7 +1198,7 @@ async function handleMalaysiaLocalWebhook(provider, body, headers = {}) {
         order_id: order.id,
         status: normalizedStatus,
       },
-      message: 'Malaysia local payment event processed',
+      message: '马来西亚本地支付事件已处理',
     };
   } catch (e) {
     await conn.rollback();

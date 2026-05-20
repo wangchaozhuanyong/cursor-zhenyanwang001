@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.strict-api.json",
+  "include": [
+    "src/modules/admin/**/*.{ts,tsx}",
+    "src/stores/useAdminUsersStore.ts",
+    "src/stores/useAdminPermissionStore.ts",
+    "src/config/adminEmptyStateGuides.ts",
+    "src/utils/adminDisplayLabels.ts",
+    "src/utils/adminCsvDownload.ts",
+    "src/constants/statusDictionary.ts",
+    "src/constants/imageUploadHints.ts",
+    "src/components/admin/**/*.{ts,tsx}"
+  ]
+}

@@ -24,6 +24,8 @@ const router = Router();
   lifecycleFromFilter: lifecycle.lifecycleFromFilter,
   statusVarcharFromLifecycle: lifecycle.statusVarcharFromLifecycle,
   normalizeLifecycleFromRow: lifecycle.normalizeLifecycleFromRow,
+  ACTIVE_PRODUCT_WHERE: lifecycle.ACTIVE_PRODUCT_WHERE,
+  activeProductWhere: lifecycle.activeProductWhere,
 };
 
 router.use('/banners', require('./routes/banner.routes'));

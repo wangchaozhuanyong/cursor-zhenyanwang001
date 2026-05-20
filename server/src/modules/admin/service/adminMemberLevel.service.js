@@ -2,6 +2,7 @@ const { generateId } = require('../../../utils/helpers');
 const { BusinessError, NotFoundError, ValidationError } = require('../../../errors');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const repo = require('../repository/adminMemberLevel.repository');
+const adminUserService = require('./adminUser.service');
 const userModule = require('../../user');
 
 const pool = repo.getPool();
@@ -15,7 +16,7 @@ function requireUserApi(name) {
 
 function toNumber(value, fieldName) {
   const n = Number(value ?? 0);
-  if (!Number.isFinite(n) || n < 0) throw new ValidationError(`${fieldName} cannot be negative`);
+  if (!Number.isFinite(n) || n < 0) throw new ValidationError(`${fieldName} 不能为负数`);
   return n;
 }
 
@@ -129,6 +130,7 @@ async function deleteLevel(req, id) {
 }
 
 async function recalcUserLevel(req, userId, options = {}) {
+  await adminUserService.assertTargetIsNormalUser(userId);
   const fn = requireUserApi('refreshUserMemberLevel');
   const result = await fn(pool, userId, { force: !!options.force });
   await writeAuditLog({ req, operatorId: req.user?.id, actionType: 'member_level.recalc_user', objectType: 'user', objectId: userId, summary: `重算用户会员等级 ${userId}`, after: result, result: 'success' });
@@ -156,6 +158,7 @@ async function recalcAllUserLevels(req, options = {}) {
 }
 
 async function assignUserLevel(req, userId, levelId, reason) {
+  await adminUserService.assertTargetIsNormalUser(userId);
   const level = await repo.selectLevelById(pool, levelId);
   if (!level) throw new NotFoundError('会员等级不存在');
   if (!level.enabled) throw new ValidationError('不能手动指定到已禁用的会员等级');
@@ -166,6 +169,7 @@ async function assignUserLevel(req, userId, levelId, reason) {
 }
 
 async function unlockUserLevel(req, userId) {
+  await adminUserService.assertTargetIsNormalUser(userId);
   const before = await repo.selectUserManualLock(pool, userId);
   if (!before) throw new NotFoundError('用户不存在');
   const ok = await repo.unlockUserLevelManual(pool, userId);

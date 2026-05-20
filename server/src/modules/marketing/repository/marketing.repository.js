@@ -1,4 +1,5 @@
 const db = require('../../../config/db');
+const { activeProductWhere } = require('../../product/productLifecycle');
 
 function parseJson(value, fallback) {
   if (value == null || value === '') return fallback;
@@ -36,7 +37,7 @@ async function selectFlashSaleActivityByPosition(position) {
      FROM marketing_activity_products ap
      JOIN products p ON p.id = ap.product_id
      WHERE ap.activity_id = ?
-       AND p.lifecycle_status = 1
+       AND ${activeProductWhere('p')}
        AND ap.activity_price > 0
        AND ap.activity_stock > ap.sold_count
      ORDER BY ap.sort_order ASC, ap.id ASC`,

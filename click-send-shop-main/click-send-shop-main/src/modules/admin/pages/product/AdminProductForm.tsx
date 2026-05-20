@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ArrowLeft, Upload, ImagePlus, Loader2, Trash2, Plus, Video } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -7,15 +6,18 @@ import { fetchProductById, createProduct, updateProduct, deleteProduct, fetchPro
 import * as categoryService from "@/services/admin/categoryService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as uploadService from "@/services/uploadService";
-import { validateUploadFile } from "@/api/modules/upload";
+import { validateUploadFile } from "@/services/uploadService";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { AdminFormSectionsSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_PRODUCT_LAYOUT } from "@/constants/imageUploadHints";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
-import { flattenCategories } from "@/utils/categoryTree";
-import type { ProductTag } from "@/types/product";
+import { flattenCategories, type FlatCategory } from "@/utils/categoryTree";
+import type { Category } from "@/types/category";
+import type { Product, ProductSpecGroup, ProductSpecValue, ProductTag } from "@/types/product";
+import type { AdminProductUpsertPayload } from "@/services/admin/productService";
 import { Tx } from "@/components/admin/AdminText";
+import AdminFieldHint, { AdminLabelWithHint, AdminSectionTitle } from "@/components/admin/AdminFieldHint";
 import { AnimatedConfirmDialog, LoadingButton, UploadDropZone } from "@/modules/micro-interactions";
 import {
   THEME_BTN_DANGER_SOLID,
@@ -90,11 +92,13 @@ export default function AdminProductForm() {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [allTags, setAllTags] = useState<ProductTag[]>([]);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [uploadingVariantImageIndex, setUploadingVariantImageIndex] = useState<number | null>(null);
+  const [variantUploadProgress, setVariantUploadProgress] = useState<number | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [form, setForm] = useState({
     name: "",
@@ -137,7 +141,7 @@ export default function AdminProductForm() {
     if (!isNew && id) {
       setLoading(true);
       fetchProductById(id)
-        .then((data: any) => {
+        .then((data: Product | null) => {
           if (data) {
             const st = data.status === "draft" || data.status === "inactive" ? data.status : "active";
             const vlist =
@@ -195,12 +199,12 @@ export default function AdminProductForm() {
               allow_index: data.allow_index == null ? true : Number(data.allow_index) === 1,
               tag_ids: Array.isArray(data.tags) ? data.tags.map((t: { id: string }) => t.id) : [],
               spec_groups: Array.isArray(data.spec_groups)
-                ? data.spec_groups.map((g: any, gi: number) => ({
+                ? data.spec_groups.map((g: ProductSpecGroup, gi: number) => ({
                   id: g.id,
                   name: g.name || "",
                   sort_order: g.sort_order ?? gi,
                   values: Array.isArray(g.values)
-                    ? g.values.map((v: any, vi: number) => ({
+                    ? g.values.map((v: ProductSpecValue, vi: number) => ({
                       id: v.id,
                       value: v.value || "",
                       image_url: v.image_url || "",
@@ -271,6 +275,44 @@ export default function AdminProductForm() {
     e.target.value = "";
     if (!file) return;
     await uploadImageFile(file, field);
+  };
+
+  const uploadVariantImageFile = async (file: File, variantIndex: number) => {
+    if (uploadingVariantImageIndex !== null) return;
+    try {
+      validateImageBeforeUpload(file);
+      validateUploadFile(file, "product");
+      setUploadingVariantImageIndex(variantIndex);
+      setVariantUploadProgress(0);
+      const res = await uploadService.uploadSingleWithProgress(file, {
+        mode: "product",
+        timeoutMs: 45_000,
+        onProgress: (percent) => setVariantUploadProgress(percent),
+      });
+      const url = String(res.url || "").trim();
+      if (!url) {
+        toast.error("服务器未返回图片地址，请检查存储配置或稍后重试");
+        return;
+      }
+      setForm((f) => {
+        const nv = [...f.variants];
+        nv[variantIndex] = { ...nv[variantIndex], image_url: url };
+        return { ...f, variants: nv };
+      });
+      toast.success("SKU 图片已上传");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "SKU 图片上传失败"));
+    } finally {
+      setUploadingVariantImageIndex(null);
+      setVariantUploadProgress(null);
+    }
+  };
+
+  const handleVariantImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, variantIndex: number) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    await uploadVariantImageFile(file, variantIndex);
   };
 
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -426,7 +468,7 @@ export default function AdminProductForm() {
       }
       const complianceType = (form.compliance_type || "normal").trim();
       const shouldNoindex = form.is_age_restricted || complianceType !== "normal";
-      const payload: any = {
+      const payload: AdminProductUpsertPayload = {
         name: form.name,
         price: mainPrice,
         original_price:
@@ -493,7 +535,7 @@ export default function AdminProductForm() {
     }
   };
 
-  const categoryOptions = flattenCategories(categories as any);
+  const categoryOptions = flattenCategories(categories);
 
   return (
     <div className="space-y-6">
@@ -518,10 +560,12 @@ export default function AdminProductForm() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <div className="rounded-xl border border-border bg-card p-6">
-            <h3 className="mb-4 text-sm font-semibold text-foreground"><Tx>商品图片</Tx></h3>
-            <p className="mb-4 text-[11px] leading-relaxed text-muted-foreground">
-              {IMAGE_UPLOAD_HINT_API} {IMAGE_UPLOAD_HINT_PRODUCT_LAYOUT}
-            </p>
+            <div className="mb-4">
+              <AdminSectionTitle
+                title={<Tx>商品图片</Tx>}
+                hint={<>{IMAGE_UPLOAD_HINT_API} {IMAGE_UPLOAD_HINT_PRODUCT_LAYOUT}</>}
+              />
+            </div>
             <div className="space-y-4">
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>封面图</Tx></label>
@@ -584,19 +628,22 @@ export default function AdminProductForm() {
               </div>
               <div className="rounded-xl border border-border bg-background/50 p-3 sm:p-4">
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-muted-foreground"><Tx>详情视频（可选）</Tx></label>
-                    <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground"><Tx>
-                      仅在商品详情页图集展示，商品卡不展示。支持 MP4 / WebM / MOV，单个视频最大 50MB；建议使用 H.264 MP4 以获得最佳兼容性。
-                      </Tx><span className="mt-0.5 block"><Tx>
-                        画面比例请与「站点外观 → 商品图比例」一致（常见为 </Tx><strong className="font-medium text-foreground/80">1:1</strong>，如{" "}
-                        <strong className="font-medium text-foreground/80">1080×1080</strong> /{" "}
-                        <strong className="font-medium text-foreground/80">720×720</strong><Tx>；若为 3:4 则如 1080×1440）。码率约 5–8 Mbps，时长 1 分钟内更易压在 50MB 内。
-                        详情页图集主区域固定为当前主题的 </Tx><strong className="font-medium text-foreground/80"><Tx>商品图比例</Tx></strong>，视频在区域内{" "}
-                        <strong className="font-medium text-foreground/80">object-contain</strong><Tx>
-                        ：与主题同比例导出时黑边最少、与图片切换不跳变；横屏或与主题不一致时可能出现上下或左右留黑。下方预览与前台使用同一比例变量。
-                      </Tx></span>
-                    </p>
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-medium text-muted-foreground"><Tx>详情视频（可选）</Tx></label>
+                    <AdminFieldHint
+                      contentClassName="max-w-sm"
+                      text={(
+                        <>
+                          <Tx>
+                            仅在商品详情页图集展示，商品卡不展示。支持 MP4 / WebM / MOV，单个视频最大 50MB；建议使用 H.264 MP4 以获得最佳兼容性。
+                          </Tx>
+                          <p className="mt-1"><Tx>
+                            画面比例请与「站点外观 → 商品图比例」一致（常见为 1:1，如 1080×1080 / 720×720；若为 3:4 则如 1080×1440）。码率约 5–8 Mbps，时长 1 分钟内更易压在 50MB 内。
+                            详情页图集主区域固定为当前主题的商品图比例，视频在区域内 object-contain：与主题同比例导出时黑边最少；横屏或与主题不一致时可能出现留黑。
+                          </Tx></p>
+                        </>
+                      )}
+                    />
                   </div>
                   {form.video_url && (
                     <button
@@ -657,17 +704,22 @@ export default function AdminProductForm() {
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>划线原价 (RM)</Tx></label>
                 <input value={form.original_price} onChange={(e) => setForm({ ...form, original_price: e.target.value })} placeholder="留空则不展示" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
-                <p className="mt-1 text-[10px] text-muted-foreground"><Tx>仅当大于售价时，前台商品卡/详情页才会以删除线显示。</Tx></p>
+                <div className="mt-1 flex justify-end">
+                  <AdminFieldHint text={<Tx>仅当大于售价时，前台商品卡/详情页才会以删除线显示。</Tx>} />
+                </div>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>库存（默认规格）</Tx></label>
                 <input type="number" min={0} value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder="0" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
-                <p className="mt-1 text-[10px] text-muted-foreground"><Tx>保存时写入默认 SKU；大批量入库仍建议在库存中心操作。</Tx></p>
+                <div className="mt-1 flex justify-end">
+                  <AdminFieldHint text={<Tx>保存时写入默认 SKU；大批量入库仍建议在库存中心操作。</Tx>} />
+                </div>
               </div>
-              <div className="rounded-lg border border-dashed border-border bg-secondary/50 px-4 py-3 text-xs leading-5 text-muted-foreground">
-                <Tx>商品积分不再在商品表单维护，请到「活动管理 / 积分管理」统一配置。</Tx>
+              <div className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-secondary/50 px-4 py-2 text-xs text-foreground">
+                <Tx>商品积分</Tx>
+                <AdminFieldHint text={<Tx>不再在商品表单维护，请到「活动管理 / 积分管理」统一配置。</Tx>} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -680,7 +732,9 @@ export default function AdminProductForm() {
                   placeholder="0"
                   className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                 />
-                <p className="mt-1 text-[10px] text-muted-foreground"><Tx>订单付款后由系统自动累加；可手动修正起步销量。</Tx></p>
+                <div className="mt-1 flex justify-end">
+                  <AdminFieldHint text={<Tx>订单付款后由系统自动累加；可手动修正起步销量。</Tx>} />
+                </div>
               </div>
               <div />
             </div>
@@ -689,7 +743,7 @@ export default function AdminProductForm() {
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>分类</Tx></label>
                 <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none">
                   <option value=""><Tx>选择分类</Tx></option>
-                  {categoryOptions.map((c: any) => (
+                  {categoryOptions.map((c: FlatCategory) => (
                     <option key={c.id} value={c.id}>
                       {"　".repeat(c.level)}
                       {c.name}
@@ -730,16 +784,20 @@ export default function AdminProductForm() {
                 <Plus size={14} /><Tx> 添加规格
               </Tx></button>
             </div>
-            <p className="text-[11px] text-muted-foreground leading-relaxed"><Tx>
-              可在此维护各规格库存与价格；保存后同步到商品总库存。
-            </Tx></p>
+            <div className="flex justify-end">
+              <AdminFieldHint
+                text={<Tx>可在此维护各规格库存与价格；保存后同步到商品总库存。</Tx>}
+              />
+            </div>
             <div className="space-y-3 rounded-lg border border-border bg-background/40 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <p className="text-xs font-semibold text-foreground">规格矩阵</p>
-                  <p className="mt-0.5 text-[10px] text-muted-foreground">
-                    最多 {MAX_SPEC_GROUPS} 组，每组 {MAX_SPEC_VALUES_PER_GROUP} 个值，自动生成 SKU 组合。
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-semibold text-foreground">规格矩阵</p>
+                    <AdminFieldHint
+                      text={`最多 ${MAX_SPEC_GROUPS} 组，每组 ${MAX_SPEC_VALUES_PER_GROUP} 个值，自动生成 SKU 组合。`}
+                    />
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   {form.spec_groups.length === 0 ? (
@@ -992,19 +1050,67 @@ export default function AdminProductForm() {
                         />
                       </td>
                       <td className="py-2 pr-2">
-                        <input
-                          value={v.image_url || ""}
-                          onChange={(e) => {
-                            const t = e.target.value;
-                            setForm((f) => {
-                              const nv = [...f.variants];
-                              nv[idx] = { ...nv[idx], image_url: t };
-                              return { ...f, variants: nv };
-                            });
-                          }}
-                          placeholder="URL"
-                          className="w-full min-w-[120px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
-                        />
+                        <div className="min-w-[180px] space-y-1">
+                          <div className="flex items-center gap-2">
+                            {v.image_url ? (
+                              <img
+                                src={v.image_url}
+                                alt={`${v.title || "SKU"} 图片`}
+                                className="h-8 w-8 rounded border border-border object-cover"
+                              />
+                            ) : (
+                              <div className="h-8 w-8 rounded border border-dashed border-border bg-secondary" />
+                            )}
+                            <label
+                              className={`inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] ${uploadingVariantImageIndex === idx ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:bg-secondary"}`}
+                            >
+                              {uploadingVariantImageIndex === idx ? (
+                                <Loader2 size={12} className="animate-spin" />
+                              ) : (
+                                <Upload size={12} />
+                              )}
+                              {uploadingVariantImageIndex === idx ? "上传中" : "上传"}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                disabled={uploadingVariantImageIndex !== null}
+                                onChange={(e) => void handleVariantImageUpload(e, idx)}
+                              />
+                            </label>
+                            {!!v.image_url && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setForm((f) => {
+                                    const nv = [...f.variants];
+                                    nv[idx] = { ...nv[idx], image_url: "" };
+                                    return { ...f, variants: nv };
+                                  });
+                                }}
+                                className={`text-[11px] ${THEME_HOVER_TEXT_DANGER}`}
+                              >
+                                清除
+                              </button>
+                            )}
+                          </div>
+                          {uploadingVariantImageIndex === idx && variantUploadProgress !== null ? (
+                            <p className="text-[10px] text-muted-foreground">上传进度 {variantUploadProgress}%</p>
+                          ) : null}
+                          <input
+                            value={v.image_url || ""}
+                            onChange={(e) => {
+                              const t = e.target.value;
+                              setForm((f) => {
+                                const nv = [...f.variants];
+                                nv[idx] = { ...nv[idx], image_url: t };
+                                return { ...f, variants: nv };
+                              });
+                            }}
+                            placeholder="URL"
+                            className="w-full rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
+                          />
+                        </div>
                       </td>
                       <td className="py-2 pr-2 text-center">
                         <input
@@ -1047,10 +1153,12 @@ export default function AdminProductForm() {
           </div>
 
           <div className="rounded-xl border border-border bg-card p-6 space-y-3">
-            <h3 className="text-sm font-semibold text-foreground"><Tx>自定义标签</Tx></h3>
-            <p className="text-[11px] leading-relaxed text-muted-foreground"><Tx>
-              标签在「标签管理」中维护；勾选后关联本商品，前台商品列表与详情页会与「热销 / 新品」徽章一并展示。
-            </Tx></p>
+            <AdminSectionTitle
+              title={<Tx>自定义标签</Tx>}
+              hint={<Tx>
+                标签在「标签管理」中维护；勾选后关联本商品，前台商品列表与详情页会与「热销 / 新品」徽章一并展示。
+              </Tx>}
+            />
             {allTags.length === 0 ? (
               <p className="text-xs text-muted-foreground"><Tx>暂无可用标签，请先到「标签管理」新建。</Tx></p>
             ) : (
@@ -1101,7 +1209,10 @@ export default function AdminProductForm() {
           <div className="rounded-xl border border-border bg-card p-6 space-y-3">
             <h3 className="text-sm font-semibold text-foreground"><Tx>状态设置</Tx></h3>
             <div className="rounded-lg border border-border p-3">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>销售状态</Tx></label>
+              <AdminLabelWithHint
+                label={<Tx>销售状态</Tx>}
+                hint={<Tx>草稿可用于先录入资料，确认后再上架。</Tx>}
+              />
               <select
                 value={form.status}
                 onChange={(e) =>
@@ -1113,7 +1224,6 @@ export default function AdminProductForm() {
                 <option value="active"><Tx>上架</Tx></option>
                 <option value="inactive"><Tx>下架</Tx></option>
               </select>
-              <p className="mt-1 text-[10px] text-muted-foreground"><Tx>草稿可用于先录入资料，确认后再上架。</Tx></p>
             </div>
             <div className="rounded-lg border border-border p-3 space-y-2">
               <p className="text-xs font-medium text-muted-foreground">合规与收录</p>
@@ -1189,22 +1299,24 @@ export default function AdminProductForm() {
                 />
               </label>
             </div>
-            {[
-              { label: "热门", desc: "显示热门标签", key: "is_hot" },
-              { label: "是否标记为新品", desc: "显示新品标签并进入新品上市专题页", key: "is_new" },
-              { label: "推荐", desc: "首页推荐展示", key: "is_recommended" },
-            ].map((t) => (
+            {(
+              [
+                { label: "热门", desc: "显示热门标签", key: "is_hot" as const },
+                { label: "是否标记为新品", desc: "显示新品标签并进入新品上市专题页", key: "is_new" as const },
+                { label: "推荐", desc: "首页推荐展示", key: "is_recommended" as const },
+              ] as const
+            ).map((t) => (
               <label key={t.key} className="flex items-center justify-between rounded-lg border border-border p-3">
-                <div>
+                <div className="flex items-center gap-2">
                   <p className="text-sm font-medium text-foreground">{t.label}</p>
-                  <p className="text-[10px] text-muted-foreground">{t.desc}</p>
+                  <AdminFieldHint text={t.desc} />
                 </div>
                 <input
                   type="checkbox"
                   className="accent-gold"
-                  checked={!!(form as any)[t.key]}
+                  checked={form[t.key]}
                   onChange={(e) => {
-                    setForm({ ...form, [t.key]: e.target.checked });
+                    setForm((prev) => ({ ...prev, [t.key]: e.target.checked }));
                   }}
                 />
               </label>

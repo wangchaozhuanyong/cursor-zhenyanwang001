@@ -1,4 +1,5 @@
 const db = require('../../../config/db');
+const { activeProductWhere } = require('../../product/productLifecycle');
 
 const cartLineSelect = `
   SELECT p.*,
@@ -22,7 +23,7 @@ const cartLineSelect = `
 async function selectCartLinesWithProducts(userId) {
   const [rows] = await db.query(
     `${cartLineSelect}
-     WHERE ci.user_id = ? AND p.lifecycle_status = 1 AND p.deleted_at IS NULL
+     WHERE ci.user_id = ? AND ${activeProductWhere('p')}
      ORDER BY ci.created_at DESC`,
     [userId],
   );
@@ -31,7 +32,7 @@ async function selectCartLinesWithProducts(userId) {
 
 async function selectActiveProductId(productId) {
   const [[row]] = await db.query(
-    'SELECT id, name, stock FROM products WHERE id = ? AND lifecycle_status = 1 AND deleted_at IS NULL',
+    `SELECT id, name, stock FROM products WHERE id = ? AND ${activeProductWhere()}`,
     [productId],
   );
   return row || null;
@@ -73,7 +74,7 @@ async function selectCartLine(userId, productId, variantId = '') {
   const [[row]] = await db.query(
     `${cartLineSelect}
      WHERE ci.user_id = ? AND ci.product_id = ? AND ci.variant_id = ?
-       AND p.lifecycle_status = 1 AND p.deleted_at IS NULL`,
+       AND ${activeProductWhere('p')}`,
     [userId, productId, variantId || ''],
   );
   return row || null;

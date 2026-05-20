@@ -275,18 +275,39 @@ async function getSearchAnalysis(query) {
 async function getTrafficAnalysis(query = {}) {
   const { dateFrom, dateTo } = resolveDateRange(query);
   if (!(await repo.isAnalyticsEventsReady())) return emptyTrafficPayload(dateFrom, dateTo);
-
+  let summaryRaw;
+  let bounceRaw;
+  let trendRaw;
+  let funnelRaw;
+  let topPagesRaw;
+  let sourcesRaw;
+  let devicesRaw;
+  let lastUpdatedRaw;
   const filters = normalizeTrafficFilters(query);
-  const [summaryRaw, bounceRaw, trendRaw, funnelRaw, topPagesRaw, sourcesRaw, devicesRaw, lastUpdatedRaw] = await Promise.all([
-    repo.selectTrafficSummary(dateFrom, dateTo, filters),
-    repo.selectTrafficBounce(dateFrom, dateTo, filters),
-    repo.selectTrafficTrend(dateFrom, dateTo, filters),
-    repo.selectTrafficFunnel(dateFrom, dateTo, filters),
-    repo.selectTrafficTopPages(dateFrom, dateTo, filters),
-    repo.selectTrafficSources(dateFrom, dateTo, filters),
-    repo.selectTrafficDevices(dateFrom, dateTo, filters),
-    repo.selectTrafficLastUpdated(dateFrom, dateTo, filters),
-  ]);
+  try {
+    [summaryRaw, bounceRaw, trendRaw, funnelRaw, topPagesRaw, sourcesRaw, devicesRaw, lastUpdatedRaw] = await Promise.all([
+      repo.selectTrafficSummary(dateFrom, dateTo, filters),
+      repo.selectTrafficBounce(dateFrom, dateTo, filters),
+      repo.selectTrafficTrend(dateFrom, dateTo, filters),
+      repo.selectTrafficFunnel(dateFrom, dateTo, filters),
+      repo.selectTrafficTopPages(dateFrom, dateTo, filters),
+      repo.selectTrafficSources(dateFrom, dateTo, filters),
+      repo.selectTrafficDevices(dateFrom, dateTo, filters),
+      repo.selectTrafficLastUpdated(dateFrom, dateTo, filters),
+    ]);
+  } catch (error) {
+    const code = String(error?.code || '');
+    const msg = String(error?.message || '');
+    const canDowngrade = code === 'ER_BAD_FIELD_ERROR'
+      || code === 'ER_NO_SUCH_TABLE'
+      || code === 'ER_PARSE_ERROR'
+      || /unknown column|doesn't exist|no such table/i.test(msg);
+    if (canDowngrade) {
+      console.warn(`[admin-report] traffic analysis downgraded: ${code || 'UNKNOWN'} ${msg}`);
+      return emptyTrafficPayload(dateFrom, dateTo);
+    }
+    throw error;
+  }
 
   const sessions = Number(summaryRaw.sessions || 0);
   const paymentSuccess = Number(summaryRaw.payment_success_count || 0);

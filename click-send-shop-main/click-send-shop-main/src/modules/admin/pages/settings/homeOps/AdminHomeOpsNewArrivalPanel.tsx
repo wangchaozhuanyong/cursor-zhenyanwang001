@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
+import AdminFieldHint, { AdminLabelWithHint, AdminSectionTitle } from "@/components/admin/AdminFieldHint";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { fetchSiteSettings, updateSiteSettings } from "@/services/admin/settingsService";
 import { toastErrorMessage } from "@/utils/errorMessage";
@@ -67,10 +68,10 @@ export default function AdminHomeOpsNewArrivalPanel() {
   return (
     <section className="rounded-2xl border border-border bg-card p-3 sm:p-4">
       <div className="mb-4">
-        <h2 className="font-semibold text-foreground">新品配置</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          控制首页「新品上市」横滑模块的标题、展示数量与补位规则。
-        </p>
+        <AdminSectionTitle
+          title="新品配置"
+          hint="控制首页「新品上市」横滑模块的标题、展示数量与补位规则。"
+        />
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 md:gap-4">
@@ -103,7 +104,9 @@ export default function AdminHomeOpsNewArrivalPanel() {
             onChange={(e) => setForm((f) => ({ ...f, newArrivalDisplayCount: e.target.value }))}
             placeholder="8"
           />
-          <span className="text-[10px] text-muted-foreground">建议 4–12，服务端最多 16</span>
+          <div className="flex justify-end">
+            <AdminFieldHint text="建议 4–12，服务端最多 16" />
+          </div>
         </label>
         <label className="flex flex-col gap-1">
           <span className="text-xs font-medium text-muted-foreground">显示价格</span>
@@ -118,7 +121,11 @@ export default function AdminHomeOpsNewArrivalPanel() {
           </select>
         </label>
         <label className="flex flex-col gap-1 md:col-span-2">
-          <span className="text-xs font-medium text-muted-foreground">补位商品仅展示有库存</span>
+          <AdminLabelWithHint
+            label="补位商品仅展示有库存"
+            hint="首页新品位优先展示后台标记为「新品」的商品；数量不足时，用最近 14 天内上架的商品补足。选「是」时，补位只拉取库存 > 0 的商品；选「否」时补位可含零库存商品。"
+            className="mb-0"
+          />
           <select
             className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
             disabled={loading}
@@ -128,10 +135,6 @@ export default function AdminHomeOpsNewArrivalPanel() {
             <option value="1">是（推荐）</option>
             <option value="0">否</option>
           </select>
-          <span className="text-[10px] leading-relaxed text-muted-foreground">
-            首页新品位优先展示后台标记为「新品」的商品；数量不足时，用最近 14 天内上架的商品补足。
-            选「是」时，补位只拉取库存 &gt; 0 的商品，避免首页出现已售罄新品；选「否」时补位可含零库存商品。
-          </span>
         </label>
       </div>
 

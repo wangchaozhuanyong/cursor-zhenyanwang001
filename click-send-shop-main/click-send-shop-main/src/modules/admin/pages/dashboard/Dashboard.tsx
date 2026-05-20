@@ -1,5 +1,4 @@
 import { formatDateTime } from "@/utils/formatDateTime";
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useState } from "react";
 import { ShoppingCart, Users, DollarSign, Package } from "lucide-react";
 import StatsCard from "@/components/admin/StatsCard";
@@ -7,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as dashboardService from "@/services/admin/dashboardService";
+import type { DashboardOverview, DashboardRecentOrderRow } from "@/types/admin";
 import { Tx } from "@/components/admin/AdminText";
 import { getOrderStatusBadgeClass, getOrderStatusLabel } from "@/constants/statusDictionary";
 
@@ -14,7 +14,7 @@ const PIE_COLORS = ["var(--theme-price)", "hsl(210, 80%, 55%)", "hsl(150, 60%, 4
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<DashboardOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +23,7 @@ export default function Dashboard() {
     setError(null);
     dashboardService.fetchDashboardStats()
       .then(setStats)
-      .catch(() => setError("加载失败"))
+      .catch(() => setError("????"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -41,7 +41,7 @@ export default function Dashboard() {
           className="rounded-full px-5 py-2 text-sm font-semibold btn-theme-gradient"
          
         ><Tx>
-          重试
+          ??
         </Tx></button>
       </div>
     );
@@ -90,19 +90,19 @@ export default function Dashboard() {
   return (
     <div className="space-y-5 sm:space-y-6">
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatsCard icon={ShoppingCart} label="今日订单" value={stats?.todayOrders ?? 0} trend="up" />
-        <StatsCard icon={DollarSign} label="今日销售额" value={`RM ${(stats?.todayRevenue ?? 0).toFixed(2)}`} trend="up" />
-        <StatsCard icon={Users} label="今日新用户" value={stats?.todayNewUsers ?? 0} trend="up" />
-        <StatsCard icon={Package} label="待处理订单" value={stats?.pendingOrders ?? 0} trend="up" />
-        <StatsCard icon={ShoppingCart} label="总订单数" value={stats?.totalOrders ?? 0} trend="up" />
-        <StatsCard icon={DollarSign} label="总销售额" value={`RM ${(stats?.totalRevenue ?? 0).toFixed(2)}`} trend="up" />
-        <StatsCard icon={Users} label="总用户数" value={stats?.totalUsers ?? 0} trend="up" />
-        <StatsCard icon={Package} label="总商品数" value={stats?.totalProducts ?? 0} trend="up" />
+        <StatsCard icon={ShoppingCart} label="????" value={stats?.todayOrders ?? 0} trend="up" />
+        <StatsCard icon={DollarSign} label="?????" value={`RM ${(stats?.todayRevenue ?? 0).toFixed(2)}`} trend="up" />
+        <StatsCard icon={Users} label="?????" value={stats?.todayNewUsers ?? 0} trend="up" />
+        <StatsCard icon={Package} label="?????" value={stats?.pendingOrders ?? 0} trend="up" />
+        <StatsCard icon={ShoppingCart} label="????" value={stats?.totalOrders ?? 0} trend="up" />
+        <StatsCard icon={DollarSign} label="????" value={`RM ${(stats?.totalRevenue ?? 0).toFixed(2)}`} trend="up" />
+        <StatsCard icon={Users} label="????" value={stats?.totalUsers ?? 0} trend="up" />
+        <StatsCard icon={Package} label="????" value={stats?.totalProducts ?? 0} trend="up" />
       </div>
 
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-6 lg:col-span-2 theme-shadow">
-          <h3 className="mb-3 text-sm font-semibold text-foreground sm:mb-4"><Tx>7日销售趋势</Tx></h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground sm:mb-4"><Tx>7?????</Tx></h3>
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={salesTrendData}>
               <defs>
@@ -118,19 +118,19 @@ export default function Dashboard() {
                 contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
                 labelStyle={{ color: "hsl(var(--foreground))" }}
               />
-              <Area type="monotone" dataKey="sales" stroke="var(--theme-price)" fillOpacity={1} fill="url(#salesGradient)" name="销售额 (RM)" />
+              <Area type="monotone" dataKey="sales" stroke="var(--theme-price)" fillOpacity={1} fill="url(#salesGradient)" name="??? (RM)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-6 theme-shadow">
-          <h3 className="mb-3 text-sm font-semibold text-foreground sm:mb-4"><Tx>品类分布</Tx></h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground sm:mb-4"><Tx>????</Tx></h3>
           {categoryData.length > 0 ? (
             <>
               <ResponsiveContainer width="100%" height={180}>
                 <PieChart>
                   <Pie data={categoryData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={4} dataKey="value">
-                    {categoryData.map((_: any, i: number) => (
+                    {categoryData.map((_, i) => (
                       <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                     ))}
                   </Pie>
@@ -138,7 +138,7 @@ export default function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
               <div className="mt-2 flex flex-wrap justify-center gap-3">
-                {categoryData.map((c: any, i: number) => (
+                {categoryData.map((c, i) => (
                   <div key={c.name} className="flex items-center gap-1">
                     <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
                     <span className="text-[10px] text-muted-foreground">{c.name} ({c.value})</span>
@@ -147,13 +147,13 @@ export default function Dashboard() {
               </div>
             </>
           ) : (
-            <p className="py-8 text-center text-sm text-muted-foreground"><Tx>暂无分类数据</Tx></p>
+            <p className="py-8 text-center text-sm text-muted-foreground"><Tx>??????</Tx></p>
           )}
         </div>
       </div>
 
       <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-6 theme-shadow">
-        <h3 className="mb-3 text-sm font-semibold text-foreground sm:mb-4"><Tx>本周订单统计</Tx></h3>
+        <h3 className="mb-3 text-sm font-semibold text-foreground sm:mb-4"><Tx>??????</Tx></h3>
         {weeklyOrderData.length > 0 ? (
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={weeklyOrderData}>
@@ -161,30 +161,30 @@ export default function Dashboard() {
               <XAxis dataKey="day" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
               <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
               <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }} />
-              <Bar dataKey="completed" fill="var(--theme-price)" radius={[4, 4, 0, 0]} name="已完成" />
-              <Bar dataKey="cancelled" fill="var(--theme-danger)" radius={[4, 4, 0, 0]} name="已取消" />
+              <Bar dataKey="completed" fill="var(--theme-price)" radius={[4, 4, 0, 0]} name="???" />
+              <Bar dataKey="cancelled" fill="var(--theme-danger)" radius={[4, 4, 0, 0]} name="???" />
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <p className="py-8 text-center text-sm text-muted-foreground"><Tx>暂无订单数据</Tx></p>
+          <p className="py-8 text-center text-sm text-muted-foreground"><Tx>??????</Tx></p>
         )}
       </div>
 
       <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-6 theme-shadow">
         <div className="mb-3 flex items-center justify-between sm:mb-4">
-          <h3 className="text-sm font-semibold text-foreground"><Tx>最近订单</Tx></h3>
+          <h3 className="text-sm font-semibold text-foreground"><Tx>????</Tx></h3>
           <PermissionGate permission="order.view">
-            <button type="button" onClick={() => navigate("/admin/orders")} className="touch-manipulation min-h-[44px] px-2 text-xs text-[var(--theme-price)] hover:underline"><Tx>查看全部</Tx></button>
+            <button type="button" onClick={() => navigate("/admin/orders")} className="touch-manipulation min-h-[44px] px-2 text-xs text-[var(--theme-price)] hover:underline"><Tx>????</Tx></button>
           </PermissionGate>
         </div>
         {recentOrders.length > 0 ? (
           <div className="space-y-3">
-            {recentOrders.map((o: any) => (
+            {recentOrders.map((o: DashboardRecentOrderRow) => (
               <PermissionGate key={o.id} permission="order.view" fallback={(
                 <div className="flex min-h-[52px] items-center justify-between theme-rounded border border-[var(--theme-border)] p-3 opacity-80">
                   <div>
                     <p className="text-sm font-medium text-foreground font-mono">{o.order_no}</p>
-                    <p className="text-xs text-muted-foreground">{o.contact_name} · {formatDateTime(o.created_at)}</p>
+                    <p className="text-xs text-muted-foreground">{o.contact_name} ? {formatDateTime(o.created_at)}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-foreground">RM {o.total_amount?.toFixed(2)}</p>
@@ -201,7 +201,7 @@ export default function Dashboard() {
                 >
                   <div>
                     <p className="text-sm font-medium text-foreground font-mono">{o.order_no}</p>
-                    <p className="text-xs text-muted-foreground">{o.contact_name} · {formatDateTime(o.created_at)}</p>
+                    <p className="text-xs text-muted-foreground">{o.contact_name} ? {formatDateTime(o.created_at)}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-foreground">RM {o.total_amount?.toFixed(2)}</p>
@@ -212,7 +212,7 @@ export default function Dashboard() {
             ))}
           </div>
         ) : (
-          <p className="py-4 text-center text-sm text-muted-foreground"><Tx>暂无订单</Tx></p>
+          <p className="py-4 text-center text-sm text-muted-foreground"><Tx>????</Tx></p>
         )}
       </div>
     </div>

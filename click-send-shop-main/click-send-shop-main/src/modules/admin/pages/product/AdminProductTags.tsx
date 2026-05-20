@@ -7,6 +7,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { LoadingButton } from "@/modules/micro-interactions";
 import type { ProductTag } from "@/types/product";
 import { Tx } from "@/components/admin/AdminText";
+import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { THEME_HOVER_BG_DANGER, THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 
@@ -92,8 +93,11 @@ export default function AdminProductTags() {
     <div className="space-y-4">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-foreground"><Tx>标签管理</Tx></h2>
-          <p className="mt-1 text-xs text-muted-foreground"><Tx>创建后，在「商品管理 → 新增/编辑商品」中勾选即可关联；前台列表与详情页会展示。</Tx></p>
+          <AdminPageTitle
+            title={<Tx>标签管理</Tx>}
+            hint={<Tx>创建后，在「商品管理 → 新增/编辑商品」中勾选即可关联；前台列表与详情页会展示。</Tx>}
+            className="text-lg [&_h1]:text-lg [&_h1]:font-semibold"
+          />
         </div>
         <PermissionGate permission="tag.manage">
           <button

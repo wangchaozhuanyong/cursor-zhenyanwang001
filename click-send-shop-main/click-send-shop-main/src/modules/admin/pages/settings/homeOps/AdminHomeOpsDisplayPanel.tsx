@@ -7,6 +7,7 @@ import { LoadingButton } from "@/modules/micro-interactions";
 import * as homeOpsService from "@/services/admin/homeOpsService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
+import { AdminSectionTitle } from "@/components/admin/AdminFieldHint";
 import { adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 
 export default function AdminHomeOpsDisplayPanel() {
@@ -45,8 +46,10 @@ export default function AdminHomeOpsDisplayPanel() {
   return (
     <section className="rounded-2xl border border-border bg-card p-3 sm:p-4">
       <div className="mb-4">
-        <h2 className="font-semibold text-foreground"><Tx>展示规则</Tx></h2>
-        <p className="mt-1 text-xs text-muted-foreground"><Tx>控制各商品区块每屏展示数量（2×2 网格时默认 4 个）。</Tx></p>
+        <AdminSectionTitle
+          title={<Tx>展示规则</Tx>}
+          hint={<Tx>控制各商品区块每屏展示数量（2×2 网格时默认 4 个）。</Tx>}
+        />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">

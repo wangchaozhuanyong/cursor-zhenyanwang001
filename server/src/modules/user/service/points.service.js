@@ -28,13 +28,13 @@ async function changeUserPoints(conn, params) {
   } = params;
 
   const delta = toInt(amount);
-  if (!userId) throw new BusinessError(400, 'Missing userId');
-  if (!action) throw new BusinessError(400, 'Missing points action');
+  if (!userId) throw new BusinessError(400, '缺少用户 ID');
+  if (!action) throw new BusinessError(400, '缺少积分操作类型');
   if (!delta) return { skipped: true, amount: 0 };
 
   let finalRelatedRecordId = relatedRecordId;
   if (!finalRelatedRecordId && isOrderPointsAction(action)) {
-    throw new BusinessError(400, 'Missing relatedRecordId for order points action');
+    throw new BusinessError(400, '订单积分操作缺少关联记录 ID');
   }
   if (!finalRelatedRecordId && sourceType === 'admin_adjust') {
     finalRelatedRecordId = `admin_adjust:${generateId()}`;
@@ -46,7 +46,7 @@ async function changeUserPoints(conn, params) {
   }
 
   const account = await repo.selectAccountForUpdate(conn, userId);
-  if (!account) throw new BusinessError(404, 'Points account not found');
+  if (!account) throw new BusinessError(404, '积分账户不存在');
   const before = toInt(account.balance);
   const after = before + delta;
   if (!allowNegative && after < 0) {
@@ -76,7 +76,7 @@ async function changeUserPoints(conn, params) {
       });
       return { skipped: false, pending: true, recordId: pendingRecordId, balanceBefore: before, balanceAfter: before, amount: 0 };
     }
-    throw new BusinessError(400, 'Insufficient points balance');
+    throw new BusinessError(400, '积分余额不足');
   }
 
   await repo.updateAccountBalance(conn, userId, delta, after);

@@ -130,6 +130,7 @@ export const useCartStore = create<CartState>()(
 
         try {
           await cartService.addToCart(product.id, qty, variant?.id, variant?.sku_code ?? "");
+          await get().loadCart();
         } catch (e) {
           set(beforeSnapshot);
           throw (e instanceof Error ? e : new Error("加入购物车失败"));
@@ -151,6 +152,7 @@ export const useCartStore = create<CartState>()(
         if (isLoggedIn() && !isLocalOnlyCartProductId(productId)) {
           try {
             await cartService.removeFromCart(productId, variantId);
+            await get().loadCart();
           } catch (e) {
             set(beforeSnapshot);
             throw (e instanceof Error ? e : new Error("删除失败"));
@@ -169,6 +171,7 @@ export const useCartStore = create<CartState>()(
         if (isLoggedIn() && !isLocalOnlyCartProductId(productId)) {
           try {
             await cartService.updateCartItemQty(productId, qty, variantId);
+            await get().loadCart();
           } catch (e) {
             set(beforeSnapshot);
             throw (e instanceof Error ? e : new Error("更新失败"));
@@ -183,6 +186,7 @@ export const useCartStore = create<CartState>()(
         if (isLoggedIn()) {
           try {
             await cartService.clearCart();
+            await get().loadCart();
           } catch (e) {
             set({ items: prev, selection: prevSel });
             throw (e instanceof Error ? e : new Error("清空失败"));

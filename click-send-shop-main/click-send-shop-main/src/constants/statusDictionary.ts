@@ -51,11 +51,12 @@ export const RETURN_STATUS = {
   REFUNDED: "refunded",
   EXCHANGE_SHIPPING: "exchange_shipping",
   COMPLETED: "completed",
+  CANCELLED: "cancelled",
 } as const;
 
 export const ORDER_STATUS_META: Record<OrderStatus, { label: string; badgeClass: string }> = {
   pending: { label: "待付款", badgeClass: THEME_BADGE_WARNING },
-  paid: { label: "已付款", badgeClass: THEME_BADGE_PRICE },
+  paid: { label: "待发货", badgeClass: THEME_BADGE_PRICE },
   shipped: { label: "已发货", badgeClass: THEME_BADGE_PRIMARY },
   completed: { label: "已完成", badgeClass: THEME_BADGE_SUCCESS },
   cancelled: { label: "已取消", badgeClass: THEME_BADGE_DANGER },
@@ -84,6 +85,7 @@ export const RETURN_STATUS_META: Record<ReturnStatus, { label: string; badgeClas
   refunded: { label: "已退款", badgeClass: THEME_BADGE_SUCCESS },
   exchange_shipping: { label: "换货发货中", badgeClass: THEME_BADGE_ACCENT },
   completed: { label: "已完成", badgeClass: THEME_BADGE_SUCCESS },
+  cancelled: { label: "已取消", badgeClass: THEME_BADGE_MUTED },
 };
 
 export const ORDER_STATUS_FILTER_OPTIONS: Array<{ value: "" | OrderStatus; label: string }> = [
@@ -93,6 +95,8 @@ export const ORDER_STATUS_FILTER_OPTIONS: Array<{ value: "" | OrderStatus; label
   { value: ORDER_STATUS.SHIPPED, label: "已发货" },
   { value: ORDER_STATUS.COMPLETED, label: "已完成" },
   { value: ORDER_STATUS.CANCELLED, label: "已取消" },
+  { value: ORDER_STATUS.REFUNDING, label: "退款中" },
+  { value: ORDER_STATUS.REFUNDED, label: "已退款" },
 ];
 
 export const PAYMENT_STATUS_FILTER_OPTIONS: Array<{ value: "" | PaymentStatus; label: string }> = [
@@ -118,6 +122,7 @@ export const RETURN_STATUS_FILTER_OPTIONS: Array<{ key: "all" | ReturnStatus; la
   { key: RETURN_STATUS.REFUNDED, label: "已退款" },
   { key: RETURN_STATUS.EXCHANGE_SHIPPING, label: "换货发货中" },
   { key: RETURN_STATUS.COMPLETED, label: "已完成" },
+  { key: RETURN_STATUS.CANCELLED, label: "已取消" },
 ];
 
 export const ORDER_STATUS_TAB_LABELS: Record<OrderStatus, string> = {

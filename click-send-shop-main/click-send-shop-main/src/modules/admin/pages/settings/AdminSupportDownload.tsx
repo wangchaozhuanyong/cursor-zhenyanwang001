@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ImagePlus, Loader2, Plus, Save, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
+import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { Tx } from "@/components/admin/AdminText";
 import { fetchSiteSettings, updateSiteSettings } from "@/services/admin/settingsService";
 import { uploadSingle } from "@/services/uploadService";
@@ -267,8 +268,10 @@ export default function AdminSupportDownload() {
       <div className="space-y-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-xl font-bold text-foreground">客服下载</h1>
-            <p className="text-sm text-muted-foreground">配置前台 /support-download 的客服二维码、外部 App 跳转和三端下载说明。</p>
+            <AdminPageTitle
+              title="客服下载"
+              hint="配置前台 /support-download 的客服二维码、外部 App 跳转和三端下载说明。"
+            />
           </div>
           <button type="button" onClick={save} disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--theme-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
             {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}

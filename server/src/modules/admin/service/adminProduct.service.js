@@ -28,6 +28,15 @@ function requireProductApi(name) {
   return fn;
 }
 
+function bumpCatalogCache() {
+  try {
+    const fn = getProductApi().clearCatalogCache;
+    if (typeof fn === 'function') fn();
+  } catch (err) {
+    console.warn('[adminProduct] clearCatalogCache:', err?.message || err);
+  }
+}
+
 function buildListWhere(query) {
   let where = 'WHERE deleted_at IS NULL';
   const params = [];
@@ -329,6 +338,7 @@ async function createProduct(body, adminUserId, req) {
       after: { name, price, stock: stock || 0, lifecycle_status: lcResolved, status: statusStr },
       result: 'success',
     });
+    bumpCatalogCache();
     return {
       data: { ...formatProduct(row), spec_groups: matrix.spec_groups, spec_values: matrix.spec_groups.flatMap((g) => g.values || []), variants: vrows.map(formatVariantRow), tags: tagMap.get(id) || [] },
       message: '创建成功',
@@ -451,6 +461,7 @@ async function updateProduct(id, body, adminUserId, req) {
       },
       result: 'success',
     });
+    bumpCatalogCache();
     return {
       data: { ...formatProduct(row), spec_groups: matrix.spec_groups, spec_values: matrix.spec_groups.flatMap((g) => g.values || []), variants: vrows.map(formatVariantRow), tags: tagMap.get(id) || [] },
       message: '更新成功',
@@ -473,8 +484,8 @@ async function updateProduct(id, body, adminUserId, req) {
 
 async function updateProductTags(id, tagIds, adminUserId, req) {
   const row = await repo.selectProductById(id);
-  if (!row) return { error: { code: 404, message: 'Product not found' } };
-  if (!Array.isArray(tagIds)) return { error: { code: 400, message: 'tag_ids must be an array' } };
+  if (!row) return { error: { code: 404, message: '商品不存在' } };
+  if (!Array.isArray(tagIds)) return { error: { code: 400, message: 'tag_ids 必须为数组' } };
   await requireProductApi('replaceTagAssignments')(id, tagIds);
   const vrows = await variantRepo.selectVariantsByProductId(id);
   const tagMap = await requireProductApi('selectTagsByProductIds')([id]);
@@ -493,9 +504,10 @@ async function updateProductTags(id, tagIds, adminUserId, req) {
     after: { tag_ids: tagIds },
     result: 'success',
   });
+  bumpCatalogCache();
   return {
     data: { product_id: id, tags: tagMap.get(id) || [] },
-    message: 'Product tags updated',
+    message: '商品标签已更新',
   };
 }
 
@@ -523,6 +535,7 @@ async function patchProductLifecycle(id, lifecycleStatus, adminUserId, req) {
   });
   const vrows = await variantRepo.selectVariantsByProductId(id);
   const tagMap = await requireProductApi('selectTagsByProductIds')([id]);
+  bumpCatalogCache();
   return {
     data: { ...formatProduct(row), variants: vrows.map(formatVariantRow), tags: tagMap.get(id) || [] },
     message: '状态已更新',
@@ -543,6 +556,7 @@ async function deleteProduct(id, adminUserId, req) {
       before: before ? { name: before.name, status: before.status } : null,
       result: 'success',
     });
+    bumpCatalogCache();
     return { data: null, message: '已删除' };
   } catch (err) {
     await writeAuditLog({
@@ -726,9 +740,10 @@ async function importProductsCsv(text, adminUserId) {
   }
 
   await logAdminAction(adminUserId, '导入商品', `新建 ${created}，更新 ${updated}`);
+  if (created > 0 || updated > 0) bumpCatalogCache();
   return {
     data: { created, updated },
-    message: `Import completed: created ${created}, updated ${updated}`,
+    message: `导入完成：新建 ${created} 条，更新 ${updated} 条`,
   };
 }
 
@@ -736,7 +751,7 @@ async function batchUpdateStatus(ids, status, adminUserId, req) {
   if (!Array.isArray(ids) || ids.length === 0) return { error: { code: 400, message: '请选择商品' } };
   const lcMap = { active: 1, inactive: 2, draft: 0 };
   const lc = lcMap[status];
-  if (lc === undefined) return { error: { code: 400, message: 'Invalid status' } };
+  if (lc === undefined) return { error: { code: 400, message: '状态无效' } };
   const st = statusVarcharFromLifecycle(lc);
   await repo.batchUpdateStatus(ids, st, lc);
   const verb = { active: '上架', inactive: '下架', draft: '设为草稿' }[status];
@@ -745,11 +760,12 @@ async function batchUpdateStatus(ids, status, adminUserId, req) {
     actionType: 'product.batch_status',
     objectType: 'product',
     objectId: ids.join(','),
-    summary: `Batch ${verb} ${ids.length} products`,
+    summary: `批量${verb} ${ids.length} 个商品`,
     after: { status: st, lifecycle_status: lc, count: ids.length },
     result: 'success',
   });
-  return { message: `${verb} ${ids.length} products` };
+  bumpCatalogCache();
+  return { message: `已${verb} ${ids.length} 个商品` };
 }
 
 module.exports = {

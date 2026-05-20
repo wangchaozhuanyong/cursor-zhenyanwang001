@@ -48,11 +48,22 @@ export function validateStrongPassword(password: string): string | null {
 }
 
 const AUTH_ERROR_MAP: Record<string, string> = {
-  "Authentication failed": "手机号或密码不正确",
+  "Authentication failed": "登录失败，请重试",
   "Phone already registered": "该手机号已注册，请直接登录",
   "Invalid input": "填写信息不正确，请检查后重试",
   "Invalid phone number": "手机号格式不正确",
   "Invalid invite code": "邀请码不存在或不可用",
+  "微信登录未开启": "微信登录未开启",
+  "微信登录未配置或配置不完整": "微信登录未配置或配置不完整",
+  "第三方登录未开启": "第三方登录未开启",
+  "Google 登录未配置或配置不完整": "Google 登录未配置或配置不完整",
+  "请先登录后再绑定微信": "请先登录后再绑定微信",
+  "微信绑定会话已过期，请重新授权": "微信绑定会话已过期，请重新授权",
+  "当前账号未绑定微信": "当前账号未绑定微信",
+  "该微信已绑定其他账号": "该微信已绑定其他账号",
+  "该手机号已绑定其他账号": "该手机号已绑定其他账号",
+  "解绑微信前请先绑定手机号或设置密码": "解绑微信前请先绑定手机号或设置密码",
+  "登录凭证无效或已过期": "登录凭证无效或已过期",
   "Password reset token is invalid": "重置令牌无效，请重新申请",
   "Password reset token has expired": "重置令牌已过期，请重新申请",
   "Request failed (400)": "填写信息不正确，请检查后重试",

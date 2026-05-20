@@ -22,7 +22,7 @@ async function getCart(userId) {
 async function resolveVariant(productId, variantId) {
   if (variantId) {
     const variant = await repo.selectActiveVariant(productId, variantId);
-    if (!variant) throw new ValidationError('Variant not found');
+    if (!variant) throw new ValidationError('规格不存在');
     return variant;
   }
   return repo.selectDefaultVariant(productId);
@@ -31,10 +31,10 @@ async function resolveVariant(productId, variantId) {
 async function addToCart(userId, body) {
   const { productId, qty, variant_id: variantId } = body;
   const quantity = Number(qty || 0);
-  if (!Number.isFinite(quantity) || quantity <= 0) throw new ValidationError('Quantity must be greater than 0');
+  if (!Number.isFinite(quantity) || quantity <= 0) throw new ValidationError('数量必须大于 0');
 
   const product = await repo.selectActiveProductId(productId);
-  if (!product) throw new NotFoundError('Product not found or inactive');
+  if (!product) throw new NotFoundError('商品不存在或已下架');
 
   const variant = await resolveVariant(productId, variantId);
   const lineVariantId = variant?.id || '';
@@ -43,9 +43,9 @@ async function addToCart(userId, body) {
   const nextQty = existingQty + quantity;
 
   if (variant && Number(variant.stock || 0) < nextQty) {
-    throw new ValidationError(variantId ? 'Insufficient variant stock' : 'Insufficient default variant stock');
+    throw new ValidationError(variantId ? '规格库存不足' : '默认规格库存不足');
   }
-  if (!variant && Number(product.stock || 0) < nextQty) throw new ValidationError('Insufficient product stock');
+  if (!variant && Number(product.stock || 0) < nextQty) throw new ValidationError('商品库存不足');
 
   const skuCode = variant?.sku_code || body.sku_code || '';
   await repo.upsertCartItem(generateId(), userId, productId, quantity, lineVariantId, skuCode);
@@ -56,21 +56,21 @@ async function addToCart(userId, body) {
 
 async function updateCartItem(userId, productId, body, variantId = '') {
   const quantity = Number(body.qty || 0);
-  if (!Number.isFinite(quantity) || quantity <= 0) throw new ValidationError('Quantity must be greater than 0');
+  if (!Number.isFinite(quantity) || quantity <= 0) throw new ValidationError('数量必须大于 0');
 
   const product = await repo.selectActiveProductId(productId);
-  if (!product) throw new NotFoundError('Product not found or inactive');
+  if (!product) throw new NotFoundError('商品不存在或已下架');
 
   const variant = await resolveVariant(productId, variantId);
   const lineVariantId = variant?.id || '';
 
   if (variant && Number(variant.stock || 0) < quantity) {
-    throw new ValidationError(variantId ? 'Insufficient variant stock' : 'Insufficient default variant stock');
+    throw new ValidationError(variantId ? '规格库存不足' : '默认规格库存不足');
   }
-  if (!variant && Number(product.stock || 0) < quantity) throw new ValidationError('Insufficient product stock');
+  if (!variant && Number(product.stock || 0) < quantity) throw new ValidationError('商品库存不足');
 
   const affected = await repo.updateCartItemQty(userId, productId, quantity, lineVariantId);
-  if (affected === 0) throw new NotFoundError('Cart item not found');
+  if (affected === 0) throw new NotFoundError('购物车商品不存在');
 
   const row = await repo.selectCartLine(userId, productId, lineVariantId);
   return { data: formatCartItem(row) };
@@ -78,12 +78,12 @@ async function updateCartItem(userId, productId, body, variantId = '') {
 
 async function removeCartItem(userId, productId, variantId = '') {
   await repo.deleteCartItem(userId, productId, variantId);
-  return { message: 'Removed' };
+  return { message: '已移除' };
 }
 
 async function clearCart(userId) {
   await repo.deleteAllCartItems(userId);
-  return { message: 'Cart cleared' };
+  return { message: '购物车已清空' };
 }
 
 module.exports = {

@@ -52,6 +52,7 @@ const homeOpsCtrl = require('../controller/adminHomeOps.controller');
 const memberLevelCtrl = require('../controller/adminMemberLevel.controller');
 const paySchemas = require('../../payment/payments.schemas');
 const productSchemas = require('../schemas/adminProduct.schemas');
+const adminOrderSchemas = require('../schemas/adminOrder.schemas');
 const adminUploadCtrl = require('../controller/adminUpload.controller');
 
 const uploadCsv = multer({
@@ -245,9 +246,33 @@ router.get('/checkout-abandonments', adminAuth, requirePermission('order.view'),
 router.get('/orders', adminAuth, requirePermission('order.view'), orderCtrl.list);
 router.get('/orders/pending-shipments', adminAuth, requirePermission('order.ship'), orderCtrl.listPendingShipments);
 router.get('/orders/:id', adminAuth, requirePermission('order.view'), orderCtrl.getById);
-router.put('/orders/:id/status', adminAuth, requirePermission('order.update'), orderCtrl.updateStatus);
-router.put('/orders/:id/ship', adminAuth, requirePermission('order.ship'), orderCtrl.ship);
-router.post('/orders/batch-ship', adminAuth, requirePermission('order.ship'), orderCtrl.batchShip);
+router.put(
+  '/orders/:id/status',
+  adminAuth,
+  requirePermission('order.update'),
+  validate({
+    params: adminOrderSchemas.adminOrderIdParamsSchema,
+    body: adminOrderSchemas.adminUpdateOrderStatusBodySchema,
+  }),
+  orderCtrl.updateStatus,
+);
+router.put(
+  '/orders/:id/ship',
+  adminAuth,
+  requirePermission('order.ship'),
+  validate({
+    params: adminOrderSchemas.adminOrderIdParamsSchema,
+    body: adminOrderSchemas.adminShipOrderBodySchema,
+  }),
+  orderCtrl.ship,
+);
+router.post(
+  '/orders/batch-ship',
+  adminAuth,
+  requirePermission('order.ship'),
+  validate({ body: adminOrderSchemas.adminBatchShipBodySchema }),
+  orderCtrl.batchShip,
+);
 router.post('/orders/:id/logistics/refresh', adminAuth, requirePermission('order.ship'), logisticsCtrl.refreshOrderTracking);
 
 /* ---- Inventory Center（SKU 维度）---- */

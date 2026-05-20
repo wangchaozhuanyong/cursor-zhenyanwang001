@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Plus, Scale } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import PermissionGate from "@/components/admin/PermissionGate";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import Pagination from "@/components/admin/Pagination";
@@ -10,6 +12,7 @@ import type { PaymentReconciliationRow } from "@/types/adminPayment";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
+import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import {
   labelChannelCode,
@@ -74,8 +77,10 @@ export default function AdminPaymentReconciliations() {
     <PermissionGate permission="payment.manage">
       <div className="p-4 md:p-6">
         <div className="mb-2">
-          <h1 className="text-xl font-bold text-foreground"><Tx>支付管理</Tx></h1>
-          <p className="text-sm text-muted-foreground"><Tx>按日 / 渠道汇总实收与差异（手续费来自渠道 JSON 配置）</Tx></p>
+          <AdminPageTitle
+            title={<Tx>支付管理</Tx>}
+            hint={<Tx>按日 / 渠道汇总实收与差异（手续费来自渠道 JSON 配置）</Tx>}
+          />
         </div>
         <PaymentAdminSubnav />
 
@@ -175,8 +180,10 @@ export default function AdminPaymentReconciliations() {
             </tr>
           )}
           footer={<Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={() => {}} />}
-          emptyIcon={Scale}
-          emptyTitle="暂无对账记录"
+          emptyIcon={ADMIN_EMPTY_GUIDES.paymentReconciliations.icon}
+          emptyTitle={ADMIN_EMPTY_GUIDES.paymentReconciliations.title}
+          emptyDescription={ADMIN_EMPTY_GUIDES.paymentReconciliations.description}
+          emptyAction={<AdminEmptyGuideActions guide={ADMIN_EMPTY_GUIDES.paymentReconciliations} />}
           renderRow={(r) => (
             <>
               <td className="px-3 py-2">{r.reconcile_date}</td>

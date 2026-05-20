@@ -80,7 +80,7 @@ async function updateProfileAdmin(req, body) {
       certificate_fingerprint: body.certificate_fingerprint || '',
     },
   });
-  return { message: 'MyInvois profile updated' };
+  return { message: 'MyInvois 配置已更新' };
 }
 
 async function getActiveProfileOrNull(q) {
@@ -252,7 +252,7 @@ async function listDocumentsAdmin(query) {
 
 async function getDocumentAdmin(id) {
   const row = await repo.selectDocumentById(pool, id);
-  if (!row) throw new NotFoundError('Message');
+  if (!row) throw new NotFoundError('发票文档不存在');
   return {
     data: {
       ...row,
@@ -265,7 +265,7 @@ async function getDocumentAdmin(id) {
 
 async function retryDocumentAdmin(id) {
   const row = await repo.selectDocumentById(pool, id);
-  if (!row) throw new NotFoundError('Message');
+  if (!row) throw new NotFoundError('发票文档不存在');
   await repo.resetDocumentForRetry(pool, id);
   await repo.insertEvent(pool, {
     id: generateId(),
@@ -273,14 +273,14 @@ async function retryDocumentAdmin(id) {
     eventType: 'document.retry_requested',
     status: 'queued',
   });
-  return { message: 'Message' };
+  return { message: '已加入重试队列' };
 }
 
 async function submitDocumentAdmin(id) {
   const row = await repo.selectDocumentById(pool, id);
-  if (!row) throw new NotFoundError('Message');
+  if (!row) throw new NotFoundError('发票文档不存在');
   await processDocument(row);
-  return { message: 'Message' };
+  return { message: '提交处理完成' };
 }
 
 async function processPendingBatch(limit = 20) {
@@ -296,11 +296,11 @@ async function processPendingBatch(limit = 20) {
 
 async function processDocument(row) {
   const profile = await repo.selectActiveProfile(pool);
-  if (!profile) throw new ValidationError('Message');
+  if (!profile) throw new ValidationError('MyInvois 配置未就绪');
   const payload = parseJson(row.payload_json, {});
   try {
     if (process.env.MYINVOIS_SUBMIT_ENABLED !== '1') {
-      await repo.markDocumentReady(pool, row.id, 'Message');
+      await repo.markDocumentReady(pool, row.id, '提交未开启，文档已标记为就绪');
       await repo.insertEvent(pool, {
         id: generateId(),
         documentId: row.id,
@@ -333,7 +333,7 @@ async function processDocument(row) {
 
 async function createReconciliationAdmin(req, body) {
   const reconcileDate = body.reconcile_date;
-  if (!reconcileDate) throw new ValidationError('Message');
+  if (!reconcileDate) throw new ValidationError('对账日期必填');
   const agg = await repo.aggregateDocumentsByDate(pool, reconcileDate, body.document_type || '');
   const id = generateId();
   await repo.insertReconciliation(pool, {
@@ -348,7 +348,7 @@ async function createReconciliationAdmin(req, body) {
     notes: body.notes || '',
     createdBy: req.user?.id || null,
   });
-  return { data: { id }, message: 'Message' };
+  return { data: { id }, message: '对账记录已创建' };
 }
 
 let schedulerTimer = null;

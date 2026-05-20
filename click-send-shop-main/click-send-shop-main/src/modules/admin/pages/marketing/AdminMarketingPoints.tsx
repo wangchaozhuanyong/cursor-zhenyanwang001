@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { Tx } from "@/components/admin/AdminText";
+import AdminFieldHint, { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import AdminPointsRecords from "@/modules/admin/pages/user/AdminPointsRecords";
 import {
   adjustUserPoints,
@@ -49,7 +50,7 @@ export default function AdminMarketingPoints() {
   const [stats, setStats] = useState({ totalEarned: 0, totalDeducted: 0, totalRecords: 0, activeUsers: 0 });
   const [loading, setLoading] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const [nextSettings, nextRules, records] = await Promise.all([
@@ -59,17 +60,17 @@ export default function AdminMarketingPoints() {
       ]);
       setSettings(nextSettings || {});
       setRules(nextRules?.list || []);
-      setStats(records.stats || stats);
+      setStats(records.stats || { totalEarned: 0, totalDeducted: 0, totalRecords: 0, activeUsers: 0 });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "加载积分管理数据失败");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    load();
-  }, []);
+    void load();
+  }, [load]);
 
   const setSetting = (key: string, value: string | number | boolean) => setSettings((s) => {
     const next = { ...s, [key]: value };
@@ -132,8 +133,10 @@ export default function AdminMarketingPoints() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-foreground"><Tx>活动管理 / 积分管理</Tx></h1>
-          <p className="mt-1 text-sm text-muted-foreground"><Tx>订单积分、商品规则、抵扣比例和积分流水统一在这里维护。</Tx></p>
+          <AdminPageTitle
+            title={<Tx>活动管理 / 积分管理</Tx>}
+            hint={<Tx>订单积分、商品规则、抵扣比例和积分流水统一在这里维护。</Tx>}
+          />
         </div>
         <button onClick={load} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-foreground" disabled={loading}><RefreshCw className="h-4 w-4" />刷新</button>
       </div>
@@ -214,8 +217,9 @@ export default function AdminMarketingPoints() {
       ) : null}
 
       {tab === "高级设置" ? (
-        <div className="rounded-xl border border-dashed border-border bg-card p-4 text-sm text-muted-foreground">
-          <Tx>积分有效期、生日多倍积分、节日多倍积分、会员等级自动升级、积分兑换礼品为预留功能；当前不会影响订单积分主流程。</Tx>
+        <div className="flex items-center gap-2 rounded-xl border border-dashed border-border bg-card px-4 py-3 text-sm text-foreground">
+          <Tx>高级设置</Tx>
+          <AdminFieldHint text={<Tx>积分有效期、生日多倍积分、节日多倍积分、会员等级自动升级、积分兑换礼品为预留功能；当前不会影响订单积分主流程。</Tx>} />
         </div>
       ) : null}
     </div>

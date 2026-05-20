@@ -65,7 +65,7 @@ async function listRolesWithPermissionIds() {
 }
 
 async function selectUserLegacyRole(userId) {
-  const [[row]] = await db.query(`SELECT id, role FROM users WHERE id = ?`, [userId]);
+  const [[row]] = await db.query(`SELECT id, role, account_status FROM users WHERE id = ? AND deleted_at IS NULL`, [userId]);
   return row || null;
 }
 
@@ -91,6 +91,11 @@ async function selectRoleById(roleId) {
   return row || null;
 }
 
+async function selectRoleByCode(code) {
+  const [[row]] = await db.query(`SELECT id, code, name FROM roles WHERE code = ?`, [code]);
+  return row || null;
+}
+
 async function selectRolesForUser(userId) {
   const [rows] = await db.query(
     `SELECT r.id, r.code, r.name
@@ -105,33 +110,52 @@ async function selectRolesForUser(userId) {
 
 async function listAdminUsers() {
   const [rows] = await db.query(
-    `SELECT id, phone, nickname, email, role, created_at, last_login_at
-     FROM users
-     WHERE role IN ('admin', 'super_admin')
+    `SELECT u.id, u.phone, u.nickname, u.email, u.role, u.account_status, u.created_at, u.last_login_at,
+            GROUP_CONCAT(r.code ORDER BY r.code) AS role_codes
+     FROM users u
+     LEFT JOIN user_roles ur ON ur.user_id = u.id
+     LEFT JOIN roles r ON r.id = ur.role_id
+     WHERE u.deleted_at IS NULL
+       AND (
+        u.role IN ('admin', 'super_admin')
         OR (
-          role = 'disabled'
-          AND EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = users.id)
+          u.role = 'disabled'
+          AND EXISTS (SELECT 1 FROM user_roles ur2 WHERE ur2.user_id = u.id)
         )
-     ORDER BY created_at DESC`,
+       )
+     GROUP BY u.id, u.phone, u.nickname, u.email, u.role, u.account_status, u.created_at, u.last_login_at
+     ORDER BY u.created_at DESC`,
   );
-  return rows;
+  return rows.map((row) => ({
+    ...row,
+    roleCodes: row.role_codes ? String(row.role_codes).split(',').filter(Boolean) : [],
+  }));
 }
 
 async function selectAdminUserById(userId) {
   const [[row]] = await db.query(
-    `SELECT id, phone, nickname, email, role, created_at, last_login_at
-     FROM users
-     WHERE id = ?
+    `SELECT u.id, u.phone, u.nickname, u.email, u.role, u.account_status, u.created_at, u.last_login_at,
+            GROUP_CONCAT(r.code ORDER BY r.code) AS role_codes
+     FROM users u
+     LEFT JOIN user_roles ur ON ur.user_id = u.id
+     LEFT JOIN roles r ON r.id = ur.role_id
+     WHERE u.id = ?
+       AND u.deleted_at IS NULL
        AND (
-         role IN ('admin','super_admin')
+         u.role IN ('admin','super_admin')
          OR (
-           role = 'disabled'
-           AND EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = users.id)
+           u.role = 'disabled'
+           AND EXISTS (SELECT 1 FROM user_roles ur2 WHERE ur2.user_id = u.id)
          )
-       )`,
+       )
+     GROUP BY u.id, u.phone, u.nickname, u.email, u.role, u.account_status, u.created_at, u.last_login_at`,
     [userId],
   );
-  return row || null;
+  if (!row) return null;
+  return {
+    ...row,
+    roleCodes: row.role_codes ? String(row.role_codes).split(',').filter(Boolean) : [],
+  };
 }
 
 async function insertAdminUser(id, phone, passwordHash, nickname, role) {
@@ -144,12 +168,23 @@ async function insertAdminUser(id, phone, passwordHash, nickname, role) {
 
 async function updateAdminUserEnabled(userId, enabled) {
   const role = enabled ? 'admin' : 'disabled';
-  await db.query(`UPDATE users SET role = ? WHERE id = ? AND role IN ('admin','disabled')`, [role, userId]);
+  const accountStatus = enabled ? 'normal' : 'disabled';
+  await db.query(
+    `UPDATE users
+     SET role = ?, account_status = ?, refresh_token_version = refresh_token_version + 1
+     WHERE id = ? AND role IN ('admin','disabled') AND deleted_at IS NULL`,
+    [role, accountStatus, userId],
+  );
 }
 
 async function softDeleteAdminUser(userId) {
   const [res] = await db.query(
-    `UPDATE users SET role = 'disabled', deleted_at = NOW() WHERE id = ? AND role IN ('admin','disabled')`,
+    `UPDATE users
+     SET role = 'disabled',
+         account_status = 'disabled',
+         refresh_token_version = refresh_token_version + 1,
+         deleted_at = NOW()
+     WHERE id = ? AND role IN ('admin','disabled') AND deleted_at IS NULL`,
     [userId],
   );
   return res.affectedRows ?? 0;
@@ -160,6 +195,28 @@ async function updatePasswordHash(userId, hash) {
     `UPDATE users SET password_hash = ?, refresh_token_version = refresh_token_version + 1 WHERE id = ?`,
     [hash, userId],
   );
+}
+
+async function createAdminUserWithRoles({ id, phone, passwordHash, nickname, legacyRole, roleIds }) {
+  const inviteCode = id.replace(/-/g, '').slice(0, 8).toUpperCase();
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.query(
+      `INSERT INTO users (id, phone, password_hash, nickname, role, invite_code, account_status)
+       VALUES (?, ?, ?, ?, ?, ?, 'normal')`,
+      [id, phone, passwordHash, nickname || 'Admin', legacyRole || 'admin', inviteCode],
+    );
+    for (const roleId of roleIds) {
+      await conn.query(`INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)`, [id, roleId]);
+    }
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 }
 
 async function insertRole(code, name, description) {
@@ -216,6 +273,7 @@ module.exports = {
   selectUserLegacyRole,
   replaceUserRoles,
   selectRoleById,
+  selectRoleByCode,
   selectRolesForUser,
   listAdminUsers,
   selectAdminUserById,
@@ -223,6 +281,7 @@ module.exports = {
   updateAdminUserEnabled,
   softDeleteAdminUser,
   updatePasswordHash,
+  createAdminUserWithRoles,
   insertRole,
   updateRoleById,
   deleteRoleById,

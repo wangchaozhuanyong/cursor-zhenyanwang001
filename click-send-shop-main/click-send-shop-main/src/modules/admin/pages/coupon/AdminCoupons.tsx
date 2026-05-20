@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Plus, Pencil, Trash2, ClipboardList, Ticket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SearchBar from "@/components/SearchBar";
@@ -7,13 +6,17 @@ import Pagination from "@/components/admin/Pagination";
 import { usePagination } from "@/hooks/usePagination";
 import { toast } from "sonner";
 import * as couponService from "@/services/admin/couponService";
+import type { Coupon } from "@/types/coupon";
 import * as userService from "@/services/admin/userService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { labelCouponStatus, labelCouponType } from "@/utils/adminDisplayLabels";
 import { formatAdminDateRange } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
+import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { AnimatedConfirmDialog, AnimatedTable } from "@/modules/micro-interactions";
+import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import {
   THEME_BADGE_DANGER,
   THEME_BADGE_MUTED,
@@ -36,7 +39,7 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 
 export default function AdminCoupons() {
   const navigate = useNavigate();
-  const [coupons, setCoupons] = useState<any[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -81,8 +84,10 @@ export default function AdminCoupons() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground"><Tx>活动管理 / 优惠券管理</Tx></h1>
-          <p className="text-sm text-muted-foreground"><Tx>管理优惠券、发放与有效期。</Tx></p>
+          <AdminPageTitle
+            title={<Tx>活动管理 / 优惠券管理</Tx>}
+            hint={<Tx>管理优惠券、发放与有效期。</Tx>}
+          />
         </div>
         <div className="flex gap-2">
           <button type="button" onClick={() => navigate("/admin/marketing/coupons/records")} className="touch-manipulation flex min-h-[44px] items-center gap-1 rounded-lg border border-border px-3 py-2.5 text-sm text-foreground hover:bg-secondary"><ClipboardList size={14} /><Tx>领券记录</Tx></button>
@@ -116,8 +121,10 @@ export default function AdminCoupons() {
           </tr>
         )}
         footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
-        emptyIcon={Ticket}
-        emptyTitle="暂无优惠券"
+        emptyIcon={ADMIN_EMPTY_GUIDES.coupons.icon}
+        emptyTitle={ADMIN_EMPTY_GUIDES.coupons.title}
+        emptyDescription={ADMIN_EMPTY_GUIDES.coupons.description}
+        emptyAction={<AdminEmptyGuideActions guide={ADMIN_EMPTY_GUIDES.coupons} />}
         renderRow={(c) => (
           <>
             <td className="px-4 py-3 font-medium">{c.title}</td>
@@ -162,7 +169,7 @@ export default function AdminCoupons() {
               {tags.map((tag) => <option key={tag.id} value={tag.id}>{tag.name}</option>)}
             </select>
           </div>
-        ) as any}
+        ) as ReactNode}
         confirmText="确认发放"
         onConfirm={() => {
           if (!issueCouponId || !issueTagId) {

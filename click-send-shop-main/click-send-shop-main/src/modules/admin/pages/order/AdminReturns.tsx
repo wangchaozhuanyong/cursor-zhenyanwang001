@@ -7,16 +7,8 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import Pagination from "@/components/admin/Pagination";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { RETURN_STATUS, RETURN_STATUS_FILTER_OPTIONS, getReturnStatusBadgeClass, getReturnStatusLabel } from "@/constants/statusDictionary";
-import type { ApproveReturnParams, ReturnRequest } from "@/types/return";
+import type { ApproveReturnParams, ReturnDetail, ReturnRequest } from "@/types/return";
 import { THEME_BTN_DANGER_SOLID, THEME_BTN_SUCCESS_SOLID, THEME_OUTLINE_DANGER } from "@/utils/themeVisuals";
-
-type ReturnDetail = ReturnRequest & {
-  order_info?: { total_amount?: number; payment_status?: string; status?: string };
-  item_info?: { product_name?: string; sku_code?: string; request_qty?: number };
-  refund_records?: Array<{ id: string; event_type: string; processing_result: string; created_at: string }>;
-  inventory_restore_records?: Array<{ id: string; quantity_delta: number; created_at: string }>;
-  operation_logs?: Array<{ id: string; summary?: string; created_at: string; result?: string }>;
-};
 
 const defaultApproveForm: ApproveReturnParams = {
   refund_amount: 0,
@@ -53,7 +45,7 @@ export default function AdminReturns() {
         pageSize,
         keyword: keyword.trim() || undefined,
         status: status === "all" ? undefined : status,
-      } as any);
+      });
       setList(res.list);
       setTotal(res.total);
     } catch (e) {
@@ -71,8 +63,8 @@ export default function AdminReturns() {
     setDetailLoading(true);
     try {
       const data = await returnService.fetchReturnById(id);
-      setDetail(data as ReturnDetail);
-      return data as ReturnDetail;
+      setDetail(data);
+      return data;
     } catch (e) {
       toast.error(toastErrorMessage(e, "加载售后详情失败"));
       return null;
@@ -228,32 +220,32 @@ export default function AdminReturns() {
             <div className="mb-3 text-base font-semibold">售后详情</div>
             {detailLoading ? <div className="text-sm text-muted-foreground">加载中...</div> : null}
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>用户：{(detail as any).user_info?.name || "-"}</div>
-              <div>手机号：{(detail as any).user_info?.phone || "-"}</div>
-              <div>订单号：{(detail as any).order_info?.order_no || detail.order_no || "-"}</div>
-              <div>支付状态：{(detail as any).order_info?.payment_status || "-"}</div>
-              <div>商品：{(detail as any).item_info?.product_name || "-"}</div>
-              <div>SKU：{(detail as any).item_info?.sku_code || "-"}</div>
-              <div>申请数量：{(detail as any).item_info?.request_qty || detail.quantity || 0}</div>
+              <div>用户：{detail.user_info?.name || "-"}</div>
+              <div>手机号：{detail.user_info?.phone || "-"}</div>
+              <div>订单号：{detail.order_info?.order_no || detail.order_no || "-"}</div>
+              <div>支付状态：{detail.order_info?.payment_status || "-"}</div>
+              <div>商品：{detail.item_info?.product_name || "-"}</div>
+              <div>SKU：{detail.item_info?.sku_code || "-"}</div>
+              <div>申请数量：{detail.item_info?.request_qty || detail.quantity || 0}</div>
               <div>退款金额：{Number(detail.refund_amount || 0).toFixed(2)}</div>
               <div className="col-span-2">申请原因：{detail.reason || "-"}</div>
               <div className="col-span-2">管理员备注：{detail.admin_remark || "-"}</div>
             </div>
             <div className="mt-4 text-sm font-medium">退款记录</div>
             <div className="space-y-1 text-xs text-muted-foreground">
-              {(detail as any).refund_records?.length ? (detail as any).refund_records.map((x: any) => (
+              {detail.refund_records?.length ? detail.refund_records.map((x) => (
                 <div key={x.id}>{x.event_type} / {x.processing_result} / {formatDateTime(x.created_at)}</div>
               )) : <div>暂无</div>}
             </div>
             <div className="mt-4 text-sm font-medium">库存恢复记录</div>
             <div className="space-y-1 text-xs text-muted-foreground">
-              {(detail as any).inventory_restore_records?.length ? (detail as any).inventory_restore_records.map((x: any) => (
+              {detail.inventory_restore_records?.length ? detail.inventory_restore_records.map((x) => (
                 <div key={x.id}>Δ{x.quantity_delta} / {formatDateTime(x.created_at)}</div>
               )) : <div>暂无</div>}
             </div>
             <div className="mt-4 text-sm font-medium">操作日志</div>
             <div className="space-y-1 text-xs text-muted-foreground">
-              {(detail as any).operation_logs?.length ? (detail as any).operation_logs.map((x: any) => (
+              {detail.operation_logs?.length ? detail.operation_logs.map((x) => (
                 <div key={x.id}>{x.summary || x.result} / {formatDateTime(x.created_at)}</div>
               )) : <div>暂无</div>}
             </div>
@@ -289,7 +281,7 @@ export default function AdminReturns() {
                 <span>退款模式</span>
                 <select
                   value={approveForm.refund_mode}
-                  onChange={(e) => setApproveForm((s) => ({ ...s, refund_mode: e.target.value as any }))}
+                  onChange={(e) => setApproveForm((s) => ({ ...s, refund_mode: e.target.value as ApproveReturnParams["refund_mode"] }))}
                   className="mt-1 h-10 w-full rounded border border-border px-3"
                 >
                   <option value="none">none</option>

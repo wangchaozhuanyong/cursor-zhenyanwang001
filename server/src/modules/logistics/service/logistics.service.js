@@ -50,9 +50,9 @@ async function attachTracking(order) {
 
 async function refreshOrderTracking(orderId) {
   const order = await repo.selectOrderForTracking(orderId);
-  if (!order) throw new NotFoundError('Order not found');
+  if (!order) throw new NotFoundError('订单不存在');
   if (!order.tracking_no) {
-    throw new ValidationError('Tracking number is missing');
+    throw new ValidationError('缺少物流单号');
   }
 
   const { carrier, events } = await malaysiaCarrierAdapter.fetchTracking(order);

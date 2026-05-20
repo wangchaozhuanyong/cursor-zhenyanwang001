@@ -10,6 +10,8 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "typecheck:strict-api": "tsc -p tsconfig.strict-api.json --noEmit",
+    "typecheck:strict-admin": "tsc -p tsconfig.strict-admin.json --noEmit",
     "preview": "vite preview",
     "preview:local": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
     "preview:local:4174": "vite preview --host 127.0.0.1 --port 4174 --strictPort",
@@ -25,7 +27,8 @@
     "audit:overlap": "node scripts/audit-ui-overlap.mjs",
     "audit:overlap:full": "node scripts/audit-ui-overlap.mjs --full",
     "pwa:icons": "node scripts/generate-pwa-icons.mjs",
-    "verify:pwa": "node scripts/verify-pwa.mjs"
+    "verify:pwa": "node scripts/verify-pwa.mjs",
+    "acceptance:pwa-device": "node scripts/pwa-device-acceptance.mjs"
   },
   "browserslist": [
     "> 0.3%",

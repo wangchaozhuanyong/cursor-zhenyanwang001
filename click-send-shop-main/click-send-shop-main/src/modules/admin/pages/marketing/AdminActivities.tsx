@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarClock, Copy, Eye, PlusCircle, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -14,6 +14,14 @@ import { THEME_OUTLINE_DANGER } from "@/utils/themeVisuals";
 import { labelDisplayPositions } from "@/constants/marketingDisplayPositions";
 import { labelActivityType } from "@/utils/adminDisplayLabels";
 import { AnimatedConfirmDialog, AnimatedTable } from "@/modules/micro-interactions";
+import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
+import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import {
+  buildActivityFilterChips,
+  hasActiveActivityFilters,
+  removeActivityFilterChip,
+} from "@/utils/adminActivityFilters";
 
 const TABS: Array<{ key: "" | ActivityStatus; label: string }> = [
   { key: "", label: "全部" },
@@ -35,7 +43,7 @@ export default function AdminActivities() {
   const [total, setTotal] = useState(0);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const load = async (next = page) => {
+  const load = useCallback(async (next = page) => {
     setLoading(true);
     try {
       const data = await activityService.fetchActivities({ page: next, pageSize, keyword: keyword || undefined, type: type || undefined, status: status || undefined });
@@ -46,9 +54,31 @@ export default function AdminActivities() {
     } finally {
       setLoading(false);
     }
+  }, [page, pageSize, keyword, status, type]);
+
+  useEffect(() => { void load(1); }, [load]);
+
+  const filterState = { keyword, type, status };
+  const filterChips = useMemo(() => buildActivityFilterChips(filterState), [keyword, type, status]);
+  const filtersActive = hasActiveActivityFilters(filterState);
+  const activitiesEmptyGuide = filtersActive
+    ? ADMIN_EMPTY_GUIDES.activitiesFiltered
+    : ADMIN_EMPTY_GUIDES.activities;
+
+  const clearActivityFilters = () => {
+    setKeyword("");
+    setType("");
+    setStatus("");
+    setPage(1);
   };
 
-  useEffect(() => { void load(1); }, [status, type, pageSize]);
+  const handleRemoveFilterChip = (key: string) => {
+    const patch = removeActivityFilterChip(key);
+    if ("keyword" in patch) setKeyword(patch.keyword ?? "");
+    if ("type" in patch) setType(patch.type ?? "");
+    if ("status" in patch) setStatus(patch.status ?? "");
+    setPage(1);
+  };
 
   const quickButtons = useMemo(() => [
     { label: "秒杀", to: "/admin/marketing/activities/new?type=flash_sale" },
@@ -72,10 +102,17 @@ export default function AdminActivities() {
 
       <div className="flex flex-wrap gap-2">{TABS.map((t) => <button key={t.label} onClick={() => { setStatus(t.key); setPage(1); }} className={`rounded-lg px-3 py-1.5 text-sm ${status === t.key ? "bg-gold/15 text-theme-price" : "bg-secondary text-muted-foreground"}`}>{t.label}</button>)}</div>
 
-      <div className="grid gap-3 md:grid-cols-[1fr_160px_auto]">
-        <SearchBar placeholder="搜索活动名称" value={keyword} onChange={setKeyword} />
-        <select value={type} onChange={(e) => setType(e.target.value as ActivityType | "")} className="rounded-lg bg-secondary px-3 py-2 text-sm"><option value=""><Tx>全部类型</Tx></option><option value="flash_sale"><Tx>限时秒杀</Tx></option><option value="full_reduction"><Tx>满减活动</Tx></option></select>
-        <button onClick={() => { setPage(1); void load(1); }} className="rounded-lg border border-border px-4 py-2 text-sm"><Tx>查询</Tx></button>
+      <div className="space-y-2">
+        <div className="grid gap-3 md:grid-cols-[1fr_160px_auto]">
+          <SearchBar placeholder="搜索活动名称" value={keyword} onChange={(v) => { setKeyword(v); setPage(1); }} />
+          <select value={type} onChange={(e) => { setType(e.target.value as ActivityType | ""); setPage(1); }} className="rounded-lg bg-secondary px-3 py-2 text-sm"><option value=""><Tx>全部类型</Tx></option><option value="flash_sale"><Tx>限时秒杀</Tx></option><option value="full_reduction"><Tx>满减活动</Tx></option></select>
+          <button type="button" onClick={() => { setPage(1); void load(1); }} className="rounded-lg border border-border px-4 py-2 text-sm"><Tx>查询</Tx></button>
+        </div>
+        <AdminFilterSummaryBar
+          chips={filterChips}
+          onClearAll={clearActivityFilters}
+          onRemove={handleRemoveFilterChip}
+        />
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -101,8 +138,16 @@ export default function AdminActivities() {
             </tr>
           )}
           footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={(p) => { setPage(p); void load(p); }} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />}
-          emptyIcon={CalendarClock}
-          emptyTitle="暂无活动"
+          emptyIcon={activitiesEmptyGuide.icon}
+          emptyTitle={activitiesEmptyGuide.title}
+          emptyDescription={activitiesEmptyGuide.description}
+          emptyAction={(
+            <AdminEmptyGuideActions
+              guide={activitiesEmptyGuide}
+              showClearFilters={filtersActive}
+              onClearFilters={clearActivityFilters}
+            />
+          )}
           renderRow={(a) => (
             <>
               <td className="px-4 py-3"><p className="font-medium">{a.title}</p><p className="text-xs text-muted-foreground line-clamp-1">{a.description || "-"}</p></td>

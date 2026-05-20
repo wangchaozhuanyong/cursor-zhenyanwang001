@@ -63,9 +63,13 @@ export interface UserProfile {
       created_at?: string | null;
     } | null;
   };
-  related?: any;
-  operation_logs?: any[];
+  related?: Record<string, unknown>;
+  operation_logs?: Record<string, unknown>[];
 }
+
+export type UserStatusOverview = NonNullable<UserProfile["status_overview"]>;
+
+export type UserEditForm = Partial<Pick<UserProfile, "nickname" | "phone" | "wechat" | "whatsapp" | "avatar">>;
 
 export interface UserTag {
   id: string;

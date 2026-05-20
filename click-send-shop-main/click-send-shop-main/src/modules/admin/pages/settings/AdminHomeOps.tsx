@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Tx } from "@/components/admin/AdminText";
+import AdminFieldHint, { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import {
   ExternalLink,
@@ -27,7 +28,7 @@ import { THEME_BADGE_MUTED, THEME_BADGE_SUCCESS, THEME_HOVER_TEXT_DANGER } from 
 import type { Category } from "@/types/category";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { LoadingButton } from "@/modules/micro-interactions";
-import { validateUploadFile } from "@/api/modules/upload";
+import { validateUploadFile } from "@/services/uploadService";
 import { hasTransparentPixels } from "@/utils/imageTransparency";
 
 type NavForm = Pick<HomeNavItem, "icon_url" | "title" | "link_url" | "sort_order" | "enabled" | "target_type" | "target_category_id">;
@@ -148,8 +149,10 @@ export default function AdminHomeOps() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-foreground"><Tx>首页运营</Tx></h1>
-        <p className="text-sm text-muted-foreground"><Tx>统一管理模块开关、展示设置、金刚区导航和新品主推设置。</Tx></p>
+        <AdminPageTitle
+          title={<Tx>首页运营</Tx>}
+          hint={<Tx>统一管理模块开关、展示设置、金刚区导航和新品主推设置。</Tx>}
+        />
       </div>
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         <nav className="flex shrink-0 flex-row gap-2 overflow-x-auto lg:w-52 lg:flex-col lg:gap-1">
@@ -171,8 +174,8 @@ export default function AdminHomeOps() {
                 <span className="flex items-center gap-2 text-sm font-semibold">
                   <Icon size={16} className={active ? "text-theme-price" : ""} />
                   {tab.label}
+                  <AdminFieldHint text={tab.desc} className="hidden lg:inline-flex" />
                 </span>
-                <span className="mt-0.5 hidden text-[10px] leading-snug lg:block">{tab.desc}</span>
               </button>
             );
           })}
@@ -186,8 +189,10 @@ export default function AdminHomeOps() {
               <div className="mb-4 flex items-center gap-2">
                 <Grid3X3 size={18} className="text-theme-price" />
                 <div>
-                  <h2 className="font-semibold text-foreground"><Tx>金刚区导航</Tx></h2>
-                  <p className="text-xs text-muted-foreground"><Tx>配置图标、标题、跳转方式、排序和启用状态。</Tx></p>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-semibold text-foreground"><Tx>金刚区导航</Tx></h2>
+                    <AdminFieldHint text={<Tx>配置图标、标题、跳转方式、排序和启用状态。</Tx>} />
+                  </div>
                 </div>
               </div>
 
@@ -221,11 +226,12 @@ export default function AdminHomeOps() {
                       <IconPreview value={navForm.icon_url} />
                     </div>
                   </div>
-                  <p className="text-[10px] leading-relaxed text-muted-foreground">
-                    <span className="font-medium text-foreground/80"><Tx>建议：</Tx></span>
-                    {IMAGE_UPLOAD_HINT_HOME_NAV_ICON}
-                    <span className="mt-0.5 block">{IMAGE_UPLOAD_HINT_API}</span>
-                  </p>
+                  <div className="flex justify-end">
+                    <AdminFieldHint
+                      contentClassName="max-w-sm"
+                      text={<>{IMAGE_UPLOAD_HINT_HOME_NAV_ICON} {IMAGE_UPLOAD_HINT_API}</>}
+                    />
+                  </div>
                 </label>
                 <label className="flex min-w-0 flex-col gap-1">
                   <span className="text-[11px] font-medium text-muted-foreground"><Tx>标题</Tx></span>
@@ -276,9 +282,9 @@ export default function AdminHomeOps() {
                       onChange={(e) => setNavForm({ ...navForm, link_url: e.target.value })}
                     />
                   )}
-                  <p className="text-[10px] leading-tight text-muted-foreground">
-                    {navForm.target_type === "category" ? "将自动跳转到对应分类页" : "支持站内路径和完整 URL"}
-                  </p>
+                  <div className="flex justify-end">
+                    <AdminFieldHint text={navForm.target_type === "category" ? "将自动跳转到对应分类页" : "支持站内路径和完整 URL"} />
+                  </div>
                 </label>
                 <label className="flex min-w-0 flex-col gap-1">
                   <span className="text-[11px] font-medium text-muted-foreground"><Tx>排序</Tx></span>
@@ -290,7 +296,9 @@ export default function AdminHomeOps() {
                     value={navForm.sort_order}
                     onChange={(e) => setNavForm({ ...navForm, sort_order: Number(e.target.value) || 0 })}
                   />
-                  <span className="text-[10px] leading-tight text-muted-foreground"><Tx>建议从 0 开始递增</Tx></span>
+                  <div className="flex justify-end">
+                    <AdminFieldHint text={<Tx>建议从 0 开始递增</Tx>} />
+                  </div>
                 </label>
                 <label className="flex cursor-pointer flex-col justify-end gap-1 pb-0.5">
                   <span className="text-[11px] font-medium text-muted-foreground"><Tx>状态</Tx></span>

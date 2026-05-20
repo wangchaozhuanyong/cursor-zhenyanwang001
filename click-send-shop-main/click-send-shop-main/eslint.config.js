@@ -30,8 +30,11 @@ export default tseslint.config(
     },
   },
   {
-    files: ["src/pages/**/*.{ts,tsx}"],
-    ignores: ["src/pages/admin/**"],
+    files: [
+      "src/pages/**/*.{ts,tsx}",
+      "src/modules/public/**/pages/**/*.{ts,tsx}",
+      "src/modules/admin/pages/**/*.{ts,tsx}",
+    ],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -44,6 +47,17 @@ export default tseslint.config(
           ],
         },
       ],
+    },
+  },
+  {
+    files: [
+      "src/contexts/**/*.{ts,tsx}",
+      "src/modules/admin/context/**/*.{ts,tsx}",
+      "src/components/SiteSocialLinks.tsx",
+      "src/components/store/HomeNavIcon.tsx",
+    ],
+    rules: {
+      "react-refresh/only-export-components": "off",
     },
   },
 );

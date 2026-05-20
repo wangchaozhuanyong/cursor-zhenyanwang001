@@ -16,6 +16,7 @@ import { refreshSiteInfo } from "@/hooks/useSiteInfo";
 import type { SiteSettings } from "@/types/admin";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { AdminSiteSettingsSkeleton } from "@/components/admin/AdminLoadingSkeletons";
+import AdminFieldHint, { AdminLabelWithHint, AdminPageTitle, AdminSectionTitle } from "@/components/admin/AdminFieldHint";
 import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_SITE_ASSET } from "@/constants/imageUploadHints";
 import { THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 
@@ -71,6 +72,22 @@ const EMPTY: SiteSettings = {
   metaPixelEnabled: "0",
   metaPixelId: "",
 };
+
+const SITE_SETTINGS_SYNC_HINT = (
+  <>
+    <p><Tx>1) 标题规则：客户端内页 =「页面名 · 站点名称」，首页优先用「SEO 标题」。</Tx></p>
+    <p className="mt-1"><Tx>2) 浏览器标签图标：读取「Favicon」，首屏静态图标与运行时图标会统一更新。</Tx></p>
+    <p className="mt-1">
+      <Tx>3) 未登录首页底部「政策与说明」等：读取政策路径 +</Tx>{" "}
+      <Link to="/admin/content" className="font-medium text-theme-price underline-offset-2 hover:underline"><Tx>
+        内容管理
+      </Tx></Link><Tx>
+        中的正文；页脚公司名/版权等同站点设置。
+      </Tx>
+    </p>
+    <p className="mt-1"><Tx>4) 首屏静态 Title 仅是兜底，进入页面后会被运行时标题策略接管。</Tx></p>
+  </>
+);
 
 const DEFAULT_FOOTER_NAV_JSON = JSON.stringify(
   [
@@ -459,12 +476,10 @@ export default function AdminSiteSettings() {
   return (
     <div className="space-y-6 pb-24">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-foreground"><Tx>站点设置</Tx></h1>
-          <p className="text-sm text-muted-foreground"><Tx>
-            配置全站通用信息：品牌、联系方式、SEO、页脚等。所有字段实时驱动前台展示。
-          </Tx></p>
-        </div>
+        <AdminPageTitle
+          title={<Tx>站点设置</Tx>}
+          hint={<Tx>配置全站通用信息：品牌、联系方式、SEO、页脚等。所有字段实时驱动前台展示。</Tx>}
+        />
         <div className="rounded-xl border border-border bg-card p-2 lg:sticky lg:top-20">
           <div className="mb-2 px-2 text-xs font-medium text-muted-foreground"><Tx>功能导航</Tx></div>
           <div className="flex flex-wrap gap-2">
@@ -494,30 +509,16 @@ export default function AdminSiteSettings() {
       ) : (
       <>
       <div className="grid max-w-5xl gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-border bg-card p-3 sm:p-4 text-xs text-muted-foreground lg:col-span-2">
-          <p className="font-medium text-foreground"><Tx>字段生效提示（避免“设置后看起来没同步”）</Tx></p>
-          <p className="mt-2"><Tx>1) 标题规则：客户端内页 =「页面名 · 站点名称」，首页优先用「SEO 标题」。</Tx></p>
-          <p className="mt-1"><Tx>2) 浏览器标签图标：读取「Favicon」，首屏静态图标与运行时图标会统一更新。</Tx></p>
-          <p className="mt-1">
-            3) 未登录首页底部「政策与说明」等：读取政策路径 +{" "}
-            <Link to="/admin/content" className="font-medium text-theme-price underline-offset-2 hover:underline"><Tx>
-              内容管理
-            </Tx></Link><Tx>
-            中的正文；页脚公司名/版权等同站点设置。
-          </Tx></p>
-          <p className="mt-1"><Tx>4) 首屏静态 Title 仅是兜底，进入页面后会被运行时标题策略接管。</Tx></p>
+        <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 lg:col-span-2">
+          <span className="text-xs font-medium text-foreground"><Tx>字段生效提示</Tx></span>
+          <AdminFieldHint text={SITE_SETTINGS_SYNC_HINT} size="md" contentClassName="max-w-md space-y-0" />
         </div>
         {visibleSections.map((section) => (
           <div
             key={section.title}
             className="rounded-xl border border-border bg-card p-6 space-y-4"
           >
-            <div>
-              <h3 className="text-sm font-semibold text-foreground">{section.title}</h3>
-              {section.desc && (
-                <p className="mt-1 text-xs text-muted-foreground">{section.desc}</p>
-              )}
-            </div>
+            <AdminSectionTitle title={section.title} hint={section.desc} />
 
             {section.fields.map((field) => {
               const value = (settings[field.key] as string) ?? "";
@@ -526,9 +527,7 @@ export default function AdminSiteSettings() {
               if (field.type === "textarea") {
                 return (
                   <div key={String(field.key)}>
-                    <label htmlFor={id} className="mb-1 block text-xs font-medium text-muted-foreground">
-                      {field.label}
-                    </label>
+                    <AdminLabelWithHint htmlFor={id} label={field.label} hint={field.hint} />
                     <textarea
                       id={id}
                       rows={field.rows ?? 2}
@@ -537,7 +536,6 @@ export default function AdminSiteSettings() {
                       placeholder={field.placeholder}
                       className="w-full resize-none rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                     />
-                    {field.hint && <p className="mt-1 text-[11px] text-muted-foreground">{field.hint}</p>}
                   </div>
                 );
               }
@@ -545,9 +543,7 @@ export default function AdminSiteSettings() {
               if (field.type === "select") {
                 return (
                   <div key={String(field.key)}>
-                    <label htmlFor={id} className="mb-1 block text-xs font-medium text-muted-foreground">
-                      {field.label}
-                    </label>
+                    <AdminLabelWithHint htmlFor={id} label={field.label} hint={field.hint} />
                     <select
                       id={id}
                       value={value}
@@ -567,9 +563,7 @@ export default function AdminSiteSettings() {
               if (field.type === "color") {
                 return (
                   <div key={String(field.key)}>
-                    <label htmlFor={id} className="mb-1 block text-xs font-medium text-muted-foreground">
-                      {field.label}
-                    </label>
+                    <AdminLabelWithHint htmlFor={id} label={field.label} hint={field.hint} />
                     <div className="flex items-center gap-3">
                       <input
                         id={id}
@@ -586,18 +580,23 @@ export default function AdminSiteSettings() {
                         className="flex-1 rounded-lg bg-secondary px-4 py-2.5 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                       />
                     </div>
-                    {field.hint && <p className="mt-1 text-[11px] text-muted-foreground">{field.hint}</p>}
                   </div>
                 );
               }
 
               if (field.type === "image") {
                 const isUploading = uploadingKey === String(field.key);
+                const imageHint = (
+                  <>
+                    {field.key === "logoUrl" || field.key === "faviconUrl"
+                      ? IMAGE_UPLOAD_HINT_SITE_ASSET
+                      : IMAGE_UPLOAD_HINT_API}
+                    {field.hint ? <p className="mt-1">{field.hint}</p> : null}
+                  </>
+                );
                 return (
                   <div key={String(field.key)}>
-                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                      {field.label}
-                    </label>
+                    <AdminLabelWithHint label={field.label} hint={imageHint} />
                     <div className="flex items-center gap-3">
                       <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-secondary">
                         {value ? (
@@ -645,21 +644,13 @@ export default function AdminSiteSettings() {
                         </div>
                       </div>
                     </div>
-                    <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-                      {field.key === "logoUrl" || field.key === "faviconUrl"
-                        ? IMAGE_UPLOAD_HINT_SITE_ASSET
-                        : IMAGE_UPLOAD_HINT_API}
-                    </p>
-                    {field.hint && <p className="mt-1 text-[11px] text-muted-foreground">{field.hint}</p>}
                   </div>
                 );
               }
 
               return (
                 <div key={String(field.key)}>
-                  <label htmlFor={id} className="mb-1 block text-xs font-medium text-muted-foreground">
-                    {field.label}
-                  </label>
+                  <AdminLabelWithHint htmlFor={id} label={field.label} hint={field.hint} />
                   <input
                     id={id}
                     type="text"
@@ -668,7 +659,6 @@ export default function AdminSiteSettings() {
                     placeholder={field.placeholder}
                     className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                   />
-                  {field.hint && <p className="mt-1 text-[11px] text-muted-foreground">{field.hint}</p>}
                 </div>
               );
             })}
@@ -679,9 +669,12 @@ export default function AdminSiteSettings() {
       {/* Sticky save bar */}
       <div className="sticky bottom-0 -mx-6 border-t border-border bg-background/95 px-6 py-4 backdrop-blur-md">
         <div className="flex max-w-5xl items-center justify-between">
-          <p className="text-xs text-muted-foreground"><Tx>
-            提示：保存后前端 5 分钟缓存会立即失效，刷新页面即可看到新内容。
-          </Tx></p>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Tx>保存说明</Tx>
+            <AdminFieldHint
+              text={<Tx>保存后前端 5 分钟缓存会立即失效，刷新页面即可看到新内容。</Tx>}
+            />
+          </div>
           <PermissionGate permission="settings.manage">
             <LoadingButton
               type="button"

@@ -85,6 +85,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
         orders: [order, ...s.orders],
         submitting: false,
       }));
+      await get().loadOrders({ page: 1 });
       return order;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "提交订单失败";

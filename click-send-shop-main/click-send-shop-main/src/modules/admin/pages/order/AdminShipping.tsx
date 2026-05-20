@@ -1,30 +1,20 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { Truck, Plus, Trash2, Edit2, MapPin, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as shippingService from "@/services/admin/shippingService";
+import type { ShippingTemplate } from "@/types/shipping";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
+import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { THEME_BADGE_MUTED, THEME_BADGE_SUCCESS, THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 
-interface Template {
-  id: number;
-  name: string;
-  regions: string;
-  baseFee: number;
-  freeAbove: number;
-  extraPerKg: number;
-  enabled: boolean;
-  isDefault?: boolean;
-}
-
 export default function AdminShipping() {
   const { confirm } = useAdminConfirm();
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [editing, setEditing] = useState<Template | null>(null);
+  const [templates, setTemplates] = useState<ShippingTemplate[]>([]);
+  const [editing, setEditing] = useState<ShippingTemplate | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", regions: "", baseFee: 0, freeAbove: 0, extraPerKg: 0 });
   const [loading, setLoading] = useState(true);
@@ -49,7 +39,7 @@ export default function AdminShipping() {
     setSaving(true);
     try {
       if (editing) {
-        await shippingService.updateTemplate(editing.id, { name: form.name, regions: form.regions, baseFee: form.baseFee, freeAbove: form.freeAbove, extraPerKg: form.extraPerKg } as any);
+        await shippingService.updateTemplate(editing.id, { name: form.name, regions: form.regions, baseFee: form.baseFee, freeAbove: form.freeAbove, extraPerKg: form.extraPerKg });
         toast.success("运费模板已更新");
       } else {
         const makeDefault = templates.length === 0;
@@ -59,8 +49,9 @@ export default function AdminShipping() {
           baseFee: form.baseFee,
           freeAbove: form.freeAbove,
           extraPerKg: form.extraPerKg,
+          enabled: true,
           isDefault: makeDefault,
-        } as any);
+        });
         toast.success(makeDefault ? "运费模板已创建并设为默认生效" : "运费模板已创建，可在列表中设为默认生效");
       }
       setShowForm(false);
@@ -74,7 +65,7 @@ export default function AdminShipping() {
     }
   };
 
-  const openEdit = (t: Template) => {
+  const openEdit = (t: ShippingTemplate) => {
     setEditing(t);
     setForm({ name: t.name, regions: t.regions, baseFee: t.baseFee, freeAbove: t.freeAbove, extraPerKg: t.extraPerKg });
     setShowForm(true);
@@ -94,7 +85,7 @@ export default function AdminShipping() {
     const t = templates.find((x) => x.id === id);
     if (!t || t.isDefault) return;
     try {
-      await shippingService.updateTemplate(id, { isDefault: true } as any);
+      await shippingService.updateTemplate(id, { isDefault: true });
       await loadData();
       toast.success(`「${t.name}」已设为默认生效，其他模板已自动停用`);
     } catch (e) {
@@ -106,11 +97,15 @@ export default function AdminShipping() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-foreground"><Tx>运费规则设置</Tx></h1>
-          <p className="text-sm text-muted-foreground"><Tx>配置配送区域和运费模板</Tx></p>
-          <p className="mt-1 max-w-xl text-xs text-muted-foreground">
-            <Tx>同一时间仅允许一个「默认生效」模板；设为默认后，结账与运费计算将使用该规则，其他模板自动停用。</Tx>
-          </p>
+          <AdminPageTitle
+            title={<Tx>运费规则设置</Tx>}
+            hint={(
+              <>
+                <p><Tx>配置配送区域和运费模板</Tx></p>
+                <p className="mt-1"><Tx>同一时间仅允许一个「默认生效」模板；设为默认后，结账与运费计算将使用该规则，其他模板自动停用。</Tx></p>
+              </>
+            )}
+          />
         </div>
         <PermissionGate permission="shipping.manage">
           <button onClick={() => { setEditing(null); setForm({ name: "", regions: "", baseFee: 0, freeAbove: 0, extraPerKg: 0 }); setShowForm(true); }} className="flex items-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-bold text-primary-foreground">

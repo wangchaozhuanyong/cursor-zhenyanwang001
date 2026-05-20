@@ -41,6 +41,27 @@ export interface CouponListParams {
   pageSize?: number;
 }
 
+/** 管理端领券记录列表行 */
+export interface CouponClaimRecord {
+  id: string;
+  status: CouponStatus | string;
+  nickname?: string;
+  phone?: string;
+  coupon_title?: string;
+  coupon_code?: string;
+  claimed_at?: string;
+  used_at?: string;
+}
+
+/** 按标签批量发券结果 */
+export interface IssueCouponByTagResult {
+  issued?: number;
+  targetUsers?: number;
+}
+
+/** 新建/编辑优惠券提交体（无 id、status） */
+export type CouponUpsertPayload = Omit<Coupon, "id" | "status">;
+
 /** 结算页优惠券选择器展示（由 couponService 从 UserCoupon 映射） */
 export interface CheckoutPickerCoupon {
   id: string;

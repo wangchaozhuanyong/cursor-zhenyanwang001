@@ -1,5 +1,7 @@
 import * as userApi from "@/api/admin/user";
 import type { MemberLevelPayload } from "@/api/admin/user";
+
+export type { MemberLevelPayload };
 import type { PaginatedData } from "@/types/common";
 import type { MemberLevel, UserProfile, UserTag } from "@/types/user";
 import { downloadAdminCsv } from "@/utils/adminCsvDownload";

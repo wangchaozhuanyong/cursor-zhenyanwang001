@@ -52,7 +52,7 @@ async function register(body) {
       id,
       phone: normalizedPhone,
       passwordHash: hash,
-      nickname: nickname || 'Message',
+      nickname: nickname || '用户',
       inviteCode: code,
       parentInviteCode,
     });
@@ -80,7 +80,7 @@ async function register(body) {
   }
 
   const token = signToken(id, 0);
-  return { data: { token, userId: id }, message: 'OK' };
+  return { data: { token, userId: id }, message: '注册成功' };
 }
 
 async function login(body) {
@@ -136,7 +136,7 @@ function buildLoginResult(userRow) {
       userId: uid,
       role: String(userRow.role || 'user'),
     },
-    message: 'Message',
+    message: '登录成功',
   };
 }
 
@@ -166,7 +166,7 @@ async function issueLoginForUserId(userId, options = {}) {
 
 async function getProfile(userId) {
   const user = await repo.selectProfileFields(userId);
-  if (!user) throw new NotFoundError('Resource not found');
+  if (!user) throw new NotFoundError('资源不存在');
   const wechatLogin = await wechatService.getWechatBindingForProfile(userId);
   return {
     data: formatUserResponse({
@@ -215,14 +215,14 @@ async function updateProfile(userId, body) {
   await repo.updateUserProfile(userId, fragments, values);
 
   const user = await repo.selectProfileFields(userId);
-  return { data: formatUserResponse(user, 'user'), message: 'Profile updated' };
+  return { data: formatUserResponse(user, 'user'), message: '资料已更新' };
 }
 
 async function changePassword(userId, body) {
   const { oldPassword, newPassword } = body;
 
   const row = await repo.selectPasswordHash(userId);
-  if (!row) throw new NotFoundError('Resource not found');
+  if (!row) throw new NotFoundError('资源不存在');
 
   let stored = row.password_hash;
   if (Buffer.isBuffer(stored)) stored = stored.toString('utf8');
@@ -236,7 +236,7 @@ async function changePassword(userId, body) {
 
   const hash = await hashPassword(newPassword);
   await repo.updatePasswordHash(userId, hash);
-  return { data: null, message: 'Password updated' };
+  return { data: null, message: '密码已更新' };
 }
 
 async function requestPasswordReset(body) {
@@ -245,7 +245,7 @@ async function requestPasswordReset(body) {
   const user = await repo.findUserByPhones(lookupPhones);
   const generic = {
     data: null,
-    message: 'Message',
+    message: '若该手机号已注册，我们将处理您的重置请求',
   };
 
   if (!user) return generic;
@@ -269,7 +269,7 @@ async function requestPasswordReset(body) {
   return {
     data: exposeToken ? { resetToken: token, expiresInMinutes: PASSWORD_RESET_TOKEN_TTL_MINUTES } : null,
     message: exposeToken
-      ? 'Message'
+      ? '开发环境已返回重置令牌'
       : generic.message,
   };
 }
@@ -286,7 +286,7 @@ async function resetPassword(body) {
   await repo.updatePasswordHash(row.user_id, hash);
   await repo.markPasswordResetTokenUsed(row.id);
   await repo.incrementRefreshTokenVersion(row.user_id);
-  return { data: null, message: 'OK' };
+  return { data: null, message: '密码已重置' };
 }
 
 async function refresh(refreshToken) {
@@ -320,7 +320,7 @@ async function logout(userId) {
   if (userId) {
     await repo.incrementRefreshTokenVersion(userId);
   }
-  return { data: null, message: 'Logged out' };
+  return { data: null, message: '已退出登录' };
 }
 
 /** 渚涘叾浠栧煙锛堝 admin锛夊湪璁よ瘉娴佺▼涓煡璇㈢敤鎴凤紝涓嶇粡杩?HTTP */

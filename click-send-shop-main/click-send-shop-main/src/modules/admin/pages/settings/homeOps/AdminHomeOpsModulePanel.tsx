@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { Tx } from "@/components/admin/AdminText";
+import AdminFieldHint, { AdminSectionTitle } from "@/components/admin/AdminFieldHint";
 import { THEME_TEXT_SUCCESS_SOFT } from "@/utils/themeVisuals";
 import { adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import {
@@ -63,10 +64,10 @@ export default function AdminHomeOpsModulePanel() {
   return (
     <section className="rounded-2xl border border-border bg-card p-3 sm:p-4">
       <div className="mb-4">
-        <h2 className="font-semibold text-foreground"><Tx>首页内容模块开关</Tx></h2>
-        <p className="mt-1 text-xs text-muted-foreground"><Tx>
-          开启后在前台对应首页展示该模块；关闭则整块隐藏（不影响商品数据本身）。
-        </Tx></p>
+        <AdminSectionTitle
+          title={<Tx>首页内容模块开关</Tx>}
+          hint={<Tx>开启后在前台对应首页展示该模块；关闭则整块隐藏（不影响商品数据本身）。</Tx>}
+        />
       </div>
 
       {loading ? (
@@ -92,11 +93,17 @@ export default function AdminHomeOpsModulePanel() {
                       className="flex items-start justify-between gap-4 rounded-xl border border-border bg-background px-4 py-3"
                     >
                       <div className="min-w-0">
-                        <p className="font-medium text-foreground">{def.label}</p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">{def.description}</p>
-                        <p className="mt-1 text-[10px] text-muted-foreground/80">
-                          适用：{def.audiences.map((a) => (a === "member" ? "登录用户" : "访客")).join("、")}
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-medium text-foreground">{def.label}</p>
+                          <AdminFieldHint
+                            text={(
+                              <>
+                                <p>{def.description}</p>
+                                <p className="mt-1">适用：{def.audiences.map((a) => (a === "member" ? "登录用户" : "访客")).join("、")}</p>
+                              </>
+                            )}
+                          />
+                        </div>
                       </div>
                       <label className="flex shrink-0 cursor-pointer items-center gap-2 pt-0.5 text-sm">
                         <input

@@ -27,17 +27,18 @@ async function main() {
     assert(await exists(file), `Missing dist/${file}`);
   }
 
-  assert(!(await exists("manifest.webmanifest")), "dist/manifest.webmanifest should not exist; PWA manifest is dynamic at /api/pwa/manifest.webmanifest");
-  assert(!(await exists("pwa-192x192.png")), "dist/pwa-192x192.png should not exist; icon is dynamic at /api/pwa/icon-192x192.png");
-  assert(!(await exists("pwa-512x512.png")), "dist/pwa-512x512.png should not exist; icon is dynamic at /api/pwa/icon-512x512.png");
-  assert(!(await exists("pwa-maskable-512x512.png")), "dist/pwa-maskable-512x512.png should not exist; icon is dynamic at /api/pwa/icon-maskable-512x512.png");
+  assert(!(await exists("manifest.webmanifest")), "dist/manifest.webmanifest should not exist; PWA manifest is dynamic at /manifest.webmanifest");
+  assert(!(await exists("pwa-192x192.png")), "dist/pwa-192x192.png should not exist; icon is dynamic at /pwa-192x192.png");
+  assert(!(await exists("pwa-512x512.png")), "dist/pwa-512x512.png should not exist; icon is dynamic at /pwa-512x512.png");
+  assert(!(await exists("pwa-maskable-512x512.png")), "dist/pwa-maskable-512x512.png should not exist; icon is dynamic at /pwa-maskable-512x512.png");
 
   const sw = await readFile(path.join(dist, "sw.js"), "utf8");
   const requiredSnippets = [
     "/offline.html",
-    "/api\\/(admin|auth|user|orders|cart|checkout|payment|upload)",
-    "/api\\/pwa",
-    "startsWith(\"/admin\")",
+    "networkOnlyApiPattern",
+    "/api/pwa/",
+    "networkOnlyPagePattern",
+    "/api/home/bootstrap",
     "new s.NetworkOnly",
   ];
   requiredSnippets.forEach((snippet) => {

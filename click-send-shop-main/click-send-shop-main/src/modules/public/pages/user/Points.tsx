@@ -22,27 +22,23 @@ import {
   THEME_TEXT_SUCCESS,
 } from "@/utils/themeVisuals";
 import PageHeader from "@/components/PageHeader";
+import { formatPointsRecordLabel, normalizePointsHintText } from "@/utils/pointsDisplayLabels";
 
 const POINTS_HINT_FALLBACK = "订单支付完成后，将按后台当前积分规则发放积分。";
-
-const POINTS_DESCRIPTION_LABELS: Record<string, string> = {
-  "Daily sign-in points": "每日签到",
-  "Order points earned": "订单积分发放",
-  "Order points reversed": "订单积分回滚",
-  "Admin points adjustment": "后台积分调整",
-};
 
 const POINTS_ERROR_LABELS: Record<string, string> = {
   "Already signed in today": "今天已经签到过了",
   "Sign-in points rule is disabled": "每日签到积分规则已关闭",
   "daily sign-in points must be at least 1": "每日签到积分必须至少为 1",
+  "Insufficient points balance": "积分余额不足",
 };
 
-function normalizePointsText(value?: string | null) {
+function normalizePointsText(value?: string | null, action?: string | null) {
   const text = String(value || "").trim();
-  if (!text) return "";
-  if (text === "Points are awarded after paid orders based on current rules.") return POINTS_HINT_FALLBACK;
-  return POINTS_DESCRIPTION_LABELS[text] || POINTS_ERROR_LABELS[text] || text;
+  if (!text) return action ? formatPointsRecordLabel({ action, description: "" }) : "";
+  const fromError = POINTS_ERROR_LABELS[text];
+  if (fromError) return fromError;
+  return formatPointsRecordLabel({ action, description: text }) || text;
 }
 
 export default function Points() {
@@ -64,7 +60,7 @@ export default function Points() {
   useEffect(() => {
     fetchPointsConfig()
       .then((cfg) => {
-        setPointsHint(normalizePointsText(cfg.orderPointsHint) || POINTS_HINT_FALLBACK);
+        setPointsHint(normalizePointsHintText(cfg.orderPointsHint, POINTS_HINT_FALLBACK));
         setSignInAward(cfg.signIn);
       })
       .catch(() => {
@@ -137,7 +133,9 @@ export default function Points() {
                     {record.amount >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm font-medium text-foreground">{normalizePointsText(record.description) || "积分变动"}</p>
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {normalizePointsText(record.description, record.action) || "积分变动"}
+                    </p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">{formatDateTime(record.created_at)}</p>
                   </div>
                   <span className={`text-sm font-bold ${record.amount >= 0 ? THEME_TEXT_SUCCESS : THEME_TEXT_DANGER}`}>

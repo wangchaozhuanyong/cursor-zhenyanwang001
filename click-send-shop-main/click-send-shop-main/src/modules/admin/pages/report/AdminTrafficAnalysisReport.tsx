@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, FileSpreadsheet, HelpCircle, MousePointerClick, Timer, TrendingUp, Users, X } from "lucide-react";
+import { Download, FileSpreadsheet, MousePointerClick, Timer, TrendingUp, Users, X } from "lucide-react";
+import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip as ChartTooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { ReportQuery } from "@/api/admin/report";
+import type { ReportQuery } from "@/services/admin/reportService";
 import { exportTrafficAnalysisCsv, fetchTrafficAnalysisReport } from "@/services/admin/reportService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 
@@ -153,19 +153,6 @@ function labelValue(key: string, value: unknown) {
 
 function labelField(key: string) {
   return FIELD_LABELS[key] || key;
-}
-
-function MetricHint({ text }: { text: string }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button type="button" className="text-[var(--theme-text-muted)] transition hover:text-[var(--theme-primary)]">
-          <HelpCircle size={13} />
-        </button>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-xs text-xs">{text}</TooltipContent>
-    </Tooltip>
-  );
 }
 
 function FilterSelect({
@@ -373,7 +360,7 @@ export default function AdminTrafficAnalysisReport() {
                 <div className="flex items-center gap-2 text-xs text-[var(--theme-text-muted)]">
                   <Icon size={15} />
                   <span>{card.label}</span>
-                  <MetricHint text={card.hint} />
+                  <AdminFieldHint text={card.hint} />
                 </div>
               </div>
               <p className="mt-3 text-2xl font-bold text-[var(--theme-text)]">
@@ -388,7 +375,7 @@ export default function AdminTrafficAnalysisReport() {
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow lg:col-span-2">
           <div className="mb-3 flex items-center gap-2">
             <h3 className="text-sm font-semibold text-[var(--theme-text)]">趋势图</h3>
-            <MetricHint text="展示 PV、UV、会话与支付金额随时间变化，受顶部筛选条件影响。" />
+            <AdminFieldHint text="展示 PV、UV、会话与支付金额随时间变化，受顶部筛选条件影响。" />
           </div>
           <ResponsiveContainer width="100%" height={280}>
             <AreaChart data={payload?.trend || []}>
@@ -409,7 +396,7 @@ export default function AdminTrafficAnalysisReport() {
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
           <div className="mb-3 flex items-center gap-2">
             <h3 className="text-sm font-semibold text-[var(--theme-text)]">转化漏斗</h3>
-            <MetricHint text="每一步展示人数或次数、相对首步转化率，以及相对上一环节流失率。" />
+            <AdminFieldHint text="每一步展示人数或次数、相对首步转化率，以及相对上一环节流失率。" />
           </div>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={payload?.funnel || []} layout="vertical" margin={{ left: 58 }}>

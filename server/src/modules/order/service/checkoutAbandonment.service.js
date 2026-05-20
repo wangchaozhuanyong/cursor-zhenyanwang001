@@ -44,7 +44,7 @@ function buildSnapshotParams(userId, body) {
 async function recordCheckoutSnapshot(userId, body) {
   const params = buildSnapshotParams(userId, body);
   if (params.itemsCount <= 0) {
-    return { data: null, message: 'No checkout items, snapshot skipped' };
+    return { data: null, message: '结算车为空，已跳过快照' };
   }
 
   const pool = repo.getPool();

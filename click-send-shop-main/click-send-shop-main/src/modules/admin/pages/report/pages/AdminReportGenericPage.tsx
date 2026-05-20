@@ -2,7 +2,18 @@ import { useEffect, useMemo, useState } from "react";
 import { FileSpreadsheet } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import ReportFilterBar from "@/components/admin/report/ReportFilterBar";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
+import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import {
+  buildReportFilterChips,
+  clearReportFilters,
+  hasActiveReportFilters,
+  removeReportFilterChip,
+} from "@/utils/adminReportFilters";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { labelReportCellValue, labelReportColumn } from "@/utils/adminDisplayLabels";
@@ -38,9 +49,11 @@ type Props = {
 };
 
 export default function AdminReportGenericPage({ title, fetcher }: Props) {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [payload, setPayload] = useState<Record<string, unknown>>({});
+  const [previewImageUrl, setPreviewImageUrl] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
     const run = async () => {
@@ -61,7 +74,10 @@ export default function AdminReportGenericPage({ title, fetcher }: Props) {
     void run();
   }, [fetcher, searchParams]);
 
-  const list = Array.isArray(payload.list) ? (payload.list as Record<string, unknown>[]) : [];
+  const list = useMemo(
+    () => (Array.isArray(payload.list) ? (payload.list as Record<string, unknown>[]) : []),
+    [payload.list],
+  );
   const summary = (payload.summary || {}) as Record<string, unknown>;
   const columns = useMemo(() => {
     if (list.length === 0) return ["col1", "col2", "col3", "col4", "col5"];
@@ -104,13 +120,41 @@ export default function AdminReportGenericPage({ title, fetcher }: Props) {
   }, [list]);
 
   const summaryEntries = Object.entries(summary).slice(0, 8);
+  const filterChips = useMemo(() => buildReportFilterChips(searchParams), [searchParams]);
+  const filtersActive = hasActiveReportFilters(searchParams);
+  const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.reportDataFiltered : ADMIN_EMPTY_GUIDES.reportData;
+
+  const handleClearFilters = () => {
+    setSearchParams(clearReportFilters(), { replace: true });
+  };
+
+  const handleRemoveFilterChip = (key: string) => {
+    setSearchParams(removeReportFilterChip(searchParams, key), { replace: true });
+  };
+
+  const openCoverPreview = (url: unknown) => {
+    const source = String(url ?? "").trim();
+    if (!source) {
+      toast.error("封面图地址为空");
+      return;
+    }
+    setPreviewImageUrl(source);
+    setPreviewOpen(true);
+  };
 
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-xl font-bold text-foreground">{title}</h1>
       </div>
-      <ReportFilterBar />
+      <div className="space-y-2">
+        <ReportFilterBar />
+        <AdminFilterSummaryBar
+          chips={filterChips}
+          onClearAll={handleClearFilters}
+          onRemove={handleRemoveFilterChip}
+        />
+      </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => (
@@ -142,17 +186,52 @@ export default function AdminReportGenericPage({ title, fetcher }: Props) {
             ))}
           </tr>
         )}
-        emptyIcon={FileSpreadsheet}
-        emptyTitle="暂无数据"
+        emptyIcon={emptyGuide.icon}
+        emptyTitle={emptyGuide.title}
+        emptyDescription={emptyGuide.description}
+        emptyAction={(
+          <AdminEmptyGuideActions
+            guide={emptyGuide}
+            showClearFilters={filtersActive}
+            onClearFilters={handleClearFilters}
+          />
+        )}
         renderRow={(row) => (
           <>
             {columns.map((k) => (
-              <td key={k} className="px-2 py-2">{formatCellValue(k, row[k])}</td>
+              <td key={k} className="px-2 py-2">
+                {k === "cover_image" ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => openCoverPreview(row[k])}
+                  >
+                    查看图片
+                  </Button>
+                ) : (
+                  formatCellValue(k, row[k])
+                )}
+              </td>
             ))}
           </>
         )}
       />
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>封面图预览</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[70vh] overflow-auto rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-2">
+            {previewImageUrl ? (
+              <img src={previewImageUrl} alt="封面图预览" className="mx-auto max-h-[65vh] w-auto max-w-full object-contain" />
+            ) : (
+              <p className="text-sm text-[var(--theme-text-muted)]">暂无可预览图片</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-

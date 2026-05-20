@@ -1,5 +1,5 @@
 import * as couponApi from "@/api/admin/coupon";
-import type { Coupon } from "@/types/coupon";
+import type { Coupon, CouponClaimRecord, IssueCouponByTagResult } from "@/types/coupon";
 import type { PaginatedData, PaginationParams } from "@/types/common";
 import { unwrapPaginated } from "@/services/responseNormalize";
 
@@ -25,7 +25,7 @@ export async function deleteCoupon(id: string) {
 export async function fetchCouponRecords(
   couponId?: string,
   params?: PaginationParams,
-): Promise<PaginatedData<Record<string, unknown>>> {
+): Promise<PaginatedData<CouponClaimRecord>> {
   if (couponId) {
     const res = await couponApi.getCouponRecords(couponId, params);
     return unwrapPaginated(res.data);
@@ -36,5 +36,5 @@ export async function fetchCouponRecords(
 
 export async function issueCouponByTag(couponId: string, tagIds: string[]) {
   const res = await couponApi.issueCouponByTag(couponId, tagIds);
-  return res.data as any;
+  return res.data as IssueCouponByTagResult;
 }

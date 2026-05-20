@@ -125,7 +125,7 @@ async function saveHomeModuleSettings(body, adminUserId, req) {
     actionType: 'home_ops.module_settings_update',
     objectType: 'site_settings',
     objectId: SETTING_KEY,
-    summary: 'Update home module settings',
+    summary: '更新首页模块开关',
     before: current,
     after: next,
     result: 'success',

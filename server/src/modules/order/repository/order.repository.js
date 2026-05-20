@@ -2,8 +2,16 @@
  * ????????SQL ???????????? mock? * @param {import('mysql2/promise').Pool|import('mysql2/promise').PoolConnection} q
  */
 const db = require('../../../config/db');
+const {
+  ACTIVE_RETURN_STATUS_LIST,
+  ACTIVE_RETURN_SQL_IN,
+  ORDER_REFUNDING_STATUSES,
+  orderAfterSalePredicate,
+} = require('../orderAfterSale');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const { generateId } = require('../../../utils/helpers');
+const { activeProductWhere } = require('../../product/productLifecycle');
+const { syncProductStockFromVariants } = require('../../product/productStockSync');
 
 function getPool() {
   return db;
@@ -16,7 +24,7 @@ async function getConnection() {
 async function selectProductsForUpdate(q, productIds) {
   if (!productIds.length) return [];
   const [rows] = await q.query(
-    `SELECT * FROM products WHERE id IN (${productIds.map(() => '?').join(',')}) AND lifecycle_status = 1 FOR UPDATE`,
+    `SELECT * FROM products WHERE id IN (${productIds.map(() => '?').join(',')}) AND ${activeProductWhere()} FOR UPDATE`,
     productIds,
   );
   return rows;
@@ -30,7 +38,7 @@ async function selectVariantsForUpdate(q, variantIds) {
     `SELECT v.*, p.name AS product_name, p.cover_image, p.points, p.category_id, p.lifecycle_status
      FROM product_variants v
      JOIN products p ON p.id = v.product_id
-     WHERE v.id IN (${ids.map(() => '?').join(',')}) AND p.lifecycle_status = 1 AND v.deleted_at IS NULL AND v.enabled = 1
+     WHERE v.id IN (${ids.map(() => '?').join(',')}) AND ${activeProductWhere('p')} AND v.deleted_at IS NULL AND v.enabled = 1
      FOR UPDATE`,
     ids,
   );
@@ -45,7 +53,7 @@ async function selectDefaultVariantsForProducts(q, productIds) {
     `SELECT v.*, p.name AS product_name, p.cover_image, p.points, p.category_id, p.lifecycle_status
      FROM product_variants v
      JOIN products p ON p.id = v.product_id
-     WHERE v.product_id IN (${ids.map(() => '?').join(',')}) AND v.is_default = 1 AND p.lifecycle_status = 1 AND v.deleted_at IS NULL AND v.enabled = 1
+     WHERE v.product_id IN (${ids.map(() => '?').join(',')}) AND v.is_default = 1 AND ${activeProductWhere('p')} AND v.deleted_at IS NULL AND v.enabled = 1
      FOR UPDATE`,
     ids,
   );
@@ -74,7 +82,7 @@ const ACTIVITY_SELECT_FIELDS = `
 async function selectProductsByIds(q, productIds) {
   if (!productIds.length) return [];
   const [rows] = await q.query(
-    `SELECT * FROM products WHERE id IN (${productIds.map(() => '?').join(',')}) AND lifecycle_status = 1`,
+    `SELECT * FROM products WHERE id IN (${productIds.map(() => '?').join(',')}) AND ${activeProductWhere()}`,
     productIds,
   );
   return rows;
@@ -88,7 +96,7 @@ async function selectVariantsByIds(q, variantIds) {
     `SELECT v.*, p.name AS product_name, p.cover_image, p.points, p.category_id, p.lifecycle_status
      FROM product_variants v
      JOIN products p ON p.id = v.product_id
-     WHERE v.id IN (${ids.map(() => '?').join(',')}) AND p.lifecycle_status = 1 AND v.deleted_at IS NULL AND v.enabled = 1`,
+     WHERE v.id IN (${ids.map(() => '?').join(',')}) AND ${activeProductWhere('p')} AND v.deleted_at IS NULL AND v.enabled = 1`,
     ids,
   );
   return rows;
@@ -415,12 +423,7 @@ async function deductVariantStock(q, variantId, qty, meta = {}) {
   );
   if (result.affectedRows > 0) {
     const afterStock = beforeStock - qty;
-    await q.query(
-      `UPDATE products p
-       SET p.stock = COALESCE((SELECT SUM(v.stock) FROM product_variants v WHERE v.product_id = p.id), p.stock)
-       WHERE p.id = ?`,
-      [beforeRow.product_id],
-    );
+    await syncProductStockFromVariants(q, beforeRow.product_id);
     await q.query(
       `INSERT INTO inventory_stock_records
          (id, product_id, variant_id, change_type, quantity_delta, before_stock,
@@ -547,7 +550,8 @@ function buildOrderListWhere(filters = {}) {
           WHERE oi.order_id = o.id AND pr.id IS NULL
         )`;
     } else if (tab === 'after_sale') {
-      where += " AND o.status IN ('refunding','refunded')";
+      where += ` AND ${orderAfterSalePredicate('o')}`;
+      params.push(...ORDER_REFUNDING_STATUSES);
     } else if (tab === 'cancelled') {
       where += " AND o.status = 'cancelled'";
     }
@@ -584,11 +588,17 @@ async function selectOrderSummary(q, userId) {
       SUM(CASE WHEN status = 'shipped' THEN 1 ELSE 0 END) AS shipped,
       SUM(CASE WHEN status = 'shipped' THEN 1 ELSE 0 END) AS pending_receive,
       SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed,
-      SUM(CASE WHEN status IN ('refunding','refunded') THEN 1 ELSE 0 END) AS after_sale,
       SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled
      FROM orders
      WHERE user_id = ?`,
     [userId],
+  );
+
+  const [[afterSaleRow]] = await q.query(
+    `SELECT COUNT(*) AS after_sale
+     FROM orders o
+     WHERE o.user_id = ? AND ${orderAfterSalePredicate('o')}`,
+    [userId, ...ORDER_REFUNDING_STATUSES],
   );
 
   const [[pendingReviewRow]] = await q.query(
@@ -611,7 +621,7 @@ async function selectOrderSummary(q, userId) {
     pending_receive: Number(base?.pending_receive || 0),
     pending_review: Number(pendingReviewRow?.pending_review || 0),
     completed: Number(base?.completed || 0),
-    after_sale: Number(base?.after_sale || 0),
+    after_sale: Number(afterSaleRow?.after_sale || 0),
     cancelled: Number(base?.cancelled || 0),
   };
 }
@@ -702,12 +712,7 @@ async function restoreVariantStock(q, variantId, qty, meta = {}) {
   const beforeStock = Number(beforeRow.stock || 0);
   const afterStock = beforeStock + Number(qty || 0);
   await q.query('UPDATE product_variants SET stock = ? WHERE id = ?', [afterStock, variantId]);
-  await q.query(
-    `UPDATE products p
-     SET p.stock = COALESCE((SELECT SUM(v.stock) FROM product_variants v WHERE v.product_id = p.id), p.stock)
-     WHERE p.id = ?`,
-    [beforeRow.product_id],
-  );
+  await syncProductStockFromVariants(q, beforeRow.product_id);
   await q.query(
     `INSERT INTO inventory_stock_records
        (id, product_id, variant_id, change_type, quantity_delta, before_stock,

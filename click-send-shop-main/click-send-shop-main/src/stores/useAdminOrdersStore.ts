@@ -66,6 +66,7 @@ interface AdminOrdersState {
 
   loadOrders: () => Promise<void>;
   applyOrderStatus: (orderId: string, status: OrderStatus) => void;
+  clearFilters: () => void;
   reset: () => void;
 }
 
@@ -86,6 +87,21 @@ export const useAdminOrdersStore = create<AdminOrdersState>((set, get) => ({
   setPageSize: (pageSize) => set({ pageSize }),
 
   reset: () => set({ ...initialState }),
+
+  clearFilters: () =>
+    set({
+      statusFilter: "",
+      paymentFilter: "",
+      search: "",
+      dateFrom: "",
+      dateTo: "",
+      paymentMethod: "",
+      paymentChannel: "",
+      shippingName: "",
+      amountMin: "",
+      amountMax: "",
+      page: 1,
+    }),
 
   loadOrders: async () => {
     set({ loading: true });

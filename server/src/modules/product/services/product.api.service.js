@@ -10,7 +10,7 @@ async function listProducts(query) {
 
 async function getProductById(id) {
   const data = await catalogService.getProductById(id);
-  if (!data) throw new BusinessError(404, 'Product not found');
+  if (!data) throw new BusinessError(404, '商品不存在');
   return data;
 }
 

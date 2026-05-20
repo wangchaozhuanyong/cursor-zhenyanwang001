@@ -1,4 +1,5 @@
 const db = require('../../../config/db');
+const { ACTIVE_PRODUCT_WHERE } = require('../../product/productLifecycle');
 
 async function upsertSearchTerm({ keyword, normalizedKeyword, resultCount }) {
   await db.query(
@@ -38,8 +39,7 @@ async function selectSuggestions(keyword, like, expandedLike, limit) {
   const [productRows] = await db.query(
     `SELECT name AS keyword, 0 AS search_count, 'product' AS source
      FROM products
-     WHERE lifecycle_status = 1
-       AND deleted_at IS NULL
+     WHERE ${ACTIVE_PRODUCT_WHERE}
        AND (
         name LIKE ?
         OR description LIKE ?
@@ -58,8 +58,7 @@ async function countSearchResults(like) {
   const [[{ total }]] = await db.query(
     `SELECT COUNT(*) AS total
      FROM products
-     WHERE lifecycle_status = 1
-       AND deleted_at IS NULL
+     WHERE ${ACTIVE_PRODUCT_WHERE}
        AND (
         name LIKE ?
         OR description LIKE ?

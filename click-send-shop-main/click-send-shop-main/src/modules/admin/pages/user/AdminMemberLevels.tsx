@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import * as userService from "@/services/admin/userService";
+import type { MemberLevelPayload } from "@/services/admin/userService";
 import type { MemberLevel } from "@/types/user";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
@@ -22,7 +23,7 @@ const emptyDraft: Draft = {
   is_default: false,
 };
 
-function toPayload(draft: Draft) {
+function toPayload(draft: Draft): MemberLevelPayload {
   return {
     name: String(draft.name || "").trim(),
     description: String(draft.description || "").trim(),
@@ -50,11 +51,11 @@ function validateDraft(draft: Draft) {
 }
 
 export default function AdminMemberLevels() {
-  const [levels, setLevels] = useState<any[]>([]);
+  const [levels, setLevels] = useState<MemberLevel[]>([]);
   const [newLevel, setNewLevel] = useState<Draft>(emptyDraft);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MemberLevel | null>(null);
 
   const loadLevels = async () => {
     setLoading(true);
@@ -62,7 +63,7 @@ export default function AdminMemberLevels() {
   };
 
   useEffect(() => { loadLevels(); }, []);
-  const updateLocal = (id: string, patch: Partial<any>) => setLevels((items) => items.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  const updateLocal = (id: string, patch: Partial<MemberLevel>) => setLevels((items) => items.map((item) => (item.id === id ? { ...item, ...patch } : item)));
 
   return (
     <div className="space-y-4">
@@ -88,7 +89,7 @@ export default function AdminMemberLevels() {
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={newLevel.enabled !== false} onChange={(e) => setNewLevel((s) => ({ ...s, enabled: e.target.checked, is_default: e.target.checked ? s.is_default : false }))} />启用</label>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={newLevel.is_default || false} onChange={(e) => setNewLevel((s) => ({ ...s, is_default: e.target.checked, enabled: e.target.checked ? true : s.enabled }))} />默认等级</label>
         </div>
-        <LoadingButton className="mt-3" type="button" variant="gold" state={savingId === "new" ? "loading" : "normal"} onClick={async () => { const err = validateDraft(newLevel); if (err) { toast.error(err); return; } setSavingId("new"); try { await userService.createMemberLevel(toPayload(newLevel) as any); setNewLevel(emptyDraft); await loadLevels(); toast.success("已创建"); } catch (e) { toast.error(toastErrorMessage(e, "创建失败")); } finally { setSavingId(null); } }}>新增</LoadingButton>
+        <LoadingButton className="mt-3" type="button" variant="gold" state={savingId === "new" ? "loading" : "normal"} onClick={async () => { const err = validateDraft(newLevel); if (err) { toast.error(err); return; } setSavingId("new"); try { await userService.createMemberLevel(toPayload(newLevel)); setNewLevel(emptyDraft); await loadLevels(); toast.success("已创建"); } catch (e) { toast.error(toastErrorMessage(e, "创建失败")); } finally { setSavingId(null); } }}>新增</LoadingButton>
       </section>
 
       {loading ? <div>加载中...</div> : levels.map((level) => (
@@ -106,7 +107,7 @@ export default function AdminMemberLevels() {
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!level.is_default} onChange={(e) => updateLocal(level.id, { is_default: e.target.checked, enabled: e.target.checked ? true : level.enabled })} />默认等级</label>
           </div>
           <div className="flex gap-2">
-            <LoadingButton type="button" variant="outline" state={savingId === level.id ? "loading" : "normal"} onClick={async () => { const err = validateDraft(level); if (err) { toast.error(err); return; } setSavingId(level.id); try { await userService.updateMemberLevel(level.id, toPayload(level) as any); await loadLevels(); toast.success("已保存"); } catch (e) { toast.error(toastErrorMessage(e, "保存失败")); } finally { setSavingId(null); } }}>保存</LoadingButton>
+            <LoadingButton type="button" variant="outline" state={savingId === level.id ? "loading" : "normal"} onClick={async () => { const err = validateDraft(level); if (err) { toast.error(err); return; } setSavingId(level.id); try { await userService.updateMemberLevel(level.id, toPayload(level)); await loadLevels(); toast.success("已保存"); } catch (e) { toast.error(toastErrorMessage(e, "保存失败")); } finally { setSavingId(null); } }}>保存</LoadingButton>
             <button type="button" onClick={() => setDeleteTarget(level)} disabled={level.is_default === true || savingId === level.id} className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border px-3 text-sm disabled:opacity-40 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER}`}><Trash2 size={15} />删除</button>
           </div>
         </div>

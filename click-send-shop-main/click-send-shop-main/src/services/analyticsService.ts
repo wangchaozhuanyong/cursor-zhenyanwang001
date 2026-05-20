@@ -123,6 +123,8 @@ function sendBeaconPayload(payload: AnalyticsEventPayload) {
   return navigator.sendBeacon(`${API_BASE}/analytics/events`, blob);
 }
 
+export type { AnalyticsEventPayload };
+
 export async function trackEvent(payload: AnalyticsEventPayload, options?: { beacon?: boolean }): Promise<void> {
   const enriched = enrichPayload(payload);
   if (!enriched) return;

@@ -3,6 +3,15 @@ const repo = require('../repository/adminCategory.repository');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { generateId } = require('../../../utils/helpers');
 
+function bumpCatalogCache() {
+  try {
+    const fn = require('../../product')?.api?.clearCatalogCache;
+    if (typeof fn === 'function') fn();
+  } catch (err) {
+    console.warn('[adminCategory] clearCatalogCache:', err?.message || err);
+  }
+}
+
 const MAX_CATEGORY_DEPTH = 3;
 
 function normalizeCategory(row) {
@@ -74,12 +83,12 @@ async function assertParentAllowed(parentId, selfId) {
     current = current.parent_id ? await repo.selectCategoryById(current.parent_id) : null;
   }
   const depth = await getDepth(parentId);
-  if (depth > MAX_CATEGORY_DEPTH) throw new BusinessError(400, `Max category depth is ${MAX_CATEGORY_DEPTH}`);
+  if (depth > MAX_CATEGORY_DEPTH) throw new BusinessError(400, `分类层级不能超过 ${MAX_CATEGORY_DEPTH} 级`);
   const selfExists = selfId ? await repo.selectCategoryById(selfId) : null;
   if (selfExists) {
     const height = await getSubtreeHeight(selfId);
     if (depth + height - 1 > MAX_CATEGORY_DEPTH) {
-      throw new BusinessError(400, `Depth exceeds max level ${MAX_CATEGORY_DEPTH} after move`);
+      throw new BusinessError(400, `移动后分类层级将超过 ${MAX_CATEGORY_DEPTH} 级`);
     }
   }
 }
@@ -105,6 +114,7 @@ async function createCategory(body, adminUserId, req) {
     after: { name, icon, icon_url, parent_id, sort_order, is_visible },
     result: 'success',
   });
+  bumpCatalogCache();
   return {
     data: {
       id,
@@ -156,6 +166,7 @@ async function updateCategory(id, body, adminUserId, req) {
   if (fragments.length === 0) throw new BusinessError(400, '没有需要更新的字段');
   await repo.updateCategoryDynamic(fragments, values, id);
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'category.update', objectType: 'category', objectId: id, summary: `更新分类 ${name || id}`, after: body, result: 'success' });
+  bumpCatalogCache();
   return { data: null, message: '更新成功' };
 }
 
@@ -166,6 +177,7 @@ async function deleteCategory(id, adminUserId, req) {
   if (products > 0) throw new BusinessError(400, '该分类已关联商品，禁止删除');
   await repo.deleteCategoryById(id, adminUserId);
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'category.delete', objectType: 'category', objectId: id, summary: `删除分类 ${id}`, result: 'success' });
+  bumpCatalogCache();
   return { data: null, message: '已删除' };
 }
 
@@ -188,10 +200,11 @@ async function updateCategorySort(items, adminUserId, req) {
     actionType: 'category.sort',
     objectType: 'category',
     objectId: null,
-    summary: `Adjusted category sort for ${items.length} items`,
+    summary: `调整 ${items.length} 个分类排序`,
     after: { count: items.length },
     result: 'success',
   });
+  bumpCatalogCache();
   return { data: null, message: '排序已更新' };
 }
 

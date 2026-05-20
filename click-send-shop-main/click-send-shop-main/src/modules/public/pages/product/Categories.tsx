@@ -28,6 +28,7 @@ import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPanel";
 
 export default function Categories() {
   const { themeConfig } = useThemeRuntime();
@@ -292,7 +293,24 @@ export default function Categories() {
 
               {filterSummary ? <div className="mb-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[color-mix(in_srgb,var(--theme-text-on-surface)_70%,var(--theme-text-muted))]">当前筛选：{filterSummary}</div> : null}
 
-              {error && <div className={`mb-3 p-3 text-center text-sm ${THEME_ALERT_ERROR_SOFT}`}>{error}</div>}
+              {error && products.length === 0 ? (
+                <div className="mb-3">
+                  <StorefrontLoadErrorPanel
+                    message={error}
+                    compact
+                    onRetry={() => {
+                      useProductStore.getState().clearError();
+                      void loadProducts();
+                      void loadCategories();
+                    }}
+                  />
+                </div>
+              ) : null}
+              {error && products.length > 0 ? (
+                <p className={`mb-3 px-3 py-2 text-center text-xs ${THEME_ALERT_ERROR_SOFT}`}>
+                  商品列表暂时无法刷新，以下为缓存数据
+                </p>
+              ) : null}
 
               <AnimatePresence mode="wait">
                 <motion.div
@@ -313,7 +331,22 @@ export default function Categories() {
                         displayMode={isListView ? "list" : "theme"}
                       />
                     ))}
-                {!loading && products.length === 0 ? <div className={cn(emptyColSpan, "py-12 text-center text-muted-foreground")}><p>{activeFilterCount > 0 || debouncedQuery ? "当前筛选条件无结果" : activeCat !== "all" ? "当前分类暂无商品" : categories.length > 0 ? "暂无商品上架" : "后台还没有配置商品"}</p>{(activeFilterCount > 0 || debouncedQuery) ? <button type="button" onClick={clearFilters} className="mt-3 rounded-full border border-[var(--theme-border)] px-4 py-2 text-xs">清空筛选</button> : null}</div> : null}
+                {!loading && !error && products.length === 0 ? (
+                  <div className={cn(emptyColSpan, "py-12 text-center text-muted-foreground")}>
+                    <p>
+                      {activeFilterCount > 0 || debouncedQuery
+                        ? "当前筛选条件无结果"
+                        : activeCat !== "all"
+                          ? "当前分类暂无商品"
+                          : "暂无商品上架"}
+                    </p>
+                    {(activeFilterCount > 0 || debouncedQuery) ? (
+                      <button type="button" onClick={clearFilters} className="mt-3 rounded-full border border-[var(--theme-border)] px-4 py-2 text-xs">
+                        清空筛选
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
                 </motion.div>
               </AnimatePresence>
             </section>

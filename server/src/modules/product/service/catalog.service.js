@@ -1,4 +1,5 @@
 const { parseBool, formatProduct } = require('../../../utils/helpers');
+const { ACTIVE_PRODUCT_WHERE } = require('../productLifecycle');
 const repo = require('../repository/catalog.repository');
 const tagAssignmentRepo = require('../repository/productTagAssignment.repository');
 const activityRepo = require('../repository/activity.repository');
@@ -127,7 +128,7 @@ function buildProductListQuery(query, categoryIds) {
   const minPrice = Number(query.min_price);
   const maxPrice = Number(query.max_price);
 
-  let where = 'WHERE lifecycle_status = 1 AND deleted_at IS NULL';
+  let where = `WHERE ${ACTIVE_PRODUCT_WHERE}`;
   const params = [];
 
   if (category_id && category_id !== 'all') {

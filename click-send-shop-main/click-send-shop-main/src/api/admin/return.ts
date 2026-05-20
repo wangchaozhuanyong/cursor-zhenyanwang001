@@ -1,17 +1,8 @@
 import { get, put } from "@/api/request";
-import type { ApproveReturnParams, ReturnRequest } from "@/types/return";
-import type { PaginatedData, PaginationParams } from "@/types/common";
+import type { ApproveReturnParams, ReturnListParams, ReturnRequest } from "@/types/return";
+import type { PaginatedData } from "@/types/common";
 
-export function getReturnRequests(
-  params?: PaginationParams & {
-    status?: string;
-    keyword?: string;
-    dateFrom?: string;
-    dateTo?: string;
-    sortBy?: string;
-    sortOrder?: string;
-  },
-) {
+export function getReturnRequests(params?: ReturnListParams) {
   return get<PaginatedData<ReturnRequest>>("/admin/returns", params as unknown as Record<string, string>);
 }
 

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { Image, Plus, Trash2, GripVertical, Eye, EyeOff, ExternalLink, Pencil } from "lucide-react";
 import { toast } from "sonner";
@@ -7,10 +6,12 @@ import * as bannerService from "@/services/admin/bannerService";
 import * as uploadService from "@/services/uploadService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
+import AdminFieldHint, { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { THEME_HOVER_TEXT_DANGER, THEME_TEXT_SUCCESS_SOFT } from "@/utils/themeVisuals";
 import { isAspectRatioWithinTolerance, readImageSize } from "@/utils/imageRatio";
+import type { Banner } from "@/types/banner";
 
 const BANNER_RATIO = 4 / 3;
 const BANNER_RATIO_TOLERANCE = 0.03;
@@ -18,7 +19,7 @@ const BANNER_SIZE_PRESETS = "1200×900 / 1600×1200 / 2000×1500";
 
 export default function AdminBanners() {
   const { confirm } = useAdminConfirm();
-  const [banners, setBanners] = useState<any[]>([]);
+  const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -58,7 +59,7 @@ export default function AdminBanners() {
       .catch((e) => toast.error(toastErrorMessage(e, "删除失败")));
   };
 
-  const openEdit = (b: any) => {
+  const openEdit = (b: Banner) => {
     setEditingId(b.id);
     setForm({ title: b.title || "", link: b.link || "", image: b.image || "" });
     setStrictRatioCheck(false);
@@ -86,7 +87,7 @@ export default function AdminBanners() {
           image: form.image,
           sort_order: banners.length + 1,
           enabled: true,
-        } as any);
+        });
         setBanners([...banners, newBanner]);
         setShowForm(false);
         setForm({ title: "", link: "", image: "" });
@@ -99,7 +100,7 @@ export default function AdminBanners() {
     }
   };
 
-  const persistBannerOrder = async (ordered: any[]) => {
+  const persistBannerOrder = async (ordered: Banner[]) => {
     setSavingOrder(true);
     try {
       await Promise.all(ordered.map((b, idx) => bannerService.updateBanner(String(b.id), { sort_order: idx + 1 })));
@@ -143,10 +144,7 @@ export default function AdminBanners() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-foreground"><Tx>Banner 管理</Tx></h1>
-          <p className="text-sm text-muted-foreground"><Tx>管理首页顶部 Banner（4:3）</Tx></p>
-        </div>
+        <AdminPageTitle title={<Tx>Banner 管理</Tx>} hint={<Tx>管理首页顶部 Banner（4:3）</Tx>} />
         <PermissionGate permission="banner.manage">
           <button
             onClick={() => {
@@ -162,23 +160,28 @@ export default function AdminBanners() {
         </PermissionGate>
       </div>
 
-      <div className="rounded-xl border border-gold/25 bg-gold/[0.06] px-4 py-3 text-sm dark:bg-gold/10">
-        <div className="flex items-center justify-between gap-3">
-          <p className="font-semibold text-foreground"><Tx>轮播图上传规范</Tx></p>
-          <button
-            type="button"
-            onClick={() => void handleCopyBannerPresets()}
-            className="rounded-lg border border-border bg-background px-2.5 py-1 text-xs text-foreground hover:bg-secondary"
-          >
-            复制推荐尺寸
-          </button>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gold/25 bg-gold/[0.06] px-4 py-2.5 text-sm dark:bg-gold/10">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-foreground"><Tx>轮播图上传规范</Tx></span>
+          <AdminFieldHint
+            contentClassName="max-w-sm"
+            text={(
+              <ul className="list-disc space-y-1 pl-4">
+                <li><Tx>首页顶部 Banner 统一使用 4:3 比例，避免展示裁切与留白。</Tx></li>
+                <li><Tx>推荐尺寸：1200×900、1600×1200、2000×1500（或任意等比 4:3）。</Tx></li>
+                <li><Tx>支持 JPG/PNG/WebP/GIF，单张不超过 15MB。</Tx></li>
+                <li><Tx>图片由服务器统一处理：最长边 2560，WebP quality 92（无需浏览器二次压缩）。</Tx></li>
+              </ul>
+            )}
+          />
         </div>
-        <ul className="mt-2 list-disc space-y-1.5 pl-5 text-[13px] leading-relaxed text-muted-foreground">
-          <li><Tx>首页顶部 Banner 统一使用 4:3 比例，避免展示裁切与留白。</Tx></li>
-          <li><Tx>推荐尺寸：1200×900、1600×1200、2000×1500（或任意等比 4:3）。</Tx></li>
-          <li><Tx>支持 JPG/PNG/WebP/GIF，单张不超过 15MB。</Tx></li>
-          <li><Tx>图片由服务器统一处理：最长边 2560，WebP quality 92（无需浏览器二次压缩）。</Tx></li>
-        </ul>
+        <button
+          type="button"
+          onClick={() => void handleCopyBannerPresets()}
+          className="rounded-lg border border-border bg-background px-2.5 py-1 text-xs text-foreground hover:bg-secondary"
+        >
+          复制推荐尺寸
+        </button>
       </div>
 
       <div className="space-y-2">

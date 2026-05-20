@@ -1,3 +1,5 @@
+import type { PaginationParams } from "@/types/common";
+
 export type ReturnStatus =
   | "pending"
   | "need_evidence"
@@ -10,7 +12,8 @@ export type ReturnStatus =
   | "refund_pending"
   | "refunded"
   | "exchange_shipping"
-  | "completed";
+  | "completed"
+  | "cancelled";
 
 export type ReturnType = "refund" | "return_refund" | "exchange" | "repair";
 
@@ -57,8 +60,46 @@ export interface ApproveReturnParams {
   reverse_rewards?: boolean;
 }
 
-export interface ReturnListParams {
-  status?: ReturnStatus;
-  page?: number;
-  pageSize?: number;
+export type ReturnListParams = Partial<PaginationParams> & {
+  status?: ReturnStatus | string;
+  keyword?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  sortBy?: string;
+  sortOrder?: string;
+};
+
+export interface ReturnRefundRecordRow {
+  id: string;
+  event_type: string;
+  processing_result: string;
+  created_at: string;
+}
+
+export interface ReturnInventoryRestoreRow {
+  id: string;
+  quantity_delta: number;
+  created_at: string;
+}
+
+export interface ReturnOperationLogRow {
+  id: string;
+  summary?: string;
+  result?: string;
+  created_at: string;
+}
+
+/** 管理端售后详情（含关联订单/用户/商品与处理记录） */
+export interface ReturnDetail extends ReturnRequest {
+  user_info?: { name?: string; phone?: string };
+  order_info?: {
+    order_no?: string;
+    total_amount?: number;
+    payment_status?: string;
+    status?: string;
+  };
+  item_info?: { product_name?: string; sku_code?: string; request_qty?: number };
+  refund_records?: ReturnRefundRecordRow[];
+  inventory_restore_records?: ReturnInventoryRestoreRow[];
+  operation_logs?: ReturnOperationLogRow[];
 }

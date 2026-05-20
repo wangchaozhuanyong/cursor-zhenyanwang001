@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import * as activityService from "@/services/admin/activityService";
@@ -117,9 +117,12 @@ export default function AdminActivityForm() {
     };
   }, [form.type]);
 
-  const selectedCouponIds = Array.isArray((form.activity_config as { coupon_ids?: string[] })?.coupon_ids)
-    ? ((form.activity_config as { coupon_ids: string[] }).coupon_ids)
-    : [];
+  const selectedCouponIds = useMemo(
+    () => (Array.isArray((form.activity_config as { coupon_ids?: string[] })?.coupon_ids)
+      ? (form.activity_config as { coupon_ids: string[] }).coupon_ids
+      : []),
+    [form.activity_config],
+  );
 
   const toggleCouponId = (couponId: string) => {
     setForm((prev) => {
@@ -131,9 +134,12 @@ export default function AdminActivityForm() {
     });
   };
 
-  const fullReductionRules = Array.isArray((form.activity_config as unknown as Record<string, unknown>)?.full_reduction_rules)
-    ? ((form.activity_config as unknown as Record<string, unknown>).full_reduction_rules as Array<{ threshold_amount: number; discount_amount: number }>)
-    : [{ threshold_amount: Number(form.threshold_amount || 0), discount_amount: Number(form.discount_amount || 0) }];
+  const fullReductionRules = useMemo(
+    () => (Array.isArray((form.activity_config as unknown as Record<string, unknown>)?.full_reduction_rules)
+      ? (form.activity_config as unknown as Record<string, unknown>).full_reduction_rules as Array<{ threshold_amount: number; discount_amount: number }>
+      : [{ threshold_amount: Number(form.threshold_amount || 0), discount_amount: Number(form.discount_amount || 0) }]),
+    [form.activity_config, form.threshold_amount, form.discount_amount],
+  );
 
   const setFullReductionRules = (rules: Array<{ threshold_amount: number; discount_amount: number }>) => {
     setForm((prev) => ({
@@ -144,7 +150,7 @@ export default function AdminActivityForm() {
     }));
   };
 
-  const localValidate = () => {
+  const localValidate = useCallback(() => {
     if (!form.title.trim()) return "活动名称必填";
     if (!form.start_at || !form.end_at) return "开始/结束时间必填";
     if (new Date(form.end_at).getTime() <= new Date(form.start_at).getTime()) return "结束时间必须晚于开始时间";
@@ -161,7 +167,7 @@ export default function AdminActivityForm() {
       }
     }
     return "";
-  };
+  }, [form, fullReductionRules, selectedCouponIds]);
 
   const performSave = async (targetStatus: ActivityStatus) => {
     setSaving(true);
@@ -193,7 +199,7 @@ export default function AdminActivityForm() {
     await performSave(targetStatus);
   };
 
-  const previewHint = useMemo(() => (localValidate() ? "请先完成活动规则" : "配置完整，可发布"), [form]);
+  const previewHint = useMemo(() => (localValidate() ? "请先完成活动规则" : "配置完整，可发布"), [localValidate]);
 
   const updateItem = (idx: number, patch: Partial<ActivityProductItem>) => {
     setForm((prev) => {

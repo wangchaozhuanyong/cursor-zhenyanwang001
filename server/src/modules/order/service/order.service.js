@@ -15,6 +15,7 @@ const {
 } = require('../orderReceiveDeadline');
 const { canUserCancel } = require('../orderStateMachine');
 const repo = require('../repository/order.repository');
+const returnRepo = require('../repository/return.repository');
 const userModule = require('../../user');
 const paymentsModule = require('../../payment');
 const checkoutAbandonmentRepo = require('../repository/checkoutAbandonment.repository');
@@ -586,8 +587,17 @@ async function getOrders(userId, query) {
     itemMap[oi.order_id].push(oi);
   }
 
+  const returnSummaries = await returnRepo.selectReturnSummaryByOrderIds(userId, orderIds);
+  const returnMap = Object.fromEntries(
+    returnSummaries.map((r) => [r.order_id, r]),
+  );
+
   const withPaymentDeadlines = await enrichOrdersWithPaymentDeadline(
-    orders.map((o) => formatOrder(o, attachOrderItemReviewFlags(o, (itemMap[o.id] || []).map(formatOrderItem)))),
+    orders.map((o) => formatOrder(
+      o,
+      attachOrderItemReviewFlags(o, (itemMap[o.id] || []).map(formatOrderItem)),
+      returnMap[o.id],
+    )),
   );
   const list = await enrichOrdersWithAutoConfirmReceiveDeadline(withPaymentDeadlines);
   return { kind: 'paginate', list, total, page, pageSize };
@@ -601,7 +611,12 @@ async function getOrderById(userId, orderId) {
   const order = await repo.selectOrderByIdAndUser(orderDb, orderId, userId);
   if (!order) throw new NotFoundError('订单不存在');
   const items = await repo.selectOrderItems(orderDb, order.id);
-  let data = formatOrder(order, attachOrderItemReviewFlags(order, items.map(formatOrderItem)));
+  const [returnSummary] = await returnRepo.selectReturnSummaryByOrderIds(userId, [order.id]);
+  let data = formatOrder(
+    order,
+    attachOrderItemReviewFlags(order, items.map(formatOrderItem)),
+    returnSummary,
+  );
   await requireLogisticsApi('attachTracking')(data);
   data = await enrichOrderWithPaymentDeadline(data);
   data = await enrichOrderWithAutoConfirmReceiveDeadline(data);

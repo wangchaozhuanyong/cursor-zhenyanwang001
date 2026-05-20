@@ -5,6 +5,7 @@ import {
   PAYMENT_STATUS_META,
   RETURN_STATUS_META,
 } from "@/constants/statusDictionary";
+import { translateApiErrorMessage } from "@/utils/apiErrorMessage";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -324,6 +325,21 @@ const SUMMARY_EXACT_ZH: Record<string, string> = {
   "售后已拒绝": "售后已拒绝",
   "记录退款失败": "记录退款失败",
   "管理员触发事件重放（记录审计，业务幂等由网关保证）": "触发支付事件重放",
+  "Admin login success": "管理员登录成功",
+  "Admin login failed": "管理员登录失败",
+  "Admin logout": "管理员退出登录",
+  "Admin marked order paid": "管理员标记订单已支付",
+  "Record refund failed": "记录退款失败",
+  "Admin replay event (audit only)": "管理员触发支付事件重放（仅审计）",
+  "Order status update failed": "订单状态更新失败",
+  "Update home module settings": "更新首页模块开关",
+  "User exported account data": "用户导出账号数据",
+  "User account cancellation failed": "用户注销账号失败",
+  "User account canceled and anonymized": "用户注销账号并完成匿名化",
+  "Create presigned upload ticket": "签发预签名上传凭证",
+  "Create presigned upload ticket failed": "签发预签名上传凭证失败",
+  "Complete presigned upload": "预签名上传完成并发布",
+  "Complete presigned upload failed": "预签名上传完成失败",
 };
 
 const ERROR_MSG_ZH: Record<string, string> = {
@@ -339,6 +355,10 @@ const ERROR_MSG_ZH: Record<string, string> = {
   Forbidden: "无权限",
   "Not Found": "资源不存在",
   "Bad Request": "请求参数错误",
+  "Permission denied": "没有操作权限",
+  "Please login first": "请先登录",
+  "Failed to create upload ticket": "创建上传凭证失败",
+  "Failed to complete upload": "完成上传失败",
 };
 
 function safeStringify(v: unknown) {
@@ -429,6 +449,26 @@ export function zhAuditSummary(summary?: string) {
   if (!raw) return "—";
   if (SUMMARY_EXACT_ZH[raw]) return SUMMARY_EXACT_ZH[raw];
 
+  const reviewPatterns: Array<{ test: RegExp; format: (m: RegExpMatchArray) => string }> = [
+    { test: /^Toggle review visibility (.+) -> (.+)$/i, format: (m) => `切换评价 ${m[1]} 展示状态为 ${m[2]}` },
+    { test: /^Approve review (.+)$/i, format: (m) => `通过评价 ${m[1]}` },
+    { test: /^Reject review (.+)$/i, format: (m) => `驳回评价 ${m[1]}` },
+    { test: /^Reply to review (.+)$/i, format: (m) => `回复评价 ${m[1]}` },
+    { test: /^Soft delete review (.+)$/i, format: (m) => `软删除评价 ${m[1]}` },
+    { test: /^Restore review (.+)$/i, format: (m) => `恢复评价 ${m[1]}` },
+    { test: /^Permanently delete review (.+)$/i, format: (m) => `永久删除评价 ${m[1]}` },
+    { test: /^Batch hide (\d+) reviews$/i, format: (m) => `批量隐藏 ${m[1]} 条评价` },
+    { test: /^Batch delete (\d+) reviews$/i, format: (m) => `批量删除 ${m[1]} 条评价` },
+    { test: /^(Unfeature|Feature) review (.+)$/i, format: (m) => `${m[1] === 'Unfeature' ? '取消精选' : '设为精选'}评价 ${m[2]}` },
+    { test: /^Update complaint status (.+)$/i, format: (m) => `更新评价 ${m[1]} 投诉状态` },
+    { test: /^Adjusted category sort for (\d+) items$/i, format: (m) => `调整 ${m[1]} 个分类排序` },
+    { test: /^Batch (.+) (\d+) products$/i, format: (m) => `批量${m[1]} ${m[2]} 个商品` },
+  ];
+  for (const { test, format } of reviewPatterns) {
+    const match = raw.match(test);
+    if (match) return format(match);
+  }
+
   let out = raw;
   // 订单状态 pending -> paid 或 pending->paid
   out = out.replace(
@@ -447,6 +487,8 @@ export function zhAuditSummary(summary?: string) {
 export function zhAuditErrorMessage(msg?: string) {
   const raw = String(msg || "").trim();
   if (!raw) return "";
+  const fromApi = translateApiErrorMessage(raw);
+  if (fromApi) return fromApi;
   if (ERROR_MSG_ZH[raw]) return ERROR_MSG_ZH[raw];
   // 常见英文前缀
   if (/^Invalid/i.test(raw)) return `参数无效：${raw.replace(/^Invalid\s*/i, "")}`;

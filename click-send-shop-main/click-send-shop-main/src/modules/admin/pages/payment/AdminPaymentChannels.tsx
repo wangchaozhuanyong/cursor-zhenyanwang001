@@ -9,6 +9,7 @@ import type { PaymentChannelRow } from "@/types/adminPayment";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
+import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 
 function parseConfig(row: PaymentChannelRow): Record<string, unknown> {
   const c = row.config_json;
@@ -76,8 +77,10 @@ export default function AdminPaymentChannels() {
     <PermissionGate permission="payment.manage">
       <div className="p-4 md:p-6">
         <div className="mb-2">
-          <h1 className="text-xl font-bold text-foreground"><Tx>支付管理</Tx></h1>
-          <p className="text-sm text-muted-foreground"><Tx>渠道启停、排序与扩展配置（手续费率等可在下方表单填写）</Tx></p>
+          <AdminPageTitle
+            title={<Tx>支付管理</Tx>}
+            hint={<Tx>渠道启停、排序与扩展配置（手续费率等可在下方表单填写）</Tx>}
+          />
         </div>
         <PaymentAdminSubnav />
 

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ThemeConfig, ThemeSceneTag, ThemeSkin } from "@/types/theme";
 import type { AutoColorAction } from "@/utils/themeStudioAuto";
 import { THEME_OUTLINE_WARNING } from "@/utils/themeVisuals";
+import AdminFieldHint, { AdminSectionTitle } from "@/components/admin/AdminFieldHint";
 import ColorField from "./ColorField";
 import ThemeHealthCheck from "./ThemeHealthCheck";
 import type { ThemeHealthFixTarget } from "./themeHealthFixMeta";
@@ -32,8 +33,10 @@ function SelectRow<T extends string>({
   const help = fieldKey ? FIELD_HELP_TEXTS[fieldKey] : undefined;
   return (
     <label className="space-y-1">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      {help ? <p className="text-[10px] leading-snug text-muted-foreground/80">{help}</p> : null}
+      <div className="flex items-center gap-1.5">
+        <span className="text-xs text-muted-foreground">{label}</span>
+        {help ? <AdminFieldHint text={help} /> : null}
+      </div>
       <select value={value} onChange={(e) => onChange(e.target.value as T)} className="h-10 w-full rounded-xl border border-border bg-background px-2 text-xs">
         {options.map((option) => (
           <option key={option} value={option}>
@@ -144,8 +147,7 @@ export default function ThemeEditorPanel({
       <div className="space-y-5">
       <section id="theme-section-basic" className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
         <div className="mb-3">
-          <h2 className="text-base font-semibold text-foreground">基础信息</h2>
-          <p className="text-xs text-muted-foreground">皮肤名称、适用场景和前台可见状态。</p>
+          <AdminSectionTitle title="基础信息" hint="皮肤名称、适用场景和前台可见状态。" />
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           <label className="space-y-1 md:col-span-2">
@@ -191,8 +193,7 @@ export default function ThemeEditorPanel({
 
       <section id="theme-section-colors" className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
         <div className="mb-3">
-          <h2 className="text-base font-semibold text-foreground">颜色系统</h2>
-          <p className="text-xs text-muted-foreground">品牌色、页面色、文字色和状态色会同步影响前台与预览。</p>
+          <AdminSectionTitle title="颜色系统" hint="品牌色、页面色、文字色和状态色会同步影响前台与预览。" />
         </div>
         <div className="space-y-4">
           <div id="theme-auto-toolbar" className="flex flex-wrap gap-2">
@@ -228,15 +229,16 @@ export default function ThemeEditorPanel({
 
       <section id="theme-section-components" className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
         <div className="mb-3">
-          <h2 className="text-base font-semibold text-foreground">组件风格</h2>
-          <p className="text-xs text-muted-foreground">按钮、导航、圆角、阴影、动效与页面密度。</p>
+          <AdminSectionTitle title="组件风格" hint="按钮、导航、圆角、阴影、动效与页面密度。" />
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           <SelectRow fieldKey="buttonStyle" label="按钮风格" value={themeConfig.buttonStyle} options={enumOptions.buttonStyle} onChange={(v) => onConfigChange("buttonStyle", v)} />
           <SelectRow fieldKey="navStyle" label="底部导航" value={themeConfig.navStyle} options={enumOptions.navStyle} onChange={(v) => onConfigChange("navStyle", v)} />
           <label className="space-y-1">
-            <span className="text-xs text-muted-foreground">圆角 radius</span>
-            <p className="text-[10px] leading-snug text-muted-foreground/80">{FIELD_HELP_TEXTS.radius}</p>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">圆角 radius</span>
+              <AdminFieldHint text={FIELD_HELP_TEXTS.radius} />
+            </div>
             <input value={themeConfig.radius} onChange={(e) => onConfigChange("radius", e.target.value)} className="h-10 w-full rounded-xl border border-border px-2 text-xs" />
           </label>
           <SelectRow fieldKey="shadowStyle" label="阴影" value={themeConfig.shadowStyle} options={enumOptions.shadowStyle} onChange={(v) => onConfigChange("shadowStyle", v)} />
@@ -247,8 +249,7 @@ export default function ThemeEditorPanel({
 
       <section id="theme-section-product" className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
         <div className="mb-3">
-          <h2 className="text-base font-semibold text-foreground">商品展示</h2>
-          <p className="text-xs text-muted-foreground">商品卡片、图片比例、价格与徽标样式。</p>
+          <AdminSectionTitle title="商品展示" hint="商品卡片、图片比例、价格与徽标样式。" />
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           <SelectRow fieldKey="productCardVariant" label="商品卡变体" value={themeConfig.productCardVariant} options={enumOptions.productCardVariant} onChange={(v) => onConfigChange("productCardVariant", v)} />
@@ -263,8 +264,7 @@ export default function ThemeEditorPanel({
 
       <section id="theme-section-home" className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
         <div className="mb-3">
-          <h2 className="text-base font-semibold text-foreground">首页与营销</h2>
-          <p className="text-xs text-muted-foreground">首页布局、头部、Banner、优惠券、会员卡和分类图标。</p>
+          <AdminSectionTitle title="首页与营销" hint="首页布局、头部、Banner、优惠券、会员卡和分类图标。" />
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           <SelectRow fieldKey="homeLayout" label="首页布局" value={themeConfig.homeLayout} options={enumOptions.homeLayout} onChange={(v) => onConfigChange("homeLayout", v)} />
@@ -278,21 +278,22 @@ export default function ThemeEditorPanel({
 
       <section id="theme-section-advanced" className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
         <div className="mb-3">
-          <h2 className="text-base font-semibold text-foreground">高级与体检</h2>
-          <p className="text-xs text-muted-foreground">后台主题模式、字体和可访问性体检建议。</p>
+          <AdminSectionTitle
+            title="高级与体检"
+            hint="后台主题模式、字体和可访问性体检建议。CSS 变量会由系统根据当前配置自动生成并同步，不需要手动维护。"
+          />
         </div>
         <div className="space-y-4">
           <div className="grid gap-3 md:grid-cols-2">
             <SelectRow fieldKey="adminThemeMode" label="后台主题模式" value={themeConfig.adminThemeMode} options={enumOptions.adminThemeMode} onChange={(v) => onConfigChange("adminThemeMode", v)} />
             <label className="space-y-1">
-              <span className="text-xs text-muted-foreground">字体</span>
-              <p className="text-[10px] leading-snug text-muted-foreground/80">{FIELD_HELP_TEXTS.fontFamily}</p>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">字体</span>
+                <AdminFieldHint text={FIELD_HELP_TEXTS.fontFamily} />
+              </div>
               <input value={themeConfig.fontFamily} onChange={(e) => onConfigChange("fontFamily", e.target.value)} className="h-10 w-full rounded-xl border border-border px-2 text-xs" />
             </label>
           </div>
-          <p className="rounded-xl border border-border bg-secondary/30 px-3 py-2 text-[11px] text-muted-foreground">
-            CSS 变量会由系统根据当前配置自动生成并同步，不需要手动维护。
-          </p>
           <ThemeHealthCheck config={themeConfig} onGoToFix={goToFix} />
         </div>
       </section>

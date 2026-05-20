@@ -13,6 +13,18 @@ node_modules/
 **/dist-ssr/
 public-frontend/
 *.log
+deploy-last.log
+**/.preview.log
+server/ssh-tunnel.log
+
+# 备份与本地缓存
+*.bak
+**/__pycache__/
+*.pyc
+
+# 仅使用 npm（package-lock.json）；避免 bun 锁文件误入仓库
+bun.lockb
+**/bun.lockb
 
 # GitHub Actions — 忽略目录内未显式放行的文件（勿用 trailing / 忽略目录，否则无法 ! 恢复子文件）
 .github/workflows/*

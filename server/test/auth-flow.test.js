@@ -8,8 +8,14 @@ const app = require('../src/app');
 const repo = require('../src/modules/auth/repository/auth.repository');
 const { generateId } = require('../src/utils/helpers');
 
-/** 涓?registerBodySchema 涓€鑷达細闇€鍚?countryCode锛涗笌 normalizeIntlPhone 鍏煎 */
-const phone = `5${Date.now().toString().slice(-7)}`;
+/** 与 registerBodySchema 一致：马来西亚本地号 + 强密码 */
+function malaysiaTestPhone() {
+  return `01${String(Date.now()).slice(-8)}`;
+}
+
+const TEST_PASSWORD = 'Secret12';
+const TEST_PASSWORD_RESET = 'NewSecret12';
+const phone = malaysiaTestPhone();
 const countryCode = '+60';
 process.env.EXPOSE_PASSWORD_RESET_TOKEN = 'true';
 
@@ -19,7 +25,7 @@ describe('auth API', () => {
   before(async () => {
     const res = await request(app)
       .post('/api/auth/register')
-      .send({ phone, countryCode, password: 'secret12', nickname: 't' })
+      .send({ phone, countryCode, password: TEST_PASSWORD, nickname: 't' })
       .expect(200);
     assert.equal(res.body.code, 0);
     assert.ok(res.body.data?.token?.accessToken);
@@ -29,7 +35,7 @@ describe('auth API', () => {
   test('POST /api/auth/login', async () => {
     const res = await request(app)
       .post('/api/auth/login')
-      .send({ phone, countryCode, password: 'secret12' })
+      .send({ phone, countryCode, password: TEST_PASSWORD })
       .expect(200);
     assert.equal(res.body.code, 0);
     assert.ok(res.body.data?.token?.refreshToken);
@@ -55,13 +61,13 @@ describe('auth API', () => {
 
     const confirm = await request(app)
       .post('/api/auth/password-reset/confirm')
-      .send({ token: requestReset.body.data.resetToken, newPassword: 'newSecret12' })
+      .send({ token: requestReset.body.data.resetToken, newPassword: TEST_PASSWORD_RESET })
       .expect(200);
     assert.equal(confirm.body.code, 0);
 
     const login = await request(app)
       .post('/api/auth/login')
-      .send({ phone, countryCode, password: 'newSecret12' })
+      .send({ phone, countryCode, password: TEST_PASSWORD_RESET })
       .expect(200);
     assert.equal(login.body.code, 0);
     assert.ok(login.body.data?.token?.accessToken);
@@ -74,7 +80,7 @@ describe('OTP auth API', () => {
   });
 
   test('POST /api/auth/otp/send and /api/auth/otp/login new user', async () => {
-    const p = `5${Date.now().toString().slice(-8)}`;
+    const p = malaysiaTestPhone();
     const send = await request(app)
       .post('/api/auth/otp/send')
       .send({ phone: p, countryCode: '+60' })
@@ -91,7 +97,7 @@ describe('OTP auth API', () => {
   });
 
   test('POST /api/auth/otp/login rejects bad code', async () => {
-    const p = `5${Date.now().toString().slice(-8)}`;
+    const p = malaysiaTestPhone();
     await request(app)
       .post('/api/auth/otp/send')
       .send({ phone: p, countryCode: '+60' })
@@ -135,10 +141,10 @@ describe('OAuth ticket exchange', () => {
   });
 
   test('POST /api/auth/oauth/exchange', async () => {
-    const p = `5${Date.now().toString().slice(-8)}`;
+    const p = malaysiaTestPhone();
     const reg = await request(app)
       .post('/api/auth/register')
-      .send({ phone: p, countryCode: '+60', password: 'secret12', nickname: 'o' })
+      .send({ phone: p, countryCode: '+60', password: TEST_PASSWORD, nickname: 'o' })
       .expect(200);
     const userId = reg.body.data.userId;
     const rawCode = crypto.randomBytes(24).toString('hex');

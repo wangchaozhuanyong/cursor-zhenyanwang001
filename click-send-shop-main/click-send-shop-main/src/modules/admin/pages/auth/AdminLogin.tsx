@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Lock, User } from "lucide-react";
 import { toast } from "sonner";
 import { adminLogin } from "@/services/admin/accountService";
-import { toastErrorMessage } from "@/utils/errorMessage";
+import { adminLoginErrorMessage } from "@/utils/storefrontError";
 import { FormFieldShake } from "@/modules/micro-interactions";
 import { useAdminT } from "@/hooks/useAdminT";
 import AdminSiteLogo from "@/components/admin/AdminSiteLogo";
@@ -16,14 +16,19 @@ export default function AdminLogin() {
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const [shakeKey, setShakeKey] = useState(0);
+  const [fieldErrors, setFieldErrors] = useState<{ account?: string; password?: string }>({});
 
   const handleLogin = async () => {
     const normalizedAccount = account.trim();
-    if (!normalizedAccount || !password.trim()) {
+    const nextErrors: { account?: string; password?: string } = {};
+    if (!normalizedAccount) nextErrors.account = "请输入管理员账号";
+    if (!password.trim()) nextErrors.password = "请输入密码";
+    if (nextErrors.account || nextErrors.password) {
+      setFieldErrors(nextErrors);
       setShakeKey((k) => k + 1);
-      toast.error(t("login.accountPasswordRequired"));
       return;
     }
+    setFieldErrors({});
     setLoading(true);
     try {
       await adminLogin({ username: normalizedAccount, phone: normalizedAccount, password });
@@ -31,7 +36,7 @@ export default function AdminLogin() {
       navigate("/admin");
     } catch (e) {
       setShakeKey((k) => k + 1);
-      toast.error(toastErrorMessage(e, t("login.loginFailed")));
+      toast.error(adminLoginErrorMessage(e, t("login.loginFailed")));
     } finally {
       setLoading(false);
     }
@@ -57,12 +62,16 @@ export default function AdminLogin() {
                 <input
                   type="text"
                   value={account}
-                  onChange={(e) => setAccount(e.target.value)}
+                  onChange={(e) => {
+                    setAccount(e.target.value);
+                    if (fieldErrors.account) setFieldErrors((s) => ({ ...s, account: undefined }));
+                  }}
                   placeholder={t("login.accountPlaceholder")}
                   className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
                   onKeyDown={(e) => e.key === "Enter" && handleLogin()}
                 />
               </div>
+              {fieldErrors.account ? <p className="mt-1 text-xs text-destructive">{fieldErrors.account}</p> : null}
             </div>
 
             <div>
@@ -72,7 +81,10 @@ export default function AdminLogin() {
                 <input
                   type={showPwd ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (fieldErrors.password) setFieldErrors((s) => ({ ...s, password: undefined }));
+                  }}
                   placeholder={t("login.passwordPlaceholder")}
                   className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
                   onKeyDown={(e) => e.key === "Enter" && handleLogin()}
@@ -81,6 +93,7 @@ export default function AdminLogin() {
                   {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              {fieldErrors.password ? <p className="mt-1 text-xs text-destructive">{fieldErrors.password}</p> : null}
             </div>
 
             <button

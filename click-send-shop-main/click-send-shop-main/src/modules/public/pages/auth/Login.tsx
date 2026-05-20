@@ -79,8 +79,13 @@ export default function Login() {
   const [keyboardInset, setKeyboardInset] = useState(0);
   const hasLockedInviteCode = !!lockedInviteCode;
   const [shakeKey, setShakeKey] = useState(0);
-  const failValidation = (message: string) => {
+  const [fieldErrors, setFieldErrors] = useState<{ phone?: string; password?: string; otp?: string; nickname?: string }>({});
+  const failValidation = (message: string, field?: keyof typeof fieldErrors) => {
     setShakeKey((k) => k + 1);
+    if (field) {
+      setFieldErrors((prev) => ({ ...prev, [field]: message }));
+      return;
+    }
     toast.error(message);
   };
 
@@ -139,7 +144,7 @@ export default function Login() {
     const oauthProvider = params.get("oauthProvider");
     if (oauthErr || wechatErr) {
       const msg = decodeURIComponent((oauthErr || wechatErr || "").replace(/\+/g, " "));
-      toast.error(msg);
+      toast.error(authErrorMessage(new Error(msg), msg || "第三方登录失败"));
       navigate("/login", { replace: true });
       return;
     }
@@ -279,9 +284,10 @@ export default function Login() {
   };
 
   const handleSubmit = async () => {
+    setFieldErrors({});
     const phoneError = validatePhoneForCountry(phone, countryCode);
     if (phoneError) {
-      failValidation(phoneError);
+      failValidation(phoneError, "phone");
       return;
     }
 
@@ -291,22 +297,22 @@ export default function Login() {
         return;
       }
       if (!otpCode.trim() || !/^\d{6}$/.test(otpCode.trim())) {
-        failValidation("请输入 6 位验证码");
+        failValidation("请输入 6 位验证码", "otp");
         return;
       }
     } else if (!password) {
-      failValidation("请输入密码");
+      failValidation("请输入密码", "password");
       return;
     }
 
     if (mode === "register") {
       if (!hasLockedInviteCode && !nickname.trim()) {
-        failValidation("请输入昵称");
+        failValidation("请输入昵称", "nickname");
         return;
       }
       const passwordError = validateStrongPassword(password);
       if (passwordError) {
-        failValidation(passwordError);
+        failValidation(passwordError, "password");
         return;
       }
     }
@@ -498,10 +504,14 @@ export default function Login() {
                   type="text"
                   placeholder="昵称"
                   value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
+                  onChange={(e) => {
+                    setNickname(e.target.value);
+                    if (fieldErrors.nickname) setFieldErrors((s) => ({ ...s, nickname: undefined }));
+                  }}
                   className={cn(INPUT_CLASS, "pl-12 pr-4")}
                 />
               </div>
+              {fieldErrors.nickname ? <p className="text-xs text-destructive">{fieldErrors.nickname}</p> : null}
             </div>
           )}
           {mode === "register" && (
@@ -527,7 +537,10 @@ export default function Login() {
           <div className="grid grid-cols-[minmax(6.5rem,7rem)_1fr] gap-2 sm:grid-cols-[112px_1fr]">
             <select
               value={countryCode}
-              onChange={(e) => setCountryCode(e.target.value)}
+              onChange={(e) => {
+                setCountryCode(e.target.value);
+                if (fieldErrors.phone) setFieldErrors((s) => ({ ...s, phone: undefined }));
+              }}
               aria-label="国家或地区代码"
               className="min-w-0 rounded-2xl border border-border bg-card px-2.5 py-3.5 text-base text-foreground focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20 sm:px-3"
             >
@@ -545,11 +558,15 @@ export default function Login() {
                 autoComplete="tel"
                 placeholder="手机号"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/[^\d\s\-()]/g, ""))}
+                onChange={(e) => {
+                  setPhone(e.target.value.replace(/[^\d\s\-()]/g, ""));
+                  if (fieldErrors.phone) setFieldErrors((s) => ({ ...s, phone: undefined }));
+                }}
                 className={cn(INPUT_CLASS, "scroll-mt-4 pl-12 pr-4")}
               />
             </div>
           </div>
+          {fieldErrors.phone ? <p className="text-xs text-destructive">{fieldErrors.phone}</p> : null}
 
           {(mode === "register" || (mode === "login" && credentialMode === "password")) && (
             <div className="relative">
@@ -558,7 +575,10 @@ export default function Login() {
                 type={showPwd ? "text" : "password"}
                 placeholder="密码"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (fieldErrors.password) setFieldErrors((s) => ({ ...s, password: undefined }));
+                }}
                 className={cn(INPUT_CLASS, "pl-12 pr-12")}
               />
               <button
@@ -570,6 +590,7 @@ export default function Login() {
               </button>
             </div>
           )}
+          {fieldErrors.password ? <p className="text-xs text-destructive">{fieldErrors.password}</p> : null}
 
           {mode === "login" && credentialMode === "otp" && (
             <div className="space-y-2">
@@ -582,10 +603,14 @@ export default function Login() {
                   placeholder="6 位验证码"
                   value={otpCode}
                   maxLength={6}
-                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  onChange={(e) => {
+                    setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                    if (fieldErrors.otp) setFieldErrors((s) => ({ ...s, otp: undefined }));
+                  }}
                   className={cn(INPUT_CLASS, "pl-12 pr-4 tracking-widest")}
                 />
               </div>
+              {fieldErrors.otp ? <p className="text-xs text-destructive">{fieldErrors.otp}</p> : null}
               <button
                 type="button"
                 onClick={handleSendOtp}

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FileText, Edit2, Shield, HelpCircle, Plus, Trash2, ChevronDown, ChevronRight, ArrowUp, ArrowDown } from "lucide-react";
@@ -10,6 +9,7 @@ import { fetchSiteSettings, updateSiteSettings } from "@/services/admin/settings
 import { toastErrorMessage } from "@/utils/errorMessage";
 import type { HelpCenterCategory, HelpCenterConfig, HelpCenterFaq } from "@/types/content";
 import { Tx } from "@/components/admin/AdminText";
+import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { AdminContentPageSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import { THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 
@@ -63,7 +63,7 @@ export default function AdminContent() {
     }
     setSaving(true);
     try {
-      await updateContentPage(editing.id, { title: form.title, content: form.content } as any);
+      await updateContentPage(editing.id, { title: form.title, content: form.content });
       setItems(items.map((i) => (i.id === editing.id ? { ...i, title: form.title, content: form.content, updatedAt: new Date().toISOString() } : i)));
       toast.success("内容已更新");
       setShowForm(false);
@@ -167,8 +167,7 @@ export default function AdminContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-foreground"><Tx>内容管理</Tx></h1>
-        <p className="text-sm text-muted-foreground"><Tx>政策页与帮助中心配置分开管理。</Tx></p>
+        <AdminPageTitle title={<Tx>内容管理</Tx>} hint={<Tx>政策页与帮助中心配置分开管理。</Tx>} />
         <div className="mt-3">
           <PermissionGate permission="content.manage">
             <button

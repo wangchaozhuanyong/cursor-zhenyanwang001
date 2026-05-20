@@ -1,7 +1,15 @@
 import { formatDateTime } from "@/utils/formatDateTime";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Search, Shield, ChevronRight } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
+import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import {
+  buildAuditLogFilterChips,
+  hasActiveAuditLogFilters,
+  removeAuditLogFilterChip,
+} from "@/utils/adminAuditLogFilters";
 import Pagination from "@/components/admin/Pagination";
 import { toast } from "sonner";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
@@ -18,6 +26,7 @@ import {
   zhOperatorRole,
 } from "@/utils/auditLogI18n";
 import { Tx } from "@/components/admin/AdminText";
+import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import { THEME_ALERT_ERROR_SOFT, THEME_BADGE_DANGER } from "@/utils/themeVisuals";
 
 export default function AdminLogs() {
@@ -58,16 +67,62 @@ export default function AdminLogs() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 见上
   }, [canAudit, auditPage, auditPageSize]);
 
-  const handleAuditSearch = () => {
-    setAuditPage(1);
+  const runAuditSearch = (page = 1) => {
+    setAuditPage(page);
     setAuditLoading(true);
-    fetchAuditLogs({
-      page: 1,
+    return fetchAuditLogs({
+      page,
       pageSize: auditPageSize,
       keyword: auditKeyword.trim() || undefined,
       result: auditResult || undefined,
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined,
+      sortOrder: "desc",
+    })
+      .then((p) => {
+        setAuditList(p.list);
+        setAuditTotal(p.total);
+      })
+      .catch(() => toast.error("加载审计日志失败"))
+      .finally(() => setAuditLoading(false));
+  };
+
+  const handleAuditSearch = () => {
+    void runAuditSearch(1);
+  };
+
+  const filterState = { keyword: auditKeyword, result: auditResult, dateFrom, dateTo };
+  const filterChips = useMemo(() => buildAuditLogFilterChips(filterState), [auditKeyword, auditResult, dateFrom, dateTo]);
+  const filtersActive = hasActiveAuditLogFilters(filterState);
+  const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.auditLogsFiltered : ADMIN_EMPTY_GUIDES.auditLogs;
+
+  const clearFilters = () => {
+    setAuditKeyword("");
+    setAuditResult("");
+    setDateFrom("");
+    setDateTo("");
+    void runAuditSearch(1);
+  };
+
+  const handleRemoveFilterChip = (key: string) => {
+    const patch = removeAuditLogFilterChip(key);
+    const nextKeyword = "keyword" in patch ? (patch.keyword ?? "") : auditKeyword;
+    const nextResult = "result" in patch ? (patch.result ?? "") : auditResult;
+    const nextDateFrom = "dateFrom" in patch ? (patch.dateFrom ?? "") : dateFrom;
+    const nextDateTo = "dateTo" in patch ? (patch.dateTo ?? "") : dateTo;
+    if ("keyword" in patch) setAuditKeyword(nextKeyword);
+    if ("result" in patch) setAuditResult(nextResult);
+    if ("dateFrom" in patch) setDateFrom(nextDateFrom);
+    if ("dateTo" in patch) setDateTo(nextDateTo);
+    setAuditPage(1);
+    setAuditLoading(true);
+    fetchAuditLogs({
+      page: 1,
+      pageSize: auditPageSize,
+      keyword: nextKeyword.trim() || undefined,
+      result: nextResult || undefined,
+      dateFrom: nextDateFrom || undefined,
+      dateTo: nextDateTo || undefined,
       sortOrder: "desc",
     })
       .then((p) => {
@@ -91,16 +146,15 @@ export default function AdminLogs() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-foreground"><Tx>审计日志</Tx></h1>
-        <p className="text-sm text-muted-foreground flex items-center gap-2">
-          <Shield size={16} className="shrink-0 text-[var(--theme-price)]" /><Tx>
-          管理端操作审计（含失败记录与前后快照）
-        </Tx></p>
+      <div className="flex items-center gap-2">
+        <h1 className="flex items-center gap-2 text-xl font-bold text-foreground">
+          <Shield size={16} className="shrink-0 text-[var(--theme-price)]" /><Tx>审计日志</Tx>
+        </h1>
+        <AdminFieldHint text={<Tx>管理端操作审计（含失败记录与前后快照）</Tx>} size="md" />
       </div>
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-end">
-        <div className="min-w-0 flex-1">
+      <div className="space-y-2">
+        <div className="min-w-0">
           <label className="mb-1 block text-xs text-muted-foreground"><Tx>关键词</Tx></label>
           <div className="flex items-center gap-1.5 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
             <Search size={14} className="text-muted-foreground shrink-0" />
@@ -108,52 +162,55 @@ export default function AdminLogs() {
               placeholder="摘要 / 操作人 / 动作 / 对象编号 / 错误信息"
               value={auditKeyword}
               onChange={(e) => setAuditKeyword(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAuditSearch()}
               className="min-w-0 flex-1 bg-transparent text-sm outline-none"
             />
           </div>
         </div>
-        <div>
-          <label className="mb-1 block text-xs text-muted-foreground"><Tx>结果</Tx></label>
-          <select
-            value={auditResult}
-            onChange={(e) => setAuditResult(e.target.value as "" | "success" | "failure")}
-            className="w-full min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
-          >
-            <option value=""><Tx>全部</Tx></option>
-            <option value="success"><Tx>成功</Tx></option>
-            <option value="failure"><Tx>失败</Tx></option>
-          </select>
-        </div>
-        <div>
-          <label htmlFor="audit-date-from" className="mb-1 block text-xs text-muted-foreground"><Tx>
-            开始日期
-          </Tx></label>
-          <SegmentedDateInput
-            id="audit-date-from"
-            value={dateFrom}
-            onChange={setDateFrom}
-            className="w-full [&>div]:theme-rounded [&>div]:border-[var(--theme-border)] [&>div]:bg-[var(--theme-surface)]"
-          />
-        </div>
-        <div>
-          <label htmlFor="audit-date-to" className="mb-1 block text-xs text-muted-foreground"><Tx>
-            结束日期
-          </Tx></label>
-          <SegmentedDateInput
-            id="audit-date-to"
-            value={dateTo}
-            onChange={setDateTo}
-            className="w-full [&>div]:theme-rounded [&>div]:border-[var(--theme-border)] [&>div]:bg-[var(--theme-surface)]"
-          />
-        </div>
-        <button
-          type="button"
-          onClick={handleAuditSearch}
-          className="min-h-[44px] theme-rounded px-5 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]"
-         
-        ><Tx>
-          查询
-        </Tx></button>
+        <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
+        <details className="group theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
+          <summary className="cursor-pointer list-none text-sm font-medium text-foreground marker:content-none">
+            <span className="text-muted-foreground group-open:hidden">展开高级筛选</span>
+            <span className="hidden group-open:inline">收起高级筛选</span>
+          </summary>
+          <div className="mt-3 flex flex-col gap-3 border-t border-[var(--theme-border)] pt-3 lg:flex-row lg:flex-wrap lg:items-end">
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground"><Tx>结果</Tx></label>
+              <select
+                value={auditResult}
+                onChange={(e) => setAuditResult(e.target.value as "" | "success" | "failure")}
+                className="w-full min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+              >
+                <option value=""><Tx>全部</Tx></option>
+                <option value="success"><Tx>成功</Tx></option>
+                <option value="failure"><Tx>失败</Tx></option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="audit-date-from" className="mb-1 block text-xs text-muted-foreground"><Tx>开始日期</Tx></label>
+              <SegmentedDateInput
+                id="audit-date-from"
+                value={dateFrom}
+                onChange={setDateFrom}
+                className="w-full [&>div]:theme-rounded [&>div]:border-[var(--theme-border)] [&>div]:bg-[var(--theme-surface)]"
+              />
+            </div>
+            <div>
+              <label htmlFor="audit-date-to" className="mb-1 block text-xs text-muted-foreground"><Tx>结束日期</Tx></label>
+              <SegmentedDateInput
+                id="audit-date-to"
+                value={dateTo}
+                onChange={setDateTo}
+                className="w-full [&>div]:theme-rounded [&>div]:border-[var(--theme-border)] [&>div]:bg-[var(--theme-surface)]"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleAuditSearch}
+              className="min-h-[44px] theme-rounded px-5 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]"
+            ><Tx>查询</Tx></button>
+          </div>
+        </details>
       </div>
 
       <div className="space-y-3 md:hidden">
@@ -199,14 +256,14 @@ export default function AdminLogs() {
         />
       </div>
 
-      <div className="hidden md:block">
+      <div className="hidden md:block theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-hidden">
         <AnimatedTable
+          embedded
           loading={auditLoading}
           rows={auditList}
           rowKey={(row) => row.id}
           skeletonRows={8}
           skeletonCols={7}
-          className="overflow-hidden theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
           tableClassName="w-full min-w-[900px] text-sm"
           theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
           thead={(
@@ -220,17 +277,16 @@ export default function AdminLogs() {
               <th className="px-3 py-3 w-10" />
             </tr>
           )}
-          footer={(
-            <Pagination
-              total={auditTotal}
-              page={auditPage}
-              pageSize={auditPageSize}
-              onPageChange={setAuditPage}
-              onPageSizeChange={(n) => { setAuditPageSize(n); setAuditPage(1); }}
+          emptyIcon={emptyGuide.icon}
+          emptyTitle={emptyGuide.title}
+          emptyDescription={emptyGuide.description}
+          emptyAction={(
+            <AdminEmptyGuideActions
+              guide={emptyGuide}
+              showClearFilters={filtersActive}
+              onClearFilters={clearFilters}
             />
           )}
-          emptyIcon={Shield}
-          emptyTitle="暂无审计记录"
           renderRow={(row) => (
             <>
               <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
@@ -261,6 +317,15 @@ export default function AdminLogs() {
             </>
           )}
         />
+        {(auditLoading || auditList.length > 0) && (
+          <Pagination
+            total={auditTotal}
+            page={auditPage}
+            pageSize={auditPageSize}
+            onPageChange={setAuditPage}
+            onPageSizeChange={(n) => { setAuditPageSize(n); setAuditPage(1); }}
+          />
+        )}
       </div>
 
       {detail && (

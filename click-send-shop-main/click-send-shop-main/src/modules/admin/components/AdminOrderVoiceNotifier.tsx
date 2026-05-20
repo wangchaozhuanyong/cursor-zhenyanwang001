@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BellRing, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import * as orderService from "@/services/admin/orderService";
-import type { AdminOrderVoiceEvent } from "@/api/admin/order";
+import type { AdminOrderVoiceEvent } from "@/services/admin/orderService";
 
 const ENABLED_KEY = "admin_order_voice_enabled";
 const LAST_CHECKED_KEY = "admin_order_voice_last_checked_at";

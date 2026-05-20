@@ -105,6 +105,10 @@ export interface Order {
   auto_confirm_receive_days?: number | null;
   auto_confirm_receive_deadline_at?: string | null;
   auto_confirm_receive_ttl_seconds?: number | null;
+  /** 关联售后单数量（列表/详情接口返回） */
+  return_request_count?: number;
+  /** 进行中售后单数量 */
+  active_return_count?: number;
 }
 
 export interface SubmitOrderParams {

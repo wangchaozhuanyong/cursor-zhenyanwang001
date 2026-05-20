@@ -37,6 +37,8 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import { useUserStore } from "@/stores/useUserStore";
 import * as inviteService from "@/services/inviteService";
 import * as orderService from "@/services/orderService";
+import * as returnService from "@/services/returnService";
+import { countActiveReturns } from "@/utils/returnBuyerStatus";
 import * as rewardService from "@/services/rewardService";
 import * as loyaltyService from "@/services/loyaltyService";
 import * as meService from "@/services/meService";
@@ -184,6 +186,16 @@ export default function Profile() {
     });
   }, [loadCoupons, loadFavorites, loadOrders, loadProfile, loggedIn]);
 
+  useEffect(() => {
+    if (!loggedIn) {
+      setActiveReturnCount(0);
+      return;
+    }
+    void returnService.fetchReturnRequests({ page: 1, pageSize: 50 })
+      .then((r) => setActiveReturnCount(countActiveReturns(r.list || [])))
+      .catch(() => setActiveReturnCount(0));
+  }, [loggedIn]);
+
   const handleLogout = async () => {
     await authStore.logout();
     toast.success("已退出登录", toastPresetQuickSuccess);
@@ -214,7 +226,12 @@ export default function Profile() {
   const orderShipping = useMemo(() => orders.filter((o) => o.status === "paid" || (o.payment_status === "paid" && o.status !== "shipped" && o.status !== "completed" && o.status !== "cancelled" && o.status !== "refunding" && o.status !== "refunded")).length, [orders]);
   const orderReceiving = useMemo(() => orders.filter((o) => o.status === "shipped").length, [orders]);
   const pendingReviewCount = useMemo(() => orders.reduce((acc, o) => acc + (o.status === "completed" ? o.items.filter((i) => i.can_review).length : 0), 0), [orders]);
-  const afterSaleCount = useMemo(() => orders.filter((o) => o.status === "refunding" || o.status === "refunded").length, [orders]);
+  const [activeReturnCount, setActiveReturnCount] = useState(0);
+  const orderRefundCount = useMemo(
+    () => orders.filter((o) => o.status === "refunding" || o.status === "refunded").length,
+    [orders],
+  );
+  const afterSaleCount = Math.max(orderSummary?.after_sale ?? orderRefundCount, activeReturnCount);
 
   const pointsEnabled = capabilities.pointsEnabled && (loyaltyConfig?.points?.displayEnabled ?? true);
   const rewardsEnabled = loyaltyConfig?.reward?.displayEnabled ?? true;
@@ -241,14 +258,14 @@ export default function Profile() {
     { label: "待发货", icon: Package, count: orderSummary?.pending_ship ?? orderShipping, path: "/orders?tab=paid", auth: true },
     { label: "待收货", icon: Truck, count: orderSummary?.pending_receive ?? orderReceiving, path: "/orders?tab=shipped", auth: true },
     { label: "待评价", icon: MessageSquare, count: orderSummary?.pending_review ?? pendingReviewCount, path: "/orders?tab=pending_review", auth: true },
-    { label: "退款售后", icon: CircleHelp, count: orderSummary?.after_sale ?? afterSaleCount, path: "/returns", auth: true },
+    { label: "退款售后", icon: CircleHelp, count: orderSummary?.after_sale ?? afterSaleCount, path: "/orders?tab=after_sale", auth: true },
   ]
   : [
     { label: "待付款", icon: Wallet, count: 0, path: "/orders?tab=pending_payment", auth: true },
     { label: "待发货", icon: Package, count: 0, path: "/orders?tab=paid", auth: true },
     { label: "待收货", icon: Truck, count: 0, path: "/orders?tab=shipped", auth: true },
     { label: "待评价", icon: MessageSquare, count: 0, path: "/orders?tab=pending_review", auth: true },
-    { label: "退款售后", icon: CircleHelp, count: 0, path: "/returns", auth: true },
+    { label: "退款售后", icon: CircleHelp, count: 0, path: "/orders?tab=after_sale", auth: true },
   ]).filter((item) => item.label !== "待评价" || capabilities.reviewEnabled) as Array<{ label: string; icon: typeof Wallet; count?: number; path: string; auth: boolean }>;
   const orderGridClass = "grid-cols-5";
   const notificationBadgeText = formatUnreadBadge(unreadCount);
@@ -344,6 +361,7 @@ export default function Profile() {
           </div>
         </section>
 
+        {loggedIn ? (
         <section className={`${CARD_CLASS} overflow-hidden`}>
           <div className={cn("px-[var(--store-card-x)] pt-[var(--store-card-y)]", inviteEnabled ? "pb-0" : "pb-[var(--store-card-y)]")}>
             <div className={cn("grid px-1 py-1", assetGridClass)}>
@@ -375,6 +393,16 @@ export default function Profile() {
           </div>
           ) : null}
         </section>
+        ) : inviteEnabled ? (
+        <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
+          <InvitePromoCard
+            loggedIn={false}
+            inviteCount={0}
+            rewardBalance={0}
+            onAction={() => navigate("/login", { state: { from: "/profile" } })}
+          />
+        </section>
+        ) : null}
 
         <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
           <div className="grid grid-cols-4 gap-x-2 gap-y-2.5">

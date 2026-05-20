@@ -2,6 +2,7 @@ import { Copy } from "lucide-react";
 import { toast } from "sonner";
 import type { ThemeConfig } from "@/types/theme";
 import { getContrastRatio } from "@/utils/themeContrast";
+import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import { COLOR_FIELD_META, type ColorFieldKey } from "./themeStudioConstants";
 
 type ColorFieldProps = {
@@ -52,12 +53,14 @@ export default function ColorField({ field, value, config, onChange, highlighted
     >
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="text-xs font-semibold text-foreground">{meta.label}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-xs font-semibold text-foreground">{meta.label}</p>
+            <AdminFieldHint text={meta.hint} />
+          </div>
           <p className="font-mono text-[10px] text-muted-foreground">{field}</p>
         </div>
         {contrast ? <span className={`shrink-0 text-[10px] font-medium ${contrast.tone}`}>{contrast.text}</span> : null}
       </div>
-      <p className="mt-1 text-[10px] leading-snug text-muted-foreground">{meta.hint}</p>
       <div className="mt-2 flex items-center gap-2">
         <input
           type="color"

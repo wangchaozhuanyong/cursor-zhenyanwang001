@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
+import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import * as settingsService from "@/services/admin/settingsService";
 import { DEFAULT_SITE_CAPABILITIES, type SiteCapabilities } from "@/types/siteCapabilities";
 import { refreshSiteCapabilities } from "@/hooks/useSiteCapabilities";
@@ -55,9 +56,11 @@ export default function AdminFeatureSettings() {
       <PageHeader title="功能开关" />
       <section className="rounded-2xl border border-border bg-card">
         <div className="flex items-center justify-between gap-3 border-b border-border p-4">
-          <div>
+          <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold text-foreground">站点功能能力</h2>
-            <p className="mt-1 text-sm text-muted-foreground">当前启用 {enabledCount} / {FEATURE_ITEMS.length} 项。配置保存到 site_settings.site_capabilities。</p>
+            <AdminFieldHint
+              text={`当前启用 ${enabledCount} / ${FEATURE_ITEMS.length} 项。保存后立即作用于前台入口与相关接口。`}
+            />
           </div>
           <button type="button" onClick={save} disabled={saving || loading} className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50">
             {saving ? "保存中..." : "保存"}
@@ -66,9 +69,9 @@ export default function AdminFeatureSettings() {
         <div className="grid gap-3 p-4 md:grid-cols-2">
           {FEATURE_ITEMS.map((item) => (
             <div key={item.key} className="flex items-center justify-between gap-4 rounded-xl border border-border p-4">
-              <div>
+              <div className="flex items-center gap-2">
                 <div className="font-medium text-foreground">{item.label}</div>
-                <div className="mt-1 text-sm text-muted-foreground">{item.desc}</div>
+                <AdminFieldHint text={item.desc} />
               </div>
               <input
                 type="checkbox"

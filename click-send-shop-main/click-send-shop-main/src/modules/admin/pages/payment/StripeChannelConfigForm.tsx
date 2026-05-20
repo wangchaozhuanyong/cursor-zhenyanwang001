@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Save } from "lucide-react";
 import { Tx } from "@/components/admin/AdminText";
+import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import {
   CHECKOUT_MODE_LABELS,
   formatPaymentConfigSummary,
@@ -43,9 +44,10 @@ export default function StripeChannelConfigForm({ draft, onDraftChange, onSave }
 
   return (
     <div className="mt-3">
-      <p className="mb-2 text-xs text-muted-foreground">
-        扩展配置（用于对账手续费估算）：{formatPaymentConfigSummary(config)}
-      </p>
+      <div className="mb-2 flex items-center gap-2 text-xs text-foreground">
+        <span>扩展配置</span>
+        <AdminFieldHint text={`用于对账手续费估算：${formatPaymentConfigSummary(config)}`} />
+      </div>
       <div className="grid gap-3 md:grid-cols-3">
         <label className="text-xs text-muted-foreground">
           <Tx>结账模式</Tx>

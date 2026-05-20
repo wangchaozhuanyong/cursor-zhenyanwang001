@@ -1,4 +1,5 @@
 const db = require('../../../config/db');
+const { ACTIVE_PRODUCT_WHERE } = require('../../product/productLifecycle');
 
 const SITEMAP_MAX_URLS = 50000;
 
@@ -9,8 +10,7 @@ async function selectProductsForSitemapWithUpdatedAt() {
             COALESCE(is_age_restricted, 0) AS is_age_restricted,
             compliance_type
      FROM products
-     WHERE lifecycle_status = 1
-       AND deleted_at IS NULL
+     WHERE ${ACTIVE_PRODUCT_WHERE}
        AND COALESCE(allow_index, 1) = 1
        AND COALESCE(is_age_restricted, 0) = 0
        AND (compliance_type IS NULL OR compliance_type = '' OR compliance_type = 'normal')
@@ -25,7 +25,7 @@ async function selectProductsForSitemapFallback() {
   const [rows] = await db.query(
     `SELECT id, created_at AS lastmod
      FROM products
-     WHERE lifecycle_status = 1 AND deleted_at IS NULL
+     WHERE ${ACTIVE_PRODUCT_WHERE}
      ORDER BY sort_order ASC, created_at DESC
      LIMIT ?`,
     [SITEMAP_MAX_URLS],

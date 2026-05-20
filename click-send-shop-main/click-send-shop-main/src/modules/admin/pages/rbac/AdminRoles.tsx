@@ -10,12 +10,23 @@ import { labelAdminLegacyRole, labelRbacRoleCode } from "@/utils/adminDisplayLab
 import { AdminTabsPanelSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { Tx } from "@/components/admin/AdminText";
+import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { THEME_BTN_DANGER_SOLID, THEME_OUTLINE_DANGER, THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 
 interface PermRow { id: number; code: string; name: string; sort_order: number }
 
 type Tab = "assign" | "manage" | "admins";
+const PRIVILEGED_ROLE_CODES = new Set(["super_admin", "admin_manager"]);
+
+function hasPrivilegedRole(user?: RbacAdminUserRow | null) {
+  if (!user) return false;
+  return user.role === "super_admin" || (user.roleCodes || []).some((code) => PRIVILEGED_ROLE_CODES.has(code));
+}
+
+function isStrongAdminPassword(password: string) {
+  return password.length >= 8 && /[a-z]/.test(password) && /[A-Z]/.test(password) && /\d/.test(password);
+}
 
 export default function AdminRoles() {
   const { confirm: askConfirm } = useAdminConfirm();
@@ -39,6 +50,8 @@ export default function AdminRoles() {
   const [showResetModal, setShowResetModal] = useState<string | null>(null);
   const [resetPw, setResetPw] = useState("");
   const [confirmDeleteAdmin, setConfirmDeleteAdmin] = useState<RbacAdminUserRow | null>(null);
+  const selectedAdmin = admins.find((u) => u.id === selectedUserId) || null;
+  const selectedTargetLocked = !isSuperAdminViewer && hasPrivilegedRole(selectedAdmin);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -78,6 +91,10 @@ export default function AdminRoles() {
 
   const handleSave = async () => {
     if (!selectedUserId) return;
+    if (selectedTargetLocked) {
+      toast.error("仅超级管理员可修改 admin_manager / super_admin 账号角色");
+      return;
+    }
     const roleIds = Object.entries(checked).filter(([, v]) => v).map(([k]) => Number(k)).filter((n) => Number.isFinite(n));
     setSaving(true);
     try {
@@ -88,6 +105,7 @@ export default function AdminRoles() {
   };
 
   const openRoleCreate = () => {
+    if (!isSuperAdminViewer) { toast.error("仅超级管理员可创建角色"); return; }
     setEditRole(null);
     setRoleForm({ code: "", name: "", description: "" });
     setRolePerms({});
@@ -95,6 +113,7 @@ export default function AdminRoles() {
   };
 
   const openRoleEdit = (r: RbacRoleRow) => {
+    if (!isSuperAdminViewer) { toast.error("仅超级管理员可修改角色"); return; }
     setEditRole(r);
     setRoleForm({ code: r.code, name: r.name, description: r.description || "" });
     const rp: Record<number, boolean> = {};
@@ -104,6 +123,7 @@ export default function AdminRoles() {
   };
 
   const handleRoleSave = async () => {
+    if (!isSuperAdminViewer) { toast.error("仅超级管理员可管理角色"); return; }
     const pids = Object.entries(rolePerms).filter(([, v]) => v).map(([k]) => Number(k));
     setSaving(true);
     try {
@@ -121,6 +141,7 @@ export default function AdminRoles() {
   };
 
   const handleRoleDelete = (r: RbacRoleRow) => {
+    if (!isSuperAdminViewer) { toast.error("仅超级管理员可删除角色"); return; }
     if (r.is_system) { toast.error("系统角色不可删除"); return; }
     adminConfirmDelete(askConfirm, r.name, async () => {
       await rbacService.deleteRole(r.id);
@@ -138,7 +159,7 @@ export default function AdminRoles() {
 
       <div className="flex flex-wrap gap-2">
         <button onClick={() => setTab("assign")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "assign" ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}><Tx>用户角色分配</Tx></button>
-        <button onClick={() => setTab("manage")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "manage" ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}><Tx>角色管理</Tx></button>
+        {isSuperAdminViewer && <button onClick={() => setTab("manage")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "manage" ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}><Tx>角色管理</Tx></button>}
         <button onClick={() => setTab("admins")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "admins" ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}><Tx>管理员账号</Tx></button>
       </div>
 
@@ -148,7 +169,10 @@ export default function AdminRoles() {
       <>
       {tab === "assign" && (
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground"><Tx>为后台管理员账号分配 RBAC 角色。超级管理员角色仅超级管理员账号可分配。</Tx></p>
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <Tx>用户角色分配</Tx>
+            <AdminFieldHint text={<Tx>为后台管理员账号分配 RBAC 角色。超级管理员角色仅超级管理员账号可分配。</Tx>} />
+          </div>
           <div className="space-y-2">
             <label className="text-xs font-medium text-muted-foreground"><Tx>选择管理员</Tx></label>
             <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2.5 text-sm text-foreground">
@@ -158,17 +182,26 @@ export default function AdminRoles() {
           <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
             <p className="mb-3 text-sm font-medium text-foreground"><Tx>分配角色（多选）</Tx></p>
             <PermissionGate permission="role.manage" fallback={<p className="text-sm text-muted-foreground"><Tx>无权限修改角色分配。</Tx></p>}>
+              {selectedTargetLocked ? (
+                <p className="mb-3 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-xs text-muted-foreground">
+                  <Tx>该账号拥有 admin_manager / super_admin 角色，仅超级管理员可调整。</Tx>
+                </p>
+              ) : null}
               <ul className="space-y-2">
-                {roles.map((r) => (
+                {roles.map((r) => {
+                  const roleLocked = !isSuperAdminViewer && PRIVILEGED_ROLE_CODES.has(r.code);
+                  return (
                   <li key={r.id} className="flex items-start gap-3">
-                    <input type="checkbox" id={`role-${r.id}`} checked={!!checked[r.id]} onChange={() => toggleRole(r.id)} className="mt-1 h-4 w-4 rounded border-border" />
+                    <input type="checkbox" id={`role-${r.id}`} checked={!!checked[r.id]} onChange={() => toggleRole(r.id)} disabled={selectedTargetLocked || roleLocked} className="mt-1 h-4 w-4 rounded border-border disabled:opacity-50" />
                     <label htmlFor={`role-${r.id}`} className="flex-1 cursor-pointer text-sm">
                       <span className="font-medium text-foreground">{r.name}</span>
                       <span className="ml-2 text-xs text-muted-foreground">{labelRbacRoleCode(r.code)}</span>
                       {r.is_system ? <span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground"><Tx>系统</Tx></span> : null}
+                      {roleLocked ? <span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground"><Tx>仅超级管理员</Tx></span> : null}
                     </label>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             </PermissionGate>
           </div>
@@ -178,7 +211,7 @@ export default function AdminRoles() {
               variant="gold"
               state={saving ? "loading" : "normal"}
               loadingText="保存中..."
-              disabled={!selectedUserId}
+              disabled={!selectedUserId || selectedTargetLocked}
               onClick={() => adminConfirmSave(askConfirm, "角色分配", () => handleSave())}
               className="min-h-[44px] w-full rounded-xl py-3 text-sm font-semibold"
             ><Tx>
@@ -191,12 +224,15 @@ export default function AdminRoles() {
       {tab === "manage" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground"><Tx>管理角色定义和权限配置。系统内置角色不可删除。</Tx></p>
-            <PermissionGate permission="role.manage">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Tx>角色管理</Tx>
+              <AdminFieldHint text={<Tx>管理角色定义和权限配置。系统内置角色不可删除。</Tx>} />
+            </div>
+            {isSuperAdminViewer && (
               <button onClick={openRoleCreate} className="flex items-center gap-1 theme-rounded px-3 py-2 text-xs font-medium btn-theme-gradient">
                 <Plus size={14} /><Tx> 新建角色
               </Tx></button>
-            </PermissionGate>
+            )}
           </div>
           <div className="space-y-3">
             {roles.map((r) => (
@@ -207,12 +243,12 @@ export default function AdminRoles() {
                     <span className="ml-2 text-xs text-muted-foreground">{labelRbacRoleCode(r.code)}</span>
                     {r.is_system ? <span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground"><Tx>系统</Tx></span> : null}
                   </div>
-                  <PermissionGate permission="role.manage">
+                  {isSuperAdminViewer && (
                     <div className="flex gap-1">
                       <button onClick={() => openRoleEdit(r)} className="theme-rounded p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]"><Pencil size={14} /></button>
                       {!r.is_system && <button onClick={() => void handleRoleDelete(r)} className={`theme-rounded p-1.5 hover:bg-[color-mix(in_srgb,var(--theme-danger)_8%,var(--theme-surface))] ${THEME_TEXT_DANGER}`}><Trash2 size={14} /></button>}
                     </div>
-                  </PermissionGate>
+                  )}
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">{r.permissionIds.length} 个权限</p>
               </div>
@@ -224,7 +260,12 @@ export default function AdminRoles() {
       {tab === "admins" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground"><Tx>管理管理员账号。拥有「角色权限」权限即可创建/禁用/重置密码；删除与普通管理员管理规则同「账号管理」页（不可删除超级管理员）。</Tx></p>
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <Tx>管理员账号</Tx>
+              <AdminFieldHint
+                text={<Tx>管理管理员账号。拥有「角色权限」权限即可创建/禁用/重置密码；删除与普通管理员管理规则同「账号管理」页（不可删除超级管理员）。</Tx>}
+              />
+            </div>
             <PermissionGate permission="role.manage">
               <button onClick={() => { setAdminForm({ phone: "", password: "", nickname: "" }); setShowAdminModal(true); }} className="flex items-center gap-1 theme-rounded px-3 py-2 text-xs font-medium btn-theme-gradient">
                 <Plus size={14} /><Tx> 新增管理员
@@ -241,7 +282,7 @@ export default function AdminRoles() {
                 </div>
                 <PermissionGate permission="role.manage">
                   <div className="flex gap-2">
-                    {u.role !== "super_admin" && (
+                    {(isSuperAdminViewer || !hasPrivilegedRole(u)) && u.role !== "super_admin" && (
                       <button
                         type="button"
                         onClick={() =>
@@ -262,10 +303,10 @@ export default function AdminRoles() {
                         {u.role === "disabled" ? "启用" : "禁用"}
                       </button>
                     )}
-                    {(u.role !== "super_admin" || isSuperAdminViewer) && (
+                    {(isSuperAdminViewer || !hasPrivilegedRole(u)) && (
                       <button onClick={() => { setShowResetModal(u.id); setResetPw(""); }} className="theme-rounded px-2 py-1 text-xs border border-[var(--theme-border)] hover:bg-[var(--theme-bg)]"><Tx>重置密码</Tx></button>
                     )}
-                    {u.role !== "super_admin" && (
+                    {(isSuperAdminViewer || !hasPrivilegedRole(u)) && u.role !== "super_admin" && (
                       <button type="button" onClick={() => setConfirmDeleteAdmin(u)} className={`theme-rounded px-2 py-1 text-xs ${THEME_OUTLINE_DANGER}`}><Tx>删除</Tx></button>
                     )}
                   </div>
@@ -295,7 +336,7 @@ export default function AdminRoles() {
               variant="gold"
               state={saving ? "loading" : "normal"}
               loadingText="创建中..."
-              disabled={!adminForm.phone || !adminForm.password}
+              disabled={!adminForm.phone || !isStrongAdminPassword(adminForm.password)}
               onClick={() =>
                 askConfirm({
                   title: "确认创建",
@@ -304,6 +345,10 @@ export default function AdminRoles() {
                   onConfirm: async () => {
                     setSaving(true);
                     try {
+                      if (!isStrongAdminPassword(adminForm.password)) {
+                        toast.error("密码至少 8 位，并包含大写字母、小写字母和数字");
+                        return;
+                      }
                       await rbacService.createAdminUser({
                         phone: adminForm.phone,
                         password: adminForm.password,
@@ -332,8 +377,8 @@ export default function AdminRoles() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowResetModal(null)}>
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm theme-rounded bg-[var(--theme-surface)] p-6 theme-shadow space-y-4">
             <h3 className="font-bold text-foreground"><Tx>重置密码</Tx></h3>
-            <input type="password" value={resetPw} onChange={(e) => setResetPw(e.target.value)} placeholder="输入新密码（至少6位）" className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" />
-            <button onClick={async () => { if (resetPw.length < 6) { toast.error("密码至少6位"); return; } try { await rbacService.resetAdminPassword(showResetModal, resetPw); toast.success("密码已重置"); setShowResetModal(null); } catch (e) { toast.error(toastErrorMessage(e, "重置失败")); } }} disabled={resetPw.length < 6} className="w-full theme-rounded py-3 text-sm font-semibold btn-theme-gradient disabled:opacity-50"><Tx>确认重置</Tx></button>
+            <input type="password" value={resetPw} onChange={(e) => setResetPw(e.target.value)} placeholder="输入新密码（至少8位，含大小写和数字）" className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" />
+            <button onClick={async () => { if (!isStrongAdminPassword(resetPw)) { toast.error("密码至少 8 位，并包含大写字母、小写字母和数字"); return; } try { await rbacService.resetAdminPassword(showResetModal, resetPw); toast.success("密码已重置"); setShowResetModal(null); } catch (e) { toast.error(toastErrorMessage(e, "重置失败")); } }} disabled={!isStrongAdminPassword(resetPw)} className="w-full theme-rounded py-3 text-sm font-semibold btn-theme-gradient disabled:opacity-50"><Tx>确认重置</Tx></button>
           </div>
         </div>
       )}

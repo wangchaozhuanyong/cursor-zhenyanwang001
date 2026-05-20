@@ -2,7 +2,7 @@ const repo = require('../repository/invite.repository');
 
 async function getStats(userId) {
   const user = await repo.selectUserInviteCode(userId);
-  if (!user) return { error: { code: 404, message: 'User not found' } };
+  if (!user) return { error: { code: 404, message: '用户不存在' } };
 
   const directCount = await repo.countDirectByParentCode(user.invite_code);
   const totalOrderAmount = await repo.sumOrderAmountByParentCode(user.invite_code);

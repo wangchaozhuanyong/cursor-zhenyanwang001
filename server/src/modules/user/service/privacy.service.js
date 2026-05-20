@@ -23,7 +23,7 @@ function buildExportPayload({ user, addresses, orders, pointsRecords }) {
 
 async function exportAccountData(userId, req) {
   const user = await repo.selectUserForExport(userId);
-  if (!user) throw new NotFoundError('User not found');
+  if (!user) throw new NotFoundError('用户不存在');
 
   const [addresses, orders, pointsRecords] = await Promise.all([
     repo.selectAddressesForExport(userId),
@@ -38,7 +38,7 @@ async function exportAccountData(userId, req) {
     actionType: 'user.data_export',
     objectType: 'user',
     objectId: userId,
-    summary: 'User exported account data',
+    summary: '用户导出账号数据',
     after: {
       addressCount: addresses.length,
       orderCount: orders.length,
@@ -47,12 +47,12 @@ async function exportAccountData(userId, req) {
     result: 'success',
   });
 
-  return { data: payload, message: 'Export data generated' };
+  return { data: payload, message: '导出数据已生成' };
 }
 
 async function cancelAccount(userId, body, req) {
   if (body.confirmText !== DELETE_CONFIRM_TEXT) {
-    throw new ValidationError('Please enter the confirmation text to cancel account');
+    throw new ValidationError('请输入确认文字以注销账号');
   }
 
   const conn = await repo.getConnection();
@@ -62,7 +62,7 @@ async function cancelAccount(userId, body, req) {
   try {
     await conn.beginTransaction();
     beforeUser = await repo.selectUserForDeletion(conn, userId);
-    if (!beforeUser || beforeUser.deleted_at) throw new NotFoundError('User not found');
+    if (!beforeUser || beforeUser.deleted_at) throw new NotFoundError('用户不存在');
 
     const suffix = crypto.createHash('sha256').update(String(userId)).digest('hex').slice(0, 12);
     const anonymizedPhone = `deleted_${suffix}`;
@@ -76,7 +76,7 @@ async function cancelAccount(userId, body, req) {
       anonymizedInviteCode,
       anonymizedPasswordHash,
     );
-    if (affected !== 1) throw new NotFoundError('User not found');
+    if (affected !== 1) throw new NotFoundError('用户不存在');
 
     anonymizedOrderCount = await repo.anonymizeOrders(conn, userId);
     deletedAddressCount = await repo.deleteAddresses(conn, userId);
@@ -89,7 +89,7 @@ async function cancelAccount(userId, body, req) {
       actionType: 'user.account_cancel',
       objectType: 'user',
       objectId: userId,
-      summary: 'User account cancellation failed',
+      summary: '用户注销账号失败',
       result: 'failure',
       errorMessage: err?.message || 'unknown',
     });
@@ -106,13 +106,13 @@ async function cancelAccount(userId, body, req) {
     actionType: 'user.account_cancel',
     objectType: 'user',
     objectId: userId,
-    summary: 'User account canceled and anonymized',
+    summary: '用户注销账号并完成匿名化',
     before: beforeUser,
     after: { deletedAddressCount, anonymizedOrderCount },
     result: 'success',
   });
 
-  return { data: null, message: 'Account canceled' };
+  return { data: null, message: '账号已注销' };
 }
 
 module.exports = {

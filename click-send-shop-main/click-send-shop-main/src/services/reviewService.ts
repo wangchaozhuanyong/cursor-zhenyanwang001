@@ -35,7 +35,7 @@ export async function toggleReviewLike(reviewId: string) {
 }
 
 export async function uploadReviewImages(files: File[]) {
-  return uploadService.uploadMultiple(files);
+  return uploadService.uploadFiles(files, { mode: "image" });
 }
 
 export async function fetchPendingReviewItems(): Promise<PendingReviewItem[]> {

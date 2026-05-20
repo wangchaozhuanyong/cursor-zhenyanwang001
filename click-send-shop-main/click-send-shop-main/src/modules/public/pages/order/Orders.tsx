@@ -9,8 +9,9 @@ import type { ProductVariant } from "@/types/product";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useCartStore } from "@/stores/useCartStore";
 import * as orderService from "@/services/orderService";
-import { getBuyerOrderStatusText, hasPendingReview, matchOrderTab } from "@/utils/orderBuyerStatus";
+import { canApplyAfterSale, canUserCancelOrder, getBuyerOrderStatusText, hasPendingReview, isPendingPayment, matchOrderTab, orderInAfterSaleTab } from "@/utils/orderBuyerStatus";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import { usePayPendingOrder } from "@/hooks/usePayPendingOrder";
 import { safeOpenExternal } from "@/utils/safeOpen";
 
 const TABS: Array<{ key: OrderTab; label: string }> = [
@@ -46,7 +47,7 @@ function summaryFromOrders(orders: Order[]): OrderSummary {
     pending_receive: orders.filter((o) => o.status === "shipped").length,
     pending_review: orders.reduce((acc, o) => acc + (hasPendingReview(o) ? o.items.filter((i) => i.can_review).length : 0), 0),
     completed: orders.filter((o) => o.status === "completed" && !hasPendingReview(o)).length,
-    after_sale: orders.filter((o) => o.status === "refunding" || o.status === "refunded").length,
+    after_sale: orders.filter((o) => orderInAfterSaleTab(o)).length,
     cancelled: orders.filter((o) => o.status === "cancelled").length,
   };
 }
@@ -78,10 +79,10 @@ function buildVariantFromOrderItem(item: Order["items"][number]): ProductVariant
   };
 }
 
-function getStatusTone(status: Order["status"]) {
-  if (status === "pending") return "text-[var(--theme-danger)]";
-  if (status === "completed") return "text-[var(--theme-primary)]";
-  if (status === "refunding" || status === "refunded") return "text-[var(--theme-danger)]";
+function getStatusTone(order: Order) {
+  if (order.status === "pending") return "text-[var(--theme-danger)]";
+  if (order.status === "completed" && !orderInAfterSaleTab(order)) return "text-[var(--theme-primary)]";
+  if (orderInAfterSaleTab(order)) return "text-[var(--theme-danger)]";
   return "text-[var(--theme-text-muted)]";
 }
 
@@ -91,6 +92,7 @@ export default function Orders() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = parseTab(searchParams);
   const capabilities = useSiteCapabilities();
+  const { paying, payPendingOrder } = usePayPendingOrder();
   const tabs = useMemo(() => TABS.filter((t) => t.key !== "pending_review" || capabilities.reviewEnabled), [capabilities.reviewEnabled]);
 
   const { orders, loading, error, loadOrders, cancelOrder, confirmReceive } = useOrderStore();
@@ -139,7 +141,10 @@ export default function Orders() {
     return () => { cancelled = true; };
   }, [orders]);
 
-  const displayOrders = useMemo(() => orders.filter((o) => matchOrderTab(o, tab)), [orders, tab]);
+  const displayOrders = useMemo(
+    () => (tab === "all" ? orders : orders.filter((o) => matchOrderTab(o, tab))),
+    [orders, tab],
+  );
   const currentSummary = summary || summaryFromOrders(orders);
 
   const switchTab = (next: OrderTab) => {
@@ -228,7 +233,7 @@ export default function Orders() {
               <article key={order.id} className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3" onClick={() => openDetail(order)}>
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-sm font-medium">订单商品</span>
-                  <span className={`text-xs font-medium ${getStatusTone(order.status)}`}>{getBuyerOrderStatusText(order)}</span>
+                  <span className={`text-xs font-medium ${getStatusTone(order)}`}>{getBuyerOrderStatusText(order)}</span>
                 </div>
 
                 {order.status === "pending" ? (
@@ -271,11 +276,31 @@ export default function Orders() {
                 </div>
 
                 <div className="mt-3 flex flex-wrap justify-end gap-2">
-                  {order.status === "pending" ? (
-                    <>
-                      <button className={actionBtn} disabled={actingId === order.id} onClick={(e) => { e.stopPropagation(); setActingId(order.id); cancelOrder(order.id).then(() => loadOrders({ page: 1, tab })).finally(() => setActingId("")); }}>取消订单</button>
-                      <button className={primaryActionBtn} onClick={(e) => { e.stopPropagation(); toast.info("支付功能待接入"); }}>去付款</button>
-                    </>
+                  {canUserCancelOrder(order) ? (
+                    <button
+                      className={actionBtn}
+                      disabled={actingId === order.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActingId(order.id);
+                        cancelOrder(order.id).then(() => loadOrders({ page: 1, tab })).finally(() => setActingId(""));
+                      }}
+                    >
+                      取消订单
+                    </button>
+                  ) : null}
+                  {isPendingPayment(order) ? (
+                    <button
+                      className={primaryActionBtn}
+                      disabled={actingId === order.id || paying}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActingId(order.id);
+                        void payPendingOrder(order, () => loadOrders({ page: 1, tab })).finally(() => setActingId(""));
+                      }}
+                    >
+                      {paying && actingId === order.id ? "处理中..." : "去付款"}
+                    </button>
                   ) : null}
 
                   {order.status === "paid" ? (
@@ -292,8 +317,11 @@ export default function Orders() {
                         <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void addOrderToCart(order); }}>加入购物车</button>
                         <button className={primaryActionBtn} onClick={(e) => { e.stopPropagation(); void repurchaseOrder(order); }}>再买一单</button>
                       </div>
-                      <div className="flex w-full justify-end gap-2">
+                      <div className="flex w-full flex-wrap justify-end gap-2">
                         <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void handleViewLogistics(order); }}>查看物流</button>
+                        {canApplyAfterSale(order) ? (
+                          <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate(`/returns?apply=${order.id}`); }}>申请售后</button>
+                        ) : null}
                         <button className={primaryActionBtn} disabled={actingId === order.id} onClick={(e) => { e.stopPropagation(); setActingId(order.id); confirmReceive(order.id).then(() => loadOrders({ page: 1, tab })).finally(() => setActingId("")); }}>确认收货</button>
                       </div>
                     </>
@@ -304,7 +332,9 @@ export default function Orders() {
                       {hasPendingReview(order) ? <button className={actionBtn} onClick={(e) => { e.stopPropagation(); openDetail(order); }}>评价</button> : null}
                       <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void addOrderToCart(order); }}>加入购物车</button>
                       <button className={primaryActionBtn} onClick={(e) => { e.stopPropagation(); void repurchaseOrder(order); }}>再买一单</button>
-                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate("/returns"); }}>申请售后</button>
+                      {canApplyAfterSale(order) ? (
+                        <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate(`/returns?apply=${order.id}`); }}>申请售后</button>
+                      ) : null}
                     </>
                   ) : null}
 
@@ -315,7 +345,7 @@ export default function Orders() {
                     </>
                   ) : null}
 
-                  {(order.status === "refunding" || order.status === "refunded") ? (
+                  {orderInAfterSaleTab(order) ? (
                     <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate("/returns"); }}>查看售后</button>
                   ) : null}
                 </div>

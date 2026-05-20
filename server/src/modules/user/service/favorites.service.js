@@ -16,7 +16,7 @@ async function addFavorite(userId, body) {
   if (!product_id) return { error: { code: 400, message: '缺少 product_id' } };
 
   const existing = await repo.findByUserAndProduct(userId, product_id);
-  if (existing) return { data: { id: existing.id }, message: 'Already favorited' };
+  if (existing) return { data: { id: existing.id }, message: '已在收藏夹中' };
 
   const id = generateId();
   await repo.insert(id, userId, product_id);
@@ -25,7 +25,7 @@ async function addFavorite(userId, body) {
 
 async function removeFavorite(userId, productId) {
   await repo.deleteByUserAndProduct(userId, productId);
-  return { message: 'Favorite removed' };
+  return { message: '已取消收藏' };
 }
 
 async function checkFavorite(userId, productId) {

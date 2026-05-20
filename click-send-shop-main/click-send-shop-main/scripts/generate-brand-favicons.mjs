@@ -24,7 +24,7 @@ async function main() {
 
   await base().resize(32, 32).webp({ quality: 92 }).toFile(path.join(publicDir, "favicon.webp"));
   await base().resize(32, 32).png().toFile(path.join(publicDir, "favicon-32x32.png"));
-  // The install/apple-touch icon is served dynamically from /api/pwa/apple-touch-icon.png
+  // The install/apple-touch icon is served dynamically from /apple-touch-icon.png
   // so it always follows the admin-configured logo instead of this bundled asset.
   const icoPng = await base().resize(32, 32).png().toBuffer();
   await writeFile(path.join(publicDir, "favicon.ico"), icoPng);

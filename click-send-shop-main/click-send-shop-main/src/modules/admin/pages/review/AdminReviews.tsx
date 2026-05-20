@@ -1,5 +1,5 @@
 import { formatDateTime } from "@/utils/formatDateTime";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Star, Eye, EyeOff, Trash2, RotateCcw, MessageSquare, AlertTriangle, Sparkles, Check, XCircle, Info } from "lucide-react";
 import AdminReviewDetailDialog from "@/modules/admin/pages/review/AdminReviewDetailDialog";
 import type { ReviewDetailPayload, ComplaintStatus } from "@/services/admin/reviewService";
@@ -11,6 +11,14 @@ import * as reviewService from "@/services/admin/reviewService";
 import type { AdminReview, ReviewListParams } from "@/services/admin/reviewService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
+import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import {
+  buildReviewFilterChips,
+  hasActiveReviewFilters,
+  removeReviewFilterChip,
+} from "@/utils/adminReviewFilters";
 import { Tx } from "@/components/admin/AdminText";
 import { adminConfirmDelete, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import {
@@ -182,6 +190,28 @@ export default function AdminReviews() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  const filterState = { keyword, status, rating, complaintStatus };
+  const filterChips = useMemo(() => buildReviewFilterChips(filterState), [keyword, status, rating, complaintStatus]);
+  const filtersActive = hasActiveReviewFilters(filterState);
+  const reviewsEmptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.reviewsFiltered : ADMIN_EMPTY_GUIDES.reviews;
+
+  const clearReviewFilters = () => {
+    setKeyword("");
+    setStatus("");
+    setRating(0);
+    setComplaintStatus("");
+    setPage(1);
+  };
+
+  const handleRemoveFilterChip = (key: string) => {
+    const patch = removeReviewFilterChip(key);
+    if ("keyword" in patch) setKeyword(patch.keyword ?? "");
+    if ("status" in patch) setStatus(patch.status ?? "");
+    if ("rating" in patch) setRating(patch.rating ?? 0);
+    if ("complaintStatus" in patch) setComplaintStatus(patch.complaintStatus ?? "");
+    setPage(1);
+  };
+
   const handleToggle = async (id: string) => {
     try {
       await reviewService.toggleVisibility(id);
@@ -273,20 +303,26 @@ export default function AdminReviews() {
 
   return (
     <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="min-w-0 flex-1">
-          <SearchBar placeholder="搜索评论内容 / 用户名 / 商品名..." value={keyword} onChange={(v) => { setKeyword(v); setPage(1); }} />
-        </div>
-        <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
-          {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
-        <select value={rating} onChange={(e) => { setRating(Number(e.target.value)); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
-          {RATING_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
-        <select value={complaintStatus} onChange={(e) => { setComplaintStatus(e.target.value); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
-          {COMPLAINT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+      <div className="space-y-2">
+        <SearchBar placeholder="搜索评论内容 / 用户名 / 商品名..." value={keyword} onChange={(v) => { setKeyword(v); setPage(1); }} />
+        <AdminFilterSummaryBar chips={filterChips} onClearAll={clearReviewFilters} onRemove={handleRemoveFilterChip} />
+        <details className="group rounded-xl border border-border bg-card px-3 py-2">
+          <summary className="cursor-pointer list-none text-sm font-medium text-foreground marker:content-none">
+            <span className="text-muted-foreground group-open:hidden">展开高级筛选</span>
+            <span className="hidden group-open:inline">收起高级筛选</span>
+          </summary>
+          <div className="mt-3 flex flex-col gap-3 border-t border-border pt-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
+              {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+            <select value={rating} onChange={(e) => { setRating(Number(e.target.value)); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
+              {RATING_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+            <select value={complaintStatus} onChange={(e) => { setComplaintStatus(e.target.value); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
+              {COMPLAINT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+        </details>
       </div>
 
       {/* Batch actions */}
@@ -405,14 +441,14 @@ export default function AdminReviews() {
         <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
       </div>
 
-      <div className="hidden md:block">
+      <div className="hidden md:block rounded-xl border border-border bg-card">
         <AnimatedTable
+          embedded
           loading={loading}
           rows={reviews}
           rowKey={(r) => r.id}
           skeletonRows={8}
           skeletonCols={9}
-          className="overflow-x-auto rounded-xl border border-border bg-card"
           tableClassName="w-full min-w-[900px] text-sm"
           theadClassName="border-b border-border bg-secondary/50"
           thead={(
@@ -425,9 +461,16 @@ export default function AdminReviews() {
               ))}
             </tr>
           )}
-          footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />}
-          emptyIcon={MessageSquare}
-          emptyTitle="暂无评论数据"
+          emptyIcon={reviewsEmptyGuide.icon}
+          emptyTitle={reviewsEmptyGuide.title}
+          emptyDescription={reviewsEmptyGuide.description}
+          emptyAction={(
+            <AdminEmptyGuideActions
+              guide={reviewsEmptyGuide}
+              showClearFilters={filtersActive}
+              onClearFilters={clearReviewFilters}
+            />
+          )}
           renderRow={(r) => {
             const badge = STATUS_BADGE[r.status] || STATUS_BADGE.normal;
             return (
@@ -492,6 +535,9 @@ export default function AdminReviews() {
             );
           }}
         />
+        {(loading || reviews.length > 0) && (
+          <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
+        )}
       </div>
 
 

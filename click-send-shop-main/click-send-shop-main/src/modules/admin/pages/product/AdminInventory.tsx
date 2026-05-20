@@ -5,6 +5,7 @@ import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { Tx } from "@/components/admin/AdminText";
+import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import Pagination from "@/components/admin/Pagination";
 import {
   adjustInventorySkuStock,
@@ -18,6 +19,17 @@ import {
 import type { InventoryChangeType, InventorySku, InventoryStockRecord, InventorySummary } from "@/types/inventory";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { THEME_BADGE_SUCCESS, THEME_BADGE_WARNING, THEME_TEXT_DANGER, THEME_TEXT_SUCCESS_SOFT, THEME_TEXT_WARNING } from "@/utils/themeVisuals";
+import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
+import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import {
+  buildInventoryRecordFilterChips,
+  buildInventorySkuFilterChips,
+  hasActiveInventoryRecordFilters,
+  hasActiveInventorySkuFilters,
+  removeInventoryRecordFilterChip,
+  removeInventorySkuFilterChip,
+} from "@/utils/adminInventoryFilters";
 
 const CHANGE_LABEL: Record<InventoryChangeType, string> = {
   in: "入库",
@@ -97,6 +109,41 @@ export default function AdminInventory() {
     setAdjusting({ sku, change_type, quantity: change_type === "adjust" ? String(sku.stock) : "", reason: "", remark: "", source_no: "", cost_price: "" });
   };
 
+  const skuFilterState = { keyword, stockStatus };
+  const recordFilterState = { keyword, changeType };
+  const skuFilterChips = useMemo(() => buildInventorySkuFilterChips(skuFilterState), [keyword, stockStatus]);
+  const recordFilterChips = useMemo(() => buildInventoryRecordFilterChips(recordFilterState), [keyword, changeType]);
+  const skuFiltersActive = hasActiveInventorySkuFilters(skuFilterState);
+  const recordFiltersActive = hasActiveInventoryRecordFilters(recordFilterState);
+  const skusEmptyGuide = skuFiltersActive ? ADMIN_EMPTY_GUIDES.inventorySkusFiltered : ADMIN_EMPTY_GUIDES.inventorySkus;
+  const recordsEmptyGuide = recordFiltersActive ? ADMIN_EMPTY_GUIDES.inventoryRecordsFiltered : ADMIN_EMPTY_GUIDES.inventoryRecords;
+
+  const clearSkuFilters = () => {
+    setKeyword("");
+    setStockStatus("");
+    setPage(1);
+  };
+
+  const clearRecordFilters = () => {
+    setKeyword("");
+    setChangeType("");
+    setRecordsPage(1);
+  };
+
+  const handleRemoveSkuFilterChip = (key: string) => {
+    const patch = removeInventorySkuFilterChip(key);
+    if ("keyword" in patch) setKeyword(patch.keyword ?? "");
+    if ("stockStatus" in patch) setStockStatus(patch.stockStatus ?? "");
+    setPage(1);
+  };
+
+  const handleRemoveRecordFilterChip = (key: string) => {
+    const patch = removeInventoryRecordFilterChip(key);
+    if ("keyword" in patch) setKeyword(patch.keyword ?? "");
+    if ("changeType" in patch) setChangeType(patch.changeType ?? "");
+    setRecordsPage(1);
+  };
+
   const projectedStock = useMemo(() => {
     if (!adjusting) return 0;
     const qty = Number(adjusting.quantity || 0);
@@ -151,8 +198,10 @@ export default function AdminInventory() {
       <div className="space-y-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-xl font-bold text-foreground"><Tx>库存中心</Tx></h1>
-            <p className="mt-1 text-sm text-muted-foreground"><Tx>按 SKU 维度管理库存，商品总库存仅作汇总展示。</Tx></p>
+            <AdminPageTitle
+              title={<Tx>库存中心</Tx>}
+              hint={<Tx>按 SKU 维度管理库存，商品总库存仅作汇总展示。</Tx>}
+            />
           </div>
           <div className="flex gap-2">
             <button onClick={() => void exportInventorySkusCsv({ keyword, stock_status: stockStatus })} className="flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm"><Download size={15} /><Tx>导出库存</Tx></button>
@@ -167,20 +216,20 @@ export default function AdminInventory() {
         </div>
 
         <div className="rounded-xl border border-border bg-card">
-          <div className="flex flex-col gap-3 border-b border-border p-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="relative max-w-sm flex-1"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><input value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1); }} placeholder="商品名 / 规格编码" className="w-full rounded-lg bg-secondary py-2.5 pl-9 pr-4 text-sm" /></div>
-            <div className="flex gap-2">
+          <div className="space-y-2 border-b border-border p-4">
+            <div className="relative max-w-sm"><Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" /><input value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1); setRecordsPage(1); }} placeholder="商品名 / 规格编码" className="w-full rounded-lg bg-secondary py-2.5 pl-9 pr-4 text-sm" /></div>
+            <AdminFilterSummaryBar chips={skuFilterChips} onClearAll={clearSkuFilters} onRemove={handleRemoveSkuFilterChip} />
+            <div className="flex flex-wrap gap-2">
               <select value={stockStatus} onChange={(e) => { setStockStatus(e.target.value as typeof stockStatus); setPage(1); }} className="rounded-lg bg-secondary px-3 py-2.5 text-sm"><option value=""><Tx>全部库存状态</Tx></option><option value="normal"><Tx>正常</Tx></option><option value="low"><Tx>低库存</Tx></option><option value="out"><Tx>缺货</Tx></option></select>
-              <button onClick={() => { setKeyword(""); setStockStatus(""); setPage(1); }} className="rounded-lg border border-border px-3 py-2.5 text-sm"><Tx>重置</Tx></button>
             </div>
           </div>
           <AnimatedTable
+            embedded
             loading={loading}
             rows={skus}
             rowKey={(s) => s.variant_id}
             skeletonRows={8}
             skeletonCols={10}
-            className="overflow-x-auto"
             tableClassName="w-full min-w-[1320px] text-left text-sm"
             theadClassName="border-b border-border text-xs text-muted-foreground"
             thead={(
@@ -195,9 +244,16 @@ export default function AdminInventory() {
                 <th className="px-4 py-3 text-right"><Tx>操作</Tx></th>
               </tr>
             )}
-            footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
-            emptyIcon={Package}
-            emptyTitle="暂无SKU库存数据"
+            emptyIcon={skusEmptyGuide.icon}
+            emptyTitle={skusEmptyGuide.title}
+            emptyDescription={skusEmptyGuide.description}
+            emptyAction={(
+              <AdminEmptyGuideActions
+                guide={skusEmptyGuide}
+                showClearFilters={skuFiltersActive}
+                onClearFilters={clearSkuFilters}
+              />
+            )}
             renderRow={(s) => (
               <>
                 <td className="px-4 py-3">
@@ -238,19 +294,29 @@ export default function AdminInventory() {
               </>
             )}
           />
-
-          <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          {(loading || skus.length > 0) && (
+            <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          )}
         </div>
 
         <div className="rounded-xl border border-border bg-card">
-          <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3"><div className="flex items-center gap-2"><History size={16} className="text-muted-foreground" /><h2 className="text-sm font-semibold"><Tx>库存流水</Tx></h2></div><div className="flex items-center gap-2"><select value={changeType} onChange={(e) => { setChangeType(e.target.value); setRecordsPage(1); }} className="rounded-lg bg-secondary px-2 py-1.5 text-xs"><option value=""><Tx>全部类型</Tx></option><option value="in"><Tx>入库</Tx></option><option value="out"><Tx>出库</Tx></option><option value="adjust"><Tx>盘点</Tx></option><option value="order_deduct"><Tx>订单扣减</Tx></option><option value="order_release"><Tx>订单释放</Tx></option></select><button onClick={() => void exportInventoryRecordsCsv({ keyword, change_type: changeType })} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>导出流水</Tx></button></div></div>
+          <div className="space-y-2 border-b border-border px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2"><History size={16} className="text-muted-foreground" /><h2 className="text-sm font-semibold"><Tx>库存流水</Tx></h2></div>
+              <div className="flex flex-wrap items-center gap-2">
+                <select value={changeType} onChange={(e) => { setChangeType(e.target.value); setRecordsPage(1); }} className="rounded-lg bg-secondary px-2 py-1.5 text-xs"><option value=""><Tx>全部类型</Tx></option><option value="in"><Tx>入库</Tx></option><option value="out"><Tx>出库</Tx></option><option value="adjust"><Tx>盘点</Tx></option><option value="order_deduct"><Tx>订单扣减</Tx></option><option value="order_release"><Tx>订单释放</Tx></option></select>
+                <button type="button" onClick={() => void exportInventoryRecordsCsv({ keyword, change_type: changeType })} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>导出流水</Tx></button>
+              </div>
+            </div>
+            <AdminFilterSummaryBar chips={recordFilterChips} onClearAll={clearRecordFilters} onRemove={handleRemoveRecordFilterChip} />
+          </div>
           <AnimatedTable
+            embedded
             loading={recordsLoading}
             rows={records}
             rowKey={(r) => r.id}
             skeletonRows={6}
             skeletonCols={9}
-            className="overflow-x-auto"
             tableClassName="w-full min-w-[1200px] text-left text-sm"
             theadClassName="border-b border-border text-xs text-muted-foreground"
             thead={(
@@ -266,9 +332,16 @@ export default function AdminInventory() {
                 <th className="px-4 py-3"><Tx>操作人</Tx></th>
               </tr>
             )}
-            footer={<Pagination total={recordsTotal} page={recordsPage} pageSize={recordsPageSize} onPageChange={setRecordsPage} onPageSizeChange={setRecordsPageSize} pageSizeOptions={[10, 20, 50]} />}
-            emptyIcon={History}
-            emptyTitle="暂无库存流水"
+            emptyIcon={recordsEmptyGuide.icon}
+            emptyTitle={recordsEmptyGuide.title}
+            emptyDescription={recordsEmptyGuide.description}
+            emptyAction={(
+              <AdminEmptyGuideActions
+                guide={recordsEmptyGuide}
+                showClearFilters={recordFiltersActive}
+                onClearFilters={clearRecordFilters}
+              />
+            )}
             renderRow={(r) => (
               <>
                 <td className="px-4 py-3 text-xs text-muted-foreground">{formatDateTime(r.created_at)}</td>
@@ -283,8 +356,16 @@ export default function AdminInventory() {
               </>
             )}
           />
-
-          <Pagination total={recordsTotal} page={recordsPage} pageSize={recordsPageSize} onPageChange={setRecordsPage} onPageSizeChange={setRecordsPageSize} pageSizeOptions={[10, 20, 50]} />
+          {(recordsLoading || records.length > 0) && (
+            <Pagination
+              total={recordsTotal}
+              page={recordsPage}
+              pageSize={recordsPageSize}
+              onPageChange={setRecordsPage}
+              onPageSizeChange={setRecordsPageSize}
+              pageSizeOptions={[10, 20, 50]}
+            />
+          )}
         </div>
 
         {adjusting && (

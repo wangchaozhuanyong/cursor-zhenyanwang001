@@ -5,7 +5,11 @@ import * as activityService from "@/services/admin/activityService";
 import * as couponService from "@/services/admin/couponService";
 import { fetchAdminPointsRecords } from "@/services/admin/pointsService";
 import { Tx } from "@/components/admin/AdminText";
+import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { fetchAdminRewardRecords } from "@/services/admin/rewardService";
+import type { MarketingActivity } from "@/types/activity";
+import type { PointsRecord } from "@/types/points";
+import type { RewardRecord } from "@/types/reward";
 
 export default function AdminMarketingDashboard() {
   const navigate = useNavigate();
@@ -14,19 +18,20 @@ export default function AdminMarketingDashboard() {
   useEffect(() => {
     void (async () => {
       const [acts, coupons, points, rewards] = await Promise.all([
-        activityService.fetchActivities({ page: 1, pageSize: 50 }).catch(() => ({ list: [] as any[] })),
-        couponService.fetchCoupons({ page: 1, pageSize: 1 }).catch(() => ({ total: 0 } as any)),
-        fetchAdminPointsRecords({ page: 1, pageSize: 20 }).catch(() => ({ list: [] as any[] })),
-        fetchAdminRewardRecords({ page: 1, pageSize: 20 }).catch(() => ({ list: [] as any[] })),
+        activityService.fetchActivities({ page: 1, pageSize: 50 }).catch(() => ({ list: [] as MarketingActivity[], total: 0, page: 1, pageSize: 50 })),
+        couponService.fetchCoupons({ page: 1, pageSize: 1 }).catch(() => ({ list: [], total: 0, page: 1, pageSize: 1 })),
+        fetchAdminPointsRecords({ page: 1, pageSize: 20 }).catch(() => ({ list: [] as PointsRecord[], total: 0, page: 1, pageSize: 20, stats: { totalEarned: 0, totalDeducted: 0, totalRecords: 0, activeUsers: 0 } })),
+        fetchAdminRewardRecords({ page: 1, pageSize: 20 }).catch(() => ({ list: [] as RewardRecord[], total: 0, page: 1, pageSize: 20, stats: { settledAmount: 0, reversedAmount: 0, totalRecords: 0, rewardedUsers: 0 } })),
       ]);
       const list = acts.list || [];
+      const today = new Date().toISOString().slice(0, 10);
       setStats({
         active: list.filter((x) => x.status === "active").length,
         upcoming: list.filter((x) => x.status === "scheduled").length,
         ended: list.filter((x) => x.status === "ended").length,
-        coupons: Number((coupons as any).total || 0),
-        pointsToday: (points.list || []).filter((x: any) => String(x.created_at || "").slice(0, 10) === new Date().toISOString().slice(0, 10)).reduce((s: number, x: any) => s + Math.max(0, Number(x.amount || 0)), 0),
-        rewardToday: (rewards.list || []).filter((x: any) => String(x.created_at || "").slice(0, 10) === new Date().toISOString().slice(0, 10)).reduce((s: number, x: any) => s + Number(x.amount || 0), 0),
+        coupons: Number(coupons.total || 0),
+        pointsToday: (points.list || []).filter((x) => String(x.created_at || "").slice(0, 10) === today).reduce((s, x) => s + Math.max(0, Number(x.amount || 0)), 0),
+        rewardToday: (rewards.list || []).filter((x) => String(x.created_at || "").slice(0, 10) === today).reduce((s, x) => s + Number(x.amount || 0), 0),
       });
     })();
   }, []);
@@ -43,8 +48,10 @@ export default function AdminMarketingDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-foreground"><Tx>活动管理 / 活动总览</Tx></h1>
-        <p className="mt-1 text-sm text-muted-foreground"><Tx>营销活动、优惠券、积分与返现的一体化运营视图。</Tx></p>
+        <AdminPageTitle
+          title={<Tx>活动管理 / 活动总览</Tx>}
+          hint={<Tx>营销活动、优惠券、积分与返现的一体化运营视图。</Tx>}
+        />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

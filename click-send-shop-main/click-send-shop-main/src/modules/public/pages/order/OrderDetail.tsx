@@ -10,8 +10,10 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import { useCartStore } from "@/stores/useCartStore";
 import type { Order } from "@/types/order";
 import type { ProductVariant } from "@/types/product";
-import { getBuyerOrderStatusText, getOrderProgressStep, hasPendingReview } from "@/utils/orderBuyerStatus";
+import { canApplyAfterSale, canUserCancelOrder, getBuyerOrderStatusText, getOrderProgressStep, hasPendingReview, isPendingPayment } from "@/utils/orderBuyerStatus";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import { usePayPendingOrder } from "@/hooks/usePayPendingOrder";
+import { OrderPaymentCountdown } from "@/components/order/OrderPaymentCountdown";
 import { OrderDiscountLines } from "./components/OrderDiscountLines";
 import { safeOpenExternal } from "@/utils/safeOpen";
 
@@ -44,6 +46,7 @@ export default function OrderDetail() {
   const [confirmReviewOpen, setConfirmReviewOpen] = useState(false);
   const [firstReviewableId, setFirstReviewableId] = useState("");
   const capabilities = useSiteCapabilities();
+  const { paying, payPendingOrder } = usePayPendingOrder();
 
   const handleViewLogistics = async () => {
     if (!order) return;
@@ -185,15 +188,63 @@ export default function OrderDetail() {
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-3 flex flex-wrap justify-end gap-2">
-          {order.status === "pending" ? (
-            <>
-              <button className="rounded-full border px-3 py-1 text-xs" onClick={async () => { await cancelOrder(order.id); await reload(); toast.success("订单已取消"); }}>取消订单</button>
-              <button className="rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1 text-xs text-[var(--theme-primary-foreground)]" onClick={() => toast.info("支付功能待接入")}>去付款</button>
-            </>
+          {canUserCancelOrder(order) ? (
+            <button
+              className="rounded-full border px-3 py-1 text-xs"
+              onClick={async () => { await cancelOrder(order.id); await reload(); toast.success("订单已取消"); }}
+            >
+              取消订单
+            </button>
+          ) : null}
+          {isPendingPayment(order) ? (
+            <button
+              type="button"
+              disabled={paying}
+              className="rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1 text-xs text-[var(--theme-primary-foreground)] disabled:opacity-60"
+              onClick={() => { void payPendingOrder(order, reload); }}
+            >
+              {paying ? "处理中..." : "去付款"}
+            </button>
           ) : null}
           {order.status === "paid" ? <><button className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate("/help")}>联系客服</button></> : null}
-          {order.status === "shipped" ? <><button className="rounded-full border px-3 py-1 text-xs" onClick={() => { void handleViewLogistics(); }}>查看物流</button><button className="rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1 text-xs text-[var(--theme-primary-foreground)]" onClick={async () => { await confirmReceive(order.id); await reload(); const next = capabilities.reviewEnabled ? (useOrderStore.getState().currentOrder?.items || []).filter((i) => i.can_review && i.order_item_id) : []; if (next.length) { setFirstReviewableId(next[0].order_item_id!); setConfirmReviewOpen(true); } }}>确认收货</button></> : null}
-          {(order.status === "refunding" || order.status === "refunded") ? <button className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate("/returns")}>查看售后进度</button> : null}
+          {order.status === "shipped" ? (
+            <>
+              <button className="rounded-full border px-3 py-1 text-xs" onClick={() => { void handleViewLogistics(); }}>查看物流</button>
+              <button
+                className="rounded-full border px-3 py-1 text-xs"
+                onClick={() => navigate(`/returns?apply=${order.id}`)}
+              >
+                申请售后
+              </button>
+              <button
+                className="rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1 text-xs text-[var(--theme-primary-foreground)]"
+                onClick={async () => {
+                  await confirmReceive(order.id);
+                  await reload();
+                  const next = capabilities.reviewEnabled
+                    ? (useOrderStore.getState().currentOrder?.items || []).filter((i) => i.can_review && i.order_item_id)
+                    : [];
+                  if (next.length) {
+                    setFirstReviewableId(next[0].order_item_id!);
+                    setConfirmReviewOpen(true);
+                  }
+                }}
+              >
+                确认收货
+              </button>
+            </>
+          ) : null}
+          {canApplyAfterSale(order) && order.status === "completed" ? (
+            <button
+              className="rounded-full border px-3 py-1 text-xs"
+              onClick={() => navigate(`/returns?apply=${order.id}`)}
+            >
+              申请售后
+            </button>
+          ) : null}
+          {(order.return_request_count || 0) > 0 || order.status === "refunding" || order.status === "refunded" ? (
+            <button className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate("/returns")}>查看售后进度</button>
+          ) : null}
         </div>
       </main>
 

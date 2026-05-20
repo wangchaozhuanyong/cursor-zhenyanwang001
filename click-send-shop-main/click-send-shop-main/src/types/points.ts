@@ -58,3 +58,12 @@ export interface PointsListParams {
   page?: number;
   pageSize?: number;
 }
+
+/** 积分规则配置页简化行（与 PointsRule 字段名不完全一致） */
+export interface PointsRuleEditRow {
+  id: string;
+  name: string;
+  action: string;
+  points: number;
+  enabled: boolean;
+}

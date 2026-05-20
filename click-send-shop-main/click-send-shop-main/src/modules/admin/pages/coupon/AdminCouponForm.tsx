@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ArrowLeft } from "lucide-react";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { AdminFormSectionsSkeleton } from "@/components/admin/AdminLoadingSkeletons";
@@ -17,6 +16,7 @@ import { Tx } from "@/components/admin/AdminText";
 import { adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { flattenCategories } from "@/utils/categoryTree";
 import type { Product } from "@/types/product";
+import type { CouponUpsertPayload } from "@/types/coupon";
 
 const couponTypes = [
   { value: "fixed", label: "满减券" },
@@ -180,7 +180,7 @@ export default function AdminCouponForm() {
 
     setSaving(true);
     try {
-      const payload: any = {
+      const payload: CouponUpsertPayload = {
         title: form.title,
         code: form.code,
         type: form.type,

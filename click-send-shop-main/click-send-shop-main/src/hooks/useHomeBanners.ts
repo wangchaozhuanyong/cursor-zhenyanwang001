@@ -31,7 +31,7 @@ function normalizeBootstrapBanners(raw: unknown): Banner[] {
 export function useHomeBanners(opts?: UseHomeBannersOpts) {
   const fetchRemote = opts?.fetchRemote !== false;
   const [banners, setBanners] = useState<Banner[]>(() => readBannerCache());
-  const [loading, setLoading] = useState(fetchRemote && banners.length === 0);
+  const [loading, setLoading] = useState(() => fetchRemote && readBannerCache().length === 0);
 
   useEffect(() => {
     if (!fetchRemote) return;
@@ -43,10 +43,11 @@ export function useHomeBanners(opts?: UseHomeBannersOpts) {
       if (next.length > 0) {
         setBanners(next);
         writeBannerCache(next);
+        setLoading(false);
       }
     }
 
-    setLoading(true);
+    setLoading((prev) => prev && readBannerCache().length === 0);
     homeService
       .fetchHomeBootstrap()
       .then((bootstrap) => {

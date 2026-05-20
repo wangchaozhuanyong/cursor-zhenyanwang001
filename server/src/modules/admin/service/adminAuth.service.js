@@ -62,6 +62,9 @@ async function login(body, req) {
     if (user.role !== 'admin' && user.role !== 'super_admin') {
       throw new BusinessError(403, '该账号无管理员权限');
     }
+    if (user.account_status === 'disabled' || user.account_status === 'blacklisted') {
+      throw new BusinessError(403, '该管理员账号已被停用');
+    }
 
     const uid = String(user.id ?? '');
     if (!uid) throw new BusinessError(401, '手机号或密码错误');
@@ -79,7 +82,7 @@ async function login(body, req) {
       actionType: 'admin.login',
       objectType: 'auth',
       objectId: uid,
-      summary: 'Admin login success',
+      summary: '管理员登录成功',
       result: 'success',
     });
     return {
@@ -102,7 +105,7 @@ async function login(body, req) {
       actionType: 'admin.login',
       objectType: 'auth',
       objectId: null,
-      summary: 'Admin login failed',
+      summary: '管理员登录失败',
       result: 'failure',
       errorMessage: err.message || String(err),
     });
@@ -125,6 +128,9 @@ async function refresh(refreshToken) {
   if (user.role !== 'admin' && user.role !== 'super_admin') {
     throw new BusinessError(403, '无管理员权限');
   }
+  if (user.account_status === 'disabled' || user.account_status === 'blacklisted') {
+    throw new BusinessError(403, '该管理员账号已被停用');
+  }
 
   try {
     return await requireAuthApi('refresh')(refreshToken);
@@ -145,7 +151,7 @@ async function logout(userId, req) {
     actionType: 'admin.logout',
     objectType: 'auth',
     objectId: userId || null,
-    summary: 'Admin logout',
+    summary: '管理员退出登录',
     result: 'success',
   });
   return { data: null, message: '已退出登录' };

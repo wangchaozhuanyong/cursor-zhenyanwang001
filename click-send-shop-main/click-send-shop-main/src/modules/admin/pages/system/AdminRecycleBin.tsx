@@ -1,5 +1,5 @@
 import { formatDateTime } from "@/utils/formatDateTime";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Trash2, RotateCcw, Loader2, AlertTriangle, Archive } from "lucide-react";
 import Pagination from "@/components/admin/Pagination";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -15,6 +15,14 @@ import type { RecycleBinItem } from "@/services/admin/recycleBinService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { labelRecycleType } from "@/utils/adminDisplayLabels";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
+import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import {
+  buildRecycleBinFilterChips,
+  hasActiveRecycleBinFilters,
+  removeRecycleBinFilterChip,
+} from "@/utils/adminRecycleBinFilters";
 import {
   THEME_BADGE_ACCENT,
   THEME_BADGE_DANGER,
@@ -68,6 +76,22 @@ export default function AdminRecycleBin() {
 
   const { page, pageSize, setPage, setPageSize, paginatedData, total } = usePagination(items, 20);
 
+  const filterState = { typeFilter };
+  const filterChips = useMemo(() => buildRecycleBinFilterChips(filterState), [typeFilter]);
+  const filtersActive = hasActiveRecycleBinFilters(filterState);
+  const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.recycleBinFiltered : ADMIN_EMPTY_GUIDES.recycleBin;
+
+  const clearFilters = () => {
+    setTypeFilter("");
+    setPage(1);
+  };
+
+  const handleRemoveFilterChip = (key: string) => {
+    const patch = removeRecycleBinFilterChip(key);
+    if ("typeFilter" in patch) setTypeFilter(patch.typeFilter ?? "");
+    setPage(1);
+  };
+
   const handleRestore = async (item: RecycleBinItem) => {
     try {
       await restoreRecycleBinItem(item.id, item.type);
@@ -88,14 +112,17 @@ export default function AdminRecycleBin() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <Archive size={20} className="text-muted-foreground" />
-          <h2 className="text-lg font-bold text-foreground"><Tx>回收站</Tx></h2>
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Archive size={20} className="text-muted-foreground" />
+            <h2 className="text-lg font-bold text-foreground"><Tx>回收站</Tx></h2>
+          </div>
+          <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
+            {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
         </div>
-        <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
-          {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
       </div>
 
       {!loading && items.length === 0 ? (
@@ -148,14 +175,14 @@ export default function AdminRecycleBin() {
             <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
           </div>
 
-          <div className="hidden md:block">
+          <div className="hidden md:block rounded-xl border border-border bg-card">
             <AnimatedTable
+              embedded
               loading={loading}
               rows={paginatedData}
               rowKey={(item) => `${item.type}-${item.id}`}
               skeletonRows={8}
               skeletonCols={4}
-              className="overflow-x-auto rounded-xl border border-border bg-card"
               tableClassName="w-full min-w-[600px] text-sm"
               theadClassName="border-b border-border bg-secondary/50"
               thead={(
@@ -165,9 +192,16 @@ export default function AdminRecycleBin() {
                   ))}
                 </tr>
               )}
-              footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />}
-              emptyIcon={Archive}
-              emptyTitle="回收站为空"
+              emptyIcon={emptyGuide.icon}
+              emptyTitle={emptyGuide.title}
+              emptyDescription={emptyGuide.description}
+              emptyAction={(
+                <AdminEmptyGuideActions
+                  guide={emptyGuide}
+                  showClearFilters={filtersActive}
+                  onClearFilters={clearFilters}
+                />
+              )}
               renderRow={(item) => (
                 <>
                   <td className="px-4 py-3">
@@ -197,6 +231,9 @@ export default function AdminRecycleBin() {
                 </>
               )}
             />
+            {(loading || paginatedData.length > 0) && (
+              <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
+            )}
           </div>
         </>
       )}

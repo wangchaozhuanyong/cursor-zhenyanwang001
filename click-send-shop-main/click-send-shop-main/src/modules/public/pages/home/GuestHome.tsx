@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/utils/structuredData";
+import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPanel";
 
 function mergeHomeProductsForGuest(hot: Product[], recommended: Product[], max: number): Product[] {
   const seen = new Set<string>();
@@ -279,18 +280,19 @@ export default function GuestHome() {
             <Sparkles className="h-5 w-5 text-[var(--theme-price)]" />
             全网爆款
           </h2>
-          {homeError && (
-            <div className="mt-4 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-center text-sm text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]">
-              <p>{homeError}</p>
-              <button
-                type="button"
-                onClick={() => loadHomeData()}
-                className="mt-3 rounded-full bg-[var(--theme-primary)] px-5 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]"
-              >
-                重试
-              </button>
+          {homeError && gridProducts.length === 0 ? (
+            <div className="mt-4">
+              <StorefrontLoadErrorPanel
+                message={homeError}
+                onRetry={() => void loadHomeData({ force: true })}
+              />
             </div>
-          )}
+          ) : null}
+          {homeError && gridProducts.length > 0 ? (
+            <p className="mb-3 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-center text-xs text-[var(--theme-text-muted)]">
+              部分推荐内容暂时无法刷新，以下为缓存数据
+            </p>
+          ) : null}
           {homeLoading && !homeError && (
             <div className={`mt-4 ${productGridClass}`}>
               {Array.from({ length: guestGridMax }).map((_, i) => (

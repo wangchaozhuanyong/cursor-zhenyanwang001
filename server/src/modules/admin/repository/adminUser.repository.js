@@ -3,6 +3,13 @@ const { ORDER_STATUS, PAID_PAYMENT_STATUS_LIST } = require('../../../constants/s
 const PAID_PAYMENT_PLACEHOLDERS = PAID_PAYMENT_STATUS_LIST.map(() => '?').join(', ');
 
 const tableColumnCache = new Map();
+const ADMIN_ACCOUNT_EXCLUSION_SQL = `
+  AND u.role NOT IN ('admin', 'super_admin')
+  AND NOT (
+    u.role = 'disabled'
+    AND EXISTS (SELECT 1 FROM user_roles ur_admin WHERE ur_admin.user_id = u.id)
+  )
+`;
 
 async function getTableColumns(tableName) {
   if (tableColumnCache.has(tableName)) return tableColumnCache.get(tableName);
@@ -31,7 +38,7 @@ async function safeRelation(label, loader, fallback) {
 }
 
 function buildUserListWhere(keyword, tagId, filters = {}) {
-  let where = 'WHERE u.deleted_at IS NULL';
+  let where = `WHERE u.deleted_at IS NULL ${ADMIN_ACCOUNT_EXCLUSION_SQL}`;
   const params = [];
   if (keyword) {
     where += ` AND (
@@ -253,7 +260,7 @@ async function selectUserSummaryById(userId) {
   const [[user]] = await db.query(
     `SELECT u.id, u.phone, u.password_hash, u.nickname, u.avatar, u.invite_code, u.parent_invite_code,
             u.points_balance, u.subordinate_enabled, u.wechat, u.whatsapp, u.created_at,
-            u.account_status,
+            u.role, u.account_status,
             COALESCE(ur.order_restricted, 0) AS order_restricted,
             COALESCE(ur.coupon_restricted, 0) AS coupon_restricted,
             COALESCE(ur.comment_restricted, 0) AS comment_restricted,
@@ -269,6 +276,28 @@ async function selectUserSummaryById(userId) {
     [userId],
   );
   return user || null;
+}
+
+async function selectProtectedAdminUserIds(userIds) {
+  if (!Array.isArray(userIds) || userIds.length === 0) return [];
+  const ids = [...new Set(userIds.map((id) => String(id || '').trim()).filter(Boolean))];
+  if (!ids.length) return [];
+  const placeholders = ids.map(() => '?').join(',');
+  const [rows] = await db.query(
+    `SELECT u.id
+     FROM users u
+     WHERE u.id IN (${placeholders})
+       AND u.deleted_at IS NULL
+       AND (
+         u.role IN ('admin', 'super_admin')
+         OR (
+           u.role = 'disabled'
+           AND EXISTS (SELECT 1 FROM user_roles ur_admin WHERE ur_admin.user_id = u.id)
+         )
+       )`,
+    ids,
+  );
+  return rows.map((row) => row.id);
 }
 
 async function countOrdersByUserId(userId) {
@@ -547,6 +576,7 @@ module.exports = {
   selectWechatIdentityByUserId,
   deleteWechatIdentityByUserId,
   selectUserSummaryById,
+  selectProtectedAdminUserIds,
   countOrdersByUserId,
   sumUserSpentExcludingCancelled,
   updateUserDynamic,

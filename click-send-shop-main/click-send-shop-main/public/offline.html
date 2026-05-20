@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <meta name="theme-color" content="#D4AF37" />
-    <title>当前离线 - 官方商城</title>
+    <title>网络不可用 · 官方商城</title>
     <style>
       :root {
         color-scheme: light;
@@ -45,13 +45,62 @@
         font-size: 14px;
         font-weight: 600;
       }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 10px 16px;
+        color: #1f1f1f;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        background: #f1f1f1;
+      }
+      .note {
+        margin-top: 16px;
+        border: 1px dashed #d8d8d8;
+        border-radius: 12px;
+        padding: 12px;
+        color: #666;
+        font-size: 13px;
+      }
     </style>
   </head>
   <body>
     <main class="card">
       <h1>网络连接不可用</h1>
-      <p>当前处于离线状态。你仍可访问部分已缓存页面，但下单、支付、订单与个人数据需要联网。</p>
-      <button type="button" onclick="location.reload()">重新连接</button>
+      <p>当前处于离线状态。你仍可访问部分已缓存的公开页面，重新联网后会自动获取最新内容。</p>
+      <div class="actions">
+        <button type="button" onclick="location.reload()">重新连接</button>
+        <a href="/">返回首页</a>
+        <a href="/support-download">联系客服</a>
+      </div>
+      <p class="note">订单、支付、购物车、个人资料和后台管理需要联网，不支持离线下单或离线支付。</p>
     </main>
+    <script>
+      function getReturnPath() {
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const from = params.get("from");
+          if (!from) return "/";
+          const decoded = decodeURIComponent(from);
+          if (!decoded || decoded.startsWith("/offline.html")) return "/";
+          return decoded;
+        } catch {
+          return "/";
+        }
+      }
+
+      window.addEventListener("online", function () {
+        window.location.replace(getReturnPath());
+      });
+    </script>
   </body>
 </html>

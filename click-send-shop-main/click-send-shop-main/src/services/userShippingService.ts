@@ -7,7 +7,7 @@ export async function fetchShippingTemplates(): Promise<ShippingTemplate[]> {
 }
 
 export async function quoteShipping(payload: {
-  shipping_template_id?: string | number;
+  shipping_template_id: string | number;
   raw_amount: number;
   estimated_weight_kg?: number;
 }) {

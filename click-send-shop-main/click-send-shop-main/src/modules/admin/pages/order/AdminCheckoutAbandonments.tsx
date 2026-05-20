@@ -1,7 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { ShoppingCart } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
+import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import {
+  buildCheckoutAbandonmentFilterChips,
+  hasActiveCheckoutAbandonmentFilters,
+  removeCheckoutAbandonmentFilterChip,
+} from "@/utils/adminCheckoutAbandonmentFilters";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import SearchBar from "@/components/SearchBar";
@@ -11,6 +19,7 @@ import type { CheckoutAbandonment, CheckoutAbandonmentStatus } from "@/types/ord
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { labelCheckoutPaymentMethod } from "@/utils/adminDisplayLabels";
 import { Tx } from "@/components/admin/AdminText";
+import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { THEME_BADGE_ACCENT, THEME_BADGE_MUTED, THEME_BADGE_SUCCESS, THEME_BADGE_WARNING } from "@/utils/themeVisuals";
 
 const STATUS_OPTIONS: Array<{ value: "" | CheckoutAbandonmentStatus; label: string }> = [
@@ -92,31 +101,66 @@ export default function AdminCheckoutAbandonments() {
     void loadData({ page: 1, pageSize: nextPageSize });
   };
 
+  const filterState = { keyword, status };
+  const filterChips = useMemo(() => buildCheckoutAbandonmentFilterChips(filterState), [keyword, status]);
+  const filtersActive = hasActiveCheckoutAbandonmentFilters(filterState);
+  const emptyGuide = filtersActive
+    ? ADMIN_EMPTY_GUIDES.checkoutAbandonmentsFiltered
+    : ADMIN_EMPTY_GUIDES.checkoutAbandonments;
+
+  const clearFilters = () => {
+    setKeyword("");
+    setStatus("");
+    setPage(1);
+    void loadData({ page: 1, status: "", keyword: "" });
+  };
+
+  const handleRemoveFilterChip = (key: string) => {
+    const patch = removeCheckoutAbandonmentFilterChip(key);
+    const nextKeyword = "keyword" in patch ? (patch.keyword ?? "") : keyword;
+    const nextStatus = "status" in patch ? (patch.status ?? "") : status;
+    if ("keyword" in patch) setKeyword(patch.keyword ?? "");
+    if ("status" in patch) setStatus(patch.status ?? "");
+    setPage(1);
+    void loadData({ page: 1, keyword: nextKeyword, status: nextStatus });
+  };
+
   return (
     <div className="space-y-4">
       <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow sm:p-4">
-        <h1 className="text-lg font-semibold text-foreground"><Tx>未完成结算</Tx></h1>
-        <p className="mt-1 text-sm text-muted-foreground"><Tx>仅做站内记录和后台查看，不触发邮件、短信或自动外呼。</Tx></p>
-        <p className="mt-2 text-xs leading-relaxed text-muted-foreground"><Tx>
-          同一用户、同一次停留在结算页的过程，只会维护</Tx><strong><Tx>一条</Tx></strong><Tx>「进行中」快照：内容随填写与勾选变化而更新；下单成功后该条变为「已下单未支付」，其余误入的「仅进入结算」空壳会自动关闭。
-          若仍看到两条时间接近的旧数据，多为升级前产生的重复快照，可忽略或后续数据清理。
-        </Tx></p>
+        <AdminPageTitle
+          title={<Tx>未完成结算</Tx>}
+          className="text-lg"
+          hint={(
+            <>
+              <p><Tx>仅做站内记录和后台查看，不触发邮件、短信或自动外呼。</Tx></p>
+              <p className="mt-1"><Tx>
+                同一用户、同一次停留在结算页的过程，只会维护一条「进行中」快照：内容随填写与勾选变化而更新；下单成功后该条变为「已下单未支付」，其余误入的「仅进入结算」空壳会自动关闭。
+                若仍看到两条时间接近的旧数据，多为升级前产生的重复快照，可忽略或后续数据清理。
+              </Tx></p>
+            </>
+          )}
+          hintContentClassName="max-w-md"
+        />
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="min-w-0 flex-1">
-          <SearchBar placeholder="搜索订单号 / 联系人 / 手机号..." value={keyword} onChange={setKeyword} />
+      <div className="space-y-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="min-w-0 flex-1">
+            <SearchBar placeholder="搜索订单号 / 联系人 / 手机号..." value={keyword} onChange={setKeyword} />
+          </div>
+          <select
+            value={status}
+            onChange={(e) => handleStatusChange(e.target.value as "" | CheckoutAbandonmentStatus)}
+            className="touch-manipulation min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2.5 text-sm text-foreground outline-none"
+          >
+            {STATUS_OPTIONS.map((option) => <option key={option.value || "unfinished"} value={option.value}>{option.label}</option>)}
+          </select>
+          <button type="button" onClick={handleSearch} className="touch-manipulation min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-2.5 text-sm text-foreground hover:opacity-90"><Tx>
+            搜索
+          </Tx></button>
         </div>
-        <select
-          value={status}
-          onChange={(e) => handleStatusChange(e.target.value as "" | CheckoutAbandonmentStatus)}
-          className="touch-manipulation min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2.5 text-sm text-foreground outline-none"
-        >
-          {STATUS_OPTIONS.map((option) => <option key={option.value || "unfinished"} value={option.value}>{option.label}</option>)}
-        </select>
-        <button type="button" onClick={handleSearch} className="touch-manipulation min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-2.5 text-sm text-foreground hover:opacity-90"><Tx>
-          搜索
-        </Tx></button>
+        <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
       </div>
 
       <div className="space-y-3 md:hidden">
@@ -156,14 +200,14 @@ export default function AdminCheckoutAbandonments() {
         <Pagination total={total} page={page} pageSize={pageSize} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
       </div>
 
-      <div className="hidden md:block">
+      <div className="hidden md:block theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow">
         <AnimatedTable
+          embedded
           loading={loading}
           rows={rows}
           rowKey={(row) => row.id}
           skeletonRows={8}
           skeletonCols={8}
-          className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
           tableClassName="w-full text-sm"
           theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
           thead={(
@@ -173,9 +217,16 @@ export default function AdminCheckoutAbandonments() {
               ))}
             </tr>
           )}
-          footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />}
-          emptyIcon={ShoppingCart}
-          emptyTitle="暂无未完成结算"
+          emptyIcon={emptyGuide.icon}
+          emptyTitle={emptyGuide.title}
+          emptyDescription={emptyGuide.description}
+          emptyAction={(
+            <AdminEmptyGuideActions
+              guide={emptyGuide}
+              showClearFilters={filtersActive}
+              onClearFilters={clearFilters}
+            />
+          )}
           renderRow={(row) => (
             <>
               <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[row.status]}`}>{STATUS_LABEL[row.status]}</span></td>
@@ -199,6 +250,9 @@ export default function AdminCheckoutAbandonments() {
             </>
           )}
         />
+        {(loading || rows.length > 0) && (
+          <Pagination total={total} page={page} pageSize={pageSize} onPageChange={handlePageChange} onPageSizeChange={handlePageSizeChange} />
+        )}
       </div>
 
     </div>

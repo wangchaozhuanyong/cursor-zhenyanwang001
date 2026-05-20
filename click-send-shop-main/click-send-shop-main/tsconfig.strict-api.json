@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "types": ["vite/client"]
+  },
+  "include": [
+    "src/api/**/*.ts",
+    "src/services/**/*.ts",
+    "src/types/**/*.ts",
+    "src/utils/token.ts",
+    "src/utils/cartNormalize.ts",
+    "src/stores/useCartStore.ts"
+  ]
+}

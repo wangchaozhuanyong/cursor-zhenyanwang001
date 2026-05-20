@@ -16,6 +16,8 @@ type AnimatedTableProps<T> = {
   thead?: ReactNode;
   theadClassName?: string;
   footer?: ReactNode;
+  /** 嵌入外层卡片时使用：去掉内层圆角/边框，分页栏在横向滚动区域外渲染 */
+  embedded?: boolean;
   emptyIcon: LucideIcon;
   emptyTitle: string;
   emptyDescription?: string;
@@ -40,6 +42,36 @@ function TableSkeleton({ rows, cols = 5 }: { rows: number; cols?: number }) {
   );
 }
 
+function TableFrame({
+  embedded,
+  className,
+  footer,
+  children,
+}: {
+  embedded?: boolean;
+  className?: string;
+  footer?: ReactNode;
+  children: ReactNode;
+}) {
+  const scrollClass = cn("overflow-x-auto", className);
+
+  if (embedded) {
+    return (
+      <>
+        <div className={scrollClass}>{children}</div>
+        {footer}
+      </>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card)]">
+      <div className={scrollClass}>{children}</div>
+      {footer}
+    </div>
+  );
+}
+
 export function AnimatedTable<T>({
   loading,
   rows,
@@ -50,6 +82,7 @@ export function AnimatedTable<T>({
   thead,
   theadClassName,
   footer,
+  embedded,
   emptyIcon,
   emptyTitle,
   emptyDescription,
@@ -59,22 +92,16 @@ export function AnimatedTable<T>({
 }: AnimatedTableProps<T>) {
   const { level, enabled } = useMotionConfig();
 
-  const wrapperClass = cn(
-    "overflow-x-auto rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card)]",
-    className,
-  );
-
   if (loading) {
     return (
-      <div className={wrapperClass}>
+      <TableFrame embedded={embedded} className={className} footer={footer}>
         <table className={cn("w-full text-sm", tableClassName)}>
           {thead ? <thead className={theadClassName}>{thead}</thead> : null}
           <tbody>
             <TableSkeleton rows={skeletonRows} cols={skeletonCols} />
           </tbody>
         </table>
-        {footer}
-      </div>
+      </TableFrame>
     );
   }
 
@@ -91,7 +118,7 @@ export function AnimatedTable<T>({
   }
 
   return (
-    <div className={wrapperClass}>
+    <TableFrame embedded={embedded} className={className} footer={footer}>
       <table className={cn("w-full text-sm text-[var(--theme-text)]", tableClassName)}>
         {thead ? <thead className={theadClassName}>{thead}</thead> : null}
         <tbody>
@@ -126,8 +153,7 @@ export function AnimatedTable<T>({
           </AnimatePresence>
         </tbody>
       </table>
-      {footer}
-    </div>
+    </TableFrame>
   );
 }
 

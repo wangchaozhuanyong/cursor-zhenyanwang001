@@ -92,7 +92,16 @@ async function reassignUsersToLevel(q, fromLevelId, toLevelId) {
 }
 
 async function selectAllUserIds(q) {
-  const [rows] = await q.query('SELECT id, member_level_manual_locked FROM users WHERE deleted_at IS NULL');
+  const [rows] = await q.query(`
+    SELECT u.id, u.member_level_manual_locked
+    FROM users u
+    WHERE u.deleted_at IS NULL
+      AND u.role NOT IN ('admin', 'super_admin')
+      AND NOT (
+        u.role = 'disabled'
+        AND EXISTS (SELECT 1 FROM user_roles ur_admin WHERE ur_admin.user_id = u.id)
+      )
+  `);
   return rows.map((r) => ({ id: r.id, manualLocked: Boolean(r.member_level_manual_locked) }));
 }
 

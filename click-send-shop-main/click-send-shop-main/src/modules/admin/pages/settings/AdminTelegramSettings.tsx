@@ -3,13 +3,14 @@ import { Bell, Loader2, RefreshCw, Send } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { Tx } from "@/components/admin/AdminText";
+import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import {
-  getTelegramLogs,
-  getTelegramStatus,
-  postTelegramTest,
+  fetchTelegramLogs,
+  fetchTelegramStatus,
+  sendTelegramTest,
   type TelegramLogRow,
   type TelegramStatus,
-} from "@/api/admin/telegram";
+} from "@/services/admin/telegramService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 
 function statusLabel(value: boolean, yes = "已配置", no = "未配置") {
@@ -35,10 +36,10 @@ export default function AdminTelegramSettings() {
 
   const load = useCallback(() => {
     setLoading(true);
-    Promise.all([getTelegramStatus(), getTelegramLogs(20)])
-      .then(([statusRes, logsRes]) => {
-        setStatus(statusRes.data);
-        setLogs(Array.isArray(logsRes.data) ? logsRes.data : []);
+    Promise.all([fetchTelegramStatus(), fetchTelegramLogs(20)])
+      .then(([statusData, logsData]) => {
+        setStatus(statusData);
+        setLogs(Array.isArray(logsData) ? logsData : []);
       })
       .catch((error) => toast.error(toastErrorMessage(error, "加载 Telegram 通知设置失败")))
       .finally(() => setLoading(false));
@@ -51,7 +52,7 @@ export default function AdminTelegramSettings() {
   const testSend = async () => {
     setTesting(true);
     try {
-      await postTelegramTest();
+      await sendTelegramTest();
       toast.success("测试消息已发送");
       load();
     } catch (error) {
@@ -66,13 +67,16 @@ export default function AdminTelegramSettings() {
       <div className="space-y-5 p-4 md:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="flex items-center gap-2 text-xl font-bold text-foreground">
-              <Bell size={20} />
-              Telegram 通知设置
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              付款成功后发送管理员群通知，包含手机号尾号 5 位、收货地址和全部商品明细。
-            </p>
+            <div className="flex items-center gap-2">
+              <h1 className="flex items-center gap-2 text-xl font-bold text-foreground">
+                <Bell size={20} />
+                Telegram 通知设置
+              </h1>
+              <AdminFieldHint
+                text="付款成功后发送管理员群通知，包含手机号尾号 5 位、收货地址和全部商品明细。"
+                size="md"
+              />
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <button

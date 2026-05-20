@@ -1,7 +1,7 @@
 const db = require('../../../config/db');
+const { ACTIVE_PRODUCT_WHERE, activeProductWhere } = require('../productLifecycle');
 
 const PUBLIC_QUERY_TIMEOUT_MS = 3000;
-const ACTIVE_PRODUCT_WHERE = "(lifecycle_status = 1 OR (lifecycle_status IS NULL AND status = 'active')) AND deleted_at IS NULL";
 
 function isTimeoutError(err) {
   return err?.code === 'PROTOCOL_SEQUENCE_TIMEOUT' || /timeout/i.test(String(err?.message || ''));
@@ -88,7 +88,7 @@ async function selectDefaultVariantsByProductIds(productIds) {
 
 async function selectProductById(id) {
   const [[row]] = await db.query(
-    'SELECT * FROM products WHERE id = ? AND lifecycle_status = 1 AND deleted_at IS NULL',
+    `SELECT * FROM products WHERE id = ? AND ${ACTIVE_PRODUCT_WHERE}`,
     [id],
   );
   return row || null;
@@ -101,6 +101,7 @@ async function selectProductVariants(productId) {
      FROM product_variants
      WHERE product_id = ?
        AND deleted_at IS NULL
+       AND enabled = 1
      ORDER BY is_default DESC, sort_order ASC, id ASC`,
     [productId],
   );
@@ -231,8 +232,7 @@ async function selectPublicProductTags(limit = 12) {
      FROM product_tags pt
      LEFT JOIN product_tag_assignments pta ON pta.tag_id = pt.id
      LEFT JOIN products p ON p.id = pta.product_id
-       AND (p.lifecycle_status = 1 OR (p.lifecycle_status IS NULL AND p.status = 'active'))
-       AND p.deleted_at IS NULL
+       AND ${activeProductWhere('p')}
      WHERE pt.enabled = 1
        AND pt.deleted_at IS NULL
      GROUP BY pt.id, pt.name, pt.color, pt.bg_color, pt.text_color, pt.sort_order
@@ -253,7 +253,7 @@ async function selectProductCategoryId(productId) {
 
 async function selectRelatedByCategory(categoryId, excludeProductId, limit) {
   const [rows] = await db.query(
-    'SELECT * FROM products WHERE lifecycle_status=1 AND deleted_at IS NULL AND category_id=? AND id!=? ORDER BY sort_order LIMIT ?',
+    `SELECT * FROM products WHERE ${ACTIVE_PRODUCT_WHERE} AND category_id=? AND id!=? ORDER BY sort_order LIMIT ?`,
     [categoryId, excludeProductId, limit],
   );
   return rows;

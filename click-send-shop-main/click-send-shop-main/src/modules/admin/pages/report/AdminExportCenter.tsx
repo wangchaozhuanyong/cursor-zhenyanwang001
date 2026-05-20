@@ -2,8 +2,11 @@ import { formatDateTime } from "@/utils/formatDateTime";
 import { useEffect, useState, useCallback } from "react";
 import { Download, Loader2, RefreshCw, CheckCircle2, XCircle, Clock, FileSpreadsheet } from "lucide-react";
 import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
+import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { Tx } from "@/components/admin/AdminText";
+import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { toast } from "sonner";
 import {
@@ -112,8 +115,10 @@ export default function AdminExportCenter() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="flex items-center gap-2 text-lg font-bold text-foreground"><FileSpreadsheet size={20} /><Tx> 导出中心</Tx></h2>
-          <p className="text-sm text-muted-foreground"><Tx>支持按报表类型与日期范围创建导出任务</Tx></p>
+          <div className="flex items-center gap-2">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-foreground"><FileSpreadsheet size={20} /><Tx> 导出中心</Tx></h2>
+            <AdminFieldHint text={<Tx>支持按报表类型与日期范围创建导出任务</Tx>} />
+          </div>
         </div>
         <button type="button" onClick={() => void loadTasks()} className="touch-manipulation rounded-xl border border-border p-2.5 text-muted-foreground hover:bg-secondary" title="刷新">
           <RefreshCw size={16} />
@@ -164,8 +169,10 @@ export default function AdminExportCenter() {
             ))}
           </tr>
         )}
-        emptyIcon={FileSpreadsheet}
-        emptyTitle="暂无导出任务"
+        emptyIcon={ADMIN_EMPTY_GUIDES.exportTasks.icon}
+        emptyTitle={ADMIN_EMPTY_GUIDES.exportTasks.title}
+        emptyDescription={ADMIN_EMPTY_GUIDES.exportTasks.description}
+        emptyAction={<AdminEmptyGuideActions guide={ADMIN_EMPTY_GUIDES.exportTasks} />}
         renderRow={(t) => (
           <>
             <td className="px-4 py-3 text-foreground">{t.file_name}</td>

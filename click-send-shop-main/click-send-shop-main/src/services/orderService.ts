@@ -26,7 +26,11 @@ function buildOrderSummaryFromOrders(orders: Order[]): OrderSummary {
   const pending_review = orders.reduce((acc, o) => (
     acc + (o.status === "completed" ? o.items.filter((it) => it.can_review).length : 0)
   ), 0);
-  const after_sale = orders.filter((o) => o.status === "refunding" || o.status === "refunded").length;
+  const after_sale = orders.filter((o) =>
+    o.status === "refunding"
+    || o.status === "refunded"
+    || Number(o.return_request_count || 0) > 0,
+  ).length;
   const completed = orders.filter((o) => o.status === "completed").length;
   const cancelled = orders.filter((o) => o.status === "cancelled").length;
   return { pending_payment, pending_ship, pending_receive, pending_review, after_sale, completed, cancelled };

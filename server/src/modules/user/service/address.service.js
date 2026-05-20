@@ -31,13 +31,13 @@ async function createAddress(userId, body) {
   }
 
   const row = await repo.selectRowByIdAndUser(id, userId);
-  return { data: row, message: 'Address created' };
+  return { data: row, message: '地址已添加' };
 }
 
 async function updateAddress(userId, id, body) {
   const { name, phone, address, isDefault } = body;
   const existing = await repo.selectByIdAndUser(id, userId);
-  if (!existing) return { error: { code: 404, message: 'Address not found' } };
+  if (!existing) return { error: { code: 404, message: '地址不存在' } };
 
   const conn = await repo.getConnection();
   try {
@@ -61,12 +61,12 @@ async function updateAddress(userId, id, body) {
   }
 
   const row = await repo.selectRowByIdAndUser(id, userId);
-  return { data: row, message: 'Address updated' };
+  return { data: row, message: '地址已更新' };
 }
 
 async function deleteAddress(userId, id) {
   const existing = await repo.selectWithDefault(id, userId);
-  if (!existing) return { error: { code: 404, message: 'Address not found' } };
+  if (!existing) return { error: { code: 404, message: '地址不存在' } };
 
   await repo.deleteById(id, userId);
 
@@ -76,16 +76,16 @@ async function deleteAddress(userId, id) {
       await repo.setDefaultById(nextId, userId);
     }
   }
-  return { message: 'Address deleted' };
+  return { message: '地址已删除' };
 }
 
 async function setDefault(userId, id) {
   const existing = await repo.selectByIdAndUser(id, userId);
-  if (!existing) return { error: { code: 404, message: 'Address not found' } };
+  if (!existing) return { error: { code: 404, message: '地址不存在' } };
 
   await repo.clearDefaultForUser(userId);
   await repo.setDefaultById(id, userId);
-  return { message: 'Default address set' };
+  return { message: '已设为默认地址' };
 }
 
 module.exports = {

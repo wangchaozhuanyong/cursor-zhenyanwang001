@@ -1,13 +1,21 @@
 import { formatDateTime } from "@/utils/formatDateTime";
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ClipboardList } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
 import { usePagination } from "@/hooks/usePagination";
 import { toast } from "sonner";
 import { fetchCouponRecords } from "@/services/admin/couponService";
+import type { CouponClaimRecord } from "@/types/coupon";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
+import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import {
+  buildCouponRecordFilterChips,
+  hasActiveCouponRecordFilters,
+  removeCouponRecordFilterChip,
+} from "@/utils/adminCouponRecordFilters";
 import { Tx } from "@/components/admin/AdminText";
 import { formatUserDisplay, labelCouponRecordStatus } from "@/utils/adminDisplayLabels";
 import { THEME_BADGE_SUCCESS } from "@/utils/themeVisuals";
@@ -21,7 +29,7 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 export default function AdminCouponRecords() {
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
-  const [records, setRecords] = useState<any[]>([]);
+  const [records, setRecords] = useState<CouponClaimRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,6 +52,24 @@ export default function AdminCouponRecords() {
   });
   const { page, pageSize, setPage, setPageSize, paginatedData, total } = usePagination(filtered, 10);
 
+  const filterState = { search, statusFilter };
+  const filterChips = useMemo(() => buildCouponRecordFilterChips(filterState), [search, statusFilter]);
+  const filtersActive = hasActiveCouponRecordFilters(filterState);
+  const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.couponRecordsFiltered : ADMIN_EMPTY_GUIDES.couponRecords;
+
+  const clearFilters = () => {
+    setSearch("");
+    setStatusFilter("");
+    setPage(1);
+  };
+
+  const handleRemoveFilterChip = (key: string) => {
+    const patch = removeCouponRecordFilterChip(key);
+    if ("search" in patch) setSearch(patch.search ?? "");
+    if ("statusFilter" in patch) setStatusFilter(patch.statusFilter ?? "");
+    setPage(1);
+  };
+
   const formatPhone = (phone: string | null | undefined) => {
     if (!phone) return "—";
     const raw = String(phone).trim();
@@ -55,14 +81,17 @@ export default function AdminCouponRecords() {
     <div className="space-y-4">
       <div className="flex items-center gap-3"><h2 className="text-lg font-semibold text-foreground"><Tx>领券记录</Tx></h2></div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="min-w-0 flex-1"><SearchBar placeholder="搜索用户/优惠券..." value={search} onChange={(v) => { setSearch(v); setPage(1); }} /></div>
-        <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="min-h-[44px] w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground outline-none sm:w-auto">
-          <option value=""><Tx>全部状态</Tx></option>
-          <option value="available"><Tx>未使用</Tx></option>
-          <option value="used"><Tx>已使用</Tx></option>
-          <option value="expired"><Tx>已过期</Tx></option>
-        </select>
+      <div className="space-y-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="min-w-0 flex-1"><SearchBar placeholder="搜索用户/优惠券..." value={search} onChange={(v) => { setSearch(v); setPage(1); }} /></div>
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="min-h-[44px] w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground outline-none sm:w-auto">
+            <option value=""><Tx>全部状态</Tx></option>
+            <option value="available"><Tx>未使用</Tx></option>
+            <option value="used"><Tx>已使用</Tx></option>
+            <option value="expired"><Tx>已过期</Tx></option>
+          </select>
+        </div>
+        <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
       </div>
 
       <div className="space-y-3 md:hidden">
@@ -97,14 +126,14 @@ export default function AdminCouponRecords() {
         <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
       </div>
 
-      <div className="hidden md:block">
+      <div className="hidden md:block rounded-xl border border-border bg-card">
         <AnimatedTable
+          embedded
           loading={loading}
           rows={paginatedData}
           rowKey={(r) => r.id}
           skeletonRows={8}
           skeletonCols={6}
-          className="overflow-x-auto rounded-xl border border-border bg-card"
           tableClassName="w-full min-w-[640px] text-sm"
           theadClassName="border-b border-border bg-secondary/50"
           thead={(
@@ -114,9 +143,16 @@ export default function AdminCouponRecords() {
               ))}
             </tr>
           )}
-          footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
-          emptyIcon={ClipboardList}
-          emptyTitle="无匹配记录"
+          emptyIcon={emptyGuide.icon}
+          emptyTitle={emptyGuide.title}
+          emptyDescription={emptyGuide.description}
+          emptyAction={(
+            <AdminEmptyGuideActions
+              guide={emptyGuide}
+              showClearFilters={filtersActive}
+              onClearFilters={clearFilters}
+            />
+          )}
           renderRow={(r) => {
             const st = statusLabels[r.status] ?? { label: labelCouponRecordStatus(r.status), color: "" };
             return (
@@ -131,6 +167,9 @@ export default function AdminCouponRecords() {
             );
           }}
         />
+        {(loading || paginatedData.length > 0) && (
+          <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+        )}
       </div>
     </div>
   );

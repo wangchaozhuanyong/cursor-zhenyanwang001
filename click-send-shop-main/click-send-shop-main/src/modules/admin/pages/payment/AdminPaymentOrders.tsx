@@ -1,7 +1,15 @@
 import { formatDateTime } from "@/utils/formatDateTime";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CreditCard } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
+import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import {
+  buildPaymentOrderFilterChips,
+  hasActivePaymentOrderFilters,
+  removePaymentOrderFilterChip,
+} from "@/utils/adminPaymentFilters";
 import PermissionGate from "@/components/admin/PermissionGate";
 import Pagination from "@/components/admin/Pagination";
 import PaymentAdminSubnav from "./PaymentAdminSubnav";
@@ -10,6 +18,7 @@ import type { PaymentOrderAdminRow } from "@/types/adminPayment";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
+import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import {
   labelChannelCode,
@@ -58,6 +67,24 @@ export default function AdminPaymentOrders() {
     void load();
   }, [load]);
 
+  const filterState = { status, keyword };
+  const filterChips = useMemo(() => buildPaymentOrderFilterChips(filterState), [status, keyword]);
+  const filtersActive = hasActivePaymentOrderFilters(filterState);
+  const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.paymentOrdersFiltered : ADMIN_EMPTY_GUIDES.paymentOrders;
+
+  const clearFilters = () => {
+    setStatus("");
+    setKeyword("");
+    setPage(1);
+  };
+
+  const handleRemoveFilterChip = (key: string) => {
+    const patch = removePaymentOrderFilterChip(key);
+    if ("status" in patch) setStatus(patch.status ?? "");
+    if ("keyword" in patch) setKeyword(patch.keyword ?? "");
+    setPage(1);
+  };
+
   const markPaid = async () => {
     const id = markOrderId.trim();
     if (!id) {
@@ -79,8 +106,7 @@ export default function AdminPaymentOrders() {
     <PermissionGate permission="payment.manage">
       <div className="p-4 md:p-6">
         <div className="mb-2">
-          <h1 className="text-xl font-bold text-foreground"><Tx>支付管理</Tx></h1>
-          <p className="text-sm text-muted-foreground"><Tx>支付单流水、线下补单</Tx></p>
+          <AdminPageTitle title={<Tx>支付管理</Tx>} hint={<Tx>支付单流水、线下补单</Tx>} />
         </div>
         <PaymentAdminSubnav />
 
@@ -124,30 +150,33 @@ export default function AdminPaymentOrders() {
           </div>
         </div>
 
-        <div className="mb-4 flex flex-wrap gap-3">
-          <select
-            value={status}
-            onChange={(e) => { setPage(1); setStatus(e.target.value); }}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
-          >
-            {statusOpts.map((o) => (
-              <option key={o.value || "all"} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-          <input
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && (setPage(1), void load())}
-            placeholder="订单号 / 交易号"
-            className="min-w-[200px] flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
-          />
-          <button
-            type="button"
-            onClick={() => { setPage(1); void load(); }}
-            className="rounded-full border border-border px-4 py-2 text-sm font-medium"
-          ><Tx>
-            查询
-          </Tx></button>
+        <div className="mb-4 space-y-2">
+          <div className="flex flex-wrap gap-3">
+            <select
+              value={status}
+              onChange={(e) => { setPage(1); setStatus(e.target.value); }}
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            >
+              {statusOpts.map((o) => (
+                <option key={o.value || "all"} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            <input
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && (setPage(1), void load())}
+              placeholder="订单号 / 交易号"
+              className="min-w-[200px] flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            />
+            <button
+              type="button"
+              onClick={() => { setPage(1); void load(); }}
+              className="rounded-full border border-border px-4 py-2 text-sm font-medium"
+            ><Tx>
+              查询
+            </Tx></button>
+          </div>
+          <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
         </div>
 
         <AnimatedTable
@@ -171,8 +200,16 @@ export default function AdminPaymentOrders() {
             </tr>
           )}
           footer={<Pagination page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={() => {}} />}
-          emptyIcon={CreditCard}
-          emptyTitle="暂无数据"
+          emptyIcon={emptyGuide.icon}
+          emptyTitle={emptyGuide.title}
+          emptyDescription={emptyGuide.description}
+          emptyAction={(
+            <AdminEmptyGuideActions
+              guide={emptyGuide}
+              showClearFilters={filtersActive}
+              onClearFilters={clearFilters}
+            />
+          )}
           renderRow={(r) => (
             <>
               <td className="px-3 py-2 text-xs text-muted-foreground" title={r.id}>

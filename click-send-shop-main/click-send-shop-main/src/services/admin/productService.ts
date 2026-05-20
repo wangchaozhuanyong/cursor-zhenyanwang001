@@ -1,5 +1,13 @@
 import * as productApi from "@/api/admin/product";
-import type { Product, ProductListParams, ProductTag } from "@/types/product";
+import type {
+  AdminProductUpsertPayload,
+  Product,
+  ProductLifecycleStatus,
+  ProductListParams,
+  ProductTag,
+} from "@/types/product";
+
+export type { AdminProductUpsertPayload };
 import type { PaginatedData } from "@/types/common";
 import { downloadAdminCsv } from "@/utils/adminCsvDownload";
 import { getAdminAccessToken } from "@/utils/token";
@@ -12,23 +20,28 @@ export async function fetchProducts(params?: ProductListParams): Promise<Paginat
   return unwrapPaginated<Product>(res.data);
 }
 
-export async function fetchProductById(id: string) {
+export async function fetchProductById(id: string): Promise<Product> {
   const res = await productApi.getProductById(id);
   return res.data;
 }
 
-export async function createProduct(data: Omit<Product, "id"> & { tag_ids?: string[] }) {
+export async function createProduct(data: AdminProductUpsertPayload) {
   const res = await productApi.createProduct(data);
   return res.data;
 }
 
-export async function updateProduct(id: string, data: Partial<Product> & { tag_ids?: string[] }) {
+export async function updateProduct(id: string, data: Partial<AdminProductUpsertPayload>) {
   const res = await productApi.updateProduct(id, data);
   return res.data;
 }
 
 export async function deleteProduct(id: string) {
   await productApi.deleteProduct(id);
+}
+
+export async function patchProductLifecycle(id: string, lifecycleStatus: ProductLifecycleStatus) {
+  const res = await productApi.patchProductLifecycle(id, lifecycleStatus);
+  return res.data;
 }
 
 export async function fetchProductTags(): Promise<ProductTag[]> {

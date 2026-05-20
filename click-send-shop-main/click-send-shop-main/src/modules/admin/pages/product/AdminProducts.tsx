@@ -9,8 +9,13 @@ import { THEME_BADGE_MUTED, THEME_BADGE_SUCCESS, THEME_BADGE_WARNING } from "@/u
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { exportProductsCsv } from "@/services/admin/productService";
-import { patchProductLifecycle } from "@/api/admin/product";
+import { patchProductLifecycle } from "@/services/admin/productService";
 import type { ProductStatus } from "@/types/product";
+import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
+import type { AdminFilterChip } from "@/components/admin/AdminFilterSummaryBar";
+import { AnimatedEmptyState } from "@/modules/micro-interactions";
+import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 
 function statusMeta(status: string) {
   if (status === "active") return { label: "上架", className: THEME_BADGE_SUCCESS };
@@ -67,6 +72,39 @@ export default function AdminProducts() {
 
   const pageIds = useMemo(() => pageProducts.map((p) => p.id), [pageProducts]);
   const allSelectedOnPage = pageIds.length > 0 && pageIds.every((id) => selected.includes(id));
+
+  const hasProductFilters = Boolean(search.trim() || statusFilter || newArrivalFilter !== "all");
+  const productFilterChips = useMemo(() => {
+    const chips: AdminFilterChip[] = [];
+    if (search.trim()) chips.push({ key: "search", label: `关键词：${search.trim()}` });
+    if (statusFilter) {
+      chips.push({
+        key: "status",
+        label: `状态：${statusFilter === "active" ? "上架" : statusFilter === "draft" ? "草稿" : "下架"}`,
+      });
+    }
+    if (newArrivalFilter === "new") chips.push({ key: "new", label: "仅新品" });
+    if (newArrivalFilter === "not-new") chips.push({ key: "notNew", label: "非新品" });
+    return chips;
+  }, [search, statusFilter, newArrivalFilter]);
+  const productsEmptyGuide = hasProductFilters
+    ? ADMIN_EMPTY_GUIDES.productsFiltered
+    : ADMIN_EMPTY_GUIDES.products;
+
+  const clearProductFilters = () => {
+    setSearch("");
+    setStatusFilter("");
+    setNewArrivalFilter("all");
+    setPage(1);
+  };
+
+  const removeProductFilterChip = (key: string) => {
+    if (key === "search") setSearch("");
+    if (key === "status") setStatusFilter("");
+    if (key === "new") setNewArrivalFilter("all");
+    if (key === "notNew") setNewArrivalFilter("all");
+    setPage(1);
+  };
 
   useEffect(() => {
     const maxPage = Math.max(1, Math.ceil(total / pageSize));
@@ -159,6 +197,12 @@ export default function AdminProducts() {
         </div>
       </div>
 
+      <AdminFilterSummaryBar
+        chips={productFilterChips}
+        onClearAll={clearProductFilters}
+        onRemove={removeProductFilterChip}
+      />
+
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
@@ -178,13 +222,29 @@ export default function AdminProducts() {
         </button>
       </div>
 
+      {!loading && pageProducts.length === 0 ? (
+        <AnimatedEmptyState
+          icon={productsEmptyGuide.icon}
+          title={productsEmptyGuide.title}
+          description={productsEmptyGuide.description}
+          action={(
+            <AdminEmptyGuideActions
+              guide={productsEmptyGuide}
+              showClearFilters={hasProductFilters}
+              onClearFilters={clearProductFilters}
+            />
+          )}
+        />
+      ) : null}
+
+      {(loading || pageProducts.length > 0) ? (
       <div className="overflow-hidden rounded-xl border border-border bg-card">
         {loading ? (
           <div className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
             <Loader2 size={16} className="animate-spin" />
             <span><Tx>加载中...</Tx></span>
           </div>
-        ) : (
+        ) : pageProducts.length === 0 ? null : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[960px] text-left text-sm">
               <thead className="border-b border-border text-xs text-muted-foreground">
@@ -249,20 +309,14 @@ export default function AdminProducts() {
                     </tr>
                   );
                 })}
-                {!pageProducts.length ? (
-                  <tr>
-                    <td className="px-5 py-10 text-center text-sm text-muted-foreground" colSpan={7}>
-                      <Tx>暂无商品数据</Tx>
-                    </td>
-                  </tr>
-                ) : null}
               </tbody>
             </table>
           </div>
         )}
       </div>
+      ) : null}
 
-      <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={() => {}} />
+      <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={() => undefined} />
     </div>
   );
 }

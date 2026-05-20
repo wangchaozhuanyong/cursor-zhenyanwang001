@@ -17,7 +17,7 @@ exports.homeOps = async (_req, res, next) => {
 exports.pageBySlug = async (req, res, next) => {
   try {
     const page = await contentService.getContentPageBySlug(req.params.slug);
-    if (!page) return res.fail(404, 'Page not found');
+    if (!page) return res.fail(404, '页面不存在');
     res.success(page);
   } catch (err) { next(err); }
 };

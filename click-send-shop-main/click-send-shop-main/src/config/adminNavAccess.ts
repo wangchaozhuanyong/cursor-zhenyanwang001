@@ -7,11 +7,9 @@ export type PathRule =
 
 const RULES: { test: (path: string) => boolean; rule: PathRule }[] = [
   { test: (p) => p === "/admin" || p === "/admin/", rule: { kind: "one", permission: "dashboard.view" } },
-  {
-    test: (p) =>
-      p.startsWith("/admin/products") || p.startsWith("/admin/categories") || p.startsWith("/admin/tags"),
-    rule: { kind: "one", permission: "product.view" },
-  },
+  { test: (p) => p.startsWith("/admin/categories"), rule: { kind: "one", permission: "category.manage" } },
+  { test: (p) => p.startsWith("/admin/tags"), rule: { kind: "one", permission: "tag.manage" } },
+  { test: (p) => p.startsWith("/admin/products"), rule: { kind: "one", permission: "product.view" } },
   { test: (p) => p.startsWith("/admin/inventory"), rule: { kind: "one", permission: "inventory.manage" } },
   { test: (p) => p.startsWith("/admin/orders"), rule: { kind: "one", permission: "order.view" } },
   { test: (p) => p.startsWith("/admin/payments"), rule: { kind: "one", permission: "payment.manage" } },
@@ -33,12 +31,12 @@ const RULES: { test: (path: string) => boolean; rule: PathRule }[] = [
   { test: (p) => p.startsWith("/admin/accounts"), rule: { kind: "one", permission: "role.manage" } },
   { test: (p) => p.startsWith("/admin/recycle-bin"), rule: { kind: "one", permission: "recycle_bin.manage" } },
   { test: (p) => p.startsWith("/admin/coupons"), rule: { kind: "one", permission: "coupon.view" } },
-  { test: (p) => p === "/admin/marketing" || p.startsWith("/admin/marketing"), rule: { kind: "any", permissions: ["activity.manage", "coupon.view", "points.manage", "referral.manage", "invite.view"] } },
   { test: (p) => p.startsWith("/admin/marketing/activities"), rule: { kind: "one", permission: "activity.manage" } },
   { test: (p) => p.startsWith("/admin/marketing/coupons"), rule: { kind: "one", permission: "coupon.view" } },
   { test: (p) => p.startsWith("/admin/marketing/points"), rule: { kind: "one", permission: "points.manage" } },
   { test: (p) => p.startsWith("/admin/marketing/rewards"), rule: { kind: "one", permission: "referral.manage" } },
   { test: (p) => p.startsWith("/admin/marketing/invites"), rule: { kind: "one", permission: "invite.view" } },
+  { test: (p) => p === "/admin/marketing" || p.startsWith("/admin/marketing"), rule: { kind: "any", permissions: ["activity.manage", "coupon.view", "points.manage", "referral.manage", "invite.view"] } },
   { test: (p) => p.startsWith("/admin/notifications"), rule: { kind: "any", permissions: ["notification.view", "notification.manage"] } },
   { test: (p) => p.startsWith("/admin/account"), rule: { kind: "one", permission: "dashboard.view" } },
   { test: (p) => p.startsWith("/admin/banners"), rule: { kind: "one", permission: "banner.manage" } },

@@ -106,7 +106,7 @@ async function guardSpecValueRemoval(conn, productId, valueIds) {
     Number(row.stock || 0) > 0 || Number(row.has_orders || 0) > 0 || Number(row.has_records || 0) > 0);
   if (blocked) {
     const skuLabel = blocked.title || blocked.sku_code || blocked.id;
-    throw new BusinessError(400, `Spec value is used by SKU "${skuLabel}" with stock/orders/inventory records and cannot be hard deleted`);
+    throw new BusinessError(400, `规格值已被 SKU「${skuLabel}」使用（含库存/订单/流水），无法硬删除`);
   }
 }
 
@@ -129,7 +129,7 @@ async function softDeleteVariantsByIds(conn, productId, ids) {
     Number(row.stock || 0) > 0 || Number(row.has_orders || 0) > 0 || Number(row.has_records || 0) > 0);
   if (blocked) {
     const skuLabel = blocked.title || blocked.sku_code || blocked.id;
-    throw new BusinessError(400, `Variant "${skuLabel}" has stock/orders/inventory records and cannot be deleted`);
+    throw new BusinessError(400, `SKU「${skuLabel}」存在库存/订单/流水记录，无法删除`);
   }
   await conn.query(
     `UPDATE product_variants

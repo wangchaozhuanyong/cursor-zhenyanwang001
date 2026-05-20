@@ -31,6 +31,44 @@ export interface DashboardStats {
   monthlyRevenue: number;
 }
 
+export interface DashboardChartPoint {
+  date: string;
+  sales: number;
+}
+
+export interface DashboardCategorySlice {
+  name: string;
+  value: number;
+}
+
+export interface DashboardWeeklyOrderPoint {
+  day: string;
+  orders?: number;
+  completed?: number;
+  cancelled?: number;
+}
+
+export interface DashboardRecentOrderRow {
+  id: string;
+  order_no?: string;
+  status?: string;
+  contact_name?: string;
+  total_amount?: number;
+  final_amount?: number;
+  created_at?: string;
+}
+
+/** /admin/dashboard/stats 完整响应（图表 + 卡片指标） */
+export interface DashboardOverview extends DashboardStats {
+  todayNewUsers?: number;
+  pendingOrders?: number;
+  totalProducts?: number;
+  salesTrend?: DashboardChartPoint[];
+  categoryData?: DashboardCategorySlice[];
+  weeklyOrders?: DashboardWeeklyOrderPoint[];
+  recentOrders?: DashboardRecentOrderRow[];
+}
+
 /**
  * 站点设置（管理后台 /admin/settings 读写）
  * 字段命名与后端 site_settings.setting_key 一致（驼峰）

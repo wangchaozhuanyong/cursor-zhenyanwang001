@@ -1,5 +1,7 @@
 import * as orderApi from "@/api/admin/order";
 import type { AdminOrderVoiceEvent } from "@/api/admin/order";
+
+export type { AdminOrderVoiceEvent };
 import type { AdminOrderSummary, CheckoutAbandonment, CheckoutAbandonmentStatus, Order, OrderListParams } from "@/types/order";
 import type { PaginatedData } from "@/types/common";
 import { downloadAdminCsv } from "@/utils/adminCsvDownload";

@@ -26,8 +26,48 @@ const INITIAL_FILTERS: ProductListParams = {
   pageSize: 10,
 };
 
-const HOME_DATA_TTL_MS = 120_000;
+const HOME_DATA_TTL_MS = 300_000;
+const PRODUCT_LIST_TTL_MS = 300_000;
+const PRODUCT_DETAIL_TTL_MS = 600_000;
+const CATEGORY_TTL_MS = 1_800_000;
+const PRODUCT_LIST_CACHE_MAX = 24;
+const PRODUCT_DETAIL_CACHE_MAX = 48;
 let productListRequestSeq = 0;
+
+/** 有上限的 Map 缓存：写入时淘汰最旧条目，避免筛选/详情浏览导致内存持续增长 */
+function setBoundedMapEntry<K, V>(map: Map<K, V>, key: K, value: V, maxEntries: number) {
+  if (map.has(key)) map.delete(key);
+  map.set(key, value);
+  while (map.size > maxEntries) {
+    const oldest = map.keys().next().value;
+    if (oldest === undefined) break;
+    map.delete(oldest);
+  }
+}
+
+type ProductListCacheEntry = {
+  data: {
+    products: Product[];
+    pagination: PaginationState;
+  };
+  cachedAt: number;
+};
+
+const productListCache = new Map<string, ProductListCacheEntry>();
+const productDetailCache = new Map<string, { product: Product; relatedProducts: Product[]; cachedAt: number }>();
+let categoriesCachedAt = 0;
+
+function buildProductListCacheKey(params: ProductListParams) {
+  return JSON.stringify(
+    Object.entries(params)
+      .filter(([, value]) => value !== undefined && value !== null && value !== "")
+      .sort(([a], [b]) => a.localeCompare(b)),
+  );
+}
+
+function isFresh(cachedAt: number, ttl: number) {
+  return cachedAt > 0 && Date.now() - cachedAt < ttl;
+}
 
 interface ProductState {
   products: Product[];
@@ -84,26 +124,48 @@ export const useProductStore = create<ProductState>((set, get) => ({
       ...get().filters,
       ...params,
     };
+    const cacheKey = buildProductListCacheKey(merged);
+    const cached = productListCache.get(cacheKey);
+    const hasFreshCache = Boolean(cached && isFresh(cached.cachedAt, PRODUCT_LIST_TTL_MS));
 
     const hasData = get().products.length > 0;
-    set({
-      loading: !hasData,
-      listRefreshing: hasData,
-      error: null,
-      filters: merged,
-    });
+    if (hasFreshCache && cached) {
+      set({
+        products: cached.data.products,
+        pagination: cached.data.pagination,
+        loading: false,
+        listRefreshing: true,
+        error: null,
+        filters: merged,
+      });
+    } else {
+      set({
+        loading: !hasData,
+        listRefreshing: hasData,
+        error: null,
+        filters: merged,
+      });
+    }
 
     try {
       const data = await productService.fetchProducts(merged);
       if (requestSeq !== productListRequestSeq) return;
+      const pagination = {
+        total: data.total,
+        page: data.page,
+        pageSize: data.pageSize,
+        totalPages: data.totalPages,
+      };
+      setBoundedMapEntry(productListCache, cacheKey, {
+        data: {
+          products: data.list,
+          pagination,
+        },
+        cachedAt: Date.now(),
+      }, PRODUCT_LIST_CACHE_MAX);
       set({
         products: data.list,
-        pagination: {
-          total: data.total,
-          page: data.page,
-          pageSize: data.pageSize,
-          totalPages: data.totalPages,
-        },
+        pagination,
         loading: false,
         listRefreshing: false,
       });
@@ -118,7 +180,17 @@ export const useProductStore = create<ProductState>((set, get) => ({
   },
 
   loadProductDetail: async (id) => {
-    set({ detailLoading: true, error: null, currentProduct: null, relatedProducts: [] });
+    const cached = productDetailCache.get(id);
+    if (cached && isFresh(cached.cachedAt, PRODUCT_DETAIL_TTL_MS)) {
+      set({
+        currentProduct: cached.product,
+        relatedProducts: cached.relatedProducts,
+        detailLoading: false,
+        error: null,
+      });
+    } else {
+      set({ detailLoading: true, error: null, currentProduct: null, relatedProducts: [] });
+    }
 
     try {
       const product = await productService.fetchProductById(id);
@@ -128,6 +200,12 @@ export const useProductStore = create<ProductState>((set, get) => ({
       }
 
       const related = await productService.fetchRelatedProducts(product);
+      setBoundedMapEntry(
+        productDetailCache,
+        id,
+        { product, relatedProducts: related, cachedAt: Date.now() },
+        PRODUCT_DETAIL_CACHE_MAX,
+      );
       set({
         currentProduct: product,
         relatedProducts: related,
@@ -192,15 +270,14 @@ export const useProductStore = create<ProductState>((set, get) => ({
   },
 
   loadCategories: async () => {
-    if (get().categories.length > 0) return;
+    if (get().categories.length > 0 && isFresh(categoriesCachedAt, CATEGORY_TTL_MS)) return;
 
     try {
       const cats = await productService.fetchCategories();
+      categoriesCachedAt = Date.now();
       set({ categories: cats });
-    } catch (err) {
-      set({
-        error: err instanceof Error ? err.message : "加载分类失败",
-      });
+    } catch {
+      // 分类加载失败不阻断商品列表；保留已有分类缓存
     }
   },
 

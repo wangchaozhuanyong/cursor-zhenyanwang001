@@ -9,6 +9,27 @@ const { NEUTRAL_SITE_DESCRIPTION, resolveSiteDescription, resolveSiteName } = re
 
 const ICON_CACHE = new Map();
 const CACHE_TTL_MS = 5 * 60 * 1000;
+const ICON_CACHE_MAX_ENTRIES = 32;
+
+function getFreshIconCacheEntry(cacheKey) {
+  const cached = ICON_CACHE.get(cacheKey);
+  if (!cached) return null;
+  if (Date.now() - cached.time >= CACHE_TTL_MS) {
+    ICON_CACHE.delete(cacheKey);
+    return null;
+  }
+  return cached.buffer;
+}
+
+function setIconCacheEntry(cacheKey, buffer) {
+  if (ICON_CACHE.has(cacheKey)) ICON_CACHE.delete(cacheKey);
+  ICON_CACHE.set(cacheKey, { time: Date.now(), buffer });
+  while (ICON_CACHE.size > ICON_CACHE_MAX_ENTRIES) {
+    const oldest = ICON_CACHE.keys().next().value;
+    if (oldest === undefined) break;
+    ICON_CACHE.delete(oldest);
+  }
+}
 
 function getProductApi() {
   return /** @type {any} */ (require('../../product')).api || {};
@@ -116,8 +137,8 @@ function getFallbackLogoPath() {
 
 async function buildIconBuffer({ logoUrl, size, maskable, fallbackPath }) {
   const cacheKey = `${logoUrl}|${size}|${maskable ? 'maskable' : 'standard'}`;
-  const cached = ICON_CACHE.get(cacheKey);
-  if (cached && Date.now() - cached.time < CACHE_TTL_MS) return cached.buffer;
+  const cachedBuffer = getFreshIconCacheEntry(cacheKey);
+  if (cachedBuffer) return cachedBuffer;
 
   let sourceBuffer = null;
   if (logoUrl) sourceBuffer = await loadImageBuffer(logoUrl);
@@ -149,7 +170,7 @@ async function buildIconBuffer({ logoUrl, size, maskable, fallbackPath }) {
     .png()
     .toBuffer();
 
-  ICON_CACHE.set(cacheKey, { time: Date.now(), buffer });
+  setIconCacheEntry(cacheKey, buffer);
   return buffer;
 }
 

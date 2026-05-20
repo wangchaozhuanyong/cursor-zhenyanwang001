@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Bell, Send } from "lucide-react";
 import { toast } from "sonner";
 import { AnimatedTable } from "@/modules/micro-interactions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import PermissionGate from "@/components/admin/PermissionGate";
 import Pagination from "@/components/admin/Pagination";
 import * as notificationService from "@/services/admin/notificationService";
@@ -242,8 +243,29 @@ export default function AdminNotifications() {
             </tr>
           )}
           footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
-          emptyIcon={Bell}
-          emptyTitle="暂无通知"
+          emptyIcon={ADMIN_EMPTY_GUIDES.notifications.icon}
+          emptyTitle={ADMIN_EMPTY_GUIDES.notifications.title}
+          emptyDescription={ADMIN_EMPTY_GUIDES.notifications.description}
+          emptyAction={(
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              <PermissionGate anyOf={["notification.send", "notification.create", "notification.manage"]}>
+                <button
+                  type="button"
+                  onClick={() => setTab("manual")}
+                  className="rounded-lg btn-theme-price px-4 py-2 text-xs font-semibold text-primary-foreground"
+                >
+                  去人工发布
+                </button>
+              </PermissionGate>
+              <button
+                type="button"
+                onClick={() => setTab("settings")}
+                className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2 text-xs font-semibold text-foreground"
+              >
+                配置自动通知
+              </button>
+            </div>
+          )}
           renderRow={(n) => (
             <>
               <td className="px-4 py-3">

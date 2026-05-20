@@ -57,13 +57,13 @@ function sanitizeRedirectAfter(raw) {
 }
 
 function assertProvider(p) {
-  if (p !== 'google') throw new ValidationError('Invalid input');
+  if (p !== 'google') throw new ValidationError('仅支持 Google 登录');
 }
 
 function googleClient() {
   const clientId = (process.env.GOOGLE_OAUTH_CLIENT_ID || '').trim();
   const clientSecret = (process.env.GOOGLE_OAUTH_CLIENT_SECRET || '').trim();
-  if (!clientId || !clientSecret) throw new ValidationError('Invalid input');
+  if (!clientId || !clientSecret) throw new ValidationError('Google 登录未配置或配置不完整');
   return { clientId, clientSecret };
 }
 
@@ -91,7 +91,7 @@ function isThirdPartyLoginEnabled() {
 }
 
 async function startOAuth(provider, redirectRaw) {
-  if (!isThirdPartyLoginEnabled()) throw new ValidationError('Invalid input');
+  if (!isThirdPartyLoginEnabled()) throw new ValidationError('第三方登录未开启');
   assertProvider(provider);
   const redirectAfter = sanitizeRedirectAfter(redirectRaw);
 
@@ -127,16 +127,16 @@ async function exchangeGoogleCode(code) {
   });
   const json = asObject(await res.json().catch(() => ({})));
   if (!res.ok) {
-    throw new ValidationError(strFrom(json.error_description) || strFrom(json.error) || 'Message');
+    throw new ValidationError(strFrom(json.error_description) || strFrom(json.error) || 'Google 授权失败');
   }
   const accessToken = strFrom(json.access_token);
-  if (!accessToken) throw new ValidationError('Invalid input');
+  if (!accessToken) throw new ValidationError('Google 授权信息不完整，请重新登录');
 
   const ui = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   const profile = asObject(await ui.json().catch(() => ({})));
-  if (!ui.ok) throw new ValidationError(strFrom(profile.error_description) || 'Message');
+  if (!ui.ok) throw new ValidationError(strFrom(profile.error_description) || '获取 Google 用户信息失败');
 
   return {
     providerUserId: strFrom(profile.sub),
@@ -148,7 +148,7 @@ async function exchangeGoogleCode(code) {
 
 async function ensureUserForOauth(provider, profile) {
   const { providerUserId, email, displayName, avatarUrl } = profile;
-  if (!providerUserId) throw new ValidationError('Invalid input');
+  if (!providerUserId) throw new ValidationError('无法获取 Google 账号标识');
 
   const existing = await repo.selectOauthAccount(provider, providerUserId);
   if (existing) {
@@ -164,7 +164,7 @@ async function ensureUserForOauth(provider, profile) {
   const invite = generateInviteCode();
   const nickname = (displayName && String(displayName).trim())
     || (email && String(email).split('@')[0])
-    || 'Message';
+    || '用户';
 
   try {
     await repo.insertUser({
@@ -177,7 +177,7 @@ async function ensureUserForOauth(provider, profile) {
     });
   } catch (err) {
     if (err && (err.code === 'ER_DUP_ENTRY' || err.errno === 1062)) {
-      throw new ConflictError('Message');
+      throw new ConflictError('创建账号失败，请重试');
     }
     throw err;
   }
@@ -241,26 +241,26 @@ function errorRedirect(message) {
 }
 
 async function handleOAuthCallback(provider, query) {
-  if (!isThirdPartyLoginEnabled()) return errorRedirect('Third-party login is disabled');
+  if (!isThirdPartyLoginEnabled()) return errorRedirect('第三方登录未开启');
   assertProvider(provider);
 
   if (query.error) {
-    const msg = String(query.error_description || query.error || 'Authorization cancelled');
+    const msg = String(query.error_description || query.error || '已取消授权');
     return errorRedirect(msg.slice(0, 200));
   }
 
   const code = query.code;
   const stateParam = query.state;
-  if (!code || !stateParam) return errorRedirect('Authorization params incomplete');
+  if (!code || !stateParam) return errorRedirect('授权参数不完整');
 
   const plain = String(stateParam).trim();
-  if (!plain) return errorRedirect('Authorization state invalid');
+  if (!plain) return errorRedirect('授权状态无效');
 
   const stateHash = hashToken(plain);
   const row = await repo.selectOauthStateByHash(stateHash);
-  if (!row || row.provider !== provider) return errorRedirect('Authorization state invalid or expired');
-  if (row.consumed_at) return errorRedirect('Message');
-  if (new Date(row.expires_at).getTime() <= Date.now()) return errorRedirect('Message');
+  if (!row || row.provider !== provider) return errorRedirect('授权状态无效或已过期');
+  if (row.consumed_at) return errorRedirect('授权状态已使用');
+  if (new Date(row.expires_at).getTime() <= Date.now()) return errorRedirect('授权状态已过期');
 
   await repo.markOauthStateConsumed(row.id);
 
@@ -270,7 +270,7 @@ async function handleOAuthCallback(provider, query) {
   try {
     profile = await exchangeGoogleCode(String(code));
   } catch (e) {
-    const msg = e instanceof Error ? e.message : 'Message';
+    const msg = e instanceof Error ? e.message : '第三方登录失败';
     return errorRedirect(msg);
   }
 
@@ -278,7 +278,7 @@ async function handleOAuthCallback(provider, query) {
   try {
     userId = await ensureUserForOauth(provider, profile);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : 'Message';
+    const msg = e instanceof Error ? e.message : '第三方登录失败';
     return errorRedirect(msg);
   }
 
@@ -286,18 +286,18 @@ async function handleOAuthCallback(provider, query) {
 }
 
 async function exchangeTicket(body) {
-  if (!isThirdPartyLoginEnabled()) throw new ValidationError('Invalid input');
+  if (!isThirdPartyLoginEnabled()) throw new ValidationError('第三方登录未开启');
   const provider = String(body.provider || '').toLowerCase();
   assertProvider(provider);
   const code = String(body.code || '').trim();
-  if (code.length < 16) throw new ValidationError('Invalid input');
+  if (code.length < 16) throw new ValidationError('登录凭证无效');
 
   const codeHash = hashToken(code);
   const row = await repo.selectAuthLoginTicketByHash(codeHash);
-  if (!row || String(row.provider) !== provider) throw new AuthError('Authentication failed');
+  if (!row || String(row.provider) !== provider) throw new AuthError('登录凭证无效或已过期');
 
   const ok = await repo.tryConsumeAuthLoginTicket(row.id);
-  if (!ok) throw new AuthError('Authentication failed');
+  if (!ok) throw new AuthError('登录凭证无效或已过期');
 
   return authService.issueLoginForUserId(row.user_id);
 }

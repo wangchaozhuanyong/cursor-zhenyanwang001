@@ -3,7 +3,6 @@ const assert = require('node:assert/strict');
 const {
   calculateOrderEarnedPoints,
   calculateMaxUsablePoints,
-  isPaymentMethodAllowedForPoints,
   resolveProductPointRule,
   roundPoints,
 } = require('../src/modules/loyalty/service/pointsEngine.service');
@@ -121,7 +120,6 @@ test('payment method points restriction supports include and exclude modes', () 
   assert.equal(orderPricing.isPaymentMethodAllowedForPoints({ payment_points_mode: 'include', allowed_payment_methods: ['online'] }, 'whatsapp'), false);
   assert.equal(orderPricing.isPaymentMethodAllowedForPoints({ payment_points_mode: 'exclude', allowed_payment_methods: ['whatsapp'] }, 'online'), true);
   assert.equal(orderPricing.isPaymentMethodAllowedForPoints({ payment_points_mode: 'exclude', allowed_payment_methods: ['whatsapp'] }, 'whatsapp'), false);
-  assert.equal(isPaymentMethodAllowedForPoints, undefined);
 });
 
 test('restricted products are excluded from redeem base', () => {

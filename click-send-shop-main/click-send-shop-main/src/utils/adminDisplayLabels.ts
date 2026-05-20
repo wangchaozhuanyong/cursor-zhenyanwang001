@@ -7,11 +7,10 @@ export function labelFromMap(
   value: string | null | undefined,
   fallback: string = UNKNOWN_LABEL,
 ): string {
-  if (value == null || value === "") return "—";
+  if (value == null || value === "") return "-";
   return map[value] ?? fallback;
 }
 
-/** 与 server/src/utils/reportColumnLabels.js 保持同步 */
 export const REPORT_COLUMN_LABELS: Record<string, string> = {
   id: "编号",
   date: "日期",
@@ -29,29 +28,41 @@ export const REPORT_COLUMN_LABELS: Record<string, string> = {
   refund_order_count: "退款订单数",
   unpaid_order_count: "未支付订单数",
   gross_sales: "销售额",
+  product_sales_amount: "商品销售额",
+  paid_amount: "实收金额",
   discount_amount: "优惠金额",
+  points_discount_amount: "积分抵扣",
+  reward_cash_discount_amount: "返现余额抵扣",
   shipping_fee: "运费",
+  shipping_income: "用户支付运费",
+  shipping_cost_amount: "实际物流成本",
+  payment_fee_amount: "支付手续费",
   refund_amount: "退款金额",
   net_sales: "净销售额",
+  net_goods_sales_amount: "商品净销售额",
+  goods_cost_amount: "商品成本",
+  gross_profit: "毛利",
+  gross_profit_amount: "商品毛利",
+  gross_margin: "毛利率",
+  expense_amount: "经营支出",
+  net_profit_amount: "净利润",
+  net_margin: "净利率",
+  missing_cost_order_count: "缺成本订单数",
+  missing_cost_item_count: "缺成本商品行数",
   items_sold: "销售件数",
-  user_count: "用户数",
-  search_count: "搜索次数",
-  no_result_count: "无结果次数",
-  product_click_count: "商品点击数",
-  add_to_cart_count: "加购量",
-  issued_count: "发放数量",
-  claimed_count: "领取数量",
-  used_count: "使用数量",
-  expired_count: "过期数量",
-  active_users: "活跃用户",
-  order_users: "下单用户",
-  new_users: "新增用户",
-  paying_users: "支付用户数",
-  product_count: "商品数",
-  active_product_count: "在售商品数",
-  stock_qty: "库存总量",
-  warning_stock: "预警库存",
+  sales_qty: "销量",
+  sales_amount: "销售额",
+  discount_allocated: "分摊优惠",
+  net_sales_amount: "净销售额",
+  cost_amount: "成本金额",
+  buyer_count: "购买用户",
+  refund_qty: "退款件数",
   current_stock: "当前库存",
+  inventory_cost_value: "库存成本",
+  view_count: "浏览量",
+  add_cart_count: "加购量",
+  favorite_count: "收藏量",
+  conversion_rate: "转化率",
   average_order_value: "客单价",
   units_per_order: "每单件数",
   payment_rate: "支付率",
@@ -60,9 +71,10 @@ export const REPORT_COLUMN_LABELS: Record<string, string> = {
   claim_rate: "领取率",
   use_rate: "使用率",
   roi: "投入产出比",
-  paid_amount: "实收金额",
   pending_orders: "待处理订单",
   product_view_count: "商品浏览次数",
+  product_click_count: "商品点击次数",
+  add_to_cart_count: "加购次数",
   checkout_start_count: "发起结算次数",
   sales_7d: "近7日销量",
   sales_30d: "近30日销量",
@@ -79,20 +91,28 @@ export const REPORT_COLUMN_LABELS: Record<string, string> = {
   category_path: "分类路径",
   parent_category_id: "父分类",
   parent_category_name: "父分类名称",
-  sales_qty: "销量",
-  sales_amount: "销售额",
-  buyer_count: "购买用户",
-  refund_qty: "退款件数",
-  view_count: "浏览量",
-  add_cart_count: "加购量",
-  favorite_count: "收藏量",
-  gross_profit: "毛利",
-  gross_margin: "毛利率",
   available_stock_days: "可售天数",
   last_searched_at: "最后搜索时间",
   created_at: "创建时间",
   updated_at: "更新时间",
-  conversion_rate: "转化率",
+  path: "页面路径",
+  page_type: "页面类型",
+  pv: "PV",
+  uv: "UV",
+  sessions: "会话数",
+  unique_ip_count: "独立 IP 数",
+  online_visitors: "在线人数",
+  new_visitors: "新访客",
+  returning_visitors: "回访客",
+  avg_duration_seconds: "平均停留秒数",
+  bounce_rate: "跳出率",
+  exit_count: "退出次数",
+  traffic_source: "渠道",
+  device: "设备",
+  os: "操作系统",
+  browser: "浏览器",
+  browser_language: "浏览器语言",
+  payment_success_count: "支付成功次数",
   status: "状态",
   type: "类型",
   provider: "支付网关",
@@ -106,6 +126,7 @@ export const REPORT_COLUMN_LABELS: Record<string, string> = {
   currency: "币种",
   code: "编码",
   title: "标题",
+  value: "数值",
   name: "名称",
   description: "说明",
   reason: "原因",
@@ -123,68 +144,15 @@ export const REPORT_COLUMN_LABELS: Record<string, string> = {
   source: "来源",
   module: "模块",
   action: "操作类型",
-  event_type: "事件类型",
-  verify_status: "验签状态",
-  processing_result: "处理结果",
-  reconcile_date: "对账日期",
-  success_amount: "成功金额",
-  diff_amount: "差异金额",
-  order_count_recon: "笔数",
 };
 
 const REPORT_TOKEN_LABELS: Record<string, string> = {
-  units: "件数",
-  per: "每",
-  order: "订单",
-  rate: "率",
-  sales: "销售",
-  stock: "库存",
-  status: "状态",
-  type: "类型",
-  activity: "活动",
-  coupon: "优惠券",
-  product: "商品",
-  category: "分类",
-  user: "用户",
-  payment: "支付",
-  refund: "退款",
-  amount: "金额",
-  count: "数量",
-  avg: "平均",
-  daily: "日",
-  mom: "环比",
-  growth: "增长",
-  claim: "领取",
-  use: "使用",
-  paid: "支付",
-  gross: "总额",
-  net: "净",
-  items: "件",
-  sold: "售出",
-  warning: "预警",
-  current: "当前",
-  available: "可售",
-  days: "天数",
-  view: "浏览",
-  cart: "购物车",
-  favorite: "收藏",
-  profit: "利润",
-  margin: "毛利",
-  conversion: "转化",
-  checkout: "结算",
-  start: "开始",
-  result: "结果",
-  no: "无",
-  click: "点击",
-  search: "搜索",
-  active: "活跃",
-  new: "新增",
-  paying: "支付",
-  pending: "待处理",
-  cancelled: "取消",
-  unpaid: "未支付",
-  monthly: "月",
-  hourly: "时",
+  units: "件数", per: "每", order: "订单", rate: "率", sales: "销售", stock: "库存", status: "状态",
+  type: "类型", activity: "活动", coupon: "优惠券", product: "商品", category: "分类", user: "用户",
+  payment: "支付", refund: "退款", amount: "金额", count: "数量", avg: "平均", daily: "日", monthly: "月",
+  mom: "环比", growth: "增长", claim: "领取", use: "使用", paid: "支付", gross: "毛", net: "净",
+  items: "件", sold: "售出", warning: "预警", current: "当前", available: "可售", days: "天数",
+  view: "浏览", cart: "购物车", favorite: "收藏", profit: "利润", margin: "毛利", conversion: "转化",
 };
 
 function humanizeReportColumnKey(key: string): string {
@@ -192,11 +160,11 @@ function humanizeReportColumnKey(key: string): string {
   if (key.endsWith("_id")) {
     const base = key.slice(0, -3);
     const baseLabel = REPORT_COLUMN_LABELS[base] || REPORT_TOKEN_LABELS[base];
-    return baseLabel ? `${baseLabel}编号` : `字段（${key}）`;
+    return baseLabel ? `${baseLabel}编号` : `字段：${key}`;
   }
   const parts = key.split("_").filter(Boolean);
   const labeled = parts.map((part) => REPORT_TOKEN_LABELS[part] ?? part);
-  if (labeled.some((p) => /^[a-z]+$/i.test(String(p)))) return `字段（${key}）`;
+  if (labeled.some((p) => /^[a-z]+$/i.test(String(p)))) return `字段：${key}`;
   return labeled.join("");
 }
 
@@ -210,6 +178,7 @@ export const PAYMENT_STATUS_LABELS: Record<string, string> = {
   paid: "已支付",
   success: "支付成功",
   refunded: "已退款",
+  partially_refunded: "部分退款",
   failed: "支付失败",
   cancelled: "已取消",
 };
@@ -225,11 +194,7 @@ export const ORDER_STATUS_LABELS: Record<string, string> = {
   refunded: "已退款",
 };
 
-export const STOCK_STATUS_LABELS: Record<string, string> = {
-  low: "低库存",
-  normal: "正常",
-  out: "缺货",
-};
+export const STOCK_STATUS_LABELS: Record<string, string> = { low: "低库存", normal: "正常", out: "缺货" };
 
 export const ACTIVITY_TYPE_LABELS: Record<string, string> = {
   flash_sale: "限时秒杀",
@@ -242,12 +207,12 @@ export const ACTIVITY_TYPE_LABELS: Record<string, string> = {
 };
 
 export function labelActivityType(type: string | undefined): string {
-  if (!type) return "—";
+  if (!type) return "-";
   return ACTIVITY_TYPE_LABELS[type] || type;
 }
 
 export function labelReportCellValue(key: string, value: unknown): string {
-  if (value === null || value === undefined || value === "") return "—";
+  if (value === null || value === undefined || value === "") return "-";
   if (typeof value === "boolean") return value ? "是" : "否";
   const s = String(value);
   if (key === "stock_status") return labelFromMap(STOCK_STATUS_LABELS, s, s);
@@ -260,20 +225,20 @@ export function labelReportCellValue(key: string, value: unknown): string {
 }
 
 export const POINTS_ACTION_LABELS: Record<string, string> = {
-  order: "??????",
-  order_redeem: "??????",
-  order_redeem_reverse: "????????",
-  order_earn: "??????",
-  order_reverse: "??????",
-  pending_reverse: "???????",
-  refund: "????",
-  sign_in: "????",
-  daily_checkin: "????",
-  invite_reward: "????",
-  admin_add: "?????",
-  admin_deduct: "?????",
-  admin_adjust: "?????",
-  redeem: "????",
+  order: "订单积分",
+  order_redeem: "订单抵扣",
+  order_redeem_reverse: "抵扣返还",
+  order_earn: "订单发放",
+  order_reverse: "积分冲正",
+  pending_reverse: "待人工冲正",
+  refund: "退款调整",
+  sign_in: "签到",
+  daily_checkin: "每日签到",
+  invite_reward: "邀请奖励",
+  admin_add: "后台增加",
+  admin_deduct: "后台扣减",
+  admin_adjust: "后台调整",
+  redeem: "积分兑换",
 };
 export function labelPointsAction(action: string): string {
   return labelFromMap(POINTS_ACTION_LABELS, action, "其他变动");
@@ -335,66 +300,41 @@ export const CHECKOUT_PAYMENT_METHOD_LABELS: Record<string, string> = {
   boost: "Boost",
 };
 export function labelOrderPaymentMethod(method: string | null | undefined): string {
-  if (!method) return "—";
+  if (!method) return "-";
   return CHECKOUT_PAYMENT_METHOD_LABELS[method] || labelChannelCode(method) || "其他方式";
 }
 export const labelCheckoutPaymentMethod = labelOrderPaymentMethod;
 
-export const COUPON_TYPE_LABELS: Record<string, string> = {
-  fixed: "满减券",
-  percentage: "折扣券",
-  shipping: "运费券",
-};
-export const COUPON_STATUS_LABELS: Record<string, string> = {
-  available: "可用",
-  expired: "已过期",
-  disabled: "已停用",
-};
-export const COUPON_RECORD_STATUS_LABELS: Record<string, string> = {
-  available: "未使用",
-  used: "已使用",
-  expired: "已过期",
-};
-export function labelCouponType(type: string): string {
-  return labelFromMap(COUPON_TYPE_LABELS, type, "其他券种");
-}
-export function labelCouponStatus(status: string): string {
-  return labelFromMap(COUPON_STATUS_LABELS, status, "其他状态");
-}
-export function labelCouponRecordStatus(status: string): string {
-  return labelFromMap(COUPON_RECORD_STATUS_LABELS, status, "其他状态");
-}
+export const COUPON_TYPE_LABELS: Record<string, string> = { fixed: "满减券", percentage: "折扣券", shipping: "运费券" };
+export const COUPON_STATUS_LABELS: Record<string, string> = { available: "可用", expired: "已过期", disabled: "已停用" };
+export const COUPON_RECORD_STATUS_LABELS: Record<string, string> = { available: "未使用", used: "已使用", expired: "已过期" };
+export function labelCouponType(type: string): string { return labelFromMap(COUPON_TYPE_LABELS, type, "其他券种"); }
+export function labelCouponStatus(status: string): string { return labelFromMap(COUPON_STATUS_LABELS, status, "其他状态"); }
+export function labelCouponRecordStatus(status: string): string { return labelFromMap(COUPON_RECORD_STATUS_LABELS, status, "其他状态"); }
 
 export const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
   system: "系统通知",
   order: "订单通知",
-  shipping: "物流通知",
-  payment: "支付通知",
-  refund: "退款通知",
-  after_sale: "售后通知",
-  promotion: "促销活动",
+  promotion: "营销通知",
+  points: "积分通知",
   coupon: "优惠券通知",
-  points: "积分变动",
-  reward: "奖励通知",
+  payment: "支付通知",
 };
-export function labelNotificationType(type: string): string {
-  return labelFromMap(NOTIFICATION_TYPE_LABELS, type, "其他通知");
-}
+export function labelNotificationType(type: string): string { return labelFromMap(NOTIFICATION_TYPE_LABELS, type, "其他通知"); }
 
 export const REWARD_STATUS_LABELS: Record<string, string> = {
-  pending: "待处理",
-  approved: "已入账",
-  paid: "已提现",
-  rejected: "已拒绝",
+  pending: "待发放",
+  available: "可用",
+  used: "已使用",
+  expired: "已过期",
   reversed: "已冲正",
 };
-export function labelRewardStatus(status: string): string {
-  return labelFromMap(REWARD_STATUS_LABELS, status, "其他状态");
-}
+export function labelRewardStatus(status: string): string { return labelFromMap(REWARD_STATUS_LABELS, status, "其他状态"); }
 
 export const EXPORT_TYPE_LABELS: Record<string, string> = {
   sales_daily: "销售日报",
   sales_monthly: "销售月报",
+  profit_daily: "利润日报",
   product_analysis: "商品分析",
   category_analysis: "分类分析",
   order_analysis: "订单分析",
@@ -403,35 +343,24 @@ export const EXPORT_TYPE_LABELS: Record<string, string> = {
   coupon_analysis: "优惠券分析",
   inventory_analysis: "库存分析",
   search_analysis: "搜索分析",
-  products: "商品数据",
-  orders: "订单数据",
-  users: "用户数据",
+  traffic_analysis: "流量分析",
 };
-export function labelExportType(type: string): string {
-  return labelFromMap(EXPORT_TYPE_LABELS, type, "其他导出");
-}
+export function labelExportType(type: string): string { return labelFromMap(EXPORT_TYPE_LABELS, type, "其他导出"); }
 
 export const RECYCLE_TYPE_LABELS: Record<string, string> = {
   products: "商品",
   categories: "分类",
   coupons: "优惠券",
+  activities: "活动",
   banners: "Banner",
-  content_pages: "内容页",
-  product_reviews: "评论",
+  users: "用户",
+  product_reviews: "商品评价",
 };
-export function labelRecycleType(type: string, typeLabel?: string | null): string {
-  if (typeLabel?.trim()) return typeLabel.trim();
-  return labelFromMap(RECYCLE_TYPE_LABELS, type, "其他");
-}
+export function labelRecycleType(type: string): string { return labelFromMap(RECYCLE_TYPE_LABELS, type, "其他"); }
 
 export function formatUserDisplay(nickname?: string | null, phone?: string | null): string {
-  const n = (nickname || "").trim();
-  const p = (phone || "").trim();
-  if (n && p) return `${n}（${p}）`;
-  return n || p || "未知用户";
-}
-
-export function internalIdTitle(id: string | null | undefined, prefix = "内部编号"): string | undefined {
-  if (!id) return undefined;
-  return `${prefix}：${id}`;
+  const name = String(nickname || "").trim();
+  const mobile = String(phone || "").trim();
+  if (name && mobile) return `${name}（${mobile}）`;
+  return name || mobile || "-";
 }

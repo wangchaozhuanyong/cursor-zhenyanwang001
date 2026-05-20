@@ -176,8 +176,16 @@ export interface HelpCenterConfig {
 export interface FooterNavItem {
   label: string;
   path: string;
-  section?: "support" | "policy";
+  section?: "support" | "policy" | "other";
+  enabled?: boolean;
+  sortOrder?: number;
 }
+
+/** 后台 FooterNavEditor 编辑态 */
+export type FooterNavEditorItem = Required<Pick<FooterNavItem, "label" | "path" | "section">> & {
+  enabled: boolean;
+  sortOrder: number;
+};
 
 export interface HomeNavItem {
   id: string;

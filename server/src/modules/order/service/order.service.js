@@ -77,6 +77,68 @@ function calculateCouponDiscount(coupon, rawAmount, shippingFee) {
   return 0;
 }
 
+function money(value) {
+  return Math.round(Number(value || 0) * 100) / 100;
+}
+
+function allocateOrderProfitSnapshot(orderItems, {
+  rawAmount,
+  discountAmount,
+  pointsDiscountAmount,
+  rewardCashDiscountAmount,
+  shippingFee,
+}) {
+  const goodsDiscountTotal = money(
+    Number(discountAmount || 0)
+    + Number(pointsDiscountAmount || 0)
+    + Number(rewardCashDiscountAmount || 0),
+  );
+  const baseAmount = money(rawAmount || orderItems.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0));
+  let allocated = 0;
+  let goodsCostAmount = 0;
+  let goodsNetSalesAmount = 0;
+  let grossProfitAmount = 0;
+
+  const items = orderItems.map((item, index) => {
+    const lineSubtotal = money(Number(item.price || 0) * Number(item.qty || 0));
+    const discountAllocated = baseAmount > 0
+      ? (index === orderItems.length - 1
+        ? money(goodsDiscountTotal - allocated)
+        : money(goodsDiscountTotal * lineSubtotal / baseAmount))
+      : 0;
+    allocated = money(allocated + discountAllocated);
+    const unitCostPrice = money(item.unitCostPrice || 0);
+    const costAmount = money(unitCostPrice * Number(item.qty || 0));
+    const netSalesAmount = money(Math.max(0, lineSubtotal - discountAllocated));
+    const grossProfit = money(netSalesAmount - costAmount);
+    const source = unitCostPrice > 0 ? 'sku_cost' : 'missing';
+    goodsCostAmount = money(goodsCostAmount + costAmount);
+    goodsNetSalesAmount = money(goodsNetSalesAmount + netSalesAmount);
+    grossProfitAmount = money(grossProfitAmount + grossProfit);
+    return {
+      ...item,
+      discountAllocated,
+      unitCostPrice,
+      costAmount,
+      netSalesAmount,
+      grossProfitAmount: grossProfit,
+      costSnapshotSource: source,
+    };
+  });
+
+  return {
+    items,
+    summary: {
+      goodsCostAmount,
+      goodsNetSalesAmount,
+      grossProfitAmount,
+      shippingCostAmount: 0,
+      paymentFeeAmount: 0,
+      netProfitAmount: money(grossProfitAmount + Number(shippingFee || 0)),
+    },
+  };
+}
+
 /** 同一满减活动下，活动商品小计达到门槛后减免一次（按活动 ID 聚合） */
 function computeFullReductionDiscount(orderItems, activityByProductId) {
   const byActivity = new Map();
@@ -282,6 +344,7 @@ async function createOrder(userId, body) {
         image: p.cover_image,
         variantImage: variant?.image_url || '',
         price,
+        unitCostPrice: Number(variant?.cost_price || 0),
         // Legacy only: preserve old product points snapshot; new order points come from pointsEngine item_results.
         points: p.points,
         qty: item.qty,
@@ -379,6 +442,14 @@ async function createOrder(userId, body) {
       lines: pricing.discount_lines || [],
     };
     const normalizedAddress = normalizeMalaysiaAddress(address, contact_name, contact_phone);
+    const profitSnapshot = allocateOrderProfitSnapshot(orderItems, {
+      rawAmount,
+      discountAmount,
+      pointsDiscountAmount: Number(loyalty.points_discount_amount || 0),
+      rewardCashDiscountAmount: Number(loyalty.reward_cash_discount_amount || 0),
+      shippingFee,
+    });
+    const orderItemsWithProfit = profitSnapshot.items;
 
     await repo.insertOrder(conn, {
       id: orderId,
@@ -413,6 +484,12 @@ async function createOrder(userId, body) {
       pointsDiscountAmount: Number(loyalty.points_discount_amount || 0),
       rewardCashUsed: Number(loyalty.reward_cash_used || 0),
       rewardCashDiscountAmount: Number(loyalty.reward_cash_discount_amount || 0),
+      goodsCostAmount: profitSnapshot.summary.goodsCostAmount,
+      goodsNetSalesAmount: profitSnapshot.summary.goodsNetSalesAmount,
+      grossProfitAmount: profitSnapshot.summary.grossProfitAmount,
+      shippingCostAmount: profitSnapshot.summary.shippingCostAmount,
+      paymentFeeAmount: profitSnapshot.summary.paymentFeeAmount,
+      netProfitAmount: profitSnapshot.summary.netProfitAmount,
       loyaltyMeta: {
         settings_snapshot: loyalty.points_settings_snapshot || null,
         product_rule_snapshots: loyalty.product_rule_snapshots || [],
@@ -474,7 +551,7 @@ async function createOrder(userId, body) {
 
     const earnItemsByProductId = new Map((loyalty.item_results || []).map((x) => [String(x.product_id), x]));
     const redeemItemsByProductId = new Map((loyalty.redeem_item_results || []).map((x) => [String(x.product_id), x]));
-    for (const oi of orderItems) {
+    for (const oi of orderItemsWithProfit) {
       const earnLine = earnItemsByProductId.get(String(oi.productId)) || {};
       const redeemLine = redeemItemsByProductId.get(String(oi.productId)) || {};
       await repo.insertOrderItem(conn, {
@@ -495,13 +572,19 @@ async function createOrder(userId, body) {
         redeemableAmount: Number(redeemLine.redeemable_amount || 0),
         isRestrictedExcluded: !!redeemLine.is_restricted_excluded,
         linePointsBaseAmount: Number(earnLine.line_points_base_amount || 0),
+        unitCostPrice: oi.unitCostPrice,
+        costAmount: oi.costAmount,
+        discountAllocated: oi.discountAllocated,
+        netSalesAmount: oi.netSalesAmount,
+        grossProfitAmount: oi.grossProfitAmount,
+        costSnapshotSource: oi.costSnapshotSource,
         qty: oi.qty,
         activityId: oi.activityId,
         activityTitle: oi.activityTitle,
       });
     }
 
-    for (const oi of orderItems) {
+    for (const oi of orderItemsWithProfit) {
       if (oi.activityId) {
         const n = await repo.incrementActivitySold(conn, oi.activityId, oi.productId, oi.qty);
         if (!n) {
@@ -815,8 +898,6 @@ module.exports = {
   completeShippedOrder,
   cancelPendingOrderInTransaction,
 };
-
-
 
 
 

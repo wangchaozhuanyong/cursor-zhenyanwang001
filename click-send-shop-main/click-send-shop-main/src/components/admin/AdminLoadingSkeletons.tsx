@@ -95,14 +95,21 @@ export function AdminContentPageSkeleton() {
 
 export function AdminSiteSettingsSkeleton() {
   return (
-    <div className="flex flex-col gap-6 lg:flex-row">
-      <div className="w-full space-y-2 rounded-xl border border-border bg-card p-2 lg:w-48">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="skeleton-base skeleton-shimmer h-9 w-full rounded-lg" />
-        ))}
-      </div>
-      <div className="flex-1 space-y-4">
-        <AdminFormSectionsSkeleton sections={2} className="max-w-none" />
+    <div className="space-y-4 pb-24">
+      <div className="skeleton-base skeleton-shimmer h-14 w-full max-w-xl rounded-xl" />
+      <div className="flex gap-6">
+        <div className="hidden w-[220px] shrink-0 space-y-2 lg:block">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="skeleton-base skeleton-shimmer h-9 w-full rounded-lg" />
+          ))}
+        </div>
+        <div className="min-w-0 flex-1 space-y-4">
+          <div className="skeleton-base skeleton-shimmer h-12 w-full rounded-2xl xl:hidden" />
+          <AdminFormSectionsSkeleton sections={2} className="max-w-none" />
+        </div>
+        <div className="hidden w-[280px] shrink-0 space-y-3 xl:block">
+          <div className="skeleton-base skeleton-shimmer h-48 w-full rounded-2xl" />
+        </div>
       </div>
     </div>
   );

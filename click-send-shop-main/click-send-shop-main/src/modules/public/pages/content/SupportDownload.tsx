@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Clock, Download, Headphones } from "lucide-react";
+import { Download, Headphones } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import SeoHead from "@/components/SeoHead";
@@ -96,19 +96,17 @@ export default function SupportDownload() {
       <PageHeader title={config.title} backFallback="/" />
 
       <main className="mx-auto w-full max-w-lg space-y-3 px-[var(--store-page-x)] py-[var(--store-page-y)] pb-6 sm:px-4 sm:py-4">
-        <section className="overflow-hidden rounded-3xl bg-[linear-gradient(135deg,var(--theme-primary),color-mix(in_srgb,var(--theme-primary)_72%,#111827))] p-5 text-[var(--theme-primary-foreground)] shadow-[var(--theme-shadow)]">
-          <p className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
+        <section className="flex flex-col items-center overflow-hidden rounded-3xl bg-[linear-gradient(135deg,var(--theme-primary),color-mix(in_srgb,var(--theme-primary)_72%,#111827))] p-5 text-center text-[var(--theme-primary-foreground)] shadow-[var(--theme-shadow)]">
+          <p className="inline-flex items-center justify-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
             <Headphones size={13} />
             官方客服与安装
           </p>
-          <h1 className="mt-4 text-2xl font-extrabold tracking-tight">{config.title}</h1>
-          <p className="mt-2 text-sm leading-relaxed opacity-90">{config.subtitle}</p>
-          {config.support.workingHours ? (
-            <p className="mt-4 inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-medium">
-              <Clock size={13} />
-              {config.support.workingHours}
-            </p>
-          ) : null}
+          <h1 className="mt-4 w-full text-2xl font-extrabold tracking-tight">{config.title}</h1>
+          <p className="mt-2 w-full text-sm leading-relaxed opacity-90">{config.subtitle}</p>
+          <div
+            className="mt-4 h-7 w-[min(100%,18rem)] rounded-full bg-white/15"
+            aria-hidden
+          />
         </section>
 
         <div className="grid grid-cols-2 gap-2 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-1 shadow-[var(--theme-shadow)]">

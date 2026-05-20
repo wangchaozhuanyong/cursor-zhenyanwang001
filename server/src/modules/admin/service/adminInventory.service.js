@@ -468,7 +468,21 @@ async function adjustSkuStock(variantId, body, adminUserId, req) {
       delta = afterStock - beforeStock;
     }
 
+    const inputCost = Number(body.cost_price || 0);
+    const oldCost = Number(sku.cost_price || 0);
+    let nextCost = null;
+    if (inputCost > 0 && changeType === 'in') {
+      nextCost = beforeStock > 0 && oldCost > 0
+        ? Math.round((((beforeStock * oldCost) + (qty * inputCost)) / (beforeStock + qty)) * 100) / 100
+        : Math.round(inputCost * 100) / 100;
+    } else if (inputCost > 0 && changeType === 'adjust') {
+      nextCost = Math.round(inputCost * 100) / 100;
+    }
+
     await repo.updateVariantStock(conn, variantId, afterStock);
+    if (nextCost !== null) {
+      await repo.updateVariantCostPrice(conn, variantId, nextCost);
+    }
     await repo.syncProductStockByProductId(conn, sku.product_id);
 
     await repo.insertStockRecord(conn, {
@@ -503,7 +517,7 @@ async function adjustSkuStock(variantId, body, adminUserId, req) {
       objectId: variantId,
       summary: `SKU库存${changeType} ${sku.product_name} / ${sku.title || sku.sku_code || variantId}`,
       before: { stock: beforeStock },
-      after: { stock: afterStock, delta, reason: body.reason || '', source_no: body.source_no || '' },
+      after: { stock: afterStock, delta, cost_price: nextCost ?? oldCost, reason: body.reason || '', source_no: body.source_no || '' },
       result: 'success',
     });
 
@@ -591,7 +605,7 @@ async function exportSkusCsv(query) {
   const skuColumns = [
     'product_id', 'product_name', 'variant_id', 'variant_title', 'spec_text', 'sku_code', 'barcode',
     'price', 'cost_price', 'enabled', 'category_name', 'lifecycle_status',
-    'stock', 'reserved_stock', 'available_stock', 'stock_warning_threshold', 'updated_at',
+    'stock', 'unit_name', 'reserved_stock', 'available_stock', 'stock_warning_threshold', 'updated_at',
   ];
   const csv = rowsToCsvLocalized(skuColumns, rows.map((r) => ({
     product_id: r.product_id,
@@ -607,6 +621,7 @@ async function exportSkusCsv(query) {
     category_name: r.category_name || '',
     lifecycle_status: r.lifecycle_status,
     stock: Number(r.stock || 0),
+    unit_name: r.unit_name || '件',
     reserved_stock: Number(r.reserved_stock || 0),
     available_stock: Number(r.available_stock || 0),
     stock_warning_threshold: Number(r.stock_warning_threshold || 0),

@@ -46,7 +46,7 @@ import {
   AdminUsers, AdminUserDetail, AdminMemberLevels, AdminInvites,
   AdminCoupons, AdminCouponForm, AdminCouponRecords, AdminActivities, AdminMarketingDashboard, AdminActivityForm, AdminMarketingPoints, AdminMarketingRewards,
   AdminReviews, AdminNotifications, AdminNotificationDetail,
-  AdminReports, AdminReportOverview, AdminSalesDailyReport, AdminSalesMonthlyReport, AdminProductAnalysisReport, AdminCategoryAnalysisReport, AdminOrderAnalysisReport, AdminCustomerAnalysisReport, AdminActivityAnalysisReport, AdminCouponAnalysisReport, AdminInventoryAnalysisReport, AdminSearchAnalysisReport, AdminTrafficAnalysisReport, AdminExportCenter,
+  AdminReports, AdminReportOverview, AdminSalesDailyReport, AdminSalesMonthlyReport, AdminProfitDailyReport, AdminProductAnalysisReport, AdminCategoryAnalysisReport, AdminOrderAnalysisReport, AdminCustomerAnalysisReport, AdminActivityAnalysisReport, AdminCouponAnalysisReport, AdminInventoryAnalysisReport, AdminSearchAnalysisReport, AdminTrafficAnalysisReport, AdminExportCenter,
   AdminSiteSettings, AdminFeatureSettings, AdminSupportDownload, AdminTelegramSettings, AdminThemeSettings, AdminContent, AdminHomeOps,
   AdminRoles, AdminLogs, AdminRecycleBin,
   AdminPaymentChannels, AdminPaymentOrders, AdminPaymentEvents, AdminPaymentReconciliations,
@@ -415,6 +415,7 @@ export function AppRoutes() {
                 <Route path="reports/overview" element={<AdminReportOverview />} />
                 <Route path="reports/daily" element={<AdminSalesDailyReport />} />
                 <Route path="reports/monthly" element={<AdminSalesMonthlyReport />} />
+                <Route path="reports/profit" element={<AdminProfitDailyReport />} />
                 <Route path="reports/products" element={<AdminProductAnalysisReport />} />
                 <Route path="reports/categories" element={<AdminCategoryAnalysisReport />} />
                 <Route path="reports/orders" element={<AdminOrderAnalysisReport />} />
@@ -454,7 +455,6 @@ const App = () => (
 );
 
 export default App;
-
 
 
 

@@ -57,13 +57,19 @@ function parseFooterNav(json?: string): FooterNavItem[] | null {
   try {
     const parsed = JSON.parse(json);
     if (!Array.isArray(parsed)) return null;
-    const items = parsed.filter(
-      (it): it is FooterNavItem =>
-        it &&
-        typeof it.label === "string" &&
-        typeof it.path === "string" &&
-        (it.section === undefined || it.section === "support" || it.section === "policy"),
-    );
+    const items = parsed
+      .filter(
+        (it): it is FooterNavItem =>
+          it &&
+          typeof it.label === "string" &&
+          typeof it.path === "string" &&
+          it.enabled !== false &&
+          (it.section === undefined ||
+            it.section === "support" ||
+            it.section === "policy" ||
+            it.section === "other"),
+      )
+      .sort((a, b) => Number(a.sortOrder ?? 0) - Number(b.sortOrder ?? 0));
     return items.length > 0 ? items : null;
   } catch {
     return null;
@@ -131,8 +137,8 @@ export default function GuestHome() {
 
   const policyNav = useMemo(() => {
     if (customNav?.length) {
-      const withSection = customNav.filter((it) => it.section === "policy");
-      if (withSection.length) return dedupeFooterNav(withSection);
+      const policyItems = customNav.filter((it) => it.section === "policy" || it.section === "other");
+      if (policyItems.length) return dedupeFooterNav(policyItems);
       return dedupeFooterNav(customNav.slice(4));
     }
 

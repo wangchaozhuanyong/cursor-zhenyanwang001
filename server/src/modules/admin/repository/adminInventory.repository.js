@@ -89,6 +89,7 @@ async function selectVariantForUpdate(conn, variantId) {
        v.title,
        v.sku_code,
        v.stock,
+       v.cost_price,
        v.reserved_stock,
        v.stock_warning_threshold,
        p.name AS product_name
@@ -150,6 +151,10 @@ async function selectVariantsDetailsForUpdate(conn, variantIds) {
 
 async function updateVariantStock(conn, variantId, stock) {
   await conn.query('UPDATE product_variants SET stock = ? WHERE id = ?', [stock, variantId]);
+}
+
+async function updateVariantCostPrice(conn, variantId, costPrice) {
+  await conn.query('UPDATE product_variants SET cost_price = ? WHERE id = ?', [costPrice, variantId]);
 }
 
 async function updateVariantWarningThreshold(variantId, threshold) {
@@ -594,6 +599,7 @@ module.exports = {
   selectVariantDetailForUpdate,
   selectVariantsDetailsForUpdate,
   updateVariantStock,
+  updateVariantCostPrice,
   updateVariantWarningThreshold,
   batchUpdateVariantWarningThreshold,
   selectProductVariants,
@@ -618,6 +624,5 @@ module.exports = {
   selectConversionOrdersPage,
   selectConversionOrderById,
 };
-
 
 

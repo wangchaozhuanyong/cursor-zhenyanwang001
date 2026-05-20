@@ -23,6 +23,19 @@ function compactDefined(obj) {
   return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
 }
 
+function normalizePaymentMethods(value) {
+  if (Array.isArray(value)) return value.map((x) => String(x || '').trim()).filter(Boolean);
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed.map((x) => String(x || '').trim()).filter(Boolean);
+    } catch {
+      return value.split(',').map((x) => x.trim()).filter(Boolean);
+    }
+  }
+  return [];
+}
+
 function normalizeSettingsBody(body = {}) {
   const pointValue = Number(body.point_value_myr ?? body.pointValueMyr ?? 0.01);
   const normalizedPointValue = Number.isFinite(pointValue) && pointValue > 0 ? pointValue : 0.01;
@@ -101,8 +114,8 @@ function buildSettingsUpdate(input) {
   for (const [key, value] of Object.entries(input)) {
     fields.push(`${key} = ?`);
     values.push(
-      key === 'allowed_payment_methods' && Array.isArray(value)
-        ? JSON.stringify(value)
+      key === 'allowed_payment_methods'
+        ? JSON.stringify(normalizePaymentMethods(value))
         : boolKeys.has(key) ? (toBool(value) ? 1 : 0) : value,
     );
   }

@@ -1,13 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { FileText, Edit2, Shield, HelpCircle, Plus, Trash2, ChevronDown, ChevronRight, ArrowUp, ArrowDown } from "lucide-react";
+import { FileText, Edit2, Shield, HelpCircle, Plus, Trash2, ChevronDown, ChevronRight, ArrowUp, ArrowDown, LogIn, ExternalLink } from "lucide-react";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { createContentPage, fetchContentPages, updateContentPage } from "@/services/admin/contentService";
 import { fetchSiteSettings, updateSiteSettings } from "@/services/admin/settingsService";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import type { HelpCenterCategory, HelpCenterConfig, HelpCenterFaq } from "@/types/content";
+import type { HelpCenterConfig } from "@/types/content";
+import {
+  buildDefaultHelpCenterConfig,
+  normalizeHelpCenterConfig,
+} from "@/constants/helpCenterConfig";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { AdminContentPageSkeleton } from "@/components/admin/AdminLoadingSkeletons";
@@ -20,6 +24,14 @@ interface ContentItem {
   content: string;
   updatedAt: string;
 }
+
+/** 登录页、Cookie、页脚引用的政策页 slug（列表置顶） */
+const LOGIN_POLICY_SLUGS = ["terms-of-service", "privacy-policy"] as const;
+
+const DEFAULT_POLICY_PATHS = {
+  termsPath: "/content/terms-of-service",
+  privacyPolicyPath: "/content/privacy-policy",
+};
 
 export default function AdminContent() {
   const [items, setItems] = useState<ContentItem[]>([]);
@@ -36,18 +48,23 @@ export default function AdminContent() {
     sort_order: "",
   });
   const [saving, setSaving] = useState(false);
-  const [helpForm, setHelpForm] = useState<HelpCenterConfig>(buildDefaultHelpConfig());
+  const [helpForm, setHelpForm] = useState<HelpCenterConfig>(buildDefaultHelpCenterConfig());
   const [helpSaving, setHelpSaving] = useState(false);
   const [helpJson, setHelpJson] = useState("");
   const [collapsedCategoryIds, setCollapsedCategoryIds] = useState<Record<string, boolean>>({});
   const [dragCatId, setDragCatId] = useState<string>("");
   const [dragFaqId, setDragFaqId] = useState<string>("");
+  const [policyPaths, setPolicyPaths] = useState(DEFAULT_POLICY_PATHS);
 
   useEffect(() => {
     setLoading(true);
     Promise.all([fetchContentPages(), fetchSiteSettings()])
       .then(([pages, settings]) => {
         setItems(pages as ContentItem[]);
+        setPolicyPaths({
+          termsPath: settings.termsPath?.trim() || DEFAULT_POLICY_PATHS.termsPath,
+          privacyPolicyPath: settings.privacyPolicyPath?.trim() || DEFAULT_POLICY_PATHS.privacyPolicyPath,
+        });
         const parsed = parseHelpConfig(settings.helpCenterConfig);
         setHelpForm(parsed);
         setHelpJson(JSON.stringify(parsed, null, 2));
@@ -78,7 +95,7 @@ export default function AdminContent() {
   const handleSaveHelp = async () => {
     setHelpSaving(true);
     try {
-      const normalized = normalizeHelpConfig(helpForm);
+      const normalized = normalizeHelpCenterConfig(helpForm);
       const payload = JSON.stringify(normalized);
       await updateSiteSettings({ helpCenterConfig: payload });
       setHelpForm(normalized);
@@ -136,7 +153,23 @@ export default function AdminContent() {
     }
   };
 
-  const iconForSlug = (slug: string) => (slug === "privacy" ? <Shield size={18} className="text-muted-foreground" /> : <FileText size={18} className="text-muted-foreground" />);
+  const iconForSlug = (slug: string) => {
+    if (slug === "privacy-policy") return <Shield size={18} className="text-muted-foreground" />;
+    return <FileText size={18} className="text-muted-foreground" />;
+  };
+
+  const sortedItems = useMemo(() => {
+    const order = new Map(LOGIN_POLICY_SLUGS.map((s, i) => [s, i]));
+    return [...items].sort((a, b) => {
+      const ai = order.has(a.slug) ? order.get(a.slug)! : 99;
+      const bi = order.has(b.slug) ? order.get(b.slug)! : 99;
+      if (ai !== bi) return ai - bi;
+      return a.title.localeCompare(b.title, "zh");
+    });
+  }, [items]);
+
+  const termsPage = items.find((i) => i.slug === "terms-of-service");
+  const privacyPage = items.find((i) => i.slug === "privacy-policy");
   const categories = [...helpForm.categories].sort((a, b) => a.sortOrder - b.sortOrder);
   const faqs = [...helpForm.faqs].sort((a, b) => a.sortOrder - b.sortOrder);
   const reorderCategories = (fromId: string, toId: string) => {
@@ -167,7 +200,14 @@ export default function AdminContent() {
   return (
     <div className="space-y-6">
       <div>
-        <AdminPageTitle title={<Tx>内容管理</Tx>} hint={<Tx>政策页与帮助中心配置分开管理。</Tx>} />
+        <AdminPageTitle
+          title={<Tx>内容管理</Tx>}
+          hint={
+            <Tx>
+              登录页协议、政策页（/content/:slug）、关于我们（/about）、常见问题（/help）在此维护；保存后前台即时生效。
+            </Tx>
+          }
+        />
         <div className="mt-3">
           <PermissionGate permission="content.manage">
             <button
@@ -185,9 +225,94 @@ export default function AdminContent() {
         <AdminContentPageSkeleton />
       ) : (
       <>
+      <div className="rounded-2xl border border-gold/30 bg-card p-4">
+        <div className="mb-3 flex items-center gap-2">
+          <LogIn size={18} className="text-theme-price" />
+          <h3 className="font-semibold"><Tx>登录页与合规文案</Tx></h3>
+        </div>
+        <p className="mb-3 text-xs text-muted-foreground">
+          <Tx>登录页底部《用户协议》《隐私政策》正文在下方列表编辑；跳转路径在站点设置中配置（一般无需修改）。</Tx>
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border border-border bg-background p-3 text-xs">
+            <p className="font-medium text-foreground"><Tx>用户协议</Tx></p>
+            <p className="mt-1 text-muted-foreground">
+              slug: <code className="text-[10px]">terms-of-service</code>
+            </p>
+            <p className="mt-1 text-muted-foreground">
+              <Tx>路径: </Tx>
+              <Link to={policyPaths.termsPath} target="_blank" rel="noreferrer" className="text-theme-price hover:underline">
+                {policyPaths.termsPath}
+              </Link>
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {termsPage ? (
+                <PermissionGate permission="content.manage">
+                  <button type="button" onClick={() => openEdit(termsPage)} className="rounded-lg border border-border px-2 py-1 hover:bg-secondary">
+                    <Tx>编辑正文</Tx>
+                  </button>
+                </PermissionGate>
+              ) : (
+                <span className="text-muted-foreground"><Tx>列表中暂无该页，请执行迁移或新增内容页</Tx></span>
+              )}
+              <Link
+                to={policyPaths.termsPath}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 hover:bg-secondary"
+              >
+                <ExternalLink size={12} /><Tx>预览</Tx>
+              </Link>
+            </div>
+          </div>
+          <div className="rounded-xl border border-border bg-background p-3 text-xs">
+            <p className="font-medium text-foreground"><Tx>隐私政策</Tx></p>
+            <p className="mt-1 text-muted-foreground">
+              slug: <code className="text-[10px]">privacy-policy</code>
+            </p>
+            <p className="mt-1 text-muted-foreground">
+              <Tx>路径: </Tx>
+              <Link to={policyPaths.privacyPolicyPath} target="_blank" rel="noreferrer" className="text-theme-price hover:underline">
+                {policyPaths.privacyPolicyPath}
+              </Link>
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {privacyPage ? (
+                <PermissionGate permission="content.manage">
+                  <button type="button" onClick={() => openEdit(privacyPage)} className="rounded-lg border border-border px-2 py-1 hover:bg-secondary">
+                    <Tx>编辑正文</Tx>
+                  </button>
+                </PermissionGate>
+              ) : (
+                <span className="text-muted-foreground"><Tx>列表中暂无该页，请执行迁移或新增内容页</Tx></span>
+              )}
+              <Link
+                to={policyPaths.privacyPolicyPath}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 hover:bg-secondary"
+              >
+                <ExternalLink size={12} /><Tx>预览</Tx>
+              </Link>
+            </div>
+          </div>
+        </div>
+        <p className="mt-3 text-[10px] text-muted-foreground">
+          <Tx>修改跳转路径：</Tx>
+          <Link to="/admin/settings/site#policy-paths" className="text-theme-price underline-offset-2 hover:underline">
+            <Tx>站点设置 → 政策页路径</Tx>
+          </Link>
+          <Tx>（需 settings.manage 权限）</Tx>
+        </p>
+      </div>
+
       <div className="rounded-2xl border border-border bg-card p-4">
         <div className="mb-3 flex items-center gap-2"><HelpCircle size={18} className="text-theme-price" /><h3 className="font-semibold"><Tx>帮助中心管理</Tx></h3></div>
-        <p className="mb-3 text-xs text-muted-foreground"><Tx>可视化维护 FAQ 分类、问题、答案、排序与启用状态，前台 Help 优先读取这里。</Tx></p>
+        <p className="mb-3 text-xs text-muted-foreground">
+          <Tx>可视化维护 FAQ 分类、问题、答案、排序与启用状态；前台</Tx>{" "}
+          <Link to="/help" className="text-theme-price underline-offset-2 hover:underline" target="_blank" rel="noreferrer">/help</Link>
+          <Tx> 优先读取此处配置（未保存前前台仍使用内置默认）。</Tx>
+        </p>
         <div className="space-y-4">
           <div className="grid gap-3 md:grid-cols-2">
             <label className="text-xs text-muted-foreground"><Tx>
@@ -286,33 +411,61 @@ export default function AdminContent() {
             <div className="mb-2 text-xs font-semibold text-muted-foreground"><Tx>JSON 预览 / 导入（可选）</Tx></div>
             <textarea value={helpJson} onChange={(e) => setHelpJson(e.target.value)} rows={8} className="w-full rounded-xl border border-border bg-background px-3 py-3 font-mono text-xs outline-none focus:border-gold" />
             <div className="mt-2 flex gap-2">
-              <button type="button" onClick={() => setHelpJson(JSON.stringify(normalizeHelpConfig(helpForm), null, 2))} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>从表单生成 JSON</Tx></button>
-              <button type="button" onClick={() => { try { const parsed = normalizeHelpConfig(JSON.parse(helpJson)); setHelpForm(parsed); toast.success("已从 JSON 导入到表单"); } catch (e) { toast.error(e instanceof Error ? e.message : "JSON 格式错误"); } }} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>从 JSON 导入表单</Tx></button>
+              <button type="button" onClick={() => setHelpJson(JSON.stringify(normalizeHelpCenterConfig(helpForm), null, 2))} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>从表单生成 JSON</Tx></button>
+              <button type="button" onClick={() => { try { const parsed = normalizeHelpCenterConfig(JSON.parse(helpJson)); setHelpForm(parsed); toast.success("已从 JSON 导入到表单"); } catch (e) { toast.error(e instanceof Error ? e.message : "JSON 格式错误"); } }} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>从 JSON 导入表单</Tx></button>
             </div>
           </div>
         </div>
-        <PermissionGate permission="settings.manage">
-          <LoadingButton
-            type="button"
-            variant="gold"
-            state={helpSaving ? "loading" : "normal"}
-            loadingText="保存中..."
-            onClick={() => void handleSaveHelp()}
-            className="mt-3 rounded-xl px-4 py-2 text-sm font-bold"
-          ><Tx>
-            保存帮助中心配置
-          </Tx></LoadingButton>
-        </PermissionGate>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <PermissionGate permission="content.manage">
+            <button
+              type="button"
+              onClick={() => {
+                if (!window.confirm("确定恢复为系统默认 FAQ？将覆盖当前表单内容（需再点保存才写入数据库）。")) return;
+                const defaults = buildDefaultHelpCenterConfig();
+                setHelpForm(defaults);
+                setHelpJson(JSON.stringify(defaults, null, 2));
+                toast.success("已载入默认 FAQ，请点击保存帮助中心配置");
+              }}
+              className="rounded-xl border border-border px-4 py-2 text-sm hover:bg-secondary"
+            >
+              <Tx>恢复默认 FAQ</Tx>
+            </button>
+            <LoadingButton
+              type="button"
+              variant="gold"
+              state={helpSaving ? "loading" : "normal"}
+              loadingText="保存中..."
+              onClick={() => void handleSaveHelp()}
+              className="rounded-xl px-4 py-2 text-sm font-bold"
+            >
+              <Tx>保存帮助中心配置</Tx>
+            </LoadingButton>
+          </PermissionGate>
+        </div>
       </div>
 
       <div className="space-y-2">
-        {items.map((item) => (
+        <h3 className="text-sm font-semibold text-foreground"><Tx>内容页列表</Tx></h3>
+        {sortedItems.map((item) => (
           <div key={item.id} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 hover:bg-secondary/30 transition-all">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary flex-shrink-0">{iconForSlug(item.slug)}</div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-foreground text-sm">{item.title}</h4>
+              <div className="flex flex-wrap items-center gap-2">
+                <h4 className="font-medium text-foreground text-sm">{item.title}</h4>
+                {LOGIN_POLICY_SLUGS.includes(item.slug as (typeof LOGIN_POLICY_SLUGS)[number]) ? (
+                  <span className="rounded-full bg-theme-price/10 px-2 py-0.5 text-[10px] font-medium text-theme-price"><Tx>登录页引用</Tx></span>
+                ) : null}
+              </div>
               <p className="text-xs text-muted-foreground mt-0.5 truncate">{item.content || "暂无内容"}</p>
-              <p className="text-[10px] text-muted-foreground mt-1"><Tx>前台路径: </Tx><Link to={`/content/${item.slug}`} className="text-theme-price underline-offset-2 hover:underline" target="_blank" rel="noreferrer">/content/{item.slug}</Link></p>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                <Tx>前台路径: </Tx>
+                {item.slug === "about" ? (
+                  <Link to="/about" className="text-theme-price underline-offset-2 hover:underline" target="_blank" rel="noreferrer">/about</Link>
+                ) : (
+                  <Link to={`/content/${item.slug}`} className="text-theme-price underline-offset-2 hover:underline" target="_blank" rel="noreferrer">/content/{item.slug}</Link>
+                )}
+              </p>
             </div>
             <PermissionGate permission="content.manage"><button onClick={() => openEdit(item)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"><Edit2 size={14} /></button></PermissionGate>
           </div>
@@ -378,52 +531,11 @@ function uid(prefix: string) {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function buildDefaultHelpConfig(): HelpCenterConfig {
-  return normalizeHelpConfig({
-    workingHours: "每天 9:00 - 22:00",
-    contactNote: "",
-    categories: [
-      { id: "order", name: "订单", sortOrder: 1, enabled: true },
-      { id: "pay", name: "支付", sortOrder: 2, enabled: true },
-    ],
-    faqs: [
-      { id: "f1", categoryId: "order", question: "如何下单？", answer: "选择商品后加入购物车并提交订单。", sortOrder: 1, enabled: true },
-    ],
-  });
-}
-
 function parseHelpConfig(raw?: string): HelpCenterConfig {
-  if (!raw || !raw.trim()) return buildDefaultHelpConfig();
+  if (!raw || !raw.trim()) return buildDefaultHelpCenterConfig();
   try {
-    return normalizeHelpConfig(JSON.parse(raw));
+    return normalizeHelpCenterConfig(JSON.parse(raw));
   } catch {
-    return buildDefaultHelpConfig();
+    return buildDefaultHelpCenterConfig();
   }
-}
-
-function normalizeHelpConfig(input: unknown): HelpCenterConfig {
-  const obj = (input || {}) as Partial<HelpCenterConfig>;
-  const categories = Array.isArray(obj.categories) ? obj.categories : [];
-  const faqs = Array.isArray(obj.faqs) ? obj.faqs : [];
-  const normalizedCategories: HelpCenterCategory[] = categories.map((c, idx) => ({
-    id: String(c.id || uid("cat")),
-    name: String(c.name || "").trim(),
-    sortOrder: Number(c.sortOrder ?? idx + 1) || idx + 1,
-    enabled: c.enabled !== false,
-  }));
-  const categoryIdSet = new Set(normalizedCategories.map((c) => c.id));
-  const normalizedFaqs: HelpCenterFaq[] = faqs.map((f, idx) => ({
-    id: String(f.id || uid("faq")),
-    categoryId: categoryIdSet.has(String(f.categoryId || "")) ? String(f.categoryId) : (normalizedCategories[0]?.id || ""),
-    question: String(f.question || "").trim(),
-    answer: String(f.answer || "").trim(),
-    sortOrder: Number(f.sortOrder ?? idx + 1) || idx + 1,
-    enabled: f.enabled !== false,
-  }));
-  return {
-    workingHours: String(obj.workingHours || "每天 9:00 - 22:00").trim(),
-    contactNote: String(obj.contactNote || "").trim(),
-    categories: normalizedCategories,
-    faqs: normalizedFaqs,
-  };
 }

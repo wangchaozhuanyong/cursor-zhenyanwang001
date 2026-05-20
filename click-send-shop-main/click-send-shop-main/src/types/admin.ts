@@ -230,6 +230,21 @@ export interface SiteSettings {
   [key: string]: string | undefined;
 }
 
+/** 站点设置后台分组 ID（与 siteSettingsSections 一致） */
+export type SiteSettingsSectionId =
+  | "basic"
+  | "brand"
+  | "contact"
+  | "social"
+  | "orders"
+  | "tax"
+  | "seo"
+  | "compliance"
+  | "footer"
+  | "shopping"
+  | "analytics"
+  | "advanced";
+
 export interface ReportData {
   labels: string[];
   datasets: { label: string; data: number[] }[];

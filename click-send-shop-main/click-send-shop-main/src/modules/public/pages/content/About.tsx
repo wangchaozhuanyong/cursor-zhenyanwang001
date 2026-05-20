@@ -8,6 +8,7 @@ import * as contentService from "@/services/contentService";
 import type { ContentPage } from "@/types/content";
 import { stripHtml, truncateText } from "@/utils/seo";
 import { sanitizeCmsHtml } from "@/utils/cmsSanitizer";
+import { isAboutPlaceholderBody } from "@/constants/helpCenterConfig";
 
 export default function About() {
   const goBack = useGoBack();
@@ -25,6 +26,8 @@ export default function About() {
   const description = pageSeoDescription
     || (page?.content ? truncateText(stripHtml(page.content), 150) : siteInfo.siteDescription || "了解平台信息、服务范围和联系方式。");
 
+  const cmsBody = page?.content && !isAboutPlaceholderBody(page.content) ? page.content : null;
+
   return (
     <div className="min-h-screen bg-background pb-6">
       <SeoHead
@@ -35,8 +38,8 @@ export default function About() {
       />
       <PageHeader title="关于我们" onBack={goBack} />
       <main className="mx-auto max-w-lg space-y-4 px-4 pt-4">
-        {page?.content ? (
-          <article className="prose prose-sm max-w-none rounded-2xl border border-border bg-card p-5 text-muted-foreground" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(page.content) }} />
+        {cmsBody ? (
+          <article className="prose prose-sm max-w-none rounded-2xl border border-border bg-card p-5 text-muted-foreground" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(cmsBody) }} />
         ) : (
           <>
             <section className="rounded-2xl border border-border bg-card p-5">

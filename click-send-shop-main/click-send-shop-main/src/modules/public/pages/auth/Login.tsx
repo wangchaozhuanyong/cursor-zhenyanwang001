@@ -728,9 +728,21 @@ export default function Login() {
         {/* ══════════════ Agreement ══════════════ */}
         <p className="pb-8 pb-safe pt-2 text-center text-[11px] leading-relaxed text-muted-foreground">
           {mode === "login" ? "登录" : "注册"}即代表您同意
-          <button onClick={() => navigate("/about")} className="text-theme-price mx-0.5">《用户协议》</button>
+          <button
+            type="button"
+            onClick={() => navigate(siteInfo.termsPath || "/content/terms-of-service")}
+            className="text-theme-price mx-0.5 hover:underline"
+          >
+            《用户协议》
+          </button>
           和
-          <button onClick={() => navigate("/help")} className="text-theme-price mx-0.5">《隐私政策》</button>
+          <button
+            type="button"
+            onClick={() => navigate(siteInfo.privacyPolicyPath || "/content/privacy-policy")}
+            className="text-theme-price mx-0.5 hover:underline"
+          >
+            《隐私政策》
+          </button>
         </p>
       </main>
     </div>

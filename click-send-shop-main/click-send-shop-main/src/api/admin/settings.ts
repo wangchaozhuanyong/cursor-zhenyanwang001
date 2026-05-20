@@ -6,6 +6,7 @@ export function getSiteSettings() {
   return get<SiteSettings>("/admin/settings");
 }
 
+/** 局部更新：仅提交 body 中出现的 key，后端按 key upsert */
 export function updateSiteSettings(data: Partial<SiteSettings>) {
   return put<SiteSettings>("/admin/settings", data);
 }

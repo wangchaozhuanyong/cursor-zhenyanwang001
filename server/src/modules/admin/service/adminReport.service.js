@@ -1,5 +1,8 @@
 const repo = require('../repository/adminReport.repository');
 const { labelReportColumn, labelReportCellValue } = require('../../../utils/reportColumnLabels');
+const { generateId } = require('../../../utils/helpers');
+const { BusinessError } = require('../../../errors/BusinessError');
+const { logAdminAction } = require('../../../utils/adminAudit');
 
 function formatDate(date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
@@ -214,6 +217,68 @@ async function getSalesMonthly(query) {
   return { summary: { 月份数: normalized.length }, list: normalized, date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
 }
 
+async function getProfitDaily(query) {
+  const { dateFrom, dateTo } = resolveDateRange(query);
+  const list = (await repo.selectProfitDaily(dateFrom, dateTo)).map((row) => ({
+    ...row,
+    paid_amount: safeNumber(row.paid_amount),
+    product_sales_amount: safeNumber(row.product_sales_amount),
+    discount_amount: safeNumber(row.discount_amount),
+    points_discount_amount: safeNumber(row.points_discount_amount),
+    reward_cash_discount_amount: safeNumber(row.reward_cash_discount_amount),
+    net_goods_sales_amount: safeNumber(row.net_goods_sales_amount),
+    goods_cost_amount: safeNumber(row.goods_cost_amount),
+    gross_profit_amount: safeNumber(row.gross_profit_amount),
+    gross_margin: safeNumber(row.gross_margin),
+    shipping_income: safeNumber(row.shipping_income),
+    shipping_cost_amount: safeNumber(row.shipping_cost_amount),
+    payment_fee_amount: safeNumber(row.payment_fee_amount),
+    refund_amount: safeNumber(row.refund_amount),
+    expense_amount: safeNumber(row.expense_amount),
+    net_profit_amount: safeNumber(row.net_profit_amount),
+    net_margin: safeNumber(row.net_margin),
+    paid_order_count: Number(row.paid_order_count || 0),
+    missing_cost_order_count: Number(row.missing_cost_order_count || 0),
+    missing_cost_item_count: Number(row.missing_cost_item_count || 0),
+  }));
+  const summary = list.reduce((acc, row) => ({
+    paid_order_count: acc.paid_order_count + Number(row.paid_order_count || 0),
+    paid_amount: safeNumber(acc.paid_amount + Number(row.paid_amount || 0)),
+    product_sales_amount: safeNumber(acc.product_sales_amount + Number(row.product_sales_amount || 0)),
+    net_goods_sales_amount: safeNumber(acc.net_goods_sales_amount + Number(row.net_goods_sales_amount || 0)),
+    goods_cost_amount: safeNumber(acc.goods_cost_amount + Number(row.goods_cost_amount || 0)),
+    gross_profit_amount: safeNumber(acc.gross_profit_amount + Number(row.gross_profit_amount || 0)),
+    shipping_income: safeNumber(acc.shipping_income + Number(row.shipping_income || 0)),
+    shipping_cost_amount: safeNumber(acc.shipping_cost_amount + Number(row.shipping_cost_amount || 0)),
+    payment_fee_amount: safeNumber(acc.payment_fee_amount + Number(row.payment_fee_amount || 0)),
+    refund_amount: safeNumber(acc.refund_amount + Number(row.refund_amount || 0)),
+    expense_amount: safeNumber(acc.expense_amount + Number(row.expense_amount || 0)),
+    net_profit_amount: safeNumber(acc.net_profit_amount + Number(row.net_profit_amount || 0)),
+    missing_cost_order_count: acc.missing_cost_order_count + Number(row.missing_cost_order_count || 0),
+    missing_cost_item_count: acc.missing_cost_item_count + Number(row.missing_cost_item_count || 0),
+  }), {
+    paid_order_count: 0,
+    paid_amount: 0,
+    product_sales_amount: 0,
+    net_goods_sales_amount: 0,
+    goods_cost_amount: 0,
+    gross_profit_amount: 0,
+    shipping_income: 0,
+    shipping_cost_amount: 0,
+    payment_fee_amount: 0,
+    refund_amount: 0,
+    expense_amount: 0,
+    net_profit_amount: 0,
+    missing_cost_order_count: 0,
+    missing_cost_item_count: 0,
+  });
+  summary.gross_margin = summary.net_goods_sales_amount > 0
+    ? safeNumber((summary.gross_profit_amount / summary.net_goods_sales_amount) * 100)
+    : 0;
+  summary.net_margin = summary.paid_amount > 0 ? safeNumber((summary.net_profit_amount / summary.paid_amount) * 100) : 0;
+  return { summary, list, date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
+}
+
 async function getProductsAnalysis(query) {
   const { dateFrom, dateTo } = resolveDateRange(query);
   const list = await repo.selectProductsAnalysis(dateFrom, dateTo);
@@ -418,6 +483,58 @@ function buildCsvFromRecords(records) {
   );
 }
 
+function normalizeExpensePayload(body = {}) {
+  const expenseDate = String(body.expense_date || body.date || '').slice(0, 10);
+  const amount = Number(body.amount);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(expenseDate)) throw new BusinessError(400, '支出日期格式不正确');
+  if (!Number.isFinite(amount) || amount < 0) throw new BusinessError(400, '支出金额必须大于等于 0');
+  return {
+    expense_date: expenseDate,
+    category: String(body.category || 'other').trim() || 'other',
+    amount: safeNumber(amount),
+    title: String(body.title || '').trim().slice(0, 255),
+    remark: String(body.remark || '').trim().slice(0, 500),
+  };
+}
+
+async function listOperatingExpenses(query = {}) {
+  const { dateFrom, dateTo } = resolveDateRange(query);
+  const list = await repo.selectOperatingExpenses(dateFrom, dateTo, String(query.category || '').trim());
+  const summary = {
+    expense_amount: safeNumber(list.reduce((sum, row) => sum + Number(row.amount || 0), 0)),
+    expense_count: list.length,
+  };
+  return { summary, list, date_from: dateFrom, date_to: dateTo };
+}
+
+async function createOperatingExpense(body, admin = {}) {
+  const payload = normalizeExpensePayload(body);
+  const created = await repo.insertOperatingExpense({
+    id: generateId(),
+    ...payload,
+    operator_id: admin.id || admin.userId || null,
+  });
+  await logAdminAction(admin.id || admin.userId || null, 'operating_expense.create', JSON.stringify({ targetId: created.id, after: created }));
+  return created;
+}
+
+async function updateOperatingExpense(id, body, admin = {}) {
+  const before = await repo.selectOperatingExpenseById(id);
+  if (!before) throw new BusinessError(404, '经营支出记录不存在');
+  const payload = normalizeExpensePayload(body);
+  const updated = await repo.updateOperatingExpense(id, payload);
+  await logAdminAction(admin.id || admin.userId || null, 'operating_expense.update', JSON.stringify({ targetId: id, before, after: updated }));
+  return updated;
+}
+
+async function deleteOperatingExpense(id, admin = {}) {
+  const before = await repo.selectOperatingExpenseById(id);
+  if (!before) throw new BusinessError(404, '经营支出记录不存在');
+  await repo.deleteOperatingExpense(id);
+  await logAdminAction(admin.id || admin.userId || null, 'operating_expense.delete', JSON.stringify({ targetId: id, before }));
+  return { ok: true };
+}
+
 async function exportByType(type, query) {
   if (type === 'sales_daily') {
     const data = await getSalesDaily(query);
@@ -428,6 +545,11 @@ async function exportByType(type, query) {
     const data = await getSalesMonthly(query);
     const csv = buildCsvFromRecords(data.list);
     return { csv, filename: `sales-monthly-${data.date_from}-${data.date_to}.csv` };
+  }
+  if (type === 'profit_daily') {
+    const data = await getProfitDaily(query);
+    const csv = buildCsvFromRecords(data.list);
+    return { csv, filename: `profit-daily-${data.date_from}-${data.date_to}.csv` };
   }
   if (type === 'product_analysis') {
     const data = await getProductsAnalysis(query);
@@ -489,6 +611,7 @@ module.exports = {
   getOverview,
   getSalesDaily,
   getSalesMonthly,
+  getProfitDaily,
   getProductsAnalysis,
   getCategoriesAnalysis,
   getOrdersAnalysis,
@@ -498,6 +621,10 @@ module.exports = {
   getInventoryAnalysis,
   getSearchAnalysis,
   getTrafficAnalysis,
+  listOperatingExpenses,
+  createOperatingExpense,
+  updateOperatingExpense,
+  deleteOperatingExpense,
   exportByType,
 };
 

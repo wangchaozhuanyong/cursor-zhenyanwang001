@@ -181,6 +181,7 @@ const navItemsRaw: NavItem[] = [
       { icon: LayoutDashboard, labelKey: "nav.reportOverview", path: "/admin/reports/overview", permission: "report.view" },
       { icon: BarChart3, labelKey: "nav.reportDaily", path: "/admin/reports/daily", permission: "report.view" },
       { icon: BarChart3, labelKey: "nav.reportMonthly", path: "/admin/reports/monthly", permission: "report.view" },
+      { icon: BarChart3, labelKey: "nav.reportProfit", path: "/admin/reports/profit", permission: "report.view" },
       { icon: Package, labelKey: "nav.reportProducts", path: "/admin/reports/products", permission: "report.view" },
       { icon: FolderTree, labelKey: "nav.reportCategories", path: "/admin/reports/categories", permission: "report.view" },
       { icon: ShoppingCart, labelKey: "nav.reportOrders", path: "/admin/reports/orders", permission: "report.view" },

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Product, ProductLifecycleStatus, ProductStatus } from "@/types/product";
+import type { Product, ProductLifecycleStatus, ProductListParams, ProductStatus } from "@/types/product";
 import * as productService from "@/services/admin/productService";
 
 const initialState = {
@@ -7,6 +7,9 @@ const initialState = {
   loading: true,
   search: "",
   selected: [] as string[],
+  total: 0,
+  page: 1,
+  pageSize: 20,
 };
 
 /**
@@ -18,9 +21,12 @@ interface AdminProductsState {
   loading: boolean;
   search: string;
   selected: string[];
+  total: number;
+  page: number;
+  pageSize: number;
 
   setSearch: (v: string) => void;
-  loadProducts: () => Promise<void>;
+  loadProducts: (params?: ProductListParams) => Promise<void>;
   toggleSelect: (id: string) => void;
   /** 与原先表格「全选当前页」一致 */
   togglePageSelection: (pageIds: string[]) => void;
@@ -40,11 +46,17 @@ export const useAdminProductsStore = create<AdminProductsState>((set, get) => ({
 
   reset: () => set({ ...initialState }),
 
-  loadProducts: async () => {
+  loadProducts: async (params = {}) => {
     set({ loading: true });
     try {
-      const p = await productService.fetchProducts();
-      set({ products: p.list as Product[], loading: false });
+      const p = await productService.fetchProducts(params);
+      set({
+        products: p.list as Product[],
+        total: Number(p.total || 0),
+        page: Number(p.page || params.page || 1),
+        pageSize: Number(p.pageSize || params.pageSize || 20),
+        loading: false,
+      });
     } catch {
       set({ loading: false });
       throw new Error("LOAD_ADMIN_PRODUCTS_FAILED");

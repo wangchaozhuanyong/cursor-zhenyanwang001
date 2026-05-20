@@ -154,8 +154,11 @@ export default function AdminHomeOps() {
           hint={<Tx>统一管理模块开关、展示设置、金刚区导航和新品主推设置。</Tx>}
         />
       </div>
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-        <nav className="flex shrink-0 flex-row gap-2 overflow-x-auto lg:w-52 lg:flex-col lg:gap-1">
+      <div className="space-y-4">
+        <nav
+          className="flex flex-wrap gap-2 border-b border-border pb-3"
+          aria-label="首页运营分区"
+        >
           {HOME_OPS_TABS.map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
@@ -163,24 +166,23 @@ export default function AdminHomeOps() {
               <button
                 key={tab.id}
                 type="button"
+                aria-current={active ? "page" : undefined}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex min-w-[9.5rem] flex-col items-start rounded-xl border px-3 py-2.5 text-left transition-colors lg:min-w-0 lg:w-full",
+                  "inline-flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition-colors",
                   active
-                    ? "border-gold/40 bg-gold/10 text-foreground"
+                    ? "border-gold/40 bg-gold/10 text-foreground shadow-sm"
                     : "border-border bg-card text-muted-foreground hover:border-gold/25 hover:bg-secondary/50",
                 )}
               >
-                <span className="flex items-center gap-2 text-sm font-semibold">
-                  <Icon size={16} className={active ? "text-theme-price" : ""} />
-                  {tab.label}
-                  <AdminFieldHint text={tab.desc} className="hidden lg:inline-flex" />
-                </span>
+                <Icon size={16} className={active ? "text-theme-price" : ""} />
+                {tab.label}
+                <AdminFieldHint text={tab.desc} />
               </button>
             );
           })}
         </nav>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0">
           {activeTab === "modules" ? <AdminHomeOpsModulePanel /> : null}
           {activeTab === "display" ? <AdminHomeOpsDisplayPanel /> : null}
           {activeTab === "newArrival" ? <AdminHomeOpsNewArrivalPanel /> : null}
@@ -401,6 +403,7 @@ export default function AdminHomeOps() {
     </div>
   );
 }
+
 
 function IconPreview({ value }: { value: string }) {
   const v = value.trim();

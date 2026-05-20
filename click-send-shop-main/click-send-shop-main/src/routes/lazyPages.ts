@@ -86,6 +86,7 @@ export const AdminReports = lazy(() => import("@/modules/admin/pages/report/Admi
 export const AdminReportOverview = lazy(() => import("@/modules/admin/pages/report/AdminReportOverview"));
 export const AdminSalesDailyReport = lazy(() => import("@/modules/admin/pages/report/AdminSalesDailyReport"));
 export const AdminSalesMonthlyReport = lazy(() => import("@/modules/admin/pages/report/AdminSalesMonthlyReport"));
+export const AdminProfitDailyReport = lazy(() => import("@/modules/admin/pages/report/AdminProfitDailyReport"));
 export const AdminProductAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminProductAnalysisReport"));
 export const AdminCategoryAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminCategoryAnalysisReport"));
 export const AdminOrderAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminOrderAnalysisReport"));
@@ -114,4 +115,3 @@ export const AdminPaymentChannels = lazy(() => import("@/modules/admin/pages/pay
 export const AdminPaymentOrders = lazy(() => import("@/modules/admin/pages/payment/AdminPaymentOrders"));
 export const AdminPaymentEvents = lazy(() => import("@/modules/admin/pages/payment/AdminPaymentEvents"));
 export const AdminPaymentReconciliations = lazy(() => import("@/modules/admin/pages/payment/AdminPaymentReconciliations"));
-

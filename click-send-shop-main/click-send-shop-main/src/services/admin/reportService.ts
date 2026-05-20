@@ -16,6 +16,10 @@ export async function fetchSalesMonthlyReport(params?: ReportQuery) {
   const res = await reportApi.getSalesMonthly(params);
   return res.data;
 }
+export async function fetchProfitDailyReport(params?: ReportQuery) {
+  const res = await reportApi.getProfitDaily(params);
+  return res.data;
+}
 export async function fetchProductAnalysisReport(params?: ReportQuery) {
   const res = await reportApi.getProductsAnalysis(params);
   return res.data;
@@ -63,3 +67,12 @@ export async function exportTrafficAnalysisCsv(params?: ReportQuery) {
   await downloadAdminCsv(`/admin/reports/export?${q.toString()}`, "traffic-analysis.csv");
 }
 
+export async function exportProfitDailyCsv(params?: ReportQuery) {
+  const q = new URLSearchParams();
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      q.set(key, String(value));
+    }
+  });
+  await downloadAdminCsv(`/admin/reports/profit/export${q.toString() ? `?${q.toString()}` : ""}`, "profit-daily.csv");
+}

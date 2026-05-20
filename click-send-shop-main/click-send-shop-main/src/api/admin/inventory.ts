@@ -1,4 +1,4 @@
-import { get, patch, post } from "@/api/request";
+import { del, get, patch, post } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
 import type { InventoryChangeType, InventoryConversionOrder, InventoryPackRule, InventorySku, InventoryStockRecord, InventorySummary } from "@/types/inventory";
 import { getAdminAccessToken } from "@/utils/token";
@@ -77,14 +77,7 @@ export function updateInventoryPackRule(id: string, data: Partial<InventoryPackR
 }
 
 export function deleteInventoryPackRule(id: string) {
-  return fetch((import.meta.env.VITE_API_BASE_URL ?? "/api") + `/admin/inventory/pack-rules/${id}`, {
-    method: "DELETE",
-    headers: getAdminAccessToken() ? { Authorization: `Bearer ${getAdminAccessToken()}` } : undefined,
-    credentials: "include",
-  }).then((res) => {
-    if (!res.ok) throw new Error("删除失败");
-    return res.json();
-  });
+  return del<void>(`/admin/inventory/pack-rules/${id}`);
 }
 
 export function unpackInventoryRule(data: { rule_id: string; parent_qty: number; remark?: string }) {

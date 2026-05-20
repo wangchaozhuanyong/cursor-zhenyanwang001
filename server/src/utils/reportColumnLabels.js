@@ -1,6 +1,3 @@
-/**
- * 报表 CSV 表头中文（与前端 adminDisplayLabels.REPORT_COLUMN_LABELS 保持同步）
- */
 const REPORT_COLUMN_LABELS = {
   id: '编号',
   date: '日期',
@@ -18,28 +15,41 @@ const REPORT_COLUMN_LABELS = {
   refund_order_count: '退款订单数',
   unpaid_order_count: '未支付订单数',
   gross_sales: '销售额',
+  product_sales_amount: '商品销售额',
+  paid_amount: '实收金额',
   discount_amount: '优惠金额',
+  points_discount_amount: '积分抵扣',
+  reward_cash_discount_amount: '返现余额抵扣',
   shipping_fee: '运费',
+  shipping_income: '用户支付运费',
+  shipping_cost_amount: '实际物流成本',
+  payment_fee_amount: '支付手续费',
   refund_amount: '退款金额',
   net_sales: '净销售额',
+  net_goods_sales_amount: '商品净销售额',
+  goods_cost_amount: '商品成本',
+  gross_profit: '毛利',
+  gross_profit_amount: '商品毛利',
+  gross_margin: '毛利率',
+  expense_amount: '经营支出',
+  net_profit_amount: '净利润',
+  net_margin: '净利率',
+  missing_cost_order_count: '缺成本订单数',
+  missing_cost_item_count: '缺成本商品行数',
   items_sold: '销售件数',
-  user_count: '用户数',
-  search_count: '搜索次数',
-  no_result_count: '无结果次数',
-  product_click_count: '商品点击数',
-  add_to_cart_count: '加购量',
-  issued_count: '发放数量',
-  claimed_count: '领取数量',
-  used_count: '使用数量',
-  expired_count: '过期数量',
-  active_users: '活跃用户',
-  order_users: '下单用户',
-  new_users: '新增用户',
-  product_count: '商品数',
-  active_product_count: '在售商品数',
-  stock_qty: '库存总量',
-  warning_stock: '预警库存',
-  paying_users: '支付用户数',
+  sales_qty: '销量',
+  sales_amount: '销售额',
+  discount_allocated: '分摊优惠',
+  net_sales_amount: '净销售额',
+  cost_amount: '成本金额',
+  buyer_count: '购买用户',
+  refund_qty: '退款件数',
+  current_stock: '当前库存',
+  inventory_cost_value: '库存成本',
+  view_count: '浏览量',
+  add_cart_count: '加购量',
+  favorite_count: '收藏量',
+  conversion_rate: '转化率',
   average_order_value: '客单价',
   units_per_order: '每单件数',
   payment_rate: '支付率',
@@ -48,9 +58,10 @@ const REPORT_COLUMN_LABELS = {
   claim_rate: '领取率',
   use_rate: '使用率',
   roi: '投入产出比',
-  paid_amount: '实收金额',
   pending_orders: '待处理订单',
   product_view_count: '商品浏览次数',
+  product_click_count: '商品点击次数',
+  add_to_cart_count: '加购次数',
   checkout_start_count: '发起结算次数',
   sales_7d: '近7日销量',
   sales_30d: '近30日销量',
@@ -67,21 +78,10 @@ const REPORT_COLUMN_LABELS = {
   category_path: '分类路径',
   parent_category_id: '父分类',
   parent_category_name: '父分类名称',
-  sales_qty: '销量',
-  sales_amount: '销售额',
-  buyer_count: '购买用户',
-  refund_qty: '退款件数',
-  current_stock: '当前库存',
-  view_count: '浏览量',
-  add_cart_count: '加购量',
-  favorite_count: '收藏量',
-  gross_profit: '毛利',
-  gross_margin: '毛利率',
   available_stock_days: '可售天数',
   last_searched_at: '最后搜索时间',
   created_at: '创建时间',
   updated_at: '更新时间',
-  conversion_rate: '转化率',
   path: '页面路径',
   page_type: '页面类型',
   pv: 'PV',
@@ -131,39 +131,15 @@ const REPORT_COLUMN_LABELS = {
   source: '来源',
   module: '模块',
   action: '操作类型',
-  event_type: '事件类型',
-  verify_status: '验签状态',
-  processing_result: '处理结果',
-  reconcile_date: '对账日期',
-  success_amount: '成功金额',
-  diff_amount: '差异金额',
-  order_count_recon: '笔数',
 };
 
 const TOKEN_LABELS = {
-  units: '件数',
-  per: '每',
-  order: '订单',
-  rate: '率',
-  sales: '销售',
-  stock: '库存',
-  status: '状态',
-  type: '类型',
-  activity: '活动',
-  coupon: '优惠券',
-  product: '商品',
-  category: '分类',
-  user: '用户',
-  payment: '支付',
-  refund: '退款',
-  amount: '金额',
-  count: '数量',
-  avg: '平均',
-  daily: '日',
-  mom: '环比',
-  growth: '增长',
-  claim: '领取',
-  use: '使用',
+  units: '件数', per: '每', order: '订单', rate: '率', sales: '销售', stock: '库存', status: '状态',
+  type: '类型', activity: '活动', coupon: '优惠券', product: '商品', category: '分类', user: '用户',
+  payment: '支付', refund: '退款', amount: '金额', count: '数量', avg: '平均', daily: '日', monthly: '月',
+  mom: '环比', growth: '增长', claim: '领取', use: '使用', paid: '支付', gross: '毛', net: '净',
+  items: '件', sold: '售出', warning: '预警', current: '当前', available: '可售', days: '天数',
+  view: '浏览', cart: '购物车', favorite: '收藏', profit: '利润', margin: '毛利', conversion: '转化',
 };
 
 function humanizeColumnKey(key) {
@@ -174,7 +150,7 @@ function humanizeColumnKey(key) {
   }
   const parts = key.split('_').filter(Boolean);
   const labeled = parts.map((part) => TOKEN_LABELS[part] ?? part);
-  if (labeled.some((p) => /^[a-z]+$/i.test(p))) return `字段（${key}）`;
+  if (labeled.some((p) => /^[a-z]+$/i.test(String(p)))) return `字段：${key}`;
   return labeled.join('');
 }
 
@@ -184,55 +160,14 @@ function labelReportColumn(key) {
 
 const STOCK_STATUS_LABELS = { low: '低库存', normal: '正常', out: '缺货' };
 const ACTIVITY_TYPE_LABELS = {
-  flash_sale: '限时秒杀',
-  full_reduction: '满减活动',
-  coupon_activity: '优惠券活动',
-  new_user_gift: '新人礼包',
-  member_activity: '会员活动',
-  points_bonus: '积分赠送',
-  cashback_activity: '返现活动',
+  flash_sale: '限时秒杀', full_reduction: '满减活动', coupon_activity: '优惠券活动', new_user_gift: '新人礼包',
+  member_activity: '会员活动', points_bonus: '积分赠送', cashback_activity: '返现活动',
 };
-const PAYMENT_STATUS_LABELS = {
-  pending: '待支付',
-  unpaid: '未支付',
-  paid: '已支付',
-  success: '支付成功',
-  refunded: '已退款',
-  failed: '支付失败',
-  cancelled: '已取消',
-};
-const ORDER_STATUS_LABELS = {
-  pending: '待处理',
-  paid: '已支付',
-  processing: '处理中',
-  shipped: '已发货',
-  completed: '已完成',
-  cancelled: '已取消',
-  refunded: '已退款',
-};
-const TRAFFIC_SOURCE_LABELS = {
-  direct: '直接访问',
-  campaign: '广告活动',
-  referral: '外部引荐',
-  organic: '自然搜索',
-  social: '社交媒体',
-  paid: '付费投放',
-};
-const PAGE_TYPE_LABELS = {
-  home: '首页',
-  product: '商品详情',
-  category: '分类页',
-  cart: '购物车',
-  checkout: '结算页',
-  search: '搜索页',
-  other: '其他页面',
-};
-const DEVICE_LABELS = {
-  desktop: '电脑',
-  mobile: '手机',
-  tablet: '平板',
-  unknown: '未知',
-};
+const PAYMENT_STATUS_LABELS = { pending: '待支付', unpaid: '未支付', paid: '已支付', success: '支付成功', refunded: '已退款', failed: '支付失败', cancelled: '已取消', partially_refunded: '部分退款' };
+const ORDER_STATUS_LABELS = { pending: '待处理', paid: '已支付', processing: '处理中', shipped: '已发货', completed: '已完成', cancelled: '已取消', refunded: '已退款' };
+const TRAFFIC_SOURCE_LABELS = { direct: '直接访问', campaign: '广告活动', referral: '外部引荐', organic: '自然搜索', social: '社交媒体', paid: '付费投放' };
+const PAGE_TYPE_LABELS = { home: '首页', product: '商品详情', category: '分类页', cart: '购物车', checkout: '结算页', search: '搜索页', other: '其他页面' };
+const DEVICE_LABELS = { desktop: '电脑', mobile: '手机', tablet: '平板', unknown: '未知' };
 
 function labelFromMap(map, value, fallback = value) {
   if (value == null || value === '') return '';

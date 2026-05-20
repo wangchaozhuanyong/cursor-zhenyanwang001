@@ -477,6 +477,8 @@ router.get('/reports/export', adminAuth, requirePermission('report.export'), rep
 router.get('/reports/overview', adminAuth, requirePermission('report.view'), reportCtrl.getOverview);
 router.get('/reports/sales/daily', adminAuth, requirePermission('report.view'), reportCtrl.getSalesDaily);
 router.get('/reports/sales/monthly', adminAuth, requirePermission('report.view'), reportCtrl.getSalesMonthly);
+router.get('/reports/profit/daily', adminAuth, requirePermission('report.view'), reportCtrl.getProfitDaily);
+router.get('/reports/profit/export', adminAuth, requirePermission('report.export'), reportCtrl.exportProfit);
 router.get('/reports/products/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getProductsAnalysis);
 router.get('/reports/categories/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getCategoriesAnalysis);
 router.get('/reports/orders/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getOrdersAnalysis);
@@ -495,6 +497,11 @@ router.get('/reports/sales', adminAuth, requirePermission('report.view'), report
 router.get('/reports/users', adminAuth, requirePermission('report.view'), reportCtrl.getCustomersAnalysis);
 router.get('/reports/products', adminAuth, requirePermission('report.view'), reportCtrl.getProductsAnalysis);
 router.get('/reports/home-engagement', adminAuth, requirePermission('report.view'), reportCtrl.getOverview);
+
+router.get('/expenses', adminAuth, requirePermission('report.view'), reportCtrl.listOperatingExpenses);
+router.post('/expenses', adminAuth, requirePermission('report.view'), reportCtrl.createOperatingExpense);
+router.put('/expenses/:id', adminAuth, requirePermission('report.view'), reportCtrl.updateOperatingExpense);
+router.delete('/expenses/:id', adminAuth, requirePermission('report.view'), reportCtrl.deleteOperatingExpense);
 
 /* ---- Export Center ---- */
 router.post('/exports', adminAuth, requirePermission('report.export'), exportCtrl.create);

@@ -44,6 +44,20 @@ const adminProductListQuerySchema = z.object({
   keyword: z.string().max(200).optional(),
   category_id: z.string().max(36).optional(),
   status: z.enum(['draft', 'active', 'inactive']).optional(),
+  stock_status: z.enum(['normal', 'low', 'out']).optional(),
+  cost_status: z.enum(['normal', 'missing']).optional(),
+  min_margin: z.coerce.number().optional(),
+  max_margin: z.coerce.number().optional(),
+  sort: z.enum([
+    'created_desc',
+    'sales_30d_desc',
+    'sales_amount_30d_desc',
+    'gross_profit_30d_desc',
+    'stock_asc',
+    'stock_desc',
+    'margin_asc',
+    'margin_desc',
+  ]).optional(),
 });
 
 const adminProductCreateBodySchema = z.object({

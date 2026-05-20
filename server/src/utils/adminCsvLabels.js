@@ -10,6 +10,7 @@ const EXTRA_CSV_LABELS = {
   original_price: '原价',
   sales_count: '销量',
   stock: '库存',
+  unit_name: '\u5e93\u5b58\u5355\u4f4d',
   cover_image: '封面图',
   video_url: '视频链接',
   lifecycle_status: '生命周期',
@@ -86,6 +87,12 @@ const INVENTORY_CHANGE_LABELS = {
   adjust: '盘点调整',
   order_deduct: '订单扣减',
   order_release: '订单释放',
+  unpack_parent_out: '\u62c6\u5305-\u5927\u5305\u88c5\u51cf\u5c11',
+  unpack_child_in: '\u62c6\u5305-\u5c0f\u5305\u88c5\u589e\u52a0',
+  assemble_child_out: '\u7ec4\u88c5-\u5c0f\u5305\u88c5\u51cf\u5c11',
+  assemble_parent_in: '\u7ec4\u88c5-\u5927\u5305\u88c5\u589e\u52a0',
+  auto_unpack_parent_out: '\u81ea\u52a8\u62c6\u5305-\u5927\u5305\u88c5\u51cf\u5c11',
+  auto_unpack_child_in: '\u81ea\u52a8\u62c6\u5305-\u5c0f\u5305\u88c5\u589e\u52a0',
 };
 
 function labelCsvColumn(key) {

@@ -7,32 +7,27 @@ require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") }
 
 const db = require("../src/config/db");
 const { generateId } = require("../src/utils/helpers");
+const { DEFAULT_ABOUT_PAGE_BODY, isAboutPlaceholderBody } = require("../src/data/defaultAboutPageBody");
+const {
+  POLICY_PAGE_DEFAULTS,
+  isPolicyPlaceholderBody,
+} = require("../src/data/defaultPolicyPageBodies");
 
 const PAGES = [
   {
+    slug: "about",
+    title: "关于我们",
+    body: DEFAULT_ABOUT_PAGE_BODY,
+  },
+  {
     slug: "privacy-policy",
-    title: "隐私政策",
-    body: [
-      "我们重视并依法保护您的个人信息。本政策说明我们如何收集、使用、保存、共享和保护您在本站提交的资料。",
-      "我们可能收集的信息包括：姓名、手机号、邮箱、收货地址、订单记录、支付状态、售后记录、设备与访问日志、Cookie 同意记录以及客服沟通内容。",
-      "我们使用这些信息用于：处理订单、安排配送、售后退款、账户安全、客服支持、统计分析、合规留痕，以及在您同意时进行营销触达。",
-      "我们仅在必要范围内与支付服务商、物流服务商、云服务商、审计顾问或执法机关共享信息，不会出售您的个人信息。",
-      "订单与财务相关资料会按法律和审计要求保存；超过保存期限后将删除、匿名化或限制访问。",
-      "您可以申请访问、更正、导出或删除您的资料，也可撤回营销同意。撤回不会影响撤回前已完成的合规处理。",
-      "如发生可能影响您权益的数据安全事件，我们将按适用法律要求进行处置与通知。",
-    ].join("\n\n"),
+    title: POLICY_PAGE_DEFAULTS["privacy-policy"].title,
+    body: POLICY_PAGE_DEFAULTS["privacy-policy"].body,
   },
   {
     slug: "terms-of-service",
-    title: "服务条款",
-    body: [
-      "访问或使用本站即表示您同意本服务条款；若不同意，请停止使用本站服务。",
-      "商品信息、价格、库存、促销和配送说明以结算页和订单确认信息为准。我们会尽力确保准确，但保留纠正明显错误的权利。",
-      "您应提供真实、完整、可联系的信息。因信息错误导致的配送失败、延迟或额外费用，可能由您承担。",
-      "订单需通过本站支持的支付方式完成，订单状态以支付回执和系统记录为准。",
-      "禁止任何滥用行为，包括但不限于恶意下单、刷券套利、攻击系统、冒用他人账户、提交欺诈信息等；违规订单可被取消并限制账户权限。",
-      "因不可抗力、承运延迟、支付通道异常、系统维护或法律要求导致的服务中断，我们将尽快修复并协助处理。",
-    ].join("\n\n"),
+    title: POLICY_PAGE_DEFAULTS["terms-of-service"].title,
+    body: POLICY_PAGE_DEFAULTS["terms-of-service"].body,
   },
   {
     slug: "refund-policy",
@@ -68,9 +63,12 @@ const PAGES = [
   },
 ];
 
-async function hasSlug(slug) {
-  const [[row]] = await db.query("SELECT id FROM content_pages WHERE slug = ? LIMIT 1", [slug]);
-  return Boolean(row?.id);
+async function getPageBySlug(slug) {
+  const [[row]] = await db.query(
+    "SELECT id, body FROM content_pages WHERE slug = ? AND deleted_at IS NULL LIMIT 1",
+    [slug],
+  );
+  return row || null;
 }
 
 async function insertPage(page) {
@@ -86,21 +84,35 @@ async function main() {
   console.log("DB:", dbName.db);
 
   let inserted = 0;
+  let updated = 0;
   let skipped = 0;
   for (const page of PAGES) {
     // eslint-disable-next-line no-await-in-loop
-    const exists = await hasSlug(page.slug);
-    if (exists) {
-      skipped += 1;
-      console.log("skip:", page.slug);
+    const existing = await getPageBySlug(page.slug);
+    if (!existing) {
+      // eslint-disable-next-line no-await-in-loop
+      await insertPage(page);
+      inserted += 1;
+      console.log("insert:", page.slug);
       continue;
     }
-    // eslint-disable-next-line no-await-in-loop
-    await insertPage(page);
-    inserted += 1;
-    console.log("insert:", page.slug);
+    const isPlaceholder =
+      (page.slug === "about" && isAboutPlaceholderBody(existing.body))
+      || (["privacy-policy", "terms-of-service"].includes(page.slug) && isPolicyPlaceholderBody(existing.body));
+    if (isPlaceholder) {
+      // eslint-disable-next-line no-await-in-loop
+      await db.query(
+        "UPDATE content_pages SET body = ?, title = ?, last_modified_at = NOW() WHERE id = ?",
+        [page.body, page.title, existing.id],
+      );
+      updated += 1;
+      console.log("update placeholder:", page.slug);
+      continue;
+    }
+    skipped += 1;
+    console.log("skip:", page.slug);
   }
-  console.log(`done. inserted=${inserted}, skipped=${skipped}`);
+  console.log(`done. inserted=${inserted}, updated=${updated}, skipped=${skipped}`);
 }
 
 main()

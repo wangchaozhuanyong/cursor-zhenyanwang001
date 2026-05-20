@@ -3,7 +3,20 @@ export type ProductStatus = "draft" | "active" | "inactive";
 /** 与后端一致：0 草稿 · 1 上架 · 2 下架 */
 export type ProductLifecycleStatus = 0 | 1 | 2;
 
-export type ProductSortType = "default" | "sales" | "newest" | "price-asc" | "price-desc";
+export type ProductSortType =
+  | "default"
+  | "sales"
+  | "newest"
+  | "price-asc"
+  | "price-desc"
+  | "created_desc"
+  | "sales_30d_desc"
+  | "sales_amount_30d_desc"
+  | "gross_profit_30d_desc"
+  | "stock_asc"
+  | "stock_desc"
+  | "margin_asc"
+  | "margin_desc";
 
 export interface ProductVariant {
   id: string;
@@ -119,6 +132,24 @@ export interface Product {
   compliance_notice?: string | null;
   allow_index?: boolean | number | null;
   category_name?: string;
+  sku_count?: number;
+  enabled_sku_count?: number;
+  min_sku_price?: number | null;
+  max_sku_price?: number | null;
+  min_cost_price?: number | null;
+  max_cost_price?: number | null;
+  missing_cost_sku_count?: number;
+  stock_warning_sku_count?: number;
+  out_of_stock_sku_count?: number;
+  inventory_cost_value?: number;
+  inventory_retail_value?: number;
+  sales_qty_7d?: number;
+  sales_amount_7d?: number;
+  gross_profit_7d?: number;
+  sales_qty_30d?: number;
+  sales_amount_30d?: number;
+  gross_profit_30d?: number;
+  gross_margin_30d?: number | null;
   created_at?: string;
   createdAt?: string;
   published_at?: string;
@@ -142,6 +173,10 @@ export interface ProductListParams {
   max_price?: number;
   in_stock?: boolean | number;
   sort?: ProductSortType;
+  stock_status?: "normal" | "low" | "out";
+  cost_status?: "normal" | "missing";
+  min_margin?: number;
+  max_margin?: number;
   page?: number;
   pageSize?: number;
 }

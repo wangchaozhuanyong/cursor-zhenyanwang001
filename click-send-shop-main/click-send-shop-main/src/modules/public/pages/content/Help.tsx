@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, MessageCircle, Search } from "lucide-react";
-import { FAQS, FAQ_CATEGORIES } from "@/constants/help";
+import { DEFAULT_FAQS, DEFAULT_FAQ_CATEGORIES } from "@/constants/help";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
@@ -43,8 +43,8 @@ export default function Help() {
   const siteInfo = useSiteInfo();
   const siteName = siteInfo.siteName || "官方商城";
   const configuredHelp = useMemo(() => parseHelpConfig(siteInfo.helpCenterConfig), [siteInfo.helpCenterConfig]);
-  const faqCategories = configuredHelp?.categories || FAQ_CATEGORIES;
-  const faqs = configuredHelp?.faqs || FAQS;
+  const faqCategories = configuredHelp?.categories || DEFAULT_FAQ_CATEGORIES;
+  const faqs = configuredHelp?.faqs || DEFAULT_FAQS;
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [keyword, setKeyword] = useState("");

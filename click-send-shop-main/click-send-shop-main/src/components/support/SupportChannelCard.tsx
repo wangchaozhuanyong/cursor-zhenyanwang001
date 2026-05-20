@@ -36,29 +36,31 @@ export default function SupportChannelCard({ channel }: Props) {
     void trackEvent({ event_type: "support_qr_view", module: "support", page: "/support-download" });
   }, [showQr]);
 
-  const onPrimary = async () => {
-    if (action.primaryMode === "copy-wechat") {
+  const onOpenLink = () => {
+    if (!action.linkUrl) {
+      toast.message("暂未配置跳转链接");
+      return;
+    }
+    void trackEvent({
+      event_type: channel.type === "whatsapp" ? "contact_whatsapp_click" : "support_channel_click",
+      module: "support",
+      page: "/support-download",
+    });
+    safeOpenExternal(action.linkUrl);
+    if (channel.type === "wechat") {
+      toast.success("正在唤起微信，若未跳转请先复制微信号");
+    } else {
+      toast.success(`正在打开 ${cleanSupportText(channel.name) || "客服"}`);
+    }
+  };
+
+  const onCopy = async (mode: "copy-wechat" | "copy-account") => {
+    void trackEvent({ event_type: "support_channel_click", module: "support", page: "/support-download" });
+    if (mode === "copy-wechat") {
       await copyWithToast(action.copyText, "微信号已复制");
       return;
     }
-    if (action.primaryMode === "copy-account") {
-      await copyWithToast(action.copyText, "账号已复制");
-      return;
-    }
-    if (action.primaryMode === "open-link" && action.linkUrl) {
-      void trackEvent({
-        event_type: channel.type === "whatsapp" ? "contact_whatsapp_click" : "support_channel_click",
-        module: "support",
-        page: "/support-download",
-      });
-      safeOpenExternal(action.linkUrl);
-      toast.success(`正在打开 ${cleanSupportText(channel.name) || "客服"}`);
-      return;
-    }
-    if (action.primaryMode === "copy-wechat" || action.primaryMode === "copy-account") {
-      void trackEvent({ event_type: "support_channel_click", module: "support", page: "/support-download" });
-    }
-    toast.message("该渠道暂未配置可用操作");
+    await copyWithToast(action.copyText, "账号已复制");
   };
 
   return (
@@ -94,17 +96,37 @@ export default function SupportChannelCard({ channel }: Props) {
       ) : null}
 
       <div className="mt-4 flex flex-wrap gap-2">
-        {action.primaryMode !== "none" ? (
+        {action.primaryMode === "open-link" ? (
           <button
             type="button"
-            onClick={() => { void onPrimary(); }}
+            onClick={onOpenLink}
             className="inline-flex min-h-10 items-center justify-center gap-1 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]"
           >
-            {action.primaryMode === "open-link" ? <ExternalLink size={14} /> : <Copy size={14} />}
+            <ExternalLink size={14} />
             {action.primaryLabel}
           </button>
         ) : null}
-        {action.primaryMode === "open-link" && account ? (
+        {action.secondaryMode ? (
+          <button
+            type="button"
+            onClick={() => { void onCopy(action.secondaryMode!); }}
+            className="inline-flex min-h-10 items-center justify-center gap-1 rounded-full border border-[var(--theme-border)] px-4 py-2 text-xs font-semibold text-[var(--theme-text)]"
+          >
+            <Copy size={14} />
+            {action.secondaryLabel}
+          </button>
+        ) : null}
+        {action.primaryMode === "copy-wechat" || action.primaryMode === "copy-account" ? (
+          <button
+            type="button"
+            onClick={() => { void onCopy(action.primaryMode); }}
+            className="inline-flex min-h-10 items-center justify-center gap-1 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]"
+          >
+            <Copy size={14} />
+            {action.primaryLabel}
+          </button>
+        ) : null}
+        {action.primaryMode === "open-link" && account && !action.secondaryMode ? (
           <button
             type="button"
             onClick={() => { void copyWithToast(account, "账号已复制"); }}

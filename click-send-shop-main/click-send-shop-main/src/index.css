@@ -188,6 +188,14 @@
 }
 
 @layer utilities {
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  .header-safe-top {
+    padding-top: max(env(safe-area-inset-top, 0px), 6px);
+  }
   .store-page {
     background: var(--theme-bg);
     color: var(--theme-text);

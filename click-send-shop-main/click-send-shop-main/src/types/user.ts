@@ -43,6 +43,23 @@ export interface UserProfile {
   member_level_min_spent?: number;
   member_level_min_orders?: number;
   account_status?: string;
+  order_restricted?: boolean | number;
+  coupon_restricted?: boolean | number;
+  comment_restricted?: boolean | number;
+  status_overview?: {
+    account_status: string;
+    restrictions: {
+      order_restricted: boolean;
+      coupon_restricted: boolean;
+      comment_restricted: boolean;
+    };
+    latest_status_action: {
+      operator_id?: string | null;
+      operator_name?: string;
+      summary?: string;
+      created_at?: string | null;
+    } | null;
+  };
   related?: any;
   operation_logs?: any[];
 }

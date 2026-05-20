@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, MapPin, Plus, Trash2, Check, Loader2 } from "lucide-react";
+import { MapPin, Plus, Trash2, Check, Loader2 } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore, type Address } from "@/stores/useUserStore";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { BottomSheetForm } from "@/modules/micro-interactions";
 import { MALAYSIA_STATES } from "@/types/address";
 import { formatAddressForDisplay } from "@/services/addressService";
 import { THEME_ACCENT_CHIP_CLASS } from "@/utils/themeVisuals";
+import PageHeader from "@/components/PageHeader";
 
 type AddressForm = Omit<Address, "id">;
 const CARD = "rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
@@ -43,7 +44,12 @@ export default function AddressManage() {
     loadAddresses();
   }, [loadAddresses]);
 
-  const openAdd = () => { setEditId(null); setForm(EMPTY_FORM); setOpen(true); };
+  const openAdd = () => {
+    setEditId(null);
+    setForm(EMPTY_FORM);
+    setOpen(true);
+  };
+
   const openEdit = (addr: Address) => {
     setEditId(addr.id);
     setForm({
@@ -92,19 +98,23 @@ export default function AddressManage() {
 
   return (
     <div className="store-page min-h-screen text-[var(--theme-text)]">
-      <header className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 px-[var(--store-page-x)] py-3 backdrop-blur-md sm:px-4">
-        <div className="mx-auto flex w-full items-center justify-between sm:max-w-lg">
-          <div className="flex items-center gap-3">
-            <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)]"><ArrowLeft size={20} /></button>
-            <h1 className="text-base font-semibold">收货地址</h1>
-          </div>
-          <button onClick={openAdd} className="inline-flex items-center gap-1 rounded-full bg-[var(--theme-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]"><Plus size={14} />新增</button>
-        </div>
-      </header>
+      <PageHeader
+        title="收货地址"
+        onBack={goBack}
+        rightSlot={
+          <button onClick={openAdd} className="inline-flex items-center gap-1 rounded-full bg-[var(--theme-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]">
+            <Plus size={14} />
+            新增
+          </button>
+        }
+      />
 
       <main className="mx-auto w-full px-[var(--store-page-x)] py-[var(--store-page-y)] pb-24 sm:max-w-lg sm:px-4 sm:py-4">
         {addressLoading ? (
-          <div className="flex flex-col items-center py-20 text-[var(--theme-muted)]"><Loader2 size={24} className="mb-3 animate-spin" /><p className="text-sm">加载中...</p></div>
+          <div className="flex flex-col items-center py-20 text-[var(--theme-muted)]">
+            <Loader2 size={24} className="mb-3 animate-spin" />
+            <p className="text-sm">加载中...</p>
+          </div>
         ) : addresses.length === 0 ? (
           <div className={`${CARD} flex flex-col items-center py-12`}>
             <MapPin size={40} className="text-[var(--theme-muted)]" />
@@ -134,7 +144,17 @@ export default function AddressManage() {
                   </button>
                   <div className="flex items-center gap-3">
                     <button onClick={() => openEdit(addr)} className="text-xs text-[var(--theme-muted)]">编辑</button>
-                    <button onClick={async () => { try { await removeAddress(addr.id); toast.success("已删除", toastPresetQuickSuccess); } catch { toast.error("删除失败"); } }} className="text-xs text-[var(--theme-danger)]">
+                    <button
+                      onClick={async () => {
+                        try {
+                          await removeAddress(addr.id);
+                          toast.success("已删除", toastPresetQuickSuccess);
+                        } catch {
+                          toast.error("删除失败");
+                        }
+                      }}
+                      className="text-xs text-[var(--theme-danger)]"
+                    >
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -156,21 +176,25 @@ export default function AddressManage() {
         height="90vh"
       >
         <div className="space-y-3">
-            <input value={form.recipient_name} onChange={(e) => setForm((f) => ({ ...f, recipient_name: e.target.value }))} placeholder="收货人姓名" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
-            <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="手机号（如 0123456789）" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
-            <input value={form.line1} onChange={(e) => setForm((f) => ({ ...f, line1: e.target.value }))} placeholder="地址行 1（门牌号、街道）" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
-            <input value={form.line2} onChange={(e) => setForm((f) => ({ ...f, line2: e.target.value }))} placeholder="地址行 2（可选）" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
-            <div className="grid grid-cols-2 gap-2">
-              <input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder="城市" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
-              <input value={form.postcode} onChange={(e) => setForm((f) => ({ ...f, postcode: e.target.value }))} placeholder="邮编（5位）" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
-            </div>
-            <select value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none">
-              {MALAYSIA_STATES.map((state) => <option key={state} value={state}>{state}</option>)}
-            </select>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={form.isDefault} onChange={(e) => setForm((f) => ({ ...f, isDefault: e.target.checked }))} />
-              设为默认地址
-            </label>
+          <input value={form.recipient_name} onChange={(e) => setForm((f) => ({ ...f, recipient_name: e.target.value }))} placeholder="收货人姓名" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
+          <input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="手机号（如 0123456789）" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
+          <input value={form.line1} onChange={(e) => setForm((f) => ({ ...f, line1: e.target.value }))} placeholder="地址行 1（门牌号、街道）" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
+          <input value={form.line2} onChange={(e) => setForm((f) => ({ ...f, line2: e.target.value }))} placeholder="地址行 2（可选）" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
+          <div className="grid grid-cols-2 gap-2">
+            <input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder="城市" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
+            <input value={form.postcode} onChange={(e) => setForm((f) => ({ ...f, postcode: e.target.value }))} placeholder="邮编（5 位）" className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none" />
+          </div>
+          <select value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none">
+            {MALAYSIA_STATES.map((state) => (
+              <option key={state} value={state}>
+                {state}
+              </option>
+            ))}
+          </select>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={form.isDefault} onChange={(e) => setForm((f) => ({ ...f, isDefault: e.target.checked }))} />
+            设为默认地址
+          </label>
         </div>
       </BottomSheetForm>
     </div>

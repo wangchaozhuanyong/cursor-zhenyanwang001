@@ -24,6 +24,7 @@ const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const logisticsModule = require('../../logistics');
 const orderDb = repo.getPool();
 const orderPricing = require('../order.pricing');
+const orderPoints = require('./orderPoints.service');
 
 function getUserApi() {
   return /** @type {any} */ (userModule).api || {};
@@ -252,7 +253,6 @@ async function createOrder(userId, body) {
       const specs = variant?.id ? (specMap.get(variant.id) || []) : [];
       const specText = specs.map((x) => x.value).filter(Boolean).join(' / ');
       rawAmount += price * item.qty;
-      totalPoints += p.points * item.qty;
       return {
         productId: p.id,
         variantId: variant?.id || null,
@@ -270,6 +270,7 @@ async function createOrder(userId, body) {
         image: p.cover_image,
         variantImage: variant?.image_url || '',
         price,
+        // Legacy only: preserve old product points snapshot; new order points come from pointsEngine item_results.
         points: p.points,
         qty: item.qty,
         activityId: activity?.activity_id || null,
@@ -349,7 +350,7 @@ async function createOrder(userId, body) {
       use_reward_cash,
       reward_cash_amount,
     }, conn);
-    const loyalty = /** @type {Record<string, number>} */ (pricing.loyalty || {});
+    const loyalty = /** @type {any} */ (pricing.loyalty || {});
     const totalAmount = Number(pricing.finalTotal || Math.max(0, rawAmount - discountAmount + shippingFee));
     totalPoints = Number(loyalty.earned_points || totalPoints || 0);
     const discountMeta = {
@@ -410,6 +411,18 @@ async function createOrder(userId, body) {
       rewardCashUsed: Number(loyalty.reward_cash_used || 0),
       rewardCashDiscountAmount: Number(loyalty.reward_cash_discount_amount || 0),
       loyaltyMeta: {
+        settings_snapshot: loyalty.points_settings_snapshot || null,
+        product_rule_snapshots: loyalty.product_rule_snapshots || [],
+        member_level_snapshot: loyalty.member_level_snapshot || { points_multiplier: 1 },
+        points_used: Number(loyalty.points_used || 0),
+        points_discount_amount: Number(loyalty.points_discount_amount || 0),
+        earned_points: totalPoints,
+        point_value_myr: Number(loyalty.point_value_myr || 0.01),
+        max_usable_points: Number(loyalty.max_usable_points || 0),
+        redeem_step: Number(loyalty.points_settings_snapshot?.redeem_step || 1),
+        adjusted: !!loyalty.adjusted,
+        disabled_reason: loyalty.disabled_reason || '',
+        calculation_version: loyalty.calculation_version || 'loyalty_engine_v1',
         use_points: !!use_points,
         use_reward_cash: !!use_reward_cash,
         available_points: Number(loyalty.available_points || 0),
@@ -428,16 +441,11 @@ async function createOrder(userId, body) {
     }
 
     if (Number(loyalty.points_used || 0) > 0) {
-      await requireApiMethod(getUserApi(), 'changePoints')(conn, {
-        userId,
-        amount: -Number(loyalty.points_used || 0),
-        action: 'order_redeem',
-        description: `订单积分抵扣 ${orderNo}`,
-        orderId,
-        orderNo,
-        sourceType: 'order_checkout',
-        relatedRecordId: `order_redeem:${orderId}`,
-        allowNegative: false,
+      await orderPoints.applyOrderRedeem(conn, {
+        id: orderId,
+        user_id: userId,
+        order_no: orderNo,
+        points_used: Number(loyalty.points_used || 0),
       });
     }
     if (Number(loyalty.reward_cash_used || 0) > 0) {
@@ -461,10 +469,11 @@ async function createOrder(userId, body) {
       });
     }
 
+    const earnItemsByProductId = new Map((loyalty.item_results || []).map((x) => [String(x.product_id), x]));
+    const redeemItemsByProductId = new Map((loyalty.redeem_item_results || []).map((x) => [String(x.product_id), x]));
     for (const oi of orderItems) {
-      const lineSubtotal = Number(oi.price) * Number(oi.qty);
-      const totalSubtotal = rawAmount || 1;
-      const lineEarned = Math.max(0, Math.floor((lineSubtotal / totalSubtotal) * Number(totalPoints || 0)));
+      const earnLine = earnItemsByProductId.get(String(oi.productId)) || {};
+      const redeemLine = redeemItemsByProductId.get(String(oi.productId)) || {};
       await repo.insertOrderItem(conn, {
         id: generateId(),
         orderId,
@@ -478,11 +487,11 @@ async function createOrder(userId, body) {
         variantImage: oi.variantImage,
         price: oi.price,
         points: oi.points,
-        earnedPoints: lineEarned,
-        pointsRuleSnapshot: {
-          strategy: 'global_amount_based',
-          product_points_legacy: oi.points,
-        },
+        earnedPoints: Number(earnLine.earned_points || 0),
+        pointsRuleSnapshot: earnLine.points_rule_snapshot || redeemLine.points_rule_snapshot || null,
+        redeemableAmount: Number(redeemLine.redeemable_amount || 0),
+        isRestrictedExcluded: !!redeemLine.is_restricted_excluded,
+        linePointsBaseAmount: Number(earnLine.line_points_base_amount || 0),
         qty: oi.qty,
         activityId: oi.activityId,
         activityTitle: oi.activityTitle,
@@ -631,20 +640,14 @@ async function cancelPendingOrderInTransaction(conn, order, options = {}) {
     }
   }
 
-  await requireApiMethod(getUserApi(), 'reverseOrderPoints')(conn, order, pointReason, {
+  await orderPoints.reverseOrderEarnPoints(conn, order, {
     trigger,
+    description: pointReason,
   });
   if (Number(order.points_used || 0) > 0) {
-    await requireApiMethod(getUserApi(), 'changePoints')(conn, {
-      userId: order.user_id,
-      amount: Number(order.points_used || 0),
-      action: 'order_redeem_refund',
+    await orderPoints.reverseOrderRedeem(conn, order, {
+      trigger,
       description: `订单取消退回积分 ${order.order_no}`,
-      orderId: order.id,
-      orderNo: order.order_no,
-      sourceType: 'order_cancel',
-      relatedRecordId: `order_redeem_refund:${order.id}`,
-      allowNegative: true,
     });
   }
   if (Number(order.reward_cash_used || 0) > 0) {
@@ -725,7 +728,10 @@ async function createStripeCheckoutSession(userId, orderId) {
  */
 async function completeShippedOrder(conn, order, options = {}) {
   await repo.updateOrderStatus(conn, order.id, ORDER_STATUS.COMPLETED);
-  await requireApiMethod(getUserApi(), 'settleOrderPoints')(conn, order, options);
+  await orderPoints.grantOrderEarnPoints(conn, order, {
+    ...options,
+    timing: 'order_completed',
+  });
   await requireApiMethod(getUserApi(), 'settleOrderRewards')(conn, order, options);
 }
 
@@ -763,9 +769,15 @@ async function previewOrder(userId, body) {
       final_amount: pricing.finalTotal,
       total_points: pricing.totalPoints,
       earned_points: pricing.loyalty?.earned_points || pricing.totalPoints || 0,
+      points_used: pricing.loyalty?.points_used || 0,
       available_points: pricing.loyalty?.available_points || 0,
       max_usable_points: pricing.loyalty?.max_usable_points || 0,
       points_discount_amount: pricing.loyalty?.points_discount_amount || 0,
+      point_value_myr: pricing.loyalty?.point_value_myr || 0.01,
+      disabled_reason: pricing.loyalty?.disabled_reason || '',
+      adjusted: !!pricing.loyalty?.adjusted,
+      points_summary: pricing.loyalty?.points_summary || null,
+      loyalty_meta: pricing.loyalty?.points_summary || null,
       available_reward_balance: pricing.loyalty?.available_reward_balance || 0,
       max_usable_reward_cash: pricing.loyalty?.max_usable_reward_cash || 0,
       reward_cash_discount_amount: pricing.loyalty?.reward_cash_discount_amount || 0,

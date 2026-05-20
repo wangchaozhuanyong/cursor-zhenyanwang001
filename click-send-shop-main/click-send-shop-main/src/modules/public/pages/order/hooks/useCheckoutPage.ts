@@ -46,7 +46,6 @@ export function useCheckoutPage() {
   const isBuyNow = !!buyNowItem;
   const items = isBuyNow ? [buyNowItem] : getSelectedItems();
   const totalAmount = () => items.reduce((s, i) => s + getCartLinePrice(i), 0);
-  const totalPoints = () => items.reduce((s, i) => s + i.product.points * i.qty, 0);
   const { submitOrder, submitting } = useOrderStore();
   const { getDefaultAddress, loadAddresses } = useUserStore();
   const loadCoupons = useCouponStore((s) => s.loadCoupons);
@@ -721,7 +720,7 @@ export function useCheckoutPage() {
     discountAmount,
     discountLines,
     finalTotal,
-    totalPointsValue: totalPoints(),
+    totalPointsValue: Number(orderPreview?.earned_points || orderPreview?.total_points || 0),
     sstCfg,
     sstPreview,
     submitting,

@@ -102,7 +102,6 @@ export default function AdminProductForm() {
     original_price: "",
     sales_count: "",
     stock: "",
-    points: "",
     category_id: "",
     sort_order: "",
     description: "",
@@ -178,7 +177,6 @@ export default function AdminProductForm() {
                 data.original_price != null ? data.original_price.toString() : "",
               sales_count: data.sales_count != null ? String(data.sales_count) : "0",
               stock: data.stock?.toString() || "",
-              points: data.points?.toString() || "",
               category_id: data.category_id || "",
               sort_order: data.sort_order?.toString() || "",
               description: data.description || "",
@@ -434,7 +432,6 @@ export default function AdminProductForm() {
         original_price:
           form.original_price === "" || !Number.isFinite(opNum) ? null : opNum,
         sales_count: Number.isFinite(scNum) ? scNum : 0,
-        points: parseInt(form.points, 10) || 0,
         category_id: form.category_id || "",
         sort_order: parseInt(form.sort_order, 10) || 0,
         description: form.description,
@@ -668,9 +665,8 @@ export default function AdminProductForm() {
                 <input type="number" min={0} value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder="0" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
                 <p className="mt-1 text-[10px] text-muted-foreground"><Tx>保存时写入默认 SKU；大批量入库仍建议在库存中心操作。</Tx></p>
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>积分值</Tx></label>
-                <input value={form.points} onChange={(e) => setForm({ ...form, points: e.target.value })} placeholder="与售价相同" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+              <div className="rounded-lg border border-dashed border-border bg-secondary/50 px-4 py-3 text-xs leading-5 text-muted-foreground">
+                <Tx>商品积分不再在商品表单维护，请到「活动管理 / 积分管理」统一配置。</Tx>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">

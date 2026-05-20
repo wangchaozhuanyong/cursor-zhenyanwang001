@@ -298,6 +298,9 @@ router.post('/users/:id/unbind-wechat', adminAuth, requirePermission('user.updat
 router.get('/users/:id', adminAuth, requirePermission('user.view'), userQueryLimiter, userCtrl.getById);
 router.put('/users/:id', adminAuth, requirePermission('user.update'), userCtrl.update);
 router.put('/users/:id/status', adminAuth, requirePermission('user.update'), userCtrl.updateStatus);
+router.put('/users/:id/account-status', adminAuth, requirePermission('user.update'), userCtrl.updateAccountStatus);
+router.put('/users/:id/restrictions', adminAuth, requirePermission('user.update'), userCtrl.updateRestrictions);
+router.get('/users/:id/status-overview', adminAuth, requirePermission('user.view'), userCtrl.getStatusOverview);
 router.put('/users/:id/subordinate', adminAuth, requirePermission('user.update'), userCtrl.updateSubordinate);
 router.put('/users/:userId/points', adminAuth, requirePermission('user.points'), userCtrl.adjustPoints);
 
@@ -381,7 +384,14 @@ router.get('/referral-rules', adminAuth, requirePermission('referral.manage'), s
 router.put('/referral-rules/:id', adminAuth, requirePermission('referral.manage'), settingsCtrl.updateReferral);
 router.get('/points/rules', adminAuth, requirePermission('points.manage'), settingsCtrl.listPoints);
 router.put('/points/rules/:id', adminAuth, requirePermission('points.manage'), settingsCtrl.updatePoints);
+router.get('/points/settings', adminAuth, requirePermission('points.manage'), pointsCtrl.getSettings);
+router.put('/points/settings', adminAuth, requirePermission('points.manage'), pointsCtrl.updateSettings);
+router.get('/points/product-rules', adminAuth, requirePermission('points.manage'), pointsCtrl.listProductRules);
+router.post('/points/product-rules', adminAuth, requirePermission('points.manage'), pointsCtrl.createProductRule);
+router.put('/points/product-rules/:id', adminAuth, requirePermission('points.manage'), pointsCtrl.updateProductRule);
+router.delete('/points/product-rules/:id', adminAuth, requirePermission('points.manage'), pointsCtrl.deleteProductRule);
 router.get('/points/records', adminAuth, requirePermission('points.manage'), pointsCtrl.listRecords);
+router.post('/users/:userId/points', adminAuth, requirePermission('user.points'), userCtrl.adjustPoints);
 router.get('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.getSite);
 router.put('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.updateSite);
 router.post(

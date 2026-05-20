@@ -1,6 +1,6 @@
 ﻿import { formatDateTime } from "@/utils/formatDateTime";
 ﻿import { useEffect, useState } from "react";
-import { ArrowLeft, Gift, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { Gift, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useNavigate } from "react-router-dom";
 import * as rewardService from "@/services/rewardService";
@@ -17,6 +17,7 @@ import {
   THEME_TEXT_DANGER,
   THEME_TEXT_SUCCESS,
 } from "@/utils/themeVisuals";
+import PageHeader from "@/components/PageHeader";
 
 export default function Rewards() {
   const goBack = useGoBack();
@@ -79,14 +80,7 @@ export default function Rewards() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 bg-background/95 px-[var(--store-page-x)] py-3 backdrop-blur-md sm:px-4">
-        <div className="mx-auto flex w-full items-center gap-3 sm:max-w-lg">
-          <button onClick={goBack}>
-            <ArrowLeft size={20} className="text-foreground" />
-          </button>
-          <h1 className="text-base font-semibold text-foreground">返现记录</h1>
-        </div>
-      </header>
+      <PageHeader title="返现记录" onBack={goBack} />
 
       <main className="mx-auto w-full px-[var(--store-page-x)] py-4 sm:max-w-lg sm:px-4 sm:py-6">
         <div className={`rounded-xl p-6 text-center ${THEME_ACCENT_HERO_SHELL}`}>

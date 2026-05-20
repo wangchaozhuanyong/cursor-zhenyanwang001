@@ -10,6 +10,31 @@ async function selectRewardSettings() {
   return row || null;
 }
 
+async function selectProductRules(q) {
+  const runner = q || db;
+  const [rows] = await runner.query(
+    `SELECT *
+     FROM loyalty_points_product_rules
+     WHERE enabled = 1
+     ORDER BY priority ASC, updated_at DESC`,
+  );
+  return rows;
+}
+
+async function selectUserMemberLevel(q, userId) {
+  if (!userId) return null;
+  const runner = q || db;
+  const [[row]] = await runner.query(
+    `SELECT ml.id, ml.name, ml.points_multiplier
+     FROM users u
+     LEFT JOIN member_levels ml ON ml.id = u.member_level_id AND ml.enabled = 1
+     WHERE u.id = ?
+     LIMIT 1`,
+    [userId],
+  );
+  return row?.id ? row : null;
+}
+
 function parseJsonArray(raw, fallback = []) {
   if (!raw) return fallback;
   if (Array.isArray(raw)) return raw;
@@ -24,6 +49,8 @@ function parseJsonArray(raw, fallback = []) {
 module.exports = {
   selectPointsSettings,
   selectRewardSettings,
+  selectProductRules,
+  selectUserMemberLevel,
   parseJsonArray,
 };
 

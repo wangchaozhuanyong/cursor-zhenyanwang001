@@ -1,0 +1,114 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const {
+  calculateOrderEarnedPoints,
+  calculateMaxUsablePoints,
+  resolveProductPointRule,
+  roundPoints,
+} = require('../src/modules/loyalty/service/pointsEngine.service');
+
+const baseSettings = {
+  display_enabled: 1,
+  earn_enabled: 1,
+  redeem_enabled: 1,
+  earn_mode: 'amount_plus_product_rule',
+  earn_currency_unit: 1,
+  earn_points_unit: 1,
+  earn_rounding: 'floor',
+  point_value_myr: 0.01,
+  points_per_currency: 100,
+  min_redeem_points: 10,
+  redeem_step: 1,
+  max_redeem_percent: 30,
+  max_redeem_amount: 0,
+  min_order_amount: 0,
+  redeem_scope: 'exclude_restricted',
+};
+
+test('roundPoints honors floor, round and ceil', () => {
+  assert.equal(roundPoints(10.5, 'floor'), 10);
+  assert.equal(roundPoints(10.5, 'round'), 11);
+  assert.equal(roundPoints(10.1, 'ceil'), 11);
+});
+
+test('global amount earn grants RM1 = 1 point', () => {
+  const result = calculateOrderEarnedPoints({
+    settings: baseSettings,
+    orderItems: [{ product_id: 'p1', qty: 1, price: 100, subtotal: 100 }],
+  });
+  assert.equal(result.earned_points, 100);
+});
+
+test('product rule beats category rule and fixed_per_item uses quantity', () => {
+  const rules = [
+    { id: 'cat', scope_type: 'category', scope_id: 'c1', earn_mode: 'no_points', priority: 1, enabled: 1, earn_enabled: 1 },
+    { id: 'prod', scope_type: 'product', scope_id: 'p1', earn_mode: 'fixed_per_item', fixed_points: 5, priority: 100, enabled: 1, earn_enabled: 1 },
+  ];
+  const product = { id: 'p1', category_id: 'c1' };
+  assert.equal(resolveProductPointRule(product, rules).id, 'prod');
+  const result = calculateOrderEarnedPoints({
+    settings: baseSettings,
+    productRules: rules,
+    productMap: { p1: product },
+    orderItems: [{ product_id: 'p1', qty: 3, price: 100, subtotal: 300 }],
+  });
+  assert.equal(result.earned_points, 15);
+});
+
+test('fixed_per_order only grants once for the same rule', () => {
+  const rule = { id: 'once', scope_type: 'category', scope_id: 'c1', earn_mode: 'fixed_per_order', fixed_points: 20, priority: 1, enabled: 1, earn_enabled: 1 };
+  const result = calculateOrderEarnedPoints({
+    settings: baseSettings,
+    productRules: [rule],
+    productMap: { p1: { id: 'p1', category_id: 'c1' }, p2: { id: 'p2', category_id: 'c1' } },
+    orderItems: [
+      { product_id: 'p1', qty: 1, price: 30, subtotal: 30 },
+      { product_id: 'p2', qty: 1, price: 40, subtotal: 40 },
+    ],
+  });
+  assert.equal(result.earned_points, 20);
+});
+
+test('amount_percent grants points from paid amount percent', () => {
+  const result = calculateOrderEarnedPoints({
+    settings: baseSettings,
+    productRules: [{ id: 'pct', scope_type: 'product', scope_id: 'p1', earn_mode: 'amount_percent', points_percent: 10, enabled: 1, earn_enabled: 1 }],
+    productMap: { p1: { id: 'p1' } },
+    orderItems: [{ product_id: 'p1', qty: 1, price: 120, subtotal: 100, line_paid_amount: 100 }],
+  });
+  assert.equal(result.earned_points, 10);
+});
+
+test('member multiplier applies after base points', () => {
+  const result = calculateOrderEarnedPoints({
+    settings: baseSettings,
+    memberLevel: { id: 'gold', points_multiplier: 2 },
+    orderItems: [{ product_id: 'p1', qty: 1, price: 100, subtotal: 100 }],
+  });
+  assert.equal(result.earned_points, 200);
+});
+
+test('max usable points honors cap and redeem step clamp', () => {
+  const result = calculateMaxUsablePoints({
+    settings: { ...baseSettings, redeem_step: 10 },
+    userPointsBalance: 5000,
+    pointsToUse: 255,
+    orderItems: [{ product_id: 'p1', qty: 1, price: 100, subtotal: 100 }],
+  });
+  assert.equal(result.max_usable_points, 3000);
+  assert.equal(result.points_used, 250);
+  assert.equal(result.points_discount_amount, 2.5);
+  assert.equal(result.adjusted, true);
+});
+
+test('restricted products are excluded from redeem base', () => {
+  const result = calculateMaxUsablePoints({
+    settings: baseSettings,
+    userPointsBalance: 5000,
+    pointsToUse: 100,
+    productMap: { p1: { id: 'p1', is_restricted: true } },
+    orderItems: [{ product_id: 'p1', qty: 1, price: 100, subtotal: 100 }],
+  });
+  assert.equal(result.max_usable_points, 0);
+  assert.equal(result.disabled_reason, '当前商品不支持积分抵扣');
+});

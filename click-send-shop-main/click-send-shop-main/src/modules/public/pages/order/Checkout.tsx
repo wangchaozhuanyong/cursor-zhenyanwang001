@@ -1,5 +1,4 @@
 ﻿import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useMediaSheetMode } from "@/modules/micro-interactions";
@@ -21,6 +20,7 @@ import { parseOrderPaymentTimeoutFromSite } from "@/utils/orderPaymentTimeout";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { submitCtaLabel } from "./utils/checkoutText";
 import MarketingPositionNotices from "@/modules/public/components/marketing/MarketingPositionNotices";
+import PageHeader from "@/components/PageHeader";
 
 export default function Checkout() {
   useDocumentTitle("结算");
@@ -75,15 +75,11 @@ export default function Checkout() {
 
   return (
     <div className="store-bottom-action-space min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
-      <header className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 px-[var(--store-page-x)] py-3 backdrop-blur-md md:px-6 border-[var(--theme-border)]">
-        <div className="mx-auto flex w-full max-w-screen-xl items-center gap-3">
-          <button onClick={checkout.goBack} aria-label="返回购物车" className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target">
-            <ArrowLeft size={20} className="text-foreground" />
-          </button>
-          <h1 className="flex-1 text-base font-semibold text-foreground md:text-xl">确认订单</h1>
-          <NotificationIconButton unreadCount={checkout.unreadCount} onClick={checkout.goNotifications} />
-        </div>
-      </header>
+      <PageHeader
+        title="确认订单"
+        onBack={checkout.goBack}
+        rightSlot={<NotificationIconButton unreadCount={checkout.unreadCount} onClick={checkout.goNotifications} />}
+      />
 
       <main className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] py-[var(--store-page-y)] md:px-6 md:py-6">
         <div className="md:grid md:grid-cols-[1fr_380px] md:items-start md:gap-8">

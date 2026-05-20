@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, forwardRef } from "react";
-import { ArrowLeft, Ticket, Loader2 } from "lucide-react";
+import { Ticket, Loader2 } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
@@ -8,9 +8,8 @@ import { useCouponStore } from "@/stores/useCouponStore";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import type { UserCoupon } from "@/types/coupon";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
-import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
-import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { cn } from "@/lib/utils";
+import PageHeader from "@/components/PageHeader";
 import {
   THEME_ACCENT_HERO_ICON,
   THEME_ACCENT_HERO_ICON_WRAP,
@@ -61,8 +60,6 @@ type Tab = "available" | "mine";
 
 export default function Coupons() {
   const goBack = useGoBack();
-  const { themeConfig } = useThemeRuntime();
-  const headerSurface = getStoreHeaderSurfaceClass(themeConfig);
   const { coupons: rawCoupons, loading, error, loadCoupons, claimCoupon } = useCouponStore();
   const [tab, setTab] = useState<Tab>("available");
   const [claimingId, setClaimingId] = useState<string | null>(null);
@@ -117,24 +114,7 @@ export default function Coupons() {
 
   return (
     <div className="store-page min-h-screen pb-6">
-      <header
-        className={cn(
-          "sticky top-0 z-40 border-b backdrop-blur-md",
-          headerSurface,
-          "bg-[var(--theme-bg)]/92",
-        )}
-      >
-        <div className="mx-auto flex w-full items-center gap-3 px-[var(--store-page-x)] py-3 sm:max-w-lg sm:px-4">
-          <button
-            type="button"
-            onClick={goBack}
-            className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))]"
-          >
-            <ArrowLeft size={20} className="text-[var(--theme-text)]" />
-          </button>
-          <h1 className="text-base font-semibold text-[var(--theme-text)]">优惠券</h1>
-        </div>
-      </header>
+      <PageHeader title="优惠券" onBack={goBack} />
 
       <main className="mx-auto w-full px-[var(--store-page-x)] sm:max-w-lg sm:px-4">
         <motion.div

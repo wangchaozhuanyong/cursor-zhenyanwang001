@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { ArrowLeft, CheckCircle2, UploadCloud, XCircle } from "lucide-react";
+import { CheckCircle2, UploadCloud, XCircle } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import * as uploadService from "@/services/uploadService";
 import { toast } from "sonner";
+import PageHeader from "@/components/PageHeader";
 
 type VerifyResult = {
   url: string;
@@ -42,14 +43,7 @@ export default function UploadVerify() {
 
   return (
     <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
-      <header className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 px-[var(--store-page-x)] py-3 backdrop-blur-md sm:px-4">
-        <div className="mx-auto flex w-full items-center gap-3 sm:max-w-lg">
-          <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
-            <ArrowLeft size={20} className="text-foreground" />
-          </button>
-          <h1 className="text-base font-semibold text-foreground">上传验收</h1>
-        </div>
-      </header>
+      <PageHeader title="上传验收" onBack={goBack} />
 
       <main className="mx-auto w-full px-[var(--store-page-x)] py-4 sm:max-w-lg sm:px-4 sm:py-6">
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
@@ -60,8 +54,7 @@ export default function UploadVerify() {
             <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" disabled={uploading} />
           </label>
           <p className="mt-3 text-xs text-muted-foreground">
-            当前策略：{result?.mode ?? "s3"}。上传走 multipart；上线启用预签名时设 VITE_UPLOAD_PRESIGN=1。
-            当策略为 s3 时，返回域名必须是 S3/CloudFront 或白名单域名。
+            当前策略：{result?.mode ?? "s3"}。启用预签名上传时请设置 `VITE_UPLOAD_PRESIGN=1`。
           </p>
         </div>
 

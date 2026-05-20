@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 type DeferredPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -24,12 +24,13 @@ function isStandalone() {
 
 export default function PwaInstallPrompt() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [deferredPrompt, setDeferredPrompt] = useState<DeferredPromptEvent | null>(null);
   const [closed, setClosed] = useState(false);
-  const [installing, setInstalling] = useState(false);
 
   const isAdmin = location.pathname.startsWith("/admin");
   const shouldHideByDismiss = useMemo(() => {
+    if (typeof window === "undefined") return false;
     const raw = localStorage.getItem(DISMISS_KEY);
     if (!raw) return false;
     const ts = Number(raw);
@@ -41,7 +42,6 @@ export default function PwaInstallPrompt() {
       event.preventDefault();
       setDeferredPrompt(event as DeferredPromptEvent);
     };
-
     window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
     return () => window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
   }, []);
@@ -57,45 +57,29 @@ export default function PwaInstallPrompt() {
 
   if (isAdmin || closed || shouldHideByDismiss || isStandalone()) return null;
 
-  const showNativePrompt = !!deferredPrompt;
-  const showIosGuide = !showNativePrompt && isIosSafari();
-  if (!showNativePrompt && !showIosGuide) return null;
+  const showPrompt = !!deferredPrompt || isIosSafari();
+  if (!showPrompt) return null;
 
   const dismiss = () => {
     localStorage.setItem(DISMISS_KEY, String(Date.now()));
     setClosed(true);
   };
 
-  const install = async () => {
-    if (!deferredPrompt) return;
-    setInstalling(true);
-    try {
-      await deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-    } finally {
-      setDeferredPrompt(null);
-      setInstalling(false);
-      dismiss();
-    }
-  };
-
   return (
     <div className="fixed bottom-20 left-1/2 z-toast w-[min(92vw,420px)] -translate-x-1/2 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]">
-      <p className="text-sm font-semibold text-[var(--theme-text)]">安装到桌面</p>
-      {showNativePrompt ? (
-        <p className="mt-1 text-xs leading-relaxed text-[var(--theme-text-muted)]">可将商城安装到手机桌面，打开体验更接近 App。</p>
-      ) : (
-        <p className="mt-1 text-xs leading-relaxed text-[var(--theme-text-muted)]">iPhone 用户请点击 Safari 分享按钮，再选择“添加到主屏幕”。</p>
-      )}
+      <p className="text-sm font-semibold text-[var(--theme-text)]">安装到桌面更方便</p>
+      <p className="mt-1 text-xs leading-relaxed text-[var(--theme-text-muted)]">点击安装后可像 App 一样直接从桌面打开。</p>
       <div className="mt-3 flex items-center justify-end gap-2">
         <button type="button" onClick={dismiss} className="rounded-full border border-[var(--theme-border)] px-3 py-1.5 text-xs text-[var(--theme-text-muted)]">
           稍后再说
         </button>
-        {showNativePrompt ? (
-          <button type="button" onClick={install} disabled={installing} className="rounded-full bg-[var(--theme-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
-            {installing ? "处理中..." : "安装到桌面"}
-          </button>
-        ) : null}
+        <button
+          type="button"
+          onClick={() => navigate("/install")}
+          className="rounded-full bg-[var(--theme-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]"
+        >
+          去安装
+        </button>
       </div>
     </div>
   );

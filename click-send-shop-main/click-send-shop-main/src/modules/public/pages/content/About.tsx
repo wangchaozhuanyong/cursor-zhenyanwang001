@@ -1,8 +1,8 @@
-import { ArrowLeft } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
+import PageHeader from "@/components/PageHeader";
 
 export default function About() {
   const goBack = useGoBack();
@@ -17,14 +17,7 @@ export default function About() {
         canonical={buildCanonical("/about")}
         robots="index,follow"
       />
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
-          <button onClick={goBack} aria-label="返回" className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
-            <ArrowLeft size={20} className="text-foreground" />
-          </button>
-          <h1 className="text-base font-semibold text-foreground">关于我们</h1>
-        </div>
-      </header>
+      <PageHeader title="关于我们" onBack={goBack} />
       <main className="mx-auto max-w-lg space-y-4 px-4 pt-4">
         <section className="rounded-2xl border border-border bg-card p-5">
           <h2 className="text-lg font-semibold text-foreground">{siteName}</h2>

@@ -67,6 +67,21 @@ function buildUserListWhere(keyword, tagId, filters = {}) {
     where += ' AND u.account_status = ?';
     params.push(filters.accountStatus);
   }
+  if (filters.orderRestricted === '1' || filters.orderRestricted === true) {
+    where += ' AND COALESCE(ur.order_restricted, 0) = 1';
+  } else if (filters.orderRestricted === '0' || filters.orderRestricted === false) {
+    where += ' AND COALESCE(ur.order_restricted, 0) = 0';
+  }
+  if (filters.couponRestricted === '1' || filters.couponRestricted === true) {
+    where += ' AND COALESCE(ur.coupon_restricted, 0) = 1';
+  } else if (filters.couponRestricted === '0' || filters.couponRestricted === false) {
+    where += ' AND COALESCE(ur.coupon_restricted, 0) = 0';
+  }
+  if (filters.commentRestricted === '1' || filters.commentRestricted === true) {
+    where += ' AND COALESCE(ur.comment_restricted, 0) = 1';
+  } else if (filters.commentRestricted === '0' || filters.commentRestricted === false) {
+    where += ' AND COALESCE(ur.comment_restricted, 0) = 0';
+  }
   if (filters.dateFrom) {
     where += ' AND u.created_at >= ?';
     params.push(filters.dateFrom);
@@ -116,7 +131,11 @@ async function getConnection() {
 
 async function countUsers(where, params) {
   const [[{ total }]] = await db.query(
-    `SELECT COUNT(*) AS total FROM users u LEFT JOIN user_statistics us ON us.user_id = u.id ${where}`,
+    `SELECT COUNT(*) AS total
+     FROM users u
+     LEFT JOIN user_statistics us ON us.user_id = u.id
+     LEFT JOIN user_restrictions ur ON ur.user_id = u.id
+     ${where}`,
     params,
   );
   return total;
@@ -136,6 +155,9 @@ async function selectUsersPage(where, params, pageSize, offset, options = {}) {
     `SELECT u.id, u.phone, u.nickname, u.avatar, u.invite_code, u.parent_invite_code,
             u.points_balance, u.subordinate_enabled, u.wechat, u.whatsapp, u.created_at,
             u.account_status,
+            COALESCE(ur.order_restricted, 0) AS order_restricted,
+            COALESCE(ur.coupon_restricted, 0) AS coupon_restricted,
+            COALESCE(ur.comment_restricted, 0) AS comment_restricted,
             COALESCE(us.total_spent, 0) AS total_spent,
             COALESCE(us.valid_order_count, 0) AS valid_order_count,
             COALESCE(us.average_order_value, 0) AS average_order_value,
@@ -151,6 +173,7 @@ async function selectUsersPage(where, params, pageSize, offset, options = {}) {
             ml.min_orders AS member_level_min_orders
      FROM users u
      LEFT JOIN user_statistics us ON us.user_id = u.id
+     LEFT JOIN user_restrictions ur ON ur.user_id = u.id
      LEFT JOIN member_levels ml ON ml.id = u.member_level_id
      ${aliasedWhere}
      ORDER BY ${sortSql} LIMIT ? OFFSET ?`,
@@ -165,8 +188,12 @@ async function selectUsersForExport(where, params) {
     `SELECT u.id, u.phone, u.nickname, u.avatar, u.invite_code, u.parent_invite_code,
             u.points_balance, u.subordinate_enabled, u.wechat, u.whatsapp, u.created_at,
             u.account_status,
+            COALESCE(ur.order_restricted, 0) AS order_restricted,
+            COALESCE(ur.coupon_restricted, 0) AS coupon_restricted,
+            COALESCE(ur.comment_restricted, 0) AS comment_restricted,
             ml.name AS member_level_name
      FROM users u
+     LEFT JOIN user_restrictions ur ON ur.user_id = u.id
      LEFT JOIN member_levels ml ON ml.id = u.member_level_id
      ${aliasedWhere}
      ORDER BY u.created_at DESC`,
@@ -223,12 +250,16 @@ async function selectUserSummaryById(userId) {
     `SELECT u.id, u.phone, u.password_hash, u.nickname, u.avatar, u.invite_code, u.parent_invite_code,
             u.points_balance, u.subordinate_enabled, u.wechat, u.whatsapp, u.created_at,
             u.account_status,
+            COALESCE(ur.order_restricted, 0) AS order_restricted,
+            COALESCE(ur.coupon_restricted, 0) AS coupon_restricted,
+            COALESCE(ur.comment_restricted, 0) AS comment_restricted,
             ml.id AS member_level_id,
             ml.name AS member_level_name,
             ml.description AS member_level_description,
             ml.min_spent AS member_level_min_spent,
             ml.min_orders AS member_level_min_orders
      FROM users u
+     LEFT JOIN user_restrictions ur ON ur.user_id = u.id
      LEFT JOIN member_levels ml ON ml.id = u.member_level_id
      WHERE u.id = ?`,
     [userId],
@@ -268,9 +299,13 @@ async function selectUserSummaryMetrics(where, params) {
       SUM(CASE WHEN EXISTS (SELECT 1 FROM user_auth_identities uai WHERE uai.user_id = u.id AND uai.provider = 'wechat_open') THEN 1 ELSE 0 END) AS wechatBound,
       SUM(CASE WHEN u.parent_invite_code IS NOT NULL AND TRIM(u.parent_invite_code) <> '' THEN 1 ELSE 0 END) AS invitedUsers,
       SUM(CASE WHEN u.account_status = 'disabled' THEN 1 ELSE 0 END) AS disabledUsers,
-      SUM(CASE WHEN u.account_status = 'blacklisted' THEN 1 ELSE 0 END) AS blacklistedUsers
+      SUM(CASE WHEN u.account_status = 'blacklisted' THEN 1 ELSE 0 END) AS blacklistedUsers,
+      SUM(CASE WHEN COALESCE(ur.order_restricted, 0) = 1 THEN 1 ELSE 0 END) AS orderRestrictedUsers,
+      SUM(CASE WHEN COALESCE(ur.coupon_restricted, 0) = 1 THEN 1 ELSE 0 END) AS couponRestrictedUsers,
+      SUM(CASE WHEN COALESCE(ur.comment_restricted, 0) = 1 THEN 1 ELSE 0 END) AS commentRestrictedUsers
      FROM users u
      LEFT JOIN user_statistics us ON us.user_id = u.id
+     LEFT JOIN user_restrictions ur ON ur.user_id = u.id
      ${where}`,
     params,
   );
@@ -283,6 +318,53 @@ async function updateUserStatus(userId, accountStatus, bumpRefreshTokenVersion =
     : 'UPDATE users SET account_status = ? WHERE id = ? AND deleted_at IS NULL';
   const [r] = await db.query(sql, [accountStatus, userId]);
   return (r.affectedRows || 0) > 0;
+}
+
+async function upsertUserRestrictions(userId, restrictions) {
+  const orderRestricted = restrictions.order_restricted ? 1 : 0;
+  const couponRestricted = restrictions.coupon_restricted ? 1 : 0;
+  const commentRestricted = restrictions.comment_restricted ? 1 : 0;
+  await db.query(
+    `INSERT INTO user_restrictions (user_id, order_restricted, coupon_restricted, comment_restricted)
+     VALUES (?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE
+       order_restricted = VALUES(order_restricted),
+       coupon_restricted = VALUES(coupon_restricted),
+       comment_restricted = VALUES(comment_restricted)`,
+    [userId, orderRestricted, couponRestricted, commentRestricted],
+  );
+}
+
+async function selectUserRestrictions(userId) {
+  const [[row]] = await db.query(
+    `SELECT
+      COALESCE(order_restricted, 0) AS order_restricted,
+      COALESCE(coupon_restricted, 0) AS coupon_restricted,
+      COALESCE(comment_restricted, 0) AS comment_restricted
+     FROM user_restrictions
+     WHERE user_id = ?
+     LIMIT 1`,
+    [userId],
+  );
+  return {
+    order_restricted: Number(row?.order_restricted || 0),
+    coupon_restricted: Number(row?.coupon_restricted || 0),
+    comment_restricted: Number(row?.comment_restricted || 0),
+  };
+}
+
+async function selectLatestStatusAuditLog(userId) {
+  const [[row]] = await db.query(
+    `SELECT operator_id, operator_name, summary, after_json, created_at
+     FROM audit_logs
+     WHERE object_type = 'user'
+       AND object_id = ?
+       AND action_type IN ('user.status_update', 'user.account_status_update', 'user.restrictions_update')
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [userId],
+  );
+  return row || null;
 }
 
 async function selectUserDetailRelations(userId) {
@@ -477,6 +559,9 @@ module.exports = {
   updateUserPasswordHash,
   selectUserSummaryMetrics,
   updateUserStatus,
+  upsertUserRestrictions,
+  selectUserRestrictions,
+  selectLatestStatusAuditLog,
   selectUserDetailRelations,
 };
 

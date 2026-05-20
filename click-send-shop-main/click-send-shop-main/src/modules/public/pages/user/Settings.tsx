@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import * as uploadService from "@/services/uploadService";
 import * as userService from "@/services/userService";
+import PageHeader from "@/components/PageHeader";
 
 const CARD = "rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
 
@@ -103,7 +104,7 @@ export default function Settings() {
       const storage = uploadService.getUploadStorageStatus(data.url);
       toast.success(`头像已保存：${storage.host}${storage.isS3 ? "（云存储）" : ""}`, toastPresetQuickSuccess);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "头像上传失败，请检查图片格式、大小或网络后重试");
+      toast.error(error instanceof Error ? error.message : "头像上传失败，请检查图片格式/大小后重试");
     } finally {
       e.target.value = "";
     }
@@ -121,7 +122,7 @@ export default function Settings() {
   const handleChangePwd = async () => {
     if (!oldPwd || !newPwd) return toast.error("请输入旧密码和新密码");
     if (newPwd.length < 6) return toast.error("新密码至少 6 位");
-    if (newPwd !== confirmPwd) return toast.error("两次输入的密码不一致");
+    if (newPwd !== confirmPwd) return toast.error("两次输入密码不一致");
     setPwdSaving(true);
     try {
       await userService.changePassword(oldPwd, newPwd);
@@ -154,14 +155,7 @@ export default function Settings() {
 
   return (
     <div className="store-page min-h-screen text-[var(--theme-text)]">
-      <header className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/95 px-[var(--store-page-x)] py-3 backdrop-blur-md sm:px-4">
-        <div className="mx-auto flex w-full items-center gap-3 sm:max-w-lg">
-          <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--theme-bg)] touch-target">
-            <ArrowLeft size={20} />
-          </button>
-          <h1 className="text-base font-semibold">个人资料</h1>
-        </div>
-      </header>
+      <PageHeader title="个人资料" onBack={goBack} />
 
       <main className="mx-auto w-full space-y-3 px-[var(--store-page-x)] py-[var(--store-page-y)] pb-24 sm:max-w-lg sm:px-4 sm:py-4">
         <section className={CARD}>
@@ -215,7 +209,7 @@ export default function Settings() {
                   disabled={wechatActionLoading}
                   className="w-full rounded-xl border border-[color-mix(in_srgb,var(--theme-danger)_35%,transparent)] py-2.5 text-sm font-medium text-[var(--theme-danger)] disabled:opacity-60"
                 >
-                  {wechatActionLoading ? "处理中…" : "解绑微信"}
+                  {wechatActionLoading ? "处理中..." : "解绑微信"}
                 </button>
               ) : (
                 <button
@@ -225,7 +219,7 @@ export default function Settings() {
                   className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#075E54]/30 bg-[#075E54] py-2.5 text-sm font-semibold text-white disabled:opacity-60"
                 >
                   <WeChatIcon size={20} />
-                  {wechatActionLoading ? "跳转中…" : "绑定微信"}
+                  {wechatActionLoading ? "跳转中..." : "绑定微信"}
                 </button>
               )}
             </div>
@@ -240,7 +234,7 @@ export default function Settings() {
             {[
               { label: "昵称", value: nickname, onChange: setNickname },
               { label: "手机号", value: phone, onChange: setPhone, readOnly: true },
-              { label: "联系用微信号", value: wechat, onChange: setWechat },
+              { label: "联系微信号", value: wechat, onChange: setWechat },
               { label: "WhatsApp", value: whatsapp, onChange: setWhatsapp },
             ].map((field) => (
               <label key={field.label} className="block">
@@ -266,33 +260,33 @@ export default function Settings() {
               <input type="password" value={oldPwd} onChange={(e) => setOldPwd(e.target.value)} placeholder="当前密码" className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
               <input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} placeholder="新密码（至少6位）" className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
               <input type="password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} placeholder="确认新密码" className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
-              <button onClick={handleChangePwd} disabled={pwdSaving} className="w-full rounded-full bg-[var(--theme-primary)] py-3 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">{pwdSaving ? "修改中…" : "确认修改密码"}</button>
+              <button onClick={handleChangePwd} disabled={pwdSaving} className="w-full rounded-full bg-[var(--theme-primary)] py-3 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">{pwdSaving ? "修改中..." : "确认修改密码"}</button>
             </div>
           )}
         </section>
 
-        <section className="rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] ring-1 sm:p-4 ring-[color-mix(in_srgb,var(--theme-danger)_35%,transparent)]">
+        <section className="rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] ring-1 ring-[color-mix(in_srgb,var(--theme-danger)_35%,transparent)] sm:p-4">
           <button type="button" onClick={() => setShowCancelForm(!showCancelForm)} className="flex w-full items-center justify-between">
             <div className="flex items-center gap-3">
               <Trash2 size={18} className="text-[var(--theme-danger)]" />
               <div className="text-left">
                 <div className="text-sm font-medium text-[var(--theme-danger)]">注销账号</div>
-                <div className="mt-0.5 text-xs text-[var(--theme-muted)]">注销后无法再登录，收货信息将被匿名化</div>
+                <div className="mt-0.5 text-xs text-[var(--theme-muted)]">注销后无法再次登录，收货信息将被匿名化</div>
               </div>
             </div>
             <ArrowLeft size={14} className={`text-[var(--theme-muted)] transition-transform ${showCancelForm ? "rotate-90" : "-rotate-90"}`} />
           </button>
           {showCancelForm && (
             <div className="mt-4 space-y-3">
-              <p className="text-xs leading-5 text-[var(--theme-muted)]">此操作会软删账号、清空地址，并脱敏历史订单中的收货姓名、电话、地址和备注。</p>
+              <p className="text-xs leading-5 text-[var(--theme-muted)]">此操作会软删除账号、清空地址，并脱敏历史订单中的收货姓名、电话、地址和备注。</p>
               <input value={cancelConfirmText} onChange={(e) => setCancelConfirmText(e.target.value)} placeholder="输入“注销账号”确认" className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
-              <button onClick={handleCancelAccount} disabled={cancelSaving} className="w-full rounded-full bg-[var(--theme-danger)] py-3 text-sm font-semibold btn-theme-gradient disabled:opacity-60">{cancelSaving ? "注销中…" : "确认注销账号"}</button>
+              <button onClick={handleCancelAccount} disabled={cancelSaving} className="w-full rounded-full bg-[var(--theme-danger)] py-3 text-sm font-semibold btn-theme-gradient disabled:opacity-60">{cancelSaving ? "注销中..." : "确认注销账号"}</button>
             </div>
           )}
         </section>
 
         <button onClick={handleSave} disabled={profileSaving} className="w-full rounded-full bg-[var(--theme-primary)] py-3.5 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
-          {profileSaving ? "保存中…" : "保存修改"}
+          {profileSaving ? "保存中..." : "保存修改"}
         </button>
       </main>
     </div>

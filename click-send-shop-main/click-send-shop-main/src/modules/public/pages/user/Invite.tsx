@@ -1,5 +1,5 @@
 ﻿import { useRef, useCallback, useEffect, useState } from "react";
-import { ArrowLeft, Copy, Download, Share2, Users, Gift } from "lucide-react";
+import { Copy, Download, Share2, Users, Gift } from "lucide-react";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +13,7 @@ import { copyToClipboard } from "@/utils/clipboard";
 import { motion } from "framer-motion";
 import { useMotionConfig } from "@/modules/micro-interactions";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
+import PageHeader from "@/components/PageHeader";
 
 function readThemeCssVar(name: string, fallback: string): string {
   const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -150,12 +151,7 @@ export default function Invite() {
 
   return (
     <div className="min-h-screen bg-[var(--theme-bg)]">
-      <header className="sticky top-0 z-40 bg-background/95 px-[var(--store-page-x)] py-3 backdrop-blur-md sm:px-4">
-        <div className="mx-auto flex w-full items-center gap-3 sm:max-w-lg">
-          <button onClick={goBack}><ArrowLeft size={20} className="text-foreground" /></button>
-          <h1 className="text-base font-semibold text-foreground">邀请中心</h1>
-        </div>
-      </header>
+      <PageHeader title="邀请中心" onBack={goBack} />
 
       <main className="mx-auto w-full px-[var(--store-page-x)] py-4 sm:max-w-lg sm:px-4 sm:py-6">
         <div className="rounded-2xl border border-[var(--theme-border)] bg-[linear-gradient(110deg,color-mix(in_srgb,var(--theme-secondary)_16%,var(--theme-surface)),var(--theme-surface))] p-5">
@@ -240,4 +236,3 @@ function Stat({ title, value }: { title: string; value: string }) {
     </div>
   );
 }
-

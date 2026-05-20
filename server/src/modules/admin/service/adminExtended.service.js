@@ -4,6 +4,7 @@ const { writeAuditLog } = require('../../../utils/auditLog');
 const { ORDER_STATUS, RETURN_STATUS } = require('../../../constants/status');
 const { getResolvedTriggerCopy } = require('./notificationTriggerSettings.service');
 const { normalizeKnownMojibakeText } = require('../../../utils/textNormalize');
+const orderPoints = require('../../order/service/orderPoints.service');
 
 function getUserApi() {
   return /** @type {any} */ (require('../../user')).api || {};
@@ -561,10 +562,21 @@ async function approveReturn(id, body, adminUserId, req) {
     if (restore_coupon && order.coupon_uc_id) {
       await repo.restoreUserCouponConn(conn, order.coupon_uc_id);
     }
-    if (reverse_points) {
-      await requireUserApi('reverseOrderPoints')(conn, order, `售后单 ${id} 审核通过，积分回滚`, {
+    const isFullRefund = refundAmount > 0 && refundAmount >= orderTotal;
+    const partialPointsNote = refundAmount > 0 && refundAmount < orderTotal
+      ? '部分退款的积分调整请通过积分手动调整处理。'
+      : '';
+    if (reverse_points && isFullRefund) {
+      await orderPoints.reverseOrderEarnPoints(conn, order, {
         operatorId: adminUserId,
-        trigger: 'return_approved',
+        trigger: 'return_approved_full_refund',
+        description: `售后单 ${id} 整单退款，积分回滚`,
+      });
+      await orderPoints.reverseOrderRedeem(conn, order, {
+        operatorId: adminUserId,
+        trigger: 'return_approved_full_refund',
+        description: `售后单 ${id} 整单退款，积分抵扣退回`,
+        sourceType: 'return_refund',
       });
     }
     if (reverse_rewards) {
@@ -617,6 +629,7 @@ async function approveReturn(id, body, adminUserId, req) {
         restore_coupon,
         reverse_points,
         reverse_rewards,
+        partial_points_note: partialPointsNote,
       },
       result: 'success',
     });
@@ -632,7 +645,7 @@ async function approveReturn(id, body, adminUserId, req) {
       }
     }
 
-    return { message: '已批准' };
+    return { message: partialPointsNote ? `已批准。${partialPointsNote}` : '已批准' };
   } catch (err) {
     await conn.rollback();
     await writeAuditLog({

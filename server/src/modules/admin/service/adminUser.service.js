@@ -21,6 +21,7 @@ async function listUsers(query) {
   const {
     keyword, tagId, wechatBound, phoneBound, memberLevelId, accountStatus, dateFrom, dateTo,
     totalSpentMin, totalSpentMax, orderCountMin, orderCountMax, pointsMin, pointsMax, refundRateMin, refundRateMax,
+    orderRestricted, couponRestricted, commentRestricted,
   } = query;
   const sortByRaw = String(query.sortBy || query.sort_by || '').trim();
   const sortDirRaw = String(query.sortDir || query.sort_dir || '').trim().toLowerCase();
@@ -41,6 +42,7 @@ async function listUsers(query) {
   const { where, params } = repo.buildUserListWhere(keyword, tagId, {
     wechatBound, phoneBound, memberLevelId, accountStatus, dateFrom, dateTo,
     totalSpentMin, totalSpentMax, orderCountMin, orderCountMax, pointsMin, pointsMax, refundRateMin, refundRateMax,
+    orderRestricted, couponRestricted, commentRestricted,
   });
   const total = await repo.countUsers(where, params);
   const summary = await repo.selectUserSummaryMetrics(where, params);
@@ -79,9 +81,30 @@ async function getUserById(userId) {
     }
     : { bound: false };
   user.related = await repo.selectUserDetailRelations(userId);
+  user.status_overview = await buildStatusOverview(userId, user);
   const { where, params } = auditRepo.buildWhere({ objectType: 'user', objectId: userId });
   user.operation_logs = await auditRepo.selectAuditLogsPage(where, params, 'ORDER BY created_at DESC', 30, 0);
   return { data: formatUserResponse(user, 'admin') };
+}
+
+async function buildStatusOverview(userId, baseUser) {
+  const restrictions = await repo.selectUserRestrictions(userId);
+  const latest = await repo.selectLatestStatusAuditLog(userId);
+  return {
+    account_status: baseUser?.account_status || 'normal',
+    restrictions: {
+      order_restricted: !!restrictions.order_restricted,
+      coupon_restricted: !!restrictions.coupon_restricted,
+      comment_restricted: !!restrictions.comment_restricted,
+    },
+    latest_status_action: latest ? {
+      operator_id: latest.operator_id || null,
+      operator_name: latest.operator_name || '',
+      summary: latest.summary || '',
+      after_json: latest.after_json || null,
+      created_at: latest.created_at || null,
+    } : null,
+  };
 }
 
 async function adminUnbindWechat(userId, adminUserId, req) {
@@ -254,10 +277,100 @@ async function updateUserStatus(userId, body, adminUserId, req) {
   const nextStatus = String(body?.accountStatus || body?.account_status || '').trim();
   const valid = ['normal', 'disabled', 'blacklisted', 'order_limited', 'coupon_limited', 'comment_limited'];
   if (!valid.includes(nextStatus)) throw new BusinessError(400, '账号状态不合法');
+  const reason = String(body?.reason || '').trim();
+  const restrictionsBefore = await repo.selectUserRestrictions(userId);
+
+  let nextAccountStatus = beforeUser.account_status || 'normal';
+  let nextRestrictions = { ...restrictionsBefore };
+  if (nextStatus === 'normal') {
+    nextAccountStatus = 'normal';
+    nextRestrictions = { order_restricted: 0, coupon_restricted: 0, comment_restricted: 0 };
+  } else if (nextStatus === 'disabled' || nextStatus === 'blacklisted') {
+    nextAccountStatus = nextStatus;
+  } else if (nextStatus === 'order_limited') {
+    nextRestrictions.order_restricted = 1;
+  } else if (nextStatus === 'coupon_limited') {
+    nextRestrictions.coupon_restricted = 1;
+  } else if (nextStatus === 'comment_limited') {
+    nextRestrictions.comment_restricted = 1;
+  }
+
+  const bump = nextAccountStatus === 'disabled' || nextAccountStatus === 'blacklisted';
+  await repo.updateUserStatus(userId, nextAccountStatus, bump);
+  await repo.upsertUserRestrictions(userId, nextRestrictions);
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'user.status_update',
+    objectType: 'user',
+    objectId: userId,
+    summary: `兼容更新用户状态 ${nextStatus}`,
+    before: { account_status: beforeUser.account_status || 'normal', restrictions: restrictionsBefore },
+    after: { account_status: nextAccountStatus, restrictions: nextRestrictions, reason, bumped_refresh_token_version: bump },
+    result: 'success',
+  });
+  return { data: null, message: '状态已更新' };
+}
+
+async function updateUserAccountStatus(userId, body, adminUserId, req) {
+  const beforeUser = await repo.selectUserSummaryById(userId);
+  if (!beforeUser) throw new BusinessError(404, '用户不存在');
+  const nextStatus = String(body?.accountStatus || body?.account_status || '').trim();
+  const reason = String(body?.reason || '').trim();
+  const valid = ['normal', 'disabled', 'blacklisted'];
+  if (!valid.includes(nextStatus)) throw new BusinessError(400, '账号状态不合法');
   const bump = nextStatus === 'disabled' || nextStatus === 'blacklisted';
   await repo.updateUserStatus(userId, nextStatus, bump);
-  await writeAuditLog({ req, operatorId: adminUserId, actionType: 'user.status_update', objectType: 'user', objectId: userId, summary: `更新用户状态 ${nextStatus}`, before: { account_status: beforeUser.account_status || 'normal' }, after: { account_status: nextStatus, bumped_refresh_token_version: bump }, result: 'success' });
-  return { data: null, message: '状态已更新' };
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'user.account_status_update',
+    objectType: 'user',
+    objectId: userId,
+    summary: `更新账户状态 ${nextStatus}`,
+    before: { account_status: beforeUser.account_status || 'normal' },
+    after: { account_status: nextStatus, reason, bumped_refresh_token_version: bump },
+    result: 'success',
+  });
+  return { data: null, message: '账户状态已更新' };
+}
+
+async function updateUserRestrictions(userId, body, adminUserId, req) {
+  const beforeUser = await repo.selectUserSummaryById(userId);
+  if (!beforeUser) throw new BusinessError(404, '用户不存在');
+  const reason = String(body?.reason || '').trim();
+  const before = await repo.selectUserRestrictions(userId);
+  const after = {
+    order_restricted: body?.orderRestricted === undefined ? before.order_restricted : (body.orderRestricted ? 1 : 0),
+    coupon_restricted: body?.couponRestricted === undefined ? before.coupon_restricted : (body.couponRestricted ? 1 : 0),
+    comment_restricted: body?.commentRestricted === undefined ? before.comment_restricted : (body.commentRestricted ? 1 : 0),
+  };
+  await repo.upsertUserRestrictions(userId, after);
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'user.restrictions_update',
+    objectType: 'user',
+    objectId: userId,
+    summary: '更新能力限制',
+    before: { restrictions: before },
+    after: { restrictions: after, reason },
+    result: 'success',
+  });
+  return {
+    data: {
+      order_restricted: !!after.order_restricted,
+      coupon_restricted: !!after.coupon_restricted,
+      comment_restricted: !!after.comment_restricted,
+    },
+    message: '能力限制已更新',
+  };
+}
+
+async function getUserStatusOverview(userId) {
+  const user = await repo.selectUserSummaryById(userId);
+  if (!user) throw new BusinessError(404, '用户不存在');
+  return { data: await buildStatusOverview(userId, user) };
 }
 
 const USER_EXPORT_HEADERS = [
@@ -268,10 +381,12 @@ async function exportUsersCsv(query) {
   const {
     keyword, tagId, wechatBound, phoneBound, memberLevelId, accountStatus, dateFrom, dateTo,
     totalSpentMin, totalSpentMax, orderCountMin, orderCountMax, pointsMin, pointsMax, refundRateMin, refundRateMax,
+    orderRestricted, couponRestricted, commentRestricted,
   } = query;
   const { where, params } = repo.buildUserListWhere(keyword, tagId, {
     wechatBound, phoneBound, memberLevelId, accountStatus, dateFrom, dateTo,
     totalSpentMin, totalSpentMax, orderCountMin, orderCountMax, pointsMin, pointsMax, refundRateMin, refundRateMax,
+    orderRestricted, couponRestricted, commentRestricted,
   });
   const rows = await repo.selectUsersForExport(where, params);
   const tagsByUserId = await repo.selectTagsForUserIds(rows.map((u) => u.id));
@@ -312,6 +427,9 @@ module.exports = {
   adminUnbindWechat,
   exportUsersCsv,
   updateUserStatus,
+  updateUserAccountStatus,
+  updateUserRestrictions,
+  getUserStatusOverview,
 };
 
 

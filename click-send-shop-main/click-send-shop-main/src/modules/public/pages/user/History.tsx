@@ -1,15 +1,14 @@
-﻿import { useEffect } from "react";
-import { ArrowLeft, Trash2, Clock, Loader2 } from "lucide-react";
+import { useEffect } from "react";
+import { Trash2, Clock, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useGoBack } from "@/hooks/useGoBack";
 import { useHistoryStore } from "@/stores/useHistoryStore";
 import { isLoggedIn } from "@/utils/token";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import PageHeader from "@/components/PageHeader";
 
 export default function History() {
   const navigate = useNavigate();
-  const goBack = useGoBack();
   const { history, loading, loadHistory, clearHistory } = useHistoryStore();
 
   useEffect(() => {
@@ -18,21 +17,16 @@ export default function History() {
 
   return (
     <div className="min-h-screen bg-background pb-6">
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex w-full items-center justify-between px-[var(--store-page-x)] py-3 sm:max-w-lg sm:px-4">
-          <div className="flex items-center gap-3">
-            <button onClick={goBack} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
-              <ArrowLeft size={20} className="text-foreground" />
-            </button>
-            <h1 className="text-base font-semibold text-foreground">浏览历史</h1>
-          </div>
-          {history.length > 0 && (
+      <PageHeader
+        title="浏览历史"
+        rightSlot={
+          history.length > 0 ? (
             <button onClick={clearHistory} className="flex items-center gap-1 text-xs text-[var(--theme-danger)] active:opacity-70">
               <Trash2 size={14} /> 清空
             </button>
-          )}
-        </div>
-      </header>
+          ) : undefined
+        }
+      />
 
       <main className="mx-auto w-full px-[var(--store-page-x)] sm:max-w-lg sm:px-4">
         {!isLoggedIn() && (
@@ -41,7 +35,7 @@ export default function History() {
             <button
               type="button"
               onClick={() => navigate("/login", { state: { from: "/history" } })}
-              className="font-semibold text-theme-price ml-1"
+              className="ml-1 font-semibold text-theme-price"
             >
               登录
             </button>
@@ -50,7 +44,7 @@ export default function History() {
         )}
         {loading ? (
           <div className="flex flex-col items-center py-20 text-muted-foreground">
-            <Loader2 size={24} className="animate-spin mb-3" />
+            <Loader2 size={24} className="mb-3 animate-spin" />
             <p className="text-sm">加载中…</p>
           </div>
         ) : history.length === 0 ? (
@@ -68,12 +62,12 @@ export default function History() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03 }}
                   onClick={() => navigate(`/product/${product.id}`)}
-                  className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 active:bg-muted transition-colors"
+                  className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 transition-colors active:bg-muted"
                 >
-                  <img src={product.cover_image} alt={product.name} className="h-16 w-16 rounded-xl object-cover flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{product.name}</p>
-                    <p className="mt-1 text-xs text-muted-foreground line-clamp-1">{product.description}</p>
+                  <img src={product.cover_image} alt={product.name} className="h-16 w-16 flex-shrink-0 rounded-xl object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-foreground">{product.name}</p>
+                    <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{product.description}</p>
                     <p className="mt-1 text-sm font-bold text-theme-price">RM {product.price}</p>
                   </div>
                 </motion.div>

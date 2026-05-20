@@ -1,5 +1,5 @@
-﻿/**
- * 绔欑偣璁剧疆 / 鍐呭椤?/ 閭€璇疯鍒?/ 绉垎瑙勫垯
+/**
+ * Site settings / content pages / invite rules / points rules
  */
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 const adminSiteSettingsService = require('../service/adminSiteSettings.service');
@@ -11,7 +11,7 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-/* 鈹€鈹€ site settings 鈹€鈹€ */
+/* site settings */
 exports.getSite = asyncRoute(async (_req, res) => {
   const r = await adminSiteSettingsService.getSiteSettings();
   res.success(r.data);
@@ -31,7 +31,7 @@ exports.uploadSiteAsset = asyncRoute(async (req, res) => {
   res.success(r.data, r.message);
 });
 
-/* 鈹€鈹€ content pages 鈹€鈹€ */
+/* ── content pages ── */
 exports.listContent = asyncRoute(async (_req, res) => {
   res.success(await adminExtended.listContentPages());
 });
@@ -48,7 +48,7 @@ exports.updateContent = asyncRoute(async (req, res) => {
   res.success(null, r.message);
 });
 
-/* 鈹€鈹€ referral rules 鈹€鈹€ */
+/* ── referral rules ── */
 exports.listReferral = asyncRoute(async (_req, res) => {
   res.success(await adminExtended.listReferralRules());
 });
@@ -59,7 +59,7 @@ exports.updateReferral = asyncRoute(async (req, res) => {
   res.success(null, r.message);
 });
 
-/* 鈹€鈹€ points rules 鈹€鈹€ */
+/* ── points rules ── */
 exports.listPoints = asyncRoute(async (_req, res) => {
   res.success(await adminExtended.listPointsRules());
 });
@@ -69,4 +69,5 @@ exports.updatePoints = asyncRoute(async (req, res) => {
   if (r.error) return res.fail(r.error.code, r.error.message);
   res.success(null, r.message);
 });
+
 

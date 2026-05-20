@@ -16,7 +16,13 @@ export type OrderPreviewResult = {
   earned_points?: number;
   available_points?: number;
   max_usable_points?: number;
+  points_used?: number;
   points_discount_amount?: number;
+  point_value_myr?: number;
+  disabled_reason?: string;
+  adjusted?: boolean;
+  points_summary?: Record<string, unknown> | null;
+  loyalty_meta?: Record<string, unknown> | null;
   available_reward_balance?: number;
   max_usable_reward_cash?: number;
   reward_cash_discount_amount?: number;

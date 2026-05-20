@@ -32,7 +32,6 @@ export default function Cart() {
     toggleSelect,
     setSelectAll,
     totalAmountSelected,
-    totalPointsSelected,
     totalItemsSelected,
   } = useCartStore();
   const selection = useCartStore((s) => s.selection);
@@ -163,9 +162,6 @@ export default function Cart() {
                     </span>
                     全选 ({selectedCount}/{items.length})
                   </SquishButton>
-                  <span className="text-xs text-muted-foreground">
-                    可获积分: {totalPointsSelected()}
-                  </span>
                 </div>
                 <AnimatePresence>
                   {items.map((item) => (
@@ -211,9 +207,7 @@ export default function Cart() {
                           >
                             {item.product.name}
                           </h3>
-                          <p className="mt-1 text-[11px] text-muted-foreground">
-                            {item.variant_name ? `规格：${item.variant_name}` : `+${item.product.points}积分`}
-                          </p>
+                          {item.variant_name ? <p className="mt-1 text-[11px] text-muted-foreground">规格：{item.variant_name}</p> : null}
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-base font-bold text-theme-price md:text-lg">
@@ -309,10 +303,6 @@ export default function Cart() {
                       {sstCartNote || "商品价格已含 SST，运费不计税。"}
                     </p>
                   ) : null}
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>可获积分</span>
-                    <span>+{totalPointsSelected()}</span>
-                  </div>
                   <div className="my-3 border-t border-[var(--theme-border)]" />
                   <div className="flex items-baseline justify-between">
                     <span className="text-sm text-foreground">合计</span>
@@ -369,9 +359,6 @@ export default function Cart() {
                   <span className="text-xl font-bold text-[var(--theme-price)]">
                     <AnimatedNumber value={totalAmountSelected()} decimals={2} format={(n) => `RM ${n.toFixed(2)}`} />
                   </span>
-                </p>
-                <p className="text-[11px] text-muted-foreground">
-                  可获积分: {totalPointsSelected()}
                 </p>
               </div>
               <SquishButton

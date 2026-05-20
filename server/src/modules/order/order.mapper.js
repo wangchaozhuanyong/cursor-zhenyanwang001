@@ -1,15 +1,18 @@
 const { PAYMENT_STATUS } = require('../../constants/status');
 const { normalizeKnownMojibakeText } = require('../../utils/textNormalize');
 
-function formatOrderItem(row) {
-  let specSnapshot = row.spec_snapshot || null;
-  if (typeof specSnapshot === 'string') {
-    try {
-      specSnapshot = JSON.parse(specSnapshot);
-    } catch {
-      specSnapshot = null;
-    }
+function parseJsonObject(raw) {
+  if (!raw) return null;
+  if (typeof raw === 'object') return raw;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
   }
+}
+
+function formatOrderItem(row) {
+  const specSnapshot = parseJsonObject(row.spec_snapshot);
   const productName = row.product_name_snapshot || row.product_name;
   const productImage = row.variant_image_snapshot || row.product_image_snapshot || row.product_image;
   return {
@@ -39,6 +42,11 @@ function formatOrderItem(row) {
     unit_price: parseFloat(row.price),
     subtotal: row.subtotal != null ? parseFloat(row.subtotal) : parseFloat(row.price) * Number(row.qty || 0),
     qty: row.qty,
+    earned_points: Number(row.earned_points || 0),
+    points_rule_snapshot: parseJsonObject(row.points_rule_snapshot),
+    redeemable_amount: Number(row.redeemable_amount || 0),
+    is_restricted_excluded: !!row.is_restricted_excluded,
+    line_points_base_amount: Number(row.line_points_base_amount || 0),
     review_id: row.review_id || null,
     review_status: row.review_status || null,
     is_reviewed: !!row.review_id,
@@ -47,13 +55,7 @@ function formatOrderItem(row) {
 }
 
 function parseDiscountMeta(raw) {
-  if (!raw) return null;
-  if (typeof raw === 'object') return raw;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
+  return parseJsonObject(raw);
 }
 
 function buildDiscountLines(row, meta) {
@@ -67,22 +69,40 @@ function buildDiscountLines(row, meta) {
   if (coupon > 0) {
     lines.push({
       type: 'coupon',
-      label: row.coupon_title ? `优惠券（${row.coupon_title}）` : '优惠券抵扣',
+      label: row.coupon_title ? `优惠券抵扣：${row.coupon_title}` : '优惠券抵扣',
       amount: coupon,
     });
   }
   if (!lines.length && Number(row.discount_amount || 0) > 0) {
     lines.push({
       type: 'coupon',
-      label: row.coupon_title ? `优惠券（${row.coupon_title}）` : '优惠抵扣',
+      label: row.coupon_title ? `优惠券抵扣：${row.coupon_title}` : '优惠券抵扣',
       amount: parseFloat(row.discount_amount),
     });
   }
   return lines;
 }
 
+function buildPointsSummary(row, discountLines, loyaltyMeta) {
+  if (!loyaltyMeta) return null;
+  return {
+    earned_points: Number(loyaltyMeta.earned_points || row.total_points || 0),
+    points_used: Number(row.points_used || loyaltyMeta.points_used || 0),
+    max_usable_points: Number(loyaltyMeta.max_usable_points || 0),
+    points_discount_amount: Number(row.points_discount_amount || loyaltyMeta.points_discount_amount || 0),
+    point_value_myr: Number(loyaltyMeta.point_value_myr || 0),
+    final_amount: parseFloat(row.total_amount),
+    discount_lines: discountLines,
+    disabled_reason: loyaltyMeta.disabled_reason || '',
+    adjusted: !!loyaltyMeta.adjusted,
+    calculation_version: loyaltyMeta.calculation_version || '',
+  };
+}
+
 function formatOrder(row, items) {
   const discountMeta = parseDiscountMeta(row.discount_meta);
+  const discountLines = buildDiscountLines(row, discountMeta);
+  const loyaltyMeta = parseJsonObject(row.loyalty_meta);
   return {
     id: row.id,
     order_no: row.order_no,
@@ -90,7 +110,7 @@ function formatOrder(row, items) {
     raw_amount: parseFloat(row.raw_amount),
     discount_amount: parseFloat(row.discount_amount),
     discount_meta: discountMeta,
-    discount_lines: buildDiscountLines(row, discountMeta),
+    discount_lines: discountLines,
     flash_sale_discount: Number(discountMeta?.flash_sale_discount || 0),
     full_reduction_discount: Number(discountMeta?.full_reduction_discount || 0),
     coupon_discount: Number(discountMeta?.coupon_discount ?? 0),
@@ -107,6 +127,15 @@ function formatOrder(row, items) {
       ? parseFloat(row.tax_exclusive_amount)
       : null,
     total_points: row.total_points,
+    earned_points: Number(row.total_points || 0),
+    points_used: Number(row.points_used || 0),
+    max_usable_points: Number(loyaltyMeta?.max_usable_points || 0),
+    points_discount_amount: Number(row.points_discount_amount || 0),
+    point_value_myr: Number(loyaltyMeta?.point_value_myr || 0),
+    disabled_reason: loyaltyMeta?.disabled_reason || '',
+    adjusted: !!loyaltyMeta?.adjusted,
+    loyalty_meta: loyaltyMeta,
+    points_summary: buildPointsSummary(row, discountLines, loyaltyMeta),
     status: row.status,
     payment_status: row.payment_status || PAYMENT_STATUS.PENDING,
     payment_time: row.payment_time || null,

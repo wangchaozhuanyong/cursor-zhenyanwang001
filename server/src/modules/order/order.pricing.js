@@ -6,6 +6,7 @@ const pointsRepo = require('../user/repository/points.repository');
 const rewardRepo = require('../user/repository/reward.repository');
 const sstTax = require('./sstTax');
 const { computeShippingFee, estimateWeightFromItems } = require('../../utils/shippingFee');
+const pointsEngine = require('../loyalty/service/pointsEngine.service');
 
 function parseActivityConfig(raw) {
   if (!raw) return null;
@@ -306,35 +307,46 @@ async function buildOrderPricing(userId, body, conn = null) {
 
   const pointsSettings = await loyaltyRepo.selectPointsSettings();
   const rewardSettings = await loyaltyRepo.selectRewardSettings();
+  const productRules = await loyaltyRepo.selectProductRules(q);
+  const memberLevel = await loyaltyRepo.selectUserMemberLevel(q, userId);
   const pointMethods = parseJsonArray(pointsSettings?.allowed_payment_methods, ['online', 'whatsapp']);
   const rewardMethods = parseJsonArray(rewardSettings?.allowed_payment_methods, ['online', 'whatsapp']);
 
   const pointsBalance = userId ? Number(await pointsRepo.selectUserPointsBalance(userId)) : 0;
   const rewardBalance = userId ? Number(await rewardRepo.sumUserRewardTransactions(q, userId)) : 0;
-  const pointsPerCurrency = Math.max(1, Number(pointsSettings?.points_per_currency || 100));
-  const minRedeemPoints = Math.max(0, Number(pointsSettings?.min_redeem_points || 0));
-  const pointsMaxByPercent = basePayableBeforeLoyalty * (Number(pointsSettings?.max_redeem_percent || 100) / 100);
-  const pointsMaxByAmount = Number(pointsSettings?.max_redeem_amount || 0) > 0
-    ? Number(pointsSettings?.max_redeem_amount || 0)
-    : Number.MAX_SAFE_INTEGER;
-  const pointsMaxCurrency = clamp(
-    Math.min(pointsMaxByPercent, pointsMaxByAmount, basePayableBeforeLoyalty),
-    0,
-    basePayableBeforeLoyalty,
-  );
-  const maxUsablePointsBySetting = Math.floor(pointsMaxCurrency * pointsPerCurrency);
-  const max_usable_points = (
-    pointsSettings?.redeem_enabled
-    && basePayableBeforeLoyalty >= Number(pointsSettings?.min_order_amount || 0)
-    && pointsBalance >= minRedeemPoints
-  ) ? Math.max(0, Math.min(pointsBalance, maxUsablePointsBySetting)) : 0;
 
   const usePoints = !!body.use_points;
   const requestPointsToUse = Number(body.points_to_use || 0);
-  const points_used = usePoints
-    ? clamp(requestPointsToUse > 0 ? Math.floor(requestPointsToUse) : max_usable_points, 0, max_usable_points)
-    : 0;
-  const points_discount_amount = points_used > 0 ? clamp(points_used / pointsPerCurrency, 0, basePayableBeforeLoyalty) : 0;
+  const goodsDiscountForAllocation = fullReductionDiscount + nonShippingGoodsCoupon;
+  const loyaltyItems = orderItems.map((oi) => {
+    const lineSubtotal = oi.price * oi.qty;
+    const discountShare = rawAmount > 0 ? (goodsDiscountForAllocation * lineSubtotal) / rawAmount : 0;
+    const product = productMap[oi.productId] || {};
+    const fullReductionBlocksPoints = fullReductionActivities.some((act) => act.allow_points_stack === 0 && lineMatchesActivityScope(oi, product, act, act.scopes || []));
+    const flash = flashByProductId.get(oi.productId);
+    return {
+      product_id: oi.productId,
+      qty: oi.qty,
+      price: oi.price,
+      subtotal: lineSubtotal,
+      line_paid_amount: Math.max(0, lineSubtotal - discountShare),
+      activity_id: oi.activityId,
+      allow_points_stack: flash ? flash.allow_points_stack !== 0 : !fullReductionBlocksPoints,
+    };
+  });
+  const pointsRedeem = pointsEngine.calculateMaxUsablePoints({
+    settings: pointsSettings,
+    userPointsBalance: pointsBalance,
+    orderItems: loyaltyItems,
+    productMap,
+    productRules,
+    coupon: couponDiscount > 0 ? { title: couponTitle, type: couponType } : null,
+    discounts: { coupon_amount: couponDiscount, full_reduction_amount: fullReductionDiscount },
+    pointsToUse: usePoints ? (requestPointsToUse > 0 ? requestPointsToUse : pointsBalance) : 0,
+  });
+  const max_usable_points = pointsRedeem.max_usable_points || 0;
+  const points_used = usePoints ? Number(pointsRedeem.points_used || 0) : 0;
+  const points_discount_amount = usePoints ? Number(pointsRedeem.points_discount_amount || 0) : 0;
 
   const afterPoints = Math.max(0, basePayableBeforeLoyalty - points_discount_amount);
   const rewardMaxByPercent = afterPoints * (Number(rewardSettings?.max_redeem_percent || 100) / 100);
@@ -354,31 +366,39 @@ async function buildOrderPricing(userId, body, conn = null) {
   const reward_cash_discount_amount = reward_cash_used;
 
   const finalTotal = Math.max(0, basePayableBeforeLoyalty - points_discount_amount - reward_cash_discount_amount);
-  const earned_points = computeEarnedPointsBySettings(
-    pointsSettings,
-    Math.max(0, goodsInclusiveTaxable - points_discount_amount - reward_cash_discount_amount),
-    legacyTotalPoints,
-  );
+  const pointsEarn = pointsEngine.calculateOrderEarnedPoints({
+    settings: pointsSettings,
+    productRules,
+    orderItems: loyaltyItems.map((item) => ({
+      ...item,
+      line_paid_amount: Math.max(0, item.line_paid_amount - (pointsSettings?.earn_after_points_redeem ? points_discount_amount * (item.line_paid_amount / Math.max(goodsInclusiveTaxable || 1, 1)) : 0)),
+    })),
+    productMap,
+    memberLevel,
+    coupon: couponDiscount > 0 ? { title: couponTitle, type: couponType } : null,
+    discounts: { coupon_amount: couponDiscount, full_reduction_amount: fullReductionDiscount },
+  });
+  const earned_points = Number(pointsEarn.earned_points || 0);
 
   const discount_lines = [];
   if (flashSaleDiscount > 0) {
-    discount_lines.push({ type: 'flash_sale', label: '绉掓潃浼樻儬', amount: flashSaleDiscount });
+    discount_lines.push({ type: 'flash_sale', label: '秒杀优惠', amount: pointsEngine.money(flashSaleDiscount) });
   }
   if (fullReductionDiscount > 0) {
-    discount_lines.push({ type: 'full_reduction', label: '婊″噺浼樻儬', amount: fullReductionDiscount });
+    discount_lines.push({ type: 'full_reduction', label: '满减优惠', amount: pointsEngine.money(fullReductionDiscount) });
   }
   if (couponDiscount > 0) {
     discount_lines.push({
       type: 'coupon',
-      label: couponTitle ? `优惠券：${couponTitle}` : '优惠券折扣',
-      amount: couponDiscount,
+      label: couponTitle ? `优惠券抵扣：${couponTitle}` : '优惠券抵扣',
+      amount: pointsEngine.money(couponDiscount),
     });
   }
   if (points_discount_amount > 0) {
-    discount_lines.push({ type: 'points', label: '绉垎鎶垫墸', amount: points_discount_amount });
+    discount_lines.push({ type: 'points', label: '积分抵扣', amount: pointsEngine.money(points_discount_amount) });
   }
   if (reward_cash_discount_amount > 0) {
-    discount_lines.push({ type: 'reward_cash', label: '杩旂幇浣欓鎶垫墸', amount: reward_cash_discount_amount });
+    discount_lines.push({ type: 'reward_cash', label: '返现余额抵扣', amount: pointsEngine.money(reward_cash_discount_amount) });
   }
 
   return {
@@ -409,9 +429,32 @@ async function buildOrderPricing(userId, body, conn = null) {
       reward_cash_discount_amount,
       available_points: pointsBalance,
       max_usable_points,
+      disabled_reason: pointsRedeem.disabled_reason || '',
+      adjusted: !!pointsRedeem.adjusted,
+      adjusted_reason: pointsRedeem.adjusted_reason || '',
+      point_value_myr: pointsRedeem.point_value_myr || Number(pointsSettings?.point_value_myr || 0.01),
+      points_per_currency: pointsRedeem.points_per_currency || Number(pointsSettings?.points_per_currency || 100),
       available_reward_balance: rewardBalance,
       max_usable_reward_cash,
       earned_points,
+      points_summary: {
+        earned_points,
+        points_used,
+        max_usable_points,
+        points_discount_amount,
+        point_value_myr: pointsRedeem.point_value_myr || Number(pointsSettings?.point_value_myr || 0.01),
+        final_amount: finalTotal,
+        discount_lines,
+        disabled_reason: pointsRedeem.disabled_reason || '',
+        adjusted: !!pointsRedeem.adjusted,
+        calculation_version: pointsEngine.CALCULATION_VERSION,
+      },
+      points_settings_snapshot: pointsSettings ? { ...pointsSettings } : null,
+      product_rule_snapshots: pointsEarn.product_rule_snapshots || [],
+      member_level_snapshot: pointsEarn.member_level_snapshot || { points_multiplier: 1 },
+      item_results: pointsEarn.item_results || [],
+      redeem_item_results: pointsRedeem.item_results || [],
+      calculation_version: pointsEngine.CALCULATION_VERSION,
       point_payment_method_whitelist: pointMethods,
       reward_payment_method_whitelist: rewardMethods,
     },

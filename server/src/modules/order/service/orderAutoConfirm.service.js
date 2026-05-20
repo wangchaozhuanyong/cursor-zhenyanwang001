@@ -1,5 +1,6 @@
-﻿/**
- * 绔欑偣璁剧疆銆屽彂璐у悗 N 澶╄嚜鍔ㄧ‘璁ゆ敹璐с€嶏細瀹氭椂鎵弿宸插彂璐ц鍗曞苟缃负宸插畬鎴愶紙缁撶畻绉垎/杩旂幇锛夈€? */
+/**
+ * Auto-confirm shipped orders after the configured number of days, then trigger completion side effects.
+ */
 const { ORDER_STATUS } = require('../../../constants/status');
 const orderRepo = require('../repository/order.repository');
 const { completeShippedOrder } = require('./order.service');
@@ -67,6 +68,7 @@ module.exports = {
   runAutoConfirmReceiveTick,
   startAutoConfirmReceiveScheduler,
 };
+
 
 
 

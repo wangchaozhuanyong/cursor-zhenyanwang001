@@ -36,6 +36,10 @@ export function CheckoutLoyaltySection({
 
   const availablePoints = Math.max(0, Math.floor(toNum(orderPreview?.available_points)));
   const maxPoints = Math.max(0, Math.floor(toNum(orderPreview?.max_usable_points)));
+  const actualPointsUsed = Math.max(0, Math.floor(toNum(orderPreview?.points_used, pointsToUse)));
+  const pointValue = toNum(orderPreview?.point_value_myr, 0.01);
+  const pointsDiscount = toNum(orderPreview?.points_discount_amount, 0);
+  const disabledReason = orderPreview?.disabled_reason || (maxPoints <= 0 ? "当前订单暂无可用积分抵扣" : "");
   const availableReward = Math.max(0, toNum(orderPreview?.available_reward_balance));
   const maxReward = Math.max(0, toNum(orderPreview?.max_usable_reward_cash));
 
@@ -49,7 +53,8 @@ export function CheckoutLoyaltySection({
             <span>积分抵扣</span>
             <input type="checkbox" checked={usePoints} onChange={(e) => onUsePointsChange(e.target.checked)} />
           </label>
-          <p className="mt-1 text-xs text-muted-foreground">可用 {availablePoints}，本单最多 {maxPoints}</p>
+          <p className="mt-1 text-xs text-muted-foreground">可用 {availablePoints}，兑换比例：1 积分 = RM {pointValue.toFixed(2)}，本单最多 {maxPoints}</p>
+          {disabledReason && maxPoints <= 0 ? <p className="mt-1 text-xs text-[var(--theme-danger)]">{disabledReason}</p> : null}
           {usePoints ? (
             <div className="mt-2 space-y-2">
               <input
@@ -74,6 +79,7 @@ export function CheckoutLoyaltySection({
                   全部
                 </button>
               </div>
+              <p className="text-xs text-muted-foreground">实际使用 {actualPointsUsed} 积分，可抵扣 RM {pointsDiscount.toFixed(2)}{orderPreview?.adjusted ? "（已按步长自动调整）" : ""}</p>
             </div>
           ) : null}
         </div>

@@ -184,20 +184,9 @@ async function addUserPoints(userId, points) {
   const conn = await getConnection();
   try {
     await conn.beginTransaction();
-    await ensureAccount(conn, userId);
-    await conn.query(
-      `UPDATE points_accounts
-       SET balance = balance + ?, total_earned = total_earned + ?
-       WHERE user_id = ?`,
-      [amount, amount, userId],
-    );
-    await conn.query(
-      `UPDATE users u
-       JOIN points_accounts pa ON pa.user_id = u.id
-       SET u.points_balance = pa.balance
-       WHERE u.id = ?`,
-      [userId],
-    );
+    const account = await selectAccountForUpdate(conn, userId);
+    const after = Number(account?.balance || 0) + amount;
+    await updateAccountBalance(conn, userId, amount, after);
     await conn.commit();
   } catch (err) {
     await conn.rollback();

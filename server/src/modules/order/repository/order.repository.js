@@ -25,6 +25,7 @@ async function selectProductsForUpdate(q, productIds) {
 async function selectVariantsForUpdate(q, variantIds) {
   const ids = [...new Set((variantIds || []).filter(Boolean))];
   if (!ids.length) return [];
+  // Legacy only: products.points is kept as a read-only snapshot source for old order compatibility.
   const [rows] = await q.query(
     `SELECT v.*, p.name AS product_name, p.cover_image, p.points, p.category_id, p.lifecycle_status
      FROM product_variants v
@@ -39,6 +40,7 @@ async function selectVariantsForUpdate(q, variantIds) {
 async function selectDefaultVariantsForProducts(q, productIds) {
   const ids = [...new Set((productIds || []).filter(Boolean))];
   if (!ids.length) return [];
+  // Legacy only: new loyalty earning is calculated by pointsEngine, not by products.points.
   const [rows] = await q.query(
     `SELECT v.*, p.name AS product_name, p.cover_image, p.points, p.category_id, p.lifecycle_status
      FROM product_variants v
@@ -81,6 +83,7 @@ async function selectProductsByIds(q, productIds) {
 async function selectVariantsByIds(q, variantIds) {
   const ids = [...new Set((variantIds || []).filter(Boolean))];
   if (!ids.length) return [];
+  // Legacy only: keep p.points available for historical order display and old snapshots.
   const [rows] = await q.query(
     `SELECT v.*, p.name AS product_name, p.cover_image, p.points, p.category_id, p.lifecycle_status
      FROM product_variants v
@@ -352,6 +355,9 @@ async function insertOrderItem(q, params) {
     points,
     earnedPoints,
     pointsRuleSnapshot,
+    redeemableAmount,
+    isRestrictedExcluded,
+    linePointsBaseAmount,
     qty,
     activityId,
     activityTitle,
@@ -360,8 +366,10 @@ async function insertOrderItem(q, params) {
     `INSERT INTO order_items
        (id, order_id, product_id, variant_id, sku_code, variant_name,
         spec_snapshot, product_name_snapshot, product_image_snapshot, variant_image_snapshot,
-        product_name, product_image, price, points, earned_points, points_rule_snapshot, qty, subtotal, activity_id, activity_title)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        product_name, product_image, price, points, earned_points, points_rule_snapshot,
+        redeemable_amount, is_restricted_excluded, line_points_base_amount,
+        qty, subtotal, activity_id, activity_title)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id,
       orderId,
@@ -379,6 +387,9 @@ async function insertOrderItem(q, params) {
       points,
       Number(earnedPoints || 0),
       pointsRuleSnapshot ? JSON.stringify(pointsRuleSnapshot) : null,
+      Number(redeemableAmount || 0),
+      isRestrictedExcluded ? 1 : 0,
+      Number(linePointsBaseAmount || 0),
       qty,
       Number(price) * Number(qty),
       activityId || null,

@@ -27,7 +27,7 @@ export async function clearCart() {
 export function calcCartSummary(items: CartItem[]) {
   return {
     totalAmount: items.reduce((sum, i) => sum + (i.unit_price ?? i.product.price) * i.qty, 0),
-    totalPoints: items.reduce((sum, i) => sum + i.product.points * i.qty, 0),
+    totalPoints: 0,
     totalItems: items.reduce((sum, i) => sum + i.qty, 0),
   };
 }

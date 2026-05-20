@@ -64,6 +64,21 @@ exports.updateStatus = asyncRoute(async (req, res) => {
   res.success(r.data, r.message);
 });
 
+exports.updateAccountStatus = asyncRoute(async (req, res) => {
+  const r = await svc.updateUserAccountStatus(req.params.id, req.body, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
+exports.updateRestrictions = asyncRoute(async (req, res) => {
+  const r = await svc.updateUserRestrictions(req.params.id, req.body, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
+exports.getStatusOverview = asyncRoute(async (req, res) => {
+  const r = await svc.getUserStatusOverview(req.params.id);
+  res.success(r.data, r.message);
+});
+
 exports.updateSubordinate = asyncRoute(async (req, res) => {
   const r = await svc.updateSubordinate(req.params.id, req.body);
   res.success(r.data, r.message);

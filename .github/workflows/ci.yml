@@ -26,6 +26,7 @@ jobs:
           cache: npm
           cache-dependency-path: click-send-shop-main/click-send-shop-main/package-lock.json
       - run: npm ci
+      - run: npm run check:admin-i18n
       - run: npm run typecheck
       - run: npm run build
         env:

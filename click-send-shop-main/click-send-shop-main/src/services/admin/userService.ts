@@ -30,6 +30,22 @@ export async function updateUserStatus(id: string, accountStatus: string) {
   await userApi.updateUserStatus(id, accountStatus);
 }
 
+export async function updateUserAccountStatus(id: string, accountStatus: string, reason?: string) {
+  await userApi.updateUserAccountStatus(id, accountStatus, reason);
+}
+
+export async function updateUserRestrictions(
+  id: string,
+  payload: { orderRestricted?: boolean; couponRestricted?: boolean; commentRestricted?: boolean; reason?: string },
+) {
+  await userApi.updateUserRestrictions(id, payload);
+}
+
+export async function fetchUserStatusOverview(id: string) {
+  const res = await userApi.getUserStatusOverview(id);
+  return res.data;
+}
+
 export async function resetUserPassword(id: string): Promise<string> {
   const res = await userApi.resetUserPassword(id);
   return (res.data as any)?.password || "";

@@ -2,31 +2,24 @@ import { ArrowLeft } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 
 interface PageHeaderProps {
-  title: string;
-  /** 自定义返回处理；不传则使用 useGoBack（智能 fallback 到首页 / Profile / Admin） */
+  title: React.ReactNode;
   onBack?: () => void;
-  /** 当无历史时的兜底路径 */
   backFallback?: string;
   rightSlot?: React.ReactNode;
 }
 
-export default function PageHeader({
-  title,
-  onBack,
-  backFallback,
-  rightSlot,
-}: PageHeaderProps) {
+export default function PageHeader({ title, onBack, backFallback, rightSlot }: PageHeaderProps) {
   const goBack = useGoBack(backFallback);
 
   return (
-    <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
-      <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
+    <header className="header-safe-top sticky top-0 z-40 bg-background/95 backdrop-blur-md">
+      <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-2">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onBack ?? goBack}
             aria-label="返回"
-            className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target"
+            className="touch-target flex items-center justify-center rounded-full hover:bg-secondary"
           >
             <ArrowLeft size={20} className="text-foreground" />
           </button>

@@ -12,6 +12,7 @@ const errorHandler = require('./middleware/errorHandler');
 const routes = require('./routes');
 const seoRoutes = require('./modules/seo/routes/seo.routes');
 const { registerSeoPrerender } = require('./modules/product/seoPrerender');
+const { registerPwaBrandRoutes } = require('./modules/pwa/pwa.routes');
 const stripeWebhook = require('./modules/payment/controller/stripeWebhook.controller');
 
 const app = express();
@@ -236,6 +237,9 @@ app.use('/api', routes);
 const serveSpa = fs.existsSync(frontendDist) && process.env.SERVE_SPA !== '0';
 if (serveSpa) {
   const frontendAssetsDir = path.join(frontendDist, 'assets');
+
+  // PWA install identity must follow admin-configured site logo/name, not the build-time bundled icon.
+  registerPwaBrandRoutes(app, { frontendDist });
 
   // Hashed build artifacts can be long-cached safely.
   app.use(

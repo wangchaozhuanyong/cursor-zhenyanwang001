@@ -1,6 +1,6 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useState } from "react";
-import { ArrowLeft, ChevronDown, ChevronUp, Copy, MessageCircle, Phone, CheckCircle2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, MessageCircle, Phone, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { getCartLinePrice } from "@/stores/useCartStore";
 import type { Order } from "@/types/order";
@@ -9,6 +9,7 @@ import { OrderSstLines } from "@/components/OrderSstLines";
 import { OrderDiscountLines } from "./OrderDiscountLines";
 import { OrderPaymentCountdown } from "@/components/order/OrderPaymentCountdown";
 import { THEME_ALERT_ERROR_BOX } from "@/utils/themeVisuals";
+import PageHeader from "@/components/PageHeader";
 
 /* ----- Order Success Page ----- */
 export function CheckoutOrderSuccess({
@@ -105,14 +106,7 @@ export function CheckoutOrderSuccess({
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 bg-background/95 px-4 py-3 backdrop-blur-md">
-        <div className="mx-auto flex max-w-lg items-center gap-3">
-          <button onClick={onHome} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
-            <ArrowLeft size={20} className="text-foreground" />
-          </button>
-          <h1 className="text-base font-semibold text-foreground">{headerTitle}</h1>
-        </div>
-      </header>
+      <PageHeader title={headerTitle} onBack={onHome} />
 
       <motion.main initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-lg px-4 py-6">
         {/* Success card */}

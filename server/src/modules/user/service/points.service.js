@@ -7,7 +7,11 @@ function toInt(value) {
   return Number.isFinite(n) ? Math.trunc(n) : 0;
 }
 
-async function changePoints(conn, params) {
+function isOrderPointsAction(action) {
+  return ['order_redeem', 'order_redeem_reverse', 'order_earn', 'order_reverse'].includes(String(action || ''));
+}
+
+async function changeUserPoints(conn, params) {
   const {
     userId,
     amount,
@@ -19,7 +23,8 @@ async function changePoints(conn, params) {
     relatedRecordId,
     operatorId,
     metadata,
-    allowNegative = true,
+    allowNegative = false,
+    pendingOnInsufficient = false,
   } = params;
 
   const delta = toInt(amount);
@@ -27,8 +32,16 @@ async function changePoints(conn, params) {
   if (!action) throw new BusinessError(400, 'Missing points action');
   if (!delta) return { skipped: true, amount: 0 };
 
-  if (relatedRecordId) {
-    const existing = await repo.selectRecordByRelatedForUpdate(conn, relatedRecordId, action);
+  let finalRelatedRecordId = relatedRecordId;
+  if (!finalRelatedRecordId && isOrderPointsAction(action)) {
+    throw new BusinessError(400, 'Missing relatedRecordId for order points action');
+  }
+  if (!finalRelatedRecordId && sourceType === 'admin_adjust') {
+    finalRelatedRecordId = `admin_adjust:${generateId()}`;
+  }
+
+  if (finalRelatedRecordId) {
+    const existing = await repo.selectRecordByRelatedForUpdate(conn, finalRelatedRecordId, action);
     if (existing) return { skipped: true, record: existing };
   }
 
@@ -37,6 +50,32 @@ async function changePoints(conn, params) {
   const before = toInt(account.balance);
   const after = before + delta;
   if (!allowNegative && after < 0) {
+    if (pendingOnInsufficient) {
+      const pendingAction = action === 'order_reverse' ? 'pending_reverse' : `${action}_pending`;
+      const pendingRelatedRecordId = finalRelatedRecordId
+        ? `${pendingAction}:${finalRelatedRecordId}`
+        : `${pendingAction}:${generateId()}`;
+      const existingPending = await repo.selectRecordByRelatedForUpdate(conn, pendingRelatedRecordId, pendingAction);
+      if (existingPending) return { skipped: true, record: existingPending };
+      const pendingRecordId = generateId();
+      await repo.insertLedgerRecord(conn, {
+        id: pendingRecordId,
+        userId,
+        orderId,
+        orderNo,
+        action: pendingAction,
+        amount: delta,
+        balanceBefore: before,
+        balanceAfter: before,
+        description: description || '积分回滚待处理',
+        sourceType,
+        relatedRecordId: pendingRelatedRecordId,
+        status: 'pending',
+        operatorId,
+        metadata: { ...(metadata || {}), insufficient_balance: true, requested_amount: delta },
+      });
+      return { skipped: false, pending: true, recordId: pendingRecordId, balanceBefore: before, balanceAfter: before, amount: 0 };
+    }
     throw new BusinessError(400, 'Insufficient points balance');
   }
 
@@ -53,12 +92,16 @@ async function changePoints(conn, params) {
     balanceAfter: after,
     description,
     sourceType,
-    relatedRecordId,
+    relatedRecordId: finalRelatedRecordId,
     status: 'success',
     operatorId,
     metadata,
   });
   return { skipped: false, recordId, balanceBefore: before, balanceAfter: after, amount: delta };
+}
+
+async function changePoints(conn, params) {
+  return changeUserPoints(conn, params);
 }
 
 async function runInTransaction(fn) {
@@ -168,20 +211,21 @@ async function signIn(userId) {
 }
 
 async function adjustUserPoints(userId, amount, reason, operatorId) {
-  return runInTransaction((conn) => changePoints(conn, {
+  return runInTransaction((conn) => changeUserPoints(conn, {
     userId,
     amount,
     action: amount > 0 ? 'admin_add' : 'admin_deduct',
     description: reason || '后台积分调整',
     sourceType: 'admin_adjust',
     operatorId,
+    allowNegative: false,
   }));
 }
 
 async function settleOrderPoints(conn, order, options = {}) {
   const amount = toInt(order?.total_points);
   if (!order?.id || !order.user_id || amount <= 0) return { skipped: true };
-  return changePoints(conn, {
+  return changeUserPoints(conn, {
     userId: order.user_id,
     amount,
     action: 'order_earn',
@@ -200,7 +244,7 @@ async function reverseOrderPoints(conn, order, reason, options = {}) {
   if (!order?.id || !order.user_id || amount <= 0) return { skipped: true };
   const earned = await repo.selectRecordByRelatedForUpdate(conn, `order_earn:${order.id}`, 'order_earn');
   if (!earned) return { skipped: true };
-  return changePoints(conn, {
+  return changeUserPoints(conn, {
     userId: order.user_id,
     amount: -amount,
     action: 'order_reverse',
@@ -211,10 +255,13 @@ async function reverseOrderPoints(conn, order, reason, options = {}) {
     relatedRecordId: `order_reverse:${order.id}`,
     operatorId: options.operatorId,
     metadata: { trigger: options.trigger || 'order_reversal' },
+    allowNegative: false,
+    pendingOnInsufficient: true,
   });
 }
 
 module.exports = {
+  changeUserPoints,
   changePoints,
   settleOrderPoints,
   reverseOrderPoints,

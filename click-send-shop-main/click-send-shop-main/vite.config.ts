@@ -129,9 +129,6 @@ export default defineConfig(() => ({
         "favicon-32x32.png",
         "favicon.webp",
         "apple-touch-icon.png",
-        "pwa-192x192.png",
-        "pwa-512x512.png",
-        "pwa-maskable-512x512.png",
         "offline.html",
       ],
       workbox: {
@@ -194,11 +191,23 @@ export default defineConfig(() => ({
           },
           {
             urlPattern: ({ url }) =>
-              url.pathname === "/offline.html"
-              || url.pathname.endsWith(".webmanifest")
-              || url.pathname.includes("favicon")
-              || url.pathname.includes("apple-touch-icon")
+              url.pathname.endsWith(".webmanifest")
               || url.pathname.includes("pwa-"),
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "pwa-brand-cache",
+              networkTimeoutSeconds: 3,
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60,
+              },
+            },
+          },
+          {
+            urlPattern: ({ url }) =>
+              url.pathname === "/offline.html"
+              || url.pathname.includes("favicon")
+              || url.pathname.includes("apple-touch-icon"),
             handler: "StaleWhileRevalidate",
             options: {
               cacheName: "pwa-shell-cache",

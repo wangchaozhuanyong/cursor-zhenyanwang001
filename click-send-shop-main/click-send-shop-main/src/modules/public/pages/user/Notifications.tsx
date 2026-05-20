@@ -1,7 +1,6 @@
 ﻿import { formatDateTime } from "@/utils/formatDateTime";
 import { useEffect, useState } from "react";
 import {
-  ArrowLeft,
   Bell,
   Package,
   Ticket,
@@ -30,6 +29,7 @@ import {
   THEME_BADGE_SUCCESS,
   THEME_BADGE_WARNING,
 } from "@/utils/themeVisuals";
+import PageHeader from "@/components/PageHeader";
 
 const typeConfig: Record<NotificationType, { icon: typeof Bell; color: string }> = {
   order: { icon: Package, color: THEME_BADGE_PRIMARY },
@@ -92,28 +92,26 @@ export default function Notifications() {
 
   return (
     <div className="min-h-screen bg-background pb-6">
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex w-full items-center justify-between px-[var(--store-page-x)] py-3 sm:max-w-lg sm:px-4">
-          <div className="flex items-center gap-3">
-            <button onClick={goBack} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
-              <ArrowLeft size={20} className="text-foreground" />
-            </button>
-            <h1 className="inline-flex items-center gap-2 text-base font-semibold leading-none text-foreground">
-              <span>消息通知</span>
-              {unreadBadgeText && (
-                <span className="inline-flex h-5 min-w-[24px] items-center justify-center rounded-full btn-theme-price px-1.5 text-[10px] font-bold leading-none text-primary-foreground">
-                  {unreadBadgeText}
-                </span>
-              )}
-            </h1>
-          </div>
-          {unreadCount > 0 && (
+      <PageHeader
+        title={
+          <span className="inline-flex items-center gap-2">
+            <span>消息通知</span>
+            {unreadBadgeText ? (
+              <span className="inline-flex h-5 min-w-[24px] items-center justify-center rounded-full btn-theme-price px-1.5 text-[10px] font-bold leading-none text-primary-foreground">
+                {unreadBadgeText}
+              </span>
+            ) : null}
+          </span>
+        }
+        onBack={goBack}
+        rightSlot={
+          unreadCount > 0 ? (
             <button onClick={markAllAsRead} className="flex items-center gap-1 text-xs text-theme-price active:opacity-70">
               <Check size={14} /> 全部已读
             </button>
-          )}
-        </div>
-      </header>
+          ) : undefined
+        }
+      />
 
       <main className="mx-auto w-full px-[var(--store-page-x)] sm:max-w-lg sm:px-4">
         {!loading && notifications.length === 0 && (

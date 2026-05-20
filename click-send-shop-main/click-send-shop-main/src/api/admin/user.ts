@@ -19,6 +19,9 @@ export interface AdminUserQuery extends PaginationParams {
   pointsMax?: string;
   refundRateMin?: string;
   refundRateMax?: string;
+  orderRestricted?: string;
+  couponRestricted?: string;
+  commentRestricted?: string;
 }
 
 export function getUsers(params?: AdminUserQuery) {
@@ -39,6 +42,34 @@ export function updateUser(id: string, data: Partial<UserProfile>) {
 
 export function updateUserStatus(id: string, accountStatus: string) {
   return put<void>(`/admin/users/${id}/status`, { accountStatus });
+}
+
+export function updateUserAccountStatus(id: string, accountStatus: string, reason?: string) {
+  return put<void>(`/admin/users/${id}/account-status`, { accountStatus, reason });
+}
+
+export function updateUserRestrictions(
+  id: string,
+  payload: { orderRestricted?: boolean; couponRestricted?: boolean; commentRestricted?: boolean; reason?: string },
+) {
+  return put<void>(`/admin/users/${id}/restrictions`, payload);
+}
+
+export function getUserStatusOverview(id: string) {
+  return get<{
+    account_status: string;
+    restrictions: {
+      order_restricted: boolean;
+      coupon_restricted: boolean;
+      comment_restricted: boolean;
+    };
+    latest_status_action: {
+      operator_id?: string | null;
+      operator_name?: string;
+      summary?: string;
+      created_at?: string | null;
+    } | null;
+  }>(`/admin/users/${id}/status-overview`);
 }
 
 export function resetUserPassword(id: string) {

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft } from "lucide-react";
 import { useParams } from "react-router-dom";
 import * as contentService from "@/services/contentService";
 import type { ContentPage } from "@/types/content";
 import { useGoBack } from "@/hooks/useGoBack";
 import ContactUsContent from "./ContactUsContent";
 import SeoHead from "@/components/SeoHead";
+import PageHeader from "@/components/PageHeader";
 import { buildCanonical, stripHtml, truncateText } from "@/utils/seo";
 
 const CONTACT_US_SLUG = "contact-us";
@@ -36,7 +36,8 @@ export default function ContentCmsPage() {
     }
     setLoading(true);
     setError(null);
-    contentService.fetchContentBySlug(slug.trim())
+    contentService
+      .fetchContentBySlug(slug.trim())
       .then((p) => {
         setPage(p ?? null);
         if (!p && !isContactUs) setError("未找到该页面");
@@ -67,14 +68,7 @@ export default function ContentCmsPage() {
         canonical={buildCanonical(`/content/${slug}`)}
         robots={isNoindex ? "noindex,follow" : "index,follow"}
       />
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
-          <button type="button" onClick={goBack} aria-label="返回" className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
-            <ArrowLeft size={20} className="text-foreground" />
-          </button>
-          <h1 className="min-w-0 flex-1 truncate text-base font-semibold text-foreground">{loading ? "加载中..." : page?.title || (isContactUs ? "联系我们" : "内容")}</h1>
-        </div>
-      </header>
+      <PageHeader title={loading ? "加载中..." : page?.title || (isContactUs ? "联系我们" : "内容")} onBack={goBack} />
       <main className="mx-auto max-w-lg px-4 pt-4">
         {error && !loading ? <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">{error}</p> : null}
         {page?.content && !loading && !error ? <article className="prose prose-sm max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(page.content) }} /> : null}

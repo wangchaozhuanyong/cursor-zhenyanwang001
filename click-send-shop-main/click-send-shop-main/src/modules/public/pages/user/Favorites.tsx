@@ -52,7 +52,7 @@ export default function Favorites() {
                   <div className="min-w-0 flex-1">
                     <p className="line-clamp-2 text-sm font-semibold text-[var(--theme-text)]">{p.name}</p>
                     <p className="mt-1 text-lg font-bold text-[var(--theme-price)]">RM {p.price}</p>
-                    <p className="mt-1 text-xs text-[var(--theme-text-muted)]">积分 +{p.points} · 库存 {p.stock} · {p.is_hot ? "热销" : p.is_new ? "新品" : "在售"}</p>
+                    <p className="mt-1 text-xs text-[var(--theme-text-muted)]">库存 {p.stock} · {p.is_hot ? "热销" : p.is_new ? "新品" : "在售"}</p>
                   </div>
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2">

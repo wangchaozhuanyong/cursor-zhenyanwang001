@@ -9,7 +9,9 @@ import {
   setUserTags,
   resetUserPassword,
   updateUserProfile,
-  updateUserStatus,
+  updateUserAccountStatus,
+  updateUserRestrictions,
+  fetchUserStatusOverview,
   recalculateUserMemberLevel,
   assignUserMemberLevel,
   fetchMemberLevels,
@@ -39,6 +41,7 @@ export default function AdminUserDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
   const [levels, setLevels] = useState<any[]>([]);
+  const [statusOverview, setStatusOverview] = useState<any>(null);
 
   const reload = useCallback(async () => {
     if (!id) return;
@@ -50,15 +53,17 @@ export default function AdminUserDetail() {
     setLoading(true);
     setLoadError(null);
     try {
-      const [u, tags, memberLevels] = await Promise.all([
+      const [u, tags, memberLevels, statusSnap] = await Promise.all([
         fetchUserById(id),
         fetchUserTags(),
         fetchMemberLevels(),
+        fetchUserStatusOverview(id),
       ]);
       if (controller.signal.aborted || seq !== loadSeqRef.current) return;
       setUser(u);
       setAllTags(tags);
       setLevels(memberLevels || []);
+      setStatusOverview(statusSnap || null);
     } catch (e) {
       if (seq !== loadSeqRef.current || isAbortError(e)) return;
       const msg = toastErrorMessage(e, "加载用户详情失败");
@@ -91,14 +96,41 @@ export default function AdminUserDetail() {
     }
   };
 
-  const doStatus = async (status: string) => {
+  const doStatus = async (status: "normal" | "disabled" | "blacklisted") => {
     if (!id) return;
+    const needReason = status === "disabled" || status === "blacklisted";
+    const reason = needReason ? window.prompt("请输入操作原因（必填）", "")?.trim() || "" : "";
+    if (needReason && !reason) {
+      toast.error("请填写操作原因");
+      return;
+    }
     try {
-      await updateUserStatus(id, status);
+      await updateUserAccountStatus(id, status, reason);
       await reload();
-      toast.success("状态已更新");
+      toast.success(status === "normal" ? "账号已恢复正常" : status === "disabled" ? "已禁用登录（会话已失效）" : "已加入黑名单");
     } catch (e) {
       toast.error(toastErrorMessage(e, "状态更新失败"));
+    }
+  };
+
+  const doRestriction = async (type: "order" | "coupon" | "comment", enabled: boolean) => {
+    if (!id) return;
+    const reason = window.prompt(`请输入${enabled ? "开启" : "取消"}限制原因（必填）`, "")?.trim() || "";
+    if (!reason) {
+      toast.error("请填写操作原因");
+      return;
+    }
+    try {
+      await updateUserRestrictions(id, {
+        reason,
+        orderRestricted: type === "order" ? enabled : undefined,
+        couponRestricted: type === "coupon" ? enabled : undefined,
+        commentRestricted: type === "comment" ? enabled : undefined,
+      });
+      await reload();
+      toast.success(`${enabled ? "已开启" : "已取消"}${type === "order" ? "下单" : type === "coupon" ? "领券" : "评论"}限制`);
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "限制更新失败"));
     }
   };
 
@@ -148,7 +180,7 @@ export default function AdminUserDetail() {
               <InfoItem label="手机号" value={user.phone || "-"} />
               <InfoItem label="微信" value={user.wechat || "-"} />
               <InfoItem label="WhatsApp" value={user.whatsapp || "-"} />
-              <InfoItem label="账号状态" value={user.account_status || "normal"} />
+              <InfoItem label="账号状态" value={statusOverview?.account_status || user.account_status || "normal"} />
               <InfoItem label="邀请码" value={user.invite_code || "-"} />
             </div>
           </div>
@@ -157,6 +189,17 @@ export default function AdminUserDetail() {
             建议优先在「基础资料」核对状态，再处理限制类操作
           </div>
         </div>
+        <div className="mt-3 grid gap-2 text-xs sm:grid-cols-4">
+          <InfoCard title="账户状态" value={statusOverview?.account_status || "normal"} />
+          <InfoCard title="下单限制" value={statusOverview?.restrictions?.order_restricted ? "已限制" : "未限制"} />
+          <InfoCard title="领券限制" value={statusOverview?.restrictions?.coupon_restricted ? "已限制" : "未限制"} />
+          <InfoCard title="评论限制" value={statusOverview?.restrictions?.comment_restricted ? "已限制" : "未限制"} />
+        </div>
+        {statusOverview?.latest_status_action ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            最近状态操作：{statusOverview.latest_status_action.summary || "-"} / 操作人：{statusOverview.latest_status_action.operator_name || "-"} / 时间：{statusOverview.latest_status_action.created_at || "-"}
+          </p>
+        ) : null}
       </section>
 
       <section className="rounded-xl border border-border bg-card p-4">
@@ -164,12 +207,12 @@ export default function AdminUserDetail() {
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           <PermissionGate permission="user.update"><ActionBtn label="编辑资料" onClick={() => { setEditOpen(true); setEditForm({ nickname: user.nickname, phone: user.phone, wechat: user.wechat, whatsapp: user.whatsapp, avatar: user.avatar }); }} /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label="重置密码" onClick={doResetPassword} /></PermissionGate>
-          <PermissionGate permission="user.update"><ActionBtn label="禁用登录" onClick={() => void doStatus("disabled")} danger /></PermissionGate>
-          <PermissionGate permission="user.update"><ActionBtn label="解封账号" onClick={() => void doStatus("normal")} /></PermissionGate>
-          <PermissionGate permission="user.update"><ActionBtn label="加入黑名单" onClick={() => void doStatus("blacklisted")} danger /></PermissionGate>
-          <PermissionGate permission="user.update"><ActionBtn label="限制下单" onClick={() => void doStatus("order_limited")} /></PermissionGate>
-          <PermissionGate permission="user.update"><ActionBtn label="限制领券" onClick={() => void doStatus("coupon_limited")} /></PermissionGate>
-          <PermissionGate permission="user.update"><ActionBtn label="限制评论" onClick={() => void doStatus("comment_limited")} /></PermissionGate>
+          <PermissionGate permission="user.update"><ActionBtn label="禁用登录" disabled={(statusOverview?.account_status || user.account_status) === "disabled"} onClick={() => void doStatus("disabled")} danger /></PermissionGate>
+          <PermissionGate permission="user.update"><ActionBtn label="恢复账号" disabled={(statusOverview?.account_status || user.account_status) === "normal"} onClick={() => void doStatus("normal")} /></PermissionGate>
+          <PermissionGate permission="user.update"><ActionBtn label="加入黑名单" disabled={(statusOverview?.account_status || user.account_status) === "blacklisted"} onClick={() => void doStatus("blacklisted")} danger /></PermissionGate>
+          <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.order_restricted ? "取消下单限制" : "开启下单限制"} onClick={() => void doRestriction("order", !statusOverview?.restrictions?.order_restricted)} /></PermissionGate>
+          <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.coupon_restricted ? "取消领券限制" : "开启领券限制"} onClick={() => void doRestriction("coupon", !statusOverview?.restrictions?.coupon_restricted)} /></PermissionGate>
+          <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.comment_restricted ? "取消评论限制" : "开启评论限制"} onClick={() => void doRestriction("comment", !statusOverview?.restrictions?.comment_restricted)} /></PermissionGate>
           <PermissionGate permission="member_level.manage"><ActionBtn label="重算会员等级" onClick={async () => { try { await recalculateUserMemberLevel(id); await reload(); toast.success("会员等级已重算"); } catch (e) { toast.error(toastErrorMessage(e, "重算失败")); } }} /></PermissionGate>
         </div>
       </section>
@@ -288,12 +331,13 @@ export default function AdminUserDetail() {
   );
 }
 
-function ActionBtn({ label, onClick, danger = false }: { label: string; onClick: () => void | Promise<void>; danger?: boolean }) {
+function ActionBtn({ label, onClick, danger = false, disabled = false }: { label: string; onClick: () => void | Promise<void>; danger?: boolean; disabled?: boolean }) {
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={() => void onClick()}
-      className={`rounded-lg border px-3 py-2 text-sm transition-colors ${danger ? "border-[var(--theme-danger)] text-[var(--theme-danger)] hover:bg-[var(--theme-danger)]/10" : "border-border text-foreground hover:bg-secondary"}`}
+      className={`rounded-lg border px-3 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${danger ? "border-[var(--theme-danger)] text-[var(--theme-danger)] hover:bg-[var(--theme-danger)]/10" : "border-border text-foreground hover:bg-secondary"}`}
     >
       {label}
     </button>

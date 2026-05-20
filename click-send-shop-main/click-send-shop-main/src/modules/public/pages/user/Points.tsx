@@ -1,6 +1,6 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Star, TrendingDown, TrendingUp, Loader2, CalendarCheck } from "lucide-react";
+import { Star, TrendingDown, TrendingUp, Loader2, CalendarCheck } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "@/stores/useUserStore";
@@ -21,6 +21,7 @@ import {
   THEME_TEXT_DANGER,
   THEME_TEXT_SUCCESS,
 } from "@/utils/themeVisuals";
+import PageHeader from "@/components/PageHeader";
 
 const POINTS_HINT_FALLBACK = "订单支付完成后，将按后台当前积分规则发放积分。";
 
@@ -80,7 +81,7 @@ export default function Points() {
     setSigningIn(true);
     try {
       const pts = await signIn();
-      toast.success(`签到成功，获得 ${pts} 积分！`, toastPresetQuickSuccess);
+      toast.success(`签到成功，获得 ${pts} 积分`, toastPresetQuickSuccess);
       loadProfile();
       loadPointsData();
     } catch (e) {
@@ -92,14 +93,7 @@ export default function Points() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 bg-background/95 px-[var(--store-page-x)] py-3 backdrop-blur-md sm:px-4">
-        <div className="mx-auto flex w-full items-center gap-3 sm:max-w-lg">
-          <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary touch-target">
-            <ArrowLeft size={20} className="text-foreground" />
-          </button>
-          <h1 className="text-base font-semibold text-foreground">我的积分</h1>
-        </div>
-      </header>
+      <PageHeader title="我的积分" onBack={goBack} />
 
       <main className="mx-auto w-full px-[var(--store-page-x)] py-4 sm:max-w-lg sm:px-4 sm:py-6">
         <div className={`rounded-2xl p-8 text-center ${THEME_ACCENT_HERO_SHELL}`}>
@@ -143,7 +137,7 @@ export default function Points() {
                     {record.amount >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{normalizePointsText(record.description) || "积分变动"}</p>
+                    <p className="truncate text-sm font-medium text-foreground">{normalizePointsText(record.description) || "积分变动"}</p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">{formatDateTime(record.created_at)}</p>
                   </div>
                   <span className={`text-sm font-bold ${record.amount >= 0 ? THEME_TEXT_SUCCESS : THEME_TEXT_DANGER}`}>
@@ -156,7 +150,7 @@ export default function Points() {
                 <button
                   onClick={loadMore}
                   disabled={loadingMore}
-                  className="w-full rounded-xl border border-border bg-card py-3 text-sm text-muted-foreground hover:bg-secondary transition-colors disabled:opacity-60"
+                  className="w-full rounded-xl border border-border bg-card py-3 text-sm text-muted-foreground transition-colors hover:bg-secondary disabled:opacity-60"
                 >
                   {loadingMore ? "加载中..." : "加载更多"}
                 </button>
@@ -168,4 +162,3 @@ export default function Points() {
     </div>
   );
 }
-

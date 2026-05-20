@@ -216,10 +216,10 @@ export const useCartStore = create<CartState>()(
       },
 
       totalAmount: () => get().items.reduce((sum, i) => sum + getCartLinePrice(i), 0),
-      totalPoints: () => get().items.reduce((sum, i) => sum + i.product.points * i.qty, 0),
+      totalPoints: () => 0,
       totalItems: () => get().items.reduce((sum, i) => sum + i.qty, 0),
       totalAmountSelected: () => get().getSelectedItems().reduce((sum, i) => sum + getCartLinePrice(i), 0),
-      totalPointsSelected: () => get().getSelectedItems().reduce((sum, i) => sum + i.product.points * i.qty, 0),
+      totalPointsSelected: () => 0,
       totalItemsSelected: () => get().getSelectedItems().reduce((sum, i) => sum + i.qty, 0),
 
       clearError: () => set({ error: null }),

@@ -233,7 +233,7 @@ async function getProductById(id) {
 async function createProduct(body, adminUserId, req) {
   const {
     name, cover_image, video_url, images, price, original_price, sales_count,
-    points, category_id, stock, sort_order,
+    category_id, stock, sort_order,
     description, is_recommended, is_new, is_hot,
     variants,
     tag_ids: tagIdsBody,
@@ -256,7 +256,6 @@ async function createProduct(body, adminUserId, req) {
         ? null
         : Number(original_price),
       sales_count: Number.isFinite(Number(sales_count)) ? Number(sales_count) : 0,
-      points: points || 0,
       category_id: category_id || '',
       stock: stock || 0,
       status: statusStr,
@@ -363,7 +362,7 @@ async function updateProduct(id, body, adminUserId, req) {
   try {
     const fields = [];
     const values = [];
-    const allowedFields = ['name', 'cover_image', 'video_url', 'price', 'points', 'category_id',
+    const allowedFields = ['name', 'cover_image', 'video_url', 'price', 'category_id',
       'sort_order', 'description', 'sales_count'];
     for (const f of allowedFields) {
       if (body[f] !== undefined) {
@@ -678,7 +677,6 @@ async function importProductsCsv(text, adminUserId) {
           price: payload.price,
           original_price: payload.original_price,
           sales_count: payload.sales_count,
-          points: payload.points,
           category_id: payload.category_id,
           stock: payload.stock,
           status: payload.status,
@@ -706,7 +704,6 @@ async function importProductsCsv(text, adminUserId) {
         price: payload.price,
         original_price: payload.original_price,
         sales_count: payload.sales_count,
-        points: payload.points,
         category_id: payload.category_id,
         stock: payload.stock,
         status: payload.status,

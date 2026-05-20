@@ -1,32 +1,29 @@
 import { useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
-/**
- * 智能返回 hook
- *
- *  - 有浏览器历史 → `navigate(-1)`
- *  - 无历史（直接访问、新标签页打开、PWA 独立窗口、被分享链接） → 跳到 `fallback`
- *
- * 默认 fallback：
- *   - `/orders/...`、`/order/...`、`/checkout` → 回到首页
- *   - `/admin/...` → `/admin`
- *   - 其他 → `/`
- *
- * 使用：
- *   const goBack = useGoBack();
- *   <button onClick={goBack}>返回</button>
- *   // 或自定义：const goBack = useGoBack("/profile");
- */
 export function useGoBack(fallback?: string) {
   const navigate = useNavigate();
   const location = useLocation();
 
   return useCallback(() => {
-    // history.length 在 SPA 内最低为 1，>1 通常表示在站内有可返回的页面
-    const hasHistory =
-      typeof window !== "undefined" && window.history.length > 1;
+    const isStandalone =
+      typeof window !== "undefined" &&
+      (window.matchMedia?.("(display-mode: standalone)")?.matches ||
+        (window.navigator as Navigator & { standalone?: boolean }).standalone === true);
+    const hasHistory = typeof window !== "undefined" && window.history.length > 1;
+    const sameOriginReferrer =
+      typeof document !== "undefined" &&
+      !!document.referrer &&
+      (() => {
+        try {
+          return new URL(document.referrer).origin === window.location.origin;
+        } catch {
+          return false;
+        }
+      })();
 
-    if (hasHistory) {
+    // PWA 独立窗口中，history 有时存在但不可回退，要求 referrer 同源再执行 -1
+    if (hasHistory && (!isStandalone || sameOriginReferrer)) {
       navigate(-1);
       return;
     }
@@ -37,11 +34,11 @@ export function useGoBack(fallback?: string) {
     }
 
     const path = location.pathname || "/";
-    let target = "/";
-    if (path.startsWith("/admin")) target = "/admin";
-    else if (path.startsWith("/profile")) target = "/profile";
-    else target = "/";
-
+    const target = path.startsWith("/admin")
+      ? "/admin"
+      : path.startsWith("/profile")
+        ? "/profile"
+        : "/";
     navigate(target, { replace: true });
-  }, [navigate, location.pathname, fallback]);
+  }, [fallback, location.pathname, navigate]);
 }

@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft, ChevronDown, ChevronUp, MessageCircle, Search } from "lucide-react";
-import { useGoBack } from "@/hooks/useGoBack";
+import { ChevronDown, ChevronUp, MessageCircle, Search } from "lucide-react";
 import { FAQS, FAQ_CATEGORIES } from "@/constants/help";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { useGoBack } from "@/hooks/useGoBack";
+import PageHeader from "@/components/PageHeader";
 
 export default function Help() {
   const goBack = useGoBack();
@@ -45,14 +46,7 @@ export default function Help() {
         robots="index,follow"
         jsonLd={[{ id: "faq-help", data: faqJsonLd }]}
       />
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
-          <button onClick={goBack} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
-            <ArrowLeft size={20} className="text-foreground" />
-          </button>
-          <h1 className="text-base font-semibold text-foreground">帮助中心</h1>
-        </div>
-      </header>
+      <PageHeader title="帮助中心" onBack={goBack} />
 
       <main className="mx-auto max-w-lg px-4 pt-4">
         <div className="relative">

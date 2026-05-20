@@ -19,6 +19,10 @@ export interface AdminUserListItem {
   subordinate_enabled?: boolean | number;
   created_at?: string;
   tags?: UserTag[];
+  account_status?: string;
+  order_restricted?: number | boolean;
+  coupon_restricted?: number | boolean;
+  comment_restricted?: number | boolean;
 }
 
 const initialState = {
@@ -33,6 +37,9 @@ const initialState = {
   phoneBoundFilter: "",
   memberLevelIdFilter: "",
   accountStatusFilter: "",
+  orderRestrictedFilter: "",
+  couponRestrictedFilter: "",
+  commentRestrictedFilter: "",
   summary: {} as Record<string, number>,
 };
 
@@ -48,6 +55,9 @@ interface AdminUsersState {
   phoneBoundFilter: string;
   memberLevelIdFilter: string;
   accountStatusFilter: string;
+  orderRestrictedFilter: string;
+  couponRestrictedFilter: string;
+  commentRestrictedFilter: string;
   summary: Record<string, number>;
   setSearch: (v: string) => void;
   setSelectedTagId: (v: string) => void;
@@ -55,6 +65,9 @@ interface AdminUsersState {
   setPhoneBoundFilter: (v: string) => void;
   setMemberLevelIdFilter: (v: string) => void;
   setAccountStatusFilter: (v: string) => void;
+  setOrderRestrictedFilter: (v: string) => void;
+  setCouponRestrictedFilter: (v: string) => void;
+  setCommentRestrictedFilter: (v: string) => void;
   setPage: (v: number) => void;
   setPageSize: (v: number) => void;
   loadUsers: (params?: {
@@ -66,6 +79,9 @@ interface AdminUsersState {
     phoneBound?: string;
     memberLevelId?: string;
     accountStatus?: string;
+    orderRestricted?: string;
+    couponRestricted?: string;
+    commentRestricted?: string;
   }) => Promise<void>;
   reset: () => void;
 }
@@ -79,6 +95,9 @@ export const useAdminUsersStore = create<AdminUsersState>((set) => ({
   setPhoneBoundFilter: (phoneBoundFilter) => set({ phoneBoundFilter }),
   setMemberLevelIdFilter: (memberLevelIdFilter) => set({ memberLevelIdFilter }),
   setAccountStatusFilter: (accountStatusFilter) => set({ accountStatusFilter }),
+  setOrderRestrictedFilter: (orderRestrictedFilter) => set({ orderRestrictedFilter }),
+  setCouponRestrictedFilter: (couponRestrictedFilter) => set({ couponRestrictedFilter }),
+  setCommentRestrictedFilter: (commentRestrictedFilter) => set({ commentRestrictedFilter }),
   setPage: (page) => set({ page }),
   setPageSize: (pageSize) => set({ pageSize }),
 
@@ -96,6 +115,9 @@ export const useAdminUsersStore = create<AdminUsersState>((set) => ({
       const phoneBound = params.phoneBound ?? state.phoneBoundFilter;
       const memberLevelId = params.memberLevelId ?? state.memberLevelIdFilter;
       const accountStatus = params.accountStatus ?? state.accountStatusFilter;
+      const orderRestricted = params.orderRestricted ?? state.orderRestrictedFilter;
+      const couponRestricted = params.couponRestricted ?? state.couponRestrictedFilter;
+      const commentRestricted = params.commentRestricted ?? state.commentRestrictedFilter;
       const p = await userService.fetchUsers({
         page,
         pageSize,
@@ -105,6 +127,9 @@ export const useAdminUsersStore = create<AdminUsersState>((set) => ({
         phoneBound: phoneBound || undefined,
         memberLevelId: memberLevelId || undefined,
         accountStatus: accountStatus || undefined,
+        orderRestricted: orderRestricted || undefined,
+        couponRestricted: couponRestricted || undefined,
+        commentRestricted: commentRestricted || undefined,
       });
       set({
         users: p.list as AdminUserListItem[],

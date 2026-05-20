@@ -1,6 +1,7 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import legacy from "@vitejs/plugin-legacy";
+import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
 
 function resolveVendorChunkName(id: string): string | undefined {
@@ -117,6 +118,102 @@ export default defineConfig(() => ({
   plugins: [
     replaceViteClientPlaceholders(),
     react(),
+    VitePWA({
+      registerType: "autoUpdate",
+      injectRegister: false,
+      outDir: "dist",
+      manifest: false,
+      includeAssets: [
+        "favicon.ico",
+        "favicon.svg",
+        "favicon-32x32.png",
+        "favicon.webp",
+        "apple-touch-icon.png",
+        "pwa-192x192.png",
+        "pwa-512x512.png",
+        "pwa-maskable-512x512.png",
+        "offline.html",
+      ],
+      workbox: {
+        swDest: "sw.js",
+        navigateFallback: "/offline.html",
+        navigateFallbackDenylist: [/^\/admin(\/|$)/, /^\/api(\/|$)/],
+        cleanupOutdatedCaches: true,
+        clientsClaim: false,
+        skipWaiting: false,
+        runtimeCaching: [
+          {
+            urlPattern: /^https?:\/\/[^/]+\/api\/(admin|auth|user|orders|cart|checkout|payment|upload)(\/|$)/,
+            handler: "NetworkOnly",
+          },
+          {
+            urlPattern: ({ url, request }) => request.mode === "navigate" && url.pathname.startsWith("/admin"),
+            handler: "NetworkOnly",
+          },
+          {
+            urlPattern: ({ request }) => request.destination === "document",
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "pages-cache",
+              networkTimeoutSeconds: 4,
+              expiration: {
+                maxEntries: 40,
+                maxAgeSeconds: 60 * 60 * 24,
+              },
+            },
+          },
+          {
+            urlPattern: ({ request }) =>
+              request.destination === "style" || request.destination === "script" || request.destination === "worker",
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "static-assets-cache",
+              expiration: {
+                maxEntries: 120,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
+            },
+          },
+          {
+            urlPattern: ({ url, request }) =>
+              request.destination === "image"
+              && (
+                url.pathname.startsWith("/assets/")
+                || url.pathname.startsWith("/uploads/")
+                || url.pathname.includes("/banner")
+                || url.pathname.includes("/product")
+              ),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "image-cache",
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 14,
+              },
+            },
+          },
+          {
+            urlPattern: ({ url }) =>
+              url.pathname === "/offline.html"
+              || url.pathname.endsWith(".webmanifest")
+              || url.pathname.includes("favicon")
+              || url.pathname.includes("apple-touch-icon")
+              || url.pathname.includes("pwa-"),
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "pwa-shell-cache",
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
+            },
+          },
+        ],
+      },
+      devOptions: {
+        enabled: false,
+      },
+    }),
     ...(legacyEnabled
       ? [
           legacy({

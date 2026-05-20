@@ -285,19 +285,16 @@ function AdminSidebarNav({
   layoutTitle: string;
   logoutLabel: string;
 }) {
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [expandedPath, setExpandedPath] = useState<string | null>(null);
 
   useEffect(() => {
-    setExpandedGroups((prev) => {
-      const next = { ...prev };
-      for (const item of navItems) {
-        if (!item.children?.length) continue;
-        const active = pathname === item.path || (item.path !== "/admin" && pathname.startsWith(item.path));
-        const childActive = item.children.some((c) => pathname === c.path || pathname.startsWith(c.path));
-        if (active || childActive) next[item.path] = true;
-      }
-      return next;
+    const activeGroup = navItems.find((item) => {
+      if (!item.children?.length) return false;
+      const active = pathname === item.path || (item.path !== "/admin" && pathname.startsWith(item.path));
+      const childActive = item.children.some((c) => pathname === c.path || pathname.startsWith(c.path));
+      return active || childActive;
     });
+    if (activeGroup) setExpandedPath(activeGroup.path);
   }, [navItems, pathname]);
 
   const listClassName =
@@ -318,18 +315,14 @@ function AdminSidebarNav({
         {navItems.map((item) => {
           const active = pathname === item.path || (item.path !== "/admin" && pathname.startsWith(item.path));
           const childActive = item.children?.some((c) => pathname === c.path || pathname.startsWith(c.path));
-          const isExpanded = !!expandedGroups[item.path];
+          const isExpanded = expandedPath === item.path;
           return (
             <div key={item.path}>
               <button
                 type="button"
                 onClick={() => {
                   if (item.children?.length) {
-                    setExpandedGroups((prev) => {
-                      const next = { ...prev, [item.path]: !prev[item.path] };
-                      return next;
-                    });
-                    if (!isExpanded) onNavigate(item.path);
+                    setExpandedPath((prev) => (prev === item.path ? null : item.path));
                     return;
                   }
                   onNavigate(item.path);
@@ -342,18 +335,17 @@ function AdminSidebarNav({
               >
                 <item.icon size={20} strokeWidth={2} />
                 <span className="flex-1 text-left">{item.label}</span>
-                {item.children && (
-                  <ChevronRight size={18} className={`shrink-0 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
-                )}
+                {item.children && <ChevronRight size={18} className={`shrink-0 transition-transform ${isExpanded ? "rotate-90" : ""}`} />}
               </button>
               <AnimatePresence initial={false}>
                 {item.children && isExpanded ? (
                 <motion.div
+                  layout
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.18, ease: "easeOut" }}
-                  className="ml-4 mt-0.5 overflow-hidden space-y-0.5 border-l border-border pl-3"
+                  className="relative z-0 ml-4 mt-0.5 overflow-hidden space-y-0.5 border-l border-border pl-3"
                 >
                   {item.children.map((child) => {
                     const cActive = child.path === item.path

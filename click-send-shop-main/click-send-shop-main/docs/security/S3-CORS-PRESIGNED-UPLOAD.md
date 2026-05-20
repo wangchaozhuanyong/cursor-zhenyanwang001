@@ -10,8 +10,8 @@
 示例（生产）：
 
 ```text
-https://flashcast.com.my
-https://www.flashcast.com.my
+https://your-domain.com
+https://www.your-domain.com
 ```
 
 本地调试可额外加入（**不要**写进生产 Bucket 长期配置，可用独立 dev bucket）：

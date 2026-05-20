@@ -106,6 +106,12 @@ function formatProduct(row) {
     is_recommended: !!row.is_recommended,
     is_new: !!row.is_new,
     is_hot: !!row.is_hot,
+    is_age_restricted: row.is_age_restricted === undefined ? undefined : !!row.is_age_restricted,
+    minimum_age: row.minimum_age == null ? null : Number(row.minimum_age),
+    compliance_type: row.compliance_type || null,
+    region_notice: row.region_notice || null,
+    compliance_notice: row.compliance_notice || null,
+    allow_index: row.allow_index === undefined ? undefined : Number(row.allow_index),
   };
 }
 

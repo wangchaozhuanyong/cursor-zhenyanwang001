@@ -80,6 +80,12 @@ export interface SiteSettings {
   seoDescription?: string;
   seoKeywords?: string;
   ogImageUrl?: string;
+  googleSiteVerification?: string;
+  defaultOgImageUrl?: string;
+  complianceNotice?: string;
+  ageGateEnabled?: string;
+  minimumAge?: string;
+  restrictedProductNoindexEnabled?: string;
 
   /* 页脚 */
   footerCompanyName?: string;

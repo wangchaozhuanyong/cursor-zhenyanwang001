@@ -15,6 +15,8 @@ import { fetchHotSearchTerms, fetchSearchSuggestions, trackSearchKeyword } from 
 import type { HotSearchTerm, SearchSuggestion } from "@/types/search";
 import { getProductGridClassName } from "@/utils/productGridClasses";
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
+import SeoHead from "@/components/SeoHead";
+import { buildCanonical } from "@/utils/seo";
 
 const HISTORY_KEY = "search_history";
 const MAX_HISTORY = 10;
@@ -156,6 +158,12 @@ export default function Search() {
 
   return (
     <div className="store-bottom-safe min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
+      <SeoHead
+        title="搜索结果｜大马通"
+        description="查看大马通站内搜索结果，快速查找相关服务、商品和帮助内容。"
+        canonical={buildCanonical("/search")}
+        robots="noindex,follow"
+      />
       <header
         className={cn(
           "sticky top-0 z-header border-b backdrop-blur-xl pt-[env(safe-area-inset-top,0px)]",

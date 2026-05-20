@@ -4,9 +4,16 @@ const SITEMAP_MAX_URLS = 50000;
 
 async function selectProductsForSitemapWithUpdatedAt() {
   const [rows] = await db.query(
-    `SELECT id, COALESCE(updated_at, created_at) AS lastmod
+    `SELECT id, name, description, category_id, COALESCE(updated_at, created_at) AS lastmod,
+            COALESCE(allow_index, 1) AS allow_index,
+            COALESCE(is_age_restricted, 0) AS is_age_restricted,
+            compliance_type
      FROM products
-     WHERE lifecycle_status = 1 AND deleted_at IS NULL
+     WHERE lifecycle_status = 1
+       AND deleted_at IS NULL
+       AND COALESCE(allow_index, 1) = 1
+       AND COALESCE(is_age_restricted, 0) = 0
+       AND (compliance_type IS NULL OR compliance_type = '' OR compliance_type = 'normal')
      ORDER BY sort_order ASC, created_at DESC
      LIMIT ?`,
     [SITEMAP_MAX_URLS],
@@ -52,9 +59,10 @@ async function selectCategoriesForSitemapFallback() {
 
 async function selectContentPagesForSitemap() {
   const [rows] = await db.query(
-    `SELECT slug, last_modified_at AS lastmod
+    `SELECT slug, title, content, last_modified_at AS lastmod
      FROM content_pages
-     WHERE publish_status = 'published' AND deleted_at IS NULL
+     WHERE publish_status = 'published'
+       AND deleted_at IS NULL
      ORDER BY slug ASC
      LIMIT ?`,
     [SITEMAP_MAX_URLS],

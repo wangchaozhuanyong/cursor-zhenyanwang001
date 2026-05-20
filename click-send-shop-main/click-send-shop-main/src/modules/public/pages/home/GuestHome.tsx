@@ -5,6 +5,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import logoWebp from "@/assets/logo.webp";
 import StoreTabHeader from "@/components/store/StoreTabHeader";
+import HomeInstallHint from "@/components/store/HomeInstallHint";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import BannerCarousel from "@/components/BannerCarousel";
@@ -33,6 +34,9 @@ import {
   HOME_HERO_STACK_CLASS,
 } from "@/constants/homeLayout";
 import { cn } from "@/lib/utils";
+import SeoHead from "@/components/SeoHead";
+import { buildCanonical } from "@/utils/seo";
+import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/utils/structuredData";
 
 function mergeHomeProductsForGuest(hot: Product[], recommended: Product[], max: number): Product[] {
   const seen = new Set<string>();
@@ -80,10 +84,10 @@ export default function GuestHome() {
   useDocumentTitle(undefined);
   const navigate = useNavigate();
   const siteInfo = useSiteInfo();
-  const siteName = siteInfo.siteName || "FlashCast";
+  const siteName = siteInfo.siteName || "大马通";
   const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
-  const slogan = siteInfo.siteSlogan || "精选全球好物，品质生活";
-  const description = siteInfo.siteDescription || "精选全球好物，品质生活购物平台";
+  const slogan = siteInfo.siteSlogan || "马来西亚华人一站式生活服务与合规精选好物平台";
+  const description = siteInfo.siteDescription || "大马通面向马来西亚华人用户，提供签证咨询、留学申请、第二家园、商业装修、本地生活服务与合规精选好物信息，支持中文客服沟通，适用地区以马来西亚本地为主。";
   const { banners } = useHomeBanners();
   const { themeConfig } = useThemeRuntime();
   const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
@@ -141,6 +145,7 @@ export default function GuestHome() {
     if (siteInfo.termsPath) extra.push({ label: "服务条款", path: siteInfo.termsPath });
     if (siteInfo.refundPolicyPath) extra.push({ label: "退款政策", path: siteInfo.refundPolicyPath });
     if (siteInfo.shippingPolicyPath) extra.push({ label: "配送政策", path: siteInfo.shippingPolicyPath });
+    extra.push({ label: "合规说明", path: "/content/compliance-notice" });
     extra.push({ label: "联系我们", path: "/content/contact-us" });
     return dedupeFooterNav([...base, ...extra]);
   }, [
@@ -163,8 +168,29 @@ export default function GuestHome() {
   const homeLayout = themeConfig.homeLayout ?? "classic";
   const isPremiumLayout = homeLayout === "premium";
   const isMagazineLayout = homeLayout === "magazine";
+  const seoTitle = siteInfo.seoTitle || "大马通｜马来西亚华人一站式生活服务与精选好物";
+  const seoDescription = siteInfo.seoDescription || description;
+  const canonical = buildCanonical("/");
+  const seoImage = siteInfo.ogImageUrl || siteInfo.defaultOgImageUrl || siteInfo.logoUrl || "/og-default.png";
   return (
     <div className={`min-h-screen bg-[var(--theme-bg)] ${bottomNavSafe} text-[var(--theme-text)]`} data-theme-home-layout={themeConfig.homeLayout}>
+      <SeoHead
+        title={seoTitle}
+        description={seoDescription}
+        keywords={siteInfo.seoKeywords}
+        canonical={canonical}
+        ogTitle={seoTitle}
+        ogDescription={seoDescription}
+        ogImage={seoImage}
+        googleSiteVerification={siteInfo.googleSiteVerification}
+        ogSiteName={siteInfo.siteName || "大马通"}
+        ogType="website"
+        jsonLd={[
+          { id: "website", data: buildWebsiteJsonLd(siteInfo) },
+          { id: "organization", data: buildOrganizationJsonLd(siteInfo) },
+        ]}
+      />
+      <HomeInstallHint />
       <StoreTabHeader
         searchMode="none"
         showSiteNameMobile
@@ -185,6 +211,13 @@ export default function GuestHome() {
           isMagazineLayout && "bg-[color-mix(in_srgb,var(--theme-bg)_88%,black)]",
         )}
       >
+        <section className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3">
+          <h1 className="text-base font-semibold text-[var(--theme-text)]">马来西亚华人一站式生活服务平台</h1>
+          <p className="mt-1 text-sm text-[var(--theme-text-muted)]">
+            大马通提供签证咨询、留学申请、第二家园、商业装修、本地生活服务与合规精选好物信息，帮助在马华人更方便地了解服务、提交需求并联系客服。
+          </p>
+        </section>
+
         {(isHomeModuleEnabled(homeModules, "banner", "guest") ||
           isHomeModuleEnabled(homeModules, "trust_bar", "guest") ||
           isHomeModuleEnabled(homeModules, "nav_grid", "guest")) ? (
@@ -249,7 +282,7 @@ export default function GuestHome() {
             全网爆款
           </h2>
           {homeError && (
-            <div className="mt-4 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-center text-sm text-[var(--theme-text-muted)]">
+            <div className="mt-4 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-center text-sm text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]">
               <p>{homeError}</p>
               <button
                 type="button"
@@ -270,7 +303,7 @@ export default function GuestHome() {
           {!homeLoading && !homeError && gridProducts.length === 0 && (
             <div className="mt-6 rounded-xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)]/60 px-4 py-10 text-center">
               <p className="text-sm text-[var(--theme-text)]">暂无推荐商品</p>
-              <p className="mt-2 text-xs text-[var(--theme-text-muted)]">
+              <p className="mt-2 text-xs text-[color-mix(in_srgb,var(--theme-text-on-surface)_70%,var(--theme-text-muted))]">
                 请先浏览分类或登录查看；商家上架商品后，这里会自动展示。              </p>
               <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
                 <button
@@ -329,6 +362,3 @@ export default function GuestHome() {
     </div>
   );
 }
-
-
-

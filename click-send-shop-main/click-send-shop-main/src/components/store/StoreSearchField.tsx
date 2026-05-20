@@ -29,7 +29,7 @@ export default function StoreSearchField({
   return (
     <div className={cn("relative min-w-0 flex-1", className)}>
       <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center" aria-hidden>
-        <Search className="h-4 w-4 text-[var(--theme-text-muted)]" />
+        <Search className="h-4 w-4 text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]" />
       </div>
       <input
         type="search"

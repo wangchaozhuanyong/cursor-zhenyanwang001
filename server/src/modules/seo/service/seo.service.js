@@ -10,6 +10,12 @@ const STATIC_PUBLIC_PATHS = [
   '/about',
 ];
 
+const RESTRICTED_KEYWORDS = [
+  'tobacco', 'cigarette', 'cigar', 'smoking', 'vape', 'e-cigarette', 'nicotine',
+  'alcohol', 'liquor', 'wine', 'beer', 'areca', 'betel',
+  '槟榔', '烟', '香烟', '真烟', '电子烟', '尼古丁', '酒', '白酒', '啤酒', '红酒',
+];
+
 function stripTrailingSlash(value) {
   return String(value || '').trim().replace(/\/+$/, '');
 }
@@ -66,7 +72,27 @@ async function selectCategoriesForSitemap() {
 }
 
 async function selectContentPagesForSitemap() {
-  return seoRepo.selectContentPagesForSitemap();
+  try {
+    return await seoRepo.selectContentPagesForSitemap();
+  } catch (err) {
+    if (err?.code !== 'ER_BAD_FIELD_ERROR') throw err;
+    return [];
+  }
+}
+
+function containsRestrictedText(value) {
+  const text = String(value || '').toLowerCase();
+  if (!text) return false;
+  return RESTRICTED_KEYWORDS.some((k) => text.includes(String(k).toLowerCase()));
+}
+
+function shouldExcludeProductFromSitemap(product) {
+  if (!product) return true;
+  if (Number(product.allow_index || 1) !== 1) return true;
+  if (Number(product.is_age_restricted || 0) === 1) return true;
+  const compliance = String(product.compliance_type || '').trim().toLowerCase();
+  if (compliance && compliance !== 'normal') return true;
+  return containsRestrictedText(`${product.name || ''} ${product.description || ''}`);
 }
 
 function renderUrl({ loc, lastmod, changefreq, priority }) {
@@ -108,13 +134,17 @@ async function buildSitemapXml(req) {
       changefreq: 'weekly',
       priority: '0.7',
     })),
-    ...products.map((product) => ({
+    ...products
+      .filter((product) => !shouldExcludeProductFromSitemap(product))
+      .map((product) => ({
       loc: buildUrl(baseUrl, `/product/${encodePathSegment(product.id)}`),
       lastmod: product.lastmod,
       changefreq: 'weekly',
       priority: '0.8',
     })),
-    ...contentPages.map((page) => ({
+    ...contentPages
+      .filter((page) => !containsRestrictedText(`${page.title || ''} ${page.content || ''}`))
+      .map((page) => ({
       loc: buildUrl(baseUrl, `/content/${encodePathSegment(page.slug)}`),
       lastmod: page.lastmod,
       changefreq: 'monthly',
@@ -134,20 +164,19 @@ async function buildSitemapXml(req) {
 function buildRobotsTxt(req) {
   const sitemapUrl = buildUrl(getPublicBaseUrl(req), '/sitemap.xml');
   return [
-    'User-agent: Googlebot',
-    'Allow: /',
-    '',
-    'User-agent: Bingbot',
-    'Allow: /',
-    '',
-    'User-agent: Twitterbot',
-    'Allow: /',
-    '',
-    'User-agent: facebookexternalhit',
-    'Allow: /',
-    '',
     'User-agent: *',
     'Allow: /',
+    'Disallow: /admin',
+    'Disallow: /api',
+    'Disallow: /checkout',
+    'Disallow: /orders',
+    'Disallow: /profile',
+    'Disallow: /settings',
+    'Disallow: /address',
+    'Disallow: /notifications',
+    'Disallow: /returns',
+    'Disallow: /reviews',
+    'Disallow: /login',
     '',
     `Sitemap: ${sitemapUrl}`,
     '',

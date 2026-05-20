@@ -31,6 +31,11 @@ import { buildProductSharePayload } from "@/utils/productShare";
 import { getProductSalesCount, hasProductSales, productSalesDetailLabel } from "@/utils/productSales";
 import { openCustomerService } from "@/utils/customerService";
 import { cn } from "@/lib/utils";
+import SeoHead from "@/components/SeoHead";
+import { buildCanonical, stripHtml, truncateText } from "@/utils/seo";
+import { buildProductJsonLd } from "@/utils/structuredData";
+import { isRestrictedProduct } from "@/utils/restrictedProduct";
+import RegulatedProductNotice from "@/components/compliance/RegulatedProductNotice";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -193,6 +198,20 @@ export default function ProductDetail() {
   }
   const showPriceMeta = salesCount !== null || statusBadges.length > 0;
   const detailSections = buildDetailSections(product.description);
+  const restricted = isRestrictedProduct(product);
+  const allowIndex = product.allow_index === undefined ? true : Number(product.allow_index) === 1;
+  const canIndex = !restricted && allowIndex;
+  const siteName = siteInfo.siteName || "大马通";
+  const canonical = buildCanonical(`/product/${product.id}`);
+  const productDescRaw = stripHtml(product.description || "");
+  const productDescription = truncateText(
+    restricted
+      ? "本页面包含受年龄、地区或当地法规限制的商品或服务信息，仅面向符合法定年龄并符合当地规定的用户展示。具体适用范围以当地法律法规、平台规则和客服确认为准。"
+      : productDescRaw || `查看 ${product.name} 的详情、价格、库存、规格与服务信息，支持中文客服咨询。`,
+    150,
+  );
+  const seoImage = selectedVariant?.image_url || product.cover_image || product.images?.[0] || siteInfo.defaultOgImageUrl || "/og-default.png";
+  const productJsonLd = canIndex ? buildProductJsonLd(product) : null;
   const galleryImages = Array.from(new Set([...(selectedVariant?.image_url ? [selectedVariant.image_url] : []), ...(Array.isArray(product.images) && product.images.length ? product.images : []), ...(product.cover_image ? [product.cover_image] : [])].filter((url): url is string => typeof url === "string" && url.trim().length > 0)));
 
   const ensureVariantSelected = () => {
@@ -326,6 +345,18 @@ export default function ProductDetail() {
 
   return (
     <div className="store-bottom-action-space min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
+      <SeoHead
+        title={`${product.name}｜${siteName}`}
+        description={productDescription}
+        canonical={canonical}
+        robots={canIndex ? "index,follow" : "noindex,follow"}
+        ogTitle={`${product.name}｜${siteName}`}
+        ogDescription={productDescription}
+        ogImage={seoImage}
+        ogType="product"
+        ogSiteName={siteName}
+        jsonLd={productJsonLd ? [{ id: "product", data: productJsonLd }] : []}
+      />
       <ProductDetailStickyHeader
         solid={headerSolid}
         onBack={goBack}
@@ -396,6 +427,7 @@ export default function ProductDetail() {
                   <div className="font-bold">{activeActivity.title}</div>
                 </div>
               ) : null}
+              {restricted ? <RegulatedProductNotice product={product} /> : null}
               <ProductTagList tags={product.tags} max={6} size="md" className="mt-3" />
             <div className="mt-4 hidden px-[var(--store-page-x)] md:block md:px-0">
               <DetailPurchaseBar
@@ -581,4 +613,3 @@ function buildDetailSections(description: string): string[] {
     .filter(Boolean);
   return parts.length > 0 ? parts : [raw];
 }
-

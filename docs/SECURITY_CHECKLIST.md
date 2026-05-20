@@ -1,0 +1,79 @@
+# Security Checklist (Pre-Release)
+
+Last updated: 2026-05-19
+
+## 1. Dependency vulnerability check
+
+Executed:
+
+1. `server`: `npm audit --omit=dev --json` -> vulnerabilities total: `0`
+2. `frontend`: `npm audit --omit=dev --json` -> vulnerabilities total: `0`
+
+Note: rerun these checks before each production release.
+
+## 2. Sensitive data in repository (quick scan)
+
+Findings:
+
+1. No tracked `server/.env` or private key file in git index.
+2. Placeholder examples exist in `.env.example` and docs/scripts (`REPLACE_ME`, `CHANGE_ME`) and are expected.
+3. No obvious AWS access key / private key block found in tracked source scan.
+
+Required manual gate:
+
+1. Validate CI secrets and server `.env` are not leaked in logs.
+2. Confirm no real credentials in release notes or screenshots.
+
+## 3. CORS policy check
+
+Current implementation: `server/src/app.js` + `server/src/config/validateEnv.js`
+
+Status:
+
+1. CORS uses explicit allow-list (`CORS_ORIGINS`), not wildcard.
+2. Production validation blocks `*`, blocks placeholders, blocks `localhost/127.0.0.1`.
+3. Credentials mode is enabled intentionally for cookie auth.
+
+## 4. Authentication and authorization baseline
+
+Status:
+
+1. User routes use auth middleware for protected endpoints.
+2. Admin routes use `adminAuth` + RBAC permission checks.
+3. Sensitive routes have rate limiting (`auth`, `upload`, `webhook`).
+
+Manual verification needed:
+
+1. Re-run unauthorized access smoke checks after each major route change.
+
+## 5. Upload security baseline
+
+Status:
+
+1. Upload requires authenticated user/admin.
+2. File type allow-list (image/video MIME + extension checks).
+3. Magic-byte validation enabled (`bufferMatchesDeclaredMime`).
+4. Size limits: image 15MB, video 50MB; batch upload count capped.
+5. Image dimension guard enabled (max pixel threshold).
+
+## 6. Admin endpoint exposure risk
+
+Status:
+
+1. `/api/admin/*` routes are guarded by admin auth and permissions.
+2. No intentionally anonymous admin route found in current router.
+
+## 7. Release-day security steps
+
+1. Re-run `npm audit --omit=dev` in backend and frontend.
+2. Run access smoke tests for anonymous user vs user vs admin roles.
+3. Confirm production `.env` secrets are rotated and not default.
+4. Confirm backup and rollback paths are available before rollout.
+
+## 8. Evidence references
+
+1. Auth/cors/helmet/rate-limit: `server/src/app.js`
+2. Production env guard: `server/src/config/validateEnv.js`
+3. Upload guards: `server/src/modules/user/controller/upload.controller.js`, `server/src/modules/user/service/uploadMedia.service.js`
+4. Admin RBAC routes: `server/src/modules/admin/routes/admin.routes.js`
+

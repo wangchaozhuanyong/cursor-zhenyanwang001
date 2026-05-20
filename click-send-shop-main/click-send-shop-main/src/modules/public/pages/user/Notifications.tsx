@@ -98,10 +98,10 @@ export default function Notifications() {
             <button onClick={goBack} className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
               <ArrowLeft size={20} className="text-foreground" />
             </button>
-            <h1 className="text-base font-semibold text-foreground">
-              消息通知
+            <h1 className="inline-flex items-center gap-2 text-base font-semibold leading-none text-foreground">
+              <span>消息通知</span>
               {unreadBadgeText && (
-                <span className="ml-2 inline-flex h-5 min-w-[24px] items-center justify-center rounded-full btn-theme-price px-1.5 text-[10px] font-bold text-primary-foreground">
+                <span className="inline-flex h-5 min-w-[24px] items-center justify-center rounded-full btn-theme-price px-1.5 text-[10px] font-bold leading-none text-primary-foreground">
                   {unreadBadgeText}
                 </span>
               )}

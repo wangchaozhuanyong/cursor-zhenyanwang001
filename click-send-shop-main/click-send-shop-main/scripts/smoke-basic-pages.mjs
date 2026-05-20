@@ -1,6 +1,6 @@
 import { chromium } from "@playwright/test";
 
-const BASE = process.env.BASE_URL || "https://flashcast.com.my";
+const BASE = process.env.BASE_URL || "https://example.com";
 const pages = ["/", "/login", "/help", "/about", "/admin/login"];
 
 async function main() {

@@ -16,8 +16,16 @@ const marketing = require('../modules/marketing');
 const loyalty = require('../modules/loyalty');
 const home = require('../modules/home');
 const seoRoutes = require('../modules/seo/routes/seo.routes');
+const seoController = require('../modules/seo/controller/seo.controller');
 
 const router = Router();
+
+router.use((req, res, next) => {
+  if (req.path.startsWith('/api') || req.originalUrl.startsWith('/api/')) {
+    res.setHeader('X-Robots-Tag', 'noindex');
+  }
+  next();
+});
 
 router.use(health);
 router.use(auth);
@@ -36,6 +44,8 @@ router.use(home);
 router.use(admin);
 /** 涓庢牴璺緞 SEO 鍚屾簮閫昏緫锛屼究浜庣粺涓€璧?/api 鍓嶇紑锛堢埇铏粛鍙娇鐢?/robots.txt锛?*/
 router.use('/seo', seoRoutes);
+router.get('/robots.txt', seoController.robots);
+router.get('/sitemap.xml', seoController.sitemap);
 
 module.exports = router;
 

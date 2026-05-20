@@ -211,7 +211,7 @@ export default function Orders() {
         {error ? <p className="text-sm text-red-500">{error}</p> : null}
 
         {!loading && displayOrders.length === 0 ? (
-          <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 text-center text-sm text-[var(--theme-text-muted)]">
+          <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 text-center text-sm text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]">
             {emptyText[tab]}
           </div>
         ) : null}

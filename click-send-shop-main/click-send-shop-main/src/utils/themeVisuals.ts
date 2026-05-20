@@ -15,9 +15,9 @@ export const THEME_ACCENT_CHIP_CLASS =
 
 /** 状态徽章底纹（订单/支付/售后等） */
 export const THEME_BADGE_WARNING =
-  "bg-[color-mix(in_srgb,var(--theme-warning)_15%,var(--theme-surface))] text-[var(--theme-warning)]";
+  "bg-[color-mix(in_srgb,var(--theme-warning)_17%,var(--theme-surface))] text-[color-mix(in_srgb,var(--theme-warning)_72%,var(--theme-text-on-surface))]";
 export const THEME_BADGE_SUCCESS =
-  "bg-[color-mix(in_srgb,var(--theme-success)_15%,var(--theme-surface))] text-[var(--theme-success)]";
+  "bg-[color-mix(in_srgb,var(--theme-success)_17%,var(--theme-surface))] text-[color-mix(in_srgb,var(--theme-success)_70%,var(--theme-text-on-surface))]";
 export const THEME_BADGE_DANGER =
   "bg-[color-mix(in_srgb,var(--theme-danger)_15%,var(--theme-surface))] text-[var(--theme-danger)]";
 export const THEME_BADGE_PRIMARY =
@@ -25,9 +25,9 @@ export const THEME_BADGE_PRIMARY =
 export const THEME_BADGE_PRICE =
   "bg-[color-mix(in_srgb,var(--theme-price)_15%,var(--theme-surface))] text-[var(--theme-price)]";
 export const THEME_BADGE_ACCENT =
-  "bg-[color-mix(in_srgb,var(--theme-accent)_15%,var(--theme-surface))] text-[var(--theme-accent)]";
+  "bg-[color-mix(in_srgb,var(--theme-accent)_17%,var(--theme-surface))] text-[color-mix(in_srgb,var(--theme-accent)_70%,var(--theme-text-on-surface))]";
 export const THEME_BADGE_MUTED =
-  "bg-[color-mix(in_srgb,var(--theme-text-muted)_12%,var(--theme-surface))] text-[var(--theme-text-muted)]";
+  "bg-[color-mix(in_srgb,var(--theme-text-muted)_16%,var(--theme-surface))] text-[color-mix(in_srgb,var(--theme-text-on-surface)_78%,var(--theme-text-muted))]";
 
 /** 列表行图标圆底 */
 export const THEME_ROW_ICON_POSITIVE =
@@ -94,7 +94,7 @@ export const THEME_OUTLINE_DANGER =
 export const THEME_OUTLINE_PRIMARY =
   "border border-[color-mix(in_srgb,var(--theme-primary)_40%,var(--theme-border))] text-[var(--theme-primary)] hover:bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))]";
 export const THEME_OUTLINE_WARNING =
-  "border border-[color-mix(in_srgb,var(--theme-warning)_40%,var(--theme-border))] text-[var(--theme-warning)] hover:bg-[color-mix(in_srgb,var(--theme-warning)_8%,var(--theme-surface))]";
+  "border border-[color-mix(in_srgb,var(--theme-warning)_45%,var(--theme-border))] text-[color-mix(in_srgb,var(--theme-warning)_72%,var(--theme-text-on-surface))] hover:bg-[color-mix(in_srgb,var(--theme-warning)_10%,var(--theme-surface))]";
 
 export const THEME_TEXT_DANGER_SOFT = "text-[var(--theme-danger)]";
 export const THEME_TEXT_SUCCESS_SOFT = "text-[var(--theme-success)]";

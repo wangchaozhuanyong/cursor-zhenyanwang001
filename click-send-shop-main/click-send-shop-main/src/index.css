@@ -28,7 +28,7 @@
     --secondary-foreground: 0 0% 8%;
 
     --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    --muted-foreground: 0 0% 36%;
 
     --accent: 43 72% 52%;
     --accent-foreground: 0 0% 8%;
@@ -78,9 +78,9 @@
     --theme-border: #e5e7eb;
     --theme-text: #000000;
     --theme-text-on-surface: #000000;
-    --theme-text-muted: rgba(0, 0, 0, 0.58);
-    --theme-muted: rgba(0, 0, 0, 0.58);
-    --theme-text-muted-on-surface: rgba(0, 0, 0, 0.58);
+    --theme-text-muted: rgba(0, 0, 0, 0.66);
+    --theme-muted: rgba(0, 0, 0, 0.66);
+    --theme-text-muted-on-surface: rgba(0, 0, 0, 0.64);
     --theme-text-subtle: rgba(0, 0, 0, 0.38);
     --theme-radius: 8px;
     --theme-font: var(--font-body);
@@ -130,7 +130,7 @@
     --secondary-foreground: 40 8% 85%;
 
     --muted: 0 0% 14%;
-    --muted-foreground: 0 0% 50%;
+    --muted-foreground: 0 0% 62%;
 
     --accent: 43 72% 52%;
     --accent-foreground: 0 0% 7%;

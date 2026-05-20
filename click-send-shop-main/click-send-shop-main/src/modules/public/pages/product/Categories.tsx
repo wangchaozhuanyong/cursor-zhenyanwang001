@@ -25,6 +25,8 @@ import ProductListViewToggle from "@/components/ProductListViewToggle";
 import { useCategoryListView } from "@/hooks/useCategoryListView";
 import { getCategoryProductsEmptyColSpan, getCategoryProductsGridClass } from "@/utils/productGridClasses";
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
+import SeoHead from "@/components/SeoHead";
+import { buildCanonical } from "@/utils/seo";
 
 export default function Categories() {
   const { themeConfig } = useThemeRuntime();
@@ -165,6 +167,25 @@ export default function Categories() {
     isHot ? "热销" : "",
     isRecommended ? "推荐" : "",
   ].filter(Boolean).join(" · ");
+  const hasComplexParams = Boolean(
+    searchParams.get("keyword")
+    || searchParams.get("sort")
+    || searchParams.get("tag_id")
+    || searchParams.get("min_price")
+    || searchParams.get("max_price")
+    || searchParams.get("in_stock")
+    || searchParams.get("is_new")
+    || searchParams.get("is_hot")
+    || searchParams.get("is_recommended")
+    || searchParams.get("page"),
+  );
+  const activeCategoryName = activeCat === "all" ? "" : categories.find((c) => c.id === activeCat)?.name || "";
+  const title = activeCategoryName ? `${activeCategoryName}｜大马通` : "全部分类｜大马通";
+  const description = activeCategoryName
+    ? `浏览大马通 ${activeCategoryName} 相关服务与商品信息，支持中文客服咨询，适用地区以马来西亚本地为主。`
+    : "浏览大马通平台的服务分类与精选好物信息，覆盖马来西亚华人常用生活服务、本地服务和合规商品信息。";
+  const robots = hasComplexParams ? "noindex,follow" : "index,follow";
+  const canonical = activeCategoryName ? buildCanonical("/categories", `cat=${activeCat}`, { keepParams: ["cat"] }) : buildCanonical("/categories");
 
   const filterDrawer = (
     <ProductFilterDrawer
@@ -195,7 +216,7 @@ export default function Categories() {
         </div>
         <div>
           <p className="mb-1 text-xs font-semibold text-[var(--theme-text)]">商品标签</p>
-          {quickTags.length > 0 ? <div className="flex flex-wrap gap-2">{quickTags.map((tag) => { const active = activeTagId === tag.id; return <button key={tag.id} type="button" onClick={() => setActiveTagId(active ? "" : tag.id)} className={`rounded-full border px-3 py-1.5 text-xs ${active ? "ring-2 ring-[var(--theme-price)]/30" : ""}`} style={{ backgroundColor: active ? tag.bg_color || "#FEF3C7" : "var(--theme-surface)", borderColor: tag.bg_color || "var(--theme-border)", color: active ? tag.text_color || "#92400E" : "var(--theme-text)" }}>{tag.name}</button>; })}</div> : <p className="text-xs text-[var(--theme-text-muted)]">暂无可用标签，请先在后台给商品绑定标签</p>}
+          {quickTags.length > 0 ? <div className="flex flex-wrap gap-2">{quickTags.map((tag) => { const active = activeTagId === tag.id; return <button key={tag.id} type="button" onClick={() => setActiveTagId(active ? "" : tag.id)} className={`rounded-full border px-3 py-1.5 text-xs ${active ? "ring-2 ring-[var(--theme-price)]/30" : ""}`} style={{ backgroundColor: active ? tag.bg_color || "#FEF3C7" : "var(--theme-surface)", borderColor: tag.bg_color || "var(--theme-border)", color: active ? tag.text_color || "#92400E" : "var(--theme-text)" }}>{tag.name}</button>; })}</div> : <p className="text-xs text-[color-mix(in_srgb,var(--theme-text-on-surface)_70%,var(--theme-text-muted))]">暂无可用标签，请先在后台给商品绑定标签</p>}
         </div>
       </div>
     </ProductFilterDrawer>
@@ -203,6 +224,7 @@ export default function Categories() {
 
   return (
     <div className="store-bottom-safe min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
+      <SeoHead title={title} description={description} canonical={canonical} robots={robots} />
       <StorePageHeader
         title="分类"
         titleInlineSlot={
@@ -265,7 +287,7 @@ export default function Categories() {
                 {filterDrawer}
               </div>
 
-              {filterSummary ? <div className="mb-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">当前筛选：{filterSummary}</div> : null}
+              {filterSummary ? <div className="mb-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[color-mix(in_srgb,var(--theme-text-on-surface)_70%,var(--theme-text-muted))]">当前筛选：{filterSummary}</div> : null}
 
               {error && <div className={`mb-3 p-3 text-center text-sm ${THEME_ALERT_ERROR_SOFT}`}>{error}</div>}
 

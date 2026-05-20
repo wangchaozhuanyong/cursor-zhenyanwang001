@@ -222,7 +222,7 @@ export default function Settings() {
                   type="button"
                   onClick={handleBindWechat}
                   disabled={wechatActionLoading}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#07C160]/30 bg-[#07C160]/10 py-2.5 text-sm font-semibold text-[#07C160] disabled:opacity-60"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#075E54]/30 bg-[#075E54] py-2.5 text-sm font-semibold text-white disabled:opacity-60"
                 >
                   <WeChatIcon size={20} />
                   {wechatActionLoading ? "跳转中…" : "绑定微信"}

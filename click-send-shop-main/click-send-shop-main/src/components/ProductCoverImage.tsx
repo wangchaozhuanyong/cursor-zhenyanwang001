@@ -32,7 +32,7 @@ export default function ProductCoverImage({
     return (
       <div
         className={cn(
-          "flex items-center justify-center bg-[var(--theme-bg)] text-[var(--theme-text-muted)]",
+          "flex items-center justify-center bg-[var(--theme-bg)] text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]",
           className,
         )}
         aria-hidden

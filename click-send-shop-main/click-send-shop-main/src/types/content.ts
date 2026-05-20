@@ -21,6 +21,7 @@ export interface SiteInfo {
   siteSlogan?: string;
   logoUrl?: string;
   faviconUrl?: string;
+  appleTouchIcon?: string;
 
   /* ─ 联系方式 ─ */
   contactPhone?: string;
@@ -36,6 +37,8 @@ export interface SiteInfo {
   facebookUrl?: string;
   tiktokUrl?: string;
   xhsUrl?: string;
+  youtubeUrl?: string;
+  otherSocialLinks?: string;
 
   /* ─ 业务 ─ */
   currency?: string;
@@ -51,9 +54,17 @@ export interface SiteInfo {
   seoDescription?: string;
   seoKeywords?: string;
   ogImageUrl?: string;
+  googleSiteVerification?: string;
+  defaultOgImageUrl?: string;
+  complianceNotice?: string;
+  ageGateEnabled?: string;
+  minimumAge?: string;
+  restrictedProductNoindexEnabled?: string;
 
   /* ─ 页脚 ─ */
   footerCompanyName?: string;
+  companyName?: string;
+  companyRegistrationNo?: string;
   footerCopyright?: string;
   footerIcpNo?: string;
   footerPolicyUrl?: string;

@@ -49,6 +49,8 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
   const soldOut = displayStock <= 0;
   const salesCount = getProductSalesCount(product.sales_count);
   const showSales = hasProductSales(product.sales_count);
+  const isServiceLike = /服务|咨询|办理|申请|装修/.test(String(product.category_name || product.name || ""));
+  const cardImageAlt = isServiceLike ? `${product.name} 服务展示图` : `${product.name} 商品图片`;
 
   const openDetail = (module: string) => {
     void trackEvent({ event_type: "product_click", module, product_id: product.id });
@@ -114,7 +116,7 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
           >
             <ProductCoverImage
               url={product.cover_image}
-              alt={product.name}
+              alt={cardImageAlt}
               className="h-full w-full"
               imgClassName={cn(
                 "h-full w-full [object-fit:var(--theme-image-fit,cover)]",
@@ -162,7 +164,7 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
       >
         <ProductCoverImage
           url={product.cover_image}
-          alt={product.name}
+          alt={cardImageAlt}
           className="h-full w-full"
           imgClassName={cn(
             "h-full w-full [object-fit:var(--theme-image-fit,cover)] transition-all duration-300 ease-in-out",

@@ -181,7 +181,7 @@ export default function Coupons() {
                 "relative flex-1 rounded-xl py-3 text-sm font-medium transition-all",
                 tab === t.key
                   ? "bg-[var(--theme-surface)] text-[var(--theme-text-on-surface)] shadow-[var(--theme-shadow)]"
-                  : "text-[var(--theme-text-muted)]",
+                  : "text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]",
               )}
             >
               {t.label}
@@ -191,7 +191,7 @@ export default function Coupons() {
                     "ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold",
                     tab === t.key
                       ? THEME_BTN_PRICE
-                      : "bg-[color-mix(in_srgb,var(--theme-text-muted)_18%,transparent)] text-[var(--theme-text-muted)]",
+                      : "bg-[color-mix(in_srgb,var(--theme-text-muted)_24%,transparent)] text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]",
                   )}
                 >
                   {t.count}
@@ -207,7 +207,7 @@ export default function Coupons() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex flex-col items-center py-16 text-[var(--theme-text-muted)]"
+                className="flex flex-col items-center py-16 text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]"
               >
                 <Ticket size={48} className="mb-3 opacity-20" />
                 <p className="text-sm">暂无优惠券</p>

@@ -110,6 +110,14 @@ export interface Product {
   is_recommended: boolean;
   is_new: boolean;
   is_hot: boolean;
+  is_age_restricted?: boolean;
+  minimum_age?: number | null;
+  compliance_type?: "normal" | "age_restricted" | "regulated" | string | null;
+  region_notice?: string | null;
+  compliance_notice?: string | null;
+  allow_index?: boolean | number | null;
+  category_name?: string;
+  attributes?: Record<string, unknown> | string | null;
   tags?: ProductCatalogTag[];
 }
 

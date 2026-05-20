@@ -88,6 +88,42 @@ function buildProductSearchKeywordsFromPayload(payload, variants = [], tags = []
   );
 }
 
+async function tryPersistComplianceFields(productId, body) {
+  const fields = [];
+  const values = [];
+  if (body.is_age_restricted !== undefined) {
+    fields.push('is_age_restricted = ?');
+    values.push(body.is_age_restricted ? 1 : 0);
+  }
+  if (body.minimum_age !== undefined) {
+    const age = body.minimum_age === '' || body.minimum_age == null ? null : Number(body.minimum_age);
+    fields.push('minimum_age = ?');
+    values.push(Number.isFinite(age) ? age : null);
+  }
+  if (body.compliance_type !== undefined) {
+    fields.push('compliance_type = ?');
+    values.push(body.compliance_type ? String(body.compliance_type).trim() : null);
+  }
+  if (body.region_notice !== undefined) {
+    fields.push('region_notice = ?');
+    values.push(body.region_notice ? String(body.region_notice).trim() : null);
+  }
+  if (body.compliance_notice !== undefined) {
+    fields.push('compliance_notice = ?');
+    values.push(body.compliance_notice ? String(body.compliance_notice).trim() : null);
+  }
+  if (body.allow_index !== undefined) {
+    fields.push('allow_index = ?');
+    values.push(body.allow_index ? 1 : 0);
+  }
+  if (!fields.length) return;
+  try {
+    await repo.updateProductDynamic(fields, values, productId);
+  } catch (err) {
+    if (err?.code !== 'ER_BAD_FIELD_ERROR') throw err;
+  }
+}
+
 function normalizeVariantPayloadForDb(variants, genId, mainPrice, mainStock) {
   const mainP = Number(mainPrice);
   const price = Number.isFinite(mainP) ? mainP : 0;
@@ -238,6 +274,7 @@ async function createProduct(body, adminUserId, req) {
     });
     await variantRepo.upsertProductSkuMatrix(id, body.spec_groups, variantRows);
     await syncProductPriceStockFromDefaultVariant(id);
+    await tryPersistComplianceFields(id, body);
     if (Number(stock || 0) > 0) {
       const defaultVariant = variantRows.find((v) => v.is_default) || variantRows[0];
       const conn = await inventoryRepo.getConnection();
@@ -385,6 +422,7 @@ async function updateProduct(id, body, adminUserId, req) {
     if (hasTagUpdate) {
       await requireProductApi('replaceTagAssignments')(id, Array.isArray(body.tag_ids) ? body.tag_ids : []);
     }
+    await tryPersistComplianceFields(id, body);
     const row = await repo.selectProductById(id);
     const matrix = await variantRepo.selectProductSkuMatrix(id);
     const vrows = matrix.variants;

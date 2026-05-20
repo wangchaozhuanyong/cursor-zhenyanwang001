@@ -1,47 +1,22 @@
-import { useState, useEffect } from "react";
-import { ArrowLeft, MapPin, Phone, Mail, MessageCircle, Globe, Award, Shield, Truck } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import logoWebp from "@/assets/logo.webp";
-import * as contentService from "@/services/contentService";
-import { useSiteInfo } from "@/hooks/useSiteInfo";
-import { renderBrandTitle } from "@/utils/brand";
+import { ArrowLeft } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
-import { SiteSocialLinks } from "@/components/SiteSocialLinks";
-import {
-  THEME_ACCENT_HERO_MUTED,
-  THEME_ACCENT_HERO_SHELL,
-  THEME_ACCENT_HERO_SUBTLE,
-  THEME_ACCENT_HERO_VALUE,
-} from "@/utils/themeVisuals";
-
-function sanitizeCmsHtml(html: string): string {
-  if (!html) return "";
-  return html
-    .replace(/<\s*(script|iframe|object|embed|form|input|button|meta|link|style)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
-    .replace(/<\s*(script|iframe|object|embed|form|input|button|meta|link|style)[^>]*\/?\s*>/gi, "")
-    .replace(/\son[a-z]+\s*=\s*(['"]).*?\1/gi, "")
-    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "")
-    .replace(/\s(href|src)\s*=\s*(['"])\s*(javascript:|data:text\/html)/gi, " $1=$2#");
-}
+import { useSiteInfo } from "@/hooks/useSiteInfo";
+import SeoHead from "@/components/SeoHead";
+import { buildCanonical } from "@/utils/seo";
 
 export default function About() {
-  const navigate = useNavigate();
   const goBack = useGoBack();
-  const [cmsContent, setCmsContent] = useState("");
   const siteInfo = useSiteInfo();
-  const logoSrc = siteInfo.logoUrl || logoWebp;
   const siteName = siteInfo.siteName || "大马通";
-  const slogan = siteInfo.siteSlogan || siteInfo.siteDescription || "尊享品质，精选全球好物";
-
-  useEffect(() => {
-    contentService.fetchContentBySlug("about").then((page) => {
-      if (page?.content) setCmsContent(page.content);
-    }).catch(() => {});
-  }, []);
 
   return (
     <div className="min-h-screen bg-background pb-6">
+      <SeoHead
+        title="关于大马通｜马来西亚华人生活服务平台"
+        description="了解大马通平台定位、服务范围和联系方式。大马通面向马来西亚华人用户，提供生活服务、项目咨询与合规精选好物信息。"
+        canonical={buildCanonical("/about")}
+        robots="index,follow"
+      />
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3">
           <button onClick={goBack} aria-label="返回" className="touch-target flex h-10 w-10 items-center justify-center rounded-full hover:bg-secondary">
@@ -50,120 +25,14 @@ export default function About() {
           <h1 className="text-base font-semibold text-foreground">关于我们</h1>
         </div>
       </header>
-
-      <main className="mx-auto max-w-lg px-4 pt-4">
-        {/* Hero */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`rounded-2xl p-6 text-center ${THEME_ACCENT_HERO_SHELL}`}
-        >
-          <img src={logoSrc} alt={siteName} width={64} height={64} className="mx-auto rounded-xl object-contain" />
-          <h2 className={`mt-3 font-display text-3xl ${THEME_ACCENT_HERO_VALUE}`}>
-            {renderBrandTitle(siteName)}
-          </h2>
-          <p className={`mt-2 text-sm ${THEME_ACCENT_HERO_MUTED}`}>{slogan}</p>
-          <div
-            className="mx-auto mt-4 h-px w-12"
-            style={{ background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 55%, transparent)" }}
-          />
-          <p className={`mt-4 text-xs leading-relaxed ${THEME_ACCENT_HERO_SUBTLE}`}>
-            {siteInfo.siteDescription ||
-              `${siteName}致力于为消费者提供精选的全球高品质商品。我们严格把控供应链，确保每一件商品都经过品质认证，让您在家即可享受全球精品购物体验。`}
-          </p>
-        </motion.div>
-
-        {/* Values */}
-        <div className="mt-8 grid grid-cols-3 gap-4 md:mt-10">
-          {[
-            { icon: Award, label: "品质保证", desc: "全球精选正品" },
-            { icon: Truck, label: "极速配送", desc: "2-5天送达" },
-            { icon: Shield, label: "售后无忧", desc: "7天退换" },
-          ].map((item, i) => (
-            <motion.div
-              key={item.label}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + i * 0.08 }}
-              className="rounded-2xl border border-border bg-card p-4 text-center"
-            >
-              <item.icon size={22} className="mx-auto text-[var(--theme-primary)]" />
-              <p className="mt-2 text-xs font-semibold text-foreground">{item.label}</p>
-              <p className="mt-0.5 text-[10px] text-muted-foreground">{item.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Story */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mt-8 rounded-2xl border border-border bg-card p-5 md:mt-10"
-        >
-          <h3 className="text-sm font-semibold text-foreground">品牌故事</h3>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            {siteName}的创始团队拥有多年跨境电商经验，深知消费者对品质和服务的追求。
-            我们与全球数百个品牌建立了直接合作关系，从源头把控品质，为您省去中间环节。
-          </p>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            我们相信，真正的奢华不仅仅是价格，更是对品质的极致追求和对客户的真诚服务。
-            每一位顾客的满意，都是我们前行的动力。
-          </p>
-        </motion.div>
-
-        {/* CMS Content */}
-        {cmsContent && (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-            className="mt-8 rounded-2xl border border-border bg-card p-5 md:mt-10"
-          >
-            <div className="prose prose-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(cmsContent) }} />
-          </motion.div>
-        )}
-
-        {/* Contact */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mt-8 rounded-2xl border border-border bg-card p-5 md:mt-10"
-        >
-          <h3 className="mb-4 text-sm font-semibold text-foreground">联系我们</h3>
-          <div className="space-y-3">
-            {[
-              siteInfo.contactPhone && { icon: Phone, label: siteInfo.contactPhone },
-              siteInfo.contactEmail && { icon: Mail, label: siteInfo.contactEmail },
-              siteInfo.wechatId && { icon: MessageCircle, label: `微信: ${siteInfo.wechatId}` },
-              siteInfo.businessHours && { icon: Globe, label: siteInfo.businessHours },
-              siteInfo.address && { icon: MapPin, label: siteInfo.address },
-            ]
-              .filter(Boolean)
-              .map((item) => {
-                const it = item as { icon: typeof Phone; label: string };
-                return (
-                  <div key={it.label} className="flex items-center gap-3">
-                    <it.icon size={16} className="text-theme-price flex-shrink-0" />
-                    <span className="text-sm text-muted-foreground">{it.label}</span>
-                  </div>
-                );
-              })}
-          </div>
-        </motion.div>
-
-        <SiteSocialLinks
-          whatsappUrl={siteInfo.whatsappUrl}
-          contactWhatsApp={siteInfo.contactWhatsApp}
-          wechatId={siteInfo.wechatId}
-          instagramUrl={siteInfo.instagramUrl}
-          facebookUrl={siteInfo.facebookUrl}
-          tiktokUrl={siteInfo.tiktokUrl}
-          xhsUrl={siteInfo.xhsUrl}
-          tone="pill"
-          className="mt-8 pb-6 md:mt-10"
-        />
+      <main className="mx-auto max-w-lg space-y-4 px-4 pt-4">
+        <section className="rounded-2xl border border-border bg-card p-5">
+          <h2 className="text-lg font-semibold text-foreground">{siteName}</h2>
+          <p className="mt-2 text-sm text-muted-foreground">马来西亚华人一站式生活服务与合规精选好物平台</p>
+        </section>
+        <section className="rounded-2xl border border-border bg-card p-5 text-sm leading-relaxed text-muted-foreground">
+          大马通面向马来西亚华人用户，提供签证咨询、留学申请、第二家园、商业装修、本地生活服务与合规精选好物信息。平台支持中文沟通，适用地区以马来西亚本地为主。
+        </section>
       </main>
     </div>
   );

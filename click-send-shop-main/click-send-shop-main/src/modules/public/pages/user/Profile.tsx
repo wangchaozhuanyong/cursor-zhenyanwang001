@@ -2,6 +2,7 @@
 import {
   Bell,
   Camera,
+  Download,
   ChevronRight,
   CircleHelp,
   Clock3,
@@ -43,6 +44,7 @@ import * as uploadService from "@/services/uploadService";
 import type { OrderSummary } from "@/types/order";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import InvitePromoCard from "@/components/store/InvitePromoCard";
+import { formatUnreadBadge } from "@/utils/notificationBadge";
 import {
   THEME_ACCENT_ICON_CLASS,
   THEME_ACCENT_ICON_SHELL_CLASS,
@@ -140,7 +142,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const loggedIn = isLoggedIn();
   const siteInfo = useSiteInfo();
-  const siteName = siteInfo.siteName || "真烟网";
+  const siteName = siteInfo.siteName || "大马通";
   const logoSrc = siteInfo.logoUrl || logoWebp;
   const authStore = useAuthStore();
   const { nickname, avatar, pointsBalance, inviteCode, memberLevel, wechatLogin, loadProfile } = useUserStore();
@@ -246,7 +248,8 @@ export default function Profile() {
     { label: "待评价", icon: MessageSquare, count: 0, path: "/orders?tab=pending_review", auth: true },
     { label: "退款售后", icon: CircleHelp, count: 0, path: "/returns", auth: true },
   ]) as Array<{ label: string; icon: typeof Wallet; count?: number; path: string; auth: boolean }>;
-const orderGridClass = "grid-cols-5";
+  const orderGridClass = "grid-cols-5";
+  const notificationBadgeText = formatUnreadBadge(unreadCount);
 
   return (
     <div className="store-page store-bottom-safe min-h-screen text-[var(--theme-text)]">
@@ -268,12 +271,12 @@ const orderGridClass = "grid-cols-5";
         rightSlot={(
           <>
             {loggedIn ? <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} /> : null}
-            <SkinPickerDialog trigger={<button type="button" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50 text-[var(--theme-text-muted)]" aria-label="切换皮肤"><Palette size={16} /></button>} />
+            <SkinPickerDialog trigger={<button type="button" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50 text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]" aria-label="切换皮肤"><Palette size={16} /></button>} />
             {loggedIn ? (
               <button
                 type="button"
                 onClick={() => navigate("/settings")}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50 text-[var(--theme-text-muted)]"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50 text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]"
                 aria-label="设置"
               >
                 <Settings size={16} />
@@ -379,14 +382,20 @@ const orderGridClass = "grid-cols-5";
               { label: "我的积分", icon: Gift, path: "/points", auth: true },
               { label: "帮助中心", icon: CircleHelp, path: "/help", auth: false },
               { label: "邀请有礼", icon: Gift, path: "/invite", auth: true },
-              { label: "消息通知", icon: Bell, path: "/notifications", auth: true },
+              { label: "消息通知", icon: Bell, path: "/notifications", auth: true, badgeText: notificationBadgeText },
               { label: "账户设置", icon: Settings, path: "/settings", auth: true },
+              { label: "安装应用", icon: Download, path: "/install", auth: false },
               { label: "我的收藏", icon: Heart, path: "/favorites", auth: false },
             ].filter((item) => (
               (item.path !== "/points" || pointsEnabled)
               && (item.path !== "/invite" || inviteEnabled)
             )).map((item) => (
-              <button key={item.label} type="button" onClick={() => gateNavigate(navigate, item.path, item.auth)} className={`min-h-[76px] rounded-2xl bg-[var(--theme-bg)] px-1 py-2 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_60%,transparent)] ${MENU_TAP}`}>
+              <button key={item.label} type="button" onClick={() => gateNavigate(navigate, item.path, item.auth)} className={`relative min-h-[76px] rounded-2xl bg-[var(--theme-bg)] px-1 py-2 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_60%,transparent)] ${MENU_TAP}`}>
+                {item.badgeText ? (
+                  <span className="absolute right-3 top-2 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[var(--theme-danger)] px-1 text-[10px] leading-none text-[var(--theme-danger-foreground)]">
+                    {item.badgeText}
+                  </span>
+                ) : null}
                 <span className={cn("mx-auto flex h-9 w-9 items-center justify-center rounded-2xl", THEME_ACCENT_ICON_SHELL_CLASS)}>
                   <item.icon size={16} strokeWidth={2} />
                 </span>

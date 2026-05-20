@@ -26,6 +26,7 @@ import MarketingPromotionBannerSection from "./MarketingPromotionBannerSection";
 import type { UserCoupon } from "@/types/coupon";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import StoreTabHeader from "@/components/store/StoreTabHeader";
+import HomeInstallHint from "@/components/store/HomeInstallHint";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import { toast } from "sonner";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -36,6 +37,9 @@ import { isLoggedIn } from "@/utils/token";
 import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
 import { isHomeModuleEnabled } from "@/constants/homeModules";
 import { HOME_HERO_STACK_CLASS, HOME_PAGE_MAIN_CLASS } from "@/constants/homeLayout";
+import SeoHead from "@/components/SeoHead";
+import { buildCanonical } from "@/utils/seo";
+import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/utils/structuredData";
 
 function Header({ title, icon: Icon, subtitle }: { title: string; icon?: React.ElementType; subtitle?: string }) {
   return (
@@ -44,7 +48,7 @@ function Header({ title, icon: Icon, subtitle }: { title: string; icon?: React.E
         {Icon && <Icon className="h-5 w-5 text-[var(--theme-price)]" />}
         {title}
       </h2>
-      {subtitle && <p className="mt-1 text-xs tracking-wider text-[var(--theme-text-muted)]">{subtitle}</p>}
+      {subtitle && <p className="mt-1 text-xs tracking-wider text-[color-mix(in_srgb,var(--theme-text-on-surface)_70%,var(--theme-text-muted))]">{subtitle}</p>}
     </div>
   );
 }
@@ -76,6 +80,11 @@ export default function MemberHome() {
   const isPremiumLayout = homeLayout === "premium";
   const isDealLayout = homeLayout === "deal";
   const isMagazineLayout = homeLayout === "magazine";
+  const seoTitle = siteInfo.seoTitle || "大马通｜马来西亚华人一站式生活服务与精选好物";
+  const seoDescription =
+    siteInfo.seoDescription ||
+    "大马通面向马来西亚华人用户，提供签证咨询、留学申请、第二家园、商业装修、本地生活服务与合规精选好物信息，支持中文客服沟通，适用地区以马来西亚本地为主。";
+  const seoImage = siteInfo.ogImageUrl || siteInfo.defaultOgImageUrl || siteInfo.logoUrl || "/og-default.png";
 
   useEffect(() => {
     const state = useProductStore.getState();
@@ -129,6 +138,23 @@ export default function MemberHome() {
 
   return (
     <div className={`store-bottom-safe min-h-screen text-[var(--theme-text)] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_90%,black)]" : "bg-[var(--theme-bg)]"}`} data-theme-home-layout={themeConfig.homeLayout}>
+      <SeoHead
+        title={seoTitle}
+        description={seoDescription}
+        keywords={siteInfo.seoKeywords}
+        canonical={buildCanonical("/")}
+        ogTitle={seoTitle}
+        ogDescription={seoDescription}
+        ogImage={seoImage}
+        googleSiteVerification={siteInfo.googleSiteVerification}
+        ogSiteName={siteInfo.siteName || "大马通"}
+        ogType="website"
+        jsonLd={[
+          { id: "website", data: buildWebsiteJsonLd(siteInfo) },
+          { id: "organization", data: buildOrganizationJsonLd(siteInfo) },
+        ]}
+      />
+      <HomeInstallHint />
       <StoreTabHeader searchMode="navigate" />
       <main className={HOME_PAGE_MAIN_CLASS}>
         {(isHomeModuleEnabled(homeModules, "banner", "member") ||
@@ -212,7 +238,7 @@ export default function MemberHome() {
             })}
           </div>
           {!couponLoading && couponTop.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)]/60 px-4 py-8 text-center text-sm text-[var(--theme-text-muted)]">
+            <div className="rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)]/60 px-4 py-8 text-center text-sm text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]">
               暂无可用会员礼包
             </div>
           ) : null}
@@ -312,6 +338,3 @@ function toBatches<T>(list: T[], size: number): T[][] {
   }
   return out;
 }
-
-
-

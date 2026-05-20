@@ -18,7 +18,7 @@ export default function ContactUsContent({ intro }: { intro?: string }) {
         <h2 className="mb-3 text-sm font-semibold">联系方式</h2>
         <ul className="space-y-3">{rows.map((row) => <li key={row.label} className="flex items-start gap-3"><row.icon size={18} className="mt-0.5 shrink-0 text-[var(--theme-price)]" /><span className="text-sm">{row.label}</span></li>)}</ul>
       </div>
-      {siteInfo.whatsappUrl ? <a href={siteInfo.whatsappUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-semibold text-white"><MessageCircle size={17} />WhatsApp</a> : null}
+      {siteInfo.whatsappUrl ? <a href={siteInfo.whatsappUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#075E54] px-4 py-2.5 text-sm font-semibold text-white"><MessageCircle size={17} />WhatsApp</a> : null}
     </div>
   );
 }

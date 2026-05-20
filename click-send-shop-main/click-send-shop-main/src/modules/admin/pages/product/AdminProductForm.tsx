@@ -113,6 +113,12 @@ export default function AdminProductForm() {
     is_hot: false,
     is_new: false,
     is_recommended: false,
+    is_age_restricted: false,
+    minimum_age: "",
+    compliance_type: "normal",
+    region_notice: "",
+    compliance_notice: "",
+    allow_index: true,
     tag_ids: [] as string[],
     spec_groups: [] as AdminSpecGroup[],
     variants: [
@@ -183,6 +189,12 @@ export default function AdminProductForm() {
               is_hot: !!data.is_hot,
               is_new: !!data.is_new,
               is_recommended: !!data.is_recommended,
+              is_age_restricted: !!data.is_age_restricted,
+              minimum_age: data.minimum_age != null ? String(data.minimum_age) : "",
+              compliance_type: data.compliance_type || "normal",
+              region_notice: data.region_notice || "",
+              compliance_notice: data.compliance_notice || "",
+              allow_index: data.allow_index == null ? true : Number(data.allow_index) === 1,
               tag_ids: Array.isArray(data.tags) ? data.tags.map((t: { id: string }) => t.id) : [],
               spec_groups: Array.isArray(data.spec_groups)
                 ? data.spec_groups.map((g: any, gi: number) => ({
@@ -414,6 +426,8 @@ export default function AdminProductForm() {
           stock: mainStock,
         };
       }
+      const complianceType = (form.compliance_type || "normal").trim();
+      const shouldNoindex = form.is_age_restricted || complianceType !== "normal";
       const payload: any = {
         name: form.name,
         price: mainPrice,
@@ -431,6 +445,12 @@ export default function AdminProductForm() {
         is_hot: form.is_hot,
         is_new: form.is_new,
         is_recommended: form.is_recommended,
+        is_age_restricted: form.is_age_restricted,
+        minimum_age: form.minimum_age ? Number(form.minimum_age) : null,
+        compliance_type: complianceType,
+        region_notice: form.region_notice?.trim() || null,
+        compliance_notice: form.compliance_notice?.trim() || null,
+        allow_index: shouldNoindex ? false : form.allow_index,
         spec_groups: form.spec_groups.map((group, gi) => ({
           id: group.id,
           name: group.name,
@@ -524,7 +544,7 @@ export default function AdminProductForm() {
                     </div>
                   )}
                   {uploadingCover ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/45 text-white">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
                       <Loader2 className="h-5 w-5 animate-spin" />
                       <span className="mt-2 text-xs"><Tx>图片上传中...</Tx></span>
                       {uploadProgress !== null ? <span className="text-[11px]">{uploadProgress}%</span> : null}
@@ -1097,6 +1117,80 @@ export default function AdminProductForm() {
                 <option value="inactive"><Tx>下架</Tx></option>
               </select>
               <p className="mt-1 text-[10px] text-muted-foreground"><Tx>草稿可用于先录入资料，确认后再上架。</Tx></p>
+            </div>
+            <div className="rounded-lg border border-border p-3 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">合规与收录</p>
+              <label className="flex items-center justify-between">
+                <span className="text-sm text-foreground">是否受年龄限制</span>
+                <input
+                  type="checkbox"
+                  className="accent-gold"
+                  checked={form.is_age_restricted}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setForm((prev) => ({
+                      ...prev,
+                      is_age_restricted: checked,
+                      compliance_type: checked && prev.compliance_type === "normal" ? "age_restricted" : prev.compliance_type,
+                      allow_index: checked ? false : prev.allow_index,
+                    }));
+                  }}
+                />
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="mb-1 block text-[10px] text-muted-foreground">最低年龄</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.minimum_age}
+                    onChange={(e) => setForm((prev) => ({ ...prev, minimum_age: e.target.value }))}
+                    className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none"
+                    placeholder="例如 18"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-[10px] text-muted-foreground">合规类型</label>
+                  <select
+                    value={form.compliance_type}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setForm((prev) => ({
+                        ...prev,
+                        compliance_type: value,
+                        allow_index: value === "normal" && !prev.is_age_restricted ? prev.allow_index : false,
+                      }));
+                    }}
+                    className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none"
+                  >
+                    <option value="normal">normal 普通</option>
+                    <option value="age_restricted">age_restricted 年龄限制</option>
+                    <option value="regulated">regulated 受监管</option>
+                  </select>
+                </div>
+              </div>
+              <input
+                value={form.region_notice}
+                onChange={(e) => setForm((prev) => ({ ...prev, region_notice: e.target.value }))}
+                placeholder="地区适用说明"
+                className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none"
+              />
+              <textarea
+                rows={2}
+                value={form.compliance_notice}
+                onChange={(e) => setForm((prev) => ({ ...prev, compliance_notice: e.target.value }))}
+                placeholder="合规说明"
+                className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none"
+              />
+              <label className="flex items-center justify-between">
+                <span className="text-sm text-foreground">允许搜索引擎收录</span>
+                <input
+                  type="checkbox"
+                  className="accent-gold"
+                  checked={form.allow_index}
+                  onChange={(e) => setForm((prev) => ({ ...prev, allow_index: e.target.checked }))}
+                />
+              </label>
             </div>
             {[
               { label: "热门", desc: "显示热门标签", key: "is_hot" },

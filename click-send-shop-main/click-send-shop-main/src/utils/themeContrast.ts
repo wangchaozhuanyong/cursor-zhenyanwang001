@@ -153,8 +153,8 @@ export function getMutedTextColor(background: string | RGB, baseText?: string) {
   const bg = typeof background === "string" ? parseColor(background) : background;
   const readable = parseColor(getReadableTextColor(bg, baseText));
   const opposite = getContrastRatio(bg, WHITE) >= getContrastRatio(bg, BLACK) ? WHITE : BLACK;
-  const candidates = [0.62, 0.72, 0.82, 0.9].map((weight) => mixColors(readable, bg, weight));
-  const candidate = candidates.find((c) => getContrastRatio(c, bg) >= 3) || mixColors(opposite, bg, 0.45);
+  const candidates = [0.5, 0.58, 0.65, 0.72].map((weight) => mixColors(readable, bg, weight));
+  const candidate = candidates.find((c) => getContrastRatio(c, bg) >= 3.8) || mixColors(opposite, bg, 0.4);
   return rgbToCss(candidate);
 }
 

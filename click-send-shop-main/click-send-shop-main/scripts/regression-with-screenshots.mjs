@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { chromium } from "@playwright/test";
 
-const BASE = process.env.BASE_URL || "https://flashcast.com.my";
+const BASE = process.env.BASE_URL || "https://example.com";
 const API = `${BASE}/api`;
 const ADMIN_PHONE = process.env.ADMIN_PHONE || "18800000001";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "Admin123456";

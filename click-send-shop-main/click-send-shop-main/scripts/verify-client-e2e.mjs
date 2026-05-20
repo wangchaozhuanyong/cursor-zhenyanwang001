@@ -1,6 +1,6 @@
 /**
  * 客户端全站冒烟 + 轻量交互检测（Playwright）
- * 用法：BASE_URL=https://flashcast.com.my node scripts/verify-client-e2e.mjs
+ * 用法：BASE_URL=https://your-domain.com node scripts/verify-client-e2e.mjs
  * 本地：先启动 server:3000 + npm run dev:8080 或 preview，BASE_URL=http://127.0.0.1:8080
  */
 import { chromium } from "@playwright/test";

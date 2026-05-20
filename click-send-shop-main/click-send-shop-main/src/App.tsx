@@ -7,6 +7,9 @@ import { TopProgressBar } from "@/components/ui/top-progress-bar";
 import AppRouteFallback from "@/components/AppRouteFallback";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import TrackingManager from "@/components/TrackingManager";
+import PwaInstallPrompt from "@/components/PwaInstallPrompt";
+import PwaUpdateToast from "@/components/PwaUpdateToast";
+import RouteSeoGuard from "@/components/RouteSeoGuard";
 
 import AdminLayout from "./layouts/AdminLayout";
 import { LegacyCouponRedirect } from "@/routes/adminLegacyRedirects";
@@ -70,6 +73,7 @@ const Invite = lazy(() => import("@/modules/public/pages/user/Invite"));
 const Help = lazy(() => import("@/modules/public/pages/content/Help"));
 const About = lazy(() => import("@/modules/public/pages/content/About"));
 const ContentCmsPage = lazy(() => import("@/modules/public/pages/content/ContentCmsPage"));
+const InstallApp = lazy(() => import("@/modules/public/pages/content/InstallApp"));
 
 const NotFound = lazy(() => import("@/modules/public/pages/error/NotFound"));
 
@@ -346,6 +350,9 @@ function AppRoutes() {
           <AdminI18nScope>
           <AdminTitleSync />
           <TrackingManager />
+          <RouteSeoGuard />
+          <PwaInstallPrompt />
+          <PwaUpdateToast />
           <Suspense fallback={<AppRouteFallback />}>
             <Routes>
               {/* Pages with bottom nav */}
@@ -365,6 +372,7 @@ function AppRoutes() {
               <Route path="/login/bind-phone" element={<BindWechatPhone />} />
               <Route path="/help" element={<Help />} />
               <Route path="/about" element={<About />} />
+              <Route path="/install" element={<InstallApp />} />
               <Route path="/content/:slug" element={<ContentCmsPage />} />
 
               {/* Protected pages (require login) */}

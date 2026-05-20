@@ -82,7 +82,7 @@ export default function ProductImageGallery({ images, name, videoUrl, overlay }:
               <ProgressiveImage
                 src={productCoverForDetail(currentItem.url)}
                 blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
-                alt={`${name} ${current + 1}`}
+                alt={current === 0 ? `${name} 主图` : `${name} 详情图 ${current + 1}`}
                 className="h-full w-full bg-transparent"
                 imgClassName="h-full w-full [object-fit:var(--theme-image-fit,cover)]"
                 sizes="100vw"

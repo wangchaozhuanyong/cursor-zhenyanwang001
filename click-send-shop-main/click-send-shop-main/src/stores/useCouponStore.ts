@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { UserCoupon } from "@/types/coupon";
 import * as couponService from "@/services/couponService";
+import { isLoggedIn } from "@/utils/token";
 
 interface CouponState {
   coupons: UserCoupon[];
@@ -19,10 +20,13 @@ export const useCouponStore = create<CouponState>((set, get) => ({
   loadCoupons: async () => {
     set({ loading: true, error: null });
     try {
-      const [userData, available] = await Promise.all([
-        couponService.fetchUserCoupons(),
-        couponService.fetchAvailableCoupons(0),
-      ]);
+      if (!isLoggedIn()) {
+        set({ coupons: [], loading: false });
+        return;
+      }
+
+      const available = await couponService.fetchAvailableCoupons(0);
+      const userData = await couponService.fetchUserCoupons();
       const claimedIds = new Set(userData.list.map((item) => item.coupon?.id));
       const unclaimed = available.filter((item) => !claimedIds.has(item.coupon?.id));
       set({ coupons: [...unclaimed, ...userData.list], loading: false });

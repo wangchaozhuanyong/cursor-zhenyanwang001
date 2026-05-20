@@ -33,6 +33,7 @@ import { getProductGridClassName } from "@/utils/productGridClasses";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { buildPersonalizedRecommendations } from "@/utils/personalizedRecommendations";
 import { isLoggedIn } from "@/utils/token";
+import * as authService from "@/services/authService";
 import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
 import { isHomeModuleEnabled } from "@/constants/homeModules";
 import { HOME_HERO_STACK_CLASS, HOME_PAGE_MAIN_CLASS } from "@/constants/homeLayout";
@@ -94,13 +95,15 @@ export default function MemberHome() {
   }, [loadHomeData]);
 
   useEffect(() => {
-    useNotificationStore.getState().fetchUnreadCount();
-    useCouponStore.getState().loadCoupons();
     if (isLoggedIn()) {
-      loadHistory().catch(() => {});
-      loadFavorites().catch(() => {});
-      loadCart().catch(() => {});
-      loadOrders({ page: 1, pageSize: 20 }).catch(() => {});
+      authService.getProfile().then(() => {
+        useNotificationStore.getState().fetchUnreadCount();
+        useCouponStore.getState().loadCoupons();
+        loadHistory().catch(() => {});
+        loadFavorites().catch(() => {});
+        loadCart().catch(() => {});
+        loadOrders({ page: 1, pageSize: 20 }).catch(() => {});
+      }).catch(() => {});
     }
   }, [loadHistory, loadFavorites, loadCart, loadOrders]);
 

@@ -16,7 +16,7 @@ interface NotificationState {
   clearError: () => void;
 }
 
-export const useNotificationStore = create<NotificationState>((set, get) => ({
+export const useNotificationStore = create<NotificationState>((set) => ({
   notifications: [],
   unreadCount: 0,
   loading: false,
@@ -30,10 +30,16 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     try {
       const count = await notificationService.fetchUnreadCount();
       set({ unreadCount: count });
-    } catch { /* silent */ }
+    } catch {
+      set({ unreadCount: 0 });
+    }
   },
 
   loadNotifications: async () => {
+    if (!isLoggedIn()) {
+      set({ notifications: [], unreadCount: 0, loading: false, error: null });
+      return;
+    }
     set({ loading: true, error: null });
     try {
       const data = await notificationService.fetchNotifications();

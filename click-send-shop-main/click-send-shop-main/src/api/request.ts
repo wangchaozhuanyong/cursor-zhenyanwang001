@@ -49,7 +49,7 @@ function extractResponseMessage(body: Record<string, unknown>, status: number): 
     (body.data as Record<string, unknown> | undefined)?.error,
   ];
   const message = candidates.find((v) => typeof v === "string" && v.trim());
-  return typeof message === "string" ? translateApiMessage(message) : `Request failed (${status})`;
+  return typeof message === "string" ? translateApiMessage(message) : `请求失败（${status}）`;
 }
 
 export function toQueryString(params?: Record<string, unknown>): string {
@@ -61,6 +61,28 @@ export function toQueryString(params?: Record<string, unknown>): string {
 
 let refreshing: Promise<string> | null = null;
 let adminRefreshing: Promise<void> | null = null;
+
+function isPublicStorefrontPath(pathname: string): boolean {
+  return pathname === "/"
+    || pathname.startsWith("/categories")
+    || pathname.startsWith("/new-arrivals")
+    || pathname.startsWith("/search")
+    || pathname.startsWith("/product/")
+    || pathname.startsWith("/help")
+    || pathname.startsWith("/about")
+    || pathname.startsWith("/content/")
+    || pathname.startsWith("/support-download")
+    || pathname.startsWith("/install");
+}
+
+function shouldRedirectToLogin(options: RequestOptions, isAuthLogout: boolean, isAccountCancel: boolean): boolean {
+  if (typeof window === "undefined") return false;
+  if (isAuthLogout || isAccountCancel || window.location.pathname.startsWith("/login")) return false;
+  if (options.skipGlobalLoading || options.loadingMode === "silent") {
+    return !isPublicStorefrontPath(window.location.pathname);
+  }
+  return true;
+}
 
 async function tryRefreshToken(): Promise<string> {
   const loadingToken = startGlobalLoadingDeferred();
@@ -152,12 +174,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     } catch {
       clearTokens();
       notifyAuthExpired();
-      if (
-        typeof window !== "undefined"
-        && !isAuthLogout
-        && !isAccountCancel
-        && !window.location.pathname.startsWith("/login")
-      ) {
+      if (shouldRedirectToLogin(options, isAuthLogout, isAccountCancel)) {
         window.location.href = "/login";
       }
       throw new ApiError(401, "登录已过期，请重新登录");
@@ -186,11 +203,15 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
         window.location.href = "/admin/login";
       }
     }
+    if (res.status === 401 && !isAdminEndpoint) {
+      clearTokens();
+      notifyAuthExpired();
+    }
     let body: Record<string, unknown> = {};
     try {
       body = (await res.json()) as Record<string, unknown>;
     } catch {
-      // ignore
+      // ignore malformed error bodies
     }
     throw new ApiError(res.status, extractResponseMessage(body, res.status), {
       ...body,

@@ -34,6 +34,8 @@ import { useAdminTOptional } from "@/hooks/useAdminT";
 import { AdminI18nProvider } from "@/contexts/AdminI18nProvider";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import { trackEvent } from "@/services/analyticsService";
+import { isStandaloneApp } from "@/utils/pwa";
 
 type PreloadableLazy<T extends React.ComponentType<never>> = T & { preload?: () => Promise<unknown> };
 function lazyWithPreload<T extends React.ComponentType<never>>(factory: () => Promise<{ default: T }>) {
@@ -154,8 +156,10 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      staleTime: 30_000,
+      staleTime: 300_000,
+      gcTime: 1_800_000,
       refetchOnWindowFocus: false,
+      refetchOnMount: false,
     },
   },
 });
@@ -179,7 +183,7 @@ function SiteIdentitySync() {
     const iconTargets: Array<{ rel: string; href: string; type?: string; sizes?: string }> = custom
       ? [
           { rel: "icon", href: custom },
-          { rel: "apple-touch-icon", href: "/api/pwa/apple-touch-icon.png" },
+          { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
         ]
       : [
           { rel: "icon", href: DEFAULT_FAVICON_ICO, sizes: "any" },
@@ -214,6 +218,17 @@ function ReferralInviteSync() {
   useEffect(() => {
     syncLockedInviteCodeBySearch(location.search);
   }, [location.search]);
+  return null;
+}
+
+function PwaStandaloneAnalytics() {
+  useEffect(() => {
+    if (!isStandaloneApp()) return;
+    const key = "pwa_open_standalone_tracked";
+    if (window.sessionStorage.getItem(key) === "1") return;
+    window.sessionStorage.setItem(key, "1");
+    void trackEvent({ event_type: "pwa_open_standalone", module: "pwa", page: window.location.pathname });
+  }, []);
   return null;
 }
 
@@ -302,8 +317,9 @@ function AppScopeSync() {
 
 function HomeRoute() {
   const { themeReady } = useThemeRuntime();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   if (!themeReady) return <StoreOutletFallback />;
-  return isLoggedIn() ? <MemberHome /> : <GuestHome />;
+  return isAuthenticated && isLoggedIn() ? <MemberHome /> : <GuestHome />;
 }
 
 function RoutePreloadOnIdle() {
@@ -365,6 +381,7 @@ function AppRoutes() {
           <AuthTokenSync />
           <SiteIdentitySync />
           <ReferralInviteSync />
+          <PwaStandaloneAnalytics />
           <AppScopeSync />
           <AdminI18nScope>
           <AdminTitleSync />

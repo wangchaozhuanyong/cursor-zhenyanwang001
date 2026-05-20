@@ -36,7 +36,7 @@ function AccordionItem({ title, children }: { title: string; children: ReactNode
       </button>
       <div className={`grid transition-[grid-template-rows] duration-300 ease-out ${isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
         <div className="min-h-0 overflow-hidden">
-          <div className="pb-5 pl-0.5">{children}</div>
+          {isOpen ? <div className="pb-5 pl-0.5">{children}</div> : null}
         </div>
       </div>
     </div>

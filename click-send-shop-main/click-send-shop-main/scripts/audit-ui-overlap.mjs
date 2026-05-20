@@ -71,8 +71,10 @@ async function jfetch(url, options = {}) {
   return body.data;
 }
 
+/** Malaysia local mobile (9–10 digits, e.g. 0123456789) for +60 registration. */
 function randomPhone() {
-  return `1${Date.now().toString().slice(-7)}${Math.floor(Math.random() * 900 + 100)}`.slice(0, 11);
+  const tail = `${Date.now()}${Math.floor(Math.random() * 1000)}`.replace(/\D/g, "").slice(-8);
+  return `01${tail}`.slice(0, 10);
 }
 
 async function registerUser() {
@@ -430,7 +432,7 @@ async function main() {
     }
 
     let adminLoggedIn = false;
-    if (adminApiOk && !isMobile) {
+    if (adminApiOk) {
       adminLoggedIn = await loginAdminUi(page);
       if (!adminLoggedIn) {
         report.push({ phase: "setup", error: `后台 UI 登录失败 (${vp.label})` });
@@ -487,7 +489,7 @@ async function main() {
       }
     }
 
-    if (adminLoggedIn && !isMobile) {
+    if (adminLoggedIn) {
       for (const route of ADMIN_ROUTES) {
         if (route.needsAdmin && !adminLoggedIn) continue;
         try {
@@ -515,7 +517,7 @@ async function main() {
           });
         }
       }
-    } else if (adminApiOk && isMobile) {
+    } else if (adminApiOk) {
       try {
         await page.goto(`${BASE}/admin/login`, { waitUntil: "domcontentloaded" });
         await waitStable(page);

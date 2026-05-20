@@ -133,15 +133,49 @@ if (trustProxyRaw === '0' || trustProxyRaw.toLowerCase() === 'false') {
   app.set('trust proxy', Number(trustProxyRaw) || trustProxyRaw);
 }
 
-const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:4173,http://localhost:8080,http://localhost:8081,http://localhost:3000,http://127.0.0.1:3000')
+const defaultCorsOrigins = [
+  'http://localhost:5173',
+  'http://localhost:4173',
+  'http://localhost:8080',
+  'http://localhost:8081',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:4173',
+  'http://127.0.0.1:8080',
+  'http://127.0.0.1:8081',
+].join(',');
+const allowedOrigins = (process.env.CORS_ORIGINS || defaultCorsOrigins)
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
 const allowDevAnyOrigin = !isProduction && process.env.ALLOW_DEV_CORS_ANY_ORIGIN === '1';
+
+/** Dev: treat localhost and 127.0.0.1 on the same port as equivalent. */
+function isAllowedCorsOrigin(origin) {
+  if (!origin || allowedOrigins.includes(origin)) return true;
+  if (!isProduction) {
+    try {
+      const u = new URL(origin);
+      const portSuffix = u.port ? `:${u.port}` : '';
+      if (u.hostname === '127.0.0.1') {
+        const twin = `${u.protocol}//localhost${portSuffix}`;
+        if (allowedOrigins.includes(twin)) return true;
+      }
+      if (u.hostname === 'localhost') {
+        const twin = `${u.protocol}//127.0.0.1${portSuffix}`;
+        if (allowedOrigins.includes(twin)) return true;
+      }
+    } catch {
+      /* ignore malformed Origin */
+    }
+  }
+  return allowDevAnyOrigin;
+}
+
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    if (allowDevAnyOrigin) return callback(null, true);
+    if (isAllowedCorsOrigin(origin)) return callback(null, true);
     callback(new Error('CORS not allowed'), false);
   },
   credentials: true,

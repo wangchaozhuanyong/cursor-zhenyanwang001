@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Download, Package, Truck } from "lucide-react";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { AnimatedTable } from "@/modules/micro-interactions";
@@ -25,10 +25,21 @@ import {
 } from "@/constants/statusDictionary";
 import { THEME_OUTLINE_DANGER, THEME_OUTLINE_PRIMARY, THEME_OUTLINE_SUCCESS } from "@/utils/themeVisuals";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
+import AdminShipOrderDialog from "@/modules/admin/components/AdminShipOrderDialog";
+import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
+import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import {
+  buildOrderFilterChips,
+  hasActiveOrderFilters,
+  removeOrderFilterChip,
+} from "@/utils/adminOrderFilters";
 
 export default function AdminOrders() {
   const navigate = useNavigate();
   const { confirm } = useAdminConfirm();
+  const [shipTarget, setShipTarget] = useState<{ id: string; orderNo: string } | null>(null);
+  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
   const {
     orders,
     loading,
@@ -59,8 +70,25 @@ export default function AdminOrders() {
     setPage,
     setPageSize,
     loadOrders,
+    clearFilters,
     reset,
   } = useAdminOrdersStore();
+
+  const filterState = {
+    statusFilter,
+    paymentFilter,
+    search,
+    dateFrom,
+    dateTo,
+    paymentMethod,
+    paymentChannel,
+    shippingName,
+    amountMin,
+    amountMax,
+  };
+  const filterChips = useMemo(() => buildOrderFilterChips(filterState), [filterState]);
+  const filtersActive = hasActiveOrderFilters(filterState);
+  const ordersEmptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.ordersFiltered : ADMIN_EMPTY_GUIDES.orders;
 
   useEffect(() => {
     void loadOrders().catch((e) => toast.error(toastErrorMessage(e, "加载订单失败")));
@@ -84,17 +112,36 @@ export default function AdminOrders() {
 
   const stats = useMemo(
     () => [
-      { label: "待付款", value: summary.pending },
-      { label: "已付款", value: summary.paid },
-      { label: "待发货", value: summary.paid },
-      { label: "已发货", value: summary.shipped },
-      { label: "已完成", value: summary.completed },
-      { label: "已取消", value: summary.cancelled },
-      { label: "退款中", value: summary.refunding },
-      { label: "已退款", value: summary.refunded },
+      { label: "待付款", value: summary.pending, status: ORDER_STATUS.PENDING },
+      { label: "待发货", value: summary.paid, status: ORDER_STATUS.PAID },
+      { label: "已发货", value: summary.shipped, status: ORDER_STATUS.SHIPPED },
+      { label: "已完成", value: summary.completed, status: ORDER_STATUS.COMPLETED },
+      { label: "已取消", value: summary.cancelled, status: ORDER_STATUS.CANCELLED },
+      { label: "退款中", value: summary.refunding, status: ORDER_STATUS.REFUNDING },
+      { label: "已退款", value: summary.refunded, status: ORDER_STATUS.REFUNDED },
     ],
     [summary],
   );
+
+  const applyQuickStatusFilter = (status: string) => {
+    setStatusFilter((current) => (current === status ? "" : status));
+    setPage(1);
+  };
+
+  const handleRemoveFilterChip = (key: string) => {
+    const patch = removeOrderFilterChip(filterState, key);
+    if ("search" in patch) setSearch(patch.search ?? "");
+    if ("statusFilter" in patch) setStatusFilter(patch.statusFilter ?? "");
+    if ("paymentFilter" in patch) setPaymentFilter(patch.paymentFilter ?? "");
+    if ("dateFrom" in patch) setDateFrom(patch.dateFrom ?? "");
+    if ("dateTo" in patch) setDateTo(patch.dateTo ?? "");
+    if ("amountMin" in patch) setAmountMin(patch.amountMin ?? "");
+    if ("amountMax" in patch) setAmountMax(patch.amountMax ?? "");
+    if ("paymentMethod" in patch) setPaymentMethod(patch.paymentMethod ?? "");
+    if ("paymentChannel" in patch) setPaymentChannel(patch.paymentChannel ?? "");
+    if ("shippingName" in patch) setShippingName(patch.shippingName ?? "");
+    setPage(1);
+  };
 
   const handleExportCsv = async () => {
     try {
@@ -138,22 +185,8 @@ export default function AdminOrders() {
     });
   };
 
-  const handleShipOrder = (orderId: string) => {
-    const trackingNo = window.prompt("请输入运单号（可留空）", "") ?? "";
-    const carrier = window.prompt("请输入承运商（可留空）", "") ?? "";
-    confirm({
-      title: "确认发货",
-      description: "确定将该订单标记为已发货？",
-      confirmText: "发货",
-      onConfirm: async () => {
-        try {
-          await orderService.shipOrder(orderId, trackingNo.trim(), carrier.trim());
-          await reloadAfterAction("订单已发货");
-        } catch (e) {
-          toast.error(toastErrorMessage(e, "发货失败"));
-        }
-      },
-    });
+  const handleShipOrder = (orderId: string, orderNo: string) => {
+    setShipTarget({ id: orderId, orderNo });
   };
 
   const renderActions = (o: (typeof orders)[number]) => {
@@ -208,7 +241,7 @@ export default function AdminOrders() {
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              handleShipOrder(o.id);
+              handleShipOrder(o.id, o.order_no);
             }}
             className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] ${THEME_OUTLINE_PRIMARY}`}
           >
@@ -246,34 +279,65 @@ export default function AdminOrders() {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
-        {stats.map((stat) => (
-          <div key={stat.label} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-center theme-shadow">
-            <p className="text-lg font-bold text-foreground">{stat.value}</p>
-            <p className="text-[10px] text-muted-foreground">{stat.label}</p>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-7">
+        {stats.map((stat) => {
+          const active = statusFilter === stat.status;
+          return (
+            <button
+              key={stat.label}
+              type="button"
+              onClick={() => applyQuickStatusFilter(stat.status)}
+              className={`theme-rounded border p-3 text-center theme-shadow transition-colors ${
+                active
+                  ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_12%,var(--theme-surface))]"
+                  : "border-[var(--theme-border)] bg-[var(--theme-surface)] hover:bg-[var(--theme-bg)]"
+              }`}
+            >
+              <p className="text-lg font-bold text-foreground">{stat.value}</p>
+              <p className="text-[10px] text-muted-foreground">{stat.label}</p>
+            </button>
+          );
+        })}
       </div>
 
       <div className="space-y-2">
-        <div className="grid gap-2 md:grid-cols-5">
-          <SearchBar placeholder="搜索订单号/联系人/电话" value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
-          <SegmentedDateInput value={dateFrom} onChange={(v) => { setDateFrom(v); setPage(1); }} />
-          <SegmentedDateInput value={dateTo} onChange={(v) => { setDateTo(v); setPage(1); }} />
-          <input value={amountMin} onChange={(e) => { setAmountMin(e.target.value); setPage(1); }} placeholder="最低金额" className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-sm" />
-          <input value={amountMax} onChange={(e) => { setAmountMax(e.target.value); setPage(1); }} placeholder="最高金额" className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-sm" />
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-sm">
-            {ORDER_STATUS_FILTER_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
-          <select value={paymentFilter} onChange={(e) => { setPaymentFilter(e.target.value as "" | PaymentStatus); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-sm">
-            {PAYMENT_STATUS_FILTER_OPTIONS.map((s) => <option key={s.value || "all"} value={s.value}>{s.label}</option>)}
-          </select>
-          <input value={paymentMethod} onChange={(e) => { setPaymentMethod(e.target.value); setPage(1); }} placeholder="支付方式" className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-sm" />
-          <input value={paymentChannel} onChange={(e) => { setPaymentChannel(e.target.value); setPage(1); }} placeholder="支付渠道" className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-sm" />
-          <input value={shippingName} onChange={(e) => { setShippingName(e.target.value); setPage(1); }} placeholder="配送方式" className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-sm" />
-          <button type="button" onClick={handleExportCsv} className="inline-flex min-h-[44px] items-center gap-1 rounded-lg border border-[var(--theme-border)] px-3 text-sm"><Download size={14} /> 导出</button>
+        <SearchBar placeholder="搜索订单号/联系人/电话" value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
+        <AdminFilterSummaryBar
+          chips={filterChips}
+          onClearAll={() => clearFilters()}
+          onRemove={handleRemoveFilterChip}
+        />
+        <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
+          <button
+            type="button"
+            onClick={() => setAdvancedFiltersOpen((v) => !v)}
+            className="w-full text-left text-sm font-medium text-foreground"
+            aria-expanded={advancedFiltersOpen}
+          >
+            {advancedFiltersOpen ? "收起高级筛选" : "展开高级筛选"}
+          </button>
+          {advancedFiltersOpen ? (
+            <div className="mt-3 space-y-2 border-t border-[var(--theme-border)] pt-3">
+              <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
+                <SegmentedDateInput value={dateFrom} onChange={(v) => { setDateFrom(v); setPage(1); }} />
+                <SegmentedDateInput value={dateTo} onChange={(v) => { setDateTo(v); setPage(1); }} />
+                <input value={amountMin} onChange={(e) => { setAmountMin(e.target.value); setPage(1); }} placeholder="最低金额" className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm" />
+                <input value={amountMax} onChange={(e) => { setAmountMax(e.target.value); setPage(1); }} placeholder="最高金额" className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm" />
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
+                  {ORDER_STATUS_FILTER_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+                <select value={paymentFilter} onChange={(e) => { setPaymentFilter(e.target.value as "" | PaymentStatus); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
+                  {PAYMENT_STATUS_FILTER_OPTIONS.map((s) => <option key={s.value || "all"} value={s.value}>{s.label}</option>)}
+                </select>
+                <input value={paymentMethod} onChange={(e) => { setPaymentMethod(e.target.value); setPage(1); }} placeholder="支付方式" className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm" />
+                <input value={paymentChannel} onChange={(e) => { setPaymentChannel(e.target.value); setPage(1); }} placeholder="支付渠道" className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm" />
+                <input value={shippingName} onChange={(e) => { setShippingName(e.target.value); setPage(1); }} placeholder="配送方式" className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm" />
+                <button type="button" onClick={handleExportCsv} className="inline-flex min-h-[44px] items-center gap-1 rounded-lg border border-[var(--theme-border)] px-3 text-sm"><Download size={14} /> 导出</button>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -294,8 +358,16 @@ export default function AdminOrders() {
           </tr>
         )}
         footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(n) => { setPageSize(n); setPage(1); }} />}
-        emptyIcon={Package}
-        emptyTitle="无匹配订单"
+        emptyIcon={ordersEmptyGuide.icon}
+        emptyTitle={ordersEmptyGuide.title}
+        emptyDescription={ordersEmptyGuide.description}
+        emptyAction={(
+          <AdminEmptyGuideActions
+            guide={ordersEmptyGuide}
+            showClearFilters={filtersActive}
+            onClearFilters={() => clearFilters()}
+          />
+        )}
         renderRow={(o) => (
           <>
             <td className="px-4 py-3 font-mono text-xs text-foreground">{o.order_no}</td>
@@ -308,6 +380,22 @@ export default function AdminOrders() {
             <td className="px-4 py-3"><button type="button" onClick={() => navigate(`/admin/orders/${o.id}`)} className="text-xs text-[var(--theme-price)] hover:underline"><Tx>详情</Tx></button></td>
           </>
         )}
+      />
+
+      <AdminShipOrderDialog
+        open={!!shipTarget}
+        orderNo={shipTarget?.orderNo ?? ""}
+        onOpenChange={(open) => !open && setShipTarget(null)}
+        onConfirm={async (trackingNo, carrier) => {
+          if (!shipTarget) return;
+          try {
+            await orderService.shipOrder(shipTarget.id, trackingNo, carrier);
+            await reloadAfterAction("订单已发货");
+          } catch (e) {
+            toast.error(toastErrorMessage(e, "发货失败"));
+            throw e;
+          }
+        }}
       />
     </div>
   );

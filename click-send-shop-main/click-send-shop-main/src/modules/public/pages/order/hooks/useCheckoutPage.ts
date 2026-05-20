@@ -34,6 +34,7 @@ import {
 import type { Address } from "@/types/address";
 import { formatAddressForDisplay } from "@/services/addressService";
 import { generateOrderText } from "../utils/checkoutText";
+import { safeOpenExternal } from "@/utils/safeOpen";
 
 export function useCheckoutPage() {
   const navigate = useNavigate();
@@ -595,7 +596,7 @@ export function useCheckoutPage() {
   const openWhatsApp = () => {
     if (!submittedOrder) return;
     const text = encodeURIComponent(generateOrderText(submittedOrder));
-    window.open(`https://wa.me/?text=${text}`, "_blank");
+    safeOpenExternal(`https://wa.me/?text=${text}`);
   };
 
   const openWeChat = () => {
@@ -741,4 +742,3 @@ export function useCheckoutPage() {
     goNotifications: () => navigate("/notifications"),
   };
 }
-

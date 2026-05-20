@@ -2,6 +2,8 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const dns = require('dns').promises;
+const net = require('net');
 const sharp = require('sharp');
 const { NEUTRAL_SITE_DESCRIPTION, resolveSiteDescription, resolveSiteName } = require('../../../config/instance');
 
@@ -26,6 +28,44 @@ function resolvePublicUrl(req, maybeUrl) {
   return `${proto}://${host}${value.startsWith('/') ? value : `/${value}`}`;
 }
 
+function isPrivateIp(ip) {
+  if (!ip) return true;
+  if (net.isIPv4(ip)) {
+    const parts = ip.split('.').map((x) => Number(x));
+    const [a, b] = parts;
+    return a === 10
+      || a === 127
+      || (a === 169 && b === 254)
+      || (a === 172 && b >= 16 && b <= 31)
+      || (a === 192 && b === 168)
+      || a === 0;
+  }
+  const normalized = ip.toLowerCase();
+  return normalized === '::1'
+    || normalized.startsWith('fc')
+    || normalized.startsWith('fd')
+    || normalized.startsWith('fe80:')
+    || normalized.startsWith('::ffff:10.')
+    || normalized.startsWith('::ffff:127.')
+    || normalized.startsWith('::ffff:192.168.');
+}
+
+async function assertSafeRemoteImageUrl(sourceUrl) {
+  let parsed;
+  try {
+    parsed = new URL(sourceUrl);
+  } catch {
+    throw new Error('Invalid PWA logo URL');
+  }
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error('Unsupported PWA logo URL protocol');
+  }
+  const records = await dns.lookup(parsed.hostname, { all: true, verbatim: true });
+  if (!records.length || records.some((record) => isPrivateIp(record.address))) {
+    throw new Error('PWA logo URL resolves to a private address');
+  }
+}
+
 async function loadSiteInfoSafe() {
   try {
     return await getProductApi().getPublicSiteInfo();
@@ -37,13 +77,31 @@ async function loadSiteInfoSafe() {
 
 async function loadImageBuffer(sourceUrl) {
   if (!sourceUrl) return null;
-  if (sourceUrl.startsWith('data:')) {
-    const match = sourceUrl.match(/^data:[^;]+;base64,(.+)$/);
-    return match ? Buffer.from(match[1], 'base64') : null;
+  await assertSafeRemoteImageUrl(sourceUrl);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 3000);
+  let response;
+  try {
+    response = await fetch(sourceUrl, { redirect: 'error', signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
   }
-  const response = await fetch(sourceUrl, { redirect: 'follow' });
   if (!response.ok) throw new Error(`logo fetch failed: ${response.status}`);
-  return Buffer.from(await response.arrayBuffer());
+  const length = Number(response.headers.get('content-length') || 0);
+  const maxBytes = 2 * 1024 * 1024;
+  if (length > maxBytes) throw new Error('PWA logo response is too large');
+  const reader = response.body?.getReader();
+  if (!reader) return Buffer.from(await response.arrayBuffer());
+  const chunks = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) throw new Error('PWA logo response is too large');
+    chunks.push(Buffer.from(value));
+  }
+  return Buffer.concat(chunks);
 }
 
 function getFallbackLogoPath() {

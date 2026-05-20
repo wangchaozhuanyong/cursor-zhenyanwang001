@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const { generateId } = require('../../../utils/helpers');
 const { BusinessError } = require('../../../errors/BusinessError');
 const { ALL_ADMIN_PERMISSION_CODES } = require('../../../constants/adminPermissions');
+const { passwordSchema } = require('../../auth/schemas/auth.schemas');
 const repo = require('../repository/rbac.repository');
 
 /** 账号管理：创建、禁用、重置、删除后台管理员（不可删除超级管理员，不可操作自己） */
@@ -155,8 +156,13 @@ async function createAdminUser(body, actor, req) {
   const { phone, password, nickname, roleIds } = body;
   if (!phone || !password) throw new BusinessError(400, '手机号和密码必填');
 
+  const parsedPassword = passwordSchema.safeParse(password);
+  if (!parsedPassword.success) {
+    throw new BusinessError(400, parsedPassword.error.issues[0]?.message || '密码强度不符合要求');
+  }
+
   const id = generateId();
-  const hash = await bcrypt.hash(password, 10);
+  const hash = await bcrypt.hash(parsedPassword.data, 10);
   await repo.insertAdminUser(id, phone, hash, nickname, 'admin');
 
   if (Array.isArray(roleIds) && roleIds.length) {
@@ -195,8 +201,11 @@ async function resetAdminPassword(userId, body, actor, req) {
     throw new BusinessError(403, '仅超级管理员可重置超级管理员密码');
   }
   const { newPassword } = body;
-  if (!newPassword || newPassword.length < 6) throw new BusinessError(400, '新密码至少 6 位');
-  const hash = await bcrypt.hash(newPassword, 10);
+  const parsedPassword = passwordSchema.safeParse(newPassword);
+  if (!parsedPassword.success) {
+    throw new BusinessError(400, parsedPassword.error.issues[0]?.message || '密码强度不符合要求');
+  }
+  const hash = await bcrypt.hash(parsedPassword.data, 10);
   await repo.updatePasswordHash(userId, hash);
 
   const { writeAuditLog } = require('../../../utils/auditLog');
@@ -241,7 +250,6 @@ module.exports = {
   deleteAdminUser,
   ALL_ADMIN_PERMISSION_CODES,
 };
-
 
 
 

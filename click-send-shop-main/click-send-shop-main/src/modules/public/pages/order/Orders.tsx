@@ -11,6 +11,7 @@ import { useCartStore } from "@/stores/useCartStore";
 import * as orderService from "@/services/orderService";
 import { getBuyerOrderStatusText, hasPendingReview, matchOrderTab } from "@/utils/orderBuyerStatus";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import { safeOpenExternal } from "@/utils/safeOpen";
 
 const TABS: Array<{ key: OrderTab; label: string }> = [
   { key: "all", label: "全部" },
@@ -100,7 +101,7 @@ export default function Orders() {
 
   const handleViewLogistics = async (order: Order) => {
     if (order.logistics_provider?.tracking_url) {
-      window.open(order.logistics_provider.tracking_url, "_blank");
+      safeOpenExternal(order.logistics_provider.tracking_url);
       return;
     }
     const carrier = order.logistics_provider?.carrier || order.carrier || "";
@@ -266,7 +267,7 @@ export default function Orders() {
                 {order.items.length > 3 ? <p className="mt-2 text-xs text-[var(--theme-text-muted)]">共 {totalItems} 件商品</p> : null}
 
                 <div className="mt-3 flex justify-end text-sm">
-                  <span>共 {totalItems} 件商品　实付款 <span className="font-semibold text-[var(--theme-price)]">RM {Number(order.total_amount || 0).toFixed(2)}</span></span>
+                  <span>共 {totalItems} 件商品，实付款 <span className="font-semibold text-[var(--theme-price)]">RM {Number(order.total_amount || 0).toFixed(2)}</span></span>
                 </div>
 
                 <div className="mt-3 flex flex-wrap justify-end gap-2">

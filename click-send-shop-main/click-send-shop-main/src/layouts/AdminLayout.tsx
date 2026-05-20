@@ -510,10 +510,6 @@ function AdminLayoutContent() {
     navigate("/admin/login");
   }, [navigate]);
 
-  if (!isAdminAuthenticated()) {
-    return <Navigate to="/admin/login" replace />;
-  }
-
   const headerTitle = useMemo(() => {
     const hidden = getHiddenAdminHeaderTitle(location.pathname, t);
     if (hidden) return hidden;
@@ -529,6 +525,10 @@ function AdminLayoutContent() {
   const tab = mobileBottomTab(location.pathname);
 
   const showNotifTab = can("notification.manage") || can("notification.view");
+
+  if (!isAdminAuthenticated()) {
+    return <Navigate to="/admin/login" replace />;
+  }
 
   return (
     <AdminConfirmProvider>

@@ -8,18 +8,9 @@ import SeoHead from "@/components/SeoHead";
 import PageHeader from "@/components/PageHeader";
 import { buildCanonical, stripHtml, truncateText } from "@/utils/seo";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { sanitizeCmsHtml } from "@/utils/cmsSanitizer";
 
 const CONTACT_US_SLUG = "contact-us";
-
-function sanitizeCmsHtml(html: string): string {
-  if (!html) return "";
-  return html
-    .replace(/<\s*(script|iframe|object|embed|form|input|button|meta|link|style)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
-    .replace(/<\s*(script|iframe|object|embed|form|input|button|meta|link|style)[^>]*\/?\s*>/gi, "")
-    .replace(/\son[a-z]+\s*=\s*(['"]).*?\1/gi, "")
-    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "")
-    .replace(/\s(href|src)\s*=\s*(['"])\s*(javascript:|data:text\/html)/gi, " $1=$2#");
-}
 
 export default function ContentCmsPage() {
   const { slug = "" } = useParams<{ slug: string }>();

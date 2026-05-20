@@ -1,5 +1,13 @@
 const mysql = require('mysql2/promise');
 
+const isProduction = process.env.NODE_ENV === 'production';
+const dbUser = process.env.DB_USER || (isProduction ? undefined : 'click_send_app');
+const dbPassword = process.env.DB_PASSWORD || (isProduction ? undefined : '');
+
+if (isProduction && (!dbUser || !dbPassword)) {
+  throw new Error('Production DB_USER and DB_PASSWORD must be set');
+}
+
 /**
  * MySQL connections must use utf8mb4 to prevent Chinese product/category text
  * from being saved as mojibake. If production still shows broken text, inspect:
@@ -11,8 +19,8 @@ const mysql = require('mysql2/promise');
 const pool = mysql.createPool({
   host:            process.env.DB_HOST     || 'localhost',
   port:     Number(process.env.DB_PORT)    || 3306,
-  user:            process.env.DB_USER     || 'root',
-  password:        process.env.DB_PASSWORD || '',
+  user:            dbUser,
+  password:        dbPassword,
   database:        process.env.DB_NAME     || 'click_send_shop',
   charset: 'utf8mb4',
   waitForConnections: true,

@@ -26,8 +26,9 @@ app.use((req, res, next) => {
 });
 
 /**
- * �?HTTP（IP/未上证书）部署时，Helmet 默认�?CSP upgrade-insecure-requests + HSTS
- * 会让部分移动浏览器把请求「升级」到 https://，因无证书而表现为「网络连接失败」�? * 仅当 PUBLIC_APP_URL 明确�?https:// 时保留完整安全头�? */
+ * When serving over plain HTTP, do not force upgrade-insecure-requests or HSTS.
+ * Keep the stricter HTTPS-only headers only when PUBLIC_APP_URL is https://.
+ */
 const publicUrl = (process.env.PUBLIC_APP_URL || '').trim();
 const useHttpsSite = publicUrl.startsWith('https://');
 
@@ -75,7 +76,7 @@ function getInlineScriptHashesFromHtml(htmlPath) {
   }
 }
 
-/** 生产环境：托�?Vite 构建产物（与 API 同源，前端请�?/api 无需跨域�?*/
+/** Serve the Vite build from the same origin as the API in production. */
 const defaultFrontendDist = path.join(
   __dirname,
   '..',
@@ -88,7 +89,7 @@ const frontendDist = process.env.FRONTEND_DIST || defaultFrontendDist;
 const frontendIndexHtml = path.join(frontendDist, 'index.html');
 const viteInlineScriptHashes = getInlineScriptHashesFromHtml(frontendIndexHtml);
 
-/** �?Helmet 默认 CSP 上补充：首页演示图（Unsplash）、Cloudflare Web Analytics 信标 */
+/** Extend Helmet CSP for configured image storage, analytics, and Stripe. */
 const helmetCspDefaults = helmet.contentSecurityPolicy.getDefaultDirectives();
 const storageAllowedOrigins = getStorageAllowedOrigins();
 const cspDirectives = {
@@ -96,7 +97,6 @@ const cspDirectives = {
   'img-src': [...helmetCspDefaults['img-src'], 'blob:', 'https://images.unsplash.com', ...storageAllowedOrigins],
   'script-src': [
     ...helmetCspDefaults['script-src'],
-    'data:',
     'https://static.cloudflareinsights.com',
     'https://js.stripe.com',
     ...viteInlineScriptHashes,
@@ -123,7 +123,7 @@ app.use(
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-/** 反向代理（Nginx / ALB）后须开启，否则限流�?req.ip 可能不准确。生产默�?1 跳；显式 TRUST_PROXY=0 关闭�?*/
+/** Configure trust proxy so rate limiting uses the real client IP behind Nginx or ALB. */
 const trustProxyRaw = (process.env.TRUST_PROXY ?? '').trim();
 if (trustProxyRaw === '0' || trustProxyRaw.toLowerCase() === 'false') {
   // leave Express default (false)
@@ -153,18 +153,25 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(require('morgan')('combined'));
 }
 
-/** Stripe Webhook 必须使用 raw body，须放在 express.json 之前 */
+const paymentWebhookLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: { code: 429, message: 'Webhook 请求过于频繁，请稍后再试' },
+});
+
+/** Stripe Webhook requires the raw body and must be registered before express.json. */
 app.post(
   '/api/payment/stripe/webhook',
+  paymentWebhookLimiter,
   express.raw({ type: 'application/json', limit: '1mb' }),
   stripeWebhook.handleWebhook,
 );
 
-// �?multer 视频上限 50MB、Nginx client_max_body_size 对齐；multipart �?multer 解析，此条主要避免大 JSON 意外 413
-app.use(express.json({ limit: '60mb' }));
+// Multipart uploads are parsed by multer; keep JSON small to reduce memory pressure.
+app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '1mb' }));
 
 const uploadsDir = path.join(__dirname, '../public/uploads');
-/** ��ʷ��Ʒ���ܽ��� full.webp���� -card/-detail��ȱʧ����ʱ���� full������ͻ��� 404 �������� */
+/** Fall back to full.webp when legacy product card/detail variants are missing. */
 app.use('/uploads', (req, res, next) => {
   const rel = decodeURIComponent(String(req.path || ''));
   const variantMatch = rel.match(/^\/([a-f0-9]{32})-(card|detail)(\.webp)$/i);
@@ -231,17 +238,11 @@ const uploadLimiter = rateLimit({
 app.use('/api/upload', uploadLimiter);
 app.use('/api/admin/upload', uploadLimiter);
 
-const paymentWebhookLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 60,
-  message: { code: 429, message: 'Webhook 请求过于频繁，请稍后再试' },
-});
-app.use('/api/payments/webhooks', paymentWebhookLimiter);
 
 app.use(responseMiddleware);
 app.use('/api', routes);
 
-/** dist 存在且未设置 SERVE_SPA=0 时托管前端（仅跑 API 时可�?.env �?SERVE_SPA=0�?*/
+/** Serve the SPA when the build exists, unless SERVE_SPA=0 is set. */
 const serveSpa = fs.existsSync(frontendDist) && process.env.SERVE_SPA !== '0';
 if (serveSpa) {
   const frontendAssetsDir = path.join(frontendDist, 'assets');
@@ -275,7 +276,7 @@ if (serveSpa) {
       },
     }),
   );
-  // Express 5 / path-to-regexp 不支�?app.get('*')，用中间件做 SPA 回退
+  // Express 5 / path-to-regexp does not support app.get('*'); use middleware for SPA fallback.
   app.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
     if (req.path.startsWith('/api')) return next();
@@ -285,9 +286,11 @@ if (serveSpa) {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.sendFile(path.join(frontendDist, 'index.html'), (err) => next(err));
   });
-  console.log(`前端静态资源目录: ${frontendDist}`);
+  console.log(`Frontend static assets: ${frontendDist}`);
 }
 
 app.use(errorHandler);
 
 module.exports = app;
+
+

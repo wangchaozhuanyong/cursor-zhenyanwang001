@@ -58,9 +58,11 @@ export default function Invite() {
   const handleShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: "邀请好友得奖励", text: `使用我的邀请码 ${inviteCode} 注册`, url: inviteLink });
+        await navigator.share({ title: "???????", text: `??????? ${inviteCode} ??`, url: inviteLink });
         return;
-      } catch {}
+      } catch {
+        // Fall back to copying the invite link when native share is cancelled or unavailable.
+      }
     }
     copyLink();
   };

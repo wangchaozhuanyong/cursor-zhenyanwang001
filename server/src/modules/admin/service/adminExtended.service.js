@@ -4,6 +4,7 @@ const { writeAuditLog } = require('../../../utils/auditLog');
 const { ORDER_STATUS, RETURN_STATUS } = require('../../../constants/status');
 const { getResolvedTriggerCopy } = require('./notificationTriggerSettings.service');
 const { normalizeKnownMojibakeText } = require('../../../utils/textNormalize');
+const { sanitizeCmsHtml } = require('../../../utils/cmsSanitizer');
 const orderPoints = require('../../order/service/orderPoints.service');
 
 function getUserApi() {
@@ -123,19 +124,6 @@ function buildReturnListWhere(query) {
   if (query.dateFrom) { where += ' AND r.created_at >= ?'; params.push(query.dateFrom); }
   if (query.dateTo) { where += ' AND r.created_at <= ?'; params.push(`${query.dateTo} 23:59:59`); }
   return { where, params };
-}
-
-function sanitizeCmsHtml(input) {
-  let html = String(input || '');
-  // Drop dangerous tags entirely.
-  html = html.replace(/<\s*(script|iframe|object|embed|form|input|button|meta|link|style)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, '');
-  html = html.replace(/<\s*(script|iframe|object|embed|form|input|button|meta|link|style)[^>]*\/?\s*>/gi, '');
-  // Remove inline event handlers such as onclick/onerror.
-  html = html.replace(/\son[a-z]+\s*=\s*(['"]).*?\1/gi, '');
-  html = html.replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '');
-  // Neutralize javascript: and data:text/html URLs.
-  html = html.replace(/\s(href|src)\s*=\s*(['"])\s*(javascript:|data:text\/html)/gi, ' $1=$2#');
-  return html;
 }
 
 const DEFAULT_LEGAL_PAGES = [

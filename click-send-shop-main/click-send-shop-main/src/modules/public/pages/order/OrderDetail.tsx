@@ -13,6 +13,7 @@ import type { ProductVariant } from "@/types/product";
 import { getBuyerOrderStatusText, getOrderProgressStep, hasPendingReview } from "@/utils/orderBuyerStatus";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { OrderDiscountLines } from "./components/OrderDiscountLines";
+import { safeOpenExternal } from "@/utils/safeOpen";
 
 const steps = ["待付款", "已付款", "已发货", "已完成"];
 
@@ -47,7 +48,7 @@ export default function OrderDetail() {
   const handleViewLogistics = async () => {
     if (!order) return;
     if (order.logistics_provider?.tracking_url) {
-      window.open(order.logistics_provider.tracking_url, "_blank");
+      safeOpenExternal(order.logistics_provider.tracking_url);
       return;
     }
     const carrier = order.logistics_provider?.carrier || order.carrier || "";

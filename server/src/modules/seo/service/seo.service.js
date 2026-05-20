@@ -13,7 +13,7 @@ const STATIC_PUBLIC_PATHS = [
 const RESTRICTED_KEYWORDS = [
   'tobacco', 'cigarette', 'cigar', 'smoking', 'vape', 'e-cigarette', 'nicotine',
   'alcohol', 'liquor', 'wine', 'beer', 'areca', 'betel',
-  '槟榔', '烟', '香烟', '真烟', '电子烟', '尼古丁', '酒', '白酒', '啤酒', '红酒',
+  '??', '?', '??', '??', '???', '???', '?', '??', '??', '??',
 ];
 
 function stripTrailingSlash(value) {

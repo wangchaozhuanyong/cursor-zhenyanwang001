@@ -156,7 +156,10 @@ async function softDeleteAdminUser(userId) {
 }
 
 async function updatePasswordHash(userId, hash) {
-  await db.query(`UPDATE users SET password_hash = ? WHERE id = ?`, [hash, userId]);
+  await db.query(
+    `UPDATE users SET password_hash = ?, refresh_token_version = refresh_token_version + 1 WHERE id = ?`,
+    [hash, userId],
+  );
 }
 
 async function insertRole(code, name, description) {
@@ -225,6 +228,7 @@ module.exports = {
   deleteRoleById,
   replaceRolePermissions,
 };
+
 
 
 

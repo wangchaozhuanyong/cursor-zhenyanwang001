@@ -7,15 +7,7 @@ import PageHeader from "@/components/PageHeader";
 import * as contentService from "@/services/contentService";
 import type { ContentPage } from "@/types/content";
 import { stripHtml, truncateText } from "@/utils/seo";
-
-function sanitizeCmsHtml(html: string): string {
-  return String(html || "")
-    .replace(/<\s*(script|iframe|object|embed|form|input|button|meta|link|style)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
-    .replace(/<\s*(script|iframe|object|embed|form|input|button|meta|link|style)[^>]*\/?\s*>/gi, "")
-    .replace(/\son[a-z]+\s*=\s*(['"]).*?\1/gi, "")
-    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "")
-    .replace(/\s(href|src)\s*=\s*(['"])\s*(javascript:|data:text\/html)/gi, " $1=$2#");
-}
+import { sanitizeCmsHtml } from "@/utils/cmsSanitizer";
 
 export default function About() {
   const goBack = useGoBack();

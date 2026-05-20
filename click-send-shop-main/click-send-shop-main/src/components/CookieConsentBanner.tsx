@@ -48,6 +48,8 @@ export default function CookieConsentBanner() {
     });
   }, [categories]);
 
+  const fixedBottom = useMemo(() => getStoreFixedBottomOffset(location.pathname), [location.pathname]);
+
   if (location.pathname.startsWith("/admin")) return null;
   if (storedConsent || categories.length === 0) return null;
 
@@ -61,8 +63,6 @@ export default function CookieConsentBanner() {
   const rejectOptional = () => saveTrackingConsent(DEFAULT_TRACKING_CONSENT);
   const saveCustom = () => saveTrackingConsent(draft);
 
-  const fixedBottom = useMemo(() => getStoreFixedBottomOffset(location.pathname), [location.pathname]);
-
   return (
     <div
       className="fixed inset-x-0 z-[70] px-4 pb-4"
@@ -71,7 +71,7 @@ export default function CookieConsentBanner() {
       <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card/95 p-4 text-card-foreground shadow-2xl backdrop-blur-md md:p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground">Cookie / 同意管理</p>
+            <p className="text-sm font-semibold text-foreground">浏览器 Cookie / 同意管理</p>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
               我们会使用必要 Cookie 保持网站正常运行。只有在你同意后，才会加载分析或广告追踪脚本。详细说明可查看{" "}
               <Link to={siteInfo.privacyPolicyPath || "/content/privacy-policy"} className="font-medium text-theme-price underline-offset-2 hover:underline">

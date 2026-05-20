@@ -5,7 +5,7 @@ import { isRestrictedProduct } from "@/utils/restrictedProduct";
 
 export function buildWebsiteJsonLd(siteInfo: SiteInfo) {
   const siteUrl = getPublicSiteUrl();
-  const siteName = (siteInfo.siteName || "官方商城").trim();
+  const siteName = (siteInfo.siteName || "大马通").trim();
   const description = truncateText(stripHtml(siteInfo.seoDescription || siteInfo.siteDescription || ""), 180);
   return {
     "@context": "https://schema.org",
@@ -23,13 +23,15 @@ export function buildWebsiteJsonLd(siteInfo: SiteInfo) {
 
 export function buildOrganizationJsonLd(siteInfo: SiteInfo) {
   const siteUrl = getPublicSiteUrl();
-  const siteName = (siteInfo.siteName || "官方商城").trim();
+  const siteName = (siteInfo.siteName || "大马通").trim();
   const description = truncateText(stripHtml(siteInfo.seoDescription || siteInfo.siteDescription || ""), 180);
   let extraLinks: string[] = [];
   try {
     const parsed = JSON.parse(String(siteInfo.otherSocialLinks || "[]"));
     if (Array.isArray(parsed)) extraLinks = parsed.map((x) => String(x || "").trim()).filter(Boolean);
-  } catch {}
+  } catch {
+    extraLinks = [];
+  }
   const links = [siteInfo.whatsappUrl, siteInfo.facebookUrl, siteInfo.instagramUrl, siteInfo.tiktokUrl, siteInfo.xhsUrl, siteInfo.youtubeUrl, ...extraLinks]
     .map((s) => String(s || "").trim())
     .filter(Boolean);

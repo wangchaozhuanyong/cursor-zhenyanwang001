@@ -132,11 +132,11 @@ export default defineConfig(() => ({
       ],
       workbox: {
         swDest: "sw.js",
-        navigateFallback: "/offline.html",
+        navigateFallback: undefined,
         navigateFallbackDenylist: [/^\/admin(\/|$)/, /^\/api(\/|$)/, /^\/manifest\.webmanifest$/, /^\/pwa-/],
         cleanupOutdatedCaches: true,
-        clientsClaim: false,
-        skipWaiting: false,
+        clientsClaim: true,
+        skipWaiting: true,
         runtimeCaching: [
           {
             urlPattern: /^https?:\/\/[^/]+\/api\/(admin|auth|user|orders|cart|checkout|payment|upload)(\/|$)/,

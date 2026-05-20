@@ -1,4 +1,4 @@
-﻿/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ArrowLeft, Upload, ImagePlus, Loader2, Trash2, Plus, Video } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -441,6 +441,7 @@ export default function AdminProductForm() {
         status: publish ? "active" : form.status,
         is_hot: form.is_hot,
         is_new: form.is_new,
+        isNewArrival: form.is_new,
         is_recommended: form.is_recommended,
         is_age_restricted: form.is_age_restricted,
         minimum_age: form.minimum_age ? Number(form.minimum_age) : null,
@@ -1190,7 +1191,7 @@ export default function AdminProductForm() {
             </div>
             {[
               { label: "热门", desc: "显示热门标签", key: "is_hot" },
-              { label: "新品", desc: "显示新品标签", key: "is_new" },
+              { label: "是否标记为新品", desc: "显示新品标签并进入新品上市专题页", key: "is_new" },
               { label: "推荐", desc: "首页推荐展示", key: "is_recommended" },
             ].map((t) => (
               <label key={t.key} className="flex items-center justify-between rounded-lg border border-border p-3">

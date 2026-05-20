@@ -109,6 +109,8 @@ export interface Product {
   description: string;
   is_recommended: boolean;
   is_new: boolean;
+  isNewArrival?: boolean;
+  newArrival?: boolean;
   is_hot: boolean;
   is_age_restricted?: boolean;
   minimum_age?: number | null;
@@ -117,6 +119,10 @@ export interface Product {
   compliance_notice?: string | null;
   allow_index?: boolean | number | null;
   category_name?: string;
+  created_at?: string;
+  createdAt?: string;
+  published_at?: string;
+  publishedAt?: string;
   attributes?: Record<string, unknown> | string | null;
   tags?: ProductCatalogTag[];
 }

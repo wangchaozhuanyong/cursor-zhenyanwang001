@@ -1,4 +1,4 @@
-﻿const { generateId, formatProduct } = require('../../../utils/helpers');
+const { generateId, formatProduct } = require('../../../utils/helpers');
 const { BusinessError } = require('../../../errors/BusinessError');
 const { logAdminAction } = require('../../../utils/adminAudit');
 const { parseCsv, parseBool } = require('../../../utils/csv');
@@ -234,7 +234,7 @@ async function createProduct(body, adminUserId, req) {
   const {
     name, cover_image, video_url, images, price, original_price, sales_count,
     category_id, stock, sort_order,
-    description, is_recommended, is_new, is_hot,
+    description, is_recommended, is_new, isNewArrival, is_hot,
     variants,
     tag_ids: tagIdsBody,
   } = body;
@@ -268,7 +268,7 @@ async function createProduct(body, adminUserId, req) {
         [],
       ),
       is_recommended: is_recommended ? 1 : 0,
-      is_new: is_new ? 1 : 0,
+      is_new: (isNewArrival ?? is_new) ? 1 : 0,
       is_hot: is_hot ? 1 : 0,
     });
     await variantRepo.upsertProductSkuMatrix(id, body.spec_groups, variantRows);
@@ -351,6 +351,9 @@ async function createProduct(body, adminUserId, req) {
 async function updateProduct(id, body, adminUserId, req) {
   const beforeRow = await repo.selectProductById(id);
   if (!beforeRow) throw new BusinessError(404, '商品不存在');
+  if (body.isNewArrival !== undefined && body.is_new === undefined) {
+    body.is_new = body.isNewArrival;
+  }
   const beforeSnap = {
     name: beforeRow.name,
     price: parseFloat(beforeRow.price),

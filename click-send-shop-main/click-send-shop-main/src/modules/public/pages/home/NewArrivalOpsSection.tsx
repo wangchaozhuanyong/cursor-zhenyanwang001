@@ -30,9 +30,10 @@ export default function NewArrivalSection({
   const navigate = useNavigate();
   const sessionId = useHomeTrackingSessionId();
   const exposedProductIdsRef = useRef<Set<string>>(new Set());
+  const normalizedTitle = !title || title.trim() === "新品" ? DEFAULT_TITLE : title;
 
   const items = useMemo(
-    () => products.slice(0, Math.max(1, Number(displayCount) || 8)),
+    () => products.slice(0, Math.min(8, Math.max(6, Number(displayCount) || 8))),
     [displayCount, products],
   );
 
@@ -70,7 +71,7 @@ export default function NewArrivalSection({
     <section className={cn("rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 md:p-4", className)}>
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-base font-bold tracking-wide text-[var(--theme-text-on-surface)]">{title || DEFAULT_TITLE}</h2>
+          <h2 className="text-base font-bold tracking-wide text-[var(--theme-text-on-surface)]">{normalizedTitle}</h2>
         </div>
         <button
           type="button"

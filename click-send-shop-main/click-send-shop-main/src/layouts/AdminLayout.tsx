@@ -1,4 +1,4 @@
-﻿import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AnimatedPage } from "@/modules/micro-interactions";
 import { Outlet, useNavigate, useLocation, Navigate } from "react-router-dom";
@@ -41,6 +41,8 @@ import {
   Languages,
   Lock,
   Paintbrush,
+  MousePointerClick,
+  Headphones,
 } from "lucide-react";
 import AdminAccountSettingsDialog from "@/components/admin/AdminAccountSettingsDialog";
 import type { AdminAccountTab } from "@/components/admin/AdminAccountPanel";
@@ -153,6 +155,7 @@ const navItemsRaw: NavItem[] = [
     children: [
       { icon: LayoutGrid, labelKey: "nav.homeDesign", path: "/admin/home-ops", permission: "home_ops.manage" },
       { icon: Image, labelKey: "nav.banners", path: "/admin/banners", permission: "banner.manage" },
+      { icon: Headphones, labelKey: "nav.supportDownload", path: "/admin/support-download", permission: "settings.manage" },
       { icon: Palette, labelKey: "nav.themeSettings", path: "/admin/settings/theme", permission: "settings.manage" },
       { icon: FileText, labelKey: "nav.content", path: "/admin/content", permission: "content.manage" },
     ],
@@ -183,6 +186,7 @@ const navItemsRaw: NavItem[] = [
       { icon: Ticket, labelKey: "nav.reportCoupons", path: "/admin/reports/coupons", permission: "report.view" },
       { icon: Package, labelKey: "nav.reportInventory", path: "/admin/reports/inventory", permission: "report.view" },
       { icon: Search, labelKey: "nav.reportSearch", path: "/admin/reports/search", permission: "report.view" },
+      { icon: MousePointerClick, labelKey: "nav.reportTraffic", path: "/admin/reports/traffic", permission: "report.view" },
       { icon: FileText, labelKey: "nav.exports", path: "/admin/exports", permission: "report.export" },
     ],
   },

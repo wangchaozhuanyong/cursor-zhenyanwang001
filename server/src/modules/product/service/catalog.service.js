@@ -1,4 +1,4 @@
-﻿const { parseBool, formatProduct } = require('../../../utils/helpers');
+const { parseBool, formatProduct } = require('../../../utils/helpers');
 const repo = require('../repository/catalog.repository');
 const tagAssignmentRepo = require('../repository/productTagAssignment.repository');
 const activityRepo = require('../repository/activity.repository');
@@ -170,7 +170,7 @@ function buildProductListQuery(query, categoryIds) {
   }
   if (isNew !== undefined) {
     if (isNew && useHomeNewArrivalsRule) {
-      where += ' AND (is_new = 1 OR created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY))';
+      where += ' AND (is_new = 1 OR created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY))';
       if (newArrivalsOnlyInStock !== undefined) {
         where += newArrivalsOnlyInStock ? ' AND stock > 0' : '';
       }
@@ -227,7 +227,7 @@ function attachActivity(product, activity) {
   if (activity.type === 'full_reduction') {
     const th = activity.threshold_amount != null ? Number(activity.threshold_amount) : null;
     const disc = activity.discount_amount != null ? Number(activity.discount_amount) : null;
-    const label = th != null && disc != null && th > 0 && disc > 0 ? `�?{th}�?{disc}` : '';
+    const label = th != null && disc != null && th > 0 && disc > 0 ? `满${th}减${disc}` : '';
     return {
       ...product,
       active_activity: activity,
@@ -364,7 +364,7 @@ async function loadHomeProducts() {
       repo.selectActiveProductsByFlag('is_recommended', recLimit),
       repo.selectActiveProductsFallback('sales_count DESC, sort_order ASC, created_at DESC', 64),
       repo.selectActiveProductsFallback('is_recommended DESC, sales_count DESC, sort_order ASC, created_at DESC', 64),
-      repo.selectActiveProductsRecent(14, 64, newArrivalOnlyInStock),
+      repo.selectActiveProductsRecent(30, 64, newArrivalOnlyInStock),
     ]);
 
   const pickUnique = (primary, fallback, target, excludeIds = new Set()) => {

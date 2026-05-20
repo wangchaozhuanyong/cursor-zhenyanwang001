@@ -91,12 +91,41 @@ export interface SiteInfo {
   newArrivalShowPrice?: string;
   newArrivalOnlyInStock?: string;
 
+  /* ─ 客服下载页配置 ─ */
+  supportDownloadConfig?: string;
+
   /* ─ Cookie 同意后的分析 / 广告追踪 ─ */
   ga4Enabled?: string;
   ga4MeasurementId?: string;
   metaPixelEnabled?: string;
   metaPixelId?: string;
   helpCenterConfig?: string;
+}
+
+export type SupportChannelType = "wechat" | "whatsapp" | "telegram" | "messenger" | "custom";
+
+export interface SupportDownloadChannel {
+  id: string;
+  type: SupportChannelType;
+  name: string;
+  enabled: boolean;
+  account: string;
+  linkUrl: string;
+  qrUrl: string;
+  description: string;
+  sortOrder: number;
+}
+
+export interface SupportDownloadConfig {
+  enabled: boolean;
+  title: string;
+  subtitle: string;
+  workingHours: string;
+  supportDescription: string;
+  showAppInstall: boolean;
+  appInstallTitle: string;
+  appInstallDescription: string;
+  channels: SupportDownloadChannel[];
 }
 
 export interface HelpCenterCategory {

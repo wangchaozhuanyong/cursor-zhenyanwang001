@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import * as contentService from "@/services/contentService";
 import * as homeService from "@/services/homeService";
 import type { SiteInfo } from "@/types/content";
@@ -26,6 +26,7 @@ const FALLBACK: SiteInfo = {
   newArrivalDisplayCount: "8",
   newArrivalShowPrice: "1",
   newArrivalOnlyInStock: "1",
+  supportDownloadConfig: "",
   supportText: "官方客服在线，售后无忧",
   shippingNotice: "全站商品支持配送，具体以结算页说明为准",
   paymentNotice: "下单后请按页面提示完成支付",
@@ -37,6 +38,7 @@ const subscribers = new Set<(info: SiteInfo) => void>();
 
 function looksLikeMojibake(value: string): boolean {
   if (!value) return false;
+  // encoding-check: ignore-next-line
   return /�|锟|鈥|銆|鍟|鐧|璇|绠|閫|鎴|鏄|鐨|鍙|娴|鏂/.test(value);
 }
 

@@ -40,6 +40,7 @@ const RULES: { test: (path: string) => boolean; rule: PathRule }[] = [
   { test: (p) => p.startsWith("/admin/notifications"), rule: { kind: "any", permissions: ["notification.view", "notification.manage"] } },
   { test: (p) => p.startsWith("/admin/account"), rule: { kind: "one", permission: "dashboard.view" } },
   { test: (p) => p.startsWith("/admin/banners"), rule: { kind: "one", permission: "banner.manage" } },
+  { test: (p) => p.startsWith("/admin/support-download"), rule: { kind: "one", permission: "settings.manage" } },
   { test: (p) => p.startsWith("/admin/home-ops"), rule: { kind: "one", permission: "home_ops.manage" } },
   { test: (p) => p.startsWith("/admin/reports"), rule: { kind: "one", permission: "report.view" } },
   { test: (p) => p.startsWith("/admin/exports"), rule: { kind: "one", permission: "report.export" } },

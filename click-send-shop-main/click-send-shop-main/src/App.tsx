@@ -1,4 +1,4 @@
-﻿import { lazy, Suspense, useEffect, useLayoutEffect, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -7,6 +7,7 @@ import { TopProgressBar } from "@/components/ui/top-progress-bar";
 import AppRouteFallback from "@/components/AppRouteFallback";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import TrackingManager from "@/components/TrackingManager";
+import RouteAnalyticsTracker from "@/components/RouteAnalyticsTracker";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import PwaUpdateToast from "@/components/PwaUpdateToast";
 import RouteSeoGuard from "@/components/RouteSeoGuard";
@@ -73,7 +74,7 @@ const Invite = lazy(() => import("@/modules/public/pages/user/Invite"));
 const Help = lazy(() => import("@/modules/public/pages/content/Help"));
 const About = lazy(() => import("@/modules/public/pages/content/About"));
 const ContentCmsPage = lazy(() => import("@/modules/public/pages/content/ContentCmsPage"));
-const InstallApp = lazy(() => import("@/modules/public/pages/content/InstallApp"));
+const SupportDownload = lazy(() => import("@/modules/public/pages/content/SupportDownload"));
 
 const NotFound = lazy(() => import("@/modules/public/pages/error/NotFound"));
 
@@ -127,9 +128,11 @@ const AdminActivityAnalysisReport = lazy(() => import("@/modules/admin/pages/rep
 const AdminCouponAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminCouponAnalysisReport"));
 const AdminInventoryAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminInventoryAnalysisReport"));
 const AdminSearchAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminSearchAnalysisReport"));
+const AdminTrafficAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminTrafficAnalysisReport"));
 const AdminExportCenter = lazy(() => import("@/modules/admin/pages/report/AdminExportCenter"));
 
 const AdminSiteSettings = lazy(() => import("@/modules/admin/pages/settings/AdminSiteSettings"));
+const AdminSupportDownload = lazy(() => import("@/modules/admin/pages/settings/AdminSupportDownload"));
 const AdminThemeSettings = lazy(() => import("@/modules/admin/pages/settings/AdminThemeSettings"));
 const AdminContent = lazy(() => import("@/modules/admin/pages/settings/AdminContent"));
 const AdminHomeOps = lazy(() => import("@/modules/admin/pages/settings/AdminHomeOps"));
@@ -171,7 +174,10 @@ function SiteIdentitySync() {
       raw && !raw.startsWith("data:") && !/lovable/i.test(raw) ? raw : "";
 
     const iconTargets: Array<{ rel: string; href: string; type?: string; sizes?: string }> = custom
-      ? [{ rel: "icon", href: custom }]
+      ? [
+          { rel: "icon", href: custom },
+          { rel: "apple-touch-icon", href: "/api/pwa/apple-touch-icon.png" },
+        ]
       : [
           { rel: "icon", href: DEFAULT_FAVICON_ICO, sizes: "any" },
           { rel: "icon", href: DEFAULT_FAVICON_SVG, type: "image/svg+xml" },
@@ -242,6 +248,7 @@ function AdminTitleSync() {
       { test: (p) => p.startsWith("/admin/settings/site"), titleKey: "routeTitles.siteSettings" },
       { test: (p) => p.startsWith("/admin/settings/theme"), titleKey: "routeTitles.theme" },
       { test: (p) => p.startsWith("/admin/home-ops"), titleKey: "routeTitles.homeOps" },
+      { test: (p) => p.startsWith("/admin/support-download"), titleKey: "routeTitles.supportDownload" },
       { test: (p) => p.startsWith("/admin/banners"), titleKey: "routeTitles.banners" },
       { test: (p) => p.startsWith("/admin/content"), titleKey: "routeTitles.content" },
       { test: (p) => p.startsWith("/admin/payments"), titleKey: "routeTitles.payments" },
@@ -262,6 +269,7 @@ function AdminTitleSync() {
       { test: (p) => p.startsWith("/admin/orders/unfinished"), titleKey: "routeTitles.unfinishedOrders" },
       { test: (p) => p.startsWith("/admin/orders"), titleKey: "routeTitles.orders" },
       { test: (p) => p.startsWith("/admin/products") || p.startsWith("/admin/categories") || p.startsWith("/admin/inventory") || p.startsWith("/admin/tags"), titleKey: "routeTitles.products" },
+      { test: (p) => p.startsWith("/admin/reports/traffic"), titleKey: "routeTitles.traffic" },
       { test: (p) => p.startsWith("/admin/reports"), titleKey: "routeTitles.reports" },
       { test: (p) => p.startsWith("/admin/exports"), titleKey: "routeTitles.exports" },
       { test: (p) => p.startsWith("/admin/logs"), titleKey: "routeTitles.auditLogs" },
@@ -350,6 +358,7 @@ function AppRoutes() {
           <AdminI18nScope>
           <AdminTitleSync />
           <TrackingManager />
+          <RouteAnalyticsTracker />
           <RouteSeoGuard />
           <PwaInstallPrompt />
           <PwaUpdateToast />
@@ -360,6 +369,7 @@ function AppRoutes() {
               <Route path="/" element={<HomeRoute />} />
               <Route path="/categories" element={<Categories />} />
               <Route path="/new-arrivals" element={<NewArrivals />} />
+              <Route path="/support-download" element={<SupportDownload />} />
               <Route path="/search" element={<Search />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/favorites" element={<Favorites />} />
@@ -372,7 +382,7 @@ function AppRoutes() {
               <Route path="/login/bind-phone" element={<BindWechatPhone />} />
               <Route path="/help" element={<Help />} />
               <Route path="/about" element={<About />} />
-              <Route path="/install" element={<InstallApp />} />
+              <Route path="/install" element={<SupportDownload />} />
               <Route path="/content/:slug" element={<ContentCmsPage />} />
 
               {/* Protected pages (require login) */}
@@ -443,6 +453,7 @@ function AppRoutes() {
                 <Route path="settings/points" element={<Navigate to="/admin/marketing/points" replace />} />
                 <Route path="settings/referral" element={<Navigate to="/admin/marketing/rewards" replace />} />
                 <Route path="settings/site" element={<AdminSiteSettings />} />
+                <Route path="support-download" element={<AdminSupportDownload />} />
                 <Route path="settings/theme" element={<AdminThemeSettings />} />
                 <Route path="home-ops" element={<AdminHomeOps />} />
                 <Route path="settings/shipping" element={<AdminShipping />} />
@@ -480,6 +491,7 @@ function AppRoutes() {
                 <Route path="reports/coupons" element={<AdminCouponAnalysisReport />} />
                 <Route path="reports/inventory" element={<AdminInventoryAnalysisReport />} />
                 <Route path="reports/search" element={<AdminSearchAnalysisReport />} />
+                <Route path="reports/traffic" element={<AdminTrafficAnalysisReport />} />
                 <Route path="accounts" element={<AdminAccounts />} />
                 <Route path="recycle-bin" element={<AdminRecycleBin />} />
                 <Route path="exports" element={<AdminExportCenter />} />

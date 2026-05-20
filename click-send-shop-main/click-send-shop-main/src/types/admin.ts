@@ -115,6 +115,9 @@ export interface SiteSettings {
   newArrivalShowPrice?: string;
   newArrivalOnlyInStock?: string;
 
+  /* 客服下载页配置 */
+  supportDownloadConfig?: string;
+
   /* 分析 / 广告埋点配置：脚本仍受 Cookie 同意状态控制 */
   ga4Enabled?: string;
   ga4MeasurementId?: string;

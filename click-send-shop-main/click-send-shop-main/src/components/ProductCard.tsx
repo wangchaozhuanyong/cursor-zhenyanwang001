@@ -1,4 +1,5 @@
-﻿import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import type { MouseEvent } from "react";
 import type { Product } from "@/types/product";
 import Reveal from "@/components/Reveal";
 import ProductCoverImage from "@/components/ProductCoverImage";
@@ -8,6 +9,7 @@ import StoreBadge from "@/components/ui/StoreBadge";
 import { getProductSalesCount, hasProductSales, productSalesLabel } from "@/utils/productSales";
 import { trackEvent } from "@/services/analyticsService";
 import { cn } from "@/lib/utils";
+import { isProductNewArrival } from "@/utils/productNewArrival";
 
 interface Props {
   product: Product;
@@ -51,10 +53,15 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
   const showSales = hasProductSales(product.sales_count);
   const isServiceLike = /服务|咨询|办理|申请|装修/.test(String(product.category_name || product.name || ""));
   const cardImageAlt = isServiceLike ? `${product.name} 服务展示图` : `${product.name} 商品图片`;
+  const showNewBadge = isProductNewArrival(product);
 
   const openDetail = (module: string) => {
     void trackEvent({ event_type: "product_click", module, product_id: product.id });
     navigate(`/product/${product.id}`);
+  };
+  const openNewArrivals = (event: MouseEvent) => {
+    event.stopPropagation();
+    navigate("/new-arrivals");
   };
 
   const nameRow = (
@@ -130,7 +137,7 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
             <div className="space-y-1.5">
               {nameRow}
               {isListRow &&
-              (product.active_activity || product.is_hot || product.is_new || (product.tags?.length ?? 0) > 0) ? (
+              (product.active_activity || product.is_hot || showNewBadge || (product.tags?.length ?? 0) > 0) ? (
                 <div className="flex flex-wrap gap-1">
                   {product.active_activity ? (
                     <StoreBadge type="sale">
@@ -138,7 +145,11 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
                     </StoreBadge>
                   ) : null}
                   {product.is_hot ? <StoreBadge type="hot">热销</StoreBadge> : null}
-                  {product.is_new ? <StoreBadge type="new">新品</StoreBadge> : null}
+                  {showNewBadge ? (
+                    <button type="button" onClick={openNewArrivals} className="cursor-pointer">
+                      <StoreBadge type="new">新品</StoreBadge>
+                    </button>
+                  ) : null}
                   <ProductTagList tags={product.tags} max={2} />
                 </div>
               ) : null}
@@ -179,7 +190,11 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
             <StoreBadge type="sale">{product.active_activity.type === "flash_sale" ? "秒杀" : "满减"}</StoreBadge>
           )}
           {product.is_hot && <StoreBadge type="hot">热销</StoreBadge>}
-          {product.is_new && <StoreBadge type="new">新品</StoreBadge>}
+          {showNewBadge ? (
+            <button type="button" onClick={openNewArrivals} className="cursor-pointer">
+              <StoreBadge type="new">新品</StoreBadge>
+            </button>
+          ) : null}
           <ProductTagList tags={product.tags} max={2} />
         </div>
         {soldOut ? <ProductSoldOutOverlay /> : null}

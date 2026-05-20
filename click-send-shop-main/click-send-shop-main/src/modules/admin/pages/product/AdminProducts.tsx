@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Download, Loader2, Pencil } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
@@ -37,6 +37,7 @@ export default function AdminProducts() {
 
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<"" | ProductStatus>("");
+  const [newArrivalFilter, setNewArrivalFilter] = useState<"all" | "new" | "not-new">("all");
   const [batchUpdating, setBatchUpdating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const pageSize = 20;
@@ -51,9 +52,11 @@ export default function AdminProducts() {
       const category = String(p.category_id || "").toLowerCase();
       const searchHit = !q || p.name.toLowerCase().includes(q) || category.includes(q);
       const statusHit = !statusFilter || p.status === statusFilter;
-      return searchHit && statusHit;
+      const newArrivalHit =
+        newArrivalFilter === "all" ? true : newArrivalFilter === "new" ? !!p.is_new : !p.is_new;
+      return searchHit && statusHit && newArrivalHit;
     });
-  }, [products, search, statusFilter]);
+  }, [products, search, statusFilter, newArrivalFilter]);
 
   const total = filteredProducts.length;
 
@@ -126,6 +129,18 @@ export default function AdminProducts() {
             <option value="draft">草稿</option>
             <option value="inactive">下架</option>
           </select>
+          <select
+            value={newArrivalFilter}
+            onChange={(e) => {
+              setNewArrivalFilter(e.target.value as "all" | "new" | "not-new");
+              setPage(1);
+            }}
+            className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm"
+          >
+            <option value="all">全部商品</option>
+            <option value="new">新品商品</option>
+            <option value="not-new">非新品商品</option>
+          </select>
           <button
             type="button"
             onClick={handleExport}
@@ -185,6 +200,7 @@ export default function AdminProducts() {
                   <th className="px-5 py-3"><Tx>商品</Tx></th>
                   <th className="px-5 py-3"><Tx>价格</Tx></th>
                   <th className="px-5 py-3"><Tx>库存</Tx></th>
+                  <th className="px-5 py-3"><Tx>新品</Tx></th>
                   <th className="px-5 py-3"><Tx>状态</Tx></th>
                   <th className="px-5 py-3 text-right"><Tx>操作</Tx></th>
                 </tr>
@@ -213,6 +229,11 @@ export default function AdminProducts() {
                       <td className="px-5 py-3 font-semibold text-foreground">RM {Number(p.price || 0).toFixed(2)}</td>
                       <td className="px-5 py-3 text-foreground">{Number(p.stock || 0)}</td>
                       <td className="px-5 py-3">
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${p.is_new ? THEME_BADGE_SUCCESS : THEME_BADGE_MUTED}`}>
+                          {p.is_new ? "新品" : "非新品"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3">
                         <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${meta.className}`}>{meta.label}</span>
                       </td>
                       <td className="px-5 py-3 text-right">
@@ -230,7 +251,7 @@ export default function AdminProducts() {
                 })}
                 {!pageProducts.length ? (
                   <tr>
-                    <td className="px-5 py-10 text-center text-sm text-muted-foreground" colSpan={6}>
+                    <td className="px-5 py-10 text-center text-sm text-muted-foreground" colSpan={7}>
                       <Tx>暂无商品数据</Tx>
                     </td>
                   </tr>

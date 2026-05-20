@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { adminTableClassName } from "@/utils/adminTableClasses";
 import type { LucideIcon } from "lucide-react";
 import { useMotionConfig } from "../hooks/useMotionConfig";
 import { tableRowTransition } from "../motionConfig";
@@ -32,7 +33,7 @@ function TableSkeleton({ rows, cols = 5 }: { rows: number; cols?: number }) {
       {Array.from({ length: rows }).map((_, i) => (
         <tr key={i} className="border-b border-[var(--theme-border)]">
           {Array.from({ length: cols }).map((__, j) => (
-            <td key={j} className="px-3 py-3">
+            <td key={j}>
               <div className="skeleton-base skeleton-shimmer h-4 w-full max-w-[8rem] rounded" />
             </td>
           ))}
@@ -95,7 +96,7 @@ export function AnimatedTable<T>({
   if (loading) {
     return (
       <TableFrame embedded={embedded} className={className} footer={footer}>
-        <table className={cn("w-full text-sm", tableClassName)}>
+        <table className={adminTableClassName(cn("w-full text-sm", tableClassName))}>
           {thead ? <thead className={theadClassName}>{thead}</thead> : null}
           <tbody>
             <TableSkeleton rows={skeletonRows} cols={skeletonCols} />
@@ -119,7 +120,7 @@ export function AnimatedTable<T>({
 
   return (
     <TableFrame embedded={embedded} className={className} footer={footer}>
-      <table className={cn("w-full text-sm text-[var(--theme-text)]", tableClassName)}>
+      <table className={adminTableClassName(cn("w-full text-sm text-[var(--theme-text)]", tableClassName))}>
         {thead ? <thead className={theadClassName}>{thead}</thead> : null}
         <tbody>
           <AnimatePresence initial={false}>

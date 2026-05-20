@@ -9,3 +9,14 @@
  */
 export const THIRD_PARTY_LOGIN_ENABLED =
   import.meta.env.VITE_THIRD_PARTY_LOGIN_ENABLED === "true";
+
+/**
+ * 可选构建时声明短信验证码登录是否开启，避免首屏等 /auth/features 时闪一下切换条。
+ * VITE_SMS_OTP_LOGIN_ENABLED=true | false；未设置则仅依赖接口 + session 缓存。
+ */
+export const SMS_OTP_LOGIN_BUILD_HINT: boolean | null =
+  import.meta.env.VITE_SMS_OTP_LOGIN_ENABLED === "true"
+    ? true
+    : import.meta.env.VITE_SMS_OTP_LOGIN_ENABLED === "false"
+      ? false
+      : null;

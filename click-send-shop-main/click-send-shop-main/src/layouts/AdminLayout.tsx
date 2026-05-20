@@ -182,6 +182,7 @@ const navItemsRaw: NavItem[] = [
       { icon: BarChart3, labelKey: "nav.reportDaily", path: "/admin/reports/daily", permission: "report.view" },
       { icon: BarChart3, labelKey: "nav.reportMonthly", path: "/admin/reports/monthly", permission: "report.view" },
       { icon: BarChart3, labelKey: "nav.reportProfit", path: "/admin/reports/profit", permission: "report.view" },
+      { icon: ClipboardList, labelKey: "nav.reportExpenses", path: "/admin/reports/expenses", permission: "report.view" },
       { icon: Package, labelKey: "nav.reportProducts", path: "/admin/reports/products", permission: "report.view" },
       { icon: FolderTree, labelKey: "nav.reportCategories", path: "/admin/reports/categories", permission: "report.view" },
       { icon: ShoppingCart, labelKey: "nav.reportOrders", path: "/admin/reports/orders", permission: "report.view" },
@@ -540,7 +541,7 @@ function AdminLayoutContent() {
 
   return (
     <AdminConfirmProvider>
-    <div className="flex min-h-[100dvh] items-start bg-[var(--theme-bg)] text-[var(--theme-text)]">
+    <div data-admin-shell className="flex min-h-[100dvh] items-start bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <aside className="hidden w-[260px] shrink-0 self-start border-r border-[var(--theme-border)] bg-[var(--theme-card)] lg:sticky lg:top-0 lg:flex lg:h-[100dvh] lg:max-h-[100dvh] lg:flex-col">
         <AdminSidebarNav
           scrollMode="inline"
@@ -713,7 +714,7 @@ function AdminLayoutContent() {
           </div>
         </header>
 
-        <main className="admin-mobile-main flex-1 p-[var(--admin-mobile-page-x)] sm:p-4 lg:p-6">
+        <main className="admin-mobile-main admin-table-scope flex-1 p-[var(--admin-mobile-page-x)] sm:p-4 lg:p-6">
           <Suspense fallback={<AdminOutletFallback />}>
             <AnimatedPage>
               <Outlet />

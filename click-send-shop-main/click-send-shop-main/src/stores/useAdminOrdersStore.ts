@@ -13,6 +13,13 @@ const initialState = {
   paymentMethod: "",
   paymentChannel: "",
   shippingName: "",
+  returnStatus: "",
+  refundStatus: "",
+  hasNote: "",
+  costStatus: "",
+  overduePayment: "",
+  overdueShipment: "",
+  buyerType: "",
   amountMin: "",
   amountMax: "",
   page: 1,
@@ -44,6 +51,13 @@ interface AdminOrdersState {
   paymentMethod: string;
   paymentChannel: string;
   shippingName: string;
+  returnStatus: "" | "none" | "active" | "any";
+  refundStatus: string;
+  hasNote: "" | "1" | "0";
+  costStatus: "" | "normal" | "missing";
+  overduePayment: "" | "1" | "0";
+  overdueShipment: "" | "1" | "0";
+  buyerType: "" | "new" | "repeat";
   amountMin: string;
   amountMax: string;
   page: number;
@@ -59,6 +73,13 @@ interface AdminOrdersState {
   setPaymentMethod: (v: string) => void;
   setPaymentChannel: (v: string) => void;
   setShippingName: (v: string) => void;
+  setReturnStatus: (v: "" | "none" | "active" | "any") => void;
+  setRefundStatus: (v: string) => void;
+  setHasNote: (v: "" | "1" | "0") => void;
+  setCostStatus: (v: "" | "normal" | "missing") => void;
+  setOverduePayment: (v: "" | "1" | "0") => void;
+  setOverdueShipment: (v: "" | "1" | "0") => void;
+  setBuyerType: (v: "" | "new" | "repeat") => void;
   setAmountMin: (v: string) => void;
   setAmountMax: (v: string) => void;
   setPage: (v: number) => void;
@@ -81,6 +102,13 @@ export const useAdminOrdersStore = create<AdminOrdersState>((set, get) => ({
   setPaymentMethod: (paymentMethod) => set({ paymentMethod }),
   setPaymentChannel: (paymentChannel) => set({ paymentChannel }),
   setShippingName: (shippingName) => set({ shippingName }),
+  setReturnStatus: (returnStatus) => set({ returnStatus }),
+  setRefundStatus: (refundStatus) => set({ refundStatus }),
+  setHasNote: (hasNote) => set({ hasNote }),
+  setCostStatus: (costStatus) => set({ costStatus }),
+  setOverduePayment: (overduePayment) => set({ overduePayment }),
+  setOverdueShipment: (overdueShipment) => set({ overdueShipment }),
+  setBuyerType: (buyerType) => set({ buyerType }),
   setAmountMin: (amountMin) => set({ amountMin }),
   setAmountMax: (amountMax) => set({ amountMax }),
   setPage: (page) => set({ page }),
@@ -98,6 +126,13 @@ export const useAdminOrdersStore = create<AdminOrdersState>((set, get) => ({
       paymentMethod: "",
       paymentChannel: "",
       shippingName: "",
+      returnStatus: "",
+      refundStatus: "",
+      hasNote: "",
+      costStatus: "",
+      overduePayment: "",
+      overdueShipment: "",
+      buyerType: "",
       amountMin: "",
       amountMax: "",
       page: 1,
@@ -115,6 +150,13 @@ export const useAdminOrdersStore = create<AdminOrdersState>((set, get) => ({
         paymentMethod,
         paymentChannel,
         shippingName,
+        returnStatus,
+        refundStatus,
+        hasNote,
+        costStatus,
+        overduePayment,
+        overdueShipment,
+        buyerType,
         amountMin,
         amountMax,
         page,
@@ -131,6 +173,13 @@ export const useAdminOrdersStore = create<AdminOrdersState>((set, get) => ({
         payment_method: paymentMethod || undefined,
         payment_channel: paymentChannel || undefined,
         shipping_name: shippingName || undefined,
+        returnStatus: returnStatus || undefined,
+        refundStatus: refundStatus || undefined,
+        hasNote: hasNote || undefined,
+        costStatus: costStatus || undefined,
+        overduePayment: overduePayment || undefined,
+        overdueShipment: overdueShipment || undefined,
+        buyerType: buyerType || undefined,
         amountMin: amountMin ? Number(amountMin) : undefined,
         amountMax: amountMax ? Number(amountMax) : undefined,
       });

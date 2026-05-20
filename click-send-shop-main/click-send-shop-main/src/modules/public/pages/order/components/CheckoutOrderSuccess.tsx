@@ -9,6 +9,7 @@ import { OrderSstLines } from "@/components/OrderSstLines";
 import { OrderDiscountLines } from "./OrderDiscountLines";
 import { OrderPaymentCountdown } from "@/components/order/OrderPaymentCountdown";
 import { THEME_ALERT_ERROR_BOX } from "@/utils/themeVisuals";
+import { sanitizeClientInstructions } from "@/utils/paymentClientInstructions";
 import PageHeader from "@/components/PageHeader";
 
 /* ----- Order Success Page ----- */
@@ -103,54 +104,71 @@ export function CheckoutOrderSuccess({
   const primaryActionClass = isPaid
     ? "btn-theme-gradient shadow-lg theme-shadow"
     : "btn-theme-price shadow-lg shadow-gold/20";
+  const onlineNote = sanitizeClientInstructions(postSubmitOnlineNote);
+  const paymentHint =
+    isOnlinePending && !postSubmitOnlineError
+      ? onlineNote || helperText
+      : !isOnlinePending
+        ? helperText
+        : "";
 
   return (
     <div className="min-h-screen bg-background">
       <PageHeader title={headerTitle} onBack={onHome} />
 
-      <motion.main initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-lg px-4 py-6">
-        {/* Success card */}
-        <div className="rounded-2xl border border-border bg-card p-8 text-center">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", bounce: 0.5, delay: 0.1 }}
-            className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-gold-light"
-          >
-            <CheckCircle2 size={40} className="text-theme-price" />
-          </motion.div>
-          <h2 className="font-display text-2xl font-bold text-foreground">{mainHeading}</h2>
-          <div className="mt-3">
-            <span className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-1 text-xs font-semibold text-[var(--theme-text)]">
-              状态：{statusBadge}
-            </span>
+      <motion.main
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mx-auto max-w-lg space-y-3 px-4 py-4 pb-8"
+      >
+        {/* 状态摘要：横向紧凑，避免上半区过高 */}
+        <div className="overflow-hidden rounded-2xl border border-border bg-card">
+          <div className="flex items-start gap-3 p-4">
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", bounce: 0.4, delay: 0.05 }}
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
+                isPaid ? "bg-[color-mix(in_srgb,var(--theme-success)_18%,transparent)]" : "bg-gold-light"
+              }`}
+            >
+              <CheckCircle2 size={24} className={isPaid ? "text-[var(--theme-success)]" : "text-theme-price"} />
+            </motion.div>
+            <div className="min-w-0 flex-1 text-left">
+              <h2 className="font-display text-lg font-bold leading-snug text-foreground">{mainHeading}</h2>
+              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                <span className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-0.5 font-semibold text-[var(--theme-text)]">
+                  {statusBadge}
+                </span>
+                <span>
+                  订单{" "}
+                  <span className="font-mono font-semibold text-foreground">#{order.order_no}</span>
+                </span>
+              </div>
+            </div>
           </div>
-          <p className="mt-2 text-sm text-muted-foreground">
-            订单编号: <span className="font-mono font-semibold text-foreground">{order.order_no}</span>
-          </p>
-          {postSubmitOnlineError && isOnlinePending && (
-            <p className={`mt-4 px-3 py-2 text-left text-xs ${THEME_ALERT_ERROR_BOX}`}>
-              {postSubmitOnlineError}
-            </p>
-          )}
-          {postSubmitOnlineNote && isOnlinePending && !postSubmitOnlineError && (
-            <p className="mt-4 rounded-lg border border-border bg-muted/40 px-3 py-2 text-left text-xs text-muted-foreground">
-              {postSubmitOnlineNote}
-            </p>
-          )}
-          {isOnlinePending && (
-            <OrderPaymentCountdown
-              order={order}
-              onExpired={onPaymentTimeoutExpired}
-              className="mt-4"
-            />
-          )}
-          <div className="mt-5 rounded-xl bg-secondary p-4">
-            <p className="text-xs leading-relaxed text-muted-foreground">{helperText}</p>
-          </div>
+
+          {(postSubmitOnlineError && isOnlinePending) || isOnlinePending || paymentHint ? (
+            <div className="space-y-2 border-t border-border px-4 py-3">
+              {postSubmitOnlineError && isOnlinePending ? (
+                <p className={`text-left text-xs ${THEME_ALERT_ERROR_BOX}`}>{postSubmitOnlineError}</p>
+              ) : null}
+              {isOnlinePending ? (
+                <OrderPaymentCountdown
+                  order={order}
+                  onExpired={onPaymentTimeoutExpired}
+                  compact
+                  className="w-full"
+                />
+              ) : null}
+              {paymentHint ? (
+                <p className="text-xs leading-relaxed text-muted-foreground">{paymentHint}</p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
-        <div className="mt-4 rounded-2xl border border-border bg-card p-4">
+        <div className="rounded-2xl border border-border bg-card p-4">
           <h3 className="mb-3 text-sm font-semibold text-foreground">关键信息</h3>
           <div className="space-y-2 text-sm">
             <div className="flex items-center justify-between">
@@ -176,9 +194,9 @@ export function CheckoutOrderSuccess({
           </div>
         </div>
 
-        {/* Action buttons */}
-        <div className="mt-6 space-y-3">
-          <p className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">下一步操作</p>
+        {/* 下一步操作 */}
+        <div className="space-y-2.5">
+          <p className="px-0.5 text-xs font-semibold text-muted-foreground">下一步操作</p>
           {isOnlinePending && (
             <>
               <button
@@ -367,8 +385,8 @@ export function CheckoutOrderSuccess({
           )}
         </div>
 
-        {/* Order detail */}
-        <div className="mt-6 rounded-2xl border border-border bg-card p-5">
+        {/* 订单详情 */}
+        <div className="rounded-2xl border border-border bg-card p-4">
           <h3 className="mb-4 text-sm font-semibold text-foreground">订单详情</h3>
           {order.items.map((item) => (
             <div key={item.product.id} className="flex items-center gap-3 border-b border-border py-3 last:border-0">
@@ -408,10 +426,10 @@ export function CheckoutOrderSuccess({
           </div>
         </div>
 
-        <div className="mt-6 space-y-3">
+        <div className="space-y-2.5 pt-1">
           <button
             onClick={onViewOrders}
-            className="w-full rounded-full border-2 border-border py-4 text-center text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
+            className="w-full rounded-full border-2 border-border py-3.5 text-center text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
           >
             查看我的订单
           </button>

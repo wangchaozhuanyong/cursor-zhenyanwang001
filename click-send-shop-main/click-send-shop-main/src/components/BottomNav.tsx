@@ -1,5 +1,5 @@
 import { Headphones, Home, LayoutGrid, ShoppingCart, User } from "lucide-react";
-import { type TouchEvent, useEffect, useRef, useState } from "react";
+import { type PointerEvent, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -15,13 +15,15 @@ const tabs = [
   { path: "/profile", label: "\u6211\u7684", icon: User },
 ];
 
-const TAP_MOVE_THRESHOLD = 12;
-const TOUCH_CLICK_SUPPRESS_MS = 650;
-
-type TouchPoint = {
-  x: number;
-  y: number;
-  time: number;
+/** 轻触允许的最大位移（px）；略放宽，避免「刚滑完页面就点底栏」被误判为滑动 */
+const TAP_MOVE_THRESHOLD = 28;
+type ActivePointer = {
+  path: string;
+  pointerId: number;
+  startX: number;
+  startY: number;
+  startTime: number;
+  maxMove: number;
 };
 
 export default function BottomNav() {
@@ -30,8 +32,7 @@ export default function BottomNav() {
   const { themeConfig } = useThemeRuntime();
   const navStyle = themeConfig.navStyle;
   const totalItems = useCartStore((s) => s.totalItems());
-  const touchStartRef = useRef<TouchPoint | null>(null);
-  const handledTouchRef = useRef<{ path: string; time: number } | null>(null);
+  const activePointerRef = useRef<ActivePointer | null>(null);
   const [badgeBump, setBadgeBump] = useState(false);
 
   useEffect(() => {
@@ -50,7 +51,8 @@ export default function BottomNav() {
 
   if (location.pathname.startsWith("/checkout")) return null;
 
-  const requiresAuth = (path: string) => path === "/profile";
+  const requiresAuth = (path: string) => path.split("?")[0] === "/profile";
+
   const isTabActive = (path: string) => {
     const base = path.split("?")[0];
     return location.pathname === base;
@@ -74,25 +76,57 @@ export default function BottomNav() {
     navigate(path);
   };
 
-  const handleTouchStart = (event: TouchEvent<HTMLAnchorElement>) => {
-    const touch = event.changedTouches[0];
-    if (!touch) return;
-    touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+  const isTapIntent = (active: ActivePointer) => active.maxMove <= TAP_MOVE_THRESHOLD;
+
+  const clearPointerCapture = (target: EventTarget & Element, pointerId: number) => {
+    try {
+      if (target.hasPointerCapture?.(pointerId)) {
+        target.releasePointerCapture(pointerId);
+      }
+    } catch {
+      // ignore
+    }
   };
 
-  const handleTouchEnd = (event: TouchEvent<HTMLAnchorElement>, path: string) => {
-    const start = touchStartRef.current;
-    const touch = event.changedTouches[0];
-    touchStartRef.current = null;
-    if (!start || !touch) return;
+  const handlePointerDown = (event: PointerEvent<HTMLButtonElement>, path: string) => {
+    if (event.button !== 0) return;
+    const target = event.currentTarget;
+    target.setPointerCapture(event.pointerId);
+    activePointerRef.current = {
+      path,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startTime: Date.now(),
+      maxMove: 0,
+    };
+  };
 
-    const movedX = Math.abs(touch.clientX - start.x);
-    const movedY = Math.abs(touch.clientY - start.y);
-    if (movedX > TAP_MOVE_THRESHOLD || movedY > TAP_MOVE_THRESHOLD) return;
+  const handlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {
+    const active = activePointerRef.current;
+    if (!active || active.pointerId !== event.pointerId) return;
+    const dx = Math.abs(event.clientX - active.startX);
+    const dy = Math.abs(event.clientY - active.startY);
+    active.maxMove = Math.max(active.maxMove, dx, dy);
+  };
+
+  const finishPointer = (event: PointerEvent<HTMLButtonElement>, path: string) => {
+    const active = activePointerRef.current;
+    if (!active || active.path !== path || active.pointerId !== event.pointerId) return;
+    activePointerRef.current = null;
+    clearPointerCapture(event.currentTarget, event.pointerId);
+
+    if (!isTapIntent(active)) return;
 
     event.preventDefault();
-    handledTouchRef.current = { path, time: Date.now() };
     handleNavigate(path);
+  };
+
+  const handlePointerCancel = (event: PointerEvent<HTMLButtonElement>) => {
+    const active = activePointerRef.current;
+    if (!active || active.pointerId !== event.pointerId) return;
+    activePointerRef.current = null;
+    clearPointerCapture(event.currentTarget, event.pointerId);
   };
 
   return (
@@ -101,38 +135,33 @@ export default function BottomNav() {
       data-theme-nav-style={navStyle}
       style={{
         paddingBottom: "max(env(safe-area-inset-bottom), 0px)",
-        touchAction: "manipulation",
+        touchAction: "none",
         WebkitTapHighlightColor: "transparent",
       }}
     >
-      <div className={getBottomNavInnerClassName(navStyle)}>
+      <div className={getBottomNavInnerClassName(navStyle)} style={{ touchAction: "none" }}>
         <div className="grid h-[68px] grid-cols-5 items-center px-1">
           {tabs.map((tab) => {
             const isActive = isTabActive(tab.path);
             const Icon = tab.icon;
             return (
-              <a
+              <button
                 key={tab.path}
-                href={tab.path}
+                type="button"
                 aria-current={isActive ? "page" : undefined}
                 aria-label={tab.label}
-                onTouchStart={handleTouchStart}
-                onTouchCancel={() => {
-                  touchStartRef.current = null;
-                }}
-                onTouchEnd={(event) => handleTouchEnd(event, tab.path)}
+                onPointerDown={(event) => handlePointerDown(event, tab.path)}
+                onPointerMove={handlePointerMove}
+                onPointerUp={(event) => finishPointer(event, tab.path)}
+                onPointerCancel={handlePointerCancel}
                 onClick={(event) => {
-                  const handledTouch = handledTouchRef.current;
-                  if (handledTouch?.path === tab.path && Date.now() - handledTouch.time < TOUCH_CLICK_SUPPRESS_MS) {
+                  if (event.pointerType === "touch") {
                     event.preventDefault();
-                    handledTouchRef.current = null;
                     return;
                   }
-                  event.preventDefault();
                   handleNavigate(tab.path);
                 }}
-                className="relative flex min-h-0 touch-manipulation select-none flex-col items-center justify-center gap-1 bg-transparent px-1 py-2 no-underline"
-                draggable={false}
+                className="relative flex min-h-0 w-full cursor-pointer select-none flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 py-2"
               >
                 <span
                   className={`relative flex h-8 min-w-8 items-center justify-center rounded-full px-2 transition-transform duration-150 ${
@@ -146,7 +175,7 @@ export default function BottomNav() {
                     className={isActive ? "text-[var(--theme-primary)]" : "text-[var(--theme-text-muted)]"}
                     strokeWidth={isActive ? 2.5 : 1.8}
                   />
-                  {tab.path === "/cart" && totalItems > 0 && (
+                  {tab.path.startsWith("/cart") && totalItems > 0 && (
                     <motion.span
                       animate={badgeBump ? { scale: [1, 1.35, 1] } : { scale: 1 }}
                       transition={{ duration: 0.35 }}
@@ -165,7 +194,7 @@ export default function BottomNav() {
                 >
                   {tab.label}
                 </span>
-              </a>
+              </button>
             );
           })}
         </div>

@@ -1,44 +1,63 @@
 import { useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
+type LocationState = { from?: string };
+
+/** 个人中心常见子页：无可用历史栈时默认回到个人中心 */
+const PROFILE_HUB_PATHS = new Set([
+  "/points",
+  "/rewards",
+  "/invite",
+  "/address",
+  "/coupons",
+  "/notifications",
+  "/settings",
+  "/orders",
+  "/returns",
+  "/history",
+  "/help",
+  "/favorites",
+  "/reviews/pending",
+]);
+
+function resolveBackFallback(pathname: string, explicit?: string, stateFrom?: string): string {
+  if (explicit) return explicit;
+  if (stateFrom?.startsWith("/")) return stateFrom;
+
+  const path = pathname || "/";
+  if (path.startsWith("/admin")) return "/admin";
+  if (path.startsWith("/profile")) return "/profile";
+
+  const base = path.split("?")[0];
+  if (PROFILE_HUB_PATHS.has(base) || base.startsWith("/orders/")) return "/profile";
+
+  return "/";
+}
+
 export function useGoBack(fallback?: string) {
   const navigate = useNavigate();
   const location = useLocation();
 
   return useCallback(() => {
-    const isStandalone =
-      typeof window !== "undefined" &&
-      (window.matchMedia?.("(display-mode: standalone)")?.matches ||
-        (window.navigator as Navigator & { standalone?: boolean }).standalone === true);
+    const stateFrom = (location.state as LocationState | null)?.from;
     const hasHistory = typeof window !== "undefined" && window.history.length > 1;
-    const sameOriginReferrer =
-      typeof document !== "undefined" &&
-      !!document.referrer &&
-      (() => {
-        try {
-          return new URL(document.referrer).origin === window.location.origin;
-        } catch {
-          return false;
-        }
-      })();
-
-    // PWA 独立窗口中，history 有时存在但不可回退，要求 referrer 同源再执行 -1
-    if (hasHistory && (!isStandalone || sameOriginReferrer)) {
-      navigate(-1);
-      return;
-    }
 
     if (fallback) {
       navigate(fallback, { replace: true });
       return;
     }
 
-    const path = location.pathname || "/";
-    const target = path.startsWith("/admin")
-      ? "/admin"
-      : path.startsWith("/profile")
-        ? "/profile"
-        : "/";
+    if (stateFrom?.startsWith("/")) {
+      navigate(stateFrom, { replace: true });
+      return;
+    }
+
+    if (hasHistory) {
+      navigate(-1);
+      return;
+    }
+
+    const target = resolveBackFallback(location.pathname, undefined, stateFrom);
     navigate(target, { replace: true });
-  }, [fallback, location.pathname, navigate]);
+  }, [fallback, location.pathname, location.state, navigate]);
 }

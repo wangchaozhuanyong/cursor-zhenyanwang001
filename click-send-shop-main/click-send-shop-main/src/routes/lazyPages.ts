@@ -87,6 +87,7 @@ export const AdminReportOverview = lazy(() => import("@/modules/admin/pages/repo
 export const AdminSalesDailyReport = lazy(() => import("@/modules/admin/pages/report/AdminSalesDailyReport"));
 export const AdminSalesMonthlyReport = lazy(() => import("@/modules/admin/pages/report/AdminSalesMonthlyReport"));
 export const AdminProfitDailyReport = lazy(() => import("@/modules/admin/pages/report/AdminProfitDailyReport"));
+export const AdminOperatingExpenses = lazy(() => import("@/modules/admin/pages/report/AdminOperatingExpenses"));
 export const AdminProductAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminProductAnalysisReport"));
 export const AdminCategoryAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminCategoryAnalysisReport"));
 export const AdminOrderAnalysisReport = lazy(() => import("@/modules/admin/pages/report/AdminOrderAnalysisReport"));

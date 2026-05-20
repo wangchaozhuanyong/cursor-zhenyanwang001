@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
-import { Copy, ExternalLink, Headphones } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Copy, Download, ExternalLink, Headphones, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { SupportDownloadChannel } from "@/types/content";
 import { copyToClipboard } from "@/utils/clipboard";
+import { downloadImage } from "@/utils/downloadImage";
 import { cleanSupportText, getChannelAction } from "@/utils/supportChannels";
 import { safeOpenExternal } from "@/utils/safeOpen";
 import { trackEvent } from "@/services/analyticsService";
@@ -27,8 +28,9 @@ export default function SupportChannelCard({ channel }: Props) {
   const account = cleanSupportText(channel.account);
   const description = cleanSupportText(channel.description);
   const qrUrl = cleanSupportText(channel.qrUrl);
-  const showQr = channel.type === "wechat" && !!qrUrl;
+  const showQr = !!qrUrl;
   const qrTrackedRef = useRef(false);
+  const [downloadingQr, setDownloadingQr] = useState(false);
 
   useEffect(() => {
     if (!showQr || qrTrackedRef.current) return;
@@ -51,6 +53,29 @@ export default function SupportChannelCard({ channel }: Props) {
       toast.success("正在唤起微信，若未跳转请先复制微信号");
     } else {
       toast.success(`正在打开 ${cleanSupportText(channel.name) || "客服"}`);
+    }
+  };
+
+  const onDownloadQr = async () => {
+    if (!qrUrl || downloadingQr) return;
+    setDownloadingQr(true);
+    void trackEvent({
+      event_type: "support_qr_download",
+      module: "support",
+      page: "/support-download",
+    });
+    try {
+      const label = cleanSupportText(channel.name) || "客服";
+      const saved = await downloadImage(qrUrl, `${label}-二维码`);
+      if (saved) {
+        toast.success("二维码已下载");
+      } else {
+        toast.message("已打开图片，请长按保存到相册");
+      }
+    } catch {
+      toast.error("下载失败，请长按图片保存");
+    } finally {
+      setDownloadingQr(false);
     }
   };
 
@@ -91,7 +116,18 @@ export default function SupportChannelCard({ channel }: Props) {
             alt={`${channel.name} 二维码`}
             className="h-40 w-40 rounded-xl border border-[var(--theme-border)] bg-white object-contain p-2"
           />
-          <p className="text-[11px] text-[var(--theme-text-muted)]">微信扫码添加客服</p>
+          <p className="text-[11px] text-[var(--theme-text-muted)]">
+            {channel.type === "wechat" ? "微信扫码添加客服" : "扫码联系客服"}
+          </p>
+          <button
+            type="button"
+            onClick={() => { void onDownloadQr(); }}
+            disabled={downloadingQr}
+            className="inline-flex min-h-9 items-center justify-center gap-1 rounded-full border border-[var(--theme-border)] px-4 py-2 text-xs font-semibold text-[var(--theme-text)] disabled:opacity-60"
+          >
+            {downloadingQr ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+            {downloadingQr ? "下载中..." : "一键下载"}
+          </button>
         </div>
       ) : null}
 

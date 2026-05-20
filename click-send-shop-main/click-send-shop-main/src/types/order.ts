@@ -51,15 +51,41 @@ export interface Order {
   tax_amount?: number | null;
   tax_exclusive_amount?: number | null;
   total_points: number;
+  user_nickname?: string;
+  user_email?: string;
+  user_phone_masked?: string;
+  member_level_name?: string;
+  contact_phone_masked?: string;
+  shipping_phone_masked?: string;
+  user_order_count?: number;
+  user_total_paid_amount?: number;
+  items_count?: number;
+  sku_count?: number;
+  items_summary?: string;
+  refund_amount?: number;
+  refund_status?: string;
+  goods_cost_amount?: number;
+  gross_profit_amount?: number;
+  shipping_cost_amount?: number;
+  payment_fee_amount?: number;
+  net_profit_amount?: number;
+  gross_margin?: number;
+  missing_cost_item_count?: number;
+  cost_snapshot_source?: string;
+  risk_badges?: string[];
+  after_sale_status?: "none" | "active" | "refunded" | "partial_refunded";
   status: OrderStatus;
   /** 支付状态（与履约 status 分离）；旧数据可能缺省，按 pending 展示 */
   payment_status?: PaymentStatus;
   payment_time?: string | null;
+  paid_at?: string | null;
   payment_channel?: string;
   payment_transaction_no?: string;
   note: string;
   created_at: string;
   shipped_at?: string | null;
+  cancelled_at?: string | null;
+  completed_at?: string | null;
   contact_name: string;
   contact_phone: string;
   /** 管理端：收货联系电话（兼容旧订单可为空，后端会回退到 contact_phone） */
@@ -151,6 +177,13 @@ export interface OrderListParams {
   payment_method?: string;
   payment_channel?: string;
   shipping_name?: string;
+  returnStatus?: "none" | "active" | "any" | "";
+  refundStatus?: string;
+  hasNote?: "1" | "0" | "";
+  costStatus?: "normal" | "missing" | "";
+  overduePayment?: "1" | "0" | "";
+  overdueShipment?: "1" | "0" | "";
+  buyerType?: "new" | "repeat" | "";
   amountMin?: number;
   amountMax?: number;
   page?: number;
@@ -207,6 +240,18 @@ export interface AdminOrderSummary {
   cancelled: number;
   refunding: number;
   refunded: number;
+  today_order_count?: number;
+  today_paid_order_count?: number;
+  today_paid_amount?: number;
+  today_refund_amount?: number;
+  today_gross_profit_amount?: number;
+  today_net_profit_amount?: number;
+  pending_payment_amount?: number;
+  pending_shipment_count?: number;
+  pending_shipment_amount?: number;
+  active_return_count?: number;
+  overdue_unpaid_count?: number;
+  overdue_shipment_count?: number;
 }
 
 export interface OrderSummary {

@@ -14,6 +14,12 @@ import type { AdminFilterChip } from "@/components/admin/AdminFilterSummaryBar";
 import { AnimatedEmptyState } from "@/modules/micro-interactions";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import {
+  ADMIN_TABLE_NOWRAP_CLASS,
+  adminTableClassName,
+  adminTdClassName,
+  adminThClassName,
+} from "@/utils/adminTableClasses";
 
 function statusMeta(status: string) {
   if (status === "active") return { label: "上架", className: THEME_BADGE_SUCCESS };
@@ -202,23 +208,23 @@ export default function AdminProducts() {
             <div className="flex items-center gap-2 p-6 text-sm text-muted-foreground"><Loader2 size={16} className="animate-spin" /><span>加载中...</span></div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1320px] text-left text-sm">
+              <table className={adminTableClassName("w-full min-w-[1320px] text-left text-sm")}>
                 <thead className="border-b border-border text-xs text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3"><input type="checkbox" checked={allSelectedOnPage} onChange={() => togglePageSelection(pageIds)} aria-label="全选当前页" /></th>
-                    <th className="px-4 py-3">商品</th>
-                    <th className="px-4 py-3">分类</th>
-                    <th className="px-4 py-3">SKU</th>
-                    <th className="px-4 py-3">售价</th>
-                    <th className="px-4 py-3">成本</th>
-                    <th className="px-4 py-3">毛利率</th>
-                    <th className="px-4 py-3">库存</th>
-                    <th className="px-4 py-3">近7天销量</th>
-                    <th className="px-4 py-3">近30天销量</th>
-                    <th className="px-4 py-3">近30天销售额</th>
-                    <th className="px-4 py-3">近30天毛利</th>
-                    <th className="px-4 py-3">状态</th>
-                    <th className="px-4 py-3 text-right">操作</th>
+                    <th className={adminThClassName("w-10")}><input type="checkbox" checked={allSelectedOnPage} onChange={() => togglePageSelection(pageIds)} aria-label="全选当前页" /></th>
+                    <th className={adminThClassName()}>商品</th>
+                    <th className={adminThClassName()}>分类</th>
+                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>SKU</th>
+                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>售价</th>
+                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>成本</th>
+                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>毛利率</th>
+                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>库存</th>
+                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>近7天销量</th>
+                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>近30天销量</th>
+                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>近30天销售额</th>
+                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>近30天毛利</th>
+                    <th className={adminThClassName()}>状态</th>
+                    <th className={adminThClassName("text-right")}>操作</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -232,35 +238,35 @@ export default function AdminProducts() {
                     const marginClass = margin < 0 ? THEME_BADGE_DANGER : margin < 15 ? THEME_BADGE_WARNING : THEME_BADGE_SUCCESS;
                     return (
                       <tr key={p.id} className="border-b border-border/70 last:border-b-0">
-                        <td className="px-4 py-3"><input type="checkbox" checked={checked} onChange={() => toggleSelect(p.id)} aria-label={`选择${p.name}`} /></td>
-                        <td className="px-4 py-3">
+                        <td className={adminTdClassName("w-10")}><input type="checkbox" checked={checked} onChange={() => toggleSelect(p.id)} aria-label={`选择${p.name}`} /></td>
+                        <td className={adminTdClassName()}>
                           <div className="flex items-center gap-3">
                             {p.cover_image ? <img src={p.cover_image} alt={p.name} className="h-11 w-11 rounded-lg border border-border object-cover" /> : <div className="h-11 w-11 rounded-lg border border-border bg-secondary" />}
                             <div className="min-w-0"><p className="max-w-[220px] truncate font-medium text-foreground">{p.name}</p></div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-foreground">{p.category_name || "-"}</td>
-                        <td className="px-4 py-3 text-foreground">{Number(p.enabled_sku_count || p.sku_count || 0)}</td>
-                        <td className="px-4 py-3 font-semibold text-foreground">{p.min_sku_price !== p.max_sku_price && p.max_sku_price ? `${money(p.min_sku_price)}-${money(p.max_sku_price)}` : money(p.price)}</td>
-                        <td className="px-4 py-3">
+                        <td className={adminTdClassName()}>{p.category_name || "-"}</td>
+                        <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{Number(p.enabled_sku_count || p.sku_count || 0)}</td>
+                        <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} font-semibold`)}>{p.min_sku_price !== p.max_sku_price && p.max_sku_price ? `${money(p.min_sku_price)}-${money(p.max_sku_price)}` : money(p.price)}</td>
+                        <td className={adminTdClassName()}>
                           <div className="space-y-1">
                             <span className="font-medium text-foreground">{p.min_cost_price ? money(p.min_cost_price) : "-"}</span>
                             {missingCost ? <span className={`block w-fit rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_DANGER}`}>缺成本</span> : null}
                           </div>
                         </td>
-                        <td className="px-4 py-3"><span className={`rounded-full px-2 py-1 text-xs font-semibold ${marginClass}`}>{percent(margin)}</span></td>
-                        <td className="px-4 py-3">
+                        <td className={adminTdClassName()}><span className={`rounded-full px-2 py-1 text-xs font-semibold ${marginClass}`}>{percent(margin)}</span></td>
+                        <td className={adminTdClassName()}>
                           <div className="space-y-1">
                             <span className="font-medium text-foreground">{Number(p.stock || 0)}</span>
                             {outOfStock ? <span className={`block w-fit rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_DANGER}`}>缺货</span> : stockWarning ? <span className={`block w-fit rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_WARNING}`}>库存预警</span> : null}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-foreground">{Number(p.sales_qty_7d || 0)}</td>
-                        <td className="px-4 py-3 text-foreground">{Number(p.sales_qty_30d || 0)}</td>
-                        <td className="px-4 py-3 text-foreground">{money(p.sales_amount_30d)}</td>
-                        <td className="px-4 py-3 text-foreground">{money(p.gross_profit_30d)}</td>
-                        <td className="px-4 py-3"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${meta.className}`}>{meta.label}</span></td>
-                        <td className="px-4 py-3 text-right">
+                        <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{Number(p.sales_qty_7d || 0)}</td>
+                        <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{Number(p.sales_qty_30d || 0)}</td>
+                        <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{money(p.sales_amount_30d)}</td>
+                        <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{money(p.gross_profit_30d)}</td>
+                        <td className={adminTdClassName()}><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${meta.className}`}>{meta.label}</span></td>
+                        <td className={adminTdClassName("text-right")}>
                           <button type="button" onClick={() => navigate(`/admin/products/${p.id}`)} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-secondary"><Pencil size={13} />编辑</button>
                         </td>
                       </tr>

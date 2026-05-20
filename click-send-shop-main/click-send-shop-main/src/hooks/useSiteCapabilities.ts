@@ -66,3 +66,24 @@ export function useSiteCapabilities(): SiteCapabilities {
 
   return capabilities;
 }
+
+/** 功能开关是否已从服务端/bootstrap 加载完成（避免语言门禁闪屏或误放行） */
+export function useSiteCapabilitiesReady(): boolean {
+  const [ready, setReady] = useState(() => cachedCapabilities !== null);
+
+  useEffect(() => {
+    if (cachedCapabilities) {
+      setReady(true);
+      return;
+    }
+    let cancelled = false;
+    loadOnce().finally(() => {
+      if (!cancelled) setReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return ready;
+}

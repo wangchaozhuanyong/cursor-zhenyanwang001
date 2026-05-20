@@ -29,8 +29,17 @@ export function updateOrderStatus(id: string, status: string, remark?: string) {
   return put<Order>(`/admin/orders/${id}/status`, { status, remark });
 }
 
-export function shipOrder(id: string, trackingNo: string, carrier: string) {
-  return put<Order>(`/admin/orders/${id}/ship`, { trackingNo, carrier });
+export function shipOrder(
+  id: string,
+  trackingNo: string,
+  carrier: string,
+  shippingCostAmount?: number,
+) {
+  return put<Order>(`/admin/orders/${id}/ship`, {
+    trackingNo,
+    carrier,
+    shipping_cost_amount: shippingCostAmount,
+  });
 }
 
 export function refreshOrderLogistics(id: string) {

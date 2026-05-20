@@ -18,7 +18,7 @@ const FEATURE_ITEMS: Array<{ key: keyof SiteCapabilities; label: string; desc: s
   { key: "memberLevelEnabled", label: "会员等级", desc: "关闭后隐藏会员等级入口，后端拒绝会员等级管理接口。" },
   { key: "customerServiceDownloadEnabled", label: "客服/APP 页", desc: "关闭后隐藏前台客服/APP 页与底部导航入口。" },
   { key: "telegramOrderNotifyEnabled", label: "Telegram 订单通知", desc: "控制订单 Telegram 通知能力。" },
-  { key: "languageGateEnabled", label: "中文浏览器限制", desc: "开启后启用中文浏览器限制逻辑。" },
+  { key: "languageGateEnabled", label: "中文浏览器限制", desc: "开启后前台商城路由将拦截非中文浏览器；后台 /admin 不受限。仅前端拦截，API 仍可直连。" },
   { key: "restrictedProductComplianceEnabled", label: "受限商品合规", desc: "控制受限商品合规提示和限制逻辑。" },
   { key: "trafficAnalyticsEnabled", label: "流量分析", desc: "关闭后前端隐藏追踪加载，后端可减少埋点入口。" },
 ];

@@ -25,6 +25,7 @@ import {
   THEME_OUTLINE_DANGER,
   THEME_TEXT_DANGER,
 } from "@/utils/themeVisuals";
+import { adminTableClassName, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
 
 type AdminSpecValue = {
   id?: string;
@@ -889,21 +890,21 @@ export default function AdminProductForm() {
               ))}
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[520px] text-xs">
+              <table className={adminTableClassName("w-full min-w-[520px] text-xs")}>
                 <thead>
                   <tr className="border-b border-border text-left text-muted-foreground">
-                    <th className="pb-2 pr-2 w-10"><Tx>默认</Tx></th>
-                    <th className="pb-2 pr-2"><Tx>规格名</Tx></th>
-                    <th className="pb-2 pr-2">SKU</th>
-                    <th className="pb-2 pr-2"><Tx>价格</Tx></th>
-                    <th className="pb-2 pr-2">原价</th>
-                    <th className="pb-2 pr-2">成本</th>
-                    <th className="pb-2 pr-2"><Tx>库存</Tx></th>
-                    <th className="pb-2 pr-2">预警</th>
-                    <th className="pb-2 pr-2">条码</th>
-                    <th className="pb-2 pr-2">图片</th>
-                    <th className="pb-2 pr-2">启用</th>
-                    <th className="pb-2 w-10" />
+                    <th className={adminThClassName("w-10")}><Tx>默认</Tx></th>
+                    <th className={adminThClassName()}><Tx>规格名</Tx></th>
+                    <th className={adminThClassName()}>SKU</th>
+                    <th className={adminThClassName()}><Tx>价格</Tx></th>
+                    <th className={adminThClassName()}>原价</th>
+                    <th className={adminThClassName()}>成本</th>
+                    <th className={adminThClassName()}><Tx>库存</Tx></th>
+                    <th className={adminThClassName()}>预警</th>
+                    <th className={adminThClassName()}>条码</th>
+                    <th className={adminThClassName()}>图片</th>
+                    <th className={adminThClassName()}>启用</th>
+                    <th className={adminThClassName("w-10")} />
                   </tr>
                 </thead>
                 <tbody>

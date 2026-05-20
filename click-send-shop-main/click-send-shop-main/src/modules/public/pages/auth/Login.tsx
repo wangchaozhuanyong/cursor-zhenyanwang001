@@ -18,7 +18,8 @@ import {
   getLockedInviteCode,
   syncLockedInviteCodeBySearch,
 } from "@/utils/inviteReferral";
-import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
+import { SMS_OTP_LOGIN_BUILD_HINT, THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
+import { readCachedAuthFeatures, writeCachedAuthFeatures } from "@/utils/authFeaturesCache";
 import { cn } from "@/lib/utils";
 import { FormFieldShake } from "@/modules/micro-interactions";
 import { authErrorMessage, validatePhoneForCountry, validateStrongPassword } from "@/utils/authValidation";
@@ -74,7 +75,18 @@ export default function Login() {
   const [otpCode, setOtpCode] = useState("");
   const [otpSending, setOtpSending] = useState(false);
   const [otpCooldown, setOtpCooldown] = useState(0);
-  const [smsOtpLoginEnabled, setSmsOtpLoginEnabled] = useState(true);
+  const [authFeatures, setAuthFeatures] = useState(() => {
+    const cached = readCachedAuthFeatures();
+    if (cached) return cached;
+    if (SMS_OTP_LOGIN_BUILD_HINT !== null) {
+      return { smsOtpLoginEnabled: SMS_OTP_LOGIN_BUILD_HINT };
+    }
+    return null;
+  });
+  const authFeaturesReady = authFeatures !== null;
+  const smsOtpLoginEnabled = authFeatures?.smsOtpLoginEnabled === true;
+  const effectiveCredentialMode: CredentialMode =
+    authFeaturesReady && smsOtpLoginEnabled ? credentialMode : "password";
   const mainRef = useRef<HTMLElement | null>(null);
   const [keyboardInset, setKeyboardInset] = useState(0);
   const hasLockedInviteCode = !!lockedInviteCode;
@@ -123,11 +135,16 @@ export default function Login() {
       .then((features) => {
         if (cancelled) return;
         const enabled = features.smsOtpLoginEnabled !== false;
-        setSmsOtpLoginEnabled(enabled);
+        const snapshot = { smsOtpLoginEnabled: enabled };
+        setAuthFeatures(snapshot);
+        writeCachedAuthFeatures(snapshot);
         if (!enabled) setCredentialMode("password");
       })
       .catch(() => {
-        if (!cancelled) setSmsOtpLoginEnabled(true);
+        if (cancelled) return;
+        const fallback = readCachedAuthFeatures() ?? { smsOtpLoginEnabled: false };
+        setAuthFeatures(fallback);
+        if (!fallback.smsOtpLoginEnabled) setCredentialMode("password");
       });
     return () => {
       cancelled = true;
@@ -291,7 +308,7 @@ export default function Login() {
       return;
     }
 
-    if (mode === "login" && credentialMode === "otp") {
+    if (mode === "login" && effectiveCredentialMode === "otp") {
       if (!smsOtpLoginEnabled) {
         failValidation("当前未开启短信验证码登录");
         return;
@@ -319,7 +336,7 @@ export default function Login() {
 
     try {
       if (mode === "login") {
-        if (credentialMode === "password") {
+        if (effectiveCredentialMode === "password") {
           if (remember) {
             localStorage.setItem(REMEMBER_KEY, phone);
             localStorage.setItem(REMEMBER_COUNTRY_CODE_KEY, countryCode);
@@ -472,17 +489,20 @@ export default function Login() {
           </div>
         </div>
 
-        {mode === "login" && smsOtpLoginEnabled && (
-          <div className="mb-4 flex rounded-2xl bg-secondary p-1">
+        {mode === "login" && authFeaturesReady && smsOtpLoginEnabled ? (
+          <div className="mb-4 flex rounded-2xl bg-secondary p-1" role="tablist" aria-label="登录方式">
             {(["password", "otp"] as CredentialMode[]).map((c) => (
               <button
                 key={c}
                 type="button"
+                role="tab"
+                aria-selected={credentialMode === c}
                 onClick={() => {
                   setCredentialMode(c);
                   setShowReset(false);
+                  setFieldErrors({});
                 }}
-                className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-all ${
+                className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${
                   credentialMode === c
                     ? "bg-card text-foreground shadow-sm"
                     : "text-muted-foreground"
@@ -492,7 +512,7 @@ export default function Login() {
               </button>
             ))}
           </div>
-        )}
+        ) : null}
 
         {/* ══════════════ Form ══════════════ */}
         <FormFieldShake shake={shakeKey} className="space-y-3.5">
@@ -568,61 +588,69 @@ export default function Login() {
           </div>
           {fieldErrors.phone ? <p className="text-xs text-destructive">{fieldErrors.phone}</p> : null}
 
-          {(mode === "register" || (mode === "login" && credentialMode === "password")) && (
-            <div className="relative">
-              <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type={showPwd ? "text" : "password"}
-                placeholder="密码"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (fieldErrors.password) setFieldErrors((s) => ({ ...s, password: undefined }));
-                }}
-                className={cn(INPUT_CLASS, "pl-12 pr-12")}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPwd(!showPwd)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground touch-target"
-              >
-                {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-          )}
-          {fieldErrors.password ? <p className="text-xs text-destructive">{fieldErrors.password}</p> : null}
-
-          {mode === "login" && credentialMode === "otp" && (
-            <div className="space-y-2">
+          <div
+            className={cn(
+              "space-y-3.5",
+              mode === "login" && authFeaturesReady && smsOtpLoginEnabled && "min-h-[7.5rem]",
+            )}
+          >
+            {(mode === "register" || (mode === "login" && effectiveCredentialMode === "password")) ? (
               <div className="relative">
-                <KeyRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  placeholder="6 位验证码"
-                  value={otpCode}
-                  maxLength={6}
+                  type={showPwd ? "text" : "password"}
+                  placeholder="密码"
+                  value={password}
+                  autoComplete={mode === "login" ? "current-password" : "new-password"}
                   onChange={(e) => {
-                    setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6));
-                    if (fieldErrors.otp) setFieldErrors((s) => ({ ...s, otp: undefined }));
+                    setPassword(e.target.value);
+                    if (fieldErrors.password) setFieldErrors((s) => ({ ...s, password: undefined }));
                   }}
-                  className={cn(INPUT_CLASS, "pl-12 pr-4 tracking-widest")}
+                  className={cn(INPUT_CLASS, "pl-12 pr-12")}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPwd(!showPwd)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground touch-target"
+                >
+                  {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
-              {fieldErrors.otp ? <p className="text-xs text-destructive">{fieldErrors.otp}</p> : null}
-              <button
-                type="button"
-                onClick={handleSendOtp}
-                disabled={otpSending || otpCooldown > 0}
-                className="w-full rounded-2xl border border-gold/40 bg-gold/10 py-3 text-xs font-semibold text-theme-price disabled:opacity-50"
-              >
-                {otpCooldown > 0 ? `${otpCooldown}s 后可重发` : otpSending ? "发送中…" : "发送验证码"}
-              </button>
-            </div>
-          )}
+            ) : null}
+            {fieldErrors.password ? <p className="text-xs text-destructive">{fieldErrors.password}</p> : null}
 
-          {mode === "login" && credentialMode === "password" && (
+            {mode === "login" && effectiveCredentialMode === "otp" ? (
+              <div className="space-y-2">
+                <div className="relative">
+                  <KeyRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="6 位验证码"
+                    value={otpCode}
+                    maxLength={6}
+                    onChange={(e) => {
+                      setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                      if (fieldErrors.otp) setFieldErrors((s) => ({ ...s, otp: undefined }));
+                    }}
+                    className={cn(INPUT_CLASS, "pl-12 pr-4 tracking-widest")}
+                  />
+                </div>
+                {fieldErrors.otp ? <p className="text-xs text-destructive">{fieldErrors.otp}</p> : null}
+                <button
+                  type="button"
+                  onClick={handleSendOtp}
+                  disabled={otpSending || otpCooldown > 0 || !authFeaturesReady}
+                  className="w-full rounded-2xl border border-gold/40 bg-gold/10 py-3 text-xs font-semibold text-theme-price disabled:opacity-50"
+                >
+                  {otpCooldown > 0 ? `${otpCooldown}s 后可重发` : otpSending ? "发送中…" : "发送验证码"}
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          {mode === "login" && effectiveCredentialMode === "password" && (
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input

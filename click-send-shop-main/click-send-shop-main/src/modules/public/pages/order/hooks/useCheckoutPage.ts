@@ -27,6 +27,10 @@ import { trackBeginCheckout, trackPurchase } from "@/utils/tracking";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import {
+  paymentInstructionToastMessage,
+  sanitizeClientInstructions,
+} from "@/utils/paymentClientInstructions";
+import {
   goodsTaxableInclusivePreview,
   parseSstFromSiteInfo,
   splitInclusiveTax,
@@ -540,9 +544,7 @@ export function useCheckoutPage() {
             window.location.assign(intent.redirect_url);
             return;
           }
-          setPostSubmitOnlineNote(
-            intent.client_instructions || "未获取到支付跳转链接，请点击下方“继续支付”，或前往“订单详情”完成付款。",
-          );
+          setPostSubmitOnlineNote(sanitizeClientInstructions(intent.client_instructions));
           toast.success("订单已创建");
         } catch (err) {
           const msg = err instanceof Error ? err.message : "在线支付发起失败";
@@ -631,10 +633,8 @@ export function useCheckoutPage() {
         window.location.assign(intent.redirect_url);
         return;
       }
-      setPostSubmitOnlineNote(
-        intent.client_instructions || "请前往订单详情查看支付状态，或稍后在“我的订单”中继续付款。",
-      );
-      toast.message(intent.client_instructions || "支付单已创建");
+      setPostSubmitOnlineNote(sanitizeClientInstructions(intent.client_instructions));
+      toast.message(paymentInstructionToastMessage(intent.client_instructions));
     } catch (e) {
       const msg = e instanceof Error ? e.message : "在线支付发起失败";
       setPostSubmitOnlineError(msg);

@@ -8,6 +8,7 @@ import { isPendingPayment } from "@/utils/orderBuyerStatus";
 import { generateOrderText } from "@/modules/public/pages/order/utils/checkoutText";
 import { copyToClipboard } from "@/utils/clipboard";
 import { safeOpenExternal } from "@/utils/safeOpen";
+import { paymentInstructionToastMessage } from "@/utils/paymentClientInstructions";
 
 export function usePayPendingOrder() {
   const capabilities = useSiteCapabilities();
@@ -35,7 +36,7 @@ export function usePayPendingOrder() {
           window.location.assign(intent.redirect_url);
           return;
         }
-        toast.message(intent.client_instructions || "支付单已创建，请按指引完成付款");
+        toast.message(paymentInstructionToastMessage(intent.client_instructions));
         await onPaid?.();
         return;
       }

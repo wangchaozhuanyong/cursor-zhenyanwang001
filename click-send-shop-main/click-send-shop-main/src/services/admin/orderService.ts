@@ -30,8 +30,13 @@ export async function updateOrderStatus(id: string, status: string, remark?: str
   return res.data;
 }
 
-export async function shipOrder(id: string, trackingNo: string, carrier: string) {
-  const res = await orderApi.shipOrder(id, trackingNo, carrier);
+export async function shipOrder(
+  id: string,
+  trackingNo: string,
+  carrier: string,
+  shippingCostAmount?: number,
+) {
+  const res = await orderApi.shipOrder(id, trackingNo, carrier, shippingCostAmount);
   return res.data;
 }
 
@@ -55,11 +60,25 @@ export async function fetchCheckoutAbandonments(params?: {
   return unwrapPaginated<CheckoutAbandonment>(res.data);
 }
 
-export async function exportOrdersCsv(params?: { status?: string; paymentStatus?: string; keyword?: string }) {
+export async function exportOrdersCsv(params?: OrderListParams) {
   const qs = new URLSearchParams();
   if (params?.status) qs.set("status", params.status);
   if (params?.paymentStatus) qs.set("paymentStatus", params.paymentStatus);
   if (params?.keyword) qs.set("keyword", params.keyword);
+  if (params?.dateFrom) qs.set("dateFrom", params.dateFrom);
+  if (params?.dateTo) qs.set("dateTo", params.dateTo);
+  if (params?.payment_method) qs.set("payment_method", params.payment_method);
+  if (params?.payment_channel) qs.set("payment_channel", params.payment_channel);
+  if (params?.shipping_name) qs.set("shipping_name", params.shipping_name);
+  if (params?.returnStatus) qs.set("returnStatus", params.returnStatus);
+  if (params?.refundStatus) qs.set("refundStatus", params.refundStatus);
+  if (params?.hasNote) qs.set("hasNote", params.hasNote);
+  if (params?.costStatus) qs.set("costStatus", params.costStatus);
+  if (params?.overduePayment) qs.set("overduePayment", params.overduePayment);
+  if (params?.overdueShipment) qs.set("overdueShipment", params.overdueShipment);
+  if (params?.buyerType) qs.set("buyerType", params.buyerType);
+  if (params?.amountMin !== undefined) qs.set("amountMin", String(params.amountMin));
+  if (params?.amountMax !== undefined) qs.set("amountMax", String(params.amountMax));
   const q = qs.toString();
   await downloadAdminCsv(`/admin/orders/export${q ? `?${q}` : ""}`, "orders.csv");
 }

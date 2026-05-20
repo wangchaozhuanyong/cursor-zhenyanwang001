@@ -1,5 +1,5 @@
 import * as reportApi from "@/api/admin/report";
-import type { ReportQuery } from "@/api/admin/report";
+import type { OperatingExpenseRecord, ReportQuery } from "@/api/admin/report";
 
 export type { ReportQuery };
 import { downloadAdminCsv } from "@/utils/adminCsvDownload";
@@ -75,4 +75,24 @@ export async function exportProfitDailyCsv(params?: ReportQuery) {
     }
   });
   await downloadAdminCsv(`/admin/reports/profit/export${q.toString() ? `?${q.toString()}` : ""}`, "profit-daily.csv");
+}
+
+export async function fetchOperatingExpenses(params?: { range_preset?: string; date_from?: string; date_to?: string; category?: string }) {
+  const res = await reportApi.getOperatingExpenses(params);
+  return res.data as { summary?: Record<string, unknown>; list?: OperatingExpenseRecord[]; date_from?: string; date_to?: string };
+}
+
+export async function createOperatingExpense(payload: Omit<OperatingExpenseRecord, "id" | "created_at" | "updated_at" | "operator_id">) {
+  const res = await reportApi.createOperatingExpense(payload);
+  return res.data as OperatingExpenseRecord;
+}
+
+export async function updateOperatingExpense(id: string, payload: Omit<OperatingExpenseRecord, "id" | "created_at" | "updated_at" | "operator_id">) {
+  const res = await reportApi.updateOperatingExpense(id, payload);
+  return res.data as OperatingExpenseRecord;
+}
+
+export async function removeOperatingExpense(id: string) {
+  const res = await reportApi.deleteOperatingExpense(id);
+  return res.data as { ok: boolean };
 }

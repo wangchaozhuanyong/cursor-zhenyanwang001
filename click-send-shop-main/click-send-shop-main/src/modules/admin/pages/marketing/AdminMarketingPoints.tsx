@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
-import { Plus, RefreshCw, Save, Trash2 } from "lucide-react";
+import { Coins, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
+import { AnimatedTable } from "@/modules/micro-interactions";
+import { ADMIN_TABLE_NOWRAP_CLASS, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint, { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import AdminPointsRecords from "@/modules/admin/pages/user/AdminPointsRecords";
@@ -185,9 +187,44 @@ export default function AdminMarketingPoints() {
             <Field label="启用"><input type="checkbox" checked={!!ruleForm.enabled} onChange={(e) => setRuleForm((s) => ({ ...s, enabled: e.target.checked }))} /></Field>
             <button onClick={saveRule} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground md:col-span-4"><Plus className="h-4 w-4" />{ruleForm.id ? "保存规则" : "新增规则"}</button>
           </div>
-          <div className="overflow-x-auto rounded-xl border border-border bg-card">
-            <table className="min-w-[980px] w-full text-sm"><thead className="bg-secondary text-muted-foreground"><tr>{["名称", "范围", "模式", "固定", "百分比", "倍率", "可抵扣", "优先级", "状态", "操作"].map((h) => <th key={h} className="px-3 py-2 text-left"><Tx>{h}</Tx></th>)}</tr></thead><tbody>{rules.map((r) => <tr key={r.id} className="border-t border-border"><td className="px-3 py-2 text-foreground">{r.name}</td><td className="px-3 py-2">{r.scope_type}:{r.scope_id || "all"}</td><td className="px-3 py-2">{r.earn_mode}</td><td className="px-3 py-2">{r.fixed_points || 0}</td><td className="px-3 py-2">{r.points_percent || 0}</td><td className="px-3 py-2">{r.multiplier_percent || 100}</td><td className="px-3 py-2">{r.redeem_enabled ? "是" : "否"}</td><td className="px-3 py-2">{r.priority}</td><td className="px-3 py-2">{r.enabled ? "启用" : "停用"}</td><td className="px-3 py-2"><button onClick={() => editRule(r)} className="mr-2 text-theme-price">编辑</button><button onClick={() => deleteRule(r.id)} className="inline-flex items-center text-destructive"><Trash2 className="h-4 w-4" /></button></td></tr>)}</tbody></table>
-          </div>
+          <AnimatedTable
+            embedded
+            loading={loading}
+            rows={rules}
+            rowKey={(r) => String(r.id || r.name)}
+            skeletonRows={6}
+            skeletonCols={10}
+            className="overflow-x-auto rounded-xl border border-border bg-card"
+            tableClassName="min-w-[980px] w-full text-sm"
+            theadClassName="bg-secondary text-muted-foreground"
+            thead={(
+              <tr>
+                {["名称", "范围", "模式", "固定", "百分比", "倍率", "可抵扣", "优先级", "状态", "操作"].map((h) => (
+                  <th key={h} className={adminThClassName(h === "操作" ? "text-right" : undefined)}><Tx>{h}</Tx></th>
+                ))}
+              </tr>
+            )}
+            emptyIcon={Coins}
+            emptyTitle="暂无商品积分规则"
+            emptyDescription="填写上方表单并保存后，规则会显示在此列表。"
+            renderRow={(r) => (
+              <>
+                <td className={adminTdClassName()}>{r.name}</td>
+                <td className={adminTdClassName()}>{r.scope_type}:{r.scope_id || "all"}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{r.earn_mode}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{r.fixed_points || 0}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{r.points_percent || 0}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{r.multiplier_percent || 100}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{r.redeem_enabled ? "是" : "否"}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{r.priority}</td>
+                <td className={adminTdClassName()}>{r.enabled ? "启用" : "停用"}</td>
+                <td className={adminTdClassName("text-right")}>
+                  <button type="button" onClick={() => editRule(r)} className="mr-2 text-theme-price">编辑</button>
+                  <button type="button" onClick={() => deleteRule(r.id)} className="inline-flex items-center text-destructive"><Trash2 className="h-4 w-4" /></button>
+                </td>
+              </>
+            )}
+          />
         </div>
       ) : null}
 

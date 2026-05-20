@@ -12,6 +12,8 @@
     --store-card-y: 12px;
     --admin-mobile-page-x: 8px;
     --admin-mobile-card-x: 12px;
+    --admin-table-cell-px: clamp(0.5rem, 1.25vw, 1rem);
+    --admin-table-cell-py: 0.625rem;
     --background: 0 0% 100%;
     --foreground: 0 0% 8%;
 
@@ -417,10 +419,9 @@
     padding: var(--theme-density-pad, 0.5rem);
     gap: var(--theme-density-gap, 0.5rem);
   }
-  [data-theme-density="compact"] table th,
-  [data-theme-density="compact"] table td {
-    padding-top: 0.375rem;
-    padding-bottom: 0.375rem;
+  [data-theme-density="compact"] [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) th,
+  [data-theme-density="compact"] [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) td {
+    --admin-table-cell-py: 0.375rem;
   }
   [data-theme-density="compact"] .admin-table-row {
     min-height: var(--theme-density-row, 2.25rem);
@@ -664,6 +665,48 @@ html {
     .admin-mobile-main {
       padding-bottom: 0;
     }
+  }
+
+  /**
+   * 管理后台数据表：列宽按内容自适应，列间距随视口缩放（覆盖各页零散的 px-2/px-4）
+   */
+  [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) {
+    table-layout: auto;
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) th,
+  [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) td {
+    padding: var(--admin-table-cell-py) var(--admin-table-cell-px) !important;
+    vertical-align: middle;
+  }
+
+  [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) thead th {
+    white-space: nowrap;
+    font-weight: 600;
+  }
+
+  [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) tbody td {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) .admin-table-nowrap {
+    white-space: nowrap;
+    word-break: normal;
+    overflow-wrap: normal;
+  }
+
+  [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) td:has(button),
+  [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) td:has(a),
+  [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) th:has(button),
+  [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) td:has(input),
+  [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) td:has(select) {
+    white-space: nowrap;
+    word-break: normal;
+    overflow-wrap: normal;
+    width: 1%;
   }
 }
 

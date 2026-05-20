@@ -1,4 +1,7 @@
-import { get, post } from "@/api/request";
+import { get, post, put } from "@/api/request";
+import type { TelegramMessagePreview, TelegramNotifyConfig, TelegramNotifySettings } from "@/utils/telegramNotifyConfig";
+
+export type { TelegramNotifySettings, TelegramMessagePreview };
 
 export interface TelegramStatus {
   enabled: boolean;
@@ -8,6 +11,7 @@ export interface TelegramStatus {
   includeOrderItems: boolean;
   maxMessageLength: number;
   adminFrontendUrlConfigured: boolean;
+  configSource?: "env" | "database";
 }
 
 export interface TelegramLogRow {
@@ -21,6 +25,18 @@ export interface TelegramLogRow {
   error_message: string;
   created_at: string;
   updated_at: string;
+}
+
+export function getTelegramSettings() {
+  return get<TelegramNotifySettings>("/admin/telegram/settings");
+}
+
+export function updateTelegramSettings(body: Partial<TelegramNotifyConfig> & { botToken?: string }) {
+  return put<TelegramNotifySettings>("/admin/telegram/settings", body);
+}
+
+export function previewTelegramMessage(body: Partial<TelegramNotifyConfig>) {
+  return post<TelegramMessagePreview>("/admin/telegram/preview", body);
 }
 
 export function getTelegramStatus() {

@@ -49,7 +49,7 @@ export default function AdminDashboardPreview({ config: _config }: { config: The
             筛选
           </Tx></button>
         </div>
-        <table className="w-full border-collapse text-[10px]">
+        <table className="admin-table-fixed w-full border-collapse text-[10px]">
           <thead>
             <tr className="border-b border-[var(--theme-border)] text-left text-[var(--theme-text-muted)]">
               <th className="py-1.5">ID</th>

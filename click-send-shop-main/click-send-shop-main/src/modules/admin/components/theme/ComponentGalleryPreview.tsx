@@ -70,7 +70,7 @@ export default function ComponentGalleryPreview({ config: _config }: { config: T
         <p className="mt-1 text-[var(--theme-text-muted)]"><Tx>从底部上滑的弹层示例</Tx></p>
       </div>
       <div className="h-8 animate-pulse rounded-lg bg-[var(--theme-border)]/40" />
-      <table className="w-full border-collapse text-[10px]">
+      <table className="admin-table-fixed w-full border-collapse text-[10px]">
         <tbody>
           <tr className="border-b border-[var(--theme-border)]">
             <td className="py-1"><Tx>表格行 A</Tx></td>

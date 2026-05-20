@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { toast } from "sonner";
-import { Eye } from "lucide-react";
+import { Eye, RotateCcw } from "lucide-react";
+import { AnimatedTable } from "@/modules/micro-interactions";
+import { ADMIN_TABLE_NOWRAP_CLASS, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
 import * as returnService from "@/services/admin/returnService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import Pagination from "@/components/admin/Pagination";
@@ -159,58 +161,63 @@ export default function AdminReturns() {
         </select>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <table className="w-full text-sm">
-          <thead className="bg-secondary/40 text-left">
-            <tr>
-              <th className="px-3 py-2">售后单</th>
-              <th className="px-3 py-2">订单号</th>
-              <th className="px-3 py-2">类型</th>
-              <th className="px-3 py-2">退款金额</th>
-              <th className="px-3 py-2">状态</th>
-              <th className="px-3 py-2">创建时间</th>
-              <th className="px-3 py-2 text-center">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((r) => (
-              <tr key={r.id} className="border-t border-border">
-                <td className="px-3 py-2">{r.id.slice(0, 8)}</td>
-                <td className="px-3 py-2">{r.order_no || "-"}</td>
-                <td className="px-3 py-2">{r.type}</td>
-                <td className="px-3 py-2">{Number(r.refund_amount || 0).toFixed(2)}</td>
-                <td className="px-3 py-2">
-                  <span className={`rounded-full px-2 py-0.5 text-xs ${getReturnStatusBadgeClass(r.status)}`}>
-                    {getReturnStatusLabel(r.status)}
-                  </span>
-                </td>
-                <td className="px-3 py-2">{formatDateTime(r.created_at)}</td>
-                <td className="px-3 py-2">
-                  <div className="flex items-center justify-center gap-2">
-                    <button
-                      className="rounded border border-border px-2 py-1 text-xs"
-                      onClick={() => { void fetchDetail(r.id); }}
-                    >
-                      <Eye size={14} />
-                    </button>
-                    {r.status === RETURN_STATUS.PENDING ? (
-                      <PermissionGate permission="return.handle">
-                        <div className="flex items-center gap-2">
-                          <button className={`rounded px-2 py-1 text-xs ${THEME_BTN_SUCCESS_SOLID}`} onClick={() => { void openApprove(r); }}>通过</button>
-                          <button className={`rounded px-2 py-1 text-xs ${THEME_OUTLINE_DANGER}`} onClick={() => { void openReject(r); }}>拒绝</button>
-                        </div>
-                      </PermissionGate>
-                    ) : null}
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {!loading && list.length === 0 ? (
-              <tr><td className="px-3 py-8 text-center text-muted-foreground" colSpan={7}>暂无售后记录</td></tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
+      <AnimatedTable
+        embedded
+        loading={loading}
+        rows={list}
+        rowKey={(r) => r.id}
+        skeletonRows={6}
+        skeletonCols={7}
+        className="overflow-x-auto rounded-xl border border-border bg-card"
+        tableClassName="w-full text-sm"
+        theadClassName="bg-secondary/40 text-left"
+        thead={(
+          <tr>
+            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>售后单</th>
+            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>订单号</th>
+            <th className={adminThClassName()}>类型</th>
+            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>退款金额</th>
+            <th className={adminThClassName()}>状态</th>
+            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>创建时间</th>
+            <th className={adminThClassName("text-center")}>操作</th>
+          </tr>
+        )}
+        emptyIcon={RotateCcw}
+        emptyTitle="暂无售后记录"
+        renderRow={(r) => (
+          <>
+            <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{r.id.slice(0, 8)}</td>
+            <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{r.order_no || "-"}</td>
+            <td className={adminTdClassName()}>{r.type}</td>
+            <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{Number(r.refund_amount || 0).toFixed(2)}</td>
+            <td className={adminTdClassName()}>
+              <span className={`rounded-full px-2 py-0.5 text-xs ${getReturnStatusBadgeClass(r.status)}`}>
+                {getReturnStatusLabel(r.status)}
+              </span>
+            </td>
+            <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{formatDateTime(r.created_at)}</td>
+            <td className={adminTdClassName()}>
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  className="rounded border border-border px-2 py-1 text-xs"
+                  onClick={() => { void fetchDetail(r.id); }}
+                >
+                  <Eye size={14} />
+                </button>
+                {r.status === RETURN_STATUS.PENDING ? (
+                  <PermissionGate permission="return.handle">
+                    <div className="flex items-center gap-2">
+                      <button type="button" className={`rounded px-2 py-1 text-xs ${THEME_BTN_SUCCESS_SOLID}`} onClick={() => { void openApprove(r); }}>通过</button>
+                      <button type="button" className={`rounded px-2 py-1 text-xs ${THEME_OUTLINE_DANGER}`} onClick={() => { void openReject(r); }}>拒绝</button>
+                    </div>
+                  </PermissionGate>
+                ) : null}
+              </div>
+            </td>
+          </>
+        )}
+      />
 
       <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
 

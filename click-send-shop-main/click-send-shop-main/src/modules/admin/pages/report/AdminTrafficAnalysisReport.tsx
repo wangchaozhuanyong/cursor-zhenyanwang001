@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import type { ReportQuery } from "@/services/admin/reportService";
 import { exportTrafficAnalysisCsv, fetchTrafficAnalysisReport } from "@/services/admin/reportService";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { adminTableClassName, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
 
 type Summary = {
   pv: number;
@@ -200,18 +201,18 @@ function DataTable({
         <span className="text-xs text-[var(--theme-text-muted)]">{rows.length} 条</span>
       </div>
       <div className="overflow-auto">
-        <table className="w-full min-w-[760px] text-xs">
+        <table className={adminTableClassName("w-full min-w-[760px] text-xs")}>
           <thead className="border-b border-[var(--theme-border)] text-[var(--theme-text-muted)]">
             <tr>
               {columns.map((column) => (
-                <th key={column.key} className="px-2 py-2 text-left font-medium">{column.label}</th>
+                <th key={column.key} className={adminThClassName()}>{column.label}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="px-2 py-10 text-center text-[var(--theme-text-muted)]">
+                <td colSpan={columns.length} className="py-10 text-center text-[var(--theme-text-muted)]">
                   <FileSpreadsheet className="mx-auto mb-2" size={22} />
                   暂无数据
                 </td>
@@ -223,7 +224,7 @@ function DataTable({
                 onClick={() => onSelect(title, row)}
               >
                 {columns.map((column) => (
-                  <td key={column.key} className="px-2 py-2 text-[var(--theme-text)]">{labelValue(column.key, row[column.key])}</td>
+                  <td key={column.key} className={adminTdClassName("text-[var(--theme-text)]")}>{labelValue(column.key, row[column.key])}</td>
                 ))}
               </tr>
             ))}

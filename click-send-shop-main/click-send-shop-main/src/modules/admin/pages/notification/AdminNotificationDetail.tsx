@@ -7,6 +7,7 @@ import * as notificationService from "@/services/admin/notificationService";
 import { labelNotificationType } from "@/utils/adminDisplayLabels";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { useAsyncResource } from "@/hooks/useAsyncResource";
+import { adminTableClassName, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
 
 const NOTIFICATION_STATUS_LABELS: Record<string, string> = {
   draft: "草稿",
@@ -157,9 +158,25 @@ export default function AdminNotificationDetail() {
           </div>
         </div>
         <div className="rounded-xl border border-border overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-secondary/60"><tr><th className="px-3 py-2 text-left">用户</th><th className="px-3 py-2 text-left">手机</th><th className="px-3 py-2 text-left">WhatsApp</th><th className="px-3 py-2 text-left">状态</th></tr></thead>
-            <tbody>{data.recipients.list.map((r) => <tr key={r.id} className="border-t border-border"><td className="px-3 py-2">{r.nickname || r.user_id}</td><td className="px-3 py-2">{r.phone || "-"}</td><td className="px-3 py-2">{r.whatsapp || "-"}</td><td className="px-3 py-2">{r.is_read ? "已读" : "未读"}</td></tr>)}</tbody>
+          <table className={adminTableClassName("w-full text-sm")}>
+            <thead className="bg-secondary/60">
+              <tr>
+                <th className={adminThClassName()}>用户</th>
+                <th className={adminThClassName()}>手机</th>
+                <th className={adminThClassName()}>WhatsApp</th>
+                <th className={adminThClassName()}>状态</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.recipients.list.map((r) => (
+                <tr key={r.id} className="border-t border-border">
+                  <td className={adminTdClassName()}>{r.nickname || r.user_id}</td>
+                  <td className={adminTdClassName()}>{r.phone || "-"}</td>
+                  <td className={adminTdClassName()}>{r.whatsapp || "-"}</td>
+                  <td className={adminTdClassName()}>{r.is_read ? "已读" : "未读"}</td>
+                </tr>
+              ))}
+            </tbody>
           </table>
         </div>
         <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -194,9 +211,25 @@ export default function AdminNotificationDetail() {
       <div className="rounded-2xl border border-border bg-card p-4">
         <h3 className="mb-2 font-semibold">操作日志</h3>
         <div className="rounded-xl border border-border overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-secondary/60"><tr><th className="px-3 py-2 text-left">时间</th><th className="px-3 py-2 text-left">操作人</th><th className="px-3 py-2 text-left">动作</th><th className="px-3 py-2 text-left">摘要</th></tr></thead>
-            <tbody>{data.logs.map((l) => <tr key={l.id} className="border-t border-border"><td className="px-3 py-2">{formatDateTime(l.created_at)}</td><td className="px-3 py-2">{l.operator_name || "-"}</td><td className="px-3 py-2">{labelAuditAction(l.action_type)}</td><td className="px-3 py-2">{l.summary || "-"}</td></tr>)}</tbody>
+          <table className={adminTableClassName("w-full text-sm")}>
+            <thead className="bg-secondary/60">
+              <tr>
+                <th className={adminThClassName()}>时间</th>
+                <th className={adminThClassName()}>操作人</th>
+                <th className={adminThClassName()}>动作</th>
+                <th className={adminThClassName()}>摘要</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.logs.map((l) => (
+                <tr key={l.id} className="border-t border-border">
+                  <td className={adminTdClassName()}>{formatDateTime(l.created_at)}</td>
+                  <td className={adminTdClassName()}>{l.operator_name || "-"}</td>
+                  <td className={adminTdClassName()}>{labelAuditAction(l.action_type)}</td>
+                  <td className={adminTdClassName()}>{l.summary || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
           </table>
         </div>
       </div>

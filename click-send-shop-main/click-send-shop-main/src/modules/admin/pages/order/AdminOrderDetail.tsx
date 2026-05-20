@@ -88,9 +88,34 @@ export default function AdminOrderDetail() {
         <div className="space-y-2">
           <div className="flex justify-between"><span className="text-muted-foreground">商品金额</span><span>{toMoney(order.raw_amount)}</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">优惠金额</span><span>-{toMoney(order.discount_amount)}</span></div>
-          <div className="flex justify-between"><span className="text-muted-foreground">运费</span><span>{toMoney(order.shipping_fee)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">运费（向客户收取）</span><span>{toMoney(order.shipping_fee)}</span></div>
           <div className="flex justify-between pt-1 text-base font-semibold"><span>实付金额</span><span>{toMoney(order.total_amount)}</span></div>
         </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-4">
+        <h3 className="mb-1 font-semibold">利润拆解</h3>
+        <p className="mb-3 text-xs text-muted-foreground">
+          净利润 = 商品毛利 + 运费收入 − 实际物流成本 − 支付手续费
+          {Number(order.refund_amount || 0) > 0 ? "（未在公式中扣减退款，退款见下方）" : ""}
+        </p>
+        <div className="space-y-2">
+          <div className="flex justify-between"><span className="text-muted-foreground">商品成本</span><span>{toMoney(order.goods_cost_amount)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">商品毛利</span><span>{toMoney(order.gross_profit_amount)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">运费收入</span><span>{toMoney(order.shipping_fee)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">实际物流成本</span><span>-{toMoney(order.shipping_cost_amount)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">支付手续费</span><span>-{toMoney(order.payment_fee_amount)}</span></div>
+          {Number(order.refund_amount || 0) > 0 ? (
+            <div className="flex justify-between text-red-600"><span>已退款</span><span>-{toMoney(order.refund_amount)}</span></div>
+          ) : null}
+          <div className="flex justify-between border-t border-border pt-2 text-base font-semibold">
+            <span>净利润</span>
+            <span className="text-[var(--theme-price)]">{toMoney(order.net_profit_amount)}</span>
+          </div>
+        </div>
+        {order.cost_snapshot_source === "missing" || Number(order.missing_cost_item_count || 0) > 0 ? (
+          <p className="mt-3 text-xs text-amber-700">部分商品缺少成本快照，毛利/净利润可能偏低，请核对商品成本后重算。</p>
+        ) : null}
       </div>
 
       <div className="rounded-xl border border-border bg-card p-4">

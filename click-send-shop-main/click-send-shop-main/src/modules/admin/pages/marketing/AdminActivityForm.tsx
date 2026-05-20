@@ -11,6 +11,7 @@ import { DISPLAY_POSITIONS, DISPLAY_POSITION_LABELS, WIP_ACTIVITY_TYPES, type Di
 import { labelActivityType } from "@/utils/adminDisplayLabels";
 import { fetchCoupons } from "@/services/admin/couponService";
 import type { Coupon } from "@/types/coupon";
+import { adminTableClassName, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
 
 const STEPS = ["选择类型", "基础信息", "活动规则", "适用范围", "展示设置", "预览发布"] as const;
 
@@ -283,18 +284,28 @@ export default function AdminActivityForm() {
                     <button type="button" onClick={() => setPickerOpen(true)} className="rounded-lg border border-border px-3 py-1.5 text-sm"><Tx>选择商品</Tx></button>
                   </div>
                   <div className="overflow-x-auto rounded-lg border border-border">
-                    <table className="min-w-full text-sm">
-                      <thead className="bg-secondary/60"><tr><th className="px-2 py-2 text-left"><Tx>商品</Tx></th><th className="px-2 py-2">原价</th><th className="px-2 py-2">活动价</th><th className="px-2 py-2">真实库存</th><th className="px-2 py-2">活动库存</th><th className="px-2 py-2">限购</th><th className="px-2 py-2">操作</th></tr></thead>
+                    <table className={adminTableClassName("min-w-full text-sm")}>
+                      <thead className="bg-secondary/60">
+                        <tr>
+                          <th className={adminThClassName()}><Tx>商品</Tx></th>
+                          <th className={adminThClassName("text-center")}><Tx>原价</Tx></th>
+                          <th className={adminThClassName("text-center")}><Tx>活动价</Tx></th>
+                          <th className={adminThClassName("text-center")}><Tx>真实库存</Tx></th>
+                          <th className={adminThClassName("text-center")}><Tx>活动库存</Tx></th>
+                          <th className={adminThClassName("text-center")}><Tx>限购</Tx></th>
+                          <th className={adminThClassName("text-center")}><Tx>操作</Tx></th>
+                        </tr>
+                      </thead>
                       <tbody>
                         {form.items.map((it, idx) => (
                           <tr key={`${it.product_id}-${idx}`} className="border-t border-border">
-                            <td className="px-2 py-2">{it.product_name || it.product_id}</td>
-                            <td className="px-2 py-2 text-center">{it.product_price ?? "-"}</td>
-                            <td className="px-2 py-2"><input type="number" value={it.activity_price} onChange={(e) => updateItem(idx, { activity_price: Number(e.target.value) })} className="w-24 rounded bg-secondary px-2 py-1" /></td>
-                            <td className="px-2 py-2 text-center">{it.product_stock ?? "-"}</td>
-                            <td className="px-2 py-2"><input type="number" value={it.activity_stock} onChange={(e) => updateItem(idx, { activity_stock: Number(e.target.value) })} className="w-24 rounded bg-secondary px-2 py-1" /></td>
-                            <td className="px-2 py-2"><input type="number" value={it.limit_per_user} onChange={(e) => updateItem(idx, { limit_per_user: Number(e.target.value) })} className="w-20 rounded bg-secondary px-2 py-1" /></td>
-                            <td className="px-2 py-2"><button type="button" onClick={() => setForm((p) => ({ ...p, items: p.items.filter((_, i) => i !== idx) }))} className="text-xs text-muted-foreground"><Tx>删除</Tx></button></td>
+                            <td className={adminTdClassName()}>{it.product_name || it.product_id}</td>
+                            <td className={adminTdClassName("text-center")}>{it.product_price ?? "-"}</td>
+                            <td className={adminTdClassName()}><input type="number" value={it.activity_price} onChange={(e) => updateItem(idx, { activity_price: Number(e.target.value) })} className="w-24 rounded bg-secondary px-2 py-1" /></td>
+                            <td className={adminTdClassName("text-center")}>{it.product_stock ?? "-"}</td>
+                            <td className={adminTdClassName()}><input type="number" value={it.activity_stock} onChange={(e) => updateItem(idx, { activity_stock: Number(e.target.value) })} className="w-24 rounded bg-secondary px-2 py-1" /></td>
+                            <td className={adminTdClassName()}><input type="number" value={it.limit_per_user} onChange={(e) => updateItem(idx, { limit_per_user: Number(e.target.value) })} className="w-20 rounded bg-secondary px-2 py-1" /></td>
+                            <td className={adminTdClassName("text-center")}><button type="button" onClick={() => setForm((p) => ({ ...p, items: p.items.filter((_, i) => i !== idx) }))} className="text-xs text-muted-foreground"><Tx>删除</Tx></button></td>
                           </tr>
                         ))}
                       </tbody>

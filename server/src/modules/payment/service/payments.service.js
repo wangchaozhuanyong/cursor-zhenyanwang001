@@ -461,7 +461,7 @@ async function createIntent(userId, body) {
         payment_order_id: paymentOrderId,
         status: 'pending',
         redirect_url: null,
-        client_instructions: 'Please transfer according to order amount or contact support for confirmation.',
+        client_instructions: '请按订单应付金额转账，或联系客服确认收款。',
       },
       message: '已创建待处理的人工支付单',
     };

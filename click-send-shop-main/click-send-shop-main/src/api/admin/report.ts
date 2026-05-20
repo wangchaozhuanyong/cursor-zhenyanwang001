@@ -1,4 +1,4 @@
-import { get } from "@/api/request";
+import { del, get, post, put } from "@/api/request";
 
 export type ReportQuery = {
   range_preset?: string;
@@ -20,6 +20,18 @@ export type ReportQuery = {
   page?: number;
   pageSize?: number;
   sort?: string;
+};
+
+export type OperatingExpenseRecord = {
+  id: string;
+  expense_date: string;
+  category: string;
+  amount: number;
+  title: string;
+  remark?: string;
+  operator_id?: string | null;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export function getReportOverview(params?: ReportQuery) {
@@ -60,4 +72,20 @@ export function getSearchAnalysis(params?: ReportQuery) {
 }
 export function getTrafficAnalysis(params?: ReportQuery) {
   return get<Record<string, unknown>>("/admin/reports/traffic", params as unknown as Record<string, unknown>);
+}
+
+export function getOperatingExpenses(params?: { range_preset?: string; date_from?: string; date_to?: string; category?: string }) {
+  return get<Record<string, unknown>>("/admin/expenses", params as unknown as Record<string, unknown>);
+}
+
+export function createOperatingExpense(payload: Omit<OperatingExpenseRecord, "id" | "created_at" | "updated_at" | "operator_id">) {
+  return post<OperatingExpenseRecord>("/admin/expenses", payload);
+}
+
+export function updateOperatingExpense(id: string, payload: Omit<OperatingExpenseRecord, "id" | "created_at" | "updated_at" | "operator_id">) {
+  return put<OperatingExpenseRecord>(`/admin/expenses/${id}`, payload);
+}
+
+export function deleteOperatingExpense(id: string) {
+  return del<{ ok: boolean }>(`/admin/expenses/${id}`);
 }

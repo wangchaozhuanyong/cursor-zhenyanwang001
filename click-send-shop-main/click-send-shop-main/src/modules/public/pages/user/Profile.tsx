@@ -68,7 +68,7 @@ function gateNavigate(navigate: ReturnType<typeof useNavigate>, path: string, re
     navigate("/login", { state: { from: path } });
     return;
   }
-  navigate(path);
+  navigate(path, { state: { from: "/profile" } });
 }
 
 function SectionTitle({ title, rightLabel, onRightClick }: { title: string; rightLabel?: string; onRightClick?: () => void }) {
@@ -289,12 +289,12 @@ export default function Profile() {
         }
         rightSlot={(
           <>
-            {loggedIn ? <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications")} /> : null}
+            {loggedIn ? <NotificationIconButton unreadCount={unreadCount} onClick={() => navigate("/notifications", { state: { from: "/profile" } })} /> : null}
             <SkinPickerDialog trigger={<button type="button" className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50 text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]" aria-label="切换皮肤"><Palette size={16} /></button>} />
             {loggedIn ? (
               <button
                 type="button"
-                onClick={() => navigate("/settings")}
+                onClick={() => navigate("/settings", { state: { from: "/profile" } })}
                 className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50 text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]"
                 aria-label="设置"
               >
@@ -336,7 +336,7 @@ export default function Profile() {
                 <Suspense fallback={null}>
                   <ProfileWechatBindSection
                     wechatLogin={wechatLogin}
-                    onNavigateSettings={() => navigate("/settings")}
+                    onNavigateSettings={() => navigate("/settings", { state: { from: "/profile" } })}
                     cardClass={CARD_CLASS}
                     menuTapClass={MENU_TAP}
                   />

@@ -1,5 +1,7 @@
 const db = require('../../../config/db');
-const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
+const { ORDER_STATUS, PAID_PAYMENT_STATUS_LIST } = require('../../../constants/status');
+
+const PAID_PAYMENT_PLACEHOLDERS = PAID_PAYMENT_STATUS_LIST.map(() => '?').join(', ');
 
 function getPool() {
   return db;
@@ -46,7 +48,8 @@ async function selectDefaultLevel(q) {
 
 async function selectUserCurrentLevel(q, userId) {
   const [[row]] = await q.query(
-    `SELECT ml.id, ml.name, ml.description, ml.min_spent, ml.min_orders, ml.discount_rate, ml.points_multiplier, ml.free_shipping_enabled, ml.sort_order, ml.enabled, ml.is_default
+    `SELECT ml.id, ml.name, ml.description, ml.min_spent, ml.min_orders, ml.discount_rate, ml.points_multiplier, ml.free_shipping_enabled, ml.sort_order, ml.enabled, ml.is_default,
+            u.member_level_manual_locked, u.member_level_manual_reason, u.member_level_manual_at
      FROM users u
      LEFT JOIN member_levels ml ON ml.id = u.member_level_id
      WHERE u.id = ?`,
@@ -62,9 +65,9 @@ async function selectUserPaidStats(q, userId) {
         COUNT(*) AS order_count
      FROM orders
      WHERE user_id = ?
-       AND payment_status = ?
+       AND payment_status IN (${PAID_PAYMENT_PLACEHOLDERS})
        AND status != ?`,
-    [userId, PAYMENT_STATUS.PAID, ORDER_STATUS.CANCELLED],
+    [userId, ...PAID_PAYMENT_STATUS_LIST, ORDER_STATUS.CANCELLED],
   );
   return {
     totalSpent: Number(row?.total_spent || 0),
@@ -76,6 +79,18 @@ async function updateUserMemberLevel(q, userId, levelId) {
   await q.query('UPDATE users SET member_level_id = ? WHERE id = ?', [levelId, userId]);
 }
 
+async function updateUserMemberLevelCalculated(q, userId, levelId) {
+  await q.query(
+    `UPDATE users
+     SET member_level_id = ?,
+         member_level_manual_locked = 0,
+         member_level_manual_reason = NULL,
+         member_level_manual_at = NULL
+     WHERE id = ?`,
+    [levelId, userId],
+  );
+}
+
 module.exports = {
   getPool,
   selectEnabledLevels,
@@ -85,6 +100,7 @@ module.exports = {
   selectUserCurrentLevel,
   selectUserPaidStats,
   updateUserMemberLevel,
+  updateUserMemberLevelCalculated,
 };
 
 

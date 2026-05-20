@@ -265,6 +265,8 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
         && prevPay !== PAYMENT_STATUS.PAID
         && fullOrder
       ) {
+        await requireUserApi('syncStatsAfterOrderPaid')(fullOrder.user_id, fullOrder.total_amount, fullOrder.id, conn);
+        await requireUserApi('refreshUserMemberLevel')(conn, fullOrder.user_id);
         try {
           const salesItems = await repo.selectOrderItemPairs(conn, fullOrder.id);
           for (const it of salesItems) {
@@ -336,6 +338,10 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
           operatorId: adminUserId,
           trigger: `admin_order_${status}`,
         });
+        if (status === ORDER_STATUS.REFUNDED) {
+          await requireUserApi('syncStatsAfterRefund')(fullOrder.user_id, fullOrder.id, conn);
+          await requireUserApi('refreshUserMemberLevel')(conn, fullOrder.user_id, { force: false });
+        }
       }
 
       if (fullOrder) {

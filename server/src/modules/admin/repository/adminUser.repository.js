@@ -1,5 +1,6 @@
 const db = require('../../../config/db');
-const { ORDER_STATUS } = require('../../../constants/status');
+const { ORDER_STATUS, PAID_PAYMENT_STATUS_LIST } = require('../../../constants/status');
+const PAID_PAYMENT_PLACEHOLDERS = PAID_PAYMENT_STATUS_LIST.map(() => '?').join(', ');
 
 const tableColumnCache = new Map();
 
@@ -155,6 +156,9 @@ async function selectUsersPage(where, params, pageSize, offset, options = {}) {
     `SELECT u.id, u.phone, u.nickname, u.avatar, u.invite_code, u.parent_invite_code,
             u.points_balance, u.subordinate_enabled, u.wechat, u.whatsapp, u.created_at,
             u.account_status,
+            u.member_level_manual_locked,
+            u.member_level_manual_reason,
+            u.member_level_manual_at,
             COALESCE(ur.order_restricted, 0) AS order_restricted,
             COALESCE(ur.coupon_restricted, 0) AS coupon_restricted,
             COALESCE(ur.comment_restricted, 0) AS comment_restricted,
@@ -271,8 +275,8 @@ async function countOrdersByUserId(userId) {
   const [[{ orderCount }]] = await db.query(
     `SELECT COUNT(*) AS orderCount
      FROM orders
-     WHERE user_id = ? AND payment_status = 'paid' AND status != ?`,
-    [userId, ORDER_STATUS.CANCELLED],
+     WHERE user_id = ? AND payment_status IN (${PAID_PAYMENT_PLACEHOLDERS}) AND status != ?`,
+    [userId, ...PAID_PAYMENT_STATUS_LIST, ORDER_STATUS.CANCELLED],
   );
   return orderCount;
 }
@@ -281,8 +285,8 @@ async function sumUserSpentExcludingCancelled(userId) {
   const [[{ totalSpent }]] = await db.query(
     `SELECT COALESCE(SUM(total_amount), 0) AS totalSpent
      FROM orders
-     WHERE user_id = ? AND payment_status = 'paid' AND status != ?`,
-    [userId, ORDER_STATUS.CANCELLED],
+     WHERE user_id = ? AND payment_status IN (${PAID_PAYMENT_PLACEHOLDERS}) AND status != ?`,
+    [userId, ...PAID_PAYMENT_STATUS_LIST, ORDER_STATUS.CANCELLED],
   );
   return totalSpent;
 }

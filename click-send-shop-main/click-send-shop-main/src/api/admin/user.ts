@@ -111,7 +111,7 @@ export function adjustUserPoints(userId: string, points: number, reason?: string
   return put<void>(`/admin/users/${userId}/points`, { points, reason });
 }
 
-export type MemberLevelPayload = Pick<MemberLevel, "name" | "description" | "min_spent" | "min_orders" | "sort_order" | "enabled" | "is_default">;
+export type MemberLevelPayload = Pick<MemberLevel, "name" | "description" | "min_spent" | "min_orders" | "discount_rate" | "points_multiplier" | "free_shipping_enabled" | "sort_order" | "enabled" | "is_default">;
 
 export function getMemberLevels() {
   return get<MemberLevel[]>("/admin/member-levels");
@@ -129,14 +129,18 @@ export function deleteMemberLevel(id: string) {
   return del<void>(`/admin/member-levels/${id}`);
 }
 
-export function recalculateAllMemberLevels() {
-  return post<{ total: number; changed: number }>('/admin/member-levels/recalculate');
+export function recalculateAllMemberLevels(options?: { force?: boolean }) {
+  return post<{ total: number; changed: number; skippedLocked?: number; force?: boolean }>('/admin/member-levels/recalculate', options || {});
 }
 
-export function recalculateUserMemberLevel(userId: string) {
-  return post(`/admin/member-levels/recalculate/${userId}`);
+export function recalculateUserMemberLevel(userId: string, options?: { force?: boolean }) {
+  return post(`/admin/member-levels/recalculate/${userId}`, options || {});
 }
 
-export function assignUserMemberLevel(userId: string, memberLevelId: string) {
-  return put<void>(`/admin/users/${userId}/member-level`, { memberLevelId });
+export function assignUserMemberLevel(userId: string, memberLevelId: string, reason?: string) {
+  return put<void>(`/admin/users/${userId}/member-level`, { memberLevelId, reason });
+}
+
+export function unlockUserMemberLevel(userId: string) {
+  return del<void>(`/admin/users/${userId}/member-level-lock`);
 }

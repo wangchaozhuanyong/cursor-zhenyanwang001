@@ -22,17 +22,22 @@ exports.remove = asyncRoute(async (req, res) => {
 });
 
 exports.recalcUserLevel = asyncRoute(async (req, res) => {
-  const r = await svc.recalcUserLevel(req, req.params.userId);
+  const r = await svc.recalcUserLevel(req, req.params.userId, { force: req.body?.force === true || req.body?.force === 1 });
   res.success(r.data, r.message);
 });
 
 exports.recalcAllUserLevels = asyncRoute(async (req, res) => {
-  const r = await svc.recalcAllUserLevels(req);
+  const r = await svc.recalcAllUserLevels(req, { force: req.body?.force === true || req.body?.force === 1 });
   res.success(r.data, r.message);
 });
 
 exports.assignUserLevel = asyncRoute(async (req, res) => {
-  const r = await svc.assignUserLevel(req, req.params.userId, req.body?.memberLevelId || req.body?.member_level_id);
+  const r = await svc.assignUserLevel(req, req.params.userId, req.body?.memberLevelId || req.body?.member_level_id, req.body?.reason);
+  res.success(r.data, r.message);
+});
+
+exports.unlockUserLevel = asyncRoute(async (req, res) => {
+  const r = await svc.unlockUserLevel(req, req.params.userId);
   res.success(r.data, r.message);
 });
 

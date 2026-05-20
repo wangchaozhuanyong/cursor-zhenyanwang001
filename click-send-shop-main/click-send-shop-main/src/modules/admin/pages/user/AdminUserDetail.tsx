@@ -14,9 +14,12 @@ import {
   fetchUserStatusOverview,
   recalculateUserMemberLevel,
   assignUserMemberLevel,
+  unlockUserMemberLevel,
   fetchMemberLevels,
 } from "@/services/admin/userService";
 import PermissionGate from "@/components/admin/PermissionGate";
+import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { isAbortError } from "@/utils/asyncErrors";
@@ -42,6 +45,10 @@ export default function AdminUserDetail() {
   const [editForm, setEditForm] = useState<any>({});
   const [levels, setLevels] = useState<any[]>([]);
   const [statusOverview, setStatusOverview] = useState<any>(null);
+  const [levelsLoadFailed, setLevelsLoadFailed] = useState(false);
+  const capabilities = useSiteCapabilities();
+  const hasMemberLevelPermission = useAdminPermissionStore((s) => s.can("member_level.manage"));
+  const canManageMemberLevel = capabilities.memberLevelEnabled && hasMemberLevelPermission;
 
   const reload = useCallback(async () => {
     if (!id) return;
@@ -52,18 +59,25 @@ export default function AdminUserDetail() {
 
     setLoading(true);
     setLoadError(null);
+    setLevelsLoadFailed(false);
     try {
-      const [u, tags, memberLevels, statusSnap] = await Promise.all([
+      const [u, tags, memberLevels, statusSnap] = await Promise.allSettled([
         fetchUserById(id),
         fetchUserTags(),
-        fetchMemberLevels(),
+        canManageMemberLevel ? fetchMemberLevels() : Promise.resolve([]),
         fetchUserStatusOverview(id),
       ]);
       if (controller.signal.aborted || seq !== loadSeqRef.current) return;
-      setUser(u);
-      setAllTags(tags);
-      setLevels(memberLevels || []);
-      setStatusOverview(statusSnap || null);
+      if (u.status === "rejected") throw u.reason;
+      setUser(u.value);
+      setAllTags(tags.status === "fulfilled" ? tags.value : []);
+      if (memberLevels.status === "fulfilled") {
+        setLevels(memberLevels.value || []);
+      } else {
+        setLevels([]);
+        setLevelsLoadFailed(true);
+      }
+      setStatusOverview(statusSnap.status === "fulfilled" ? statusSnap.value || null : null);
     } catch (e) {
       if (seq !== loadSeqRef.current || isAbortError(e)) return;
       const msg = toastErrorMessage(e, "加载用户详情失败");
@@ -73,7 +87,7 @@ export default function AdminUserDetail() {
     } finally {
       if (seq === loadSeqRef.current) setLoading(false);
     }
-  }, [id]);
+  }, [id, canManageMemberLevel]);
 
   useEffect(() => {
     if (!id) return;
@@ -213,7 +227,8 @@ export default function AdminUserDetail() {
           <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.order_restricted ? "取消下单限制" : "开启下单限制"} onClick={() => void doRestriction("order", !statusOverview?.restrictions?.order_restricted)} /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.coupon_restricted ? "取消领券限制" : "开启领券限制"} onClick={() => void doRestriction("coupon", !statusOverview?.restrictions?.coupon_restricted)} /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.comment_restricted ? "取消评论限制" : "开启评论限制"} onClick={() => void doRestriction("comment", !statusOverview?.restrictions?.comment_restricted)} /></PermissionGate>
-          <PermissionGate permission="member_level.manage"><ActionBtn label="重算会员等级" onClick={async () => { try { await recalculateUserMemberLevel(id); await reload(); toast.success("会员等级已重算"); } catch (e) { toast.error(toastErrorMessage(e, "重算失败")); } }} /></PermissionGate>
+          {canManageMemberLevel ? <ActionBtn label="按规则重新计算" onClick={async () => { try { await recalculateUserMemberLevel(id, { force: true }); await reload(); toast.success("会员等级已按规则重算"); } catch (e) { toast.error(toastErrorMessage(e, "重算失败")); } }} /> : null}
+          {canManageMemberLevel ? <ActionBtn label="解除手动锁定" disabled={!Number(user.member_level_manual_locked || 0)} onClick={async () => { try { await unlockUserMemberLevel(id); await reload(); toast.success("已解除手动锁定"); } catch (e) { toast.error(toastErrorMessage(e, "解除失败")); } }} /> : null}
         </div>
       </section>
 
@@ -242,22 +257,33 @@ export default function AdminUserDetail() {
             </div>
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <span className="text-muted-foreground">会员等级</span>
-              <select
-                className="min-w-[12rem] rounded-lg border border-border bg-background px-2.5 py-2 text-sm"
-                value={user.member_level_id || ""}
-                onChange={async (e) => {
-                  try {
-                    await assignUserMemberLevel(id, e.target.value);
-                    await reload();
-                    toast.success("会员等级已更新");
-                  } catch (err) {
-                    toast.error(toastErrorMessage(err, "更新失败"));
-                  }
-                }}
-              >
-                <option value="">未设置</option>
-                {levels.map((lv) => <option key={lv.id} value={lv.id}>{lv.name}</option>)}
-              </select>
+              {canManageMemberLevel && !levelsLoadFailed ? (
+                <select
+                  className="min-w-[12rem] rounded-lg border border-border bg-background px-2.5 py-2 text-sm"
+                  value={user.member_level_id || ""}
+                  onChange={async (e) => {
+                    const reason = window.prompt("请输入手动指定原因（可选）", "")?.trim() || "";
+                    try {
+                      await assignUserMemberLevel(id, e.target.value, reason);
+                      await reload();
+                      toast.success("会员等级已手动指定并锁定");
+                    } catch (err) {
+                      toast.error(toastErrorMessage(err, "更新失败"));
+                    }
+                  }}
+                >
+                  <option value="">未设置</option>
+                  {levels.filter((lv) => lv.enabled !== false).map((lv) => <option key={lv.id} value={lv.id}>{lv.name}</option>)}
+                </select>
+              ) : (
+                <span className="rounded-lg border border-border bg-secondary/40 px-3 py-2 text-sm">{user.member_level_name || "未设置"}</span>
+              )}
+              {Number(user.member_level_manual_locked || 0) ? (
+                <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs text-amber-700">
+                  手动指定等级{user.member_level_manual_reason ? `：${user.member_level_manual_reason}` : ""}
+                </span>
+              ) : null}
+              {levelsLoadFailed ? <span className="text-xs text-muted-foreground">会员等级配置加载失败，已隐藏编辑入口</span> : null}
             </div>
           </div>
         )}

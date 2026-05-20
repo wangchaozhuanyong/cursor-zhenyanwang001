@@ -159,11 +159,11 @@ export default function OrderDetail() {
         <div className="rounded-2xl border border-border bg-card p-3">
           <p className="text-sm font-medium">价格明细</p>
           <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">商品金额</span><span>RM {Number(order.raw_amount || 0).toFixed(2)}</span></div>
-          {Number(order.discount_amount || 0) > 0 ? <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">优惠金额</span><span className="text-[var(--theme-danger)]">-RM {Number(order.discount_amount || 0).toFixed(2)}</span></div> : null}
+          {Number(order.discount_amount || 0) > 0 && !(order.discount_lines || []).length ? <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">优惠金额</span><span className="text-[var(--theme-danger)]">-RM {Number(order.discount_amount || 0).toFixed(2)}</span></div> : null}
           {capabilities.pointsEnabled && Number(order.points_discount_amount || 0) > 0 ? <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">积分抵扣</span><span className="text-[var(--theme-danger)]">-RM {Number(order.points_discount_amount || 0).toFixed(2)}</span></div> : null}
           {Number(order.reward_cash_discount_amount || 0) > 0 ? <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">返现抵扣</span><span className="text-[var(--theme-danger)]">-RM {Number(order.reward_cash_discount_amount || 0).toFixed(2)}</span></div> : null}
           <OrderDiscountLines order={order} />
-          <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">运费</span><span>RM {Number(order.shipping_fee || 0).toFixed(2)}</span></div>
+          <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">运费</span><span className={Number(order.shipping_fee || 0) === 0 ? "text-[var(--theme-success)]" : undefined}>{Number(order.shipping_fee || 0) === 0 ? "包邮" : `RM ${Number(order.shipping_fee || 0).toFixed(2)}`}</span></div>
           <div className="mt-3 flex justify-between text-sm font-semibold"><span>实付款</span><span className="text-[var(--theme-price)]">RM {Number(order.total_amount || 0).toFixed(2)}</span></div>
         </div>
 

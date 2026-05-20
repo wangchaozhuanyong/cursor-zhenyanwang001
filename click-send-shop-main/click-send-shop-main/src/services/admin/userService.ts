@@ -108,17 +108,21 @@ export async function deleteMemberLevel(id: string) {
   await userApi.deleteMemberLevel(id);
 }
 
-export async function recalculateAllMemberLevels() {
-  const res = await userApi.recalculateAllMemberLevels();
+export async function recalculateAllMemberLevels(options?: { force?: boolean }) {
+  const res = await userApi.recalculateAllMemberLevels(options);
   return res.data as any;
 }
 
-export async function recalculateUserMemberLevel(userId: string) {
-  await userApi.recalculateUserMemberLevel(userId);
+export async function recalculateUserMemberLevel(userId: string, options?: { force?: boolean }) {
+  await userApi.recalculateUserMemberLevel(userId, options);
 }
 
-export async function assignUserMemberLevel(userId: string, memberLevelId: string) {
-  await userApi.assignUserMemberLevel(userId, memberLevelId);
+export async function assignUserMemberLevel(userId: string, memberLevelId: string, reason?: string) {
+  await userApi.assignUserMemberLevel(userId, memberLevelId, reason);
+}
+
+export async function unlockUserMemberLevel(userId: string) {
+  await userApi.unlockUserMemberLevel(userId);
 }
 
 export async function exportUsersCsv(params?: UserListQuery) {

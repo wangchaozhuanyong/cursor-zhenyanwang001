@@ -25,7 +25,7 @@ async function selectUserMemberLevel(q, userId) {
   if (!userId) return null;
   const runner = q || db;
   const [[row]] = await runner.query(
-    `SELECT ml.id, ml.name, ml.points_multiplier
+    `SELECT ml.id, ml.name, ml.discount_rate, ml.points_multiplier, ml.free_shipping_enabled
      FROM users u
      LEFT JOIN member_levels ml ON ml.id = u.member_level_id AND ml.enabled = 1
      WHERE u.id = ?

@@ -42,6 +42,9 @@ export interface UserProfile {
   member_level_description?: string;
   member_level_min_spent?: number;
   member_level_min_orders?: number;
+  member_level_manual_locked?: boolean | number;
+  member_level_manual_reason?: string | null;
+  member_level_manual_at?: string | null;
   account_status?: string;
   order_restricted?: boolean | number;
   coupon_restricted?: boolean | number;

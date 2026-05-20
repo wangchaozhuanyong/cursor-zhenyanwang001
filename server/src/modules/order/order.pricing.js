@@ -270,6 +270,7 @@ async function buildOrderPricing(userId, body, conn = null) {
       : estimateWeightFromItems(items);
     shippingFee = computeShippingFee(tpl, rawAmount, w);
   }
+  const originalShippingFee = shippingFee;
 
   const hasActivityDiscount = flashSaleDiscount > 0 || fullReductionDiscount > 0;
   const activityAllowsCoupon = fullReductionActivities.every((a) => !!a.allow_coupon_stack)
@@ -297,18 +298,17 @@ async function buildOrderPricing(userId, body, conn = null) {
   }
 
   const nonShippingGoodsCoupon = couponType === 'shipping' ? 0 : couponDiscount;
-  const goodsInclusiveTaxable = Math.max(0, rawAmount - fullReductionDiscount - nonShippingGoodsCoupon);
-  const sstRows = await siteSettingsRepo.selectSiteSettingsByKeys(['sstEnabled', 'sstRatePercent', 'sstLabel']);
-  const sstSettings = sstTax.parseSstSettingsFromSiteSettingsRows(sstRows);
-  const taxSnap = sstTax.buildOrderTaxSnapshot(sstSettings, goodsInclusiveTaxable);
-
-  const discountAmount = fullReductionDiscount + couponDiscount;
-  const basePayableBeforeLoyalty = Math.max(0, rawAmount - discountAmount + shippingFee);
-
   const pointsSettings = await loyaltyRepo.selectPointsSettings();
   const rewardSettings = await loyaltyRepo.selectRewardSettings();
   const productRules = await loyaltyRepo.selectProductRules(q);
   const memberLevel = await loyaltyRepo.selectUserMemberLevel(q, userId);
+  const memberDiscountRate = memberLevel
+    ? Math.min(1, Math.max(0.01, Number(memberLevel.discount_rate || 1)))
+    : 1;
+  const memberFreeShipping = !!memberLevel?.free_shipping_enabled;
+  if (memberFreeShipping && shippingFee > 0) {
+    shippingFee = 0;
+  }
   const pointMethods = parseJsonArray(pointsSettings?.allowed_payment_methods, ['online', 'whatsapp']);
   const rewardMethods = parseJsonArray(rewardSettings?.allowed_payment_methods, ['online', 'whatsapp']);
 
@@ -317,7 +317,18 @@ async function buildOrderPricing(userId, body, conn = null) {
 
   const usePoints = !!body.use_points;
   const requestPointsToUse = Number(body.points_to_use || 0);
-  const goodsDiscountForAllocation = fullReductionDiscount + nonShippingGoodsCoupon;
+  const memberLevelDiscountBase = Math.max(0, rawAmount - fullReductionDiscount - nonShippingGoodsCoupon);
+  const memberLevelDiscount = memberDiscountRate < 1
+    ? pointsEngine.money(memberLevelDiscountBase * (1 - memberDiscountRate))
+    : 0;
+  const memberShippingDiscount = memberFreeShipping ? pointsEngine.money(originalShippingFee) : 0;
+  const totalGoodsDiscount = fullReductionDiscount + couponDiscount + memberLevelDiscount;
+  const basePayableBeforeLoyaltyWithMember = Math.max(0, rawAmount - totalGoodsDiscount + shippingFee);
+  const goodsInclusiveTaxable = Math.max(0, rawAmount - fullReductionDiscount - nonShippingGoodsCoupon - memberLevelDiscount);
+  const sstRows = await siteSettingsRepo.selectSiteSettingsByKeys(['sstEnabled', 'sstRatePercent', 'sstLabel']);
+  const sstSettings = sstTax.parseSstSettingsFromSiteSettingsRows(sstRows);
+  const taxSnap = sstTax.buildOrderTaxSnapshot(sstSettings, goodsInclusiveTaxable);
+  const goodsDiscountForAllocation = fullReductionDiscount + nonShippingGoodsCoupon + memberLevelDiscount;
   const loyaltyItems = orderItems.map((oi) => {
     const lineSubtotal = oi.price * oi.qty;
     const discountShare = rawAmount > 0 ? (goodsDiscountForAllocation * lineSubtotal) / rawAmount : 0;
@@ -341,14 +352,14 @@ async function buildOrderPricing(userId, body, conn = null) {
     productMap,
     productRules,
     coupon: couponDiscount > 0 ? { title: couponTitle, type: couponType } : null,
-    discounts: { coupon_amount: couponDiscount, full_reduction_amount: fullReductionDiscount },
+    discounts: { coupon_amount: couponDiscount, full_reduction_amount: fullReductionDiscount, member_level_discount: memberLevelDiscount },
     pointsToUse: usePoints ? (requestPointsToUse > 0 ? requestPointsToUse : pointsBalance) : 0,
   });
   const max_usable_points = pointsRedeem.max_usable_points || 0;
   const points_used = usePoints ? Number(pointsRedeem.points_used || 0) : 0;
   const points_discount_amount = usePoints ? Number(pointsRedeem.points_discount_amount || 0) : 0;
 
-  const afterPoints = Math.max(0, basePayableBeforeLoyalty - points_discount_amount);
+  const afterPoints = Math.max(0, basePayableBeforeLoyaltyWithMember - points_discount_amount);
   const rewardMaxByPercent = afterPoints * (Number(rewardSettings?.max_redeem_percent || 100) / 100);
   const rewardMaxByAmount = Number(rewardSettings?.max_redeem_amount || 0) > 0
     ? Number(rewardSettings?.max_redeem_amount || 0)
@@ -365,7 +376,7 @@ async function buildOrderPricing(userId, body, conn = null) {
     : 0;
   const reward_cash_discount_amount = reward_cash_used;
 
-  const finalTotal = Math.max(0, basePayableBeforeLoyalty - points_discount_amount - reward_cash_discount_amount);
+  const finalTotal = Math.max(0, basePayableBeforeLoyaltyWithMember - points_discount_amount - reward_cash_discount_amount);
   const pointsEarn = pointsEngine.calculateOrderEarnedPoints({
     settings: pointsSettings,
     productRules,
@@ -376,7 +387,7 @@ async function buildOrderPricing(userId, body, conn = null) {
     productMap,
     memberLevel,
     coupon: couponDiscount > 0 ? { title: couponTitle, type: couponType } : null,
-    discounts: { coupon_amount: couponDiscount, full_reduction_amount: fullReductionDiscount },
+    discounts: { coupon_amount: couponDiscount, full_reduction_amount: fullReductionDiscount, member_level_discount: memberLevelDiscount },
   });
   const earned_points = Number(pointsEarn.earned_points || 0);
 
@@ -394,6 +405,20 @@ async function buildOrderPricing(userId, body, conn = null) {
       amount: pointsEngine.money(couponDiscount),
     });
   }
+  if (memberLevelDiscount > 0) {
+    discount_lines.push({
+      type: 'member_level_discount',
+      label: memberLevel?.name ? `会员折扣：${memberLevel.name}` : '会员折扣',
+      amount: pointsEngine.money(memberLevelDiscount),
+    });
+  }
+  if (memberShippingDiscount > 0) {
+    discount_lines.push({
+      type: 'member_free_shipping',
+      label: memberLevel?.name ? `会员免邮：${memberLevel.name}` : '会员免邮',
+      amount: pointsEngine.money(memberShippingDiscount),
+    });
+  }
   if (points_discount_amount > 0) {
     discount_lines.push({ type: 'points', label: '积分抵扣', amount: pointsEngine.money(points_discount_amount) });
   }
@@ -406,7 +431,7 @@ async function buildOrderPricing(userId, body, conn = null) {
     flashSaleDiscount,
     fullReductionDiscount,
     couponDiscount,
-    discountAmount,
+    discountAmount: totalGoodsDiscount,
     shippingFee,
     finalTotal,
     totalPoints: earned_points,
@@ -437,6 +462,8 @@ async function buildOrderPricing(userId, body, conn = null) {
       available_reward_balance: rewardBalance,
       max_usable_reward_cash,
       earned_points,
+      member_level_discount: memberLevelDiscount,
+      member_free_shipping_discount: memberShippingDiscount,
       points_summary: {
         earned_points,
         points_used,
@@ -451,7 +478,7 @@ async function buildOrderPricing(userId, body, conn = null) {
       },
       points_settings_snapshot: pointsSettings ? { ...pointsSettings } : null,
       product_rule_snapshots: pointsEarn.product_rule_snapshots || [],
-      member_level_snapshot: pointsEarn.member_level_snapshot || { points_multiplier: 1 },
+      member_level_snapshot: pointsEarn.member_level_snapshot || (memberLevel ? { ...memberLevel } : { points_multiplier: 1 }),
       item_results: pointsEarn.item_results || [],
       redeem_item_results: pointsRedeem.item_results || [],
       calculation_version: pointsEngine.CALCULATION_VERSION,

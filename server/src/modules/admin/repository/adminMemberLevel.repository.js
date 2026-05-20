@@ -31,6 +31,28 @@ async function countUsersByLevel(q, id) {
   return Number(row?.total || 0);
 }
 
+async function countEnabledLevels(q, excludingId = null) {
+  const params = [];
+  let where = 'WHERE enabled = 1';
+  if (excludingId) {
+    where += ' AND id != ?';
+    params.push(excludingId);
+  }
+  const [[row]] = await q.query(`SELECT COUNT(*) AS total FROM member_levels ${where}`, params);
+  return Number(row?.total || 0);
+}
+
+async function countEnabledDefaultLevels(q, excludingId = null) {
+  const params = [];
+  let where = 'WHERE enabled = 1 AND is_default = 1';
+  if (excludingId) {
+    where += ' AND id != ?';
+    params.push(excludingId);
+  }
+  const [[row]] = await q.query(`SELECT COUNT(*) AS total FROM member_levels ${where}`, params);
+  return Number(row?.total || 0);
+}
+
 async function clearDefault(q) {
   await q.query('UPDATE member_levels SET is_default = 0');
 }
@@ -70,12 +92,47 @@ async function reassignUsersToLevel(q, fromLevelId, toLevelId) {
 }
 
 async function selectAllUserIds(q) {
+  const [rows] = await q.query('SELECT id, member_level_manual_locked FROM users WHERE deleted_at IS NULL');
+  return rows.map((r) => ({ id: r.id, manualLocked: Boolean(r.member_level_manual_locked) }));
+}
+
+async function selectUserManualLock(q, userId) {
+  const [[row]] = await q.query(
+    `SELECT id, member_level_id, member_level_manual_locked, member_level_manual_reason, member_level_manual_at
+     FROM users
+     WHERE id = ? AND deleted_at IS NULL`,
+    [userId],
+  );
+  return row || null;
+}
+
+async function selectAllUserIdsLegacy(q) {
   const [rows] = await q.query('SELECT id FROM users WHERE deleted_at IS NULL');
   return rows.map((r) => r.id);
 }
 
-async function updateUserLevelManual(q, userId, levelId) {
-  const [r] = await q.query('UPDATE users SET member_level_id = ? WHERE id = ? AND deleted_at IS NULL', [levelId, userId]);
+async function updateUserLevelManual(q, userId, levelId, reason) {
+  const [r] = await q.query(
+    `UPDATE users
+     SET member_level_id = ?,
+         member_level_manual_locked = 1,
+         member_level_manual_reason = ?,
+         member_level_manual_at = NOW()
+     WHERE id = ? AND deleted_at IS NULL`,
+    [levelId, reason || null, userId],
+  );
+  return (r.affectedRows || 0) > 0;
+}
+
+async function unlockUserLevelManual(q, userId) {
+  const [r] = await q.query(
+    `UPDATE users
+     SET member_level_manual_locked = 0,
+         member_level_manual_reason = NULL,
+         member_level_manual_at = NULL
+     WHERE id = ? AND deleted_at IS NULL`,
+    [userId],
+  );
   return (r.affectedRows || 0) > 0;
 }
 
@@ -85,13 +142,18 @@ module.exports = {
   selectLevels,
   selectLevelById,
   countUsersByLevel,
+  countEnabledLevels,
+  countEnabledDefaultLevels,
   clearDefault,
   insertLevel,
   updateLevel,
   deleteLevel,
   reassignUsersToLevel,
   selectAllUserIds,
+  selectAllUserIdsLegacy,
+  selectUserManualLock,
   updateUserLevelManual,
+  unlockUserLevelManual,
 };
 
 

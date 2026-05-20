@@ -16,6 +16,9 @@ function normalizeLevel(row) {
     sort_order: Number(row.sort_order || 0),
     enabled: Boolean(row.enabled),
     is_default: Boolean(row.is_default),
+    member_level_manual_locked: Boolean(row.member_level_manual_locked),
+    member_level_manual_reason: row.member_level_manual_reason || '',
+    member_level_manual_at: row.member_level_manual_at || null,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -57,18 +60,30 @@ async function getUserMemberLevel(userId) {
   }
 }
 
-async function refreshUserMemberLevel(q, userId) {
+async function refreshUserMemberLevel(q, userId, options = {}) {
   if (!userId) return { changed: false, level: null, stats: { totalSpent: 0, orderCount: 0 } };
   try {
     const levels = await repo.selectEnabledLevels(q);
     const current = await repo.selectUserCurrentLevel(q, userId);
     const stats = await repo.selectUserPaidStats(q, userId);
+    if (current?.member_level_manual_locked && !options.force) {
+      return {
+        changed: false,
+        skipped: true,
+        skippedReason: 'manual_locked',
+        previousLevel: normalizeLevel(current),
+        level: normalizeLevel(current),
+        stats,
+      };
+    }
     const defaultLevel = await repo.selectDefaultLevel(q);
     const best = pickBestLevel(levels, stats) || defaultLevel;
     if (!best?.id) return { changed: false, level: normalizeLevel(current), stats };
     const changed = current?.id !== best.id;
     if (changed) {
-      await repo.updateUserMemberLevel(q, userId, best.id);
+      await repo.updateUserMemberLevelCalculated(q, userId, best.id);
+    } else if (current?.member_level_manual_locked && options.force) {
+      await repo.updateUserMemberLevelCalculated(q, userId, best.id);
     }
     return {
       changed,

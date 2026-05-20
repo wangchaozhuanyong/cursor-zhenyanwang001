@@ -38,11 +38,32 @@ async function findUserIdByPhones(phones) {
 
 async function insertUser(params) {
   const { id, phone, passwordHash, nickname, inviteCode, parentInviteCode } = params;
+  const defaultLevelId = params.memberLevelId || await selectDefaultMemberLevelId();
   await db.query(
-    `INSERT INTO users (id, phone, password_hash, nickname, invite_code, parent_invite_code)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [id, phone ?? null, passwordHash ?? null, nickname, inviteCode, parentInviteCode],
+    `INSERT INTO users (id, phone, password_hash, nickname, invite_code, parent_invite_code, member_level_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [id, phone ?? null, passwordHash ?? null, nickname, inviteCode, parentInviteCode, defaultLevelId],
   );
+}
+
+async function selectDefaultMemberLevelId() {
+  try {
+    const [[row]] = await db.query(
+      `SELECT id
+       FROM member_levels
+       WHERE enabled = 1
+       ORDER BY is_default DESC, sort_order ASC, min_spent ASC, min_orders ASC, created_at ASC
+       LIMIT 1`,
+    );
+    return row?.id || null;
+  } catch (err) {
+    const code = err?.code;
+    const msg = String(err?.message || '');
+    if (code === 'ER_NO_SUCH_TABLE' || code === 'ER_BAD_FIELD_ERROR' || msg.includes('member_levels')) {
+      return null;
+    }
+    throw err;
+  }
 }
 
 async function findUserByPhone(phone) {

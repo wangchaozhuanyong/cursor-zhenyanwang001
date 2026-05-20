@@ -351,27 +351,20 @@ async function createOrder(userId, body) {
       reward_cash_amount,
     }, conn);
     const loyalty = /** @type {any} */ (pricing.loyalty || {});
+    discountAmount = Number(pricing.discountAmount || discountAmount);
+    shippingFee = Number(pricing.shippingFee ?? shippingFee);
+    const finalTaxSnap = pricing.taxSnap || taxSnap;
     const totalAmount = Number(pricing.finalTotal || Math.max(0, rawAmount - discountAmount + shippingFee));
     totalPoints = Number(loyalty.earned_points || totalPoints || 0);
     const discountMeta = {
       flash_sale_discount: flashSaleDiscount,
       full_reduction_discount: fullReductionDiscount,
       coupon_discount: couponDiscountValue,
+      member_level_discount: Number(loyalty.member_level_discount || 0),
+      member_free_shipping: Number(loyalty.member_free_shipping_discount || 0),
       points_discount: Number(loyalty.points_discount_amount || 0),
       reward_cash_discount: Number(loyalty.reward_cash_discount_amount || 0),
-      lines: [
-        flashSaleDiscount > 0 ? { type: 'flash_sale', label: '秒杀优惠', amount: flashSaleDiscount } : null,
-        fullReductionDiscount > 0 ? { type: 'full_reduction', label: '满减优惠', amount: fullReductionDiscount } : null,
-        couponDiscountValue > 0
-          ? { type: 'coupon', label: usedCouponTitle ? `优惠券（${usedCouponTitle}）` : '优惠券抵扣', amount: couponDiscountValue }
-          : null,
-        Number(loyalty.points_discount_amount || 0) > 0
-          ? { type: 'points', label: '积分抵扣', amount: Number(loyalty.points_discount_amount || 0) }
-          : null,
-        Number(loyalty.reward_cash_discount_amount || 0) > 0
-          ? { type: 'reward_cash', label: '返现余额抵扣', amount: Number(loyalty.reward_cash_discount_amount || 0) }
-          : null,
-      ].filter(Boolean),
+      lines: pricing.discount_lines || [],
     };
     const orderId = generateId();
     const orderNo = generateOrderNo();
@@ -400,12 +393,12 @@ async function createOrder(userId, body) {
       addressPostcode: normalizedAddress.postcode,
       addressCountry: normalizedAddress.country,
       paymentMethod: payment_method,
-      taxMode: taxSnap.tax_mode,
-      taxRate: taxSnap.tax_rate,
-      taxLabel: taxSnap.tax_label,
-      taxableAmount: taxSnap.taxable_amount,
-      taxAmount: taxSnap.tax_amount,
-      taxExclusiveAmount: taxSnap.tax_exclusive_amount,
+      taxMode: finalTaxSnap.tax_mode,
+      taxRate: finalTaxSnap.tax_rate,
+      taxLabel: finalTaxSnap.tax_label,
+      taxableAmount: finalTaxSnap.taxable_amount,
+      taxAmount: finalTaxSnap.tax_amount,
+      taxExclusiveAmount: finalTaxSnap.tax_exclusive_amount,
       pointsUsed: Number(loyalty.points_used || 0),
       pointsDiscountAmount: Number(loyalty.points_discount_amount || 0),
       rewardCashUsed: Number(loyalty.reward_cash_used || 0),

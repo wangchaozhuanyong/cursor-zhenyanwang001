@@ -297,6 +297,7 @@ router.delete('/member-levels/:id', adminAuth, memberLevelFeature, requirePermis
 router.post('/member-levels/recalculate', adminAuth, memberLevelFeature, requirePermission('member_level.manage'), memberLevelCtrl.recalcAllUserLevels);
 router.post('/member-levels/recalculate/:userId', adminAuth, memberLevelFeature, requirePermission('member_level.manage'), memberLevelCtrl.recalcUserLevel);
 router.put('/users/:userId/member-level', adminAuth, memberLevelFeature, requirePermission('member_level.manage'), memberLevelCtrl.assignUserLevel);
+router.delete('/users/:userId/member-level-lock', adminAuth, memberLevelFeature, requirePermission('member_level.manage'), memberLevelCtrl.unlockUserLevel);
 
 /* ---- Users ---- */
 router.get('/users/export', adminAuth, requirePermission('user.view'), userCtrl.exportCsv);

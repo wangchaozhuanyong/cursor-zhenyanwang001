@@ -10,8 +10,11 @@ const malaysiaLocalProvider = require('../providers/malaysiaLocalProvider');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const crypto = require('crypto');
-const telegramService = require('../../telegram/telegram.service');
 const payDb = payRepo.getPool();
+
+function getTelegramApi() {
+  return /** @type {any} */ (require('../../telegram')).api || {};
+}
 
 function getOrderApi() {
   return /** @type {any} */ (require('../../order')).api || {};
@@ -79,7 +82,7 @@ function requireMyinvoisApi(name) {
 
 async function notifyTelegramOrderPaid(orderId, source) {
   try {
-    await telegramService.notifyOrderPaid(orderId, source);
+    await getTelegramApi().notifyOrderPaid(orderId, source);
   } catch (e) {
     console.error('[Telegram] notify order paid failed:', e?.message || e);
   }

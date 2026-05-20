@@ -17,6 +17,7 @@ const requireAnyPermission = adminAuth.requireAnyPermission;
 const { userQueryLimiter } = require('../../../middleware/rateLimiters');
 const { paginationCap } = require('../../../middleware/paginationCap');
 const { validate } = require('../../../middleware/validate');
+const { requireSiteCapability } = require('../../../middleware/siteCapabilityGuard');
 
 const authCtrl = require('../controller/adminAuth.controller');
 const dashboardCtrl = require('../controller/adminDashboard.controller');
@@ -42,16 +43,16 @@ const settingsCtrl = require('../controller/adminSettings.controller');
 const themeCtrl = require('../controller/adminTheme.controller');
 const exportCtrl = require('../controller/adminExport.controller');
 const recycleBinCtrl = require('../controller/adminRecycleBin.controller');
-const adminPayCtrl = require('../../payment/controller/adminPayments.controller');
-const telegramCtrl = require('../../telegram/telegram.controller');
-const logisticsCtrl = require('../../logistics/controller/logistics.controller');
+const adminPayCtrl = require('../controller/adminPayments.controller');
+const telegramCtrl = require('../controller/adminTelegram.controller');
+const logisticsCtrl = require('../controller/adminLogistics.controller');
 const inventoryCtrl = require('../controller/adminInventory.controller');
 const activityCtrl = require('../controller/adminActivity.controller');
 const homeOpsCtrl = require('../controller/adminHomeOps.controller');
 const memberLevelCtrl = require('../controller/adminMemberLevel.controller');
 const paySchemas = require('../../payment/payments.schemas');
 const productSchemas = require('../schemas/adminProduct.schemas');
-const userUploadCtrl = require('../../user/controller/upload.controller');
+const adminUploadCtrl = require('../controller/adminUpload.controller');
 
 const uploadCsv = multer({
   storage: multer.memoryStorage(),
@@ -155,12 +156,11 @@ router.post(
   productCtrl.batchUpdateStatus,
 );
 /** 管理端图片上传：要求具备商品或站点配置权限，避免低权限账号滥用上传通道 */
-const userUploadPresignCtrl = require('../../user/controller/uploadPresign.controller');
 const uploadPermission = requireAnyPermission(['product.manage', 'settings.manage']);
-router.post('/upload/ticket', adminAuth, uploadPermission, userUploadPresignCtrl.createTicket);
-router.post('/upload/complete', adminAuth, uploadPermission, userUploadPresignCtrl.completeUpload);
-router.post('/upload', adminAuth, uploadPermission, userUploadCtrl.uploadMiddleware, userUploadCtrl.uploadFile);
-router.post('/upload/multiple', adminAuth, uploadPermission, userUploadCtrl.uploadMultiple, userUploadCtrl.uploadFiles);
+router.post('/upload/ticket', adminAuth, uploadPermission, adminUploadCtrl.createTicket);
+router.post('/upload/complete', adminAuth, uploadPermission, adminUploadCtrl.completeUpload);
+router.post('/upload', adminAuth, uploadPermission, adminUploadCtrl.uploadMiddleware, adminUploadCtrl.uploadFile);
+router.post('/upload/multiple', adminAuth, uploadPermission, adminUploadCtrl.uploadMultiple, adminUploadCtrl.uploadFiles);
 
 /* ---- Product Tags ---- */
 router.get('/product-tags', adminAuth, requireAnyPermission(['tag.manage', 'product.manage']), productCtrl.listTags);
@@ -169,10 +169,12 @@ router.put('/product-tags/:id', adminAuth, requirePermission('tag.manage'), prod
 router.delete('/product-tags/:id', adminAuth, requirePermission('tag.manage'), productCtrl.removeTag);
 
 /* ---- Payments（支付管理）---- */
-router.get('/payments/channels', adminAuth, requirePermission('payment.manage'), adminPayCtrl.listChannels);
+const onlinePaymentFeature = requireSiteCapability('onlinePaymentEnabled', '本站未启用在线支付');
+router.get('/payments/channels', adminAuth, onlinePaymentFeature, requirePermission('payment.manage'), adminPayCtrl.listChannels);
 router.put(
   '/payments/channels/:id',
   adminAuth,
+  onlinePaymentFeature,
   requirePermission('payment.manage'),
   validate({ params: paySchemas.adminChannelIdParamSchema, body: paySchemas.updateChannelBodySchema }),
   adminPayCtrl.updateChannel,
@@ -180,6 +182,7 @@ router.put(
 router.get(
   '/payments/orders',
   adminAuth,
+  onlinePaymentFeature,
   requirePermission('payment.manage'),
   validate({ query: paySchemas.listAdminQuerySchema }),
   adminPayCtrl.listPaymentOrders,
@@ -187,6 +190,7 @@ router.get(
 router.get(
   '/payments/events',
   adminAuth,
+  onlinePaymentFeature,
   requirePermission('payment.manage'),
   validate({ query: paySchemas.listAdminQuerySchema }),
   adminPayCtrl.listPaymentEvents,
@@ -194,6 +198,7 @@ router.get(
 router.post(
   '/payments/orders/:orderId/mark-paid',
   adminAuth,
+  onlinePaymentFeature,
   requirePermission('payment.manage'),
   validate({ params: paySchemas.adminOrderIdParamSchema, body: paySchemas.markPaidBodySchema }),
   adminPayCtrl.markOrderPaid,
@@ -201,6 +206,7 @@ router.post(
 router.post(
   '/payments/orders/:orderId/refund',
   adminAuth,
+  onlinePaymentFeature,
   requirePermission('payment.manage'),
   validate({ params: paySchemas.adminOrderIdParamSchema, body: paySchemas.refundBodySchema }),
   adminPayCtrl.recordRefund,
@@ -208,6 +214,7 @@ router.post(
 router.post(
   '/payments/events/:eventId/replay',
   adminAuth,
+  onlinePaymentFeature,
   requirePermission('payment.manage'),
   validate({ params: paySchemas.adminEventIdParamSchema }),
   adminPayCtrl.replayEvent,
@@ -215,6 +222,7 @@ router.post(
 router.get(
   '/payments/reconciliations',
   adminAuth,
+  onlinePaymentFeature,
   requirePermission('payment.manage'),
   validate({ query: paySchemas.listAdminQuerySchema }),
   adminPayCtrl.listReconciliations,
@@ -222,6 +230,7 @@ router.get(
 router.post(
   '/payments/reconciliations',
   adminAuth,
+  onlinePaymentFeature,
   requirePermission('payment.manage'),
   validate({ body: paySchemas.createReconciliationBodySchema }),
   adminPayCtrl.createReconciliation,
@@ -242,18 +251,20 @@ router.post('/orders/batch-ship', adminAuth, requirePermission('order.ship'), or
 router.post('/orders/:id/logistics/refresh', adminAuth, requirePermission('order.ship'), logisticsCtrl.refreshOrderTracking);
 
 /* ---- Inventory Center（SKU 维度）---- */
-router.get('/inventory/summary', adminAuth, requirePermission('inventory.manage'), inventoryCtrl.summary);
-router.get('/inventory/skus', adminAuth, requirePermission('inventory.manage'), inventoryCtrl.listSkus);
-router.get('/inventory/records', adminAuth, requirePermission('inventory.manage'), inventoryCtrl.listRecords);
-router.get('/inventory/export', adminAuth, requirePermission('inventory.manage'), inventoryCtrl.exportSkusCsv);
-router.get('/inventory/records/export', adminAuth, requirePermission('inventory.manage'), inventoryCtrl.exportRecordsCsv);
-router.post('/inventory/batch-warning-threshold', adminAuth, requirePermission('inventory.manage'), inventoryCtrl.batchWarningThreshold);
-router.post('/inventory/batch-adjust', adminAuth, requirePermission('inventory.manage'), inventoryCtrl.batchAdjust);
-router.post('/inventory/skus/:variantId/adjust', adminAuth, requirePermission('inventory.manage'), inventoryCtrl.adjustSkuStock);
-router.patch('/inventory/skus/:variantId/warning-threshold', adminAuth, requirePermission('inventory.manage'), inventoryCtrl.updateSkuWarningThreshold);
+const inventoryFeature = requireSiteCapability('inventoryEnabled', '本站未启用库存功能');
+router.get('/inventory/summary', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.summary);
+router.get('/inventory/skus', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.listSkus);
+router.get('/inventory/records', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.listRecords);
+router.get('/inventory/export', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.exportSkusCsv);
+router.get('/inventory/records/export', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.exportRecordsCsv);
+router.post('/inventory/batch-warning-threshold', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.batchWarningThreshold);
+router.post('/inventory/batch-adjust', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.batchAdjust);
+router.post('/inventory/skus/:variantId/adjust', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.adjustSkuStock);
+router.patch('/inventory/skus/:variantId/warning-threshold', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.updateSkuWarningThreshold);
 router.post(
   '/inventory/products/:productId/adjust',
   adminAuth,
+  inventoryFeature,
   requirePermission('inventory.manage'),
   inventoryCtrl.adjustProductStockCompat,
 );
@@ -278,13 +289,14 @@ router.put('/home-ops/nav-items/:id', adminAuth, requirePermission('home_ops.man
 router.delete('/home-ops/nav-items/:id', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.deleteNavItem);
 
 /* ---- Member Levels ---- */
-router.get('/member-levels', adminAuth, requirePermission('member_level.manage'), memberLevelCtrl.list);
-router.post('/member-levels', adminAuth, requirePermission('member_level.manage'), memberLevelCtrl.create);
-router.put('/member-levels/:id', adminAuth, requirePermission('member_level.manage'), memberLevelCtrl.update);
-router.delete('/member-levels/:id', adminAuth, requirePermission('member_level.manage'), memberLevelCtrl.remove);
-router.post('/member-levels/recalculate', adminAuth, requirePermission('member_level.manage'), memberLevelCtrl.recalcAllUserLevels);
-router.post('/member-levels/recalculate/:userId', adminAuth, requirePermission('member_level.manage'), memberLevelCtrl.recalcUserLevel);
-router.put('/users/:userId/member-level', adminAuth, requirePermission('member_level.manage'), memberLevelCtrl.assignUserLevel);
+const memberLevelFeature = requireSiteCapability('memberLevelEnabled', '本站未启用会员等级功能');
+router.get('/member-levels', adminAuth, memberLevelFeature, requirePermission('member_level.manage'), memberLevelCtrl.list);
+router.post('/member-levels', adminAuth, memberLevelFeature, requirePermission('member_level.manage'), memberLevelCtrl.create);
+router.put('/member-levels/:id', adminAuth, memberLevelFeature, requirePermission('member_level.manage'), memberLevelCtrl.update);
+router.delete('/member-levels/:id', adminAuth, memberLevelFeature, requirePermission('member_level.manage'), memberLevelCtrl.remove);
+router.post('/member-levels/recalculate', adminAuth, memberLevelFeature, requirePermission('member_level.manage'), memberLevelCtrl.recalcAllUserLevels);
+router.post('/member-levels/recalculate/:userId', adminAuth, memberLevelFeature, requirePermission('member_level.manage'), memberLevelCtrl.recalcUserLevel);
+router.put('/users/:userId/member-level', adminAuth, memberLevelFeature, requirePermission('member_level.manage'), memberLevelCtrl.assignUserLevel);
 
 /* ---- Users ---- */
 router.get('/users/export', adminAuth, requirePermission('user.view'), userCtrl.exportCsv);
@@ -305,7 +317,7 @@ router.put('/users/:id/account-status', adminAuth, requirePermission('user.updat
 router.put('/users/:id/restrictions', adminAuth, requirePermission('user.update'), userCtrl.updateRestrictions);
 router.get('/users/:id/status-overview', adminAuth, requirePermission('user.view'), userCtrl.getStatusOverview);
 router.put('/users/:id/subordinate', adminAuth, requirePermission('user.update'), userCtrl.updateSubordinate);
-router.put('/users/:userId/points', adminAuth, requirePermission('user.points'), userCtrl.adjustPoints);
+router.put('/users/:userId/points', adminAuth, requireSiteCapability('pointsEnabled', '本站未启用积分功能'), requirePermission('user.points'), userCtrl.adjustPoints);
 
 /* ---- Categories ---- */
 router.get('/categories', adminAuth, requirePermission('category.manage'), categoryCtrl.list);
@@ -315,13 +327,14 @@ router.put('/categories/:id', adminAuth, requirePermission('category.manage'), c
 router.delete('/categories/:id', adminAuth, requirePermission('category.manage'), categoryCtrl.remove);
 
 /* ---- Coupons ---- */
-router.get('/coupons', adminAuth, requirePermission('coupon.view'), couponCtrl.list);
-router.post('/coupons', adminAuth, requirePermission('coupon.manage'), couponCtrl.create);
-router.put('/coupons/:id', adminAuth, requirePermission('coupon.manage'), couponCtrl.update);
-router.delete('/coupons/:id', adminAuth, requirePermission('coupon.manage'), couponCtrl.remove);
-router.post('/coupons/:id/issue-by-tag', adminAuth, requirePermission('coupon.manage'), couponCtrl.issueByTag);
-router.get('/coupon-records', adminAuth, requirePermission('coupon.view'), couponCtrl.listAllRecords);
-router.get('/coupons/:couponId/records', adminAuth, requirePermission('coupon.view'), couponCtrl.listRecordsByCoupon);
+const couponFeature = requireSiteCapability('couponEnabled', '本站未启用优惠券功能');
+router.get('/coupons', adminAuth, couponFeature, requirePermission('coupon.view'), couponCtrl.list);
+router.post('/coupons', adminAuth, couponFeature, requirePermission('coupon.manage'), couponCtrl.create);
+router.put('/coupons/:id', adminAuth, couponFeature, requirePermission('coupon.manage'), couponCtrl.update);
+router.delete('/coupons/:id', adminAuth, couponFeature, requirePermission('coupon.manage'), couponCtrl.remove);
+router.post('/coupons/:id/issue-by-tag', adminAuth, couponFeature, requirePermission('coupon.manage'), couponCtrl.issueByTag);
+router.get('/coupon-records', adminAuth, couponFeature, requirePermission('coupon.view'), couponCtrl.listAllRecords);
+router.get('/coupons/:couponId/records', adminAuth, couponFeature, requirePermission('coupon.view'), couponCtrl.listRecordsByCoupon);
 
 /* ---- Returns ---- */
 router.get('/returns', adminAuth, requirePermission('return.view'), returnCtrl.list);
@@ -337,19 +350,20 @@ const reviewModerate = requireAnyPermission(['review.moderate', 'review.manage']
 const reviewFeature = requireAnyPermission(['review.feature', 'review.manage']);
 const reviewDelete = requireAnyPermission(['review.delete', 'review.manage']);
 
-router.get('/reviews', adminAuth, reviewView, reviewCtrl.list);
-router.get('/reviews/:id', adminAuth, reviewView, reviewCtrl.getDetail);
-router.put('/reviews/:id/toggle', adminAuth, reviewModerate, reviewCtrl.toggleVisibility);
-router.put('/reviews/:id/approve', adminAuth, reviewModerate, reviewCtrl.approve);
-router.put('/reviews/:id/reject', adminAuth, reviewModerate, reviewCtrl.reject);
-router.put('/reviews/:id/feature', adminAuth, reviewFeature, reviewCtrl.toggleFeatured);
-router.put('/reviews/:id/reply', adminAuth, reviewReply, reviewCtrl.reply);
-router.put('/reviews/:id/complaint', adminAuth, reviewModerate, reviewCtrl.updateComplaint);
-router.delete('/reviews/:id', adminAuth, reviewDelete, reviewCtrl.remove);
-router.put('/reviews/:id/restore', adminAuth, reviewDelete, reviewCtrl.restore);
-router.delete('/reviews/:id/permanent', adminAuth, reviewDelete, reviewCtrl.permanentDelete);
-router.post('/reviews/batch-hide', adminAuth, reviewModerate, reviewCtrl.batchHide);
-router.post('/reviews/batch-delete', adminAuth, reviewDelete, reviewCtrl.batchDelete);
+const reviewFeatureEnabled = requireSiteCapability('reviewEnabled', '本站未启用评价功能');
+router.get('/reviews', adminAuth, reviewFeatureEnabled, reviewView, reviewCtrl.list);
+router.get('/reviews/:id', adminAuth, reviewFeatureEnabled, reviewView, reviewCtrl.getDetail);
+router.put('/reviews/:id/toggle', adminAuth, reviewFeatureEnabled, reviewModerate, reviewCtrl.toggleVisibility);
+router.put('/reviews/:id/approve', adminAuth, reviewFeatureEnabled, reviewModerate, reviewCtrl.approve);
+router.put('/reviews/:id/reject', adminAuth, reviewFeatureEnabled, reviewModerate, reviewCtrl.reject);
+router.put('/reviews/:id/feature', adminAuth, reviewFeatureEnabled, reviewFeature, reviewCtrl.toggleFeatured);
+router.put('/reviews/:id/reply', adminAuth, reviewFeatureEnabled, reviewReply, reviewCtrl.reply);
+router.put('/reviews/:id/complaint', adminAuth, reviewFeatureEnabled, reviewModerate, reviewCtrl.updateComplaint);
+router.delete('/reviews/:id', adminAuth, reviewFeatureEnabled, reviewDelete, reviewCtrl.remove);
+router.put('/reviews/:id/restore', adminAuth, reviewFeatureEnabled, reviewDelete, reviewCtrl.restore);
+router.delete('/reviews/:id/permanent', adminAuth, reviewFeatureEnabled, reviewDelete, reviewCtrl.permanentDelete);
+router.post('/reviews/batch-hide', adminAuth, reviewFeatureEnabled, reviewModerate, reviewCtrl.batchHide);
+router.post('/reviews/batch-delete', adminAuth, reviewFeatureEnabled, reviewDelete, reviewCtrl.batchDelete);
 
 /* ---- Banners ---- */
 router.get('/banners', adminAuth, requirePermission('banner.manage'), bannerCtrl.list);
@@ -385,18 +399,21 @@ router.get('/rewards/records', adminAuth, requirePermission('referral.manage'), 
 /* ---- Settings: referral / points / site / content ---- */
 router.get('/referral-rules', adminAuth, requirePermission('referral.manage'), settingsCtrl.listReferral);
 router.put('/referral-rules/:id', adminAuth, requirePermission('referral.manage'), settingsCtrl.updateReferral);
-router.get('/points/rules', adminAuth, requirePermission('points.manage'), settingsCtrl.listPoints);
-router.put('/points/rules/:id', adminAuth, requirePermission('points.manage'), settingsCtrl.updatePoints);
-router.get('/points/settings', adminAuth, requirePermission('points.manage'), pointsCtrl.getSettings);
-router.put('/points/settings', adminAuth, requirePermission('points.manage'), pointsCtrl.updateSettings);
-router.get('/points/product-rules', adminAuth, requirePermission('points.manage'), pointsCtrl.listProductRules);
-router.post('/points/product-rules', adminAuth, requirePermission('points.manage'), pointsCtrl.createProductRule);
-router.put('/points/product-rules/:id', adminAuth, requirePermission('points.manage'), pointsCtrl.updateProductRule);
-router.delete('/points/product-rules/:id', adminAuth, requirePermission('points.manage'), pointsCtrl.deleteProductRule);
-router.get('/points/records', adminAuth, requirePermission('points.manage'), pointsCtrl.listRecords);
-router.post('/users/:userId/points', adminAuth, requirePermission('user.points'), userCtrl.adjustPoints);
+const pointsFeature = requireSiteCapability('pointsEnabled', '本站未启用积分功能');
+router.get('/points/rules', adminAuth, pointsFeature, requirePermission('points.manage'), settingsCtrl.listPoints);
+router.put('/points/rules/:id', adminAuth, pointsFeature, requirePermission('points.manage'), settingsCtrl.updatePoints);
+router.get('/points/settings', adminAuth, pointsFeature, requirePermission('points.manage'), pointsCtrl.getSettings);
+router.put('/points/settings', adminAuth, pointsFeature, requirePermission('points.manage'), pointsCtrl.updateSettings);
+router.get('/points/product-rules', adminAuth, pointsFeature, requirePermission('points.manage'), pointsCtrl.listProductRules);
+router.post('/points/product-rules', adminAuth, pointsFeature, requirePermission('points.manage'), pointsCtrl.createProductRule);
+router.put('/points/product-rules/:id', adminAuth, pointsFeature, requirePermission('points.manage'), pointsCtrl.updateProductRule);
+router.delete('/points/product-rules/:id', adminAuth, pointsFeature, requirePermission('points.manage'), pointsCtrl.deleteProductRule);
+router.get('/points/records', adminAuth, pointsFeature, requirePermission('points.manage'), pointsCtrl.listRecords);
+router.post('/users/:userId/points', adminAuth, pointsFeature, requirePermission('user.points'), userCtrl.adjustPoints);
 router.get('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.getSite);
 router.put('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.updateSite);
+router.get('/settings/features', adminAuth, requirePermission('settings.manage'), settingsCtrl.getFeatures);
+router.put('/settings/features', adminAuth, requirePermission('settings.manage'), settingsCtrl.updateFeatures);
 router.get('/telegram/status', adminAuth, requirePermission('settings.manage'), telegramCtrl.getStatus);
 router.get('/telegram/logs', adminAuth, requirePermission('settings.manage'), telegramCtrl.listLogs);
 router.post('/telegram/test', adminAuth, requirePermission('settings.manage'), telegramCtrl.testSend);
@@ -414,12 +431,13 @@ router.post('/content', adminAuth, requirePermission('content.manage'), settings
 router.put('/content/:id', adminAuth, requirePermission('content.manage'), settingsCtrl.updateContent);
 
 /* ---- Shipping ---- */
-router.get('/shipping/templates', adminAuth, requirePermission('shipping.manage'), shippingCtrl.listTemplates);
-router.post('/shipping/templates', adminAuth, requirePermission('shipping.manage'), shippingCtrl.createTemplate);
-router.put('/shipping/templates/:id', adminAuth, requirePermission('shipping.manage'), shippingCtrl.updateTemplate);
-router.delete('/shipping/templates/:id', adminAuth, requirePermission('shipping.manage'), shippingCtrl.removeTemplate);
-router.get('/shipping/settings', adminAuth, requirePermission('shipping.manage'), shippingCtrl.getSettings);
-router.put('/shipping/settings', adminAuth, requirePermission('shipping.manage'), shippingCtrl.updateSettings);
+const shippingFeature = requireSiteCapability('shippingEnabled', '本站未启用配送功能');
+router.get('/shipping/templates', adminAuth, shippingFeature, requirePermission('shipping.manage'), shippingCtrl.listTemplates);
+router.post('/shipping/templates', adminAuth, shippingFeature, requirePermission('shipping.manage'), shippingCtrl.createTemplate);
+router.put('/shipping/templates/:id', adminAuth, shippingFeature, requirePermission('shipping.manage'), shippingCtrl.updateTemplate);
+router.delete('/shipping/templates/:id', adminAuth, shippingFeature, requirePermission('shipping.manage'), shippingCtrl.removeTemplate);
+router.get('/shipping/settings', adminAuth, shippingFeature, requirePermission('shipping.manage'), shippingCtrl.getSettings);
+router.put('/shipping/settings', adminAuth, shippingFeature, requirePermission('shipping.manage'), shippingCtrl.updateSettings);
 
 /* ---- Reports / 数据中心 ---- */
 router.get('/reports/export', adminAuth, requirePermission('report.export'), reportCtrl.exportByType);

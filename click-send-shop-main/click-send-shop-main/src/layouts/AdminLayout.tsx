@@ -56,6 +56,8 @@ import { canAccessAdminPath, getFirstAllowedAdminPath } from "@/config/adminNavA
 import { AdminConfirmProvider } from "@/modules/admin/context/AdminConfirmContext";
 import AdminSiteLogo from "@/components/admin/AdminSiteLogo";
 import AdminOrderVoiceNotifier from "@/modules/admin/components/AdminOrderVoiceNotifier";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import type { SiteCapabilities } from "@/types/siteCapabilities";
 
 type NavPerm = string | { anyOf: string[] };
 
@@ -207,6 +209,7 @@ const navItemsRaw: NavItem[] = [
     path: "/admin/settings/site",
     children: [
       { icon: Settings, labelKey: "nav.siteSettings", path: "/admin/settings/site", permission: "settings.manage" },
+      { icon: Settings, labelKey: "nav.featureSettings", path: "/admin/settings/features", permission: "settings.manage" },
       { icon: Bell, labelKey: "nav.telegramNotifications", path: "/admin/settings/telegram", permission: "settings.manage" },
       { icon: Truck, labelKey: "nav.shipping", path: "/admin/settings/shipping", permission: "shipping.manage" },
       { icon: ScrollText, labelKey: "nav.auditLogs", path: "/admin/logs", permission: "audit.view" },
@@ -237,11 +240,26 @@ function filterNav(
   items: NavItem[],
   can: (c: string) => boolean,
   canAny: (a: string[]) => boolean,
+  capabilities: SiteCapabilities,
 ): NavItem[] {
+  const hiddenByCapability = (path?: string) => {
+    if (!path) return false;
+    if (path.includes("/payments/")) return !capabilities.onlinePaymentEnabled;
+    if (path.includes("/marketing/coupons") || path.includes("/reports/coupons")) return !capabilities.couponEnabled;
+    if (path.includes("/marketing/points")) return !capabilities.pointsEnabled;
+    if (path.includes("/member-levels")) return !capabilities.memberLevelEnabled;
+    if (path.includes("/reviews")) return !capabilities.reviewEnabled;
+    if (path.includes("/inventory") || path.includes("/reports/inventory")) return !capabilities.inventoryEnabled;
+    if (path.includes("/settings/shipping")) return !capabilities.shippingEnabled;
+    if (path.includes("/support-download")) return !capabilities.customerServiceDownloadEnabled;
+    if (path.includes("/reports/traffic")) return !capabilities.trafficAnalyticsEnabled;
+    return false;
+  };
   const out: NavItem[] = [];
   for (const item of items) {
+    if (hiddenByCapability(item.path)) continue;
     if (item.children?.length) {
-      const children = item.children.filter((c) => passNavPerm(c.permission, can, canAny));
+      const children = item.children.filter((c) => !hiddenByCapability(c.path) && passNavPerm(c.permission, can, canAny));
       if (children.length === 0) continue;
       if (item.permission !== undefined && !passNavPerm(item.permission, can, canAny)) continue;
       out.push({ ...item, children });
@@ -431,10 +449,11 @@ function AdminLayoutContent() {
 
   const can = useAdminPermissionStore((s) => s.can);
   const canAny = useAdminPermissionStore((s) => s.canAny);
+  const capabilities = useSiteCapabilities();
 
   const navItems = useMemo(
-    () => resolveNavLabels(filterNav(navItemsRaw, can, canAny), t),
-    [can, canAny, t],
+    () => resolveNavLabels(filterNav(navItemsRaw, can, canAny, capabilities), t),
+    [can, canAny, capabilities, t],
   );
 
   useEffect(() => {

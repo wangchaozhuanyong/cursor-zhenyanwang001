@@ -10,6 +10,7 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import { useCartStore } from "@/stores/useCartStore";
 import * as orderService from "@/services/orderService";
 import { getBuyerOrderStatusText, hasPendingReview, matchOrderTab } from "@/utils/orderBuyerStatus";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 
 const TABS: Array<{ key: OrderTab; label: string }> = [
   { key: "all", label: "全部" },
@@ -88,6 +89,8 @@ export default function Orders() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = parseTab(searchParams);
+  const capabilities = useSiteCapabilities();
+  const tabs = useMemo(() => TABS.filter((t) => t.key !== "pending_review" || capabilities.reviewEnabled), [capabilities.reviewEnabled]);
 
   const { orders, loading, error, loadOrders, cancelOrder, confirmReceive } = useOrderStore();
   const { addToCart, clearBuyNow, setSelectAll } = useCartStore();
@@ -195,7 +198,7 @@ export default function Orders() {
       <main className="mx-auto w-full px-[var(--store-page-x)] py-[var(--store-page-y)] sm:max-w-lg sm:p-4">
         <div className="sticky top-0 z-10 -mx-[var(--store-page-x)] mb-3 border-b border-[var(--theme-border)] bg-background px-[var(--store-page-x)] py-2 sm:-mx-4 sm:px-4">
           <div className="flex gap-2 overflow-x-auto pb-1">
-            {TABS.map((t) => {
+            {tabs.map((t) => {
               const active = t.key === tab;
               const count = tabCount(currentSummary, t.key);
               return (

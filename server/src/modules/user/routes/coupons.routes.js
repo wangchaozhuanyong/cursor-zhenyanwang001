@@ -3,10 +3,12 @@ const ctrl = require('../controller/coupon.controller');
 const auth = require('../../../middleware/auth');
 const { guardByAction } = require('../../../middleware/accountStatusGuard');
 const { validate } = require('../../../middleware/validate');
+const { requireSiteCapability } = require('../../../middleware/siteCapabilityGuard');
 const { claimCouponBodySchema } = require('../schemas/user.schemas');
 
 const router = Router();
 
+router.use(requireSiteCapability('couponEnabled', '本站未启用优惠券功能'));
 router.get('/mine', auth, ctrl.getUserCoupons);
 router.get('/available', auth, ctrl.getAvailableCoupons);
 router.post('/claim', auth, guardByAction('coupon'), validate({ body: claimCouponBodySchema }), ctrl.claimCoupon);

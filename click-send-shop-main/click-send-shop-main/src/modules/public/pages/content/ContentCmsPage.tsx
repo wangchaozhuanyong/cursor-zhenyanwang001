@@ -7,6 +7,7 @@ import ContactUsContent from "./ContactUsContent";
 import SeoHead from "@/components/SeoHead";
 import PageHeader from "@/components/PageHeader";
 import { buildCanonical, stripHtml, truncateText } from "@/utils/seo";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
 
 const CONTACT_US_SLUG = "contact-us";
 
@@ -23,6 +24,7 @@ function sanitizeCmsHtml(html: string): string {
 export default function ContentCmsPage() {
   const { slug = "" } = useParams<{ slug: string }>();
   const goBack = useGoBack();
+  const siteInfo = useSiteInfo();
   const [page, setPage] = useState<ContentPage | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,12 +53,13 @@ export default function ContentCmsPage() {
 
   const pageSeoTitle = String((page as any)?.seoTitle || (page as any)?.seo_title || "").trim();
   const pageSeoDescription = String((page as any)?.seoDescription || (page as any)?.seo_description || "").trim();
-  const title = pageSeoTitle || (page?.title ? `${page.title}｜大马通` : "内容页面｜大马通");
+  const siteName = siteInfo.siteName || "官方商城";
+  const title = pageSeoTitle || (page?.title ? `${page.title}｜${siteName}` : `内容页面｜${siteName}`);
   const description = useMemo(() => {
     if (pageSeoDescription) return truncateText(pageSeoDescription, 150);
     if (page?.content) return truncateText(stripHtml(page.content), 150);
-    return "查看大马通平台内容说明，了解相关服务流程、使用规则和注意事项。";
-  }, [page?.content, pageSeoDescription]);
+    return siteInfo.siteDescription || "本平台提供商品、服务与客户支持信息。";
+  }, [page?.content, pageSeoDescription, siteInfo.siteDescription]);
   const pageStatus = String((page as any)?.status || "").toLowerCase();
   const isNoindex = Boolean((page as any)?.noindex) || ["draft", "hidden", "private"].includes(pageStatus);
 

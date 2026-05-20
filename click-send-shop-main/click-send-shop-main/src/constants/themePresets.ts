@@ -1,10 +1,10 @@
 import type { ThemeConfig, ThemeSkin } from "@/types/theme";
 
-/** 大马通默认生活服务绿 — 全局默认皮肤 */
+/** 默认生活服务绿 — 全局默认皮肤 */
 export const DEFAULT_SKIN_ID = "default_life_green";
 
 export const DEFAULT_LIFE_GREEN_CONFIG: ThemeConfig = {
-  skinName: "大马通默认生活服务绿",
+  skinName: "默认生活服务绿",
   bgColor: "#F5F7FA",
   surfaceColor: "#FFFFFF",
   primaryColor: "#00B14F",
@@ -46,7 +46,7 @@ export const CLASSIC_GOLD_BLACK_CONFIG = DEFAULT_LIFE_GREEN_CONFIG;
 /** 仅当数据库无皮肤 / 接口失败时的兜底（单套），不会批量恢复历史 6 套预设 */
 export const FALLBACK_THEME_SKIN: ThemeSkin = {
   id: DEFAULT_SKIN_ID,
-  name: "大马通默认生活服务绿",
+  name: "默认生活服务绿",
   sceneTag: "life_service",
   clientEnabled: true,
   config: DEFAULT_LIFE_GREEN_CONFIG,

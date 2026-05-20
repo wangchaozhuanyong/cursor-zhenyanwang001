@@ -1,5 +1,6 @@
 const repo = require('../repository/health.repository');
 const { getRedisUrl, pingRedis } = require('../../../config/redis');
+const { getInstanceInfo } = require('../../../config/instance');
 
 function isRedisConfigured() {
   return Boolean(
@@ -26,6 +27,7 @@ function getLivenessPayload() {
     uptime: Math.floor(process.uptime()),
     node: process.version,
     env: process.env.NODE_ENV || 'development',
+    instance: getInstanceInfo(),
   };
 }
 
@@ -35,7 +37,7 @@ async function getReadinessPayload() {
     await repo.ping();
     database = true;
   } catch {
-    return { ok: false, data: { database: false, redis: null } };
+    return { ok: false, data: { database: false, redis: null, instance: getInstanceInfo() } };
   }
 
   const redis = await getRedisReadiness();
@@ -49,6 +51,7 @@ async function getReadinessPayload() {
         database: true,
         redis: false,
         redisConfigured: true,
+        instance: getInstanceInfo(),
       },
     };
   }
@@ -60,6 +63,7 @@ async function getReadinessPayload() {
       database: true,
       redis: redis.skipped ? 'not_configured' : redis.ok,
       ...(redis.configured && redis.latencyMs != null ? { redisLatencyMs: redis.latencyMs } : {}),
+      instance: getInstanceInfo(),
     },
   };
 }

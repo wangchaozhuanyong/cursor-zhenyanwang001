@@ -26,7 +26,6 @@ import MarketingPromotionBannerSection from "./MarketingPromotionBannerSection";
 import type { UserCoupon } from "@/types/coupon";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import StoreTabHeader from "@/components/store/StoreTabHeader";
-import HomeInstallHint from "@/components/store/HomeInstallHint";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import { toast } from "sonner";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -80,10 +79,12 @@ export default function MemberHome() {
   const isPremiumLayout = homeLayout === "premium";
   const isDealLayout = homeLayout === "deal";
   const isMagazineLayout = homeLayout === "magazine";
-  const seoTitle = siteInfo.seoTitle || "大马通｜马来西亚华人一站式生活服务与精选好物";
+  const siteName = siteInfo.siteName || "官方商城";
+  const seoTitle = siteInfo.seoTitle || siteName;
   const seoDescription =
     siteInfo.seoDescription ||
-    "大马通面向马来西亚华人用户，提供签证咨询、留学申请、第二家园、商业装修、本地生活服务与合规精选好物信息，支持中文客服沟通，适用地区以马来西亚本地为主。";
+    siteInfo.siteDescription ||
+    "本平台提供商品、服务与客户支持信息。";
   const seoImage = siteInfo.ogImageUrl || siteInfo.defaultOgImageUrl || siteInfo.logoUrl || "/og-default.png";
 
   useEffect(() => {
@@ -147,14 +148,13 @@ export default function MemberHome() {
         ogDescription={seoDescription}
         ogImage={seoImage}
         googleSiteVerification={siteInfo.googleSiteVerification}
-        ogSiteName={siteInfo.siteName || "大马通"}
+        ogSiteName={siteName}
         ogType="website"
         jsonLd={[
           { id: "website", data: buildWebsiteJsonLd(siteInfo) },
           { id: "organization", data: buildOrganizationJsonLd(siteInfo) },
         ]}
       />
-      <HomeInstallHint />
       <StoreTabHeader searchMode="navigate" />
       <main className={HOME_PAGE_MAIN_CLASS}>
         {(isHomeModuleEnabled(homeModules, "banner", "member") ||

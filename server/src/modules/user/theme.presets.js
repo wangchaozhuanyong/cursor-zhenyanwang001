@@ -1,7 +1,7 @@
 const DEFAULT_SKIN_ID = 'default_life_green';
 
 const DEFAULT_LIFE_GREEN_CONFIG = {
-  skinName: 'å¤§é©¬é€šé»˜è®¤ç”Ÿæ´»æœåŠ¡ç»¿',
+  skinName: '???????',
   bgColor: '#F5F7FA',
   surfaceColor: '#FFFFFF',
   primaryColor: '#00B14F',
@@ -40,16 +40,16 @@ const DEFAULT_LIFE_GREEN_CONFIG = {
 /** @deprecated */
 const CLASSIC_GOLD_BLACK_CONFIG = DEFAULT_LIFE_GREEN_CONFIG;
 
-/** ä»…å½“ site_settings æ— çš®è‚¤æ•°æ®æ—¶çš„å…œåº•ï¼ˆå•å¥—ï¼?*/
+/** ä»?å½? site_settings æ? ç?®è?¤æ?°æ®æ?¶ç??å??åº?ï¼?å?å¥?ï¼?*/
 const FALLBACK_THEME_SKIN = {
   id: DEFAULT_SKIN_ID,
-  name: 'å¤§é©¬é€šé»˜è®¤ç”Ÿæ´»æœåŠ¡ç»¿',
+  name: '???????',
   sceneTag: 'life_service',
   clientEnabled: true,
   config: DEFAULT_LIFE_GREEN_CONFIG,
 };
 
-/** @deprecated è¯·ä½¿ç”?FALLBACK_THEME_SKIN */
+/** @deprecated è¯·ä½¿ç??FALLBACK_THEME_SKIN */
 const THEME_PRESETS = [FALLBACK_THEME_SKIN];
 
 const PROMO_SKIN_ID = 'promo_red_orange';

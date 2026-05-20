@@ -4,9 +4,9 @@ import * as homeService from "@/services/homeService";
 import type { SiteInfo } from "@/types/content";
 
 const FALLBACK: SiteInfo = {
-  siteName: "大马通",
-  siteDescription: "大马通面向马来西亚华人用户，提供签证咨询、留学申请、第二家园、商业装修、本地生活服务与合规精选好物信息，支持中文客服沟通，适用地区以马来西亚本地为主。",
-  siteSlogan: "马来西亚华人一站式生活服务与合规精选好物平台",
+  siteName: "官方商城",
+  siteDescription: "本平台提供商品、服务与客户支持信息。",
+  siteSlogan: "官方商品与服务平台",
   contactPhone: "",
   contactEmail: "",
   contactWhatsApp: "",
@@ -19,8 +19,8 @@ const FALLBACK: SiteInfo = {
   tiktokUrl: "",
   xhsUrl: "",
   currency: "RM",
-  footerCompanyName: "大马通",
-  footerCopyright: `© ${new Date().getFullYear()} 大马通 版权所有`,
+  footerCompanyName: "官方商城",
+  footerCopyright: `© ${new Date().getFullYear()} 官方商城 版权所有`,
   newArrivalSectionTitle: "",
   newArrivalSectionSubtitle: "",
   newArrivalDisplayCount: "8",

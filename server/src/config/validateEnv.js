@@ -17,13 +17,49 @@ function validateEnv() {
     placeholderMarkers.some((m) => s.includes(m));
 
   if (isProd) {
+    const siteCode = String(process.env.SITE_CODE || '').trim();
+    const siteName = String(process.env.SITE_NAME || '').trim();
+    const pm2App = String(process.env.PM2_APP || '').trim();
+    const dbName = String(process.env.DB_NAME || '').trim();
+    const redisPrefix = String(process.env.REDIS_KEY_PREFIX || '').trim();
+    const bullmqPrefix = String(process.env.BULLMQ_PREFIX || '').trim();
+    const storagePrefix = String(process.env.STORAGE_KEY_PREFIX || '').trim().replace(/^\/+|\/+$/g, '');
+
+    if (!siteCode) {
+      console.error('[FATAL] 生产环境必须设置 SITE_CODE');
+      process.exit(1);
+    }
+    if (!/^[a-z0-9_-]+$/.test(siteCode)) {
+      console.error('[FATAL] SITE_CODE 只能使用小写字母、数字、横线、下划线');
+      process.exit(1);
+    }
+    if (!siteName) {
+      console.warn(`[WARN][${siteCode}] 建议设置 SITE_NAME，未设置时将使用中性站点名`);
+    }
+    if (!pm2App) {
+      console.error(`[FATAL][${siteCode}] 生产环境必须设置 PM2_APP`);
+      process.exit(1);
+    }
+    if (!dbName) {
+      console.error(`[FATAL][${siteCode}] 生产环境必须设置 DB_NAME`);
+      process.exit(1);
+    }
+    if (!redisPrefix) {
+      console.error(`[FATAL][${siteCode}] 生产环境必须设置 REDIS_KEY_PREFIX，避免多站点共用 Redis 时串 key`);
+      process.exit(1);
+    }
+    if (!bullmqPrefix) {
+      console.error(`[FATAL][${siteCode}] 生产环境必须设置 BULLMQ_PREFIX，避免多站点共用队列前缀`);
+      process.exit(1);
+    }
+
     const dbUser = String(process.env.DB_USER || '').trim().toLowerCase();
     if (!dbUser) {
-      console.error('[FATAL] 生产环境必须显式设置 DB_USER（禁止使用默认值）');
+      console.error(`[FATAL][${siteCode}] 生产环境必须显式设置 DB_USER（禁止使用默认值）`);
       process.exit(1);
     }
     if (dbUser === 'root') {
-      console.error('[FATAL] 生产环境禁止使用 DB_USER=root，请改为最小权限应用账号');
+      console.error(`[FATAL][${siteCode}] 生产环境禁止使用 DB_USER=root，请改为最小权限应用账号`);
       process.exit(1);
     }
 
@@ -46,11 +82,16 @@ function validateEnv() {
         'STORAGE_S3_ACCESS_KEY_ID',
         'STORAGE_S3_SECRET_ACCESS_KEY',
         'STORAGE_PUBLIC_BASE_URL',
+        'STORAGE_KEY_PREFIX',
       ];
       const missingS3 = requiredS3.filter((k) => !(process.env[k] || '').trim());
       if (missingS3.length > 0) {
-        console.error(`[FATAL] STORAGE_DRIVER=s3 时缺少配置: ${missingS3.join(', ')}`);
+        console.error(`[FATAL][${siteCode}] STORAGE_DRIVER=s3 时缺少配置: ${missingS3.join(', ')}`);
         process.exit(1);
+      }
+      const recommendedPrefix = `${siteCode}/prod`;
+      if (storagePrefix !== recommendedPrefix) {
+        console.warn(`[WARN][${siteCode}] STORAGE_KEY_PREFIX 建议设置为 ${recommendedPrefix}，当前为 ${storagePrefix || '(empty)'}`);
       }
     }
 
@@ -111,6 +152,10 @@ function validateEnv() {
     }
     if (hasPlaceholder(pub)) {
       console.error('[FATAL] 生产环境 PUBLIC_APP_URL 仍含占位符，请替换为正式域名');
+      process.exit(1);
+    }
+    if (!corsOrigins.includes(pub.replace(/\/+$/, '')) && !corsOrigins.includes(pub)) {
+      console.error(`[FATAL][${siteCode}] CORS_ORIGINS 必须包含 PUBLIC_APP_URL: ${pub}`);
       process.exit(1);
     }
 

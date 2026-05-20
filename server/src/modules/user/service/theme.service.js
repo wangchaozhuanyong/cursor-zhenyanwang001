@@ -203,7 +203,7 @@ async function getThemeSkins() {
   return normalizeThemeSkinsPayload({
     defaultSkinId: DEFAULT_SKIN_ID,
     activeSkinId: DEFAULT_SKIN_ID,
-    skins: [{ id: DEFAULT_SKIN_ID, name: '大马通默认主题', config: fallbackConfig }],
+    skins: [{ id: DEFAULT_SKIN_ID, name: '默认主题', config: fallbackConfig }],
   });
 }
 

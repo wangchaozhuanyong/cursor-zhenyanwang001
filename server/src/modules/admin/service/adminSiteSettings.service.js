@@ -4,6 +4,10 @@ const { invalidatePaymentTimeoutSettingsCache } = require('../../order/orderPaym
 const sharp = require('sharp');
 const { isS3StorageEnabled, uploadBufferToS3 } = require('../../../utils/objectStorage');
 
+function getSiteCapabilitiesApi() {
+  return /** @type {any} */ (require('../../siteCapabilities')).api || {};
+}
+
 const SITE_ASSET_KEYS = new Set(['logoUrl', 'faviconUrl']);
 
 function rowsToMap(rows) {
@@ -121,9 +125,32 @@ async function uploadSiteAsset(file, key, adminUserId, req) {
   return { data: { key, url: finalUrl }, message: '图片已保存到设置' };
 }
 
+async function getSiteCapabilities() {
+  return { data: await getSiteCapabilitiesApi().getSiteCapabilities() };
+}
+
+async function updateSiteCapabilities(body, adminUserId, req) {
+  const before = await getSiteCapabilitiesApi().getSiteCapabilities();
+  const after = await getSiteCapabilitiesApi().saveSiteCapabilities(body);
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'settings.features_update',
+    objectType: 'site_settings',
+    objectId: 'site_capabilities',
+    summary: '更新站点功能开关',
+    before,
+    after,
+    result: 'success',
+  });
+  return { data: after, message: '功能开关已更新' };
+}
+
 module.exports = {
+  getSiteCapabilities,
   getShippingSettings,
   updateShippingSettings,
+  updateSiteCapabilities,
   getSiteSettings,
   updateSiteSettings,
   uploadSiteAsset,

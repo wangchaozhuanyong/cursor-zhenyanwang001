@@ -1,5 +1,10 @@
-const telegramService = require('./telegram.service');
+const { Router } = require('express');
+const telegramService = require('./service/telegram.service');
 
-module.exports = {
-  api: telegramService,
-};
+const router = Router();
+
+router.use('/telegram', require('./routes/telegram.routes'));
+
+/** @type {any} */ (router).api = telegramService;
+
+module.exports = router;

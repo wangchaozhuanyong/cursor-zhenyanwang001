@@ -6,23 +6,58 @@ import { buildCanonical } from "@/utils/seo";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useGoBack } from "@/hooks/useGoBack";
 import PageHeader from "@/components/PageHeader";
+import type { FaqItem } from "@/constants/help";
+import type { HelpCenterConfig } from "@/types/content";
+
+function parseHelpConfig(raw?: string): { categories: string[]; faqs: FaqItem[]; contactNote?: string } | null {
+  if (!raw?.trim()) return null;
+  try {
+    const parsed = JSON.parse(raw) as HelpCenterConfig;
+    const enabledCategories = (Array.isArray(parsed.categories) ? parsed.categories : [])
+      .filter((cat) => cat.enabled !== false)
+      .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
+    const categoryNameById = new Map(enabledCategories.map((cat) => [cat.id, cat.name]));
+    const faqs = (Array.isArray(parsed.faqs) ? parsed.faqs : [])
+      .filter((faq) => faq.enabled !== false && categoryNameById.has(faq.categoryId))
+      .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
+      .map((faq) => ({
+        id: faq.id,
+        category: categoryNameById.get(faq.categoryId) || "常见问题",
+        question: faq.question,
+        answer: faq.answer,
+      }))
+      .filter((faq) => faq.question && faq.answer);
+    if (enabledCategories.length === 0 || faqs.length === 0) return null;
+    return {
+      categories: enabledCategories.map((cat) => cat.name),
+      faqs,
+      contactNote: parsed.contactNote,
+    };
+  } catch {
+    return null;
+  }
+}
 
 export default function Help() {
   const goBack = useGoBack();
   const siteInfo = useSiteInfo();
+  const siteName = siteInfo.siteName || "官方商城";
+  const configuredHelp = useMemo(() => parseHelpConfig(siteInfo.helpCenterConfig), [siteInfo.helpCenterConfig]);
+  const faqCategories = configuredHelp?.categories || FAQ_CATEGORIES;
+  const faqs = configuredHelp?.faqs || FAQS;
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [keyword, setKeyword] = useState("");
 
   const filtered = useMemo(() => {
     const q = keyword.trim().toLowerCase();
-    return FAQS.filter((item) => {
+    return faqs.filter((item) => {
       const categoryHit = !activeCategory || item.category === activeCategory;
       if (!categoryHit) return false;
       if (!q) return true;
       return item.question.toLowerCase().includes(q) || item.answer.toLowerCase().includes(q);
     });
-  }, [activeCategory, keyword]);
+  }, [activeCategory, faqs, keyword]);
 
   const faqJsonLd = useMemo(
     () => ({
@@ -40,8 +75,8 @@ export default function Help() {
   return (
     <div className="min-h-screen bg-background pb-6">
       <SeoHead
-        title="帮助中心｜大马通"
-        description="查看大马通常见问题，包括平台服务、签证留学、第二家园、商业装修、下单流程、支付配送、售后退款、账户隐私与合规说明。"
+        title={`帮助中心｜${siteName}`}
+        description={`查看${siteName}常见问题、下单流程、支付配送、售后退款与账户说明。`}
         canonical={buildCanonical("/help")}
         robots="index,follow"
         jsonLd={[{ id: "faq-help", data: faqJsonLd }]}
@@ -66,7 +101,7 @@ export default function Help() {
           >
             全部
           </button>
-          {FAQ_CATEGORIES.map((cat) => (
+          {faqCategories.map((cat) => (
             <button
               key={cat}
               type="button"
@@ -89,7 +124,7 @@ export default function Help() {
           ))}
         </div>
         <div className="mt-6 rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
-          <p>需要人工协助时，可通过平台客服入口联系。</p>
+          <p>{configuredHelp?.contactNote || "需要人工协助时，可通过平台客服入口联系。"}</p>
           {siteInfo.whatsappUrl ? (
             <a href={siteInfo.whatsappUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-theme-price">
               <MessageCircle size={14} />

@@ -43,7 +43,7 @@ export default function StoreTabHeader({
   const { themeConfig } = useThemeRuntime();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
 
-  const siteName = siteInfo.siteName || "大马通";
+  const siteName = siteInfo.siteName || "官方商城";
   const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
 

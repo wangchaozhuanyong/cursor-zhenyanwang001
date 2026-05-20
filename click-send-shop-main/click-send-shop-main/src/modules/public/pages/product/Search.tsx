@@ -4,6 +4,7 @@ import CategoryTabs from "@/components/CategoryTabs";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useGoBack } from "@/hooks/useGoBack";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { cn } from "@/lib/utils";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { useProductStore } from "@/stores/useProductStore";
@@ -36,6 +37,7 @@ function saveHistory(list: string[]) {
 export default function Search() {
   const goBack = useGoBack("/");
   const { themeConfig } = useThemeRuntime();
+  const siteInfo = useSiteInfo();
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
   const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
   const [query, setQuery] = useState("");
@@ -158,11 +160,13 @@ export default function Search() {
   const shouldShowDiscovery = showHistory && !debouncedQuery && !query.trim();
   const shouldShowSuggestions = query.trim().length > 0 && suggestions.length > 0 && query.trim() !== debouncedQuery.trim();
 
+  const siteName = siteInfo.siteName || "官方商城";
+
   return (
     <div className="store-bottom-safe min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <SeoHead
-        title="搜索结果｜大马通"
-        description="查看大马通站内搜索结果，快速查找相关服务、商品和帮助内容。"
+        title={`搜索结果｜${siteName}`}
+        description={`查看${siteName}站内搜索结果，快速查找相关服务、商品和帮助内容。`}
         canonical={buildCanonical("/search")}
         robots="noindex,follow"
       />

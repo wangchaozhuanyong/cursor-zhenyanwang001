@@ -102,7 +102,9 @@ export interface SiteInfo {
   helpCenterConfig?: string;
 }
 
-export type SupportChannelType = "wechat" | "whatsapp" | "telegram" | "messenger" | "custom";
+export type SupportChannelType = "wechat" | "whatsapp" | "telegram";
+export type DownloadPlatformType = "desktop" | "android" | "ios";
+export type SupportDownloadTab = "support" | "download";
 
 export interface SupportDownloadChannel {
   id: string;
@@ -116,16 +118,35 @@ export interface SupportDownloadChannel {
   sortOrder: number;
 }
 
+export interface DownloadPlatform {
+  id: string;
+  type: DownloadPlatformType;
+  enabled: boolean;
+  title: string;
+  description: string;
+  buttonText: string;
+  instructions: string[];
+  sortOrder: number;
+}
+
 export interface SupportDownloadConfig {
   enabled: boolean;
   title: string;
   subtitle: string;
-  workingHours: string;
-  supportDescription: string;
-  showAppInstall: boolean;
-  appInstallTitle: string;
-  appInstallDescription: string;
-  channels: SupportDownloadChannel[];
+  defaultTab: SupportDownloadTab;
+  support: {
+    enabled: boolean;
+    title: string;
+    description: string;
+    workingHours: string;
+    channels: SupportDownloadChannel[];
+  };
+  download: {
+    enabled: boolean;
+    title: string;
+    description: string;
+    platforms: DownloadPlatform[];
+  };
 }
 
 export interface HelpCenterCategory {

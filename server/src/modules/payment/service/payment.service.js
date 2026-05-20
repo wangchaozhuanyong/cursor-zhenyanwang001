@@ -1,10 +1,13 @@
 const { generateId } = require('../../../utils/helpers');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const paymentsService = require('./payments.service');
-const telegramService = require('../../telegram/telegram.service');
 
 function getOrderApi() {
   return /** @type {any} */ (require('../../order')).api || {};
+}
+
+function getTelegramApi() {
+  return /** @type {any} */ (require('../../telegram')).api || {};
 }
 
 function getOrderDb() {
@@ -56,7 +59,7 @@ async function refreshMemberLevel(q, userId) {
 
 async function notifyTelegramOrderPaid(orderId, source) {
   try {
-    await telegramService.notifyOrderPaid(orderId, source);
+    await getTelegramApi().notifyOrderPaid(orderId, source);
   } catch (err) {
     console.error('[Telegram] notify order paid failed:', err?.message || err);
   }

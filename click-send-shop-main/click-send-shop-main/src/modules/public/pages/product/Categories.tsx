@@ -27,9 +27,11 @@ import { getCategoryProductsEmptyColSpan, getCategoryProductsGridClass } from "@
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
 
 export default function Categories() {
   const { themeConfig } = useThemeRuntime();
+  const siteInfo = useSiteInfo();
   const { viewMode, setViewMode } = useCategoryListView();
   const [searchParams, setSearchParams] = useSearchParams();
   const productGridClass = getCategoryProductsGridClass(viewMode, themeConfig.productCardVariant);
@@ -180,10 +182,11 @@ export default function Categories() {
     || searchParams.get("page"),
   );
   const activeCategoryName = activeCat === "all" ? "" : categories.find((c) => c.id === activeCat)?.name || "";
-  const title = activeCategoryName ? `${activeCategoryName}｜大马通` : "全部分类｜大马通";
+  const siteName = siteInfo.siteName || "官方商城";
+  const title = activeCategoryName ? `${activeCategoryName}｜${siteName}` : `全部分类｜${siteName}`;
   const description = activeCategoryName
-    ? `浏览大马通 ${activeCategoryName} 相关服务与商品信息，支持中文客服咨询，适用地区以马来西亚本地为主。`
-    : "浏览大马通平台的服务分类与精选好物信息，覆盖马来西亚华人常用生活服务、本地服务和合规商品信息。";
+    ? `浏览${siteName} ${activeCategoryName} 相关商品与服务信息。`
+    : `浏览${siteName}的商品与服务分类信息。`;
   const robots = hasComplexParams ? "noindex,follow" : "index,follow";
   const canonical = activeCategoryName ? buildCanonical("/categories", `cat=${activeCat}`, { keepParams: ["cat"] }) : buildCanonical("/categories");
 

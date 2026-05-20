@@ -18,17 +18,18 @@ describe('SEO prerender HTML injection', () => {
 </html>`;
 
     const html = renderHtmlWithSeo(template, {
-      title: '测试商品 | 大马通,
+      title: '测试商品｜官方商城',
       description: '测试商品描述',
       keywords: '测试商品, 分类',
-      imageUrl: 'https://example.test/cover.jpg',
-      canonicalUrl: 'https://example.test/product/p1',
+      ogImage: 'https://example.test/cover.jpg',
+      canonical: 'https://example.test/product/p1',
       ogType: 'product',
-      bodyHtml: '    <article data-seo-prerender="product"><h1>测试商品</h1><p>测试商品描述</p></article>',
-      jsonLd: { '@context': 'https://schema.org', '@type': 'Product', name: '测试商品' },
+      prerenderH1: '测试商品',
+      prerenderText: '测试商品描述',
+      jsonLd: [{ '@context': 'https://schema.org', '@type': 'Product', name: '测试商品' }],
     });
 
-    assert.match(html, /<title>测试商品 | 大马通\/title>/);
+    assert.match(html, /<title>测试商品｜官方商城<\/title>/);
     assert.match(html, /<meta name="description" content="测试商品描述">/);
     assert.match(html, /<meta name="keywords" content="测试商品, 分类">/);
     assert.match(html, /<meta property="og:type" content="product">/);

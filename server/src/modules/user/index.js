@@ -6,6 +6,10 @@ const rewardService = require('./service/reward.service');
 const notificationService = require('./service/notification.service');
 const memberLevelService = require('./service/memberLevel.service');
 const { UserStatsService } = require('./service/userStats.service');
+const uploadCtrl = require('./controller/upload.controller');
+const uploadPresignCtrl = require('./controller/uploadPresign.controller');
+const themeService = require('./service/theme.service');
+const rewardServiceApi = require('./service/reward.service');
 
 const router = Router();
 
@@ -32,6 +36,7 @@ router.use('/theme', require('./routes/theme.routes'));
   sumRewardTransactionsBalance: rewardService.sumRewardTransactionsBalance,
   insertRewardTransaction: rewardService.insertRewardTransaction,
   adjustUserPoints: pointsService.adjustUserPoints,
+  getAdminPointsRecords: pointsService.getAdminRecords,
   changeUserPoints: pointsService.changeUserPoints,
   changePoints: pointsService.changePoints,
   insertUserNotification: notificationService.insertUserNotification,
@@ -41,6 +46,15 @@ router.use('/theme', require('./routes/theme.routes'));
   syncStatsAfterOrderPaid: UserStatsService.syncStatsAfterOrderPaid,
   syncStatsAfterRefund: UserStatsService.syncStatsAfterRefund,
   syncStatsAfterOrderCancelled: UserStatsService.syncStatsAfterOrderCancelled,
+  uploadMiddleware: uploadCtrl.uploadMiddleware,
+  uploadMultiple: uploadCtrl.uploadMultiple,
+  uploadFile: uploadCtrl.uploadFile,
+  uploadFiles: uploadCtrl.uploadFiles,
+  createUploadTicket: uploadPresignCtrl.createTicket,
+  completeUpload: uploadPresignCtrl.completeUpload,
+  updateThemeConfig: themeService.updateThemeConfig,
+  updateThemeSkins: themeService.updateThemeSkins,
+  getAdminRewardRecords: rewardServiceApi.getAdminRecords,
 };
 
 module.exports = router;

@@ -1,5 +1,12 @@
-const rewardController = require('../../user/controller/reward.controller');
+const { asyncRoute } = require('../../../middleware/asyncRoute');
 
-exports.listRecords = rewardController.adminListRecords;
+function getUserApi() {
+  return /** @type {any} */ (require('../../user')).api || {};
+}
+
+exports.listRecords = asyncRoute(async (req, res) => {
+  const data = await getUserApi().getAdminRewardRecords(req.query);
+  res.success(data);
+});
 
 

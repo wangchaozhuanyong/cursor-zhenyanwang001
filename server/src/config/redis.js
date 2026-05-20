@@ -1,5 +1,6 @@
 // @ts-nocheck
 const Redis = require('ioredis');
+const { instanceLogPrefix } = require('./instance');
 
 let redisClient;
 let warnedConnectionError = false;
@@ -20,7 +21,7 @@ function getRedisUrl() {
 }
 
 function getRedisKeyPrefix() {
-  return (process.env.REDIS_KEY_PREFIX || 'click-send-shop').trim().replace(/:+$/, '');
+  return (process.env.REDIS_KEY_PREFIX || process.env.SITE_CODE || 'click-send-shop').trim().replace(/:+$/, '');
 }
 
 function applyRedisUrlOptions(options) {
@@ -87,7 +88,7 @@ function attachRedisLogger(client, label = 'default') {
   client.on('error', (err) => {
     if (warnedConnectionError) return;
     warnedConnectionError = true;
-    console.warn(`[Redis] ${label} connection error: ${err.message}`);
+    console.warn(`${instanceLogPrefix('Redis')} ${label} connection error: ${err.message}`);
   });
 
   return client;

@@ -4,6 +4,7 @@ const auth = require('../../../middleware/auth');
 const authOptional = require('../../../middleware/authOptional');
 const { guardByAction } = require('../../../middleware/accountStatusGuard');
 const { validate } = require('../../../middleware/validate');
+const { requireSiteCapability } = require('../../../middleware/siteCapabilityGuard');
 const {
   productReviewsQuerySchema,
   productReviewProductParamSchema,
@@ -31,8 +32,8 @@ router.get(
   validate({ params: productReviewProductParamSchema, query: productReviewsQuerySchema }),
   ctrl.getProductReviews,
 );
-router.post('/', auth, guardByAction('comment'), validate({ body: createReviewBodySchema }), ctrl.createReview);
-router.post('/:id/like', auth, guardByAction('comment'), validate({ params: reviewIdParamSchema }), ctrl.toggleLike);
+router.post('/', requireSiteCapability('reviewEnabled', '本站未启用评价功能'), auth, guardByAction('comment'), validate({ body: createReviewBodySchema }), ctrl.createReview);
+router.post('/:id/like', requireSiteCapability('reviewEnabled', '本站未启用评价功能'), auth, guardByAction('comment'), validate({ params: reviewIdParamSchema }), ctrl.toggleLike);
 
 module.exports = router;
 

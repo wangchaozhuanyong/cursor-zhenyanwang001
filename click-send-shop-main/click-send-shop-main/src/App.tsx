@@ -8,9 +8,9 @@ import AppRouteFallback from "@/components/AppRouteFallback";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import TrackingManager from "@/components/TrackingManager";
 import RouteAnalyticsTracker from "@/components/RouteAnalyticsTracker";
-import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import PwaUpdateToast from "@/components/PwaUpdateToast";
 import RouteSeoGuard from "@/components/RouteSeoGuard";
+import LanguageGate from "@/components/LanguageGate";
 
 import AdminLayout from "./layouts/AdminLayout";
 import { LegacyCouponRedirect } from "@/routes/adminLegacyRedirects";
@@ -33,6 +33,7 @@ import { StoreOutletFallback } from "@/components/AppRouteFallback";
 import { useAdminTOptional } from "@/hooks/useAdminT";
 import { AdminI18nProvider } from "@/contexts/AdminI18nProvider";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 
 type PreloadableLazy<T extends React.ComponentType<never>> = T & { preload?: () => Promise<unknown> };
 function lazyWithPreload<T extends React.ComponentType<never>>(factory: () => Promise<{ default: T }>) {
@@ -132,6 +133,7 @@ const AdminTrafficAnalysisReport = lazy(() => import("@/modules/admin/pages/repo
 const AdminExportCenter = lazy(() => import("@/modules/admin/pages/report/AdminExportCenter"));
 
 const AdminSiteSettings = lazy(() => import("@/modules/admin/pages/settings/AdminSiteSettings"));
+const AdminFeatureSettings = lazy(() => import("@/modules/admin/pages/settings/AdminFeatureSettings"));
 const AdminSupportDownload = lazy(() => import("@/modules/admin/pages/settings/AdminSupportDownload"));
 const AdminTelegramSettings = lazy(() => import("@/modules/admin/pages/settings/AdminTelegramSettings"));
 const AdminThemeSettings = lazy(() => import("@/modules/admin/pages/settings/AdminThemeSettings"));
@@ -228,7 +230,7 @@ function AdminTitleSync() {
 
   useEffect(() => {
     if (!location.pathname.startsWith("/admin")) return;
-    const siteName = (siteInfo.siteName || "大马通").trim();
+    const siteName = (siteInfo.siteName || "官方商城").trim();
     const seoTitle = (siteInfo.seoTitle || "").trim();
     const routeTitleMap: Array<{ test: (path: string) => boolean; titleKey: string }> = [
       { test: (p) => p === "/admin" || p === "/admin/", titleKey: "routeTitles.admin" },
@@ -247,6 +249,7 @@ function AdminTitleSync() {
         titleKey: "routeTitles.couponEditFull",
       },
       { test: (p) => p.startsWith("/admin/settings/site"), titleKey: "routeTitles.siteSettings" },
+      { test: (p) => p.startsWith("/admin/settings/features"), titleKey: "routeTitles.siteSettings" },
       { test: (p) => p.startsWith("/admin/settings/telegram"), titleKey: "routeTitles.telegram" },
       { test: (p) => p.startsWith("/admin/settings/theme"), titleKey: "routeTitles.theme" },
       { test: (p) => p.startsWith("/admin/home-ops"), titleKey: "routeTitles.homeOps" },
@@ -280,7 +283,7 @@ function AdminTitleSync() {
     ];
     const match = routeTitleMap.find((item) => item.test(location.pathname));
     const pageTitle = t(match?.titleKey ?? "routeTitles.admin");
-    document.title = `${pageTitle} | ${siteName || seoTitle || "大马通"}`;
+    document.title = `${pageTitle} | ${siteName || seoTitle || "官方商城"}`;
   }, [location.pathname, siteInfo.siteName, siteInfo.seoTitle, t]);
 
   return null;
@@ -344,8 +347,14 @@ function LoyaltyRouteGuard({
   return <>{children}</>;
 }
 
+function CapabilityRoute({ enabled, children }: { enabled: boolean; children: ReactNode }) {
+  if (!enabled) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
 function AppRoutes() {
   const location = useLocation();
+  const capabilities = useSiteCapabilities();
   return (
     <ErrorBoundary resetKey={location.pathname}>
     <QueryClientProvider client={queryClient}>
@@ -362,8 +371,8 @@ function AppRoutes() {
           <TrackingManager />
           <RouteAnalyticsTracker />
           <RouteSeoGuard />
-          <PwaInstallPrompt />
           <PwaUpdateToast />
+          <LanguageGate />
           <Suspense fallback={<AppRouteFallback />}>
             <Routes>
               {/* Pages with bottom nav */}
@@ -371,7 +380,7 @@ function AppRoutes() {
               <Route path="/" element={<HomeRoute />} />
               <Route path="/categories" element={<Categories />} />
               <Route path="/new-arrivals" element={<NewArrivals />} />
-              <Route path="/support-download" element={<SupportDownload />} />
+              <Route path="/support-download" element={<CapabilityRoute enabled={capabilities.customerServiceDownloadEnabled}><SupportDownload /></CapabilityRoute>} />
               <Route path="/search" element={<Search />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/favorites" element={<Favorites />} />
@@ -384,7 +393,7 @@ function AppRoutes() {
               <Route path="/login/bind-phone" element={<BindWechatPhone />} />
               <Route path="/help" element={<Help />} />
               <Route path="/about" element={<About />} />
-              <Route path="/install" element={<SupportDownload />} />
+              <Route path="/install" element={capabilities.customerServiceDownloadEnabled ? <Navigate to="/support-download?tab=download" replace /> : <Navigate to="/" replace />} />
               <Route path="/content/:slug" element={<ContentCmsPage />} />
 
               {/* Protected pages (require login) */}
@@ -406,9 +415,11 @@ function AppRoutes() {
                 path="/points"
                 element={
                   <ProtectedRoute>
-                    <LoyaltyRouteGuard feature="points">
-                      <Points />
-                    </LoyaltyRouteGuard>
+                    <CapabilityRoute enabled={capabilities.pointsEnabled}>
+                      <LoyaltyRouteGuard feature="points">
+                        <Points />
+                      </LoyaltyRouteGuard>
+                    </CapabilityRoute>
                   </ProtectedRoute>
                 }
               />
@@ -423,10 +434,10 @@ function AppRoutes() {
                 }
               />
               <Route path="/address" element={<ProtectedRoute><AddressManage /></ProtectedRoute>} />
-              <Route path="/coupons" element={<ProtectedRoute><Coupons /></ProtectedRoute>} />
+              <Route path="/coupons" element={<ProtectedRoute><CapabilityRoute enabled={capabilities.couponEnabled}><Coupons /></CapabilityRoute></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               <Route path="/returns" element={<ProtectedRoute><Returns /></ProtectedRoute>} />
-              <Route path="/reviews/pending" element={<ProtectedRoute><PendingReviews /></ProtectedRoute>} />
+              <Route path="/reviews/pending" element={<ProtectedRoute><CapabilityRoute enabled={capabilities.reviewEnabled}><PendingReviews /></CapabilityRoute></ProtectedRoute>} />
               {/* 与购物车/收藏一致：未登录可读取本地持久化浏览记录 */}
               <Route path="/history" element={<History />} />
 
@@ -437,29 +448,30 @@ function AppRoutes() {
                 <Route path="products" element={<AdminProducts />} />
                 <Route path="products/:id" element={<AdminProductForm />} />
                 <Route path="categories" element={<AdminCategories />} />
-                <Route path="inventory" element={<AdminInventory />} />
+                <Route path="inventory" element={<CapabilityRoute enabled={capabilities.inventoryEnabled}><AdminInventory /></CapabilityRoute>} />
                 <Route path="tags" element={<AdminProductTags />} />
                 <Route path="orders" element={<AdminOrders />} />
                 <Route path="orders/unfinished" element={<AdminCheckoutAbandonments />} />
                 <Route path="orders/:id" element={<AdminOrderDetail />} />
-                <Route path="payments/channels" element={<AdminPaymentChannels />} />
-                <Route path="payments/orders" element={<AdminPaymentOrders />} />
-                <Route path="payments/events" element={<AdminPaymentEvents />} />
-                <Route path="payments/reconciliations" element={<AdminPaymentReconciliations />} />
+                <Route path="payments/channels" element={<CapabilityRoute enabled={capabilities.onlinePaymentEnabled}><AdminPaymentChannels /></CapabilityRoute>} />
+                <Route path="payments/orders" element={<CapabilityRoute enabled={capabilities.onlinePaymentEnabled}><AdminPaymentOrders /></CapabilityRoute>} />
+                <Route path="payments/events" element={<CapabilityRoute enabled={capabilities.onlinePaymentEnabled}><AdminPaymentEvents /></CapabilityRoute>} />
+                <Route path="payments/reconciliations" element={<CapabilityRoute enabled={capabilities.onlinePaymentEnabled}><AdminPaymentReconciliations /></CapabilityRoute>} />
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="users/:id" element={<AdminUserDetail />} />
-                <Route path="member-levels" element={<AdminMemberLevels />} />
+                <Route path="member-levels" element={<CapabilityRoute enabled={capabilities.memberLevelEnabled}><AdminMemberLevels /></CapabilityRoute>} />
                 <Route path="invites" element={<Navigate to="/admin/marketing/invites" replace />} />
                 <Route path="rewards" element={<Navigate to="/admin/marketing/rewards" replace />} />
                 <Route path="points/records" element={<Navigate to="/admin/marketing/points" replace />} />
                 <Route path="settings/points" element={<Navigate to="/admin/marketing/points" replace />} />
                 <Route path="settings/referral" element={<Navigate to="/admin/marketing/rewards" replace />} />
                 <Route path="settings/site" element={<AdminSiteSettings />} />
+                <Route path="settings/features" element={<AdminFeatureSettings />} />
                 <Route path="settings/telegram" element={<AdminTelegramSettings />} />
-                <Route path="support-download" element={<AdminSupportDownload />} />
+                <Route path="support-download" element={<CapabilityRoute enabled={capabilities.customerServiceDownloadEnabled}><AdminSupportDownload /></CapabilityRoute>} />
                 <Route path="settings/theme" element={<AdminThemeSettings />} />
                 <Route path="home-ops" element={<AdminHomeOps />} />
-                <Route path="settings/shipping" element={<AdminShipping />} />
+                <Route path="settings/shipping" element={<CapabilityRoute enabled={capabilities.shippingEnabled}><AdminShipping /></CapabilityRoute>} />
                 <Route path="settings/roles" element={<AdminRoles />} />
                 <Route path="coupons" element={<Navigate to="/admin/marketing/coupons" replace />} />
                 <Route path="coupons/new" element={<Navigate to="/admin/marketing/coupons/new" replace />} />
@@ -469,14 +481,14 @@ function AppRoutes() {
                 <Route path="marketing/activities" element={<AdminActivities />} />
                 <Route path="marketing/activities/new" element={<AdminActivityForm />} />
                 <Route path="marketing/activities/:id/edit" element={<AdminActivityForm />} />
-                <Route path="marketing/coupons" element={<AdminCoupons />} />
-                <Route path="marketing/coupons/new" element={<AdminCouponForm />} />
-                <Route path="marketing/coupons/:id" element={<AdminCouponForm />} />
-                <Route path="marketing/coupons/records" element={<AdminCouponRecords />} />
-                <Route path="marketing/points" element={<AdminMarketingPoints />} />
+                <Route path="marketing/coupons" element={<CapabilityRoute enabled={capabilities.couponEnabled}><AdminCoupons /></CapabilityRoute>} />
+                <Route path="marketing/coupons/new" element={<CapabilityRoute enabled={capabilities.couponEnabled}><AdminCouponForm /></CapabilityRoute>} />
+                <Route path="marketing/coupons/:id" element={<CapabilityRoute enabled={capabilities.couponEnabled}><AdminCouponForm /></CapabilityRoute>} />
+                <Route path="marketing/coupons/records" element={<CapabilityRoute enabled={capabilities.couponEnabled}><AdminCouponRecords /></CapabilityRoute>} />
+                <Route path="marketing/points" element={<CapabilityRoute enabled={capabilities.pointsEnabled}><AdminMarketingPoints /></CapabilityRoute>} />
                 <Route path="marketing/rewards" element={<AdminMarketingRewards />} />
                 <Route path="marketing/invites" element={<AdminInvites />} />
-                <Route path="reviews" element={<AdminReviews />} />
+                <Route path="reviews" element={<CapabilityRoute enabled={capabilities.reviewEnabled}><AdminReviews /></CapabilityRoute>} />
                 <Route path="returns" element={<AdminReturns />} />
                 <Route path="notifications" element={<AdminNotifications />} />
                 <Route path="notifications/:id" element={<AdminNotificationDetail />} />
@@ -491,10 +503,10 @@ function AppRoutes() {
                 <Route path="reports/orders" element={<AdminOrderAnalysisReport />} />
                 <Route path="reports/customers" element={<AdminCustomerAnalysisReport />} />
                 <Route path="reports/activities" element={<AdminActivityAnalysisReport />} />
-                <Route path="reports/coupons" element={<AdminCouponAnalysisReport />} />
-                <Route path="reports/inventory" element={<AdminInventoryAnalysisReport />} />
+                <Route path="reports/coupons" element={<CapabilityRoute enabled={capabilities.couponEnabled}><AdminCouponAnalysisReport /></CapabilityRoute>} />
+                <Route path="reports/inventory" element={<CapabilityRoute enabled={capabilities.inventoryEnabled}><AdminInventoryAnalysisReport /></CapabilityRoute>} />
                 <Route path="reports/search" element={<AdminSearchAnalysisReport />} />
-                <Route path="reports/traffic" element={<AdminTrafficAnalysisReport />} />
+                <Route path="reports/traffic" element={<CapabilityRoute enabled={capabilities.trafficAnalyticsEnabled}><AdminTrafficAnalysisReport /></CapabilityRoute>} />
                 <Route path="accounts" element={<AdminAccounts />} />
                 <Route path="recycle-bin" element={<AdminRecycleBin />} />
                 <Route path="exports" element={<AdminExportCenter />} />

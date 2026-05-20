@@ -12,6 +12,7 @@ const { startPaymentTimeoutScheduler } = require('./modules/order/service/orderP
 const { startMyInvoisRetryScheduler } = require('./modules/myinvois/service/myinvois.service');
 const { getStorageHealthReport } = require('./utils/objectStorage');
 const { ensureDefaultLegalContentPages } = require('./modules/admin/service/adminExtended.service');
+const { getInstanceInfo, instanceLogPrefix } = require('./config/instance');
 
 const PORT = process.env.PORT || 3000;
 const RUN_MIGRATIONS_ON_BOOT = process.env.RUN_MIGRATIONS_ON_BOOT === '1';
@@ -22,24 +23,32 @@ const bootPromise = RUN_MIGRATIONS_ON_BOOT
 
 bootPromise
   .then(async () => {
+    const instance = getInstanceInfo();
+    console.log(`${instanceLogPrefix('Instance')} SITE_CODE=${instance.siteCode || '(unset)'}`);
+    console.log(`${instanceLogPrefix('Instance')} SITE_NAME=${instance.siteName || '(unset)'}`);
+    console.log(`${instanceLogPrefix('Instance')} PUBLIC_APP_URL=${instance.publicAppUrl || '(unset)'}`);
+    console.log(`${instanceLogPrefix('Instance')} DB_NAME=${instance.dbName || '(unset)'}`);
+    console.log(`${instanceLogPrefix('Instance')} STORAGE_KEY_PREFIX=${instance.storageKeyPrefix || '(unset)'}`);
+    console.log(`${instanceLogPrefix('Instance')} REDIS_KEY_PREFIX=${instance.redisKeyPrefix || '(unset)'}`);
+
     const storage = getStorageHealthReport();
     if (storage.mode === 's3') {
-      console.log('[Storage] driver=s3');
-      console.log(`[Storage] healthy=${storage.healthy} bucket=${storage.bucket} region=${storage.region}`);
-      console.log(`[Storage] endpoint=${storage.endpoint}`);
-      console.log(`[Storage] publicBaseUrl=${storage.publicBaseUrl} keyPrefix=${storage.keyPrefix}`);
-      console.log(`[Storage] forcePathStyle=${storage.forcePathStyle}`);
-      console.log(`[Storage] accessKeyId=${storage.accessKeyIdMasked} secret=${storage.secretKeyMasked}`);
+      console.log(`${instanceLogPrefix('Storage')} driver=s3`);
+      console.log(`${instanceLogPrefix('Storage')} healthy=${storage.healthy} bucket=${storage.bucket} region=${storage.region}`);
+      console.log(`${instanceLogPrefix('Storage')} endpoint=${storage.endpoint}`);
+      console.log(`${instanceLogPrefix('Storage')} publicBaseUrl=${storage.publicBaseUrl} keyPrefix=${storage.keyPrefix}`);
+      console.log(`${instanceLogPrefix('Storage')} forcePathStyle=${storage.forcePathStyle}`);
+      console.log(`${instanceLogPrefix('Storage')} accessKeyId=${storage.accessKeyIdMasked} secret=${storage.secretKeyMasked}`);
       if (!storage.healthy) {
-        console.warn(`[Storage] missing required env: ${storage.missing.join(', ')}`);
+        console.warn(`${instanceLogPrefix('Storage')} missing required env: ${storage.missing.join(', ')}`);
       }
     } else {
-      console.log(`[Storage] driver=${storage.driver} mode=${storage.mode}`);
-      console.log(`[Storage] ${storage.note}`);
+      console.log(`${instanceLogPrefix('Storage')} driver=${storage.driver} mode=${storage.mode}`);
+      console.log(`${instanceLogPrefix('Storage')} ${storage.note}`);
     }
 
     await ensureDefaultLegalContentPages();
-    console.log('[CMS] ensured default legal content pages');
+    console.log(`${instanceLogPrefix('CMS')} ensured default legal content pages`);
 
     startCleanupScheduler();
     startNotificationScheduler();
@@ -48,14 +57,14 @@ bootPromise
     startMyInvoisRetryScheduler();
     app.listen(PORT, () => {
       if (process.env.NODE_ENV === 'production') {
-        console.log(`鉁?Server listening (production), PORT=${PORT}`);
+        console.log(`${instanceLogPrefix('Server')} listening (production), PORT=${PORT}`);
       } else {
-        console.log(`鉁?Server running 鈫?http://localhost:${PORT}`);
+        console.log(`${instanceLogPrefix('Server')} running http://localhost:${PORT}`);
       }
     });
   })
   .catch((err) => {
-    console.error('Startup precheck failed:', err);
+    console.error(`${instanceLogPrefix('Startup')} precheck failed:`, err);
     process.exit(1);
   });
 

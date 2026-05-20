@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const catalogService = require('./service/catalog.service');
 const contentService = require('./service/content.service');
+const { NEUTRAL_SITE_DESCRIPTION, resolveSiteDescription, resolveSiteName } = require('../../config/instance');
 
 const RESTRICTED_KEYWORDS = [
   'tobacco', 'cigarette', 'cigar', 'smoking', 'vape', 'e-cigarette', 'nicotine',
@@ -129,8 +130,9 @@ async function getSiteInfoSafe() {
 }
 
 function buildHomePayload(baseUrl, siteInfo) {
-  const title = siteInfo.seoTitle || '大马通｜马来西亚华人一站式生活服务与精选好物';
-  const description = siteInfo.seoDescription || '大马通面向马来西亚华人用户，提供签证咨询、留学申请、第二家园、商业装修、本地生活服务与合规精选好物信息，支持中文客服沟通，适用地区以马来西亚本地为主。';
+  const siteName = resolveSiteName(siteInfo);
+  const description = siteInfo.seoDescription || resolveSiteDescription(siteInfo);
+  const title = siteInfo.seoTitle || siteName;
   const image = toAbsolute(baseUrl, siteInfo.ogImageUrl || siteInfo.defaultOgImageUrl || siteInfo.logoUrl || '/og-default.png');
   return {
     title,
@@ -140,11 +142,11 @@ function buildHomePayload(baseUrl, siteInfo) {
     ogDescription: description,
     ogImage: image,
     ogType: 'website',
-    ogSiteName: siteInfo.siteName || '大马通',
+    ogSiteName: siteName,
     googleSiteVerification: siteInfo.googleSiteVerification || '',
     robots: 'index,follow',
-    prerenderH1: '马来西亚华人一站式生活服务平台',
-    prerenderText: '大马通提供签证咨询、留学申请、第二家园、商业装修、本地生活服务与合规精选好物信息，帮助在马华人更方便地了解服务、提交需求并联系客服。',
+    prerenderH1: siteName,
+    prerenderText: description,
   };
 }
 
@@ -168,26 +170,26 @@ async function registerSeoPrerender(app, { frontendDist }) {
   app.get('/', (req, res) => render(req, res, async (baseUrl, siteInfo) => buildHomePayload(baseUrl, siteInfo)));
   app.get('/new-arrivals', (req, res) => render(req, res, async (baseUrl, siteInfo) => ({
     ...buildHomePayload(baseUrl, siteInfo),
-    title: '最新服务与精选好物｜大马通',
-    description: '查看大马通最新发布的服务信息、生活服务内容与合规精选好物，适用地区以马来西亚本地为主。',
+    title: `新品上市｜${resolveSiteName(siteInfo)}`,
+    description: `查看${resolveSiteName(siteInfo)}最新发布的商品、服务与活动信息。`,
     canonical: `${baseUrl}/new-arrivals`,
   })));
   app.get('/categories', (req, res) => render(req, res, async (baseUrl, siteInfo) => ({
     ...buildHomePayload(baseUrl, siteInfo),
-    title: '全部分类｜大马通',
-    description: '浏览大马通平台的服务分类与精选好物信息，覆盖马来西亚华人常用生活服务、本地服务和合规商品信息。',
+    title: `全部分类｜${resolveSiteName(siteInfo)}`,
+    description: `浏览${resolveSiteName(siteInfo)}的商品与服务分类信息。`,
     canonical: `${baseUrl}/categories`,
   })));
   app.get('/help', (req, res) => render(req, res, async (baseUrl, siteInfo) => ({
     ...buildHomePayload(baseUrl, siteInfo),
-    title: '帮助中心｜大马通',
-    description: '查看大马通常见问题，包括平台服务、签证留学、第二家园、商业装修、下单流程、支付配送、售后退款、账户隐私与合规说明。',
+    title: `帮助中心｜${resolveSiteName(siteInfo)}`,
+    description: `查看${resolveSiteName(siteInfo)}常见问题、下单流程、支付配送、售后退款与账户说明。`,
     canonical: `${baseUrl}/help`,
   })));
   app.get('/about', (req, res) => render(req, res, async (baseUrl, siteInfo) => ({
     ...buildHomePayload(baseUrl, siteInfo),
-    title: '关于大马通｜马来西亚华人生活服务平台',
-    description: '了解大马通平台定位、服务范围和联系方式。大马通面向马来西亚华人用户，提供生活服务、项目咨询与合规精选好物信息。',
+    title: `关于我们｜${resolveSiteName(siteInfo)}`,
+    description: `了解${resolveSiteName(siteInfo)}的平台信息、服务范围和联系方式。`,
     canonical: `${baseUrl}/about`,
   })));
   app.get('/content/:slug', (req, res) => render(req, res, async (baseUrl, siteInfo) => {
@@ -197,8 +199,8 @@ async function registerSeoPrerender(app, { frontendDist }) {
     const seoDesc = page.seo_description || '';
     return {
       ...buildHomePayload(baseUrl, siteInfo),
-      title: seoTitle || `${page.title}｜大马通`,
-      description: seoDesc || truncate(stripHtml(page.content || '查看大马通平台内容说明，了解相关服务流程、使用规则和注意事项。'), 150),
+      title: seoTitle || `${page.title}｜${resolveSiteName(siteInfo)}`,
+      description: seoDesc || truncate(stripHtml(page.content || NEUTRAL_SITE_DESCRIPTION), 150),
       canonical: `${baseUrl}/content/${encodeURIComponent(req.params.slug)}`,
       robots: ['draft', 'hidden', 'private'].includes(String(page.status || '').toLowerCase()) || Number(page.noindex || 0) === 1 ? 'noindex,follow' : 'index,follow',
     };
@@ -207,7 +209,7 @@ async function registerSeoPrerender(app, { frontendDist }) {
     const product = await catalogService.getProductById(req.params.id);
     if (!product) return null;
     const restricted = isRestrictedProduct(product) || Number(product.allow_index || 1) !== 1;
-    const title = `${product.name}｜${siteInfo.siteName || '大马通'}`;
+    const title = `${product.name}｜${resolveSiteName(siteInfo)}`;
     const description = restricted
       ? '本页面包含受年龄、地区或当地法规限制的商品或服务信息，仅面向符合法定年龄并符合当地规定的用户展示。具体适用范围以当地法律法规、平台规则和客服确认为准。'
       : truncate(stripHtml(product.description || `查看 ${product.name} 的详情、价格、库存、规格与服务信息，支持中文客服咨询。`), 150);

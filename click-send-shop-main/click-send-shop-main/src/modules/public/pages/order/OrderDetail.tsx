@@ -11,6 +11,7 @@ import { useCartStore } from "@/stores/useCartStore";
 import type { Order } from "@/types/order";
 import type { ProductVariant } from "@/types/product";
 import { getBuyerOrderStatusText, getOrderProgressStep, hasPendingReview } from "@/utils/orderBuyerStatus";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { OrderDiscountLines } from "./components/OrderDiscountLines";
 
 const steps = ["待付款", "已付款", "已发货", "已完成"];
@@ -41,6 +42,7 @@ export default function OrderDetail() {
   const [reviewItemId, setReviewItemId] = useState("");
   const [confirmReviewOpen, setConfirmReviewOpen] = useState(false);
   const [firstReviewableId, setFirstReviewableId] = useState("");
+  const capabilities = useSiteCapabilities();
 
   const handleViewLogistics = async () => {
     if (!order) return;
@@ -73,7 +75,7 @@ export default function OrderDetail() {
     if (id) void loadOrderDetail(id);
   }, [id, loadOrderDetail]);
 
-  const reviewableItems = useMemo(() => (order?.items || []).filter((i) => i.can_review && i.order_item_id), [order]);
+  const reviewableItems = useMemo(() => (capabilities.reviewEnabled ? (order?.items || []).filter((i) => i.can_review && i.order_item_id) : []), [capabilities.reviewEnabled, order]);
   const step = order ? getOrderProgressStep(order) : 0;
 
   const reload = async () => {
@@ -157,7 +159,7 @@ export default function OrderDetail() {
           <p className="text-sm font-medium">价格明细</p>
           <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">商品金额</span><span>RM {Number(order.raw_amount || 0).toFixed(2)}</span></div>
           {Number(order.discount_amount || 0) > 0 ? <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">优惠金额</span><span className="text-[var(--theme-danger)]">-RM {Number(order.discount_amount || 0).toFixed(2)}</span></div> : null}
-          {Number(order.points_discount_amount || 0) > 0 ? <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">积分抵扣</span><span className="text-[var(--theme-danger)]">-RM {Number(order.points_discount_amount || 0).toFixed(2)}</span></div> : null}
+          {capabilities.pointsEnabled && Number(order.points_discount_amount || 0) > 0 ? <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">积分抵扣</span><span className="text-[var(--theme-danger)]">-RM {Number(order.points_discount_amount || 0).toFixed(2)}</span></div> : null}
           {Number(order.reward_cash_discount_amount || 0) > 0 ? <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">返现抵扣</span><span className="text-[var(--theme-danger)]">-RM {Number(order.reward_cash_discount_amount || 0).toFixed(2)}</span></div> : null}
           <OrderDiscountLines order={order} />
           <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">运费</span><span>RM {Number(order.shipping_fee || 0).toFixed(2)}</span></div>
@@ -189,7 +191,7 @@ export default function OrderDetail() {
             </>
           ) : null}
           {order.status === "paid" ? <><button className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate("/help")}>联系客服</button></> : null}
-          {order.status === "shipped" ? <><button className="rounded-full border px-3 py-1 text-xs" onClick={() => { void handleViewLogistics(); }}>查看物流</button><button className="rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1 text-xs text-[var(--theme-primary-foreground)]" onClick={async () => { await confirmReceive(order.id); await reload(); const next = (useOrderStore.getState().currentOrder?.items || []).filter((i) => i.can_review && i.order_item_id); if (next.length) { setFirstReviewableId(next[0].order_item_id!); setConfirmReviewOpen(true); } }}>确认收货</button></> : null}
+          {order.status === "shipped" ? <><button className="rounded-full border px-3 py-1 text-xs" onClick={() => { void handleViewLogistics(); }}>查看物流</button><button className="rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1 text-xs text-[var(--theme-primary-foreground)]" onClick={async () => { await confirmReceive(order.id); await reload(); const next = capabilities.reviewEnabled ? (useOrderStore.getState().currentOrder?.items || []).filter((i) => i.can_review && i.order_item_id) : []; if (next.length) { setFirstReviewableId(next[0].order_item_id!); setConfirmReviewOpen(true); } }}>确认收货</button></> : null}
           {(order.status === "refunding" || order.status === "refunded") ? <button className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate("/returns")}>查看售后进度</button> : null}
         </div>
       </main>
@@ -197,7 +199,7 @@ export default function OrderDetail() {
       <div className="fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
         <div className="mx-auto flex max-w-lg items-center gap-2 px-4 py-3">
           <button className="rounded-full border border-[var(--theme-border)] px-3 py-2 text-xs" onClick={() => navigate("/help")}>客服</button>
-          {hasPendingReview(order) ? <button className="rounded-full border border-[var(--theme-border)] px-3 py-2 text-xs" onClick={() => setReviewItemId(reviewableItems[0]?.order_item_id || "")}>评价</button> : null}
+          {capabilities.reviewEnabled && hasPendingReview(order) ? <button className="rounded-full border border-[var(--theme-border)] px-3 py-2 text-xs" onClick={() => setReviewItemId(reviewableItems[0]?.order_item_id || "")}>评价</button> : null}
           <button className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs" onClick={() => { void addOrderToCart(); }}>加入购物车</button>
           <button className="flex-1 rounded-full bg-[var(--theme-primary)] px-3 py-2 text-xs font-medium text-[var(--theme-primary-foreground)]" onClick={() => { void repurchaseOrder(); }}>再买一单</button>
         </div>

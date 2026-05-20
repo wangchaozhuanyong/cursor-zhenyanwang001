@@ -29,6 +29,9 @@ function run() {
 
   for (const moduleName of moduleNames) {
     const modulePath = path.join(modulesRoot, moduleName);
+    if (!fs.existsSync(path.join(modulePath, 'index.js'))) {
+      missing.push(`${moduleName}/index.js`);
+    }
     for (const dir of requiredDirs) {
       const target = path.join(modulePath, dir);
       if (!isDirectory(target)) {

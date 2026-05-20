@@ -119,7 +119,7 @@ const SECTIONS: Section[] = [
     category: "brand",
     desc: "网站名称、Slogan、Logo / Favicon — 全站头部、底部、登录页、文档标题都会读取",
     fields: [
-      { key: "siteName", label: "站点名称", placeholder: "例如：大马通", hint: "全站头部 / 浏览器标题尾缀" },
+      { key: "siteName", label: "站点名称", placeholder: "例如：A网站", hint: "全站头部 / 浏览器标题尾缀" },
       { key: "siteSlogan", label: "Slogan / 副标题", placeholder: "尊享品质，精选全球好物" },
       { key: "siteDescription", label: "站点描述", type: "textarea", rows: 2, placeholder: "用于首页 hero / SEO description 兜底" },
       { key: "logoUrl", label: "Logo (推荐 256×256，上传后统一转 WEBP)", type: "image", hint: "未配置时回退到打包内置 logo" },
@@ -233,7 +233,7 @@ const SECTIONS: Section[] = [
     category: "seo",
     desc: "搜索引擎抓取与社交分享时使用，未填写时回退到「站点名称 / 站点描述 / Logo」",
     fields: [
-      { key: "seoTitle", label: "SEO 标题", placeholder: "大马通 - 马来西亚优选商城" },
+      { key: "seoTitle", label: "SEO 标题", placeholder: "A网站 - 官方商城" },
       { key: "seoDescription", label: "SEO 描述", type: "textarea", rows: 2, placeholder: "150 字以内，提升搜索点击率" },
       { key: "seoKeywords", label: "SEO 关键词", placeholder: "用英文逗号分隔, 例: shop,malaysia,gift" },
       { key: "ogImageUrl", label: "分享卡片图（OG Image，推荐 1200×630）", type: "image" },
@@ -295,8 +295,8 @@ const SECTIONS: Section[] = [
     category: "content",
     desc: "未登录首页底部页脚（品牌区、公司名称、版权等）会读取此处。政策类正文请在侧栏「内容管理」编辑对应页面，勿再使用外链。",
     fields: [
-      { key: "footerCompanyName", label: "公司名称", placeholder: "大马通" },
-      { key: "footerCopyright", label: "版权信息", placeholder: "© 2026 大马通 版权所有" },
+      { key: "footerCompanyName", label: "公司名称", placeholder: "A网站" },
+      { key: "footerCopyright", label: "版权信息", placeholder: "© 2026 A网站 版权所有" },
       { key: "footerIcpNo", label: "备案号 / 工商注册号", placeholder: "可选" },
     ],
   },

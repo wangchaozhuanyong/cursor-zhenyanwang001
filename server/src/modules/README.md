@@ -24,8 +24,11 @@
 - `seo`：SEO 相关接口
 - `logistics`：物流能力
 - `myinvois`：电子发票能力
-- `notification`：通知能力
-- `theme`：主题相关（逐步与 user/theme 能力收敛）
+- `pwa`：PWA manifest 与图标能力
+- `telegram`：Telegram 通知能力
+- `siteCapabilities`：站点功能开关能力
+
+说明：通知、主题当前不是独立后端模块；通知能力归入 `user` / `admin`，主题能力归入 `user` 并通过模块公开 API 供后台编排。
 
 ## 模块内分层约束
 

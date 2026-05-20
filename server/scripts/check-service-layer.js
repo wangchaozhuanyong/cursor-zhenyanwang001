@@ -15,8 +15,6 @@ const scanRoots = [
 
 function shouldSkipFile(relPath, baseName) {
   if (baseName.endsWith('.repository.js')) return true;
-  if (baseName.endsWith('.routes.js')) return true;
-  if (baseName.includes('controller')) return true;
   if (baseName.includes('mapper')) return true;
   if (relPath.includes(`${path.sep}schemas${path.sep}`)) return true;
   return false;
@@ -41,6 +39,8 @@ for (const root of scanRoots) {
 const dbQueryRe = /\bdb\.query\s*\(/;
 const poolQueryRe = /\bpool\.query\s*\(/;
 const requireDbRe = /require\s*\(\s*['"][^'"]*config\/db['"]\s*\)/;
+const controllerRequiresRepositoryRe = /require\s*\(\s*['"][^'"]*repository[^'"]*['"]\s*\)/;
+const routesRequiresServiceOrRepositoryRe = /require\s*\(\s*['"][^'"]*(?:service|repository)[^'"]*['"]\s*\)/;
 
 let failed = false;
 for (const f of files) {
@@ -61,6 +61,14 @@ for (const f of files) {
     console.error(`[check-service-layer] Forbidden require(config/db) in non-repository file: ${rel}`);
     failed = true;
   }
+  if (base.includes('controller') && controllerRequiresRepositoryRe.test(text)) {
+    console.error(`[check-service-layer] Forbidden repository import in controller file: ${rel}`);
+    failed = true;
+  }
+  if (base.endsWith('.routes.js') && routesRequiresServiceOrRepositoryRe.test(text)) {
+    console.error(`[check-service-layer] Forbidden service/repository import in routes file: ${rel}`);
+    failed = true;
+  }
 }
 
 /** *service*.js 中禁止在 pool/conn 上直接 .query */
@@ -79,3 +87,5 @@ if (failed) {
   console.error('\nFix: SQL stays in *repository*.js; service uses repository methods only.\n');
   process.exit(1);
 }
+
+console.log('[check-service-layer] OK');

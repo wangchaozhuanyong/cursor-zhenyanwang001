@@ -201,7 +201,7 @@ export default function ProductDetail() {
   const restricted = isRestrictedProduct(product);
   const allowIndex = product.allow_index === undefined ? true : Number(product.allow_index) === 1;
   const canIndex = !restricted && allowIndex;
-  const siteName = siteInfo.siteName || "大马通";
+  const siteName = siteInfo.siteName || "官方商城";
   const canonical = buildCanonical(`/product/${product.id}`);
   const productDescRaw = stripHtml(product.description || "");
   const productDescription = truncateText(

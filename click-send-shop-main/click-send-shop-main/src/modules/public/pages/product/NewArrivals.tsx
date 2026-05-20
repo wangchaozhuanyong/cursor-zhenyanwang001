@@ -26,6 +26,7 @@ export default function NewArrivals() {
   const navigate = useNavigate();
   const goBack = useGoBack("/");
   const siteInfo = useSiteInfo();
+  const siteName = siteInfo.siteName || "官方商城";
   const { products, loading, error, loadProducts } = useProductStore();
   const [sort, setSort] = useState<ProductSortType>("newest");
 
@@ -43,7 +44,7 @@ export default function NewArrivals() {
   return (
     <div className="store-bottom-safe min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <SeoHead
-        title="新品上市｜大马通"
+        title={`新品上市｜${siteName}`}
         description="发现最新上架的好物，最近上新的商品都在这里。"
         canonical={buildCanonical("/new-arrivals")}
         robots="index,follow"

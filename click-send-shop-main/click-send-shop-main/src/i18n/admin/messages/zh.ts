@@ -101,6 +101,7 @@ export const adminMessagesZh: AdminMessages = {
     staffAccounts: "员工账号",
     settings: "系统设置",
     siteSettings: "站点设置",
+    featureSettings: "功能开关",
     telegramNotifications: "Telegram 通知",
     shipping: "配送设置",
     content: "内容管理",

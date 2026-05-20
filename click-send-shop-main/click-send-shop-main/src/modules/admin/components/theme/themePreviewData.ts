@@ -13,7 +13,7 @@ export const previewBanner: Banner = {
 
 export const previewProduct = {
   id: "preview-product",
-  name: "大马通精选商品 · 预览款",
+  name: "官方商城精选商品 · 预览款",
   price: 88,
   original_price: 128,
   points: 20,

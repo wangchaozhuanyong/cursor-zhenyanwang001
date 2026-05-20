@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ChangeEvent 
 import {
   Bell,
   Camera,
-  Download,
   ChevronRight,
   CircleHelp,
   Clock3,
@@ -22,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import logoWebp from "@/assets/logo.webp";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { isLoggedIn } from "@/utils/token";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
@@ -142,7 +142,8 @@ export default function Profile() {
   const navigate = useNavigate();
   const loggedIn = isLoggedIn();
   const siteInfo = useSiteInfo();
-  const siteName = siteInfo.siteName || "大马通";
+  const capabilities = useSiteCapabilities();
+  const siteName = siteInfo.siteName || "官方商城";
   const logoSrc = siteInfo.logoUrl || logoWebp;
   const authStore = useAuthStore();
   const { nickname, avatar, pointsBalance, inviteCode, memberLevel, wechatLogin, loadProfile } = useUserStore();
@@ -215,7 +216,7 @@ export default function Profile() {
   const pendingReviewCount = useMemo(() => orders.reduce((acc, o) => acc + (o.status === "completed" ? o.items.filter((i) => i.can_review).length : 0), 0), [orders]);
   const afterSaleCount = useMemo(() => orders.filter((o) => o.status === "refunding" || o.status === "refunded").length, [orders]);
 
-  const pointsEnabled = loyaltyConfig?.points?.displayEnabled ?? true;
+  const pointsEnabled = capabilities.pointsEnabled && (loyaltyConfig?.points?.displayEnabled ?? true);
   const rewardsEnabled = loyaltyConfig?.reward?.displayEnabled ?? true;
   const inviteEnabled = loyaltyConfig?.reward?.referralEnabled ?? true;
   const assetItems = [
@@ -225,6 +226,7 @@ export default function Profile() {
     { key: "reward", label: "邀请返现", value: `RM ${rewardBalance.toFixed(2)}`, path: "/rewards", auth: true },
   ].filter((item) => (
     (item.key !== "points" || pointsEnabled)
+    && (item.key !== "coupons" || capabilities.couponEnabled)
     && (item.key !== "reward" || rewardsEnabled)
   ));
   const assetGridClass = assetItems.length <= 2
@@ -247,7 +249,7 @@ export default function Profile() {
     { label: "待收货", icon: Truck, count: 0, path: "/orders?tab=shipped", auth: true },
     { label: "待评价", icon: MessageSquare, count: 0, path: "/orders?tab=pending_review", auth: true },
     { label: "退款售后", icon: CircleHelp, count: 0, path: "/returns", auth: true },
-  ]) as Array<{ label: string; icon: typeof Wallet; count?: number; path: string; auth: boolean }>;
+  ]).filter((item) => item.label !== "待评价" || capabilities.reviewEnabled) as Array<{ label: string; icon: typeof Wallet; count?: number; path: string; auth: boolean }>;
   const orderGridClass = "grid-cols-5";
   const notificationBadgeText = formatUnreadBadge(unreadCount);
 
@@ -384,7 +386,6 @@ export default function Profile() {
               { label: "邀请有礼", icon: Gift, path: "/invite", auth: true },
               { label: "消息通知", icon: Bell, path: "/notifications", auth: true, badgeText: notificationBadgeText },
               { label: "账户设置", icon: Settings, path: "/settings", auth: true },
-              { label: "安装应用", icon: Download, path: "/install", auth: false },
               { label: "我的收藏", icon: Heart, path: "/favorites", auth: false },
             ].filter((item) => (
               (item.path !== "/points" || pointsEnabled)

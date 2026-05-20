@@ -25,6 +25,7 @@ import { copyToClipboard } from "@/utils/clipboard";
 import type { PublicPaymentChannel } from "@/services/paymentService";
 import { trackBeginCheckout, trackPurchase } from "@/utils/tracking";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import {
   goodsTaxableInclusivePreview,
   parseSstFromSiteInfo,
@@ -102,6 +103,7 @@ export function useCheckoutPage() {
   const [postSubmitWalletError, setPostSubmitWalletError] = useState<string | null>(null);
   const [selectedCoupon, setSelectedCoupon] = useState<CheckoutPickerCoupon | null>(null);
   const siteInfo = useSiteInfo();
+  const capabilities = useSiteCapabilities();
   const [rewardBalance, setRewardBalance] = useState(0);
   const [usePoints, setUsePoints] = useState(false);
   const [pointsToUse, setPointsToUse] = useState(0);
@@ -175,7 +177,8 @@ export function useCheckoutPage() {
   }, []);
 
   const rawTotal = totalAmount();
-  const { coupons: pickerCoupons, loading: pickerCouponsLoading } = useCheckoutPickerCoupons(rawTotal);
+  const { coupons: pickerCouponsRaw, loading: pickerCouponsLoading } = useCheckoutPickerCoupons(rawTotal);
+  const pickerCoupons = capabilities.couponEnabled ? pickerCouponsRaw : [];
   const { templates: shippingTemplates, loading: shippingRulesLoading, loadError: shippingRulesError } = useShippingStore();
   const enabledTemplates = shippingTemplates.filter((t) => t.enabled);
   const selectedTemplate = enabledTemplates[0] ?? null;
@@ -184,7 +187,7 @@ export function useCheckoutPage() {
     ? calcShippingFee(selectedTemplate, rawTotal, { totalWeightKg: weightKg })
     : 0;
   const shippingFee = orderPreview?.shipping_fee ?? serverShippingFee ?? previewShippingFee;
-  const clientCouponDiscount = selectedCoupon
+  const clientCouponDiscount = capabilities.couponEnabled && selectedCoupon
     ? selectedCoupon.discountType === "percentage"
       ? Math.min(rawTotal, Math.floor(rawTotal * selectedCoupon.discount / 100))
       : selectedCoupon.discountType === "shipping"
@@ -344,12 +347,12 @@ export function useCheckoutPage() {
         contact_name: name.trim() || "结算预览",
         contact_phone: phone.trim() || "60000000000",
         address: address.trim() || "MY",
-        coupon_id: selectedCoupon?.id,
+        coupon_id: capabilities.couponEnabled ? selectedCoupon?.id : undefined,
         shipping_template_id: selectedTemplateId ?? undefined,
         shipping_name: selectedTemplate?.name,
         estimated_weight_kg: weightKg,
-        use_points: usePoints,
-        points_to_use: usePoints ? pointsToUse : 0,
+        use_points: capabilities.pointsEnabled && usePoints,
+        points_to_use: capabilities.pointsEnabled && usePoints ? pointsToUse : 0,
         use_reward_cash: useRewardCash,
         reward_cash_amount: useRewardCash ? rewardCashAmount : 0,
       };
@@ -412,7 +415,7 @@ export function useCheckoutPage() {
         discount_amount: discountAmount,
         shipping_fee: shippingFee,
         total_amount: finalTotal,
-        payment_method: paymentMethod,
+        payment_method: capabilities.onlinePaymentEnabled ? paymentMethod : "whatsapp",
         contact_name: name,
         contact_phone: phone,
       }).then((snapshot) => {
@@ -485,15 +488,15 @@ export function useCheckoutPage() {
             }
           : address,
         note,
-        coupon_id: selectedCoupon?.id,
-        coupon_title: selectedCoupon?.title ?? "",
+        coupon_id: capabilities.couponEnabled ? selectedCoupon?.id : undefined,
+        coupon_title: capabilities.couponEnabled ? selectedCoupon?.title ?? "" : "",
         shipping_template_id: selectedTemplate?.id,
         shipping_name: selectedTemplate?.name ?? "",
-        payment_method: paymentMethod,
+        payment_method: capabilities.onlinePaymentEnabled ? paymentMethod : "whatsapp",
         estimated_weight_kg: weightKg,
         checkout_abandonment_id: checkoutAbandonmentIdRef.current || checkoutAbandonmentId || undefined,
-        use_points: usePoints,
-        points_to_use: usePoints ? pointsToUse : 0,
+        use_points: capabilities.pointsEnabled && usePoints,
+        points_to_use: capabilities.pointsEnabled && usePoints ? pointsToUse : 0,
         use_reward_cash: useRewardCash,
         reward_cash_amount: useRewardCash ? rewardCashAmount : 0,
       });
@@ -659,9 +662,9 @@ export function useCheckoutPage() {
     }
   };
 
-  const showOnline = loyaltyConfig?.checkout?.onlinePaymentEnabled ?? true;
+  const showOnline = capabilities.onlinePaymentEnabled && (loyaltyConfig?.checkout?.onlinePaymentEnabled ?? true);
   const showCustomerService = loyaltyConfig?.checkout?.customerServicePaymentEnabled ?? true;
-  const pointsRedeemEnabled = loyaltyConfig?.checkout?.pointsRedeemEnabled ?? true;
+  const pointsRedeemEnabled = capabilities.pointsEnabled && (loyaltyConfig?.checkout?.pointsRedeemEnabled ?? true);
   const rewardCashRedeemEnabled = loyaltyConfig?.checkout?.rewardCashRedeemEnabled ?? true;
 
   return {

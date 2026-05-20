@@ -101,6 +101,7 @@ export const adminMessagesEn: AdminMessages = {
     staffAccounts: "Staff accounts",
     settings: "System settings",
     siteSettings: "Site settings",
+    featureSettings: "Features",
     telegramNotifications: "Telegram notifications",
     shipping: "Shipping",
     content: "Content",

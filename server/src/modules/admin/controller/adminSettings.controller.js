@@ -22,6 +22,16 @@ exports.updateSite = asyncRoute(async (req, res) => {
   res.success(r.data, r.message);
 });
 
+exports.getFeatures = asyncRoute(async (_req, res) => {
+  const r = await adminSiteSettingsService.getSiteCapabilities();
+  res.success(r.data);
+});
+
+exports.updateFeatures = asyncRoute(async (req, res) => {
+  const r = await adminSiteSettingsService.updateSiteCapabilities(req.body, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
 exports.uploadSiteAssetMiddleware = upload.single('file');
 
 exports.uploadSiteAsset = asyncRoute(async (req, res) => {

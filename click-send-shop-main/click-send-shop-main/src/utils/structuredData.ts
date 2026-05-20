@@ -5,7 +5,7 @@ import { isRestrictedProduct } from "@/utils/restrictedProduct";
 
 export function buildWebsiteJsonLd(siteInfo: SiteInfo) {
   const siteUrl = getPublicSiteUrl();
-  const siteName = (siteInfo.siteName || "大马通").trim();
+  const siteName = (siteInfo.siteName || "官方商城").trim();
   const description = truncateText(stripHtml(siteInfo.seoDescription || siteInfo.siteDescription || ""), 180);
   return {
     "@context": "https://schema.org",
@@ -23,7 +23,7 @@ export function buildWebsiteJsonLd(siteInfo: SiteInfo) {
 
 export function buildOrganizationJsonLd(siteInfo: SiteInfo) {
   const siteUrl = getPublicSiteUrl();
-  const siteName = (siteInfo.siteName || "大马通").trim();
+  const siteName = (siteInfo.siteName || "官方商城").trim();
   const description = truncateText(stripHtml(siteInfo.seoDescription || siteInfo.siteDescription || ""), 180);
   let extraLinks: string[] = [];
   try {

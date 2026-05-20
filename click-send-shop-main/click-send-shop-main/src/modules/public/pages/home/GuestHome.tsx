@@ -5,7 +5,6 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import logoWebp from "@/assets/logo.webp";
 import StoreTabHeader from "@/components/store/StoreTabHeader";
-import HomeInstallHint from "@/components/store/HomeInstallHint";
 import ProductCard from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import BannerCarousel from "@/components/BannerCarousel";
@@ -84,10 +83,10 @@ export default function GuestHome() {
   useDocumentTitle(undefined);
   const navigate = useNavigate();
   const siteInfo = useSiteInfo();
-  const siteName = siteInfo.siteName || "大马通";
+  const siteName = siteInfo.siteName || "官方商城";
   const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
-  const slogan = siteInfo.siteSlogan || "马来西亚华人一站式生活服务与合规精选好物平台";
-  const description = siteInfo.siteDescription || "大马通面向马来西亚华人用户，提供签证咨询、留学申请、第二家园、商业装修、本地生活服务与合规精选好物信息，支持中文客服沟通，适用地区以马来西亚本地为主。";
+  const slogan = siteInfo.siteSlogan || "官方商品与服务平台";
+  const description = siteInfo.siteDescription || "本平台提供商品、服务与客户支持信息。";
   const { banners } = useHomeBanners();
   const { themeConfig } = useThemeRuntime();
   const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
@@ -168,7 +167,7 @@ export default function GuestHome() {
   const homeLayout = themeConfig.homeLayout ?? "classic";
   const isPremiumLayout = homeLayout === "premium";
   const isMagazineLayout = homeLayout === "magazine";
-  const seoTitle = siteInfo.seoTitle || "大马通｜马来西亚华人一站式生活服务与精选好物";
+  const seoTitle = siteInfo.seoTitle || siteName;
   const seoDescription = siteInfo.seoDescription || description;
   const canonical = buildCanonical("/");
   const seoImage = siteInfo.ogImageUrl || siteInfo.defaultOgImageUrl || siteInfo.logoUrl || "/og-default.png";
@@ -183,14 +182,13 @@ export default function GuestHome() {
         ogDescription={seoDescription}
         ogImage={seoImage}
         googleSiteVerification={siteInfo.googleSiteVerification}
-        ogSiteName={siteInfo.siteName || "大马通"}
+        ogSiteName={siteName}
         ogType="website"
         jsonLd={[
           { id: "website", data: buildWebsiteJsonLd(siteInfo) },
           { id: "organization", data: buildOrganizationJsonLd(siteInfo) },
         ]}
       />
-      <HomeInstallHint />
       <StoreTabHeader
         searchMode="none"
         showSiteNameMobile
@@ -212,9 +210,9 @@ export default function GuestHome() {
         )}
       >
         <section className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3">
-          <h1 className="text-base font-semibold text-[var(--theme-text)]">马来西亚华人一站式生活服务平台</h1>
+          <h1 className="text-base font-semibold text-[var(--theme-text)]">{slogan}</h1>
           <p className="mt-1 text-sm text-[var(--theme-text-muted)]">
-            大马通提供签证咨询、留学申请、第二家园、商业装修、本地生活服务与合规精选好物信息，帮助在马华人更方便地了解服务、提交需求并联系客服。
+            {description}
           </p>
         </section>
 

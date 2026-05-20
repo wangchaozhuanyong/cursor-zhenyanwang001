@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { FileSpreadsheet } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import ReportFilterBar from "@/components/admin/report/ReportFilterBar";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
@@ -201,15 +200,13 @@ export default function AdminReportGenericPage({ title, fetcher }: Props) {
             {columns.map((k) => (
               <td key={k} className="px-2 py-2">
                 {k === "cover_image" ? (
-                  <Button
+                  <button
                     type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 px-2 text-xs"
+                    className="inline-flex h-7 items-center rounded-md border border-[var(--theme-border)] bg-transparent px-2 text-xs text-foreground hover:bg-secondary"
                     onClick={() => openCoverPreview(row[k])}
                   >
                     查看图片
-                  </Button>
+                  </button>
                 ) : (
                   formatCellValue(k, row[k])
                 )}

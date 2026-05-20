@@ -90,13 +90,6 @@ function replaceViteClientPlaceholders(): Plugin {
 const thirdPartyLoginEnabled = process.env.VITE_THIRD_PARTY_LOGIN_ENABLED === "true";
 const legacyEnabled = process.env.VITE_LEGACY_BUILD === "1";
 
-const networkOnlyApiPattern = /^\/api\/(admin|auth|user|orders|cart|checkout|payment|upload)(\/|$)/;
-const networkOnlyPagePattern = /^\/(admin|cart|checkout|orders|settings|profile|address|coupons|notifications|returns|reviews\/pending|points|rewards|invite)(\/|$)/;
-
-function isGetRequest(request: Request) {
-  return request.method === "GET";
-}
-
 // https://vitejs.dev/config/
 export default defineConfig(() => ({
   define: {
@@ -141,7 +134,7 @@ export default defineConfig(() => ({
         swDest: "sw.js",
         navigateFallback: undefined,
         navigateFallbackDenylist: [
-          networkOnlyPagePattern,
+          /^\/(admin|cart|checkout|orders|settings|profile|address|coupons|notifications|returns|reviews\/pending|points|rewards|invite)(\/|$)/,
           /^\/api(\/|$)/,
           /^\/manifest\.webmanifest$/,
           /^\/pwa-/,
@@ -152,7 +145,8 @@ export default defineConfig(() => ({
         skipWaiting: false,
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => networkOnlyApiPattern.test(url.pathname),
+            urlPattern: ({ url }) =>
+              /^\/api\/(admin|auth|user|orders|cart|checkout|payment|upload)(\/|$)/.test(url.pathname),
             handler: "NetworkOnly",
           },
           {
@@ -164,12 +158,14 @@ export default defineConfig(() => ({
             handler: "NetworkOnly",
           },
           {
-            urlPattern: ({ url, request }) => request.mode === "navigate" && networkOnlyPagePattern.test(url.pathname),
+            urlPattern: ({ url, request }) =>
+              request.mode === "navigate"
+              && /^\/(admin|cart|checkout|orders|settings|profile|address|coupons|notifications|returns|reviews\/pending|points|rewards|invite)(\/|$)/.test(url.pathname),
             handler: "NetworkOnly",
           },
           {
             urlPattern: ({ url, request }) =>
-              isGetRequest(request)
+              request.method === "GET"
               && (
                 url.pathname === "/api/home/bootstrap"
                 || url.pathname === "/api/content/site-info"
@@ -186,7 +182,7 @@ export default defineConfig(() => ({
           },
           {
             urlPattern: ({ url, request }) =>
-              isGetRequest(request)
+              request.method === "GET"
               && (
                 url.pathname === "/api/categories"
                 || url.pathname.startsWith("/api/categories/")
@@ -202,7 +198,7 @@ export default defineConfig(() => ({
           },
           {
             urlPattern: ({ url, request }) =>
-              isGetRequest(request)
+              request.method === "GET"
               && (
                 url.pathname === "/api/products"
                 || url.pathname === "/api/products/home"
@@ -219,7 +215,7 @@ export default defineConfig(() => ({
           },
           {
             urlPattern: ({ url, request }) =>
-              isGetRequest(request)
+              request.method === "GET"
               && /^\/api\/products\/[^/]+(\/related)?$/.test(url.pathname),
             handler: "StaleWhileRevalidate",
             options: {
@@ -232,7 +228,7 @@ export default defineConfig(() => ({
           },
           {
             urlPattern: ({ url, request }) =>
-              isGetRequest(request)
+              request.method === "GET"
               && (
                 url.pathname.startsWith("/api/banners")
                 || url.pathname.startsWith("/api/content/")

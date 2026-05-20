@@ -289,7 +289,7 @@ function mobileBottomTab(pathname: string): "dash" | "products" | "orders" | "no
 
 /**
  * 侧栏滚动策略：
- * - inline：与整页同一文档流，由浏览器主滚动条带动（桌面端 lg+）
+ * - inline：桌面端 sticky 满高侧栏，菜单区内部滚动，退出固定在底部（避免侧栏下方留白不跟滚）
  * - overlay：固定高度抽屉内自滚动（移动端全屏菜单，避免菜单溢出屏幕）
  */
 function AdminSidebarNav({
@@ -324,11 +324,13 @@ function AdminSidebarNav({
   const listClassName =
     scrollMode === "overlay"
       ? "min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-2 py-3"
-      : "space-y-0.5 px-2 py-3";
+      : "min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-2 py-3";
 
   return (
     <nav
-      className={`flex touch-manipulation flex-col ${scrollMode === "overlay" ? "h-full max-h-[100dvh] min-h-0 flex-1" : ""}`}
+      className={`flex touch-manipulation flex-col ${
+        scrollMode === "overlay" ? "h-full max-h-[100dvh] min-h-0 flex-1" : "h-full min-h-0"
+      }`}
     >
       <div className="safe-area-pt flex shrink-0 items-center gap-2 border-b border-border px-5 py-4">
         <AdminSiteLogo size="sm" />
@@ -533,7 +535,7 @@ function AdminLayoutContent() {
   return (
     <AdminConfirmProvider>
     <div className="flex min-h-[100dvh] items-start bg-[var(--theme-bg)] text-[var(--theme-text)]">
-      <aside className="hidden w-[260px] shrink-0 border-r border-[var(--theme-border)] bg-[var(--theme-card)] lg:block">
+      <aside className="hidden w-[260px] shrink-0 self-start border-r border-[var(--theme-border)] bg-[var(--theme-card)] lg:sticky lg:top-0 lg:flex lg:h-[100dvh] lg:max-h-[100dvh] lg:flex-col">
         <AdminSidebarNav
           scrollMode="inline"
           navItems={navItems}

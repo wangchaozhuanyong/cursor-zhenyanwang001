@@ -35,14 +35,23 @@ async function main() {
   const sw = await readFile(path.join(dist, "sw.js"), "utf8");
   const requiredSnippets = [
     "/offline.html",
-    "networkOnlyApiPattern",
+    "admin|auth|user|orders|cart|checkout|payment|upload",
     "/api/pwa/",
-    "networkOnlyPagePattern",
+    "reviews\\/pending|points|rewards|invite",
     "/api/home/bootstrap",
+    '"GET"',
     "new s.NetworkOnly",
+  ];
+  const forbiddenSnippets = [
+    "networkOnlyApiPattern",
+    "networkOnlyPagePattern",
+    "isGetRequest",
   ];
   requiredSnippets.forEach((snippet) => {
     assert(sw.includes(snippet), `sw.js missing required rule fragment: ${snippet}`);
+  });
+  forbiddenSnippets.forEach((snippet) => {
+    assert(!sw.includes(snippet), `sw.js must not reference unresolved symbol: ${snippet}`);
   });
 
   console.log("PWA verification passed.");

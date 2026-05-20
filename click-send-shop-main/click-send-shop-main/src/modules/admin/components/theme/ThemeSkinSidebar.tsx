@@ -28,6 +28,11 @@ function colorDots(config: ThemeSkin["config"]) {
   return [config.primaryColor, config.secondaryColor, config.accentColor, config.bgColor];
 }
 
+/** 单张皮肤卡约 118px（标题、标签、更多按钮）；列表区至少可见 10 张 */
+const SKIN_LIST_VISIBLE_COUNT = 10;
+const SKIN_CARD_ESTIMATE_PX = 118;
+const SKIN_LIST_MIN_HEIGHT_PX = SKIN_CARD_ESTIMATE_PX * SKIN_LIST_VISIBLE_COUNT;
+
 export default function ThemeSkinSidebar({
   skins,
   selectedSkinId,
@@ -60,8 +65,8 @@ export default function ThemeSkinSidebar({
   });
 
   return (
-    <aside className="w-full shrink-0 rounded-2xl border border-border bg-card p-4 shadow-sm h-[calc(100vh-112px)] overflow-hidden 2xl:sticky 2xl:top-24 2xl:w-[320px]">
-      <div className="flex h-full flex-col gap-3">
+    <aside className="w-full shrink-0 self-start rounded-2xl border border-border bg-card p-4 shadow-sm 2xl:sticky 2xl:top-24 2xl:w-[320px]">
+      <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold text-foreground">皮肤库</p>
           <button
@@ -100,9 +105,11 @@ export default function ThemeSkinSidebar({
         </div>
 
         {onAddStarter && starterQuickAdds.length ? (
-          <div className="rounded-xl border border-dashed border-border p-2">
-            <p className="mb-2 text-xs font-medium text-foreground">从模板新建</p>
-            <div className="grid max-h-[220px] grid-cols-1 gap-1 overflow-y-auto pr-1">
+          <details className="rounded-xl border border-dashed border-border p-2">
+            <summary className="cursor-pointer list-none text-xs font-medium text-foreground [&::-webkit-details-marker]:hidden">
+              从模板新建（{starterQuickAdds.length}）
+            </summary>
+            <div className="mt-2 grid max-h-[160px] grid-cols-1 gap-1 overflow-y-auto pr-1">
               {starterQuickAdds.slice(0, 20).map((item) => (
                 <button
                   key={item.id}
@@ -115,10 +122,13 @@ export default function ThemeSkinSidebar({
                 </button>
               ))}
             </div>
-          </div>
+          </details>
         ) : null}
 
-        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+        <div
+          className="space-y-2 overflow-y-auto pr-1"
+          style={{ minHeight: SKIN_LIST_MIN_HEIGHT_PX }}
+        >
           {filtered.map((skin) => {
             const selected = skin.id === selectedSkinId;
             const isDefault = skin.id === defaultSkinId;

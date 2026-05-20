@@ -10,7 +10,7 @@ import { getBottomNavInnerClassName, getBottomNavShellClassName } from "@/utils/
 const tabs = [
   { path: "/", label: "\u9996\u9875", icon: Home },
   { path: "/categories", label: "\u5206\u7c7b", icon: LayoutGrid },
-  { path: "/support-download", label: "\u5ba2\u670d\u4e0b\u8f7d", icon: Headphones },
+  { path: "/support-download", label: "客服/下载", icon: Headphones },
   { path: "/cart", label: "\u8d2d\u7269\u8f66", icon: ShoppingCart },
   { path: "/profile", label: "\u6211\u7684", icon: User },
 ];

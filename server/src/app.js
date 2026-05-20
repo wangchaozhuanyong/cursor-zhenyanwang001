@@ -12,7 +12,7 @@ const errorHandler = require('./middleware/errorHandler');
 const routes = require('./routes');
 const seoRoutes = require('./modules/seo/routes/seo.routes');
 const { registerSeoPrerender } = require('./modules/product/seoPrerender');
-const { registerPwaBrandRoutes } = require('./modules/pwa/pwa.routes');
+const { registerPwaBrandRoutes } = require('./modules/pwa/routes/pwa.routes');
 const stripeWebhook = require('./modules/payment/controller/stripeWebhook.controller');
 
 const app = express();

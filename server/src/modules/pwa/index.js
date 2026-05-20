@@ -1,5 +1,5 @@
 const express = require('express');
-const { createPwaBrandRouter } = require('./pwa.routes');
+const { createPwaBrandRouter } = require('./routes/pwa.routes');
 
 const router = express.Router();
 router.use('/pwa', createPwaBrandRouter({ iconBasePath: '/api/pwa' }));

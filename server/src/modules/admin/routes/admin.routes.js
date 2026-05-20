@@ -89,7 +89,6 @@ router.post('/rbac/admin-users/:userId/delete', adminAuth, requirePermission('ro
 
 /* ---- Dashboard ---- */
 router.get('/dashboard/stats', adminAuth, requirePermission('dashboard.view'), dashboardCtrl.getStats);
-router.get('/dashboard/chart', adminAuth, requirePermission('dashboard.view'), dashboardCtrl.getChart);
 
 /* ---- Products ---- */
 router.get(
@@ -280,6 +279,14 @@ const inventoryFeature = requireSiteCapability('inventoryEnabled', '本站未启
 router.get('/inventory/summary', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.summary);
 router.get('/inventory/skus', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.listSkus);
 router.get('/inventory/records', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.listRecords);
+router.get('/inventory/pack-rules', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.listPackRules);
+router.post('/inventory/pack-rules', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.createPackRule);
+router.patch('/inventory/pack-rules/:id', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.updatePackRule);
+router.delete('/inventory/pack-rules/:id', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.deletePackRule);
+router.post('/inventory/conversions/unpack', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.unpack);
+router.post('/inventory/conversions/assemble', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.assemble);
+router.get('/inventory/conversions', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.listConversions);
+router.get('/inventory/conversions/:id', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.getConversion);
 router.get('/inventory/export', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.exportSkusCsv);
 router.get('/inventory/records/export', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.exportRecordsCsv);
 router.post('/inventory/batch-warning-threshold', adminAuth, inventoryFeature, requirePermission('inventory.manage'), inventoryCtrl.batchWarningThreshold);

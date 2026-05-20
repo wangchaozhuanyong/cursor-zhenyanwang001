@@ -20,6 +20,13 @@ describe('orderStateMachine', () => {
     assert.doesNotThrow(() => assertFulfillmentTransition('paid', 'shipped'));
   });
 
+  test('fulfillment: paid -> cancelled forbidden (must refund first)', () => {
+    assert.throws(
+      () => assertFulfillmentTransition('paid', 'cancelled'),
+      (e) => e instanceof BusinessError,
+    );
+  });
+
   test('fulfillment: pending -> shipped forbidden', () => {
     assert.throws(
       () => assertFulfillmentTransition('pending', 'shipped'),

@@ -91,7 +91,7 @@ export interface SiteInfo {
   newArrivalShowPrice?: string;
   newArrivalOnlyInStock?: string;
 
-  /* ─ 客服下载页配置 ─ */
+  /* ─ 客服/APP 页配置（supportDownloadConfig JSON） ─ */
   supportDownloadConfig?: string;
 
   /* ─ Cookie 同意后的分析 / 广告追踪 ─ */

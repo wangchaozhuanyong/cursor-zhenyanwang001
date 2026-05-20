@@ -1,6 +1,7 @@
 const { generateId } = require('../../../utils/helpers');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const paymentsService = require('./payments.service');
+const orderPoints = require('../../order/service/orderPoints.service');
 
 function getOrderApi() {
   return /** @type {any} */ (require('../../order')).api || {};
@@ -13,6 +14,25 @@ function getTelegramApi() {
 function getOrderDb() {
   const api = getOrderApi();
   return typeof api.getOrderPool === 'function' ? api.getOrderPool() : null;
+}
+
+async function grantPaymentSuccessPoints(order) {
+  const api = getOrderApi();
+  if (typeof api.getOrderConnection !== 'function') return;
+  const conn = await api.getOrderConnection();
+  try {
+    await conn.beginTransaction();
+    await orderPoints.maybeGrantOrderEarnPoints(conn, order, {
+      trigger: 'payment_success',
+      timing: 'payment_success',
+    });
+    await conn.commit();
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
 }
 
 function getUserApi() {
@@ -47,6 +67,14 @@ function requireOrderApi(name) {
   const fn = getOrderApi()[name];
   if (typeof fn !== 'function') {
     throw new Error(`Order 模块 API 未暴露方法：${name}`);
+  }
+  return fn;
+}
+
+function requireUserApi(name) {
+  const fn = getUserApi()[name];
+  if (typeof fn !== 'function') {
+    throw new Error(`User 模块 API 未暴露方法：${name}`);
   }
   return fn;
 }
@@ -134,6 +162,21 @@ async function handleStripeEvent(event) {
     return { handled: true, duplicate: true };
   }
   await requireOrderApi('markCheckoutAbandonmentPaidByOrderId')(orderDb, orderId);
+  try {
+    await requireUserApi('syncStatsAfterOrderPaid')(
+      order.user_id,
+      Number(order.total_amount || 0),
+      orderId,
+      null,
+    );
+  } catch (e) {
+    console.error('[stripe webhook] syncStatsAfterOrderPaid failed:', e?.message || e);
+  }
+  try {
+    await grantPaymentSuccessPoints(order);
+  } catch (e) {
+    console.error('[stripe webhook] grant payment-success points failed:', e?.message || e);
+  }
   await refreshMemberLevel(orderDb, order.user_id);
 
   try {
@@ -180,6 +223,5 @@ module.exports = {
   handleStripeEvent,
   validatePaymentIntentAmount,
 };
-
 
 

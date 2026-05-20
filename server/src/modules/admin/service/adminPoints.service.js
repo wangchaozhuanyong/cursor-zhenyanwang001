@@ -35,9 +35,13 @@ function normalizeSettingsBody(body = {}) {
     earn_points_unit: body.earn_points_unit ?? body.earnPointsUnit,
     earn_rounding: body.earn_rounding ?? body.earnRounding,
     earn_after_discount: body.earn_after_discount ?? body.earnAfterDiscount,
+    earn_after_points_redeem: body.earn_after_points_redeem ?? body.earnAfterPointsRedeem,
     promotion_no_points: body.promotion_no_points ?? body.promotionNoPoints,
     marketing_activity_no_points: body.marketing_activity_no_points ?? body.marketingActivityNoPoints,
     coupon_no_points: body.coupon_no_points ?? body.couponNoPoints,
+    member_price_no_points: body.member_price_no_points ?? body.memberPriceNoPoints,
+    payment_points_mode: body.payment_points_mode ?? body.paymentPointsMode,
+    allowed_payment_methods: body.allowed_payment_methods ?? body.allowedPaymentMethods,
     redeem_scope: body.redeem_scope ?? body.redeemScope,
     point_value_myr: normalizedPointValue,
     points_per_currency: Math.max(1, Math.round(1 / normalizedPointValue)),
@@ -50,6 +54,9 @@ function normalizeSettingsBody(body = {}) {
     allow_with_reward_cash: body.allow_with_reward_cash ?? body.allowWithRewardCash,
     zero_pay_allowed: body.zero_pay_allowed ?? body.zeroPayAllowed,
     settle_timing: body.settle_timing ?? body.settleTiming,
+    expire_enabled: body.expire_enabled ?? body.expireEnabled,
+    expire_days: body.expire_days ?? body.expireDays,
+    allow_negative_points: body.allow_negative_points ?? body.allowNegativePoints,
   };
 }
 
@@ -78,18 +85,26 @@ function buildSettingsUpdate(input) {
     'earn_enabled',
     'redeem_enabled',
     'earn_after_discount',
+    'earn_after_points_redeem',
     'promotion_no_points',
     'marketing_activity_no_points',
     'coupon_no_points',
+    'member_price_no_points',
     'allow_with_coupon',
     'allow_with_reward_cash',
     'zero_pay_allowed',
+    'expire_enabled',
+    'allow_negative_points',
   ]);
   const fields = [];
   const values = [];
   for (const [key, value] of Object.entries(input)) {
     fields.push(`${key} = ?`);
-    values.push(boolKeys.has(key) ? (toBool(value) ? 1 : 0) : value);
+    values.push(
+      key === 'allowed_payment_methods' && Array.isArray(value)
+        ? JSON.stringify(value)
+        : boolKeys.has(key) ? (toBool(value) ? 1 : 0) : value,
+    );
   }
   return { fields, values };
 }

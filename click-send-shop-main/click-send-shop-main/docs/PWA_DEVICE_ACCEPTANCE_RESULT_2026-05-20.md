@@ -13,7 +13,7 @@
 | A1 | manifest 200 + JSON | ☑ | `Content-Type: application/manifest+json` |
 | A2 | sw.js 200 + no-cache | ☑ | `Cache-Control: no-cache, no-store, must-revalidate` |
 | A3 | offline / 图标 | ☑ | `/offline.html` 200；图标路径可用 |
-| A4 | `/install` → 客服下载 | ☑* | SPA 客户端 `Navigate`；需浏览器执行路由（非 302） |
+| A4 | `/install` → 客服/APP 安装 Tab | ☑* | SPA 客户端 `Navigate`；需浏览器执行路由（非 302） |
 | A5 | 首页无全站安装条 | ☑ | 新 `index.html` 无「可安装到手机桌面」文案 |
 
 ---
@@ -34,7 +34,7 @@
 **用户 / 测试人操作**：
 
 1. Chrome：设置 → 隐私 → 清除 `flashcast.com.my` 站点数据；或 DevTools → Application → Service Workers → Unregister → 硬刷新。
-2. 已安装的 PWA：卸载桌面图标后重新从客服下载页安装。
+2. 已安装的 PWA：卸载桌面图标后重新从客服/APP 页安装 Tab 安装。
 
 自动化浏览器会话在部署后仍可能显示离线页，直至清 SW；curl/新 HTML 已确认为新版。
 

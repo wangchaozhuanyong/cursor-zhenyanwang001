@@ -19,6 +19,8 @@ export type OrderPreviewResult = {
   points_used?: number;
   points_discount_amount?: number;
   point_value_myr?: number;
+  min_redeem_points?: number;
+  redeem_step?: number;
   disabled_reason?: string;
   adjusted?: boolean;
   points_summary?: Record<string, unknown> | null;

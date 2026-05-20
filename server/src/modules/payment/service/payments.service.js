@@ -9,6 +9,7 @@ const manualProvider = require('../providers/manualProvider');
 const malaysiaLocalProvider = require('../providers/malaysiaLocalProvider');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const { writeAuditLog } = require('../../../utils/auditLog');
+const orderPoints = require('../../order/service/orderPoints.service');
 const crypto = require('crypto');
 const payDb = payRepo.getPool();
 
@@ -57,6 +58,7 @@ const orderRepo = {
   selectOrderById: (...args) => requireOrderApi('selectOrderById')(...args),
   selectOrderByIdForUpdate: (...args) => requireOrderApi('selectOrderByIdForUpdate')(...args),
   updateOrderRefundState: (...args) => requireOrderApi('updateOrderRefundState')(...args),
+  applyOrderRefundCompensation: (...args) => requireOrderApi('applyOrderRefundCompensation')(...args),
   insertNotification: (...args) => requireOrderApi('insertOrderNotification')(...args),
 };
 
@@ -531,6 +533,10 @@ async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionN
     return { skipped: true, reason: 'already_paid' };
   }
   await requireUserApi('syncStatsAfterOrderPaid')(order.user_id, toMoney(order.total_amount), order.id, conn);
+  await orderPoints.maybeGrantOrderEarnPoints(conn, order, {
+    trigger: 'payment_success',
+    timing: 'payment_success',
+  });
   await payRepo.insertAnalyticsEvent(conn, {
     user_id: order.user_id,
     dedupe_key: `payment_success:${order.id}`,
@@ -787,6 +793,12 @@ async function markOrderPaidByAdmin(req, orderId, body) {
     if (!paidUpdated) {
       throw new ValidationError('订单状态已变更，请刷新后重试');
     }
+    await requireUserApi('syncStatsAfterOrderPaid')(order.user_id, total, order.id, conn);
+    await orderPoints.maybeGrantOrderEarnPoints(conn, order, {
+      operatorId: adminUserId,
+      trigger: 'admin_mark_paid',
+      timing: 'payment_success',
+    });
     await requireUserApi('refreshUserMemberLevel')(conn, order.user_id);
 
     const itemRows = await orderRepo.selectOrderItemQtyRows(conn, order.id);
@@ -878,70 +890,98 @@ async function markOrderPaidByAdmin(req, orderId, body) {
   }
 }
 
-async function recordRefundByAdmin(req, orderId, body) {
+async function recordRefundByAdmin(req, orderId, body, externalConn = null) {
   const amount = toMoney(body.amount);
   if (amount <= 0) throw new ValidationError('退款金额必须大于 0');
-  const conn = await payRepo.getConnection();
+  const conn = externalConn || await payRepo.getConnection();
+  const ownConn = !externalConn;
   let order = null;
+  let result = null;
   try {
-    await conn.beginTransaction();
+    if (ownConn) await conn.beginTransaction();
     order = await orderRepo.selectOrderByIdForUpdate(conn, orderId);
     if (!order) throw new NotFoundError('订单不存在');
     if (!['paid', 'partially_refunded'].includes(order.payment_status || '')) {
       throw new ValidationError('仅已支付订单可记录退款');
     }
-    const total = toMoney(order.total_amount);
-    if (amount > total) throw new ValidationError('退款金额不能超过实付金额');
-
-    const isFullRefund = amount >= total - 0.01;
-    const paymentStatus = isFullRefund ? PAYMENT_STATUS.REFUNDED : PAYMENT_STATUS.PARTIALLY_REFUNDED;
-    const orderStatus = isFullRefund ? ORDER_STATUS.REFUNDED : ORDER_STATUS.REFUNDING;
-    const refundStatus = isFullRefund ? 'refunded' : 'partially_refunded';
-    await orderRepo.updateOrderRefundState(conn, order.id, {
-      paymentStatus,
-      orderStatus,
-      refundStatus,
-    });
 
     const eventId = body.refund_reference || `refund_${order.id}_${Date.now()}`;
-    await payRepo.insertPaymentEvent(conn, {
-      id: generateId(),
-      payment_order_id: null,
-      order_id: order.id,
-      provider: order.payment_provider || order.payment_channel || 'manual',
-      provider_event_id: eventId,
-      event_type: body.mode === 'provider' ? 'refund.provider_recorded' : 'refund.manual_recorded',
-      verify_status: body.mode === 'provider' ? 'success' : 'manual',
-      processing_result: isFullRefund ? 'refunded' : 'partially_refunded',
-      payload_json: {
-        amount,
-        currency: 'MYR',
-        reason: body.reason || '',
-        refund_reference: body.refund_reference || '',
-        mode: body.mode || 'manual',
+    result = await orderRepo.applyOrderRefundCompensation(conn, {
+      order,
+      refundAmount: amount,
+      refundReference: eventId,
+      reason: body.reason || '',
+      mode: body.mode || 'manual',
+      operatorId: req.user?.id || null,
+      insertPaymentEvent: async (q, ctx) => {
+        const { order: o, amount: amt, isFullRefund, refundReference, reason, mode } = ctx;
+        await payRepo.insertPaymentEvent(q, {
+          id: generateId(),
+          payment_order_id: null,
+          order_id: o.id,
+          provider: o.payment_provider || o.payment_channel || 'manual',
+          provider_event_id: refundReference,
+          event_type: mode === 'provider' ? 'refund.provider_recorded' : 'refund.manual_recorded',
+          verify_status: mode === 'provider' ? 'success' : 'manual',
+          processing_result: isFullRefund ? 'refunded' : 'partially_refunded',
+          payload_json: {
+            amount: amt,
+            currency: 'MYR',
+            reason: reason || '',
+            refund_reference: refundReference,
+            mode: mode || 'manual',
+          },
+          error_message: '',
+        });
       },
-      error_message: '',
+      options: {
+        restoreStock: body.restore_stock === true,
+        restoreCoupon: body.restore_coupon === true,
+        reversePoints: body.reverse_points !== false,
+        reverseRewards: body.reverse_rewards === true,
+        decrementSales: body.decrement_sales !== false,
+        reverseWallet: body.reverse_wallet !== false,
+        trigger: 'payment_refund_record',
+      },
     });
-    await conn.commit();
 
-    await writeAuditLog({
-      req,
-      operatorId: req.user?.id,
-      actionType: 'payment.refund_record',
-      objectType: 'order',
-      objectId: order.id,
-      summary: `记录退款 ?RM ${amount.toFixed(2)} (${isFullRefund ? '全额' : '部分'})`,
-      after: { amount, paymentStatus, refundStatus, reason: body.reason || '' },
-      result: 'success',
-    });
-    try {
-      await requireMyinvoisApi('enqueueRefundCreditNoteIfEnabled')({ orderId: order.id }, 'payment_refund_recorded');
-    } catch (e) {
-      console.error('[MyInvois] enqueue credit note after refund record failed:', e?.message || e);
+    if (ownConn) await conn.commit();
+
+    if (ownConn) {
+      await writeAuditLog({
+        req,
+        operatorId: req.user?.id,
+        actionType: 'payment.refund_record',
+        objectType: 'order',
+        objectId: order.id,
+        summary: `记录退款 RM ${amount.toFixed(2)} (${result.isFullRefund ? '全额' : '部分'})`,
+        after: {
+          amount,
+          paymentStatus: result.paymentStatus,
+          refundStatus: result.refundStatus,
+          refundedAmount: result.refundedAmount,
+          reason: body.reason || '',
+        },
+        result: 'success',
+      });
+      try {
+        await requireMyinvoisApi('enqueueRefundCreditNoteIfEnabled')({ orderId: order.id }, 'payment_refund_recorded');
+      } catch (e) {
+        console.error('[MyInvois] enqueue credit note after refund record failed:', e?.message || e);
+      }
     }
-    return { data: { order_id: order.id, payment_status: paymentStatus, refund_status: refundStatus }, message: '退款记录已保存' };
+    return {
+      data: {
+        order_id: order.id,
+        payment_status: result.paymentStatus,
+        refund_status: result.refundStatus,
+        refunded_amount: result.refundedAmount,
+      },
+      message: '退款记录已保存',
+      result,
+    };
   } catch (err) {
-    await conn.rollback();
+    if (ownConn) await conn.rollback();
     await writeAuditLog({
       req,
       operatorId: req.user?.id,
@@ -954,7 +994,7 @@ async function recordRefundByAdmin(req, orderId, body) {
     }).catch(() => {});
     throw err;
   } finally {
-    conn.release();
+    if (ownConn) conn.release();
   }
 }
 
@@ -1227,5 +1267,4 @@ module.exports = {
   handleManualWebhook,
   handleMalaysiaLocalWebhook,
 };
-
 

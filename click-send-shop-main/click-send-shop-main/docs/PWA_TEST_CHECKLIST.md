@@ -81,7 +81,7 @@ curl -I https://YOUR_DOMAIN/pwa-maskable-512x512.png
 
 ## 8. PWA 回滚方法
 1. 回滚 `vite.config.ts` 的 `VitePWA(...)` 配置。
-2. 删除客服下载页 PWA 安装逻辑和更新提示组件接入。
+2. 删除客服/APP 页 PWA 安装逻辑和更新提示组件接入。
 3. 保留或回滚后端动态 manifest/icon 路由，按发布策略二选一。
 4. 重新构建部署。
 5. 对线上用户执行一次 SW 清理指引（避免旧 SW 滞留）。

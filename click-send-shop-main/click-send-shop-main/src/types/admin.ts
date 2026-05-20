@@ -27,25 +27,73 @@ export interface DashboardStats {
   totalRevenue: number;
   todayOrders: number;
   todayRevenue: number;
-  monthlyOrders: number;
-  monthlyRevenue: number;
+  monthlyOrders?: number;
+  monthlyRevenue?: number;
+  totalProducts?: number;
 }
 
-export interface DashboardChartPoint {
+export interface DashboardDateRange {
+  preset: string;
+  dateFrom: string;
+  dateTo: string;
+  timezone: string;
+}
+
+export interface DashboardTodayMetrics {
+  revenue: number;
+  paidOrders: number;
+  orderCount: number;
+  newUsers: number;
+  pendingPayment: number;
+  pendingShip: number;
+  pendingAfterSale: number;
+  lowStock: number;
+  outOfStock: number;
+}
+
+export interface DashboardTodos {
+  pendingShip: number;
+  afterSale: number;
+  paymentFailed: number;
+  lowStock: number;
+  outOfStock: number;
+}
+
+export interface DashboardSalesTrendPoint {
   date: string;
   sales: number;
+  order_count: number;
+  paid_order_count: number;
+  refund_amount: number;
+  avg_order_value: number;
 }
 
 export interface DashboardCategorySlice {
   name: string;
   value: number;
+  sales_qty?: number;
+  share_percent?: number;
 }
 
-export interface DashboardWeeklyOrderPoint {
-  day: string;
-  orders?: number;
-  completed?: number;
-  cancelled?: number;
+export interface DashboardProductRow {
+  product_id: string;
+  product_name: string;
+  sales_qty: number;
+  sales_amount: number;
+  current_stock: number;
+  warning_stock?: number;
+}
+
+export interface DashboardAnalyticsMonitor {
+  customerServiceClicks: number;
+  qrViews: number;
+  androidDownloadClicks: number;
+  iosSafariGuide: number;
+  pwaInstallPrompt: number;
+  pwaOpen: number;
+  installConversionRate: number;
+  pwaDownloadPageViews?: number;
+  pwaInstalled?: number;
 }
 
 export interface DashboardRecentOrderRow {
@@ -58,15 +106,30 @@ export interface DashboardRecentOrderRow {
   created_at?: string;
 }
 
-/** /admin/dashboard/stats 完整响应（图表 + 卡片指标） */
+/** /admin/dashboard/stats 完整响应 */
 export interface DashboardOverview extends DashboardStats {
+  range?: DashboardDateRange;
+  canViewOrders?: boolean;
+  today?: DashboardTodayMetrics;
+  todos?: DashboardTodos;
   todayNewUsers?: number;
   pendingOrders?: number;
-  totalProducts?: number;
-  salesTrend?: DashboardChartPoint[];
+  salesTrend?: DashboardSalesTrendPoint[];
+  categorySalesShare?: DashboardCategorySlice[];
   categoryData?: DashboardCategorySlice[];
-  weeklyOrders?: DashboardWeeklyOrderPoint[];
+  topProducts?: DashboardProductRow[];
+  slowProducts?: DashboardProductRow[];
+  lowStockProducts?: DashboardProductRow[];
+  analytics?: DashboardAnalyticsMonitor;
   recentOrders?: DashboardRecentOrderRow[];
+}
+
+export type DashboardRangePreset = "today" | "last_7_days" | "last_30_days" | "this_month" | "custom";
+
+export interface DashboardStatsQuery {
+  range_preset?: DashboardRangePreset;
+  date_from?: string;
+  date_to?: string;
 }
 
 /**
@@ -153,7 +216,7 @@ export interface SiteSettings {
   newArrivalShowPrice?: string;
   newArrivalOnlyInStock?: string;
 
-  /* 客服下载页配置 */
+  /* 客服/APP 页配置 */
   supportDownloadConfig?: string;
 
   /* 分析 / 广告埋点配置：脚本仍受 Cookie 同意状态控制 */

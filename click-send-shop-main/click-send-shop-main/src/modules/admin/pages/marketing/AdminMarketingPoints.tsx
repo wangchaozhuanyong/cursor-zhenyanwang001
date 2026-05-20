@@ -72,7 +72,7 @@ export default function AdminMarketingPoints() {
     void load();
   }, [load]);
 
-  const setSetting = (key: string, value: string | number | boolean) => setSettings((s) => {
+  const setSetting = (key: string, value: string | number | boolean | string[]) => setSettings((s) => {
     const next = { ...s, [key]: value };
     if (key === "point_value_myr") {
       const pointValue = Number(value);

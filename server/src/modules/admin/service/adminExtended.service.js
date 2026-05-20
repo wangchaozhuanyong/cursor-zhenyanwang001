@@ -485,7 +485,7 @@ async function approveReturn(id, body, adminUserId, req) {
       refund_mode = 'none',
       restore_stock = false,
       restore_coupon = false,
-      reverse_points = false,
+      reverse_points = true,
       reverse_rewards = false,
     } = body || {};
 
@@ -550,34 +550,8 @@ async function approveReturn(id, body, adminUserId, req) {
       }
     }
 
-    if (restore_coupon && order.coupon_uc_id) {
-      await repo.restoreUserCouponConn(conn, order.coupon_uc_id);
-    }
     const isFullRefund = refundAmount > 0 && refundAmount >= orderTotal;
-    const partialPointsNote = refundAmount > 0 && refundAmount < orderTotal
-      ? '部分退款的积分调整请通过积分手动调整处理。'
-      : '';
-    if (reverse_points && isFullRefund) {
-      await orderPoints.reverseOrderEarnPoints(conn, order, {
-        operatorId: adminUserId,
-        trigger: 'return_approved_full_refund',
-        description: `售后单 ${id} 整单退款，积分回滚`,
-      });
-      await orderPoints.reverseOrderRedeem(conn, order, {
-        operatorId: adminUserId,
-        trigger: 'return_approved_full_refund',
-        description: `售后单 ${id} 整单退款，积分抵扣退回`,
-        sourceType: 'return_refund',
-      });
-    }
-    if (reverse_rewards) {
-      await requireUserApi('reverseOrderRewards')(conn, order, `售后单 ${id} 审核通过，返现冲正`, {
-        operatorId: adminUserId,
-        trigger: 'return_approved',
-      });
-    }
-
-    await conn.commit();
+    const partialPointsNote = '';
 
     if (refundAmount > 0) {
       await requirePaymentApi('recordRefundByAdmin')(req, order.id, {
@@ -585,9 +559,27 @@ async function approveReturn(id, body, adminUserId, req) {
         mode: refund_mode === 'provider' ? 'provider' : 'manual',
         reason: admin_remark || `售后单 ${id} 退款`,
         refund_reference: `return_${id}_${Date.now()}`,
+        restore_stock: false,
+        restore_coupon,
+        reverse_points,
+        reverse_rewards,
+        decrement_sales: isFullRefund,
+        reverse_wallet: isFullRefund,
+      }, conn);
+      await repo.updateReturnByFieldsConn(
+        conn,
+        ['status = ?'],
+        [RETURN_STATUS.REFUNDED],
+        id,
+      );
+    } else if (reverse_rewards) {
+      await requireUserApi('reverseOrderRewards')(conn, order, `售后单 ${id} 审核通过，返现冲正`, {
+        operatorId: adminUserId,
+        trigger: 'return_approved',
       });
-      await repo.updateReturnRequestByFields(['status = ?'], [RETURN_STATUS.REFUNDED], id);
     }
+
+    await conn.commit();
 
     const retCopy = await getResolvedTriggerCopy('return_approved', {
       order_no: order.order_no,
@@ -1011,7 +1003,6 @@ module.exports = {
   ensureDefaultLegalContentPages,
   _sanitizeCmsHtmlForTest: sanitizeCmsHtml,
 };
-
 
 
 

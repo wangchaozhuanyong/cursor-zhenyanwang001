@@ -1,7 +1,14 @@
 const db = require('../../../config/db');
-const { PAID_PAYMENT_STATUS_LIST } = require('../../../constants/status');
+const { PAID_PAYMENT_SQL, netSalesExpr, refundedAmountExpr } = require('../../../utils/orderRevenueSql');
 
-const PAID_PAYMENT_SQL = PAID_PAYMENT_STATUS_LIST.map((s) => `'${s}'`).join(', ');
+const NET_SALES_O = netSalesExpr('o');
+const NET_SALES = netSalesExpr('');
+const REFUNDED_O = refundedAmountExpr('o');
+const REFUNDED = refundedAmountExpr('');
+const GROSS_O = `CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.total_amount ELSE 0 END`;
+const GROSS = `CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN total_amount ELSE 0 END`;
+const ORDER_NET_RATIO = `(CASE WHEN o.total_amount > 0 AND o.payment_status IN (${PAID_PAYMENT_SQL})
+  THEN GREATEST(0, o.total_amount - COALESCE(o.refunded_amount, 0)) / o.total_amount ELSE 0 END)`;
 
 /** 未执行 061 迁移时 analytics_events 不存在，报表需降级避免 500 */
 let analyticsEventsReady;
@@ -63,12 +70,12 @@ async function queryList(sql, params = []) {
 async function selectOverviewSummary(dateFrom, dateTo) {
   return queryOne(
     `SELECT
-      COALESCE(SUM(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN total_amount ELSE 0 END),0) AS gross_sales,
-      COALESCE(SUM(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN total_amount ELSE 0 END),0) AS paid_amount,
+      COALESCE(SUM(${GROSS}),0) AS gross_sales,
+      COALESCE(SUM(${NET_SALES}),0) AS paid_amount,
       COALESCE(SUM(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN discount_amount ELSE 0 END),0) AS discount_amount,
       COUNT(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN 1 END) AS paid_order_count,
       COUNT(*) AS order_count,
-      COALESCE(SUM(CASE WHEN payment_status='refunded' OR status='refunded' THEN total_amount ELSE 0 END),0) AS refund_amount,
+      COALESCE(SUM(${REFUNDED}),0) AS refund_amount,
       COUNT(CASE WHEN status IN ('pending') OR payment_status IN ('pending','unpaid') THEN 1 END) AS pending_orders
      FROM orders
      WHERE ${rangeWhere("DATE(DATE_ADD(created_at, INTERVAL 8 HOUR))")}`,
@@ -99,11 +106,11 @@ async function selectSalesDaily(dateFrom, dateTo) {
       COUNT(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN 1 END) AS paid_order_count,
       COUNT(CASE WHEN o.status='cancelled' THEN 1 END) AS cancelled_order_count,
       COUNT(CASE WHEN o.status='refunded' OR o.payment_status='refunded' THEN 1 END) AS refund_order_count,
-      COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.total_amount ELSE 0 END),0) AS gross_sales,
+      COALESCE(SUM(${GROSS_O}),0) AS gross_sales,
       COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.discount_amount ELSE 0 END),0) AS discount_amount,
       COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.shipping_fee ELSE 0 END),0) AS shipping_fee,
-      COALESCE(SUM(CASE WHEN o.status='refunded' OR o.payment_status='refunded' THEN o.total_amount ELSE 0 END),0) AS refund_amount,
-      COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.total_amount ELSE 0 END),0) - COALESCE(SUM(CASE WHEN o.status='refunded' OR o.payment_status='refunded' THEN o.total_amount ELSE 0 END),0) AS net_sales,
+      COALESCE(SUM(${REFUNDED_O}),0) AS refund_amount,
+      COALESCE(SUM(${NET_SALES_O}),0) AS net_sales,
       COALESCE(SUM(oi.qty),0) AS items_sold,
       COUNT(DISTINCT CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.user_id END) AS paying_users
      FROM orders o
@@ -119,10 +126,10 @@ async function selectSalesMonthly(dateFrom, dateTo) {
   return queryList(
     `SELECT
       DATE_FORMAT(DATE_ADD(created_at, INTERVAL 8 HOUR),'%Y-%m') AS month,
-      COALESCE(SUM(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN total_amount ELSE 0 END),0) AS gross_sales,
-      COALESCE(SUM(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN total_amount ELSE 0 END),0) - COALESCE(SUM(CASE WHEN payment_status='refunded' OR status='refunded' THEN total_amount ELSE 0 END),0) AS net_sales,
+      COALESCE(SUM(${GROSS}),0) AS gross_sales,
+      COALESCE(SUM(${NET_SALES}),0) AS net_sales,
       COUNT(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN 1 END) AS paid_order_count,
-      COALESCE(SUM(CASE WHEN payment_status='refunded' OR status='refunded' THEN total_amount ELSE 0 END),0) AS refund_amount,
+      COALESCE(SUM(${REFUNDED}),0) AS refund_amount,
       COALESCE(SUM(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN discount_amount ELSE 0 END),0) AS discount_amount
      FROM orders
      WHERE ${rangeWhere("DATE(DATE_ADD(created_at, INTERVAL 8 HOUR))")}

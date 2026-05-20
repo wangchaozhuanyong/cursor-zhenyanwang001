@@ -444,6 +444,7 @@ function AdminLayoutContent() {
   const { t, locale, setLocale } = useAdminT();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
+  const [skinPickerOpen, setSkinPickerOpen] = useState(false);
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
   const [accountDialogTab, setAccountDialogTab] = useState<AdminAccountTab>("profile");
   const [topSearch, setTopSearch] = useState("");
@@ -473,13 +474,17 @@ function AdminLayoutContent() {
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (skinPickerOpen) return;
+      if (target.closest('[role="dialog"]')) return;
+      if (avatarRef.current && !avatarRef.current.contains(target)) {
         setAvatarMenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  }, [skinPickerOpen]);
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -629,23 +634,17 @@ function AdminLayoutContent() {
               </button>
               {avatarMenuOpen && (
                 <motion.div className="absolute right-0 top-full z-50 mt-1 w-56 rounded-xl border border-border bg-card py-1 shadow-lg">
-                  <SkinPickerDialog
-                    title={t("skin.titleSystem")}
-                    description={t("skin.description")}
-                    loadingText={t("skin.loading")}
-                    currentSkinHint={t("skin.currentSkin")}
-                    switchHint={t("skin.switchHint")}
-                    selectedBadge={t("skin.selected")}
-                    trigger={(
-                      <button
-                        type="button"
-                        className="flex min-h-[44px] w-full items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-secondary"
-                      >
-                        <Palette size={16} />
-                        {t("layout.changeSkin")}
-                      </button>
-                    )}
-                  />
+                  <button
+                    type="button"
+                    className="flex min-h-[44px] w-full items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-secondary"
+                    onClick={() => {
+                      setSkinPickerOpen(true);
+                      setAvatarMenuOpen(false);
+                    }}
+                  >
+                    <Palette size={16} />
+                    {t("layout.changeSkin")}
+                  </button>
                   <div className="px-4 py-2">
                     <p className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                       <Languages size={14} />
@@ -761,6 +760,16 @@ function AdminLayoutContent() {
           </div>
         </nav>
       </div>
+      <SkinPickerDialog
+        open={skinPickerOpen}
+        onOpenChange={setSkinPickerOpen}
+        title={t("skin.titleSystem")}
+        description={t("skin.description")}
+        loadingText={t("skin.loading")}
+        currentSkinHint={t("skin.currentSkin")}
+        switchHint={t("skin.switchHint")}
+        selectedBadge={t("skin.selected")}
+      />
       <AdminAccountSettingsDialog
         open={accountDialogOpen}
         onOpenChange={setAccountDialogOpen}

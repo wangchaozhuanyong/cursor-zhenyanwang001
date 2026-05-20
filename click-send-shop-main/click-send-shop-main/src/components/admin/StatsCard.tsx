@@ -8,11 +8,24 @@ interface StatsCardProps {
   value: string | number;
   change?: string;
   trend?: "up" | "down";
+  onClick?: () => void;
 }
 
-export default function StatsCard({ icon: Icon, label, value, change, trend }: StatsCardProps) {
+export default function StatsCard({ icon: Icon, label, value, change, trend, onClick }: StatsCardProps) {
+  const interactive = Boolean(onClick);
   return (
-    <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
+    <div
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={interactive ? (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick?.();
+        }
+      } : undefined}
+      className={`rounded-xl border border-border bg-card p-3 sm:p-4 ${interactive ? "cursor-pointer transition-colors hover:bg-[var(--theme-bg)] active:bg-[var(--theme-bg)]" : ""}`}
+    >
       <div className="flex items-center justify-between gap-2">
         <span className="text-[11px] leading-tight text-muted-foreground sm:text-xs">{label}</span>
         <Icon size={16} className="shrink-0 text-[var(--theme-primary)]" />

@@ -10,7 +10,7 @@ import { getBottomNavInnerClassName, getBottomNavShellClassName } from "@/utils/
 const tabs = [
   { path: "/", label: "\u9996\u9875", icon: Home },
   { path: "/categories", label: "\u5206\u7c7b", icon: LayoutGrid },
-  { path: "/support-download", label: "客服/下载", icon: Headphones },
+  { path: "/support-download?tab=support", label: "客服/APP", icon: Headphones },
   { path: "/cart", label: "\u8d2d\u7269\u8f66", icon: ShoppingCart },
   { path: "/profile", label: "\u6211\u7684", icon: User },
 ];
@@ -51,8 +51,19 @@ export default function BottomNav() {
   if (location.pathname.startsWith("/checkout")) return null;
 
   const requiresAuth = (path: string) => path === "/profile";
+  const isTabActive = (path: string) => {
+    const base = path.split("?")[0];
+    return location.pathname === base;
+  };
+
   const handleNavigate = (path: string) => {
-    if (location.pathname === path) {
+    const base = path.split("?")[0];
+    const targetSearch = path.includes("?") ? `?${path.split("?")[1]}` : "";
+    if (location.pathname === base) {
+      if (targetSearch && location.search !== targetSearch) {
+        navigate(path);
+        return;
+      }
       window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
       return;
     }
@@ -97,7 +108,7 @@ export default function BottomNav() {
       <div className={getBottomNavInnerClassName(navStyle)}>
         <div className="grid h-[68px] grid-cols-5 items-center px-1">
           {tabs.map((tab) => {
-            const isActive = location.pathname === tab.path;
+            const isActive = isTabActive(tab.path);
             const Icon = tab.icon;
             return (
               <a

@@ -5,8 +5,8 @@ const db = require('../../../config/db');
 const {
   ACTIVE_RETURN_STATUS_LIST,
   ACTIVE_RETURN_SQL_IN,
-  ORDER_REFUNDING_STATUSES,
   orderAfterSalePredicate,
+  orderAfterSaleParams,
 } = require('../orderAfterSale');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const { generateId } = require('../../../utils/helpers');
@@ -454,6 +454,174 @@ async function deductVariantStock(q, variantId, qty, meta = {}) {
   }
   return result.affectedRows;
 }
+
+function createAutoConversionOrderNo() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  const rand = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `ZDCB${y}${m}${d}${Date.now().toString().slice(-6)}${rand}`;
+}
+
+async function ensureVariantStockWithAutoUnpack(q, variantId, requiredQty, meta = {}) {
+  const [[child]] = await q.query(
+    `SELECT v.id, v.product_id, v.title, v.sku_code, v.stock, COALESCE(v.unit_name, '件') AS unit_name,
+            p.name AS product_name
+       FROM product_variants v
+       JOIN products p ON p.id = v.product_id
+      WHERE v.id = ? AND v.deleted_at IS NULL AND v.enabled = 1
+      FOR UPDATE`,
+    [variantId],
+  );
+  if (!child) return { ok: false, stock: 0, unpacked: false };
+  const childStock = Number(child.stock || 0);
+  const needQty = Number(requiredQty || 0);
+  if (childStock >= needQty) return { ok: true, stock: childStock, unpacked: false };
+
+  const [[rule]] = await q.query(
+    `SELECT *
+       FROM inventory_pack_rules
+      WHERE child_variant_id = ?
+        AND enabled = 1
+        AND auto_unpack_enabled = 1
+        AND deleted_at IS NULL
+      ORDER BY created_at ASC
+      LIMIT 1
+      FOR UPDATE`,
+    [variantId],
+  );
+  if (!rule) return { ok: false, stock: childStock, unpacked: false };
+
+  const ruleParentQty = Math.max(1, Number(rule.parent_qty || 1));
+  const childQty = Number(rule.child_qty || 0);
+  if (!childQty || childQty <= 1) return { ok: false, stock: childStock, unpacked: false };
+  const shortage = needQty - childStock;
+  const needParentQty = Math.ceil((shortage * ruleParentQty) / childQty);
+
+  const [[parent]] = await q.query(
+    `SELECT v.id, v.product_id, v.title, v.sku_code, v.stock, COALESCE(v.unit_name, '件') AS unit_name,
+            p.name AS product_name
+       FROM product_variants v
+       JOIN products p ON p.id = v.product_id
+      WHERE v.id = ? AND v.deleted_at IS NULL AND v.enabled = 1
+      FOR UPDATE`,
+    [rule.parent_variant_id],
+  );
+  if (!parent) return { ok: false, stock: childStock, unpacked: false };
+  const parentBefore = Number(parent.stock || 0);
+  if (parentBefore < needParentQty) return { ok: false, stock: childStock, unpacked: false };
+
+  const childTotalQty = Math.floor((needParentQty * childQty) / ruleParentQty);
+  if (childTotalQty <= 0) return { ok: false, stock: childStock, unpacked: false };
+  const parentAfter = parentBefore - needParentQty;
+  const childAfter = childStock + childTotalQty;
+  await q.query('UPDATE product_variants SET stock = ? WHERE id = ?', [parentAfter, parent.id]);
+  await q.query('UPDATE product_variants SET stock = ? WHERE id = ?', [childAfter, child.id]);
+  await syncProductStockFromVariants(q, parent.product_id);
+  if (parent.product_id !== child.product_id) await syncProductStockFromVariants(q, child.product_id);
+
+  const conversionId = generateId();
+  const conversionNo = createAutoConversionOrderNo();
+  await q.query(
+    `INSERT INTO inventory_conversion_orders
+       (id, order_no, type, rule_id,
+        parent_product_id, parent_variant_id, parent_qty,
+        child_product_id, child_variant_id, rule_parent_qty, child_qty_per_parent, child_total_qty,
+        parent_before_stock, parent_after_stock, child_before_stock, child_after_stock,
+        parent_product_name_snapshot, parent_variant_name_snapshot, parent_sku_code_snapshot, parent_unit_name_snapshot,
+        child_product_name_snapshot, child_variant_name_snapshot, child_sku_code_snapshot, child_unit_name_snapshot,
+        source_type, source_order_id, source_order_no, operator_id, remark)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      conversionId,
+      conversionNo,
+      'auto_unpack',
+      rule.id,
+      parent.product_id,
+      parent.id,
+      needParentQty,
+      child.product_id,
+      child.id,
+      ruleParentQty,
+      childQty,
+      childTotalQty,
+      parentBefore,
+      parentAfter,
+      childStock,
+      childAfter,
+      parent.product_name || '',
+      parent.title || '',
+      parent.sku_code || '',
+      parent.unit_name || '件',
+      child.product_name || '',
+      child.title || '',
+      child.sku_code || '',
+      child.unit_name || '件',
+      'order',
+      meta.orderId || null,
+      meta.orderNo || '',
+      null,
+      meta.reason || '订单库存不足自动拆包',
+    ],
+  );
+
+  await q.query(
+    `INSERT INTO inventory_stock_records
+       (id, product_id, variant_id, change_type, quantity_delta, before_stock,
+        after_stock, reason, ref_type, ref_id, operator_id,
+        product_name_snapshot, variant_name_snapshot, sku_code_snapshot, order_no_snapshot, source_no, remark, created_by_type)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      generateId(),
+      parent.product_id,
+      parent.id,
+      'auto_unpack_parent_out',
+      -needParentQty,
+      parentBefore,
+      parentAfter,
+      `订单 ${meta.orderNo || ''} 自动拆包`,
+      'inventory_conversion',
+      conversionId,
+      null,
+      parent.product_name || '',
+      parent.title || '',
+      parent.sku_code || '',
+      meta.orderNo || '',
+      conversionNo,
+      '',
+      'system',
+    ],
+  );
+  await q.query(
+    `INSERT INTO inventory_stock_records
+       (id, product_id, variant_id, change_type, quantity_delta, before_stock,
+        after_stock, reason, ref_type, ref_id, operator_id,
+        product_name_snapshot, variant_name_snapshot, sku_code_snapshot, order_no_snapshot, source_no, remark, created_by_type)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      generateId(),
+      child.product_id,
+      child.id,
+      'auto_unpack_child_in',
+      childTotalQty,
+      childStock,
+      childAfter,
+      `订单 ${meta.orderNo || ''} 自动拆包`,
+      'inventory_conversion',
+      conversionId,
+      null,
+      child.product_name || '',
+      child.title || '',
+      child.sku_code || '',
+      meta.orderNo || '',
+      conversionNo,
+      '',
+      'system',
+    ],
+  );
+  return { ok: childAfter >= needQty, stock: childAfter, unpacked: true, conversionId, conversionNo };
+}
 async function ensurePointsAccount(q, userId) {
   await q.query(
     `INSERT IGNORE INTO points_accounts (user_id, balance, total_earned)
@@ -551,7 +719,7 @@ function buildOrderListWhere(filters = {}) {
         )`;
     } else if (tab === 'after_sale') {
       where += ` AND ${orderAfterSalePredicate('o')}`;
-      params.push(...ORDER_REFUNDING_STATUSES);
+      params.push(...orderAfterSaleParams());
     } else if (tab === 'cancelled') {
       where += " AND o.status = 'cancelled'";
     }
@@ -598,7 +766,7 @@ async function selectOrderSummary(q, userId) {
     `SELECT COUNT(*) AS after_sale
      FROM orders o
      WHERE o.user_id = ? AND ${orderAfterSalePredicate('o')}`,
-    [userId, ...ORDER_REFUNDING_STATUSES],
+    [userId, ...orderAfterSaleParams()],
   );
 
   const [[pendingReviewRow]] = await q.query(
@@ -749,6 +917,15 @@ async function incrementProductSales(q, productId, qty) {
   );
 }
 
+async function decrementProductSales(q, productId, qty) {
+  const n = Math.max(0, Number(qty) || 0);
+  if (!productId || n <= 0) return;
+  await q.query(
+    'UPDATE products SET sales_count = GREATEST(0, sales_count - ?) WHERE id = ?',
+    [n, productId],
+  );
+}
+
 async function decrementUserPoints(q, userId, points) {
   const amount = Math.max(Number(points) || 0, 0);
   await ensurePointsAccount(q, userId);
@@ -812,17 +989,21 @@ async function updateOrderPaid(q, orderId, params = {}) {
 }
 
 async function updateOrderRefundState(q, orderId, params = {}) {
-  const { paymentStatus, orderStatus, refundStatus } = params;
+  const { paymentStatus, orderStatus, refundStatus, refundedAmount } = params;
+  if (refundedAmount !== undefined && refundedAmount !== null) {
+    await q.query(
+      `UPDATE orders
+       SET payment_status = ?, status = ?, refund_status = ?, refunded_amount = ?
+       WHERE id = ?`,
+      [paymentStatus, orderStatus, refundStatus, refundedAmount, orderId],
+    );
+    return;
+  }
   await q.query(
     `UPDATE orders
      SET payment_status = ?, status = ?, refund_status = ?
      WHERE id = ?`,
-    [
-      paymentStatus,
-      orderStatus,
-      refundStatus,
-      orderId,
-    ],
+    [paymentStatus, orderStatus, refundStatus, orderId],
   );
 }
 
@@ -933,6 +1114,7 @@ module.exports = {
   selectProductsForUpdate,
   selectProductsByIds,
   selectVariantsForUpdate,
+  ensureVariantStockWithAutoUnpack,
   selectVariantsByIds,
   selectDefaultVariantsForProducts,
   selectDefaultVariantsForProductsRead,
@@ -973,6 +1155,7 @@ module.exports = {
   selectOrderItemQtyRows,
   restoreVariantStock,
   incrementProductSales,
+  decrementProductSales,
   decrementUserPoints,
   restoreUserCouponById,
   restoreUserCouponHeuristic,

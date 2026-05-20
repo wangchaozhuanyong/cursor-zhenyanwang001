@@ -24,16 +24,24 @@ function orderAfterSalePredicate(alias = 'o') {
     ${alias}.status IN (?, ?)
     OR EXISTS (
       SELECT 1 FROM return_requests rr
-      WHERE rr.order_id = ${alias}.id AND rr.user_id = ${alias}.user_id
+      WHERE rr.order_id = ${alias}.id
+        AND rr.user_id = ${alias}.user_id
+        AND rr.status IN (${ACTIVE_RETURN_SQL_IN})
     )
   )`;
 }
 
 const ORDER_REFUNDING_STATUSES = [ORDER_STATUS.REFUNDING, ORDER_STATUS.REFUNDED];
 
+/** SQL 占位符绑定参数（先订单退款状态，再活跃售后状态） */
+function orderAfterSaleParams() {
+  return [...ORDER_REFUNDING_STATUSES, ...ACTIVE_RETURN_STATUS_LIST];
+}
+
 module.exports = {
   ACTIVE_RETURN_STATUS_LIST,
   ACTIVE_RETURN_SQL_IN,
   ORDER_REFUNDING_STATUSES,
   orderAfterSalePredicate,
+  orderAfterSaleParams,
 };

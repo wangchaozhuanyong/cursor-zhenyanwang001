@@ -1,11 +1,6 @@
 import { get } from "@/api/request";
-import type { DashboardStats } from "@/types/admin";
+import type { DashboardOverview, DashboardStatsQuery } from "@/types/admin";
 
-export function getDashboardStats() {
-  return get<DashboardStats>("/admin/dashboard/stats");
+export function getDashboardStats(query?: DashboardStatsQuery) {
+  return get<DashboardOverview>("/admin/dashboard/stats", query);
 }
-
-export function getDashboardChartData(range: "week" | "month" | "year") {
-  return get<{ labels: string[]; values: number[] }>("/admin/dashboard/chart", { range });
-}
-

@@ -55,4 +55,44 @@ exports.exportRecordsCsv = asyncRoute(async (req, res) => {
   res.send(`\uFEFF${csv}`);
 });
 
+exports.listPackRules = asyncRoute(async (req, res) => {
+  const r = await svc.listPackRules(req.query || {});
+  res.success(r);
+});
+
+exports.createPackRule = asyncRoute(async (req, res) => {
+  const r = await svc.createPackRule(req.body || {}, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
+exports.updatePackRule = asyncRoute(async (req, res) => {
+  const r = await svc.updatePackRule(req.params.id, req.body || {}, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
+exports.deletePackRule = asyncRoute(async (req, res) => {
+  const r = await svc.deletePackRule(req.params.id, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
+exports.unpack = asyncRoute(async (req, res) => {
+  const r = await svc.unpack(req.body || {}, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
+exports.assemble = asyncRoute(async (req, res) => {
+  const r = await svc.assemble(req.body || {}, req.user?.id, req);
+  res.success(r.data, r.message);
+});
+
+exports.listConversions = asyncRoute(async (req, res) => {
+  const r = await svc.listConversions(req.query || {});
+  res.success(r);
+});
+
+exports.getConversion = asyncRoute(async (req, res) => {
+  const r = await svc.getConversion(req.params.id);
+  res.success(r.data);
+});
+
 

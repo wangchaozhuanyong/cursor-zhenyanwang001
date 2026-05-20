@@ -1,5 +1,6 @@
 const { generateId } = require('../../../utils/helpers');
 const { BusinessError } = require('../../../errors/BusinessError');
+const { POINTS_ACTION } = require('../../../constants/pointsActions');
 const repo = require('../repository/points.repository');
 
 function toInt(value) {
@@ -8,7 +9,13 @@ function toInt(value) {
 }
 
 function isOrderPointsAction(action) {
-  return ['order_redeem', 'order_redeem_reverse', 'order_earn', 'order_reverse'].includes(String(action || ''));
+  const orderActions = /** @type {Set<string>} */ (new Set([
+    POINTS_ACTION.ORDER_REDEEM,
+    POINTS_ACTION.ORDER_REDEEM_REVERSE,
+    POINTS_ACTION.ORDER_EARN,
+    POINTS_ACTION.ORDER_EARN_REVERSE,
+  ]));
+  return orderActions.has(String(action || ''));
 }
 
 async function changeUserPoints(conn, params) {
@@ -51,7 +58,7 @@ async function changeUserPoints(conn, params) {
   const after = before + delta;
   if (!allowNegative && after < 0) {
     if (pendingOnInsufficient) {
-      const pendingAction = action === 'order_reverse' ? 'pending_reverse' : `${action}_pending`;
+      const pendingAction = action === POINTS_ACTION.ORDER_EARN_REVERSE ? POINTS_ACTION.PENDING_REVERSE : `${action}_pending`;
       const pendingRelatedRecordId = finalRelatedRecordId
         ? `${pendingAction}:${finalRelatedRecordId}`
         : `${pendingAction}:${generateId()}`;
@@ -202,7 +209,7 @@ async function signIn(userId) {
   await runInTransaction((conn) => changePoints(conn, {
     userId,
     amount: grant,
-    action: 'sign_in',
+    action: POINTS_ACTION.SIGN_IN,
     description: '每日签到',
     sourceType: 'sign_in',
     relatedRecordId: `sign_in:${userId}:${today}`,
@@ -214,7 +221,7 @@ async function adjustUserPoints(userId, amount, reason, operatorId) {
   return runInTransaction((conn) => changeUserPoints(conn, {
     userId,
     amount,
-    action: amount > 0 ? 'admin_add' : 'admin_deduct',
+    action: amount > 0 ? POINTS_ACTION.ADMIN_ADD : POINTS_ACTION.ADMIN_DEDUCT,
     description: reason || '后台积分调整',
     sourceType: 'admin_adjust',
     operatorId,
@@ -223,43 +230,15 @@ async function adjustUserPoints(userId, amount, reason, operatorId) {
 }
 
 async function settleOrderPoints(conn, order, options = {}) {
-  const amount = toInt(order?.total_points);
-  if (!order?.id || !order.user_id || amount <= 0) return { skipped: true };
-  return changeUserPoints(conn, {
-    userId: order.user_id,
-    amount,
-    action: 'order_earn',
-    description: '订单积分发放',
-    orderId: order.id,
-    orderNo: order.order_no,
-    sourceType: 'order_completion',
-    relatedRecordId: `order_earn:${order.id}`,
-    operatorId: options.operatorId,
-    metadata: { trigger: options.trigger || 'order_completed' },
-  });
+  return require('../../order/service/orderPoints.service').grantOrderEarnPoints(conn, order, options);
 }
 
 async function reverseOrderPoints(conn, order, reason, options = {}) {
-  const amount = toInt(order?.total_points);
-  if (!order?.id || !order.user_id || amount <= 0) return { skipped: true };
-  const earned = await repo.selectRecordByRelatedForUpdate(conn, `order_earn:${order.id}`, 'order_earn');
-  if (!earned) return { skipped: true };
-  return changeUserPoints(conn, {
-    userId: order.user_id,
-    amount: -amount,
-    action: 'order_reverse',
-    description: reason || '订单积分回滚',
-    orderId: order.id,
-    orderNo: order.order_no,
-    sourceType: 'order_reversal',
-    relatedRecordId: `order_reverse:${order.id}`,
-    operatorId: options.operatorId,
-    metadata: { trigger: options.trigger || 'order_reversal' },
-    allowNegative: false,
-    pendingOnInsufficient: true,
+  return require('../../order/service/orderPoints.service').reverseOrderEarnPoints(conn, order, {
+    ...options,
+    description: reason || options.description,
   });
 }
-
 module.exports = {
   changeUserPoints,
   changePoints,

@@ -19,6 +19,8 @@ export type AnalyticsEventPayload = {
     | "banner_click"
     | "activity_click"
     | "contact_whatsapp_click"
+    | "support_channel_click"
+    | "support_qr_view"
     | "pwa_download_page_view"
     | "pwa_install_button_shown"
     | "pwa_install_button_clicked"

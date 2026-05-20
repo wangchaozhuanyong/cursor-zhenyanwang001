@@ -1,14 +1,9 @@
 import * as dashboardApi from "@/api/admin/dashboard";
-import type { DashboardOverview } from "@/types/admin";
+import type { DashboardOverview, DashboardStatsQuery } from "@/types/admin";
 
-export async function fetchDashboardStats(): Promise<DashboardOverview> {
-  const res = await dashboardApi.getDashboardStats();
+export async function fetchDashboardStats(query?: DashboardStatsQuery): Promise<DashboardOverview> {
+  const res = await dashboardApi.getDashboardStats(query);
   return res.data as DashboardOverview;
 }
 
-export type { DashboardOverview };
-
-export async function fetchChartData(range: "week" | "month" | "year") {
-  const res = await dashboardApi.getDashboardChartData(range);
-  return res.data;
-}
+export type { DashboardOverview, DashboardStatsQuery };

@@ -15,7 +15,7 @@ class UserStatsService {
 
   /**
    * @param {PoolConnection} q
-   * @param {{ userId: string; orderId: string; eventType: 'paid'|'cancelled'|'refunded' }} params
+   * @param {{ userId: string; orderId: string; eventType: string }} params
    * @returns {Promise<boolean>}
    */
   static async markEventOnce(q, params) {
@@ -64,25 +64,34 @@ class UserStatsService {
 
   /**
    * @param {string} userId
-   * @param {string=} orderId
+   * @param {string} orderId
+   * @param {number} refundAmount
    * @param {PoolConnection=} conn
+   * @param {{ isFullRefund?: boolean; eventType?: string }} options
    */
-  static async syncStatsAfterRefund(userId, orderId, conn) {
+  static async syncStatsAfterRefund(userId, orderId, refundAmount, conn, options = {}) {
     if (!userId) return;
+    const amount = Math.max(0, Number(refundAmount) || 0);
+    const eventType = options.eventType || (options.isFullRefund ? 'refunded' : `refund_partial:${orderId}:${amount}`);
+
     const q = conn || await repo.getConnection();
     const ownTx = !conn;
     try {
       if (ownTx) await q.beginTransaction();
       await UserStatsService.ensureRow(q, userId);
-      if (orderId) {
-        const ok = await UserStatsService.markEventOnce(q, { userId, orderId, eventType: 'refunded' });
-        if (!ok) {
-          if (ownTx) await q.commit();
-          return;
+
+      let shouldApply = true;
+      if (orderId && eventType) {
+        shouldApply = await UserStatsService.markEventOnce(q, { userId, orderId, eventType });
+      }
+      if (shouldApply) {
+        if (amount > 0) {
+          await repo.decrementPaidStats(q, userId, amount);
+        }
+        if (options.isFullRefund) {
+          await repo.incrementRefundStats(q, userId);
         }
       }
-
-      await repo.incrementRefundStats(q, userId);
 
       if (ownTx) await q.commit();
     } catch (e) {
@@ -128,4 +137,3 @@ class UserStatsService {
 }
 
 module.exports = { UserStatsService };
-

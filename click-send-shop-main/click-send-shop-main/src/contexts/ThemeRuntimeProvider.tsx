@@ -42,8 +42,15 @@ function isAdminScope() {
   return typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
 }
 
-function resolveThemeConfigForScope(config: ThemeConfig, skinId: string, inAdmin: boolean): ThemeConfig {
+function resolveThemeConfigForScope(
+  config: ThemeConfig,
+  skinId: string,
+  inAdmin: boolean,
+  options?: { adminManualPreview?: boolean },
+): ThemeConfig {
   if (!inAdmin) return config;
+  /** 后台手动预览某套皮肤时展示真实配色，不因 adminThemeMode=fixed 被压成同一套灰白 */
+  if (options?.adminManualPreview) return config;
   if (config.adminThemeMode === "fixed") {
     return normalizeThemeConfig({ ...config, ...ADMIN_SAFE_THEME_OVERRIDES });
   }
@@ -78,6 +85,9 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   const [themeReady, setThemeReady] = useState(initial.ready);
   const [themeSynced, setThemeSynced] = useState(false);
   const [inAdminScope, setInAdminScope] = useState(() => isAdminScope());
+  const [adminManualSkinPick, setAdminManualSkinPick] = useState(
+    () => typeof window !== "undefined" && isAdminScope() && localStorage.getItem(SKIN_MANUAL_KEY) === "1",
+  );
 
   const switchableSkins = useMemo(
     () => skins.filter((skin) => skin.clientEnabled !== false),
@@ -128,6 +138,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
 
       const saved = typeof window !== "undefined" ? localStorage.getItem(SKIN_STORAGE_KEY) : null;
       const isManual = typeof window !== "undefined" && localStorage.getItem(SKIN_MANUAL_KEY) === "1";
+      const inAdmin = isAdminScope();
       const currentActive = normalized.activeSkinId || normalized.defaultSkinId || DEFAULT_SKIN_ID;
       const lastActive = typeof window !== "undefined" ? localStorage.getItem(LAST_ACTIVE_SKIN_KEY) : null;
       const activeChangedByAdmin = !!lastActive && currentActive !== lastActive;
@@ -141,16 +152,22 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       if (isManual && saved) {
         if (!skinExists(saved)) {
           if (typeof window !== "undefined") localStorage.removeItem(SKIN_MANUAL_KEY);
+          setAdminManualSkinPick(false);
           chosen = skinExists(currentActive) ? currentActive : normalized.defaultSkinId;
         } else if (activeChangedByAdmin) {
           if (typeof window !== "undefined") localStorage.removeItem(SKIN_MANUAL_KEY);
+          setAdminManualSkinPick(false);
           chosen = currentActive;
-        } else if (skinClientPickable(saved)) {
+        } else if (inAdmin || skinClientPickable(saved)) {
           chosen = saved;
+          if (inAdmin) setAdminManualSkinPick(true);
         } else {
           if (typeof window !== "undefined") localStorage.removeItem(SKIN_MANUAL_KEY);
+          setAdminManualSkinPick(false);
           chosen = skinExists(currentActive) ? currentActive : normalized.defaultSkinId;
         }
+      } else {
+        setAdminManualSkinPick(false);
       }
       setSkinIdState(chosen);
       const active = normalized.skins.find((s) => s.id === chosen) ?? normalized.skins[0];
@@ -195,8 +212,11 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   }, [skinId, skins]);
 
   const appliedConfig = useMemo(
-    () => resolveThemeConfigForScope(themeConfig, skinId, inAdminScope),
-    [themeConfig, skinId, inAdminScope],
+    () =>
+      resolveThemeConfigForScope(themeConfig, skinId, inAdminScope, {
+        adminManualPreview: inAdminScope && adminManualSkinPick,
+      }),
+    [themeConfig, skinId, inAdminScope, adminManualSkinPick],
   );
 
   useEffect(() => {
@@ -215,7 +235,9 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const syncScope = () => {
       const root = document.documentElement;
-      const scoped = resolveThemeConfigForScope(themeConfig, skinId, isAdminScope());
+      const scoped = resolveThemeConfigForScope(themeConfig, skinId, isAdminScope(), {
+        adminManualPreview: isAdminScope() && adminManualSkinPick,
+      });
       const palette = generateThemePalette(scoped);
       Object.entries(palette).forEach(([key, value]) => root.style.setProperty(key, value));
       applyThemeDataAttributes(root, scoped);
@@ -223,7 +245,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
     syncScope();
     window.addEventListener("app:scope-changed", syncScope);
     return () => window.removeEventListener("app:scope-changed", syncScope);
-  }, [themeConfig, skinId]);
+  }, [themeConfig, skinId, adminManualSkinPick]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({
@@ -238,6 +260,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
           : switchableSkins.some((skin) => skin.id === id);
         if (!allowed) return;
         setSkinIdState(id);
+        if (inAdminScope) setAdminManualSkinPick(true);
         if (typeof window !== "undefined") {
           localStorage.setItem(SKIN_STORAGE_KEY, id);
           localStorage.setItem(SKIN_MANUAL_KEY, "1");
@@ -247,7 +270,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       themeReady,
       themeSynced,
     }),
-    [skinId, skins, switchableSkins, pickerSkins, inAdminScope, themeConfig, themeReady, themeSynced],
+    [skinId, skins, switchableSkins, pickerSkins, inAdminScope, adminManualSkinPick, themeConfig, themeReady, themeSynced],
   );
 
   return <ThemeRuntimeContext.Provider value={value}>{children}</ThemeRuntimeContext.Provider>;

@@ -180,6 +180,8 @@ async function insertLedgerRecord(conn, params) {
 }
 
 async function addUserPoints(userId, points) {
+  // Deprecated compatibility helper. New business flows must use
+  // user/service/points.changeUserPoints() so every balance change has a ledger row.
   const amount = Math.max(Number(points) || 0, 0);
   const conn = await getConnection();
   try {

@@ -16,7 +16,7 @@ const FEATURE_ITEMS: Array<{ key: keyof SiteCapabilities; label: string; desc: s
   { key: "inventoryEnabled", label: "库存", desc: "关闭后隐藏库存管理入口，后端拒绝库存管理接口。" },
   { key: "shippingEnabled", label: "配送", desc: "关闭后隐藏配送设置，后端拒绝配送管理接口。" },
   { key: "memberLevelEnabled", label: "会员等级", desc: "关闭后隐藏会员等级入口，后端拒绝会员等级管理接口。" },
-  { key: "customerServiceDownloadEnabled", label: "客服下载页", desc: "关闭后隐藏客服下载页入口。" },
+  { key: "customerServiceDownloadEnabled", label: "客服/APP 页", desc: "关闭后隐藏前台客服/APP 页与底部导航入口。" },
   { key: "telegramOrderNotifyEnabled", label: "Telegram 订单通知", desc: "控制订单 Telegram 通知能力。" },
   { key: "languageGateEnabled", label: "中文浏览器限制", desc: "开启后启用中文浏览器限制逻辑。" },
   { key: "restrictedProductComplianceEnabled", label: "受限商品合规", desc: "控制受限商品合规提示和限制逻辑。" },

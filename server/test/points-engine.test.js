@@ -3,9 +3,11 @@ const assert = require('node:assert/strict');
 const {
   calculateOrderEarnedPoints,
   calculateMaxUsablePoints,
+  isPaymentMethodAllowedForPoints,
   resolveProductPointRule,
   roundPoints,
 } = require('../src/modules/loyalty/service/pointsEngine.service');
+const orderPricing = require('../src/modules/order/order.pricing');
 
 const baseSettings = {
   display_enabled: 1,
@@ -99,6 +101,27 @@ test('max usable points honors cap and redeem step clamp', () => {
   assert.equal(result.points_used, 250);
   assert.equal(result.points_discount_amount, 2.5);
   assert.equal(result.adjusted, true);
+});
+
+test('max usable points is floored to redeem step when balance is the cap', () => {
+  const result = calculateMaxUsablePoints({
+    settings: { ...baseSettings, redeem_step: 10, max_redeem_percent: 100 },
+    userPointsBalance: 255,
+    pointsToUse: 255,
+    orderItems: [{ product_id: 'p1', qty: 1, price: 100, subtotal: 100 }],
+  });
+  assert.equal(result.max_usable_points, 250);
+  assert.equal(result.points_used, 250);
+});
+
+test('payment method points restriction supports include and exclude modes', () => {
+  assert.equal(orderPricing.isPaymentMethodAllowedForPoints({ payment_points_mode: 'all' }, 'whatsapp'), true);
+  assert.equal(orderPricing.isPaymentMethodAllowedForPoints({ payment_points_mode: 'disabled' }, 'online'), false);
+  assert.equal(orderPricing.isPaymentMethodAllowedForPoints({ payment_points_mode: 'include', allowed_payment_methods: ['online'] }, 'online'), true);
+  assert.equal(orderPricing.isPaymentMethodAllowedForPoints({ payment_points_mode: 'include', allowed_payment_methods: ['online'] }, 'whatsapp'), false);
+  assert.equal(orderPricing.isPaymentMethodAllowedForPoints({ payment_points_mode: 'exclude', allowed_payment_methods: ['whatsapp'] }, 'online'), true);
+  assert.equal(orderPricing.isPaymentMethodAllowedForPoints({ payment_points_mode: 'exclude', allowed_payment_methods: ['whatsapp'] }, 'whatsapp'), false);
+  assert.equal(isPaymentMethodAllowedForPoints, undefined);
 });
 
 test('restricted products are excluded from redeem base', () => {

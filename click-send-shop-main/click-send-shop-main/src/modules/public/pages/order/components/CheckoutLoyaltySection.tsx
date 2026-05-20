@@ -36,12 +36,17 @@ export function CheckoutLoyaltySection({
 
   const availablePoints = Math.max(0, Math.floor(toNum(orderPreview?.available_points)));
   const maxPoints = Math.max(0, Math.floor(toNum(orderPreview?.max_usable_points)));
+  const redeemStep = Math.max(1, Math.floor(toNum(orderPreview?.redeem_step, 1)));
   const actualPointsUsed = Math.max(0, Math.floor(toNum(orderPreview?.points_used, pointsToUse)));
   const pointValue = toNum(orderPreview?.point_value_myr, 0.01);
   const pointsDiscount = toNum(orderPreview?.points_discount_amount, 0);
   const disabledReason = orderPreview?.disabled_reason || (maxPoints <= 0 ? "当前订单暂无可用积分抵扣" : "");
   const availableReward = Math.max(0, toNum(orderPreview?.available_reward_balance));
   const maxReward = Math.max(0, toNum(orderPreview?.max_usable_reward_cash));
+  const normalizePointsInput = (value: number) => {
+    const clamped = Math.max(0, Math.min(maxPoints, Math.floor(value || 0)));
+    return Math.floor(clamped / redeemStep) * redeemStep;
+  };
 
   return (
     <section className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow space-y-4">
@@ -62,9 +67,9 @@ export function CheckoutLoyaltySection({
                 type="range"
                 min={0}
                 max={maxPoints}
-                step={1}
+                step={redeemStep}
                 value={Math.max(0, Math.min(maxPoints, pointsToUse))}
-                onChange={(e) => onPointsToUseChange(Math.max(0, Math.min(maxPoints, Number(e.target.value || 0))))}
+                onChange={(e) => onPointsToUseChange(normalizePointsInput(Number(e.target.value || 0)))}
               />
               <div className="flex items-center gap-2">
                 <input
@@ -72,8 +77,9 @@ export function CheckoutLoyaltySection({
                   type="number"
                   min={0}
                   max={maxPoints}
+                  step={redeemStep}
                   value={pointsToUse}
-                  onChange={(e) => onPointsToUseChange(Math.max(0, Math.min(maxPoints, Number(e.target.value || 0))))}
+                  onChange={(e) => onPointsToUseChange(normalizePointsInput(Number(e.target.value || 0)))}
                 />
                 <button type="button" className="rounded-lg border border-[var(--theme-border)] px-3 py-2 text-xs" onClick={() => onPointsToUseChange(maxPoints)}>
                   全部

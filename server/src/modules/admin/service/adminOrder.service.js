@@ -266,6 +266,11 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
         && fullOrder
       ) {
         await requireUserApi('syncStatsAfterOrderPaid')(fullOrder.user_id, fullOrder.total_amount, fullOrder.id, conn);
+        await orderPoints.maybeGrantOrderEarnPoints(conn, fullOrder, {
+          operatorId: adminUserId,
+          trigger: 'payment_success',
+          timing: 'payment_success',
+        });
         await requireUserApi('refreshUserMemberLevel')(conn, fullOrder.user_id);
         try {
           const salesItems = await repo.selectOrderItemPairs(conn, fullOrder.id);
@@ -283,7 +288,8 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
           await requireUserApi('syncStatsAfterOrderCancelled')(fullOrder.user_id, fullOrder.id, conn);
         }
         const items = await repo.selectOrderItemPairs(conn, fullOrder.id);
-        for (const item of items) {
+        const cancelItems = await requireOrderApi('selectOrderItemQtyRows')(conn, fullOrder.id);
+        for (const item of cancelItems) {
           if (!item.variant_id) {
         throw new BusinessError(400, `订单 ${fullOrder.order_no} 缺失 SKU 明细，无法执行库存释放`);
           }
@@ -294,24 +300,39 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
             operatorId: adminUserId,
             reason: `管理员取消订单 #${fullOrder.order_no} 释放 SKU 库存`,
           });
+          if (item.activity_id) {
+            await requireOrderApi('decrementActivitySold')(conn, item.activity_id, item.product_id, item.qty);
+          }
         }
-        await orderPoints.reverseOrderEarnPoints(conn, fullOrder, {
-          operatorId: adminUserId,
-          trigger: 'admin_order_cancelled',
-            description: `订单取消回滚 ${fullOrder.order_no}`,
-        });
-        await orderPoints.reverseOrderRedeem(conn, fullOrder, {
-          operatorId: adminUserId,
-          trigger: 'admin_order_cancelled',
-            description: `订单取消回滚 ${fullOrder.order_no}`,
-        });
+        if (Number(fullOrder.reward_cash_used || 0) > 0) {
+          await requireUserApi('insertRewardTransaction')(conn, {
+            id: generateId(),
+            rewardRecordId: null,
+            userId: fullOrder.user_id,
+            orderId: fullOrder.id,
+            orderNo: fullOrder.order_no,
+            type: 'wallet_redeem_refund',
+            amount: Number(fullOrder.reward_cash_used || 0),
+            status: 'success',
+            reason: `管理员取消订单退回返现抵扣 ${fullOrder.order_no}`,
+            metadata: { trigger: 'admin_order_cancelled' },
+          });
+        }
         if (fullOrder.coupon_uc_id) {
           await repo.restoreUserCouponById(conn, fullOrder.coupon_uc_id);
         }
       }
 
+      if (status === ORDER_STATUS.SHIPPED && fullOrder) {
+        await orderPoints.maybeGrantOrderEarnPoints(conn, fullOrder, {
+          operatorId: adminUserId,
+          trigger: 'order_shipped',
+          timing: 'order_shipped',
+        });
+      }
+
       if (status === ORDER_STATUS.COMPLETED && fullOrder) {
-        await orderPoints.grantOrderEarnPoints(conn, fullOrder, {
+        await orderPoints.maybeGrantOrderEarnPoints(conn, fullOrder, {
           operatorId: adminUserId,
           trigger: 'admin_order_completed',
           timing: 'order_completed',
@@ -323,15 +344,11 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
       }
 
       if ((status === ORDER_STATUS.CANCELLED || status === ORDER_STATUS.REFUNDED) && fullOrder) {
-        await orderPoints.reverseOrderEarnPoints(conn, fullOrder, {
+        await orderPoints.rollbackOrderPoints(conn, fullOrder, {
           operatorId: adminUserId,
           trigger: `admin_order_${status}`,
-            description: `订单状态变更为 ${status}，执行回滚`,
-        });
-        await orderPoints.reverseOrderRedeem(conn, fullOrder, {
-          operatorId: adminUserId,
-          trigger: `admin_order_${status}`,
-            description: `订单状态变更为 ${status}，执行回滚`,
+          description: `Order status changed to ${status}; rollback earned points`,
+          redeemDescription: `Order status changed to ${status}; refund redeemed points`,
           sourceType: `admin_order_${status}`,
         });
         await requireUserApi('reverseOrderRewards')(conn, fullOrder, `订单状态变更为 ${status}，奖励已回滚`, {
@@ -339,7 +356,17 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
           trigger: `admin_order_${status}`,
         });
         if (status === ORDER_STATUS.REFUNDED) {
-          await requireUserApi('syncStatsAfterRefund')(fullOrder.user_id, fullOrder.id, conn);
+          const refundAmt = Math.max(
+            0,
+            Number(fullOrder.total_amount || 0) - Number(fullOrder.refunded_amount || 0),
+          );
+          await requireUserApi('syncStatsAfterRefund')(
+            fullOrder.user_id,
+            fullOrder.id,
+            refundAmt > 0 ? refundAmt : Number(fullOrder.total_amount || 0),
+            conn,
+            { isFullRefund: true, eventType: 'refunded' },
+          );
           await requireUserApi('refreshUserMemberLevel')(conn, fullOrder.user_id, { force: false });
         }
       }
@@ -432,6 +459,21 @@ async function shipOrder(orderId, body, adminUserId, req) {
     const trackingNo = body.trackingNo || body.tracking_no || '';
     const carrier = body.carrier || '';
     await repo.updateOrderShipped(orderId, trackingNo, carrier);
+    const pointsConn = await repo.getConnection();
+    try {
+      await pointsConn.beginTransaction();
+      await orderPoints.maybeGrantOrderEarnPoints(pointsConn, order, {
+        operatorId: adminUserId,
+        trigger: 'order_shipped',
+        timing: 'order_shipped',
+      });
+      await pointsConn.commit();
+    } catch (err) {
+      await pointsConn.rollback();
+      throw err;
+    } finally {
+      pointsConn.release();
+    }
     await requireLogisticsApi('refreshOrderTrackingQuietly')(orderId);
 
     const shipCopy = await getResolvedTriggerCopy('order_ship', {
@@ -558,6 +600,22 @@ async function batchShipOrders(payload = {}, adminUserId, req) {
       continue;
     }
     await repo.updateOrderShipped(orderId, trackingNo, carrier);
+    const pointsConn = await repo.getConnection();
+    try {
+      await pointsConn.beginTransaction();
+      await orderPoints.maybeGrantOrderEarnPoints(pointsConn, row, {
+        operatorId: adminUserId,
+        trigger: 'order_shipped',
+        timing: 'order_shipped',
+      });
+      await pointsConn.commit();
+    } catch (err) {
+      await pointsConn.rollback();
+      failed.push({ order_id: orderId, reason: err.message || 'points_grant_failed' });
+      continue;
+    } finally {
+      pointsConn.release();
+    }
     shipped += 1;
     try {
       const copy = await getResolvedTriggerCopy('order_ship', {
@@ -601,8 +659,6 @@ module.exports = {
   listPendingShipmentOrders,
   batchShipOrders,
 };
-
-
 
 
 

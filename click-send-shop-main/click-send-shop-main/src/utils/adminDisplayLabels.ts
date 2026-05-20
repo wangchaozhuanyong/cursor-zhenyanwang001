@@ -260,17 +260,20 @@ export function labelReportCellValue(key: string, value: unknown): string {
 }
 
 export const POINTS_ACTION_LABELS: Record<string, string> = {
-  order: "订单奖励",
-  order_earn: "订单奖励",
-  order_reverse: "订单回滚",
-  refund: "退款扣回",
-  sign_in: "每日签到",
-  daily_checkin: "每日签到",
-  invite_reward: "邀请奖励",
-  admin_add: "管理员增加",
-  admin_deduct: "管理员扣减",
-  admin_adjust: "管理员调整",
-  redeem: "积分抵扣",
+  order: "??????",
+  order_redeem: "??????",
+  order_redeem_reverse: "????????",
+  order_earn: "??????",
+  order_reverse: "??????",
+  pending_reverse: "???????",
+  refund: "????",
+  sign_in: "????",
+  daily_checkin: "????",
+  invite_reward: "????",
+  admin_add: "?????",
+  admin_deduct: "?????",
+  admin_adjust: "?????",
+  redeem: "????",
 };
 export function labelPointsAction(action: string): string {
   return labelFromMap(POINTS_ACTION_LABELS, action, "其他变动");

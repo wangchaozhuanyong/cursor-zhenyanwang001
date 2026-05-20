@@ -13,7 +13,7 @@
 | A | A3 | ☑ | /offline.html → 200 |
 | A | A5 | ☑ | 首页无全站安装条 |
 | A | A4 | ☑ | 最终 URL: https://flashcast.com.my/support-download?tab=download |
-| B | B1 | ☑ | 客服下载页正常渲染 |
+| B | B1 | ☑ | 客服/APP 页正常渲染 |
 | B | B2 | ☑ | 有安装相关 UI |
 | B | B3 | △ 待人工 | 需真机：系统安装确认框 Playwright 无法触发 |
 | B | B4 | △ 待人工 | 需真机：桌面图标 |

@@ -100,12 +100,12 @@ async function runAndroid() {
 
   await page.waitForTimeout(2000);
   const dlText = await page.locator("body").innerText();
-  const isOfflinePage = /网络连接不可用|当前处于离线状态/.test(dlText) && !/客服下载|安装/.test(dlText);
-  record("B", "B1", !isOfflinePage, isOfflinePage ? "仍为离线页" : "客服下载页正常渲染");
+  const isOfflinePage = /网络连接不可用|当前处于离线状态/.test(dlText) && !/客服与安装|客服|安装/.test(dlText);
+  record("B", "B1", !isOfflinePage, isOfflinePage ? "仍为离线页" : "客服/APP 页正常渲染");
 
   const hasInstallUi =
-    /立即安装|安装网页 App|安装处理中|已安装，可从桌面/.test(dlText)
-    || /当前浏览器不支持一键安装/.test(dlText);
+    /一键安装|安装到电脑桌面|立即安装|安装处理中|已安装/.test(dlText)
+    || /请使用 Chrome 打开|请使用 Safari 打开|复制网站链接/.test(dlText);
   record("B", "B2", hasInstallUi, hasInstallUi ? "有安装相关 UI" : "未找到安装按钮/说明");
 
   record("B", "B3", null, "需真机：系统安装确认框 Playwright 无法触发");

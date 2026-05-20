@@ -1,7 +1,10 @@
 export type PointsAction =
   | "order"
+  | "order_redeem"
+  | "order_redeem_reverse"
   | "order_earn"
   | "order_reverse"
+  | "pending_reverse"
   | "refund"
   | "sign_in"
   | "invite_reward"

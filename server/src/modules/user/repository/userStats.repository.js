@@ -54,6 +54,23 @@ async function incrementRefundStats(q, userId) {
   );
 }
 
+async function decrementPaidStats(q, userId, amount) {
+  const delta = Math.max(0, Number(amount) || 0);
+  if (delta <= 0) return;
+  await q.query(
+    `UPDATE user_statistics
+       SET total_spent = GREATEST(0, total_spent - ?),
+           average_order_value = IF(
+             valid_order_count <= 0,
+             0,
+             ROUND(GREATEST(0, total_spent - ?) / valid_order_count, 2)
+           )
+     WHERE user_id = ?`,
+    [delta, delta, userId],
+  );
+  await refreshRefundRate(q, userId);
+}
+
 async function incrementCancelledOrderCount(q, userId) {
   await q.query(
     `UPDATE user_statistics
@@ -70,6 +87,7 @@ module.exports = {
   incrementPaidStats,
   refreshRefundRate,
   incrementRefundStats,
+  decrementPaidStats,
   incrementCancelledOrderCount,
 };
 

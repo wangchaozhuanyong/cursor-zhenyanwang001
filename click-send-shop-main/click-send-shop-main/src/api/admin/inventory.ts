@@ -1,6 +1,6 @@
 import { get, patch, post } from "@/api/request";
 import type { PaginatedData } from "@/types/common";
-import type { InventoryChangeType, InventorySku, InventoryStockRecord, InventorySummary } from "@/types/inventory";
+import type { InventoryChangeType, InventoryConversionOrder, InventoryPackRule, InventorySku, InventoryStockRecord, InventorySummary } from "@/types/inventory";
 import { getAdminAccessToken } from "@/utils/token";
 
 export function getInventorySummary() {
@@ -54,6 +54,65 @@ export function getInventoryRecords(params?: {
   date_to?: string;
 }) {
   return get<PaginatedData<InventoryStockRecord>>("/admin/inventory/records", params as unknown as Record<string, unknown>);
+}
+
+export function getInventoryPackRules(params?: {
+  page?: number;
+  pageSize?: number;
+  keyword?: string;
+  parent_variant_id?: string;
+  child_variant_id?: string;
+  enabled?: boolean | string;
+  auto_unpack_enabled?: boolean | string;
+}) {
+  return get<PaginatedData<InventoryPackRule>>("/admin/inventory/pack-rules", params as unknown as Record<string, unknown>);
+}
+
+export function createInventoryPackRule(data: Partial<InventoryPackRule>) {
+  return post<InventoryPackRule>("/admin/inventory/pack-rules", data);
+}
+
+export function updateInventoryPackRule(id: string, data: Partial<InventoryPackRule>) {
+  return patch<InventoryPackRule>(`/admin/inventory/pack-rules/${id}`, data);
+}
+
+export function deleteInventoryPackRule(id: string) {
+  return fetch((import.meta.env.VITE_API_BASE_URL ?? "/api") + `/admin/inventory/pack-rules/${id}`, {
+    method: "DELETE",
+    headers: getAdminAccessToken() ? { Authorization: `Bearer ${getAdminAccessToken()}` } : undefined,
+    credentials: "include",
+  }).then((res) => {
+    if (!res.ok) throw new Error("删除失败");
+    return res.json();
+  });
+}
+
+export function unpackInventoryRule(data: { rule_id: string; parent_qty: number; remark?: string }) {
+  return post<InventoryConversionOrder>("/admin/inventory/conversions/unpack", data);
+}
+
+export function assembleInventoryRule(data: { rule_id: string; parent_qty: number; remark?: string }) {
+  return post<InventoryConversionOrder>("/admin/inventory/conversions/assemble", data);
+}
+
+export function getInventoryConversions(params?: {
+  page?: number;
+  pageSize?: number;
+  keyword?: string;
+  type?: string;
+  order_no?: string;
+  source_order_no?: string;
+  parent_variant_id?: string;
+  child_variant_id?: string;
+  operator_id?: string;
+  date_from?: string;
+  date_to?: string;
+}) {
+  return get<PaginatedData<InventoryConversionOrder>>("/admin/inventory/conversions", params as unknown as Record<string, unknown>);
+}
+
+export function getInventoryConversion(id: string) {
+  return get<InventoryConversionOrder>(`/admin/inventory/conversions/${id}`);
 }
 
 async function downloadCsv(url: string, filename: string) {

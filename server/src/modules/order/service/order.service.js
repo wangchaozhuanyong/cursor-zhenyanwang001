@@ -183,6 +183,8 @@ async function createOrder(userId, body) {
   const conn = await repo.getConnection();
   try {
     await conn.beginTransaction();
+    const orderId = generateId();
+    const orderNo = generateOrderNo();
 
     const productIds = items.map((i) => i.product_id);
     const products = await repo.selectProductsForUpdate(conn, productIds);
@@ -203,16 +205,13 @@ async function createOrder(userId, body) {
       if (!activityMap.has(row.product_id)) activityMap.set(row.product_id, row);
     }
     const fullReductionActivities = await repo.selectActiveFullReductionActivitiesForUpdate(conn);
+    const requiredVariantQty = new Map();
 
     for (const item of items) {
       const p = productMap[item.product_id];
       if (!p) {
         await conn.rollback();
         throw new NotFoundError(`商品 ${item.product_id} 不存在或已下架`);
-      }
-      if (p.stock < item.qty) {
-        await conn.rollback();
-        throw new ValidationError(`商品「${p.name}」库存不足，剩余 ${p.stock} 件`);
       }
       const variant = item.variant_id
         ? variantById.get(item.variant_id)
@@ -221,10 +220,7 @@ async function createOrder(userId, body) {
         await conn.rollback();
         throw new ValidationError(`商品「${p.name}」请选择有效规格`);
       }
-      if (Number(variant.stock || 0) < item.qty) {
-        await conn.rollback();
-        throw new ValidationError(`SKU「${variant.title || variant.sku_code || p.name}」库存不足，剩余 ${variant.stock} 件`);
-      }
+      requiredVariantQty.set(variant.id, Number(requiredVariantQty.get(variant.id) || 0) + Number(item.qty || 0));
       const activity = activityMap.get(item.product_id);
       if (activity) {
         const remaining = Number(activity.activity_stock || 0) - Number(activity.sold_count || 0);
@@ -238,6 +234,21 @@ async function createOrder(userId, body) {
           throw new ValidationError(`活动商品「${p.name}」每单限购 ${limitPerUser} 件`);
         }
       }
+    }
+
+    for (const [variantId, requiredQty] of requiredVariantQty.entries()) {
+      const result = await repo.ensureVariantStockWithAutoUnpack(conn, variantId, requiredQty, {
+        orderId,
+        orderNo,
+        reason: `\u8ba2\u5355 ${orderNo} \u5e93\u5b58\u4e0d\u8db3\u81ea\u52a8\u62c6\u5305`,
+      });
+      if (!result.ok) {
+        const variant = variantById.get(variantId) || requestedVariants.find((v) => v.id === variantId) || defaultVariants.find((v) => v.id === variantId);
+        await conn.rollback();
+        throw new ValidationError(`SKU「${variant?.title || variant?.sku_code || variantId}」库存不足，剩余 ${result.stock || 0} 件`);
+      }
+      const variant = variantById.get(variantId) || defaultVariants.find((v) => v.id === variantId);
+      if (variant) variant.stock = result.stock;
     }
 
     let rawAmount = 0;
@@ -367,8 +378,6 @@ async function createOrder(userId, body) {
       reward_cash_discount: Number(loyalty.reward_cash_discount_amount || 0),
       lines: pricing.discount_lines || [],
     };
-    const orderId = generateId();
-    const orderNo = generateOrderNo();
     const normalizedAddress = normalizeMalaysiaAddress(address, contact_name, contact_phone);
 
     await repo.insertOrder(conn, {
@@ -648,16 +657,12 @@ async function cancelPendingOrderInTransaction(conn, order, options = {}) {
     }
   }
 
-  await orderPoints.reverseOrderEarnPoints(conn, order, {
+  await orderPoints.rollbackOrderPoints(conn, order, {
     trigger,
     description: pointReason,
+    redeemDescription: `Order cancellation refunds redeemed points ${order.order_no}`,
+    sourceType: 'order_cancel',
   });
-  if (Number(order.points_used || 0) > 0) {
-    await orderPoints.reverseOrderRedeem(conn, order, {
-      trigger,
-      description: `订单取消退回积分 ${order.order_no}`,
-    });
-  }
   if (Number(order.reward_cash_used || 0) > 0) {
     await requireApiMethod(getUserApi(), 'insertRewardTransaction')(conn, {
       id: generateId(),
@@ -736,7 +741,7 @@ async function createStripeCheckoutSession(userId, orderId) {
  */
 async function completeShippedOrder(conn, order, options = {}) {
   await repo.updateOrderStatus(conn, order.id, ORDER_STATUS.COMPLETED);
-  await orderPoints.grantOrderEarnPoints(conn, order, {
+  await orderPoints.maybeGrantOrderEarnPoints(conn, order, {
     ...options,
     timing: 'order_completed',
   });
@@ -782,6 +787,8 @@ async function previewOrder(userId, body) {
       max_usable_points: pricing.loyalty?.max_usable_points || 0,
       points_discount_amount: pricing.loyalty?.points_discount_amount || 0,
       point_value_myr: pricing.loyalty?.point_value_myr || 0.01,
+      min_redeem_points: pricing.loyalty?.min_redeem_points || 0,
+      redeem_step: pricing.loyalty?.redeem_step || 1,
       disabled_reason: pricing.loyalty?.disabled_reason || '',
       adjusted: !!pricing.loyalty?.adjusted,
       points_summary: pricing.loyalty?.points_summary || null,
@@ -808,7 +815,6 @@ module.exports = {
   completeShippedOrder,
   cancelPendingOrderInTransaction,
 };
-
 
 
 

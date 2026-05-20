@@ -6,6 +6,8 @@ import { ResponsiveSheet } from "@/modules/micro-interactions";
 
 export default function SkinPickerDialog({
   trigger,
+  open: openControlled,
+  onOpenChange,
   title = "更换皮肤",
   description = "请选择一个皮肤以切换主题样式。",
   loadingText = "皮肤加载中...",
@@ -14,7 +16,10 @@ export default function SkinPickerDialog({
   selectedBadge = "已选",
   className,
 }: {
-  trigger: ReactNode;
+  trigger?: ReactNode;
+  /** 受控打开状态（用于后台头像菜单等：弹层在 Portal 内，避免父级卸载） */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   title?: string;
   description?: string;
   loadingText?: string;
@@ -23,21 +28,23 @@ export default function SkinPickerDialog({
   selectedBadge?: string;
   className?: string;
 }) {
-  const [open, setOpen] = useState(false);
+  const [openInternal, setOpenInternal] = useState(false);
+  const open = openControlled ?? openInternal;
+  const setOpen = onOpenChange ?? setOpenInternal;
   const { pickerSkins, skinId, setSkinId } = useThemeRuntime();
 
-  const triggerNode = isValidElement(trigger)
+  const triggerNode = trigger && isValidElement(trigger)
     ? cloneElement(trigger as ReactElement<{ onClick?: (e: React.MouseEvent) => void }>, {
         onClick: (e: React.MouseEvent) => {
           (trigger as ReactElement<{ onClick?: (e: React.MouseEvent) => void }>).props.onClick?.(e);
           setOpen(true);
         },
       })
-    : (
+    : trigger ? (
         <button type="button" onClick={() => setOpen(true)}>
           {trigger}
         </button>
-      );
+      ) : null;
 
   return (
     <>

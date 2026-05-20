@@ -4,11 +4,12 @@ const returnStateMachine = require('./returnStateMachine');
 const checkoutAbandonmentRepo = require('./repository/checkoutAbandonment.repository');
 const orderRepo = require('./repository/order.repository');
 const orderService = require('./service/order.service');
+const orderRefundCompensation = require('./service/orderRefundCompensation.service');
 const checkoutAbandonmentService = require('./service/checkoutAbandonment.service');
 
 const router = Router();
 
-/** ĞëÔÚ¹ÒÔØ×ÓÂ·ÓÉÖ®Ç°×¢²á£¬±ÜÃâ order ? payment Ñ­»·ÒÀÀµÊ± api ÉĞÎ´¾ÍĞ÷ */
+/** ????? order ? payment ?? api ? */
 /** @type {any} */ (router).api = {
   assertFulfillmentTransition: orderStateMachine.assertFulfillmentTransition,
   assertPaymentTransition: orderStateMachine.assertPaymentTransition,
@@ -28,8 +29,11 @@ const router = Router();
   updateOrderPaid: orderRepo.updateOrderPaid,
   updateOrderRefundState: orderRepo.updateOrderRefundState,
   selectOrderItemQtyRows: orderRepo.selectOrderItemQtyRows,
+  decrementActivitySold: orderRepo.decrementActivitySold,
   restoreVariantStock: orderRepo.restoreVariantStock,
   incrementProductSales: orderRepo.incrementProductSales,
+  decrementProductSales: orderRepo.decrementProductSales,
+  applyOrderRefundCompensation: orderRefundCompensation.applyOrderRefundCompensation,
   insertOrderNotification: orderRepo.insertNotification,
   insertWebhookEventIfAbsent: orderRepo.insertWebhookEventIfAbsent,
   cancelPendingOrderInTransaction: orderService.cancelPendingOrderInTransaction,

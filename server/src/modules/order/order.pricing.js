@@ -52,6 +52,16 @@ function parseJsonArray(raw, fallback = []) {
   }
 }
 
+function isPaymentMethodAllowedForPoints(settings, paymentMethod) {
+  const mode = settings?.payment_points_mode || 'all';
+  const methods = parseJsonArray(settings?.allowed_payment_methods, []);
+  if (mode === 'all') return true;
+  if (mode === 'disabled') return false;
+  if (mode === 'include') return methods.includes(paymentMethod);
+  if (mode === 'exclude') return !methods.includes(paymentMethod);
+  return true;
+}
+
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
 }
@@ -317,6 +327,9 @@ async function buildOrderPricing(userId, body, conn = null) {
 
   const usePoints = !!body.use_points;
   const requestPointsToUse = Number(body.points_to_use || 0);
+  if (usePoints && !isPaymentMethodAllowedForPoints(pointsSettings, body.payment_method)) {
+    throw new ValidationError('当前支付方式不支持积分抵扣');
+  }
   const memberLevelDiscountBase = Math.max(0, rawAmount - fullReductionDiscount - nonShippingGoodsCoupon);
   const memberLevelDiscount = memberDiscountRate < 1
     ? pointsEngine.money(memberLevelDiscountBase * (1 - memberDiscountRate))
@@ -459,6 +472,8 @@ async function buildOrderPricing(userId, body, conn = null) {
       adjusted_reason: pointsRedeem.adjusted_reason || '',
       point_value_myr: pointsRedeem.point_value_myr || Number(pointsSettings?.point_value_myr || 0.01),
       points_per_currency: pointsRedeem.points_per_currency || Number(pointsSettings?.points_per_currency || 100),
+      min_redeem_points: Number(pointsSettings?.min_redeem_points || 0),
+      redeem_step: Number(pointsSettings?.redeem_step || 1),
       available_reward_balance: rewardBalance,
       max_usable_reward_cash,
       earned_points,
@@ -497,7 +512,7 @@ module.exports = {
   parseActivityConfig,
   parseIdList,
   assertCouponUsableOnOrder,
+  isPaymentMethodAllowedForPoints,
 };
-
 
 

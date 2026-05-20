@@ -272,6 +272,11 @@ async function payWithRewardWallet(userId, orderId) {
       fee_amount: 0,
       net_amount: payableAmount,
     });
+    try {
+      await requireOrderApi('recomputeOrderProfitAmounts')(conn, lockedOrder.id, {});
+    } catch (e) {
+      console.error('[payWithRewardWallet] recomputeOrderProfitAmounts failed:', e?.message || e);
+    }
 
     await payRepo.insertPaymentEvent(conn, {
       id: generateId(),
@@ -594,6 +599,11 @@ async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionN
   } catch (e) {
     if (e?.code !== 'ER_DUP_ENTRY') throw e;
   }
+  try {
+    await requireOrderApi('recomputeOrderProfitAmounts')(conn, order.id, {});
+  } catch (e) {
+    console.error('[markOrderPaidFromProvider] recomputeOrderProfitAmounts failed:', e?.message || e);
+  }
   return { ok: true };
 }
 
@@ -696,6 +706,11 @@ async function recordStripeCapture(orderId, paymentIntentId, stripeEventId, payl
     });
   } catch (e) {
     if (e?.code !== 'ER_DUP_ENTRY') throw e;
+  }
+  try {
+    await requireOrderApi('recomputeOrderProfitAmounts')(payDb, order.id, {});
+  } catch (e) {
+    console.error('[recordStripeCapture] recomputeOrderProfitAmounts failed:', e?.message || e);
   }
 
   try {
@@ -827,6 +842,11 @@ async function markOrderPaidByAdmin(req, orderId, body) {
       fee_amount: 0,
       net_amount: total,
     });
+    try {
+      await requireOrderApi('recomputeOrderProfitAmounts')(conn, order.id, {});
+    } catch (e) {
+      console.error('[markOrderPaidByAdmin] recomputeOrderProfitAmounts failed:', e?.message || e);
+    }
 
     await payRepo.insertPaymentEvent(conn, {
       id: generateId(),
@@ -1267,4 +1287,3 @@ module.exports = {
   handleManualWebhook,
   handleMalaysiaLocalWebhook,
 };
-

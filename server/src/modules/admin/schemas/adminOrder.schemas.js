@@ -22,6 +22,7 @@ const adminShipOrderBodySchema = z.object({
   trackingNo: z.string().trim().max(128).optional(),
   tracking_no: z.string().trim().max(128).optional(),
   carrier: z.string().trim().max(64).optional(),
+  shipping_cost_amount: z.coerce.number().min(0).max(9999999).optional(),
 });
 
 const adminBatchShipBodySchema = z.object({

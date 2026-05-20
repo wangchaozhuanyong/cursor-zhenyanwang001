@@ -4,12 +4,13 @@ const returnStateMachine = require('./returnStateMachine');
 const checkoutAbandonmentRepo = require('./repository/checkoutAbandonment.repository');
 const orderRepo = require('./repository/order.repository');
 const orderService = require('./service/order.service');
+const orderProfitService = require('./service/orderProfit.service');
 const orderRefundCompensation = require('./service/orderRefundCompensation.service');
 const checkoutAbandonmentService = require('./service/checkoutAbandonment.service');
 
 const router = Router();
 
-/** ????? order ? payment ?? api ? */
+/** æ½©?æ½©æ½©æ½©æ½©????æ½©æ½© order ? payment ?æ½©æ½©æ½©? api æ½©?æ½©æ½© */
 /** @type {any} */ (router).api = {
   assertFulfillmentTransition: orderStateMachine.assertFulfillmentTransition,
   assertPaymentTransition: orderStateMachine.assertPaymentTransition,
@@ -40,6 +41,7 @@ const router = Router();
   listAdminCheckoutAbandonments: checkoutAbandonmentService.listAdminCheckoutAbandonments,
   listDueCheckoutReminders: checkoutAbandonmentService.listDueCheckoutReminders,
   markCheckoutReminderSent: checkoutAbandonmentService.markCheckoutReminderSent,
+  recomputeOrderProfitAmounts: orderProfitService.recomputeOrderProfitAmounts,
 };
 
 router.use('/orders', require('./routes/orders.routes'));

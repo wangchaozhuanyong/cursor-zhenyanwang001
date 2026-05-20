@@ -55,9 +55,37 @@ function buildCategorySalesShare(rows) {
   }));
 }
 
+async function settleDashboardQuery(label, fn, fallback) {
+  try {
+    return await fn();
+  } catch (error) {
+    console.error(`[dashboard] ${label} failed:`, error?.message || error);
+    return fallback;
+  }
+}
+
 async function getStats(query = {}, user = {}) {
   const { dateFrom, dateTo, preset, todayYmd } = resolveKLDateRange(query);
   const viewOrders = canViewOrders(user);
+
+  const emptyToday = {
+    todayRevenue: 0,
+    todayPaidOrders: 0,
+    todayOrders: 0,
+    todayNewUsers: 0,
+    pendingPayment: 0,
+    pendingShip: 0,
+    pendingAfterSale: 0,
+    lowStock: 0,
+    outOfStock: 0,
+  };
+  const emptyTodos = {
+    pendingShip: 0,
+    afterSale: 0,
+    paymentFailed: 0,
+    lowStock: 0,
+    outOfStock: 0,
+  };
 
   const [
     totalOrders,
@@ -74,19 +102,21 @@ async function getStats(query = {}, user = {}) {
     analyticsRaw,
     recentOrdersRaw,
   ] = await Promise.all([
-    repo.countOrdersExcludingCancelled(),
-    repo.countUsers(),
-    repo.countProducts(),
-    repo.sumCompletedRevenue(),
-    repo.selectTodaySummary(todayYmd),
-    repo.selectTodos(),
-    repo.selectSalesTrend(dateFrom, dateTo),
-    repo.selectCategorySalesShare(dateFrom, dateTo),
-    repo.selectTopProducts(dateFrom, dateTo, false, 10),
-    repo.selectTopProducts(dateFrom, dateTo, true, 10),
-    repo.selectLowStockProducts(10),
-    repo.selectAnalyticsMonitor(dateFrom, dateTo),
-    viewOrders ? repo.selectRecentOrders(5) : Promise.resolve([]),
+    settleDashboardQuery('countOrders', () => repo.countOrdersExcludingCancelled(), 0),
+    settleDashboardQuery('countUsers', () => repo.countUsers(), 0),
+    settleDashboardQuery('countProducts', () => repo.countProducts(), 0),
+    settleDashboardQuery('sumRevenue', () => repo.sumCompletedRevenue(), 0),
+    settleDashboardQuery('todaySummary', () => repo.selectTodaySummary(todayYmd), emptyToday),
+    settleDashboardQuery('todos', () => repo.selectTodos(), emptyTodos),
+    settleDashboardQuery('salesTrend', () => repo.selectSalesTrend(dateFrom, dateTo), []),
+    settleDashboardQuery('categoryShare', () => repo.selectCategorySalesShare(dateFrom, dateTo), []),
+    settleDashboardQuery('topProducts', () => repo.selectTopProducts(dateFrom, dateTo, false, 10), []),
+    settleDashboardQuery('slowProducts', () => repo.selectTopProducts(dateFrom, dateTo, true, 10), []),
+    settleDashboardQuery('lowStockProducts', () => repo.selectLowStockProducts(10), []),
+    settleDashboardQuery('analytics', () => repo.selectAnalyticsMonitor(dateFrom, dateTo), {}),
+    viewOrders
+      ? settleDashboardQuery('recentOrders', () => repo.selectRecentOrders(5), [])
+      : Promise.resolve([]),
   ]);
 
   const installClicked = Number(analyticsRaw.pwa_install_button_clicked || 0);

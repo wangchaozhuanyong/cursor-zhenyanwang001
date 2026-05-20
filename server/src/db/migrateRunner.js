@@ -163,9 +163,23 @@ async function migrationStatus() {
   }
 }
 
+async function listPendingMigrationNames() {
+  await ensureTable();
+  if (!fs.existsSync(MIGRATIONS_DIR)) return [];
+  const applied = await getAppliedNames();
+  const entries = fs.readdirSync(MIGRATIONS_DIR);
+  const bases = new Set();
+  for (const f of entries) {
+    const m = f.match(/^(.+)\.up\.(sql|js)$/);
+    if (m) bases.add(m[1]);
+  }
+  return [...bases].sort().filter((name) => !applied.has(name));
+}
+
 module.exports = {
   runPendingMigrations,
   runLastMigrationDown,
   migrationStatus,
+  listPendingMigrationNames,
   MIGRATIONS_DIR,
 };

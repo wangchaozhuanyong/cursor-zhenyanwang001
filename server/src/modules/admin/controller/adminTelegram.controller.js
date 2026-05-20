@@ -1,28 +1,31 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
-
-function getTelegramApi() {
-  return /** @type {any} */ (require('../../telegram')).api || {};
-}
-
-function requireTelegramApi(name) {
-  const fn = getTelegramApi()[name];
-  if (typeof fn !== 'function') {
-    throw new Error(`Telegram 模块 API 未暴露方法：${name}`);
-  }
-  return fn;
-}
+const telegramService = require('../../telegram/service/telegram.service');
 
 exports.getStatus = asyncRoute(async (_req, res) => {
-  res.success(requireTelegramApi('getStatus')());
+  res.success(await telegramService.getStatus());
+});
+
+exports.getSettings = asyncRoute(async (_req, res) => {
+  res.success(await telegramService.getAdminSettings());
+});
+
+exports.updateSettings = asyncRoute(async (req, res) => {
+  const data = await telegramService.saveAdminSettings(req.body, req.user?.id, req);
+  res.success(data, 'Telegram 设置已保存');
+});
+
+exports.previewMessage = asyncRoute(async (req, res) => {
+  const data = await telegramService.buildMessagePreview(req.body || {});
+  res.success(data);
 });
 
 exports.testSend = asyncRoute(async (_req, res) => {
-  const result = await requireTelegramApi('sendTestMessage')();
+  const result = await telegramService.sendTestMessage();
   res.success(result, 'Telegram 测试消息已发送');
 });
 
 exports.listLogs = asyncRoute(async (req, res) => {
   const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 20));
-  const list = await requireTelegramApi('listLogs')(limit);
+  const list = await telegramService.listLogs(limit);
   res.success(list);
 });

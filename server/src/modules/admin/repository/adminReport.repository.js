@@ -1,14 +1,7 @@
 const db = require('../../../config/db');
-const { PAID_PAYMENT_SQL, netSalesExpr, refundedAmountExpr } = require('../../../utils/orderRevenueSql');
-
-const NET_SALES_O = netSalesExpr('o');
-const NET_SALES = netSalesExpr('');
-const REFUNDED_O = refundedAmountExpr('o');
-const REFUNDED = refundedAmountExpr('');
-const GROSS_O = `CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.total_amount ELSE 0 END`;
-const GROSS = `CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN total_amount ELSE 0 END`;
-const ORDER_NET_RATIO = `(CASE WHEN o.total_amount > 0 AND o.payment_status IN (${PAID_PAYMENT_SQL})
-  THEN GREATEST(0, o.total_amount - COALESCE(o.refunded_amount, 0)) / o.total_amount ELSE 0 END)`;
+const { PAID_PAYMENT_SQL } = require('../../../utils/orderRevenueSql');
+const { getReportExprs } = require('./adminReport.expr');
+const { getProfitDailySqlParts } = require('../../../db/schemaContract');
 
 /** 未执行 061 迁移时 analytics_events 不存在，报表需降级避免 500 */
 let analyticsEventsReady;
@@ -68,6 +61,7 @@ async function queryList(sql, params = []) {
 }
 
 async function selectOverviewSummary(dateFrom, dateTo) {
+  const { GROSS, NET_SALES, REFUNDED } = await getReportExprs();
   return queryOne(
     `SELECT
       COALESCE(SUM(${GROSS}),0) AS gross_sales,
@@ -99,6 +93,15 @@ async function selectOverviewTopProducts(dateFrom, dateTo, asc = false) {
 }
 
 async function selectSalesDaily(dateFrom, dateTo) {
+  const {
+    GROSS_O,
+    REFUNDED_O,
+    NET_SALES_O,
+    grossProfitSumO,
+    netProfitSumO,
+    missingCostJoin,
+    missingCostOrderCount,
+  } = await getReportExprs();
   return queryList(
     `SELECT
       DATE(DATE_ADD(o.created_at, INTERVAL 8 HOUR)) AS date,
@@ -112,9 +115,9 @@ async function selectSalesDaily(dateFrom, dateTo) {
       COALESCE(SUM(${REFUNDED_O}),0) AS refund_amount,
       COALESCE(SUM(${NET_SALES_O}),0) AS net_sales,
       COALESCE(MAX(items.items_sold),0) AS items_sold,
-      COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.gross_profit_amount ELSE 0 END),0) AS gross_profit_amount,
-      COALESCE(SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.net_profit_amount ELSE 0 END),0) AS net_profit_amount,
-      COUNT(DISTINCT CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) AND missing.missing_cost_item_count > 0 THEN o.id END) AS missing_cost_order_count,
+      ${grossProfitSumO} AS gross_profit_amount,
+      ${netProfitSumO} AS net_profit_amount,
+      ${missingCostOrderCount} AS missing_cost_order_count,
       COUNT(DISTINCT CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.user_id END) AS paying_users
      FROM orders o
      LEFT JOIN (
@@ -125,11 +128,7 @@ async function selectSalesDaily(dateFrom, dateTo) {
        WHERE ${rangeWhere("DATE(DATE_ADD(o2.created_at, INTERVAL 8 HOUR))")}
        GROUP BY DATE(DATE_ADD(o2.created_at, INTERVAL 8 HOUR))
      ) items ON items.date = DATE(DATE_ADD(o.created_at, INTERVAL 8 HOUR))
-     LEFT JOIN (
-       SELECT order_id, SUM(CASE WHEN cost_snapshot_source='missing' THEN 1 ELSE 0 END) AS missing_cost_item_count
-       FROM order_items
-       GROUP BY order_id
-     ) missing ON missing.order_id = o.id
+     ${missingCostJoin}
      WHERE ${rangeWhere("DATE(DATE_ADD(o.created_at, INTERVAL 8 HOUR))")}
      GROUP BY DATE(DATE_ADD(o.created_at, INTERVAL 8 HOUR))
      ORDER BY date ASC`,
@@ -138,6 +137,7 @@ async function selectSalesDaily(dateFrom, dateTo) {
 }
 
 async function selectSalesMonthly(dateFrom, dateTo) {
+  const { GROSS, NET_SALES, REFUNDED } = await getReportExprs();
   return queryList(
     `SELECT
       DATE_FORMAT(DATE_ADD(created_at, INTERVAL 8 HOUR),'%Y-%m') AS month,
@@ -155,6 +155,18 @@ async function selectSalesMonthly(dateFrom, dateTo) {
 }
 
 async function selectProductsAnalysis(dateFrom, dateTo) {
+  const { loadSchemaCapabilities } = require('../../../db/schemaContract');
+  const itemSchema = await loadSchemaCapabilities();
+  const discountExpr = itemSchema.orderItemsDiscountAllocated ? 'oi.discount_allocated' : '0';
+  const netSalesExpr = itemSchema.orderItemsNetSales
+    ? 'CASE WHEN COALESCE(oi.net_sales_amount,0) > 0 THEN oi.net_sales_amount ELSE oi.subtotal END'
+    : 'oi.subtotal';
+  const costExpr = itemSchema.orderItemsGrossProfit ? 'oi.cost_amount' : '0';
+  const grossProfitExpr = itemSchema.orderItemsGrossProfit ? 'oi.gross_profit_amount' : '0';
+  const missingCostPredicate = itemSchema.orderItemsCostSnapshot
+    ? "oi.cost_snapshot_source='missing'"
+    : '0=1';
+
   const hasAnalytics = await isAnalyticsEventsReady();
   const analyticsJoin = hasAnalytics
     ? `LEFT JOIN (
@@ -181,12 +193,12 @@ async function selectProductsAnalysis(dateFrom, dateTo) {
       c.name AS category_name,
       COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN oi.qty ELSE 0 END),0) AS sales_qty,
       COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN oi.qty*oi.price ELSE 0 END),0) AS sales_amount,
-      COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN oi.discount_allocated ELSE 0 END),0) AS discount_amount,
-      COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN CASE WHEN COALESCE(oi.net_sales_amount,0) > 0 THEN oi.net_sales_amount ELSE oi.subtotal END ELSE 0 END),0) AS net_sales_amount,
-      COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN oi.cost_amount ELSE 0 END),0) AS cost_amount,
-      COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN oi.gross_profit_amount ELSE 0 END),0) AS gross_profit,
-      CASE WHEN COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN CASE WHEN COALESCE(oi.net_sales_amount,0) > 0 THEN oi.net_sales_amount ELSE oi.subtotal END ELSE 0 END),0) > 0
-        THEN ROUND(COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN oi.gross_profit_amount ELSE 0 END),0) / COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN CASE WHEN COALESCE(oi.net_sales_amount,0) > 0 THEN oi.net_sales_amount ELSE oi.subtotal END ELSE 0 END),1) * 100, 2)
+      COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN ${discountExpr} ELSE 0 END),0) AS discount_amount,
+      COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN ${netSalesExpr} ELSE 0 END),0) AS net_sales_amount,
+      COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN ${costExpr} ELSE 0 END),0) AS cost_amount,
+      COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN ${grossProfitExpr} ELSE 0 END),0) AS gross_profit,
+      CASE WHEN COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN ${netSalesExpr} ELSE 0 END),0) > 0
+        THEN ROUND(COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN ${grossProfitExpr} ELSE 0 END),0) / COALESCE(SUM(CASE WHEN o.id IS NOT NULL THEN ${netSalesExpr} ELSE 0 END),1) * 100, 2)
         ELSE 0 END AS gross_margin,
       COUNT(DISTINCT o.id) AS order_count,
       COUNT(DISTINCT o.user_id) AS buyer_count,
@@ -195,7 +207,7 @@ async function selectProductsAnalysis(dateFrom, dateTo) {
       0 AS refund_rate,
       p.stock AS current_stock,
       COALESCE(inv.inventory_cost_value,0) AS inventory_cost_value,
-      COALESCE(SUM(CASE WHEN o.id IS NOT NULL AND oi.cost_snapshot_source='missing' THEN 1 ELSE 0 END),0) AS missing_cost_item_count,
+      COALESCE(SUM(CASE WHEN o.id IS NOT NULL AND ${missingCostPredicate} THEN 1 ELSE 0 END),0) AS missing_cost_item_count,
       NULL AS available_stock_days,
       COALESCE(MAX(ae.view_count),0) AS view_count,
       COALESCE(MAX(ae.add_cart_count),0) AS add_cart_count,
@@ -224,6 +236,12 @@ async function selectProductsAnalysis(dateFrom, dateTo) {
 }
 
 async function selectProfitDaily(dateFrom, dateTo) {
+  const { missingCostJoin, orderAggSelect, expenseDateUnion, expenseJoin } = await getProfitDailySqlParts();
+  const params = [dateFrom, dateTo];
+  if (expenseDateUnion) params.push(dateFrom, dateTo);
+  params.push(dateFrom, dateTo);
+  if (expenseJoin.includes('operating_expense_records')) params.push(dateFrom, dateTo);
+
   return queryList(
     `SELECT
        d.date,
@@ -250,45 +268,19 @@ async function selectProfitDaily(dateFrom, dateTo) {
        SELECT DATE(DATE_ADD(created_at, INTERVAL 8 HOUR)) AS date
        FROM orders
        WHERE ${rangeWhere("DATE(DATE_ADD(created_at, INTERVAL 8 HOUR))")}
-       UNION
-       SELECT expense_date AS date
-       FROM operating_expense_records
-       WHERE expense_date BETWEEN ? AND ?
+       ${expenseDateUnion}
      ) d
      LEFT JOIN (
        SELECT DATE(DATE_ADD(o.created_at, INTERVAL 8 HOUR)) AS date,
-              COUNT(DISTINCT CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.id END) AS paid_order_count,
-              SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN GREATEST(0, o.total_amount - COALESCE(o.refunded_amount,0)) ELSE 0 END) AS paid_amount,
-              SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.raw_amount ELSE 0 END) AS product_sales_amount,
-              SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.discount_amount ELSE 0 END) AS discount_amount,
-              SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.points_discount_amount ELSE 0 END) AS points_discount_amount,
-              SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.reward_cash_discount_amount ELSE 0 END) AS reward_cash_discount_amount,
-              SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.goods_net_sales_amount ELSE 0 END) AS net_goods_sales_amount,
-              SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.goods_cost_amount ELSE 0 END) AS goods_cost_amount,
-              SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.gross_profit_amount ELSE 0 END) AS gross_profit_amount,
-              SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.shipping_fee ELSE 0 END) AS shipping_income,
-              SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.shipping_cost_amount ELSE 0 END) AS shipping_cost_amount,
-              SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN o.payment_fee_amount ELSE 0 END) AS payment_fee_amount,
-              SUM(COALESCE(o.refunded_amount,0)) AS refund_amount,
-              COUNT(DISTINCT CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) AND missing.missing_cost_item_count > 0 THEN o.id END) AS missing_cost_order_count,
-              SUM(CASE WHEN o.payment_status IN (${PAID_PAYMENT_SQL}) THEN COALESCE(missing.missing_cost_item_count,0) ELSE 0 END) AS missing_cost_item_count
+              ${orderAggSelect}
        FROM orders o
-       LEFT JOIN (
-         SELECT order_id, SUM(CASE WHEN cost_snapshot_source='missing' THEN 1 ELSE 0 END) AS missing_cost_item_count
-         FROM order_items
-         GROUP BY order_id
-       ) missing ON missing.order_id = o.id
+       ${missingCostJoin}
        WHERE ${rangeWhere("DATE(DATE_ADD(o.created_at, INTERVAL 8 HOUR))")}
        GROUP BY DATE(DATE_ADD(o.created_at, INTERVAL 8 HOUR))
      ) o ON o.date = d.date
-     LEFT JOIN (
-       SELECT expense_date AS date, SUM(amount) AS expense_amount
-       FROM operating_expense_records
-       WHERE expense_date BETWEEN ? AND ?
-       GROUP BY expense_date
-     ) e ON e.date = d.date
+     ${expenseJoin}
      ORDER BY d.date ASC`,
-    [dateFrom, dateTo, dateFrom, dateTo, dateFrom, dateTo, dateFrom, dateTo],
+    params,
   );
 }
 

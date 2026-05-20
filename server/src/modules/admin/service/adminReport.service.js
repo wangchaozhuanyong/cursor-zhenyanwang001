@@ -196,9 +196,28 @@ async function getSalesDaily(query) {
   return { summary, list: normalized, date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
 }
 
+function canDowngradeReportError(error) {
+  const code = String(error?.code || '');
+  const msg = String(error?.message || '');
+  return code === 'ER_BAD_FIELD_ERROR'
+    || code === 'ER_NO_SUCH_TABLE'
+    || code === 'ER_PARSE_ERROR'
+    || /unknown column|doesn't exist|no such table/i.test(msg);
+}
+
 async function getSalesMonthly(query) {
   const { dateFrom, dateTo } = resolveDateRange(query);
-  const list = await repo.selectSalesMonthly(dateFrom, dateTo);
+  let list;
+  try {
+    list = await repo.selectSalesMonthly(dateFrom, dateTo);
+  } catch (error) {
+    if (canDowngradeReportError(error)) {
+      console.warn(`[admin-report] sales monthly downgraded: ${error.message}`);
+      list = [];
+    } else {
+      throw error;
+    }
+  }
   let prev = null;
   const normalized = list.map((r) => {
     const gross = safeNumber(r.gross_sales);

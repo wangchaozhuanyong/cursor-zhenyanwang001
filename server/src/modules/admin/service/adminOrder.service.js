@@ -8,6 +8,7 @@ const { generateId } = require('../../../utils/helpers');
 const { BusinessError, NotFoundError, ValidationError } = require('../../../errors');
 const { logAdminAction } = require('../../../utils/adminAudit');
 const { rowsToCsvLocalized } = require('../../../utils/adminCsvLabels');
+const { maskPhone } = require('../../../utils/privacyMask');
 const { getResolvedTriggerCopy } = require('./notificationTriggerSettings.service');
 const repo = require('../repository/adminOrder.repository');
 const { writeAuditLog } = require('../../../utils/auditLog');
@@ -72,6 +73,13 @@ function buildAdminOrderListWhere(query) {
     dateTo,
     amountMin,
     amountMax,
+    returnStatus,
+    refundStatus,
+    hasNote,
+    costStatus,
+    overduePayment,
+    overdueShipment,
+    buyerType,
   } = query;
   if (status) {
     where += ' AND o.status = ?';
@@ -94,8 +102,22 @@ function buildAdminOrderListWhere(query) {
     params.push(shippingName);
   }
   if (keyword) {
-    where += ' AND (o.order_no LIKE ? OR o.contact_name LIKE ? OR o.contact_phone LIKE ? OR COALESCE(o.shipping_phone, "") LIKE ?)';
-    params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
+    where += ` AND (
+      o.order_no LIKE ?
+      OR o.contact_name LIKE ?
+      OR o.contact_phone LIKE ?
+      OR COALESCE(o.shipping_phone, '') LIKE ?
+      OR o.user_id LIKE ?
+      OR COALESCE(u.nickname, '') LIKE ?
+      OR COALESCE(u.phone, '') LIKE ?
+      OR COALESCE(u.email, '') LIKE ?
+      OR COALESCE(o.tracking_no, '') LIKE ?
+      OR COALESCE(o.payment_transaction_no, '') LIKE ?
+    )`;
+    params.push(
+      `%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`,
+      `%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`,
+    );
   }
   if (dateFrom) {
     where += ' AND o.created_at >= ?';
@@ -114,6 +136,38 @@ function buildAdminOrderListWhere(query) {
   if (Number.isFinite(max)) {
     where += ' AND o.total_amount <= ?';
     params.push(max);
+  }
+  if (returnStatus === 'active') {
+    where += " AND EXISTS (SELECT 1 FROM return_requests rr WHERE rr.order_id = o.id AND rr.status IN ('pending', 'approved', 'processing'))";
+  } else if (returnStatus === 'none') {
+    where += ' AND NOT EXISTS (SELECT 1 FROM return_requests rr WHERE rr.order_id = o.id)';
+  } else if (returnStatus === 'any') {
+    where += ' AND EXISTS (SELECT 1 FROM return_requests rr WHERE rr.order_id = o.id)';
+  }
+  if (refundStatus) {
+    where += ' AND o.refund_status = ?';
+    params.push(refundStatus);
+  }
+  if (hasNote === '1' || hasNote === true) {
+    where += " AND COALESCE(o.note, '') <> ''";
+  } else if (hasNote === '0') {
+    where += " AND COALESCE(o.note, '') = ''";
+  }
+  if (costStatus === 'missing') {
+    where += " AND EXISTS (SELECT 1 FROM order_items oi_cost WHERE oi_cost.order_id = o.id AND oi_cost.cost_snapshot_source = 'missing')";
+  } else if (costStatus === 'normal') {
+    where += " AND NOT EXISTS (SELECT 1 FROM order_items oi_cost WHERE oi_cost.order_id = o.id AND oi_cost.cost_snapshot_source = 'missing')";
+  }
+  if (overduePayment === '1' || overduePayment === true) {
+    where += " AND COALESCE(o.payment_status, 'pending') = 'pending' AND o.created_at < DATE_SUB(NOW(), INTERVAL 2 HOUR)";
+  }
+  if (overdueShipment === '1' || overdueShipment === true) {
+    where += " AND o.status = 'paid' AND o.payment_status IN ('paid', 'partially_refunded') AND COALESCE(o.paid_at, o.payment_time, o.created_at) < DATE_SUB(NOW(), INTERVAL 24 HOUR)";
+  }
+  if (buyerType === 'new') {
+    where += ' AND (SELECT COUNT(*) FROM orders ou WHERE ou.user_id = o.user_id) <= 1';
+  } else if (buyerType === 'repeat') {
+    where += ' AND (SELECT COUNT(*) FROM orders ou WHERE ou.user_id = o.user_id) > 1';
   }
   return { where, params };
 }
@@ -137,6 +191,80 @@ function normalizeOrderSummary(summaryRows = []) {
   return base;
 }
 
+function normalizeOperationalSummary(row = {}) {
+  const numericKeys = [
+    'today_order_count',
+    'today_paid_order_count',
+    'today_paid_amount',
+    'today_refund_amount',
+    'today_gross_profit_amount',
+    'today_net_profit_amount',
+    'pending_payment_amount',
+    'pending_shipment_count',
+    'pending_shipment_amount',
+    'active_return_count',
+    'overdue_unpaid_count',
+    'overdue_shipment_count',
+  ];
+  return Object.fromEntries(numericKeys.map((key) => [key, Number(row[key] || 0)]));
+}
+
+function buildOrderBadges(order) {
+  const badges = [];
+  if (order.note) badges.push('买家备注');
+  if (Number(order.active_return_count || 0) > 0) badges.push('售后中');
+  if (Number(order.refund_amount || order.refunded_amount || 0) > 0) badges.push('有退款');
+  if (order.cost_snapshot_source === 'missing' || Number(order.missing_cost_item_count || 0) > 0) badges.push('缺成本');
+  if (Number(order.total_amount || 0) >= 500) badges.push('高金额');
+  if ((order.payment_status || PAYMENT_STATUS.PENDING) === PAYMENT_STATUS.PENDING) {
+    const created = order.created_at ? new Date(order.created_at).getTime() : 0;
+    if (created && Date.now() - created > 2 * 60 * 60 * 1000) badges.push('超时未支付');
+  }
+  if (order.status === ORDER_STATUS.PAID && ['paid', 'partially_refunded'].includes(order.payment_status || '')) {
+    const paidAt = order.paid_at || order.payment_time || order.created_at;
+    const paidTime = paidAt ? new Date(paidAt).getTime() : 0;
+    if (paidTime && Date.now() - paidTime > 24 * 60 * 60 * 1000) badges.push('待发货超24h');
+  }
+  return badges;
+}
+
+function escapeRegExp(value) {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function maskSensitiveText(text, phones = []) {
+  let output = String(text || '');
+  for (const phone of phones) {
+    const raw = String(phone || '').trim();
+    const compact = raw.replace(/\s+/g, '');
+    const masked = maskPhone(raw);
+    if (!raw || !masked) continue;
+    output = output.replace(new RegExp(escapeRegExp(raw), 'g'), masked);
+    if (compact && compact !== raw) {
+      output = output.replace(new RegExp(escapeRegExp(compact), 'g'), masked);
+    }
+  }
+  return output;
+}
+
+function sanitizeAdminOrderListRow(order) {
+  const shippingPhone = order.shipping_phone || order.contact_phone || '';
+  order.contact_phone_masked = maskPhone(order.contact_phone);
+  order.shipping_phone_masked = maskPhone(shippingPhone);
+  order.user_phone_masked = maskPhone(order.user_phone);
+  order.after_sale_status = Number(order.active_return_count || 0) > 0
+    ? 'active'
+    : Number(order.refund_amount || order.refunded_amount || 0) > 0
+      ? ((order.payment_status || '') === 'partially_refunded' || (order.refund_status || '') === 'partially_refunded' ? 'partial_refunded' : 'refunded')
+      : 'none';
+  order.risk_badges = buildOrderBadges(order);
+  order.contact_phone = undefined;
+  order.shipping_phone = undefined;
+  order.user_phone = undefined;
+  order.address = undefined;
+  return order;
+}
+
 function attachItemsAndAmounts(order, items) {
   const mapped = items.map((it) => ({
     product_id: it.product_id,
@@ -154,6 +282,12 @@ function attachItemsAndAmounts(order, items) {
   order.raw_amount = parseFloat(order.raw_amount);
   order.shipping_fee = parseFloat(order.shipping_fee);
   order.discount_amount = parseFloat(order.discount_amount);
+  order.goods_cost_amount = parseFloat(order.goods_cost_amount || 0);
+  order.gross_profit_amount = parseFloat(order.gross_profit_amount || 0);
+  order.shipping_cost_amount = parseFloat(order.shipping_cost_amount || 0);
+  order.payment_fee_amount = parseFloat(order.payment_fee_amount || 0);
+  order.net_profit_amount = parseFloat(order.net_profit_amount || 0);
+  order.refund_amount = parseFloat(order.refund_amount || order.refunded_amount || 0);
   return order;
 }
 
@@ -163,9 +297,10 @@ async function listOrders(query) {
   const { where, params } = buildAdminOrderListWhere(query);
   const total = await repo.countOrdersAdmin(where, params);
   const offset = (page - 1) * pageSize;
-  const [orders, summaryRows] = await Promise.all([
+  const [orders, summaryRows, operationalSummary] = await Promise.all([
     repo.selectOrdersAdminPage(where, params, pageSize, offset),
     repo.selectOrderStatusSummary(where, params),
+    repo.selectOrderOperationalSummary(where, params),
   ]);
 
   if (orders.length > 0) {
@@ -180,6 +315,9 @@ async function listOrders(query) {
       attachItemsAndAmounts(order, itemsByOrderId[order.id] || []);
     }
   }
+  for (const order of orders) {
+    sanitizeAdminOrderListRow(order);
+  }
 
   return {
     kind: 'paginate',
@@ -187,7 +325,10 @@ async function listOrders(query) {
     total,
     page,
     pageSize,
-    summary: normalizeOrderSummary(summaryRows),
+    summary: {
+      ...normalizeOrderSummary(summaryRows),
+      ...normalizeOperationalSummary(operationalSummary),
+    },
   };
 }
 
@@ -458,10 +599,16 @@ async function shipOrder(orderId, body, adminUserId, req) {
 
     const trackingNo = body.trackingNo || body.tracking_no || '';
     const carrier = body.carrier || '';
+    const shippingCostAmountInput = body.shipping_cost_amount;
     await repo.updateOrderShipped(orderId, trackingNo, carrier);
     const pointsConn = await repo.getConnection();
     try {
       await pointsConn.beginTransaction();
+      if (shippingCostAmountInput !== undefined) {
+        await requireOrderApi('recomputeOrderProfitAmounts')(pointsConn, order.id, {
+          shippingCostAmount: Number(shippingCostAmountInput || 0),
+        });
+      }
       await orderPoints.maybeGrantOrderEarnPoints(pointsConn, order, {
         operatorId: adminUserId,
         trigger: 'order_shipped',
@@ -524,8 +671,10 @@ async function shipOrder(orderId, body, adminUserId, req) {
 const ORDER_EXPORT_HEADERS = [
   'id', 'order_no', 'user_id', 'status', 'payment_status', 'total_amount', 'raw_amount', 'discount_amount', 'shipping_fee',
   'tax_mode', 'tax_rate', 'tax_label', 'taxable_amount', 'tax_amount', 'tax_exclusive_amount',
-  'total_points', 'contact_name', 'contact_phone', 'shipping_phone', 'address', 'payment_method', 'coupon_title',
-  'shipping_name', 'tracking_no', 'carrier', 'note', 'created_at',
+  'total_points', 'user_nickname', 'user_phone_masked', 'contact_name', 'contact_phone_masked', 'shipping_phone_masked',
+  'items_summary', 'items_count', 'sku_count', 'address', 'payment_method', 'payment_channel', 'payment_transaction_no',
+  'paid_at', 'coupon_title', 'shipping_name', 'tracking_no', 'carrier', 'shipped_at', 'return_request_count',
+  'active_return_count', 'refund_amount', 'goods_cost_amount', 'gross_profit_amount', 'shipping_cost_amount', 'payment_fee_amount', 'net_profit_amount', 'note', 'created_at',
 ];
 
 async function exportOrdersCsv(query) {
@@ -548,15 +697,32 @@ async function exportOrdersCsv(query) {
     tax_amount: o.tax_amount ?? '',
     tax_exclusive_amount: o.tax_exclusive_amount ?? '',
     total_points: o.total_points,
+    user_nickname: o.user_nickname || '',
+    user_phone_masked: maskPhone(o.user_phone),
     contact_name: o.contact_name || '',
-    contact_phone: o.contact_phone || '',
-    shipping_phone: o.shipping_phone || o.contact_phone || '',
-    address: (o.address || '').replace(/\r\n/g, ' ').replace(/,/g, ' '),
+    contact_phone_masked: maskPhone(o.contact_phone),
+    shipping_phone_masked: maskPhone(o.shipping_phone || o.contact_phone),
+    items_summary: o.items_summary || '',
+    items_count: o.items_count || 0,
+    sku_count: o.sku_count || 0,
+    address: maskSensitiveText(o.address || '', [o.contact_phone, o.shipping_phone, o.user_phone]).replace(/\r\n/g, ' ').replace(/,/g, ' '),
     payment_method: o.payment_method || '',
+    payment_channel: o.payment_channel || '',
+    payment_transaction_no: o.payment_transaction_no || '',
+    paid_at: o.paid_at || o.payment_time ? new Date(o.paid_at || o.payment_time).toISOString() : '',
     coupon_title: o.coupon_title || '',
     shipping_name: o.shipping_name || '',
     tracking_no: o.tracking_no || '',
     carrier: o.carrier || '',
+    shipped_at: o.shipped_at ? new Date(o.shipped_at).toISOString() : '',
+    return_request_count: o.return_request_count || 0,
+    active_return_count: o.active_return_count || 0,
+    refund_amount: o.refund_amount || o.refunded_amount || 0,
+    goods_cost_amount: o.goods_cost_amount || 0,
+    gross_profit_amount: o.gross_profit_amount || 0,
+    shipping_cost_amount: o.shipping_cost_amount || 0,
+    payment_fee_amount: o.payment_fee_amount || 0,
+    net_profit_amount: o.net_profit_amount || 0,
     note: (o.note || '').replace(/\r\n/g, ' '),
     created_at: o.created_at ? new Date(o.created_at).toISOString() : '',
   }));
@@ -659,9 +825,5 @@ module.exports = {
   listPendingShipmentOrders,
   batchShipOrders,
 };
-
-
-
-
 
 

@@ -1,5 +1,6 @@
 const { ZodError } = require('zod');
-const { AppError } = require('../errors');
+const { AppError, ServiceUnavailableError } = require('../errors');
+const { isSchemaDriftError } = require('../db/schemaErrors');
 
 function isUploadTypeError(message) {
   const raw = String(message || '');
@@ -38,6 +39,19 @@ module.exports = function errorHandler(err, req, res, _next) {
       code: statusCode,
       message: err.message || '请求失败',
       data: err.details ?? null,
+      traceId,
+    });
+  }
+
+  if (isSchemaDriftError(err)) {
+    const schemaErr = new ServiceUnavailableError(
+      '数据库结构未与当前代码同步。请在服务器执行：cd server && npm run migrate，然后重启服务。',
+    );
+    console.error(`[${traceId}] schema drift:`, err?.message || err);
+    return res.status(503).json({
+      code: 503,
+      message: schemaErr.message,
+      data: { hint: 'schema_migration_required', sqlMessage: String(err?.message || '').slice(0, 500) },
       traceId,
     });
   }

@@ -9,6 +9,7 @@
 const db = require('../../../config/db');
 const { ORDER_STATUS } = require('../../../constants/status');
 const { generateId } = require('../../../utils/helpers');
+const { getOrderRevenueExprs } = require('../../../db/schemaContract');
 
 function getPool() {
   return db;
@@ -42,7 +43,13 @@ async function selectOrderItemsWithProduct(q, orderId) {
 }
 
 async function countOrdersAdmin(where, params) {
-  const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total FROM orders o ${where}`, params);
+  const [[{ total }]] = await db.query(
+    `SELECT COUNT(*) AS total
+     FROM orders o
+     LEFT JOIN users u ON u.id = o.user_id
+     ${where}`,
+    params,
+  );
   return total;
 }
 
@@ -50,6 +57,7 @@ async function selectOrderStatusSummary(where, params) {
   const [rows] = await db.query(
     `SELECT o.status, COUNT(*) AS count
      FROM orders o
+     LEFT JOIN users u ON u.id = o.user_id
      ${where}
      GROUP BY o.status`,
     params,
@@ -59,7 +67,66 @@ async function selectOrderStatusSummary(where, params) {
 
 async function selectOrdersAdminPage(where, params, pageSize, offset) {
   const [orders] = await db.query(
-    `SELECT o.* FROM orders o ${where} ORDER BY o.created_at DESC LIMIT ? OFFSET ?`,
+    `SELECT
+       o.id, o.user_id, o.order_no, o.raw_amount, o.discount_amount, o.coupon_title,
+       o.shipping_fee, o.shipping_name, o.tracking_no, o.carrier, o.total_amount,
+       o.goods_cost_amount, o.gross_profit_amount, o.shipping_cost_amount, o.payment_fee_amount, o.net_profit_amount,
+       o.total_points, o.status, o.payment_status, o.refund_status, o.refunded_amount,
+       o.note, o.contact_name, o.contact_phone, o.shipping_phone, o.address,
+       o.payment_method, o.payment_channel, o.payment_transaction_no, o.payment_time,
+       o.paid_at, o.shipped_at, o.cancelled_at, o.completed_at, o.created_at,
+       o.points_discount_amount, o.reward_cash_discount_amount, o.reward_cash_used,
+       u.nickname AS user_nickname,
+       u.phone AS user_phone,
+       u.email AS user_email,
+       u.member_level_id,
+       ml.name AS member_level_name,
+       COALESCE(user_stats.order_count, 0) AS user_order_count,
+       COALESCE(user_stats.total_paid_amount, 0) AS user_total_paid_amount,
+       COALESCE(item_stats.items_count, 0) AS items_count,
+       COALESCE(item_stats.sku_count, 0) AS sku_count,
+       item_stats.items_summary,
+       COALESCE(item_stats.missing_cost_item_count, 0) AS missing_cost_item_count,
+       item_stats.cost_snapshot_source,
+       COALESCE(return_stats.return_request_count, 0) AS return_request_count,
+       COALESCE(return_stats.active_return_count, 0) AS active_return_count,
+       COALESCE(o.refunded_amount, 0) AS refund_amount
+     FROM orders o
+     LEFT JOIN users u ON u.id = o.user_id
+     LEFT JOIN member_levels ml ON ml.id = u.member_level_id
+     LEFT JOIN (
+       SELECT
+         user_id,
+         COUNT(*) AS order_count,
+         SUM(CASE WHEN payment_status IN ('paid', 'partially_refunded') THEN total_amount ELSE 0 END) AS total_paid_amount
+       FROM orders
+       GROUP BY user_id
+     ) user_stats ON user_stats.user_id = o.user_id
+     LEFT JOIN (
+       SELECT
+         order_id,
+         SUM(qty) AS items_count,
+         COUNT(DISTINCT COALESCE(NULLIF(variant_id, ''), product_id)) AS sku_count,
+         GROUP_CONCAT(
+           CONCAT(COALESCE(NULLIF(product_name, ''), NULLIF(product_name_snapshot, ''), '商品'), ' ×', qty)
+           ORDER BY id
+           SEPARATOR '；'
+         ) AS items_summary,
+         SUM(CASE WHEN cost_snapshot_source = 'missing' THEN 1 ELSE 0 END) AS missing_cost_item_count,
+         CASE WHEN SUM(CASE WHEN cost_snapshot_source = 'missing' THEN 1 ELSE 0 END) > 0 THEN 'missing' ELSE 'normal' END AS cost_snapshot_source
+       FROM order_items
+       GROUP BY order_id
+     ) item_stats ON item_stats.order_id = o.id
+     LEFT JOIN (
+       SELECT
+         order_id,
+         COUNT(*) AS return_request_count,
+         SUM(CASE WHEN status IN ('pending', 'approved', 'processing') THEN 1 ELSE 0 END) AS active_return_count
+       FROM return_requests
+       GROUP BY order_id
+     ) return_stats ON return_stats.order_id = o.id
+     ${where}
+     ORDER BY o.created_at DESC LIMIT ? OFFSET ?`,
     [...params, pageSize, offset],
   );
   return orders;
@@ -67,10 +134,92 @@ async function selectOrdersAdminPage(where, params, pageSize, offset) {
 
 async function selectOrdersForExport(where, params) {
   const [orders] = await db.query(
-    `SELECT o.* FROM orders o ${where} ORDER BY o.created_at DESC`,
+    `SELECT
+       o.*,
+       u.nickname AS user_nickname,
+       u.phone AS user_phone,
+       u.email AS user_email,
+       COALESCE(item_stats.items_count, 0) AS items_count,
+       COALESCE(item_stats.sku_count, 0) AS sku_count,
+       item_stats.items_summary,
+       COALESCE(item_stats.missing_cost_item_count, 0) AS missing_cost_item_count,
+       COALESCE(return_stats.return_request_count, 0) AS return_request_count,
+       COALESCE(return_stats.active_return_count, 0) AS active_return_count,
+       COALESCE(o.refunded_amount, 0) AS refund_amount
+     FROM orders o
+     LEFT JOIN users u ON u.id = o.user_id
+     LEFT JOIN (
+       SELECT
+         order_id,
+         SUM(qty) AS items_count,
+         COUNT(DISTINCT COALESCE(NULLIF(variant_id, ''), product_id)) AS sku_count,
+         GROUP_CONCAT(
+           CONCAT(COALESCE(NULLIF(product_name, ''), NULLIF(product_name_snapshot, ''), '商品'), ' ×', qty)
+           ORDER BY id
+           SEPARATOR '；'
+         ) AS items_summary,
+         SUM(CASE WHEN cost_snapshot_source = 'missing' THEN 1 ELSE 0 END) AS missing_cost_item_count
+       FROM order_items
+       GROUP BY order_id
+     ) item_stats ON item_stats.order_id = o.id
+     LEFT JOIN (
+       SELECT
+         order_id,
+         COUNT(*) AS return_request_count,
+         SUM(CASE WHEN status IN ('pending', 'approved', 'processing') THEN 1 ELSE 0 END) AS active_return_count
+       FROM return_requests
+       GROUP BY order_id
+     ) return_stats ON return_stats.order_id = o.id
+     ${where}
+     ORDER BY o.created_at DESC`,
     params,
   );
   return orders;
+}
+
+async function selectOrderOperationalSummary(where, params) {
+  const { schema } = await getOrderRevenueExprs();
+  const paidNet = schema.ordersRefundedAmount
+    ? 'GREATEST(0, o.total_amount - COALESCE(o.refunded_amount, 0))'
+    : 'o.total_amount';
+  const refundCol = schema.ordersRefundedAmount ? 'COALESCE(o.refunded_amount, 0)' : '0';
+  const grossCol = schema.ordersGrossProfit ? 'COALESCE(o.gross_profit_amount, 0)' : '0';
+  const netCol = schema.ordersNetProfit ? 'COALESCE(o.net_profit_amount, 0)' : '0';
+  const [[row]] = await db.query(
+    `SELECT
+       COALESCE(SUM(CASE WHEN DATE(o.created_at) = CURDATE() THEN 1 ELSE 0 END), 0) AS today_order_count,
+       COALESCE(SUM(CASE WHEN DATE(COALESCE(o.paid_at, o.payment_time)) = CURDATE()
+         AND o.payment_status IN ('paid', 'partially_refunded') THEN 1 ELSE 0 END), 0) AS today_paid_order_count,
+       COALESCE(SUM(CASE WHEN DATE(COALESCE(o.paid_at, o.payment_time)) = CURDATE()
+         AND o.payment_status IN ('paid', 'partially_refunded')
+         THEN ${paidNet} ELSE 0 END), 0) AS today_paid_amount,
+       COALESCE(SUM(CASE WHEN DATE(COALESCE(o.paid_at, o.payment_time)) = CURDATE()
+         THEN ${refundCol} ELSE 0 END), 0) AS today_refund_amount,
+       COALESCE(SUM(CASE WHEN DATE(COALESCE(o.paid_at, o.payment_time)) = CURDATE()
+         AND o.payment_status IN ('paid', 'partially_refunded') THEN ${grossCol} ELSE 0 END), 0) AS today_gross_profit_amount,
+       COALESCE(SUM(CASE WHEN DATE(COALESCE(o.paid_at, o.payment_time)) = CURDATE()
+         AND o.payment_status IN ('paid', 'partially_refunded') THEN ${netCol} ELSE 0 END), 0) AS today_net_profit_amount,
+       COALESCE(SUM(CASE WHEN COALESCE(o.payment_status, 'pending') = 'pending' THEN o.total_amount ELSE 0 END), 0) AS pending_payment_amount,
+       COALESCE(SUM(CASE WHEN o.status = 'paid' AND o.payment_status IN ('paid', 'partially_refunded') THEN 1 ELSE 0 END), 0) AS pending_shipment_count,
+       COALESCE(SUM(CASE WHEN o.status = 'paid' AND o.payment_status IN ('paid', 'partially_refunded') THEN o.total_amount ELSE 0 END), 0) AS pending_shipment_amount,
+       COALESCE(SUM(CASE WHEN return_stats.active_return_count > 0 THEN return_stats.active_return_count ELSE 0 END), 0) AS active_return_count,
+       COALESCE(SUM(CASE WHEN COALESCE(o.payment_status, 'pending') = 'pending'
+         AND o.created_at < DATE_SUB(NOW(), INTERVAL 2 HOUR) THEN 1 ELSE 0 END), 0) AS overdue_unpaid_count,
+       COALESCE(SUM(CASE WHEN o.status = 'paid' AND o.payment_status IN ('paid', 'partially_refunded')
+         AND COALESCE(o.paid_at, o.payment_time, o.created_at) < DATE_SUB(NOW(), INTERVAL 24 HOUR) THEN 1 ELSE 0 END), 0) AS overdue_shipment_count
+     FROM orders o
+     LEFT JOIN users u ON u.id = o.user_id
+     LEFT JOIN (
+       SELECT
+         order_id,
+         SUM(CASE WHEN status IN ('pending', 'approved', 'processing') THEN 1 ELSE 0 END) AS active_return_count
+       FROM return_requests
+       GROUP BY order_id
+     ) return_stats ON return_stats.order_id = o.id
+     ${where}`,
+    params,
+  );
+  return row || {};
 }
 
 /**
@@ -335,6 +484,7 @@ module.exports = {
   selectOrderItemsBatch,
   countOrdersAdmin,
   selectOrderStatusSummary,
+  selectOrderOperationalSummary,
   selectOrdersAdminPage,
   selectOrdersForExport,
   selectOrderById,
@@ -389,6 +539,3 @@ async function selectOrdersByIds(orderIds = []) {
   );
   return rows;
 }
-
-
-

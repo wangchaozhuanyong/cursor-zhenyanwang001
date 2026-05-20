@@ -11,10 +11,19 @@ function orderCol(alias, column) {
 /**
  * 净销售额表达式（订单别名）
  * @param {string} [alias]
+ * @param {{ includeRefundedAmount?: boolean }} [options]
  */
-function netSalesExpr(alias = 'o') {
+function netSalesExpr(alias = 'o', options = {}) {
+  const includeRefunded = options.includeRefundedAmount !== false;
   const ps = orderCol(alias, 'payment_status');
   const total = orderCol(alias, 'total_amount');
+  if (!includeRefunded) {
+    return `CASE
+    WHEN ${ps} IN (${PAID_PAYMENT_SQL})
+      THEN ${total}
+    ELSE 0
+  END`;
+  }
   const refunded = orderCol(alias, 'refunded_amount');
   return `CASE
     WHEN ${ps} IN (${PAID_PAYMENT_SQL})
@@ -24,8 +33,23 @@ function netSalesExpr(alias = 'o') {
 }
 
 /** 累计退款金额 */
-function refundedAmountExpr(alias = 'o') {
+function refundedAmountExpr(alias = 'o', options = {}) {
+  if (options.includeRefundedAmount === false) {
+    return '0';
+  }
   return `COALESCE(${orderCol(alias, 'refunded_amount')}, 0)`;
+}
+
+/** 订单净收入占比（用于 order_items 分摊） */
+function orderNetRatioExpr(alias = 'o', options = {}) {
+  const includeRefunded = options.includeRefundedAmount !== false;
+  const a = alias;
+  if (!includeRefunded) {
+    return `(CASE WHEN ${a}.total_amount > 0 AND ${a}.payment_status IN (${PAID_PAYMENT_SQL})
+      THEN 1 ELSE 0 END)`;
+  }
+  return `(CASE WHEN ${a}.total_amount > 0 AND ${a}.payment_status IN (${PAID_PAYMENT_SQL})
+  THEN GREATEST(0, ${a}.total_amount - COALESCE(${a}.refunded_amount, 0)) / ${a}.total_amount ELSE 0 END)`;
 }
 
 /** 是否计为已支付订单（用于计数） */
@@ -37,5 +61,6 @@ module.exports = {
   PAID_PAYMENT_SQL,
   netSalesExpr,
   refundedAmountExpr,
+  orderNetRatioExpr,
   isPaidOrderExpr,
 };

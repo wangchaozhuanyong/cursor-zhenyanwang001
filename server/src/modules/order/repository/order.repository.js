@@ -1130,6 +1130,38 @@ async function selectDueShippedOrderIds(q, days, limit, shippedStatus) {
   return rows.map((r) => r.id);
 }
 
+async function selectOrderPaymentFeeTotal(q, orderId) {
+  const [[row]] = await q.query(
+    `SELECT COALESCE(SUM(pf.fee_amount), 0) AS total_fee
+     FROM payment_orders po
+     JOIN payment_fees pf ON pf.payment_order_id = po.id
+     WHERE po.order_id = ?`,
+    [orderId],
+  );
+  return Number(row?.total_fee || 0);
+}
+
+async function updateOrderProfitAmounts(q, orderId, params = {}) {
+  const {
+    shippingCostAmount,
+    paymentFeeAmount,
+    netProfitAmount,
+  } = params;
+  await q.query(
+    `UPDATE orders
+     SET shipping_cost_amount = ?,
+         payment_fee_amount = ?,
+         net_profit_amount = ?
+     WHERE id = ?`,
+    [
+      Number(shippingCostAmount || 0),
+      Number(paymentFeeAmount || 0),
+      Number(netProfitAmount || 0),
+      orderId,
+    ],
+  );
+}
+
 module.exports = {
   getPool,
   getConnection,
@@ -1192,4 +1224,6 @@ module.exports = {
   insertRewardRecord,
   selectExpiredPendingOrderIds,
   selectDueShippedOrderIds,
+  selectOrderPaymentFeeTotal,
+  updateOrderProfitAmounts,
 };

@@ -18,6 +18,7 @@ const { userQueryLimiter } = require('../../../middleware/rateLimiters');
 const { paginationCap } = require('../../../middleware/paginationCap');
 const { validate } = require('../../../middleware/validate');
 const { requireSiteCapability } = require('../../../middleware/siteCapabilityGuard');
+const { ensureAdminSchemaReady } = require('../../../middleware/schemaReadiness');
 
 const authCtrl = require('../controller/adminAuth.controller');
 const dashboardCtrl = require('../controller/adminDashboard.controller');
@@ -69,6 +70,12 @@ router.post('/auth/logout', adminAuth, authCtrl.logout);
 router.get('/account/profile', adminAuth, authCtrl.getProfile);
 router.put('/account/profile', adminAuth, authCtrl.updateProfile);
 router.put('/account/password', adminAuth, authCtrl.changePassword);
+
+/** 登录/刷新之后：关键迁移未完成时返回 503 指引，避免笼统的「服务器内部错误」 */
+router.use((req, res, next) => {
+  if (/^\/auth\/(login|refresh)$/.test(req.path)) return next();
+  return ensureAdminSchemaReady(req, res, next);
+});
 
 /* ---- RBAC ---- */
 router.get('/rbac/me', adminAuth, authCtrl.getRbacMe);
@@ -448,6 +455,9 @@ router.put('/settings', adminAuth, requirePermission('settings.manage'), setting
 router.get('/settings/features', adminAuth, requirePermission('settings.manage'), settingsCtrl.getFeatures);
 router.put('/settings/features', adminAuth, requirePermission('settings.manage'), settingsCtrl.updateFeatures);
 router.get('/telegram/status', adminAuth, requirePermission('settings.manage'), telegramCtrl.getStatus);
+router.get('/telegram/settings', adminAuth, requirePermission('settings.manage'), telegramCtrl.getSettings);
+router.put('/telegram/settings', adminAuth, requirePermission('settings.manage'), telegramCtrl.updateSettings);
+router.post('/telegram/preview', adminAuth, requirePermission('settings.manage'), telegramCtrl.previewMessage);
 router.get('/telegram/logs', adminAuth, requirePermission('settings.manage'), telegramCtrl.listLogs);
 router.post('/telegram/test', adminAuth, requirePermission('settings.manage'), telegramCtrl.testSend);
 router.post(

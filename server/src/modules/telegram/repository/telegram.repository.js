@@ -1,6 +1,25 @@
 const db = require('../../../config/db');
 const { generateId } = require('../../../utils/helpers');
 
+/** 未执行 091 迁移时 notification_logs 不存在，管理端需降级避免 500 */
+let notificationLogsReady;
+
+async function isNotificationLogsReady() {
+  if (notificationLogsReady !== undefined) return notificationLogsReady;
+  try {
+    await db.query('SELECT 1 FROM notification_logs LIMIT 1');
+    notificationLogsReady = true;
+  } catch (e) {
+    if (e.code === 'ER_NO_SUCH_TABLE') {
+      console.warn('[telegram] notification_logs 表不存在，通知日志已降级为空；请执行数据库迁移 091');
+      notificationLogsReady = false;
+    } else {
+      throw e;
+    }
+  }
+  return notificationLogsReady;
+}
+
 function getPool() {
   return db;
 }
@@ -72,6 +91,7 @@ async function selectTelegramOrderSnapshot(orderId) {
 }
 
 async function hasSentTelegramEvent(orderId, eventType) {
+  if (!(await isNotificationLogsReady())) return false;
   const [[row]] = await db.query(
     `SELECT id
        FROM notification_logs
@@ -86,6 +106,7 @@ async function hasSentTelegramEvent(orderId, eventType) {
 }
 
 async function insertNotificationLog(payload) {
+  if (!(await isNotificationLogsReady())) return null;
   const id = payload.id || generateId();
   await db.query(
     `INSERT INTO notification_logs
@@ -109,6 +130,7 @@ async function insertNotificationLog(payload) {
 }
 
 async function listTelegramLogs(limit = 20) {
+  if (!(await isNotificationLogsReady())) return [];
   const n = Math.min(100, Math.max(1, Number(limit) || 20));
   const [rows] = await db.query(
     `SELECT id, target_type, target_id, order_id, event_type, send_status,
@@ -124,6 +146,7 @@ async function listTelegramLogs(limit = 20) {
 
 module.exports = {
   getPool,
+  isNotificationLogsReady,
   selectTelegramOrderSnapshot,
   hasSentTelegramEvent,
   insertNotificationLog,

@@ -1,6 +1,5 @@
 /**
- * 管理端 CSV 列名中文（导出表头 / 导入表头兼容）
- * 与前端 adminDisplayLabels、reportColumnLabels 保持语义一致
+ * Admin CSV column labels.
  */
 const { REPORT_COLUMN_LABELS, labelReportColumn } = require('./reportColumnLabels');
 
@@ -10,7 +9,7 @@ const EXTRA_CSV_LABELS = {
   original_price: '原价',
   sales_count: '销量',
   stock: '库存',
-  unit_name: '\u5e93\u5b58\u5355\u4f4d',
+  unit_name: '库存单位',
   cover_image: '封面图',
   video_url: '视频链接',
   lifecycle_status: '生命周期',
@@ -58,13 +57,25 @@ const EXTRA_CSV_LABELS = {
   after_stock: '变更后库存',
   source_no: '来源单号',
   operator_name: '操作人',
+  user_nickname: '用户昵称',
+  user_phone_masked: '用户手机号(脱敏)',
+  contact_phone_masked: '联系人电话(脱敏)',
+  shipping_phone_masked: '收货电话(脱敏)',
+  items_summary: '商品摘要',
+  items_count: '商品件数',
+  sku_count: 'SKU数',
+  payment_channel: '支付渠道',
+  payment_transaction_no: '支付交易号',
+  paid_at: '支付时间',
+  shipped_at: '发货时间',
+  return_request_count: '售后单数',
+  active_return_count: '售后中数量',
 };
 
 /** @type {Record<string, string>} */
 const CSV_COLUMN_LABELS = {
   ...REPORT_COLUMN_LABELS,
   ...EXTRA_CSV_LABELS,
-  // 业务导出专用（避免与报表「分类」等短标签冲突）
   category_id: '分类编号',
   product_id: '商品编号',
   user_id: '用户编号',
@@ -77,8 +88,6 @@ for (const [key, label] of Object.entries(CSV_COLUMN_LABELS)) {
   HEADER_TO_KEY.set(key, key);
   HEADER_TO_KEY.set(label, key);
 }
-// 常见别名（导入模板兼容）
-HEADER_TO_KEY.set('售价', 'price');
 HEADER_TO_KEY.set('价格', 'price');
 
 const INVENTORY_CHANGE_LABELS = {
@@ -87,12 +96,12 @@ const INVENTORY_CHANGE_LABELS = {
   adjust: '盘点调整',
   order_deduct: '订单扣减',
   order_release: '订单释放',
-  unpack_parent_out: '\u62c6\u5305-\u5927\u5305\u88c5\u51cf\u5c11',
-  unpack_child_in: '\u62c6\u5305-\u5c0f\u5305\u88c5\u589e\u52a0',
-  assemble_child_out: '\u7ec4\u88c5-\u5c0f\u5305\u88c5\u51cf\u5c11',
-  assemble_parent_in: '\u7ec4\u88c5-\u5927\u5305\u88c5\u589e\u52a0',
-  auto_unpack_parent_out: '\u81ea\u52a8\u62c6\u5305-\u5927\u5305\u88c5\u51cf\u5c11',
-  auto_unpack_child_in: '\u81ea\u52a8\u62c6\u5305-\u5c0f\u5305\u88c5\u589e\u52a0',
+  unpack_parent_out: '拆包-大包装减少',
+  unpack_child_in: '拆包-小包装增加',
+  assemble_child_out: '组装-小包装减少',
+  assemble_parent_in: '组装-大包装增加',
+  auto_unpack_parent_out: '自动拆包-大包装减少',
+  auto_unpack_child_in: '自动拆包-小包装增加',
 };
 
 function labelCsvColumn(key) {
@@ -114,7 +123,6 @@ function rowsToCsvLocalized(columnKeys, rowObjects) {
 }
 
 /**
- * 将 CSV 解析行（表头可为中文或英文 key）规范为英文字段名
  * @param {Record<string, string>[]} rows
  */
 function normalizeCsvImportRows(rows) {

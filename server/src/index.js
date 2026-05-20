@@ -4,7 +4,7 @@ const { validateEnv } = require('./config/validateEnv');
 validateEnv();
 
 const app = require('./app');
-const { runPendingMigrations } = require('./db/migrateRunner');
+const { prepareDatabaseForRuntime } = require('./db/schemaStartup');
 const { startCleanupScheduler } = require('./modules/admin/service/adminExport.service');
 const { startNotificationScheduler } = require('./modules/admin/service/adminNotification.service');
 const { startAutoConfirmReceiveScheduler } = require('./modules/order/service/orderAutoConfirm.service');
@@ -15,11 +15,10 @@ const { ensureDefaultLegalContentPages } = require('./modules/admin/service/admi
 const { getInstanceInfo, instanceLogPrefix } = require('./config/instance');
 
 const PORT = process.env.PORT || 3000;
-const RUN_MIGRATIONS_ON_BOOT = process.env.RUN_MIGRATIONS_ON_BOOT === '1';
+/** 默认启动时自动迁移；仅当 RUN_MIGRATIONS_ON_BOOT=0 时关闭（避免代码已更新而库结构落后导致管理端 500） */
+const RUN_MIGRATIONS_ON_BOOT = process.env.RUN_MIGRATIONS_ON_BOOT !== '0';
 
-const bootPromise = RUN_MIGRATIONS_ON_BOOT
-  ? runPendingMigrations()
-  : Promise.resolve();
+const bootPromise = prepareDatabaseForRuntime({ runMigrations: RUN_MIGRATIONS_ON_BOOT });
 
 bootPromise
   .then(async () => {

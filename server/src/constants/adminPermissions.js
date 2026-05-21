@@ -50,6 +50,9 @@ const ALL_ADMIN_PERMISSION_CODES = [
   'monitoring.view',
   'monitoring.manage',
   'monitoring.repair',
+  'data_cleanup.view',
+  'data_cleanup.manage',
+  'data_cleanup.execute',
 ];
 
 module.exports = { ALL_ADMIN_PERMISSION_CODES };

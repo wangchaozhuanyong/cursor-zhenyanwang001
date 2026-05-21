@@ -22,6 +22,7 @@ const siteCapabilities = require('../modules/siteCapabilities');
 const notification = require('../modules/notification');
 const theme = require('../modules/theme');
 const monitoring = require('../modules/monitoring');
+const dataRetention = require('../modules/dataRetention');
 
 const router = Router();
 
@@ -53,7 +54,7 @@ router.use(siteCapabilities);
 router.use(notification);
 router.use(theme);
 router.use(monitoring);
+router.use(dataRetention);
 router.use(admin);
 
 module.exports = router;
-

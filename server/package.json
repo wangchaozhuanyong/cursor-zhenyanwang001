@@ -31,7 +31,7 @@
     "test:flow": "node scripts/run-db-integration-tests.js test/flow-smoke.test.js",
     "test:smoke": "node scripts/run-db-integration-tests.js test/flow-smoke.test.js",
     "test:stripe": "node -r tsx/cjs --test test/stripe-amount.test.js",
-    "test:unit": "node -r tsx/cjs --test --test-force-exit test/health.test.js test/stripe-amount.test.js test/order-state-machine.test.js test/return-state-machine.test.js test/file-magic.test.js test/upload-presign.test.js test/sms-otp-adapter.test.js test/auth-cookies.test.js test/manual-webhook-security.test.js test/cms-sanitize.test.js test/admin-order-schemas.test.js test/points-engine.test.js test/order-points.test.js test/monitoring-cron.test.js test/monitoring-auto-fix.test.js test/admin-gateway-guard.test.js test/admin-event-service.test.js",
+    "test:unit": "node -r tsx/cjs --test --test-force-exit test/health.test.js test/stripe-amount.test.js test/order-state-machine.test.js test/return-state-machine.test.js test/file-magic.test.js test/upload-presign.test.js test/sms-otp-adapter.test.js test/auth-cookies.test.js test/manual-webhook-security.test.js test/cms-sanitize.test.js test/admin-order-schemas.test.js test/points-engine.test.js test/order-points.test.js test/monitoring-cron.test.js test/monitoring-auto-fix.test.js test/admin-gateway-guard.test.js test/admin-event-service.test.js test/data-retention-service.test.js",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:smoke"
   },
   "dependencies": {

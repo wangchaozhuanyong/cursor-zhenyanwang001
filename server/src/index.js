@@ -5,7 +5,6 @@ validateEnv();
 
 const app = require('./app');
 const { prepareDatabaseForRuntime } = require('./db/schemaStartup');
-const { startCleanupScheduler } = require('./modules/admin/service/adminExport.service');
 const { startNotificationScheduler } = require('./modules/admin/service/adminNotification.service');
 const { startEscalationScheduler: startAdminEventEscalationScheduler } = require('./modules/admin/service/adminEvent.service');
 const { startAutoConfirmReceiveScheduler } = require('./modules/order/service/orderAutoConfirm.service');
@@ -13,6 +12,7 @@ const { startPaymentTimeoutScheduler } = require('./modules/order/service/orderP
 const { startOrderTimeoutEventScheduler } = require('./modules/order/service/orderEventTimeout.service');
 const { startMyInvoisRetryScheduler } = require('./modules/myinvois/service/myinvois.service');
 const { startMonitoringScheduler } = require('./modules/monitoring/service/monitoringScheduler.service');
+const { startDataRetentionScheduler } = require('./modules/dataRetention/service/dataRetention.service');
 const { getRedisUrl, pingRedis } = require('./config/redis');
 const { getStorageHealthReport } = require('./utils/objectStorage');
 const { ensureDefaultLegalContentPages } = require('./modules/admin/service/adminExtended.service');
@@ -76,7 +76,7 @@ bootPromise
     await ensureDefaultLegalContentPages();
     console.log(`${instanceLogPrefix('CMS')} ensured default legal content pages`);
 
-    startCleanupScheduler();
+    startDataRetentionScheduler();
     startNotificationScheduler();
     startAdminEventEscalationScheduler();
     startAutoConfirmReceiveScheduler();

@@ -6,8 +6,10 @@
   }
 }
 
-module.exports = async function down({ query }) {
-  for (const table of ['site_settings', 'categories', 'banners', 'products']) {
-    await dropVersionColumn(query, table);
-  }
+module.exports = {
+  async down(query) {
+    for (const table of ['site_settings', 'categories', 'banners', 'products']) {
+      await dropVersionColumn(query, table);
+    }
+  },
 };

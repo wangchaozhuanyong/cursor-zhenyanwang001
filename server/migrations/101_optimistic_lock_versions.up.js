@@ -16,8 +16,10 @@ async function addVersionColumn(query, table) {
   await query(`ALTER TABLE ${table} ADD COLUMN version INT NOT NULL DEFAULT 1`);
 }
 
-module.exports = async function up({ query }) {
-  for (const table of ['products', 'banners', 'categories', 'site_settings']) {
-    await addVersionColumn(query, table);
-  }
+module.exports = {
+  async up(query) {
+    for (const table of ['products', 'banners', 'categories', 'site_settings']) {
+      await addVersionColumn(query, table);
+    }
+  },
 };

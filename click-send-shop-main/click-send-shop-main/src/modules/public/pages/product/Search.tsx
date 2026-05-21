@@ -1,16 +1,16 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { ArrowLeft, Clock, Search as SearchIcon, TrendingUp, X } from "lucide-react";
 import CategoryTabs from "@/components/CategoryTabs";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useGoBack } from "@/hooks/useGoBack";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { cn } from "@/lib/utils";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { useProductStore } from "@/stores/useProductStore";
-import ProductCard from "@/components/ProductCard";
-import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
+import SilkProductGrid from "@/components/motion/SilkProductGrid";
 import { flattenCategories } from "@/utils/categoryTree";
 import { fetchHotSearchTerms, fetchSearchSuggestions, trackSearchKeyword } from "@/services/searchService";
 import type { HotSearchTerm, SearchSuggestion } from "@/types/search";
@@ -38,8 +38,16 @@ export default function Search() {
   const goBack = useGoBack("/");
   const { themeConfig } = useThemeRuntime();
   const siteInfo = useSiteInfo();
+  const siteCapabilities = useSiteCapabilities();
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
   const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
+  const productCardSiteContext = useMemo(
+    () => ({
+      restrictedComplianceEnabled: siteCapabilities.restrictedProductComplianceEnabled,
+      siteInfo,
+    }),
+    [siteCapabilities.restrictedProductComplianceEnabled, siteInfo],
+  );
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [activeCat, setActiveCat] = useState("all");
@@ -54,10 +62,13 @@ export default function Search() {
     products,
     categories,
     loading,
+    listRefreshing,
     error,
     loadProducts,
     loadCategories,
   } = useProductStore();
+  const showFullSkeleton = loading && products.length === 0;
+  const showSoftRefreshing = listRefreshing && products.length > 0;
 
   useEffect(() => {
     loadCategories();
@@ -163,7 +174,7 @@ export default function Search() {
   const siteName = siteInfo.siteName || "官方商城";
 
   return (
-    <div className="store-page-shell bg-[var(--theme-bg)] text-[var(--theme-text)]">
+    <div className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <SeoHead
         title={`搜索结果｜${siteName}`}
         description={`查看${siteName}站内搜索结果，快速查找相关服务、商品和帮助内容。`}
@@ -358,15 +369,14 @@ export default function Search() {
             )}
 
             {!shouldShowDiscovery && (
-              <>
-                <div className={productGridClass}>
-                  {loading
-                    ? Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)
-                    : products.map((product) => (
-                        <ProductCard key={product.id} product={product} />
-                      ))}
-                </div>
-                {!loading && products.length === 0 && (
+              <SilkProductGrid
+                products={products}
+                className={productGridClass}
+                skeletonCount={6}
+                siteContext={productCardSiteContext}
+                showFullSkeleton={showFullSkeleton}
+                showSoftRefreshing={showSoftRefreshing}
+                emptyState={
                   <div className="py-20 text-center text-sm text-muted-foreground">
                     <p>没有找到相关商品</p>
                     <button
@@ -381,8 +391,8 @@ export default function Search() {
                       清空搜索重新查看
                     </button>
                   </div>
-                )}
-              </>
+                }
+              />
             )}
           </section>
         </div>

@@ -27,7 +27,6 @@ import {
 } from "@/constants/siteBrand";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { syncLockedInviteCodeBySearch } from "@/utils/inviteReferral";
-import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { trackEvent } from "@/services/analyticsService";
@@ -123,15 +122,15 @@ function AppScopeSync() {
 }
 
 function HomeRoute() {
-  const { themeReady } = useThemeRuntime();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  if (!themeReady) return <StoreOutletFallback />;
   return isAuthenticated && isLoggedIn() ? <MemberHome /> : <GuestHome />;
 }
 
 function RoutePreloadOnIdle() {
   useEffect(() => {
     const run = () => {
+      GuestHome.preload?.();
+      MemberHome.preload?.();
       Categories.preload?.();
       NewArrivals.preload?.();
       Cart.preload?.();

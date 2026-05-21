@@ -178,7 +178,7 @@ export default function SupportDownload() {
   }
 
   return (
-    <div className="store-page-shell bg-[var(--theme-bg)] text-[var(--theme-text)]">
+    <div className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <SeoHead
         title={`${config.title} - ${siteInfo.siteName || "官方商城"}`}
         description={config.subtitle}

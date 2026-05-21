@@ -24,6 +24,7 @@ import { getCategoryProductsEmptyColSpan, getCategoryProductsGridClass } from "@
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPanel";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
@@ -31,6 +32,14 @@ import SilkProductGrid from "@/components/motion/SilkProductGrid";
 export default function Categories() {
   const { themeConfig } = useThemeRuntime();
   const siteInfo = useSiteInfo();
+  const siteCapabilities = useSiteCapabilities();
+  const productCardSiteContext = useMemo(
+    () => ({
+      restrictedComplianceEnabled: siteCapabilities.restrictedProductComplianceEnabled,
+      siteInfo,
+    }),
+    [siteCapabilities.restrictedProductComplianceEnabled, siteInfo],
+  );
   const { viewMode, setViewMode } = useCategoryListView();
   const [searchParams, setSearchParams] = useSearchParams();
   const productGridClass = getCategoryProductsGridClass(viewMode, themeConfig.productCardVariant);
@@ -231,7 +240,7 @@ export default function Categories() {
   );
 
   return (
-    <div className="store-page-shell bg-[var(--theme-bg)] text-[var(--theme-text)]">
+    <div className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <SeoHead title={title} description={description} canonical={canonical} robots={robots} />
       <StorePageHeader
         title="分类"
@@ -321,6 +330,7 @@ export default function Categories() {
                 className={productGridClass}
                 displayMode={isListView ? "list" : "theme"}
                 skeletonCount={8}
+                siteContext={productCardSiteContext}
                 showFullSkeleton={showFullSkeleton}
                 showSoftRefreshing={showSoftRefreshing}
                 emptyState={

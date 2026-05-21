@@ -1,10 +1,9 @@
-import React, { Suspense, useEffect } from "react";
+import React, { Suspense, useEffect, useLayoutEffect } from "react";
 import { Outlet, useLocation, useNavigationType } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
-import { ScrollBarsProvider } from "@/contexts/ScrollBarsContext";
 import { StoreOutletFallback } from "@/components/AppRouteFallback";
 import FrontPageTransition from "@/components/FrontPageTransition";
-import { STORE_TAB_PATHS } from "@/utils/storeBottomInset";
+import { isStoreTabPath } from "@/utils/storeBottomInset";
 
 /**
  * 前台带底栏布局。全站页脚仅由未登录首页 GuestHome 内置的 GuestMobileFooter 提供；
@@ -14,14 +13,14 @@ const FrontLayout = React.forwardRef<HTMLDivElement>((_, ref) => {
   const location = useLocation();
   const navigationType = useNavigationType();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (navigationType === "POP") return;
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    window.scrollTo(0, 0);
   }, [location.pathname, navigationType]);
 
   useEffect(() => {
     const path = location.pathname;
-    if (!STORE_TAB_PATHS.has(path)) {
+    if (!isStoreTabPath(path)) {
       document.documentElement.removeAttribute("data-store-tab-route");
       return;
     }
@@ -33,18 +32,16 @@ const FrontLayout = React.forwardRef<HTMLDivElement>((_, ref) => {
   }, [location.pathname]);
 
   return (
-    <ScrollBarsProvider>
-      <div ref={ref} className="relative min-h-0 overflow-x-clip">
-        <div className="relative isolate min-h-0 w-full">
+    <div ref={ref} className="relative overflow-x-clip">
+      <div className="relative isolate w-full">
+        <FrontPageTransition>
           <Suspense fallback={<StoreOutletFallback />}>
-            <FrontPageTransition>
-              <Outlet />
-            </FrontPageTransition>
+            <Outlet />
           </Suspense>
-        </div>
-        <BottomNav />
+        </FrontPageTransition>
       </div>
-    </ScrollBarsProvider>
+      <BottomNav />
+    </div>
   );
 });
 

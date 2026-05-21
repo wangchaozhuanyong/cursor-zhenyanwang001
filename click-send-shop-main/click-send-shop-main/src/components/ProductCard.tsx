@@ -6,6 +6,7 @@ import Reveal from "@/components/Reveal";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
+import type { SiteInfo } from "@/types/content";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getRestrictedProductMinimumAge } from "@/utils/ageGate";
 import { isRestrictedProduct } from "@/utils/restrictedProduct";
@@ -16,11 +17,18 @@ import { trackEvent } from "@/services/analyticsService";
 import { cn } from "@/lib/utils";
 import { isProductNewArrival } from "@/utils/productNewArrival";
 
+export type ProductCardSiteContext = {
+  restrictedComplianceEnabled: boolean;
+  siteInfo: SiteInfo;
+};
+
 interface Props {
   product: Product;
   index?: number;
   /** 分类页列表：左图右文单行，不受主题「紧凑横版」影响 */
   displayMode?: "theme" | "list";
+  /** 列表页由 SilkProductGrid 注入，避免每张卡重复订阅站点配置 */
+  siteContext?: ProductCardSiteContext;
 }
 
 /** 商品图上的售罄层：保留封面可见，文案清晰可读 */
@@ -45,15 +53,39 @@ function ProductSoldOutOverlay({ compact = false }: { compact?: boolean }) {
   );
 }
 
-export default function ProductCard({ product, index = 0, displayMode = "theme" }: Props) {
+export default function ProductCard(props: Props) {
+  if (props.siteContext) {
+    return <ProductCardInner {...props} siteContext={props.siteContext} />;
+  }
+  return <ProductCardWithHooks {...props} />;
+}
+
+function ProductCardWithHooks(props: Omit<Props, "siteContext">) {
+  const capabilities = useSiteCapabilities();
+  const siteInfo = useSiteInfo();
+  return (
+    <ProductCardInner
+      {...props}
+      siteContext={{
+        restrictedComplianceEnabled: capabilities.restrictedProductComplianceEnabled,
+        siteInfo,
+      }}
+    />
+  );
+}
+
+function ProductCardInner({
+  product,
+  index = 0,
+  displayMode = "theme",
+  siteContext,
+}: Props & { siteContext: ProductCardSiteContext }) {
   const navigate = useNavigate();
   const impressionRef = useRef<HTMLDivElement | null>(null);
   const impressionSentRef = useRef(false);
   const { themeConfig } = useThemeRuntime();
-  const siteInfo = useSiteInfo();
-  const siteCapabilities = useSiteCapabilities();
-  const showAgeBadge =
-    siteCapabilities.restrictedProductComplianceEnabled && isRestrictedProduct(product);
+  const { siteInfo, restrictedComplianceEnabled } = siteContext;
+  const showAgeBadge = restrictedComplianceEnabled && isRestrictedProduct(product);
   const ageBadgeLabel = showAgeBadge ? `${getRestrictedProductMinimumAge(product, siteInfo)}+` : null;
   const cardCenter = themeConfig.cardTextAlign === "center" && displayMode !== "list";
   const cardVariant = themeConfig.productCardVariant ?? "standard";

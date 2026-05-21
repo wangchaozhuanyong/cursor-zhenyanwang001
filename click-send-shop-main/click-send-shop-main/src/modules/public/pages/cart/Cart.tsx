@@ -53,6 +53,16 @@ export default function Cart() {
     ) : (
       "去结算"
     );
+  const isEmptyCart = !loading && items.length === 0;
+  const headerTitle =
+    totalQty > 0 ? (
+      <>
+        购物车
+        <span className="ml-1.5 text-sm font-normal text-[var(--theme-text-muted)]">({totalQty})</span>
+      </>
+    ) : (
+      "购物车"
+    );
 
   useEffect(() => {
     loadCart();
@@ -68,19 +78,11 @@ export default function Cart() {
   };
 
   return (
-    <div className="store-page-shell bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
+    <div className="store-page-shell store-bottom-cart-space bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
       <StorePageHeader
-        centerTitle={!loading && items.length === 0}
-        title={
-          <>
-            购物车
-            {totalQty > 0 ? (
-              <span className="ml-1.5 text-sm font-normal text-[var(--theme-text-muted)]">({totalQty})</span>
-            ) : null}
-          </>
-        }
+        title={headerTitle}
         rightSlot={
-          items.length > 0 ? (
+          !isEmptyCart && items.length > 0 ? (
             <button
               type="button"
               onClick={() => setSelectAll(!allSelected)}
@@ -132,7 +134,7 @@ export default function Cart() {
             ) : items.length === 0 ? (
               <EmptyState
                 icon={ShoppingBag}
-                title="购物车空空如也"
+                title="暂无商品"
                 description="快去挑选心仪的商品吧"
                 action={{ label: "去逛逛", onClick: () => navigate("/") }}
               />

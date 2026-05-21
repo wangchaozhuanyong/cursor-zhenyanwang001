@@ -81,6 +81,7 @@ export const AdminMarketingRewards = lazy(() => import("@/modules/admin/pages/ma
 export const AdminReviews = lazy(() => import("@/modules/admin/pages/review/AdminReviews"));
 export const AdminNotifications = lazy(() => import("@/modules/admin/pages/notification/AdminNotifications"));
 export const AdminNotificationDetail = lazy(() => import("@/modules/admin/pages/notification/AdminNotificationDetail"));
+export const AdminEventCenter = lazy(() => import("@/modules/admin/pages/event/AdminEventCenter"));
 
 export const AdminReports = lazy(() => import("@/modules/admin/pages/report/AdminReports"));
 export const AdminReportOverview = lazy(() => import("@/modules/admin/pages/report/AdminReportOverview"));

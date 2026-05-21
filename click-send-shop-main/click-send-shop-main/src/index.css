@@ -631,9 +631,8 @@
   scrollbar-width: none;
 }
 
-/* Smooth scroll everywhere */
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
 /* 底栏为 fixed：用 scroll-padding 预留空间，避免页面根节点 padding-bottom 在页脚下方形成大块空白 */

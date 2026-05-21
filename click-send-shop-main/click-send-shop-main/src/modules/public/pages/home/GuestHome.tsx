@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import logoWebp from "@/assets/logo.webp";
 import StoreTabHeader from "@/components/store/StoreTabHeader";
@@ -89,6 +90,14 @@ export default function GuestHome() {
   useDocumentTitle(undefined);
   const navigate = useNavigate();
   const siteInfo = useSiteInfo();
+  const siteCapabilities = useSiteCapabilities();
+  const productCardSiteContext = useMemo(
+    () => ({
+      restrictedComplianceEnabled: siteCapabilities.restrictedProductComplianceEnabled,
+      siteInfo,
+    }),
+    [siteCapabilities.restrictedProductComplianceEnabled, siteInfo],
+  );
   const siteName = siteInfo.siteName || "官方商城";
   const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
   const slogan = siteInfo.siteSlogan || "官方商品与服务平台";
@@ -180,7 +189,7 @@ export default function GuestHome() {
   const canonical = buildCanonical("/");
   const seoImage = siteInfo.ogImageUrl || siteInfo.defaultOgImageUrl || siteInfo.logoUrl || "/og-default.png";
   return (
-    <div className="store-page-shell bg-[var(--theme-bg)] text-[var(--theme-text)]" data-theme-home-layout={themeConfig.homeLayout}>
+    <div className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]" data-theme-home-layout={themeConfig.homeLayout}>
       <SeoHead
         title={seoTitle}
         description={seoDescription}
@@ -313,6 +322,7 @@ export default function GuestHome() {
             products={gridProducts}
             className={`mt-4 ${productGridClass}`}
             skeletonCount={guestGridMax}
+            siteContext={productCardSiteContext}
             showFullSkeleton={homeLoading && !homeError && gridProducts.length === 0}
             emptyState={
               !homeLoading && !homeError ? (

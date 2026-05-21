@@ -8,7 +8,11 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 function StorefrontFallback() {
   return (
-    <div className="store-page-shell bg-[var(--theme-bg)]" aria-busy="true" aria-label="页面加载中">
+    <div
+      className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]"
+      aria-busy="true"
+      aria-label="页面加载中"
+    >
       <div className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-screen-xl items-center gap-3 px-4 py-3 md:px-6">
           <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
@@ -63,12 +67,24 @@ export function AdminOutletFallback() {
 
 export function StoreOutletFallback() {
   return (
-    <div className="mx-auto w-full max-w-screen-xl px-4 py-4" aria-busy="true" aria-label="页面加载中">
-      <Skeleton className="mb-4 h-9 w-40 max-w-full rounded-full" />
-      <Skeleton className={`${BANNER_SKELETON_HEIGHT_CLASS} w-full rounded-2xl`} />
-      <div className="mt-5 grid grid-cols-2 gap-4">
-        <Skeleton className="h-40 rounded-2xl" />
-        <Skeleton className="h-40 rounded-2xl" />
+    <div
+      className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]"
+      aria-busy="true"
+      aria-label="页面加载中"
+    >
+      <div className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/85 backdrop-blur-md">
+        <div className="mx-auto flex max-w-screen-xl items-center gap-3 px-4 py-3 md:px-6">
+          <Skeleton className="h-9 w-9 shrink-0 rounded-full" />
+          <Skeleton className="h-9 min-w-0 flex-1 rounded-full md:max-w-md" />
+          <Skeleton className="h-9 w-9 shrink-0 rounded-full sm:w-10" />
+        </div>
+      </div>
+      <div className="mx-auto w-full max-w-screen-xl px-4 py-4 md:px-6">
+        <Skeleton className={`${BANNER_SKELETON_HEIGHT_CLASS} w-full rounded-2xl`} />
+        <div className="mt-5 grid grid-cols-2 gap-4">
+          <Skeleton className="h-40 rounded-2xl" />
+          <Skeleton className="h-40 rounded-2xl" />
+        </div>
       </div>
     </div>
   );

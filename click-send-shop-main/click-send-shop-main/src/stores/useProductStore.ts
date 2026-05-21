@@ -84,6 +84,9 @@ interface ProductState {
 
   categories: Category[];
 
+  /** 当前列表区展示的 cacheKey，与 filters 对应 */
+  currentListCacheKey: string | null;
+
   loading: boolean;
   listRefreshing: boolean;
   detailLoading: boolean;
@@ -113,6 +116,8 @@ export const useProductStore = create<ProductState>((set, get) => ({
 
   categories: [],
 
+  currentListCacheKey: null,
+
   loading: false,
   listRefreshing: false,
   detailLoading: false,
@@ -127,10 +132,11 @@ export const useProductStore = create<ProductState>((set, get) => ({
     const cacheKey = buildProductListCacheKey(merged);
     const cached = productListCache.get(cacheKey);
     const hasFreshCache = Boolean(cached && isFresh(cached.cachedAt, PRODUCT_LIST_TTL_MS));
+    const hasStaleCache = Boolean(cached && !hasFreshCache);
+    const state = get();
+    const sameListKey = state.currentListCacheKey === cacheKey;
 
-    const hasData = get().products.length > 0;
     if (hasFreshCache && cached) {
-      // Show cached list immediately; skip duplicate fetch when params unchanged.
       set({
         products: cached.data.products,
         pagination: cached.data.pagination,
@@ -138,14 +144,38 @@ export const useProductStore = create<ProductState>((set, get) => ({
         listRefreshing: false,
         error: null,
         filters: merged,
+        currentListCacheKey: cacheKey,
       });
       return;
-    } else {
+    }
+
+    if (hasStaleCache && cached) {
       set({
-        loading: !hasData,
-        listRefreshing: hasData,
+        products: cached.data.products,
+        pagination: cached.data.pagination,
+        loading: false,
+        listRefreshing: true,
         error: null,
         filters: merged,
+        currentListCacheKey: cacheKey,
+      });
+    } else if (sameListKey && state.products.length > 0) {
+      set({
+        loading: false,
+        listRefreshing: true,
+        error: null,
+        filters: merged,
+        currentListCacheKey: cacheKey,
+      });
+    } else {
+      set({
+        products: [],
+        pagination: INITIAL_PAGINATION,
+        loading: true,
+        listRefreshing: false,
+        error: null,
+        filters: merged,
+        currentListCacheKey: cacheKey,
       });
     }
 
@@ -170,6 +200,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
         pagination,
         loading: false,
         listRefreshing: false,
+        currentListCacheKey: cacheKey,
       });
     } catch (err) {
       if (requestSeq !== productListRequestSeq) return;

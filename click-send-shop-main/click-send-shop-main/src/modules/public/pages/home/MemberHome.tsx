@@ -141,7 +141,7 @@ export default function MemberHome() {
   const rec = recBatches.length > 0 ? recBatches[recBatchIndex % recBatches.length] : [];
 
   return (
-    <div className={`store-page-shell text-[var(--theme-text)] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_90%,black)]" : "bg-[var(--theme-bg)]"}`} data-theme-home-layout={themeConfig.homeLayout}>
+    <div className={`store-page-shell store-bottom-safe text-[var(--theme-text)] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_90%,black)]" : "bg-[var(--theme-bg)]"}`} data-theme-home-layout={themeConfig.homeLayout}>
       <SeoHead
         title={seoTitle}
         description={seoDescription}

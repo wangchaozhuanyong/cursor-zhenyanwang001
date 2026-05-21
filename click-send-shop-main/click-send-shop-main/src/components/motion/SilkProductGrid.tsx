@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import ProductCard from "@/components/ProductCard";
+import ProductCard, { type ProductCardSiteContext } from "@/components/ProductCard";
 import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import SilkRefreshOverlay from "@/components/motion/SilkRefreshOverlay";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,8 @@ type SilkProductGridProps = {
   showFullSkeleton?: boolean;
   showSoftRefreshing?: boolean;
   emptyState?: ReactNode;
+  /** 由列表页注入，避免每张卡重复订阅站点配置 */
+  siteContext?: ProductCardSiteContext;
 };
 
 export default function SilkProductGrid({
@@ -23,6 +25,7 @@ export default function SilkProductGrid({
   showFullSkeleton = false,
   showSoftRefreshing = false,
   emptyState,
+  siteContext,
 }: SilkProductGridProps) {
   const isListView = displayMode === "list";
 
@@ -40,6 +43,7 @@ export default function SilkProductGrid({
                 product={product}
                 index={index}
                 displayMode={displayMode}
+                siteContext={siteContext}
               />
             ))}
         {!showFullSkeleton && products.length === 0 ? emptyState : null}

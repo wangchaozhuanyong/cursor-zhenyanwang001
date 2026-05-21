@@ -30,21 +30,16 @@ export function silkTransition(duration: number, delay = 0): Transition {
   return { duration, delay, ease: SILK_EASE };
 }
 
+/** 页面级过渡：仅 opacity，无 exit / transform，避免 sticky 残影与 Tab 切换白屏 */
 export function pageTransition(level: MotionTier) {
-  if (level === "none") return { initial: false as const, animate: {}, exit: {}, transition: { duration: 0 } };
-  if (level === "rich") {
-    return {
-      initial: { opacity: 0, y: 10, scale: 0.992 },
-      animate: { opacity: 1, y: 0, scale: 1 },
-      exit: { opacity: 0, y: 6 },
-      transition: silkTransition(0.26),
-    };
+  if (level === "none") {
+    return { initial: false as const, animate: {}, transition: { duration: 0 } };
   }
+  const duration = level === "rich" ? 0.18 : 0.12;
   return {
-    initial: { opacity: 0, y: 4 },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: 4 },
-    transition: silkTransition(0.18),
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    transition: silkTransition(duration),
   };
 }
 

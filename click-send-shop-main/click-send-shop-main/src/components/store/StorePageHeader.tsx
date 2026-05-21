@@ -77,12 +77,12 @@ export default function StorePageHeader({
                 <div className="min-w-0 flex-1 overflow-hidden">{titleInlineSlot}</div>
               </div>
             ) : centerTitle ? (
-              <>
+              <div className="flex max-w-full flex-col items-center gap-1">
                 {eyebrow ? (
-                  <p className="mb-0.5 text-xs font-medium text-[var(--theme-text-muted)]">{eyebrow}</p>
+                  <p className="text-xs font-medium leading-none text-[var(--theme-text-muted)]">{eyebrow}</p>
                 ) : null}
-                <h1 className="text-lg font-bold tracking-tight text-[var(--theme-text)]">{title}</h1>
-              </>
+                <h1 className="text-lg font-bold leading-tight tracking-tight text-[var(--theme-text)]">{title}</h1>
+              </div>
             ) : (
               <>
                 <h1 className="flex min-w-0 items-baseline gap-0 truncate text-lg font-bold tracking-tight text-[var(--theme-text)]">

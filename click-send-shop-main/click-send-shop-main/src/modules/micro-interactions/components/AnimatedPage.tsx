@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useMotionConfig } from "../hooks/useMotionConfig";
@@ -11,27 +11,21 @@ export function AnimatedPage({ children, className }: { children: ReactNode; cla
   const pageMotion = pageTransition(level);
 
   if (!enabled) {
-    return <div className={className}>{children}</div>;
+    return <div className={cn("relative w-full", className)}>{children}</div>;
   }
 
-  // pathname key: query-only updates (e.g. /categories filters) must not remount the whole page (location.key changes on replace).
-  // mode="wait": avoid sync enter/exit stacking two full pages in document flow (mobile scroll duplication).
+  // pathname key：仅 query 变化（如分类筛选）不 remount 整页。
+  // 无 AnimatePresence / exit：避免 wait 白屏、旧页堆叠、sticky + transform 残影。
   return (
-    <div className="relative isolate w-full">
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={location.pathname}
-          className={cn("relative w-full", className)}
-          initial={pageMotion.initial}
-          animate={pageMotion.animate}
-          exit={pageMotion.exit}
-          transition={pageMotion.transition}
-          style={{ backfaceVisibility: "hidden", transformOrigin: "50% 0%" }}
-        >
-          {children}
-        </motion.div>
-      </AnimatePresence>
-    </div>
+    <motion.div
+      key={location.pathname}
+      className={cn("relative w-full", className)}
+      initial={pageMotion.initial}
+      animate={pageMotion.animate}
+      transition={pageMotion.transition}
+    >
+      {children}
+    </motion.div>
   );
 }
 

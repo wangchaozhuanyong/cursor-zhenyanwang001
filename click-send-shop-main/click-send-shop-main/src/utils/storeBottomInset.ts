@@ -7,7 +7,12 @@ export const STORE_TAB_PATHS = new Set([
   "/cart",
   "/favorites",
   "/profile",
+  "/support-download",
 ]);
+
+export function isStoreTabPath(pathname: string): boolean {
+  return STORE_TAB_PATHS.has(pathname);
+}
 
 /**
  * `bottom` offset for fixed overlays (e.g. cookie banner) so they sit above

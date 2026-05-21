@@ -35,20 +35,23 @@ function normalizeAdminApiPath(path) {
 }
 
 function getConfiguredAllowedOrigins() {
-  const configured = [
-    ...splitCsv(process.env.ADMIN_ALLOWED_ORIGINS),
-    ...splitCsv(process.env.ADMIN_PUBLIC_URL),
-    ...splitCsv(process.env.ADMIN_ORIGIN),
-  ]
+  const configured = splitCsv(process.env.ADMIN_ALLOWED_ORIGINS)
     .map(normalizeOrigin)
     .filter(Boolean);
 
-  const publicAppOrigin = normalizeOrigin(process.env.PUBLIC_APP_URL);
-  const merged = publicAppOrigin
-    ? [...configured, publicAppOrigin]
-    : configured;
+  if (process.env.NODE_ENV !== 'production') {
+    configured.push(
+      ...splitCsv(process.env.ADMIN_PUBLIC_URL).map(normalizeOrigin).filter(Boolean),
+      ...splitCsv(process.env.ADMIN_ORIGIN).map(normalizeOrigin).filter(Boolean),
+    );
+  }
 
-  const unique = [...new Set(merged)].filter(Boolean);
+  if (process.env.ADMIN_COMPAT_ALLOW_PUBLIC_APP_ORIGIN === '1') {
+    const publicAppOrigin = normalizeOrigin(process.env.PUBLIC_APP_URL);
+    if (publicAppOrigin) configured.push(publicAppOrigin);
+  }
+
+  const unique = [...new Set(configured)].filter(Boolean);
   if (unique.length) return unique;
 
   if (process.env.NODE_ENV === 'production') return [];

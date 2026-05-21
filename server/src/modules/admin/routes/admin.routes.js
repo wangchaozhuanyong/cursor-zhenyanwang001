@@ -83,8 +83,24 @@ router.use((req, res, next) => {
 });
 
 const highRiskAdminOperation = (req) => {
+  const exportReadPatterns = [
+    /^\/orders\/export$/,
+    /^\/users\/export$/,
+    /^\/inventory\/export$/,
+    /^\/inventory\/records\/export$/,
+    /^\/reports\/export$/,
+    /^\/reports\/[^/]+\/export$/,
+    /^\/reports\/profit\/export$/,
+    /^\/exports\/[^/]+\/download$/,
+    /^\/notifications\/[^/]+\/recipients\/export$/,
+  ];
+  if (req.method === 'GET') {
+    return exportReadPatterns.some((pattern) => pattern.test(req.path));
+  }
+
   if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return false;
-  return [
+  const mutatingPatterns = [
+    /^\/account\/password$/,
     /^\/rbac\//,
     /^\/payments\/channels/,
     /^\/payments\/orders\/[^/]+\/refund/,
@@ -94,6 +110,12 @@ const highRiskAdminOperation = (req) => {
     /^\/settings(\/|$)/,
     /^\/telegram\/settings/,
     /^\/system\/theme/,
+    /^\/shipping\/settings/,
+    /^\/points\/settings/,
+    /^\/points\/rules/,
+    /^\/referral-rules/,
+    /^\/home-ops\/settings/,
+    /^\/notifications\/trigger-settings/,
     /^\/inventory\//,
     /^\/orders\/[^/]+\/refund/,
     /^\/returns\/[^/]+/,
@@ -101,7 +123,8 @@ const highRiskAdminOperation = (req) => {
     /^\/exports/,
     /^\/products\/[^/]+$/,
     /^\/products\/[^/]+\/delete$/,
-  ].some((pattern) => pattern.test(req.path));
+  ];
+  return mutatingPatterns.some((pattern) => pattern.test(req.path));
 };
 
 router.use((req, res, next) => {

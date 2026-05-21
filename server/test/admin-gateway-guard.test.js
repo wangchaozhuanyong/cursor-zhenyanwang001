@@ -36,10 +36,22 @@ function createApp() {
   return app;
 }
 
-test('getConfiguredAllowedOrigins includes PUBLIC_APP_URL fallback', () => withEnv({
+test('getConfiguredAllowedOrigins does not include PUBLIC_APP_URL by default in production', () => withEnv({
   NODE_ENV: 'production',
   ADMIN_ALLOWED_ORIGINS: 'https://admin.example.com',
   PUBLIC_APP_URL: 'https://shop.example.com',
+}, () => {
+  const allowed = getConfiguredAllowedOrigins();
+  assert.deepEqual(allowed, [
+    'https://admin.example.com',
+  ]);
+}));
+
+test('getConfiguredAllowedOrigins includes PUBLIC_APP_URL only when compat switch is enabled', () => withEnv({
+  NODE_ENV: 'production',
+  ADMIN_ALLOWED_ORIGINS: 'https://admin.example.com',
+  PUBLIC_APP_URL: 'https://shop.example.com',
+  ADMIN_COMPAT_ALLOW_PUBLIC_APP_ORIGIN: '1',
 }, () => {
   const allowed = getConfiguredAllowedOrigins();
   assert.deepEqual(allowed, [

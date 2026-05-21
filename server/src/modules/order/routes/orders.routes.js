@@ -14,6 +14,7 @@ const {
 } = require('../schemas/order.schemas');
 
 const router = Router();
+const mallFeature = requireSiteCapability('mallEnabled', '商城功能已关闭');
 
 router.use(auth);
 router.use(guardByAction('order'));
@@ -21,8 +22,8 @@ router.use(guardByAction('order'));
 router.get('/', validate({ query: listOrdersQuerySchema }), ctrl.getOrders);
 router.get('/summary', ctrl.getOrderSummary);
 router.post('/checkout-abandonments', validate({ body: checkoutAbandonmentBodySchema }), ctrl.recordCheckoutAbandonment);
-router.post('/preview', validate({ body: previewOrderBodySchema }), ctrl.previewOrder);
-router.post('/', validate({ body: createOrderBodySchema }), ctrl.createOrder);
+router.post('/preview', mallFeature, validate({ body: previewOrderBodySchema }), ctrl.previewOrder);
+router.post('/', mallFeature, validate({ body: createOrderBodySchema }), ctrl.createOrder);
 
 router.get('/:id', validate({ params: orderIdParamSchema }), ctrl.getOrderById);
 router.post('/:id/cancel', validate({ params: orderIdParamSchema }), ctrl.cancelOrder);
@@ -41,5 +42,4 @@ router.post(
 router.post('/:id/confirm', validate({ params: orderIdParamSchema }), ctrl.confirmReceive);
 
 module.exports = router;
-
 

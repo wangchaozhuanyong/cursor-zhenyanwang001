@@ -13,12 +13,18 @@ export interface BrowserEnv {
 const IN_APP_PATTERNS = [
   /micromessenger/i,
   /wechat/i,
+  /qq\//i,
+  /mqqbrowser/i,
+  /alipayclient/i,
+  /dingtalk/i,
+  /weibo/i,
   /line\//i,
   /fban|fbav/i,
   /instagram/i,
   /tiktok/i,
   /bytedance/i,
   /aweme/i,
+  /douyin/i,
   /linkedinapp/i,
   /twitter/i,
   /snapchat/i,
@@ -28,7 +34,6 @@ function detectInAppBrowser(ua: string): boolean {
   return IN_APP_PATTERNS.some((pattern) => pattern.test(ua));
 }
 
-/** 客户端浏览器环境（客服/安装页 PWA 引导用） */
 export function detectBrowserEnv(): BrowserEnv {
   if (typeof window === "undefined") {
     return {
@@ -72,5 +77,5 @@ export function detectBrowserEnv(): BrowserEnv {
 
 export function getPublicSiteUrl(): string {
   if (typeof window === "undefined") return "";
-  return window.location.origin;
+  return window.location.href;
 }

@@ -25,6 +25,7 @@ const dashboardCtrl = require('../controller/adminDashboard.controller');
 const productCtrl = require('../controller/adminProduct.controller');
 const orderCtrl = require('../controller/adminOrder.controller');
 const orderEventCtrl = require('../controller/adminOrderEvent.controller');
+const adminEventCtrl = require('../controller/adminEvent.controller');
 const checkoutAbandonmentCtrl = require('../controller/adminCheckoutAbandonment.controller');
 const userCtrl = require('../controller/adminUser.controller');
 const categoryCtrl = require('../controller/adminCategory.controller');
@@ -95,6 +96,7 @@ router.delete('/rbac/admin-users/:userId', adminAuth, requirePermission('role.ma
 router.post('/rbac/admin-users/:userId/delete', adminAuth, requirePermission('role.manage'), rbacCtrl.removeAdminUser);
 
 /* ---- Dashboard ---- */
+router.get('/events', adminAuth, adminEventCtrl.stream);
 router.get('/dashboard/stats', adminAuth, requirePermission('dashboard.view'), dashboardCtrl.getStats);
 
 /* ---- Products ---- */
@@ -497,7 +499,7 @@ router.get('/reports/activities/analysis', adminAuth, requirePermission('report.
 router.get('/reports/coupons/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getCouponsAnalysis);
 router.get('/reports/inventory/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getInventoryAnalysis);
 router.get('/reports/search/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getSearchAnalysis);
-router.get('/reports/traffic', adminAuth, requirePermission('report.view'), reportCtrl.getTrafficAnalysis);
+router.get('/reports/traffic', adminAuth, requireSiteCapability('trafficAnalyticsEnabled', '流量分析功能已关闭'), requirePermission('report.view'), reportCtrl.getTrafficAnalysis);
 
 // 兼容旧接口
 router.get('/reports/sales/export', adminAuth, requirePermission('report.export'), reportCtrl.exportByType);

@@ -10,10 +10,10 @@ const tabs = [
 export default function PaymentAdminSubnav() {
   return (
     <div className="mb-6 flex flex-wrap gap-2 border-b border-[var(--theme-border)] pb-3">
-      {tabs.map((t) => (
+      {tabs.map((tab) => (
         <NavLink
-          key={t.to}
-          to={t.to}
+          key={tab.to}
+          to={tab.to}
           className={({ isActive }) =>
             `rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               isActive
@@ -22,7 +22,7 @@ export default function PaymentAdminSubnav() {
             }`
           }
         >
-          {t.label}
+          {tab.label}
         </NavLink>
       ))}
     </div>

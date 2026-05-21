@@ -1,6 +1,7 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { Plus, Pencil, Trash2, ClipboardList, Ticket } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
+import { Plus, Pencil, Trash2, ClipboardList } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
 import { usePagination } from "@/hooks/usePagination";
@@ -9,11 +10,13 @@ import * as couponService from "@/services/admin/couponService";
 import type { Coupon } from "@/types/coupon";
 import * as userService from "@/services/admin/userService";
 import PermissionGate from "@/components/admin/PermissionGate";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { labelCouponStatus, labelCouponType } from "@/utils/adminDisplayLabels";
 import { formatAdminDateRange } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { AnimatedConfirmDialog, AnimatedTable } from "@/modules/micro-interactions";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
@@ -39,46 +42,56 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 
 export default function AdminCoupons() {
   const navigate = useNavigate();
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [tags, setTags] = useState<Array<{ id: string; name: string }>>([]);
   const [issueCouponId, setIssueCouponId] = useState<string | null>(null);
   const [issueTagId, setIssueTagId] = useState("");
 
-  const filteredCoupons = coupons.filter((c) => {
+  const couponsQuery = useQuery({
+    queryKey: adminQueryKeys.coupons(),
+    queryFn: () => couponService.fetchCoupons(),
+    staleTime: 60_000,
+  });
+
+  const tagsQuery = useQuery({
+    queryKey: [...adminQueryKeys.usersRoot(), "tags"],
+    queryFn: userService.fetchUserTags,
+    staleTime: 60_000,
+  });
+
+  const coupons = couponsQuery.data?.list ?? [];
+  const tags = useMemo(
+    () => (tagsQuery.data ?? []).map((tag) => ({ id: tag.id, name: tag.name })),
+    [tagsQuery.data],
+  );
+  const loading = couponsQuery.isLoading && !couponsQuery.data;
+
+  const filteredCoupons = coupons.filter((coupon) => {
     if (!search) return true;
     const q = search.toLowerCase();
-    return c.title?.toLowerCase().includes(q) || c.code?.toLowerCase().includes(q);
+    return coupon.title?.toLowerCase().includes(q) || coupon.code?.toLowerCase().includes(q);
   });
   const { page, pageSize, setPage, setPageSize, paginatedData, total } = usePagination(filteredCoupons, 10);
 
-  useEffect(() => {
-    couponService.fetchCoupons()
-      .then((p) => setCoupons(p.list))
-      .catch((e) => toast.error(toastErrorMessage(e, "加载数据失败")))
-      .finally(() => setLoading(false));
-    userService.fetchUserTags().then((rows) => setTags(rows.map((t) => ({ id: t.id, name: t.name })))).catch(() => {});
-  }, []);
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => couponService.deleteCoupon(id),
+    onSuccess: async () => {
+      toast.success("已删除");
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponsRoot() });
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, "删除失败")),
+  });
 
-  const handleDelete = (id: string) => {
-    couponService.deleteCoupon(id)
-      .then(() => { setCoupons(coupons.filter((c) => c.id !== id)); toast.success("已删除"); })
-      .catch((e) => toast.error(toastErrorMessage(e, "删除失败")));
-  };
-
-  const handleIssueByTag = async (couponId: string, tagIds: string[]) => {
-    if (!tagIds.length) return;
-    try {
-      const r = await couponService.issueCouponByTag(couponId, tagIds);
-      toast.success(`发放完成：${r?.issued || 0}/${r?.targetUsers || 0}`);
+  const issueMutation = useMutation({
+    mutationFn: ({ couponId, tagIds }: { couponId: string; tagIds: string[] }) => couponService.issueCouponByTag(couponId, tagIds),
+    onSuccess: (result) => {
+      toast.success(`发放完成：${result?.issued || 0}/${result?.targetUsers || 0}`);
       setIssueCouponId(null);
       setIssueTagId("");
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "发放失败"));
-    }
-  };
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, "发放失败")),
+  });
 
   return (
     <div className="space-y-4">
@@ -102,7 +115,7 @@ export default function AdminCoupons() {
       <AnimatedTable
         loading={loading}
         rows={paginatedData}
-        rowKey={(c) => c.id}
+        rowKey={(coupon) => coupon.id}
         skeletonRows={8}
         skeletonCols={8}
         tableClassName="min-w-[960px]"
@@ -125,20 +138,22 @@ export default function AdminCoupons() {
         emptyTitle={ADMIN_EMPTY_GUIDES.coupons.title}
         emptyDescription={ADMIN_EMPTY_GUIDES.coupons.description}
         emptyAction={<AdminEmptyGuideActions guide={ADMIN_EMPTY_GUIDES.coupons} />}
-        renderRow={(c) => (
+        renderRow={(coupon) => (
           <>
-            <td className="px-4 py-3 font-medium">{c.title}</td>
-            <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs ${typeLabels[c.type]?.color || "bg-secondary text-foreground"}`}>{typeLabels[c.type]?.label || labelCouponType(c.type)}</span></td>
-            <td className="px-4 py-3 text-xs text-muted-foreground">{c.code}</td>
-            <td className="px-4 py-3">{c.value}</td>
-            <td className="px-4 py-3">{c.min_amount}</td>
-            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{formatAdminDateRange(c.start_date, c.end_date)}</td>
-            <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs ${statusLabels[c.status]?.color || "bg-secondary text-foreground"}`}>{statusLabels[c.status]?.label || labelCouponStatus(c.status)}</span></td>
+            <td className="max-w-[12rem] px-4 py-3 align-middle">
+              <AdminTableCell value={coupon.title} fullText={coupon.title} maxWidth="11rem" />
+            </td>
+            <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs ${typeLabels[coupon.type]?.color || "bg-secondary text-foreground"}`}>{typeLabels[coupon.type]?.label || labelCouponType(coupon.type)}</span></td>
+            <td className="px-4 py-3 text-xs text-muted-foreground">{coupon.code}</td>
+            <td className="px-4 py-3">{coupon.value}</td>
+            <td className="px-4 py-3">{coupon.min_amount}</td>
+            <td className="px-4 py-3 text-xs whitespace-nowrap text-muted-foreground">{formatAdminDateRange(coupon.start_date, coupon.end_date)}</td>
+            <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs ${statusLabels[coupon.status]?.color || "bg-secondary text-foreground"}`}>{statusLabels[coupon.status]?.label || labelCouponStatus(coupon.status)}</span></td>
             <td className="px-4 py-3">
               <div className="flex gap-2">
-                <button type="button" onClick={() => navigate(`/admin/marketing/coupons/${c.id}`)} className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground" title="编辑"><Pencil size={13} /></button>
-                <PermissionGate permission="coupon.manage"><button type="button" onClick={() => setIssueCouponId(c.id)} className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground" title="按标签发券">发券</button></PermissionGate>
-                <PermissionGate permission="coupon.manage"><button type="button" onClick={() => setDeleteId(c.id)} className={`rounded-md p-1.5 ${THEME_OUTLINE_DANGER}`} title="删除"><Trash2 size={13} /></button></PermissionGate>
+                <button type="button" onClick={() => navigate(`/admin/marketing/coupons/${coupon.id}`)} className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground" title="编辑"><Pencil size={13} /></button>
+                <PermissionGate permission="coupon.manage"><button type="button" onClick={() => setIssueCouponId(coupon.id)} className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground" title="按标签发券">发券</button></PermissionGate>
+                <PermissionGate permission="coupon.manage"><button type="button" onClick={() => setDeleteId(coupon.id)} className={`rounded-md p-1.5 ${THEME_OUTLINE_DANGER}`} title="删除"><Trash2 size={13} /></button></PermissionGate>
               </div>
             </td>
           </>
@@ -153,7 +168,7 @@ export default function AdminCoupons() {
         confirmText="删除"
         onConfirm={() => {
           if (!deleteId) return;
-          handleDelete(deleteId);
+          deleteMutation.mutate(deleteId);
           setDeleteId(null);
         }}
       />
@@ -176,7 +191,7 @@ export default function AdminCoupons() {
             toast.error("请先选择标签");
             return;
           }
-          void handleIssueByTag(issueCouponId, [issueTagId]);
+          issueMutation.mutate({ couponId: issueCouponId, tagIds: [issueTagId] });
         }}
       />
     </div>

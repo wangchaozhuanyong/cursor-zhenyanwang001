@@ -240,8 +240,26 @@ async function selectOrderStateById(orderId) {
   return row || null;
 }
 
+async function selectAdminOrderForUpdate(q, orderId) {
+  const [[row]] = await q.query(
+    'SELECT * FROM orders WHERE id = ? FOR UPDATE',
+    [orderId],
+  );
+  return row || null;
+}
+
 async function updateOrderShipped(orderId, trackingNo, carrier) {
   await db.query(
+    `UPDATE orders
+       SET status = ?, tracking_no = ?, carrier = ?,
+           shipped_at = COALESCE(shipped_at, NOW())
+     WHERE id = ?`,
+    [ORDER_STATUS.SHIPPED, trackingNo, carrier, orderId],
+  );
+}
+
+async function updateOrderShippedTx(q, orderId, trackingNo, carrier) {
+  await q.query(
     `UPDATE orders
        SET status = ?, tracking_no = ?, carrier = ?,
            shipped_at = COALESCE(shipped_at, NOW())
@@ -489,7 +507,9 @@ module.exports = {
   selectOrdersForExport,
   selectOrderById,
   selectOrderStateById,
+  selectAdminOrderForUpdate,
   updateOrderShipped,
+  updateOrderShippedTx,
   touchOrderShippedAtIfNull,
 
   updateOrderStatusAndPayment,

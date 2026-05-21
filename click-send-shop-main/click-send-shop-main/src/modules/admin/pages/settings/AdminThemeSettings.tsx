@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { DEFAULT_SKIN_ID, THEME_PRESETS } from "@/constants/themePresets";
 import { STARTER_THEME_SKIN_MAP, STARTER_THEME_SKINS } from "@/constants/starterThemeSkins";
@@ -16,9 +17,28 @@ import type { ThemeConfig, ThemeSceneTag, ThemeSkin } from "@/types/theme";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { canDeleteThemeSkin, normalizeThemeConfig, normalizeThemeSkinsPayload } from "@/utils/themeConfig";
 import { applyAutoColorAction, type AutoColorAction } from "@/utils/themeStudioAuto";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
+
+function applyThemePayload(
+  normalized: ReturnType<typeof normalizeThemeSkinsPayload>,
+  setters: {
+    setSkins: (v: ThemeSkin[]) => void;
+    setDefaultSkinId: (v: string) => void;
+    setActiveSkinId: (v: string) => void;
+    setSelectedSkinId: (v: string) => void;
+    setThemeConfig: (v: ThemeConfig) => void;
+  },
+) {
+  setters.setSkins(normalized.skins);
+  setters.setDefaultSkinId(normalized.defaultSkinId);
+  setters.setActiveSkinId(normalized.activeSkinId);
+  setters.setSelectedSkinId(normalized.activeSkinId);
+  const current = normalized.skins.find((s) => s.id === normalized.activeSkinId) || normalized.skins[0];
+  setters.setThemeConfig(normalizeThemeConfig(current?.config));
+}
 
 export default function AdminThemeSettings() {
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [skins, setSkins] = useState<ThemeSkin[]>([]);
   const [defaultSkinId, setDefaultSkinId] = useState(DEFAULT_SKIN_ID);
@@ -37,34 +57,35 @@ export default function AdminThemeSettings() {
 
   const selectedSkin = useMemo(() => skins.find((s) => s.id === selectedSkinId), [skins, selectedSkinId]);
 
+  const themeQuery = useQuery({
+    queryKey: adminQueryKeys.themeSkins(),
+    queryFn: fetchThemeSkins,
+    staleTime: 60_000,
+  });
+
+  const loading = themeQuery.isLoading && !themeQuery.data;
+
   useEffect(() => {
-    setLoading(true);
-    fetchThemeSkins()
-      .then((data) => {
-        const normalized = normalizeThemeSkinsPayload({
-          defaultSkinId: data?.defaultSkinId,
-          activeSkinId: data?.activeSkinId || data?.defaultSkinId,
-          skins: Array.isArray(data?.skins) ? data.skins : THEME_PRESETS,
-        });
-        setSkins(normalized.skins);
-        setDefaultSkinId(normalized.defaultSkinId);
-        setActiveSkinId(normalized.activeSkinId);
-        setSelectedSkinId(normalized.activeSkinId);
-        const current = normalized.skins.find((s) => s.id === normalized.activeSkinId) || normalized.skins[0];
-        setThemeConfig(normalizeThemeConfig(current?.config));
-      })
-      .catch((error) => {
-        toast.error(toastErrorMessage(error, "加载皮肤配置失败，已使用本地预设"));
-        const normalized = normalizeThemeSkinsPayload({ skins: THEME_PRESETS });
-        setSkins(normalized.skins);
-        setDefaultSkinId(normalized.defaultSkinId);
-        setActiveSkinId(normalized.activeSkinId);
-        setSelectedSkinId(normalized.activeSkinId);
-        const current = normalized.skins.find((s) => s.id === normalized.activeSkinId) || normalized.skins[0];
-        setThemeConfig(normalizeThemeConfig(current?.config));
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    if (themeQuery.isError) {
+      toast.error(toastErrorMessage(themeQuery.error, "加载皮肤配置失败，已使用本地预设"));
+      applyThemePayload(normalizeThemeSkinsPayload({ skins: THEME_PRESETS }), {
+        setSkins,
+        setDefaultSkinId,
+        setActiveSkinId,
+        setSelectedSkinId,
+        setThemeConfig,
+      });
+      return;
+    }
+    if (!themeQuery.data) return;
+    const data = themeQuery.data;
+    const normalized = normalizeThemeSkinsPayload({
+      defaultSkinId: data?.defaultSkinId,
+      activeSkinId: data?.activeSkinId || data?.defaultSkinId,
+      skins: Array.isArray(data?.skins) ? data.skins : THEME_PRESETS,
+    });
+    applyThemePayload(normalized, { setSkins, setDefaultSkinId, setActiveSkinId, setSelectedSkinId, setThemeConfig });
+  }, [themeQuery.data, themeQuery.isError, themeQuery.error]);
 
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -94,6 +115,7 @@ export default function AdminThemeSettings() {
       setActiveSkinId(normalized.activeSkinId);
       notifyGlobalThemeUpdated();
       setDirty(false);
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.themeSkins() });
       toast.success(message);
     } catch (error) {
       toast.error(toastErrorMessage(error, "保存失败"));

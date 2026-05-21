@@ -1,32 +1,33 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import ReportFilterBar from "@/components/admin/report/ReportFilterBar";
 import { fetchReportOverview } from "@/services/admin/reportService";
 import { toast } from "sonner";
 import { Tx } from "@/components/admin/AdminText";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 export default function AdminReportOverview() {
   const [searchParams] = useSearchParams();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<Record<string, unknown>>({});
 
-  useEffect(() => {
-    const run = async () => {
-      setLoading(true);
-      try {
-        const params: Record<string, string> = {};
-        searchParams.forEach((v, k) => (params[k] = v));
-        const res = await fetchReportOverview(params);
-        setData(res || {});
-      } catch (e) {
-        toast.error(toastErrorMessage(e, "加载经营总览失败"));
-      } finally {
-        setLoading(false);
-      }
-    };
-    void run();
+  const queryParams = useMemo(() => {
+    const params: Record<string, string> = {};
+    searchParams.forEach((v, k) => {
+      params[k] = v;
+    });
+    return params;
   }, [searchParams]);
+
+  const overviewQuery = useQuery({
+    queryKey: adminQueryKeys.reportOverview(queryParams),
+    queryFn: () => fetchReportOverview(queryParams),
+    placeholderData: (previous) => previous,
+    staleTime: 60_000,
+  });
+
+  const data = overviewQuery.data ?? {};
+  const loading = overviewQuery.isLoading && !overviewQuery.data;
 
   const summary = useMemo(() => (data.summary || {}) as unknown as Record<string, unknown>, [data]);
   const topHot = useMemo(() => (Array.isArray(data.topHotProducts) ? data.topHotProducts : []), [data]);

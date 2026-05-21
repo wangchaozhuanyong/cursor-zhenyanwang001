@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { Loader2, RotateCcw, TrendingDown, TrendingUp, Users } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
@@ -13,6 +14,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatUserDisplay, labelRewardStatus } from "@/utils/adminDisplayLabels";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
@@ -30,6 +32,7 @@ import {
   THEME_BADGE_WARNING,
   THEME_TEXT_DANGER,
 } from "@/utils/themeVisuals";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 const statusOptions: Array<{ value: "" | RewardStatus; label: string }> = [
   { value: "", label: "全部状态" },
@@ -60,59 +63,53 @@ function money(value: unknown) {
   return Number.isFinite(n) ? n.toFixed(2) : "0.00";
 }
 
+function normalizeReferralRules(data: ReferralRule[]): ReferralRuleEditRow[] {
+  return data.map((r, idx) => ({
+    id: String(r.id ?? idx),
+    level: Number(r.level ?? idx + 1),
+    name: String(r.description || `等级 ${idx + 1}`),
+    rewardPercent: Number(r.commission_rate ?? 0),
+    enabled: Boolean(r.enabled ?? true),
+  }));
+}
+
 export default function AdminRewardRecords() {
-  const [records, setRecords] = useState<RewardRecord[]>([]);
-  const [stats, setStats] = useState<RewardStats>(emptyStats);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState<"" | RewardStatus>("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [total, setTotal] = useState(0);
-  const [rulesLoading, setRulesLoading] = useState(true);
   const [rulesSaving, setRulesSaving] = useState(false);
   const [rules, setRules] = useState<ReferralRuleEditRow[]>([]);
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    fetchAdminRewardRecords({ page, pageSize, keyword, status: status || undefined })
-      .then((data) => {
-        if (cancelled) return;
-        setRecords(data.list || []);
-        setStats(data.stats || emptyStats);
-        setTotal(data.total || 0);
-      })
-      .catch((e) => toast.error(toastErrorMessage(e, "加载返现记录失败")))
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => { cancelled = true; };
-  }, [page, pageSize, keyword, status]);
+  const queryParams = useMemo(
+    () => ({ page, pageSize, keyword, status: status || undefined }),
+    [keyword, page, pageSize, status],
+  );
+
+  const listQuery = useQuery({
+    queryKey: adminQueryKeys.rewardRecords(queryParams),
+    queryFn: () => fetchAdminRewardRecords(queryParams),
+    placeholderData: (previous) => previous,
+    staleTime: 60_000,
+  });
+
+  const rulesQuery = useQuery({
+    queryKey: adminQueryKeys.referralRules(),
+    queryFn: fetchReferralRules,
+    staleTime: 60_000,
+  });
+
+  const records = listQuery.data?.list ?? [];
+  const stats = listQuery.data?.stats ?? emptyStats;
+  const total = listQuery.data?.total ?? 0;
+  const loading = listQuery.isLoading && !listQuery.data;
+  const rulesLoading = rulesQuery.isLoading && !rulesQuery.data;
 
   useEffect(() => {
-    let cancelled = false;
-    setRulesLoading(true);
-    fetchReferralRules()
-      .then((data: ReferralRule[]) => {
-        if (cancelled) return;
-        const normalized = data.map((r, idx) => ({
-          id: String(r.id ?? idx),
-          level: Number(r.level ?? idx + 1),
-          name: String(r.description || `等级 ${idx + 1}`),
-          rewardPercent: Number(r.commission_rate ?? 0),
-          enabled: Boolean(r.enabled ?? true),
-        }));
-        setRules(normalized);
-      })
-      .catch((e) => toast.error(toastErrorMessage(e, "加载返现规则失败")))
-      .finally(() => {
-        if (!cancelled) setRulesLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    if (!rulesQuery.data) return;
+    setRules(normalizeReferralRules(rulesQuery.data));
+  }, [rulesQuery.data]);
 
   const updateRuleField = (id: string, field: "rewardPercent" | "enabled", value: number | boolean) => {
     setRules((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
@@ -129,6 +126,7 @@ export default function AdminRewardRecords() {
         });
       }
       toast.success("返现规则已保存");
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.referralRules() });
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存返现规则失败"));
     } finally {
@@ -320,7 +318,9 @@ export default function AdminRewardRecords() {
               <td className="px-4 py-3">
                 <span className={`rounded-full px-2 py-1 text-xs ${label.className}`}>{label.label}</span>
               </td>
-              <td className="max-w-[220px] truncate px-4 py-3 text-xs text-theme-muted">{record.remark || "—"}</td>
+              <td className="max-w-[14rem] px-4 py-3 align-middle">
+                <AdminTableCell value={record.remark || "—"} fullText={record.remark || ""} maxWidth="13rem" muted />
+              </td>
               <td className="px-4 py-3 text-xs text-theme-muted">
                 {record.created_at ? formatDateTime(record.created_at) : "—"}
               </td>

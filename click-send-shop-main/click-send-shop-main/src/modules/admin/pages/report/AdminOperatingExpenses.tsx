@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
@@ -19,6 +20,7 @@ import {
   adminTdClassName,
   adminThClassName,
 } from "@/utils/adminTableClasses";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 type FormState = {
   expense_date: string;
@@ -48,41 +50,44 @@ function emptyForm(): FormState {
 
 export default function AdminOperatingExpenses() {
   const { confirm } = useAdminConfirm();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
-  const [list, setList] = useState<OperatingExpenseRecord[]>([]);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [category, setCategory] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm());
 
+  const queryParams = useMemo(
+    () => ({
+      range_preset: "last_30_days",
+      date_from: dateFrom || undefined,
+      date_to: dateTo || undefined,
+      category: category || undefined,
+    }),
+    [category, dateFrom, dateTo],
+  );
+
+  const listQuery = useQuery({
+    queryKey: adminQueryKeys.operatingExpenses(queryParams),
+    queryFn: async () => {
+      const data = await fetchOperatingExpenses(queryParams);
+      return Array.isArray(data?.list) ? data.list : [];
+    },
+    placeholderData: (previous) => previous,
+    staleTime: 60_000,
+  });
+
+  const list = listQuery.data ?? [];
+  const loading = listQuery.isLoading && !listQuery.data;
+
+  const invalidateExpenses = () =>
+    queryClient.invalidateQueries({ queryKey: ["admin", "reports", "operating-expenses"] });
+
   const totalAmount = useMemo(
     () => list.reduce((sum, row) => sum + Number(row.amount || 0), 0),
     [list],
   );
-
-  async function load() {
-    setLoading(true);
-    try {
-      const data = await fetchOperatingExpenses({
-        range_preset: "last_30_days",
-        date_from: dateFrom || undefined,
-        date_to: dateTo || undefined,
-        category: category || undefined,
-      });
-      setList(Array.isArray(data?.list) ? data.list : []);
-    } catch (error) {
-      toast.error(toastErrorMessage(error, "加载经营支出失败"));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void load();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateFrom, dateTo, category]);
 
   function startEdit(row: OperatingExpenseRecord) {
     setEditingId(row.id);
@@ -122,7 +127,7 @@ export default function AdminOperatingExpenses() {
         toast.success("经营支出已新增");
       }
       resetForm();
-      await load();
+      await invalidateExpenses();
     } catch (error) {
       toast.error(toastErrorMessage(error, editingId ? "更新经营支出失败" : "新增经营支出失败"));
     } finally {
@@ -135,7 +140,7 @@ export default function AdminOperatingExpenses() {
       try {
         await removeOperatingExpense(id);
         toast.success("经营支出已删除");
-        await load();
+        await invalidateExpenses();
       } catch (error) {
         toast.error(toastErrorMessage(error, "删除经营支出失败"));
       }

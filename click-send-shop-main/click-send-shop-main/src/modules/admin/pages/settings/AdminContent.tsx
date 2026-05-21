@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { FileText, Edit2, Shield, HelpCircle, Plus, Trash2, ChevronDown, ChevronRight, ArrowUp, ArrowDown, LogIn, ExternalLink } from "lucide-react";
 import { LoadingButton } from "@/modules/micro-interactions";
@@ -12,10 +13,12 @@ import {
   buildDefaultHelpCenterConfig,
   normalizeHelpCenterConfig,
 } from "@/constants/helpCenterConfig";
+import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { AdminContentPageSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import { THEME_TEXT_DANGER } from "@/utils/themeVisuals";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 interface ContentItem {
   id: string;
@@ -34,8 +37,7 @@ const DEFAULT_POLICY_PATHS = {
 };
 
 export default function AdminContent() {
-  const [items, setItems] = useState<ContentItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [editing, setEditing] = useState<ContentItem | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -56,22 +58,31 @@ export default function AdminContent() {
   const [dragFaqId, setDragFaqId] = useState<string>("");
   const [policyPaths, setPolicyPaths] = useState(DEFAULT_POLICY_PATHS);
 
+  const contentQuery = useQuery({
+    queryKey: adminQueryKeys.contentHub(),
+    queryFn: async () => {
+      const [pages, settings] = await Promise.all([fetchContentPages(), fetchSiteSettings()]);
+      return { pages: pages as ContentItem[], settings };
+    },
+    staleTime: 60_000,
+  });
+
+  const items = contentQuery.data?.pages ?? [];
+  const loading = contentQuery.isLoading && !contentQuery.data;
+
+  const invalidateContent = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.contentHub() });
+
   useEffect(() => {
-    setLoading(true);
-    Promise.all([fetchContentPages(), fetchSiteSettings()])
-      .then(([pages, settings]) => {
-        setItems(pages as ContentItem[]);
-        setPolicyPaths({
-          termsPath: settings.termsPath?.trim() || DEFAULT_POLICY_PATHS.termsPath,
-          privacyPolicyPath: settings.privacyPolicyPath?.trim() || DEFAULT_POLICY_PATHS.privacyPolicyPath,
-        });
-        const parsed = parseHelpConfig(settings.helpCenterConfig);
-        setHelpForm(parsed);
-        setHelpJson(JSON.stringify(parsed, null, 2));
-      })
-      .catch((e) => toast.error(toastErrorMessage(e, "加载内容失败")))
-      .finally(() => setLoading(false));
-  }, []);
+    if (!contentQuery.data) return;
+    const { settings } = contentQuery.data;
+    setPolicyPaths({
+      termsPath: settings.termsPath?.trim() || DEFAULT_POLICY_PATHS.termsPath,
+      privacyPolicyPath: settings.privacyPolicyPath?.trim() || DEFAULT_POLICY_PATHS.privacyPolicyPath,
+    });
+    const parsed = parseHelpConfig(settings.helpCenterConfig);
+    setHelpForm(parsed);
+    setHelpJson(JSON.stringify(parsed, null, 2));
+  }, [contentQuery.data]);
 
   const handleSave = async () => {
     if (!form.title || !form.content || !editing) {
@@ -81,10 +92,10 @@ export default function AdminContent() {
     setSaving(true);
     try {
       await updateContentPage(editing.id, { title: form.title, content: form.content });
-      setItems(items.map((i) => (i.id === editing.id ? { ...i, title: form.title, content: form.content, updatedAt: new Date().toISOString() } : i)));
       toast.success("内容已更新");
       setShowForm(false);
       setEditing(null);
+      await invalidateContent();
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败"));
     } finally {
@@ -101,6 +112,7 @@ export default function AdminContent() {
       setHelpForm(normalized);
       setHelpJson(JSON.stringify(normalized, null, 2));
       toast.success("帮助中心配置已保存");
+      await invalidateContent();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "帮助中心配置保存失败");
     } finally {
@@ -128,24 +140,17 @@ export default function AdminContent() {
     }
     setSaving(true);
     try {
-      const created = await createContentPage({
+      await createContentPage({
         title,
         slug,
         content,
         publish_status: createForm.publish_status,
         sort_order: createForm.sort_order ? Number(createForm.sort_order) : undefined,
       });
-      const next = {
-        id: created.id || `${Date.now()}`,
-        title,
-        slug,
-        content,
-        updatedAt: new Date().toISOString(),
-      } as ContentItem;
-      setItems((prev) => [next, ...prev]);
       setShowCreateForm(false);
       setCreateForm({ title: "", slug: "", content: "", publish_status: "published", sort_order: "" });
       toast.success("内容页已创建");
+      await invalidateContent();
     } catch (e) {
       toast.error(toastErrorMessage(e, "创建失败"));
     } finally {
@@ -457,7 +462,15 @@ export default function AdminContent() {
                   <span className="rounded-full bg-theme-price/10 px-2 py-0.5 text-[10px] font-medium text-theme-price"><Tx>登录页引用</Tx></span>
                 ) : null}
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5 truncate">{item.content || "暂无内容"}</p>
+              <div className="mt-0.5">
+                <AdminTableCell
+                  value={item.content || "暂无内容"}
+                  fullText={item.content || ""}
+                  maxWidth="100%"
+                  muted
+                  lines={2}
+                />
+              </div>
               <p className="text-[10px] text-muted-foreground mt-1">
                 <Tx>前台路径: </Tx>
                 {item.slug === "about" ? (

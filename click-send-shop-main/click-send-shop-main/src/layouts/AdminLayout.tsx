@@ -58,6 +58,7 @@ import AdminSiteLogo from "@/components/admin/AdminSiteLogo";
 import AdminOrderVoiceNotifier from "@/modules/admin/components/AdminOrderVoiceNotifier";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import type { SiteCapabilities } from "@/types/siteCapabilities";
+import { useAdminEvents } from "@/hooks/admin/useAdminEvents";
 
 type NavPerm = string | { anyOf: string[] };
 
@@ -455,6 +456,7 @@ function AdminLayoutContent() {
   const can = useAdminPermissionStore((s) => s.can);
   const canAny = useAdminPermissionStore((s) => s.canAny);
   const capabilities = useSiteCapabilities();
+  useAdminEvents(true);
 
   const navItems = useMemo(
     () => resolveNavLabels(filterNav(navItemsRaw, can, canAny, capabilities), t),

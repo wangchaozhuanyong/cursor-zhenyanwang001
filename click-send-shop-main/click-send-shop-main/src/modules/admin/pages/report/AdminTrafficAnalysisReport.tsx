@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Download, FileSpreadsheet, MousePointerClick, Timer, TrendingUp, Users, X } from "lucide-react";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip as ChartTooltip, XAxis, YAxis } from "recharts";
@@ -7,6 +8,7 @@ import type { ReportQuery } from "@/services/admin/reportService";
 import { exportTrafficAnalysisCsv, fetchTrafficAnalysisReport } from "@/services/admin/reportService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { adminTableClassName, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 type Summary = {
   pv: number;
@@ -237,8 +239,6 @@ function DataTable({
 
 export default function AdminTrafficAnalysisReport() {
   const [filters, setFilters] = useState<ReportQuery>({ range_preset: "last_7_days", granularity: "day" });
-  const [payload, setPayload] = useState<TrafficPayload | null>(null);
-  const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [drawer, setDrawer] = useState<{ title: string; row: TableRow } | null>(null);
 
@@ -252,21 +252,15 @@ export default function AdminTrafficAnalysisReport() {
     return result;
   }, [filters]);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await fetchTrafficAnalysisReport(query);
-      setPayload(data as unknown as TrafficPayload);
-    } catch (error) {
-      toast.error(toastErrorMessage(error, "流量分析加载失败"));
-    } finally {
-      setLoading(false);
-    }
-  }, [query]);
+  const reportQuery = useQuery({
+    queryKey: adminQueryKeys.trafficReport(query as Record<string, string>),
+    queryFn: async () => (await fetchTrafficAnalysisReport(query)) as unknown as TrafficPayload,
+    placeholderData: (previous) => previous,
+    staleTime: 60_000,
+  });
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const payload = reportQuery.data ?? null;
+  const loading = reportQuery.isLoading && !reportQuery.data;
 
   const summary = payload?.summary || DEFAULT_SUMMARY;
   const cards = [

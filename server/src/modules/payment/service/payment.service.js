@@ -1,7 +1,6 @@
 const { generateId } = require('../../../utils/helpers');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const paymentsService = require('./payments.service');
-const orderPoints = require('../../order/service/orderPoints.service');
 
 function getOrderApi() {
   return /** @type {any} */ (require('../../order')).api || {};
@@ -14,25 +13,6 @@ function getTelegramApi() {
 function getOrderDb() {
   const api = getOrderApi();
   return typeof api.getOrderPool === 'function' ? api.getOrderPool() : null;
-}
-
-async function grantPaymentSuccessPoints(order) {
-  const api = getOrderApi();
-  if (typeof api.getOrderConnection !== 'function') return;
-  const conn = await api.getOrderConnection();
-  try {
-    await conn.beginTransaction();
-    await orderPoints.maybeGrantOrderEarnPoints(conn, order, {
-      trigger: 'payment_success',
-      timing: 'payment_success',
-    });
-    await conn.commit();
-  } catch (err) {
-    await conn.rollback();
-    throw err;
-  } finally {
-    conn.release();
-  }
 }
 
 function getUserApi() {
@@ -173,7 +153,6 @@ async function handleStripeEvent(event) {
     console.error('[stripe webhook] syncStatsAfterOrderPaid failed:', e?.message || e);
   }
   try {
-    await grantPaymentSuccessPoints(order);
   } catch (e) {
     console.error('[stripe webhook] grant payment-success points failed:', e?.message || e);
   }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
@@ -34,6 +35,7 @@ import SiteSettingCard from "./SiteSettingCard";
 import SiteSettingField from "./SiteSettingField";
 import PolicyPathFields from "./PolicyPathFields";
 import FooterNavEditor from "./FooterNavEditor";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 function mergeSettings(data: Partial<SiteSettings> | null | undefined): SiteSettings {
   return { ...EMPTY_SITE_SETTINGS, ...(data && typeof data === "object" ? data : {}) };
@@ -41,8 +43,8 @@ function mergeSettings(data: Partial<SiteSettings> | null | undefined): SiteSett
 
 export default function SiteSettingsPage() {
   const { confirm } = useAdminConfirm();
+  const queryClient = useQueryClient();
   const location = useLocation();
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<SiteSettings>(EMPTY_SITE_SETTINGS);
   const [saved, setSaved] = useState<SiteSettings>(EMPTY_SITE_SETTINGS);
@@ -50,17 +52,20 @@ export default function SiteSettingsPage() {
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
   const [advancedJsonOpen, setAdvancedJsonOpen] = useState(false);
 
+  const settingsQuery = useQuery({
+    queryKey: adminQueryKeys.siteSettings(),
+    queryFn: fetchSiteSettings,
+    staleTime: 60_000,
+  });
+
+  const loading = settingsQuery.isLoading && !settingsQuery.data;
+
   useEffect(() => {
-    setLoading(true);
-    fetchSiteSettings()
-      .then((data) => {
-        const merged = mergeSettings(data);
-        setSettings(merged);
-        setSaved(merged);
-      })
-      .catch((e) => toast.error(toastErrorMessage(e, "加载设置失败")))
-      .finally(() => setLoading(false));
-  }, []);
+    if (!settingsQuery.data) return;
+    const merged = mergeSettings(settingsQuery.data);
+    setSettings(merged);
+    setSaved(merged);
+  }, [settingsQuery.data]);
 
   useEffect(() => {
     if (loading || location.hash !== "#policy-paths") return;
@@ -148,6 +153,7 @@ export default function SiteSettingsPage() {
       setSaved((prev) => ({ ...prev, ...payload }));
       setSettings((prev) => ({ ...prev, ...payload }));
       await refreshSiteInfo();
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.siteSettings() });
       toast.success(mode === "all" ? "全部设置已保存" : `${activeSection.title}已保存`);
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败"));

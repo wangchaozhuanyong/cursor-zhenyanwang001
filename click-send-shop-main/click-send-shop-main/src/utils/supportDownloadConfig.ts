@@ -22,65 +22,63 @@ export const PLATFORM_TYPES: DownloadPlatformType[] = ["desktop", "android", "io
 
 export const DEFAULT_PLATFORMS: DownloadPlatform[] = [
   {
-    id: "desktop",
-    type: "desktop",
-    enabled: true,
-    title: "电脑端",
-    description: "使用 Chrome 或 Edge 打开商城，可把商城安装到电脑桌面。",
-    buttonText: "安装到电脑桌面",
-    instructions: [
-      "使用 Chrome 或 Edge 打开商城。",
-      "点击地址栏旁的安装图标，或从浏览器菜单选择「安装应用」。",
-      "按系统提示确认即可完成安装。",
-    ],
-    sortOrder: 1,
-  },
-  {
     id: "android",
     type: "android",
     enabled: true,
-    title: "安卓端",
-    description: "在 Android Chrome 中可将商城一键安装到桌面。",
-    buttonText: "一键安装到桌面",
+    title: "安卓手机",
+    description: "可将商城添加到安卓手机桌面，像 App 一样快速打开。",
+    buttonText: "一键添加到桌面",
     instructions: [
-      "请使用 Chrome 打开本网站。",
-      "点击「一键安装到桌面」并按提示确认。",
-      "也可在浏览器菜单中选择「添加到主屏幕」。",
+      "点击浏览器右上角“菜单”或“...”",
+      "选择“添加到桌面 / 添加到主屏幕 / 发送到桌面”",
+      "点击确认后，回到手机桌面打开",
     ],
-    sortOrder: 2,
+    sortOrder: 1,
   },
   {
     id: "ios",
     type: "ios",
     enabled: true,
-    title: "苹果端",
-    description: "iPhone 需使用 Safari 手动添加到主屏幕。",
-    buttonText: "",
+    title: "苹果手机",
+    description: "请使用 Safari 浏览器将商城添加到主屏幕。",
+    buttonText: "复制链接，用 Safari 打开",
     instructions: [
-      "点击 Safari 底部分享按钮。",
-      "选择「添加到主屏幕」。",
-      "点击「添加」完成安装。",
+      "用 Safari 打开本页面",
+      "点击底部中间的“分享”按钮",
+      "向下滑动，选择“添加到主屏幕”",
+      "点击右上角“添加”",
+      "回到手机桌面打开",
     ],
-    sortOrder: 3,
+    sortOrder: 2,
+  },
+  {
+    id: "desktop",
+    type: "desktop",
+    enabled: false,
+    title: "电脑端",
+    description: "仅为兼容旧配置保留，前台不展示。",
+    buttonText: "",
+    instructions: [],
+    sortOrder: 99,
   },
 ];
 
 export const DEFAULT_SUPPORT_DOWNLOAD_CONFIG: SupportDownloadConfig = {
   enabled: true,
-  title: "客服与安装",
-  subtitle: "联系客服或将商城添加到桌面，像 App 一样快速打开。",
+  title: "客服中心",
+  subtitle: "如需咨询商品、订单、售后或使用问题，请联系官方客服；也可查看添加到桌面的使用指引。",
   defaultTab: "support",
   support: {
     enabled: true,
-    title: "客服",
-    description: "如需咨询商品、订单、售后或安装问题，请通过下方入口联系官方客服。",
+    title: "联系客服",
+    description: "请选择下方官方客服渠道咨询商品、订单、售后或使用问题。",
     workingHours: "",
     channels: [],
   },
   download: {
     enabled: true,
-    title: "安装",
-    description: "选择适合你的设备，把商城添加到桌面使用。",
+    title: "添加到桌面",
+    description: "可将商城添加到手机桌面，像 App 一样快速打开。",
     platforms: DEFAULT_PLATFORMS,
   },
 };
@@ -119,11 +117,12 @@ export function normalizePlatform(
     ? (platform.type as DownloadPlatformType)
     : null;
   if (!type) return null;
-  const fallback = DEFAULT_PLATFORMS.find((item) => item.type === type)!;
+  const fallback = DEFAULT_PLATFORMS.find((item) => item.type === type) || DEFAULT_PLATFORMS[0];
+  const enabled = type === "desktop" ? false : platform.enabled !== false;
   return {
     id: trim(platform.id) || type,
     type,
-    enabled: platform.enabled !== false,
+    enabled,
     title: trim(platform.title) || fallback.title,
     description: trim(platform.description) || fallback.description,
     buttonText: trim(platform.buttonText) || fallback.buttonText,
@@ -198,7 +197,7 @@ export function getEnabledSupportChannels(config: SupportDownloadConfig): Suppor
 
 export function getEnabledDownloadPlatforms(config: SupportDownloadConfig): DownloadPlatform[] {
   return (config.download.platforms || DEFAULT_PLATFORMS)
-    .filter((p) => p.enabled !== false)
+    .filter((p) => p.enabled !== false && p.type !== "desktop")
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 }
 

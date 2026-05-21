@@ -1,6 +1,7 @@
 const { generateId, generateOrderNo } = require('../../../utils/helpers');
 const { computeShippingFee, estimateWeightFromItems } = require('../../../utils/shippingFee');
 const {
+  ForbiddenError,
   NotFoundError,
   ValidationError,
 } = require('../../../errors');
@@ -26,6 +27,15 @@ const logisticsModule = require('../../logistics');
 const orderDb = repo.getPool();
 const orderPricing = require('../order.pricing');
 const orderPoints = require('./orderPoints.service');
+const siteCapabilitiesService = require('../../siteCapabilities/service/siteCapabilities.service');
+
+function publishAdminEvent(event) {
+  try {
+    require('../../admin/service/adminEventBus.service').publishAdminEvent(event);
+  } catch {
+    // Realtime refresh is best-effort and must never block checkout.
+  }
+}
 
 function getUserApi() {
   return /** @type {any} */ (userModule).api || {};
@@ -60,6 +70,19 @@ function requireLogisticsApi(name) {
     throw new Error(`Logistics 模块 API 未暴露方法: ${name}`);
   }
   return fn;
+}
+
+async function assertOrderCapabilityUsage(body = {}) {
+  const [pointsEnabled, couponEnabled] = await Promise.all([
+    siteCapabilitiesService.isCapabilityEnabled('pointsEnabled'),
+    siteCapabilitiesService.isCapabilityEnabled('couponEnabled'),
+  ]);
+  if (!pointsEnabled && (body.use_points || Number(body.points_to_use || 0) > 0)) {
+    throw new ForbiddenError('积分功能已关闭');
+  }
+  if (!couponEnabled && (body.coupon_id || body.coupon_title)) {
+    throw new ForbiddenError('优惠券功能已关闭');
+  }
 }
 
 function calculateCouponDiscount(coupon, rawAmount, shippingFee) {
@@ -235,6 +258,7 @@ function normalizeMalaysiaAddress(address, contactName, contactPhone) {
  * @param {object} body
  */
 async function createOrder(userId, body) {
+  await assertOrderCapabilityUsage(body);
   const {
     items, contact_name, contact_phone, address, note,
     coupon_id, coupon_title, shipping_template_id, shipping_name, payment_method,
@@ -630,6 +654,12 @@ async function createOrder(userId, body) {
 
     await conn.commit();
 
+    publishAdminEvent({
+      type: 'order.created',
+      objectId: orderId,
+      summary: orderNo,
+    });
+
     const formattedItems = orderItems.map((oi) => formatOrderItem({
       product_id: oi.productId,
       variant_id: oi.variantId,
@@ -740,7 +770,7 @@ async function cancelPendingOrderInTransaction(conn, order, options = {}) {
     }
   }
 
-  await orderPoints.rollbackOrderPoints(conn, order, {
+  await orderPoints.refundOrderRedeemOnly(conn, order, {
     trigger,
     description: pointReason,
     redeemDescription: `Order cancellation refunds redeemed points ${order.order_no}`,
@@ -853,6 +883,7 @@ async function confirmReceive(userId, orderId) {
 }
 
 async function previewOrder(userId, body) {
+  await assertOrderCapabilityUsage(body);
   const pricing = await orderPricing.buildOrderPricing(userId, body, null);
   return {
     data: {
@@ -898,7 +929,3 @@ module.exports = {
   completeShippedOrder,
   cancelPendingOrderInTransaction,
 };
-
-
-
-

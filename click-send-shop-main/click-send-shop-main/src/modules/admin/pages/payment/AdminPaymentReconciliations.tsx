@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Scale } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
@@ -21,57 +22,54 @@ import {
   PAYMENT_CHANNEL_FILTER_OPTIONS,
   PAYMENT_PROVIDER_FILTER_OPTIONS,
 } from "@/utils/paymentAdminLabels";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 export default function AdminPaymentReconciliations() {
   const { confirm } = useAdminConfirm();
-  const [list, setList] = useState<PaymentReconciliationRow[]>([]);
-  const [total, setTotal] = useState(0);
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
-  const [loading, setLoading] = useState(true);
   const [reconcileDate, setReconcileDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [provider, setProvider] = useState("stripe");
   const [channelCode, setChannelCode] = useState("");
   const [diffAmount, setDiffAmount] = useState("");
   const [notes, setNotes] = useState("");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await paymentAdmin.fetchAdminPaymentReconciliations({
-        page: String(page),
-        pageSize: String(pageSize),
-      });
-      setList(data.list);
-      setTotal(data.total);
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "加载对账失败"));
-    } finally {
-      setLoading(false);
-    }
-  }, [page, pageSize]);
+  const queryParams = useMemo(
+    () => ({ page: String(page), pageSize: String(pageSize) }),
+    [page, pageSize],
+  );
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const listQuery = useQuery({
+    queryKey: adminQueryKeys.paymentReconciliations(queryParams),
+    queryFn: () => paymentAdmin.fetchAdminPaymentReconciliations(queryParams),
+    placeholderData: (previous) => previous,
+    staleTime: 60_000,
+  });
 
-  const create = async () => {
-    try {
-      await paymentAdmin.createAdminPaymentReconciliation({
+  const list = listQuery.data?.list ?? [];
+  const total = listQuery.data?.total ?? 0;
+  const loading = listQuery.isLoading && !listQuery.data;
+
+  const createMutation = useMutation({
+    mutationFn: () =>
+      paymentAdmin.createAdminPaymentReconciliation({
         reconcile_date: reconcileDate,
         provider,
         channel_code: channelCode.trim() || undefined,
         diff_amount: diffAmount.trim() ? Number(diffAmount) : undefined,
         notes: notes.trim() || undefined,
-      });
+      }),
+    onSuccess: async () => {
       toast.success("已创建对账草稿");
       setNotes("");
       setDiffAmount("");
-      void load();
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "创建失败"));
-    }
-  };
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.paymentReconciliationsRoot() });
+    },
+    onError: (e) => toast.error(toastErrorMessage(e, "创建失败")),
+  });
+
+  const create = () => createMutation.mutate();
 
   return (
     <PermissionGate permission="payment.manage">

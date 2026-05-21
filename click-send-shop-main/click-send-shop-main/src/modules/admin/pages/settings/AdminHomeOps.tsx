@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint, { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
@@ -19,6 +20,7 @@ import AdminHomeOpsModulePanel from "./homeOps/AdminHomeOpsModulePanel";
 import AdminHomeOpsNewArrivalPanel from "./homeOps/AdminHomeOpsNewArrivalPanel";
 import { toast } from "sonner";
 import * as uploadService from "@/services/uploadService";
+import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_HOME_NAV_ICON } from "@/constants/imageUploadHints";
 import * as homeOpsService from "@/services/admin/homeOpsService";
@@ -30,6 +32,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { validateUploadFile } from "@/services/uploadService";
 import { hasTransparentPixels } from "@/utils/imageTransparency";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 type NavForm = Pick<HomeNavItem, "icon_url" | "title" | "link_url" | "sort_order" | "enabled" | "target_type" | "target_category_id">;
 
@@ -63,35 +66,31 @@ const HOME_OPS_TABS: { id: HomeOpsTab; label: string; icon: React.ElementType; d
 
 export default function AdminHomeOps() {
   const { confirm } = useAdminConfirm();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<HomeOpsTab>("modules");
-  const [navItems, setNavItems] = useState<HomeNavItem[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingNavId, setEditingNavId] = useState<string | null>(null);
   const [navForm, setNavForm] = useState<NavForm>(emptyNavForm);
   const [navIconUploading, setNavIconUploading] = useState(false);
   const navIconFileRef = useRef<HTMLInputElement>(null);
 
-  const reload = async () => {
-    setLoading(true);
-    try {
+  const homeOpsQuery = useQuery({
+    queryKey: adminQueryKeys.homeOpsNav(),
+    queryFn: async () => {
       const [nav, cats] = await Promise.all([
         homeOpsService.fetchHomeNavItems(),
-        categoryService.fetchCategories().catch(() => []),
+        categoryService.fetchCategories().catch(() => [] as Category[]),
       ]);
-      setNavItems(nav);
-      setCategories(cats);
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "加载首页运营数据失败"));
-    } finally {
-      setLoading(false);
-    }
-  };
+      return { nav, categories: cats };
+    },
+    staleTime: 60_000,
+  });
 
-  useEffect(() => {
-    void reload();
-  }, []);
+  const navItems = homeOpsQuery.data?.nav ?? [];
+  const categories = homeOpsQuery.data?.categories ?? [];
+  const loading = homeOpsQuery.isLoading && !homeOpsQuery.data;
+
+  const invalidateHomeOps = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.homeOpsNav() });
 
   const onNavIconFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -135,7 +134,7 @@ export default function AdminHomeOps() {
       toast.success(editingNavId ? "导航已更新" : "导航已新增");
       setEditingNavId(null);
       setNavForm(emptyNavForm);
-      await reload();
+      await invalidateHomeOps();
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存导航失败"));
     } finally {
@@ -344,12 +343,23 @@ export default function AdminHomeOps() {
                     <IconPreview value={item.icon_url} />
                     <div className="min-w-0 flex-1">
                       <div className="font-medium text-foreground">{item.title}</div>
-                      <div className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
-                        <ExternalLink size={11} />
-                        {item.target_type === "category" && item.target_category_id
-                          ? `分类：${categoryNameMap.get(item.target_category_id) || item.target_category_id}`
-                          : (item.link_url || "未设置跳转")}
-                        · 排序 {item.sort_order}
+                      <div className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+                        <ExternalLink size={11} className="shrink-0" />
+                        <AdminTableCell
+                          value={
+                            item.target_type === "category" && item.target_category_id
+                              ? `分类：${categoryNameMap.get(item.target_category_id) || item.target_category_id}`
+                              : (item.link_url || "未设置跳转")
+                          }
+                          fullText={[
+                            item.target_type === "category" && item.target_category_id
+                              ? `分类：${categoryNameMap.get(item.target_category_id) || item.target_category_id}`
+                              : (item.link_url || "未设置跳转"),
+                            `排序 ${item.sort_order}`,
+                          ].join("\n")}
+                          maxWidth="100%"
+                          muted
+                        />
                       </div>
                     </div>
                     <span className={`rounded-full px-2 py-1 text-xs font-semibold ${item.enabled ? THEME_BADGE_SUCCESS : THEME_BADGE_MUTED}`}>
@@ -381,7 +391,7 @@ export default function AdminHomeOps() {
                           adminConfirmDelete(confirm, item.title || "该导航", async () => {
                             try {
                               await homeOpsService.deleteHomeNavItem(item.id);
-                              await reload();
+                              await invalidateHomeOps();
                               toast.success("已删除");
                             } catch (e) {
                               toast.error(toastErrorMessage(e, "删除失败"));

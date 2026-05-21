@@ -126,6 +126,41 @@ async function selectRecordByRelatedForUpdate(conn, relatedRecordId, action) {
   return row || null;
 }
 
+async function selectPendingReverseRecordsForUpdate(conn, userId) {
+  const [rows] = await conn.query(
+    `SELECT *
+     FROM points_records
+     WHERE user_id = ? AND action = 'pending_reverse' AND status = 'pending' AND amount < 0
+     ORDER BY created_at ASC, id ASC
+     FOR UPDATE`,
+    [userId],
+  );
+  return rows || [];
+}
+
+async function hasPendingReverse(userId) {
+  if (!userId) return false;
+  const [[row]] = await db.query(
+    `SELECT COUNT(*) AS total
+     FROM points_records
+     WHERE user_id = ? AND action = 'pending_reverse' AND status = 'pending' AND amount < 0`,
+    [userId],
+  );
+  return Number(row?.total || 0) > 0;
+}
+
+async function updatePendingReverseRecord(conn, id, params = {}) {
+  await conn.query(
+    'UPDATE points_records SET amount = ?, status = ?, metadata = ? WHERE id = ?',
+    [
+      params.amount,
+      params.status,
+      params.metadata ? JSON.stringify(params.metadata) : null,
+      id,
+    ],
+  );
+}
+
 async function updateAccountBalance(conn, userId, amount, balanceAfter) {
   const earnedDelta = amount > 0 ? amount : 0;
   const spentDelta = amount < 0 ? Math.abs(amount) : 0;
@@ -213,6 +248,9 @@ module.exports = {
   ensureAccount,
   selectAccountForUpdate,
   selectRecordByRelatedForUpdate,
+  selectPendingReverseRecordsForUpdate,
+  hasPendingReverse,
+  updatePendingReverseRecord,
   updateAccountBalance,
   insertLedgerRecord,
   addUserPoints,

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type CSSProperties } from "react";
+import { useState, useEffect } from "react";
 import { Eye, EyeOff, Phone, Lock, User, KeyRound } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -7,6 +7,7 @@ import * as authService from "@/services/authService";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import LoginBannerCarousel from "@/components/LoginBannerCarousel";
+import { LoginAgreementFooter } from "@/components/auth/LoginAgreementFooter";
 import logoWebp from "@/assets/logo.webp";
 import { ApiError } from "@/types/common";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -23,6 +24,7 @@ import { readCachedAuthFeatures, writeCachedAuthFeatures } from "@/utils/authFea
 import { cn } from "@/lib/utils";
 import { FormFieldShake } from "@/modules/micro-interactions";
 import { authErrorMessage, validatePhoneForCountry, validateStrongPassword } from "@/utils/authValidation";
+import { useFormFieldFocus } from "@/hooks/useFormFieldFocus";
 
 const REMEMBER_KEY = "login_remembered_phone";
 /** text-base(16px) 避免 iOS 聚焦时自动缩放视口导致整页闪动 */
@@ -33,8 +35,6 @@ const COUNTRY_CODE_OPTIONS = [
   { value: "+60", label: "🇲🇾 +60" },
   { value: "+86", label: "🇨🇳 +86" },
 ];
-const KEYBOARD_INSET_THRESHOLD = 24;
-
 type AuthMode = "login" | "register";
 type CredentialMode = "password" | "otp";
 
@@ -87,8 +87,7 @@ export default function Login() {
   const smsOtpLoginEnabled = authFeatures?.smsOtpLoginEnabled === true;
   const effectiveCredentialMode: CredentialMode =
     authFeaturesReady && smsOtpLoginEnabled ? credentialMode : "password";
-  const mainRef = useRef<HTMLElement | null>(null);
-  const [keyboardInset, setKeyboardInset] = useState(0);
+  const { formCompact, layoutCompact } = useFormFieldFocus();
   const hasLockedInviteCode = !!lockedInviteCode;
   const [shakeKey, setShakeKey] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<{ phone?: string; password?: string; otp?: string; nickname?: string }>({});
@@ -219,58 +218,6 @@ export default function Login() {
       cancelled = true;
     };
   }, [location.search, navigate, from, fromState]);
-
-  useEffect(() => {
-    const isKeyboardField = (el: Element | null) => {
-      if (el instanceof HTMLTextAreaElement) return true;
-      if (!(el instanceof HTMLInputElement)) return false;
-      return !["checkbox", "radio", "button", "submit", "reset", "file", "hidden", "image"].includes(
-        (el.type || "text").toLowerCase(),
-      );
-    };
-
-    const updateKeyboardInset = () => {
-      const viewport = window.visualViewport;
-      if (!viewport) {
-        setKeyboardInset(0);
-        return;
-      }
-
-      const inset = Math.max(0, Math.round(window.innerHeight - viewport.height - viewport.offsetTop));
-      setKeyboardInset(inset > KEYBOARD_INSET_THRESHOLD ? inset : 0);
-    };
-
-    const scrollFocusedFieldIntoView = () => {
-      const active = document.activeElement;
-      if (!isKeyboardField(active) || !mainRef.current?.contains(active)) return;
-
-      window.setTimeout(() => {
-        active.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
-      }, 80);
-    };
-
-    const handleViewportChange = () => {
-      updateKeyboardInset();
-      scrollFocusedFieldIntoView();
-    };
-
-    const handleFocusIn = (event: FocusEvent) => {
-      if (!isKeyboardField(event.target as Element | null)) return;
-      updateKeyboardInset();
-      scrollFocusedFieldIntoView();
-    };
-
-    document.addEventListener("focusin", handleFocusIn);
-    window.visualViewport?.addEventListener("resize", handleViewportChange);
-    window.visualViewport?.addEventListener("scroll", handleViewportChange);
-    updateKeyboardInset();
-
-    return () => {
-      document.removeEventListener("focusin", handleFocusIn);
-      window.visualViewport?.removeEventListener("resize", handleViewportChange);
-      window.visualViewport?.removeEventListener("scroll", handleViewportChange);
-    };
-  }, []);
 
   const loading = authStore.loading;
 
@@ -421,52 +368,34 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-page-shell flex h-[100dvh] min-h-[100dvh] flex-col overflow-hidden bg-background">
-      {/* ══════════════ Top Brand Bar ══════════════ */}
-      <header className="relative z-20 flex shrink-0 items-center gap-3 border-b border-transparent bg-background/95 px-5 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] backdrop-blur">
+    <div className="auth-page-shell flex flex-col overflow-hidden bg-background">
+      <header className="relative z-20 flex shrink-0 items-center gap-3 border-b border-border/40 bg-background px-5 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
         <img src={logoSrc} alt={siteName} width={44} height={44} className="rounded-xl object-contain" loading="eager" decoding="async" />
-        <div className="flex flex-col">
-          <h1 className="font-display text-xl font-bold tracking-tight leading-tight text-foreground">
+        <div className="min-w-0 flex flex-col">
+          <h1 className="font-display text-xl font-bold leading-tight tracking-tight text-foreground">
             {renderBrandTitle(siteName)}
           </h1>
-          <p className="text-[11px] tracking-widest text-muted-foreground uppercase">
-            {slogan}
-          </p>
+          <p className="truncate text-[11px] uppercase tracking-widest text-muted-foreground">{slogan}</p>
         </div>
       </header>
 
-      {/* 表单聚焦时只暂停轮播，避免输入时顶部内容突然消失造成页面跳动。 */}
-      {/* ══════════════ Main Content ══════════════ */}
-      <main
-        ref={mainRef}
-        style={
-          {
-            paddingBottom: `calc(max(env(safe-area-inset-bottom), 0.5rem) + ${keyboardInset}px)`,
-            scrollPaddingBottom: `calc(2rem + ${keyboardInset}px)`,
-          } satisfies CSSProperties
-        }
-        className={cn(
-          "mx-auto min-h-0 w-full max-w-lg flex-1 overflow-y-auto overscroll-contain px-[var(--store-page-x)] pt-3",
-        )}
-      >
-        {banners.length > 0 ? (
-          <div className="mb-5">
-            <LoginBannerCarousel banners={banners} />
-          </div>
+      <main className="auth-page-main mx-auto min-h-0 w-full max-w-lg flex-1 overflow-y-auto overscroll-contain px-[var(--store-page-x)] pt-3 pb-4">
+        {banners.length > 0 && !layoutCompact ? (
+          <section className="mb-4">
+            <LoginBannerCarousel banners={banners} paused={formCompact} />
+          </section>
         ) : null}
 
-        {/* Welcome text */}
-        <div className="mb-6">
+        <section className="mb-5 shrink-0">
           <h2 className="font-display text-2xl font-bold text-foreground">
             {mode === "login" ? "欢迎回来" : "创建账号"}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === "login" ? "登录您的账号，畅享品质购物" : "注册新账号，开启品质购物之旅"}
           </p>
-        </div>
+        </section>
 
-        {/* ══════════════ Auth Tabs ══════════════ */}
-        <div className="mb-5">
+        <section className="mb-4">
           <div className="flex rounded-2xl bg-secondary p-1">
             {(["login", "register"] as AuthMode[]).map((m) => (
               <button
@@ -487,10 +416,10 @@ export default function Login() {
               </button>
             ))}
           </div>
-        </div>
+        </section>
 
         {mode === "login" && authFeaturesReady && smsOtpLoginEnabled ? (
-          <div className="mb-4 flex rounded-2xl bg-secondary p-1" role="tablist" aria-label="登录方式">
+          <section className="mb-4 flex rounded-2xl bg-secondary p-1" role="tablist" aria-label="登录方式">
             {(["password", "otp"] as CredentialMode[]).map((c) => (
               <button
                 key={c}
@@ -511,10 +440,9 @@ export default function Login() {
                 {c === "password" ? "密码登录" : "验证码登录"}
               </button>
             ))}
-          </div>
+          </section>
         ) : null}
 
-        {/* ══════════════ Form ══════════════ */}
         <FormFieldShake shake={shakeKey} className="space-y-3.5">
           {mode === "register" && !hasLockedInviteCode && (
             <div>
@@ -582,18 +510,13 @@ export default function Login() {
                   setPhone(e.target.value.replace(/[^\d\s\-()]/g, ""));
                   if (fieldErrors.phone) setFieldErrors((s) => ({ ...s, phone: undefined }));
                 }}
-                className={cn(INPUT_CLASS, "scroll-mt-4 pl-12 pr-4")}
+                className={cn(INPUT_CLASS, "pl-12 pr-4")}
               />
             </div>
           </div>
           {fieldErrors.phone ? <p className="text-xs text-destructive">{fieldErrors.phone}</p> : null}
 
-          <div
-            className={cn(
-              "space-y-3.5",
-              mode === "login" && authFeaturesReady && smsOtpLoginEnabled && "min-h-[7.5rem]",
-            )}
-          >
+          <div className="space-y-3.5">
             {(mode === "register" || (mode === "login" && effectiveCredentialMode === "password")) ? (
               <div className="relative">
                 <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -690,7 +613,7 @@ export default function Login() {
         </FormFieldShake>
 
         {mode === "login" && showReset && (
-          <FormFieldShake shake={shakeKey} className="mb-6 rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <FormFieldShake shake={shakeKey} className="mt-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-sm font-semibold text-foreground">重置密码</h3>
@@ -753,26 +676,14 @@ export default function Login() {
           </FormFieldShake>
         )}
 
-        {/* ══════════════ Agreement ══════════════ */}
-        <p className="pb-8 pb-safe pt-2 text-center text-[11px] leading-relaxed text-muted-foreground">
-          {mode === "login" ? "登录" : "注册"}即代表您同意
-          <button
-            type="button"
-            onClick={() => navigate(siteInfo.termsPath || "/content/terms-of-service")}
-            className="text-theme-price mx-0.5 hover:underline"
-          >
-            《用户协议》
-          </button>
-          和
-          <button
-            type="button"
-            onClick={() => navigate(siteInfo.privacyPolicyPath || "/content/privacy-policy")}
-            className="text-theme-price mx-0.5 hover:underline"
-          >
-            《隐私政策》
-          </button>
-        </p>
       </main>
+
+      <LoginAgreementFooter
+        mode={mode}
+        termsPath={siteInfo.termsPath}
+        privacyPath={siteInfo.privacyPolicyPath}
+        hiddenOnKeyboard={layoutCompact}
+      />
     </div>
   );
 }

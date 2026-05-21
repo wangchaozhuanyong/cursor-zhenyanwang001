@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CreditCard } from "lucide-react";
 import StripeChannelConfigForm from "./StripeChannelConfigForm";
 import { formatChannelSubtitle, labelPaymentEnvironment } from "@/utils/paymentAdminLabels";
@@ -10,6 +11,7 @@ import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 function parseConfig(row: PaymentChannelRow): Record<string, unknown> {
   const c = row.config_json;
@@ -25,38 +27,42 @@ function parseConfig(row: PaymentChannelRow): Record<string, unknown> {
 }
 
 export default function AdminPaymentChannels() {
-  const [rows, setRows] = useState<PaymentChannelRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [configDraft, setConfigDraft] = useState<Record<string, string>>({});
 
-  const load = useCallback(() => {
-    setLoading(true);
-    paymentAdmin
-      .fetchAdminPaymentChannels()
-      .then((list) => {
-        setRows(list);
-        const draft: Record<string, string> = {};
-        for (const r of list) {
-          draft[r.id] = JSON.stringify(parseConfig(r), null, 2);
-        }
-        setConfigDraft(draft);
-      })
-      .catch((e) => toast.error(toastErrorMessage(e, "加载渠道失败")))
-      .finally(() => setLoading(false));
-  }, []);
+  const channelsQuery = useQuery({
+    queryKey: adminQueryKeys.paymentChannels(),
+    queryFn: paymentAdmin.fetchAdminPaymentChannels,
+    staleTime: 60_000,
+  });
+
+  const rows = channelsQuery.data ?? [];
+  const loading = channelsQuery.isLoading && !channelsQuery.data;
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (!rows.length) return;
+    const draft: Record<string, string> = {};
+    for (const r of rows) {
+      draft[r.id] = JSON.stringify(parseConfig(r), null, 2);
+    }
+    setConfigDraft(draft);
+  }, [rows]);
+
+  const invalidateChannels = () =>
+    queryClient.invalidateQueries({ queryKey: adminQueryKeys.paymentChannels() });
+
+  const saveMutation = useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: Parameters<typeof paymentAdmin.updateAdminPaymentChannel>[1] }) =>
+      paymentAdmin.updateAdminPaymentChannel(id, patch),
+    onSuccess: async () => {
+      toast.success("已保存");
+      await invalidateChannels();
+    },
+    onError: (e) => toast.error(toastErrorMessage(e, "保存失败")),
+  });
 
   const saveRow = async (id: string, patch: Parameters<typeof paymentAdmin.updateAdminPaymentChannel>[1]) => {
-    try {
-      await paymentAdmin.updateAdminPaymentChannel(id, patch);
-      toast.success("已保存");
-      void load();
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "保存失败"));
-    }
+    saveMutation.mutate({ id, patch });
   };
 
   const saveConfigJson = async (row: PaymentChannelRow) => {

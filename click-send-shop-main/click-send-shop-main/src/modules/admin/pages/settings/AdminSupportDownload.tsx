@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ImagePlus, Loader2, Plus, Save, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -10,12 +11,13 @@ import { refreshSiteInfo } from "@/hooks/useSiteInfo";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import {
   CHANNEL_TYPES,
+  DEFAULT_PLATFORMS,
   DEFAULT_SUPPORT_DOWNLOAD_CONFIG,
   normalizeSupportDownloadConfig,
   parseSupportDownloadConfig,
-  PLATFORM_TYPES,
 } from "@/utils/supportDownloadConfig";
 import type { DownloadPlatform, SupportChannelType, SupportDownloadChannel, SupportDownloadConfig, SupportDownloadTab } from "@/types/content";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 const inputClass = "w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-[var(--theme-primary)]";
 
@@ -25,10 +27,9 @@ const CHANNEL_TYPE_LABELS: Record<SupportChannelType, string> = {
   telegram: "Telegram",
 };
 
-const PLATFORM_LABELS: Record<(typeof PLATFORM_TYPES)[number], string> = {
-  desktop: "电脑端",
-  android: "安卓端",
-  ios: "苹果端",
+const PLATFORM_LABELS = {
+  android: "安卓手机",
+  ios: "苹果手机",
 };
 
 function createChannel(sortOrder: number): SupportDownloadChannel {
@@ -45,6 +46,16 @@ function createChannel(sortOrder: number): SupportDownloadChannel {
   };
 }
 
+function ensureMobilePlatforms(platforms: DownloadPlatform[]): DownloadPlatform[] {
+  const existing = platforms.filter((platform) => platform.type === "android" || platform.type === "ios");
+  const withDefaults = ["android", "ios"].map((type) => {
+    const current = existing.find((platform) => platform.type === type);
+    const fallback = DEFAULT_PLATFORMS.find((platform) => platform.type === type)!;
+    return current || fallback;
+  });
+  return withDefaults.sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
 function updateInstruction(platform: DownloadPlatform, value: string): DownloadPlatform {
   return {
     ...platform,
@@ -56,22 +67,27 @@ function updateInstruction(platform: DownloadPlatform, value: string): DownloadP
 }
 
 export default function AdminSupportDownload() {
+  const queryClient = useQueryClient();
   const [form, setForm] = useState<SupportDownloadConfig>(DEFAULT_SUPPORT_DOWNLOAD_CONFIG);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingId, setUploadingId] = useState("");
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
 
+  const settingsQuery = useQuery({
+    queryKey: adminQueryKeys.siteSettings(),
+    queryFn: fetchSiteSettings,
+    staleTime: 60_000,
+  });
+
+  const loading = settingsQuery.isLoading && !settingsQuery.data;
+
   useEffect(() => {
-    setLoading(true);
-    fetchSiteSettings()
-      .then((settings) => setForm(parseSupportDownloadConfig(settings.supportDownloadConfig)))
-      .catch((error) => toast.error(toastErrorMessage(error, "加载客服安装配置失败")))
-      .finally(() => setLoading(false));
-  }, []);
+    if (!settingsQuery.data) return;
+    setForm(parseSupportDownloadConfig(settingsQuery.data.supportDownloadConfig));
+  }, [settingsQuery.data]);
 
   const channels = useMemo(() => [...form.support.channels].sort((a, b) => a.sortOrder - b.sortOrder), [form.support.channels]);
-  const platforms = useMemo(() => [...form.download.platforms].sort((a, b) => a.sortOrder - b.sortOrder), [form.download.platforms]);
+  const platforms = useMemo(() => ensureMobilePlatforms(form.download.platforms), [form.download.platforms]);
 
   const updateChannel = (id: string, patch: Partial<SupportDownloadChannel>) => {
     setForm((prev) => ({
@@ -96,13 +112,19 @@ export default function AdminSupportDownload() {
   };
 
   const updatePlatform = (id: string, patch: Partial<DownloadPlatform>) => {
-    setForm((prev) => ({
-      ...prev,
-      download: {
-        ...prev.download,
-        platforms: prev.download.platforms.map((platform) => (platform.id === id ? { ...platform, ...patch } : platform)),
-      },
-    }));
+    setForm((prev) => {
+      const nextPlatforms = ensureMobilePlatforms(prev.download.platforms).map((platform) => (
+        platform.id === id ? { ...platform, ...patch } : platform
+      ));
+      const legacyDesktop = prev.download.platforms.filter((platform) => platform.type === "desktop").map((platform) => ({ ...platform, enabled: false }));
+      return {
+        ...prev,
+        download: {
+          ...prev.download,
+          platforms: [...nextPlatforms, ...legacyDesktop],
+        },
+      };
+    });
   };
 
   const uploadQr = async (channelId: string, file?: File) => {
@@ -122,11 +144,26 @@ export default function AdminSupportDownload() {
   const save = async () => {
     setSaving(true);
     try {
-      const normalized = normalizeSupportDownloadConfig(form);
+      const normalized = normalizeSupportDownloadConfig({
+        ...form,
+        title: form.title || "客服中心",
+        subtitle: form.subtitle || DEFAULT_SUPPORT_DOWNLOAD_CONFIG.subtitle,
+        defaultTab: form.defaultTab || "support",
+        support: {
+          ...form.support,
+          title: form.support.title || "联系客服",
+        },
+        download: {
+          ...form.download,
+          title: form.download.title || "添加到桌面",
+          platforms: ensureMobilePlatforms(form.download.platforms),
+        },
+      });
       await updateSiteSettings({ supportDownloadConfig: JSON.stringify(normalized) });
       setForm(normalized);
       await refreshSiteInfo();
-      toast.success("客服与安装配置已保存，前台将立即生效");
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.siteSettings() });
+      toast.success("客服中心配置已保存，前台将立即生效");
     } catch (error) {
       toast.error(toastErrorMessage(error, "保存失败"));
     } finally {
@@ -147,12 +184,7 @@ export default function AdminSupportDownload() {
     <PermissionGate permission="settings.manage">
       <div className="space-y-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <AdminPageTitle
-              title="客服与安装"
-              hint="配置前台 /support-download 的客服渠道（名称、账号、二维码、链接）与三端 PWA 安装说明。"
-            />
-          </div>
+          <AdminPageTitle title="客服中心配置" hint="配置前台客服渠道与手机添加到桌面说明。" />
           <button type="button" onClick={save} disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--theme-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
             {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
             保存配置
@@ -163,7 +195,7 @@ export default function AdminSupportDownload() {
           <h2 className="font-semibold text-foreground">页面内容</h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <label className="block text-sm font-medium">页面是否启用<select className={`${inputClass} mt-1`} value={form.enabled ? "1" : "0"} onChange={(e) => setForm((prev) => ({ ...prev, enabled: e.target.value === "1" }))}><option value="1">启用</option><option value="0">关闭</option></select></label>
-            <label className="block text-sm font-medium">默认打开 Tab<select className={`${inputClass} mt-1`} value={form.defaultTab} onChange={(e) => setForm((prev) => ({ ...prev, defaultTab: e.target.value as SupportDownloadTab }))}><option value="support">客服</option><option value="download">安装</option></select></label>
+            <label className="block text-sm font-medium">默认打开 Tab<select className={`${inputClass} mt-1`} value={form.defaultTab} onChange={(e) => setForm((prev) => ({ ...prev, defaultTab: e.target.value as SupportDownloadTab }))}><option value="support">联系客服</option><option value="download">添加到桌面</option></select></label>
             <label className="block text-sm font-medium">页面标题<input className={`${inputClass} mt-1`} value={form.title} onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))} /></label>
             <label className="block text-sm font-medium">页面副标题<input className={`${inputClass} mt-1`} value={form.subtitle} onChange={(e) => setForm((prev) => ({ ...prev, subtitle: e.target.value }))} /></label>
           </div>
@@ -182,7 +214,7 @@ export default function AdminSupportDownload() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="font-semibold text-foreground">客服渠道列表</h2>
-              <p className="text-xs text-muted-foreground">保存字段：enabled、type、name、account、linkUrl、qrUrl、description、sortOrder</p>
+              <p className="text-xs text-muted-foreground">前台只展示已启用渠道，并以渠道切换形式显示。</p>
             </div>
             <button type="button" onClick={() => setForm((prev) => ({ ...prev, support: { ...prev.support, channels: [...prev.support.channels, createChannel(prev.support.channels.length + 1)] } }))} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Plus size={14} />新增渠道</button>
           </div>
@@ -199,11 +231,11 @@ export default function AdminSupportDownload() {
                   <input className={inputClass} value={channel.name} onChange={(e) => updateChannel(channel.id, { name: e.target.value })} placeholder="渠道名称" />
                   <input className={inputClass} type="number" value={channel.sortOrder} onChange={(e) => updateChannel(channel.id, { sortOrder: Number(e.target.value) || 0 })} placeholder="排序" />
                   <input className={inputClass} value={channel.account} onChange={(e) => updateChannel(channel.id, { account: e.target.value })} placeholder="微信号 / 手机号 / Telegram 用户名" />
-                  <input className={inputClass} value={channel.linkUrl} onChange={(e) => updateChannel(channel.id, { linkUrl: e.target.value })} placeholder={channel.type === "wechat" ? "微信跳转链接（可选，留空则唤起微信 App）" : "外部跳转链接（可选）"} />
+                  <input className={inputClass} value={channel.linkUrl} onChange={(e) => updateChannel(channel.id, { linkUrl: e.target.value })} placeholder="外部跳转链接（可选）" />
                   <textarea className={`${inputClass} md:col-span-2`} rows={2} value={channel.description} onChange={(e) => updateChannel(channel.id, { description: e.target.value })} placeholder="渠道说明" />
                   <div className="md:col-span-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      {channel.qrUrl ? <img src={channel.qrUrl} alt="二维码预览" className="h-16 w-16 rounded-lg border border-border object-cover" /> : <span className="inline-flex h-16 w-16 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground"><ImagePlus size={18} /></span>}
+                      {channel.qrUrl ? <img src={channel.qrUrl} alt="二维码预览" className="h-16 w-16 rounded-lg border border-border bg-white object-contain p-1" /> : <span className="inline-flex h-16 w-16 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground"><ImagePlus size={18} /></span>}
                       <input className={`${inputClass} min-w-[220px] flex-1`} value={channel.qrUrl} onChange={(e) => updateChannel(channel.id, { qrUrl: e.target.value })} placeholder="二维码图片 URL" />
                       <input ref={(node) => { fileInputs.current[channel.id] = node; }} type="file" accept="image/*" className="hidden" onChange={(e) => void uploadQr(channel.id, e.target.files?.[0])} />
                       <button type="button" onClick={() => fileInputs.current[channel.id]?.click()} disabled={uploadingId === channel.id} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary disabled:opacity-60">{uploadingId === channel.id ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}上传二维码</button>
@@ -216,31 +248,30 @@ export default function AdminSupportDownload() {
         </section>
 
         <section className="rounded-xl border border-border bg-card p-4">
-          <h2 className="font-semibold text-foreground">安装配置</h2>
+          <h2 className="font-semibold text-foreground">手机添加到桌面说明</h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <label className="block text-sm font-medium">安装 Tab 是否启用<select className={`${inputClass} mt-1`} value={form.download.enabled ? "1" : "0"} onChange={(e) => setForm((prev) => ({ ...prev, download: { ...prev.download, enabled: e.target.value === "1" } }))}><option value="1">启用</option><option value="0">关闭</option></select></label>
-            <label className="block text-sm font-medium">安装 Tab 标题<input className={`${inputClass} mt-1`} value={form.download.title} onChange={(e) => setForm((prev) => ({ ...prev, download: { ...prev.download, title: e.target.value } }))} /></label>
-            <label className="block text-sm font-medium md:col-span-2">安装说明<textarea className={`${inputClass} mt-1`} rows={3} value={form.download.description} onChange={(e) => setForm((prev) => ({ ...prev, download: { ...prev.download, description: e.target.value } }))} /></label>
+            <label className="block text-sm font-medium">添加到桌面 Tab 是否启用<select className={`${inputClass} mt-1`} value={form.download.enabled ? "1" : "0"} onChange={(e) => setForm((prev) => ({ ...prev, download: { ...prev.download, enabled: e.target.value === "1" } }))}><option value="1">启用</option><option value="0">关闭</option></select></label>
+            <label className="block text-sm font-medium">添加到桌面 Tab 标题<input className={`${inputClass} mt-1`} value={form.download.title} onChange={(e) => setForm((prev) => ({ ...prev, download: { ...prev.download, title: e.target.value } }))} /></label>
+            <label className="block text-sm font-medium md:col-span-2">添加到桌面说明<textarea className={`${inputClass} mt-1`} rows={3} value={form.download.description} onChange={(e) => setForm((prev) => ({ ...prev, download: { ...prev.download, description: e.target.value } }))} /></label>
           </div>
 
           <div className="mt-4 space-y-4">
             {platforms.map((platform) => (
               <div key={platform.id} className="rounded-xl border border-border/80 bg-background p-4">
                 <div className="mb-3 flex items-center justify-between gap-2">
-                  <p className="font-medium text-foreground">{PLATFORM_LABELS[platform.type] ?? platform.type}</p>
+                  <p className="font-medium text-foreground">{PLATFORM_LABELS[platform.type]}</p>
                   <select className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none" value={platform.enabled ? "1" : "0"} onChange={(e) => updatePlatform(platform.id, { enabled: e.target.value === "1" })}><option value="1">启用</option><option value="0">隐藏</option></select>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   <input className={inputClass} value={platform.title} onChange={(e) => updatePlatform(platform.id, { title: e.target.value })} placeholder="标题" />
                   <input className={inputClass} type="number" value={platform.sortOrder} onChange={(e) => updatePlatform(platform.id, { sortOrder: Number(e.target.value) || 0 })} placeholder="排序" />
-                  <input className={inputClass} value={platform.buttonText} onChange={(e) => updatePlatform(platform.id, { buttonText: e.target.value })} placeholder={platform.type === "ios" ? "苹果端可留空" : "按钮文案"} />
+                  <input className={inputClass} value={platform.buttonText} onChange={(e) => updatePlatform(platform.id, { buttonText: e.target.value })} placeholder="按钮文案" />
                   <input className={inputClass} value={platform.description} onChange={(e) => updatePlatform(platform.id, { description: e.target.value })} placeholder="说明" />
-                  <label className="block text-sm font-medium md:col-span-2">步骤说明（一行一步）<textarea className={`${inputClass} mt-1`} rows={3} value={platform.instructions.join("\n")} onChange={(e) => updatePlatform(platform.id, updateInstruction(platform, e.target.value))} /></label>
+                  <label className="block text-sm font-medium md:col-span-2">步骤说明（一行一步）<textarea className={`${inputClass} mt-1`} rows={4} value={platform.instructions.join("\n")} onChange={(e) => updatePlatform(platform.id, updateInstruction(platform, e.target.value))} /></label>
                 </div>
               </div>
             ))}
           </div>
-          {platforms.length === 0 ? <p className="mt-2 text-xs text-muted-foreground">未配置平台时将使用默认 desktop / android / ios 模板。</p> : null}
         </section>
       </div>
     </PermissionGate>

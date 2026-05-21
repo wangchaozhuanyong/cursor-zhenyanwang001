@@ -1,5 +1,6 @@
 const repo = require('../repository/adminSiteSettings.repository');
 const { writeAuditLog } = require('../../../utils/auditLog');
+const { BusinessError } = require('../../../errors');
 const { invalidatePaymentTimeoutSettingsCache } = require('../../order/orderPaymentDeadline');
 const sharp = require('sharp');
 const { isS3StorageEnabled, uploadBufferToS3 } = require('../../../utils/objectStorage');
@@ -12,9 +13,12 @@ const SITE_ASSET_KEYS = new Set(['logoUrl', 'faviconUrl']);
 
 function rowsToMap(rows) {
   const settings = {};
+  let version = 1;
   rows.forEach((r) => {
     settings[r.setting_key] = r.setting_value;
+    version = Math.max(version, Number(r.version || 1));
   });
+  settings.version = version;
   return settings;
 }
 
@@ -26,7 +30,14 @@ async function getShippingSettings() {
 async function updateShippingSettings(body, adminUserId, req) {
   const beforeRows = await repo.selectShippingSettingsRows();
   const beforeMap = rowsToMap(beforeRows);
+  const expectedVersion = body.version === undefined || body.version === null || body.version === ''
+    ? null
+    : Number(body.version);
+  if (expectedVersion !== null && Number(beforeMap.version || 1) !== expectedVersion) {
+    throw new BusinessError(409, '数据已被其他管理员修改，请刷新后再编辑');
+  }
   for (const [key, value] of Object.entries(body)) {
+    if (key === 'version') continue;
     await repo.upsertSetting(`shipping_${key}`, value);
   }
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'settings.shipping_update', objectType: 'site_settings', objectId: null, summary: '更新运费设置', before: beforeMap, after: body, result: 'success' });
@@ -42,7 +53,14 @@ async function updateSiteSettings(body, adminUserId, req) {
   const beforeRows = await repo.selectNonShippingSettingsRows();
   const beforeMap = rowsToMap(beforeRows);
   try {
+    const expectedVersion = body.version === undefined || body.version === null || body.version === ''
+      ? null
+      : Number(body.version);
+    if (expectedVersion !== null && Number(beforeMap.version || 1) !== expectedVersion) {
+      throw new BusinessError(409, '数据已被其他管理员修改，请刷新后再编辑');
+    }
     for (const [key, value] of Object.entries(body)) {
+      if (key === 'version') continue;
       await repo.upsertSetting(key, value);
     }
     if (

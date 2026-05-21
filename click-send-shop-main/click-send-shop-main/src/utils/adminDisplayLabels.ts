@@ -16,12 +16,13 @@ export const REPORT_COLUMN_LABELS: Record<string, string> = {
   date: "日期",
   month: "月份",
   keyword: "关键词",
-  category_id: "分类",
-  coupon_id: "优惠券",
-  activity_id: "活动",
-  order_id: "订单",
-  user_id: "用户",
-  product_id: "商品",
+  category_id: "分类ID",
+  coupon_id: "优惠券ID",
+  activity_id: "活动ID",
+  order_id: "订单ID",
+  user_id: "用户ID",
+  product_id: "商品ID",
+  variant_id: "规格ID",
   order_count: "订单数",
   paid_order_count: "支付订单数",
   cancelled_order_count: "取消订单数",
@@ -71,6 +72,21 @@ export const REPORT_COLUMN_LABELS: Record<string, string> = {
   claim_rate: "领取率",
   use_rate: "使用率",
   roi: "投入产出比",
+  issued_count: "发行数量",
+  claimed_count: "领取数量",
+  used_count: "使用数量",
+  expired_count: "过期数量",
+  paying_users: "付费用户数",
+  active_users: "活跃用户数",
+  order_users: "下单用户数",
+  new_users: "新用户数",
+  active_product_count: "在售商品数",
+  stock_qty: "库存件数",
+  product_count: "商品数",
+  search_count: "搜索次数",
+  no_result_count: "无结果次数",
+  user_count: "搜索用户数",
+  warning_stock: "预警库存",
   pending_orders: "待处理订单",
   product_view_count: "商品浏览次数",
   product_click_count: "商品点击次数",
@@ -125,6 +141,8 @@ export const REPORT_COLUMN_LABELS: Record<string, string> = {
   amount: "金额",
   currency: "币种",
   code: "编码",
+  sku_code: "SKU",
+  barcode: "条码",
   title: "标题",
   value: "数值",
   name: "名称",
@@ -150,17 +168,26 @@ const REPORT_TOKEN_LABELS: Record<string, string> = {
   units: "件数", per: "每", order: "订单", rate: "率", sales: "销售", stock: "库存", status: "状态",
   type: "类型", activity: "活动", coupon: "优惠券", product: "商品", category: "分类", user: "用户",
   payment: "支付", refund: "退款", amount: "金额", count: "数量", avg: "平均", daily: "日", monthly: "月",
-  mom: "环比", growth: "增长", claim: "领取", use: "使用", paid: "支付", gross: "毛", net: "净",
+  mom: "环比", growth: "增长", claim: "领取", claimed: "领取", use: "使用", used: "使用", issued: "发行", expired: "过期",
+  paid: "支付", gross: "毛", net: "净",
   items: "件", sold: "售出", warning: "预警", current: "当前", available: "可售", days: "天数",
   view: "浏览", cart: "购物车", favorite: "收藏", profit: "利润", margin: "毛利", conversion: "转化",
 };
+
+/** 系统内部 UUID 等长 ID，表格中缩短显示 */
+export function formatInternalIdDisplay(value: unknown): string {
+  const s = String(value ?? "").trim();
+  if (!s) return "-";
+  if (s.length <= 14) return s;
+  return `${s.slice(0, 8)}…${s.slice(-4)}`;
+}
 
 function humanizeReportColumnKey(key: string): string {
   if (REPORT_COLUMN_LABELS[key]) return REPORT_COLUMN_LABELS[key];
   if (key.endsWith("_id")) {
     const base = key.slice(0, -3);
     const baseLabel = REPORT_COLUMN_LABELS[base] || REPORT_TOKEN_LABELS[base];
-    return baseLabel ? `${baseLabel}编号` : `字段：${key}`;
+    return baseLabel ? `${baseLabel}ID` : `字段：${key}`;
   }
   const parts = key.split("_").filter(Boolean);
   const labeled = parts.map((part) => REPORT_TOKEN_LABELS[part] ?? part);
@@ -221,6 +248,7 @@ export function labelReportCellValue(key: string, value: unknown): string {
   if (key === "status") return labelFromMap(ORDER_STATUS_LABELS, s, s);
   if (key === "type" && ACTIVITY_TYPE_LABELS[s]) return labelFromMap(ACTIVITY_TYPE_LABELS, s, s);
   if (key.endsWith("_rate") && !Number.isNaN(Number(s))) return `${s}%`;
+  if (key.endsWith("_id") && /[0-9a-f-]{8,}/i.test(s)) return formatInternalIdDisplay(s);
   return s;
 }
 

@@ -3,14 +3,14 @@ const { PAYMENT_STATUS, PAID_PAYMENT_STATUS_LIST } = require('../constants/statu
 /** 已产生支付收入的 payment_status（含部分退款，需扣 refunded_amount） */
 const PAID_PAYMENT_SQL = PAID_PAYMENT_STATUS_LIST.map((s) => `'${s}'`).join(',');
 
-/** @param {string} [alias] 空字符串表示无表别名（单表 orders 查询） */
+/** @param {string} alias 空字符串表示无表别名（单表 orders 查询） */
 function orderCol(alias, column) {
   return alias ? `${alias}.${column}` : column;
 }
 
 /**
  * 净销售额表达式（订单别名）
- * @param {string} [alias]
+ * @param {string} alias
  * @param {{ includeRefundedAmount?: boolean }} [options]
  */
 function netSalesExpr(alias = 'o', options = {}) {

@@ -54,6 +54,14 @@ async function updateProductDynamic(setFragments, values, id) {
   await db.query(`UPDATE products SET ${setFragments.join(', ')} WHERE id = ?`, [...values, id]);
 }
 
+async function updateProductDynamicWithVersion(setFragments, values, id, version) {
+  const [result] = await db.query(
+    `UPDATE products SET ${setFragments.join(', ')}, version = version + 1 WHERE id = ? AND version = ?`,
+    [...values, id, Number(version)],
+  );
+  return result.affectedRows;
+}
+
 async function deleteProductById(id, deletedBy) {
   await db.query('UPDATE products SET deleted_at = NOW(), deleted_by = ? WHERE id = ?', [deletedBy || null, id]);
 }
@@ -78,10 +86,10 @@ module.exports = {
   selectProductById,
   insertProduct,
   updateProductDynamic,
+  updateProductDynamicWithVersion,
   deleteProductById,
   restoreProductById,
   batchUpdateStatus,
 };
-
 
 

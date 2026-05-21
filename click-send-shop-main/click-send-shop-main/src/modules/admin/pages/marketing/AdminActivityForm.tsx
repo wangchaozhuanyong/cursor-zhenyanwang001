@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import * as activityService from "@/services/admin/activityService";
 import type { ActivityPayload, ActivityProductItem, ActivityStatus, ActivityType } from "@/types/activity";
 import { toastErrorMessage } from "@/utils/errorMessage";
@@ -27,6 +30,7 @@ function toggleDisplayPosition(current: string[] | undefined, key: DisplayPositi
 }
 
 export default function AdminActivityForm() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = !!id;
@@ -37,8 +41,6 @@ export default function AdminActivityForm() {
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
   const [pendingPublishStatus, setPendingPublishStatus] = useState<ActivityStatus | null>(null);
   const [statusLabel, setStatusLabel] = useState("草稿");
-  const [couponOptions, setCouponOptions] = useState<Coupon[]>([]);
-  const [couponsLoading, setCouponsLoading] = useState(false);
 
   const [form, setForm] = useState<ActivityPayload>({
     type: (search.get("type") as ActivityType) || "flash_sale",
@@ -64,59 +66,51 @@ export default function AdminActivityForm() {
     items: [],
   });
 
-  useEffect(() => {
-    if (!isEdit || !id) return;
-    void (async () => {
-      try {
-        const d = await activityService.fetchActivity(id);
-        setForm({
-          type: d.type,
-          title: d.title,
-          subtitle: d.subtitle || "",
-          description: d.description || "",
-          start_at: d.start_at,
-          end_at: d.end_at,
-          status: (d.status || "draft") as ActivityStatus,
-          disabled: d.disabled,
-          threshold_amount: d.threshold_amount ?? null,
-          discount_amount: d.discount_amount ?? null,
-          scope_type: d.scope_type || "product",
-          scope_ids: d.scope_ids || [],
-          allow_coupon_stack: d.allow_coupon_stack ?? true,
-          allow_points_stack: d.allow_points_stack ?? true,
-          allow_reward: d.allow_reward ?? false,
-          publish_at: d.publish_at || null,
-          internal_note: d.internal_note || "",
-          display_positions: d.display_positions || [],
-          activity_config: d.activity_config || {},
-          sort_order: d.sort_order || 0,
-          items: d.items || [],
-        });
-        setStatusLabel(d.status_label || "草稿");
-      } catch (e) {
-        toast.error(toastErrorMessage(e, "加载活动失败"));
-      }
-    })();
-  }, [id, isEdit]);
+  const activityQuery = useQuery({
+    queryKey: adminQueryKeys.activityDetail(id || ""),
+    queryFn: () => activityService.fetchActivity(id!),
+    enabled: isEdit && !!id,
+    staleTime: 60_000,
+  });
+
+  const couponsQuery = useQuery({
+    queryKey: adminQueryKeys.activityFormCoupons(),
+    queryFn: () => fetchCoupons({ page: 1, pageSize: 200 }).then((res) => res.list || []),
+    enabled: form.type === "coupon_activity" || form.type === "new_user_gift",
+    staleTime: 60_000,
+  });
+
+  const couponOptions = couponsQuery.data ?? [];
+  const couponsLoading = couponsQuery.isLoading && !couponsQuery.data;
 
   useEffect(() => {
-    if (form.type !== "coupon_activity" && form.type !== "new_user_gift") return;
-    let cancelled = false;
-    setCouponsLoading(true);
-    fetchCoupons({ page: 1, pageSize: 200 })
-      .then((res) => {
-        if (!cancelled) setCouponOptions(res.list || []);
-      })
-      .catch(() => {
-        if (!cancelled) setCouponOptions([]);
-      })
-      .finally(() => {
-        if (!cancelled) setCouponsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [form.type]);
+    if (!activityQuery.data) return;
+    const d = activityQuery.data;
+    setForm({
+      type: d.type,
+      title: d.title,
+      subtitle: d.subtitle || "",
+      description: d.description || "",
+      start_at: d.start_at,
+      end_at: d.end_at,
+      status: (d.status || "draft") as ActivityStatus,
+      disabled: d.disabled,
+      threshold_amount: d.threshold_amount ?? null,
+      discount_amount: d.discount_amount ?? null,
+      scope_type: d.scope_type || "product",
+      scope_ids: d.scope_ids || [],
+      allow_coupon_stack: d.allow_coupon_stack ?? true,
+      allow_points_stack: d.allow_points_stack ?? true,
+      allow_reward: d.allow_reward ?? false,
+      publish_at: d.publish_at || null,
+      internal_note: d.internal_note || "",
+      display_positions: d.display_positions || [],
+      activity_config: d.activity_config || {},
+      sort_order: d.sort_order || 0,
+      items: d.items || [],
+    });
+    setStatusLabel(d.status_label || "草稿");
+  }, [activityQuery.data]);
 
   const selectedCouponIds = useMemo(
     () => (Array.isArray((form.activity_config as { coupon_ids?: string[] })?.coupon_ids)
@@ -177,6 +171,10 @@ export default function AdminActivityForm() {
       if (targetStatus !== "draft") await activityService.validateActivity(payload, id);
       if (isEdit && id) await activityService.updateActivity(id, payload);
       else await activityService.createActivity(payload);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.activitiesRoot() }),
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.marketingDashboard() }),
+      ]);
       toast.success(targetStatus === "draft" ? "草稿已保存" : "活动已发布");
       navigate("/admin/marketing/activities");
     } catch (e) {

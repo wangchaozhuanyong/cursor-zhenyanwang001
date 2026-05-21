@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { DEFAULT_HOME_MODULE_SETTINGS, mergeHomeModuleSettings, type HomeModuleSettings } from "@/constants/homeModules";
@@ -9,21 +10,26 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminSectionTitle } from "@/components/admin/AdminFieldHint";
 import { adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 export default function AdminHomeOpsDisplayPanel() {
   const { confirm } = useAdminConfirm();
+  const queryClient = useQueryClient();
   const [settings, setSettings] = useState<HomeModuleSettings>(DEFAULT_HOME_MODULE_SETTINGS);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const settingsQuery = useQuery({
+    queryKey: adminQueryKeys.homeOpsSettings(),
+    queryFn: homeOpsService.fetchHomeOpsSettings,
+    staleTime: 60_000,
+  });
+
+  const loading = settingsQuery.isLoading && !settingsQuery.data;
+
   useEffect(() => {
-    setLoading(true);
-    homeOpsService
-      .fetchHomeOpsSettings()
-      .then((data) => setSettings(mergeHomeModuleSettings(data)))
-      .catch((e) => toast.error(toastErrorMessage(e, "加载展示规则失败")))
-      .finally(() => setLoading(false));
-  }, []);
+    if (!settingsQuery.data) return;
+    setSettings(mergeHomeModuleSettings(settingsQuery.data));
+  }, [settingsQuery.data]);
 
   const save = async () => {
     setSaving(true);
@@ -35,6 +41,7 @@ export default function AdminHomeOpsDisplayPanel() {
       });
       setSettings(mergeHomeModuleSettings(saved));
       invalidateHomeModuleSettingsCache();
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.homeOpsSettings() });
       toast.success("展示规则已保存");
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败"));

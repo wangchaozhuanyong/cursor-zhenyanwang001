@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { ShoppingCart } from "lucide-react";
+import { AdminTableCell, AdminTableCellGroup } from "@/components/admin/AdminTableCell";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
@@ -15,6 +17,7 @@ import { toast } from "sonner";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
 import * as orderService from "@/services/admin/orderService";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import type { CheckoutAbandonment, CheckoutAbandonmentStatus } from "@/types/order";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { labelCheckoutPaymentMethod } from "@/utils/adminDisplayLabels";
@@ -46,59 +49,48 @@ const STATUS_BADGE: Record<CheckoutAbandonmentStatus, string> = {
 
 export default function AdminCheckoutAbandonments() {
   const navigate = useNavigate();
-  const [rows, setRows] = useState<CheckoutAbandonment[]>([]);
-  const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<"" | CheckoutAbandonmentStatus>("");
   const [keyword, setKeyword] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [total, setTotal] = useState(0);
 
-  const loadData = async (next?: { page?: number; status?: "" | CheckoutAbandonmentStatus; keyword?: string; pageSize?: number }) => {
-    setLoading(true);
-    try {
-      const data = await orderService.fetchCheckoutAbandonments({
-        page: next?.page ?? page,
-        pageSize: next?.pageSize ?? pageSize,
-        status: next?.status ?? status,
-        keyword: (next?.keyword ?? keyword).trim() || undefined,
-      });
-      setRows(data.list);
-      setTotal(data.total);
-      setPage(data.page);
-      setPageSize(data.pageSize);
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "加载未完成结算失败"));
-    } finally {
-      setLoading(false);
-    }
-  };
+  const queryParams = useMemo(
+    () => ({
+      page,
+      pageSize,
+      status: status || undefined,
+      keyword: keyword.trim() || undefined,
+    }),
+    [keyword, page, pageSize, status],
+  );
 
-  useEffect(() => {
-    void loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const listQuery = useQuery({
+    queryKey: adminQueryKeys.checkoutAbandonments(queryParams),
+    queryFn: () => orderService.fetchCheckoutAbandonments(queryParams),
+    placeholderData: (previous) => previous,
+    staleTime: 60_000,
+  });
+
+  const rows = listQuery.data?.list ?? [];
+  const total = listQuery.data?.total ?? 0;
+  const loading = listQuery.isLoading && !listQuery.data;
 
   const handleStatusChange = (value: "" | CheckoutAbandonmentStatus) => {
     setStatus(value);
     setPage(1);
-    void loadData({ page: 1, status: value });
   };
 
   const handleSearch = () => {
     setPage(1);
-    void loadData({ page: 1 });
   };
 
   const handlePageChange = (nextPage: number) => {
     setPage(nextPage);
-    void loadData({ page: nextPage });
   };
 
   const handlePageSizeChange = (nextPageSize: number) => {
     setPageSize(nextPageSize);
     setPage(1);
-    void loadData({ page: 1, pageSize: nextPageSize });
   };
 
   const filterState = { keyword, status };
@@ -112,17 +104,13 @@ export default function AdminCheckoutAbandonments() {
     setKeyword("");
     setStatus("");
     setPage(1);
-    void loadData({ page: 1, status: "", keyword: "" });
   };
 
   const handleRemoveFilterChip = (key: string) => {
     const patch = removeCheckoutAbandonmentFilterChip(key);
-    const nextKeyword = "keyword" in patch ? (patch.keyword ?? "") : keyword;
-    const nextStatus = "status" in patch ? (patch.status ?? "") : status;
     if ("keyword" in patch) setKeyword(patch.keyword ?? "");
     if ("status" in patch) setStatus(patch.status ?? "");
     setPage(1);
-    void loadData({ page: 1, keyword: nextKeyword, status: nextStatus });
   };
 
   return (
@@ -183,12 +171,24 @@ export default function AdminCheckoutAbandonments() {
             </div>
             <div className="mt-3 flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-foreground">{row.contact_name || "未填写联系人"}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{row.contact_phone_masked || "未填写电话"} · {row.items_count} 件</p>
+                <AdminTableCellGroup
+                  maxWidth="100%"
+                  lines={[
+                    { text: row.contact_name || "未填写联系人" },
+                    { text: `${row.contact_phone_masked || "未填写电话"} · ${row.items_count} 件`, muted: true },
+                  ]}
+                />
               </div>
               <p className="shrink-0 text-sm font-semibold text-[var(--theme-price)]">RM {row.total_amount.toFixed(2)}</p>
             </div>
-            <p className="mt-2 truncate text-xs text-muted-foreground">{row.items_summary.map((item) => `${item.name || "未命名商品"} x${item.qty}`).join("，") || "无商品摘要"}</p>
+            <div className="mt-2">
+              <AdminTableCell
+                value={row.items_summary.map((item) => `${item.name || "未命名商品"} x${item.qty}`).join("，") || "无商品摘要"}
+                fullText={row.items_summary.map((item) => `${item.name || "未命名商品"} x${item.qty}`).join("\n") || "无商品摘要"}
+                maxWidth="100%"
+                muted
+              />
+            </div>
             {row.order_id && (
               <button type="button" onClick={() => navigate(`/admin/orders/${row.order_id}`)} className="mt-3 text-xs text-[var(--theme-price)] hover:underline">
                 查看订单 {row.order_no || ""}
@@ -230,13 +230,22 @@ export default function AdminCheckoutAbandonments() {
           renderRow={(row) => (
             <>
               <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_BADGE[row.status]}`}>{STATUS_LABEL[row.status]}</span></td>
-              <td className="px-4 py-3 text-foreground">
-                <div>{row.contact_name || "—"}</div>
-                <div className="text-xs text-muted-foreground">{row.contact_phone_masked || "—"}</div>
+              <td className="max-w-[11rem] px-4 py-3 align-middle">
+                <AdminTableCellGroup
+                  maxWidth="10.5rem"
+                  lines={[
+                    { text: row.contact_name || "—" },
+                    { text: row.contact_phone_masked || "—", muted: true },
+                  ]}
+                />
               </td>
-              <td className="max-w-[320px] px-4 py-3 text-foreground">
-                <div className="truncate">{row.items_summary.map((item) => `${item.name || "未命名商品"} x${item.qty}`).join("，") || "—"}</div>
-                <div className="text-xs text-muted-foreground">{row.items_count} 件</div>
+              <td className="max-w-[16rem] px-4 py-3 align-middle">
+                <AdminTableCell
+                  value={row.items_summary.map((item) => `${item.name || "未命名商品"} x${item.qty}`).join("，") || "—"}
+                  fullText={row.items_summary.map((item) => `${item.name || "未命名商品"} x${item.qty}`).join("\n") || "—"}
+                  maxWidth="15rem"
+                />
+                <div className="mt-0.5 text-xs text-muted-foreground">{row.items_count} 件</div>
               </td>
               <td className="px-4 py-3 font-semibold text-foreground">RM {row.total_amount.toFixed(2)}</td>
               <td className="px-4 py-3 text-foreground">{labelCheckoutPaymentMethod(row.payment_method)}</td>

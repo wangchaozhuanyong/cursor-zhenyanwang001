@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useLayoutEffect, type ReactNode } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,6 +34,7 @@ import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { trackEvent } from "@/services/analyticsService";
 import { isStandaloneApp } from "@/utils/pwa";
+import { queryClient } from "@/lib/queryClient";
 import {
   MemberHome, GuestHome, Login, BindWechatPhone,
   Categories, ProductDetail, NewArrivals, Search,
@@ -51,18 +52,6 @@ import {
   AdminRoles, AdminLogs, AdminRecycleBin,
   AdminPaymentChannels, AdminPaymentOrders, AdminPaymentEvents, AdminPaymentReconciliations,
 } from "@/routes/lazyPages";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 300_000,
-      gcTime: 1_800_000,
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-    },
-  },
-});
 
 /** 持久化的 isAuthenticated 与登录标记可能不一致（清缓存、多标签页等），启动时与 token 标记对齐 */
 function AuthTokenSync() {
@@ -295,17 +284,17 @@ export function AppRoutes() {
               {/* Pages with bottom nav */}
               <Route element={<FrontLayout />}>
               <Route path="/" element={<HomeRoute />} />
-              <Route path="/categories" element={<Categories />} />
-              <Route path="/new-arrivals" element={<NewArrivals />} />
+              <Route path="/categories" element={<CapabilityRoute enabled={capabilities.mallEnabled}><Categories /></CapabilityRoute>} />
+              <Route path="/new-arrivals" element={<CapabilityRoute enabled={capabilities.mallEnabled}><NewArrivals /></CapabilityRoute>} />
               <Route path="/support-download" element={<CapabilityRoute enabled={capabilities.customerServiceDownloadEnabled}><SupportDownload /></CapabilityRoute>} />
-              <Route path="/search" element={<Search />} />
-              <Route path="/cart" element={<Cart />} />
+              <Route path="/search" element={<CapabilityRoute enabled={capabilities.mallEnabled}><Search /></CapabilityRoute>} />
+              <Route path="/cart" element={<CapabilityRoute enabled={capabilities.mallEnabled}><Cart /></CapabilityRoute>} />
               <Route path="/favorites" element={<Favorites />} />
               <Route path="/profile" element={<Profile />} />
               </Route>
 
               {/* Public pages */}
-              <Route path="/product/:id" element={<ProductDetail />} />
+              <Route path="/product/:id" element={<CapabilityRoute enabled={capabilities.mallEnabled}><ProductDetail /></CapabilityRoute>} />
               <Route path="/login" element={<Login />} />
               <Route path="/login/bind-phone" element={<BindWechatPhone />} />
               <Route path="/help" element={<Help />} />
@@ -314,7 +303,7 @@ export function AppRoutes() {
               <Route path="/content/:slug" element={<ContentCmsPage />} />
 
               {/* Protected pages (require login) */}
-              <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+              <Route path="/checkout" element={<ProtectedRoute><CapabilityRoute enabled={capabilities.mallEnabled}><Checkout /></CapabilityRoute></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
               <Route path="/orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
@@ -456,5 +445,3 @@ const App = () => (
 );
 
 export default App;
-
-

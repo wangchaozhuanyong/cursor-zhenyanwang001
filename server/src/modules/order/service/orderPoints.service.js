@@ -1,4 +1,3 @@
-const loyaltyRepo = require('../../loyalty/repository/loyalty.repository');
 const pointsRepo = require('../../user/repository/points.repository');
 const { POINTS_ACTION } = require('../../../constants/pointsActions');
 
@@ -59,11 +58,9 @@ async function grantOrderEarnPoints(conn, order, options = {}) {
   const amount = toInt(order?.total_points);
   if (!order?.id || !order.user_id || amount <= 0) return { skipped: true };
 
-  const settings = await loyaltyRepo.selectPointsSettings();
-  const settleTiming = settings?.settle_timing || 'order_completed';
   const timing = options.timing || 'order_completed';
-  if (settleTiming !== timing) {
-    return { skipped: true, reason: `settle_timing:${settleTiming}` };
+  if (timing !== 'order_completed') {
+    return { skipped: true, reason: 'earn_only_on_order_completed' };
   }
 
   return requireUserApi('changeUserPoints')(conn, {
@@ -106,22 +103,29 @@ async function maybeGrantOrderEarnPoints(conn, order, options = {}) {
   return grantOrderEarnPoints(conn, order, { ...options, timing });
 }
 
-async function rollbackOrderPoints(conn, order, options = {}) {
-  const earnResult = await reverseOrderEarnPoints(conn, order, {
+async function refundOrderRedeemOnly(conn, order, options = {}) {
+  return reverseOrderRedeem(conn, order, {
     operatorId: options.operatorId,
     trigger: options.trigger,
-    description: options.description || `订单积分回滚 ${order.order_no}`,
-    sourceType: options.sourceType || 'order_reversal',
+    description: options.redeemDescription || options.description || `Order refund returns redeemed points ${order?.order_no || ''}`,
+    sourceType: options.sourceType || 'order_refund',
   });
-  let redeemResult = { skipped: true };
-  if (Number(order?.points_used || 0) > 0) {
-    redeemResult = await reverseOrderRedeem(conn, order, {
-      operatorId: options.operatorId,
-      trigger: options.trigger,
-      description: options.redeemDescription || `订单积分抵扣退回 ${order.order_no}`,
-      sourceType: options.sourceType || 'order_reversal',
-    });
-  }
+}
+
+async function reverseOrderEarnOnly(conn, order, options = {}) {
+  return reverseOrderEarnPoints(conn, order, {
+    operatorId: options.operatorId,
+    trigger: options.trigger,
+    description: options.description || `Order refund reverses earned points ${order?.order_no || ''}`,
+    sourceType: options.sourceType || 'order_refund',
+  });
+}
+
+async function rollbackOrderPoints(conn, order, options = {}) {
+  const redeemResult = await refundOrderRedeemOnly(conn, order, options);
+  const earnResult = options.reverseEarn
+    ? await reverseOrderEarnOnly(conn, order, options)
+    : { skipped: true, reason: 'use_reverseOrderEarnOnly_explicitly' };
   return { earn: earnResult, redeem: redeemResult };
 }
 
@@ -193,6 +197,8 @@ module.exports = {
   grantOrderEarnPoints,
   reverseOrderEarnPoints,
   maybeGrantOrderEarnPoints,
+  refundOrderRedeemOnly,
+  reverseOrderEarnOnly,
   rollbackOrderPoints,
   rollbackOrderPointsForPartialRefund,
 };

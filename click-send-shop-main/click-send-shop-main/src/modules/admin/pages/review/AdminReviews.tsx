@@ -1,5 +1,6 @@
 import { formatDateTime } from "@/utils/formatDateTime";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Star, Eye, EyeOff, Trash2, RotateCcw, MessageSquare, AlertTriangle, Sparkles, Check, XCircle, Info } from "lucide-react";
 import AdminReviewDetailDialog from "@/modules/admin/pages/review/AdminReviewDetailDialog";
 import type { ReviewDetailPayload, ComplaintStatus } from "@/services/admin/reviewService";
@@ -9,7 +10,9 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import { toast } from "sonner";
 import * as reviewService from "@/services/admin/reviewService";
 import type { AdminReview, ReviewListParams } from "@/services/admin/reviewService";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
@@ -106,10 +109,7 @@ function SkeletonRow() {
 
 export default function AdminReviews() {
   const { confirm } = useAdminConfirm();
-  const [reviews, setReviews] = useState<AdminReview[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [total, setTotal] = useState(0);
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [keyword, setKeyword] = useState("");
@@ -126,27 +126,32 @@ export default function AdminReviews() {
   const [complaintTarget, setComplaintTarget] = useState<AdminReview | null>(null);
   const [complaintForm, setComplaintForm] = useState<{ status: ComplaintStatus; note: string }>({ status: "pending", note: "" });
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params: ReviewListParams = { page, pageSize, sortBy: "created_at", sortOrder: "DESC" };
-      if (keyword) params.keyword = keyword;
-      if (status) {
-        params.status = status;
-        if (status === "deleted") params.includeDeleted = "true";
-      }
-      if (rating) params.rating = rating;
-      if (complaintStatus) params.complaintStatus = complaintStatus;
-      const data = await reviewService.fetchReviews(params);
-      setReviews(data.list);
-      setTotal(data.total);
-    } catch (e) {
-      setError(toastErrorMessage(e, "加载评论失败"));
-    } finally {
-      setLoading(false);
+  const queryParams = useMemo(() => {
+    const params: ReviewListParams = { page, pageSize, sortBy: "created_at", sortOrder: "DESC" };
+    if (keyword) params.keyword = keyword;
+    if (status) {
+      params.status = status;
+      if (status === "deleted") params.includeDeleted = "true";
     }
+    if (rating) params.rating = rating;
+    if (complaintStatus) params.complaintStatus = complaintStatus;
+    return params;
   }, [page, pageSize, keyword, status, rating, complaintStatus]);
+
+  const listQuery = useQuery({
+    queryKey: adminQueryKeys.reviews(queryParams),
+    queryFn: () => reviewService.fetchReviews(queryParams),
+    placeholderData: (previous) => previous,
+    staleTime: 60_000,
+  });
+
+  const reviews = listQuery.data?.list ?? [];
+  const total = listQuery.data?.total ?? 0;
+  const loading = listQuery.isLoading && !listQuery.data;
+  const error = listQuery.isError ? toastErrorMessage(listQuery.error, "加载评论失败") : null;
+
+  const invalidateReviews = () =>
+    queryClient.invalidateQueries({ queryKey: adminQueryKeys.reviewsRoot() });
 
   const openDetail = async (id: string) => {
     setDetailLoading(true);
@@ -165,7 +170,7 @@ export default function AdminReviews() {
     try {
       await reviewService.approveReview(id);
       toast.success("已通过审核");
-      loadData();
+      void invalidateReviews();
       if (detail?.review.id === id) openDetail(id);
     } catch (e) { toast.error(toastErrorMessage(e, "操作失败")); }
   };
@@ -174,7 +179,7 @@ export default function AdminReviews() {
     try {
       await reviewService.rejectReview(id);
       toast.success("已拒绝");
-      loadData();
+      void invalidateReviews();
     } catch (e) { toast.error(toastErrorMessage(e, "操作失败")); }
   };
 
@@ -184,11 +189,9 @@ export default function AdminReviews() {
       await reviewService.updateComplaint(complaintTarget.id, complaintForm.status, complaintForm.note.trim() || undefined);
       toast.success("差评处理已更新");
       setComplaintTarget(null);
-      loadData();
+      void invalidateReviews();
     } catch (e) { toast.error(toastErrorMessage(e, "保存失败")); }
   };
-
-  useEffect(() => { loadData(); }, [loadData]);
 
   const filterState = { keyword, status, rating, complaintStatus };
   const filterChips = useMemo(() => buildReviewFilterChips(filterState), [keyword, status, rating, complaintStatus]);
@@ -216,7 +219,7 @@ export default function AdminReviews() {
     try {
       await reviewService.toggleVisibility(id);
       toast.success("状态已更新");
-      loadData();
+      void invalidateReviews();
     } catch (e) { toast.error(toastErrorMessage(e, "操作失败")); }
   };
 
@@ -224,7 +227,7 @@ export default function AdminReviews() {
     try {
       await reviewService.toggleFeatured(id);
       toast.success("精选状态已更新");
-      loadData();
+      void invalidateReviews();
     } catch (e) { toast.error(toastErrorMessage(e, "操作失败")); }
   };
 
@@ -232,7 +235,7 @@ export default function AdminReviews() {
     try {
       await reviewService.deleteReview(id);
       toast.success("已删除");
-      loadData();
+      void invalidateReviews();
     } catch (e) { toast.error(toastErrorMessage(e, "删除失败")); }
   };
 
@@ -240,7 +243,7 @@ export default function AdminReviews() {
     try {
       await reviewService.restoreReview(id);
       toast.success("已恢复");
-      loadData();
+      void invalidateReviews();
     } catch (e) { toast.error(toastErrorMessage(e, "恢复失败")); }
   };
 
@@ -249,7 +252,7 @@ export default function AdminReviews() {
       await reviewService.permanentDeleteReview(id);
       toast.success("已彻底删除");
       setConfirmDelete(null);
-      loadData();
+      void invalidateReviews();
     } catch (e) { toast.error(toastErrorMessage(e, "删除失败")); }
   };
 
@@ -260,7 +263,7 @@ export default function AdminReviews() {
       toast.success("回复成功");
       setReplyTarget(null);
       setReplyText("");
-      loadData();
+      void invalidateReviews();
     } catch (e) { toast.error(toastErrorMessage(e, "回复失败")); }
   };
 
@@ -269,7 +272,7 @@ export default function AdminReviews() {
       await reviewService.batchHide(selected);
       toast.success(`已隐藏 ${selected.length} 条评论`);
       setSelected([]);
-      loadData();
+      void invalidateReviews();
     } catch (e) { toast.error(toastErrorMessage(e, "操作失败")); }
   };
 
@@ -278,7 +281,7 @@ export default function AdminReviews() {
       await reviewService.batchDelete(selected);
       toast.success(`已删除 ${selected.length} 条评论`);
       setSelected([]);
-      loadData();
+      void invalidateReviews();
     } catch (e) { toast.error(toastErrorMessage(e, "操作失败")); }
   };
 
@@ -296,7 +299,7 @@ export default function AdminReviews() {
       <div className="flex h-64 flex-col items-center justify-center gap-3 text-muted-foreground">
         <AlertTriangle size={32} />
         <p>{error}</p>
-        <button type="button" onClick={loadData} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary"><Tx>重试</Tx></button>
+        <button type="button" onClick={() => void listQuery.refetch()} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary"><Tx>重试</Tx></button>
       </div>
     );
   }
@@ -487,8 +490,10 @@ export default function AdminReviews() {
                   </div>
                 </td>
                 <td className="px-3 py-3"><StarRating rating={r.rating} /></td>
-                <td className="max-w-[200px] px-3 py-3">
-                  <button type="button" onClick={() => openDetail(r.id)} className="truncate text-left text-xs text-foreground hover:text-theme-price" title={r.content}>{r.content}</button>
+                <td className="max-w-[12rem] px-3 py-3 align-middle">
+                  <button type="button" onClick={() => openDetail(r.id)} className="block w-full min-w-0 text-left">
+                    <AdminTableCell value={r.content} fullText={r.content} maxWidth="11rem" />
+                  </button>
                   {r.is_verified_purchase && <p className={`mt-0.5 text-[10px] ${THEME_TEXT_SUCCESS_SOFT}`}>已购</p>}
                   {r.images?.length > 0 && (
                     <div className="mt-1 flex gap-1">
@@ -500,11 +505,13 @@ export default function AdminReviews() {
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-1.5">
                     {r.product_cover && <img src={r.product_cover} alt="" className="h-7 w-7 rounded object-cover" />}
-                    <span className="max-w-[100px] truncate text-xs text-foreground" title={r.product_name}>{r.product_name || "—"}</span>
+                    <AdminTableCell value={r.product_name || "—"} fullText={r.product_name || ""} maxWidth="6.5rem" />
                   </div>
                 </td>
                 <td className="px-3 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>{badge.text}</span></td>
-                <td className="max-w-[120px] px-3 py-3"><p className="truncate text-[11px] text-muted-foreground" title={r.admin_reply || ""}>{r.admin_reply || "—"}</p></td>
+                <td className="max-w-[9rem] px-3 py-3 align-middle">
+                  <AdminTableCell value={r.admin_reply || "—"} fullText={r.admin_reply || ""} maxWidth="8.5rem" muted />
+                </td>
                 <td className="px-3 py-3 text-[11px] text-muted-foreground whitespace-nowrap">{r.created_at ? formatDateTime(r.created_at) : "—"}</td>
                 <td className="px-3 py-3">
                   <div className="flex gap-1">

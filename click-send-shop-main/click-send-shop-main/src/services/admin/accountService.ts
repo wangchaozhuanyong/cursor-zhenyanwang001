@@ -2,6 +2,7 @@ import * as accountApi from "@/api/admin/account";
 import { setAdminTokens, clearAdminTokens, isAdminLoggedIn } from "@/utils/token";
 import type { AdminLoginParams, AdminUser } from "@/types/admin";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
+import { clearAdminQueryCache } from "@/lib/queryClient";
 
 const ADMIN_FLAG_KEY = "admin_authenticated";
 
@@ -76,4 +77,5 @@ export async function adminLogout(): Promise<void> {
   clearAdminTokens();
   localStorage.removeItem(ADMIN_FLAG_KEY);
   useAdminPermissionStore.getState().clear();
+  clearAdminQueryCache();
 }

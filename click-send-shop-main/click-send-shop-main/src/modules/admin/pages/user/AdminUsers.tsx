@@ -1,33 +1,38 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
-import { Download, Trash2 } from "lucide-react";
-import { formatDateTime } from "@/utils/formatDateTime";
-import { AnimatedConfirmDialog, AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Download, Trash2, Users } from "lucide-react";
+import { toast } from "sonner";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
-import { toast } from "sonner";
-import * as userService from "@/services/admin/userService";
 import PermissionGate from "@/components/admin/PermissionGate";
-import { useAdminUsersStore } from "@/stores/useAdminUsersStore";
-import { toastErrorMessage } from "@/utils/errorMessage";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
+import type { AdminFilterChip } from "@/components/admin/AdminFilterSummaryBar";
+import { AdminTableCell } from "@/components/admin/AdminTableCell";
+import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
-import {
-  buildUserFilterChips,
-  hasActiveUserFilters,
-  removeUserFilterChip,
-} from "@/utils/adminUserFilters";
+import * as userService from "@/services/admin/userService";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { toastErrorMessage } from "@/utils/errorMessage";
+import { formatDateTime } from "@/utils/formatDateTime";
 import { productTagBadgeClass } from "@/utils/productTagBadge";
-import type { MemberLevel, UserTag } from "@/types/user";
-import type { AdminUserListItem } from "@/stores/useAdminUsersStore";
+import type { MemberLevel, UserProfile, UserTag } from "@/types/user";
+
+const PAGE_SIZE = 20;
+
+const ACCOUNT_STATUS_LABELS: Record<string, string> = {
+  normal: "正常",
+  disabled: "禁用登录",
+  blacklisted: "黑名单",
+};
 
 function UserTagBadges({ tags }: { tags?: UserTag[] }) {
   if (!tags?.length) return <span className="text-xs text-muted-foreground">无标签</span>;
   return <div className="flex flex-wrap gap-1">{tags.map((tag) => <span key={tag.id} className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${productTagBadgeClass(tag.color)}`}>{tag.name}</span>)}</div>;
 }
 
-function UserStatusBadges({ user }: { user: AdminUserListItem }) {
+function UserStatusBadges({ user }: { user: UserProfile }) {
   const accountStatus = String(user.account_status || "normal");
   const items = [
     accountStatus === "disabled" ? "禁用登录" : null,
@@ -40,118 +45,41 @@ function UserStatusBadges({ user }: { user: AdminUserListItem }) {
   return <div className="flex flex-wrap gap-1">{items.map((item) => <span key={item} className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700">{item}</span>)}</div>;
 }
 
+function filterBoundLabel(prefix: string, value: string) {
+  if (value === "1") return `${prefix}：已绑定`;
+  if (value === "0") return `${prefix}：未绑定`;
+  return "";
+}
+
+function restrictionLabel(prefix: string, value: string) {
+  if (value === "1") return `${prefix}：已限制`;
+  if (value === "0") return `${prefix}：未限制`;
+  return "";
+}
+
 export default function AdminUsers() {
   const navigate = useNavigate();
-  const users = useAdminUsersStore((s) => s.users);
-  const total = useAdminUsersStore((s) => s.total);
-  const page = useAdminUsersStore((s) => s.page);
-  const pageSize = useAdminUsersStore((s) => s.pageSize);
-  const loading = useAdminUsersStore((s) => s.loading);
-  const search = useAdminUsersStore((s) => s.search);
-  const selectedTagId = useAdminUsersStore((s) => s.selectedTagId);
-  const wechatBoundFilter = useAdminUsersStore((s) => s.wechatBoundFilter);
-  const phoneBoundFilter = useAdminUsersStore((s) => s.phoneBoundFilter);
-  const memberLevelIdFilter = useAdminUsersStore((s) => s.memberLevelIdFilter);
-  const accountStatusFilter = useAdminUsersStore((s) => s.accountStatusFilter);
-  const orderRestrictedFilter = useAdminUsersStore((s) => s.orderRestrictedFilter);
-  const couponRestrictedFilter = useAdminUsersStore((s) => s.couponRestrictedFilter);
-  const commentRestrictedFilter = useAdminUsersStore((s) => s.commentRestrictedFilter);
-  const summary = useAdminUsersStore((s) => s.summary);
-  const setSearch = useAdminUsersStore((s) => s.setSearch);
-  const setSelectedTagId = useAdminUsersStore((s) => s.setSelectedTagId);
-  const setWechatBoundFilter = useAdminUsersStore((s) => s.setWechatBoundFilter);
-  const setPhoneBoundFilter = useAdminUsersStore((s) => s.setPhoneBoundFilter);
-  const setMemberLevelIdFilter = useAdminUsersStore((s) => s.setMemberLevelIdFilter);
-  const setAccountStatusFilter = useAdminUsersStore((s) => s.setAccountStatusFilter);
-  const setOrderRestrictedFilter = useAdminUsersStore((s) => s.setOrderRestrictedFilter);
-  const setCouponRestrictedFilter = useAdminUsersStore((s) => s.setCouponRestrictedFilter);
-  const setCommentRestrictedFilter = useAdminUsersStore((s) => s.setCommentRestrictedFilter);
-  const setPage = useAdminUsersStore((s) => s.setPage);
-  const setPageSize = useAdminUsersStore((s) => s.setPageSize);
-  const loadUsers = useAdminUsersStore((s) => s.loadUsers);
-  const clearFilters = useAdminUsersStore((s) => s.clearFilters);
-  const resetUsersStore = useAdminUsersStore((s) => s.reset);
-  const [tags, setTags] = useState<UserTag[]>([]);
-  const [memberLevels, setMemberLevels] = useState<MemberLevel[]>([]);
+  const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
+  const [search, setSearch] = useState("");
+  const [selectedTagId, setSelectedTagId] = useState("");
+  const [wechatBoundFilter, setWechatBoundFilter] = useState("");
+  const [phoneBoundFilter, setPhoneBoundFilter] = useState("");
+  const [memberLevelIdFilter, setMemberLevelIdFilter] = useState("");
+  const [accountStatusFilter, setAccountStatusFilter] = useState("");
+  const [orderRestrictedFilter, setOrderRestrictedFilter] = useState("");
+  const [couponRestrictedFilter, setCouponRestrictedFilter] = useState("");
+  const [commentRestrictedFilter, setCommentRestrictedFilter] = useState("");
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState("金色");
-  const [tagSaving, setTagSaving] = useState(false);
-  const [tagDeleteId, setTagDeleteId] = useState<string | null>(null);
-  const [tagDeleteImpact, setTagDeleteImpact] = useState(0);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [batchTagId, setBatchTagId] = useState("");
-  const [batchTagSaving, setBatchTagSaving] = useState(false);
 
-  useLayoutEffect(() => { useAdminUsersStore.setState({ loading: true }); }, []);
-  useEffect(() => { loadUsers().catch((e) => toast.error(toastErrorMessage(e, "加载失败"))); }, [loadUsers]);
-  useEffect(() => { userService.fetchUserTags().then(setTags).catch((e) => toast.error(toastErrorMessage(e, "加载标签失败"))); }, []);
-  useEffect(() => { userService.fetchMemberLevels().then(setMemberLevels).catch(() => setMemberLevels([])); }, []);
-  useEffect(() => () => resetUsersStore(), [resetUsersStore]);
-  useEffect(() => { setSelectedUserIds([]); }, [users, page, pageSize, search, selectedTagId, wechatBoundFilter, phoneBoundFilter, memberLevelIdFilter, accountStatusFilter, orderRestrictedFilter, couponRestrictedFilter, commentRestrictedFilter]);
-
-  const filterState = {
-    search,
-    selectedTagId,
-    wechatBoundFilter,
-    phoneBoundFilter,
-    memberLevelIdFilter,
-    accountStatusFilter,
-    orderRestrictedFilter,
-    couponRestrictedFilter,
-    commentRestrictedFilter,
-  };
-  const selectedTagName = tags.find((t) => t.id === selectedTagId)?.name;
-  const selectedMemberLevelName = memberLevels.find((l) => l.id === memberLevelIdFilter)?.name;
-  const filterChips = useMemo(
-    () => buildUserFilterChips(filterState, {
-      tagName: selectedTagName,
-      memberLevelName: selectedMemberLevelName,
-    }),
-    [filterState, selectedTagName, selectedMemberLevelName],
-  );
-  const filtersActive = hasActiveUserFilters(filterState);
-  const usersEmptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.usersFiltered : ADMIN_EMPTY_GUIDES.users;
-
-  const reloadFromStore = (nextPage = 1) => {
-    const s = useAdminUsersStore.getState();
-    return loadUsers({
-      page: nextPage,
-      keyword: s.search || undefined,
-      tagId: s.selectedTagId || undefined,
-      wechatBound: s.wechatBoundFilter || undefined,
-      phoneBound: s.phoneBoundFilter || undefined,
-      memberLevelId: s.memberLevelIdFilter || undefined,
-      accountStatus: s.accountStatusFilter || undefined,
-      orderRestricted: s.orderRestrictedFilter || undefined,
-      couponRestricted: s.couponRestrictedFilter || undefined,
-      commentRestricted: s.commentRestrictedFilter || undefined,
-    });
-  };
-
-  const handleClearFilters = () => {
-    clearFilters();
-    void reloadFromStore(1).catch((e) => toast.error(toastErrorMessage(e, "加载失败")));
-  };
-
-  const handleRemoveFilterChip = (key: string) => {
-    const patch = removeUserFilterChip(filterState, key);
-    if ("search" in patch) setSearch(patch.search ?? "");
-    if ("selectedTagId" in patch) setSelectedTagId(patch.selectedTagId ?? "");
-    if ("wechatBoundFilter" in patch) setWechatBoundFilter(patch.wechatBoundFilter ?? "");
-    if ("phoneBoundFilter" in patch) setPhoneBoundFilter(patch.phoneBoundFilter ?? "");
-    if ("memberLevelIdFilter" in patch) setMemberLevelIdFilter(patch.memberLevelIdFilter ?? "");
-    if ("accountStatusFilter" in patch) setAccountStatusFilter(patch.accountStatusFilter ?? "");
-    if ("orderRestrictedFilter" in patch) setOrderRestrictedFilter(patch.orderRestrictedFilter ?? "");
-    if ("couponRestrictedFilter" in patch) setCouponRestrictedFilter(patch.couponRestrictedFilter ?? "");
-    if ("commentRestrictedFilter" in patch) setCommentRestrictedFilter(patch.commentRestrictedFilter ?? "");
-    setPage(1);
-    void reloadFromStore(1).catch((e) => toast.error(toastErrorMessage(e, "加载失败")));
-  };
-
-  const queryBase = {
+  const queryParams = useMemo<userService.UserListQuery>(() => ({
     page,
     pageSize,
-    keyword: search || undefined,
+    keyword: search.trim() || undefined,
     tagId: selectedTagId || undefined,
     wechatBound: wechatBoundFilter || undefined,
     phoneBound: phoneBoundFilter || undefined,
@@ -160,36 +88,124 @@ export default function AdminUsers() {
     orderRestricted: orderRestrictedFilter || undefined,
     couponRestricted: couponRestrictedFilter || undefined,
     commentRestricted: commentRestrictedFilter || undefined,
+  }), [accountStatusFilter, commentRestrictedFilter, couponRestrictedFilter, memberLevelIdFilter, orderRestrictedFilter, page, pageSize, phoneBoundFilter, search, selectedTagId, wechatBoundFilter]);
+
+  const usersQuery = useQuery({
+    queryKey: [...adminQueryKeys.usersRoot(), "list", queryParams],
+    queryFn: () => userService.fetchUsers(queryParams),
+    staleTime: 60_000,
+    refetchInterval: 90_000,
+  });
+  const tagsQuery = useQuery({ queryKey: [...adminQueryKeys.usersRoot(), "tags"], queryFn: userService.fetchUserTags, staleTime: 60_000 });
+  const memberLevelsQuery = useQuery({ queryKey: [...adminQueryKeys.usersRoot(), "member-levels"], queryFn: userService.fetchMemberLevels, staleTime: 60_000 });
+
+  const invalidateUsers = async () => {
+    await queryClient.invalidateQueries({ queryKey: adminQueryKeys.usersRoot() });
+  };
+
+  const createTagMutation = useMutation({
+    mutationFn: () => userService.createUserTag({ name: newTagName.trim(), color: newTagColor }),
+    onSuccess: async () => { toast.success("标签已创建"); setNewTagName(""); await invalidateUsers(); },
+    onError: (error) => toast.error(toastErrorMessage(error, "创建标签失败")),
+  });
+
+  const deleteTagMutation = useMutation({
+    mutationFn: (id: string) => userService.deleteUserTag(id),
+    onSuccess: async () => { toast.success("标签已删除"); await invalidateUsers(); },
+    onError: (error) => toast.error(toastErrorMessage(error, "删除标签失败")),
+  });
+
+  const batchTagMutation = useMutation({
+    mutationFn: async () => {
+      if (!batchTagId) throw new Error("请先选择标签");
+      if (!selectedUserIds.length) throw new Error("请先勾选用户");
+      return userService.batchSetUserTag(batchTagId, selectedUserIds);
+    },
+    onSuccess: async (affected) => { toast.success(`批量打标完成：${affected}/${selectedUserIds.length}`); setSelectedUserIds([]); await invalidateUsers(); },
+    onError: (error) => toast.error(toastErrorMessage(error, "批量打标失败")),
+  });
+
+  const users = usersQuery.data?.list || [];
+  const total = usersQuery.data?.total || 0;
+  const summary = usersQuery.data?.summary || {};
+  const tags = tagsQuery.data || [];
+  const memberLevels = memberLevelsQuery.data || [];
+
+  const selectedTagName = tags.find((tag) => tag.id === selectedTagId)?.name;
+  const selectedMemberLevelName = memberLevels.find((level: MemberLevel) => level.id === memberLevelIdFilter)?.name;
+  const filtersActive = Boolean(search.trim() || selectedTagId || wechatBoundFilter || phoneBoundFilter || memberLevelIdFilter || accountStatusFilter || orderRestrictedFilter || couponRestrictedFilter || commentRestrictedFilter);
+  const filterChips = useMemo(() => {
+    const chips: AdminFilterChip[] = [];
+    if (search.trim()) chips.push({ key: "search", label: `关键词：${search.trim()}` });
+    if (selectedTagId) chips.push({ key: "tag", label: `标签：${selectedTagName || selectedTagId}` });
+    const wechat = filterBoundLabel("微信", wechatBoundFilter);
+    if (wechat) chips.push({ key: "wechat", label: wechat });
+    const phone = filterBoundLabel("手机号", phoneBoundFilter);
+    if (phone) chips.push({ key: "phone", label: phone });
+    if (memberLevelIdFilter) chips.push({ key: "memberLevel", label: `会员：${selectedMemberLevelName || memberLevelIdFilter}` });
+    if (accountStatusFilter) chips.push({ key: "accountStatus", label: `账号：${ACCOUNT_STATUS_LABELS[accountStatusFilter] || accountStatusFilter}` });
+    const order = restrictionLabel("下单", orderRestrictedFilter);
+    if (order) chips.push({ key: "orderRestricted", label: order });
+    const coupon = restrictionLabel("领券", couponRestrictedFilter);
+    if (coupon) chips.push({ key: "couponRestricted", label: coupon });
+    const comment = restrictionLabel("评论", commentRestrictedFilter);
+    if (comment) chips.push({ key: "commentRestricted", label: comment });
+    return chips;
+  }, [accountStatusFilter, commentRestrictedFilter, couponRestrictedFilter, memberLevelIdFilter, orderRestrictedFilter, phoneBoundFilter, search, selectedMemberLevelName, selectedTagId, selectedTagName, wechatBoundFilter]);
+
+  const usersEmptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.usersFiltered : ADMIN_EMPTY_GUIDES.users;
+
+  const clearFilters = () => {
+    setSearch("");
+    setSelectedTagId("");
+    setWechatBoundFilter("");
+    setPhoneBoundFilter("");
+    setMemberLevelIdFilter("");
+    setAccountStatusFilter("");
+    setOrderRestrictedFilter("");
+    setCouponRestrictedFilter("");
+    setCommentRestrictedFilter("");
+    setPage(1);
+  };
+
+  const removeFilterChip = (key: string) => {
+    if (key === "search") setSearch("");
+    if (key === "tag") setSelectedTagId("");
+    if (key === "wechat") setWechatBoundFilter("");
+    if (key === "phone") setPhoneBoundFilter("");
+    if (key === "memberLevel") setMemberLevelIdFilter("");
+    if (key === "accountStatus") setAccountStatusFilter("");
+    if (key === "orderRestricted") setOrderRestrictedFilter("");
+    if (key === "couponRestricted") setCouponRestrictedFilter("");
+    if (key === "commentRestricted") setCommentRestrictedFilter("");
+    setPage(1);
   };
 
   const handleExportCsv = async () => {
     try {
-      await userService.exportUsersCsv(queryBase);
+      await userService.exportUsersCsv(queryParams);
       toast.success("已开始导出 CSV");
-    } catch (e) { toast.error(toastErrorMessage(e, "导出失败")); }
+    } catch (error) {
+      toast.error(toastErrorMessage(error, "导出失败"));
+    }
   };
-
-  const reloadTags = async () => setTags(await userService.fetchUserTags());
 
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <SearchBar placeholder="搜索昵称/手机号/微信/邀请码" value={search} onChange={(value) => { setSearch(value); setPage(1); loadUsers({ page: 1, keyword: value }).catch((e) => toast.error(toastErrorMessage(e, "加载失败"))); }} />
-        <AdminFilterSummaryBar chips={filterChips} onClearAll={handleClearFilters} onRemove={handleRemoveFilterChip} />
+        <SearchBar placeholder="搜索昵称 / 手机号 / 微信 / 邀请码" value={search} onChange={(value) => { setSearch(value); setPage(1); }} />
+        <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={removeFilterChip} />
         <details className="group theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
-          <summary className="cursor-pointer list-none text-sm font-medium text-foreground marker:content-none">
-            <span className="text-muted-foreground group-open:hidden">展开高级筛选</span>
-            <span className="hidden group-open:inline">收起高级筛选</span>
-          </summary>
+          <summary className="cursor-pointer list-none text-sm font-medium text-foreground marker:content-none"><span className="text-muted-foreground group-open:hidden">展开高级筛选</span><span className="hidden group-open:inline">收起高级筛选</span></summary>
           <div className="mt-3 flex flex-col gap-3 border-t border-[var(--theme-border)] pt-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <select value={selectedTagId} onChange={(e) => { setSelectedTagId(e.target.value); setPage(1); loadUsers({ page: 1, tagId: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">全部标签</option>{tags.map((tag) => <option key={tag.id} value={tag.id}>{tag.name}</option>)}</select>
-            <select value={wechatBoundFilter} onChange={(e) => { setWechatBoundFilter(e.target.value); setPage(1); loadUsers({ page: 1, wechatBound: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">微信绑定(全部)</option><option value="1">已绑定</option><option value="0">未绑定</option></select>
-            <select value={phoneBoundFilter} onChange={(e) => { setPhoneBoundFilter(e.target.value); setPage(1); loadUsers({ page: 1, phoneBound: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">手机号(全部)</option><option value="1">已绑定</option><option value="0">未绑定</option></select>
-            {memberLevels.length > 0 ? <select value={memberLevelIdFilter} onChange={(e) => { setMemberLevelIdFilter(e.target.value); setPage(1); loadUsers({ page: 1, memberLevelId: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">会员等级(全部)</option>{memberLevels.map((level) => <option key={level.id} value={level.id}>{level.name}{level.enabled === false ? "（已禁用）" : ""}</option>)}</select> : null}
-            <select value={accountStatusFilter} onChange={(e) => { setAccountStatusFilter(e.target.value); setPage(1); loadUsers({ page: 1, accountStatus: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">账号状态(全部)</option><option value="normal">正常</option><option value="disabled">禁用登录</option><option value="blacklisted">黑名单</option></select>
-            <select value={orderRestrictedFilter} onChange={(e) => { setOrderRestrictedFilter(e.target.value); setPage(1); loadUsers({ page: 1, orderRestricted: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">下单限制(全部)</option><option value="1">已限制</option><option value="0">未限制</option></select>
-            <select value={couponRestrictedFilter} onChange={(e) => { setCouponRestrictedFilter(e.target.value); setPage(1); loadUsers({ page: 1, couponRestricted: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">领券限制(全部)</option><option value="1">已限制</option><option value="0">未限制</option></select>
-            <select value={commentRestrictedFilter} onChange={(e) => { setCommentRestrictedFilter(e.target.value); setPage(1); loadUsers({ page: 1, commentRestricted: e.target.value }).catch((er) => toast.error(toastErrorMessage(er, "加载失败"))); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">评论限制(全部)</option><option value="1">已限制</option><option value="0">未限制</option></select>
+            <select value={selectedTagId} onChange={(e) => { setSelectedTagId(e.target.value); setPage(1); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">全部标签</option>{tags.map((tag) => <option key={tag.id} value={tag.id}>{tag.name}</option>)}</select>
+            <select value={wechatBoundFilter} onChange={(e) => { setWechatBoundFilter(e.target.value); setPage(1); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">微信绑定（全部）</option><option value="1">已绑定</option><option value="0">未绑定</option></select>
+            <select value={phoneBoundFilter} onChange={(e) => { setPhoneBoundFilter(e.target.value); setPage(1); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">手机号（全部）</option><option value="1">已绑定</option><option value="0">未绑定</option></select>
+            {memberLevels.length > 0 ? <select value={memberLevelIdFilter} onChange={(e) => { setMemberLevelIdFilter(e.target.value); setPage(1); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">会员等级（全部）</option>{memberLevels.map((level) => <option key={level.id} value={level.id}>{level.name}{level.enabled === false ? "（已禁用）" : ""}</option>)}</select> : null}
+            <select value={accountStatusFilter} onChange={(e) => { setAccountStatusFilter(e.target.value); setPage(1); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">账号状态（全部）</option><option value="normal">正常</option><option value="disabled">禁用登录</option><option value="blacklisted">黑名单</option></select>
+            <select value={orderRestrictedFilter} onChange={(e) => { setOrderRestrictedFilter(e.target.value); setPage(1); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">下单限制（全部）</option><option value="1">已限制</option><option value="0">未限制</option></select>
+            <select value={couponRestrictedFilter} onChange={(e) => { setCouponRestrictedFilter(e.target.value); setPage(1); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">领券限制（全部）</option><option value="1">已限制</option><option value="0">未限制</option></select>
+            <select value={commentRestrictedFilter} onChange={(e) => { setCommentRestrictedFilter(e.target.value); setPage(1); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">评论限制（全部）</option><option value="1">已限制</option><option value="0">未限制</option></select>
             <PermissionGate permission="user.view"><button type="button" onClick={handleExportCsv} className="touch-manipulation flex min-h-[44px] shrink-0 items-center gap-1.5 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2.5 text-sm"><Download size={16} /> 导出</button></PermissionGate>
           </div>
         </details>
@@ -199,16 +215,16 @@ export default function AdminUsers() {
         { label: "匹配用户数", value: String(total) },
         { label: "今日新增", value: String(summary.todayNew || 0) },
         { label: "被邀请用户", value: String(summary.invitedUsers || 0) },
-      ].map((s) => <div key={s.label} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-center theme-shadow"><p className="text-lg font-bold text-foreground">{s.value}</p><p className="text-[10px] text-muted-foreground">{s.label}</p></div>)}</div>
+      ].map((item) => <div key={item.label} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-center theme-shadow"><p className="text-lg font-bold text-foreground">{item.value}</p><p className="text-[10px] text-muted-foreground">{item.label}</p></div>)}</div>
 
       <PermissionGate permission="user.update">
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
           <div className="flex flex-wrap gap-2 items-end">
             <input value={newTagName} onChange={(e) => setNewTagName(e.target.value)} placeholder="新标签名称" className="min-h-[40px] rounded-lg bg-secondary px-3 py-2 text-sm" />
             <select value={newTagColor} onChange={(e) => setNewTagColor(e.target.value)} className="min-h-[40px] rounded-lg bg-secondary px-3 py-2 text-sm"><option>红色</option><option>绿色</option><option>蓝色</option><option>金色</option></select>
-            <LoadingButton type="button" variant="gold" state={tagSaving ? "loading" : "normal"} onClick={async () => { if (!newTagName.trim()) return; setTagSaving(true); try { await userService.createUserTag({ name: newTagName.trim(), color: newTagColor }); setNewTagName(""); await reloadTags(); toast.success("标签已创建"); } catch (e) { toast.error(toastErrorMessage(e, "创建标签失败")); } finally { setTagSaving(false); } }} className="min-h-[40px] rounded-lg px-3 py-2 text-sm font-semibold">添加</LoadingButton>
+            <button type="button" disabled={createTagMutation.isPending || !newTagName.trim()} onClick={() => createTagMutation.mutate()} className="min-h-[40px] rounded-lg bg-[var(--theme-price)] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">添加</button>
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">{tags.map((tag) => <span key={tag.id} className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${productTagBadgeClass(tag.color)}`}>{tag.name}<span className="opacity-70">({tag.count ?? 0})</span><button type="button" onClick={async () => { try { const impact = await userService.fetchUserTagImpact(tag.id); setTagDeleteImpact(impact); } catch { setTagDeleteImpact(tag.count || 0); } setTagDeleteId(tag.id); }} className="ml-1 rounded-full p-0.5 hover:bg-black/10" aria-label={`删除${tag.name}`}><Trash2 size={12} /></button></span>)}</div>
+          <div className="mt-3 flex flex-wrap gap-2">{tags.map((tag) => <span key={tag.id} className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${productTagBadgeClass(tag.color)}`}>{tag.name}<span className="opacity-70">({tag.count ?? 0})</span><button type="button" onClick={async () => { const impact = await userService.fetchUserTagImpact(tag.id).catch(() => tag.count || 0); if (window.confirm(`该标签当前影响 ${impact} 位用户，确认删除？`)) deleteTagMutation.mutate(tag.id); }} className="ml-1 rounded-full p-0.5 hover:bg-black/10" aria-label={`删除${tag.name}`}><Trash2 size={12} /></button></span>)}</div>
         </div>
       </PermissionGate>
 
@@ -216,42 +232,29 @@ export default function AdminUsers() {
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground">已选 {selectedUserIds.length} 人</span>
-            <select value={batchTagId} onChange={(e) => setBatchTagId(e.target.value)} className="min-h-[40px] rounded-lg bg-secondary px-3 py-2 text-sm">
-              <option value="">选择要批量打的标签</option>
-              {tags.map((tag) => <option key={tag.id} value={tag.id}>{tag.name}</option>)}
-            </select>
-            <LoadingButton
-              type="button"
-              variant="gold"
-              state={batchTagSaving ? "loading" : "normal"}
-              onClick={async () => {
-                if (!batchTagId) { toast.error("请先选择标签"); return; }
-                if (!selectedUserIds.length) { toast.error("请先勾选用户"); return; }
-                setBatchTagSaving(true);
-                try {
-                  const affected = await userService.batchSetUserTag(batchTagId, selectedUserIds);
-                  toast.success(`批量打标完成：${affected}/${selectedUserIds.length}`);
-                  await loadUsers();
-                  setSelectedUserIds([]);
-                } catch (e) {
-                  toast.error(toastErrorMessage(e, "批量打标失败"));
-                } finally {
-                  setBatchTagSaving(false);
-                }
-              }}
-              className="min-h-[40px] rounded-lg px-3 py-2 text-sm font-semibold"
-            >
-              批量打标
-            </LoadingButton>
+            <select value={batchTagId} onChange={(e) => setBatchTagId(e.target.value)} className="min-h-[40px] rounded-lg bg-secondary px-3 py-2 text-sm"><option value="">选择要批量打的标签</option>{tags.map((tag) => <option key={tag.id} value={tag.id}>{tag.name}</option>)}</select>
+            <button type="button" disabled={batchTagMutation.isPending} onClick={() => batchTagMutation.mutate()} className="min-h-[40px] rounded-lg bg-[var(--theme-price)] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">批量打标</button>
           </div>
         </div>
       </PermissionGate>
 
-      <div className="hidden md:block">
-        <AnimatedTable loading={loading} rows={users} rowKey={(u) => u.id} skeletonRows={8} skeletonCols={10} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto" tableClassName="min-w-[1080px] w-full text-sm" theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70" thead={(<tr><th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap"><input type="checkbox" checked={users.length > 0 && selectedUserIds.length === users.length} onChange={(e) => setSelectedUserIds(e.target.checked ? users.map((x) => x.id) : [])} /></th>{["用户", "手机号", "状态", "会员等级", "标签", "邀请码", "上级邀请码", "积分", "注册时间", "操作"].map((h) => <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>)}</tr>)} footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={(nextPage) => { setPage(nextPage); loadUsers({ page: nextPage }).catch((e) => toast.error(toastErrorMessage(e, "加载失败"))); }} onPageSizeChange={(nextPageSize) => { setPageSize(nextPageSize); setPage(1); loadUsers({ page: 1, pageSize: nextPageSize }).catch((e) => toast.error(toastErrorMessage(e, "加载失败"))); }} />} emptyIcon={usersEmptyGuide.icon} emptyTitle={usersEmptyGuide.title} emptyDescription={usersEmptyGuide.description} emptyAction={(<AdminEmptyGuideActions guide={usersEmptyGuide} showClearFilters={filtersActive} onClearFilters={handleClearFilters} />)} renderRow={(u) => (<><td className="px-4 py-3"><input type="checkbox" checked={selectedUserIds.includes(u.id)} onChange={(e) => setSelectedUserIds((prev) => e.target.checked ? [...prev, u.id] : prev.filter((id) => id !== u.id))} /></td><td className="px-4 py-3"><span className="font-medium text-foreground">{u.nickname || u.phone}</span></td><td className="px-4 py-3 text-foreground whitespace-nowrap">{u.phone}</td><td className="px-4 py-3"><UserStatusBadges user={u} /></td><td className="px-4 py-3 whitespace-nowrap">{u.member_level_name || "普通会员"}</td><td className="px-4 py-3"><UserTagBadges tags={u.tags} /></td><td className="px-4 py-3 font-mono text-xs text-foreground">{u.invite_code || "-"}</td><td className="px-4 py-3 font-mono text-xs text-muted-foreground">{u.parent_invite_code || "-"}</td><td className="px-4 py-3 text-foreground">{u.points_balance ?? 0}</td><td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{u.created_at ? formatDateTime(u.created_at) : "-"}</td><td className="px-4 py-3"><button type="button" onClick={() => navigate(`/admin/users/${u.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">详情</button></td></>)} />
-      </div>
-      <AnimatedConfirmDialog open={!!tagDeleteId} onOpenChange={(open) => !open && setTagDeleteId(null)} danger title="删除标签" description={`该标签当前影响 ${tagDeleteImpact} 位用户，删除后会同步移除其标签关系，确认继续？`} confirmText="删除" onConfirm={async () => { if (!tagDeleteId) return; try { await userService.deleteUserTag(tagDeleteId); await reloadTags(); await loadUsers(); setTagDeleteId(null); toast.success("标签已删除"); } catch (e) { toast.error(toastErrorMessage(e, "删除失败")); } }} />
+      <AnimatedTable
+        loading={usersQuery.isLoading}
+        rows={users}
+        rowKey={(user) => user.id}
+        skeletonRows={8}
+        skeletonCols={10}
+        className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
+        tableClassName="min-w-[1080px] w-full text-sm"
+        theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
+        emptyIcon={Users}
+        emptyTitle={usersEmptyGuide.title}
+        emptyDescription={usersEmptyGuide.description}
+        emptyAction={<AdminEmptyGuideActions guide={usersEmptyGuide} showClearFilters={filtersActive} onClearFilters={clearFilters} />}
+        thead={<tr><th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap"><input type="checkbox" checked={users.length > 0 && selectedUserIds.length === users.length} onChange={(e) => setSelectedUserIds(e.target.checked ? users.map((user) => user.id) : [])} /></th>{["用户", "手机号", "状态", "会员等级", "标签", "邀请码", "上级邀请码", "积分", "注册时间", "操作"].map((head) => <th key={head} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{head}</th>)}</tr>}
+        footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
+        renderRow={(user) => <><td className="px-4 py-3"><input type="checkbox" checked={selectedUserIds.includes(user.id)} onChange={(e) => setSelectedUserIds((prev) => e.target.checked ? [...prev, user.id] : prev.filter((id) => id !== user.id))} /></td><td className="max-w-[11rem] px-4 py-3 align-middle"><AdminTableCell value={user.nickname || user.phone || user.id} fullText={[user.nickname, user.phone, user.id].filter(Boolean).join("\n")} maxWidth="10.5rem" /></td><td className="px-4 py-3 text-foreground whitespace-nowrap">{user.phone || "-"}</td><td className="px-4 py-3"><UserStatusBadges user={user} /></td><td className="px-4 py-3 whitespace-nowrap">{user.member_level_name || user.memberLevel?.name || "普通会员"}</td><td className="px-4 py-3"><UserTagBadges tags={user.tags} /></td><td className="px-4 py-3 font-mono text-xs text-foreground">{user.invite_code || user.inviteCode || "-"}</td><td className="px-4 py-3 font-mono text-xs text-muted-foreground">{user.parent_invite_code || user.parentInviteCode || "-"}</td><td className="px-4 py-3 text-foreground">{user.points_balance ?? user.pointsBalance ?? 0}</td><td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{user.created_at ? formatDateTime(user.created_at) : "-"}</td><td className="px-4 py-3"><button type="button" onClick={() => navigate(`/admin/users/${user.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">详情</button></td></>}
+      />
     </div>
   );
 }
-

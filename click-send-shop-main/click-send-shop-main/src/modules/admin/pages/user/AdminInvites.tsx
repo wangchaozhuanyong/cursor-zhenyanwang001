@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { Users } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchInviteRecords } from "@/services/admin/inviteService";
 import type { InviteRecord, InviteRecordsSummary } from "@/types/invite";
@@ -18,29 +18,30 @@ import {
   hasActiveInviteRecordFilters,
   removeInviteRecordFilterChip,
 } from "@/utils/adminInviteRecordFilters";
-import { toastErrorMessage } from "@/utils/errorMessage";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 export default function AdminInvites() {
   const navigate = useNavigate();
-  const [invites, setInvites] = useState<InviteRecord[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [total, setTotal] = useState(0);
-  const [summary, setSummary] = useState<InviteRecordsSummary>({});
 
-  useEffect(() => {
-    setLoading(true);
-    fetchInviteRecords({ page, pageSize, keyword: search || undefined })
-      .then((p) => {
-        setInvites(p.list || []);
-        setTotal(p.total || 0);
-        setSummary(p.summary || {});
-      })
-      .catch((e) => toast.error(toastErrorMessage(e, "加载邀请记录失败")))
-      .finally(() => setLoading(false));
-  }, [page, pageSize, search]);
+  const queryParams = useMemo(
+    () => ({ page, pageSize, keyword: search || undefined }),
+    [page, pageSize, search],
+  );
+
+  const listQuery = useQuery({
+    queryKey: adminQueryKeys.inviteRecords(queryParams),
+    queryFn: () => fetchInviteRecords(queryParams),
+    placeholderData: (previous) => previous,
+    staleTime: 60_000,
+  });
+
+  const invites = listQuery.data?.list ?? [];
+  const total = listQuery.data?.total ?? 0;
+  const summary: InviteRecordsSummary = listQuery.data?.summary ?? {};
+  const loading = listQuery.isLoading && !listQuery.data;
 
   const filterState = { search };
   const filterChips = useMemo(() => buildInviteRecordFilterChips(filterState), [search]);

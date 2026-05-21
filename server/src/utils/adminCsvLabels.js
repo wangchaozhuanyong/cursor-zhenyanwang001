@@ -76,9 +76,9 @@ const EXTRA_CSV_LABELS = {
 const CSV_COLUMN_LABELS = {
   ...REPORT_COLUMN_LABELS,
   ...EXTRA_CSV_LABELS,
-  category_id: '分类编号',
-  product_id: '商品编号',
-  user_id: '用户编号',
+  category_id: '分类ID',
+  product_id: '商品ID',
+  user_id: '用户ID',
   id: '编号',
 };
 

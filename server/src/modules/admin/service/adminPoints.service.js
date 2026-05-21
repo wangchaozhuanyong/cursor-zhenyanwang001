@@ -66,7 +66,7 @@ function normalizeSettingsBody(body = {}) {
     allow_with_coupon: body.allow_with_coupon ?? body.allowWithCoupon,
     allow_with_reward_cash: body.allow_with_reward_cash ?? body.allowWithRewardCash,
     zero_pay_allowed: body.zero_pay_allowed ?? body.zeroPayAllowed,
-    settle_timing: body.settle_timing ?? body.settleTiming,
+    settle_timing: 'order_completed',
     expire_enabled: body.expire_enabled ?? body.expireEnabled,
     expire_days: body.expire_days ?? body.expireDays,
     allow_negative_points: body.allow_negative_points ?? body.allowNegativePoints,

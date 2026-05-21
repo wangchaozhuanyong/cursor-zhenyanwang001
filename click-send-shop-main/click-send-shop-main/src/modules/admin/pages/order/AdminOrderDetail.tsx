@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { fetchOrderById } from "@/services/admin/orderService";
-import type { Order } from "@/types/order";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { formatDateTime } from "@/utils/formatDateTime";
 import {
   getOrderStatusBadgeClass,
@@ -17,23 +18,16 @@ function toMoney(value: unknown) {
 export default function AdminOrderDetail() {
   const navigate = useNavigate();
   const { id = "" } = useParams();
-  const [order, setOrder] = useState<Order | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let mounted = true;
-    if (!id) return;
-    void fetchOrderById(id)
-      .then((o) => {
-        if (mounted) setOrder(o);
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
-    return () => {
-      mounted = false;
-    };
-  }, [id]);
+  const orderQuery = useQuery({
+    queryKey: adminQueryKeys.orderDetail(id),
+    queryFn: () => fetchOrderById(id),
+    enabled: !!id,
+    staleTime: 60_000,
+  });
+
+  const order = orderQuery.data ?? null;
+  const loading = orderQuery.isLoading && !orderQuery.data;
 
   if (loading) return <div className="p-6 text-sm">加载中...</div>;
   if (!order) return <div className="p-6 text-sm">订单不存在</div>;
@@ -72,7 +66,7 @@ export default function AdminOrderDetail() {
               <div key={itemKey} className="flex gap-3 border-b border-border pb-3 last:border-b-0 last:pb-0">
                 <img src={item.product?.cover_image || ""} alt={item.product?.name || "product"} className="h-14 w-14 rounded object-cover bg-secondary" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{item.product?.name || "-"}</p>
+                  <AdminTableCell value={item.product?.name || "-"} fullText={item.product?.name || ""} maxWidth="100%" />
                   <p className="text-xs text-muted-foreground">{item.variant_name || item.sku_code || "默认规格"}</p>
                   <p className="text-xs text-muted-foreground">{toMoney(item.unit_price || 0)} x {item.qty}</p>
                 </div>

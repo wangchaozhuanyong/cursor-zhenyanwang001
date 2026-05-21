@@ -1,18 +1,30 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Download, Package, Truck } from "lucide-react";
-import { formatDateTime } from "@/utils/formatDateTime";
-import { AnimatedTable } from "@/modules/micro-interactions";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
-import { toast } from "sonner";
-import * as orderService from "@/services/admin/orderService";
 import PermissionGate from "@/components/admin/PermissionGate";
-import type { Order, PaymentStatus } from "@/types/order";
-import { useAdminOrdersStore } from "@/stores/useAdminOrdersStore";
-import { Tx } from "@/components/admin/AdminText";
-import { toastErrorMessage } from "@/utils/errorMessage";
+import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
+import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
+import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
+import AdminShipOrderDialog from "@/modules/admin/components/AdminShipOrderDialog";
+import { AdminTableCell, AdminTableCellGroup } from "@/components/admin/AdminTableCell";
+import { AnimatedTable } from "@/modules/micro-interactions";
+import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import * as orderService from "@/services/admin/orderService";
+import type { AdminOrderSummary, Order, OrderListParams, OrderStatus, PaymentStatus } from "@/types/order";
+import { formatDateTime } from "@/utils/formatDateTime";
+import { toastErrorMessage } from "@/utils/errorMessage";
+import { maskPhone } from "@/utils/privacyMask";
+import {
+  buildOrderFilterChips,
+  hasActiveOrderFilters,
+  removeOrderFilterChip,
+} from "@/utils/adminOrderFilters";
 import {
   ORDER_STATUS,
   PAYMENT_STATUS,
@@ -24,17 +36,30 @@ import {
   getPaymentStatusLabel,
 } from "@/constants/statusDictionary";
 import { THEME_OUTLINE_DANGER, THEME_OUTLINE_PRIMARY, THEME_OUTLINE_SUCCESS } from "@/utils/themeVisuals";
-import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
-import AdminShipOrderDialog from "@/modules/admin/components/AdminShipOrderDialog";
-import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
-import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
-import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
-import {
-  buildOrderFilterChips,
-  hasActiveOrderFilters,
-  removeOrderFilterChip,
-} from "@/utils/adminOrderFilters";
-import { maskPhone } from "@/utils/privacyMask";
+
+const initialSummary: AdminOrderSummary = {
+  pending: 0,
+  paid: 0,
+  shipped: 0,
+  completed: 0,
+  cancelled: 0,
+  refunding: 0,
+  refunded: 0,
+};
+
+const paymentMethodOptions = [
+  { value: "", label: "全部支付方式" },
+  { value: "online", label: "Online" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "reward_wallet", label: "返现余额" },
+];
+
+const shippingOptions = [
+  { value: "", label: "全部配送方式" },
+  { value: "J&T Express", label: "J&T Express" },
+  { value: "DHL", label: "DHL" },
+  { value: "Self Pickup", label: "自提" },
+];
 
 function money(value: unknown): string {
   const n = Number(value || 0);
@@ -72,72 +97,52 @@ function afterSaleLabel(order: Order): { text: string; className: string } {
   return { text: "无售后", className: "bg-slate-100 text-slate-600" };
 }
 
-const paymentMethodOptions = [
-  { value: "", label: "全部支付方式" },
-  { value: "online", label: "Online" },
-  { value: "whatsapp", label: "WhatsApp" },
-  { value: "reward_wallet", label: "返现余额" },
-];
-
-const shippingOptions = [
-  { value: "", label: "全部配送方式" },
-  { value: "J&T Express", label: "J&T Express" },
-  { value: "DHL", label: "DHL" },
-  { value: "Self Pickup", label: "自提" },
-];
-
 export default function AdminOrders() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { confirm } = useAdminConfirm();
   const [shipTarget, setShipTarget] = useState<{ id: string; orderNo: string } | null>(null);
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
-  const {
-    orders,
-    loading,
-    statusFilter,
-    paymentFilter,
-    search,
-    dateFrom,
-    dateTo,
-    paymentMethod,
-    paymentChannel,
-    shippingName,
-    returnStatus,
-    refundStatus,
-    hasNote,
-    costStatus,
-    overduePayment,
-    overdueShipment,
-    buyerType,
-    amountMin,
-    amountMax,
-    page,
-    pageSize,
-    total,
-    summary,
-    setStatusFilter,
-    setPaymentFilter,
-    setSearch,
-    setDateFrom,
-    setDateTo,
-    setPaymentMethod,
-    setPaymentChannel,
-    setShippingName,
-    setReturnStatus,
-    setRefundStatus,
-    setHasNote,
-    setCostStatus,
-    setOverduePayment,
-    setOverdueShipment,
-    setBuyerType,
-    setAmountMin,
-    setAmountMax,
-    setPage,
-    setPageSize,
-    loadOrders,
-    clearFilters,
-    reset,
-  } = useAdminOrdersStore();
+  const [statusFilter, setStatusFilter] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState<"" | PaymentStatus>("");
+  const [search, setSearch] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
+  const [paymentChannel, setPaymentChannel] = useState("");
+  const [shippingName, setShippingName] = useState("");
+  const [returnStatus, setReturnStatus] = useState<"" | "none" | "active" | "any">("");
+  const [refundStatus, setRefundStatus] = useState("");
+  const [hasNote, setHasNote] = useState<"" | "1" | "0">("");
+  const [costStatus, setCostStatus] = useState<"" | "normal" | "missing">("");
+  const [overduePayment, setOverduePayment] = useState<"" | "1" | "0">("");
+  const [overdueShipment, setOverdueShipment] = useState<"" | "1" | "0">("");
+  const [buyerType, setBuyerType] = useState<"" | "new" | "repeat">("");
+  const [amountMin, setAmountMin] = useState("");
+  const [amountMax, setAmountMax] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  const clearFilters = () => {
+    setStatusFilter("");
+    setPaymentFilter("");
+    setSearch("");
+    setDateFrom("");
+    setDateTo("");
+    setPaymentMethod("");
+    setPaymentChannel("");
+    setShippingName("");
+    setReturnStatus("");
+    setRefundStatus("");
+    setHasNote("");
+    setCostStatus("");
+    setOverduePayment("");
+    setOverdueShipment("");
+    setBuyerType("");
+    setAmountMin("");
+    setAmountMax("");
+    setPage(1);
+  };
 
   const filterState = {
     statusFilter,
@@ -162,9 +167,29 @@ export default function AdminOrders() {
   const filtersActive = hasActiveOrderFilters(filterState);
   const ordersEmptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.ordersFiltered : ADMIN_EMPTY_GUIDES.orders;
 
-  useEffect(() => {
-    void loadOrders().catch((e) => toast.error(toastErrorMessage(e, "加载订单失败")));
-  }, [
+  const queryParams = useMemo<OrderListParams>(() => ({
+    page,
+    pageSize,
+    status: (statusFilter || undefined) as OrderStatus | undefined,
+    paymentStatus: paymentFilter || undefined,
+    keyword: search.trim() || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    payment_method: paymentMethod || undefined,
+    payment_channel: paymentChannel || undefined,
+    shipping_name: shippingName || undefined,
+    returnStatus: returnStatus || undefined,
+    refundStatus: refundStatus || undefined,
+    hasNote: hasNote || undefined,
+    costStatus: costStatus || undefined,
+    overduePayment: overduePayment || undefined,
+    overdueShipment: overdueShipment || undefined,
+    buyerType: buyerType || undefined,
+    amountMin: amountMin ? Number(amountMin) : undefined,
+    amountMax: amountMax ? Number(amountMax) : undefined,
+  }), [
+    page,
+    pageSize,
     statusFilter,
     paymentFilter,
     search,
@@ -182,12 +207,39 @@ export default function AdminOrders() {
     buyerType,
     amountMin,
     amountMax,
-    page,
-    pageSize,
-    loadOrders,
   ]);
 
-  useEffect(() => () => reset(), [reset]);
+  const ordersQuery = useQuery({
+    queryKey: adminQueryKeys.orders(queryParams),
+    queryFn: () => orderService.fetchOrders(queryParams),
+    placeholderData: (previous) => previous,
+    refetchInterval: 60_000,
+  });
+
+  const orders = ordersQuery.data?.list ?? [];
+  const loading = ordersQuery.isLoading && !ordersQuery.data;
+  const total = ordersQuery.data?.total ?? 0;
+  const summary = ordersQuery.data?.summary ?? initialSummary;
+
+  const invalidateOrderQueries = async (orderId?: string) => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.ordersRoot() }),
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() }),
+      orderId ? queryClient.invalidateQueries({ queryKey: adminQueryKeys.orderDetail(orderId) }) : Promise.resolve(),
+    ]);
+  };
+
+  const statusMutation = useMutation({
+    mutationFn: ({ orderId, nextStatus }: { orderId: string; nextStatus: string }) => orderService.updateOrderStatus(orderId, nextStatus),
+    onSuccess: async (_data, variables) => invalidateOrderQueries(variables.orderId),
+  });
+
+  const shipMutation = useMutation({
+    mutationFn: ({ orderId, trackingNo, carrier, shippingCostAmount }: { orderId: string; trackingNo: string; carrier: string; shippingCostAmount?: number }) => (
+      orderService.shipOrder(orderId, trackingNo, carrier, shippingCostAmount)
+    ),
+    onSuccess: async (_data, variables) => invalidateOrderQueries(variables.orderId),
+  });
 
   const stats = useMemo(
     () => [
@@ -230,37 +282,17 @@ export default function AdminOrders() {
     setPage(1);
   };
 
-  const currentQuery = () => ({
-    status: statusFilter || undefined,
-    paymentStatus: paymentFilter || undefined,
-    keyword: search.trim() || undefined,
-    dateFrom: dateFrom || undefined,
-    dateTo: dateTo || undefined,
-    payment_method: paymentMethod || undefined,
-    payment_channel: paymentChannel || undefined,
-    shipping_name: shippingName || undefined,
-    returnStatus: returnStatus || undefined,
-    refundStatus: refundStatus || undefined,
-    hasNote: hasNote || undefined,
-    costStatus: costStatus || undefined,
-    overduePayment: overduePayment || undefined,
-    overdueShipment: overdueShipment || undefined,
-    buyerType: buyerType || undefined,
-    amountMin: amountMin ? Number(amountMin) : undefined,
-    amountMax: amountMax ? Number(amountMax) : undefined,
-  });
-
   const handleExportCsv = async () => {
     try {
-      await orderService.exportOrdersCsv(currentQuery());
+      await orderService.exportOrdersCsv(queryParams);
       toast.success("已开始下载 CSV");
     } catch (e) {
       toast.error(toastErrorMessage(e, "导出失败"));
     }
   };
 
-  const reloadAfterAction = async (message: string) => {
-    await loadOrders();
+  const reloadAfterAction = async (message: string, orderId?: string) => {
+    await invalidateOrderQueries(orderId);
     toast.success(message);
   };
 
@@ -279,8 +311,8 @@ export default function AdminOrders() {
       danger,
       onConfirm: async () => {
         try {
-          await orderService.updateOrderStatus(orderId, nextStatus);
-          await reloadAfterAction(successMessage);
+          await statusMutation.mutateAsync({ orderId, nextStatus });
+          await reloadAfterAction(successMessage, orderId);
         } catch (e) {
           toast.error(toastErrorMessage(e, "订单操作失败"));
         }
@@ -364,64 +396,129 @@ export default function AdminOrders() {
     const phone = o.shipping_phone_masked || o.contact_phone_masked || maskPhone(o.shipping_phone || o.contact_phone) || "-";
     const shippedWithoutTracking = o.status === ORDER_STATUS.SHIPPED && !o.tracking_no;
 
+    const itemsSummary = o.items_summary || getFirstItemSummary(o.items);
+    const itemQty = o.items_count || o.items?.reduce((sum, item) => sum + Number(item.qty || 0), 0) || 0;
+    const amountTooltip = [
+      `实付 RM ${money(o.total_amount)}`,
+      `优惠 RM ${money(discount)}`,
+      Number(o.refund_amount || 0) > 0 ? `退款 RM ${money(o.refund_amount)}` : null,
+      o.gross_profit_amount !== undefined ? `毛利 RM ${money(o.gross_profit_amount)}` : null,
+      o.net_profit_amount !== undefined ? `净利 RM ${money(o.net_profit_amount)}` : null,
+    ].filter(Boolean) as string[];
+
     return (
       <>
-        <td className="px-4 py-3 align-top">
-          <div className="font-mono text-xs text-foreground">{o.order_no}</div>
-          <div className="text-[11px] text-muted-foreground">UID {shortId(o.user_id)}</div>
+        <td className="max-w-[9rem] px-4 py-2.5 align-middle">
+          <AdminTableCellGroup
+            maxWidth="8.5rem"
+            lines={[
+              { text: o.order_no, mono: true },
+              { text: `UID ${shortId(o.user_id)}`, muted: true, mono: true },
+            ]}
+            tooltipLines={[`订单号：${o.order_no}`, `用户 ID：${o.user_id || "-"}`]}
+          />
         </td>
-        <td className="px-4 py-3 align-top text-foreground">
-          <div className="font-medium">{o.user_nickname || "未命名用户"}</div>
-          <div className="text-xs text-muted-foreground">收货人：{o.contact_name || "-"}</div>
-          <div className="text-xs text-muted-foreground">电话：{phone}</div>
-          <div className="text-[11px] text-muted-foreground">历史 {o.user_order_count || 0} 单{ o.member_level_name ? ` · ${o.member_level_name}` : ""}</div>
+        <td className="max-w-[11rem] px-4 py-2.5 align-middle">
+          <AdminTableCellGroup
+            maxWidth="10.5rem"
+            lines={[
+              { text: o.user_nickname || "未命名用户" },
+              { text: `电话 ${phone}`, muted: true },
+            ]}
+            tooltipLines={[
+              `昵称：${o.user_nickname || "未命名用户"}`,
+              `收货人：${o.contact_name || "-"}`,
+              `电话：${phone}`,
+              `历史订单：${o.user_order_count || 0} 单${o.member_level_name ? ` · ${o.member_level_name}` : ""}`,
+            ]}
+          />
         </td>
-        <td className="px-4 py-3 align-top">
-          <div className="flex max-w-[260px] items-start gap-2">
+        <td className="max-w-[12rem] px-4 py-2.5 align-middle">
+          <div className="flex min-w-0 items-start gap-2">
             <Package size={15} className="mt-0.5 shrink-0 text-muted-foreground" />
-            <div>
-              <div className="max-w-[220px] truncate text-sm text-foreground" title={o.items_summary || undefined}>{o.items_summary || getFirstItemSummary(o.items)}</div>
-              <div className="text-xs text-muted-foreground">{o.items_count || o.items?.reduce((sum, item) => sum + Number(item.qty || 0), 0) || 0} 件 / {o.sku_count || o.items?.length || 0} 个 SKU</div>
-            </div>
+            <AdminTableCellGroup
+              maxWidth="10rem"
+              lines={[
+                { text: itemsSummary },
+                { text: `${itemQty} 件 / ${o.sku_count || o.items?.length || 0} SKU`, muted: true },
+              ]}
+              tooltipLines={[itemsSummary, `${itemQty} 件，${o.sku_count || o.items?.length || 0} 个 SKU`]}
+            />
           </div>
         </td>
-        <td className="px-4 py-3 align-top">
-          <div className="font-semibold text-foreground">RM {money(o.total_amount)}</div>
-          <div className="text-xs text-muted-foreground">优惠 RM {money(discount)}</div>
-          {Number(o.refund_amount || 0) > 0 ? <div className="text-xs text-red-500">退款 RM {money(o.refund_amount)}</div> : null}
-          {o.gross_profit_amount !== undefined ? <div className="text-xs text-muted-foreground">毛利 RM {money(o.gross_profit_amount)}</div> : null}
-          {o.net_profit_amount !== undefined ? <div className="text-xs font-medium text-foreground">净利 RM {money(o.net_profit_amount)}</div> : null}
-          {Number(o.shipping_cost_amount || 0) > 0 ? (
-            <div className="text-[11px] text-muted-foreground">物流成本 RM {money(o.shipping_cost_amount)}</div>
-          ) : null}
-          {Number(o.payment_fee_amount || 0) > 0 ? (
-            <div className="text-[11px] text-muted-foreground">手续费 RM {money(o.payment_fee_amount)}</div>
-          ) : null}
+        <td className="max-w-[8rem] px-4 py-2.5 align-middle">
+          <AdminTableCellGroup
+            maxWidth="7.5rem"
+            lines={[
+              { text: `RM ${money(o.total_amount)}` },
+              { text: `优惠 RM ${money(discount)}`, muted: true },
+            ]}
+            tooltipLines={amountTooltip}
+          />
         </td>
-        <td className="px-4 py-3 align-top">
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${getPaymentStatusBadgeClass(o.payment_status || PAYMENT_STATUS.PENDING)}`}>{getPaymentStatusLabel(o.payment_status || PAYMENT_STATUS.PENDING)}</span>
-          <div className="mt-1 text-xs text-muted-foreground">{o.payment_method || "-"}{o.payment_channel ? ` / ${o.payment_channel}` : ""}</div>
-          <div className="text-[11px] text-muted-foreground">{formatDateTime(o.paid_at || o.payment_time || "") || "未支付"}</div>
-        </td>
-        <td className="px-4 py-3 align-top">
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${getOrderStatusBadgeClass(o.status)}`}>{getOrderStatusLabel(o.status)}</span>
-          <div className="mt-1 text-xs text-muted-foreground">{o.shipping_name || o.carrier || "-"}</div>
-          <div className={shippedWithoutTracking ? "text-[11px] text-red-500" : "text-[11px] text-muted-foreground"}>{shippedWithoutTracking ? "已发货但无单号" : (o.tracking_no || "无单号")}</div>
-          <div className="text-[11px] text-muted-foreground">{formatDateTime(o.shipped_at || "") || "未发货"}</div>
-        </td>
-        <td className="px-4 py-3 align-top">
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${afterSale.className}`}>{afterSale.text}</span>
-          <div className="mt-1 text-xs text-muted-foreground">售后 {o.return_request_count || 0} 单</div>
-          {Number(o.refund_amount || 0) > 0 ? <div className="text-xs text-red-500">RM {money(o.refund_amount)}</div> : null}
-        </td>
-        <td className="px-4 py-3 align-top">
-          <div className="flex max-w-[160px] flex-wrap gap-1">
-            {badges.length ? badges.map((badge) => <span key={badge} className="rounded-full bg-[var(--theme-bg)] px-2 py-0.5 text-[10px] text-muted-foreground">{badge}</span>) : <span className="text-xs text-muted-foreground">-</span>}
+        <td className="max-w-[9rem] px-4 py-2.5 align-middle">
+          <div className="min-w-0 space-y-1">
+            <span className={`inline-block max-w-full truncate rounded-full px-2 py-0.5 text-[10px] font-medium ${getPaymentStatusBadgeClass(o.payment_status || PAYMENT_STATUS.PENDING)}`}>
+              {getPaymentStatusLabel(o.payment_status || PAYMENT_STATUS.PENDING)}
+            </span>
+            <AdminTableCell
+              value={`${o.payment_method || "-"}${o.payment_channel ? ` / ${o.payment_channel}` : ""}`}
+              fullText={`${o.payment_method || "-"}${o.payment_channel ? ` / ${o.payment_channel}` : ""}\n${formatDateTime(o.paid_at || o.payment_time || "") || "未支付"}`}
+              maxWidth="8.5rem"
+              muted
+            />
           </div>
         </td>
-        <td className="px-4 py-3 align-top text-xs text-muted-foreground">{formatDateTime(o.created_at)}</td>
+        <td className="max-w-[9rem] px-4 py-2.5 align-middle">
+          <div className="min-w-0 space-y-1">
+            <span className={`inline-block max-w-full truncate rounded-full px-2 py-0.5 text-[10px] font-medium ${getOrderStatusBadgeClass(o.status)}`}>
+              {getOrderStatusLabel(o.status)}
+            </span>
+            <AdminTableCell
+              value={shippedWithoutTracking ? "已发货·无单号" : (o.tracking_no || "无单号")}
+              fullText={[
+                `配送：${o.shipping_name || o.carrier || "-"}`,
+                shippedWithoutTracking ? "已发货但未填写物流单号" : `单号：${o.tracking_no || "无"}`,
+                `发货时间：${formatDateTime(o.shipped_at || "") || "未发货"}`,
+              ].join("\n")}
+              maxWidth="8.5rem"
+              muted
+              className={shippedWithoutTracking ? "text-red-500" : undefined}
+            />
+          </div>
+        </td>
+        <td className="max-w-[7rem] px-4 py-2.5 align-middle">
+          <div className="min-w-0 space-y-1">
+            <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${afterSale.className}`}>{afterSale.text}</span>
+            <AdminTableCell
+              value={`售后 ${o.return_request_count || 0} 单`}
+              fullText={[
+                afterSale.text,
+                `售后单数：${o.return_request_count || 0}`,
+                Number(o.refund_amount || 0) > 0 ? `退款 RM ${money(o.refund_amount)}` : "",
+              ].filter(Boolean).join("\n")}
+              maxWidth="6.5rem"
+              muted
+            />
+          </div>
+        </td>
+        <td className="max-w-[8rem] px-4 py-2.5 align-middle">
+          <AdminTableCell
+            value={
+              badges.length
+                ? badges.slice(0, 2).join(" · ") + (badges.length > 2 ? ` +${badges.length - 2}` : "")
+                : "-"
+            }
+            fullText={badges.join("、") || "-"}
+            maxWidth="7.5rem"
+            muted
+          />
+        </td>
+        <td className="max-w-[9rem] whitespace-nowrap px-4 py-2.5 align-middle text-xs text-muted-foreground">
+          <AdminTableCell value={formatDateTime(o.created_at)} columnKey="created_at" maxWidth="8.5rem" />
+        </td>
         <td className="px-4 py-3 align-top">{renderActions(o)}</td>
-        <td className="px-4 py-3 align-top"><button type="button" onClick={() => navigate(`/admin/orders/${o.id}`)} className="text-xs text-[var(--theme-price)] hover:underline"><Tx>详情</Tx></button></td>
+        <td className="px-4 py-3 align-top"><button type="button" onClick={() => navigate(`/admin/orders/${o.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">详情</button></td>
       </>
     );
   };
@@ -557,8 +654,9 @@ export default function AdminOrders() {
         onConfirm={async (trackingNo, carrier, shippingCostAmount) => {
           if (!shipTarget) return;
           try {
-            await orderService.shipOrder(shipTarget.id, trackingNo, carrier, shippingCostAmount);
-            await reloadAfterAction("订单已发货");
+            await shipMutation.mutateAsync({ orderId: shipTarget.id, trackingNo, carrier, shippingCostAmount });
+            await reloadAfterAction("订单已发货", shipTarget.id);
+            setShipTarget(null);
           } catch (e) {
             toast.error(toastErrorMessage(e, "发货失败"));
             throw e;

@@ -2,6 +2,7 @@ const { Router } = require('express');
 const ctrl = require('../controller/cart.controller');
 const auth = require('../../../middleware/auth');
 const { validate } = require('../../../middleware/validate');
+const { requireSiteCapability } = require('../../../middleware/siteCapabilityGuard');
 const {
   addToCartBodySchema,
   updateCartItemBodySchema,
@@ -9,8 +10,10 @@ const {
 } = require('../schemas/cart.schemas');
 
 const router = Router();
+const mallFeature = requireSiteCapability('mallEnabled', '商城功能已关闭');
 
 router.use(auth);
+router.use(mallFeature);
 
 router.get('/', ctrl.getCart);
 router.post('/', validate({ body: addToCartBodySchema }), ctrl.addToCart);

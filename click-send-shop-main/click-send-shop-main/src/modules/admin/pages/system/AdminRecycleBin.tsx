@@ -1,9 +1,9 @@
 import { formatDateTime } from "@/utils/formatDateTime";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trash2, RotateCcw, Loader2, AlertTriangle, Archive } from "lucide-react";
 import Pagination from "@/components/admin/Pagination";
 import PermissionGate from "@/components/admin/PermissionGate";
-import { usePagination } from "@/hooks/usePagination";
 import { toast } from "sonner";
 import { Tx } from "@/components/admin/AdminText";
 import {
@@ -12,8 +12,10 @@ import {
   restoreRecycleBinItem,
 } from "@/services/admin/recycleBinService";
 import type { RecycleBinItem } from "@/services/admin/recycleBinService";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { labelRecycleType } from "@/utils/adminDisplayLabels";
+import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
@@ -45,6 +47,15 @@ const TYPE_OPTIONS = [
   { value: "banners", label: "Banner" },
   { value: "content_pages", label: "内容页" },
   { value: "product_reviews", label: "评论" },
+  { value: "marketing_activities", label: "营销活动" },
+  { value: "product_tags", label: "商品标签" },
+  { value: "notifications", label: "通知" },
+  { value: "notification_batches", label: "通知批次" },
+  { value: "product_variants", label: "商品规格" },
+  { value: "product_spec_groups", label: "规格组" },
+  { value: "product_spec_values", label: "规格值" },
+  { value: "inventory_pack_rules", label: "组装拆包规则" },
+  { value: "users", label: "用户" },
 ];
 
 const TYPE_BADGE: Record<string, string> = {
@@ -57,24 +68,29 @@ const TYPE_BADGE: Record<string, string> = {
 };
 
 export default function AdminRecycleBin() {
-  const [items, setItems] = useState<RecycleBinItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [typeFilter, setTypeFilter] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<RecycleBinItem | null>(null);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = typeFilter ? { type: typeFilter } : {};
-      const rows = await loadRecycleBin(params);
-      setItems(rows);
-    } catch (e) { toast.error(toastErrorMessage(e, "加载回收站失败")); }
-    finally { setLoading(false); }
-  }, [typeFilter]);
+  const queryParams = useMemo(
+    () => ({ ...(typeFilter ? { type: typeFilter } : {}), page, pageSize }),
+    [page, pageSize, typeFilter],
+  );
 
-  useEffect(() => { loadData(); }, [loadData]);
+  const listQuery = useQuery({
+    queryKey: adminQueryKeys.recycleBin(queryParams),
+    queryFn: () => loadRecycleBin(queryParams),
+    placeholderData: (previous) => previous,
+    staleTime: 60_000,
+  });
 
-  const { page, pageSize, setPage, setPageSize, paginatedData, total } = usePagination(items, 20);
+  const items = listQuery.data?.list ?? [];
+  const total = listQuery.data?.total ?? 0;
+  const loading = listQuery.isLoading && !listQuery.data;
+
+  const invalidateRecycleBin = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.recycleBinRoot() });
 
   const filterState = { typeFilter };
   const filterChips = useMemo(() => buildRecycleBinFilterChips(filterState), [typeFilter]);
@@ -92,13 +108,14 @@ export default function AdminRecycleBin() {
     setPage(1);
   };
 
-  const handleRestore = async (item: RecycleBinItem) => {
-    try {
-      await restoreRecycleBinItem(item.id, item.type);
+  const restoreMutation = useMutation({
+    mutationFn: (item: RecycleBinItem) => restoreRecycleBinItem(item.id, item.type),
+    onSuccess: async () => {
       toast.success("已恢复");
-      loadData();
-    } catch (e) { toast.error(toastErrorMessage(e, "恢复失败")); }
-  };
+      await invalidateRecycleBin();
+    },
+    onError: (e) => toast.error(toastErrorMessage(e, "恢复失败")),
+  });
 
   const handlePermanentDelete = async () => {
     if (!confirmDelete) return;
@@ -106,7 +123,7 @@ export default function AdminRecycleBin() {
       await permanentlyDeleteRecycleBinItem(confirmDelete.id, confirmDelete.type);
       toast.success("已彻底删除");
       setConfirmDelete(null);
-      loadData();
+      await invalidateRecycleBin();
     } catch (e) { toast.error(toastErrorMessage(e, "删除失败")); }
   };
 
@@ -146,7 +163,7 @@ export default function AdminRecycleBin() {
                 </div>
               ))
               : null}
-            {!loading && paginatedData.map((item) => (
+            {!loading && items.map((item) => (
               <div key={`${item.type}-${item.id}`} className="rounded-xl border border-border bg-card p-4 shadow-sm">
                 <div className="flex items-start gap-3">
                   {item.cover_image && <img src={item.cover_image} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />}
@@ -156,11 +173,15 @@ export default function AdminRecycleBin() {
                         {labelRecycleType(item.type, item.type_label)}
                       </span>
                     </div>
-                    <p className="text-sm font-medium text-foreground truncate">{item.name || item.id}</p>
+                    <AdminTableCell
+                      value={item.name || item.id}
+                      fullText={item.name ? `${item.name}\n${item.id}` : item.id}
+                      maxWidth="100%"
+                    />
                     <p className="text-[11px] text-muted-foreground">删除时间: {item.deleted_at ? formatDateTime(item.deleted_at) : "—"}</p>
                     <PermissionGate permission="recycle_bin.manage">
                       <div className="flex gap-2 pt-1">
-                        <button type="button" onClick={() => handleRestore(item)} className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border border-[var(--theme-border)] py-1.5 text-xs ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`}>
+                        <button type="button" onClick={() => restoreMutation.mutate(item)} className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border border-[var(--theme-border)] py-1.5 text-xs ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`}>
                           <RotateCcw size={12} className="mr-1 inline" /><Tx>恢复
                         </Tx></button>
                         <button type="button" onClick={() => setConfirmDelete(item)} className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border py-1.5 text-xs ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`}>
@@ -179,7 +200,7 @@ export default function AdminRecycleBin() {
             <AnimatedTable
               embedded
               loading={loading}
-              rows={paginatedData}
+              rows={items}
               rowKey={(item) => `${item.type}-${item.id}`}
               skeletonRows={8}
               skeletonCols={4}
@@ -212,14 +233,18 @@ export default function AdminRecycleBin() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       {item.cover_image && <img src={item.cover_image} alt="" className="h-8 w-8 rounded object-cover" />}
-                      <span className="max-w-[200px] truncate text-foreground" title={item.name}>{item.name || item.id}</span>
+                      <AdminTableCell
+                        value={item.name || item.id}
+                        fullText={item.name ? `${item.name}\n${item.id}` : item.id}
+                        maxWidth="12.5rem"
+                      />
                     </div>
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{item.deleted_at ? formatDateTime(item.deleted_at) : "—"}</td>
                   <td className="px-4 py-3">
                     <PermissionGate permission="recycle_bin.manage">
                       <div className="flex gap-1">
-                        <button type="button" onClick={() => handleRestore(item)} className={`touch-manipulation rounded-lg border border-[var(--theme-border)] p-1.5 ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`} title="恢复">
+                        <button type="button" onClick={() => restoreMutation.mutate(item)} className={`touch-manipulation rounded-lg border border-[var(--theme-border)] p-1.5 ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`} title="恢复">
                           <RotateCcw size={14} />
                         </button>
                         <button type="button" onClick={() => setConfirmDelete(item)} className={`touch-manipulation rounded-lg border p-1.5 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`} title="彻底删除">
@@ -231,7 +256,7 @@ export default function AdminRecycleBin() {
                 </>
               )}
             />
-            {(loading || paginatedData.length > 0) && (
+            {(loading || items.length > 0) && (
               <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(s) => { setPageSize(s); setPage(1); }} />
             )}
           </div>

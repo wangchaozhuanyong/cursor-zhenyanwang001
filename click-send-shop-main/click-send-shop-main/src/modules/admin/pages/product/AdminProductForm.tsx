@@ -1,6 +1,7 @@
 import { ArrowLeft, Upload, ImagePlus, Loader2, Trash2, Plus, Video } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { fetchProductById, createProduct, updateProduct, deleteProduct, fetchProductTags } from "@/services/admin/productService";
 import * as categoryService from "@/services/admin/categoryService";
@@ -26,6 +27,7 @@ import {
   THEME_TEXT_DANGER,
 } from "@/utils/themeVisuals";
 import { adminTableClassName, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 type AdminSpecValue = {
   id?: string;
@@ -90,11 +92,8 @@ export default function AdminProductForm() {
   const { id } = useParams();
   const isNew = id === "new";
 
-  const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [allTags, setAllTags] = useState<ProductTag[]>([]);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
@@ -130,20 +129,33 @@ export default function AdminProductForm() {
     ] as AdminVariantForm[],
   });
 
-  useEffect(() => {
-    categoryService.fetchCategories().then(setCategories).catch(() => {});
-  }, []);
+  const categoriesQuery = useQuery({
+    queryKey: adminQueryKeys.categories(),
+    queryFn: categoryService.fetchCategories,
+    staleTime: 60_000,
+  });
+
+  const tagsQuery = useQuery({
+    queryKey: adminQueryKeys.productTags(),
+    queryFn: fetchProductTags,
+    staleTime: 60_000,
+  });
+
+  const categories = categoriesQuery.data ?? [];
+  const allTags = tagsQuery.data ?? [];
+
+  const productQuery = useQuery({
+    queryKey: adminQueryKeys.productForm(id || "new"),
+    queryFn: () => fetchProductById(id!),
+    enabled: !isNew && !!id,
+    staleTime: 60_000,
+  });
+
+  const loading = !isNew && productQuery.isLoading && !productQuery.data;
 
   useEffect(() => {
-    fetchProductTags().then(setAllTags).catch(() => setAllTags([]));
-  }, []);
-
-  useEffect(() => {
-    if (!isNew && id) {
-      setLoading(true);
-      fetchProductById(id)
-        .then((data: Product | null) => {
-          if (data) {
+    const data = productQuery.data;
+    if (!data) return;
             const st = data.status === "draft" || data.status === "inactive" ? data.status : "active";
             const vlist =
               data.variants?.length ?
@@ -216,12 +228,12 @@ export default function AdminProductForm() {
                 : [],
               variants: vlist,
             });
-          }
-        })
-        .catch((e) => toast.error(toastErrorMessage(e, "加载商品信息失败")))
-        .finally(() => setLoading(false));
-    }
-  }, [id, isNew]);
+  }, [productQuery.data]);
+
+  useEffect(() => {
+    if (!productQuery.isError) return;
+    toast.error(toastErrorMessage(productQuery.error, "加载商品信息失败"));
+  }, [productQuery.error, productQuery.isError]);
 
   const validateImageBeforeUpload = (file: File) => {
     const type = file.type.toLowerCase();
@@ -561,70 +573,72 @@ export default function AdminProductForm() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <div className="rounded-xl border border-border bg-card p-6">
-            <div className="mb-4">
+            <div className="mb-3">
               <AdminSectionTitle
                 title={<Tx>商品图片</Tx>}
                 hint={<>{IMAGE_UPLOAD_HINT_API} {IMAGE_UPLOAD_HINT_PRODUCT_LAYOUT}</>}
               />
             </div>
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>封面图</Tx></label>
-                <UploadDropZone
-                  disabled={uploadingCover}
-                  className={`relative flex h-40 w-40 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border ${uploadingCover ? "cursor-not-allowed opacity-80" : "cursor-pointer hover:border-gold/50"}`}
-                  onFiles={(files) => {
-                    const file = files[0];
-                    if (file) void uploadImageFile(file, "cover");
-                  }}
-                >
-                  {form.cover_image ? (
-                    <img src={form.cover_image} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="text-center">
-                      <Upload size={24} className="mx-auto text-muted-foreground" />
-                      <span className="mt-1 block text-xs text-muted-foreground"><Tx>上传封面</Tx></span>
-                    </div>
-                  )}
-                  {uploadingCover ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      <span className="mt-2 text-xs"><Tx>图片上传中...</Tx></span>
-                      {uploadProgress !== null ? <span className="text-[11px]">{uploadProgress}%</span> : null}
-                    </div>
-                  ) : null}
-                  <input disabled={uploadingCover} type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, "cover")} />
-                </UploadDropZone>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>轮播图（最多 6 张）</Tx></label>
-                <div className="flex flex-wrap gap-3">
-                  {form.images.map((img, i) => (
-                    <div key={i} className="relative h-24 w-24 rounded-lg overflow-hidden border border-border">
-                      <img src={img} alt="" className="h-full w-full object-cover" />
-                      <button onClick={() => setForm((f) => ({ ...f, images: f.images.filter((_, idx) => idx !== i) }))} className={`absolute top-0 right-0 rounded-bl px-1 text-xs ${THEME_BTN_DANGER_SOLID}`}>×</button>
-                    </div>
-                  ))}
-                  {uploadingGallery && (
-                    <div className="flex h-24 w-24 flex-col items-center justify-center rounded-lg border border-border bg-secondary/60 text-xs text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="mt-1"><Tx>上传中...</Tx></span>
-                      {uploadProgress !== null ? <span className="text-[10px]">{uploadProgress}%</span> : null}
-                    </div>
-                  )}
-                  {form.images.length < 6 && (
-                    <UploadDropZone
-                      disabled={uploadingGallery}
-                      className={`flex h-24 w-24 items-center justify-center rounded-lg border-2 border-dashed border-border ${uploadingGallery ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:border-gold/50"}`}
-                      onFiles={(files) => {
-                        const file = files[0];
-                        if (file) void uploadImageFile(file, "gallery");
-                      }}
-                    >
-                      <ImagePlus size={18} className="text-muted-foreground" />
-                      <input disabled={uploadingGallery} type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, "gallery")} />
-                    </UploadDropZone>
-                  )}
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-[9.5rem_minmax(0,1fr)]">
+                <div className="min-w-0">
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>封面图</Tx></label>
+                  <UploadDropZone
+                    disabled={uploadingCover}
+                    className={`relative mx-auto flex h-32 w-32 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border sm:mx-0 ${uploadingCover ? "cursor-not-allowed opacity-80" : "cursor-pointer hover:border-gold/50"}`}
+                    onFiles={(files) => {
+                      const file = files[0];
+                      if (file) void uploadImageFile(file, "cover");
+                    }}
+                  >
+                    {form.cover_image ? (
+                      <img src={form.cover_image} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="text-center">
+                        <Upload size={22} className="mx-auto text-muted-foreground" />
+                        <span className="mt-1 block text-xs text-muted-foreground"><Tx>上传封面</Tx></span>
+                      </div>
+                    )}
+                    {uploadingCover ? (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.55)]">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span className="mt-2 text-xs"><Tx>图片上传中...</Tx></span>
+                        {uploadProgress !== null ? <span className="text-[11px]">{uploadProgress}%</span> : null}
+                      </div>
+                    ) : null}
+                    <input disabled={uploadingCover} type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, "cover")} />
+                  </UploadDropZone>
+                </div>
+                <div className="min-w-0">
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>轮播图（最多 6 张）</Tx></label>
+                  <div className="flex flex-wrap gap-2">
+                    {form.images.map((img, i) => (
+                      <div key={i} className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-border">
+                        <img src={img} alt="" className="h-full w-full object-cover" />
+                        <button onClick={() => setForm((f) => ({ ...f, images: f.images.filter((_, idx) => idx !== i) }))} className={`absolute top-0 right-0 rounded-bl px-1 text-xs ${THEME_BTN_DANGER_SOLID}`}>×</button>
+                      </div>
+                    ))}
+                    {uploadingGallery && (
+                      <div className="flex h-20 w-20 shrink-0 flex-col items-center justify-center rounded-lg border border-border bg-secondary/60 text-xs text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="mt-1"><Tx>上传中...</Tx></span>
+                        {uploadProgress !== null ? <span className="text-[10px]">{uploadProgress}%</span> : null}
+                      </div>
+                    )}
+                    {form.images.length < 6 && (
+                      <UploadDropZone
+                        disabled={uploadingGallery}
+                        className={`flex h-20 w-20 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-border ${uploadingGallery ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:border-gold/50"}`}
+                        onFiles={(files) => {
+                          const file = files[0];
+                          if (file) void uploadImageFile(file, "gallery");
+                        }}
+                      >
+                        <ImagePlus size={18} className="text-muted-foreground" />
+                        <input disabled={uploadingGallery} type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, "gallery")} />
+                      </UploadDropZone>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="rounded-xl border border-border bg-background/50 p-3 sm:p-4">
@@ -693,11 +707,11 @@ export default function AdminProductForm() {
 
           <div className="rounded-xl border border-border bg-card p-6 space-y-4">
             <h3 className="text-sm font-semibold text-foreground"><Tx>基本信息</Tx></h3>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>商品名称</Tx></label>
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="输入商品名称" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>商品名称</Tx></label>
+                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="输入商品名称" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+              </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>售价 (RM)</Tx></label>
                 <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="0.00" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
@@ -709,8 +723,6 @@ export default function AdminProductForm() {
                   <AdminFieldHint text={<Tx>仅当大于售价时，前台商品卡/详情页才会以删除线显示。</Tx>} />
                 </div>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>库存（默认规格）</Tx></label>
                 <input type="number" min={0} value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder="0" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
@@ -718,12 +730,6 @@ export default function AdminProductForm() {
                   <AdminFieldHint text={<Tx>保存时写入默认 SKU；大批量入库仍建议在库存中心操作。</Tx>} />
                 </div>
               </div>
-              <div className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-secondary/50 px-4 py-2 text-xs text-foreground">
-                <Tx>商品积分</Tx>
-                <AdminFieldHint text={<Tx>不再在商品表单维护，请到「活动管理 / 积分管理」统一配置。</Tx>} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>销量</Tx></label>
                 <input
@@ -737,9 +743,6 @@ export default function AdminProductForm() {
                   <AdminFieldHint text={<Tx>订单付款后由系统自动累加；可手动修正起步销量。</Tx>} />
                 </div>
               </div>
-              <div />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>分类</Tx></label>
                 <select value={form.category_id} onChange={(e) => setForm({ ...form, category_id: e.target.value })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none">

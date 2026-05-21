@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Truck, Plus, Trash2, Edit2, MapPin, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as shippingService from "@/services/admin/shippingService";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import type { ShippingTemplate } from "@/types/shipping";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
@@ -12,27 +14,23 @@ import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules
 import { THEME_BADGE_MUTED, THEME_BADGE_SUCCESS, THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 
 export default function AdminShipping() {
+  const queryClient = useQueryClient();
   const { confirm } = useAdminConfirm();
-  const [templates, setTemplates] = useState<ShippingTemplate[]>([]);
   const [editing, setEditing] = useState<ShippingTemplate | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", regions: "", baseFee: 0, freeAbove: 0, extraPerKg: 0 });
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const data = await shippingService.fetchTemplates();
-      setTemplates(data);
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "加载运费模板失败"));
-    } finally {
-      setLoading(false);
-    }
-  };
+  const templatesQuery = useQuery({
+    queryKey: adminQueryKeys.shippingTemplates(),
+    queryFn: shippingService.fetchTemplates,
+    staleTime: 60_000,
+  });
 
-  useEffect(() => { loadData(); }, []);
+  const templates = templatesQuery.data ?? [];
+  const loading = templatesQuery.isLoading && !templatesQuery.data;
+
+  const invalidateShipping = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.shippingRoot() });
 
   const handleSave = async () => {
     if (!form.name || !form.regions) { toast.error("请填写完整信息"); return; }
@@ -57,7 +55,7 @@ export default function AdminShipping() {
       setShowForm(false);
       setEditing(null);
       setForm({ name: "", regions: "", baseFee: 0, freeAbove: 0, extraPerKg: 0 });
-      await loadData();
+      await invalidateShipping();
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败"));
     } finally {
@@ -74,7 +72,7 @@ export default function AdminShipping() {
   const handleDelete = async (id: number) => {
     try {
       await shippingService.deleteTemplate(id);
-      await loadData();
+      await invalidateShipping();
       toast.success("已删除");
     } catch (e) {
       toast.error(toastErrorMessage(e, "删除失败"));
@@ -86,7 +84,7 @@ export default function AdminShipping() {
     if (!t || t.isDefault) return;
     try {
       await shippingService.updateTemplate(id, { isDefault: true });
-      await loadData();
+      await invalidateShipping();
       toast.success(`「${t.name}」已设为默认生效，其他模板已自动停用`);
     } catch (e) {
       toast.error(toastErrorMessage(e, "操作失败"));

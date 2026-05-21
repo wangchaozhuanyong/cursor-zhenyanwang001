@@ -1,5 +1,6 @@
 import { formatDateTime } from "@/utils/formatDateTime";
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Loader2, RefreshCw, CheckCircle2, XCircle, Clock, FileSpreadsheet } from "lucide-react";
 import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
@@ -21,6 +22,7 @@ import { labelExportType } from "@/utils/adminDisplayLabels";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import { THEME_TEXT_DANGER, THEME_TEXT_SUCCESS, THEME_TEXT_WARNING } from "@/utils/themeVisuals";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 const EXPORT_TYPES = [
   { value: "sales_daily", label: "销售日报" },
@@ -59,32 +61,22 @@ function formatBytes(bytes: number) {
 
 export default function AdminExportCenter() {
   const { confirm } = useAdminConfirm();
-  const [tasks, setTasks] = useState<ExportTask[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
   const [selectedType, setSelectedType] = useState("sales_daily");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
-  const loadTasks = useCallback(async () => {
-    try {
-      const rows = await loadExportTasks();
-      setTasks(rows);
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "加载导出列表失败"));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const tasksQuery = useQuery({
+    queryKey: adminQueryKeys.exportTasks(),
+    queryFn: loadExportTasks,
+    staleTime: 10_000,
+    refetchInterval: (query) =>
+      (query.state.data ?? []).some((t) => t.status === EXPORT_TASK_STATUS.PENDING) ? 3000 : false,
+  });
 
-  useEffect(() => { void loadTasks(); }, [loadTasks]);
-
-  useEffect(() => {
-    const hasPending = tasks.some((t) => t.status === EXPORT_TASK_STATUS.PENDING);
-    if (!hasPending) return;
-    const timer = setInterval(() => { void loadTasks(); }, 3000);
-    return () => clearInterval(timer);
-  }, [tasks, loadTasks]);
+  const tasks = tasksQuery.data ?? [];
+  const loading = tasksQuery.isLoading && !tasksQuery.data;
 
   const handleCreate = async () => {
     setCreating(true);
@@ -94,7 +86,7 @@ export default function AdminExportCenter() {
         date_to: dateTo || undefined,
       });
       toast.success("导出任务已创建");
-      void loadTasks();
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.exportTasks() });
     } catch (e) {
       toast.error(toastErrorMessage(e, "创建失败"));
     } finally {
@@ -120,7 +112,7 @@ export default function AdminExportCenter() {
             <AdminFieldHint text={<Tx>支持按报表类型与日期范围创建导出任务</Tx>} />
           </div>
         </div>
-        <button type="button" onClick={() => void loadTasks()} className="touch-manipulation rounded-xl border border-border p-2.5 text-muted-foreground hover:bg-secondary" title="刷新">
+        <button type="button" onClick={() => void tasksQuery.refetch()} className="touch-manipulation rounded-xl border border-border p-2.5 text-muted-foreground hover:bg-secondary" title="刷新">
           <RefreshCw size={16} />
         </button>
       </div>

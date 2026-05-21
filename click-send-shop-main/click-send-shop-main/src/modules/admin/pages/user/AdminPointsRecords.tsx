@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useSearchParams } from "react-router-dom";
 import { Loader2, Star, TrendingDown, TrendingUp, Users } from "lucide-react";
@@ -13,6 +14,7 @@ import { formatUserDisplay, labelPointsAction } from "@/utils/adminDisplayLabels
 import { formatPointsRecordLabel } from "@/utils/pointsDisplayLabels";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
@@ -23,6 +25,7 @@ import {
   removePointsRecordFilterChip,
 } from "@/utils/adminPointsRecordFilters";
 import { THEME_TEXT_DANGER } from "@/utils/themeVisuals";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 const actionOptions: Array<{ value: "" | PointsAction; label: string }> = [
   { value: "", label: "全部类型" },
@@ -67,67 +70,60 @@ function intValue(value: unknown) {
   return Number.isFinite(n) ? Math.trunc(n) : 0;
 }
 
+function normalizePointsRules(data: PointsRule[]): PointsRuleEditRow[] {
+  return data.map((r, idx) => ({
+    id: String(r.id ?? idx),
+    name: String(r.name ?? "积分规则"),
+    action: String((r as PointsRule & { action?: string }).action ?? ""),
+    points: Number((r as PointsRule & { points?: number }).points ?? r.sign_in_points ?? 0),
+    enabled: Boolean(r.enabled ?? true),
+  }));
+}
+
 export default function AdminPointsRecords() {
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
-  const [records, setRecords] = useState<PointsRecord[]>([]);
-  const [stats, setStats] = useState<PointsStats>(emptyStats);
-  const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState(searchParams.get("userId") || "");
   const [action, setAction] = useState<"" | PointsAction>("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [total, setTotal] = useState(0);
-  const [rulesLoading, setRulesLoading] = useState(true);
   const [rulesSaving, setRulesSaving] = useState(false);
   const [rules, setRules] = useState<PointsRuleEditRow[]>([]);
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
+  const queryParams = useMemo(() => {
     const looksLikeUserId = keyword.length >= 20 && !keyword.includes(" ");
-    fetchAdminPointsRecords({
+    return {
       page,
       pageSize,
       keyword: looksLikeUserId ? undefined : keyword,
       userId: looksLikeUserId ? keyword : undefined,
       action: action || undefined,
-    })
-      .then((data) => {
-        if (cancelled) return;
-        setRecords(data.list || []);
-        setStats(data.stats || emptyStats);
-        setTotal(data.total || 0);
-      })
-      .catch((e) => toast.error(toastErrorMessage(e, "加载积分明细失败")))
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => { cancelled = true; };
-  }, [page, pageSize, keyword, action]);
+    };
+  }, [action, keyword, page, pageSize]);
+
+  const listQuery = useQuery({
+    queryKey: adminQueryKeys.pointsRecords(queryParams),
+    queryFn: () => fetchAdminPointsRecords(queryParams),
+    placeholderData: (previous) => previous,
+    staleTime: 60_000,
+  });
+
+  const rulesQuery = useQuery({
+    queryKey: adminQueryKeys.pointsRules(),
+    queryFn: fetchPointsRules,
+    staleTime: 60_000,
+  });
+
+  const records = listQuery.data?.list ?? [];
+  const stats = listQuery.data?.stats ?? emptyStats;
+  const total = listQuery.data?.total ?? 0;
+  const loading = listQuery.isLoading && !listQuery.data;
+  const rulesLoading = rulesQuery.isLoading && !rulesQuery.data;
 
   useEffect(() => {
-    let cancelled = false;
-    setRulesLoading(true);
-    fetchPointsRules()
-      .then((data: PointsRule[]) => {
-        if (cancelled) return;
-        const normalized = data.map((r, idx) => ({
-          id: String(r.id ?? idx),
-          name: String(r.name ?? "积分规则"),
-          action: String((r as PointsRule & { action?: string }).action ?? ""),
-          points: Number((r as PointsRule & { points?: number }).points ?? r.sign_in_points ?? 0),
-          enabled: Boolean(r.enabled ?? true),
-        }));
-        setRules(normalized);
-      })
-      .catch((e) => toast.error(toastErrorMessage(e, "加载积分规则失败")))
-      .finally(() => {
-        if (!cancelled) setRulesLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    if (!rulesQuery.data) return;
+    setRules(normalizePointsRules(rulesQuery.data));
+  }, [rulesQuery.data]);
 
   const updateRuleField = (id: string, field: "points" | "enabled", value: number | boolean) => {
     setRules((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
@@ -140,6 +136,7 @@ export default function AdminPointsRecords() {
         await updatePointsRule(rule.id, { name: rule.name, enabled: rule.enabled, sign_in_points: rule.points });
       }
       toast.success("积分规则已保存");
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.pointsRules() });
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存积分规则失败"));
     } finally {
@@ -334,8 +331,13 @@ export default function AdminPointsRecords() {
               </td>
               <td className="px-4 py-3 text-theme-muted">{record.balance_before ?? "—"}</td>
               <td className="px-4 py-3 text-[var(--theme-text-on-surface)]">{record.balance_after ?? "—"}</td>
-              <td className="max-w-[260px] truncate px-4 py-3 text-xs text-theme-muted" title={record.description || undefined}>
-                {formatPointsRecordLabel({ action: record.action, description: record.description }) || "—"}
+              <td className="max-w-[16rem] px-4 py-3 align-middle">
+                <AdminTableCell
+                  value={formatPointsRecordLabel({ action: record.action, description: record.description }) || "—"}
+                  fullText={record.description || formatPointsRecordLabel({ action: record.action, description: record.description }) || ""}
+                  maxWidth="15rem"
+                  muted
+                />
               </td>
               <td className="px-4 py-3 text-xs text-theme-muted">
                 {record.created_at ? formatDateTime(record.created_at) : "—"}

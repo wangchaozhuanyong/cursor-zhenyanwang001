@@ -9,9 +9,16 @@ const manualProvider = require('../providers/manualProvider');
 const malaysiaLocalProvider = require('../providers/malaysiaLocalProvider');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const { writeAuditLog } = require('../../../utils/auditLog');
-const orderPoints = require('../../order/service/orderPoints.service');
 const crypto = require('crypto');
 const payDb = payRepo.getPool();
+
+function publishAdminEvent(event) {
+  try {
+    require('../../admin/service/adminEventBus.service').publishAdminEvent(event);
+  } catch {
+    // Best-effort realtime signal; payment processing must not depend on SSE.
+  }
+}
 
 function getTelegramApi() {
   return /** @type {any} */ (require('../../telegram')).api || {};
@@ -538,10 +545,6 @@ async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionN
     return { skipped: true, reason: 'already_paid' };
   }
   await requireUserApi('syncStatsAfterOrderPaid')(order.user_id, toMoney(order.total_amount), order.id, conn);
-  await orderPoints.maybeGrantOrderEarnPoints(conn, order, {
-    trigger: 'payment_success',
-    timing: 'payment_success',
-  });
   await payRepo.insertAnalyticsEvent(conn, {
     user_id: order.user_id,
     dedupe_key: `payment_success:${order.id}`,
@@ -809,11 +812,6 @@ async function markOrderPaidByAdmin(req, orderId, body) {
       throw new ValidationError('订单状态已变更，请刷新后重试');
     }
     await requireUserApi('syncStatsAfterOrderPaid')(order.user_id, total, order.id, conn);
-    await orderPoints.maybeGrantOrderEarnPoints(conn, order, {
-      operatorId: adminUserId,
-      trigger: 'admin_mark_paid',
-      timing: 'payment_success',
-    });
     await requireUserApi('refreshUserMemberLevel')(conn, order.user_id);
 
     const itemRows = await orderRepo.selectOrderItemQtyRows(conn, order.id);
@@ -867,6 +865,16 @@ async function markOrderPaidByAdmin(req, orderId, body) {
     });
 
     await conn.commit();
+    publishAdminEvent({
+      type: 'order.payment_success',
+      objectId: order.id,
+      summary: order.order_no,
+    });
+    publishAdminEvent({
+      type: 'payment.event',
+      objectId: paymentOrderId,
+      summary: order.order_no,
+    });
     await notifyTelegramOrderPaid(order.id, 'manual_admin');
     try {
         await requireMyinvoisApi('enqueueOrderInvoiceIfEnabled')(order.id, 'admin_mark_paid');

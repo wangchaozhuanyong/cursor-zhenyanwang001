@@ -1,334 +1,279 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { formatDateTime } from "@/utils/formatDateTime";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { RefreshCw, RotateCcw, Search } from "lucide-react";
 import { toast } from "sonner";
-import { Eye, RotateCcw } from "lucide-react";
-import { AnimatedTable } from "@/modules/micro-interactions";
-import { ADMIN_TABLE_NOWRAP_CLASS, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
-import * as returnService from "@/services/admin/returnService";
 import PermissionGate from "@/components/admin/PermissionGate";
 import Pagination from "@/components/admin/Pagination";
-import { toastErrorMessage } from "@/utils/errorMessage";
-import { RETURN_STATUS, RETURN_STATUS_FILTER_OPTIONS, getReturnStatusBadgeClass, getReturnStatusLabel } from "@/constants/statusDictionary";
+import { AdminTableCell } from "@/components/admin/AdminTableCell";
+import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
+import * as returnService from "@/services/admin/returnService";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import type { ApproveReturnParams, ReturnDetail, ReturnRequest } from "@/types/return";
-import { THEME_BTN_DANGER_SOLID, THEME_BTN_SUCCESS_SOLID, THEME_OUTLINE_DANGER } from "@/utils/themeVisuals";
+import { toastErrorMessage } from "@/utils/errorMessage";
+import { formatDateTime } from "@/utils/formatDateTime";
 
-const defaultApproveForm: ApproveReturnParams = {
-  refund_amount: 0,
-  admin_remark: "",
-  refund_mode: "none",
-  restore_stock: false,
-  restore_coupon: false,
-  reverse_points: false,
-  reverse_rewards: false,
+const STATUS_LABELS: Record<string, string> = {
+  pending: "待审核",
+  need_evidence: "待补凭证",
+  approved: "已通过",
+  rejected: "已拒绝",
+  processing: "处理中",
+  waiting_return: "待寄回",
+  return_in_transit: "退货在途",
+  received: "已收货",
+  refund_pending: "待退款",
+  refunded: "已退款",
+  exchange_shipping: "换货发出",
+  completed: "已完成",
+  cancelled: "已取消",
 };
 
+const TYPE_LABELS: Record<string, string> = {
+  refund: "仅退款",
+  return_refund: "退货退款",
+  exchange: "换货",
+  repair: "维修",
+};
+
+function money(value: unknown) {
+  return `RM ${Number(value || 0).toFixed(2)}`;
+}
+
+function labelStatus(status?: string) {
+  return status ? STATUS_LABELS[status] || status : "-";
+}
+
+function labelType(type?: string) {
+  return type ? TYPE_LABELS[type] || type : "-";
+}
+
+type ReviewMode = "approve" | "reject";
+
 export default function AdminReturns() {
-  const [list, setList] = useState<ReturnRequest[]>([]);
-  const [total, setTotal] = useState(0);
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [keyword, setKeyword] = useState("");
-  const [status, setStatus] = useState("all");
-  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [reviewMode, setReviewMode] = useState<ReviewMode | null>(null);
+  const [refundAmount, setRefundAmount] = useState("");
+  const [adminRemark, setAdminRemark] = useState("");
 
-  const [detail, setDetail] = useState<ReturnDetail | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
+  const params = useMemo(() => ({
+    page,
+    pageSize,
+    keyword: keyword.trim() || undefined,
+    status: status || undefined,
+  }), [keyword, page, pageSize, status]);
 
-  const [approveTarget, setApproveTarget] = useState<ReturnDetail | null>(null);
-  const [approveForm, setApproveForm] = useState<ApproveReturnParams>(defaultApproveForm);
-  const [rejectTarget, setRejectTarget] = useState<ReturnDetail | null>(null);
-  const [rejectRemark, setRejectRemark] = useState("");
+  const returnsQuery = useQuery({
+    queryKey: [...adminQueryKeys.returnsRoot(), "list", params],
+    queryFn: () => returnService.fetchReturnRequests(params),
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+  });
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await returnService.fetchReturnRequests({
-        page,
-        pageSize,
-        keyword: keyword.trim() || undefined,
-        status: status === "all" ? undefined : status,
-      });
-      setList(res.list);
-      setTotal(res.total);
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "加载售后列表失败"));
-    } finally {
-      setLoading(false);
-    }
-  }, [keyword, page, pageSize, status]);
+  const detailQuery = useQuery({
+    queryKey: [...adminQueryKeys.returnsRoot(), "detail", selectedId],
+    queryFn: () => returnService.fetchReturnById(selectedId as string),
+    enabled: !!selectedId,
+    staleTime: 30_000,
+  });
 
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
-
-  const fetchDetail = useCallback(async (id: string) => {
-    setDetailLoading(true);
-    try {
-      const data = await returnService.fetchReturnById(id);
-      setDetail(data);
-      return data;
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "加载售后详情失败"));
-      return null;
-    } finally {
-      setDetailLoading(false);
-    }
-  }, []);
-
-  const openApprove = async (row: ReturnRequest) => {
-    const d = await fetchDetail(row.id);
-    if (!d) return;
-    const orderTotal = Number(d.order_info?.total_amount || 0);
-    setApproveTarget(d);
-    setApproveForm({
-      ...defaultApproveForm,
-      refund_amount: Math.max(0, Number(d.refund_amount || 0)),
-      admin_remark: d.admin_remark || "",
-      refund_mode: orderTotal > 0 ? "manual" : "none",
-    });
+  const invalidateReturns = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.returnsRoot() }),
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.ordersRoot() }),
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() }),
+    ]);
   };
 
-  const openReject = async (row: ReturnRequest) => {
-    const d = await fetchDetail(row.id);
-    if (!d) return;
-    setRejectTarget(d);
-    setRejectRemark(d.admin_remark || "");
-  };
+  const approveMutation = useMutation({
+    mutationFn: async (detail: ReturnDetail) => {
+      const payload: ApproveReturnParams = {
+        refund_amount: Number(refundAmount || detail.refund_amount || 0),
+        admin_remark: adminRemark.trim() || undefined,
+        restore_inventory: true,
+        rollback_points_rewards: true,
+        refund_mode: "manual",
+      };
+      return returnService.approveReturn(detail.id, payload);
+    },
+    onSuccess: async () => {
+      toast.success("售后申请已通过，订单与仪表盘会自动刷新");
+      setReviewMode(null);
+      setAdminRemark("");
+      setRefundAmount("");
+      await invalidateReturns();
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, "审核通过失败")),
+  });
 
-  const orderTotal = useMemo(() => Number(approveTarget?.order_info?.total_amount || 0), [approveTarget]);
+  const rejectMutation = useMutation({
+    mutationFn: async (detail: ReturnDetail) => returnService.rejectReturn(detail.id, adminRemark.trim() || "售后申请未通过"),
+    onSuccess: async () => {
+      toast.success("售后申请已拒绝");
+      setReviewMode(null);
+      setAdminRemark("");
+      await invalidateReturns();
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, "拒绝售后失败")),
+  });
 
-  const submitApprove = async () => {
-    if (!approveTarget) return;
-    if (!Number.isFinite(approveForm.refund_amount) || approveForm.refund_amount < 0) {
-      toast.error("退款金额必须大于等于 0");
-      return;
-    }
-    if (approveForm.refund_amount > orderTotal) {
-      toast.error("退款金额不能超过订单实付金额");
-      return;
-    }
-    try {
-      await returnService.approveReturn(approveTarget.id, approveForm);
-      toast.success("售后已通过");
-      setApproveTarget(null);
-      setApproveForm(defaultApproveForm);
-      await loadData();
-      if (detail?.id === approveTarget.id) {
-        await fetchDetail(approveTarget.id);
-      }
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "售后通过失败"));
-    }
-  };
+  const rows = returnsQuery.data?.list || [];
+  const total = returnsQuery.data?.total || 0;
+  const detail = detailQuery.data;
 
-  const submitReject = async () => {
-    if (!rejectTarget) return;
-    if (!rejectRemark.trim()) {
-      toast.error("拒绝原因不能为空");
-      return;
-    }
-    try {
-      await returnService.rejectReturn(rejectTarget.id, rejectRemark.trim());
-      toast.success("售后已拒绝");
-      setRejectTarget(null);
-      setRejectRemark("");
-      await loadData();
-      if (detail?.id === rejectTarget.id) {
-        await fetchDetail(rejectTarget.id);
-      }
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "售后拒绝失败"));
-    }
+  const openReview = (mode: ReviewMode, row: ReturnRequest) => {
+    setSelectedId(row.id);
+    setReviewMode(mode);
+    setRefundAmount(String(row.refund_amount || ""));
+    setAdminRemark("");
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          value={keyword}
-          onChange={(e) => { setKeyword(e.target.value); setPage(1); }}
-          placeholder="搜索售后单号/订单号"
-          className="h-10 w-64 rounded border border-border px-3 text-sm"
+    <PermissionGate permission="order.return.manage">
+      <div className="p-4 md:p-6">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold text-foreground">售后管理</h1>
+            <p className="mt-1 text-sm text-muted-foreground">售后列表由 Query 缓存管理，审核后刷新订单、售后和仪表盘。</p>
+          </div>
+          <button type="button" onClick={() => void returnsQuery.refetch()} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
+            <RefreshCw size={16} className={returnsQuery.isFetching ? "animate-spin" : ""} />
+            刷新
+          </button>
+        </div>
+
+        <div className="mb-4 grid gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 md:grid-cols-[180px_1fr_auto]">
+          <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
+            <option value="">全部状态</option>
+            {Object.entries(STATUS_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1); }} placeholder="搜索订单号、原因、商品或用户信息" className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm" />
+          </div>
+          <button type="button" onClick={() => { setStatus(""); setKeyword(""); setPage(1); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">清空筛选</button>
+        </div>
+
+        <AnimatedTable
+          loading={returnsQuery.isLoading}
+          rows={rows}
+          rowKey={(row) => row.id}
+          skeletonRows={8}
+          skeletonCols={8}
+          emptyIcon={RotateCcw}
+          emptyTitle="暂无售后申请"
+          emptyDescription="当前筛选条件下没有售后记录。"
+          className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
+          tableClassName="min-w-[1040px] w-full text-sm"
+          theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
+          thead={<tr>{['申请', '订单', '类型', '原因', '退款金额', '状态', '创建时间', '操作'].map((head) => <th key={head} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{head}</th>)}</tr>}
+          footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
+          renderRow={(row) => (
+            <>
+              <td className="px-4 py-3 font-mono text-xs text-foreground">{row.id}</td>
+              <td className="px-4 py-3">
+                <div className="font-medium text-foreground">{row.order_no}</div>
+                <div className="text-[11px] text-muted-foreground">{row.sku_code || row.product_id || '-'}</div>
+              </td>
+              <td className="px-4 py-3 text-sm">{labelType(row.type)}</td>
+              <td className="max-w-[14rem] px-4 py-3 align-middle">
+                <AdminTableCell
+                  value={row.reason || row.description || '-'}
+                  fullText={[row.reason, row.description].filter(Boolean).join('\n') || '-'}
+                  maxWidth="13rem"
+                  muted
+                />
+              </td>
+              <td className="px-4 py-3 font-semibold text-foreground whitespace-nowrap">{money(row.refund_amount)}</td>
+              <td className="px-4 py-3"><span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{labelStatus(row.status)}</span></td>
+              <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(row.created_at)}</td>
+              <td className="px-4 py-3">
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setSelectedId(row.id)} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">详情</button>
+                  <button type="button" onClick={() => openReview('approve', row)} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">通过</button>
+                  <button type="button" onClick={() => openReview('reject', row)} className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700">拒绝</button>
+                </div>
+              </td>
+            </>
+          )}
         />
-        <select
-          value={status}
-          onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-          className="h-10 rounded border border-border px-3 text-sm"
-        >
-          {RETURN_STATUS_FILTER_OPTIONS.map((s) => (
-            <option key={s.key} value={s.key}>{s.label}</option>
-          ))}
-        </select>
-      </div>
 
-      <AnimatedTable
-        embedded
-        loading={loading}
-        rows={list}
-        rowKey={(r) => r.id}
-        skeletonRows={6}
-        skeletonCols={7}
-        className="overflow-x-auto rounded-xl border border-border bg-card"
-        tableClassName="w-full text-sm"
-        theadClassName="bg-secondary/40 text-left"
-        thead={(
-          <tr>
-            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>售后单</th>
-            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>订单号</th>
-            <th className={adminThClassName()}>类型</th>
-            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>退款金额</th>
-            <th className={adminThClassName()}>状态</th>
-            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>创建时间</th>
-            <th className={adminThClassName("text-center")}>操作</th>
-          </tr>
-        )}
-        emptyIcon={RotateCcw}
-        emptyTitle="暂无售后记录"
-        renderRow={(r) => (
-          <>
-            <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{r.id.slice(0, 8)}</td>
-            <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{r.order_no || "-"}</td>
-            <td className={adminTdClassName()}>{r.type}</td>
-            <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{Number(r.refund_amount || 0).toFixed(2)}</td>
-            <td className={adminTdClassName()}>
-              <span className={`rounded-full px-2 py-0.5 text-xs ${getReturnStatusBadgeClass(r.status)}`}>
-                {getReturnStatusLabel(r.status)}
-              </span>
-            </td>
-            <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{formatDateTime(r.created_at)}</td>
-            <td className={adminTdClassName()}>
-              <div className="flex items-center justify-center gap-2">
-                <button
-                  type="button"
-                  className="rounded border border-border px-2 py-1 text-xs"
-                  onClick={() => { void fetchDetail(r.id); }}
-                >
-                  <Eye size={14} />
-                </button>
-                {r.status === RETURN_STATUS.PENDING ? (
-                  <PermissionGate permission="return.handle">
-                    <div className="flex items-center gap-2">
-                      <button type="button" className={`rounded px-2 py-1 text-xs ${THEME_BTN_SUCCESS_SOLID}`} onClick={() => { void openApprove(r); }}>通过</button>
-                      <button type="button" className={`rounded px-2 py-1 text-xs ${THEME_OUTLINE_DANGER}`} onClick={() => { void openReject(r); }}>拒绝</button>
+        {selectedId ? (
+          <div className="fixed inset-0 z-50 flex justify-end bg-black/40">
+            <aside className="h-full w-full max-w-xl overflow-y-auto bg-background p-5 shadow-xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">售后详情</h2>
+                  <p className="mt-1 text-xs text-muted-foreground">{selectedId}</p>
+                </div>
+                <button type="button" onClick={() => { setSelectedId(null); setReviewMode(null); }} className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-secondary">关闭</button>
+              </div>
+
+              {detailQuery.isLoading ? <p className="mt-6 text-sm text-muted-foreground">正在加载详情...</p> : null}
+              {detail ? (
+                <div className="mt-5 space-y-4 text-sm">
+                  <div className="rounded-xl border border-border p-4">
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <div><span className="text-muted-foreground">订单号：</span>{detail.order_no}</div>
+                      <div><span className="text-muted-foreground">状态：</span>{labelStatus(detail.status)}</div>
+                      <div><span className="text-muted-foreground">类型：</span>{labelType(detail.type)}</div>
+                      <div><span className="text-muted-foreground">退款金额：</span>{money(detail.refund_amount)}</div>
                     </div>
-                  </PermissionGate>
-                ) : null}
-              </div>
-            </td>
-          </>
-        )}
-      />
+                  </div>
+                  <div className="rounded-xl border border-border p-4">
+                    <p className="font-medium text-foreground">申请原因</p>
+                    <p className="mt-2 text-muted-foreground whitespace-pre-wrap">{detail.reason || detail.description || '-'}</p>
+                  </div>
+                  {detail.operation_logs?.length ? (
+                    <div className="rounded-xl border border-border p-4">
+                      <p className="font-medium text-foreground">处理记录</p>
+                      <div className="mt-3 space-y-2">
+                        {detail.operation_logs.map((log) => (
+                          <div key={log.id} className="rounded-lg bg-secondary/60 p-3 text-xs">
+                            <div>{log.summary || log.result || '操作记录'}</div>
+                            <div className="mt-1 text-muted-foreground">{formatDateTime(log.created_at)}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
 
-      <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
-
-      {detail ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDetail(null)}>
-          <div className="max-h-[85vh] w-full max-w-2xl overflow-auto rounded-xl bg-card p-4" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-3 text-base font-semibold">售后详情</div>
-            {detailLoading ? <div className="text-sm text-muted-foreground">加载中...</div> : null}
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>用户：{detail.user_info?.name || "-"}</div>
-              <div>手机号：{detail.user_info?.phone || "-"}</div>
-              <div>订单号：{detail.order_info?.order_no || detail.order_no || "-"}</div>
-              <div>支付状态：{detail.order_info?.payment_status || "-"}</div>
-              <div>商品：{detail.item_info?.product_name || "-"}</div>
-              <div>SKU：{detail.item_info?.sku_code || "-"}</div>
-              <div>申请数量：{detail.item_info?.request_qty || detail.quantity || 0}</div>
-              <div>退款金额：{Number(detail.refund_amount || 0).toFixed(2)}</div>
-              <div className="col-span-2">申请原因：{detail.reason || "-"}</div>
-              <div className="col-span-2">管理员备注：{detail.admin_remark || "-"}</div>
-            </div>
-            <div className="mt-4 text-sm font-medium">退款记录</div>
-            <div className="space-y-1 text-xs text-muted-foreground">
-              {detail.refund_records?.length ? detail.refund_records.map((x) => (
-                <div key={x.id}>{x.event_type} / {x.processing_result} / {formatDateTime(x.created_at)}</div>
-              )) : <div>暂无</div>}
-            </div>
-            <div className="mt-4 text-sm font-medium">库存恢复记录</div>
-            <div className="space-y-1 text-xs text-muted-foreground">
-              {detail.inventory_restore_records?.length ? detail.inventory_restore_records.map((x) => (
-                <div key={x.id}>Δ{x.quantity_delta} / {formatDateTime(x.created_at)}</div>
-              )) : <div>暂无</div>}
-            </div>
-            <div className="mt-4 text-sm font-medium">操作日志</div>
-            <div className="space-y-1 text-xs text-muted-foreground">
-              {detail.operation_logs?.length ? detail.operation_logs.map((x) => (
-                <div key={x.id}>{x.summary || x.result} / {formatDateTime(x.created_at)}</div>
-              )) : <div>暂无</div>}
-            </div>
+                  {reviewMode ? (
+                    <div className="rounded-xl border border-border p-4">
+                      <p className="font-medium text-foreground">{reviewMode === 'approve' ? '通过售后' : '拒绝售后'}</p>
+                      {reviewMode === 'approve' ? (
+                        <label className="mt-3 block text-xs text-muted-foreground">
+                          退款金额
+                          <input value={refundAmount} onChange={(e) => setRefundAmount(e.target.value)} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+                        </label>
+                      ) : null}
+                      <label className="mt-3 block text-xs text-muted-foreground">
+                        处理备注
+                        <textarea value={adminRemark} onChange={(e) => setAdminRemark(e.target.value)} rows={4} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+                      </label>
+                      <div className="mt-4 flex justify-end gap-2">
+                        <button type="button" onClick={() => setReviewMode(null)} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary">取消</button>
+                        <button
+                          type="button"
+                          onClick={() => reviewMode === 'approve' ? approveMutation.mutate(detail) : rejectMutation.mutate(detail)}
+                          disabled={approveMutation.isPending || rejectMutation.isPending}
+                          className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                        >
+                          提交处理
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </aside>
           </div>
-        </div>
-      ) : null}
-
-      {approveTarget ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setApproveTarget(null)}>
-          <div className="w-full max-w-lg rounded-xl bg-card p-4" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-3 text-base font-semibold">售后通过处理</div>
-            <div className="space-y-2 text-sm">
-              <label className="block">
-                <span>退款金额</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={orderTotal}
-                  value={approveForm.refund_amount}
-                  onChange={(e) => setApproveForm((s) => ({ ...s, refund_amount: Number(e.target.value) }))}
-                  className="mt-1 h-10 w-full rounded border border-border px-3"
-                />
-              </label>
-              <label className="block">
-                <span>管理员备注</span>
-                <textarea
-                  value={approveForm.admin_remark || ""}
-                  onChange={(e) => setApproveForm((s) => ({ ...s, admin_remark: e.target.value }))}
-                  className="mt-1 w-full rounded border border-border p-2"
-                />
-              </label>
-              <label className="block">
-                <span>退款模式</span>
-                <select
-                  value={approveForm.refund_mode}
-                  onChange={(e) => setApproveForm((s) => ({ ...s, refund_mode: e.target.value as ApproveReturnParams["refund_mode"] }))}
-                  className="mt-1 h-10 w-full rounded border border-border px-3"
-                >
-                  <option value="none">none</option>
-                  <option value="manual">manual</option>
-                  <option value="provider">provider</option>
-                </select>
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <label><input type="checkbox" checked={approveForm.restore_stock} onChange={(e) => setApproveForm((s) => ({ ...s, restore_stock: e.target.checked }))} /> 恢复库存</label>
-                <label><input type="checkbox" checked={approveForm.restore_coupon} onChange={(e) => setApproveForm((s) => ({ ...s, restore_coupon: e.target.checked }))} /> 恢复优惠券</label>
-                <label><input type="checkbox" checked={approveForm.reverse_points} onChange={(e) => setApproveForm((s) => ({ ...s, reverse_points: e.target.checked }))} /> 回滚积分</label>
-                <label><input type="checkbox" checked={approveForm.reverse_rewards} onChange={(e) => setApproveForm((s) => ({ ...s, reverse_rewards: e.target.checked }))} /> 冲正返现</label>
-              </div>
-              <div className="text-xs text-muted-foreground">订单实付金额：{orderTotal.toFixed(2)}</div>
-            </div>
-            <div className="mt-4 flex justify-end gap-2">
-              <button className="rounded border border-border px-3 py-1.5 text-sm" onClick={() => setApproveTarget(null)}>取消</button>
-              <button className={`rounded px-3 py-1.5 text-sm ${THEME_BTN_SUCCESS_SOLID}`} onClick={() => { void submitApprove(); }}>确认通过</button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {rejectTarget ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setRejectTarget(null)}>
-          <div className="w-full max-w-lg rounded-xl bg-card p-4" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-3 text-base font-semibold">拒绝售后</div>
-            <textarea
-              value={rejectRemark}
-              onChange={(e) => setRejectRemark(e.target.value)}
-              placeholder="请输入拒绝原因（必填）"
-              className="w-full rounded border border-border p-2"
-            />
-            <div className="mt-4 flex justify-end gap-2">
-              <button className="rounded border border-border px-3 py-1.5 text-sm" onClick={() => setRejectTarget(null)}>取消</button>
-              <button className={`rounded px-3 py-1.5 text-sm ${THEME_BTN_DANGER_SOLID}`} onClick={() => { void submitReject(); }}>确认拒绝</button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </div>
+        ) : null}
+      </div>
+    </PermissionGate>
   );
 }

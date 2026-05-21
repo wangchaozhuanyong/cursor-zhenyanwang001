@@ -1,6 +1,9 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Search, Shield, ChevronRight } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { AdminTableCell, AdminTableCellGroup } from "@/components/admin/AdminTableCell";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
@@ -16,10 +19,11 @@ import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { fetchAuditLogs } from "@/services/admin/logService";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import type { AuditLogRow } from "@/services/admin/logService";
+import AuditLogDetailPanel from "@/components/admin/AuditLogDetailPanel";
 import {
-  buildAuditChangeSummary,
+  getAuditActionTypeFilterOptions,
+  getAuditObjectTypeFilterOptions,
   zhActionType,
-  zhAuditErrorMessage,
   zhAuditResult,
   zhAuditSummary,
   zhObjectType,
@@ -27,72 +31,107 @@ import {
 } from "@/utils/auditLogI18n";
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
-import { THEME_ALERT_ERROR_SOFT, THEME_BADGE_DANGER } from "@/utils/themeVisuals";
+import { THEME_BADGE_DANGER } from "@/utils/themeVisuals";
+import { adminQueryKeys, type AuditLogListParams } from "@/lib/adminQueryKeys";
 
 export default function AdminLogs() {
   const can = useAdminPermissionStore((s) => s.can);
   const isSuperAdmin = useAdminPermissionStore((s) => s.isSuperAdmin);
   const canAudit = isSuperAdmin || can("audit.view");
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [auditList, setAuditList] = useState<AuditLogRow[]>([]);
-  const [auditTotal, setAuditTotal] = useState(0);
-  const [auditPage, setAuditPage] = useState(1);
-  const [auditPageSize, setAuditPageSize] = useState(20);
-  const [auditLoading, setAuditLoading] = useState(false);
-  const [auditKeyword, setAuditKeyword] = useState("");
-  const [auditResult, setAuditResult] = useState<"" | "success" | "failure">("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [auditPage, setAuditPage] = useState(() => Math.max(1, Number(searchParams.get("page")) || 1));
+  const [auditPageSize, setAuditPageSize] = useState(() => Math.min(100, Math.max(1, Number(searchParams.get("pageSize")) || 20)));
+  const [auditKeyword, setAuditKeyword] = useState(() => searchParams.get("keyword") || "");
+  const [auditResult, setAuditResult] = useState<"" | "success" | "failure">(() => {
+    const result = searchParams.get("result");
+    return result === "success" || result === "failure" ? result : "";
+  });
+  const [dateFrom, setDateFrom] = useState(() => searchParams.get("dateFrom") || "");
+  const [dateTo, setDateTo] = useState(() => searchParams.get("dateTo") || "");
+  const [operatorId, setOperatorId] = useState(() => searchParams.get("operatorId") || "");
+  const [objectType, setObjectType] = useState(() => searchParams.get("objectType") || "");
+  const [objectId, setObjectId] = useState(() => searchParams.get("objectId") || "");
+  const [actionType, setActionType] = useState(() => searchParams.get("actionType") || "");
   const [detail, setDetail] = useState<AuditLogRow | null>(null);
+
+  const buildFilterParams = (overrides?: Partial<AuditLogListParams>): AuditLogListParams => ({
+    keyword: auditKeyword.trim() || undefined,
+    result: auditResult || undefined,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    operatorId: operatorId.trim() || undefined,
+    objectType: objectType.trim() || undefined,
+    objectId: objectId.trim() || undefined,
+    actionType: actionType.trim() || undefined,
+    ...overrides,
+  });
+
+  const [submittedFilters, setSubmittedFilters] = useState<AuditLogListParams>(() =>
+    buildFilterParams({
+      keyword: searchParams.get("keyword") || undefined,
+      result: searchParams.get("result") || undefined,
+      dateFrom: searchParams.get("dateFrom") || undefined,
+      dateTo: searchParams.get("dateTo") || undefined,
+      operatorId: searchParams.get("operatorId") || undefined,
+      objectType: searchParams.get("objectType") || undefined,
+      objectId: searchParams.get("objectId") || undefined,
+      actionType: searchParams.get("actionType") || undefined,
+    }),
+  );
+
+  const queryParams = useMemo(
+    () => ({
+      ...submittedFilters,
+      page: auditPage,
+      pageSize: auditPageSize,
+      sortOrder: "desc" as const,
+    }),
+    [auditPage, auditPageSize, submittedFilters],
+  );
+
+  const auditQuery = useQuery({
+    queryKey: adminQueryKeys.auditLogs(queryParams),
+    queryFn: () => fetchAuditLogs(queryParams),
+    enabled: canAudit,
+    placeholderData: (previous) => previous,
+    staleTime: 60_000,
+  });
+
+  const auditList = auditQuery.data?.list ?? [];
+  const auditTotal = auditQuery.data?.total ?? 0;
+  const auditLoading = auditQuery.isLoading && !auditQuery.data;
 
   useEffect(() => {
     if (!canAudit) return;
-    setAuditLoading(true);
-    fetchAuditLogs({
-      page: auditPage,
-      pageSize: auditPageSize,
-      keyword: auditKeyword.trim() || undefined,
-      result: auditResult || undefined,
-      dateFrom: dateFrom || undefined,
-      dateTo: dateTo || undefined,
-      sortOrder: "desc",
-    })
-      .then((p) => {
-        setAuditList(p.list);
-        setAuditTotal(p.total);
-      })
-      .catch(() => toast.error("加载审计日志失败"))
-      .finally(() => setAuditLoading(false));
-    // 仅分页变化时自动拉取；筛选项变更由「查询」触发，避免输入时频繁请求
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 见上
-  }, [canAudit, auditPage, auditPageSize]);
+    syncUrl(queryParams);
+  }, [canAudit, queryParams]);
 
-  const runAuditSearch = (page = 1) => {
+  const applySubmittedFilters = (filters: AuditLogListParams, page = 1) => {
+    setSubmittedFilters(filters);
     setAuditPage(page);
-    setAuditLoading(true);
-    return fetchAuditLogs({
-      page,
-      pageSize: auditPageSize,
-      keyword: auditKeyword.trim() || undefined,
-      result: auditResult || undefined,
-      dateFrom: dateFrom || undefined,
-      dateTo: dateTo || undefined,
-      sortOrder: "desc",
-    })
-      .then((p) => {
-        setAuditList(p.list);
-        setAuditTotal(p.total);
-      })
-      .catch(() => toast.error("加载审计日志失败"))
-      .finally(() => setAuditLoading(false));
+  };
+
+  const syncUrl = (params: AuditLogListParams & { page?: number; pageSize?: number }) => {
+    const next = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value == null || value === "" || key === "sortOrder") return;
+      if (key === "page" && Number(value) === 1) return;
+      if (key === "pageSize" && Number(value) === 20) return;
+      next.set(key, String(value));
+    });
+    setSearchParams(next, { replace: true });
   };
 
   const handleAuditSearch = () => {
-    void runAuditSearch(1);
+    applySubmittedFilters(buildFilterParams(), 1);
   };
 
-  const filterState = { keyword: auditKeyword, result: auditResult, dateFrom, dateTo };
-  const filterChips = useMemo(() => buildAuditLogFilterChips(filterState), [auditKeyword, auditResult, dateFrom, dateTo]);
+  const objectTypeOptions = useMemo(() => getAuditObjectTypeFilterOptions(), []);
+  const actionTypeOptions = useMemo(() => getAuditActionTypeFilterOptions(), []);
+
+  const filterState = { keyword: auditKeyword, result: auditResult, dateFrom, dateTo, operatorId, objectType, objectId, actionType };
+  const filterChips = useMemo(() => buildAuditLogFilterChips(filterState), [auditKeyword, auditResult, dateFrom, dateTo, operatorId, objectType, objectId, actionType]);
   const filtersActive = hasActiveAuditLogFilters(filterState);
   const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.auditLogsFiltered : ADMIN_EMPTY_GUIDES.auditLogs;
 
@@ -101,7 +140,12 @@ export default function AdminLogs() {
     setAuditResult("");
     setDateFrom("");
     setDateTo("");
-    void runAuditSearch(1);
+    setOperatorId("");
+    setObjectType("");
+    setObjectId("");
+    setActionType("");
+    setSearchParams(new URLSearchParams(), { replace: true });
+    applySubmittedFilters({}, 1);
   };
 
   const handleRemoveFilterChip = (key: string) => {
@@ -110,27 +154,31 @@ export default function AdminLogs() {
     const nextResult = "result" in patch ? (patch.result ?? "") : auditResult;
     const nextDateFrom = "dateFrom" in patch ? (patch.dateFrom ?? "") : dateFrom;
     const nextDateTo = "dateTo" in patch ? (patch.dateTo ?? "") : dateTo;
+    const nextOperatorId = "operatorId" in patch ? (patch.operatorId ?? "") : operatorId;
+    const nextObjectType = "objectType" in patch ? (patch.objectType ?? "") : objectType;
+    const nextObjectId = "objectId" in patch ? (patch.objectId ?? "") : objectId;
+    const nextActionType = "actionType" in patch ? (patch.actionType ?? "") : actionType;
     if ("keyword" in patch) setAuditKeyword(nextKeyword);
     if ("result" in patch) setAuditResult(nextResult);
     if ("dateFrom" in patch) setDateFrom(nextDateFrom);
     if ("dateTo" in patch) setDateTo(nextDateTo);
-    setAuditPage(1);
-    setAuditLoading(true);
-    fetchAuditLogs({
-      page: 1,
-      pageSize: auditPageSize,
-      keyword: nextKeyword.trim() || undefined,
-      result: nextResult || undefined,
-      dateFrom: nextDateFrom || undefined,
-      dateTo: nextDateTo || undefined,
-      sortOrder: "desc",
-    })
-      .then((p) => {
-        setAuditList(p.list);
-        setAuditTotal(p.total);
-      })
-      .catch(() => toast.error("加载审计日志失败"))
-      .finally(() => setAuditLoading(false));
+    if ("operatorId" in patch) setOperatorId(nextOperatorId);
+    if ("objectType" in patch) setObjectType(nextObjectType);
+    if ("objectId" in patch) setObjectId(nextObjectId);
+    if ("actionType" in patch) setActionType(nextActionType);
+    applySubmittedFilters(
+      {
+        keyword: nextKeyword.trim() || undefined,
+        result: nextResult || undefined,
+        dateFrom: nextDateFrom || undefined,
+        dateTo: nextDateTo || undefined,
+        operatorId: nextOperatorId.trim() || undefined,
+        objectType: nextObjectType.trim() || undefined,
+        objectId: nextObjectId.trim() || undefined,
+        actionType: nextActionType.trim() || undefined,
+      },
+      1,
+    );
   };
 
   if (!canAudit) {
@@ -184,6 +232,52 @@ export default function AdminLogs() {
                 <option value=""><Tx>全部</Tx></option>
                 <option value="success"><Tx>成功</Tx></option>
                 <option value="failure"><Tx>失败</Tx></option>
+              </select>
+            </div>
+            <div className="min-w-[10rem] flex-1">
+              <label className="mb-1 block text-xs text-muted-foreground"><Tx>操作人编号</Tx></label>
+              <input
+                value={operatorId}
+                onChange={(e) => setOperatorId(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAuditSearch()}
+                className="w-full min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                placeholder="管理员或用户编号（可填尾部几位）"
+              />
+            </div>
+            <div className="min-w-[9rem] flex-1">
+              <label className="mb-1 block text-xs text-muted-foreground"><Tx>对象类型</Tx></label>
+              <select
+                value={objectType}
+                onChange={(e) => setObjectType(e.target.value)}
+                className="w-full min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+              >
+                <option value=""><Tx>全部类型</Tx></option>
+                {objectTypeOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="min-w-[10rem] flex-1">
+              <label className="mb-1 block text-xs text-muted-foreground"><Tx>对象编号</Tx></label>
+              <input
+                value={objectId}
+                onChange={(e) => setObjectId(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAuditSearch()}
+                className="w-full min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                placeholder="订单、用户等对象编号"
+              />
+            </div>
+            <div className="min-w-[11rem] flex-[1.2]">
+              <label className="mb-1 block text-xs text-muted-foreground"><Tx>动作</Tx></label>
+              <select
+                value={actionType}
+                onChange={(e) => setActionType(e.target.value)}
+                className="w-full min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+              >
+                <option value=""><Tx>全部动作</Tx></option>
+                {actionTypeOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -292,9 +386,14 @@ export default function AdminLogs() {
               <td className="px-3 py-2 text-xs text-muted-foreground whitespace-nowrap">
                 {row.created_at ? formatDateTime(row.created_at) : "—"}
               </td>
-              <td className="px-3 py-2 text-xs">
-                <div className="font-medium text-foreground">{row.operator_name || "—"}</div>
-                <div className="text-muted-foreground">{zhOperatorRole(row.operator_role)}</div>
+              <td className="max-w-[9rem] px-3 py-2 align-middle">
+                <AdminTableCellGroup
+                  maxWidth="8.5rem"
+                  lines={[
+                    { text: row.operator_name || "—" },
+                    { text: zhOperatorRole(row.operator_role), muted: true },
+                  ]}
+                />
               </td>
               <td className="px-3 py-2 text-xs font-semibold text-foreground">{zhActionType(row.action_type)}</td>
               <td className="px-3 py-2 text-xs">
@@ -303,7 +402,13 @@ export default function AdminLogs() {
                   <div className="text-[10px] text-muted-foreground" title={row.object_id}><Tx>已关联</Tx></div>
                 ) : null}
               </td>
-              <td className="px-3 py-2 text-xs text-foreground max-w-[200px] truncate" title={row.summary || undefined}>{zhAuditSummary(row.summary)}</td>
+              <td className="max-w-[12rem] px-3 py-2 align-middle">
+                <AdminTableCell
+                  value={zhAuditSummary(row.summary)}
+                  fullText={zhAuditSummary(row.summary)}
+                  maxWidth="11rem"
+                />
+              </td>
               <td className="px-3 py-2">
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${row.result === "success" ? "bg-[color-mix(in_srgb,var(--theme-price)_12%,transparent)] text-[var(--theme-price)]" : THEME_BADGE_DANGER}`}>
                   {zhAuditResult(row.result)}
@@ -328,55 +433,11 @@ export default function AdminLogs() {
         )}
       </div>
 
-      {detail && (
+      {detail ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDetail(null)}>
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="max-h-[85vh] w-full max-w-lg overflow-y-auto theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow"
-          >
-            <h3 className="text-sm font-bold text-foreground mb-3"><Tx>审计详情</Tx></h3>
-            <dl className="space-y-2 text-xs">
-              <div className="flex justify-between gap-2"><dt className="text-muted-foreground"><Tx>动作</Tx></dt><dd className="text-right font-semibold">{zhActionType(detail.action_type)}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-muted-foreground"><Tx>摘要</Tx></dt><dd className="text-right max-w-[70%] break-words">{zhAuditSummary(detail.summary)}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-muted-foreground"><Tx>对象</Tx></dt><dd className="text-right" title={detail.object_id || undefined}>{zhObjectType(detail.object_type)}{detail.object_id ? " · 已关联" : ""}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-muted-foreground"><Tx>路径</Tx></dt><dd className="text-right break-all">{detail.request_method} {detail.request_path}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-muted-foreground"><Tx>IP 地址</Tx></dt><dd>{detail.ip || "—"}</dd></div>
-              <div className="flex justify-between gap-2"><dt className="text-muted-foreground"><Tx>浏览器标识</Tx></dt><dd className="text-right break-all max-w-[70%]">{detail.user_agent || "—"}</dd></div>
-              {detail.result === "failure" && detail.error_message && (
-                <div className={`rounded-lg p-2 ${THEME_ALERT_ERROR_SOFT}`}>{zhAuditErrorMessage(detail.error_message)}</div>
-              )}
-              {(() => {
-                const changes = buildAuditChangeSummary(detail.before_json, detail.after_json);
-                if (!changes.length) return null;
-                return (
-                  <div className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)]/40 p-2">
-                    <dt className="text-muted-foreground mb-1"><Tx>变更摘要</Tx></dt>
-                    <div className="space-y-1 text-[11px]">
-                      {changes.map((c) => (
-                        <div key={c.key} className="flex flex-wrap items-baseline justify-between gap-2">
-                          <span className="text-muted-foreground">{c.label}</span>
-                          <span className="font-mono text-foreground break-all text-right">
-                            {c.fromText} → {c.toText}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-              <div>
-                <dt className="text-muted-foreground mb-1"><Tx>变更前</Tx></dt>
-                <pre className="max-h-40 overflow-auto rounded-lg bg-secondary p-2 text-[10px]">{detail.before_json != null ? JSON.stringify(detail.before_json, null, 2) : "—"}</pre>
-              </div>
-              <div>
-                <dt className="text-muted-foreground mb-1"><Tx>变更后</Tx></dt>
-                <pre className="max-h-40 overflow-auto rounded-lg bg-secondary p-2 text-[10px]">{detail.after_json != null ? JSON.stringify(detail.after_json, null, 2) : "—"}</pre>
-              </div>
-            </dl>
-            <button type="button" onClick={() => setDetail(null)} className="mt-4 w-full theme-rounded border border-[var(--theme-border)] py-2 text-sm"><Tx>关闭</Tx></button>
-          </div>
+          <AuditLogDetailPanel detail={detail} onClose={() => setDetail(null)} />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

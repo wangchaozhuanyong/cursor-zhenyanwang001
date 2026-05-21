@@ -1,4 +1,4 @@
-const { ValidationError } = require('../../errors');
+const { ForbiddenError, ValidationError } = require('../../errors');
 const repo = require('./repository/order.repository');
 const siteSettingsRepo = require('./repository/siteSettings.repository');
 const loyaltyRepo = require('../loyalty/repository/loyalty.repository');
@@ -7,6 +7,7 @@ const rewardRepo = require('../user/repository/reward.repository');
 const sstTax = require('./sstTax');
 const { computeShippingFee, estimateWeightFromItems } = require('../../utils/shippingFee');
 const pointsEngine = require('../loyalty/service/pointsEngine.service');
+const siteCapabilitiesService = require('../siteCapabilities/service/siteCapabilities.service');
 
 function parseActivityConfig(raw) {
   if (!raw) return null;
@@ -207,6 +208,16 @@ function assertCouponUsableOnOrder({
 async function buildOrderPricing(userId, body, conn = null) {
   const q = conn || repo.getPool();
   const { items, coupon_id, shipping_template_id, estimated_weight_kg } = body;
+  const [pointsEnabled, couponEnabled] = await Promise.all([
+    siteCapabilitiesService.isCapabilityEnabled('pointsEnabled'),
+    siteCapabilitiesService.isCapabilityEnabled('couponEnabled'),
+  ]);
+  if (!couponEnabled && (coupon_id || body.coupon_title)) {
+    throw new ForbiddenError('优惠券功能已关闭');
+  }
+  if (!pointsEnabled && (body.use_points || Number(body.points_to_use || 0) > 0)) {
+    throw new ForbiddenError('积分功能已关闭');
+  }
 
   const productIds = items.map((i) => i.product_id);
   const products = conn
@@ -323,9 +334,10 @@ async function buildOrderPricing(userId, body, conn = null) {
   const rewardMethods = parseJsonArray(rewardSettings?.allowed_payment_methods, ['online', 'whatsapp']);
 
   const pointsBalance = userId ? Number(await pointsRepo.selectUserPointsBalance(userId)) : 0;
+  const hasPendingPointsReverse = userId ? await pointsRepo.hasPendingReverse(userId) : false;
   const rewardBalance = userId ? Number(await rewardRepo.sumUserRewardTransactions(q, userId)) : 0;
 
-  const usePoints = !!body.use_points;
+  const usePoints = pointsEnabled && !!body.use_points;
   const requestPointsToUse = Number(body.points_to_use || 0);
   if (usePoints && !isPaymentMethodAllowedForPoints(pointsSettings, body.payment_method)) {
     throw new ValidationError('当前支付方式不支持积分抵扣');
@@ -358,17 +370,29 @@ async function buildOrderPricing(userId, body, conn = null) {
       allow_points_stack: flash ? flash.allow_points_stack !== 0 : !fullReductionBlocksPoints,
     };
   });
-  const pointsRedeem = pointsEngine.calculateMaxUsablePoints({
-    settings: pointsSettings,
-    userPointsBalance: pointsBalance,
-    orderItems: loyaltyItems,
-    productMap,
-    productRules,
-    coupon: couponDiscount > 0 ? { title: couponTitle, type: couponType } : null,
-    discounts: { coupon_amount: couponDiscount, full_reduction_amount: fullReductionDiscount, member_level_discount: memberLevelDiscount },
-    pointsToUse: usePoints ? (requestPointsToUse > 0 ? requestPointsToUse : pointsBalance) : 0,
+  const pointsRedeem = hasPendingPointsReverse
+    ? {
+      max_usable_points: 0,
+      points_used: 0,
+      points_discount_amount: 0,
+      point_value_myr: Number(pointsSettings?.point_value_myr || 0.01),
+      points_per_currency: Number(pointsSettings?.points_per_currency || 100),
+      disabled_reason: '存在待扣回积分，暂不可使用积分抵扣',
+      adjusted: usePoints,
+      adjusted_reason: usePoints ? 'pending_reverse' : '',
+      item_results: [],
+    }
+    : pointsEngine.calculateMaxUsablePoints({
+      settings: pointsSettings,
+      userPointsBalance: pointsBalance,
+      orderItems: loyaltyItems,
+      productMap,
+      productRules,
+      coupon: couponDiscount > 0 ? { title: couponTitle, type: couponType } : null,
+      discounts: { coupon_amount: couponDiscount, full_reduction_amount: fullReductionDiscount, member_level_discount: memberLevelDiscount },
+    pointsToUse: pointsEnabled && usePoints ? (requestPointsToUse > 0 ? requestPointsToUse : pointsBalance) : 0,
   });
-  const max_usable_points = pointsRedeem.max_usable_points || 0;
+  const max_usable_points = pointsEnabled ? (pointsRedeem.max_usable_points || 0) : 0;
   const points_used = usePoints ? Number(pointsRedeem.points_used || 0) : 0;
   const points_discount_amount = usePoints ? Number(pointsRedeem.points_discount_amount || 0) : 0;
 
@@ -514,5 +538,3 @@ module.exports = {
   assertCouponUsableOnOrder,
   isPaymentMethodAllowedForPoints,
 };
-
-

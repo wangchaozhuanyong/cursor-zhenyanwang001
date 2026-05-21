@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Eye, Loader2, RefreshCw, Save, Send } from "lucide-react";
 import { toast } from "sonner";
+import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
@@ -27,6 +29,7 @@ import {
   TELEGRAM_BOT_TOKEN_UNCHANGED,
   type TelegramNotifyConfig,
 } from "@/utils/telegramNotifyConfig";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 const inputClass =
   "w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-[var(--theme-primary)]";
@@ -39,6 +42,7 @@ function formatDate(value?: string) {
 }
 
 export default function AdminTelegramSettings() {
+  const queryClient = useQueryClient();
   const [form, setForm] = useState<TelegramNotifyConfig>(normalizeTelegramNotifyConfig({}));
   const [botTokenMasked, setBotTokenMasked] = useState("");
   const [botTokenConfigured, setBotTokenConfigured] = useState(false);
@@ -47,7 +51,6 @@ export default function AdminTelegramSettings() {
   const [logs, setLogs] = useState<TelegramLogRow[]>([]);
   const [preview, setPreview] = useState<TelegramMessagePreview | null>(null);
   const [previewIndex, setPreviewIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -65,33 +68,39 @@ export default function AdminTelegramSettings() {
     }
   }, []);
 
-  const load = useCallback(() => {
-    setLoading(true);
-    Promise.allSettled([fetchTelegramSettings(), fetchTelegramLogs(20)])
-      .then(async ([settingsResult, logsResult]) => {
-        if (settingsResult.status === "fulfilled" && settingsResult.value) {
-          const s = settingsResult.value;
-          setForm(settingsToForm(s));
-          setBotTokenMasked(s.botTokenMasked || "");
-          setBotTokenConfigured(!!s.botTokenConfigured);
-          setConfigSource(s.configSource === "env" ? "env" : "database");
-          setBotTokenInput("");
-          await loadPreview(settingsToForm(s));
-        } else if (settingsResult.status === "rejected") {
-          toast.error(toastErrorMessage(settingsResult.reason, "加载 Telegram 设置失败"));
-        }
-        if (logsResult.status === "fulfilled") {
-          setLogs(Array.isArray(logsResult.value) ? logsResult.value : []);
-        } else {
-          setLogs([]);
-        }
-      })
-      .finally(() => setLoading(false));
-  }, [loadPreview]);
+  const telegramQuery = useQuery({
+    queryKey: adminQueryKeys.telegramSettings(),
+    queryFn: async () => {
+      const [settingsResult, logsResult] = await Promise.allSettled([
+        fetchTelegramSettings(),
+        fetchTelegramLogs(20),
+      ]);
+      if (settingsResult.status === "rejected") {
+        throw settingsResult.reason;
+      }
+      return {
+        settings: settingsResult.value,
+        logs: logsResult.status === "fulfilled" && Array.isArray(logsResult.value) ? logsResult.value : [],
+      };
+    },
+    staleTime: 60_000,
+  });
+
+  const loading = telegramQuery.isLoading && !telegramQuery.data;
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (!telegramQuery.data?.settings) return;
+    const s = telegramQuery.data.settings;
+    setForm(settingsToForm(s));
+    setBotTokenMasked(s.botTokenMasked || "");
+    setBotTokenConfigured(!!s.botTokenConfigured);
+    setConfigSource(s.configSource === "env" ? "env" : "database");
+    setBotTokenInput("");
+    setLogs(telegramQuery.data.logs);
+    void loadPreview(settingsToForm(s));
+  }, [telegramQuery.data, loadPreview]);
+
+  const reload = () => void telegramQuery.refetch();
 
   const patchForm = (patch: Partial<TelegramNotifyConfig>) => {
     setForm((prev) => ({ ...prev, ...patch }));
@@ -110,6 +119,7 @@ export default function AdminTelegramSettings() {
       setBotTokenInput("");
       await refreshSiteCapabilities();
       await loadPreview(settingsToForm(saved));
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.telegramSettings() });
       toast.success("Telegram 设置已保存");
     } catch (error) {
       toast.error(toastErrorMessage(error, "保存失败"));
@@ -159,7 +169,7 @@ export default function AdminTelegramSettings() {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={load}
+              onClick={reload}
               disabled={loading}
               className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-semibold disabled:opacity-60"
             >
@@ -362,7 +372,9 @@ export default function AdminTelegramSettings() {
                           <span className="rounded-full bg-secondary px-2 py-1 text-xs font-semibold">{log.send_status}</span>
                         </td>
                         <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-xs`)}>{log.provider_message_id || "-"}</td>
-                        <td className={adminTdClassName("max-w-[280px] truncate text-xs text-muted-foreground")}>{log.error_message || "-"}</td>
+                        <td className={adminTdClassName("max-w-[18rem]")}>
+                          <AdminTableCell value={log.error_message || "-"} fullText={log.error_message || ""} maxWidth="17rem" muted />
+                        </td>
                       </tr>
                     ))}
                     {logs.length === 0 && (

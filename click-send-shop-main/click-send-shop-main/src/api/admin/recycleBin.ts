@@ -1,4 +1,5 @@
 import { get, put, post } from "@/api/request";
+import type { PaginatedData } from "@/types/common";
 
 export interface RecycleBinItem {
   id: string;
@@ -12,8 +13,17 @@ export interface RecycleBinItem {
   deleted_by: string | null;
 }
 
-export function getRecycleBin(params?: { type?: string }) {
-  return get<RecycleBinItem[]>("/admin/recycle-bin", params as unknown as Record<string, unknown>);
+export interface RecycleBinListParams {
+  type?: string;
+  keyword?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export function getRecycleBin(params?: RecycleBinListParams) {
+  return get<RecycleBinItem[] | PaginatedData<RecycleBinItem>>("/admin/recycle-bin", params as unknown as Record<string, unknown>);
 }
 
 export function restoreItem(id: string, type: string) {

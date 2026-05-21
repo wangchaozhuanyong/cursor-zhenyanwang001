@@ -42,6 +42,14 @@ async function updateCategoryDynamic(setFragments, values, id) {
   await db.query(`UPDATE categories SET ${setFragments.join(', ')} WHERE id = ?`, [...values, id]);
 }
 
+async function updateCategoryDynamicWithVersion(setFragments, values, id, version) {
+  const [result] = await db.query(
+    `UPDATE categories SET ${setFragments.join(', ')}, version = version + 1 WHERE id = ? AND version = ?`,
+    [...values, id, Number(version)],
+  );
+  return result.affectedRows;
+}
+
 async function selectCategoryById(id) {
   const [[row]] = await db.query('SELECT * FROM categories WHERE id = ? AND deleted_at IS NULL', [id]);
   return row || null;
@@ -95,6 +103,7 @@ module.exports = {
   selectCategoryById,
   insertCategory,
   updateCategoryDynamic,
+  updateCategoryDynamicWithVersion,
   countChildren,
   countProducts,
   batchUpdateSort,

@@ -94,10 +94,13 @@ export default function GuestHome() {
   const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
   const slogan = siteInfo.siteSlogan || "官方商品与服务平台";
   const description = siteInfo.siteDescription || "本平台提供商品、服务与客户支持信息。";
-  const { banners } = useHomeBanners();
+  const { banners, loading: bannersLoading } = useHomeBanners();
   const { themeConfig } = useThemeRuntime();
   const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
   const { settings: homeModules } = useHomeModuleSettings();
+  const guestBannerEnabled = isHomeModuleEnabled(homeModules, "banner", "guest");
+  const showGuestIntroFallback =
+    !bannersLoading && (!guestBannerEnabled || banners.length === 0);
   const guestGridMax = homeModules.guestRecommendMax;
   const {
     hotProducts,
@@ -216,21 +219,30 @@ export default function GuestHome() {
           isMagazineLayout && "bg-[color-mix(in_srgb,var(--theme-bg)_88%,black)]",
         )}
       >
-        <section className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3">
-          <h1 className="text-base font-semibold text-[var(--theme-text)]">{slogan}</h1>
-          <p className="mt-1 text-sm text-[var(--theme-text-muted)]">
-            {description}
-          </p>
-        </section>
+        <h1 className="sr-only">{slogan}</h1>
+        <p className="sr-only">{description}</p>
 
-        {(isHomeModuleEnabled(homeModules, "banner", "guest") ||
+        {showGuestIntroFallback ? (
+          <section className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-4">
+            <h2 className="text-base font-semibold text-[var(--theme-text)]">{slogan}</h2>
+            <p className="mt-1 line-clamp-2 text-sm leading-6 text-[var(--theme-text-muted)]">
+              {description}
+            </p>
+          </section>
+        ) : null}
+
+        {(guestBannerEnabled ||
           isHomeModuleEnabled(homeModules, "trust_bar", "guest") ||
           isHomeModuleEnabled(homeModules, "nav_grid", "guest")) ? (
           <div className={HOME_HERO_STACK_CLASS}>
-        {isHomeModuleEnabled(homeModules, "banner", "guest") ? (
+        {guestBannerEnabled ? (
           <AnimatedSection>
             <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
-              <BannerCarousel banners={banners} themeConfigOverride={themeConfig} />
+              <BannerCarousel
+                banners={banners}
+                loading={bannersLoading}
+                themeConfigOverride={themeConfig}
+              />
             </div>
           </AnimatedSection>
         ) : null}

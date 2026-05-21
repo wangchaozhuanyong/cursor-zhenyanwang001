@@ -110,11 +110,17 @@ async function applyOrderRefundCompensation(conn, params) {
 
   if (reversePoints) {
     if (isFullRefund) {
-      await orderPoints.rollbackOrderPoints(conn, order, {
+      await orderPoints.refundOrderRedeemOnly(conn, order, {
         operatorId,
         trigger: options.trigger || 'order_refund',
-        description: reason || `订单退款回滚积分 ${order.order_no}`,
-        redeemDescription: `订单退款退回抵扣积分 ${order.order_no}`,
+        description: reason || `Order refund returns redeemed points ${order.order_no}`,
+        redeemDescription: `Order refund returns redeemed points ${order.order_no}`,
+        sourceType: 'order_refund',
+      });
+      await orderPoints.reverseOrderEarnOnly(conn, order, {
+        operatorId,
+        trigger: options.trigger || 'order_refund',
+        description: reason || `Order refund reverses earned points ${order.order_no}`,
         sourceType: 'order_refund',
       });
     } else {

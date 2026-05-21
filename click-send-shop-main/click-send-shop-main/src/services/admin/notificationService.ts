@@ -12,6 +12,8 @@ export type NotificationQueryParams = PaginationParams & {
   workflow_status?: string;
 };
 
+export type NotificationPayload = notificationApi.NotificationPayload;
+
 export async function fetchNotifications(params?: NotificationQueryParams): Promise<PaginatedData<Notification>> {
   const res = await notificationApi.getNotifications(params as unknown as Record<string, unknown>);
   return unwrapPaginated<Notification>(res.data);

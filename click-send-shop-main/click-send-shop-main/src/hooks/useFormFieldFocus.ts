@@ -9,23 +9,34 @@ function isKeyboardTriggerField(el: Element | null): boolean {
   return !["checkbox", "radio", "button", "submit", "reset", "file", "hidden", "image"].includes(type);
 }
 
-export function isSoftKeyboardLikelyOpen(): boolean {
+function isCoarsePointerDevice(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(pointer: coarse)").matches;
+}
+
+/** 迟滞阈值，避免 Chrome visualViewport 微抖导致布局来回切换 */
+function readKeyboardLikelyOpen(prevOpen: boolean): boolean {
   if (typeof window === "undefined" || !window.visualViewport) return false;
-  return window.visualViewport.height < window.innerHeight * 0.82;
+  const ratio = window.visualViewport.height / window.innerHeight;
+  return prevOpen ? ratio < 0.85 : ratio < 0.75;
 }
 
 /**
  * 登录等表单页：区分「文本框聚焦」与「软键盘弹起」。
- * - 国家代码 select 仅聚焦不会收起顶部轮播
- * - 手机号/密码等输入唤起键盘时才收起轮播并压缩布局
+ * - 桌面 Chrome：不因 visualViewport 微变收起轮播或改动底部协议区
+ * - 触屏设备：软键盘稳定弹起后才压缩顶部轮播（无动画，避免闪跳）
  */
 export function useFormFieldFocus(enabled = true) {
   const [textFieldFocused, setTextFieldFocused] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const keyboardOpenRef = useRef(false);
   const blurTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const viewportDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const coarsePointer = useRef(isCoarsePointerDevice());
 
   useEffect(() => {
     if (!enabled || typeof document === "undefined") return;
+    coarsePointer.current = isCoarsePointerDevice();
 
     const clearBlurTimer = () => {
       if (blurTimerRef.current) {
@@ -34,8 +45,30 @@ export function useFormFieldFocus(enabled = true) {
       }
     };
 
+    const clearViewportDebounce = () => {
+      if (viewportDebounceRef.current) {
+        clearTimeout(viewportDebounceRef.current);
+        viewportDebounceRef.current = null;
+      }
+    };
+
+    const applyKeyboardOpen = (next: boolean) => {
+      if (keyboardOpenRef.current === next) return;
+      keyboardOpenRef.current = next;
+      setKeyboardOpen(next);
+    };
+
     const syncKeyboardOpen = () => {
-      setKeyboardOpen(isSoftKeyboardLikelyOpen());
+      const next = readKeyboardLikelyOpen(keyboardOpenRef.current);
+      applyKeyboardOpen(next);
+    };
+
+    const scheduleViewportSync = () => {
+      clearViewportDebounce();
+      viewportDebounceRef.current = setTimeout(() => {
+        viewportDebounceRef.current = null;
+        syncKeyboardOpen();
+      }, 120);
     };
 
     const setTextFocusedTrue = () => {
@@ -51,7 +84,7 @@ export function useFormFieldFocus(enabled = true) {
         if (isKeyboardTriggerField(document.activeElement)) return;
         setTextFieldFocused(false);
         syncKeyboardOpen();
-        if (!isSoftKeyboardLikelyOpen()) setKeyboardOpen(false);
+        if (!readKeyboardLikelyOpen(keyboardOpenRef.current)) applyKeyboardOpen(false);
       }, 220);
     };
 
@@ -65,8 +98,8 @@ export function useFormFieldFocus(enabled = true) {
     };
 
     const onViewportResize = () => {
-      const kb = isSoftKeyboardLikelyOpen();
-      setKeyboardOpen(kb);
+      scheduleViewportSync();
+      const kb = readKeyboardLikelyOpen(keyboardOpenRef.current);
       if (isKeyboardTriggerField(document.activeElement) || kb) {
         setTextFieldFocused(true);
         return;
@@ -78,18 +111,24 @@ export function useFormFieldFocus(enabled = true) {
     document.addEventListener("focusout", onFocusOut);
     window.visualViewport?.addEventListener("resize", onViewportResize);
     syncKeyboardOpen();
+
     return () => {
       clearBlurTimer();
+      clearViewportDebounce();
       document.removeEventListener("focusin", onFocusIn);
       document.removeEventListener("focusout", onFocusOut);
       window.visualViewport?.removeEventListener("resize", onViewportResize);
     };
   }, [enabled]);
 
+  const layoutCompact = keyboardOpen && coarsePointer.current;
+
   return {
     textFieldFocused,
     keyboardOpen,
-    /** 文本框聚焦或软键盘已弹起（用于暂停轮播、收紧间距） */
+    /** 仅触屏 + 软键盘：收起轮播等，桌面 Chrome 不触发 */
+    layoutCompact,
+    /** 文本框聚焦或软键盘已弹起（用于暂停轮播） */
     formCompact: textFieldFocused || keyboardOpen,
   };
 }

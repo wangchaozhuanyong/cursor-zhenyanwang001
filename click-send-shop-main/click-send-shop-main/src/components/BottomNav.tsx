@@ -6,16 +6,17 @@ import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useCartStore } from "@/stores/useCartStore";
 import { isLoggedIn } from "@/utils/token";
 import { getBottomNavInnerClassName, getBottomNavShellClassName } from "@/utils/themeVisuals";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 
 const tabs = [
   { path: "/", label: "\u9996\u9875", icon: Home },
   { path: "/categories", label: "\u5206\u7c7b", icon: LayoutGrid },
-  { path: "/support-download?tab=support", label: "客服/APP", icon: Headphones },
+  { path: "/support-download?tab=support", label: "客服", icon: Headphones },
   { path: "/cart", label: "\u8d2d\u7269\u8f66", icon: ShoppingCart },
   { path: "/profile", label: "\u6211\u7684", icon: User },
 ];
 
-/** 轻触允许的最大位移（px）；略放宽，避免「刚滑完页面就点底栏」被误判为滑动 */
+/** 杞昏Е鍏佽鐨勬渶澶т綅绉伙紙px锛夛紱鐣ユ斁瀹斤紝閬垮厤銆屽垰婊戝畬椤甸潰灏辩偣搴曟爮銆嶈璇垽涓烘粦鍔?*/
 const TAP_MOVE_THRESHOLD = 28;
 type ActivePointer = {
   path: string;
@@ -31,6 +32,7 @@ export default function BottomNav() {
   const navigate = useNavigate();
   const { themeConfig } = useThemeRuntime();
   const navStyle = themeConfig.navStyle;
+  const capabilities = useSiteCapabilities();
   const totalItems = useCartStore((s) => s.totalItems());
   const activePointerRef = useRef<ActivePointer | null>(null);
   const [badgeBump, setBadgeBump] = useState(false);
@@ -57,6 +59,7 @@ export default function BottomNav() {
     const base = path.split("?")[0];
     return location.pathname === base;
   };
+  const visibleTabs = tabs.filter((tab) => capabilities.mallEnabled || !["/categories", "/cart"].includes(tab.path.split("?")[0]));
 
   const handleNavigate = (path: string) => {
     const base = path.split("?")[0];
@@ -140,8 +143,8 @@ export default function BottomNav() {
       }}
     >
       <div className={getBottomNavInnerClassName(navStyle)} style={{ touchAction: "none" }}>
-        <div className="grid h-[68px] grid-cols-5 items-center px-1">
-          {tabs.map((tab) => {
+        <div className="grid h-[68px] items-center px-1" style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0, 1fr))` }}>
+          {visibleTabs.map((tab) => {
             const isActive = isTabActive(tab.path);
             const Icon = tab.icon;
             return (

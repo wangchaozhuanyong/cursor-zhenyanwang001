@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import * as settingsService from "@/services/admin/settingsService";
 import { DEFAULT_SITE_CAPABILITIES, type SiteCapabilities } from "@/types/siteCapabilities";
 import { refreshSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 const FEATURE_ITEMS: Array<{ key: keyof SiteCapabilities; label: string; desc: string }> = [
   { key: "mallEnabled", label: "商城模块", desc: "控制商品、购物车等商城入口展示。" },
@@ -24,18 +26,31 @@ const FEATURE_ITEMS: Array<{ key: keyof SiteCapabilities; label: string; desc: s
 ];
 
 export default function AdminFeatureSettings() {
+  const queryClient = useQueryClient();
   const [values, setValues] = useState<SiteCapabilities>(DEFAULT_SITE_CAPABILITIES);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const visibleFeatureItems = useMemo(
+    () => FEATURE_ITEMS.filter((item) => !["serviceEnabled", "restrictedProductComplianceEnabled"].includes(item.key)),
+    [],
+  );
+
+  const capabilitiesQuery = useQuery({
+    queryKey: adminQueryKeys.siteCapabilities(),
+    queryFn: settingsService.fetchSiteCapabilities,
+    staleTime: 60_000,
+  });
+
+  const loading = capabilitiesQuery.isLoading && !capabilitiesQuery.data;
 
   useEffect(() => {
-    settingsService.fetchSiteCapabilities()
-      .then((data) => setValues({ ...DEFAULT_SITE_CAPABILITIES, ...(data ?? {}) }))
-      .catch(() => toast.error("功能开关加载失败"))
-      .finally(() => setLoading(false));
-  }, []);
+    if (!capabilitiesQuery.data) return;
+    setValues({ ...DEFAULT_SITE_CAPABILITIES, ...capabilitiesQuery.data });
+  }, [capabilitiesQuery.data]);
 
-  const enabledCount = useMemo(() => Object.values(values).filter(Boolean).length, [values]);
+  const enabledCount = useMemo(
+    () => visibleFeatureItems.filter((item) => values[item.key]).length,
+    [values, visibleFeatureItems],
+  );
 
   const save = async () => {
     setSaving(true);
@@ -43,6 +58,7 @@ export default function AdminFeatureSettings() {
       const next = await settingsService.updateSiteCapabilities(values);
       setValues({ ...DEFAULT_SITE_CAPABILITIES, ...(next ?? {}) });
       await refreshSiteCapabilities();
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.siteCapabilities() });
       toast.success("功能开关已保存");
     } catch {
       toast.error("保存失败");
@@ -59,7 +75,7 @@ export default function AdminFeatureSettings() {
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold text-foreground">站点功能能力</h2>
             <AdminFieldHint
-              text={`当前启用 ${enabledCount} / ${FEATURE_ITEMS.length} 项。保存后立即作用于前台入口与相关接口。`}
+              text={`当前启用 ${enabledCount} / ${visibleFeatureItems.length} 项。保存后立即作用于前台入口与相关接口。`}
             />
           </div>
           <button type="button" onClick={save} disabled={saving || loading} className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50">
@@ -67,7 +83,7 @@ export default function AdminFeatureSettings() {
           </button>
         </div>
         <div className="grid gap-3 p-4 md:grid-cols-2">
-          {FEATURE_ITEMS.map((item) => (
+          {visibleFeatureItems.map((item) => (
             <div key={item.key} className="flex items-center justify-between gap-4 rounded-xl border border-border p-4">
               <div className="flex items-center gap-2">
                 <div className="font-medium text-foreground">{item.label}</div>

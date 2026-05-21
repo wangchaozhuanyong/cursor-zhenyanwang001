@@ -2,8 +2,10 @@ import { ArrowLeft } from "lucide-react";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { AdminFormSectionsSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import { useNavigate, useParams } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { createCoupon, updateCoupon, fetchCoupons } from "@/services/admin/couponService";
 import * as categoryService from "@/services/admin/categoryService";
 import { fetchProducts } from "@/services/admin/productService";
@@ -25,6 +27,7 @@ const couponTypes = [
 ];
 
 export default function AdminCouponForm() {
+  const queryClient = useQueryClient();
   const { confirm } = useAdminConfirm();
   const navigate = useNavigate();
   const goBack = useGoBack("/admin/marketing/coupons");
@@ -33,13 +36,8 @@ export default function AdminCouponForm() {
   const isNew = couponId === "new";
   const isEdit = !isNew;
 
-  const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [productPage, setProductPage] = useState(1);
-  const [productTotal, setProductTotal] = useState(0);
-  const [productLoading, setProductLoading] = useState(false);
   const [productKeyword, setProductKeyword] = useState("");
   const [form, setForm] = useState({
     title: "",
@@ -64,92 +62,88 @@ export default function AdminCouponForm() {
     stackable_with_activity: true,
   });
 
+  const categoriesQuery = useQuery({
+    queryKey: adminQueryKeys.categories(),
+    queryFn: categoryService.fetchCategories,
+    staleTime: 60_000,
+  });
+
+  const categories = categoriesQuery.data ?? [];
+
+  const couponQuery = useQuery({
+    queryKey: adminQueryKeys.couponDetail(couponId),
+    queryFn: async () => {
+      const data = await fetchCoupons({ page: 1, pageSize: 500 });
+      const coupon = data.list.find((c) => String(c.id) === couponId);
+      if (!coupon) throw new Error("NOT_FOUND");
+      return coupon;
+    },
+    enabled: isEdit && !!couponId,
+    staleTime: 60_000,
+    retry: false,
+  });
+
+  const productQueryParams = useMemo(
+    () => ({ page: productPage, pageSize: 50, keyword: productKeyword.trim() || undefined }),
+    [productKeyword, productPage],
+  );
+
+  const productsQuery = useQuery({
+    queryKey: adminQueryKeys.couponFormProducts(productQueryParams),
+    queryFn: () => fetchProducts(productQueryParams),
+    enabled: form.usable_scope_type === "product",
+    placeholderData: (previous) => previous,
+    staleTime: 30_000,
+  });
+
+  const products = productsQuery.data?.list ?? [];
+  const productTotal = productsQuery.data?.total ?? 0;
+  const productLoading = productsQuery.isLoading && !productsQuery.data;
+
+  const loading = isNew ? false : couponQuery.isLoading && !couponQuery.data;
+
   useEffect(() => {
-    let cancelled = false;
-
-    categoryService.fetchCategories().then((rows) => {
-      if (!cancelled) setCategories(rows);
-    }).catch(() => {});
-    setProductLoading(true);
-    fetchProducts({ page: 1, pageSize: 50 }).then((res) => {
-      if (!cancelled) {
-        setProducts(res.list || []);
-        setProductTotal(res.total || 0);
-        setProductPage(1);
-      }
-    }).catch(() => {}).finally(() => {
-      if (!cancelled) setProductLoading(false);
-    });
-
-    if (isNew) {
-      setLoading(false);
-      return () => { cancelled = true; };
-    }
-
+    if (!isEdit) return;
     if (!couponId) {
-      setLoading(false);
       toast.error("优惠券参数异常，已返回列表");
       navigate("/admin/marketing/coupons", { replace: true });
-      return () => { cancelled = true; };
+      return;
     }
-
-    setLoading(true);
-    fetchCoupons({ page: 1, pageSize: 500 })
-      .then((data) => {
-        if (cancelled) return;
-        const coupon = data.list.find((c) => String(c.id) === couponId);
-        if (!coupon) {
-          toast.error("未找到该优惠券，可能已删除");
-          navigate("/admin/marketing/coupons", { replace: true });
-          return;
-        }
-        setForm({
-          title: coupon.title || "",
-          code: coupon.code || "",
-          type: coupon.type || "fixed",
-          value: coupon.value?.toString() || "",
-          min_amount: coupon.min_amount?.toString() || "",
-          start_date: coupon.start_date?.slice(0, 10) || "",
-          end_date: coupon.end_date?.slice(0, 10) || "",
-          description: coupon.description || "",
-          scope_type: coupon.scope_type || "all",
-          category_ids: Array.isArray(coupon.category_ids) ? coupon.category_ids : [],
-          display_badge: coupon.display_badge || "",
-          total_quantity: coupon.total_quantity?.toString() || "0",
-          per_user_limit: coupon.per_user_limit?.toString() || "1",
-          new_user_only: !!coupon.new_user_only,
-          member_only: !!coupon.member_only,
-          auto_issue: !!coupon.auto_issue,
-          usable_scope_type: coupon.usable_scope_type || "all",
-          usable_product_ids: Array.isArray(coupon.usable_product_ids) ? coupon.usable_product_ids : [],
-          usable_category_ids: Array.isArray(coupon.usable_category_ids) ? coupon.usable_category_ids : [],
-          stackable_with_activity: coupon.stackable_with_activity !== false,
-        });
-      })
-      .catch((e) => toast.error(toastErrorMessage(e, "加载优惠券失败")))
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => { cancelled = true; };
-  }, [couponId, isNew, navigate]);
+    if (!couponQuery.isError) return;
+    if (couponQuery.error instanceof Error && couponQuery.error.message === "NOT_FOUND") {
+      toast.error("未找到该优惠券，可能已删除");
+    } else {
+      toast.error(toastErrorMessage(couponQuery.error, "加载优惠券失败"));
+    }
+    navigate("/admin/marketing/coupons", { replace: true });
+  }, [couponId, couponQuery.error, couponQuery.isError, isEdit, navigate]);
 
   useEffect(() => {
-    let cancelled = false;
-    if (form.usable_scope_type !== "product") return () => { cancelled = true; };
-    setProductLoading(true);
-    fetchProducts({ page: productPage, pageSize: 50, keyword: productKeyword.trim() || undefined })
-      .then((res) => {
-        if (cancelled) return;
-        setProducts(res.list || []);
-        setProductTotal(res.total || 0);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setProductLoading(false);
-      });
-    return () => { cancelled = true; };
-  }, [form.usable_scope_type, productPage, productKeyword]);
+    if (!couponQuery.data) return;
+    const coupon = couponQuery.data;
+    setForm({
+      title: coupon.title || "",
+      code: coupon.code || "",
+      type: coupon.type || "fixed",
+      value: coupon.value?.toString() || "",
+      min_amount: coupon.min_amount?.toString() || "",
+      start_date: coupon.start_date?.slice(0, 10) || "",
+      end_date: coupon.end_date?.slice(0, 10) || "",
+      description: coupon.description || "",
+      scope_type: coupon.scope_type || "all",
+      category_ids: Array.isArray(coupon.category_ids) ? coupon.category_ids : [],
+      display_badge: coupon.display_badge || "",
+      total_quantity: coupon.total_quantity?.toString() || "0",
+      per_user_limit: coupon.per_user_limit?.toString() || "1",
+      new_user_only: !!coupon.new_user_only,
+      member_only: !!coupon.member_only,
+      auto_issue: !!coupon.auto_issue,
+      usable_scope_type: coupon.usable_scope_type || "all",
+      usable_product_ids: Array.isArray(coupon.usable_product_ids) ? coupon.usable_product_ids : [],
+      usable_category_ids: Array.isArray(coupon.usable_category_ids) ? coupon.usable_category_ids : [],
+      stackable_with_activity: coupon.stackable_with_activity !== false,
+    });
+  }, [couponQuery.data]);
 
   const handleSave = async () => {
     if (!form.title) { toast.error("请输入优惠券名称"); return; }
@@ -209,6 +203,8 @@ export default function AdminCouponForm() {
         await updateCoupon(couponId, payload);
         toast.success("优惠券更新成功");
       }
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponsRoot() });
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.marketingDashboard() });
       navigate("/admin/marketing/coupons");
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败，请重试"));

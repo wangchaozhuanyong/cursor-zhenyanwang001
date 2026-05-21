@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminLabelWithHint, AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import {
@@ -17,12 +18,14 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminTableCellGroup } from "@/components/admin/AdminTableCell";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as categoryService from "@/services/admin/categoryService";
 import * as uploadService from "@/services/uploadService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { hasTransparentPixels } from "@/utils/imageTransparency";
 import type { Category } from "@/types/category";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
 import {
   THEME_BADGE_MUTED,
@@ -115,8 +118,8 @@ function reorderSiblings(nodes: Category[], draggedId: string, targetId: string)
 }
 
 export default function AdminCategories() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const expandedInitialized = useRef(false);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState<CategoryForm>(EMPTY_FORM);
@@ -126,22 +129,23 @@ export default function AdminCategories() {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
 
-  const loadCategories = async () => {
-    setLoading(true);
-    try {
-      const data = await categoryService.fetchCategories();
-      setCategories(data);
-      setExpanded(new Set(data.map((x) => x.id)));
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "加载数据失败"));
-    } finally {
-      setLoading(false);
-    }
-  };
+  const categoriesQuery = useQuery({
+    queryKey: adminQueryKeys.categories(),
+    queryFn: categoryService.fetchCategories,
+    staleTime: 60_000,
+  });
+
+  const categories = categoriesQuery.data ?? [];
+  const loading = categoriesQuery.isLoading && !categoriesQuery.data;
+
+  const invalidateCategories = () =>
+    queryClient.invalidateQueries({ queryKey: adminQueryKeys.categories() });
 
   useEffect(() => {
-    loadCategories();
-  }, []);
+    if (!categories.length || expandedInitialized.current) return;
+    expandedInitialized.current = true;
+    setExpanded(new Set(categories.map((x) => x.id)));
+  }, [categories]);
 
   const flatRows = useMemo(() => flattenTree(categories, expanded), [categories, expanded]);
   const allRows = useMemo(() => flattenAll(categories), [categories]);
@@ -193,7 +197,7 @@ export default function AdminCategories() {
       setShowForm(false);
       setFormData(EMPTY_FORM);
       toast.success("分类已添加");
-      await loadCategories();
+      await invalidateCategories();
     } catch (e) {
       toast.error(toastErrorMessage(e, "添加失败"));
     } finally {
@@ -230,7 +234,7 @@ export default function AdminCategories() {
       });
       setEditingId(null);
       toast.success("分类已更新");
-      await loadCategories();
+      await invalidateCategories();
     } catch (e) {
       toast.error(toastErrorMessage(e, "更新失败"));
     } finally {
@@ -241,7 +245,7 @@ export default function AdminCategories() {
   const handleVisibleToggle = async (cat: Category) => {
     try {
       await categoryService.updateCategory(cat.id, { is_visible: cat.is_visible === false });
-      await loadCategories();
+      await invalidateCategories();
       toast.success(cat.is_visible === false ? "分类已显示" : "分类已隐藏");
     } catch (e) {
       toast.error(toastErrorMessage(e, "状态更新失败"));
@@ -254,7 +258,7 @@ export default function AdminCategories() {
       await categoryService.deleteCategory(deleteTarget.id);
       toast.success("分类已删除");
       setDeleteTarget(null);
-      await loadCategories();
+      await invalidateCategories();
     } catch (e) {
       toast.error(toastErrorMessage(e, "删除失败"));
     }
@@ -274,14 +278,14 @@ export default function AdminCategories() {
       setDraggingId(null);
       return;
     }
-    setCategories(tree);
+    queryClient.setQueryData(adminQueryKeys.categories(), tree);
     setDraggingId(null);
     try {
       await categoryService.updateCategorySort(payload);
       toast.success("排序已保存");
     } catch (e) {
       toast.error(toastErrorMessage(e, "排序保存失败"));
-      await loadCategories();
+      await invalidateCategories();
     }
   };
 
@@ -487,10 +491,14 @@ export default function AdminCategories() {
                   </div>
                 ) : (
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-foreground">{cat.name}</p>
-                    <p className="truncate text-[10px] text-muted-foreground" title={cat.id}>
-                      {categorySubtitle(cat, categoryNameById)}
-                    </p>
+                    <AdminTableCellGroup
+                      maxWidth="14rem"
+                      lines={[
+                        { text: cat.name },
+                        { text: categorySubtitle(cat, categoryNameById), muted: true },
+                      ]}
+                      tooltipLines={[cat.name, categorySubtitle(cat, categoryNameById), cat.id]}
+                    />
                   </div>
                 )}
               </div>

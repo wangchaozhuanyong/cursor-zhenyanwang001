@@ -15,7 +15,7 @@ const OBJECT_TYPE_ZH: Record<string, string> = {
   role: "角色",
   auth: "认证",
   site_settings: "站点设置",
-  banner: "Banner",
+  banner: "轮播图",
   product: "商品",
   product_tag: "商品标签",
   product_variant: "商品规格",
@@ -499,7 +499,12 @@ export function zhAuditErrorMessage(msg?: string) {
 export function formatAuditValue(v: unknown, fieldKey?: string) {
   if (v === null || v === undefined) return "—";
   if (typeof v === "boolean") return v ? "是" : "否";
-  if (typeof v === "number") return String(v);
+  if (typeof v === "number") {
+    if (fieldKey === "total_amount" || fieldKey === "amount" || fieldKey === "refund_amount") {
+      return `RM ${v.toFixed(2)}`;
+    }
+    return String(v);
+  }
   if (typeof v === "string") {
     if (!v) return "—";
     if (fieldKey === "status" || fieldKey?.endsWith("_status")) {
@@ -523,13 +528,113 @@ function toDisplayValue(v: unknown, fieldKey?: string) {
   return formatAuditValue(v, fieldKey);
 }
 
+export type AuditSnapshotRow = { label: string; value: string };
+
+const REQUEST_PATH_ZH: Record<string, string> = {
+  "/api/orders": "订单",
+  "/api/auth/login": "登录",
+  "/api/auth/logout": "退出登录",
+  "/api/admin/auth/login": "管理员登录",
+  "/api/cart": "购物车",
+  "/api/checkout": "结账",
+  "/api/returns": "售后",
+  "/api/upload/presign": "上传凭证",
+};
+
+const HTTP_METHOD_ZH: Record<string, string> = {
+  GET: "查询",
+  POST: "提交",
+  PUT: "更新",
+  PATCH: "部分更新",
+  DELETE: "删除",
+};
+
+export function zhHttpMethod(method?: string) {
+  const key = String(method || "").trim().toUpperCase();
+  if (!key) return "";
+  return HTTP_METHOD_ZH[key] || key;
+}
+
+/** 将 POST /api/orders 等接口路径译为后台可读说明 */
+export function zhRequestPath(method?: string, path?: string) {
+  const route = String(path || "").trim();
+  if (!route) return "—";
+  const verb = String(method || "").trim().toUpperCase();
+  const resource = REQUEST_PATH_ZH[route] || route.replace(/^\/api\//, "").replace(/\//g, " / ");
+
+  if (verb === "POST" && route === "/api/orders") return "用户提交订单";
+  if (verb === "POST") return `提交${resource}`;
+  if (verb === "GET") return `查询${resource}`;
+  if (verb === "PUT" || verb === "PATCH") return `更新${resource}`;
+  if (verb === "DELETE") return `删除${resource}`;
+  const methodLabel = zhHttpMethod(verb);
+  return methodLabel ? `${methodLabel} · ${resource}` : resource;
+}
+
+export function zhUserAgentBrief(userAgent?: string) {
+  const raw = String(userAgent || "").trim();
+  if (!raw) return { brief: "—" as const, full: undefined };
+
+  let os = "未知设备";
+  if (/iPhone|iPad|iPod/i.test(raw)) os = "iPhone / iPad";
+  else if (/Android/i.test(raw)) os = "Android 手机";
+  else if (/Mac OS X|Macintosh/i.test(raw)) os = "Mac 电脑";
+  else if (/Windows/i.test(raw)) os = "Windows 电脑";
+
+  let browser = "其他浏览器";
+  if (/CriOS/i.test(raw) || (/Chrome\//i.test(raw) && !/Edg/i.test(raw))) browser = "Chrome";
+  else if (/Safari/i.test(raw) && !/Chrome/i.test(raw)) browser = "Safari";
+  else if (/Firefox/i.test(raw)) browser = "Firefox";
+  else if (/Edg/i.test(raw)) browser = "Edge";
+
+  return {
+    brief: `${os} · ${browser}`,
+    full: raw.length > 48 ? raw : undefined,
+  };
+}
+
+export function buildAuditSnapshotRows(json: unknown, limit = 16): AuditSnapshotRow[] {
+  if (json == null) return [];
+  if (!isPlainObject(json)) {
+    return [{ label: "内容", value: formatAuditValue(json) }];
+  }
+  return Object.entries(json)
+    .slice(0, limit)
+    .map(([key, value]) => ({
+      label: zhFieldName(key),
+      value: formatAuditValue(value, key),
+    }));
+}
+
 export function buildAuditChangeSummary(beforeJson: unknown, afterJson: unknown, limit = 12) {
-  if (!isPlainObject(beforeJson) || !isPlainObject(afterJson)) return [];
-  const keys = new Set([...Object.keys(beforeJson), ...Object.keys(afterJson)]);
+  const beforeObj = isPlainObject(beforeJson) ? beforeJson : null;
+  const afterObj = isPlainObject(afterJson) ? afterJson : null;
+
+  if (!beforeObj && afterObj) {
+    return Object.entries(afterObj).slice(0, limit).map(([key, value]) => ({
+      key,
+      label: zhFieldName(key),
+      fromText: "（无）",
+      toText: toDisplayValue(value, key),
+    }));
+  }
+
+  if (beforeObj && !afterObj) {
+    return Object.entries(beforeObj).slice(0, limit).map(([key, value]) => ({
+      key,
+      label: zhFieldName(key),
+      fromText: toDisplayValue(value, key),
+      toText: "（已清空）",
+    }));
+  }
+
+  if (!beforeObj || !afterObj) return [];
+
+  const keys = new Set([...Object.keys(beforeObj), ...Object.keys(afterObj)]);
   const changed: Array<{ key: string; from: unknown; to: unknown }> = [];
   keys.forEach((k) => {
-    const a = beforeJson[k];
-    const b = afterJson[k];
+    const a = beforeObj[k];
+    const b = afterObj[k];
     if (safeStringify(a) !== safeStringify(b)) changed.push({ key: k, from: a, to: b });
   });
   return changed.slice(0, limit).map((it) => ({
@@ -538,4 +643,24 @@ export function buildAuditChangeSummary(beforeJson: unknown, afterJson: unknown,
     fromText: toDisplayValue(it.from, it.key),
     toText: toDisplayValue(it.to, it.key),
   }));
+}
+
+export type AuditFilterOption = { value: string; label: string };
+
+function sortOptionsZh(options: AuditFilterOption[]) {
+  return [...options].sort((a, b) => a.label.localeCompare(b.label, "zh-Hans"));
+}
+
+/** 审计日志高级筛选：对象类型下拉（值为后端枚举，展示中文） */
+export function getAuditObjectTypeFilterOptions(): AuditFilterOption[] {
+  return sortOptionsZh(
+    Object.entries(OBJECT_TYPE_ZH).map(([value, label]) => ({ value, label })),
+  );
+}
+
+/** 审计日志高级筛选：动作类型下拉 */
+export function getAuditActionTypeFilterOptions(): AuditFilterOption[] {
+  return sortOptionsZh(
+    Object.entries(ACTION_ZH).map(([value, label]) => ({ value, label })),
+  );
 }

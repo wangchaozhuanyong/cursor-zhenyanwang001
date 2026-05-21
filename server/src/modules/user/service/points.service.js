@@ -8,6 +8,16 @@ function toInt(value) {
   return Number.isFinite(n) ? Math.trunc(n) : 0;
 }
 
+function parseMetadata(value) {
+  if (!value) return {};
+  if (typeof value === 'object') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return {};
+  }
+}
+
 function isOrderPointsAction(action) {
   const orderActions = /** @type {Set<string>} */ (new Set([
     POINTS_ACTION.ORDER_REDEEM,
@@ -55,7 +65,43 @@ async function changeUserPoints(conn, params) {
   const account = await repo.selectAccountForUpdate(conn, userId);
   if (!account) throw new BusinessError(404, '积分账户不存在');
   const before = toInt(account.balance);
-  const after = before + delta;
+  let effectiveDelta = delta;
+  let pendingReverseOffset = 0;
+  const pendingReverseDetails = [];
+
+  if (delta > 0) {
+    const pendingRecords = await repo.selectPendingReverseRecordsForUpdate(conn, userId);
+    let remainingGrant = delta;
+    for (const pending of pendingRecords) {
+      if (remainingGrant <= 0) break;
+      const pendingAmount = Math.abs(toInt(pending.amount));
+      if (pendingAmount <= 0) continue;
+      const offset = Math.min(remainingGrant, pendingAmount);
+      const remainingPending = pendingAmount - offset;
+      remainingGrant -= offset;
+      pendingReverseOffset += offset;
+      pendingReverseDetails.push({
+        id: pending.id,
+        related_record_id: pending.related_record_id,
+        offset,
+        remaining: remainingPending,
+      });
+      await repo.updatePendingReverseRecord(conn, pending.id, {
+        amount: remainingPending > 0 ? -remainingPending : 0,
+        status: remainingPending > 0 ? 'pending' : 'resolved',
+        metadata: {
+          ...parseMetadata(pending.metadata),
+          last_offset_action: action,
+          last_offset_related_record_id: finalRelatedRecordId || null,
+          last_offset_amount: offset,
+          remaining_amount: remainingPending,
+        },
+      });
+    }
+    effectiveDelta = remainingGrant;
+  }
+
+  const after = before + effectiveDelta;
   if (!allowNegative && after < 0) {
     if (pendingOnInsufficient) {
       const pendingAction = action === POINTS_ACTION.ORDER_EARN_REVERSE ? POINTS_ACTION.PENDING_REVERSE : `${action}_pending`;
@@ -86,7 +132,9 @@ async function changeUserPoints(conn, params) {
     throw new BusinessError(400, '积分余额不足');
   }
 
-  await repo.updateAccountBalance(conn, userId, delta, after);
+  if (effectiveDelta !== 0) {
+    await repo.updateAccountBalance(conn, userId, effectiveDelta, after);
+  }
   const recordId = generateId();
   await repo.insertLedgerRecord(conn, {
     id: recordId,
@@ -94,7 +142,7 @@ async function changeUserPoints(conn, params) {
     orderId,
     orderNo,
     action,
-    amount: delta,
+    amount: effectiveDelta,
     balanceBefore: before,
     balanceAfter: after,
     description,
@@ -102,9 +150,23 @@ async function changeUserPoints(conn, params) {
     relatedRecordId: finalRelatedRecordId,
     status: 'success',
     operatorId,
-    metadata,
+    metadata: pendingReverseOffset > 0
+      ? {
+        ...(metadata || {}),
+        requested_amount: delta,
+        pending_reverse_offset: pendingReverseOffset,
+        pending_reverse_details: pendingReverseDetails,
+      }
+      : metadata,
   });
-  return { skipped: false, recordId, balanceBefore: before, balanceAfter: after, amount: delta };
+  return {
+    skipped: false,
+    recordId,
+    balanceBefore: before,
+    balanceAfter: after,
+    amount: effectiveDelta,
+    pendingReverseOffset,
+  };
 }
 
 async function changePoints(conn, params) {
@@ -154,6 +216,10 @@ async function getAdminRecords(query) {
 async function getBalance(userId) {
   const balance = await repo.selectUserPointsBalance(userId);
   return { balance };
+}
+
+async function hasPendingReverse(userId) {
+  return repo.hasPendingReverse(userId);
 }
 
 async function resolveSignInAward() {
@@ -248,6 +314,7 @@ module.exports = {
   getRecords,
   getAdminRecords,
   getBalance,
+  hasPendingReverse,
   getClientPointsConfig,
   signIn,
 };

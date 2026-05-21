@@ -115,9 +115,9 @@ export default function ReportFilterBar({ categoryOptions = [], onChange }: Prop
           <option value="">全部分类</option>
           {categoryOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
-        <input value={productId} onChange={(e) => update({ product_id: e.target.value })} placeholder="商品编号（可选）" className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-xs" />
-        <input value={activityId} onChange={(e) => update({ activity_id: e.target.value })} placeholder="活动编号（可选）" className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-xs" />
-        <input value={couponId} onChange={(e) => update({ coupon_id: e.target.value })} placeholder="优惠券编号（可选）" className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-xs" />
+        <input value={productId} onChange={(e) => update({ product_id: e.target.value })} placeholder="商品ID（系统内部，可选）" title="用于技术人员筛选，请从商品编辑页或接口复制完整 ID，不是 SKU" className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-xs" />
+        <input value={activityId} onChange={(e) => update({ activity_id: e.target.value })} placeholder="活动ID（系统内部，可选）" className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-xs" />
+        <input value={couponId} onChange={(e) => update({ coupon_id: e.target.value })} placeholder="优惠券ID（系统内部，可选）" className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-xs" />
         <select value={orderStatus} onChange={(e) => update({ order_status: e.target.value })} className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-2 text-xs">
           <option value="">全部订单状态</option>
           <option value="pending">待付款</option>

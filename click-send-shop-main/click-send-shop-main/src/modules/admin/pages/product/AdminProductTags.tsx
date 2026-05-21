@@ -1,6 +1,8 @@
 import { Plus, Trash2, Loader2, Pencil } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchProductTags, createProductTag, updateProductTag, deleteProductTag } from "@/services/admin/productService";
 import { toastErrorMessage } from "@/utils/errorMessage";
@@ -20,26 +22,23 @@ const EMPTY_FORM = {
 };
 
 export default function AdminProductTags() {
+  const queryClient = useQueryClient();
   const { confirm } = useAdminConfirm();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [tags, setTags] = useState<ProductTag[]>([]);
-  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
-  const loadTags = async () => {
-    try {
-      const data = await fetchProductTags();
-      setTags(data || []);
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "加载标签失败"));
-    } finally {
-      setLoading(false);
-    }
-  };
+  const tagsQuery = useQuery({
+    queryKey: adminQueryKeys.productTags(),
+    queryFn: fetchProductTags,
+    staleTime: 60_000,
+  });
 
-  useEffect(() => { loadTags(); }, []);
+  const tags = tagsQuery.data ?? [];
+  const loading = tagsQuery.isLoading && !tagsQuery.data;
+
+  const invalidateTags = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() });
 
   const resetForm = () => {
     setForm(EMPTY_FORM);
@@ -71,7 +70,7 @@ export default function AdminProductTags() {
         toast.success("标签已创建");
       }
       resetForm();
-      loadTags();
+      await invalidateTags();
     } catch (e) {
       toast.error(toastErrorMessage(e, editingId ? "保存标签失败" : "创建标签失败"));
     } finally {
@@ -79,15 +78,14 @@ export default function AdminProductTags() {
     }
   };
 
-  const handleDelete = async (tagId: string) => {
-    try {
-      await deleteProductTag(tagId);
+  const deleteMutation = useMutation({
+    mutationFn: deleteProductTag,
+    onSuccess: async () => {
       toast.success("标签已删除");
-      setTags(tags.filter((t) => t.id !== tagId));
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "删除标签失败"));
-    }
-  };
+      await invalidateTags();
+    },
+    onError: (e) => toast.error(toastErrorMessage(e, "删除标签失败")),
+  });
 
   return (
     <div className="space-y-4">
@@ -193,7 +191,7 @@ export default function AdminProductTags() {
               <PermissionGate permission="tag.manage">
                 <button
                   type="button"
-                  onClick={() => adminConfirmDelete(confirm, tag.name, () => handleDelete(tag.id))}
+                  onClick={() => adminConfirmDelete(confirm, tag.name, () => deleteMutation.mutate(tag.id))}
                   className={`rounded-md p-1.5 text-muted-foreground ${THEME_HOVER_BG_DANGER} ${THEME_HOVER_TEXT_DANGER}`}
                 >
                   <Trash2 size={14} />

@@ -1,6 +1,7 @@
 import { ArrowLeft, ShieldAlert, UserRound } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   fetchUserById,
@@ -22,8 +23,8 @@ import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { isAbortError } from "@/utils/asyncErrors";
 import type { MemberLevel, UserEditForm, UserProfile, UserStatusOverview, UserTag } from "@/types/user";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 const tabs = ["基础资料", "订单记录", "地址信息", "积分/优惠券", "邀请/返现", "售后记录", "评论记录", "操作日志"] as const;
 
@@ -33,70 +34,46 @@ export default function AdminUserDetail() {
   const navigate = useNavigate();
   const goBack = useGoBack("/admin/users");
   const { id = "" } = useParams();
-  const loadSeqRef = useRef(0);
-  const abortRef = useRef<AbortController | null>(null);
-
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<TabType>(tabs[0]);
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [allTags, setAllTags] = useState<UserTag[]>([]);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<UserEditForm>({});
-  const [levels, setLevels] = useState<MemberLevel[]>([]);
-  const [statusOverview, setStatusOverview] = useState<UserStatusOverview | null>(null);
-  const [levelsLoadFailed, setLevelsLoadFailed] = useState(false);
   const capabilities = useSiteCapabilities();
   const hasMemberLevelPermission = useAdminPermissionStore((s) => s.can("member_level.manage"));
   const canManageMemberLevel = capabilities.memberLevelEnabled && hasMemberLevelPermission;
 
-  const reload = useCallback(async () => {
-    if (!id) return;
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-    const seq = ++loadSeqRef.current;
-
-    setLoading(true);
-    setLoadError(null);
-    setLevelsLoadFailed(false);
-    try {
+  const detailQuery = useQuery({
+    queryKey: adminQueryKeys.userDetail(id),
+    queryFn: async () => {
       const [u, tags, memberLevels, statusSnap] = await Promise.allSettled([
         fetchUserById(id),
         fetchUserTags(),
-        canManageMemberLevel ? fetchMemberLevels() : Promise.resolve([]),
+        canManageMemberLevel ? fetchMemberLevels() : Promise.resolve([] as MemberLevel[]),
         fetchUserStatusOverview(id),
       ]);
-      if (controller.signal.aborted || seq !== loadSeqRef.current) return;
       if (u.status === "rejected") throw u.reason;
-      setUser(u.value);
-      setAllTags(tags.status === "fulfilled" ? tags.value : []);
-      if (memberLevels.status === "fulfilled") {
-        setLevels(memberLevels.value || []);
-      } else {
-        setLevels([]);
-        setLevelsLoadFailed(true);
-      }
-      setStatusOverview(statusSnap.status === "fulfilled" ? statusSnap.value || null : null);
-    } catch (e) {
-      if (seq !== loadSeqRef.current || isAbortError(e)) return;
-      const msg = toastErrorMessage(e, "加载用户详情失败");
-      setLoadError(msg);
-      setUser(null);
-      toast.error(msg);
-    } finally {
-      if (seq === loadSeqRef.current) setLoading(false);
-    }
-  }, [id, canManageMemberLevel]);
+      return {
+        user: u.value,
+        allTags: tags.status === "fulfilled" ? tags.value : [],
+        levels: memberLevels.status === "fulfilled" ? (memberLevels.value || []) : [],
+        levelsLoadFailed: memberLevels.status === "rejected",
+        statusOverview: statusSnap.status === "fulfilled" ? statusSnap.value || null : null,
+      };
+    },
+    enabled: !!id,
+    staleTime: 60_000,
+  });
 
-  useEffect(() => {
-    if (!id) return;
-    void reload();
-    return () => {
-      loadSeqRef.current += 1;
-      abortRef.current?.abort();
-    };
-  }, [id, reload]);
+  const user = detailQuery.data?.user ?? null;
+  const allTags = detailQuery.data?.allTags ?? [];
+  const levels = detailQuery.data?.levels ?? [];
+  const levelsLoadFailed = detailQuery.data?.levelsLoadFailed ?? false;
+  const statusOverview = detailQuery.data?.statusOverview ?? null;
+  const loading = detailQuery.isLoading && !detailQuery.data;
+  const loadError = detailQuery.isError ? toastErrorMessage(detailQuery.error, "加载用户详情失败") : null;
+
+  const invalidateUserDetail = () =>
+    queryClient.invalidateQueries({ queryKey: adminQueryKeys.userDetail(id) });
 
   const doResetPassword = async () => {
     if (!id) return;
@@ -120,7 +97,7 @@ export default function AdminUserDetail() {
     }
     try {
       await updateUserAccountStatus(id, status, reason);
-      await reload();
+      await invalidateUserDetail();
       toast.success(status === "normal" ? "账号已恢复正常" : status === "disabled" ? "已禁用登录（会话已失效）" : "已加入黑名单");
     } catch (e) {
       toast.error(toastErrorMessage(e, "状态更新失败"));
@@ -141,7 +118,7 @@ export default function AdminUserDetail() {
         couponRestricted: type === "coupon" ? enabled : undefined,
         commentRestricted: type === "comment" ? enabled : undefined,
       });
-      await reload();
+      await invalidateUserDetail();
       toast.success(`${enabled ? "已开启" : "已取消"}${type === "order" ? "下单" : type === "coupon" ? "领券" : "评论"}限制`);
     } catch (e) {
       toast.error(toastErrorMessage(e, "限制更新失败"));
@@ -153,7 +130,7 @@ export default function AdminUserDetail() {
     try {
       await updateUserProfile(id, editForm);
       setEditOpen(false);
-      await reload();
+      await invalidateUserDetail();
       toast.success("资料已保存");
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败"));
@@ -228,8 +205,8 @@ export default function AdminUserDetail() {
           <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.order_restricted ? "取消下单限制" : "开启下单限制"} onClick={() => void doRestriction("order", !statusOverview?.restrictions?.order_restricted)} /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.coupon_restricted ? "取消领券限制" : "开启领券限制"} onClick={() => void doRestriction("coupon", !statusOverview?.restrictions?.coupon_restricted)} /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.comment_restricted ? "取消评论限制" : "开启评论限制"} onClick={() => void doRestriction("comment", !statusOverview?.restrictions?.comment_restricted)} /></PermissionGate>
-          {canManageMemberLevel ? <ActionBtn label="按规则重新计算" onClick={async () => { try { await recalculateUserMemberLevel(id, { force: true }); await reload(); toast.success("会员等级已按规则重算"); } catch (e) { toast.error(toastErrorMessage(e, "重算失败")); } }} /> : null}
-          {canManageMemberLevel ? <ActionBtn label="解除手动锁定" disabled={!Number(user.member_level_manual_locked || 0)} onClick={async () => { try { await unlockUserMemberLevel(id); await reload(); toast.success("已解除手动锁定"); } catch (e) { toast.error(toastErrorMessage(e, "解除失败")); } }} /> : null}
+          {canManageMemberLevel ? <ActionBtn label="按规则重新计算" onClick={async () => { try { await recalculateUserMemberLevel(id, { force: true }); await invalidateUserDetail(); toast.success("会员等级已按规则重算"); } catch (e) { toast.error(toastErrorMessage(e, "重算失败")); } }} /> : null}
+          {canManageMemberLevel ? <ActionBtn label="解除手动锁定" disabled={!Number(user.member_level_manual_locked || 0)} onClick={async () => { try { await unlockUserMemberLevel(id); await invalidateUserDetail(); toast.success("已解除手动锁定"); } catch (e) { toast.error(toastErrorMessage(e, "解除失败")); } }} /> : null}
         </div>
       </section>
 
@@ -266,7 +243,7 @@ export default function AdminUserDetail() {
                     const reason = window.prompt("请输入手动指定原因（可选）", "")?.trim() || "";
                     try {
                       await assignUserMemberLevel(id, e.target.value, reason);
-                      await reload();
+                      await invalidateUserDetail();
                       toast.success("会员等级已手动指定并锁定");
                     } catch (err) {
                       toast.error(toastErrorMessage(err, "更新失败"));
@@ -308,7 +285,7 @@ export default function AdminUserDetail() {
         )}
         {tab === "售后记录" && <DataList title="售后记录" rows={user.related?.after_sales} onAll={() => navigate(`/admin/returns?userId=${user.id}`)} />}
         {tab === "评论记录" && <DataList title="评论记录" rows={user.related?.review_records} onAll={() => navigate(`/admin/reviews?keyword=${user.id}`)} />}
-        {tab === "操作日志" && <DataList title="操作日志" rows={user.operation_logs} onAll={() => navigate(`/admin/system/logs?objectType=user&objectId=${user.id}`)} />}
+        {tab === "操作日志" && <DataList title="操作日志" rows={user.operation_logs} onAll={() => navigate(`/admin/logs?objectType=user&objectId=${user.id}`)} />}
       </section>
 
       <section className="rounded-xl border border-border bg-card p-4">

@@ -1,5 +1,6 @@
 import { formatDateTime } from "@/utils/formatDateTime";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, UserCog, Shield, Trash2, KeyRound, ToggleLeft, ToggleRight, AlertTriangle, Copy } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
@@ -17,6 +18,7 @@ import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { usePagination } from "@/hooks/usePagination";
 import { toast } from "sonner";
 import * as rbacService from "@/services/admin/rbacService";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import type { RbacAdminUserRow } from "@/services/admin/rbacService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
@@ -60,8 +62,7 @@ function isStrongAdminPassword(password: string) {
 
 export default function AdminAccounts() {
   const isSuperAdminViewer = useAdminPermissionStore((s) => s.isSuperAdmin);
-  const [admins, setAdmins] = useState<RbacAdminUserRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [showOpsHelp, setShowOpsHelp] = useState(false);
@@ -70,20 +71,21 @@ export default function AdminAccounts() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<RbacAdminUserRow | null>(null);
 
-  const loadData = async () => {
-    try {
-      const data = await rbacService.loadRbacAdminUsers();
-      setAdmins(Array.isArray(data) ? data : []);
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "加载管理员列表失败"));
-    } finally {
-      setLoading(false);
-    }
-  };
+  const adminsQuery = useQuery({
+    queryKey: adminQueryKeys.accounts(),
+    queryFn: rbacService.loadRbacAdminUsers,
+    staleTime: 60_000,
+  });
 
-  useEffect(() => {
-    void loadData();
-  }, []);
+  const admins = adminsQuery.data ?? [];
+  const loading = adminsQuery.isLoading && !adminsQuery.data;
+
+  const invalidateAccounts = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.accounts() }),
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.rbacRoot() }),
+    ]);
+  };
 
   const filtered = admins.filter((a) => {
     if (!search) return true;
@@ -122,7 +124,7 @@ export default function AdminAccounts() {
       toast.success("管理员已创建");
       setShowCreate(false);
       setCreateForm({ phone: "", password: "", nickname: "" });
-      void loadData();
+      void invalidateAccounts();
     } catch (err) {
       toast.error(toastErrorMessage(err, "创建失败"));
     }
@@ -133,7 +135,7 @@ export default function AdminAccounts() {
     try {
       await rbacService.toggleAdminUser(user.id, enabled);
       toast.success(enabled ? "已启用" : "已禁用");
-      void loadData();
+      void invalidateAccounts();
     } catch (err) {
       toast.error(toastErrorMessage(err, "操作失败"));
     }
@@ -160,7 +162,7 @@ export default function AdminAccounts() {
       await rbacService.deleteAdminUser(confirmDelete.id);
       toast.success("管理员已删除");
       setConfirmDelete(null);
-      void loadData();
+      void invalidateAccounts();
     } catch (err) {
       toast.error(toastErrorMessage(err, "删除失败"));
     }

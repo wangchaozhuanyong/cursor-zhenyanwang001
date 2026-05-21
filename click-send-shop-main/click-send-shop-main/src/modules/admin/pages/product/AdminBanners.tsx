@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image, Plus, Trash2, GripVertical, Eye, EyeOff, ExternalLink, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -12,6 +13,7 @@ import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules
 import { THEME_HOVER_TEXT_DANGER, THEME_TEXT_SUCCESS_SOFT } from "@/utils/themeVisuals";
 import { isAspectRatioWithinTolerance, readImageSize } from "@/utils/imageRatio";
 import type { Banner } from "@/types/banner";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 const BANNER_RATIO = 4 / 3;
 const BANNER_RATIO_TOLERANCE = 0.03;
@@ -19,8 +21,7 @@ const BANNER_SIZE_PRESETS = "1200×900 / 1600×1200 / 2000×1500";
 
 export default function AdminBanners() {
   const { confirm } = useAdminConfirm();
-  const [banners, setBanners] = useState<Banner[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -29,22 +30,25 @@ export default function AdminBanners() {
   const [strictRatioCheck, setStrictRatioCheck] = useState(false);
   const [form, setForm] = useState({ title: "", link: "", image: "" });
 
-  useEffect(() => {
-    bannerService
-      .fetchBanners()
-      .then(setBanners)
-      .catch((e) => toast.error(toastErrorMessage(e, "加载 Banner 失败")))
-      .finally(() => setLoading(false));
-  }, []);
+  const bannersQuery = useQuery({
+    queryKey: adminQueryKeys.banners(),
+    queryFn: bannerService.fetchBanners,
+    staleTime: 60_000,
+  });
+
+  const banners = bannersQuery.data ?? [];
+  const loading = bannersQuery.isLoading && !bannersQuery.data;
+
+  const invalidateBanners = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.banners() });
 
   const toggleBanner = (id: string) => {
     const banner = banners.find((b) => b.id === id);
     if (!banner) return;
     bannerService
       .updateBanner(id, { enabled: !banner.enabled })
-      .then(() => {
-        setBanners(banners.map((b) => (b.id === id ? { ...b, enabled: !b.enabled } : b)));
+      .then(async () => {
         toast.success("状态已更新");
+        await invalidateBanners();
       })
       .catch((e) => toast.error(toastErrorMessage(e, "更新失败")));
   };
@@ -52,9 +56,9 @@ export default function AdminBanners() {
   const handleDelete = (id: string) => {
     bannerService
       .deleteBanner(id)
-      .then(() => {
-        setBanners(banners.filter((b) => b.id !== id));
+      .then(async () => {
         toast.success("已删除");
+        await invalidateBanners();
       })
       .catch((e) => toast.error(toastErrorMessage(e, "删除失败")));
   };
@@ -75,24 +79,23 @@ export default function AdminBanners() {
     try {
       if (editingId) {
         await bannerService.updateBanner(editingId, { title: form.title, link: form.link, image: form.image });
-        setBanners(banners.map((b) => (b.id === editingId ? { ...b, ...form } : b)));
         setShowForm(false);
         setEditingId(null);
         setForm({ title: "", link: "", image: "" });
         toast.success("Banner 已更新");
       } else {
-        const newBanner = await bannerService.createBanner({
+        await bannerService.createBanner({
           title: form.title,
           link: form.link,
           image: form.image,
           sort_order: banners.length + 1,
           enabled: true,
         });
-        setBanners([...banners, newBanner]);
         setShowForm(false);
         setForm({ title: "", link: "", image: "" });
         toast.success("Banner 已添加");
       }
+      await invalidateBanners();
     } catch (e) {
       toast.error(toastErrorMessage(e, editingId ? "更新失败" : "添加失败"));
     } finally {
@@ -104,7 +107,10 @@ export default function AdminBanners() {
     setSavingOrder(true);
     try {
       await Promise.all(ordered.map((b, idx) => bannerService.updateBanner(String(b.id), { sort_order: idx + 1 })));
-      setBanners(ordered.map((b, idx) => ({ ...b, sort_order: idx + 1 })));
+      queryClient.setQueryData(
+        adminQueryKeys.banners(),
+        ordered.map((b, idx) => ({ ...b, sort_order: idx + 1 })),
+      );
       toast.success("Banner 排序已更新");
     } catch (e) {
       toast.error(toastErrorMessage(e, "排序保存失败，请重试"));
@@ -127,7 +133,10 @@ export default function AdminBanners() {
     const next = [...banners];
     const [moved] = next.splice(fromIdx, 1);
     next.splice(toIdx, 0, moved);
-    setBanners(next.map((b, idx) => ({ ...b, sort_order: idx + 1 })));
+    queryClient.setQueryData(
+      adminQueryKeys.banners(),
+      next.map((b, idx) => ({ ...b, sort_order: idx + 1 })),
+    );
     setDraggingId(null);
     await persistBannerOrder(next);
   };

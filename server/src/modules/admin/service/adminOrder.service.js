@@ -11,6 +11,7 @@ const { rowsToCsvLocalized } = require('../../../utils/adminCsvLabels');
 const { maskPhone } = require('../../../utils/privacyMask');
 const { getResolvedTriggerCopy } = require('./notificationTriggerSettings.service');
 const repo = require('../repository/adminOrder.repository');
+const adminEventBus = require('./adminEventBus.service');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { ORDER_STATUS, PAYMENT_STATUS, ORDER_STATUS_LIST } = require('../../../constants/status');
 const orderPoints = require('../../order/service/orderPoints.service');
@@ -546,6 +547,11 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
       after: { status, payment_status: newPayment },
       result: 'success',
     });
+    adminEventBus.publishAdminEvent({
+      type: 'order.updated',
+      objectId: orderId,
+      summary: `订单状态 ${beforeSnap.status} -> ${status}`,
+    });
     if (newPayment === PAYMENT_STATUS.PAID && prevPay !== PAYMENT_STATUS.PAID) {
       try {
         await requireMyinvoisApi('enqueueOrderInvoiceIfEnabled')(orderId, 'admin_order_status_paid');
@@ -650,6 +656,11 @@ async function shipOrder(orderId, body, adminUserId, req) {
       before: beforeSnap,
       after: { status: ORDER_STATUS.SHIPPED, tracking_no: trackingNo, carrier },
       result: 'success',
+    });
+    adminEventBus.publishAdminEvent({
+      type: 'order.shipped',
+      objectId: orderId,
+      summary: `订单发货 ${order.order_no}`,
     });
     return { data: null, message: '已发货' };
   } catch (err) {

@@ -3,6 +3,7 @@ const repo = require('../repository/adminExtended.repository');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { ORDER_STATUS, RETURN_STATUS } = require('../../../constants/status');
 const { getResolvedTriggerCopy } = require('./notificationTriggerSettings.service');
+const adminEventBus = require('./adminEventBus.service');
 const { normalizeKnownMojibakeText } = require('../../../utils/textNormalize');
 const { sanitizeCmsHtml } = require('../../../utils/cmsSanitizer');
 const orderPoints = require('../../order/service/orderPoints.service');
@@ -335,6 +336,11 @@ async function updateReturnStatus(id, body, adminUserId, req) {
   if (refund_amount !== undefined) { setFragments.push('refund_amount = ?'); values.push(refund_amount); }
   await repo.updateReturnRequestByFields(setFragments, values, id);
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'return.status_update', objectType: 'return_request', objectId: id, summary: `售后状态 ${current.status}->${status}`, before: { status: current.status }, after: { status, admin_remark, refund_amount }, result: 'success' });
+  adminEventBus.publishAdminEvent({
+    type: 'return.updated',
+    objectId: id,
+    summary: `售后状态 ${current.status} -> ${status}`,
+  });
   return { message: '状态已更新' };
 }
 
@@ -580,6 +586,11 @@ async function approveReturn(id, body, adminUserId, req) {
     }
 
     await conn.commit();
+    adminEventBus.publishAdminEvent({
+      type: refundAmount > 0 ? 'order.refunded' : 'return.updated',
+      objectId: ret.order_id || id,
+      summary: refundAmount > 0 ? `订单退款 ${ret.order_id}` : `售后批准 ${id}`,
+    });
 
     const retCopy = await getResolvedTriggerCopy('return_approved', {
       order_no: order.order_no,
@@ -673,6 +684,11 @@ async function rejectReturn(id, body, adminUserId, req) {
       before: { status: beforeSnapRow.status },
       after: { status: RETURN_STATUS.REJECTED, admin_remark: String(admin_remark).trim() },
       result: 'success',
+    });
+    adminEventBus.publishAdminEvent({
+      type: 'return.updated',
+      objectId: id,
+      summary: '售后已拒绝',
     });
     return { message: '已拒绝' };
   } catch (err) {

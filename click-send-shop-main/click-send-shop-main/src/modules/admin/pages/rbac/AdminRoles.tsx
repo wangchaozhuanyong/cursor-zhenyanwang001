@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Shield, Plus, Trash2, Pencil, X } from "lucide-react";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -13,6 +14,7 @@ import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { THEME_BTN_DANGER_SOLID, THEME_OUTLINE_DANGER, THEME_TEXT_DANGER } from "@/utils/themeVisuals";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 interface PermRow { id: number; code: string; name: string; sort_order: number }
 
@@ -30,14 +32,11 @@ function isStrongAdminPassword(password: string) {
 
 export default function AdminRoles() {
   const { confirm: askConfirm } = useAdminConfirm();
+  const queryClient = useQueryClient();
   const isSuperAdminViewer = useAdminPermissionStore((s) => s.isSuperAdmin);
   const [tab, setTab] = useState<Tab>("assign");
-  const [roles, setRoles] = useState<RbacRoleRow[]>([]);
-  const [perms, setPerms] = useState<PermRow[]>([]);
-  const [admins, setAdmins] = useState<RbacAdminUserRow[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [checked, setChecked] = useState<Record<number, boolean>>({});
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const [editRole, setEditRole] = useState<RbacRoleRow | null>(null);
@@ -53,39 +52,44 @@ export default function AdminRoles() {
   const selectedAdmin = admins.find((u) => u.id === selectedUserId) || null;
   const selectedTargetLocked = !isSuperAdminViewer && hasPrivilegedRole(selectedAdmin);
 
-  const reload = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [r, a, p] = await Promise.all([rbacService.loadRbacRoles(), rbacService.loadRbacAdminUsers(), rbacService.loadRbacPermissions()]);
-      setRoles(r);
-      setAdmins(a);
-      setPerms(p);
-      if (a.length && !selectedUserId) setSelectedUserId(a[0].id);
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "加载失败"));
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedUserId]);
+  const overviewQuery = useQuery({
+    queryKey: adminQueryKeys.rbacOverview(),
+    queryFn: async () => {
+      const [roles, admins, perms] = await Promise.all([
+        rbacService.loadRbacRoles(),
+        rbacService.loadRbacAdminUsers(),
+        rbacService.loadRbacPermissions(),
+      ]);
+      return { roles, admins, perms };
+    },
+    staleTime: 60_000,
+  });
 
-  useEffect(() => { void reload(); }, [reload]);
+  const roles = overviewQuery.data?.roles ?? [];
+  const admins = overviewQuery.data?.admins ?? [];
+  const perms = overviewQuery.data?.perms ?? [];
+  const loading = overviewQuery.isLoading && !overviewQuery.data;
+
+  const invalidateRbac = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.rbacRoot() });
 
   useEffect(() => {
-    if (!selectedUserId) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const ur = await rbacService.loadUserRoles(selectedUserId);
-        if (cancelled) return;
-        const next: Record<number, boolean> = {};
-        for (const id of ur.roleIds) next[id] = true;
-        setChecked(next);
-      } catch (e) {
-        toast.error(toastErrorMessage(e, "无法加载该用户的角色"));
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [selectedUserId]);
+    if (!admins.length || selectedUserId) return;
+    setSelectedUserId(admins[0].id);
+  }, [admins, selectedUserId]);
+
+  const userRolesQuery = useQuery({
+    queryKey: adminQueryKeys.rbacUserRoles(selectedUserId),
+    queryFn: () => rbacService.loadUserRoles(selectedUserId),
+    enabled: !!selectedUserId,
+    staleTime: 30_000,
+  });
+
+  useEffect(() => {
+    if (!userRolesQuery.data) return;
+    const next: Record<number, boolean> = {};
+    for (const id of userRolesQuery.data.roleIds) next[id] = true;
+    setChecked(next);
+  }, [userRolesQuery.data]);
 
   const toggleRole = (id: number) => setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
 
@@ -100,6 +104,7 @@ export default function AdminRoles() {
     try {
       await rbacService.saveUserRoles(selectedUserId, roleIds);
       toast.success("已保存");
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.rbacUserRoles(selectedUserId) });
     } catch (e) { toast.error(toastErrorMessage(e, "保存失败")); }
     finally { setSaving(false); }
   };
@@ -135,7 +140,7 @@ export default function AdminRoles() {
         toast.success("角色已创建");
       }
       setShowRoleModal(false);
-      void reload();
+      void invalidateRbac();
     } catch (e) { toast.error(toastErrorMessage(e, "操作失败")); }
     finally { setSaving(false); }
   };
@@ -146,7 +151,7 @@ export default function AdminRoles() {
     adminConfirmDelete(askConfirm, r.name, async () => {
       await rbacService.deleteRole(r.id);
       toast.success("已删除");
-      void reload();
+      void invalidateRbac();
     });
   };
 
@@ -294,7 +299,7 @@ export default function AdminRoles() {
                             onConfirm: async () => {
                               await rbacService.toggleAdminUser(u.id, u.role === "disabled");
                               toast.success("已更新");
-                              void reload();
+                              void invalidateRbac();
                             },
                           })
                         }
@@ -356,7 +361,7 @@ export default function AdminRoles() {
                       });
                       toast.success("已创建");
                       setShowAdminModal(false);
-                      void reload();
+                      void invalidateRbac();
                     } catch (e) {
                       toast.error(toastErrorMessage(e, "创建失败"));
                     } finally {
@@ -397,7 +402,7 @@ export default function AdminRoles() {
                     await rbacService.deleteAdminUser(confirmDeleteAdmin.id);
                     toast.success("已删除");
                     setConfirmDeleteAdmin(null);
-                    void reload();
+                    void invalidateRbac();
                   } catch (e) {
                     toast.error(toastErrorMessage(e, "删除失败"));
                   }

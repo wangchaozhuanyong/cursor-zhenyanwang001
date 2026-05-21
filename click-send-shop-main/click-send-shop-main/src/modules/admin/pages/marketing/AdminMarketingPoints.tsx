@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Coins, Plus, RefreshCw, Save, Trash2 } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
@@ -19,6 +20,8 @@ import {
   type LoyaltyPointsSettings,
   type ProductPointRule,
 } from "@/services/admin/pointsService";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { toastErrorMessage } from "@/utils/errorMessage";
 
 const inputCls = "rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground";
 const labelCls = "text-xs font-medium text-muted-foreground";
@@ -43,36 +46,45 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 }
 
 export default function AdminMarketingPoints() {
+  const queryClient = useQueryClient();
   const tabs = useMemo(() => ["积分总览", "积分规则", "商品积分规则", "积分抵扣", "积分明细", "手动调整", "高级设置"], []);
   const [tab, setTab] = useState(tabs[0]);
   const [settings, setSettings] = useState<LoyaltyPointsSettings>({});
-  const [rules, setRules] = useState<ProductPointRule[]>([]);
   const [ruleForm, setRuleForm] = useState<ProductPointRule>(defaultRule);
   const [adjustForm, setAdjustForm] = useState({ userId: "", points: "", reason: "" });
-  const [stats, setStats] = useState({ totalEarned: 0, totalDeducted: 0, totalRecords: 0, activeUsers: 0 });
-  const [loading, setLoading] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
+  const overviewQuery = useQuery({
+    queryKey: adminQueryKeys.pointsOverview(),
+    queryFn: async () => {
       const [nextSettings, nextRules, records] = await Promise.all([
         fetchPointsSettings(),
         fetchProductPointRules({ pageSize: 100 }),
         fetchAdminPointsRecords({ page: 1, pageSize: 5 }),
       ]);
-      setSettings(nextSettings || {});
-      setRules(nextRules?.list || []);
-      setStats(records.stats || { totalEarned: 0, totalDeducted: 0, totalRecords: 0, activeUsers: 0 });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "加载积分管理数据失败");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return {
+        settings: nextSettings || {},
+        rules: nextRules?.list || [],
+        stats: records.stats || { totalEarned: 0, totalDeducted: 0, totalRecords: 0, activeUsers: 0 },
+      };
+    },
+    staleTime: 60_000,
+  });
+
+  const rules = overviewQuery.data?.rules ?? [];
+  const stats = overviewQuery.data?.stats ?? { totalEarned: 0, totalDeducted: 0, totalRecords: 0, activeUsers: 0 };
+  const loading = overviewQuery.isLoading && !overviewQuery.data;
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (overviewQuery.data?.settings) setSettings(overviewQuery.data.settings);
+  }, [overviewQuery.data?.settings]);
+
+  useEffect(() => {
+    if (overviewQuery.isError) {
+      toast.error(toastErrorMessage(overviewQuery.error, "加载积分管理数据失败"));
+    }
+  }, [overviewQuery.isError, overviewQuery.error]);
+
+  const invalidatePoints = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.pointsRoot() });
 
   const setSetting = (key: string, value: string | number | boolean | string[]) => setSettings((s) => {
     const next = { ...s, [key]: value };
@@ -87,49 +99,60 @@ export default function AdminMarketingPoints() {
     return next;
   });
 
-  const saveSettings = async () => {
-    const pointValue = Number(settings.point_value_myr || 0);
-    const step = Number(settings.redeem_step || 1);
-    if (pointValue <= 0 || step <= 0) {
-      toast.error("积分抵扣比例和使用步长必须大于 0");
-      return;
-    }
-    const saved = await savePointsSettings(settings);
-    setSettings(saved);
-    toast.success("积分设置已保存");
-  };
+  const saveSettingsMutation = useMutation({
+    mutationFn: () => {
+      const pointValue = Number(settings.point_value_myr || 0);
+      const step = Number(settings.redeem_step || 1);
+      if (pointValue <= 0 || step <= 0) throw new Error("积分抵扣比例和使用步长必须大于 0");
+      return savePointsSettings(settings);
+    },
+    onSuccess: async (saved) => {
+      setSettings(saved);
+      toast.success("积分设置已保存");
+      await invalidatePoints();
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, "保存积分设置失败")),
+  });
 
-  const saveRule = async () => {
-    if (!ruleForm.name?.trim()) {
-      toast.error("请输入规则名称");
-      return;
-    }
-    const saved = ruleForm.id ? await saveProductPointRule(ruleForm.id, ruleForm) : await createProductPointRule(ruleForm);
-    setRuleForm(defaultRule);
-    await load();
-    toast.success(saved?.id ? "商品积分规则已保存" : "规则已保存");
-  };
+  const saveRuleMutation = useMutation({
+    mutationFn: () => {
+      if (!ruleForm.name?.trim()) throw new Error("请输入规则名称");
+      return ruleForm.id ? saveProductPointRule(ruleForm.id, ruleForm) : createProductPointRule(ruleForm);
+    },
+    onSuccess: async () => {
+      setRuleForm(defaultRule);
+      toast.success("规则已保存");
+      await invalidatePoints();
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, "保存规则失败")),
+  });
+
+  const deleteRuleMutation = useMutation({
+    mutationFn: (id: string) => removeProductPointRule(id),
+    onSuccess: async () => {
+      toast.success("规则已停用");
+      await invalidatePoints();
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, "停用规则失败")),
+  });
+
+  const adjustMutation = useMutation({
+    mutationFn: () => {
+      const amount = Number(adjustForm.points);
+      if (!adjustForm.userId || !Number.isFinite(amount) || amount === 0 || !adjustForm.reason.trim()) {
+        throw new Error("请填写用户 ID、调整积分和原因");
+      }
+      return adjustUserPoints(adjustForm.userId, amount, adjustForm.reason);
+    },
+    onSuccess: async () => {
+      setAdjustForm({ userId: "", points: "", reason: "" });
+      toast.success("积分已调整");
+      await invalidatePoints();
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, "调整积分失败")),
+  });
 
   const editRule = (rule: ProductPointRule) => setRuleForm({ ...defaultRule, ...rule });
-
-  const deleteRule = async (id?: string) => {
-    if (!id) return;
-    await removeProductPointRule(id);
-    await load();
-    toast.success("规则已停用");
-  };
-
-  const submitAdjust = async () => {
-    const amount = Number(adjustForm.points);
-    if (!adjustForm.userId || !Number.isFinite(amount) || amount === 0 || !adjustForm.reason.trim()) {
-      toast.error("请填写用户 ID、调整积分和原因");
-      return;
-    }
-    await adjustUserPoints(adjustForm.userId, amount, adjustForm.reason);
-    setAdjustForm({ userId: "", points: "", reason: "" });
-    await load();
-    toast.success("积分已调整");
-  };
 
   return (
     <div className="space-y-4">
@@ -140,7 +163,7 @@ export default function AdminMarketingPoints() {
             hint={<Tx>订单积分、商品规则、抵扣比例和积分流水统一在这里维护。</Tx>}
           />
         </div>
-        <button onClick={load} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-foreground" disabled={loading}><RefreshCw className="h-4 w-4" />刷新</button>
+        <button type="button" onClick={() => void invalidatePoints()} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-foreground" disabled={loading}><RefreshCw className="h-4 w-4" />刷新</button>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -165,8 +188,8 @@ export default function AdminMarketingPoints() {
           <Field label="获得多少积分"><input className={inputCls} type="number" value={String(settings.earn_points_unit ?? 1)} onChange={(e) => setSetting("earn_points_unit", e.target.value)} /></Field>
           <Field label="取整方式"><select className={inputCls} value={String(settings.earn_rounding || "floor")} onChange={(e) => setSetting("earn_rounding", e.target.value)}><option value="floor">向下取整</option><option value="round">四舍五入</option><option value="ceil">向上取整</option></select></Field>
           <Field label="优惠后金额积分"><input type="checkbox" checked={!!settings.earn_after_discount} onChange={(e) => setSetting("earn_after_discount", e.target.checked)} /></Field>
-          <Field label="发放时机"><select className={inputCls} value={String(settings.settle_timing || "order_completed")} onChange={(e) => setSetting("settle_timing", e.target.value)}><option value="payment_success">支付成功后</option><option value="order_shipped">发货后</option><option value="order_completed">订单完成后</option></select></Field>
-          <button onClick={saveSettings} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground md:col-span-3"><Save className="h-4 w-4" />保存积分规则</button>
+          <Field label="发放时机"><div className={`${inputCls} flex items-center`}>订单完成后发放（固定规则）</div></Field>
+          <button type="button" onClick={() => saveSettingsMutation.mutate()} disabled={saveSettingsMutation.isPending} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground md:col-span-3"><Save className="h-4 w-4" />保存积分规则</button>
         </div>
       ) : null}
 
@@ -185,7 +208,7 @@ export default function AdminMarketingPoints() {
             <Field label="允许积分抵扣"><input type="checkbox" checked={!!ruleForm.redeem_enabled} onChange={(e) => setRuleForm((s) => ({ ...s, redeem_enabled: e.target.checked }))} /></Field>
             <Field label="最多抵扣比例"><input className={inputCls} type="number" value={String(ruleForm.max_redeem_percent ?? "")} onChange={(e) => setRuleForm((s) => ({ ...s, max_redeem_percent: e.target.value === "" ? null : Number(e.target.value) }))} /></Field>
             <Field label="启用"><input type="checkbox" checked={!!ruleForm.enabled} onChange={(e) => setRuleForm((s) => ({ ...s, enabled: e.target.checked }))} /></Field>
-            <button onClick={saveRule} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground md:col-span-4"><Plus className="h-4 w-4" />{ruleForm.id ? "保存规则" : "新增规则"}</button>
+            <button type="button" onClick={() => saveRuleMutation.mutate()} disabled={saveRuleMutation.isPending} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground md:col-span-4"><Plus className="h-4 w-4" />{ruleForm.id ? "保存规则" : "新增规则"}</button>
           </div>
           <AnimatedTable
             embedded
@@ -220,7 +243,7 @@ export default function AdminMarketingPoints() {
                 <td className={adminTdClassName()}>{r.enabled ? "启用" : "停用"}</td>
                 <td className={adminTdClassName("text-right")}>
                   <button type="button" onClick={() => editRule(r)} className="mr-2 text-theme-price">编辑</button>
-                  <button type="button" onClick={() => deleteRule(r.id)} className="inline-flex items-center text-destructive"><Trash2 className="h-4 w-4" /></button>
+                  <button type="button" onClick={() => r.id && deleteRuleMutation.mutate(r.id)} className="inline-flex items-center text-destructive"><Trash2 className="h-4 w-4" /></button>
                 </td>
               </>
             )}
@@ -238,7 +261,7 @@ export default function AdminMarketingPoints() {
           <Field label="单笔最多抵扣金额"><input className={inputCls} type="number" value={String(settings.max_redeem_amount ?? 0)} onChange={(e) => setSetting("max_redeem_amount", e.target.value)} /></Field>
           <Field label="最低订单金额"><input className={inputCls} type="number" value={String(settings.min_order_amount ?? 0)} onChange={(e) => setSetting("min_order_amount", e.target.value)} /></Field>
           <Field label="抵扣范围"><select className={inputCls} value={String(settings.redeem_scope || "exclude_restricted")} onChange={(e) => setSetting("redeem_scope", e.target.value)}><option value="all">全部商品</option><option value="product_rule">按商品/分类规则</option><option value="exclude_restricted">排除受监管商品</option></select></Field>
-          <button onClick={saveSettings} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground md:col-span-3"><Save className="h-4 w-4" />保存抵扣设置</button>
+          <button type="button" onClick={() => saveSettingsMutation.mutate()} disabled={saveSettingsMutation.isPending} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground md:col-span-3"><Save className="h-4 w-4" />保存抵扣设置</button>
         </div>
       ) : null}
 
@@ -249,7 +272,7 @@ export default function AdminMarketingPoints() {
           <Field label="用户 ID"><input className={inputCls} value={adjustForm.userId} onChange={(e) => setAdjustForm((s) => ({ ...s, userId: e.target.value }))} /></Field>
           <Field label="调整积分"><input className={inputCls} type="number" value={adjustForm.points} onChange={(e) => setAdjustForm((s) => ({ ...s, points: e.target.value }))} /></Field>
           <Field label="原因"><input className={inputCls} value={adjustForm.reason} onChange={(e) => setAdjustForm((s) => ({ ...s, reason: e.target.value }))} /></Field>
-          <button onClick={submitAdjust} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground md:col-span-3"><Save className="h-4 w-4" />提交调整</button>
+          <button type="button" onClick={() => adjustMutation.mutate()} disabled={adjustMutation.isPending} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground md:col-span-3"><Save className="h-4 w-4" />提交调整</button>
         </div>
       ) : null}
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import PermissionGate from "@/components/admin/PermissionGate";
 import AdminFieldHint, { AdminLabelWithHint, AdminSectionTitle } from "@/components/admin/AdminFieldHint";
@@ -6,6 +7,7 @@ import { LoadingButton } from "@/modules/micro-interactions";
 import { fetchSiteSettings, updateSiteSettings } from "@/services/admin/settingsService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
 type NewArrivalForm = {
   newArrivalSectionTitle: string;
@@ -25,25 +27,29 @@ const empty: NewArrivalForm = {
 
 export default function AdminHomeOpsNewArrivalPanel() {
   const { confirm } = useAdminConfirm();
+  const queryClient = useQueryClient();
   const [form, setForm] = useState<NewArrivalForm>(empty);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const settingsQuery = useQuery({
+    queryKey: adminQueryKeys.siteSettings(),
+    queryFn: fetchSiteSettings,
+    staleTime: 60_000,
+  });
+
+  const loading = settingsQuery.isLoading && !settingsQuery.data;
+
   useEffect(() => {
-    setLoading(true);
-    fetchSiteSettings()
-      .then((data) => {
-        setForm({
-          newArrivalSectionTitle: data?.newArrivalSectionTitle ?? "",
-          newArrivalSectionSubtitle: data?.newArrivalSectionSubtitle ?? "",
-          newArrivalDisplayCount: data?.newArrivalDisplayCount ?? "8",
-          newArrivalShowPrice: data?.newArrivalShowPrice ?? "1",
-          newArrivalOnlyInStock: data?.newArrivalOnlyInStock ?? "1",
-        });
-      })
-      .catch((e) => toast.error(toastErrorMessage(e, "加载新品配置失败")))
-      .finally(() => setLoading(false));
-  }, []);
+    if (!settingsQuery.data) return;
+    const data = settingsQuery.data;
+    setForm({
+      newArrivalSectionTitle: data?.newArrivalSectionTitle ?? "",
+      newArrivalSectionSubtitle: data?.newArrivalSectionSubtitle ?? "",
+      newArrivalDisplayCount: data?.newArrivalDisplayCount ?? "8",
+      newArrivalShowPrice: data?.newArrivalShowPrice ?? "1",
+      newArrivalOnlyInStock: data?.newArrivalOnlyInStock ?? "1",
+    });
+  }, [settingsQuery.data]);
 
   const save = async () => {
     const count = parseInt(form.newArrivalDisplayCount.trim(), 10);
@@ -57,6 +63,7 @@ export default function AdminHomeOpsNewArrivalPanel() {
         ...form,
         newArrivalDisplayCount: String(count),
       });
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.siteSettings() });
       toast.success("新品配置已保存");
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败"));

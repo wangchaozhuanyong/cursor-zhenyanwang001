@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { FileSpreadsheet } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import ReportFilterBar from "@/components/admin/report/ReportFilterBar";
@@ -14,8 +15,11 @@ import {
   removeReportFilterChip,
 } from "@/utils/adminReportFilters";
 import { toast } from "sonner";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { labelReportCellValue, labelReportColumn } from "@/utils/adminDisplayLabels";
+import { getReportColumnMaxWidthStyle, reportTableThClassName } from "@/utils/adminTableColumnPolicy";
 import { formatAdminDate, formatAdminDateTimeAuto } from "@/utils/formatDateTime";
 
 function formatCellValue(key: string, value: unknown) {
@@ -47,31 +51,36 @@ type Props = {
   fetcher: (params: Record<string, string>) => Promise<Record<string, unknown>>;
 };
 
+function searchParamsRecord(searchParams: URLSearchParams): Record<string, string> {
+  const params: Record<string, string> = {};
+  searchParams.forEach((value, key) => {
+    params[key] = value;
+  });
+  return params;
+}
+
 export default function AdminReportGenericPage({ title, fetcher }: Props) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [loading, setLoading] = useState(true);
-  const [payload, setPayload] = useState<Record<string, unknown>>({});
   const [previewImageUrl, setPreviewImageUrl] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
 
+  const filterParams = useMemo(() => searchParamsRecord(searchParams), [searchParams]);
+
+  const reportQuery = useQuery({
+    queryKey: adminQueryKeys.report(title, filterParams),
+    queryFn: () => fetcher(filterParams),
+    placeholderData: (previous) => previous,
+    staleTime: 60_000,
+  });
+
+  const loading = reportQuery.isLoading && !reportQuery.data;
+  const payload = reportQuery.data ?? {};
+
   useEffect(() => {
-    const run = async () => {
-      setLoading(true);
-      try {
-        const p: Record<string, string> = {};
-        searchParams.forEach((v, k) => {
-          p[k] = v;
-        });
-        const data = await fetcher(p);
-        setPayload(data || {});
-      } catch (e) {
-        toast.error(toastErrorMessage(e, "加载报表失败"));
-      } finally {
-        setLoading(false);
-      }
-    };
-    void run();
-  }, [fetcher, searchParams]);
+    if (reportQuery.isError) {
+      toast.error(toastErrorMessage(reportQuery.error, "加载报表失败"));
+    }
+  }, [reportQuery.isError, reportQuery.error]);
 
   const list = useMemo(
     () => (Array.isArray(payload.list) ? (payload.list as Record<string, unknown>[]) : []),
@@ -162,12 +171,21 @@ export default function AdminReportGenericPage({ title, fetcher }: Props) {
                 <div className="skeleton-base skeleton-shimmer h-6 w-24 rounded" />
               </div>
             ))
-          : summaryEntries.map(([k, v]) => (
-              <div key={k} className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
-                <p className="text-xs text-[var(--theme-text-muted)]">{labelReportColumn(k)}</p>
-                <p className="mt-1 text-lg font-bold text-[var(--theme-text)]">{formatCellValue(k, v)}</p>
-              </div>
-            ))}
+          : summaryEntries.map(([k, v]) => {
+              const summaryDisplay = formatCellValue(k, v);
+              return (
+                <div key={k} className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
+                  <p className="text-xs text-[var(--theme-text-muted)]">{labelReportColumn(k)}</p>
+                  <div className="mt-1 text-lg font-bold text-[var(--theme-text)]">
+                    <AdminTableCell
+                      value={summaryDisplay}
+                      columnKey={k}
+                      fullText={summaryDisplay === "-" ? "" : String(summaryDisplay)}
+                    />
+                  </div>
+                </div>
+              );
+            })}
       </div>
       <AnimatedTable
         loading={loading}
@@ -176,12 +194,14 @@ export default function AdminReportGenericPage({ title, fetcher }: Props) {
         skeletonRows={8}
         skeletonCols={columns.length}
         className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-0 overflow-auto"
-        tableClassName="w-full min-w-[900px] text-xs"
+        tableClassName="w-full min-w-[720px] table-fixed text-xs"
         theadClassName="border-b border-[var(--theme-border)]"
         thead={(
           <tr>
             {columns.map((k) => (
-              <th key={k} className="px-2 py-2 text-left text-muted-foreground">{labelReportColumn(k)}</th>
+              <th key={k} className={reportTableThClassName(k)} style={getReportColumnMaxWidthStyle(k)}>
+                {labelReportColumn(k)}
+              </th>
             ))}
           </tr>
         )}
@@ -197,21 +217,32 @@ export default function AdminReportGenericPage({ title, fetcher }: Props) {
         )}
         renderRow={(row) => (
           <>
-            {columns.map((k) => (
-              <td key={k} className="px-2 py-2">
-                {k === "cover_image" ? (
-                  <button
-                    type="button"
-                    className="inline-flex h-7 items-center rounded-md border border-[var(--theme-border)] bg-transparent px-2 text-xs text-foreground hover:bg-secondary"
-                    onClick={() => openCoverPreview(row[k])}
-                  >
-                    查看图片
-                  </button>
-                ) : (
-                  formatCellValue(k, row[k])
-                )}
-              </td>
-            ))}
+            {columns.map((k) => {
+              const display = formatCellValue(k, row[k]);
+              return (
+                <td
+                  key={k}
+                  className="max-w-0 px-2 py-2 align-middle"
+                  style={getReportColumnMaxWidthStyle(k)}
+                >
+                  {k === "cover_image" ? (
+                    <button
+                      type="button"
+                      className="inline-flex h-7 items-center rounded-md border border-[var(--theme-border)] bg-transparent px-2 text-xs text-foreground hover:bg-secondary"
+                      onClick={() => openCoverPreview(row[k])}
+                    >
+                      查看图片
+                    </button>
+                  ) : (
+                    <AdminTableCell
+                      value={display}
+                      columnKey={k}
+                      fullText={display === "-" ? "" : display}
+                    />
+                  )}
+                </td>
+              );
+            })}
           </>
         )}
       />

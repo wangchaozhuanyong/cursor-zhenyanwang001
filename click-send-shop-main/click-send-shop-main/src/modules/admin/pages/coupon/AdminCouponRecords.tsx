@@ -1,12 +1,14 @@
 import { formatDateTime } from "@/utils/formatDateTime";
-import { useState, useEffect, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ClipboardList } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
 import { usePagination } from "@/hooks/usePagination";
-import { toast } from "sonner";
 import { fetchCouponRecords } from "@/services/admin/couponService";
 import type { CouponClaimRecord } from "@/types/coupon";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
@@ -29,24 +31,23 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 export default function AdminCouponRecords() {
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
-  const [records, setRecords] = useState<CouponClaimRecord[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    setLoading(true);
-    fetchCouponRecords()
-      .then((p) => setRecords(p.list))
-      .catch(() => toast.error("加载领券记录失败"))
-      .finally(() => setLoading(false));
-  }, []);
+  const recordsQuery = useQuery({
+    queryKey: adminQueryKeys.couponRecords(),
+    queryFn: () => fetchCouponRecords(),
+    staleTime: 60_000,
+  });
 
-  const filtered = records.filter((r) => {
-    if (statusFilter && r.status !== statusFilter) return false;
+  const records = recordsQuery.data?.list ?? [];
+  const loading = recordsQuery.isLoading && !recordsQuery.data;
+
+  const filtered = records.filter((record) => {
+    if (statusFilter && record.status !== statusFilter) return false;
     if (search) {
       const q = search.toLowerCase();
-      return (r.nickname || "").toLowerCase().includes(q)
-        || (r.phone || "").toLowerCase().includes(q)
-        || (r.coupon_title || "").toLowerCase().includes(q);
+      return (record.nickname || "").toLowerCase().includes(q)
+        || (record.phone || "").toLowerCase().includes(q)
+        || (record.coupon_title || "").toLowerCase().includes(q);
     }
     return true;
   });
@@ -79,98 +80,74 @@ export default function AdminCouponRecords() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3"><h2 className="text-lg font-semibold text-foreground"><Tx>领券记录</Tx></h2></div>
-
-      <div className="space-y-2">
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-          <div className="min-w-0 flex-1"><SearchBar placeholder="搜索用户/优惠券..." value={search} onChange={(v) => { setSearch(v); setPage(1); }} /></div>
-          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="min-h-[44px] w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground outline-none sm:w-auto">
-            <option value=""><Tx>全部状态</Tx></option>
-            <option value="available"><Tx>未使用</Tx></option>
-            <option value="used"><Tx>已使用</Tx></option>
-            <option value="expired"><Tx>已过期</Tx></option>
-          </select>
-        </div>
-        <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
+      <div className="flex items-center gap-2">
+        <ClipboardList className="h-5 w-5 text-[var(--theme-price)]" />
+        <h1 className="text-xl font-bold"><Tx>领券记录</Tx></h1>
       </div>
 
-      <div className="space-y-3 md:hidden">
-        {loading
-          ? Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-border bg-card p-4">
-              <div className="space-y-2">
-                <div className="skeleton-base skeleton-shimmer h-4 w-3/4 rounded" />
-                <div className="skeleton-base skeleton-shimmer h-3 w-1/2 rounded" />
-                <div className="skeleton-base skeleton-shimmer h-3 w-2/3 rounded" />
-              </div>
-            </div>
-          ))
-          : null}
-        {!loading && paginatedData.map((r) => {
-          const st = statusLabels[r.status] ?? { label: labelCouponRecordStatus(r.status), color: "" };
-          return (
-            <div key={r.id} className="rounded-xl border border-border bg-card p-4">
-              <div className="flex items-start justify-between gap-2">
-                <p className="font-medium text-foreground">{r.coupon_title || "未命名优惠券"}</p>
-                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${st.color}`}>{st.label}</span>
-              </div>
-              <p className="mt-2 text-sm text-foreground">{formatUserDisplay(r.nickname, r.phone)}</p>
-              <p className="mt-2 text-[11px] text-muted-foreground">领取 {r.claimed_at ? formatDateTime(r.claimed_at) : "—"}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">使用 {r.used_at ? formatDateTime(r.used_at) : "—"}</p>
-            </div>
-          );
-        })}
-        {!loading && paginatedData.length === 0 && (
-          <div className="py-12 text-center text-sm text-muted-foreground"><Tx>无匹配记录</Tx></div>
+      <div className="flex flex-wrap gap-2">
+        <SearchBar placeholder="搜索用户/优惠券" value={search} onChange={(value) => { setSearch(value); setPage(1); }} />
+        <select
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+          className="rounded-lg bg-secondary px-3 py-2 text-sm"
+        >
+          <option value=""><Tx>全部状态</Tx></option>
+          <option value="available"><Tx>未使用</Tx></option>
+          <option value="used"><Tx>已使用</Tx></option>
+          <option value="expired"><Tx>已过期</Tx></option>
+        </select>
+      </div>
+
+      <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
+
+      <AnimatedTable
+        loading={loading}
+        rows={paginatedData}
+        rowKey={(record: CouponClaimRecord) => record.id}
+        skeletonRows={8}
+        skeletonCols={6}
+        tableClassName="min-w-[900px]"
+        className="overflow-hidden border-border bg-card"
+        theadClassName="bg-secondary/40 text-left text-xs text-muted-foreground"
+        thead={(
+          <tr>
+            <th className="px-4 py-3"><Tx>用户</Tx></th>
+            <th className="px-4 py-3"><Tx>手机号</Tx></th>
+            <th className="px-4 py-3"><Tx>优惠券</Tx></th>
+            <th className="px-4 py-3"><Tx>状态</Tx></th>
+            <th className="px-4 py-3"><Tx>领取时间</Tx></th>
+            <th className="px-4 py-3"><Tx>使用时间</Tx></th>
+          </tr>
         )}
-        <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
-      </div>
-
-      <div className="hidden md:block rounded-xl border border-border bg-card">
-        <AnimatedTable
-          embedded
-          loading={loading}
-          rows={paginatedData}
-          rowKey={(r) => r.id}
-          skeletonRows={8}
-          skeletonCols={6}
-          tableClassName="w-full min-w-[640px] text-sm"
-          theadClassName="border-b border-border bg-secondary/50"
-          thead={(
-            <tr>
-              {["用户", "手机号", "优惠券", "领取时间", "状态", "使用时间"].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
-              ))}
-            </tr>
-          )}
-          emptyIcon={emptyGuide.icon}
-          emptyTitle={emptyGuide.title}
-          emptyDescription={emptyGuide.description}
-          emptyAction={(
-            <AdminEmptyGuideActions
-              guide={emptyGuide}
-              showClearFilters={filtersActive}
-              onClearFilters={clearFilters}
-            />
-          )}
-          renderRow={(r) => {
-            const st = statusLabels[r.status] ?? { label: labelCouponRecordStatus(r.status), color: "" };
-            return (
-              <>
-                <td className="px-4 py-3 text-foreground">{formatUserDisplay(r.nickname, r.phone)}</td>
-                <td className="px-4 py-3 text-foreground">{formatPhone(r.phone)}</td>
-                <td className="px-4 py-3 text-foreground">{r.coupon_title || "未命名优惠券"}</td>
-                <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{r.claimed_at ? formatDateTime(r.claimed_at) : "—"}</td>
-                <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${st.color}`}>{st.label}</span></td>
-                <td className="px-4 py-3 text-xs text-muted-foreground">{r.used_at ? formatDateTime(r.used_at) : "—"}</td>
-              </>
-            );
-          }}
-        />
-        {(loading || paginatedData.length > 0) && (
-          <Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />
+        footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
+        emptyIcon={emptyGuide.icon}
+        emptyTitle={emptyGuide.title}
+        emptyDescription={emptyGuide.description}
+        emptyAction={(
+          <AdminEmptyGuideActions
+            guide={emptyGuide}
+            showClearFilters={filtersActive}
+            onClearFilters={clearFilters}
+          />
         )}
-      </div>
+        renderRow={(record) => (
+          <>
+            <td className="px-4 py-3">{formatUserDisplay(record.nickname, record.phone)}</td>
+            <td className="px-4 py-3 text-xs text-muted-foreground">{formatPhone(record.phone)}</td>
+            <td className="max-w-[12rem] px-4 py-3 align-middle">
+              <AdminTableCell value={record.coupon_title || "—"} fullText={record.coupon_title || ""} maxWidth="11rem" />
+            </td>
+            <td className="px-4 py-3">
+              <span className={`rounded-full px-2 py-0.5 text-xs ${statusLabels[record.status]?.color || "bg-secondary text-foreground"}`}>
+                {statusLabels[record.status]?.label || labelCouponRecordStatus(record.status)}
+              </span>
+            </td>
+            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(record.claimed_at)}</td>
+            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{record.used_at ? formatDateTime(record.used_at) : "—"}</td>
+          </>
+        )}
+      />
     </div>
   );
 }

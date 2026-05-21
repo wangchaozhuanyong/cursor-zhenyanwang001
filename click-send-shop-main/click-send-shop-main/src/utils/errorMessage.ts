@@ -13,6 +13,9 @@ function localizeMessage(message: string | undefined, fallback: string): string 
 
 export function getErrorMessage(error: unknown, fallback = "操作失败"): string {
   if (error instanceof ApiError) {
+    if (error.code === 409) {
+      return "数据已被其他管理员修改，请刷新后再编辑";
+    }
     const data = error.data as Record<string, unknown> | undefined;
     const backendMessage = readString(data?.message) || readString(data?.error);
     const message = localizeMessage(backendMessage || readString(error.message), fallback);
@@ -35,3 +38,4 @@ export function getErrorMessage(error: unknown, fallback = "操作失败"): stri
 export function toastErrorMessage(error: unknown, fallback = "操作失败"): string {
   return getErrorMessage(error, fallback);
 }
+

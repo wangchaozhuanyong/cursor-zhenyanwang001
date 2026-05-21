@@ -5,7 +5,8 @@ const { getInstanceInfo } = require('../../../config/instance');
 function isRedisConfigured() {
   return Boolean(
     getRedisUrl()
-    || (process.env.REDIS_HOST || '').trim(),
+    || (process.env.REDIS_HOST || '').trim()
+    || process.env.REDIS_ENABLED === '1',
   );
 }
 

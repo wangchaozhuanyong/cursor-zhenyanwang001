@@ -1,0 +1,19 @@
+# Ubuntu 24 上 apt redis-server 的 systemd 单元可能因 jemalloc 无法启动。
+# 安装 redis-server 后执行：
+#   sudo cp deploy/redis-server-custom.service /etc/systemd/system/redis-custom.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now redis-custom
+[Unit]
+Description=Redis (custom unit, daemonize via redis.conf)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/redis-server /etc/redis/redis.conf --daemonize yes
+ExecStop=/usr/bin/redis-cli shutdown
+TimeoutStartSec=30
+
+[Install]
+WantedBy=multi-user.target

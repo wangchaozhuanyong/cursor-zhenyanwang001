@@ -34,16 +34,16 @@ export function pageTransition(level: MotionTier) {
   if (level === "none") return { initial: false as const, animate: {}, exit: {}, transition: { duration: 0 } };
   if (level === "rich") {
     return {
-      initial: { opacity: 0, y: 10, scale: 0.992 },
+      initial: { opacity: 1, y: 10, scale: 0.992 },
       animate: { opacity: 1, y: 0, scale: 1 },
-      exit: { opacity: 0, y: -4 },
+      exit: { opacity: 1, y: -4 },
       transition: silkTransition(0.26),
     };
   }
   return {
-    initial: { opacity: 0, y: 4 },
+    initial: { opacity: 1, y: 4 },
     animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: -2 },
+    exit: { opacity: 1, y: -2 },
     transition: silkTransition(0.18),
   };
 }

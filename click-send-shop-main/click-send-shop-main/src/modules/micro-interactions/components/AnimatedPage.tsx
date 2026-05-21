@@ -13,16 +13,17 @@ export function AnimatedPage({ children, className }: { children: ReactNode; cla
     return <div className={className}>{children}</div>;
   }
 
+  // popLayout: mount next route immediately so Suspense fallback stays visible (mode="wait" + opacity:0 caused white screens on tab nav).
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence mode="popLayout" initial={false}>
       <motion.div
-        key={location.pathname}
+        key={location.key}
         className={className}
         initial={pageMotion.initial}
         animate={pageMotion.animate}
         exit={pageMotion.exit}
         transition={pageMotion.transition}
-        style={{ backfaceVisibility: "hidden", transformOrigin: "50% 0%" }}
+        style={{ backfaceVisibility: "hidden", transformOrigin: "50% 0%", minHeight: "1px" }}
       >
         {children}
       </motion.div>

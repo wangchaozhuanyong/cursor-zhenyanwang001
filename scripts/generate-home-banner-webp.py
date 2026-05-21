@@ -4,7 +4,8 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 OUT = Path("artifacts/home-banners-webp")
 OUT.mkdir(parents=True, exist_ok=True)
 
-W, H = 750, 330
+# 2.34:1（与 src/constants/bannerAspect.ts 一致）
+W, H = 750, 320
 
 BANNERS = [
     {

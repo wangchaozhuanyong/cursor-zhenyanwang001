@@ -1,4 +1,5 @@
 import { useLocation } from "react-router-dom";
+import { BANNER_SKELETON_HEIGHT_CLASS } from "@/constants/bannerAspect";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
@@ -64,7 +65,7 @@ export function StoreOutletFallback() {
   return (
     <div className="mx-auto w-full max-w-screen-xl px-4 py-4" aria-busy="true" aria-label="页面加载中">
       <Skeleton className="mb-4 h-9 w-40 max-w-full rounded-full" />
-      <Skeleton className="h-[calc((100vw-2rem)/2.34)] max-h-52 min-h-32 w-full rounded-2xl" />
+      <Skeleton className={`${BANNER_SKELETON_HEIGHT_CLASS} w-full rounded-2xl`} />
       <div className="mt-5 grid grid-cols-2 gap-4">
         <Skeleton className="h-40 rounded-2xl" />
         <Skeleton className="h-40 rounded-2xl" />

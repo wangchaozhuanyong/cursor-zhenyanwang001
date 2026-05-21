@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supportsColorMix } from "@/utils/cssSupport";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { BANNER_ASPECT_CSS } from "@/constants/bannerAspect";
 import { getBannerContainerClassName, getBannerOverlayClassName } from "@/utils/themeVisuals";
 
 interface LoginBanner {
@@ -63,7 +64,7 @@ export default function LoginBannerCarousel({ banners, paused = false }: LoginBa
   return (
     <div
       className={`relative w-full overflow-hidden bg-[var(--theme-surface)] ${bannerContainerClass}`}
-      style={{ aspectRatio: "4 / 3", borderRadius: "var(--theme-radius)" }}
+      style={{ aspectRatio: BANNER_ASPECT_CSS, borderRadius: "var(--theme-radius)" }}
       data-theme-banner-style={themeConfig.bannerStyle}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
@@ -82,7 +83,7 @@ export default function LoginBannerCarousel({ banners, paused = false }: LoginBa
           <img
             src={banners[current].image}
             alt={banners[current].title}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover object-center"
             decoding="async"
           />
           {bannerOverlayClass ? (

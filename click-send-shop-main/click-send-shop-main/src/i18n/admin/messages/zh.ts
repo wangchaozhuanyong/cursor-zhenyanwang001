@@ -110,6 +110,12 @@ export const adminMessagesZh: AdminMessages = {
     auditLogs: "操作日志",
     roles: "角色权限",
     recycleBin: "回收站",
+    monitoringCenter: "监控中心",
+    monitoringOverview: "数据总览",
+    monitoringAnomalies: "数据异常",
+    monitoringRepairTasks: "修复任务",
+    monitoringRules: "监控规则",
+    monitoringRuns: "运行记录",
   },
   routeTitles: {
     admin: "管理后台",
@@ -162,6 +168,7 @@ export const adminMessagesZh: AdminMessages = {
     exports: "数据中心 / 数据导出",
     auditLogs: "系统设置 / 操作日志",
     recycleBin: "系统设置 / 回收站",
+    monitoring: "监控中心",
     notifications: "通知中心 / 通知管理",
   },
   common: {

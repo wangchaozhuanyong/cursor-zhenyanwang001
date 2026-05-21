@@ -11,13 +11,18 @@ import AdminFieldHint, { AdminPageTitle } from "@/components/admin/AdminFieldHin
 import { LoadingButton } from "@/modules/micro-interactions";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { THEME_HOVER_TEXT_DANGER, THEME_TEXT_SUCCESS_SOFT } from "@/utils/themeVisuals";
+import {
+  BANNER_ASPECT_CLASS,
+  BANNER_ASPECT_RATIO,
+  BANNER_ASPECT_TOLERANCE,
+  BANNER_SIZE_PRESETS,
+} from "@/constants/bannerAspect";
+import { IMAGE_UPLOAD_HINT_BANNER_LAYOUT } from "@/constants/imageUploadHints";
 import { isAspectRatioWithinTolerance, readImageSize } from "@/utils/imageRatio";
 import type { Banner } from "@/types/banner";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
-const BANNER_RATIO = 4 / 3;
-const BANNER_RATIO_TOLERANCE = 0.03;
-const BANNER_SIZE_PRESETS = "1200×900 / 1600×1200 / 2000×1500";
+const BANNER_RATIO_LABEL = `${BANNER_ASPECT_RATIO.toFixed(2)}:1`;
 
 export default function AdminBanners() {
   const { confirm } = useAdminConfirm();
@@ -153,7 +158,7 @@ export default function AdminBanners() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <AdminPageTitle title={<Tx>Banner 管理</Tx>} hint={<Tx>管理首页顶部 Banner（4:3）</Tx>} />
+        <AdminPageTitle title={<Tx>Banner 管理</Tx>} hint={<Tx>{`管理首页顶部 Banner（${BANNER_RATIO_LABEL}）`}</Tx>} />
         <PermissionGate permission="banner.manage">
           <button
             onClick={() => {
@@ -176,10 +181,10 @@ export default function AdminBanners() {
             contentClassName="max-w-sm"
             text={(
               <ul className="list-disc space-y-1 pl-4">
-                <li><Tx>首页顶部 Banner 统一使用 4:3 比例，避免展示裁切与留白。</Tx></li>
-                <li><Tx>推荐尺寸：1200×900、1600×1200、2000×1500（或任意等比 4:3）。</Tx></li>
+                <li><Tx>{`首页顶部 Banner 统一使用 ${BANNER_RATIO_LABEL} 宽幅比例，与前台轮播容器一致。`}</Tx></li>
+                <li><Tx>{`推荐尺寸：${BANNER_SIZE_PRESETS}（或任意等比 ${BANNER_RATIO_LABEL}）。`}</Tx></li>
+                <li><Tx>{IMAGE_UPLOAD_HINT_BANNER_LAYOUT}</Tx></li>
                 <li><Tx>支持 JPG/PNG/WebP/GIF，单张不超过 15MB。</Tx></li>
-                <li><Tx>图片由服务器统一处理：最长边 2560，WebP quality 92（无需浏览器二次压缩）。</Tx></li>
               </ul>
             )}
           />
@@ -197,7 +202,7 @@ export default function AdminBanners() {
         {loading
           ? Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="flex items-center gap-4 rounded-2xl border border-border bg-card p-3 sm:p-4">
-                <div className="skeleton-base skeleton-shimmer aspect-[4/3] w-28 rounded-xl" />
+                <div className={`skeleton-base skeleton-shimmer ${BANNER_ASPECT_CLASS} w-28 rounded-xl`} />
                 <div className="flex-1 space-y-2">
                   <div className="skeleton-base skeleton-shimmer h-4 w-40 rounded" />
                   <div className="skeleton-base skeleton-shimmer h-3 w-56 rounded" />
@@ -218,7 +223,7 @@ export default function AdminBanners() {
             } ${draggingId === String(b.id) ? "opacity-50" : ""} ${savingOrder ? "cursor-wait" : "cursor-move"}`}
           >
             <GripVertical size={16} className="cursor-grab text-muted-foreground" />
-            <div className="flex aspect-[4/3] w-28 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-secondary">
+            <div className={`flex ${BANNER_ASPECT_CLASS} w-28 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-secondary`}>
               {b.image ? <img src={b.image} alt="" className="h-full w-full object-cover" /> : <Image size={24} className="text-muted-foreground" />}
             </div>
             <div className="min-w-0 flex-1">
@@ -271,15 +276,15 @@ export default function AdminBanners() {
                 onChange={(e) => setStrictRatioCheck(e.target.checked)}
                 className="h-4 w-4 rounded border-border"
               />
-              <span>严格 4:3 校验（开启后，非 4:3 图片将禁止上传）</span>
+              <span>{`严格 ${BANNER_RATIO_LABEL} 校验（开启后，非标准比例图片将禁止上传）`}</span>
             </label>
-            <label className="flex aspect-[4/3] w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border bg-secondary hover:border-gold/50">
+            <label className={`flex ${BANNER_ASPECT_CLASS} w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border bg-secondary hover:border-gold/50`}>
               {form.image ? (
                 <img src={form.image} alt="" className="h-full w-full object-cover" />
               ) : (
                 <>
                   <Image size={32} className="text-muted-foreground" />
-                  <p className="mt-2 text-xs font-medium text-foreground"><Tx>点击上传 4:3 Banner 图片</Tx></p>
+                  <p className="mt-2 text-xs font-medium text-foreground"><Tx>{`点击上传 ${BANNER_RATIO_LABEL} Banner 图片`}</Tx></p>
                 </>
               )}
               <input
@@ -296,20 +301,20 @@ export default function AdminBanners() {
                       size = await readImageSize(file);
                     } catch {
                       if (strictRatioCheck) {
-                        toast.error("读取图片尺寸失败，无法进行严格 4:3 校验。请关闭严格校验后重试，或换一张 JPG/PNG/WebP 图片。");
+                        toast.error(`读取图片尺寸失败，无法进行严格 ${BANNER_RATIO_LABEL} 校验。请关闭严格校验后重试，或换一张 JPG/PNG/WebP 图片。`);
                         return;
                       }
                       toast.warning("读取图片尺寸失败，已跳过比例提示并继续上传。");
                     }
                     if (size && size.width > 0 && size.height > 0) {
                       const { width, height } = size;
-                      const ratioOk = isAspectRatioWithinTolerance(width, height, BANNER_RATIO, BANNER_RATIO_TOLERANCE);
+                      const ratioOk = isAspectRatioWithinTolerance(width, height, BANNER_ASPECT_RATIO, BANNER_ASPECT_TOLERANCE);
                       if (!ratioOk && strictRatioCheck) {
-                        toast.error(`当前图片为 ${width}×${height}，不符合 4:3 比例，已阻止上传。`);
+                        toast.error(`当前图片为 ${width}×${height}，不符合 ${BANNER_RATIO_LABEL} 比例，已阻止上传。`);
                         return;
                       }
                       if (!ratioOk) {
-                        toast.warning(`当前图片为 ${width}×${height}，建议使用 4:3 比例（如 1200×900）以获得最佳展示效果。`);
+                        toast.warning(`当前图片为 ${width}×${height}，建议使用 ${BANNER_RATIO_LABEL} 比例（如 1200×512）以获得最佳展示效果。`);
                       }
                     }
                     const res = await uploadService.uploadSingleWithProgress(file, { mode: "banner" });

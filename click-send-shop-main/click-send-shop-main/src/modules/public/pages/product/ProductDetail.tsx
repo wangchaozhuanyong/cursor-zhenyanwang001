@@ -22,6 +22,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useGoBack } from "@/hooks/useGoBack";
 import { copyToClipboard } from "@/utils/clipboard";
 import { trackAddToCart, trackProductView } from "@/utils/tracking";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getProductGridClassName } from "@/utils/productGridClasses";
@@ -34,8 +35,18 @@ import { cn } from "@/lib/utils";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical, stripHtml, truncateText } from "@/utils/seo";
 import { buildProductJsonLd } from "@/utils/structuredData";
-import { isRestrictedProduct } from "@/utils/restrictedProduct";
 import RegulatedProductNotice from "@/components/compliance/RegulatedProductNotice";
+import RestrictedAgeConfirm from "@/components/compliance/RestrictedAgeConfirm";
+import {
+  getRestrictedProductMinimumAge,
+  requiresRestrictedPurchaseConfirmation,
+} from "@/utils/ageGate";
+import {
+  buildRegulatedProductNoticeProps,
+  canIndexProductDetail,
+  shouldShowRegulatedNotice,
+} from "@/utils/regulatedProductNotice";
+import { isRestrictedProduct } from "@/utils/restrictedProduct";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -48,6 +59,7 @@ export default function ProductDetail() {
   const [purchaseIntent, setPurchaseIntent] = useState<"cart" | "buy">("cart");
   const [shareSheetOpen, setShareSheetOpen] = useState(false);
   const [shareText, setShareText] = useState("");
+  const [purchaseAgeOk, setPurchaseAgeOk] = useState(true);
   const isMobileSheet = useMediaSheetMode();
   const trackedProductIdRef = useRef<string | null>(null);
   const headerSentinelRef = useRef<HTMLDivElement>(null);
@@ -71,10 +83,21 @@ export default function ProductDetail() {
 
   const reviewsVm = useProductReviews(id ?? "");
   const siteInfo = useSiteInfo();
+  const siteCapabilities = useSiteCapabilities();
   const { themeConfig } = useThemeRuntime();
   const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
 
   useDocumentTitle(product?.name);
+
+  useEffect(() => {
+    if (!product) return;
+    const syncPurchaseAge = () => {
+      setPurchaseAgeOk(!requiresRestrictedPurchaseConfirmation(product, siteInfo));
+    };
+    syncPurchaseAge();
+    window.addEventListener("age-gate:confirmed", syncPurchaseAge);
+    return () => window.removeEventListener("age-gate:confirmed", syncPurchaseAge);
+  }, [product, siteInfo]);
 
   useEffect(() => {
     if (id) {
@@ -199,8 +222,12 @@ export default function ProductDetail() {
   const showPriceMeta = salesCount !== null || statusBadges.length > 0;
   const detailSections = buildDetailSections(product.description);
   const restricted = isRestrictedProduct(product);
-  const allowIndex = product.allow_index === undefined ? true : Number(product.allow_index) === 1;
-  const canIndex = !restricted && allowIndex;
+  const showRegulatedNotice = shouldShowRegulatedNotice(
+    product,
+    siteCapabilities.restrictedProductComplianceEnabled,
+  );
+  const regulatedNoticeProps = buildRegulatedProductNoticeProps(product, siteInfo);
+  const canIndex = canIndexProductDetail(product, siteInfo);
   const siteName = siteInfo.siteName || "官方商城";
   const canonical = buildCanonical(`/product/${product.id}`);
   const productDescRaw = stripHtml(product.description || "");
@@ -222,7 +249,17 @@ export default function ProductDetail() {
     return selectedVariant;
   };
 
+  const purchaseAgeBlocked = Boolean(product && !purchaseAgeOk);
+  const purchaseMinimumAge = product ? getRestrictedProductMinimumAge(product, siteInfo) : 18;
+
+  const guardRestrictedPurchase = () => {
+    if (!purchaseAgeBlocked) return true;
+    toast.error(`该商品仅限年满 ${purchaseMinimumAge} 岁用户购买或咨询`);
+    return false;
+  };
+
   const openPurchaseSheet = (intent: "cart" | "buy") => {
+    if (!guardRestrictedPurchase()) return;
     if (soldOut) {
       toast.error("库存不足");
       return;
@@ -427,11 +464,18 @@ export default function ProductDetail() {
                   <div className="font-bold">{activeActivity.title}</div>
                 </div>
               ) : null}
-              {restricted ? <RegulatedProductNotice product={product} /> : null}
+              {showRegulatedNotice ? <RegulatedProductNotice {...regulatedNoticeProps} /> : null}
+              {purchaseAgeBlocked ? (
+                <RestrictedAgeConfirm
+                  requiredAge={purchaseMinimumAge}
+                  onConfirmed={() => setPurchaseAgeOk(true)}
+                />
+              ) : null}
               <ProductTagList tags={product.tags} max={6} size="md" className="mt-3" />
             <div className="mt-4 hidden px-[var(--store-page-x)] md:block md:px-0">
               <DetailPurchaseBar
                 soldOut={soldOut}
+                purchaseBlocked={purchaseAgeBlocked}
                 isFavorite={isFavorite}
                 onFavorite={handleFavorite}
                 onCustomerService={() => void handleCustomerService()}
@@ -482,6 +526,7 @@ export default function ProductDetail() {
         <div className="mx-auto w-full px-[var(--store-page-x)] py-3 sm:max-w-lg sm:px-4">
           <DetailPurchaseBar
             soldOut={soldOut}
+            purchaseBlocked={purchaseAgeBlocked}
             isFavorite={isFavorite}
             onFavorite={handleFavorite}
             onCustomerService={() => void handleCustomerService()}
@@ -541,6 +586,7 @@ export default function ProductDetail() {
 /** 详情页购买操作条：左收藏/客服，右加入购物车 + 立即购买（淘宝式双按钮） */
 function DetailPurchaseBar({
   soldOut,
+  purchaseBlocked = false,
   isFavorite,
   onFavorite,
   onCustomerService,
@@ -548,12 +594,14 @@ function DetailPurchaseBar({
   onBuyNow,
 }: {
   soldOut: boolean;
+  purchaseBlocked?: boolean;
   isFavorite: boolean;
   onFavorite: () => void;
   onCustomerService: () => void;
   onAddToCart: () => void;
   onBuyNow: () => void;
 }) {
+  const disabled = soldOut || purchaseBlocked;
   return (
     <div className="flex items-stretch gap-3">
       <div className="flex shrink-0 items-center gap-4 pr-1">
@@ -577,7 +625,7 @@ function DetailPurchaseBar({
       <div className="flex min-w-0 flex-1 overflow-hidden rounded-full shadow-sm">
         <button
           type="button"
-          disabled={soldOut}
+          disabled={disabled}
           onClick={onAddToCart}
           className={cn(
             "min-h-11 flex-1 px-2 text-sm font-semibold transition-opacity",
@@ -589,7 +637,7 @@ function DetailPurchaseBar({
         </button>
         <button
           type="button"
-          disabled={soldOut}
+          disabled={disabled}
           onClick={onBuyNow}
           className={cn(
             "min-h-11 flex-1 px-2 text-sm font-semibold transition-opacity",
@@ -597,7 +645,7 @@ function DetailPurchaseBar({
             "disabled:cursor-not-allowed disabled:opacity-50",
           )}
         >
-          {soldOut ? "已售罄" : "立即购买"}
+          {soldOut ? "已售罄" : purchaseBlocked ? "需年龄确认" : "立即购买"}
         </button>
       </div>
     </div>

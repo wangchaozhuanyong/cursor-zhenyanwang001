@@ -116,3 +116,10 @@ export const AdminPaymentChannels = lazy(() => import("@/modules/admin/pages/pay
 export const AdminPaymentOrders = lazy(() => import("@/modules/admin/pages/payment/AdminPaymentOrders"));
 export const AdminPaymentEvents = lazy(() => import("@/modules/admin/pages/payment/AdminPaymentEvents"));
 export const AdminPaymentReconciliations = lazy(() => import("@/modules/admin/pages/payment/AdminPaymentReconciliations"));
+
+export const AdminMonitoringOverview = lazy(() => import("@/modules/admin/pages/monitoring/AdminMonitoringOverview"));
+export const AdminMonitoringAnomalies = lazy(() => import("@/modules/admin/pages/monitoring/AdminMonitoringAnomalies"));
+export const AdminMonitoringAnomalyDetail = lazy(() => import("@/modules/admin/pages/monitoring/AdminMonitoringAnomalyDetail"));
+export const AdminMonitoringRepairTasks = lazy(() => import("@/modules/admin/pages/monitoring/AdminMonitoringRepairTasks"));
+export const AdminMonitoringRules = lazy(() => import("@/modules/admin/pages/monitoring/AdminMonitoringRules"));
+export const AdminMonitoringRuns = lazy(() => import("@/modules/admin/pages/monitoring/AdminMonitoringRuns"));

@@ -33,9 +33,9 @@ function setAuthCookies(req, res, token, prefix = '') {
   res.cookie(accessName, token.accessToken, {
     httpOnly: true,
     secure,
-    sameSite: 'lax',
+    sameSite: prefix === 'admin' ? 'strict' : 'lax',
     maxAge: 15 * 60 * 1000,
-    path: '/',
+    path: prefix === 'admin' ? '/api/admin' : '/',
   });
   res.cookie(refreshName, token.refreshToken, {
     httpOnly: true,
@@ -51,6 +51,7 @@ function clearAuthCookies(req, res, prefix = '') {
   const common = { httpOnly: true, secure };
   if (prefix === 'admin') {
     res.clearCookie(ADMIN_ACCESS_COOKIE, { ...common, sameSite: 'lax', path: '/' });
+    res.clearCookie(ADMIN_ACCESS_COOKIE, { ...common, sameSite: 'strict', path: '/api/admin' });
     res.clearCookie(ADMIN_REFRESH_COOKIE, { ...common, sameSite: 'strict', path: '/api/admin' });
     return;
   }

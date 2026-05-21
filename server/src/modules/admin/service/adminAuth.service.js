@@ -5,24 +5,112 @@ const { comparePassword, signToken, verifyToken } = require('../../../utils/help
 const { logAdminAction } = require('../../../utils/adminAudit');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const rbacService = require('./rbac.service');
+const adminMfaService = require('./adminMfa.service');
 const { buildPhoneLookupCandidates } = require('../../../utils/phone');
 
 const authApi = /** @type {any} */ (authModule).api || {};
+const PUBLIC_LOGIN_FAILURE_MESSAGE = '账号或密码错误';
+const CAPTCHA_FAILURE_THRESHOLD = Number(process.env.ADMIN_LOGIN_CAPTCHA_FAILURES || 3);
+const LOCK_FAILURE_THRESHOLD = Number(process.env.ADMIN_LOGIN_LOCK_FAILURES || 10);
+const LOCK_MS = Number(process.env.ADMIN_LOGIN_LOCK_MINUTES || 30) * 60 * 1000;
+const loginRiskState = new Map();
+const ADMIN_ACCESS_EXPIRES_IN = process.env.ADMIN_JWT_EXPIRES_IN || '15m';
+const ADMIN_ACCESS_EXPIRES_SECONDS = Number(process.env.ADMIN_JWT_EXPIRES_SECONDS || 15 * 60);
 
 function requireAuthApi(name) {
   const fn = authApi[name];
   if (typeof fn !== 'function') {
-    throw new Error(`Auth 模块 API 未暴露方法: ${name}`);
+    throw new Error(`Auth module API is missing method: ${name}`);
   }
   return fn;
 }
 
 function normalizeLoginAccount(input) {
-  // Normalize full-width digits and spaces copied from IM tools/keyboards.
   return String(input || '')
     .replace(/[！-～]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
     .replace(/\s+/g, '')
     .trim();
+}
+
+function getClientIp(req) {
+  const xf = req?.headers?.['x-forwarded-for'];
+  return String(req?.ip || (typeof xf === 'string' ? xf.split(',')[0].trim() : '') || req?.socket?.remoteAddress || 'unknown');
+}
+
+function riskKey(scope, value) {
+  return `${scope}:${String(value || 'unknown').toLowerCase()}`;
+}
+
+function getRiskRecord(key) {
+  const now = Date.now();
+  const record = loginRiskState.get(key);
+  if (!record || (record.lockedUntil && record.lockedUntil <= now)) {
+    const fresh = { failures: 0, lockedUntil: 0, lastFailureAt: 0 };
+    loginRiskState.set(key, fresh);
+    return fresh;
+  }
+  return record;
+}
+
+function getRiskKeys(phone, req) {
+  const ip = getClientIp(req);
+  return [
+    riskKey('ip', ip),
+    riskKey('account', phone),
+    riskKey('combo', `${ip}|${phone}`),
+  ];
+}
+
+function getMaxFailures(keys) {
+  return Math.max(...keys.map((key) => getRiskRecord(key).failures), 0);
+}
+
+function decorateLoginError(err, reason) {
+  err.auditReason = reason;
+  return err;
+}
+
+function assertLoginRiskAllowed(phone, body, req) {
+  const keys = getRiskKeys(phone, req);
+  const now = Date.now();
+  const locked = keys.find((key) => {
+    const record = getRiskRecord(key);
+    return record.lockedUntil && record.lockedUntil > now;
+  });
+  if (locked) {
+    throw decorateLoginError(new BusinessError(423, PUBLIC_LOGIN_FAILURE_MESSAGE), 'ACCOUNT_LOCKED');
+  }
+
+  const hasCaptcha = Boolean(body?.captchaToken || body?.turnstileToken);
+  if (getMaxFailures(keys) >= CAPTCHA_FAILURE_THRESHOLD && !hasCaptcha) {
+    throw decorateLoginError(new BusinessError(401, PUBLIC_LOGIN_FAILURE_MESSAGE), 'CAPTCHA_REQUIRED');
+  }
+}
+
+function recordLoginFailure(phone, req) {
+  const now = Date.now();
+  for (const key of getRiskKeys(phone, req)) {
+    const record = getRiskRecord(key);
+    record.failures += 1;
+    record.lastFailureAt = now;
+    if (record.failures >= LOCK_FAILURE_THRESHOLD) {
+      record.lockedUntil = now + LOCK_MS;
+    }
+    loginRiskState.set(key, record);
+  }
+}
+
+function clearLoginFailures(phone, req) {
+  for (const key of getRiskKeys(phone, req)) {
+    loginRiskState.delete(key);
+  }
+}
+
+function coerceHash(hash) {
+  let h = hash;
+  if (Buffer.isBuffer(h)) h = h.toString('utf8');
+  else if (h != null && typeof h !== 'string') h = String(h);
+  return typeof h === 'string' && h.trim() ? h : '';
 }
 
 async function login(body, req) {
@@ -30,16 +118,14 @@ async function login(body, req) {
   const countryCode = body.countryCode;
   const password = String(body.password || '');
   try {
-    if (!phone || !password) throw new BusinessError(400, '手机号和密码不能为空');
+    if (!phone || !password) {
+      throw decorateLoginError(new BusinessError(400, PUBLIC_LOGIN_FAILURE_MESSAGE), 'MISSING_CREDENTIALS');
+    }
+    assertLoginRiskAllowed(phone, body, req);
 
     const matchedUsers = await requireAuthApi('findUsersByPhones')(buildPhoneLookupCandidates(phone, countryCode));
-    if (!matchedUsers.length) throw new BusinessError(401, '账号未注册');
-
-    function coerceHash(hash) {
-      let h = hash;
-      if (Buffer.isBuffer(h)) h = h.toString('utf8');
-      else if (h != null && typeof h !== 'string') h = String(h);
-      return typeof h === 'string' && h.trim() ? h : '';
+    if (!matchedUsers.length) {
+      throw decorateLoginError(new BusinessError(401, PUBLIC_LOGIN_FAILURE_MESSAGE), 'ADMIN_NOT_FOUND');
     }
 
     let user = null;
@@ -57,22 +143,52 @@ async function login(body, req) {
       console.error('[adminAuth.login] bcrypt compare error', e);
       user = null;
     }
-    if (!user) throw new BusinessError(401, '密码错误');
+    if (!user) {
+      throw decorateLoginError(new BusinessError(401, PUBLIC_LOGIN_FAILURE_MESSAGE), 'PASSWORD_WRONG');
+    }
 
     if (user.role !== 'admin' && user.role !== 'super_admin') {
-      throw new BusinessError(403, '该账号无管理员权限');
+      throw decorateLoginError(new BusinessError(403, PUBLIC_LOGIN_FAILURE_MESSAGE), 'NOT_ADMIN');
     }
     if (user.account_status === 'disabled' || user.account_status === 'blacklisted') {
-      throw new BusinessError(403, '该管理员账号已被停用');
+      throw decorateLoginError(new BusinessError(403, PUBLIC_LOGIN_FAILURE_MESSAGE), 'ADMIN_DISABLED');
     }
 
     const uid = String(user.id ?? '');
-    if (!uid) throw new BusinessError(401, '手机号或密码错误');
+    if (!uid) {
+      throw decorateLoginError(new BusinessError(401, PUBLIC_LOGIN_FAILURE_MESSAGE), 'ADMIN_ID_MISSING');
+    }
 
     const rv = Number.isFinite(Number(user.refresh_token_version)) ? Number(user.refresh_token_version) : 0;
-    const token = signToken(uid, rv);
+    const mfaChallenge = await adminMfaService.buildLoginMfaChallenge({
+      id: uid,
+      phone: user.phone || phone,
+      nickname: user.nickname || '',
+      role: user.role,
+      refresh_token_version: rv,
+    }, req);
+    if (mfaChallenge) {
+      await writeAuditLog({
+        req,
+        operatorId: uid,
+        operatorName: user.nickname || phone,
+        operatorRole: user.role,
+        actionType: 'admin.mfa.challenge',
+        objectType: 'auth',
+        objectId: uid,
+        summary: mfaChallenge.data?.mfaSetupRequired ? 'admin MFA setup required' : 'admin MFA login required',
+        result: 'success',
+      });
+      return mfaChallenge;
+    }
+
+    const token = signToken(uid, rv, {
+      accessExpiresIn: ADMIN_ACCESS_EXPIRES_IN,
+      expiresInSeconds: ADMIN_ACCESS_EXPIRES_SECONDS,
+    });
     const access = await rbacService.getAccessContext(uid, user.role);
     try { await requireAuthApi('updateLastLogin')(uid); } catch { /* non-critical */ }
+    clearLoginFailures(phone, req);
     await logAdminAction(user.nickname || phone, 'admin login', '');
     await writeAuditLog({
       req,
@@ -82,7 +198,7 @@ async function login(body, req) {
       actionType: 'admin.login',
       objectType: 'auth',
       objectId: uid,
-      summary: '管理员登录成功',
+      summary: 'admin login success',
       result: 'success',
     });
     return {
@@ -97,6 +213,7 @@ async function login(body, req) {
       message: '登录成功',
     };
   } catch (err) {
+    recordLoginFailure(phone, req);
     await writeAuditLog({
       req,
       operatorId: null,
@@ -105,9 +222,9 @@ async function login(body, req) {
       actionType: 'admin.login',
       objectType: 'auth',
       objectId: null,
-      summary: '管理员登录失败',
+      summary: 'admin login failure',
       result: 'failure',
-      errorMessage: err.message || String(err),
+      errorMessage: err.auditReason || err.message || String(err),
     });
     throw err;
   }
@@ -117,7 +234,7 @@ async function refresh(refreshToken) {
   if (!refreshToken) throw new BusinessError(401, '请先登录');
   let payload;
   try {
-    payload = /** @type {{ type?: string, userId?: string }} */ (verifyToken(refreshToken));
+    payload = /** @type {{ type?: string, userId?: string, rv?: number }} */ (verifyToken(refreshToken));
   } catch {
     throw new BusinessError(401, '登录已过期，请重新登录');
   }
@@ -129,11 +246,18 @@ async function refresh(refreshToken) {
     throw new BusinessError(403, '无管理员权限');
   }
   if (user.account_status === 'disabled' || user.account_status === 'blacklisted') {
-    throw new BusinessError(403, '该管理员账号已被停用');
+    throw new BusinessError(403, '管理员账号已停用');
   }
 
   try {
-    return await requireAuthApi('refresh')(refreshToken);
+    await requireAuthApi('refresh')(refreshToken);
+    const rv = Number.isFinite(Number(payload.rv)) ? Number(payload.rv) + 1 : 1;
+    await requireAuthApi('bumpRefreshTokenVersion')(payload.userId);
+    const token = signToken(payload.userId, rv, {
+      accessExpiresIn: ADMIN_ACCESS_EXPIRES_IN,
+      expiresInSeconds: ADMIN_ACCESS_EXPIRES_SECONDS,
+    });
+    return { data: { accessToken: token.accessToken, refreshToken: token.refreshToken, expiresIn: token.expiresIn } };
   } catch (err) {
     if (err instanceof AuthError) throw new BusinessError(401, err.message || '登录已过期，请重新登录');
     throw err;
@@ -151,17 +275,10 @@ async function logout(userId, req) {
     actionType: 'admin.logout',
     objectType: 'auth',
     objectId: userId || null,
-    summary: '管理员退出登录',
+    summary: 'admin logout',
     result: 'success',
   });
   return { data: null, message: '已退出登录' };
 }
 
 module.exports = { login, refresh, logout };
-
-
-
-
-
-
-

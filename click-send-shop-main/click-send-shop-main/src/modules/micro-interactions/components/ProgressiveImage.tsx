@@ -135,8 +135,8 @@ export function ProgressiveImage({
             setHiResLoaded(false);
           }}
           className={cn(
-            "absolute inset-0 h-full w-full object-cover transition-opacity ease-out duration-300",
-            showHiRes ? "opacity-100" : "opacity-0",
+            "absolute inset-0 h-full w-full object-cover transition-[opacity,transform] duration-500 ease-out",
+            showHiRes ? "scale-100 opacity-100" : "scale-[1.015] opacity-0",
             imgClassName,
           )}
         />

@@ -43,6 +43,7 @@ import {
   Paintbrush,
   MousePointerClick,
   Headphones,
+  AlertTriangle,
 } from "lucide-react";
 import AdminAccountSettingsDialog from "@/components/admin/AdminAccountSettingsDialog";
 import type { AdminAccountTab } from "@/components/admin/AdminAccountPanel";
@@ -59,6 +60,7 @@ import AdminOrderVoiceNotifier from "@/modules/admin/components/AdminOrderVoiceN
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import type { SiteCapabilities } from "@/types/siteCapabilities";
 import { useAdminEvents } from "@/hooks/admin/useAdminEvents";
+import { getSecurityAlerts, type SecurityAlertSummary } from "@/api/admin/audit";
 
 type NavPerm = string | { anyOf: string[] };
 
@@ -79,6 +81,20 @@ interface NavItem {
 
 type ResolvedNavChild = NavChild & { label: string };
 type ResolvedNavItem = Omit<NavItem, "children"> & { label: string; children?: ResolvedNavChild[] };
+
+const localNavLabels: Record<string, string> = {
+  "nav.monitoringCenter": "监控中心",
+  "nav.monitoringOverview": "数据总览",
+  "nav.monitoringAnomalies": "数据异常",
+  "nav.monitoringRepairTasks": "修复任务",
+  "nav.monitoringRules": "监控规则",
+  "nav.monitoringRuns": "运行记录",
+};
+
+function resolveNavLabel(t: (key: string) => string, key: string) {
+  const translated = t(key);
+  return translated === key ? localNavLabels[key] || key : translated;
+}
 
 const navItemsRaw: NavItem[] = [
   { icon: LayoutDashboard, labelKey: "nav.dashboard", path: "/admin", permission: "dashboard.view" },
@@ -174,6 +190,19 @@ const navItemsRaw: NavItem[] = [
     ],
   },
   {
+    icon: Shield,
+    labelKey: "nav.monitoringCenter",
+    path: "/admin/monitoring",
+    permission: { anyOf: ["monitoring.view", "monitoring.manage", "monitoring.repair"] },
+    children: [
+      { icon: LayoutDashboard, labelKey: "nav.monitoringOverview", path: "/admin/monitoring", permission: { anyOf: ["monitoring.view", "monitoring.manage", "monitoring.repair"] } },
+      { icon: Shield, labelKey: "nav.monitoringAnomalies", path: "/admin/monitoring/anomalies", permission: { anyOf: ["monitoring.view", "monitoring.manage", "monitoring.repair"] } },
+      { icon: RotateCcw, labelKey: "nav.monitoringRepairTasks", path: "/admin/monitoring/repair-tasks", permission: { anyOf: ["monitoring.view", "monitoring.manage", "monitoring.repair"] } },
+      { icon: Settings, labelKey: "nav.monitoringRules", path: "/admin/monitoring/rules", permission: { anyOf: ["monitoring.view", "monitoring.manage"] } },
+      { icon: ScrollText, labelKey: "nav.monitoringRuns", path: "/admin/monitoring/runs", permission: { anyOf: ["monitoring.view", "monitoring.manage", "monitoring.repair"] } },
+    ],
+  },
+  {
     icon: BarChart3,
     labelKey: "nav.dataCenter",
     path: "/admin/reports/overview",
@@ -224,8 +253,8 @@ const navItemsRaw: NavItem[] = [
 function resolveNavLabels(items: NavItem[], t: (key: string) => string): ResolvedNavItem[] {
   return items.map((item) => ({
     ...item,
-    label: t(item.labelKey),
-    children: item.children?.map((c) => ({ ...c, label: t(c.labelKey) })),
+    label: resolveNavLabel(t, item.labelKey),
+    children: item.children?.map((c) => ({ ...c, label: resolveNavLabel(t, c.labelKey) })),
   }));
 }
 
@@ -451,12 +480,17 @@ function AdminLayoutContent() {
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
   const [accountDialogTab, setAccountDialogTab] = useState<AdminAccountTab>("profile");
   const [topSearch, setTopSearch] = useState("");
+  const [securityAlerts, setSecurityAlerts] = useState<SecurityAlertSummary | null>(null);
+  const [securityAlertsOpen, setSecurityAlertsOpen] = useState(false);
   const avatarRef = useRef<HTMLDivElement>(null);
+  const securityAlertsRef = useRef<HTMLDivElement>(null);
 
   const can = useAdminPermissionStore((s) => s.can);
   const canAny = useAdminPermissionStore((s) => s.canAny);
+  const isSuperAdmin = useAdminPermissionStore((s) => s.isSuperAdmin);
   const capabilities = useSiteCapabilities();
   useAdminEvents(true);
+  const canViewSecurityAlerts = isSuperAdmin || can("audit.view");
 
   const navItems = useMemo(
     () => resolveNavLabels(filterNav(navItemsRaw, can, canAny, capabilities), t),
@@ -485,10 +519,37 @@ function AdminLayoutContent() {
       if (avatarRef.current && !avatarRef.current.contains(target)) {
         setAvatarMenuOpen(false);
       }
+      if (securityAlertsRef.current && !securityAlertsRef.current.contains(target)) {
+        setSecurityAlertsOpen(false);
+      }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [skinPickerOpen]);
+
+  useEffect(() => {
+    if (!isAdminAuthenticated() || !canViewSecurityAlerts) {
+      setSecurityAlerts(null);
+      return;
+    }
+
+    let alive = true;
+    const load = async () => {
+      try {
+        const data = await getSecurityAlerts({ limit: 5, sinceHours: 24 });
+        if (alive) setSecurityAlerts(data);
+      } catch {
+        if (alive) setSecurityAlerts(null);
+      }
+    };
+
+    void load();
+    const timer = window.setInterval(load, 60_000);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+    };
+  }, [canViewSecurityAlerts]);
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -536,6 +597,7 @@ function AdminLayoutContent() {
   const tab = mobileBottomTab(location.pathname);
 
   const showNotifTab = can("notification.manage") || can("notification.view");
+  const securityAlertCount = securityAlerts?.total ?? 0;
 
   if (!isAdminAuthenticated()) {
     return <Navigate to="/admin/login" replace />;
@@ -614,16 +676,85 @@ function AdminLayoutContent() {
                 className="w-36 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground lg:w-40"
               />
             </div>
-            {showNotifTab && (
-              <button
-                type="button"
-                aria-label={t("layout.notifications")}
-                className="touch-manipulation relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-secondary"
-                onClick={() => navigate("/admin/notifications")}
-              >
-                <Bell size={20} />
-                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive" />
-              </button>
+            {(showNotifTab || canViewSecurityAlerts) && (
+              <div ref={securityAlertsRef} className="relative shrink-0">
+                <button
+                  type="button"
+                  aria-label={t("layout.notifications")}
+                  className="touch-manipulation relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-secondary"
+                  onClick={() => {
+                    if (canViewSecurityAlerts) {
+                      setSecurityAlertsOpen((v) => !v);
+                      return;
+                    }
+                    navigate("/admin/notifications");
+                  }}
+                >
+                  <Bell size={20} />
+                  {securityAlertCount > 0 ? (
+                    <span className="absolute right-1.5 top-1.5 flex min-h-[16px] min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-white">
+                      {securityAlertCount > 99 ? "99+" : securityAlertCount}
+                    </span>
+                  ) : showNotifTab ? (
+                    <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-destructive" />
+                  ) : null}
+                </button>
+                {securityAlertsOpen && canViewSecurityAlerts ? (
+                  <motion.div className="absolute right-0 top-full z-50 mt-1 w-[min(92vw,22rem)] rounded-xl border border-border bg-card p-2 shadow-lg">
+                    <div className="flex items-center justify-between px-2 py-2">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <Shield size={16} className="shrink-0 text-destructive" />
+                        <p className="truncate text-sm font-semibold text-foreground">安全监控</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        onClick={() => {
+                          setSecurityAlertsOpen(false);
+                          navigate("/admin/logs?keyword=security");
+                        }}
+                      >
+                        审计日志
+                      </button>
+                    </div>
+                    <div className="max-h-72 overflow-y-auto">
+                      {securityAlerts?.list?.length ? (
+                        securityAlerts.list.map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            className="flex w-full gap-2 rounded-lg px-2 py-2 text-left hover:bg-secondary"
+                            onClick={() => {
+                              setSecurityAlertsOpen(false);
+                              navigate(`/admin/logs?actionType=${encodeURIComponent(item.action_type)}`);
+                            }}
+                          >
+                            <AlertTriangle size={15} className={`mt-0.5 shrink-0 ${item.result === "failure" ? "text-destructive" : "text-[var(--theme-primary)]"}`} />
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-xs font-medium text-foreground">{item.summary || item.action_type}</span>
+                              <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{item.ip || "-"} · {new Date(item.created_at).toLocaleString()}</span>
+                            </span>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-2 py-6 text-center text-xs text-muted-foreground">近 24 小时暂无安全告警</div>
+                      )}
+                    </div>
+                    {showNotifTab ? (
+                      <button
+                        type="button"
+                        className="mt-1 flex min-h-[40px] w-full items-center justify-center rounded-lg border border-border text-sm text-foreground hover:bg-secondary"
+                        onClick={() => {
+                          setSecurityAlertsOpen(false);
+                          navigate("/admin/notifications");
+                        }}
+                      >
+                        打开通知中心
+                      </button>
+                    ) : null}
+                  </motion.div>
+                ) : null}
+              </div>
             )}
             {can("order.view") && <AdminOrderVoiceNotifier />}
             <div ref={avatarRef} className="relative shrink-0">

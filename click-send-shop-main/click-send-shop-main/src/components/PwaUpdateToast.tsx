@@ -7,12 +7,41 @@ const SW_UPDATE_TIMEOUT_MS = 2000;
 
 export default function PwaUpdateToast() {
   const trackedAvailableRef = useRef(false);
+  const reloadStartedRef = useRef(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  const reloadOnce = useCallback(() => {
+    if (reloadStartedRef.current) return;
+    reloadStartedRef.current = true;
+    window.location.reload();
+  }, []);
+
+  const waitForControllerChange = useCallback(() => {
+    if (!("serviceWorker" in navigator)) return Promise.resolve();
+
+    return new Promise<void>((resolve) => {
+      let settled = false;
+      let timeoutId = 0;
+
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeoutId);
+        navigator.serviceWorker.removeEventListener("controllerchange", finish);
+        resolve();
+      };
+
+      timeoutId = window.setTimeout(finish, SW_UPDATE_TIMEOUT_MS);
+      navigator.serviceWorker.addEventListener("controllerchange", finish);
+    });
+  }, []);
+
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({
     immediate: true,
+    onNeedReload: reloadOnce,
   });
 
   useEffect(() => {
@@ -32,19 +61,17 @@ export default function PwaUpdateToast() {
     void trackEvent({ event_type: "pwa_update_accepted", module: "pwa", page: window.location.pathname });
     setNeedRefresh(false);
 
+    const controllerChanged = waitForControllerChange();
+
     try {
-      await Promise.race([
-        updateServiceWorker(true),
-        new Promise<void>((resolve) => {
-          window.setTimeout(resolve, SW_UPDATE_TIMEOUT_MS);
-        }),
-      ]);
+      await updateServiceWorker(true);
+      await controllerChanged;
     } catch {
       // 忽略 SW 异常，下面仍会整页刷新以加载最新静态资源
     }
 
-    window.location.reload();
-  }, [refreshing, setNeedRefresh, updateServiceWorker]);
+    reloadOnce();
+  }, [refreshing, reloadOnce, setNeedRefresh, updateServiceWorker, waitForControllerChange]);
 
   if (!needRefresh) return null;
 

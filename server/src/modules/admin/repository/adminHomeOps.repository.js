@@ -36,11 +36,29 @@ async function deleteNavItem(id) {
   await db.query('DELETE FROM home_nav_items WHERE id = ?', [id]);
 }
 
+async function batchUpdateNavSort(items) {
+  if (!items.length) return;
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+    for (const item of items) {
+      await conn.query('UPDATE home_nav_items SET sort_order = ? WHERE id = ?', [item.sort_order, item.id]);
+    }
+    await conn.commit();
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
 module.exports = {
   selectNavItems,
   insertNavItem,
   updateNavItem,
   deleteNavItem,
+  batchUpdateNavSort,
 };
 
 

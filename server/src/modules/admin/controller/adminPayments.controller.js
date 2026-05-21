@@ -1,4 +1,5 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
+const dataChangeTracker = require('../../monitoring/service/dataChangeTracker.service');
 
 function getPaymentApi() {
   return /** @type {any} */ (require('../../payment')).api || {};
@@ -19,6 +20,14 @@ exports.listChannels = asyncRoute(async (_req, res) => {
 
 exports.updateChannel = asyncRoute(async (req, res) => {
   const result = await requirePaymentApi('updateChannelAdmin')(req, req.params.id, req.body);
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'payment',
+    entityType: 'payment_channel',
+    entityId: req.params.id,
+    action: 'channel.update',
+    beforeData: req.body,
+    afterData: result,
+  });
   res.success(null, result.message);
 });
 
@@ -38,11 +47,27 @@ exports.listPaymentEvents = asyncRoute(async (req, res) => {
 
 exports.markOrderPaid = asyncRoute(async (req, res) => {
   const result = await requirePaymentApi('markOrderPaidByAdmin')(req, req.params.orderId, req.body);
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'payment',
+    entityType: 'order',
+    entityId: req.params.orderId,
+    action: 'payment.mark_paid',
+    beforeData: req.body,
+    afterData: result,
+  });
   res.success(null, result.message);
 });
 
 exports.recordRefund = asyncRoute(async (req, res) => {
   const result = await requirePaymentApi('recordRefundByAdmin')(req, req.params.orderId, req.body);
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'payment',
+    entityType: 'order',
+    entityId: req.params.orderId,
+    action: 'refund.record',
+    beforeData: req.body,
+    afterData: result.data,
+  });
   res.success(result.data, result.message);
 });
 

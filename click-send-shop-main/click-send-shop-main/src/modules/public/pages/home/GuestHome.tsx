@@ -5,8 +5,6 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import logoWebp from "@/assets/logo.webp";
 import StoreTabHeader from "@/components/store/StoreTabHeader";
-import ProductCard from "@/components/ProductCard";
-import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import BannerCarousel from "@/components/BannerCarousel";
 import HomeTrustBar from "@/components/HomeTrustBar";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
@@ -37,6 +35,7 @@ import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/utils/structuredData";
 import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPanel";
+import SilkProductGrid from "@/components/motion/SilkProductGrid";
 
 function mergeHomeProductsForGuest(hot: Product[], recommended: Product[], max: number): Product[] {
   const seen = new Set<string>();
@@ -311,15 +310,14 @@ export default function GuestHome() {
               部分推荐内容暂时无法刷新，以下为缓存数据
             </p>
           ) : null}
-          {homeLoading && !homeError && (
-            <div className={`mt-4 ${productGridClass}`}>
-              {Array.from({ length: guestGridMax }).map((_, i) => (
-                <ProductCardSkeleton key={i} />
-              ))}
-            </div>
-          )}
-          {!homeLoading && !homeError && gridProducts.length === 0 && (
-            <div className="mt-6 rounded-xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)]/60 px-4 py-10 text-center">
+          <SilkProductGrid
+            products={gridProducts}
+            className={`mt-4 ${productGridClass}`}
+            skeletonCount={guestGridMax}
+            showFullSkeleton={homeLoading && !homeError && gridProducts.length === 0}
+            emptyState={
+              !homeLoading && !homeError ? (
+                <div className="mt-6 rounded-xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)]/60 px-4 py-10 text-center">
               <p className="text-sm text-[var(--theme-text)]">暂无推荐商品</p>
               <p className="mt-2 text-xs text-[color-mix(in_srgb,var(--theme-text-on-surface)_70%,var(--theme-text-muted))]">
                 请先浏览分类或登录查看；商家上架商品后，这里会自动展示。              </p>
@@ -339,15 +337,10 @@ export default function GuestHome() {
                   登录 / 注册
                 </button>
               </div>
-            </div>
-          )}
-          {!homeLoading && !homeError && gridProducts.length > 0 && (
-            <div className={`mt-4 ${productGridClass}`}>
-              {gridProducts.map((p, i) => (
-                <ProductCard key={p.id} product={p} index={i} />
-              ))}
-            </div>
-          )}
+                </div>
+              ) : null
+            }
+          />
         </section>
         </AnimatedSection>
         ) : null}

@@ -4,24 +4,25 @@ import type { Product } from "@/types/product";
 
 export const previewBanner: Banner = {
   id: "preview-banner",
-  title: "Theme Studio 预览 Banner",
+  title: "主题预览轮播（非线上数据）",
   image: banner1Image,
   link: "/products",
   sort_order: 1,
   enabled: true,
 };
 
+/** 仅 Theme Studio 组件画廊占位，不写入商品库 */
 export const previewProduct = {
   id: "preview-product",
-  name: "官方商城精选商品 · 预览款",
+  name: "主题预览商品卡（非线上数据）",
   price: 88,
   original_price: 128,
   points: 20,
   stock: 30,
-  sales_count: 256,
+  sales_count: 0,
   cover_image: banner1Image,
   images: [banner1Image],
-  tags: ["热销", "包邮"],
-  is_hot: true,
-  is_new: true,
+  tags: ["预览"],
+  is_hot: false,
+  is_new: false,
 } as unknown as Product;

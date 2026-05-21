@@ -3,17 +3,14 @@ import { useSearchParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import StoreSearchField from "@/components/store/StoreSearchField";
-import ProductCard from "@/components/ProductCard";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { useMotionConfig } from "@/modules/micro-interactions";
 import { cn } from "@/lib/utils";
-import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import ProductFilterDrawer from "@/components/ProductFilterDrawer";
 import ProductSortBar from "@/components/ProductSortBar";
 import CategoryKingkongRow, { type CategoryKingkongItem } from "@/components/CategoryKingkongRow";
 import CategorySideTree from "@/components/CategorySideTree";
 import { getCategoryNavIconValue } from "@/utils/categoryNavIcon";
-import { Skeleton } from "@/components/ui/skeleton";
 import * as productService from "@/services/productService";
 import type { ProductSortType, ProductTag } from "@/types/product";
 import type { Category } from "@/types/category";
@@ -29,6 +26,7 @@ import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPanel";
+import SilkProductGrid from "@/components/motion/SilkProductGrid";
 
 export default function Categories() {
   const { themeConfig } = useThemeRuntime();
@@ -51,7 +49,7 @@ export default function Categories() {
   const [isNew, setIsNew] = useState(searchParams.get("is_new") === "1");
   const [isHot, setIsHot] = useState(searchParams.get("is_hot") === "1");
   const [isRecommended, setIsRecommended] = useState(searchParams.get("is_recommended") === "1");
-  const { products, categories, loading, error, loadProducts, loadCategories } = useProductStore();
+  const { products, categories, loading, listRefreshing, error, loadProducts, loadCategories } = useProductStore();
 
   useEffect(() => { loadCategories(); }, [loadCategories]);
   useEffect(() => { productService.fetchProductTags(20).then(setQuickTags).catch(() => setQuickTags([])); }, []);
@@ -190,6 +188,8 @@ export default function Categories() {
     : `浏览${siteName}的商品与服务分类信息。`;
   const robots = hasComplexParams ? "noindex,follow" : "index,follow";
   const canonical = activeCategoryName ? buildCanonical("/categories", `cat=${activeCat}`, { keepParams: ["cat"] }) : buildCanonical("/categories");
+  const showFullSkeleton = loading && products.length === 0;
+  const showSoftRefreshing = listRefreshing && products.length > 0;
 
   const filterDrawer = (
     <ProductFilterDrawer
@@ -312,26 +312,15 @@ export default function Categories() {
                 </p>
               ) : null}
 
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={`${activeCat}-${sort}-${viewMode}-${loading}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.18 }}
-                  className={productGridClass}
-                >
-                {loading
-                  ? Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} list={isListView} />)
-                  : products.map((p, i) => (
-                      <ProductCard
-                        key={p.id}
-                        product={p}
-                        index={i}
-                        displayMode={isListView ? "list" : "theme"}
-                      />
-                    ))}
-                {!loading && !error && products.length === 0 ? (
+              <SilkProductGrid
+                products={products}
+                className={productGridClass}
+                displayMode={isListView ? "list" : "theme"}
+                skeletonCount={8}
+                showFullSkeleton={showFullSkeleton}
+                showSoftRefreshing={showSoftRefreshing}
+                emptyState={
+                  !error ? (
                   <div className={cn(emptyColSpan, "py-12 text-center text-muted-foreground")}>
                     <p>
                       {activeFilterCount > 0 || debouncedQuery
@@ -346,9 +335,9 @@ export default function Categories() {
                       </button>
                     ) : null}
                   </div>
-                ) : null}
-                </motion.div>
-              </AnimatePresence>
+                  ) : null
+                }
+              />
             </section>
           </div>
         </div>

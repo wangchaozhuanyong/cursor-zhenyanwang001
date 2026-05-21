@@ -40,3 +40,14 @@ export function getAuditLogs(params?: AuditLogListParams) {
   return get<PaginatedData<AuditLogRow>>("/admin/audit-logs", params as unknown as Record<string, string>);
 }
 
+export interface SecurityAlertSummary {
+  total: number;
+  failures: number;
+  sinceHours: number;
+  list: AuditLogRow[];
+}
+
+export function getSecurityAlerts(params?: { limit?: number; sinceHours?: number }) {
+  return get<SecurityAlertSummary>("/admin/security/alerts", params as unknown as Record<string, string>);
+}
+

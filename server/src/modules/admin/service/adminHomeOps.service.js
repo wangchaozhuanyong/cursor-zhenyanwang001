@@ -41,6 +41,8 @@ async function createNavItem(body) {
   if (!title) return { error: { code: 400, message: '标题不能为空' } };
   const targetType = trimString(body.target_type ?? body.targetType, 20) || 'url';
   const targetCategoryId = trimString(body.target_category_id ?? body.targetCategoryId, 36) || null;
+  const existing = await repo.selectNavItems();
+  const maxSort = existing.reduce((max, row) => Math.max(max, Number(row.sort_order || 0)), 0);
   const item = {
     id: generateId(),
     iconUrl: trimString(body.icon_url ?? body.iconUrl, 512),
@@ -48,7 +50,7 @@ async function createNavItem(body) {
     linkUrl: trimString(body.link_url ?? body.linkUrl, 512),
     targetType: targetType === 'category' ? 'category' : 'url',
     targetCategoryId: targetType === 'category' ? targetCategoryId : null,
-    sortOrder: toSortOrder(body.sort_order ?? body.sortOrder, 0),
+    sortOrder: toSortOrder(body.sort_order ?? body.sortOrder, maxSort + 1),
     enabled: normalizeBool(body.enabled, true),
   };
   await repo.insertNavItem(item);
@@ -104,6 +106,26 @@ async function deleteNavItem(id) {
   return { data: null, message: '删除成功' };
 }
 
+async function sortNavItems(body) {
+  const items = body?.items;
+  if (!Array.isArray(items) || items.length === 0) {
+    return { error: { code: 400, message: '排序数据不能为空' } };
+  }
+  const normalized = items.map((item, index) => {
+    const id = trimString(item.id, 36);
+    if (!id) return null;
+    return {
+      id,
+      sort_order: toSortOrder(item.sort_order ?? item.sortOrder, index + 1),
+    };
+  }).filter(Boolean);
+  if (normalized.length !== items.length) {
+    return { error: { code: 400, message: '导航 ID 无效' } };
+  }
+  await repo.batchUpdateNavSort(normalized);
+  return { data: null, message: '排序已更新' };
+}
+
 async function getHomeOpsSettings() {
   return homeModuleSettings.getHomeModuleSettings();
 }
@@ -126,6 +148,7 @@ module.exports = {
   createNavItem,
   updateNavItem,
   deleteNavItem,
+  sortNavItems,
   getHomeOpsSettings,
   updateHomeOpsSettings,
   getPublicHomeOps,

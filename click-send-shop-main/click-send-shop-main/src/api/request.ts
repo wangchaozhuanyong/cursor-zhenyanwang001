@@ -10,6 +10,7 @@ import {
 import { normalizeMediaUrls } from "@/utils/mediaUrl";
 import { notifyAuthExpired } from "@/lib/authSessionBridge";
 import { startGlobalLoadingDeferred, stopGlobalLoading } from "@/lib/loadingProgress";
+import { clearAdminCsrfToken, getAdminCsrfToken, setAdminCsrfToken } from "@/lib/adminCsrf";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
@@ -61,6 +62,7 @@ export function toQueryString(params?: Record<string, unknown>): string {
 
 let refreshing: Promise<string> | null = null;
 let adminRefreshing: Promise<void> | null = null;
+const ADMIN_CSRF_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 function isPublicStorefrontPath(pathname: string): boolean {
   return pathname === "/"
@@ -123,7 +125,15 @@ export async function tryRefreshAdminSession(): Promise<void> {
 
   if (!res.ok) {
     clearAdminTokens();
+    clearAdminCsrfToken();
     throw new ApiError(401, "登录已过期，请重新登录");
+  }
+
+  try {
+    const body = (await res.clone().json()) as ApiResponse<{ csrfToken?: string }>;
+    setAdminCsrfToken(body.data?.csrfToken);
+  } catch {
+    // Ignore malformed refresh payloads; the next mutation can fetch a token.
   }
 }
 
@@ -140,12 +150,21 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
   const isAuthLogout = endpoint.startsWith("/auth/logout");
   const isAdminAuthLogin = endpoint.startsWith("/admin/auth/login");
   const isAdminAuthRefresh = endpoint.startsWith("/admin/auth/refresh");
+  const isAdminCsrfEndpoint = endpoint.startsWith("/admin/auth/csrf");
   const isAccountCancel = endpoint.startsWith("/user/account/cancel");
   const token = isAdminEndpoint ? getAdminAccessToken() : getAccessToken();
+  const method = String(options.method || "GET").toUpperCase();
+  const needsAdminCsrf = isAdminEndpoint
+    && ADMIN_CSRF_METHODS.has(method)
+    && !isAdminAuthLogin
+    && !isAdminAuthRefresh
+    && !isAdminCsrfEndpoint;
+  const csrfToken = needsAdminCsrf ? await getAdminCsrfToken() : "";
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
     ...options.headers,
   };
 
@@ -199,6 +218,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
   if (!res.ok) {
     if (res.status === 401 && isAdminEndpoint) {
       clearAdminTokens();
+      clearAdminCsrfToken();
       if (typeof window !== "undefined" && !window.location.pathname.startsWith("/admin/login")) {
         window.location.href = "/admin/login";
       }

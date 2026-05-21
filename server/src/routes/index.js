@@ -21,6 +21,7 @@ const telegram = require('../modules/telegram');
 const siteCapabilities = require('../modules/siteCapabilities');
 const notification = require('../modules/notification');
 const theme = require('../modules/theme');
+const monitoring = require('../modules/monitoring');
 
 const router = Router();
 
@@ -51,8 +52,8 @@ router.use(telegram);
 router.use(siteCapabilities);
 router.use(notification);
 router.use(theme);
+router.use(monitoring);
 router.use(admin);
 
 module.exports = router;
-
 

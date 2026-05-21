@@ -1,14 +1,15 @@
 import * as accountApi from "@/api/admin/account";
 import { setAdminTokens, clearAdminTokens, isAdminLoggedIn } from "@/utils/token";
-import type { AdminLoginParams, AdminUser } from "@/types/admin";
+import type { AdminLoginParams, AdminLoginResult, AdminUser } from "@/types/admin";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { clearAdminQueryCache } from "@/lib/queryClient";
+import { clearAdminCsrfToken, setAdminCsrfToken } from "@/lib/adminCsrf";
 
 const ADMIN_FLAG_KEY = "admin_authenticated";
 
 export async function adminLogin(
   params: AdminLoginParams,
-): Promise<{ token: string; user: AdminUser }> {
+): Promise<AdminLoginResult> {
   const username = String(params.username || "").trim();
   const payload: AdminLoginParams = {
     username,
@@ -18,14 +19,26 @@ export async function adminLogin(
   if (params.countryCode) payload.countryCode = params.countryCode;
 
   const res = await accountApi.adminLogin(payload);
-  const d = res.data as unknown as Record<string, unknown>;
+  return applyAdminLoginPayload(res.data as unknown as Record<string, unknown>, username);
+}
 
+function applyAdminLoginPayload(d: Record<string, unknown>, username: string): AdminLoginResult {
+  if (d.mfaRequired || d.mfaSetupRequired) {
+    return {
+      mfaRequired: Boolean(d.mfaRequired),
+      mfaSetupRequired: Boolean(d.mfaSetupRequired),
+      mfaTicket: String(d.mfaTicket || ""),
+      secret: d.secret ? String(d.secret) : undefined,
+      otpAuthUrl: d.otpAuthUrl ? String(d.otpAuthUrl) : undefined,
+    };
+  }
   // Backend returns { token: { accessToken, refreshToken }, userId }
   const tokenObj = d.token as { accessToken?: string; refreshToken?: string } | undefined;
   const accessToken = tokenObj?.accessToken || (d.accessToken as string) || "";
   const refreshToken = tokenObj?.refreshToken || (d.refreshToken as string) || "";
 
   setAdminTokens(accessToken, refreshToken);
+  setAdminCsrfToken(d.csrfToken as string | undefined);
   localStorage.setItem(ADMIN_FLAG_KEY, "1");
 
   const permissions = (d.permissions as string[]) || [];
@@ -45,6 +58,13 @@ export async function adminLogin(
     token: accessToken,
     user,
   };
+}
+
+export async function verifyAdminMfa(
+  params: { mfaTicket: string; code: string; username?: string },
+): Promise<AdminLoginResult> {
+  const res = await accountApi.verifyAdminMfa({ mfaTicket: params.mfaTicket, code: params.code });
+  return applyAdminLoginPayload(res.data as unknown as Record<string, unknown>, params.username || "");
 }
 
 export async function fetchAdminProfile(): Promise<AdminUser> {
@@ -75,6 +95,7 @@ export async function adminLogout(): Promise<void> {
     await accountApi.adminLogoutApi();
   } catch { /* best-effort */ }
   clearAdminTokens();
+  clearAdminCsrfToken();
   localStorage.removeItem(ADMIN_FLAG_KEY);
   useAdminPermissionStore.getState().clear();
   clearAdminQueryCache();

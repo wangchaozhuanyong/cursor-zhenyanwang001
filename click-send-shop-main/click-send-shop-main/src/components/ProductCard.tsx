@@ -4,7 +4,11 @@ import type { MouseEvent } from "react";
 import type { Product } from "@/types/product";
 import Reveal from "@/components/Reveal";
 import ProductCoverImage from "@/components/ProductCoverImage";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { getRestrictedProductMinimumAge } from "@/utils/ageGate";
+import { isRestrictedProduct } from "@/utils/restrictedProduct";
 import ProductTagList from "@/components/ProductTagList";
 import StoreBadge from "@/components/ui/StoreBadge";
 import { getProductSalesCount, hasProductSales, productSalesLabel } from "@/utils/productSales";
@@ -46,6 +50,11 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
   const impressionRef = useRef<HTMLDivElement | null>(null);
   const impressionSentRef = useRef(false);
   const { themeConfig } = useThemeRuntime();
+  const siteInfo = useSiteInfo();
+  const siteCapabilities = useSiteCapabilities();
+  const showAgeBadge =
+    siteCapabilities.restrictedProductComplianceEnabled && isRestrictedProduct(product);
+  const ageBadgeLabel = showAgeBadge ? `${getRestrictedProductMinimumAge(product, siteInfo)}+` : null;
   const cardCenter = themeConfig.cardTextAlign === "center" && displayMode !== "list";
   const cardVariant = themeConfig.productCardVariant ?? "standard";
   const isListRow = displayMode === "list";
@@ -57,6 +66,8 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
   const isServiceLike = /服务|咨询|办理|申请|装修/.test(String(product.category_name || product.name || ""));
   const cardImageAlt = isServiceLike ? `${product.name} 服务展示图` : `${product.name} 商品图片`;
   const showNewBadge = isProductNewArrival(product);
+  const imageLoading = index < 4 ? "eager" : "lazy";
+  const imageFetchPriority = index < 2 ? "high" : undefined;
 
   useEffect(() => {
     const node = impressionRef.current;
@@ -128,7 +139,7 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
     return (
       <Reveal
         index={index}
-        className="theme-product-card group cursor-pointer overflow-hidden theme-rounded"
+        className="theme-product-card group cursor-pointer overflow-hidden theme-rounded transform-gpu"
         onClick={() => openDetail("categories")}
       >
         <div ref={impressionRef} className={cn("flex", isListRow ? "gap-3 p-3" : "gap-2.5 p-2.5 sm:gap-3 sm:p-3")}>
@@ -143,12 +154,19 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
               alt={cardImageAlt}
               className="h-full w-full"
               imgClassName={cn(
-                "h-full w-full [object-fit:var(--theme-image-fit,cover)]",
+                "h-full w-full [object-fit:var(--theme-image-fit,cover)] transition-transform duration-300 ease-out group-hover:scale-[1.018]",
                 soldOut && "grayscale-[35%] brightness-[0.88] saturate-[0.85]",
               )}
               sizes={isListRow ? "(max-width: 768px) 112px, 160px" : "(max-width: 768px) 28vw, 200px"}
+              loading={imageLoading}
+              fetchPriority={imageFetchPriority}
             />
             {soldOut ? <ProductSoldOutOverlay compact /> : null}
+            {ageBadgeLabel ? (
+              <span className="pointer-events-none absolute left-1.5 top-1.5 z-[3] rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                {ageBadgeLabel}
+              </span>
+            ) : null}
           </div>
           <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 py-0.5">
             <div className="space-y-1.5">
@@ -183,7 +201,7 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
   return (
     <Reveal
       index={index}
-      className="theme-product-card group cursor-pointer overflow-hidden theme-rounded"
+      className="theme-product-card group cursor-pointer overflow-hidden theme-rounded transform-gpu"
       onClick={() => openDetail("product_grid")}
     >
       <div
@@ -199,9 +217,11 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
             "h-full w-full [object-fit:var(--theme-image-fit,cover)] transition-all duration-300 ease-in-out",
             soldOut
               ? "grayscale-[35%] brightness-[0.88] saturate-[0.85]"
-              : "group-hover:scale-105",
+              : "group-hover:scale-[1.025]",
           )}
           sizes="(max-width: 768px) 45vw, 320px"
+          loading={imageLoading}
+          fetchPriority={imageFetchPriority}
         />
         <div className="absolute left-2 top-2 z-[1] flex flex-wrap gap-1">
           {product.active_activity && (
@@ -216,6 +236,11 @@ export default function ProductCard({ product, index = 0, displayMode = "theme" 
           <ProductTagList tags={product.tags} max={2} />
         </div>
         {soldOut ? <ProductSoldOutOverlay /> : null}
+        {ageBadgeLabel ? (
+          <span className="pointer-events-none absolute right-2 top-2 z-[3] rounded-full bg-black/70 px-1.5 py-0.5 text-[10px] font-bold text-white">
+            {ageBadgeLabel}
+          </span>
+        ) : null}
       </div>
       <div className={`flex flex-col gap-2 p-3 ${isPremium ? "gap-2.5 p-3.5" : ""}`}>
         {nameRow}

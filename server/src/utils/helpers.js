@@ -43,16 +43,16 @@ async function comparePassword(plain, hash) {
  * @param {string} userId
  * @param {number} [refreshVersion=0] 与 users.refresh_token_version 对齐；登出后递增可使旧 refresh 失效
  */
-function signToken(userId, refreshVersion = 0) {
+function signToken(userId, refreshVersion = 0, options = {}) {
   const secret = getJwtSecret();
-  const expiresIn = /** @type {import('jsonwebtoken').SignOptions['expiresIn']} */ (process.env.JWT_EXPIRES_IN || '30m');
-  const accessToken = jwt.sign({ userId }, secret, { expiresIn });
+  const expiresIn = /** @type {import('jsonwebtoken').SignOptions['expiresIn']} */ (options.accessExpiresIn || process.env.JWT_EXPIRES_IN || '30m');
+  const accessToken = jwt.sign({ userId, ...(options.accessPayload || {}) }, secret, { expiresIn });
   const refreshToken = jwt.sign(
     { userId, type: 'refresh', rv: refreshVersion },
     secret,
     { expiresIn: '30d' },
   );
-  return { accessToken, refreshToken, expiresIn: 30 * 60 };
+  return { accessToken, refreshToken, expiresIn: options.expiresInSeconds || 30 * 60 };
 }
 
 function verifyToken(token) {

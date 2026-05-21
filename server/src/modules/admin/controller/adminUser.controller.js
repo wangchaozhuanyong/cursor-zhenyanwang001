@@ -1,5 +1,6 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 const svc = require('../service/adminUser.service');
+const dataChangeTracker = require('../../monitoring/service/dataChangeTracker.service');
 
 exports.list = asyncRoute(async (req, res) => {
   const r = await svc.listUsers(req.query);
@@ -55,17 +56,44 @@ exports.batchSetTag = asyncRoute(async (req, res) => {
 });
 
 exports.update = asyncRoute(async (req, res) => {
+  const before = await svc.getUserById(req.params.id).then((r) => r.data).catch(() => null);
   const r = await svc.updateUser(req.params.id, req.body, req.user?.id, req);
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'user',
+    entityType: 'user',
+    entityId: req.params.id,
+    action: 'profile.update',
+    beforeData: before,
+    afterData: r.data,
+  });
   res.success(r.data, r.message);
 });
 
 exports.updateStatus = asyncRoute(async (req, res) => {
+  const before = await svc.getUserById(req.params.id).then((r) => r.data).catch(() => null);
   const r = await svc.updateUserStatus(req.params.id, req.body, req.user?.id, req);
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'user',
+    entityType: 'user',
+    entityId: req.params.id,
+    action: 'status.update',
+    beforeData: before,
+    afterData: r.data,
+  });
   res.success(r.data, r.message);
 });
 
 exports.updateAccountStatus = asyncRoute(async (req, res) => {
+  const before = await svc.getUserById(req.params.id).then((r) => r.data).catch(() => null);
   const r = await svc.updateUserAccountStatus(req.params.id, req.body, req.user?.id, req);
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'user',
+    entityType: 'user',
+    entityId: req.params.id,
+    action: 'account_status.update',
+    beforeData: before,
+    afterData: r.data,
+  });
   res.success(r.data, r.message);
 });
 
@@ -85,7 +113,16 @@ exports.updateSubordinate = asyncRoute(async (req, res) => {
 });
 
 exports.adjustPoints = asyncRoute(async (req, res) => {
+  const before = await svc.getUserById(req.params.userId).then((r) => r.data).catch(() => null);
   const r = await svc.adjustUserPoints(req.params.userId, req.body, req.user?.id, req);
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'loyalty',
+    entityType: 'user',
+    entityId: req.params.userId,
+    action: 'points.adjust',
+    beforeData: before,
+    afterData: r.data,
+  });
   res.success(r.data, r.message);
 });
 

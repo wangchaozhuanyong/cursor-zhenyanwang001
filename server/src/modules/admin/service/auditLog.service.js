@@ -16,7 +16,24 @@ async function listAuditLogs(query) {
   return { kind: 'paginate', list, total, page, pageSize };
 }
 
-module.exports = { listAuditLogs };
+async function listSecurityAlerts(query = {}) {
+  const limit = Math.min(50, Math.max(1, parseInt(query.limit, 10) || 10));
+  const sinceHours = Math.min(168, Math.max(1, parseInt(query.sinceHours, 10) || 24));
+  const [summary, list] = await Promise.all([
+    repo.countSecurityAlerts(sinceHours),
+    repo.selectSecurityAlerts(limit, sinceHours),
+  ]);
+  return {
+    data: {
+      ...summary,
+      sinceHours,
+      list,
+    },
+    message: 'success',
+  };
+}
+
+module.exports = { listAuditLogs, listSecurityAlerts };
 
 
 

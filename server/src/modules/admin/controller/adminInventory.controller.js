@@ -1,5 +1,6 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 const svc = require('../service/adminInventory.service');
+const dataChangeTracker = require('../../monitoring/service/dataChangeTracker.service');
 
 exports.summary = asyncRoute(async (req, res) => {
   const r = await svc.getSummary();
@@ -13,16 +14,40 @@ exports.listSkus = asyncRoute(async (req, res) => {
 
 exports.adjustSkuStock = asyncRoute(async (req, res) => {
   const r = await svc.adjustSkuStock(req.params.variantId, req.body || {}, req.user?.id, req);
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'inventory',
+    entityType: 'product_variant',
+    entityId: req.params.variantId,
+    action: 'stock.adjust',
+    beforeData: req.body || {},
+    afterData: r.data,
+  });
   res.success(r.data, r.message);
 });
 
 exports.adjustProductStockCompat = asyncRoute(async (req, res) => {
   const r = await svc.adjustProductStockCompat(req.params.productId, req.body || {}, req.user?.id, req);
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'inventory',
+    entityType: 'product',
+    entityId: req.params.productId,
+    action: 'stock.adjust',
+    beforeData: req.body || {},
+    afterData: r.data,
+  });
   res.success(r.data, r.message);
 });
 
 exports.updateSkuWarningThreshold = asyncRoute(async (req, res) => {
   const r = await svc.updateSkuWarningThreshold(req.params.variantId, req.body || {}, req.user?.id, req);
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'inventory',
+    entityType: 'product_variant',
+    entityId: req.params.variantId,
+    action: 'warning_threshold.update',
+    beforeData: req.body || {},
+    afterData: r.data,
+  });
   res.success(r.data, r.message);
 });
 
@@ -33,6 +58,14 @@ exports.batchWarningThreshold = asyncRoute(async (req, res) => {
 
 exports.batchAdjust = asyncRoute(async (req, res) => {
   const r = await svc.batchAdjust(req.body || {}, req.user?.id, req);
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'inventory',
+    entityType: 'product_variant',
+    entityId: 'batch',
+    action: 'stock.batch_adjust',
+    beforeData: req.body || {},
+    afterData: r.data,
+  });
   res.success(r.data, r.message);
 });
 

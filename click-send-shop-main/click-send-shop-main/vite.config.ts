@@ -91,7 +91,10 @@ const thirdPartyLoginEnabled = process.env.VITE_THIRD_PARTY_LOGIN_ENABLED === "t
 const legacyEnabled = process.env.VITE_LEGACY_BUILD === "1";
 
 // https://vitejs.dev/config/
-export default defineConfig(() => ({
+export default defineConfig(({ mode }) => {
+const isAdminBuild = mode === "admin" || process.env.VITE_APP_TARGET === "admin";
+
+return ({
   define: {
     "import.meta.env.VITE_THIRD_PARTY_LOGIN_ENABLED": JSON.stringify(
       thirdPartyLoginEnabled ? "true" : "false",
@@ -121,7 +124,7 @@ export default defineConfig(() => ({
     VitePWA({
       registerType: "prompt",
       injectRegister: false,
-      outDir: "dist",
+      outDir: isAdminBuild ? "admin-dist" : "dist",
       manifest: false,
       includeAssets: [
         "favicon.ico",
@@ -141,8 +144,8 @@ export default defineConfig(() => ({
           /^\/apple-touch-icon\.png$/,
         ],
         cleanupOutdatedCaches: true,
-        clientsClaim: true,
-        skipWaiting: true,
+        clientsClaim: false,
+        skipWaiting: false,
         runtimeCaching: [
           {
             urlPattern: ({ url }) =>
@@ -299,7 +302,7 @@ export default defineConfig(() => ({
         enabled: false,
       },
     }),
-    ...(legacyEnabled
+    ...(!isAdminBuild && legacyEnabled
       ? [
           legacy({
             targets: ["Chrome >= 64", "Safari >= 12", "iOS >= 12", "Android >= 7", "not IE 11"],
@@ -311,10 +314,14 @@ export default defineConfig(() => ({
     stripImportMetaResolveGuard(),
   ],
   build: {
+    outDir: isAdminBuild ? "admin-dist" : "dist",
     sourcemap: false,
     cssTarget: ["chrome64", "safari12"],
     chunkSizeWarningLimit: 900,
     rolldownOptions: {
+      input: isAdminBuild
+        ? path.resolve(__dirname, "admin-index.html")
+        : path.resolve(__dirname, "index.html"),
       checks: {
         pluginTimings: false,
       },
@@ -331,4 +338,5 @@ export default defineConfig(() => ({
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
   },
-}));
+});
+});

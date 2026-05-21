@@ -85,6 +85,46 @@ async function selectOperatorDisplayByUserId(userId) {
   return row || null;
 }
 
+async function selectSecurityAlerts(limit = 10, sinceHours = 24) {
+  const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
+  const safeHours = Math.min(168, Math.max(1, Number(sinceHours) || 24));
+  const [rows] = await db.query(
+    `SELECT *
+       FROM audit_logs
+      WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? HOUR)
+        AND (
+          action_type LIKE 'security.%'
+          OR (action_type = 'admin.login' AND result = 'failure')
+          OR action_type = 'admin.mfa.challenge'
+        )
+      ORDER BY created_at DESC
+      LIMIT ?`,
+    [safeHours, safeLimit],
+  );
+  return rows.map(mapRow);
+}
+
+async function countSecurityAlerts(sinceHours = 24) {
+  const safeHours = Math.min(168, Math.max(1, Number(sinceHours) || 24));
+  const [[row]] = await db.query(
+    `SELECT
+       COUNT(*) AS total,
+       SUM(CASE WHEN result = 'failure' THEN 1 ELSE 0 END) AS failures
+       FROM audit_logs
+      WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? HOUR)
+        AND (
+          action_type LIKE 'security.%'
+          OR (action_type = 'admin.login' AND result = 'failure')
+          OR action_type = 'admin.mfa.challenge'
+        )`,
+    [safeHours],
+  );
+  return {
+    total: Number(row?.total || 0),
+    failures: Number(row?.failures || 0),
+  };
+}
+
 /**
  * @param {{
  *   id: string;
@@ -136,6 +176,8 @@ module.exports = {
   buildWhere,
   countAuditLogs,
   selectAuditLogsPage,
+  selectSecurityAlerts,
+  countSecurityAlerts,
   selectOperatorDisplayByUserId,
   insertAuditLogRow,
 };

@@ -47,6 +47,9 @@ const ALL_ADMIN_PERMISSION_CODES = [
   'review.delete',
   'review.manage',
   'recycle_bin.manage',
+  'monitoring.view',
+  'monitoring.manage',
+  'monitoring.repair',
 ];
 
 module.exports = { ALL_ADMIN_PERMISSION_CODES };

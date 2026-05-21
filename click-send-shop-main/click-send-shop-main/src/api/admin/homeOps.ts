@@ -25,3 +25,7 @@ export function updateHomeNavItem(id: string, data: Partial<HomeNavItem>) {
 export function deleteHomeNavItem(id: string) {
   return del<void>(`/admin/home-ops/nav-items/${id}`);
 }
+
+export function sortHomeNavItems(items: { id: string; sort_order: number }[]) {
+  return put<void>("/admin/home-ops/nav-items/sort", { items });
+}

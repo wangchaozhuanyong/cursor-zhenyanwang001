@@ -52,4 +52,4 @@ npm run dev
 | `npm run admin:role` | 设置管理员角色 |
 | `npm run migrate:status` | 查看迁移状态 |
 | `npm run migrate:down` | 回滚最近一次迁移 |
-| `npm run seed:demo-products` | 空库时写入 4 个上架演示商品 + 必要时创建「演示分类」（`search_keywords=[demo-seed-product]`）。已有上架商品时默认跳过；刷新：`SEED_DEMO_PRODUCTS_REFRESH=1 npm run seed:demo-products` |
+| `npm run purge:demo-products` | 清理历史演示商品（腕表/香水/耳机等 Unsplash 占位，`search_keywords=[demo-seed-product]`）。预览：`DRY_RUN=1 npm run purge:demo-products`；部署时 migration `103` 会自动执行一次 |

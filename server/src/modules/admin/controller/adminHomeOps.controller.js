@@ -22,6 +22,10 @@ exports.deleteNavItem = asyncRoute(async (req, res) => {
   sendResult(res, await svc.deleteNavItem(req.params.id));
 });
 
+exports.sortNavItems = asyncRoute(async (req, res) => {
+  sendResult(res, await svc.sortNavItems(req.body));
+});
+
 exports.getSettings = asyncRoute(async (_req, res) => {
   res.success(await svc.getHomeOpsSettings());
 });

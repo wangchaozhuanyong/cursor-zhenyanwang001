@@ -14,6 +14,8 @@ const multer = require('multer');
 const adminAuth = require('../../../middleware/adminAuth');
 const requirePermission = adminAuth.requirePermission;
 const requireAnyPermission = adminAuth.requireAnyPermission;
+const adminMfaService = require('../service/adminMfa.service');
+const { adminSecurityAudit } = require('../../../middleware/adminSecurityAudit');
 const { userQueryLimiter } = require('../../../middleware/rateLimiters');
 const { paginationCap } = require('../../../middleware/paginationCap');
 const { validate } = require('../../../middleware/validate');
@@ -67,6 +69,8 @@ const router = Router();
 /* ---- Auth & Account ---- */
 router.post('/auth/login', authCtrl.login);
 router.post('/auth/refresh', authCtrl.refresh);
+router.post('/auth/mfa/verify', authCtrl.verifyMfa);
+router.get('/auth/csrf', authCtrl.csrf);
 router.post('/auth/logout', adminAuth, authCtrl.logout);
 router.get('/account/profile', adminAuth, authCtrl.getProfile);
 router.put('/account/profile', adminAuth, authCtrl.updateProfile);
@@ -77,6 +81,39 @@ router.use((req, res, next) => {
   if (/^\/auth\/(login|refresh)$/.test(req.path)) return next();
   return ensureAdminSchemaReady(req, res, next);
 });
+
+const highRiskAdminOperation = (req) => {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return false;
+  return [
+    /^\/rbac\//,
+    /^\/payments\/channels/,
+    /^\/payments\/orders\/[^/]+\/refund/,
+    /^\/payments\/orders\/[^/]+\/mark-paid/,
+    /^\/payments\/events\/[^/]+\/replay/,
+    /^\/payments\/reconciliations/,
+    /^\/settings(\/|$)/,
+    /^\/telegram\/settings/,
+    /^\/system\/theme/,
+    /^\/inventory\//,
+    /^\/orders\/[^/]+\/refund/,
+    /^\/returns\/[^/]+/,
+    /^\/recycle-bin\/[^/]+\/permanent-delete/,
+    /^\/exports/,
+    /^\/products\/[^/]+$/,
+    /^\/products\/[^/]+\/delete$/,
+  ].some((pattern) => pattern.test(req.path));
+};
+
+router.use((req, res, next) => {
+  if (/^\/auth\//.test(req.path)) return next();
+  if (!highRiskAdminOperation(req)) return next();
+  return adminAuth(req, res, (err) => {
+    if (err) return next(err);
+    return adminMfaService.requireRecentMfa(req, res, next);
+  });
+});
+
+router.use(adminSecurityAudit);
 
 /* ---- RBAC ---- */
 router.get('/rbac/me', adminAuth, authCtrl.getRbacMe);
@@ -326,6 +363,7 @@ router.get('/home-ops/settings', adminAuth, requirePermission('home_ops.manage')
 router.put('/home-ops/settings', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.updateSettings);
 router.get('/home-ops/nav-items', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.listNavItems);
 router.post('/home-ops/nav-items', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.createNavItem);
+router.put('/home-ops/nav-items/sort', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.sortNavItems);
 router.put('/home-ops/nav-items/:id', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.updateNavItem);
 router.delete('/home-ops/nav-items/:id', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.deleteNavItem);
 
@@ -527,6 +565,7 @@ router.post('/recycle-bin/:id/permanent-delete', adminAuth, requirePermission('r
 
 /* ---- Logs ---- */
 router.get('/audit-logs', adminAuth, requirePermission('audit.view'), logCtrl.listAuditLogs);
+router.get('/security/alerts', adminAuth, requirePermission('audit.view'), logCtrl.listSecurityAlerts);
 router.get('/logs', adminAuth, requirePermission('admin_log.view'), logCtrl.listAdminLogs);
 
 module.exports = router;

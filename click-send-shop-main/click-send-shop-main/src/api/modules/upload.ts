@@ -7,6 +7,7 @@ import {
   setAccessToken,
 } from "@/utils/token";
 import { normalizeMediaUrls } from "@/utils/mediaUrl";
+import { getAdminCsrfToken } from "@/lib/adminCsrf";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 const IMAGE_MAX_SIZE = 15 * 1024 * 1024;
@@ -149,6 +150,7 @@ function xhrUpload<T>(
   formData: FormData,
   token: string | null,
   options: UploadRequestOptions,
+  csrfToken = "",
 ): Promise<{ status: number; payload: UploadEnvelope<T>; rawResponse?: string }> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -156,6 +158,7 @@ function xhrUpload<T>(
     xhr.withCredentials = true;
     xhr.timeout = options.timeoutMs ?? 45_000;
     if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    if (csrfToken) xhr.setRequestHeader("X-CSRF-Token", csrfToken);
     xhr.setRequestHeader("Accept", "application/json");
 
     const onAbort = () => {
@@ -232,6 +235,7 @@ function xhrJsonPost<T>(
   body: unknown,
   token: string | null,
   options: UploadRequestOptions,
+  csrfToken = "",
 ): Promise<{ status: number; payload: UploadEnvelope<T> }> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -241,6 +245,7 @@ function xhrJsonPost<T>(
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.setRequestHeader("Accept", "application/json");
     if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    if (csrfToken) xhr.setRequestHeader("X-CSRF-Token", csrfToken);
 
     const onAbort = () => {
       xhr.abort();
@@ -311,17 +316,19 @@ async function authorizedJsonPost<T>(
 ): Promise<T> {
   const adminMode = options.adminMode ?? inAdminContext();
   let token = adminMode ? getAdminAccessToken() : getAccessToken();
-  let result = await xhrJsonPost<T>(url, body, token, options);
+  let csrfToken = adminMode ? await getAdminCsrfToken() : "";
+  let result = await xhrJsonPost<T>(url, body, token, options, csrfToken);
 
   if (result.status === 401 && !adminMode) {
     token = await refreshAccessToken();
-    result = await xhrJsonPost<T>(url, body, token, options);
+    result = await xhrJsonPost<T>(url, body, token, options, csrfToken);
   }
 
   if (result.status === 401 && adminMode) {
     try {
       await tryRefreshAdminSession();
-      result = await xhrJsonPost<T>(url, body, getAdminAccessToken(), options);
+      csrfToken = await getAdminCsrfToken();
+      result = await xhrJsonPost<T>(url, body, getAdminAccessToken(), options, csrfToken);
     } catch {
       clearAdminTokens();
       if (typeof window !== "undefined" && !window.location.pathname.startsWith("/admin/login")) {
@@ -337,17 +344,19 @@ async function authorizedJsonPost<T>(
 async function doUpload<T>(url: string, formData: FormData, options: UploadRequestOptions = {}): Promise<T> {
   const adminMode = options.adminMode ?? inAdminContext();
   let token = adminMode ? getAdminAccessToken() : getAccessToken();
-  let result = await xhrUpload<T>(url, formData, token, options);
+  let csrfToken = adminMode ? await getAdminCsrfToken() : "";
+  let result = await xhrUpload<T>(url, formData, token, options, csrfToken);
 
   if (result.status === 401 && !adminMode) {
     token = await refreshAccessToken();
-    result = await xhrUpload<T>(url, formData, token, options);
+    result = await xhrUpload<T>(url, formData, token, options, csrfToken);
   }
 
   if (result.status === 401 && adminMode) {
     try {
       await tryRefreshAdminSession();
-      result = await xhrUpload<T>(url, formData, getAdminAccessToken(), options);
+      csrfToken = await getAdminCsrfToken();
+      result = await xhrUpload<T>(url, formData, getAdminAccessToken(), options, csrfToken);
     } catch {
       clearAdminTokens();
       if (typeof window !== "undefined" && !window.location.pathname.startsWith("/admin/login")) {

@@ -110,6 +110,12 @@ export const adminMessagesEn: AdminMessages = {
     auditLogs: "Audit logs",
     roles: "Roles & permissions",
     recycleBin: "Recycle bin",
+    monitoringCenter: "Monitoring",
+    monitoringOverview: "Overview",
+    monitoringAnomalies: "Anomalies",
+    monitoringRepairTasks: "Repair tasks",
+    monitoringRules: "Rules",
+    monitoringRuns: "Runs",
   },
   routeTitles: {
     admin: "Admin Console",
@@ -163,6 +169,7 @@ export const adminMessagesEn: AdminMessages = {
     products: "Products",
     reports: "Analytics",
     exports: "Analytics / Data export",
+    monitoring: "Monitoring",
   },
   common: {
     retry: "Retry",

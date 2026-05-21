@@ -30,3 +30,7 @@ export async function updateHomeNavItem(id: string, data: Partial<HomeNavItem>):
 export async function deleteHomeNavItem(id: string): Promise<void> {
   await homeOpsApi.deleteHomeNavItem(id);
 }
+
+export async function sortHomeNavItems(items: { id: string; sort_order: number }[]): Promise<void> {
+  await homeOpsApi.sortHomeNavItems(items);
+}

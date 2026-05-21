@@ -12,6 +12,11 @@ export interface AdminUser {
   permissions?: string[];
   isSuperAdmin?: boolean;
   roleCodes?: string[];
+  mfa?: {
+    enabled: boolean;
+    required: boolean;
+    lastVerifiedAt?: string | null;
+  };
 }
 
 export interface AdminLoginParams {
@@ -19,6 +24,16 @@ export interface AdminLoginParams {
   phone?: string;
   countryCode?: string;
   password: string;
+}
+
+export interface AdminLoginResult {
+  token?: string;
+  user?: AdminUser;
+  mfaRequired?: boolean;
+  mfaSetupRequired?: boolean;
+  mfaTicket?: string;
+  secret?: string;
+  otpAuthUrl?: string;
 }
 
 export interface DashboardStats {

@@ -1,8 +1,12 @@
 import { get, put, post } from "@/api/request";
-import type { AdminUser, AdminLoginParams } from "@/types/admin";
+import type { AdminLoginParams, AdminLoginResult, AdminUser } from "@/types/admin";
 
 export function adminLogin(params: AdminLoginParams) {
-  return post<{ token: string; user: AdminUser }>("/admin/auth/login", params);
+  return post<AdminLoginResult>("/admin/auth/login", params);
+}
+
+export function verifyAdminMfa(params: { mfaTicket: string; code: string }) {
+  return post<AdminLoginResult>("/admin/auth/mfa/verify", params);
 }
 
 export function adminLogoutApi() {

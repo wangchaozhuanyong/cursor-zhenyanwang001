@@ -11,7 +11,7 @@ async function adminAuthMiddleware(req, res, next) {
 
   let payload;
   try {
-    payload = /** @type {{ type?: string, userId?: string }} */ (verifyToken(token));
+    payload = /** @type {{ type?: string, userId?: string, mfaVerifiedAt?: number }} */ (verifyToken(token));
     if (payload.type === 'refresh') {
       return res.fail(401, '登录已过期，请重新登录');
     }
@@ -36,6 +36,7 @@ async function adminAuthMiddleware(req, res, next) {
       permissions: ctx.permissions,
       isSuperAdmin: ctx.isSuperAdmin,
       roleCodes: ctx.roleCodes,
+      mfaVerifiedAt: payload.mfaVerifiedAt || 0,
     };
     next();
   } catch (err) {
@@ -67,4 +68,3 @@ adminAuthMiddleware.requirePermission = requirePermission;
 adminAuthMiddleware.requireAnyPermission = requireAnyPermission;
 
 module.exports = adminAuthMiddleware;
-

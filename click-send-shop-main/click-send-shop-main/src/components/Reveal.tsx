@@ -1,5 +1,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { AnimatedSection } from "@/modules/micro-interactions";
+import { motion } from "framer-motion";
+import { useMotionConfig } from "@/modules/micro-interactions";
+import { listItemTransition } from "@/modules/micro-interactions/motionConfig";
 
 type RevealProps = HTMLAttributes<HTMLDivElement> & {
   index?: number;
@@ -13,9 +15,28 @@ export default function Reveal({
   className = "",
   ...rest
 }: RevealProps) {
+  const { level, enabled } = useMotionConfig();
+  const motionProps = listItemTransition(level, index);
+
+  if (!enabled || level === "none") {
+    return (
+      <div className={className} {...rest}>
+        {children}
+      </div>
+    );
+  }
+
   return (
-    <AnimatedSection as="div" delay={index * 0.06} className={className} {...rest}>
+    <motion.div
+      className={className}
+      initial={motionProps.initial}
+      animate={motionProps.animate}
+      exit={motionProps.exit}
+      transition={motionProps.transition}
+      style={{ backfaceVisibility: "hidden", transformOrigin: "50% 50%" }}
+      {...(rest as any)}
+    >
       {children}
-    </AnimatedSection>
+    </motion.div>
   );
 }

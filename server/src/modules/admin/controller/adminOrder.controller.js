@@ -1,5 +1,6 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 const svc = require('../service/adminOrder.service');
+const dataChangeTracker = require('../../monitoring/service/dataChangeTracker.service');
 
 exports.list = asyncRoute(async (req, res) => {
   const r = await svc.listOrders(req.query);
@@ -27,12 +28,30 @@ exports.getById = asyncRoute(async (req, res) => {
 });
 
 exports.updateStatus = asyncRoute(async (req, res) => {
+  const before = await svc.getOrderById(req.params.id).then((r) => r.data).catch(() => null);
   const r = await svc.updateOrderStatus(req.params.id, req.body, req.user?.id, req);
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'order',
+    entityType: 'order',
+    entityId: req.params.id,
+    action: 'status.update',
+    beforeData: before,
+    afterData: r.data,
+  });
   res.success(r.data, r.message);
 });
 
 exports.ship = asyncRoute(async (req, res) => {
+  const before = await svc.getOrderById(req.params.id).then((r) => r.data).catch(() => null);
   const r = await svc.shipOrder(req.params.id, req.body, req.user?.id, req);
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'order',
+    entityType: 'order',
+    entityId: req.params.id,
+    action: 'ship',
+    beforeData: before,
+    afterData: r.data,
+  });
   res.success(r.data, r.message);
 });
 
@@ -43,6 +62,14 @@ exports.listPendingShipments = asyncRoute(async (req, res) => {
 
 exports.batchShip = asyncRoute(async (req, res) => {
   const r = await svc.batchShipOrders(req.body, req.user?.id, req);
+  await dataChangeTracker.trackFromRequest(req, {
+    module: 'order',
+    entityType: 'order',
+    entityId: 'batch',
+    action: 'batch_ship',
+    beforeData: req.body,
+    afterData: r.data,
+  });
   res.success(r.data, r.message);
 });
 

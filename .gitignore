@@ -10,6 +10,7 @@ server/.env
 
 node_modules/
 **/dist/
+**/admin-dist/
 **/dist-ssr/
 public-frontend/
 *.log
@@ -40,4 +41,3 @@ deploy.log
 
 server/public/uploads/*
 !server/public/uploads/.gitkeep
-

@@ -12,6 +12,7 @@ import type { PaginatedData } from "@/types/common";
 import { downloadAdminCsv } from "@/utils/adminCsvDownload";
 import { getAdminAccessToken } from "@/utils/token";
 import { unwrapList, unwrapPaginated } from "@/services/responseNormalize";
+import { getAdminCsrfToken } from "@/lib/adminCsrf";
 
 const BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
@@ -79,11 +80,16 @@ export async function exportProductsCsv(params?: { keyword?: string; category_id
 
 export async function importProductsCsv(file: File): Promise<{ created: number; updated: number }> {
   const token = getAdminAccessToken();
+  const csrfToken = await getAdminCsrfToken();
   const fd = new FormData();
   fd.append("file", file);
   const res = await fetch(`${BASE}/admin/products/import`, {
     method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
+    },
+    credentials: "include",
     body: fd,
   });
   const body = (await res.json()) as { code: number; message?: string; data?: { created: number; updated: number } };

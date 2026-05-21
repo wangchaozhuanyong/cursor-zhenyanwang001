@@ -7,11 +7,23 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 const adminAuthService = require('../service/adminAuth.service');
 const adminAccountService = require('../service/adminAccount.service');
+const adminMfaService = require('../service/adminMfa.service');
 const { setAuthCookies, clearAuthCookies, getRefreshTokenFromRequest } = require('../../../utils/authCookies');
+const { createCsrfToken } = require('../../../middleware/adminGatewayGuard');
 
 exports.login = asyncRoute(async (req, res) => {
   const r = await adminAuthService.login(req.body, req);
+  if (r.data?.token) {
+    setAuthCookies(req, res, r.data.token, 'admin');
+    r.data.csrfToken = createCsrfToken(req, res);
+  }
+  res.success(r.data, r.message);
+});
+
+exports.verifyMfa = asyncRoute(async (req, res) => {
+  const r = await adminMfaService.verifyChallenge(req.body, req, res);
   setAuthCookies(req, res, r.data.token, 'admin');
+  r.data.csrfToken = createCsrfToken(req, res);
   res.success(r.data, r.message);
 });
 
@@ -21,10 +33,15 @@ exports.refresh = asyncRoute(async (req, res) => {
   if (r.data?.accessToken) {
     setAuthCookies(req, res, {
       accessToken: r.data.accessToken,
-      refreshToken,
+      refreshToken: r.data.refreshToken || refreshToken,
     }, 'admin');
   }
+  r.data = /** @type {any} */ ({ ...(r.data || {}), csrfToken: createCsrfToken(req, res) });
   res.success(r.data);
+});
+
+exports.csrf = asyncRoute(async (req, res) => {
+  res.success({ csrfToken: createCsrfToken(req, res) });
 });
 
 exports.logout = asyncRoute(async (req, res) => {
@@ -35,8 +52,10 @@ exports.logout = asyncRoute(async (req, res) => {
 
 exports.getProfile = asyncRoute(async (req, res) => {
   const r = await adminAccountService.getProfile(req.user.id);
+  const mfa = await adminMfaService.getStatus(req.user.id);
   res.success({
     ...r.data,
+    mfa,
     permissions: req.user.permissions,
     isSuperAdmin: req.user.isSuperAdmin,
     roleCodes: req.user.roleCodes,
@@ -58,6 +77,7 @@ exports.getRbacMe = asyncRoute(async (req, res) => {
     permissions: req.user.permissions,
     isSuperAdmin: req.user.isSuperAdmin,
     roleCodes: req.user.roleCodes,
+    mfaVerifiedAt: /** @type {any} */ (req.user).mfaVerifiedAt || 0,
   });
 });
 

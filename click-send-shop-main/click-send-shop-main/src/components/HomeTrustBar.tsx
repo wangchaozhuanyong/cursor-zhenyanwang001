@@ -1,11 +1,11 @@
-import { Heart, ShieldCheck, Truck, Wallet } from "lucide-react";
+import { Headphones, LifeBuoy, ShieldCheck, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const TRUST_ITEMS = [
   { icon: ShieldCheck, label: "正品保障" },
   { icon: Truck, label: "本地配送" },
-  { icon: Wallet, label: "安全支付" },
-  { icon: Heart, label: "售后无忧" },
+  { icon: Headphones, label: "中文客服" },
+  { icon: LifeBuoy, label: "售后协助" },
 ] as const;
 
 interface HomeTrustBarProps {
@@ -17,15 +17,30 @@ export default function HomeTrustBar({ className }: HomeTrustBarProps) {
   return (
     <section
       className={cn(
-        "grid grid-cols-4 gap-2 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3",
+        "grid grid-cols-4 gap-0.5 rounded-2xl border border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)]",
+        "bg-[color-mix(in_srgb,var(--theme-surface)_96%,var(--theme-bg))] px-1 py-3.5 sm:gap-1 sm:px-2 sm:py-4",
         className,
       )}
       aria-label="服务保障"
     >
       {TRUST_ITEMS.map(({ icon: Icon, label }) => (
-        <div key={label} className="flex min-w-0 items-center gap-1.5 text-xs text-[var(--theme-text)]">
-          <Icon size={14} className="shrink-0 text-[var(--theme-price)]" aria-hidden />
-          <span className="truncate">{label}</span>
+        <div
+          key={label}
+          className="flex min-w-0 flex-col items-center justify-center gap-1.5 px-0.5 text-center"
+        >
+          <span
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-text)_4%,transparent)]"
+            aria-hidden
+          >
+            <Icon
+              size={15}
+              strokeWidth={1.75}
+              className="text-[color-mix(in_srgb,var(--theme-text)_58%,var(--theme-text-muted))]"
+            />
+          </span>
+          <span className="w-full whitespace-nowrap text-[10px] font-medium leading-none tracking-[0.02em] text-[color-mix(in_srgb,var(--theme-text)_82%,var(--theme-text-muted))] sm:text-[11px]">
+            {label}
+          </span>
         </div>
       ))}
     </section>

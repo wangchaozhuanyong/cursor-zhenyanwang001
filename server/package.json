@@ -19,7 +19,7 @@
     "migrate:status": "node scripts/migrate-cli.js status",
     "verify-schema": "node scripts/verify-critical-schema.js",
     "wipe:business-data": "node scripts/wipe-business-data.js",
-    "seed:demo-products": "node scripts/seed-demo-products.js",
+    "purge:demo-products": "node scripts/purge-demo-products.js",
     "seed:content-pages": "node scripts/seed-content-pages.js",
     "seed:policy-paths": "node scripts/seed-policy-paths.js",
     "smoke:user-tag-marketing": "node scripts/smoke-user-tag-marketing.js",

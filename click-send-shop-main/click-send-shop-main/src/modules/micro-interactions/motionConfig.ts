@@ -3,6 +3,7 @@ import type { Transition, Variants } from "framer-motion";
 
 export const LIST_STAGGER_CAP = 12;
 export const TABLE_STAGGER_ROW_CAP = 50;
+export const SILK_EASE = [0.22, 1, 0.36, 1] as const;
 
 export type MotionTier = MotionLevel;
 
@@ -25,21 +26,25 @@ function easeOut(dur: number): Transition {
   return { duration: dur, ease: "easeOut" };
 }
 
+export function silkTransition(duration: number, delay = 0): Transition {
+  return { duration, delay, ease: SILK_EASE };
+}
+
 export function pageTransition(level: MotionTier) {
   if (level === "none") return { initial: false as const, animate: {}, exit: {}, transition: { duration: 0 } };
   if (level === "rich") {
     return {
-      initial: { opacity: 0, y: 8 },
-      animate: { opacity: 1, y: 0 },
-      exit: { opacity: 0 },
-      transition: easeOut(0.2),
+      initial: { opacity: 0, y: 10, scale: 0.992 },
+      animate: { opacity: 1, y: 0, scale: 1 },
+      exit: { opacity: 0, y: -4 },
+      transition: silkTransition(0.26),
     };
   }
   return {
-    initial: { opacity: 0 },
+    initial: { opacity: 0, y: 4 },
     animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0 },
-    transition: easeOut(0.14),
+    exit: { opacity: 0, y: -2 },
+    transition: silkTransition(0.18),
   };
 }
 
@@ -57,12 +62,13 @@ export function listItemTransition(level: MotionTier, index: number) {
   if (level === "none" || index >= LIST_STAGGER_CAP) {
     return { initial: false as const, animate: {}, exit: {}, transition: { duration: 0 } };
   }
-  const y = level === "rich" ? 10 : 4;
+  const y = level === "rich" ? 18 : 8;
+  const delay = Math.min(index, LIST_STAGGER_CAP - 1) * 0.035;
   return {
-    initial: { opacity: 0, y },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, x: level === "rich" ? -12 : 0, transition: easeOut(0.16) },
-    transition: { ...easeOut(0.18), delay: Math.min(index, LIST_STAGGER_CAP - 1) * 0.04 },
+    initial: level === "rich" ? { opacity: 0, y, scale: 0.96, filter: "blur(8px)" } : { opacity: 0, y },
+    animate: level === "rich" ? { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" } : { opacity: 1, y: 0 },
+    exit: { opacity: 0, transition: silkTransition(0.14) },
+    transition: silkTransition(level === "rich" ? 0.24 : 0.18, delay),
   };
 }
 

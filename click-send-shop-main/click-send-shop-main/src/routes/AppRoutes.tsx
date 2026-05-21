@@ -10,6 +10,7 @@ import TrackingManager from "@/components/TrackingManager";
 import RouteAnalyticsTracker from "@/components/RouteAnalyticsTracker";
 import PwaUpdateToast from "@/components/PwaUpdateToast";
 import RouteSeoGuard from "@/components/RouteSeoGuard";
+import AgeGate from "@/components/compliance/AgeGate";
 import LanguageGate from "@/components/LanguageGate";
 import AdminLayout from "@/layouts/AdminLayout";
 import { LegacyCouponRedirect } from "@/routes/adminLegacyRedirects";
@@ -51,6 +52,8 @@ import {
   AdminSiteSettings, AdminFeatureSettings, AdminSupportDownload, AdminTelegramSettings, AdminThemeSettings, AdminContent, AdminHomeOps,
   AdminRoles, AdminLogs, AdminRecycleBin,
   AdminPaymentChannels, AdminPaymentOrders, AdminPaymentEvents, AdminPaymentReconciliations,
+  AdminMonitoringOverview, AdminMonitoringAnomalies, AdminMonitoringAnomalyDetail,
+  AdminMonitoringRepairTasks, AdminMonitoringRules, AdminMonitoringRuns,
 } from "@/routes/lazyPages";
 
 /** 持久化的 isAuthenticated 与登录标记可能不一致（清缓存、多标签页等），启动时与 token 标记对齐 */
@@ -184,9 +187,12 @@ function AdminTitleSync() {
       { test: (p) => p.startsWith("/admin/logs"), titleKey: "routeTitles.auditLogs" },
       { test: (p) => p.startsWith("/admin/recycle-bin"), titleKey: "routeTitles.recycleBin" },
       { test: (p) => p.startsWith("/admin/notifications"), titleKey: "routeTitles.notifications" },
+      { test: (p) => p.startsWith("/admin/monitoring"), titleKey: "routeTitles.monitoring" },
     ];
     const match = routeTitleMap.find((item) => item.test(location.pathname));
-    const pageTitle = t(match?.titleKey ?? "routeTitles.admin");
+    const rawTitleKey = match?.titleKey ?? "routeTitles.admin";
+    const translatedTitle = t(rawTitleKey);
+    const pageTitle = translatedTitle === rawTitleKey && rawTitleKey === "routeTitles.monitoring" ? "监控中心" : translatedTitle;
     document.title = `${pageTitle} | ${siteName || seoTitle || "官方商城"}`;
   }, [location.pathname, siteInfo.siteName, siteInfo.seoTitle, t]);
 
@@ -279,6 +285,7 @@ export function AppRoutes() {
           <RouteSeoGuard />
           <PwaUpdateToast />
           <LanguageGate />
+          <AgeGate />
           <Suspense fallback={<AppRouteFallback />}>
             <Routes>
               {/* Pages with bottom nav */}
@@ -398,6 +405,12 @@ export function AppRoutes() {
                 <Route path="returns" element={<AdminReturns />} />
                 <Route path="notifications" element={<AdminNotifications />} />
                 <Route path="notifications/:id" element={<AdminNotificationDetail />} />
+                <Route path="monitoring" element={<AdminMonitoringOverview />} />
+                <Route path="monitoring/anomalies" element={<AdminMonitoringAnomalies />} />
+                <Route path="monitoring/anomalies/:id" element={<AdminMonitoringAnomalyDetail />} />
+                <Route path="monitoring/repair-tasks" element={<AdminMonitoringRepairTasks />} />
+                <Route path="monitoring/rules" element={<AdminMonitoringRules />} />
+                <Route path="monitoring/runs" element={<AdminMonitoringRuns />} />
                 <Route path="account" element={<AdminAccount />} />
                 <Route path="banners" element={<AdminBanners />} />
                 <Route path="reports" element={<AdminReports />} />

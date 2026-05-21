@@ -10,8 +10,6 @@ import { useHistoryStore } from "@/stores/useHistoryStore";
 import { useOrderStore } from "@/stores/useOrderStore";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import ProductCard from "@/components/ProductCard";
-import ProductCardSkeleton from "@/components/ProductCardSkeleton";
 import BannerCarousel from "@/components/BannerCarousel";
 import HomeTrustBar from "@/components/HomeTrustBar";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
@@ -40,6 +38,7 @@ import { HOME_HERO_STACK_CLASS, HOME_PAGE_MAIN_CLASS } from "@/constants/homeLay
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/utils/structuredData";
+import SilkProductGrid from "@/components/motion/SilkProductGrid";
 
 function Header({ title, icon: Icon, subtitle }: { title: string; icon?: React.ElementType; subtitle?: string }) {
   return (
@@ -292,11 +291,12 @@ export default function MemberHome() {
                 换一批              </button>
             ) : null}
           </div>
-          <div className={productGridClass}>
-            {homeLoading
-              ? Array.from({ length: HOT_BATCH_SIZE }).map((_, i) => <ProductCardSkeleton key={i} />)
-              : hot.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
-          </div>
+          <SilkProductGrid
+            products={hot}
+            className={productGridClass}
+            skeletonCount={HOT_BATCH_SIZE}
+            showFullSkeleton={homeLoading && hot.length === 0}
+          />
         </section>
         </AnimatedSection>
         ) : null}
@@ -320,11 +320,12 @@ export default function MemberHome() {
                 换一批              </button>
             ) : null}
           </div>
-          <div className={productGridClass}>
-            {homeLoading
-              ? Array.from({ length: REC_BATCH_SIZE }).map((_, i) => <ProductCardSkeleton key={i} />)
-              : rec.map((p, i) => <ProductCard key={p.id} product={p} index={i} />)}
-          </div>
+          <SilkProductGrid
+            products={rec}
+            className={productGridClass}
+            skeletonCount={REC_BATCH_SIZE}
+            showFullSkeleton={homeLoading && rec.length === 0}
+          />
         </section>
         </AnimatedSection>
         ) : null}

@@ -9,6 +9,11 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const responseMiddleware = require('./middleware/response');
 const errorHandler = require('./middleware/errorHandler');
+const {
+  adminGatewayGuard,
+  adminCsrfGuard,
+  blockAdminApiOnPublicHost,
+} = require('./middleware/adminGatewayGuard');
 const routes = require('./routes');
 const seoRoutes = require('./modules/seo/routes/seo.routes');
 const { registerSeoPrerender } = require('./modules/product/seoPrerender');
@@ -94,7 +99,7 @@ const helmetCspDefaults = helmet.contentSecurityPolicy.getDefaultDirectives();
 const storageAllowedOrigins = getStorageAllowedOrigins();
 const cspDirectives = {
   ...helmetCspDefaults,
-  'img-src': [...helmetCspDefaults['img-src'], 'blob:', 'https://images.unsplash.com', ...storageAllowedOrigins],
+  'img-src': [...helmetCspDefaults['img-src'], 'blob:', ...storageAllowedOrigins],
   'script-src': [
     ...helmetCspDefaults['script-src'],
     'https://static.cloudflareinsights.com',
@@ -149,6 +154,9 @@ const allowedOrigins = (process.env.CORS_ORIGINS || defaultCorsOrigins)
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
+for (const origin of (process.env.ADMIN_ALLOWED_ORIGINS || '').split(',').map((item) => item.trim()).filter(Boolean)) {
+  if (!allowedOrigins.includes(origin)) allowedOrigins.push(origin);
+}
 const allowDevAnyOrigin = !isProduction && process.env.ALLOW_DEV_CORS_ANY_ORIGIN === '1';
 
 /** Dev: treat localhost and 127.0.0.1 on the same port as equivalent. */
@@ -182,6 +190,8 @@ app.use(cors({
 }));
 
 app.use(compression());
+app.use(blockAdminApiOnPublicHost);
+app.use(adminGatewayGuard);
 
 if (process.env.NODE_ENV !== 'test') {
   app.use(require('morgan')('combined'));
@@ -203,6 +213,7 @@ app.post(
 
 // Multipart uploads are parsed by multer; keep JSON small to reduce memory pressure.
 app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || '1mb' }));
+app.use(adminCsrfGuard);
 
 const uploadsDir = path.join(__dirname, '../public/uploads');
 /** Fall back to full.webp when legacy product card/detail variants are missing. */
@@ -280,6 +291,7 @@ app.use('/api', routes);
 const serveSpa = fs.existsSync(frontendDist) && process.env.SERVE_SPA !== '0';
 if (serveSpa) {
   const frontendAssetsDir = path.join(frontendDist, 'assets');
+  const serveAdminSpa = process.env.SERVE_ADMIN_SPA === '1';
 
   // PWA install identity must follow admin-configured site logo/name, not the build-time bundled icon.
   registerPwaBrandRoutes(app, { frontendDist });
@@ -314,6 +326,9 @@ if (serveSpa) {
   app.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
     if (req.path.startsWith('/api')) return next();
+    if (!serveAdminSpa && (req.path === '/admin' || req.path.startsWith('/admin/'))) {
+      return res.status(404).send('Not Found');
+    }
     // Missing hashed chunks must be a real 404; returning index.html makes
     // dynamic import failures harder to diagnose and can cache the wrong MIME.
     if (req.path.startsWith('/assets/')) return next();
@@ -326,5 +341,3 @@ if (serveSpa) {
 app.use(errorHandler);
 
 module.exports = app;
-
-

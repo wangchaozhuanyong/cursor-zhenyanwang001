@@ -74,11 +74,14 @@ export default function Categories() {
   }, [activeCat, activeTagId, debouncedQuery, inStock, isHot, isNew, isRecommended, maxPrice, minPrice, setSearchParams, sort]);
 
   useEffect(() => {
+    syncQuery();
+  }, [syncQuery]);
+
+  useEffect(() => {
     const min = minPrice ? Number(minPrice) : undefined;
     const max = maxPrice ? Number(maxPrice) : undefined;
     if (min !== undefined && max !== undefined && min > max) return;
-    syncQuery();
-    loadProducts({
+    void loadProducts({
       category_id: activeCat === "all" ? undefined : activeCat,
       tag_id: activeTagId || undefined,
       keyword: debouncedQuery || undefined,
@@ -93,7 +96,7 @@ export default function Categories() {
       page: 1,
       pageSize: 50,
     });
-  }, [activeCat, activeTagId, debouncedQuery, inStock, isHot, isNew, isRecommended, loadProducts, maxPrice, minPrice, sort, syncQuery]);
+  }, [activeCat, activeTagId, debouncedQuery, inStock, isHot, isNew, isRecommended, loadProducts, maxPrice, minPrice, sort]);
 
   const handleSelectChild = useCallback((childId: string) => {
     void trackEvent({ event_type: "category_click", module: "categories", category_id: childId });

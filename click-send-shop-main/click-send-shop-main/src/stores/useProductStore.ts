@@ -130,11 +130,12 @@ export const useProductStore = create<ProductState>((set, get) => ({
 
     const hasData = get().products.length > 0;
     if (hasFreshCache && cached) {
+      // Show cached list immediately; revalidate in background without the "正在更新" banner.
       set({
         products: cached.data.products,
         pagination: cached.data.pagination,
         loading: false,
-        listRefreshing: true,
+        listRefreshing: false,
         error: null,
         filters: merged,
       });

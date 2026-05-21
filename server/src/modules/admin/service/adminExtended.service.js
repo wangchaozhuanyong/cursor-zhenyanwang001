@@ -24,6 +24,30 @@ function getPaymentApi() {
   return /** @type {any} */ (require('../../payment')).api || {};
 }
 
+function emitAdminEvent(event, options = {}) {
+  try {
+    void require('./adminEvent.service').emitEvent(event, {
+      operatorId: options.operatorId || null,
+      operatorType: options.operatorType || 'admin',
+      source: event.source || 'admin_extended',
+    });
+  } catch {
+    // Event center is best-effort.
+  }
+}
+
+function autoResolveAdminEvent(fingerprint, options = {}) {
+  try {
+    void require('./adminEvent.service').autoResolveByFingerprint(fingerprint, {
+      operatorId: options.operatorId || null,
+      remark: options.remark || '业务处理完成后自动关闭',
+      metadata: options.metadata || {},
+    });
+  } catch {
+    // Best-effort.
+  }
+}
+
 const COLOR_PRESETS = {
   red: { bg_color: '#FEE2E2', text_color: '#B91C1C' },
   green: { bg_color: '#DCFCE7', text_color: '#15803D' },
@@ -591,6 +615,36 @@ async function approveReturn(id, body, adminUserId, req) {
       objectId: ret.order_id || id,
       summary: refundAmount > 0 ? `订单退款 ${ret.order_id}` : `售后批准 ${id}`,
     });
+    emitAdminEvent({
+      eventType: refundAmount > 0 ? 'refund.requested' : 'return.requested',
+      category: 'refund',
+      severity: 'P2',
+      status: 'resolved',
+      title: refundAmount > 0 ? '退款处理完成' : '售后处理完成',
+      message: `售后单 ${id} 已处理完成`,
+      entityType: 'return_request',
+      entityId: id,
+      fingerprint: {
+        eventType: refundAmount > 0 ? 'refund.requested' : 'return.requested',
+        entityType: 'return_request',
+        entityId: id,
+      },
+      payload: { returnId: id, orderId: order.id, orderNo: order.order_no, refundAmount },
+      impactAmount: refundAmount || null,
+      source: 'return_approve',
+    }, { operatorId: adminUserId });
+    autoResolveAdminEvent({
+      eventType: 'return.requested',
+      entityType: 'return_request',
+      entityId: id,
+    }, { operatorId: adminUserId, metadata: { returnId: id, orderId: order.id } });
+    if (refundAmount > 0) {
+      autoResolveAdminEvent({
+        eventType: 'refund.requested',
+        entityType: 'return_request',
+        entityId: id,
+      }, { operatorId: adminUserId, metadata: { returnId: id, orderId: order.id } });
+    }
 
     const retCopy = await getResolvedTriggerCopy('return_approved', {
       order_no: order.order_no,
@@ -960,6 +1014,26 @@ async function updateContentPage(id, body, adminUserId, req) {
 
   try {
     await repo.updateContentPageByFields(setFragments, values, id);
+    const sanitizedNextContent = content !== undefined ? sanitizeCmsHtml(String(content)) : null;
+    const nextPublishStatus = body.publish_status !== undefined ? body.publish_status : before.publish_status;
+    if (
+      nextPublishStatus !== 'draft'
+      && sanitizedNextContent !== null
+      && sanitizedNextContent.replace(/<[^>]*>/g, '').trim().length === 0
+    ) {
+      emitAdminEvent({
+        eventType: 'content.page_empty',
+        category: 'content',
+        severity: 'P2',
+        title: '内容页面为空',
+        message: `内容页面 ${before.slug || id} 已发布但正文为空`,
+        entityType: 'content_page',
+        entityId: id,
+        fingerprint: { eventType: 'content.page_empty', entityType: 'content_page', entityId: id },
+        payload: { slug: before.slug, title: title !== undefined ? title : before.title },
+        source: 'content_admin',
+      }, { operatorId: adminUserId });
+    }
     await writeAuditLog({
       req,
       operatorId: adminUserId,
@@ -1019,9 +1093,6 @@ module.exports = {
   ensureDefaultLegalContentPages,
   _sanitizeCmsHtmlForTest: sanitizeCmsHtml,
 };
-
-
-
 
 
 

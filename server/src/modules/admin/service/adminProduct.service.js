@@ -37,6 +37,107 @@ function bumpCatalogCache() {
   }
 }
 
+function emitProductEvent(event, options = {}) {
+  try {
+    void require('./adminEvent.service').emitEvent(event, {
+      operatorId: options.operatorId || null,
+      operatorType: options.operatorType || 'admin',
+      source: event.source || 'product_admin',
+    });
+  } catch {
+    // Event center is best-effort; product saves must not depend on it.
+  }
+}
+
+function resolveProductImages(row) {
+  const images = [];
+  if (row?.cover_image) images.push(row.cover_image);
+  const raw = row?.images;
+  if (Array.isArray(raw)) images.push(...raw);
+  else if (typeof raw === 'string' && raw.trim()) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) images.push(...parsed);
+      else images.push(raw);
+    } catch {
+      images.push(raw);
+    }
+  }
+  return images.filter(Boolean);
+}
+
+function emitProductRiskEvents(row, variants = [], adminUserId = null) {
+  if (!row?.id) return;
+  const price = Number(row.price || 0);
+  const stock = Number(row.stock || 0);
+  const lifecycle = normalizeLifecycleFromRow(row);
+  const images = resolveProductImages(row);
+  const basePayload = {
+    productId: row.id,
+    productName: row.name,
+    price,
+    stock,
+    lifecycleStatus: lifecycle,
+  };
+  if (price <= 0) {
+    emitProductEvent({
+      eventType: 'product.price_zero',
+      category: 'content',
+      severity: 'P1',
+      title: '商品价格为零',
+      message: `商品 ${row.name || row.id} 价格为 0`,
+      entityType: 'product',
+      entityId: row.id,
+      fingerprint: { eventType: 'product.price_zero', entityType: 'product', entityId: row.id },
+      payload: basePayload,
+      source: 'product_admin',
+    }, { operatorId: adminUserId });
+  }
+  const costly = variants.find((v) => Number(v.cost_price || 0) > Number(v.price || price || 0));
+  if (costly) {
+    emitProductEvent({
+      eventType: 'product.cost_higher_than_price',
+      category: 'content',
+      severity: 'P1',
+      title: '商品成本高于售价',
+      message: `商品 ${row.name || row.id} 存在成本高于售价的 SKU`,
+      entityType: 'product',
+      entityId: row.id,
+      fingerprint: { eventType: 'product.cost_higher_than_price', entityType: 'product', entityId: row.id },
+      payload: { ...basePayload, variantId: costly.id, skuCode: costly.sku_code, costPrice: Number(costly.cost_price || 0), skuPrice: Number(costly.price || price || 0) },
+      source: 'product_admin',
+    }, { operatorId: adminUserId });
+  }
+  if (images.length === 0) {
+    emitProductEvent({
+      eventType: 'product.image_missing',
+      category: 'content',
+      severity: 'P2',
+      title: '商品图片缺失',
+      message: `商品 ${row.name || row.id} 没有主图或图片集`,
+      entityType: 'product',
+      entityId: row.id,
+      fingerprint: { eventType: 'product.image_missing', entityType: 'product', entityId: row.id },
+      payload: basePayload,
+      source: 'product_admin',
+    }, { operatorId: adminUserId });
+  }
+  if (stock <= 0 && lifecycle === LIFECYCLE.ON_SHELF) {
+    emitProductEvent({
+      eventType: 'product.no_stock_but_online',
+      category: 'content',
+      severity: 'P2',
+      title: '无库存商品仍在线',
+      message: `商品 ${row.name || row.id} 库存为 ${stock} 但仍在线`,
+      entityType: 'product',
+      entityId: row.id,
+      fingerprint: { eventType: 'product.no_stock_but_online', entityType: 'product', entityId: row.id },
+      payload: basePayload,
+      source: 'product_admin',
+    }, { operatorId: adminUserId });
+  }
+}
+
 function buildListWhere(query) {
   let where = 'WHERE deleted_at IS NULL';
   const params = [];
@@ -338,6 +439,7 @@ async function createProduct(body, adminUserId, req) {
       after: { name, price, stock: stock || 0, lifecycle_status: lcResolved, status: statusStr },
       result: 'success',
     });
+    emitProductRiskEvents(row, vrows, adminUserId);
     bumpCatalogCache();
     return {
       data: { ...formatProduct(row), spec_groups: matrix.spec_groups, spec_values: matrix.spec_groups.flatMap((g) => g.values || []), variants: vrows.map(formatVariantRow), tags: tagMap.get(id) || [] },
@@ -461,6 +563,7 @@ async function updateProduct(id, body, adminUserId, req) {
       },
       result: 'success',
     });
+    emitProductRiskEvents(row, vrows, adminUserId);
     bumpCatalogCache();
     return {
       data: { ...formatProduct(row), spec_groups: matrix.spec_groups, spec_values: matrix.spec_groups.flatMap((g) => g.values || []), variants: vrows.map(formatVariantRow), tags: tagMap.get(id) || [] },
@@ -780,8 +883,6 @@ module.exports = {
   importProductsCsv,
   batchUpdateStatus,
 };
-
-
 
 
 

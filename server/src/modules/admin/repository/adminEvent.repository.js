@@ -266,6 +266,21 @@ async function listEscalationCandidates(limit = 50) {
   return rows;
 }
 
+async function listActiveRecordsByTypes(eventTypes = [], limit = 500) {
+  if (!Array.isArray(eventTypes) || eventTypes.length === 0) return [];
+  const placeholders = eventTypes.map(() => '?').join(',');
+  const [rows] = await db.query(
+    `SELECT *
+     FROM admin_event_records
+     WHERE event_type IN (${placeholders})
+       AND status IN ('open', 'acknowledged', 'in_progress')
+     ORDER BY created_at ASC
+     LIMIT ?`,
+    [...eventTypes, limit],
+  );
+  return rows;
+}
+
 module.exports = {
   findRuleByType,
   insertRecord,
@@ -281,4 +296,5 @@ module.exports = {
   selectBossMetrics,
   listRules,
   listEscalationCandidates,
+  listActiveRecordsByTypes,
 };

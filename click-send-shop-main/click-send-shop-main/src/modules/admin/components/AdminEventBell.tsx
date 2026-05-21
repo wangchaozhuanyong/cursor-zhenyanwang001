@@ -1,9 +1,13 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Bell, CheckCircle2, Eye, Shield, Siren, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import * as eventService from "@/services/admin/eventCenterService";
+import type { AdminEventRecord } from "@/services/admin/eventCenterService";
+
+const P0_SOUND_PLAYED_KEY = "admin_event_p0_sound_played_ids";
+const MAX_SOUND_PLAYED_IDS = 300;
 
 const tabs = [
   { key: "all", label: "全部" },
@@ -18,6 +22,54 @@ function severityClass(severity: string) {
   if (severity === "P1") return "bg-orange-500 text-white";
   if (severity === "P2") return "bg-amber-100 text-amber-800";
   return "bg-secondary text-muted-foreground";
+}
+
+function readSoundPlayedIds() {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(P0_SOUND_PLAYED_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveSoundPlayedIds(ids: string[]) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(P0_SOUND_PLAYED_KEY, JSON.stringify(ids.slice(-MAX_SOUND_PLAYED_IDS)));
+}
+
+async function playP0Beep() {
+  const AudioContextCtor = window.AudioContext || (window as typeof window & {
+    webkitAudioContext?: typeof AudioContext;
+  }).webkitAudioContext;
+  if (!AudioContextCtor) return;
+  const ctx = new AudioContextCtor();
+  const gain = ctx.createGain();
+  gain.gain.value = 0.16;
+  gain.connect(ctx.destination);
+
+  for (const [index, frequency] of [880, 660, 880].entries()) {
+    const oscillator = ctx.createOscillator();
+    oscillator.type = "sine";
+    oscillator.frequency.value = frequency;
+    oscillator.connect(gain);
+    const start = ctx.currentTime + index * 0.16;
+    oscillator.start(start);
+    oscillator.stop(start + 0.11);
+  }
+
+  await new Promise((resolve) => window.setTimeout(resolve, 620));
+  await ctx.close().catch(() => undefined);
+}
+
+function shouldPlayP0Sound(event: AdminEventRecord, locallyPlayed: Set<string>) {
+  return event.severity === "P0"
+    && event.soundEnabled
+    && !event.soundPlayedAt
+    && !locallyPlayed.has(event.id)
+    && ["open", "acknowledged", "in_progress"].includes(event.status);
 }
 
 export default function AdminEventBell() {
@@ -57,6 +109,36 @@ export default function AdminEventBell() {
   const badge = Math.max(summary?.unreadCount || 0, summary?.p0Count || 0);
   const rows = eventsQuery.data?.list || [];
   const hasP0 = (summary?.p0Count || 0) > 0;
+  const p0SoundQuery = useQuery({
+    queryKey: adminQueryKeys.eventCenterEvents({ tab: "urgent", severity: "P0", page: 1, pageSize: 10 }),
+    queryFn: () => eventService.fetchAdminEvents({ tab: "urgent", severity: "P0", page: 1, pageSize: 10 }),
+    enabled: hasP0,
+    refetchInterval: hasP0 ? 15000 : false,
+  });
+
+  const markSoundPlayed = useCallback(async (eventId: string) => {
+    try {
+      await eventService.markAdminEventSoundPlayed(eventId);
+      void queryClient.invalidateQueries({ queryKey: adminQueryKeys.eventCenterRoot() });
+    } catch {
+      // Local persistence still prevents repeated browser alarms if the network hiccups.
+    }
+  }, [queryClient]);
+
+  useEffect(() => {
+    const events = p0SoundQuery.data?.list || [];
+    if (!events.length) return;
+
+    const playedIds = readSoundPlayedIds();
+    const playedSet = new Set(playedIds);
+    const next = events.find((event) => shouldPlayP0Sound(event, playedSet));
+    if (!next) return;
+
+    saveSoundPlayedIds([...playedIds, next.id]);
+    void playP0Beep().finally(() => {
+      void markSoundPlayed(next.id);
+    });
+  }, [markSoundPlayed, p0SoundQuery.data?.list]);
 
   const counts = useMemo(() => [
     { label: "未读", value: summary?.unreadCount || 0 },

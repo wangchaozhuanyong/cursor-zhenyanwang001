@@ -10,6 +10,7 @@ const { startNotificationScheduler } = require('./modules/admin/service/adminNot
 const { startEscalationScheduler: startAdminEventEscalationScheduler } = require('./modules/admin/service/adminEvent.service');
 const { startAutoConfirmReceiveScheduler } = require('./modules/order/service/orderAutoConfirm.service');
 const { startPaymentTimeoutScheduler } = require('./modules/order/service/orderPaymentTimeout.service');
+const { startOrderTimeoutEventScheduler } = require('./modules/order/service/orderEventTimeout.service');
 const { startMyInvoisRetryScheduler } = require('./modules/myinvois/service/myinvois.service');
 const { startMonitoringScheduler } = require('./modules/monitoring/service/monitoringScheduler.service');
 const { getRedisUrl, pingRedis } = require('./config/redis');
@@ -20,6 +21,17 @@ const { getInstanceInfo, instanceLogPrefix } = require('./config/instance');
 const PORT = process.env.PORT || 3000;
 /** 默认启动时自动迁移；仅当 RUN_MIGRATIONS_ON_BOOT=0 时关闭（避免代码已更新而库结构落后导致管理端 500） */
 const RUN_MIGRATIONS_ON_BOOT = process.env.RUN_MIGRATIONS_ON_BOOT !== '0';
+
+function emitSystemEvent(event) {
+  try {
+    void require('./modules/admin/service/adminEvent.service').emitEvent(event, {
+      operatorType: 'system',
+      source: event.source || 'server_startup',
+    });
+  } catch {
+    // Startup diagnostics are best-effort.
+  }
+}
 
 const bootPromise = prepareDatabaseForRuntime({ runMigrations: RUN_MIGRATIONS_ON_BOOT });
 
@@ -43,6 +55,18 @@ bootPromise
       console.log(`${instanceLogPrefix('Storage')} accessKeyId=${storage.accessKeyIdMasked} secret=${storage.secretKeyMasked}`);
       if (!storage.healthy) {
         console.warn(`${instanceLogPrefix('Storage')} missing required env: ${storage.missing.join(', ')}`);
+        emitSystemEvent({
+          eventType: 'system.storage_unhealthy',
+          category: 'system',
+          severity: 'P1',
+          title: '存储服务异常',
+          message: `对象存储配置不完整：${storage.missing.join(', ')}`,
+          entityType: 'system',
+          entityId: 'storage',
+          fingerprint: { eventType: 'system.storage_unhealthy', entityType: 'system', entityId: 'storage' },
+          payload: storage,
+          source: 'server_startup',
+        });
       }
     } else {
       console.log(`${instanceLogPrefix('Storage')} driver=${storage.driver} mode=${storage.mode}`);
@@ -57,6 +81,7 @@ bootPromise
     startAdminEventEscalationScheduler();
     startAutoConfirmReceiveScheduler();
     startPaymentTimeoutScheduler();
+    startOrderTimeoutEventScheduler();
     startMyInvoisRetryScheduler();
     if (process.env.MONITORING_SCHEDULER_DISABLED !== '1') {
       const redisConfigured = Boolean(getRedisUrl() || process.env.REDIS_ENABLED === '1');
@@ -70,6 +95,18 @@ bootPromise
             console.log(`${instanceLogPrefix('Monitoring')} scheduler started (Redis ok)`);
           } else {
             console.warn(`${instanceLogPrefix('Monitoring')} scheduler skipped: Redis ping failed`);
+            emitSystemEvent({
+              eventType: 'system.redis_unavailable',
+              category: 'system',
+              severity: 'P1',
+              title: 'Redis 不可用',
+              message: 'Redis ping 失败，监控调度器已跳过启动',
+              entityType: 'system',
+              entityId: 'redis',
+              fingerprint: { eventType: 'system.redis_unavailable', entityType: 'system', entityId: 'redis' },
+              payload: redisPing,
+              source: 'server_startup',
+            });
           }
         } catch (err) {
           console.warn(`${instanceLogPrefix('Monitoring')} scheduler skipped: ${err.message}`);

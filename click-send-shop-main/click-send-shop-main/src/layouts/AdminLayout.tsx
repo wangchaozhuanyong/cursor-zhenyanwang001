@@ -84,6 +84,7 @@ type ResolvedNavChild = NavChild & { label: string };
 type ResolvedNavItem = Omit<NavItem, "children"> & { label: string; children?: ResolvedNavChild[] };
 
 const localNavLabels: Record<string, string> = {
+  "nav.eventCenter": "后台事件",
   "nav.monitoringCenter": "监控中心",
   "nav.monitoringOverview": "数据总览",
   "nav.monitoringAnomalies": "数据异常",
@@ -185,8 +186,9 @@ const navItemsRaw: NavItem[] = [
     icon: Bell,
     labelKey: "nav.notificationCenter",
     path: "/admin/notifications",
-    permission: { anyOf: ["notification.view", "notification.manage"] },
+    permission: { anyOf: ["notification.view", "notification.manage", "event.view", "event.manage"] },
     children: [
+      { icon: AlertTriangle, labelKey: "nav.eventCenter", path: "/admin/event-center", permission: { anyOf: ["event.view", "event.manage"] } },
       { icon: Bell, labelKey: "nav.notifications", path: "/admin/notifications", permission: { anyOf: ["notification.view", "notification.manage"] } },
     ],
   },

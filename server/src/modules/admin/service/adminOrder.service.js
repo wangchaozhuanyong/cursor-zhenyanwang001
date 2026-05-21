@@ -15,6 +15,7 @@ const adminEventBus = require('./adminEventBus.service');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { ORDER_STATUS, PAYMENT_STATUS, ORDER_STATUS_LIST } = require('../../../constants/status');
 const orderPoints = require('../../order/service/orderPoints.service');
+const orderTimeoutEvents = require('../../order/service/orderEventTimeout.service');
 function getUserApi() {
   return /** @type {any} */ (require('../../user')).api || {};
 }
@@ -662,6 +663,12 @@ async function shipOrder(orderId, body, adminUserId, req) {
       objectId: orderId,
       summary: `订单发货 ${order.order_no}`,
     });
+    await orderTimeoutEvents.autoResolveOrderTimeoutEvents(orderId, {
+      trigger: 'admin_ship_order',
+      orderNo: order.order_no,
+      carrier,
+      trackingNo,
+    }).catch(() => {});
     return { data: null, message: '已发货' };
   } catch (err) {
     await writeAuditLog({
@@ -794,6 +801,12 @@ async function batchShipOrders(payload = {}, adminUserId, req) {
       pointsConn.release();
     }
     shipped += 1;
+    await orderTimeoutEvents.autoResolveOrderTimeoutEvents(orderId, {
+      trigger: 'admin_batch_ship_order',
+      orderNo: row.order_no,
+      carrier,
+      trackingNo,
+    }).catch(() => {});
     try {
       const copy = await getResolvedTriggerCopy('order_ship', {
         order_no: row.order_no,
@@ -836,5 +849,3 @@ module.exports = {
   listPendingShipmentOrders,
   batchShipOrders,
 };
-
-

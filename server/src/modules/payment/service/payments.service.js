@@ -1039,6 +1039,46 @@ async function recordRefundByAdmin(req, orderId, body, externalConn = null) {
     if (ownConn) await conn.commit();
 
     if (ownConn) {
+      emitAdminEvent({
+        eventType: 'refund.requested',
+        category: 'refund',
+        severity: 'P2',
+        status: 'resolved',
+        title: '退款处理完成',
+        message: `订单 ${order.order_no} 已记录退款 RM ${amount.toFixed(2)}`,
+        entityType: 'order',
+        entityId: order.id,
+        fingerprint: {
+          eventType: 'refund.requested',
+          entityType: 'order',
+          entityId: order.id,
+          refundReference: eventId,
+        },
+        payload: {
+          orderNo: order.order_no,
+          refundAmount: amount,
+          refundReference: eventId,
+          refundStatus: result.refundStatus,
+          refundedAmount: result.refundedAmount,
+        },
+        impactAmount: amount,
+        source: 'payment_refund_record',
+      }, { operatorId: req.user?.id || null, operatorType: 'admin' });
+      if (Number(result.refundedAmount || 0) > Number(order.total_amount || 0)) {
+        emitAdminEvent({
+          eventType: 'refund.exceeds_paid',
+          category: 'refund',
+          severity: 'P0',
+          title: '退款金额超过实付金额',
+          message: `订单 ${order.order_no} 累计退款超过订单金额`,
+          entityType: 'order',
+          entityId: order.id,
+          fingerprint: { eventType: 'refund.exceeds_paid', entityType: 'order', entityId: order.id },
+          payload: { orderNo: order.order_no, refundedAmount: result.refundedAmount, paidAmount: order.total_amount },
+          impactAmount: Number(result.refundedAmount || 0) - Number(order.total_amount || 0),
+          source: 'payment_refund_record',
+        }, { operatorId: req.user?.id || null, operatorType: 'admin' });
+      }
       await writeAuditLog({
         req,
         operatorId: req.user?.id,

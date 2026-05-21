@@ -6,7 +6,7 @@
 #   3) HEALTH_PORT 上有 node 在 LISTEN
 #   4) /api/health/live 返回 200
 #   5) /api/health/ready 返回 200（含 DB 探测）
-#   6) pm2-error.log 近 200 行无关键错误
+#   6) pm2-error.log 近期无关键错误（默认仅看最近 20 分钟，避免历史 Redis 噪声误杀部署）
 #   7) server/.env 关键变量完整（生产模式更严格）
 #
 # 用法（在服务器项目根执行）：
@@ -18,6 +18,7 @@
 #   HEALTH_PATH    默认 /api/health/live
 #   READY_PATH     默认 /api/health/ready
 #   PM2_ERROR_LOG  显式日志路径；不设则自动从 pm2 jlist 读取
+#   PM2_VERIFY_LOG_MAX_AGE_MINUTES  仅扫描该分钟数内的 pm2-error 行（默认 20）
 #   PROJECT_DIR    显式项目根；不设则取脚本上一级
 #   SKIP_ENV_CHECK 设为 1 时跳过 .env 检查（不推荐）
 #
@@ -129,10 +130,22 @@ echo
 echo "==== 5) GET http://127.0.0.1:${HEALTH_PORT}${READY_PATH} ===="
 READY_BODY=$(mktemp)
 READY_CODE=$(curl -sS -o "$READY_BODY" -w "%{http_code}" "http://127.0.0.1:${HEALTH_PORT}${READY_PATH}" || echo "000")
+READY_REDIS_OK=0
 if [[ "$READY_CODE" == "200" ]]; then
   echo "✅ HTTP $READY_CODE"
   head -c 300 "$READY_BODY" 2>/dev/null
   echo
+  if command -v node >/dev/null 2>&1; then
+    READY_REDIS_OK=$(node -e "
+      const fs=require('fs');
+      try{
+        const raw=fs.readFileSync(process.argv[1],'utf8');
+        const j=JSON.parse(raw);
+        const redis=j?.data?.redis;
+        process.stdout.write(redis===true||redis==='true'?'1':'0');
+      }catch(e){ process.stdout.write('0'); }
+    " "$READY_BODY" 2>/dev/null || echo 0)
+  fi
 else
   note_fail "❌ /ready HTTP $READY_CODE（DB/依赖未就绪？）"
   head -c 300 "$READY_BODY" 2>/dev/null
@@ -160,14 +173,40 @@ fi
 if [[ -z "$ERROR_LOG" || ! -f "$ERROR_LOG" ]]; then
   echo "⚠️ 未找到 $PM2_APP 的 pm2-error.log（可显式 export PM2_ERROR_LOG=/path/to/log）"
 else
-  echo "ℹ️  $ERROR_LOG"
-  HITS=$(tail -n 200 "$ERROR_LOG" 2>/dev/null \
-    | grep -E -i "Migration failed|ECONNREFUSED|ER_ACCESS_DENIED|ER_BAD_DB_ERROR|PROTOCOL_CONNECTION_LOST|ETIMEDOUT|UnhandledPromiseRejection|Error: connect|getaddrinfo|validateEnv|JWT_SECRET" || true)
+  LOG_MAX_AGE_MINUTES="${PM2_VERIFY_LOG_MAX_AGE_MINUTES:-20}"
+  echo "ℹ️  $ERROR_LOG（仅扫描最近 ${LOG_MAX_AGE_MINUTES} 分钟内带时间戳的行）"
+  RECENT_LOG=$(mktemp)
+  tail -n 400 "$ERROR_LOG" 2>/dev/null > "$RECENT_LOG" || true
+  FILTERED_LOG=$(mktemp)
+  if command -v node >/dev/null 2>&1; then
+    node -e "
+      const fs=require('fs');
+      const maxAgeMin=Number(process.argv[1]||20);
+      const readyRedisOk=process.argv[2]==='1';
+      const path=process.argv[3];
+      const cutoff=Date.now()-maxAgeMin*60*1000;
+      const lines=fs.readFileSync(path,'utf8').split(/\r?\n/);
+      const out=[];
+      for (const line of lines){
+        const m=line.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}):/);
+        if(!m) continue;
+        const ts=Date.parse(m[1]);
+        if(!Number.isFinite(ts)||ts<cutoff) continue;
+        if(readyRedisOk && /ECONNREFUSED|BullMQ|\[Redis\]/i.test(line)) continue;
+        out.push(line);
+      }
+      process.stdout.write(out.join('\n'));
+    " "$LOG_MAX_AGE_MINUTES" "$READY_REDIS_OK" "$RECENT_LOG" > "$FILTERED_LOG" 2>/dev/null || true
+  else
+    cp "$RECENT_LOG" "$FILTERED_LOG"
+  fi
+  HITS=$(grep -E -i "Migration failed|ECONNREFUSED|ER_ACCESS_DENIED|ER_BAD_DB_ERROR|PROTOCOL_CONNECTION_LOST|ETIMEDOUT|UnhandledPromiseRejection|Error: connect|getaddrinfo|validateEnv|JWT_SECRET" "$FILTERED_LOG" 2>/dev/null || true)
+  rm -f "$RECENT_LOG" "$FILTERED_LOG" 2>/dev/null || true
   if [[ -n "$HITS" ]]; then
-    note_fail "❌ pm2-error.log 近 200 行命中关键错误："
+    note_fail "❌ pm2-error.log 最近 ${LOG_MAX_AGE_MINUTES} 分钟命中关键错误："
     echo "$HITS"
   else
-    echo "✅ 近 200 行未发现迁移 / DB / 启动关键错误"
+    echo "✅ 最近 ${LOG_MAX_AGE_MINUTES} 分钟未发现迁移 / DB / 启动关键错误"
   fi
 fi
 

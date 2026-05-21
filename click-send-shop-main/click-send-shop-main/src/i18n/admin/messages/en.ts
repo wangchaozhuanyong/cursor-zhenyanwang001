@@ -110,6 +110,7 @@ export const adminMessagesEn: AdminMessages = {
     auditLogs: "Audit logs",
     roles: "Roles & permissions",
     recycleBin: "Recycle bin",
+    eventCenter: "Admin events",
     monitoringCenter: "Monitoring",
     monitoringOverview: "Overview",
     monitoringAnomalies: "Anomalies",
@@ -169,6 +170,7 @@ export const adminMessagesEn: AdminMessages = {
     products: "Products",
     reports: "Analytics",
     exports: "Analytics / Data export",
+    eventCenter: "Admin events",
     monitoring: "Monitoring",
   },
   common: {

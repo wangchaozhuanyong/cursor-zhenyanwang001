@@ -197,6 +197,7 @@ function AdminTitleSync() {
       { test: (p) => p.startsWith("/admin/logs"), titleKey: "routeTitles.auditLogs" },
       { test: (p) => p.startsWith("/admin/recycle-bin"), titleKey: "routeTitles.recycleBin" },
       { test: (p) => p.startsWith("/admin/notifications"), titleKey: "routeTitles.notifications" },
+      { test: (p) => p.startsWith("/admin/event-center"), titleKey: "routeTitles.eventCenter" },
       { test: (p) => p.startsWith("/admin/monitoring"), titleKey: "routeTitles.monitoring" },
     ];
     const match = routeTitleMap.find((item) => item.test(location.pathname));

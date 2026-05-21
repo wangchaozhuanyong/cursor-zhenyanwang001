@@ -1,5 +1,13 @@
 const { writeAuditLog } = require('../utils/auditLog');
 
+const SECURITY_EVENT_TITLES = {
+  'security.rbac_change': '权限配置变更',
+  'security.payment_config_change': '支付配置变更',
+  'security.site_settings_change': '站点设置变更',
+  'security.data_export': '后台数据导出',
+  'security.permanent_delete': '永久删除操作',
+};
+
 const EXPORT_ROUTES = [
   /^\/orders\/export$/,
   /^\/users\/export$/,
@@ -67,6 +75,35 @@ function adminSecurityAudit(req, res, next) {
       result: success ? 'success' : 'failure',
       errorMessage: success ? '' : `HTTP ${res.statusCode}`,
     });
+    if (success && SECURITY_EVENT_TITLES[meta.actionType]) {
+      try {
+        const adminEventService = require('../modules/admin/service/adminEvent.service');
+        void adminEventService.emitEvent({
+          eventType: meta.actionType,
+          category: 'security',
+          title: SECURITY_EVENT_TITLES[meta.actionType],
+          message: `${req.method} ${req.path} 已执行`,
+          entityType: meta.objectType,
+          entityId: meta.objectId || req.path,
+          fingerprint: {
+            eventType: meta.actionType,
+            objectType: meta.objectType,
+            objectId: meta.objectId || req.path,
+            requestId: req.id || null,
+            at: Date.now(),
+          },
+          payload: {
+            method: req.method,
+            path: req.path,
+            query: req.query,
+            bodyKeys: req.body && typeof req.body === 'object' ? Object.keys(req.body).slice(0, 50) : [],
+          },
+          source: 'admin_security_audit',
+        }, { operatorId: req.user?.id || null, operatorType: 'admin' });
+      } catch (error) {
+        console.warn('[adminSecurityAudit] event emit failed:', error?.message || error);
+      }
+    }
   });
 
   return next();

@@ -7,6 +7,7 @@ const app = require('./app');
 const { prepareDatabaseForRuntime } = require('./db/schemaStartup');
 const { startCleanupScheduler } = require('./modules/admin/service/adminExport.service');
 const { startNotificationScheduler } = require('./modules/admin/service/adminNotification.service');
+const { startEscalationScheduler: startAdminEventEscalationScheduler } = require('./modules/admin/service/adminEvent.service');
 const { startAutoConfirmReceiveScheduler } = require('./modules/order/service/orderAutoConfirm.service');
 const { startPaymentTimeoutScheduler } = require('./modules/order/service/orderPaymentTimeout.service');
 const { startMyInvoisRetryScheduler } = require('./modules/myinvois/service/myinvois.service');
@@ -53,6 +54,7 @@ bootPromise
 
     startCleanupScheduler();
     startNotificationScheduler();
+    startAdminEventEscalationScheduler();
     startAutoConfirmReceiveScheduler();
     startPaymentTimeoutScheduler();
     startMyInvoisRetryScheduler();

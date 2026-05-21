@@ -24,6 +24,34 @@ function createConversionOrderNo(prefix = 'ZH') {
   return `${prefix}${y}${m}${d}${Date.now().toString().slice(-6)}${rand}`;
 }
 
+function getStockEventFingerprint(eventType, variantId) {
+  return { eventType, entityType: 'product_variant', entityId: variantId };
+}
+
+function emitInventoryEvent(event, options = {}) {
+  try {
+    void require('./adminEvent.service').emitEvent(event, {
+      operatorId: options.operatorId || null,
+      operatorType: options.operatorType || 'admin',
+      source: event.source || 'inventory',
+    });
+  } catch {
+    // Event center is best-effort; inventory writes must not depend on it.
+  }
+}
+
+function autoResolveInventoryEvent(fingerprint, options = {}) {
+  try {
+    void require('./adminEvent.service').autoResolveByFingerprint(fingerprint, {
+      operatorId: options.operatorId || null,
+      remark: options.remark || '库存恢复后自动关闭',
+      metadata: options.metadata || {},
+    });
+  } catch {
+    // Best-effort.
+  }
+}
+
 function buildSkuWhere(query) {
   let where = 'WHERE p.deleted_at IS NULL AND v.deleted_at IS NULL';
   const params = [];
@@ -508,6 +536,87 @@ async function adjustSkuStock(variantId, body, adminUserId, req) {
     });
 
     await conn.commit();
+
+    const threshold = Number(sku.stock_warning_threshold || 5);
+    const basePayload = {
+      productId: sku.product_id,
+      variantId,
+      productName: sku.product_name,
+      variantName: sku.title || '',
+      skuCode: sku.sku_code || '',
+      beforeStock,
+      afterStock,
+      delta,
+      threshold,
+    };
+    if (afterStock < 0) {
+      emitInventoryEvent({
+        eventType: 'stock.negative',
+        category: 'stock',
+        severity: 'P1',
+        title: '库存为负',
+        message: `${sku.product_name} / ${sku.title || sku.sku_code || variantId} 库存为 ${afterStock}`,
+        entityType: 'product_variant',
+        entityId: variantId,
+        fingerprint: getStockEventFingerprint('stock.negative', variantId),
+        payload: basePayload,
+        source: 'inventory_adjust',
+      }, { operatorId: adminUserId });
+    } else if (afterStock <= 0) {
+      emitInventoryEvent({
+        eventType: 'stock.out',
+        category: 'stock',
+        severity: 'P1',
+        title: '库存售罄',
+        message: `${sku.product_name} / ${sku.title || sku.sku_code || variantId} 库存已售罄`,
+        entityType: 'product_variant',
+        entityId: variantId,
+        fingerprint: getStockEventFingerprint('stock.out', variantId),
+        payload: basePayload,
+        source: 'inventory_adjust',
+      }, { operatorId: adminUserId });
+    } else if (afterStock <= threshold) {
+      emitInventoryEvent({
+        eventType: 'stock.low',
+        category: 'stock',
+        severity: 'P2',
+        title: '库存偏低',
+        message: `${sku.product_name} / ${sku.title || sku.sku_code || variantId} 库存 ${afterStock} 低于预警阈值 ${threshold}`,
+        entityType: 'product_variant',
+        entityId: variantId,
+        fingerprint: getStockEventFingerprint('stock.low', variantId),
+        payload: basePayload,
+        source: 'inventory_adjust',
+      }, { operatorId: adminUserId });
+      autoResolveInventoryEvent(getStockEventFingerprint('stock.out', variantId), { operatorId: adminUserId, metadata: basePayload });
+      autoResolveInventoryEvent(getStockEventFingerprint('stock.negative', variantId), { operatorId: adminUserId, metadata: basePayload });
+    } else {
+      autoResolveInventoryEvent(getStockEventFingerprint('stock.low', variantId), { operatorId: adminUserId, metadata: basePayload });
+      autoResolveInventoryEvent(getStockEventFingerprint('stock.out', variantId), { operatorId: adminUserId, metadata: basePayload });
+      autoResolveInventoryEvent(getStockEventFingerprint('stock.negative', variantId), { operatorId: adminUserId, metadata: basePayload });
+    }
+    if (Math.abs(delta) >= 100) {
+      emitInventoryEvent({
+        eventType: 'stock.manual_adjust_large',
+        category: 'stock',
+        severity: 'P2',
+        status: 'resolved',
+        title: '大额库存手动调整',
+        message: `${sku.product_name} / ${sku.title || sku.sku_code || variantId} 手动调整 ${delta}`,
+        entityType: 'product_variant',
+        entityId: variantId,
+        fingerprint: {
+          eventType: 'stock.manual_adjust_large',
+          entityType: 'product_variant',
+          entityId: variantId,
+          beforeStock,
+          afterStock,
+          at: Date.now(),
+        },
+        payload: basePayload,
+        source: 'inventory_adjust',
+      }, { operatorId: adminUserId });
+    }
 
     await writeAuditLog({
       req,

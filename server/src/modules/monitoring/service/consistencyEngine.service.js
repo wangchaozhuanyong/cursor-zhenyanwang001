@@ -103,6 +103,20 @@ async function rescanAnomaly(anomalyId, options = {}) {
     && String(item.entity_id) === String(anomaly.entity_id)
   ));
   if (!matched) {
+    try {
+      await require('../../admin/service/adminEvent.service').autoResolveByFingerprint({
+        eventType: anomaly.rule_code || anomaly.severity,
+        entityType: anomaly.entity_type,
+        entityId: anomaly.entity_id,
+        anomalyId: anomaly.id || null,
+      }, {
+        operatorId: options.operatorId || null,
+        remark: '数据一致性重新扫描正常后自动关闭',
+        metadata: { anomalyId },
+      });
+    } catch (error) {
+      console.warn('[consistencyEngine] auto resolve admin event failed:', error?.message || error);
+    }
     return repo.markAnomalyStatus(anomalyId, 'resolved', options.operatorId);
   }
   return matched;

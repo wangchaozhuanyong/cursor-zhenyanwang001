@@ -45,6 +45,16 @@ export type AuditLogListParams = {
   actionType?: string;
   sortOrder?: string;
 };
+export type AdminEventListParams = {
+  page?: number;
+  pageSize?: number;
+  tab?: string;
+  status?: string;
+  category?: string;
+  severity?: string;
+  unread?: string | boolean;
+  keyword?: string;
+};
 
 export const adminQueryKeys = {
   root: ["admin"] as const,
@@ -62,6 +72,11 @@ export const adminQueryKeys = {
     ["admin", "payments", "reconciliations", filters ?? {}] as const,
   returnsRoot: () => ["admin", "returns"] as const,
   notificationsRoot: () => ["admin", "notifications"] as const,
+  eventCenterRoot: () => ["admin", "event-center"] as const,
+  eventCenterEvents: (filters?: AdminEventListParams) => ["admin", "event-center", "events", filters ?? {}] as const,
+  eventCenterSummary: () => ["admin", "event-center", "summary"] as const,
+  eventCenterBossMetrics: () => ["admin", "event-center", "boss-metrics"] as const,
+  eventCenterRules: () => ["admin", "event-center", "rules"] as const,
   inventoryRoot: () => ["admin", "inventory"] as const,
   productsRoot: () => ["admin", "products"] as const,
   products: (filters?: ProductListParams) => ["admin", "products", filters ?? {}] as const,

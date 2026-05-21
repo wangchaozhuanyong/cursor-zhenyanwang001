@@ -37,6 +37,14 @@ function publishAdminEvent(event) {
   }
 }
 
+function emitAdminEvent(event) {
+  try {
+    void require('../../admin/service/adminEvent.service').emitEvent(event, { operatorType: 'system' });
+  } catch {
+    // Monitoring is best-effort and must never block checkout.
+  }
+}
+
 function getUserApi() {
   return /** @type {any} */ (userModule).api || {};
 }
@@ -658,6 +666,20 @@ async function createOrder(userId, body) {
       type: 'order.created',
       objectId: orderId,
       summary: orderNo,
+    });
+    emitAdminEvent({
+      eventType: 'order.created',
+      category: 'order',
+      severity: 'P3',
+      status: 'resolved',
+      title: '订单创建',
+      message: `订单 ${orderNo} 已创建`,
+      entityType: 'order',
+      entityId: orderId,
+      fingerprint: { eventType: 'order.created', entityType: 'order', entityId: orderId },
+      payload: { orderNo, userId, totalAmount },
+      impactAmount: totalAmount,
+      source: 'order_checkout',
     });
 
     const formattedItems = orderItems.map((oi) => formatOrderItem({

@@ -12,6 +12,9 @@ type AdminEventPayload = {
 
 function invalidateForAdminEvent(queryClient: ReturnType<typeof useQueryClient>, event: AdminEventPayload) {
   const type = String(event.type || "");
+  if (type.startsWith("admin.event")) {
+    void queryClient.invalidateQueries({ queryKey: adminQueryKeys.eventCenterRoot() });
+  }
   if (type.startsWith("order.")) {
     void queryClient.invalidateQueries({ queryKey: adminQueryKeys.ordersRoot() });
     void queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() });

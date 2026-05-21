@@ -27,6 +27,17 @@ function getMyinvoisApi() {
   return /** @type {any} */ (require('../../myinvois')).api || {};
 }
 
+function emitAdminEvent(event) {
+  try {
+    void require('../../admin/service/adminEvent.service').emitEvent(event, {
+      operatorType: 'system',
+      source: event.source || 'stripe_webhook',
+    });
+  } catch {
+    // Event center is best-effort; webhook processing must not depend on it.
+  }
+}
+
 function requireAdminApi(name) {
   const fn = getAdminApi()[name];
   if (typeof fn !== 'function') {
@@ -127,6 +138,28 @@ async function handleStripeEvent(event) {
   const check = validatePaymentIntentAmount(order, pi);
   if (check.ok === false) {
     console.error('[stripe webhook] payment validation failed:', check.reason, check.details || '');
+    emitAdminEvent({
+      eventType: check.reason === 'currency_mismatch' ? 'payment.currency_mismatch' : 'payment.amount_mismatch',
+      category: 'payment',
+      severity: 'P0',
+      title: check.reason === 'currency_mismatch' ? '支付币种不一致' : '支付金额不一致',
+      message: `订单 ${order.order_no} 的 Stripe 支付回调校验失败`,
+      entityType: 'order',
+      entityId: orderId,
+      fingerprint: {
+        eventType: check.reason === 'currency_mismatch' ? 'payment.currency_mismatch' : 'payment.amount_mismatch',
+        entityType: 'order',
+        entityId: orderId,
+        eventId,
+      },
+      payload: {
+        orderNo: order.order_no,
+        reason: check.reason,
+        details: check.details || {},
+      },
+      impactAmount: Number(order.total_amount || 0),
+      source: 'stripe_webhook',
+    });
     return { handled: true };
   }
 
@@ -195,6 +228,19 @@ async function handleStripeEvent(event) {
     console.error('[MyInvois] enqueue invoice after Stripe payment failed:', err?.message || err);
   }
   await notifyTelegramOrderPaid(orderId, 'stripe');
+  emitAdminEvent({
+    eventType: 'order.paid',
+    category: 'order',
+    severity: 'P2',
+    title: '订单已付款',
+    message: `订单 ${order.order_no} 已通过 Stripe 付款`,
+    entityType: 'order',
+    entityId: orderId,
+    fingerprint: { eventType: 'order.paid', entityType: 'order', entityId: orderId },
+    payload: { orderNo: order.order_no, paymentTransactionNo: pi.id || '', eventId, channel: 'stripe' },
+    impactAmount: Number(order.total_amount || 0),
+    source: 'stripe_webhook',
+  });
   return { handled: true };
 }
 
@@ -202,5 +248,4 @@ module.exports = {
   handleStripeEvent,
   validatePaymentIntentAmount,
 };
-
 

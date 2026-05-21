@@ -94,6 +94,20 @@ const frontendDist = process.env.FRONTEND_DIST || defaultFrontendDist;
 const frontendIndexHtml = path.join(frontendDist, 'index.html');
 const viteInlineScriptHashes = getInlineScriptHashesFromHtml(frontendIndexHtml);
 
+const defaultAdminDist = path.join(
+  __dirname,
+  '..',
+  '..',
+  'click-send-shop-main',
+  'click-send-shop-main',
+  'admin-dist',
+);
+const adminDist = process.env.ADMIN_DIST || defaultAdminDist;
+const adminDistIndexHtml = ['index.html', 'admin-index.html']
+  .map((name) => path.join(adminDist, name))
+  .find((filePath) => fs.existsSync(filePath)) || path.join(adminDist, 'admin-index.html');
+const adminDistReady = fs.existsSync(adminDistIndexHtml);
+
 /** Extend Helmet CSP for configured image storage, analytics, and Stripe. */
 const helmetCspDefaults = helmet.contentSecurityPolicy.getDefaultDirectives();
 const storageAllowedOrigins = getStorageAllowedOrigins();
@@ -289,9 +303,32 @@ app.use('/api', routes);
 
 /** Serve the SPA when the build exists, unless SERVE_SPA=0 is set. */
 const serveSpa = fs.existsSync(frontendDist) && process.env.SERVE_SPA !== '0';
+const serveAdminSpaDisabled = process.env.SERVE_ADMIN_SPA === '0';
+const serveAdminFromAdminDist = adminDistReady && !serveAdminSpaDisabled;
+const serveAdminFromMainSpa = serveSpa && !serveAdminSpaDisabled && !serveAdminFromAdminDist;
+
+if (serveAdminFromAdminDist) {
+  const adminAssetsDir = path.join(adminDist, 'assets');
+  if (fs.existsSync(adminAssetsDir)) {
+    app.use(
+      '/assets',
+      express.static(adminAssetsDir, {
+        fallthrough: true,
+        immutable: true,
+        maxAge: '30d',
+      }),
+    );
+  }
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    if (req.path !== '/admin' && !req.path.startsWith('/admin/')) return next();
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    return res.sendFile(adminDistIndexHtml, (err) => next(err));
+  });
+}
+
 if (serveSpa) {
   const frontendAssetsDir = path.join(frontendDist, 'assets');
-  const serveAdminSpa = process.env.SERVE_ADMIN_SPA === '1';
 
   // PWA install identity must follow admin-configured site logo/name, not the build-time bundled icon.
   registerPwaBrandRoutes(app, { frontendDist });
@@ -326,7 +363,15 @@ if (serveSpa) {
   app.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
     if (req.path.startsWith('/api')) return next();
-    if (!serveAdminSpa && (req.path === '/admin' || req.path.startsWith('/admin/'))) {
+    if (res.headersSent) return next();
+    if (serveAdminFromAdminDist && (req.path === '/admin' || req.path.startsWith('/admin/'))) {
+      return next();
+    }
+    if (
+      !serveAdminFromMainSpa
+      && !serveAdminFromAdminDist
+      && (req.path === '/admin' || req.path.startsWith('/admin/'))
+    ) {
       return res.status(404).send('Not Found');
     }
     // Missing hashed chunks must be a real 404; returning index.html makes
@@ -336,6 +381,44 @@ if (serveSpa) {
     res.sendFile(path.join(frontendDist, 'index.html'), (err) => next(err));
   });
   console.log(`Frontend static assets: ${frontendDist}`);
+  if (serveAdminFromMainSpa) {
+    console.log('Admin UI: integrated /admin routes from main frontend dist');
+  } else if (serveAdminFromAdminDist) {
+    console.log(`Admin UI: standalone admin-dist at ${adminDist}`);
+  } else if (!serveAdminSpaDisabled) {
+    console.warn(
+      'Admin UI: /admin is disabled. Set SERVE_ADMIN_SPA=1 for integrated admin routes, or build admin-dist.',
+    );
+  }
+}
+
+if (serveAdminFromAdminDist && !serveSpa) {
+  const adminAssetsDir = path.join(adminDist, 'assets');
+  if (fs.existsSync(adminAssetsDir)) {
+    app.use(
+      '/assets',
+      express.static(adminAssetsDir, {
+        immutable: true,
+        maxAge: '30d',
+      }),
+    );
+  }
+  app.use(
+    express.static(adminDist, {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('index.html')) {
+          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        }
+      },
+    }),
+  );
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    if (req.path.startsWith('/api')) return next();
+    if (req.path.startsWith('/assets/')) return next();
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.sendFile(adminDistIndexHtml, (err) => next(err));
+  });
 }
 
 app.use(errorHandler);

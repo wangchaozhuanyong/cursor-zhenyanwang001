@@ -20,6 +20,18 @@ function publishAdminEvent(event) {
   }
 }
 
+function emitAdminEvent(event, options = {}) {
+  try {
+    void require('../../admin/service/adminEvent.service').emitEvent(event, {
+      operatorId: options.operatorId || null,
+      operatorType: options.operatorType || 'system',
+      source: options.source || event.source || 'payment',
+    });
+  } catch {
+    // Event center is best-effort; payment state changes must not depend on it.
+  }
+}
+
 function getTelegramApi() {
   return /** @type {any} */ (require('../../telegram')).api || {};
 }
@@ -299,6 +311,19 @@ async function payWithRewardWallet(userId, orderId) {
     });
 
     await conn.commit();
+    emitAdminEvent({
+      eventType: 'order.paid',
+      category: 'order',
+      severity: 'P2',
+      title: '订单已付款',
+      message: `订单 ${lockedOrder.order_no} 已通过返现钱包付款`,
+      entityType: 'order',
+      entityId: lockedOrder.id,
+      fingerprint: { eventType: 'order.paid', entityType: 'order', entityId: lockedOrder.id },
+      payload: { orderNo: lockedOrder.order_no, paymentOrderId, channel: 'reward_wallet', amount: payableAmount },
+      impactAmount: payableAmount,
+      source: 'reward_wallet',
+    });
     await notifyTelegramOrderPaid(lockedOrder.id, 'reward_wallet');
     try {
       await requireMyinvoisApi('enqueueOrderInvoiceIfEnabled')(lockedOrder.id, 'reward_wallet_paid');
@@ -875,6 +900,44 @@ async function markOrderPaidByAdmin(req, orderId, body) {
       objectId: paymentOrderId,
       summary: order.order_no,
     });
+    emitAdminEvent({
+      eventType: 'payment.manual_mark_paid',
+      category: 'payment',
+      severity: 'P2',
+      status: 'resolved',
+      title: '手动标记已支付',
+      message: `管理员手动将订单 ${order.order_no} 标记为已支付`,
+      entityType: 'order',
+      entityId: order.id,
+      fingerprint: {
+        eventType: 'payment.manual_mark_paid',
+        entityType: 'order',
+        entityId: order.id,
+        paymentReference: txNo,
+      },
+      payload: {
+        orderNo: order.order_no,
+        paymentOrderId,
+        paymentReference: txNo,
+        reason: reason || '',
+        adminRemark: adminRemark || '',
+      },
+      impactAmount: total,
+      source: 'admin_mark_paid',
+    }, { operatorId: adminUserId, operatorType: 'admin' });
+    emitAdminEvent({
+      eventType: 'order.paid',
+      category: 'order',
+      severity: 'P2',
+      title: '订单已付款',
+      message: `订单 ${order.order_no} 已付款`,
+      entityType: 'order',
+      entityId: order.id,
+      fingerprint: { eventType: 'order.paid', entityType: 'order', entityId: order.id },
+      payload: { orderNo: order.order_no, paymentOrderId, channel: chCode, source: 'manual_admin' },
+      impactAmount: total,
+      source: 'admin_mark_paid',
+    }, { operatorId: adminUserId, operatorType: 'admin' });
     await notifyTelegramOrderPaid(order.id, 'manual_admin');
     try {
         await requireMyinvoisApi('enqueueOrderInvoiceIfEnabled')(order.id, 'admin_mark_paid');
@@ -1096,6 +1159,18 @@ async function handleManualWebhook(provider, body, headerSecret) {
   const nonce = String(body?.nonce || '').trim();
   const signature = String(body?.signature || headerSecret || '').trim().toLowerCase();
   if (!timestamp || !nonce || !signature) {
+    emitAdminEvent({
+      eventType: 'payment.webhook_signature_failed',
+      category: 'payment',
+      severity: 'P1',
+      title: '支付回调签名失败',
+      message: 'manual 支付回调缺少 timestamp / nonce / signature',
+      entityType: 'payment_webhook',
+      entityId: String(body?.event_id || body?.order_id || 'manual'),
+      fingerprint: { eventType: 'payment.webhook_signature_failed', provider: 'manual', eventId: body?.event_id || null, nonce, reason: 'missing_signature', at: Date.now() },
+      payload: { provider: 'manual', reason: 'missing_signature', orderId: body?.order_id || null },
+      source: 'payment_webhook',
+    });
     throw new ValidationError('Webhook 缺少 timestamp / nonce / signature');
   }
   if (!/^\d{10,13}$/.test(timestamp)) throw new ValidationError('Webhook timestamp 格式无效');
@@ -1110,6 +1185,18 @@ async function handleManualWebhook(provider, body, headerSecret) {
   const payload = buildManualWebhookSigningPayload(body, timestamp, nonce);
   const expectedSignature = crypto.createHmac('sha256', expected).update(payload).digest('hex');
   if (!timingSafeHexEquals(signature, expectedSignature)) {
+    emitAdminEvent({
+      eventType: 'payment.webhook_signature_failed',
+      category: 'payment',
+      severity: 'P1',
+      title: '支付回调签名失败',
+      message: 'manual 支付回调签名校验失败',
+      entityType: 'payment_webhook',
+      entityId: String(body?.event_id || body?.order_id || 'manual'),
+      fingerprint: { eventType: 'payment.webhook_signature_failed', provider: 'manual', eventId: body?.event_id || null, nonce, reason: 'invalid_signature' },
+      payload: { provider: 'manual', reason: 'invalid_signature', orderId: body?.order_id || null },
+      source: 'payment_webhook',
+    });
     throw new ValidationError('Webhook 签名校验失败');
   }
 
@@ -1152,14 +1239,42 @@ async function handleMalaysiaLocalWebhook(provider, body, headers = {}) {
     throw new BusinessError(503, '未配置 ?PAYMENT_MALAYSIA_WEBHOOK_SECRET');
   }
   if (headerSecret) {
-    if (String(headerSecret) !== expectedSecret) throw new ValidationError('Webhook 密钥无效');
+    if (String(headerSecret) !== expectedSecret) {
+      emitAdminEvent({
+        eventType: 'payment.webhook_signature_failed',
+        category: 'payment',
+        severity: 'P1',
+        title: '支付回调签名失败',
+        message: 'malaysia_local 支付回调密钥无效',
+        entityType: 'payment_webhook',
+        entityId: String(body?.event_id || body?.order_id || 'malaysia_local'),
+        fingerprint: { eventType: 'payment.webhook_signature_failed', provider: 'malaysia_local', eventId: body?.event_id || null, reason: 'invalid_secret' },
+        payload: { provider: 'malaysia_local', reason: 'invalid_secret', orderId: body?.order_id || null },
+        source: 'payment_webhook',
+      });
+      throw new ValidationError('Webhook 密钥无效');
+    }
   } else {
     const verified = malaysiaLocalProvider.verifySignature({
       body,
       headerSignature,
       secret: expectedSecret,
     });
-    if (!verified.ok) throw new ValidationError(`Webhook 签名无效: ${verified.reason}`);
+    if (!verified.ok) {
+      emitAdminEvent({
+        eventType: 'payment.webhook_signature_failed',
+        category: 'payment',
+        severity: 'P1',
+        title: '支付回调签名失败',
+        message: `malaysia_local 支付回调签名无效: ${verified.reason}`,
+        entityType: 'payment_webhook',
+        entityId: String(body?.event_id || body?.order_id || 'malaysia_local'),
+        fingerprint: { eventType: 'payment.webhook_signature_failed', provider: 'malaysia_local', eventId: body?.event_id || null, reason: verified.reason || 'invalid_signature' },
+        payload: { provider: 'malaysia_local', reason: verified.reason || 'invalid_signature', orderId: body?.order_id || null },
+        source: 'payment_webhook',
+      });
+      throw new ValidationError(`Webhook 签名无效: ${verified.reason}`);
+    }
   }
 
   const eventId = String(body.event_id || body.transaction_id || body.reference || `my_${Date.now()}`);
@@ -1214,6 +1329,32 @@ async function handleMalaysiaLocalWebhook(provider, body, headers = {}) {
         error_message: '金额或币种不匹配',
       });
       await conn.commit();
+      emitAdminEvent({
+        eventType: amountOk ? 'payment.currency_mismatch' : 'payment.amount_mismatch',
+        category: 'payment',
+        severity: 'P0',
+        title: amountOk ? '支付币种不一致' : '支付金额不一致',
+        message: `订单 ${order.order_no} 的 malaysia_local 回调金额或币种不匹配`,
+        entityType: 'order',
+        entityId: order.id,
+        fingerprint: {
+          eventType: amountOk ? 'payment.currency_mismatch' : 'payment.amount_mismatch',
+          entityType: 'order',
+          entityId: order.id,
+          paymentOrderId: paymentOrder.id,
+          eventId,
+        },
+        payload: {
+          orderNo: order.order_no,
+          paymentOrderId: paymentOrder.id,
+          expectedAmount,
+          webhookAmount,
+          expectedCurrency: paymentOrder.currency || 'MYR',
+          webhookCurrency,
+        },
+        impactAmount: expectedAmount,
+        source: 'payment_webhook',
+      });
       throw new ValidationError('Webhook 金额或币种不匹配');
     }
 
@@ -1252,6 +1393,19 @@ async function handleMalaysiaLocalWebhook(provider, body, headers = {}) {
 
     await conn.commit();
     if (shouldQueueMyInvoisInvoice) {
+      emitAdminEvent({
+        eventType: 'order.paid',
+        category: 'order',
+        severity: 'P2',
+        title: '订单已付款',
+        message: `订单 ${order.order_no} 已通过 malaysia_local 付款`,
+        entityType: 'order',
+        entityId: order.id,
+        fingerprint: { eventType: 'order.paid', entityType: 'order', entityId: order.id },
+        payload: { orderNo: order.order_no, paymentOrderId: paymentOrder.id, channel: paymentOrder.channel_code, eventId },
+        impactAmount: expectedAmount,
+        source: 'malaysia_local_webhook',
+      });
       await notifyTelegramOrderPaid(order.id, 'malaysia_local');
       try {
         await requireMyinvoisApi('enqueueOrderInvoiceIfEnabled')(order.id, 'malaysia_local_paid');

@@ -57,6 +57,7 @@ import { canAccessAdminPath, getFirstAllowedAdminPath } from "@/config/adminNavA
 import { AdminConfirmProvider } from "@/modules/admin/context/AdminConfirmContext";
 import AdminSiteLogo from "@/components/admin/AdminSiteLogo";
 import AdminOrderVoiceNotifier from "@/modules/admin/components/AdminOrderVoiceNotifier";
+import AdminEventBell from "@/modules/admin/components/AdminEventBell";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import type { SiteCapabilities } from "@/types/siteCapabilities";
 import { useAdminEvents } from "@/hooks/admin/useAdminEvents";
@@ -676,7 +677,8 @@ function AdminLayoutContent() {
                 className="w-36 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground lg:w-40"
               />
             </div>
-            {(showNotifTab || canViewSecurityAlerts) && (
+            <AdminEventBell />
+            {false && (showNotifTab || canViewSecurityAlerts) && (
               <div ref={securityAlertsRef} className="relative shrink-0">
                 <button
                   type="button"

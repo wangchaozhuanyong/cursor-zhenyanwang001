@@ -134,6 +134,18 @@ router.post('/rbac/admin-users/:userId/delete', adminAuth, requirePermission('ro
 
 /* ---- Dashboard ---- */
 router.get('/events', adminAuth, adminEventCtrl.stream);
+router.get('/event-center/events', adminAuth, requireAnyPermission(['event.view', 'event.manage']), adminEventCtrl.list);
+router.get('/event-center/summary', adminAuth, requireAnyPermission(['event.view', 'event.manage']), adminEventCtrl.summary);
+router.get('/event-center/boss-metrics', adminAuth, requireAnyPermission(['event.view', 'event.manage']), adminEventCtrl.bossMetrics);
+router.get('/event-center/rules', adminAuth, requireAnyPermission(['event.rule.manage', 'event.manage']), adminEventCtrl.rules);
+router.put('/event-center/events/:id/read', adminAuth, requireAnyPermission(['event.view', 'event.manage']), adminEventCtrl.markRead);
+router.put('/event-center/events/:id/hide', adminAuth, requireAnyPermission(['event.view', 'event.manage']), adminEventCtrl.hide);
+router.put('/event-center/events/:id/sound-played', adminAuth, requireAnyPermission(['event.view', 'event.manage']), adminEventCtrl.markSoundPlayed);
+router.put('/event-center/events/:id/popup-seen', adminAuth, requireAnyPermission(['event.view', 'event.manage']), adminEventCtrl.markPopupSeen);
+router.put('/event-center/events/:id/acknowledge', adminAuth, requirePermission('event.manage'), adminEventCtrl.acknowledge);
+router.put('/event-center/events/:id/in-progress', adminAuth, requirePermission('event.manage'), adminEventCtrl.startProgress);
+router.put('/event-center/events/:id/resolve', adminAuth, requirePermission('event.manage'), adminEventCtrl.resolve);
+router.put('/event-center/events/:id/ignore', adminAuth, requirePermission('event.manage'), adminEventCtrl.ignore);
 router.get('/dashboard/stats', adminAuth, requirePermission('dashboard.view'), dashboardCtrl.getStats);
 
 /* ---- Products ---- */

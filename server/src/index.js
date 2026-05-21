@@ -11,7 +11,7 @@ const { startAutoConfirmReceiveScheduler } = require('./modules/order/service/or
 const { startPaymentTimeoutScheduler } = require('./modules/order/service/orderPaymentTimeout.service');
 const { startMyInvoisRetryScheduler } = require('./modules/myinvois/service/myinvois.service');
 const { startMonitoringScheduler } = require('./modules/monitoring/service/monitoringScheduler.service');
-const { pingRedis } = require('./config/redis');
+const { getRedisUrl, pingRedis } = require('./config/redis');
 const { getStorageHealthReport } = require('./utils/objectStorage');
 const { ensureDefaultLegalContentPages } = require('./modules/admin/service/adminExtended.service');
 const { getInstanceInfo, instanceLogPrefix } = require('./config/instance');
@@ -57,16 +57,21 @@ bootPromise
     startPaymentTimeoutScheduler();
     startMyInvoisRetryScheduler();
     if (process.env.MONITORING_SCHEDULER_DISABLED !== '1') {
-      try {
-        const redisPing = await pingRedis();
-        if (redisPing.ok) {
-          startMonitoringScheduler();
-          console.log(`${instanceLogPrefix('Monitoring')} scheduler started (Redis ok)`);
-        } else {
-          console.warn(`${instanceLogPrefix('Monitoring')} scheduler skipped: Redis ping failed`);
+      const redisConfigured = Boolean(getRedisUrl() || process.env.REDIS_ENABLED === '1');
+      if (!redisConfigured) {
+        console.log(`${instanceLogPrefix('Monitoring')} scheduler skipped: Redis not configured`);
+      } else {
+        try {
+          const redisPing = await pingRedis();
+          if (redisPing.ok) {
+            startMonitoringScheduler();
+            console.log(`${instanceLogPrefix('Monitoring')} scheduler started (Redis ok)`);
+          } else {
+            console.warn(`${instanceLogPrefix('Monitoring')} scheduler skipped: Redis ping failed`);
+          }
+        } catch (err) {
+          console.warn(`${instanceLogPrefix('Monitoring')} scheduler skipped: ${err.message}`);
         }
-      } catch (err) {
-        console.warn(`${instanceLogPrefix('Monitoring')} scheduler skipped: ${err.message}`);
       }
     }
     app.listen(PORT, () => {

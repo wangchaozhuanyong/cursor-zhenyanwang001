@@ -23,7 +23,8 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import * as categoryService from "@/services/admin/categoryService";
 import * as uploadService from "@/services/uploadService";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { hasTransparentPixels } from "@/utils/imageTransparency";
+import { ensureTransparentIconFile } from "@/utils/imageTransparency";
+import { iconMatteProgressToast, iconMatteSuccessToast } from "@/utils/iconMatteMessages";
 import type { Category } from "@/types/category";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
@@ -163,17 +164,20 @@ export default function AdminCategories() {
 
   const uploadIcon = async (file: File, target: "create" | "edit") => {
     try {
-      const transparent = await hasTransparentPixels(file);
-      if (!transparent) {
-        toast.error("该图标没有透明通道，前台可能出现方形底。请上传透明 PNG/WebP。");
-        return;
-      }
-      const res = await uploadService.uploadSingle(file, { mode: "thumb" });
+      const matteToastId = "category-icon-matte";
+      const { file: prepared, autoMatted, method } = await ensureTransparentIconFile(file, {
+        onProgress: (message) => {
+          toast.loading(message, { id: matteToastId });
+        },
+      });
+      if (autoMatted) toast.info(iconMatteProgressToast(method, "done"), { id: matteToastId });
+      else toast.dismiss(matteToastId);
+      const res = await uploadService.uploadSingle(prepared, { mode: "thumb" });
       const url = res.url || "";
       if (!url) throw new Error("服务器未返回图片地址");
       if (target === "create") setFormData((f) => ({ ...f, icon_url: url }));
       else setEditData((f) => ({ ...f, icon_url: url }));
-      toast.success("图标已上传");
+      toast.success(autoMatted ? iconMatteSuccessToast(method) : "图标已上传");
     } catch (e) {
       toast.error(toastErrorMessage(e, "上传失败"));
     }
@@ -357,7 +361,7 @@ export default function AdminCategories() {
             <div>
               <AdminLabelWithHint
                 label={<Tx>图标 URL</Tx>}
-                hint={<Tx>建议 128×128 正方形（PNG/WebP/SVG 均可），透明背景更佳。</Tx>}
+                hint={<Tx>建议 128×128 正方形；无透明通道时将自动 AI 抠图。</Tx>}
               />
               <div className="flex gap-2">
                 <input

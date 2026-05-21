@@ -14,7 +14,7 @@ export const IMAGE_UPLOAD_HINT_SITE_ASSET =
   "格式：JPG、PNG、WebP、GIF；单张不超过 5MB。上传后转 WebP：Logo 最长边不超过 512px，Favicon 最长边不超过 64px（均等比缩小）。";
 
 export const IMAGE_UPLOAD_HINT_HOME_NAV_ICON =
-  "建议正方形源图 192×192px 及以上；上传走 thumb 档（最长边 800px WebP）。也可填图片 URL、站内路径或 Emoji。";
+  "建议正方形源图 192×192px 及以上；无透明通道时将自动 AI 抠图（首次约下载 40MB 模型，浏览器缓存后更快）。也可填图片 URL、站内路径或 Emoji。";
 
 export const IMAGE_UPLOAD_HINT_BANNER_LAYOUT =
   `比例 ${BANNER_ASPECT_RATIO.toFixed(2)}:1（推荐 ${BANNER_SIZE_PRESETS}）；服务器最长边 2560px、WebP quality 92。`;
@@ -27,4 +27,4 @@ export const IMAGE_UPLOAD_HINT_AVATAR =
 
 export const IMAGE_UPLOAD_HINT_REVIEW =
   IMAGE_UPLOAD_HINT_API + " 本条评价最多附加 5 张图。";
-
+

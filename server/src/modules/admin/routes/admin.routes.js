@@ -362,6 +362,7 @@ router.delete('/activities/:id', adminAuth, requirePermission('activity.manage')
 router.get('/home-ops/settings', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.getSettings);
 router.put('/home-ops/settings', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.updateSettings);
 router.get('/home-ops/nav-items', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.listNavItems);
+router.get('/home-ops/support-channels', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.listSupportChannels);
 router.post('/home-ops/nav-items', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.createNavItem);
 router.put('/home-ops/nav-items/sort', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.sortNavItems);
 router.put('/home-ops/nav-items/:id', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.updateNavItem);

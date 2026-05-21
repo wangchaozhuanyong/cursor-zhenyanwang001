@@ -6,6 +6,7 @@ type Props = {
   loading: boolean;
   navItems: HomeNavItem[];
   categoryNameMap: Map<string, string>;
+  supportChannelNameMap: Map<string, string>;
   draggingId: string | null;
   savingOrder: boolean;
   setDraggingId: (id: string | null) => void;
@@ -19,6 +20,7 @@ export default function HomeNavSortableList({
   loading,
   navItems,
   categoryNameMap,
+  supportChannelNameMap,
   draggingId,
   savingOrder,
   setDraggingId,
@@ -27,10 +29,16 @@ export default function HomeNavSortableList({
   onDelete,
   onPositionChange,
 }: Props) {
-  const getLinkLabel = (item: HomeNavItem) =>
-    item.target_type === "category" && item.target_category_id
-      ? `分类：${categoryNameMap.get(item.target_category_id) || item.target_category_id}`
-      : item.link_url || "未设置跳转";
+  const getLinkLabel = (item: HomeNavItem) => {
+    if (item.target_type === "category" && item.target_category_id) {
+      return `分类：${categoryNameMap.get(item.target_category_id) || item.target_category_id}`;
+    }
+    if (item.target_type === "support" && item.target_support_channel_id) {
+      const name = supportChannelNameMap.get(item.target_support_channel_id);
+      return name ? `客服：${name}` : `客服：${item.target_support_channel_id}（可能已失效）`;
+    }
+    return item.link_url || "未设置跳转";
+  };
 
   return (
     <div className="mt-4 space-y-2">

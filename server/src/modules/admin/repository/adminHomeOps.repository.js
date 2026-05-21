@@ -1,6 +1,7 @@
 const db = require('../../../config/db');
 
-const navFields = 'id, icon_url, title, link_url, target_type, target_category_id, sort_order, enabled, created_at, updated_at';
+const navFields =
+  'id, icon_url, title, link_url, target_type, target_category_id, target_support_channel_id, sort_order, enabled, created_at, updated_at';
 
 async function selectNavItems({ publicOnly = false } = {}) {
   const where = publicOnly ? 'WHERE enabled = 1' : '';
@@ -12,8 +13,8 @@ async function selectNavItems({ publicOnly = false } = {}) {
 
 async function insertNavItem(item) {
   await db.query(
-    `INSERT INTO home_nav_items (id, icon_url, title, link_url, target_type, target_category_id, sort_order, enabled)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO home_nav_items (id, icon_url, title, link_url, target_type, target_category_id, target_support_channel_id, sort_order, enabled)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       item.id,
       item.iconUrl,
@@ -21,6 +22,7 @@ async function insertNavItem(item) {
       item.linkUrl,
       item.targetType || 'url',
       item.targetCategoryId || null,
+      item.targetSupportChannelId || null,
       item.sortOrder,
       item.enabled ? 1 : 0,
     ],
@@ -60,6 +62,3 @@ module.exports = {
   deleteNavItem,
   batchUpdateNavSort,
 };
-
-
-

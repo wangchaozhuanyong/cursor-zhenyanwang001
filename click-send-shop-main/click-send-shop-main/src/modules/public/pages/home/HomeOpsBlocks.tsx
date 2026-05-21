@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import HomeNavIcon from "@/components/store/HomeNavIcon";
 import type { HomeNavItem } from "@/types/content";
 import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import {
   HOME_NAV_ICON_FRAME_CLASS,
   HOME_NAV_ITEM_CLASS,
@@ -18,9 +20,26 @@ function openTarget(navigate: ReturnType<typeof useNavigate>, url: string) {
   navigate(target.startsWith("/") ? target : `/${target}`);
 }
 
-function openHomeNavTarget(navigate: ReturnType<typeof useNavigate>, item: HomeNavItem) {
+function openHomeNavTarget(
+  navigate: ReturnType<typeof useNavigate>,
+  item: HomeNavItem,
+  options?: { customerServiceEnabled?: boolean },
+) {
   if (item.target_type === "category" && item.target_category_id) {
     navigate(`/categories?cat=${item.target_category_id}`);
+    return;
+  }
+  if (item.target_type === "support") {
+    if (options?.customerServiceEnabled === false) {
+      toast.error("客服中心暂未开放");
+      return;
+    }
+    const channelId = String(item.target_support_channel_id || "").trim();
+    if (channelId) {
+      navigate(`/support-download?channelId=${encodeURIComponent(channelId)}`);
+      return;
+    }
+    navigate("/support-download?tab=support");
     return;
   }
   openTarget(navigate, item.link_url || "");
@@ -32,12 +51,12 @@ function normalizeText(value: string | undefined, fallback = ""): string {
 }
 
 const fallbackNavItems: HomeNavItem[] = [
-  { id: "fallback-1", title: "全部分类", icon_url: "📚", link_url: "/categories", target_type: "url", target_category_id: null, sort_order: 1, enabled: true },
-  { id: "fallback-2", title: "新品上新", icon_url: "🆕", link_url: "/new-arrivals", target_type: "url", target_category_id: null, sort_order: 2, enabled: true },
-  { id: "fallback-3", title: "热销好物", icon_url: "🔥", link_url: "/categories?sort=sales_desc", target_type: "url", target_category_id: null, sort_order: 3, enabled: true },
-  { id: "fallback-4", title: "优惠券", icon_url: "🎟️", link_url: "/coupons", target_type: "url", target_category_id: null, sort_order: 4, enabled: true },
-  { id: "fallback-5", title: "我的订单", icon_url: "🧾", link_url: "/orders", target_type: "url", target_category_id: null, sort_order: 5, enabled: true },
-  { id: "fallback-6", title: "联系客服", icon_url: "📞", link_url: "/content/contact-us", target_type: "url", target_category_id: null, sort_order: 6, enabled: true },
+  { id: "fallback-1", title: "全部分类", icon_url: "📚", link_url: "/categories", target_type: "url", target_category_id: null, target_support_channel_id: null, sort_order: 1, enabled: true },
+  { id: "fallback-2", title: "新品上新", icon_url: "🆕", link_url: "/new-arrivals", target_type: "url", target_category_id: null, target_support_channel_id: null, sort_order: 2, enabled: true },
+  { id: "fallback-3", title: "热销好物", icon_url: "🔥", link_url: "/categories?sort=sales_desc", target_type: "url", target_category_id: null, target_support_channel_id: null, sort_order: 3, enabled: true },
+  { id: "fallback-4", title: "优惠券", icon_url: "🎟️", link_url: "/coupons", target_type: "url", target_category_id: null, target_support_channel_id: null, sort_order: 4, enabled: true },
+  { id: "fallback-5", title: "我的订单", icon_url: "🧾", link_url: "/orders", target_type: "url", target_category_id: null, target_support_channel_id: null, sort_order: 5, enabled: true },
+  { id: "fallback-6", title: "联系客服", icon_url: "📞", link_url: "/support-download?tab=support", target_type: "support", target_category_id: null, target_support_channel_id: null, sort_order: 6, enabled: true },
 ];
 
 function withFallbackNavItems(items: HomeNavItem[], minCount = 5): HomeNavItem[] {
@@ -55,6 +74,7 @@ function withFallbackNavItems(items: HomeNavItem[], minCount = 5): HomeNavItem[]
 
 export default function HomeOpsBlocks() {
   const { settings: homeModules, navItems, ready } = useHomeModuleSettings();
+  const capabilities = useSiteCapabilities();
   const navigate = useNavigate();
 
   if (homeModules.modules.nav_grid === false) return null;
@@ -72,7 +92,9 @@ export default function HomeOpsBlocks() {
           <button
             key={item.id}
             type="button"
-            onClick={() => openHomeNavTarget(navigate, item)}
+            onClick={() => openHomeNavTarget(navigate, item, {
+              customerServiceEnabled: capabilities.customerServiceDownloadEnabled,
+            })}
             className={`${HOME_NAV_ITEM_CLASS} w-full min-w-0`}
           >
             <span className={HOME_NAV_ICON_FRAME_CLASS}>

@@ -122,24 +122,51 @@ export default function SupportDownload() {
   }, [channelByType, config.download.enabled, config.support.enabled]);
 
   const queryTab = searchParams.get("tab");
-  const activeView = getDefaultView(queryTab, availableViews, config.defaultTab);
+  const queryChannelId = searchParams.get("channelId")?.trim() || "";
+  const pinnedChannel = useMemo(
+    () => (queryChannelId ? channels.find((channel) => channel.id === queryChannelId) : undefined),
+    [channels, queryChannelId],
+  );
+
+  const activeView = useMemo(() => {
+    if (pinnedChannel && availableViews.includes(pinnedChannel.type)) {
+      return pinnedChannel.type;
+    }
+    return getDefaultView(queryTab, availableViews, config.defaultTab);
+  }, [availableViews, config.defaultTab, pinnedChannel, queryTab]);
 
   useEffect(() => {
     if (!activeView) return;
-    if (queryTab === activeView) return;
     const next = new URLSearchParams(searchParams);
-    next.set("tab", activeView);
-    setSearchParams(next, { replace: true });
-  }, [activeView, queryTab, searchParams, setSearchParams]);
+    let changed = false;
+    if (next.get("tab") !== activeView) {
+      next.set("tab", activeView);
+      changed = true;
+    }
+    if (pinnedChannel) {
+      if (next.get("channelId") !== pinnedChannel.id) {
+        next.set("channelId", pinnedChannel.id);
+        changed = true;
+      }
+    } else if (queryChannelId) {
+      next.delete("channelId");
+      changed = true;
+    }
+    if (changed) setSearchParams(next, { replace: true });
+  }, [activeView, pinnedChannel, queryChannelId, searchParams, setSearchParams]);
 
   const setActiveView = (view: SupportDownloadView) => {
     const next = new URLSearchParams(searchParams);
     next.set("tab", view);
+    next.delete("channelId");
     setSearchParams(next, { replace: true });
   };
 
-  const activeChannel =
-    activeView && activeView !== "download" ? channelByType[activeView] : undefined;
+  const activeChannel = useMemo(() => {
+    if (pinnedChannel) return pinnedChannel;
+    if (activeView && activeView !== "download") return channelByType[activeView];
+    return undefined;
+  }, [activeView, channelByType, pinnedChannel]);
   const recommendedPlatform = browserEnv.platform;
 
   if (!config.enabled) {
@@ -228,7 +255,13 @@ export default function SupportDownload() {
           </div>
         ) : null}
 
-        {!activeView ? (
+        {queryChannelId && !pinnedChannel ? (
+          <section className="rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 text-center text-sm text-[var(--theme-text-muted)]">
+            所选客服账号不存在或已停用，请返回首页重试或联系站点管理员。
+          </section>
+        ) : null}
+
+        {!activeView && !queryChannelId ? (
           <section className="rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 text-center text-sm text-[var(--theme-text-muted)]">
             暂未配置客服渠道或添加到桌面说明，请稍后再试。
           </section>

@@ -12,6 +12,8 @@
     "check:module-structure": "node scripts/check-module-structure.js",
     "check:tracked-artifacts": "node scripts/check-tracked-artifacts.js",
     "db:init": "node scripts/apply-sql.js",
+    "db:create-test": "node scripts/create-test-database.js --migrate",
+    "db:grant-test": "node scripts/grant-test-database.js",
     "admin:create": "node scripts/create-admin.js",
     "admin:role": "node scripts/set-admin-role.js",
     "migrate": "node scripts/migrate-cli.js",
@@ -23,14 +25,14 @@
     "seed:content-pages": "node scripts/seed-content-pages.js",
     "seed:policy-paths": "node scripts/seed-policy-paths.js",
     "smoke:user-tag-marketing": "node scripts/smoke-user-tag-marketing.js",
-    "test": "node -r tsx/cjs --test --test-force-exit test/health.test.js test/auth-flow.test.js",
+    "test": "npm run test:unit",
     "test:redis": "node -r tsx/cjs --test test/redis-standard.test.js",
-    "test:integration": "node -r tsx/cjs --test --test-force-exit test/auth-flow.test.js test/payment-channels.test.js",
-    "test:flow": "node -r tsx/cjs --test test/flow-smoke.test.js",
-    "test:smoke": "node -r tsx/cjs --test test/flow-smoke.test.js",
+    "test:integration": "node scripts/run-db-integration-tests.js test/auth-flow.test.js test/payment-channels.test.js test/admin-user-tags.test.js",
+    "test:flow": "node scripts/run-db-integration-tests.js test/flow-smoke.test.js",
+    "test:smoke": "node scripts/run-db-integration-tests.js test/flow-smoke.test.js",
     "test:stripe": "node -r tsx/cjs --test test/stripe-amount.test.js",
     "test:unit": "node -r tsx/cjs --test --test-force-exit test/health.test.js test/stripe-amount.test.js test/order-state-machine.test.js test/return-state-machine.test.js test/file-magic.test.js test/upload-presign.test.js test/sms-otp-adapter.test.js test/auth-cookies.test.js test/manual-webhook-security.test.js test/cms-sanitize.test.js test/admin-order-schemas.test.js test/points-engine.test.js test/order-points.test.js",
-    "test:all": "node -r tsx/cjs --test --test-force-exit test/health.test.js test/auth-flow.test.js test/payment-channels.test.js test/flow-smoke.test.js test/stripe-amount.test.js test/order-state-machine.test.js test/return-state-machine.test.js test/file-magic.test.js test/sms-otp-adapter.test.js"
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:smoke"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1044.0",

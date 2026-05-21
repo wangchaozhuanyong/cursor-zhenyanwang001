@@ -1,4 +1,4 @@
-const { normalizeThemeConfig, normalizeThemeSkinsPayload } = require('../src/modules/user/theme.service');
+const { normalizeThemeConfig, normalizeThemeSkinsPayload } = require('../src/modules/user/service/theme.service');
 
 const ORGANIC_SANDSTONE_ID = 'organic_sandstone';
 

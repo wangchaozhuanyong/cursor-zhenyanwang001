@@ -16,6 +16,9 @@ function resolveVendorChunkName(id: string): string | undefined {
   if (normalizedId.includes("lucide-react")) return "vendor-icons";
   if (normalizedId.includes("qrcode.react")) return "vendor-qrcode";
   if (normalizedId.includes("sonner")) return "vendor-toast";
+  if (normalizedId.includes("@imgly/background-removal") || normalizedId.includes("onnxruntime-web")) {
+    return "vendor-imgly-matte";
+  }
 
   if (
     normalizedId.includes("/node_modules/react/")
@@ -135,6 +138,7 @@ return ({
       ],
       workbox: {
         swDest: "sw.js",
+        globIgnores: ["**/*.wasm", "**/ort*.mjs", "**/vendor-imgly-matte*.js"],
         navigateFallback: undefined,
         navigateFallbackDenylist: [
           /^\/(admin|cart|checkout|orders|settings|profile|address|coupons|notifications|returns|reviews\/pending|points|rewards|invite)(\/|$)/,
@@ -331,6 +335,9 @@ return ({
         },
       },
     },
+  },
+  optimizeDeps: {
+    include: ["@imgly/background-removal", "onnxruntime-web"],
   },
   resolve: {
     alias: {

@@ -10,6 +10,10 @@ exports.listNavItems = asyncRoute(async (_req, res) => {
   res.success(await svc.listNavItems());
 });
 
+exports.listSupportChannels = asyncRoute(async (_req, res) => {
+  sendResult(res, await svc.listSupportChannelsForAdmin());
+});
+
 exports.createNavItem = asyncRoute(async (req, res) => {
   sendResult(res, await svc.createNavItem(req.body));
 });

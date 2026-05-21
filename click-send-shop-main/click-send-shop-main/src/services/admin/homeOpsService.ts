@@ -18,6 +18,11 @@ export async function fetchHomeNavItems(): Promise<HomeNavItem[]> {
   return unwrapList<HomeNavItem>(res.data);
 }
 
+export async function fetchHomeNavSupportChannels(): Promise<homeOpsApi.HomeNavSupportChannelOption[]> {
+  const res = await homeOpsApi.getHomeNavSupportChannels();
+  return unwrapList<homeOpsApi.HomeNavSupportChannelOption>(res.data);
+}
+
 export async function createHomeNavItem(data: Partial<HomeNavItem>): Promise<HomeNavItem> {
   const res = await homeOpsApi.createHomeNavItem(data);
   return res.data;

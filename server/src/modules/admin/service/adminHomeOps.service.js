@@ -1,6 +1,9 @@
 const { generateId } = require('../../../utils/helpers');
+const db = require('../../../config/db');
 const repo = require('../repository/adminHomeOps.repository');
 const homeModuleSettings = require('../homeModuleSettings');
+const supportChannels = require('../homeNavSupportChannels');
+const siteCapabilitiesService = require('../../siteCapabilities/service/siteCapabilities.service');
 
 function trimString(value, max = 512) {
   return String(value ?? '').trim().slice(0, max);
@@ -16,6 +19,67 @@ function normalizeBool(value, fallback = true) {
   return value === true || value === 1 || value === '1' || value === 'true';
 }
 
+function normalizeTargetType(value) {
+  const raw = trimString(value, 20);
+  if (raw === 'category') return 'category';
+  if (raw === 'support') return 'support';
+  return 'url';
+}
+
+async function assertSupportNavAllowed() {
+  const caps = await siteCapabilitiesService.getSiteCapabilities();
+  if (caps.customerServiceDownloadEnabled === false) {
+    return { error: { code: 400, message: '请先开启站点能力中的「客服/APP 页」' } };
+  }
+  return null;
+}
+
+async function resolveNavTarget(body) {
+  const targetType = normalizeTargetType(body.target_type ?? body.targetType);
+  const targetCategoryId = trimString(body.target_category_id ?? body.targetCategoryId, 36) || null;
+  const targetSupportChannelId = trimString(
+    body.target_support_channel_id ?? body.targetSupportChannelId,
+    64,
+  ) || null;
+
+  if (targetType === 'category') {
+    if (!targetCategoryId) {
+      return { error: { code: 400, message: '请选择要跳转的分类' } };
+    }
+    return {
+      targetType,
+      targetCategoryId,
+      targetSupportChannelId: null,
+      linkUrl: `/categories?cat=${targetCategoryId}`,
+    };
+  }
+
+  if (targetType === 'support') {
+    const capError = await assertSupportNavAllowed();
+    if (capError) return capError;
+    if (!targetSupportChannelId) {
+      return { error: { code: 400, message: '请选择客服账号' } };
+    }
+    const channel = await supportChannels.findSupportChannel(targetSupportChannelId, { requireEnabled: true });
+    if (!channel) {
+      return { error: { code: 400, message: '所选客服账号不存在或已禁用，请在客服/APP 设置中检查' } };
+    }
+    return {
+      targetType,
+      targetCategoryId: null,
+      targetSupportChannelId: channel.id,
+      linkUrl: supportChannels.buildSupportNavLinkUrl(channel.id),
+    };
+  }
+
+  return {
+    targetType: 'url',
+    targetCategoryId: null,
+    targetSupportChannelId: null,
+    linkUrl: trimString(body.link_url ?? body.linkUrl, 512),
+  };
+}
+
 function formatNavItem(row) {
   return {
     id: row.id,
@@ -24,6 +88,7 @@ function formatNavItem(row) {
     link_url: row.link_url || '',
     target_type: row.target_type || 'url',
     target_category_id: row.target_category_id || null,
+    target_support_channel_id: row.target_support_channel_id || null,
     sort_order: Number(row.sort_order || 0),
     enabled: !!row.enabled,
     created_at: row.created_at,
@@ -36,20 +101,30 @@ async function listNavItems(options) {
   return rows.map(formatNavItem);
 }
 
+async function listSupportChannelsForAdmin() {
+  const capError = await assertSupportNavAllowed();
+  if (capError) return capError;
+  const channels = await supportChannels.listSupportChannels({ enabledOnly: true });
+  return { data: channels };
+}
+
 async function createNavItem(body) {
   const title = trimString(body.title, 64);
   if (!title) return { error: { code: 400, message: '标题不能为空' } };
-  const targetType = trimString(body.target_type ?? body.targetType, 20) || 'url';
-  const targetCategoryId = trimString(body.target_category_id ?? body.targetCategoryId, 36) || null;
+
+  const target = await resolveNavTarget(body);
+  if (target.error) return target;
+
   const existing = await repo.selectNavItems();
   const maxSort = existing.reduce((max, row) => Math.max(max, Number(row.sort_order || 0)), 0);
   const item = {
     id: generateId(),
     iconUrl: trimString(body.icon_url ?? body.iconUrl, 512),
     title,
-    linkUrl: trimString(body.link_url ?? body.linkUrl, 512),
-    targetType: targetType === 'category' ? 'category' : 'url',
-    targetCategoryId: targetType === 'category' ? targetCategoryId : null,
+    linkUrl: target.linkUrl,
+    targetType: target.targetType,
+    targetCategoryId: target.targetCategoryId,
+    targetSupportChannelId: target.targetSupportChannelId,
     sortOrder: toSortOrder(body.sort_order ?? body.sortOrder, maxSort + 1),
     enabled: normalizeBool(body.enabled, true),
   };
@@ -61,6 +136,7 @@ async function createNavItem(body) {
 async function updateNavItem(id, body) {
   const fields = [];
   const values = [];
+
   if (body.icon_url !== undefined || body.iconUrl !== undefined) {
     fields.push('icon_url = ?');
     values.push(trimString(body.icon_url ?? body.iconUrl, 512));
@@ -71,24 +147,36 @@ async function updateNavItem(id, body) {
     fields.push('title = ?');
     values.push(title);
   }
-  if (body.link_url !== undefined || body.linkUrl !== undefined) {
-    fields.push('link_url = ?');
-    values.push(trimString(body.link_url ?? body.linkUrl, 512));
+
+  const targetTouched =
+    body.target_type !== undefined
+    || body.targetType !== undefined
+    || body.link_url !== undefined
+    || body.linkUrl !== undefined
+    || body.target_category_id !== undefined
+    || body.targetCategoryId !== undefined
+    || body.target_support_channel_id !== undefined
+    || body.targetSupportChannelId !== undefined;
+
+  if (targetTouched) {
+    const [[current]] = await db.query(
+      'SELECT target_type, target_category_id, target_support_channel_id, link_url FROM home_nav_items WHERE id = ? LIMIT 1',
+      [id],
+    );
+    if (!current) return { error: { code: 404, message: '导航不存在' } };
+    const merged = {
+      target_type: body.target_type ?? body.targetType ?? current.target_type,
+      target_category_id: body.target_category_id ?? body.targetCategoryId ?? current.target_category_id,
+      target_support_channel_id:
+        body.target_support_channel_id ?? body.targetSupportChannelId ?? current.target_support_channel_id,
+      link_url: body.link_url ?? body.linkUrl ?? current.link_url,
+    };
+    const target = await resolveNavTarget(merged);
+    if (target.error) return target;
+    fields.push('target_type = ?', 'target_category_id = ?', 'target_support_channel_id = ?', 'link_url = ?');
+    values.push(target.targetType, target.targetCategoryId, target.targetSupportChannelId, target.linkUrl);
   }
-  if (body.target_type !== undefined || body.targetType !== undefined) {
-    const targetType = trimString(body.target_type ?? body.targetType, 20);
-    const normalized = targetType === 'category' ? 'category' : 'url';
-    fields.push('target_type = ?');
-    values.push(normalized);
-    if (normalized !== 'category') {
-      fields.push('target_category_id = ?');
-      values.push(null);
-    }
-  }
-  if (body.target_category_id !== undefined || body.targetCategoryId !== undefined) {
-    fields.push('target_category_id = ?');
-    values.push(trimString(body.target_category_id ?? body.targetCategoryId, 36) || null);
-  }
+
   if (body.sort_order !== undefined || body.sortOrder !== undefined) {
     fields.push('sort_order = ?');
     values.push(toSortOrder(body.sort_order ?? body.sortOrder, 0));
@@ -97,6 +185,7 @@ async function updateNavItem(id, body) {
     fields.push('enabled = ?');
     values.push(normalizeBool(body.enabled, true) ? 1 : 0);
   }
+  if (!fields.length) return { data: null, message: '更新成功' };
   await repo.updateNavItem(id, fields, values);
   return { data: null, message: '更新成功' };
 }
@@ -112,10 +201,10 @@ async function sortNavItems(body) {
     return { error: { code: 400, message: '排序数据不能为空' } };
   }
   const normalized = items.map((item, index) => {
-    const id = trimString(item.id, 36);
-    if (!id) return null;
+    const itemId = trimString(item.id, 36);
+    if (!itemId) return null;
     return {
-      id,
+      id: itemId,
       sort_order: toSortOrder(item.sort_order ?? item.sortOrder, index + 1),
     };
   }).filter(Boolean);
@@ -145,6 +234,7 @@ async function getPublicHomeOps() {
 
 module.exports = {
   listNavItems,
+  listSupportChannelsForAdmin,
   createNavItem,
   updateNavItem,
   deleteNavItem,
@@ -153,10 +243,3 @@ module.exports = {
   updateHomeOpsSettings,
   getPublicHomeOps,
 };
-
-
-
-
-
-
-

@@ -1,37 +1,49 @@
 /**
- * 鐢ㄦ埛鏍囩锛氭湇鍔″眰鍐掔儫锛堥渶 MySQL 宸茶縼绉?037_user_tags銆乽sers 琛ㄦ湁鏁版嵁锛? */
-require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+ * DB integration smoke test for admin user tags.
+ */
+require('./setupTestEnv').requireTestDatabase();
 require('./_dbCleanup.test');
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 const svc = require('../src/modules/admin/service/adminUser.service');
 const db = require('../src/config/db');
+const { generateId } = require('../src/utils/helpers');
 
 const mockReq = {};
 
 describe('admin user tags', () => {
   test('listUserTags + create + setUserTags + listUsers filter + delete', async () => {
-    const [[user]] = await db.query('SELECT id FROM users LIMIT 1');
-    assert.ok(user?.id, '需要至少一条 users 记录');
+    let [[user]] = await db.query('SELECT id FROM users LIMIT 1');
+    if (!user?.id) {
+      const id = generateId();
+      await db.query(
+        'INSERT INTO users (id, phone, password_hash, nickname, invite_code) VALUES (?, ?, ?, ?, ?)',
+        [id, `tag-test-${Date.now()}`, 'test-only', 'tag-test', `tag${Date.now()}`],
+      );
+      [[user]] = await db.query('SELECT id FROM users WHERE id = ? LIMIT 1', [id]);
+    }
+    assert.ok(user?.id, 'requires at least one user row');
 
     const listed = await svc.listUserTags();
-    assert.ok(Array.isArray(listed.data), 'listUserTags 搴旇繑鍥炴暟缁?data');
+    assert.ok(Array.isArray(listed.data), 'listUserTags should return data array');
 
     const name = `smoke-tag-${Date.now()}`;
-    const created = await svc.createUserTag({ name, color: '閲戣壊' }, null, mockReq);
-    assert.ok(created.data?.id, '鍒涘缓鏍囩搴旇繑鍥?id');
+    const created = await svc.createUserTag({ name, color: '#2563eb' }, null, mockReq);
+    assert.ok(created.data?.id, 'createUserTag should return id');
 
     const assigned = await svc.setUserTags(user.id, { tagIds: [created.data.id] }, null, mockReq);
-    assert.ok(Array.isArray(assigned.data), 'setUserTags 搴旇繑鍥炴爣绛炬暟缁?);
-    assert.ok(assigned.data.some((t) => t.id === created.data.id), '鐢ㄦ埛搴斿甫涓婃柊寤烘爣绛?);
+    assert.ok(Array.isArray(assigned.data), 'setUserTags should return tag array');
+    assert.ok(assigned.data.some((t) => t.id === created.data.id), 'created tag should be assigned');
 
     const page = await svc.listUsers({ page: '1', pageSize: '50', tagId: created.data.id });
-    assert.ok(page.list.some((u) => u.id === user.id && Array.isArray(u.tags) && u.tags.some((t) => t.id === created.data.id)), '鎸?tagId 绛涢€夊簲鍖呭惈璇ョ敤鎴?);
+    assert.ok(
+      page.list.some((u) => u.id === user.id && Array.isArray(u.tags) && u.tags.some((t) => t.id === created.data.id)),
+      'tagId filter should include assigned user',
+    );
 
     await svc.deleteUserTag(created.data.id, null, mockReq);
 
     const cleared = await svc.setUserTags(user.id, { tagIds: [] }, null, mockReq);
-    assert.equal(cleared.data.length, 0, '娓呯┖鍚庢爣绛惧簲涓虹┖鏁扮粍');
+    assert.equal(cleared.data.length, 0, 'setUserTags should clear tags');
   });
 });
-

@@ -9,10 +9,19 @@ import { LoadingButton } from "@/modules/micro-interactions";
 import { adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import * as uploadService from "@/services/uploadService";
 import { validateUploadFile } from "@/services/uploadService";
-import { hasTransparentPixels } from "@/utils/imageTransparency";
+import { ensureTransparentIconFile } from "@/utils/imageTransparency";
+import { iconMatteProgressToast, iconMatteSuccessToast } from "@/utils/iconMatteMessages";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import type { HomeNavSupportChannelOption } from "@/api/admin/homeOps";
 import type { NavForm } from "./homeNavUtils";
+import { buildSupportNavLink } from "./homeNavUtils";
 import HomeNavIconPreview from "./HomeNavIconPreview";
+
+const SUPPORT_TYPE_LABELS: Record<string, string> = {
+  wechat: "微信",
+  whatsapp: "WhatsApp",
+  telegram: "Telegram",
+};
 
 type Props = {
   navForm: NavForm;
@@ -21,6 +30,8 @@ type Props = {
   saving: boolean;
   onSave: () => void | Promise<void>;
   categoryOptions: Array<{ id: string; label: string }>;
+  supportChannels: HomeNavSupportChannelOption[];
+  supportNavEnabled: boolean;
   nextSortOrder: number;
 };
 
@@ -31,6 +42,8 @@ export default function HomeNavFormPanel({
   saving,
   onSave,
   categoryOptions,
+  supportChannels,
+  supportNavEnabled,
   nextSortOrder,
 }: Props) {
   const { confirm } = useAdminConfirm();
@@ -44,14 +57,19 @@ export default function HomeNavFormPanel({
     setNavIconUploading(true);
     try {
       validateUploadFile(file, "thumb");
-      const transparent = await hasTransparentPixels(file);
-      if (!transparent) {
-        toast.error("图标缺少透明通道，建议上传透明 PNG 或 WebP。");
-        return;
-      }
-      const { url } = await uploadService.uploadSingleWithProgress(file, { mode: "thumb", timeoutMs: 45000 });
+      const matteToastId = "home-nav-icon-matte";
+      const { file: prepared, autoMatted, method: matteMethod } = await ensureTransparentIconFile(file, {
+        onProgress: (message) => {
+          toast.loading(message, { id: matteToastId });
+        },
+      });
+      if (autoMatted) toast.info(iconMatteProgressToast(matteMethod, "done"), { id: matteToastId });
+      else toast.dismiss(matteToastId);
+      const { url } = await uploadService.uploadSingleWithProgress(prepared, { mode: "thumb", timeoutMs: 45000 });
       setNavForm((prev) => ({ ...prev, icon_url: url }));
-      toast.success("图标上传成功，请保存生效。");
+      toast.success(
+        autoMatted ? `${iconMatteSuccessToast(matteMethod)}，请保存生效。` : "图标上传成功，请保存生效。",
+      );
     } catch (err) {
       toast.error(toastErrorMessage(err, "图标上传失败"));
     } finally {
@@ -119,16 +137,25 @@ export default function HomeNavFormPanel({
           className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
           value={navForm.target_type || "url"}
           onChange={(e) => {
-            const next = e.target.value === "category" ? "category" : "url";
+            const next = e.target.value === "category"
+              ? "category"
+              : e.target.value === "support"
+                ? "support"
+                : "url";
             setNavForm((prev) => ({
               ...prev,
               target_type: next,
               target_category_id: next === "category" ? prev.target_category_id : null,
+              target_support_channel_id: next === "support" ? prev.target_support_channel_id : null,
+              link_url: next === "url" ? prev.link_url : "",
             }));
           }}
         >
           <option value="url"><Tx>URL / 站内路径</Tx></option>
           <option value="category"><Tx>分类页</Tx></option>
+          <option value="support" disabled={!supportNavEnabled}>
+            <Tx>联系客服</Tx>
+          </option>
         </select>
         {navForm.target_type === "category" ? (
           <select
@@ -150,17 +177,49 @@ export default function HomeNavFormPanel({
               </option>
             ))}
           </select>
-        ) : (
+        ) : null}
+        {navForm.target_type === "support" ? (
+          <select
+            className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
+            value={navForm.target_support_channel_id || ""}
+            onChange={(e) => {
+              const id = e.target.value || null;
+              setNavForm((prev) => ({
+                ...prev,
+                target_support_channel_id: id,
+                link_url: id ? buildSupportNavLink(id) : "",
+              }));
+            }}
+          >
+            <option value=""><Tx>请选择客服账号</Tx></option>
+            {supportChannels.map((channel) => (
+              <option key={channel.id} value={channel.id}>
+                {channel.name}
+                {channel.account ? ` · ${channel.account}` : ""}
+                {` (${SUPPORT_TYPE_LABELS[channel.type] || channel.type})`}
+              </option>
+            ))}
+          </select>
+        ) : null}
+        {navForm.target_type === "url" ? (
           <input
             className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
             placeholder="/categories 或 https://..."
             value={navForm.link_url}
             onChange={(e) => setNavForm({ ...navForm, link_url: e.target.value })}
           />
-        )}
+        ) : null}
         <div className="flex justify-end">
           <AdminFieldHint
-            text={navForm.target_type === "category" ? "将自动跳转到对应分类页" : "支持站内路径和完整 URL"}
+            text={
+              navForm.target_type === "category"
+                ? "将自动跳转到对应分类页"
+                : navForm.target_type === "support"
+                  ? supportNavEnabled
+                    ? "账号在「客服/APP」中维护，仅显示已启用账号"
+                    : "请先在站点能力中开启「客服/APP 页」"
+                  : "支持站内路径和完整 URL"
+            }
           />
         </div>
       </label>

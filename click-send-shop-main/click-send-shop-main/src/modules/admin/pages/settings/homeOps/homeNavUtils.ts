@@ -3,7 +3,14 @@ import type { Category } from "@/types/category";
 
 export type NavForm = Pick<
   HomeNavItem,
-  "icon_url" | "title" | "link_url" | "sort_order" | "enabled" | "target_type" | "target_category_id"
+  | "icon_url"
+  | "title"
+  | "link_url"
+  | "sort_order"
+  | "enabled"
+  | "target_type"
+  | "target_category_id"
+  | "target_support_channel_id"
 >;
 
 export const emptyNavForm: NavForm = {
@@ -12,9 +19,14 @@ export const emptyNavForm: NavForm = {
   link_url: "",
   target_type: "url",
   target_category_id: null,
+  target_support_channel_id: null,
   sort_order: 1,
   enabled: true,
 };
+
+export function buildSupportNavLink(channelId: string) {
+  return `/support-download?channelId=${encodeURIComponent(channelId)}`;
+}
 
 export function flattenCategories(nodes: Category[], level = 0): Array<{ id: string; label: string }> {
   const out: Array<{ id: string; label: string }> = [];

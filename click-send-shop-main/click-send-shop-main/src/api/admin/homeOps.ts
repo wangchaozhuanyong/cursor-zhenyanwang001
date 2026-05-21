@@ -14,6 +14,19 @@ export function getHomeNavItems() {
   return get<HomeNavItem[]>("/admin/home-ops/nav-items");
 }
 
+export type HomeNavSupportChannelOption = {
+  id: string;
+  type: string;
+  name: string;
+  account: string;
+  enabled: boolean;
+  sort_order: number;
+};
+
+export function getHomeNavSupportChannels() {
+  return get<HomeNavSupportChannelOption[]>("/admin/home-ops/support-channels");
+}
+
 export function createHomeNavItem(data: Partial<HomeNavItem>) {
   return post<HomeNavItem>("/admin/home-ops/nav-items", data);
 }

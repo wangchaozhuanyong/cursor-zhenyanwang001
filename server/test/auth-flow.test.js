@@ -1,4 +1,4 @@
-require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+require('./setupTestEnv').requireTestDatabase();
 require('./_dbCleanup.test');
 const { test, describe, before } = require('node:test');
 const assert = require('node:assert/strict');
@@ -171,4 +171,3 @@ describe('OAuth ticket exchange', () => {
     assert.notEqual(again.body.code, 0);
   });
 });
-

@@ -1,4 +1,4 @@
-const { normalizeThemeSkinsPayload } = require('../src/modules/user/theme.service');
+const { normalizeThemeSkinsPayload } = require('../src/modules/user/service/theme.service');
 const { OBSIDIAN_BLACK_GOLD_SKIN_ID } = require('../src/modules/user/starterThemeSkins');
 
 module.exports = {

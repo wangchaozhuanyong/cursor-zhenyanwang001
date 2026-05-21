@@ -1,5 +1,5 @@
 const { DEFAULT_SKIN_ID, THEME_PRESETS } = require('../src/modules/user/theme.presets');
-const { normalizeThemeConfig, normalizeThemeSkinsPayload } = require('../src/modules/user/theme.service');
+const { normalizeThemeConfig, normalizeThemeSkinsPayload } = require('../src/modules/user/service/theme.service');
 
 /**
  * 将 theme_skins 重置为 6 套大马通 V6 系统预设；

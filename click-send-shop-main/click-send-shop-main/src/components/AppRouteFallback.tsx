@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 function StorefrontFallback() {
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)]" aria-busy="true" aria-label="页面加载中">
+    <div className="store-page-shell bg-[var(--theme-bg)]" aria-busy="true" aria-label="页面加载中">
       <div className="sticky top-0 z-40 border-b border-[var(--theme-border)] bg-[var(--theme-surface)]/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-screen-xl items-center gap-3 px-4 py-3 md:px-6">
           <Skeleton className="h-9 w-9 shrink-0 rounded-full" />

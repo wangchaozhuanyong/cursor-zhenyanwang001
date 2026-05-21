@@ -1,14 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { trackEvent } from "@/services/analyticsService";
+import {
+  clearDismissedSwToken,
+  fetchSwVersionToken,
+  isCurrentUpdateDismissed,
+  setDismissedSwToken,
+} from "@/lib/pwaUpdateDismiss";
 
 /** 等待 SW 激活的最长时间，超时后仍强制刷新页面 */
 const SW_UPDATE_TIMEOUT_MS = 2000;
+/** 后台定期检查 SW 更新（避免 immediate 一进站就频繁弹窗） */
+const SW_PERIODIC_CHECK_MS = 60 * 60 * 1000;
 
 export default function PwaUpdateToast() {
   const trackedAvailableRef = useRef(false);
   const reloadStartedRef = useRef(false);
+  const registrationRef = useRef<ServiceWorkerRegistration | undefined>(undefined);
+  const periodicCheckRef = useRef<number | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
 
   const reloadOnce = useCallback(() => {
     if (reloadStartedRef.current) return;
@@ -36,22 +47,86 @@ export default function PwaUpdateToast() {
     });
   }, []);
 
+  const checkForSwUpdate = useCallback(() => {
+    const registration = registrationRef.current;
+    if (!registration || registration.installing || !navigator.onLine) return;
+    void registration.update();
+  }, []);
+
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({
-    immediate: true,
+    immediate: false,
+    onRegisteredSW(_swUrl, registration) {
+      registrationRef.current = registration;
+      if (!registration) return;
+
+      if (periodicCheckRef.current) {
+        window.clearInterval(periodicCheckRef.current);
+      }
+      periodicCheckRef.current = window.setInterval(() => {
+        checkForSwUpdate();
+      }, SW_PERIODIC_CHECK_MS);
+    },
   });
 
   useEffect(() => {
-    if (!needRefresh || trackedAvailableRef.current) return;
-    trackedAvailableRef.current = true;
-    void trackEvent({ event_type: "pwa_update_available", module: "pwa", page: window.location.pathname });
+    return () => {
+      if (periodicCheckRef.current) {
+        window.clearInterval(periodicCheckRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        checkForSwUpdate();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [checkForSwUpdate]);
+
+  useEffect(() => {
+    if (!needRefresh) {
+      setShowPrompt(false);
+      trackedAvailableRef.current = false;
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      if (await isCurrentUpdateDismissed()) {
+        if (!cancelled) setShowPrompt(false);
+        return;
+      }
+      if (cancelled) return;
+      setShowPrompt(true);
+      if (!trackedAvailableRef.current) {
+        trackedAvailableRef.current = true;
+        void trackEvent({
+          event_type: "pwa_update_available",
+          module: "pwa",
+          page: window.location.pathname,
+        });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [needRefresh]);
 
   const handleDismiss = useCallback(() => {
     if (refreshing) return;
-    setNeedRefresh(false);
+    void (async () => {
+      const token = await fetchSwVersionToken();
+      if (token) setDismissedSwToken(token);
+      setNeedRefresh(false);
+      setShowPrompt(false);
+    })();
   }, [refreshing, setNeedRefresh]);
 
   const handleRefresh = useCallback(async () => {
@@ -59,6 +134,8 @@ export default function PwaUpdateToast() {
     setRefreshing(true);
     void trackEvent({ event_type: "pwa_update_accepted", module: "pwa", page: window.location.pathname });
     setNeedRefresh(false);
+    setShowPrompt(false);
+    clearDismissedSwToken();
 
     const controllerChanged = waitForControllerChange();
 
@@ -72,7 +149,7 @@ export default function PwaUpdateToast() {
     reloadOnce();
   }, [refreshing, reloadOnce, setNeedRefresh, updateServiceWorker, waitForControllerChange]);
 
-  if (!needRefresh) return null;
+  if (!showPrompt) return null;
 
   return (
     <div

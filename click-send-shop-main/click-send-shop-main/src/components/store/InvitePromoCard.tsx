@@ -1,4 +1,5 @@
 import { Gift } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   THEME_GIFT_BADGE_SHELL,
   THEME_INVITE_PROMO_CTA,
@@ -33,7 +34,7 @@ export default function InvitePromoCard({
   className = "",
 }: InvitePromoCardProps) {
   return (
-    <div className={`relative overflow-hidden rounded-[22px] px-4 py-3.5 ${THEME_INVITE_PROMO_SHELL} ${className}`}>
+    <div className={cn("relative overflow-hidden rounded-2xl px-4 py-3.5", THEME_INVITE_PROMO_SHELL, className)}>
       <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-base font-bold leading-snug text-[var(--theme-invite-promo-foreground)]">邀请好友得奖励</p>

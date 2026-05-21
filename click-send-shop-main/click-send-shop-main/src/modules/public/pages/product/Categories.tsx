@@ -231,7 +231,7 @@ export default function Categories() {
   );
 
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
+    <div className="store-page-shell bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <SeoHead title={title} description={description} canonical={canonical} robots={robots} />
       <StorePageHeader
         title="分类"

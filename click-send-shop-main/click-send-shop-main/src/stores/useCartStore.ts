@@ -1,12 +1,16 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { isLoggedIn } from "@/utils/token";
+import { ApiError } from "@/types/common";
+import { isLoggedIn, clearTokens } from "@/utils/token";
+import { notifyAuthExpired } from "@/lib/authSessionBridge";
 import type { Product, ProductVariant } from "@/types/product";
 import type { CartItem } from "@/types/cart";
 import * as cartService from "@/services/cartService";
 import { normalizeCartItem, normalizeCartItems } from "@/utils/cartNormalize";
 
 export const LOCAL_ONLY_CART_PRODUCT_PREFIX = "demo-micro-interactions:" as const;
+
+let cartLoadInflight: Promise<void> | null = null;
 
 function isLocalOnlyCartProductId(productId: string) {
   return productId.startsWith(LOCAL_ONLY_CART_PRODUCT_PREFIX);
@@ -82,13 +86,27 @@ export const useCartStore = create<CartState>()(
 
       loadCart: async () => {
         if (!isLoggedIn()) return;
-        set({ loading: true, error: null });
-        try {
-          const items = normalizeCartItems(await cartService.fetchCart());
-          set((s) => ({ items, selection: mergeSelection(s.selection, items), loading: false }));
-        } catch (e) {
-          set({ loading: false, error: e instanceof Error ? e.message : "加载购物车失败" });
-        }
+        if (cartLoadInflight) return cartLoadInflight;
+
+        cartLoadInflight = (async () => {
+          set({ loading: true, error: null });
+          try {
+            const items = normalizeCartItems(await cartService.fetchCart());
+            set((s) => ({ items, selection: mergeSelection(s.selection, items), loading: false }));
+          } catch (e) {
+            if (e instanceof ApiError && e.status === 401) {
+              clearTokens();
+              notifyAuthExpired();
+              set({ loading: false, error: null });
+              return;
+            }
+            set({ loading: false, error: e instanceof Error ? e.message : "加载购物车失败" });
+          }
+        })().finally(() => {
+          cartLoadInflight = null;
+        });
+
+        return cartLoadInflight;
       },
 
       mergeLocalThenSync: async (localBeforeAuth) => {

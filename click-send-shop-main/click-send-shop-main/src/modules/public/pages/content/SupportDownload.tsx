@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Copy, Smartphone } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import PageHeader from "@/components/PageHeader";
+import StorePageHeader from "@/components/store/StorePageHeader";
 import SeoHead from "@/components/SeoHead";
 import SupportChannelCard from "@/components/support/SupportChannelCard";
 import InstallPlatformCard from "@/components/support/InstallPlatformCard";
@@ -171,21 +171,21 @@ export default function SupportDownload() {
 
   if (!config.enabled) {
     return (
-      <div className="min-h-screen bg-[var(--theme-bg)] px-[var(--store-page-x)] py-[var(--store-page-y)] text-sm text-[var(--theme-text-muted)]">
+      <div className="store-page-shell bg-[var(--theme-bg)] px-[var(--store-page-x)] py-[var(--store-page-y)] text-sm text-[var(--theme-text-muted)]">
         客服中心暂未开放。
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
+    <div className="store-page-shell bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <SeoHead
         title={`${config.title} - ${siteInfo.siteName || "官方商城"}`}
         description={config.subtitle}
         canonical={buildCanonical("/support-download")}
         robots="index,follow"
       />
-      <PageHeader title={config.title} backFallback="/" />
+      <StorePageHeader title={config.title} centerTitle />
 
       <main className="mx-auto w-full max-w-lg space-y-3 px-[var(--store-page-x)] py-[var(--store-page-y)] pb-6 sm:px-4 sm:py-4">
         {availableViews.length > 0 ? (

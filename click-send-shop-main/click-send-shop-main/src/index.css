@@ -202,6 +202,15 @@
     background: var(--theme-bg);
     color: var(--theme-text);
   }
+  /* 前台页最小高度：避免移动端 100vh 比可视区大导致底部假滚动 */
+  .store-page-shell {
+    min-height: 100svh;
+  }
+  @supports (height: 100dvh) {
+    .store-page-shell {
+      min-height: 100dvh;
+    }
+  }
   .store-section {
     background: transparent;
     color: var(--theme-text);
@@ -363,7 +372,9 @@
   .bg-theme-invite-promo {
     background: var(--theme-invite-promo-bg);
     color: var(--theme-invite-promo-foreground);
-    border-color: var(--theme-invite-promo-border);
+    border: none;
+    /* 渐变圆角用 border 会在角上出现偏移重影，改用内描边 */
+    box-shadow: inset 0 0 0 1px var(--theme-invite-promo-border);
   }
 
   .bg-theme-invite-promo .theme-invite-promo-muted {
@@ -374,7 +385,8 @@
   .bg-theme-coupon-card-shell {
     background: var(--theme-coupon-card-shell-bg);
     color: var(--theme-coupon-card-shell-fg);
-    border-color: var(--theme-coupon-card-shell-border);
+    border: none;
+    box-shadow: inset 0 0 0 1px var(--theme-coupon-card-shell-border);
   }
 
   .bg-theme-coupon-card-shell .theme-coupon-card-muted {

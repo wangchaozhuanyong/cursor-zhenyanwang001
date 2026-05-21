@@ -42,7 +42,7 @@ export default function NewArrivals() {
   }, [loadProducts, siteInfo.newArrivalOnlyInStock, sort]);
 
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
+    <div className="store-page-shell bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <SeoHead
         title={`新品上市｜${siteName}`}
         description="发现最新上架的好物，最近上新的商品都在这里。"

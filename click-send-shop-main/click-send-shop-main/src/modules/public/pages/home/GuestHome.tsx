@@ -180,7 +180,7 @@ export default function GuestHome() {
   const canonical = buildCanonical("/");
   const seoImage = siteInfo.ogImageUrl || siteInfo.defaultOgImageUrl || siteInfo.logoUrl || "/og-default.png";
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]" data-theme-home-layout={themeConfig.homeLayout}>
+    <div className="store-page-shell bg-[var(--theme-bg)] text-[var(--theme-text)]" data-theme-home-layout={themeConfig.homeLayout}>
       <SeoHead
         title={seoTitle}
         description={seoDescription}

@@ -35,11 +35,13 @@ const FrontLayout = React.forwardRef<HTMLDivElement>((_, ref) => {
   return (
     <ScrollBarsProvider>
       <div ref={ref} className="relative min-h-0 overflow-x-clip">
-        <Suspense fallback={<StoreOutletFallback />}>
-          <FrontPageTransition>
-            <Outlet />
-          </FrontPageTransition>
-        </Suspense>
+        <div className="relative isolate min-h-0 w-full">
+          <Suspense fallback={<StoreOutletFallback />}>
+            <FrontPageTransition>
+              <Outlet />
+            </FrontPageTransition>
+          </Suspense>
+        </div>
         <BottomNav />
       </div>
     </ScrollBarsProvider>

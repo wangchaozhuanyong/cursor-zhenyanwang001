@@ -68,10 +68,9 @@ export default function Cart() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
+    <div className="store-page-shell bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
       <StorePageHeader
         centerTitle={!loading && items.length === 0}
-        eyebrow={!loading && items.length === 0 ? "空空如也" : undefined}
         title={
           <>
             购物车

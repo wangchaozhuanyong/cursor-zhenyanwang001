@@ -16,7 +16,8 @@ import FrontLayout from "@/layouts/FrontLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { isLoggedIn } from "@/utils/token";
+import { isLoggedIn, clearTokens } from "@/utils/token";
+import * as authService from "@/services/authService";
 import {
   DEFAULT_APPLE_TOUCH_ICON,
   DEFAULT_FAVICON_ICO,
@@ -42,7 +43,17 @@ import {
 
 function AuthTokenSync() {
   useLayoutEffect(() => {
-    useAuthStore.setState({ isAuthenticated: isLoggedIn() });
+    const flagged = isLoggedIn();
+    useAuthStore.setState({ isAuthenticated: flagged });
+    if (!flagged) return;
+    void authService.getProfile()
+      .then(() => {
+        useAuthStore.setState({ isAuthenticated: true });
+      })
+      .catch(() => {
+        clearTokens();
+        useAuthStore.setState({ isAuthenticated: false });
+      });
   }, []);
   return null;
 }

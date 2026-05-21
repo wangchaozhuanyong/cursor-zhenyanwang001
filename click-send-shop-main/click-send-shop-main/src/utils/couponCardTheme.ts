@@ -65,8 +65,8 @@ export function getCouponCardPresentation(
 
   const shellByStyle: Record<CouponStyle, string> = {
     ticket: "bg-[var(--theme-surface)] border border-[var(--theme-border)]",
-    premium: "bg-theme-coupon-card-shell border",
-    deal: "bg-theme-coupon-card-shell border",
+    premium: "bg-theme-coupon-card-shell",
+    deal: "bg-theme-coupon-card-shell",
     minimal: "bg-[var(--theme-surface)] border border-[var(--theme-border)]",
   };
 
@@ -113,7 +113,7 @@ export function getCouponCardPresentation(
     couponStyle,
     layout,
     useThemedMarketingShell,
-    shellClass: useThemedMarketingShell ? "bg-theme-coupon-card-shell border" : shellByStyle[couponStyle],
+    shellClass: useThemedMarketingShell ? "bg-theme-coupon-card-shell" : shellByStyle[couponStyle],
     gridClass: gridByLayout[layout],
     titleClass,
     mutedClass,

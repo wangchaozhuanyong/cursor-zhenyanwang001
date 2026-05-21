@@ -94,16 +94,17 @@ export default function MemberHome() {
   }, [loadHomeData]);
 
   useEffect(() => {
-    if (isLoggedIn()) {
-      authService.getProfile().then(() => {
+    if (!isLoggedIn()) return;
+    void authService.getProfile()
+      .then(() => {
         useNotificationStore.getState().fetchUnreadCount();
         useCouponStore.getState().loadCoupons();
-        loadHistory().catch(() => {});
-        loadFavorites().catch(() => {});
-        loadCart().catch(() => {});
-        loadOrders({ page: 1, pageSize: 20 }).catch(() => {});
-      }).catch(() => {});
-    }
+        void loadHistory().catch(() => {});
+        void loadFavorites().catch(() => {});
+        void loadCart().catch(() => {});
+        void loadOrders({ page: 1, pageSize: 20 }).catch(() => {});
+      })
+      .catch(() => {});
   }, [loadHistory, loadFavorites, loadCart, loadOrders]);
 
   const couponTop = useMemo(
@@ -140,7 +141,7 @@ export default function MemberHome() {
   const rec = recBatches.length > 0 ? recBatches[recBatchIndex % recBatches.length] : [];
 
   return (
-    <div className={`min-h-screen text-[var(--theme-text)] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_90%,black)]" : "bg-[var(--theme-bg)]"}`} data-theme-home-layout={themeConfig.homeLayout}>
+    <div className={`store-page-shell text-[var(--theme-text)] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_90%,black)]" : "bg-[var(--theme-bg)]"}`} data-theme-home-layout={themeConfig.homeLayout}>
       <SeoHead
         title={seoTitle}
         description={seoDescription}

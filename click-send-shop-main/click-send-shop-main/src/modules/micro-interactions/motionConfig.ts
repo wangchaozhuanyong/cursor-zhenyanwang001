@@ -34,16 +34,16 @@ export function pageTransition(level: MotionTier) {
   if (level === "none") return { initial: false as const, animate: {}, exit: {}, transition: { duration: 0 } };
   if (level === "rich") {
     return {
-      initial: { opacity: 1, y: 10, scale: 0.992 },
+      initial: { opacity: 0, y: 10, scale: 0.992 },
       animate: { opacity: 1, y: 0, scale: 1 },
-      exit: { opacity: 1, y: -4 },
+      exit: { opacity: 0, y: 6 },
       transition: silkTransition(0.26),
     };
   }
   return {
-    initial: { opacity: 1, y: 4 },
+    initial: { opacity: 0, y: 4 },
     animate: { opacity: 1, y: 0 },
-    exit: { opacity: 1, y: -2 },
+    exit: { opacity: 0, y: 4 },
     transition: silkTransition(0.18),
   };
 }
@@ -65,8 +65,8 @@ export function listItemTransition(level: MotionTier, index: number) {
   const y = level === "rich" ? 18 : 8;
   const delay = Math.min(index, LIST_STAGGER_CAP - 1) * 0.035;
   return {
-    initial: level === "rich" ? { opacity: 0, y, scale: 0.96, filter: "blur(8px)" } : { opacity: 0, y },
-    animate: level === "rich" ? { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" } : { opacity: 1, y: 0 },
+    initial: level === "rich" ? { opacity: 0, y, scale: 0.98 } : { opacity: 0, y },
+    animate: level === "rich" ? { opacity: 1, y: 0, scale: 1 } : { opacity: 1, y: 0 },
     exit: { opacity: 0, transition: silkTransition(0.14) },
     transition: silkTransition(level === "rich" ? 0.24 : 0.18, delay),
   };

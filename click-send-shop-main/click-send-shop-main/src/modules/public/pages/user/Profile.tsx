@@ -271,7 +271,7 @@ export default function Profile() {
   const notificationBadgeText = formatUnreadBadge(unreadCount);
 
   return (
-    <div className="store-page min-h-screen text-[var(--theme-text)]">
+    <div className="store-page store-page-shell text-[var(--theme-text)]">
       <StorePageHeader
         title={
           <span className="inline-flex min-w-0 items-center gap-2.5">
@@ -381,11 +381,12 @@ export default function Profile() {
             </div>
           </div>
           {inviteEnabled ? (
-          <div className="px-[var(--store-card-x)] pb-[var(--store-card-y)] pt-3">
+          <div className="border-t border-[color-mix(in_srgb,var(--theme-border)_55%,transparent)] px-[var(--store-card-x)] pb-[var(--store-card-y)] pt-3">
             <InvitePromoCard
               loggedIn={loggedIn}
               inviteCount={inviteCount}
               rewardBalance={rewardBalance}
+              className="rounded-2xl"
               onAction={() =>
                 loggedIn ? gateNavigate(navigate, "/invite", true) : navigate("/login", { state: { from: "/profile" } })
               }

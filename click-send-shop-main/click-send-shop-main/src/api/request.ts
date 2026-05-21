@@ -18,6 +18,8 @@ type LoadingMode = "global" | "silent";
 export type RequestOptions = RequestInit & {
   skipGlobalLoading?: boolean;
   loadingMode?: LoadingMode;
+  /** 401 时不尝试 refresh 重试，避免无效会话下重复请求（如购物车静默拉取） */
+  skipAuthRetry?: boolean;
 };
 
 function gatewayErrorMessage(status: number): string | null {
@@ -181,7 +183,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     if (loadingToken) stopGlobalLoading(loadingToken);
   }
 
-  if (res.status === 401 && retry && !isAdminEndpoint && !isAuthLoginOrRegister) {
+  if (res.status === 401 && retry && !options.skipAuthRetry && !isAdminEndpoint && !isAuthLoginOrRegister) {
     if (!refreshing) refreshing = tryRefreshToken().finally(() => { refreshing = null; });
     try {
       const newToken = await refreshing;
@@ -244,10 +246,11 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
   return normalizeMediaUrls(payload, BASE_URL);
 }
 
-export function get<T>(endpoint: string, params?: Record<string, unknown>, options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode">) {
+export function get<T>(endpoint: string, params?: Record<string, unknown>, options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode" | "skipAuthRetry">) {
   return request<ApiResponse<T>>(`${endpoint}${toQueryString(params)}`, {
     skipGlobalLoading: options?.skipGlobalLoading ?? true,
     loadingMode: options?.loadingMode ?? "silent",
+    skipAuthRetry: options?.skipAuthRetry,
   });
 }
 

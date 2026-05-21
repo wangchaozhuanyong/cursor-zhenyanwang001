@@ -1,0 +1,63 @@
+const repo = require('../repository/monitoring.repository');
+const repairTaskService = require('./repairTask.service');
+
+const AUTOMATED_REPAIR_TYPES = new Set([
+  'sync_product_stock_from_variants',
+  'clear_cache_key',
+  'recalculate_user_statistics',
+]);
+
+function isAutoFixCandidate(dbRule, anomaly) {
+  if (!dbRule?.auto_fix_enabled) return false;
+  if (repairTaskService.FINANCIAL_RULES.has(anomaly.rule_code || dbRule.code)) return false;
+  if (['resolved', 'ignored', 'repaired', 'repair_pending'].includes(anomaly.status)) return false;
+
+  const evidence = anomaly.evidence || {};
+  if (!evidence.autoFixable) return false;
+
+  const repairType = evidence.repairSuggestion?.repairType;
+  return Boolean(repairType && AUTOMATED_REPAIR_TYPES.has(repairType));
+}
+
+async function hasPendingRepairTask(anomalyId) {
+  const [[row]] = await repo.db.query(
+    `SELECT id FROM data_repair_tasks WHERE anomaly_id = ? AND repair_status = 'pending' LIMIT 1`,
+    [anomalyId],
+  );
+  return Boolean(row);
+}
+
+async function processRuleAutoFix(dbRule, savedAnomalies = [], options = {}) {
+  if (!dbRule?.auto_fix_enabled) return [];
+
+  const createdTasks = [];
+  for (const entry of savedAnomalies) {
+    const anomaly = entry?.anomaly || entry;
+    if (!anomaly?.id || !isAutoFixCandidate(dbRule, anomaly)) continue;
+    if (await hasPendingRepairTask(anomaly.id)) continue;
+
+    const task = await repairTaskService.createRepairTask(
+      anomaly.id,
+      options.operatorId || null,
+      options.remark || '规则启用自动修复，系统自动创建修复任务',
+    );
+    const { enqueueRepairTask } = require('./monitoringScheduler.service');
+    await enqueueRepairTask(task.id, {
+      operatorId: options.operatorId || null,
+      runType: 'auto_fix',
+    });
+    await repo.recordRuleEvent(dbRule.code, 'anomaly.auto_fix_enqueued', {
+      anomalyId: anomaly.id,
+      repairTaskId: task.id,
+      repairType: task.repair_type,
+    });
+    createdTasks.push(task);
+  }
+  return createdTasks;
+}
+
+module.exports = {
+  AUTOMATED_REPAIR_TYPES,
+  isAutoFixCandidate,
+  processRuleAutoFix,
+};

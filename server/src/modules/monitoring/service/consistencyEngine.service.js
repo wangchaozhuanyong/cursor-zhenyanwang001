@@ -2,6 +2,7 @@ const repo = require('../repository/monitoring.repository');
 const registry = require('./ruleRegistry.service');
 const rootCauseAnalyzer = require('./rootCauseAnalyzer.service');
 const notification = require('./monitoringNotification.service');
+const autoFix = require('./autoFix.service');
 
 function normalizeAnomaly(item, rule = {}) {
   return {
@@ -51,6 +52,7 @@ async function runRule(ruleCode, options = {}) {
     for (const item of rawAnomalies) {
       saved.push(await upsertAnomaly(item, dbRule || {}));
     }
+    const autoFixTasks = await autoFix.processRuleAutoFix(dbRule, saved, options);
     await repo.finishRun(runId, {
       status: 'success',
       checkedCount: output.checkedCount ?? rawAnomalies.length,
@@ -61,8 +63,15 @@ async function runRule(ruleCode, options = {}) {
       runId,
       durationMs: Date.now() - started,
       anomalyCount: saved.length,
+      autoFixTaskCount: autoFixTasks.length,
     });
-    return { runId, checkedCount: output.checkedCount ?? rawAnomalies.length, anomalyCount: saved.length, anomalies: saved };
+    return {
+      runId,
+      checkedCount: output.checkedCount ?? rawAnomalies.length,
+      anomalyCount: saved.length,
+      anomalies: saved,
+      autoFixTasks,
+    };
   } catch (error) {
     await repo.finishRun(runId, { status: 'failed', checkedCount: 0, anomalyCount: 0, errorMessage: error.message });
     await repo.recordRuleEvent(ruleCode, 'rule.run.failed', { runId, error: error.message });

@@ -2,6 +2,8 @@ const { asyncRoute } = require('../../../middleware/asyncRoute');
 const repo = require('../repository/monitoring.repository');
 const engine = require('../service/consistencyEngine.service');
 const repairTaskService = require('../service/repairTask.service');
+const cronMatcher = require('../service/cronMatcher.service');
+const { reloadRulesCache } = require('../service/monitoringScheduler.service');
 
 function currentAdminId(req) {
   return req.user?.id || null;
@@ -85,8 +87,14 @@ exports.updateRule = asyncRoute(async (req, res) => {
   for (const key of ['enabled', 'severity', 'schedule_cron', 'auto_fix_enabled']) {
     if (req.body?.[key] !== undefined) patch[key] = req.body[key];
   }
+  if (patch.schedule_cron !== undefined && patch.schedule_cron !== null && patch.schedule_cron !== '') {
+    if (!cronMatcher.isValidExpression(patch.schedule_cron)) {
+      return res.fail(400, 'schedule_cron 格式无效，需为 5 段标准 cron（分 时 日 月 周）');
+    }
+  }
   const rule = await repo.updateRule(req.params.code, patch);
   if (!rule) return res.fail(404, '监控规则不存在');
+  reloadRulesCache();
   res.success(rule, '规则已更新');
 });
 

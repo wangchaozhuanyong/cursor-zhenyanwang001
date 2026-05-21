@@ -70,6 +70,8 @@ export default function Cart() {
   return (
     <div className="store-bottom-cart-space min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
       <StorePageHeader
+        centerTitle={!loading && items.length === 0}
+        eyebrow={!loading && items.length === 0 ? "空空如也" : undefined}
         title={
           <>
             购物车
@@ -78,7 +80,6 @@ export default function Cart() {
             ) : null}
           </>
         }
-        subtitle={items.length === 0 ? "空空如也" : undefined}
         rightSlot={
           items.length > 0 ? (
             <button

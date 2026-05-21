@@ -8,6 +8,10 @@ export type StorePageHeaderProps = {
   leftSlot?: ReactNode;
   /** 与标题同一行、靠右伸展（如分类页搜索框） */
   titleInlineSlot?: ReactNode;
+  /** 显示在标题上方；需配合 centerTitle 才能在顶栏水平居中 */
+  eyebrow?: ReactNode;
+  /** 标题区水平居中（左右 slot 仍贴边，避免与居中标题重叠） */
+  centerTitle?: boolean;
   subtitle?: string;
   rightSlot?: ReactNode;
   bottomSlot?: ReactNode;
@@ -20,6 +24,8 @@ export default function StorePageHeader({
   title,
   leftSlot,
   titleInlineSlot,
+  eyebrow,
+  centerTitle = false,
   subtitle,
   rightSlot,
   bottomSlot,
@@ -42,14 +48,41 @@ export default function StorePageHeader({
       )}
     >
       <div className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] sm:px-4 md:px-6">
-        <div className="flex min-h-14 items-center gap-3 py-2">
-          {leftSlot ? <div className="flex shrink-0 items-center">{leftSlot}</div> : null}
-          <div className="min-w-0 flex-1">
+        <div
+          className={cn(
+            "flex min-h-14 items-center gap-3 py-2",
+            centerTitle && !titleInlineSlot && "relative justify-center",
+          )}
+        >
+          {leftSlot ? (
+            <div
+              className={cn(
+                "flex shrink-0 items-center",
+                centerTitle && !titleInlineSlot && "absolute left-0 top-1/2 z-10 -translate-y-1/2",
+              )}
+            >
+              {leftSlot}
+            </div>
+          ) : null}
+          <div
+            className={cn(
+              centerTitle && !titleInlineSlot
+                ? "flex w-full max-w-full flex-col items-center px-14 text-center sm:px-16"
+                : "min-w-0 flex-1",
+            )}
+          >
             {titleInlineSlot ? (
               <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                 <h1 className="shrink-0 text-lg font-bold tracking-tight text-[var(--theme-text)]">{title}</h1>
                 <div className="min-w-0 flex-1 overflow-hidden">{titleInlineSlot}</div>
               </div>
+            ) : centerTitle ? (
+              <>
+                {eyebrow ? (
+                  <p className="mb-0.5 text-xs font-medium text-[var(--theme-text-muted)]">{eyebrow}</p>
+                ) : null}
+                <h1 className="text-lg font-bold tracking-tight text-[var(--theme-text)]">{title}</h1>
+              </>
             ) : (
               <>
                 <h1 className="flex min-w-0 items-baseline gap-0 truncate text-lg font-bold tracking-tight text-[var(--theme-text)]">
@@ -61,7 +94,16 @@ export default function StorePageHeader({
               </>
             )}
           </div>
-          {rightSlot ? <div className="flex shrink-0 items-center gap-2">{rightSlot}</div> : null}
+          {rightSlot ? (
+            <div
+              className={cn(
+                "flex shrink-0 items-center gap-2",
+                centerTitle && !titleInlineSlot && "absolute right-0 top-1/2 z-10 -translate-y-1/2",
+              )}
+            >
+              {rightSlot}
+            </div>
+          ) : null}
         </div>
         {bottomSlot ? <div className="pb-2.5">{bottomSlot}</div> : null}
       </div>

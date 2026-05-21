@@ -47,7 +47,7 @@ import {
   AdminOrders, AdminCheckoutAbandonments, AdminOrderDetail, AdminReturns, AdminShipping,
   AdminUsers, AdminUserDetail, AdminMemberLevels, AdminInvites,
   AdminCoupons, AdminCouponForm, AdminCouponRecords, AdminActivities, AdminMarketingDashboard, AdminActivityForm, AdminMarketingPoints, AdminMarketingRewards,
-  AdminReviews, AdminNotifications, AdminNotificationDetail,
+  AdminReviews, AdminNotifications, AdminNotificationDetail, AdminEventCenter,
   AdminReports, AdminReportOverview, AdminSalesDailyReport, AdminSalesMonthlyReport, AdminProfitDailyReport, AdminOperatingExpenses, AdminProductAnalysisReport, AdminCategoryAnalysisReport, AdminOrderAnalysisReport, AdminCustomerAnalysisReport, AdminActivityAnalysisReport, AdminCouponAnalysisReport, AdminInventoryAnalysisReport, AdminSearchAnalysisReport, AdminTrafficAnalysisReport, AdminExportCenter,
   AdminSiteSettings, AdminFeatureSettings, AdminSupportDownload, AdminTelegramSettings, AdminThemeSettings, AdminContent, AdminHomeOps,
   AdminRoles, AdminLogs, AdminRecycleBin,
@@ -413,6 +413,7 @@ export function AppRoutes() {
                 <Route path="marketing/invites" element={<AdminInvites />} />
                 <Route path="reviews" element={<CapabilityRoute enabled={capabilities.reviewEnabled}><AdminReviews /></CapabilityRoute>} />
                 <Route path="returns" element={<AdminReturns />} />
+                <Route path="event-center" element={<AdminEventCenter />} />
                 <Route path="notifications" element={<AdminNotifications />} />
                 <Route path="notifications/:id" element={<AdminNotificationDetail />} />
                 <Route path="monitoring" element={<AdminMonitoringOverview />} />

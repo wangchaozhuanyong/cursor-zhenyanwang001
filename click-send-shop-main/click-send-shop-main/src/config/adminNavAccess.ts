@@ -38,6 +38,7 @@ const RULES: { test: (path: string) => boolean; rule: PathRule }[] = [
   { test: (p) => p.startsWith("/admin/marketing/invites"), rule: { kind: "one", permission: "invite.view" } },
   { test: (p) => p === "/admin/marketing" || p.startsWith("/admin/marketing"), rule: { kind: "any", permissions: ["activity.manage", "coupon.view", "points.manage", "referral.manage", "invite.view"] } },
   { test: (p) => p.startsWith("/admin/notifications"), rule: { kind: "any", permissions: ["notification.view", "notification.manage"] } },
+  { test: (p) => p.startsWith("/admin/event-center"), rule: { kind: "any", permissions: ["event.view", "event.manage"] } },
   { test: (p) => p.startsWith("/admin/monitoring"), rule: { kind: "any", permissions: ["monitoring.view", "monitoring.manage", "monitoring.repair"] } },
   { test: (p) => p.startsWith("/admin/account"), rule: { kind: "one", permission: "dashboard.view" } },
   { test: (p) => p.startsWith("/admin/banners"), rule: { kind: "one", permission: "banner.manage" } },

@@ -1,11 +1,15 @@
-# Admin Cloudflare Security Rules
+# Flashcast Admin Cloudflare Security Rules
 
-Replace `yourdomain.com` with the production storefront domain and `admin.yourdomain.com` with the production admin domain.
+Production domains:
+
+- Storefront: `flashcast.com.my`
+- Admin console: `console.flashcast.com.my`
+- Required access order: Cloudflare Access -> admin login -> MFA -> RBAC
 
 ## DNS and SSL
 
-- `yourdomain.com` points to the storefront deployment.
-- `admin.yourdomain.com` points to the admin deployment.
+- `flashcast.com.my` points to the storefront deployment.
+- `console.flashcast.com.my` points to the admin deployment.
 - Both records should be proxied through Cloudflare.
 - SSL/TLS mode should be `Full (strict)`.
 
@@ -13,19 +17,23 @@ Replace `yourdomain.com` with the production storefront domain and `admin.yourdo
 
 Protect the whole admin hostname before the application login page:
 
-- Application domain: `admin.yourdomain.com`
+- Access Application domain: `console.flashcast.com.my`
 - Path: `/*`
-- Policy: allow only administrator identity provider groups or approved admin emails.
+- Policy: allow only administrator emails or administrator identity provider groups.
 - Session duration: keep short, for example 8 hours.
+
+Do not create a Cloudflare Access application for `flashcast.com.my`; the public storefront must remain public while its admin paths are blocked by WAF and origin rules.
 
 ## WAF Custom Rules
 
 Block admin paths on the public storefront hostname:
 
 ```text
-(http.host eq "yourdomain.com" and starts_with(http.request.uri.path, "/admin"))
+(http.host eq "flashcast.com.my" and starts_with(http.request.uri.path, "/admin"))
 or
-(http.host eq "yourdomain.com" and starts_with(http.request.uri.path, "/api/admin/"))
+(http.host eq "flashcast.com.my" and starts_with(http.request.uri.path, "/api/admin/"))
+or
+(http.host eq "flashcast.com.my" and http.request.uri.path eq "/api/admin")
 ```
 
 Action: `Block`.
@@ -34,7 +42,7 @@ Only allow admin API on the admin hostname:
 
 ```text
 starts_with(http.request.uri.path, "/api/admin/")
-and http.host ne "admin.yourdomain.com"
+and http.host ne "console.flashcast.com.my"
 ```
 
 Action: `Block`.
@@ -42,7 +50,7 @@ Action: `Block`.
 Challenge suspicious admin login traffic:
 
 ```text
-http.host eq "admin.yourdomain.com"
+http.host eq "console.flashcast.com.my"
 and http.request.uri.path eq "/api/admin/auth/login"
 and (
   cf.threat_score ge 10
@@ -59,7 +67,7 @@ Create an edge rate limit for admin login:
 - Expression:
 
 ```text
-http.host eq "admin.yourdomain.com"
+http.host eq "console.flashcast.com.my"
 and http.request.uri.path eq "/api/admin/auth/login"
 and http.request.method eq "POST"
 ```
@@ -69,17 +77,29 @@ and http.request.method eq "POST"
 - Mitigation timeout: 30 minutes.
 - Action: `Block` or `Managed Challenge`.
 
+Keep the server-side login limiter enabled as a second layer. The origin still enforces IP + account risk controls and account lockout.
+
+## Origin Hardening
+
+Prevent bypassing Cloudflare Access by direct origin access:
+
+- Prefer Cloudflare Tunnel for the Node/Nginx origin.
+- If using a public origin IP, restrict inbound firewall rules to Cloudflare IP ranges only.
+- Keep `TRUST_PROXY=1` so the backend reads Cloudflare/Nginx forwarded client IPs correctly.
+
 ## Origin Variables
 
 Set backend environment variables:
 
 ```env
-PUBLIC_APP_URL=https://yourdomain.com
-CORS_ORIGINS=https://yourdomain.com,https://admin.yourdomain.com
-ADMIN_ALLOWED_ORIGINS=https://admin.yourdomain.com
-ADMIN_JWT_EXPIRES_IN=15m
+PUBLIC_APP_URL=https://flashcast.com.my
+ADMIN_PUBLIC_URL=https://console.flashcast.com.my
+ADMIN_ALLOWED_ORIGINS=https://console.flashcast.com.my
+CORS_ORIGINS=https://flashcast.com.my,https://console.flashcast.com.my
+NODE_ENV=production
+TRUST_PROXY=1
 ADMIN_MFA_SECRET_KEY=<long-random-secret>
-ADMIN_MFA_ISSUER=<brand-name> Admin
+ADMIN_MFA_ISSUER=Flashcast Admin
 ```
 
-Keep `ADMIN_ALLOWED_ORIGINS` narrow in production. Do not include localhost or wildcard origins outside local development.
+Keep `ADMIN_ALLOWED_ORIGINS` narrow in production. Do not include `flashcast.com.my`, localhost, wildcard origins, or the public storefront unless temporarily using `ADMIN_COMPAT_ALLOW_PUBLIC_APP_ORIGIN=1` for a controlled migration.

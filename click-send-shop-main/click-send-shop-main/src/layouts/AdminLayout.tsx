@@ -44,6 +44,7 @@ import {
   MousePointerClick,
   Headphones,
   AlertTriangle,
+  Database,
 } from "lucide-react";
 import AdminAccountSettingsDialog from "@/components/admin/AdminAccountSettingsDialog";
 import type { AdminAccountTab } from "@/components/admin/AdminAccountPanel";
@@ -91,6 +92,7 @@ const localNavLabels: Record<string, string> = {
   "nav.monitoringRepairTasks": "修复任务",
   "nav.monitoringRules": "监控规则",
   "nav.monitoringRuns": "运行记录",
+  "nav.dataRetention": "数据保存与清理中心",
 };
 
 function resolveNavLabel(t: (key: string) => string, key: string) {
@@ -248,6 +250,7 @@ const navItemsRaw: NavItem[] = [
       { icon: Bell, labelKey: "nav.telegramNotifications", path: "/admin/settings/telegram", permission: "settings.manage" },
       { icon: Truck, labelKey: "nav.shipping", path: "/admin/settings/shipping", permission: "shipping.manage" },
       { icon: ScrollText, labelKey: "nav.auditLogs", path: "/admin/logs", permission: "audit.view" },
+      { icon: Database, labelKey: "nav.dataRetention", path: "/admin/data-retention", permission: { anyOf: ["data_cleanup.view", "data_cleanup.manage", "data_cleanup.execute"] } },
       { icon: RotateCcw, labelKey: "nav.recycleBin", path: "/admin/recycle-bin", permission: "recycle_bin.manage" },
     ],
   },

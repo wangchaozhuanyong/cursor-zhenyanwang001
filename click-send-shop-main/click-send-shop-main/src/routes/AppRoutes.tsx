@@ -50,7 +50,7 @@ import {
   AdminReviews, AdminNotifications, AdminNotificationDetail, AdminEventCenter,
   AdminReports, AdminReportOverview, AdminSalesDailyReport, AdminSalesMonthlyReport, AdminProfitDailyReport, AdminOperatingExpenses, AdminProductAnalysisReport, AdminCategoryAnalysisReport, AdminOrderAnalysisReport, AdminCustomerAnalysisReport, AdminActivityAnalysisReport, AdminCouponAnalysisReport, AdminInventoryAnalysisReport, AdminSearchAnalysisReport, AdminTrafficAnalysisReport, AdminExportCenter,
   AdminSiteSettings, AdminFeatureSettings, AdminSupportDownload, AdminTelegramSettings, AdminThemeSettings, AdminContent, AdminHomeOps,
-  AdminRoles, AdminLogs, AdminRecycleBin,
+  AdminRoles, AdminLogs, AdminRecycleBin, AdminDataRetention,
   AdminPaymentChannels, AdminPaymentOrders, AdminPaymentEvents, AdminPaymentReconciliations,
   AdminMonitoringOverview, AdminMonitoringAnomalies, AdminMonitoringAnomalyDetail,
   AdminMonitoringRepairTasks, AdminMonitoringRules, AdminMonitoringRuns,
@@ -195,6 +195,7 @@ function AdminTitleSync() {
       { test: (p) => p.startsWith("/admin/reports"), titleKey: "routeTitles.reports" },
       { test: (p) => p.startsWith("/admin/exports"), titleKey: "routeTitles.exports" },
       { test: (p) => p.startsWith("/admin/logs"), titleKey: "routeTitles.auditLogs" },
+      { test: (p) => p.startsWith("/admin/data-retention"), titleKey: "routeTitles.dataRetention" },
       { test: (p) => p.startsWith("/admin/recycle-bin"), titleKey: "routeTitles.recycleBin" },
       { test: (p) => p.startsWith("/admin/notifications"), titleKey: "routeTitles.notifications" },
       { test: (p) => p.startsWith("/admin/event-center"), titleKey: "routeTitles.eventCenter" },
@@ -442,6 +443,7 @@ export function AppRoutes() {
                 <Route path="reports/traffic" element={<CapabilityRoute enabled={capabilities.trafficAnalyticsEnabled}><AdminTrafficAnalysisReport /></CapabilityRoute>} />
                 <Route path="accounts" element={<AdminAccounts />} />
                 <Route path="recycle-bin" element={<AdminRecycleBin />} />
+                <Route path="data-retention" element={<AdminDataRetention />} />
                 <Route path="exports" element={<AdminExportCenter />} />
                 <Route path="logs" element={<AdminLogs />} />
                 <Route path="content" element={<AdminContent />} />

@@ -1,4 +1,5 @@
 import type { ActivityListParams } from "@/api/admin/activity";
+import type { DataCleanupRunListParams } from "@/api/admin/dataRetention";
 import type { OrderListParams } from "@/types/order";
 import type { ProductListParams } from "@/types/product";
 
@@ -122,6 +123,11 @@ export const adminQueryKeys = {
   accounts: () => ["admin", "rbac", "accounts"] as const,
   auditLogsRoot: () => ["admin", "audit-logs"] as const,
   auditLogs: (filters?: AuditLogListParams) => ["admin", "audit-logs", filters ?? {}] as const,
+  dataCleanupRoot: () => ["admin", "data-cleanup"] as const,
+  dataCleanupOverview: () => ["admin", "data-cleanup", "overview"] as const,
+  dataCleanupPolicies: () => ["admin", "data-cleanup", "policies"] as const,
+  dataCleanupRuns: (filters?: DataCleanupRunListParams) => ["admin", "data-cleanup", "runs", filters ?? {}] as const,
+  dataCleanupRun: (id: string | number) => ["admin", "data-cleanup", "run", String(id)] as const,
   banners: () => ["admin", "banners"] as const,
   contentHub: () => ["admin", "content", "hub"] as const,
   homeOpsNav: () => ["admin", "home-ops", "nav"] as const,

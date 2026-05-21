@@ -26,6 +26,14 @@ function normalizeOrigin(value) {
   }
 }
 
+function normalizeAdminApiPath(path) {
+  const normalized = String(path || '');
+  if (normalized.length > 1 && normalized.endsWith('/')) {
+    return normalized.slice(0, -1);
+  }
+  return normalized;
+}
+
 function getConfiguredAllowedOrigins() {
   const configured = [
     ...splitCsv(process.env.ADMIN_ALLOWED_ORIGINS),
@@ -35,7 +43,14 @@ function getConfiguredAllowedOrigins() {
     .map(normalizeOrigin)
     .filter(Boolean);
 
-  if (configured.length) return [...new Set(configured)];
+  const publicAppOrigin = normalizeOrigin(process.env.PUBLIC_APP_URL);
+  const merged = publicAppOrigin
+    ? [...configured, publicAppOrigin]
+    : configured;
+
+  const unique = [...new Set(merged)].filter(Boolean);
+  if (unique.length) return unique;
+
   if (process.env.NODE_ENV === 'production') return [];
 
   return [
@@ -63,6 +78,27 @@ function getSourceOrigin(req) {
   return normalizeOrigin(req.get('referer'));
 }
 
+function buildGatewayContext(req) {
+  const allowed = getConfiguredAllowedOrigins();
+  return {
+    requestOrigin: getRequestOriginFromHost(req),
+    sourceOrigin: getSourceOrigin(req),
+    allowedOrigins: allowed,
+    host: req.get('host') || '',
+    path: req.path,
+    method: req.method,
+  };
+}
+
+function logAdminGatewayDeny(req, reason, extra = {}) {
+  const context = {
+    reason,
+    ...buildGatewayContext(req),
+    ...extra,
+  };
+  console.warn('[admin-gateway] blocked request', JSON.stringify(context));
+}
+
 function timingSafeEqualString(a, b) {
   const left = Buffer.from(String(a || ''));
   const right = Buffer.from(String(b || ''));
@@ -83,6 +119,7 @@ async function auditSecurityBlock(req, reason, extra = {}) {
       origin: req.get('origin') || '',
       referer: req.get('referer') || '',
       host: req.get('host') || '',
+      ...buildGatewayContext(req),
       ...extra,
     },
     result: 'failure',
@@ -90,22 +127,41 @@ async function auditSecurityBlock(req, reason, extra = {}) {
   });
 }
 
+function denyAdminGateway(req, res, {
+  reason,
+  statusCode,
+  message,
+  extra = {},
+}) {
+  logAdminGatewayDeny(req, reason, extra);
+  void auditSecurityBlock(req, reason, extra);
+  return res.status(statusCode).json({ code: statusCode, message });
+}
+
 function blockAdminApiOnPublicHost(req, res, next) {
   if (!req.path.startsWith('/api/admin')) return next();
+
   const allowed = getConfiguredAllowedOrigins();
   const requestOrigin = getRequestOriginFromHost(req);
 
   if (!allowed.length) {
     if (process.env.NODE_ENV === 'production') {
-      void auditSecurityBlock(req, 'admin_allowed_origins_not_configured');
-      return res.status(404).json({ code: 404, message: 'Not Found' });
+      return denyAdminGateway(req, res, {
+        reason: 'admin_allowed_origins_not_configured',
+        statusCode: 404,
+        message: 'Not Found',
+      });
     }
     return next();
   }
 
-  if (!allowed.includes(requestOrigin)) {
-    void auditSecurityBlock(req, 'admin_api_public_host', { requestOrigin, allowedOrigins: allowed });
-    return res.status(404).json({ code: 404, message: 'Not Found' });
+  if (!requestOrigin || !allowed.includes(requestOrigin)) {
+    return denyAdminGateway(req, res, {
+      reason: 'admin_api_host_not_allowed',
+      statusCode: 404,
+      message: 'Not Found',
+      extra: { requestOrigin },
+    });
   }
 
   return next();
@@ -116,13 +172,51 @@ function adminGatewayGuard(req, res, next) {
   if (req.method === 'OPTIONS') return next();
 
   const allowed = getConfiguredAllowedOrigins();
+  const requestOrigin = getRequestOriginFromHost(req);
   const sourceOrigin = getSourceOrigin(req);
-  if (!allowed.length || !sourceOrigin || !allowed.includes(sourceOrigin)) {
-    void auditSecurityBlock(req, !sourceOrigin ? 'admin_api_missing_origin' : 'admin_api_origin_denied', {
-      sourceOrigin,
-      allowedOrigins: allowed,
+  const apiPath = normalizeAdminApiPath(req.path);
+
+  if (!allowed.length) {
+    if (process.env.NODE_ENV === 'production') {
+      return denyAdminGateway(req, res, {
+        reason: 'admin_allowed_origins_not_configured',
+        statusCode: 403,
+        message: 'Forbidden',
+      });
+    }
+    return next();
+  }
+
+  if (!requestOrigin || !allowed.includes(requestOrigin)) {
+    return denyAdminGateway(req, res, {
+      reason: 'admin_api_host_not_allowed',
+      statusCode: 403,
+      message: 'Forbidden',
+      extra: { requestOrigin },
     });
-    return res.status(403).json({ code: 403, message: 'Forbidden' });
+  }
+
+  if (sourceOrigin && !allowed.includes(sourceOrigin)) {
+    return denyAdminGateway(req, res, {
+      reason: 'admin_api_origin_denied',
+      statusCode: 403,
+      message: 'Forbidden',
+      extra: { sourceOrigin },
+    });
+  }
+
+  if (!sourceOrigin) {
+    if (SAFE_METHODS.has(req.method)) {
+      return next();
+    }
+    if (CSRF_EXEMPT_PATHS.has(apiPath)) {
+      return next();
+    }
+    return denyAdminGateway(req, res, {
+      reason: 'admin_api_missing_origin',
+      statusCode: 403,
+      message: 'Forbidden',
+    });
   }
 
   return next();
@@ -165,12 +259,16 @@ function getCookie(req, name) {
 function adminCsrfGuard(req, res, next) {
   if (!req.path.startsWith('/api/admin')) return next();
   if (SAFE_METHODS.has(req.method)) return next();
-  if (CSRF_EXEMPT_PATHS.has(req.path)) return next();
+  if (CSRF_EXEMPT_PATHS.has(normalizeAdminApiPath(req.path))) return next();
 
   const headerToken = String(req.get('x-csrf-token') || '');
   const cookieToken = getCookie(req, 'admin_csrf_token');
 
   if (!headerToken || !cookieToken || !timingSafeEqualString(headerToken, cookieToken)) {
+    logAdminGatewayDeny(req, 'admin_csrf_failed', {
+      hasHeaderToken: Boolean(headerToken),
+      hasCookieToken: Boolean(cookieToken),
+    });
     void auditSecurityBlock(req, 'admin_csrf_failed', {
       hasHeaderToken: Boolean(headerToken),
       hasCookieToken: Boolean(cookieToken),
@@ -187,4 +285,5 @@ module.exports = {
   blockAdminApiOnPublicHost,
   createCsrfToken,
   getConfiguredAllowedOrigins,
+  normalizeAdminApiPath,
 };

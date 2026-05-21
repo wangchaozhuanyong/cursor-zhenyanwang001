@@ -19,7 +19,7 @@ export default function Favorites() {
   }, [loadFavorites]);
 
   return (
-    <div className="store-bottom-safe min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       <PageHeader title="我的收藏" />
 
       <main className="mx-auto w-full px-[var(--store-page-x)] sm:max-w-lg sm:px-4">

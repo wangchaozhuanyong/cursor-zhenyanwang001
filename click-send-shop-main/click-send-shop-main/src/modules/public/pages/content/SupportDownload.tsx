@@ -171,14 +171,14 @@ export default function SupportDownload() {
 
   if (!config.enabled) {
     return (
-      <div className="store-bottom-safe min-h-screen bg-[var(--theme-bg)] px-[var(--store-page-x)] py-[var(--store-page-y)] text-sm text-[var(--theme-text-muted)]">
+      <div className="min-h-screen bg-[var(--theme-bg)] px-[var(--store-page-x)] py-[var(--store-page-y)] text-sm text-[var(--theme-text-muted)]">
         客服中心暂未开放。
       </div>
     );
   }
 
   return (
-    <div className="store-bottom-safe min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
+    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <SeoHead
         title={`${config.title} - ${siteInfo.siteName || "官方商城"}`}
         description={config.subtitle}

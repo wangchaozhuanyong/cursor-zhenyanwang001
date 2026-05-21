@@ -163,7 +163,7 @@ export default function Search() {
   const siteName = siteInfo.siteName || "官方商城";
 
   return (
-    <div className="store-bottom-safe min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
+    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <SeoHead
         title={`搜索结果｜${siteName}`}
         description={`查看${siteName}站内搜索结果，快速查找相关服务、商品和帮助内容。`}

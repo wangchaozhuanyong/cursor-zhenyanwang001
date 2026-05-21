@@ -130,7 +130,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
 
     const hasData = get().products.length > 0;
     if (hasFreshCache && cached) {
-      // Show cached list immediately; revalidate in background without the "正在更新" banner.
+      // Show cached list immediately; skip duplicate fetch when params unchanged.
       set({
         products: cached.data.products,
         pagination: cached.data.pagination,
@@ -139,6 +139,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
         error: null,
         filters: merged,
       });
+      return;
     } else {
       set({
         loading: !hasData,

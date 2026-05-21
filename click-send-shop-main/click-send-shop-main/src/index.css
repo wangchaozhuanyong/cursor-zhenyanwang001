@@ -624,6 +624,18 @@ html {
   scroll-behavior: smooth;
 }
 
+/* 底栏为 fixed：用 scroll-padding 预留空间，避免页面根节点 padding-bottom 在页脚下方形成大块空白 */
+html[data-app-scope="store"] {
+  scroll-padding-bottom: calc(var(--store-bottom-nav-height, 72px) + env(safe-area-inset-bottom, 0px));
+}
+
+html[data-app-scope="store"][data-store-tab-route="cart"] {
+  scroll-padding-bottom: calc(
+    var(--store-bottom-nav-height, 72px) + var(--store-action-bar-height, 4.75rem) +
+      env(safe-area-inset-bottom, 0px)
+  );
+}
+
 /* Global loading skeleton: inherit dynamic skin variables only */
 .skeleton-base {
   position: relative;

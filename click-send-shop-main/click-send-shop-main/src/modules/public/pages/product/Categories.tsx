@@ -70,8 +70,9 @@ export default function Categories() {
     if (isRecommended) next.set("is_recommended", "1");
     if (sort && sort !== "default") next.set("sort", sort);
     if (debouncedQuery) next.set("keyword", debouncedQuery);
+    if (next.toString() === searchParams.toString()) return;
     setSearchParams(next, { replace: true });
-  }, [activeCat, activeTagId, debouncedQuery, inStock, isHot, isNew, isRecommended, maxPrice, minPrice, setSearchParams, sort]);
+  }, [activeCat, activeTagId, debouncedQuery, inStock, isHot, isNew, isRecommended, maxPrice, minPrice, searchParams, setSearchParams, sort]);
 
   useEffect(() => {
     syncQuery();
@@ -230,7 +231,7 @@ export default function Categories() {
   );
 
   return (
-    <div className="store-bottom-safe min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
+    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <SeoHead title={title} description={description} canonical={canonical} robots={robots} />
       <StorePageHeader
         title="分类"

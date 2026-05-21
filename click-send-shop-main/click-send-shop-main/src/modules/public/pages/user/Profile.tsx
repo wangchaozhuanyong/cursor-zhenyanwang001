@@ -271,7 +271,7 @@ export default function Profile() {
   const notificationBadgeText = formatUnreadBadge(unreadCount);
 
   return (
-    <div className="store-page store-bottom-safe min-h-screen text-[var(--theme-text)]">
+    <div className="store-page min-h-screen text-[var(--theme-text)]">
       <StorePageHeader
         title={
           <span className="inline-flex min-w-0 items-center gap-2.5">

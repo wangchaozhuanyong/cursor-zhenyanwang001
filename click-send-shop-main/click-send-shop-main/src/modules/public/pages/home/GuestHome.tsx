@@ -172,7 +172,6 @@ export default function GuestHome() {
     navigate(path);
   };
 
-  const bottomNavSafe = "store-bottom-safe";
   const homeLayout = themeConfig.homeLayout ?? "classic";
   const isPremiumLayout = homeLayout === "premium";
   const isMagazineLayout = homeLayout === "magazine";
@@ -181,7 +180,7 @@ export default function GuestHome() {
   const canonical = buildCanonical("/");
   const seoImage = siteInfo.ogImageUrl || siteInfo.defaultOgImageUrl || siteInfo.logoUrl || "/og-default.png";
   return (
-    <div className={`min-h-screen bg-[var(--theme-bg)] ${bottomNavSafe} text-[var(--theme-text)]`} data-theme-home-layout={themeConfig.homeLayout}>
+    <div className="min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)]" data-theme-home-layout={themeConfig.homeLayout}>
       <SeoHead
         title={seoTitle}
         description={seoDescription}

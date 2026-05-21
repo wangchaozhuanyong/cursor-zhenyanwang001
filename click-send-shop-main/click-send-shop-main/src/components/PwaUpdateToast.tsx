@@ -41,7 +41,6 @@ export default function PwaUpdateToast() {
     updateServiceWorker,
   } = useRegisterSW({
     immediate: true,
-    onNeedReload: reloadOnce,
   });
 
   useEffect(() => {

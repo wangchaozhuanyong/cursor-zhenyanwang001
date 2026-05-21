@@ -13,11 +13,11 @@ export function AnimatedPage({ children, className }: { children: ReactNode; cla
     return <div className={className}>{children}</div>;
   }
 
-  // popLayout: mount next route immediately so Suspense fallback stays visible (mode="wait" + opacity:0 caused white screens on tab nav).
+  // pathname key: query-only updates (e.g. /categories filters) must not remount the whole page (location.key changes on replace).
   return (
-    <AnimatePresence mode="popLayout" initial={false}>
+    <AnimatePresence mode="sync" initial={false}>
       <motion.div
-        key={location.key}
+        key={location.pathname}
         className={className}
         initial={pageMotion.initial}
         animate={pageMotion.animate}

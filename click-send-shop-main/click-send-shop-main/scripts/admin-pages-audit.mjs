@@ -38,7 +38,7 @@ const PATHS = [
   "/admin/settings/referral",
   "/admin/account",
   "/admin/content",
-  "/admin/logs",
+  "/admin/audit-logs",
   "/admin/settings/roles",
   "/admin/accounts",
   "/admin/recycle-bin",

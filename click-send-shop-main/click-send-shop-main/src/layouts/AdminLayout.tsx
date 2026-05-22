@@ -249,7 +249,7 @@ const navItemsRaw: NavItem[] = [
       { icon: Settings, labelKey: "nav.featureSettings", path: "/admin/settings/features", permission: "settings.manage" },
       { icon: Bell, labelKey: "nav.telegramNotifications", path: "/admin/settings/telegram", permission: "settings.manage" },
       { icon: Truck, labelKey: "nav.shipping", path: "/admin/settings/shipping", permission: "shipping.manage" },
-      { icon: ScrollText, labelKey: "nav.auditLogs", path: "/admin/logs", permission: "audit.view" },
+      { icon: ScrollText, labelKey: "nav.auditLogs", path: "/admin/audit-logs", permission: "audit.view" },
       { icon: Database, labelKey: "nav.dataRetention", path: "/admin/data-retention", permission: { anyOf: ["data_cleanup.view", "data_cleanup.manage", "data_cleanup.execute"] } },
       { icon: DatabaseBackup, labelKey: "nav.backupCenter", path: "/admin/backups", permission: "backup.view" },
       { icon: RotateCcw, labelKey: "nav.recycleBin", path: "/admin/recycle-bin", permission: "recycle_bin.manage" },
@@ -713,7 +713,7 @@ function AdminLayoutContent() {
                         className="rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
                         onClick={() => {
                           setSecurityAlertsOpen(false);
-                          navigate("/admin/logs?keyword=security");
+                          navigate("/admin/audit-logs?keyword=security");
                         }}
                       >
                         审计日志
@@ -728,7 +728,7 @@ function AdminLayoutContent() {
                             className="flex w-full gap-2 rounded-lg px-2 py-2 text-left hover:bg-secondary"
                             onClick={() => {
                               setSecurityAlertsOpen(false);
-                              navigate(`/admin/logs?actionType=${encodeURIComponent(item.action_type)}`);
+                              navigate(`/admin/audit-logs?actionType=${encodeURIComponent(item.action_type)}`);
                             }}
                           >
                             <AlertTriangle size={15} className={`mt-0.5 shrink-0 ${item.result === "failure" ? "text-destructive" : "text-[var(--theme-primary)]"}`} />

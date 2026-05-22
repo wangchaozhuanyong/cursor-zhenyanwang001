@@ -48,7 +48,7 @@ const RULES: { test: (path: string) => boolean; rule: PathRule }[] = [
   { test: (p) => p.startsWith("/admin/home-ops"), rule: { kind: "one", permission: "home_ops.manage" } },
   { test: (p) => p.startsWith("/admin/reports"), rule: { kind: "one", permission: "report.view" } },
   { test: (p) => p.startsWith("/admin/exports"), rule: { kind: "one", permission: "report.export" } },
-  { test: (p) => p.startsWith("/admin/logs"), rule: { kind: "one", permission: "audit.view" } },
+  { test: (p) => p.startsWith("/admin/audit-logs"), rule: { kind: "one", permission: "audit.view" } },
   { test: (p) => p.startsWith("/admin/content"), rule: { kind: "one", permission: "content.manage" } },
 ];
 

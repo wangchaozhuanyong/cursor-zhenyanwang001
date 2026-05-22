@@ -193,7 +193,7 @@ function AdminTitleSync() {
       { test: (p) => p.startsWith("/admin/reports/traffic"), titleKey: "routeTitles.traffic" },
       { test: (p) => p.startsWith("/admin/reports"), titleKey: "routeTitles.reports" },
       { test: (p) => p.startsWith("/admin/exports"), titleKey: "routeTitles.exports" },
-      { test: (p) => p.startsWith("/admin/logs"), titleKey: "routeTitles.auditLogs" },
+      { test: (p) => p.startsWith("/admin/audit-logs"), titleKey: "routeTitles.auditLogs" },
       { test: (p) => p.startsWith("/admin/data-retention"), titleKey: "routeTitles.dataRetention" },
       { test: (p) => p.startsWith("/admin/recycle-bin"), titleKey: "routeTitles.recycleBin" },
       { test: (p) => p.startsWith("/admin/notifications"), titleKey: "routeTitles.notifications" },
@@ -444,7 +444,7 @@ export function AppRoutes() {
                 <Route path="recycle-bin" element={<AdminRecycleBin />} />
                 <Route path="data-retention" element={<AdminDataRetention />} />
                 <Route path="exports" element={<AdminExportCenter />} />
-                <Route path="logs" element={<AdminLogs />} />
+                <Route path="audit-logs" element={<AdminLogs />} />
                 <Route path="content" element={<AdminContent />} />
               </Route>
 

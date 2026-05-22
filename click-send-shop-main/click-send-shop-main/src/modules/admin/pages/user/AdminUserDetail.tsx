@@ -285,7 +285,7 @@ export default function AdminUserDetail() {
         )}
         {tab === "售后记录" && <DataList title="售后记录" rows={user.related?.after_sales} onAll={() => navigate(`/admin/returns?userId=${user.id}`)} />}
         {tab === "评论记录" && <DataList title="评论记录" rows={user.related?.review_records} onAll={() => navigate(`/admin/reviews?keyword=${user.id}`)} />}
-        {tab === "操作日志" && <DataList title="操作日志" rows={user.operation_logs} onAll={() => navigate(`/admin/logs?objectType=user&objectId=${user.id}`)} />}
+        {tab === "操作日志" && <DataList title="操作日志" rows={user.operation_logs} onAll={() => navigate(`/admin/audit-logs?objectType=user&objectId=${user.id}`)} />}
       </section>
 
       <section className="rounded-xl border border-border bg-card p-4">

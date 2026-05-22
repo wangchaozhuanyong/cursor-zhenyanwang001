@@ -377,3 +377,198 @@ export default function AdminAccounts() {
     </div>
   );
 }
+
+function AdminSecurityDialog({
+  target,
+  onClose,
+  onChanged,
+}: {
+  target: RbacAdminUserRow;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const queryKey = adminQueryKeys.accountSecurity(target.id);
+  const securityQuery = useQuery({
+    queryKey,
+    queryFn: () => rbacService.loadAdminUserSecurity(target.id),
+  });
+  const security = securityQuery.data;
+  const activeDevices = security?.trustedDevices.filter((device) => device.active) ?? [];
+
+  const refresh = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey }),
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.accounts() }),
+    ]);
+    onChanged();
+  };
+
+  const setMfaRequiredMutation = useMutation({
+    mutationFn: (required: boolean) => rbacService.updateAdminUserMfaRequired(target.id, required),
+    onSuccess: async (_data, required) => {
+      toast.success(required ? "已要求该员工下次登录绑定 MFA" : "已关闭该员工 MFA 要求");
+      await refresh();
+    },
+    onError: (err) => toast.error(toastErrorMessage(err, "安全设置更新失败")),
+  });
+
+  const resetMfaMutation = useMutation({
+    mutationFn: () => rbacService.resetAdminUserMfa(target.id),
+    onSuccess: async () => {
+      toast.success("MFA 已重置，下次登录需要重新绑定");
+      await refresh();
+    },
+    onError: (err) => toast.error(toastErrorMessage(err, "MFA 重置失败")),
+  });
+
+  const revokeAllDevicesMutation = useMutation({
+    mutationFn: () => rbacService.revokeAdminTrustedDevices(target.id),
+    onSuccess: async (data) => {
+      toast.success(`已撤销 ${data?.revoked ?? 0} 台可信设备`);
+      await refresh();
+    },
+    onError: (err) => toast.error(toastErrorMessage(err, "可信设备撤销失败")),
+  });
+
+  const revokeDeviceMutation = useMutation({
+    mutationFn: (deviceId: string) => rbacService.revokeAdminTrustedDevice(target.id, deviceId),
+    onSuccess: async () => {
+      toast.success("可信设备已撤销");
+      await refresh();
+    },
+    onError: (err) => toast.error(toastErrorMessage(err, "可信设备撤销失败")),
+  });
+
+  const busy = setMfaRequiredMutation.isPending
+    || resetMfaMutation.isPending
+    || revokeAllDevicesMutation.isPending
+    || revokeDeviceMutation.isPending;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-2xl theme-rounded bg-[var(--theme-surface)] p-5 theme-shadow">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="flex items-center gap-2 text-base font-bold text-foreground">
+              <ShieldCheck size={18} />
+              员工安全设置
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground">{target.nickname || target.phone} · {target.phone}</p>
+          </div>
+          <button type="button" className="rounded border border-border p-1.5 text-muted-foreground hover:bg-secondary" onClick={onClose} title="关闭">
+            <X size={16} />
+          </button>
+        </div>
+
+        {securityQuery.isLoading ? (
+          <div className="mt-5 rounded-lg border border-border bg-secondary/40 p-4 text-sm text-muted-foreground">正在加载安全状态...</div>
+        ) : securityQuery.isError ? (
+          <div className={`mt-5 rounded-lg border p-4 text-sm ${THEME_ALERT_ERROR_SOFT}`}>安全状态加载失败，请稍后重试。</div>
+        ) : (
+          <div className="mt-5 space-y-4">
+            <div className="grid gap-3 md:grid-cols-3">
+              <SecurityMetric label="MFA 要求" value={security?.mfa.required ? "已要求" : "未要求"} />
+              <SecurityMetric label="MFA 状态" value={security?.mfa.enabled ? "已启用" : "未启用"} />
+              <SecurityMetric label="可信设备" value={`${activeDevices.length} 台有效`} />
+            </div>
+
+            <div className="rounded-lg border border-border p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">MFA 登录保护</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    开启后，该员工下次登录需要绑定身份验证器；重置会撤销旧绑定和可信设备。
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={busy || security?.mfa.lockedRequired || security?.mfa.required}
+                    onClick={() => setMfaRequiredMutation.mutate(true)}
+                    className="rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-50"
+                  >
+                    要求 MFA
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy || security?.mfa.lockedRequired || !security?.mfa.required}
+                    onClick={() => setMfaRequiredMutation.mutate(false)}
+                    className="rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-50"
+                  >
+                    关闭要求
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => resetMfaMutation.mutate()}
+                    className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-50"
+                  >
+                    <RotateCcw size={13} />
+                    重置 MFA
+                  </button>
+                </div>
+              </div>
+              {security?.mfa.lockedRequired ? (
+                <p className="mt-3 text-xs text-amber-700">超级管理员必须启用 MFA，不能关闭要求。</p>
+              ) : null}
+            </div>
+
+            <div className="rounded-lg border border-border p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">可信设备</p>
+                  <p className="mt-1 text-xs text-muted-foreground">撤销后，该员工下次登录需要重新完成 MFA 验证。</p>
+                </div>
+                <button
+                  type="button"
+                  disabled={busy || activeDevices.length === 0}
+                  onClick={() => revokeAllDevicesMutation.mutate()}
+                  className="rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-50"
+                >
+                  撤销全部设备
+                </button>
+              </div>
+
+              <div className="mt-3 divide-y divide-border rounded-lg border border-border">
+                {(security?.trustedDevices ?? []).length === 0 ? (
+                  <div className="p-3 text-xs text-muted-foreground">暂无可信设备记录。</div>
+                ) : (
+                  security?.trustedDevices.map((device) => (
+                    <div key={device.id} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 text-foreground">
+                          <Smartphone size={14} />
+                          <span>{device.active ? "有效设备" : "已失效设备"}</span>
+                        </div>
+                        <p className="mt-1">最近使用：{device.lastSeenAt ? formatDateTime(device.lastSeenAt) : "-"}</p>
+                        <p>到期时间：{device.expiresAt ? formatDateTime(device.expiresAt) : "-"}</p>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={busy || !device.active}
+                        onClick={() => revokeDeviceMutation.mutate(device.id)}
+                        className="rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-secondary disabled:opacity-50"
+                      >
+                        撤销
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SecurityMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-secondary/30 p-3">
+      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-foreground">{value}</p>
+    </div>
+  );
+}

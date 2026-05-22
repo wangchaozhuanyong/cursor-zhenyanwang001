@@ -14,8 +14,8 @@ module.exports = {
     `);
 
     await query(`
-      INSERT IGNORE INTO permissions (code, name, description)
-      VALUES ('admin_log.view', '操作日志', '查看旧版后台操作日志')
+      INSERT IGNORE INTO permissions (code, name, sort_order)
+      VALUES ('admin_log.view', '操作日志', 999)
     `);
   },
 };

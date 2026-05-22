@@ -82,6 +82,9 @@ async function main() {
     const { sizeBytes } = await fileStat(encPath);
     const storageKey = `${process.env.BACKUP_S3_PREFIX || 'shop-backups'}/mysql/full/${stamp}/${path.basename(encPath)}`;
     const uploaded = await uploadObject(encPath, storageKey);
+    if (!uploaded.skipped) {
+      await uploadObject(`${encPath}.meta.json`, `${storageKey}.meta.json`);
+    }
 
     await safeRepo('insert file', () => repo.insertBackupFile({
       id: generateId(),

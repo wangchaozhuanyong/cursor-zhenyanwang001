@@ -366,6 +366,14 @@ export default function AdminAccounts() {
           </div>
         </div>
       )}
+
+      {securityTarget && (
+        <AdminSecurityDialog
+          target={securityTarget}
+          onClose={() => setSecurityTarget(null)}
+          onChanged={() => void invalidateAccounts()}
+        />
+      )}
     </div>
   );
 }

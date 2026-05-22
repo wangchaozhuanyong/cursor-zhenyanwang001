@@ -38,6 +38,9 @@ export function adminLoginErrorMessage(error: unknown, fallback: string): string
     if (error.status === 401) return "账号或密码不正确";
     if (error.status === 403) return "该账号无权登录管理后台";
     if (error.status === 429) return "登录尝试过于频繁，请稍后再试";
+    if (/MFA code invalid/i.test(error.message)) return "验证码不正确或已过期，请使用身份验证器当前显示的 6 位数字";
+    if (/MFA challenge expired/i.test(error.message)) return "验证已过期，请点击「返回密码登录」后重新登录并扫码";
+    if (/MFA challenge invalid/i.test(error.message)) return "验证会话无效，请点击「返回密码登录」后重新登录";
   }
   const msg = error instanceof Error ? error.message : "";
   if (/服务暂时不可用|服务维护|服务响应超时/i.test(msg)) {
@@ -49,5 +52,9 @@ export function adminLoginErrorMessage(error: unknown, fallback: string): string
   if (/Authentication failed|invalid credentials|密码|账号/i.test(msg)) {
     return "账号或密码不正确";
   }
+  if (/MFA code invalid/i.test(msg)) return "验证码不正确或已过期，请使用身份验证器当前显示的 6 位数字";
+  if (/MFA challenge expired/i.test(msg)) return "验证已过期，请点击「返回密码登录」后重新登录并扫码";
+  if (/MFA challenge invalid/i.test(msg)) return "验证会话无效，请点击「返回密码登录」后重新登录";
+  if (/MFA verification failed/i.test(msg)) return "MFA 验证失败，请检查验证码是否正确或是否已过期";
   return fallback;
 }

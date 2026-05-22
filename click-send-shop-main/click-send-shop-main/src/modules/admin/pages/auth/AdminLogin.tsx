@@ -63,7 +63,7 @@ export default function AdminLogin() {
   const handleVerifyMfa = async () => {
     if (!mfaState?.ticket || !mfaCode.trim()) {
       setShakeKey((k) => k + 1);
-      toast.error("Enter the 6-digit MFA code");
+      toast.error(t("login.mfaCodeRequired"));
       return;
     }
     setLoading(true);
@@ -77,7 +77,7 @@ export default function AdminLogin() {
       navigate("/admin");
     } catch (e) {
       setShakeKey((k) => k + 1);
-      toast.error(adminLoginErrorMessage(e, "MFA verification failed"));
+      toast.error(adminLoginErrorMessage(e, t("login.mfaVerifyFailed")));
     } finally {
       setLoading(false);
     }
@@ -101,7 +101,7 @@ export default function AdminLogin() {
                 <div className="rounded-xl border border-border bg-secondary p-4">
                   <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                     <KeyRound size={16} />
-                    {mfaState.setupRequired ? "Set up MFA" : "MFA verification"}
+                    {mfaState.setupRequired ? t("login.mfaSetupTitle") : t("login.mfaVerifyTitle")}
                   </div>
                   {mfaState.setupRequired ? (
                     <div className="mt-4 space-y-3">
@@ -112,7 +112,7 @@ export default function AdminLogin() {
                       ) : null}
                       {mfaState.secret ? (
                         <div>
-                          <p className="text-xs text-muted-foreground">Manual setup key</p>
+                          <p className="text-xs text-muted-foreground">{t("login.mfaManualKey")}</p>
                           <code className="mt-1 block break-all rounded-lg border border-border bg-background p-2 text-xs text-foreground">
                             {mfaState.secret}
                           </code>
@@ -121,12 +121,12 @@ export default function AdminLogin() {
                     </div>
                   ) : null}
                   <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                    Open your authenticator app and enter the current 6-digit code.
+                    {t("login.mfaInstruction")}
                   </p>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">MFA code</label>
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">{t("login.mfaCodeLabel")}</label>
                   <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2.5 focus-within:border-gold/50 focus-within:ring-1 focus-within:ring-gold/20">
                     <KeyRound size={16} className="text-muted-foreground" />
                     <input
@@ -134,7 +134,7 @@ export default function AdminLogin() {
                       inputMode="numeric"
                       value={mfaCode}
                       onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                      placeholder="000000"
+                      placeholder={t("login.mfaCodePlaceholder")}
                       className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
                       onKeyDown={(e) => e.key === "Enter" && handleVerifyMfa()}
                     />
@@ -147,14 +147,14 @@ export default function AdminLogin() {
                   disabled={loading}
                   className="touch-manipulation mt-2 min-h-[48px] w-full rounded-xl btn-theme-price py-3 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 active:opacity-95 disabled:opacity-50 sm:text-sm"
                 >
-                  {loading ? "Verifying..." : "Verify and enter"}
+                  {loading ? t("login.mfaVerifying") : t("login.mfaVerifySubmit")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setMfaState(null)}
                   className="w-full text-xs text-muted-foreground hover:text-foreground"
                 >
-                  Back to password login
+                  {t("login.mfaBackToPassword")}
                 </button>
               </>
             ) : (

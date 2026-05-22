@@ -54,6 +54,7 @@ const inventoryCtrl = require('../controller/adminInventory.controller');
 const activityCtrl = require('../controller/adminActivity.controller');
 const homeOpsCtrl = require('../controller/adminHomeOps.controller');
 const memberLevelCtrl = require('../controller/adminMemberLevel.controller');
+const backupCtrl = require('../controller/adminBackup.controller');
 const paySchemas = require('../../payment/payments.schemas');
 const productSchemas = require('../schemas/adminProduct.schemas');
 const adminOrderSchemas = require('../schemas/adminOrder.schemas');
@@ -70,11 +71,14 @@ const router = Router();
 router.post('/auth/login', authCtrl.login);
 router.post('/auth/refresh', authCtrl.refresh);
 router.post('/auth/mfa/verify', authCtrl.verifyMfa);
+router.post('/auth/mfa/reverify', adminAuth, authCtrl.reverifyMfa);
 router.get('/auth/csrf', authCtrl.csrf);
 router.post('/auth/logout', adminAuth, authCtrl.logout);
 router.get('/account/profile', adminAuth, authCtrl.getProfile);
 router.put('/account/profile', adminAuth, authCtrl.updateProfile);
 router.put('/account/password', adminAuth, authCtrl.changePassword);
+router.get('/account/order-voice', adminAuth, authCtrl.getOrderVoiceSettings);
+router.put('/account/order-voice', adminAuth, authCtrl.updateOrderVoiceSettings);
 
 /** 登录/刷新之后：关键迁移未完成时返回 503 指引，避免笼统的「服务器内部错误」 */
 router.use((req, res, next) => {
@@ -116,6 +120,8 @@ const highRiskAdminOperation = (req) => {
     /^\/referral-rules/,
     /^\/home-ops\/settings/,
     /^\/notifications\/trigger-settings/,
+    /^\/backups\//,
+    /^\/restore\//,
     /^\/inventory\//,
     /^\/orders\/[^/]+\/refund/,
     /^\/returns\/[^/]+/,
@@ -149,6 +155,11 @@ router.post('/rbac/roles', adminAuth, requirePermission('role.manage'), rbacCtrl
 router.put('/rbac/roles/:roleId', adminAuth, requirePermission('role.manage'), rbacCtrl.updateRole);
 router.delete('/rbac/roles/:roleId', adminAuth, requirePermission('role.manage'), rbacCtrl.removeRole);
 router.post('/rbac/admin-users', adminAuth, requirePermission('role.manage'), rbacCtrl.createAdminUser);
+router.get('/rbac/admin-users/:userId/security', adminAuth, requirePermission('role.manage'), rbacCtrl.getAdminUserSecurity);
+router.put('/rbac/admin-users/:userId/security/mfa-required', adminAuth, requirePermission('role.manage'), rbacCtrl.setAdminUserMfaRequired);
+router.post('/rbac/admin-users/:userId/security/mfa-reset', adminAuth, requirePermission('role.manage'), rbacCtrl.resetAdminUserMfa);
+router.post('/rbac/admin-users/:userId/security/trusted-devices/revoke', adminAuth, requirePermission('role.manage'), rbacCtrl.revokeAdminTrustedDevices);
+router.post('/rbac/admin-users/:userId/security/trusted-devices/:deviceId/revoke', adminAuth, requirePermission('role.manage'), rbacCtrl.revokeAdminTrustedDevice);
 router.put('/rbac/admin-users/:userId/toggle', adminAuth, requirePermission('role.manage'), rbacCtrl.toggleAdminUser);
 router.put('/rbac/admin-users/:userId/reset-password', adminAuth, requirePermission('role.manage'), rbacCtrl.resetAdminPassword);
 router.delete('/rbac/admin-users/:userId', adminAuth, requirePermission('role.manage'), rbacCtrl.removeAdminUser);
@@ -170,6 +181,22 @@ router.put('/event-center/events/:id/in-progress', adminAuth, requirePermission(
 router.put('/event-center/events/:id/resolve', adminAuth, requirePermission('event.manage'), adminEventCtrl.resolve);
 router.put('/event-center/events/:id/ignore', adminAuth, requirePermission('event.manage'), adminEventCtrl.ignore);
 router.get('/dashboard/stats', adminAuth, requirePermission('dashboard.view'), dashboardCtrl.getStats);
+
+/* ---- Data safety / Backup & Restore ---- */
+router.get('/backups/overview', adminAuth, requirePermission('backup.view'), backupCtrl.overview);
+router.get('/backups/files', adminAuth, requirePermission('backup.view'), backupCtrl.listFiles);
+router.post('/backups/full', adminAuth, requirePermission('backup.create'), backupCtrl.createFullBackup);
+router.get('/backups/alerts', adminAuth, requirePermission('backup.view'), backupCtrl.listAlerts);
+router.get('/restore/jobs', adminAuth, requirePermission('backup.restore.request'), backupCtrl.listRestoreJobs);
+router.post('/restore/jobs', adminAuth, requirePermission('backup.restore.request'), backupCtrl.createRestoreJob);
+router.post(
+  '/restore/jobs/:id/approve',
+  adminAuth,
+  requirePermission('backup.restore.approve'),
+  adminMfaService.requireRecentMfa,
+  backupCtrl.approveRestoreJob,
+);
+router.get('/restore/drills', adminAuth, requirePermission('backup.view'), backupCtrl.listDrillReports);
 
 /* ---- Products ---- */
 router.get(
@@ -602,7 +629,6 @@ router.post('/recycle-bin/:id/permanent-delete', adminAuth, requirePermission('r
 /* ---- Logs ---- */
 router.get('/audit-logs', adminAuth, requirePermission('audit.view'), logCtrl.listAuditLogs);
 router.get('/security/alerts', adminAuth, requirePermission('audit.view'), logCtrl.listSecurityAlerts);
-router.get('/logs', adminAuth, requirePermission('admin_log.view'), logCtrl.listAdminLogs);
 
 module.exports = router;
 

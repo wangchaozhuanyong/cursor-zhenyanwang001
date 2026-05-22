@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BellRing, Volume2, VolumeX } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import * as orderService from "@/services/admin/orderService";
+import {
+  getAdminOrderVoiceSettings,
+  updateAdminOrderVoiceSettings,
+} from "@/api/admin/orderVoice";
 import type { AdminOrderVoiceEvent } from "@/services/admin/orderService";
 
-const ENABLED_KEY = "admin_order_voice_enabled";
 const LAST_CHECKED_KEY = "admin_order_voice_last_checked_at";
 const PLAYED_IDS_KEY = "admin_order_voice_played_event_ids";
 const VOLUME_KEY = "admin_order_voice_volume";
@@ -16,11 +18,6 @@ type QueueItem = {
   text: string;
   fallbackToast: string;
 };
-
-function readBoolean(key: string) {
-  if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(key) === "true";
-}
 
 function readVolume() {
   if (typeof window === "undefined") return 1;
@@ -45,6 +42,60 @@ function savePlayedIds(ids: string[]) {
 
 function getSpeechSupport() {
   return typeof window !== "undefined" && "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+}
+
+let sharedAudioContext: AudioContext | null = null;
+
+function getSharedAudioContext() {
+  if (typeof window === "undefined") return null;
+  const AudioContextCtor = window.AudioContext || (window as Window & typeof globalThis & {
+    webkitAudioContext?: typeof AudioContext;
+  }).webkitAudioContext;
+  if (!AudioContextCtor) return null;
+  if (!sharedAudioContext || sharedAudioContext.state === "closed") {
+    sharedAudioContext = new AudioContextCtor();
+  }
+  return sharedAudioContext;
+}
+
+/** 在用户点击的同一事件循环内解锁 Web Audio（浏览器自动播放策略）。 */
+async function ensureAudioUnlocked() {
+  const ctx = getSharedAudioContext();
+  if (!ctx) return;
+  if (ctx.state === "suspended") {
+    await ctx.resume();
+  }
+  const buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  source.connect(ctx.destination);
+  source.start(0);
+  await new Promise((resolve) => window.setTimeout(resolve, 16));
+}
+
+function resumeSpeechSynthesis() {
+  if (!getSpeechSupport()) return;
+  if (window.speechSynthesis.paused) {
+    window.speechSynthesis.resume();
+  }
+}
+
+function waitForVoices(timeoutMs = 2500) {
+  if (!getSpeechSupport()) return Promise.resolve([]);
+  const existing = window.speechSynthesis.getVoices();
+  if (existing.length > 0) return Promise.resolve(existing);
+
+  return new Promise<SpeechSynthesisVoice[]>((resolve) => {
+    const finish = () => {
+      window.speechSynthesis.removeEventListener("voiceschanged", onChange);
+      resolve(window.speechSynthesis.getVoices());
+    };
+    const onChange = () => {
+      if (window.speechSynthesis.getVoices().length > 0) finish();
+    };
+    window.speechSynthesis.addEventListener("voiceschanged", onChange);
+    window.setTimeout(finish, timeoutMs);
+  });
 }
 
 function pickChineseVoice() {
@@ -90,11 +141,11 @@ function buildQueueItems(events: AdminOrderVoiceEvent[]): QueueItem[] {
 }
 
 async function playBeep(volume: number) {
-  const AudioContextCtor = window.AudioContext || (window as Window & typeof globalThis & {
-    webkitAudioContext?: typeof AudioContext;
-  }).webkitAudioContext;
-  if (!AudioContextCtor) return;
-  const ctx = new AudioContextCtor();
+  const ctx = getSharedAudioContext();
+  if (!ctx) throw new Error("AudioContext unsupported");
+  if (ctx.state === "suspended") {
+    await ctx.resume();
+  }
   const oscillator = ctx.createOscillator();
   const gain = ctx.createGain();
   oscillator.type = "sine";
@@ -105,56 +156,74 @@ async function playBeep(volume: number) {
   oscillator.start();
   oscillator.stop(ctx.currentTime + 0.18);
   await new Promise((resolve) => window.setTimeout(resolve, 220));
-  await ctx.close().catch(() => undefined);
 }
 
 export default function AdminOrderVoiceNotifier() {
-  const [enabled, setEnabled] = useState(() => readBoolean(ENABLED_KEY));
-  const [volume, setVolume] = useState(readVolume);
-  const [unsupported, setUnsupported] = useState(() => !getSpeechSupport());
-  const [voicesReady, setVoicesReady] = useState(false);
-  const enabledRef = useRef(enabled);
-  const volumeRef = useRef(volume);
+  const [enabled, setEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const volumeRef = useRef(readVolume());
+  const enabledRef = useRef(false);
   const pollingRef = useRef(false);
   const queueRef = useRef<QueueItem[]>([]);
   const playingRef = useRef(false);
 
-  const supportText = useMemo(
-    () => unsupported ? "当前浏览器不支持中文语音播报，将使用提示音提醒" : "",
-    [unsupported],
-  );
+  const applyEnabled = useCallback((next: boolean) => {
+    enabledRef.current = next;
+    setEnabled(next);
+  }, []);
 
   useEffect(() => {
-    enabledRef.current = enabled;
-  }, [enabled]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getAdminOrderVoiceSettings();
+        if (!cancelled) applyEnabled(Boolean(res.data?.enabled));
+      } catch (error) {
+        console.warn("[AdminOrderVoiceNotifier] load settings failed:", error);
+        if (!cancelled) applyEnabled(false);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [applyEnabled]);
 
   useEffect(() => {
-    volumeRef.current = volume;
-    window.localStorage.setItem(VOLUME_KEY, String(volume));
-  }, [volume]);
-
-  useEffect(() => {
-    if (!getSpeechSupport()) {
-      setUnsupported(true);
-      return;
-    }
-    const loadVoices = () => setVoicesReady(true);
+    if (!getSpeechSupport()) return;
+    const loadVoices = () => undefined;
     loadVoices();
     window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
     return () => window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
   }, []);
 
-  const speakText = useCallback((text: string, options?: { interrupt?: boolean }) => {
+  const speakText = useCallback(async (
+    text: string,
+    options?: { interrupt?: boolean; allowCanceled?: boolean },
+  ) => {
     if (!getSpeechSupport()) {
-      setUnsupported(true);
-      return Promise.reject(new Error("speechSynthesis unsupported"));
+      throw new Error("speechSynthesis unsupported");
     }
 
+    resumeSpeechSynthesis();
+    if (options?.interrupt) {
+      window.speechSynthesis.cancel();
+      await new Promise((resolve) => window.setTimeout(resolve, 32));
+    }
+    await waitForVoices();
+
     return new Promise<void>((resolve, reject) => {
+      let settled = false;
+      const finish = (ok: boolean, reason?: string) => {
+        if (settled) return;
+        settled = true;
+        if (ok) resolve();
+        else reject(new Error(reason || "speechSynthesis failed"));
+      };
+
       try {
-        if (options?.interrupt) {
-          window.speechSynthesis.cancel();
-        }
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = "zh-CN";
         utterance.rate = 1;
@@ -162,11 +231,27 @@ export default function AdminOrderVoiceNotifier() {
         utterance.volume = volumeRef.current;
         const voice = pickChineseVoice();
         if (voice) utterance.voice = voice;
-        utterance.onend = () => resolve();
-        utterance.onerror = () => reject(new Error("speechSynthesis failed"));
+        utterance.onend = () => finish(true);
+        utterance.onerror = (event) => {
+          const code = event.error || "";
+          if (code === "interrupted") {
+            finish(true);
+            return;
+          }
+          if (code === "canceled" && options?.allowCanceled) {
+            finish(true);
+            return;
+          }
+          finish(false, code);
+        };
         window.speechSynthesis.speak(utterance);
+        window.setTimeout(() => {
+          if (!settled && !window.speechSynthesis.speaking) {
+            finish(false, "speechSynthesis timeout");
+          }
+        }, 8000);
       } catch (error) {
-        reject(error);
+        finish(false, error instanceof Error ? error.message : "speechSynthesis failed");
       }
     });
   }, []);
@@ -184,9 +269,7 @@ export default function AdminOrderVoiceNotifier() {
           try {
             await playBeep(volumeRef.current);
           } catch {
-            setEnabled(false);
-            window.localStorage.setItem(ENABLED_KEY, "false");
-            toast.error("浏览器阻止了声音播放，请点击“开启提醒”。");
+            toast.error("浏览器阻止了声音播放，请检查系统音量或浏览器权限。");
             break;
           }
           toast.info(item.fallbackToast);
@@ -227,7 +310,7 @@ export default function AdminOrderVoiceNotifier() {
   }, [enqueueEvents]);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || loading) return;
     const schedule = () => {
       const delay = document.hidden ? HIDDEN_POLL_MS : VISIBLE_POLL_MS;
       return window.setTimeout(async () => {
@@ -247,103 +330,86 @@ export default function AdminOrderVoiceNotifier() {
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [enabled, pollEvents]);
+  }, [enabled, loading, pollEvents]);
 
-  const handleEnable = async () => {
-    try {
-      if (getSpeechSupport()) {
-        await speakText("订单语音提醒已开启。", { interrupt: true });
-      } else {
-        setUnsupported(true);
-        await playBeep(volume);
-        toast.info("当前浏览器不支持中文语音播报，将使用提示音提醒");
-      }
-      window.localStorage.setItem(ENABLED_KEY, "true");
-      window.localStorage.setItem(LAST_CHECKED_KEY, new Date().toISOString());
-      setEnabled(true);
-    } catch {
-      window.localStorage.setItem(ENABLED_KEY, "false");
-      setEnabled(false);
-      toast.error("浏览器阻止了声音播放，请点击“开启提醒”。");
-    }
-  };
-
-  const handleDisable = () => {
-    if (getSpeechSupport()) window.speechSynthesis.cancel();
-    queueRef.current = [];
-    window.localStorage.setItem(ENABLED_KEY, "false");
-    setEnabled(false);
-  };
-
-  const handleTest = async () => {
-    try {
-      await speakText("叮咚，您有新的订单，请及时处理。", { interrupt: true });
-    } catch {
+  const verifyPlaybackForEnable = useCallback(async (): Promise<"speech" | "beep"> => {
+    await ensureAudioUnlocked();
+    if (getSpeechSupport()) {
       try {
-        await playBeep(volume);
-        toast.info("有新的订单，请及时处理。");
+        await speakText("订单语音提醒已开启。", { interrupt: true, allowCanceled: false });
+        return "speech";
       } catch {
-        window.localStorage.setItem(ENABLED_KEY, "false");
-        setEnabled(false);
-        toast.error("浏览器阻止了声音播放，请点击“开启提醒”。");
+        await playBeep(volumeRef.current);
+        return "beep";
       }
     }
+    await playBeep(volumeRef.current);
+    return "beep";
+  }, [speakText]);
+
+  const persistEnabled = async (next: boolean) => {
+    const res = await updateAdminOrderVoiceSettings(next);
+    applyEnabled(Boolean(res.data?.enabled));
+    if (next) {
+      window.localStorage.setItem(LAST_CHECKED_KEY, new Date().toISOString());
+    } else {
+      if (getSpeechSupport()) {
+        window.speechSynthesis.cancel();
+      }
+      queueRef.current = [];
+      playingRef.current = false;
+    }
   };
+
+  const handleToggle = async () => {
+    if (loading || saving) return;
+
+    if (enabled) {
+      setSaving(true);
+      try {
+        await persistEnabled(false);
+        toast.success("订单语音提醒已关闭");
+      } catch {
+        toast.error("保存失败，请稍后重试");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const mode = await verifyPlaybackForEnable();
+      await persistEnabled(true);
+      toast.success(
+        mode === "speech"
+          ? "订单语音提醒已开启"
+          : "订单语音提醒已开启（当前为提示音模式）",
+      );
+    } catch {
+      toast.error("浏览器阻止了声音播放，无法开启提醒。请再点一次「未开启」，或检查标签页是否静音。");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const statusLabel = loading || saving ? "处理中" : enabled ? "已开启" : "未开启";
 
   return (
-    <div className="fixed bottom-20 right-3 z-40 flex max-w-[calc(100vw-1.5rem)] shrink-0 items-center gap-2 rounded-xl border border-border bg-card px-2.5 py-1.5 text-xs shadow-lg lg:static lg:z-auto lg:shadow-sm">
-      {enabled ? (
-        <Volume2 size={16} className="text-[var(--theme-primary)]" />
-      ) : (
-        <VolumeX size={16} className="text-muted-foreground" />
-      )}
-      <div className="hidden min-w-0 sm:block">
-        <p className="whitespace-nowrap font-medium text-foreground">
-          {enabled ? "订单语音提醒已开启" : "订单语音提醒未开启"}
-        </p>
-        {supportText ? <p className="max-w-56 truncate text-[11px] text-muted-foreground">{supportText}</p> : null}
-      </div>
-      {enabled ? (
-        <>
-          <label className="flex items-center gap-1 text-[11px] text-muted-foreground">
-            音量
-            <input
-              aria-label="订单语音提醒音量"
-              type="range"
-              min="0"
-              max="1"
-              step="0.1"
-              value={volume}
-              onChange={(event) => setVolume(Number(event.target.value))}
-              className="w-16 accent-[var(--theme-primary)]"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={handleTest}
-            className="rounded-lg bg-secondary px-2 py-1 font-medium text-foreground hover:opacity-90"
-          >
-            测试播报
-          </button>
-          <button
-            type="button"
-            onClick={handleDisable}
-            className="rounded-lg px-2 py-1 font-medium text-muted-foreground hover:bg-secondary"
-          >
-            关闭提醒
-          </button>
-        </>
-      ) : (
-        <button
-          type="button"
-          onClick={handleEnable}
-          className="inline-flex items-center gap-1 rounded-lg bg-[var(--theme-primary)] px-2 py-1 font-medium text-[var(--theme-primary-foreground)] hover:opacity-90"
-        >
-          <BellRing size={14} />
-          开启提醒
-        </button>
-      )}
-      <span className="sr-only">{voicesReady ? "语音列表已加载" : "语音列表加载中"}</span>
-    </div>
+    <button
+      type="button"
+      disabled={loading || saving}
+      onClick={handleToggle}
+      aria-pressed={enabled}
+      title={enabled ? "订单语音提醒已开启，点击关闭" : "订单语音提醒未开启，点击开启"}
+      aria-label={enabled ? "订单语音提醒已开启，点击关闭" : "订单语音提醒未开启，点击开启"}
+      className={
+        enabled
+          ? "inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-primary)] px-2.5 text-xs font-medium text-[var(--theme-primary-foreground)] hover:opacity-90 disabled:opacity-60 sm:px-3"
+          : "inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-border bg-secondary px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted disabled:opacity-60 sm:px-3"
+      }
+    >
+      <span className="max-w-[4.5rem] truncate sm:max-w-none">{statusLabel}</span>
+    </button>
   );
 }

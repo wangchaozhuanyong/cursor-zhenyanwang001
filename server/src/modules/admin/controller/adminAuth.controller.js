@@ -27,6 +27,15 @@ exports.verifyMfa = asyncRoute(async (req, res) => {
   res.success(r.data, r.message);
 });
 
+exports.reverifyMfa = asyncRoute(async (req, res) => {
+  const r = await adminMfaService.verifyReverify(req.body, req);
+  if (r.data?.token) {
+    setAuthCookies(req, res, r.data.token, 'admin');
+  }
+  r.data = /** @type {any} */ ({ ...(r.data || {}), csrfToken: createCsrfToken(req, res) });
+  res.success(r.data, r.message);
+});
+
 exports.refresh = asyncRoute(async (req, res) => {
   const refreshToken = getRefreshTokenFromRequest(req, 'admin');
   const r = await adminAuthService.refresh(refreshToken);
@@ -69,6 +78,16 @@ exports.updateProfile = asyncRoute(async (req, res) => {
 
 exports.changePassword = asyncRoute(async (req, res) => {
   const r = await adminAccountService.changePassword(req.user.id, req.body);
+  res.success(r.data, r.message);
+});
+
+exports.getOrderVoiceSettings = asyncRoute(async (req, res) => {
+  const r = await adminAccountService.getOrderVoiceSettings(req.user.id);
+  res.success(r.data);
+});
+
+exports.updateOrderVoiceSettings = asyncRoute(async (req, res) => {
+  const r = await adminAccountService.updateOrderVoiceSettings(req.user.id, req.body);
   res.success(r.data, r.message);
 });
 

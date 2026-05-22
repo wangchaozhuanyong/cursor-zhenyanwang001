@@ -74,10 +74,25 @@ async function changePassword(userId, body) {
   return requireAuthApi('changePassword')(userId, body);
 }
 
+async function getOrderVoiceSettings(userId) {
+  const enabled = await repo.selectOrderVoiceEnabled(userId);
+  return { data: { enabled } };
+}
+
+async function updateOrderVoiceSettings(userId, body) {
+  if (typeof body?.enabled !== 'boolean') {
+    throw new BusinessError(400, 'enabled 必须为布尔值');
+  }
+  await repo.updateOrderVoiceEnabled(userId, body.enabled);
+  return { data: { enabled: body.enabled }, message: body.enabled ? '订单语音提醒已开启' : '订单语音提醒已关闭' };
+}
+
 module.exports = {
   getProfile,
   updateProfile,
   changePassword,
+  getOrderVoiceSettings,
+  updateOrderVoiceSettings,
 };
 
 

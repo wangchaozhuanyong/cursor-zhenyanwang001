@@ -86,8 +86,8 @@ export default function AdminActivities() {
     onError: (error) => toast.error(toastErrorMessage(error, "删除失败")),
   });
 
-  const filterState = { keyword, type, status };
-  const filterChips = useMemo(() => buildActivityFilterChips(filterState), [keyword, type, status]);
+  const filterState = useMemo(() => ({ keyword, type, status }), [keyword, type, status]);
+  const filterChips = useMemo(() => buildActivityFilterChips(filterState), [filterState]);
   const filtersActive = hasActiveActivityFilters(filterState);
   const activitiesEmptyGuide = filtersActive
     ? ADMIN_EMPTY_GUIDES.activitiesFiltered

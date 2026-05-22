@@ -125,7 +125,7 @@ return ({
     replaceViteClientPlaceholders(),
     react(),
     VitePWA({
-      registerType: "prompt",
+      registerType: "autoUpdate",
       injectRegister: false,
       outDir: isAdminBuild ? "admin-dist" : "dist",
       manifest: false,
@@ -148,8 +148,8 @@ return ({
           /^\/apple-touch-icon\.png$/,
         ],
         cleanupOutdatedCaches: true,
-        clientsClaim: false,
-        skipWaiting: false,
+        clientsClaim: true,
+        skipWaiting: true,
         runtimeCaching: [
           {
             urlPattern: ({ url }) =>

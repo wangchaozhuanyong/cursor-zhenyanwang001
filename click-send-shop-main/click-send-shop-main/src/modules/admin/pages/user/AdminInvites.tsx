@@ -43,8 +43,8 @@ export default function AdminInvites() {
   const summary: InviteRecordsSummary = listQuery.data?.summary ?? {};
   const loading = listQuery.isLoading && !listQuery.data;
 
-  const filterState = { search };
-  const filterChips = useMemo(() => buildInviteRecordFilterChips(filterState), [search]);
+  const filterState = useMemo(() => ({ search }), [search]);
+  const filterChips = useMemo(() => buildInviteRecordFilterChips(filterState), [filterState]);
   const filtersActive = hasActiveInviteRecordFilters(filterState);
   const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.invitesFiltered : ADMIN_EMPTY_GUIDES.invites;
 

@@ -5,7 +5,7 @@ import {
   getMonitoringAnomalyDetail,
   rescanMonitoringAnomaly,
   type MonitoringAnomalyDetail,
-} from "@/api/admin/monitoring";
+} from "@/services/admin/monitoringService";
 import MonitoringSubnav, { Badge, formatTime, JsonBlock, severityClass } from "./MonitoringSubnav";
 
 export default function AdminMonitoringAnomalyDetail() {

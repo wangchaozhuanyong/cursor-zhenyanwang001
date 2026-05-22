@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getMonitoringOverview, type MonitoringOverview } from "@/api/admin/monitoring";
+import { getMonitoringOverview, type MonitoringOverview } from "@/services/admin/monitoringService";
 import MonitoringSubnav, { Badge, formatTime, severityClass } from "./MonitoringSubnav";
 
 export default function AdminMonitoringOverview() {

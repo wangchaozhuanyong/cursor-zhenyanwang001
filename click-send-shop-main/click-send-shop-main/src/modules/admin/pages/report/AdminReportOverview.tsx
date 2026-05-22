@@ -8,6 +8,8 @@ import { Tx } from "@/components/admin/AdminText";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
+const EMPTY_REPORT_OVERVIEW = {};
+
 export default function AdminReportOverview() {
   const [searchParams] = useSearchParams();
 
@@ -26,7 +28,7 @@ export default function AdminReportOverview() {
     staleTime: 60_000,
   });
 
-  const data = overviewQuery.data ?? {};
+  const data = overviewQuery.data ?? EMPTY_REPORT_OVERVIEW;
   const loading = overviewQuery.isLoading && !overviewQuery.data;
 
   const summary = useMemo(() => (data.summary || {}) as unknown as Record<string, unknown>, [data]);

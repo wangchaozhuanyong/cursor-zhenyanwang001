@@ -127,7 +127,7 @@ export default function AdminProducts() {
     onError: (error) => toast.error(toastErrorMessage(error, "批量更新状态失败")),
   });
 
-  const products = productsQuery.data?.list || [];
+  const products = useMemo(() => productsQuery.data?.list || [], [productsQuery.data?.list]);
   const total = productsQuery.data?.total || 0;
   const pageIds = useMemo(() => products.map((product) => product.id), [products]);
   const allSelectedOnPage = pageIds.length > 0 && pageIds.every((id) => selected.includes(id));

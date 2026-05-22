@@ -67,7 +67,7 @@ export default function AdminContent() {
     staleTime: 60_000,
   });
 
-  const items = contentQuery.data?.pages ?? [];
+  const items = useMemo(() => contentQuery.data?.pages ?? [], [contentQuery.data?.pages]);
   const loading = contentQuery.isLoading && !contentQuery.data;
 
   const invalidateContent = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.contentHub() });

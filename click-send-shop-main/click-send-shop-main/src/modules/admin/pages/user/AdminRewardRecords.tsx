@@ -134,8 +134,8 @@ export default function AdminRewardRecords() {
     }
   };
 
-  const filterState = { keyword, status };
-  const filterChips = useMemo(() => buildRewardRecordFilterChips(filterState), [keyword, status]);
+  const filterState = useMemo(() => ({ keyword, status }), [keyword, status]);
+  const filterChips = useMemo(() => buildRewardRecordFilterChips(filterState), [filterState]);
   const filtersActive = hasActiveRewardRecordFilters(filterState);
   const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.rewardRecordsFiltered : ADMIN_EMPTY_GUIDES.rewardRecords;
 

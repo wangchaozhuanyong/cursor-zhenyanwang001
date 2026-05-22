@@ -156,7 +156,7 @@ export default function AdminDataRetention() {
     enabled: canView && selectedRunId != null,
   });
 
-  const policies = policiesQuery.data ?? [];
+  const policies = useMemo(() => policiesQuery.data ?? [], [policiesQuery.data]);
   const groupedPolicies = useMemo(() => groupPolicies(policies), [policies]);
   const selectedPolicies = useMemo(
     () => policies.filter((policy) => selectedKeys.includes(policy.key)),

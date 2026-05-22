@@ -92,8 +92,8 @@ export default function AdminRecycleBin() {
 
   const invalidateRecycleBin = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.recycleBinRoot() });
 
-  const filterState = { typeFilter };
-  const filterChips = useMemo(() => buildRecycleBinFilterChips(filterState), [typeFilter]);
+  const filterState = useMemo(() => ({ typeFilter }), [typeFilter]);
+  const filterChips = useMemo(() => buildRecycleBinFilterChips(filterState), [filterState]);
   const filtersActive = hasActiveRecycleBinFilters(filterState);
   const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.recycleBinFiltered : ADMIN_EMPTY_GUIDES.recycleBin;
 

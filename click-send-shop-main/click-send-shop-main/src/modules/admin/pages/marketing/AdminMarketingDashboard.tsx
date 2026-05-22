@@ -13,6 +13,15 @@ import type { MarketingActivity } from "@/types/activity";
 import type { PointsRecord } from "@/types/points";
 import type { RewardRecord } from "@/types/reward";
 
+const EMPTY_MARKETING_STATS = {
+  active: 0,
+  upcoming: 0,
+  ended: 0,
+  coupons: 0,
+  pointsToday: 0,
+  rewardToday: 0,
+};
+
 export default function AdminMarketingDashboard() {
   const navigate = useNavigate();
 
@@ -55,14 +64,7 @@ export default function AdminMarketingDashboard() {
     staleTime: 60_000,
   });
 
-  const stats = dashboardQuery.data ?? {
-    active: 0,
-    upcoming: 0,
-    ended: 0,
-    coupons: 0,
-    pointsToday: 0,
-    rewardToday: 0,
-  };
+  const stats = dashboardQuery.data ?? EMPTY_MARKETING_STATS;
 
   const cards = useMemo(
     () => [

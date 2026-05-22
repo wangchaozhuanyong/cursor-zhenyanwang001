@@ -8,7 +8,6 @@ import AppRouteFallback, { StoreOutletFallback } from "@/components/AppRouteFall
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import TrackingManager from "@/components/TrackingManager";
 import RouteAnalyticsTracker from "@/components/RouteAnalyticsTracker";
-import PwaUpdateToast from "@/components/PwaUpdateToast";
 import RouteSeoGuard from "@/components/RouteSeoGuard";
 import AgeGate from "@/components/compliance/AgeGate";
 import LanguageGate from "@/components/LanguageGate";
@@ -187,7 +186,7 @@ export function StoreAppRoutes() {
           <TrackingManager />
           <RouteAnalyticsTracker />
           <RouteSeoGuard />
-          <PwaUpdateToast />
+          {/* <PwaUpdateToast /> */}
           <LanguageGate />
           <AgeGate />
           <Suspense fallback={<AppRouteFallback />}>

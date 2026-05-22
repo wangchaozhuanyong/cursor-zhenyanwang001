@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getMonitoringRuns, type MonitoringRun } from "@/api/admin/monitoring";
+import { getMonitoringRuns, type MonitoringRun } from "@/services/admin/monitoringService";
 import MonitoringSubnav, { Badge, formatTime } from "./MonitoringSubnav";
 
 export default function AdminMonitoringRuns() {

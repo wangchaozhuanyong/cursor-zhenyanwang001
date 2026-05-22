@@ -144,8 +144,8 @@ export default function AdminPointsRecords() {
     }
   };
 
-  const filterState = { keyword, action };
-  const filterChips = useMemo(() => buildPointsRecordFilterChips(filterState), [keyword, action]);
+  const filterState = useMemo(() => ({ keyword, action }), [keyword, action]);
+  const filterChips = useMemo(() => buildPointsRecordFilterChips(filterState), [filterState]);
   const filtersActive = hasActivePointsRecordFilters(filterState);
   const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.pointsRecordsFiltered : ADMIN_EMPTY_GUIDES.pointsRecords;
 

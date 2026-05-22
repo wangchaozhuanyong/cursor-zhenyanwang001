@@ -1,5 +1,5 @@
 import { formatDateTime } from "@/utils/formatDateTime";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Shield, ChevronRight } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
@@ -102,17 +102,7 @@ export default function AdminLogs() {
   const auditTotal = auditQuery.data?.total ?? 0;
   const auditLoading = auditQuery.isLoading && !auditQuery.data;
 
-  useEffect(() => {
-    if (!canAudit) return;
-    syncUrl(queryParams);
-  }, [canAudit, queryParams]);
-
-  const applySubmittedFilters = (filters: AuditLogListParams, page = 1) => {
-    setSubmittedFilters(filters);
-    setAuditPage(page);
-  };
-
-  const syncUrl = (params: AuditLogListParams & { page?: number; pageSize?: number }) => {
+  const syncUrl = useCallback((params: AuditLogListParams & { page?: number; pageSize?: number }) => {
     const next = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value == null || value === "" || key === "sortOrder") return;
@@ -121,6 +111,16 @@ export default function AdminLogs() {
       next.set(key, String(value));
     });
     setSearchParams(next, { replace: true });
+  }, [setSearchParams]);
+
+  useEffect(() => {
+    if (!canAudit) return;
+    syncUrl(queryParams);
+  }, [canAudit, queryParams, syncUrl]);
+
+  const applySubmittedFilters = (filters: AuditLogListParams, page = 1) => {
+    setSubmittedFilters(filters);
+    setAuditPage(page);
   };
 
   const handleAuditSearch = () => {
@@ -130,8 +130,11 @@ export default function AdminLogs() {
   const objectTypeOptions = useMemo(() => getAuditObjectTypeFilterOptions(), []);
   const actionTypeOptions = useMemo(() => getAuditActionTypeFilterOptions(), []);
 
-  const filterState = { keyword: auditKeyword, result: auditResult, dateFrom, dateTo, operatorId, objectType, objectId, actionType };
-  const filterChips = useMemo(() => buildAuditLogFilterChips(filterState), [auditKeyword, auditResult, dateFrom, dateTo, operatorId, objectType, objectId, actionType]);
+  const filterState = useMemo(
+    () => ({ keyword: auditKeyword, result: auditResult, dateFrom, dateTo, operatorId, objectType, objectId, actionType }),
+    [actionType, auditKeyword, auditResult, dateFrom, dateTo, objectId, objectType, operatorId],
+  );
+  const filterChips = useMemo(() => buildAuditLogFilterChips(filterState), [filterState]);
   const filtersActive = hasActiveAuditLogFilters(filterState);
   const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.auditLogsFiltered : ADMIN_EMPTY_GUIDES.auditLogs;
 

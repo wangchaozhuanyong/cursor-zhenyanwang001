@@ -270,7 +270,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       themeReady,
       themeSynced,
     }),
-    [skinId, skins, switchableSkins, pickerSkins, inAdminScope, adminManualSkinPick, themeConfig, themeReady, themeSynced],
+    [skinId, skins, switchableSkins, pickerSkins, inAdminScope, themeConfig, themeReady, themeSynced],
   );
 
   return <ThemeRuntimeContext.Provider value={value}>{children}</ThemeRuntimeContext.Provider>;
@@ -348,5 +348,4 @@ export function useThemeRuntime() {
   if (!context) throw new Error("useThemeRuntime must be used within ThemeRuntimeProvider");
   return context;
 }
-
 

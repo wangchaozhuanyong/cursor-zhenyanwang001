@@ -193,8 +193,8 @@ export default function AdminReviews() {
     } catch (e) { toast.error(toastErrorMessage(e, "保存失败")); }
   };
 
-  const filterState = { keyword, status, rating, complaintStatus };
-  const filterChips = useMemo(() => buildReviewFilterChips(filterState), [keyword, status, rating, complaintStatus]);
+  const filterState = useMemo(() => ({ keyword, status, rating, complaintStatus }), [keyword, status, rating, complaintStatus]);
+  const filterChips = useMemo(() => buildReviewFilterChips(filterState), [filterState]);
   const filtersActive = hasActiveReviewFilters(filterState);
   const reviewsEmptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.reviewsFiltered : ADMIN_EMPTY_GUIDES.reviews;
 

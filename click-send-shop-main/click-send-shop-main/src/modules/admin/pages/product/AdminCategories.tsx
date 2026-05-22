@@ -136,7 +136,7 @@ export default function AdminCategories() {
     staleTime: 60_000,
   });
 
-  const categories = categoriesQuery.data ?? [];
+  const categories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data]);
   const loading = categoriesQuery.isLoading && !categoriesQuery.data;
 
   const invalidateCategories = () =>

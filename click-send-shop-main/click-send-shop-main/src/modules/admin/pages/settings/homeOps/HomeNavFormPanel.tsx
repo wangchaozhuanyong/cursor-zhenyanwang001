@@ -12,7 +12,7 @@ import { validateUploadFile } from "@/services/uploadService";
 import { ensureTransparentIconFile } from "@/utils/imageTransparency";
 import { iconMatteProgressToast, iconMatteSuccessToast } from "@/utils/iconMatteMessages";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import type { HomeNavSupportChannelOption } from "@/api/admin/homeOps";
+import type { HomeNavSupportChannelOption } from "@/services/admin/homeOpsService";
 import type { NavForm } from "./homeNavUtils";
 import { buildSupportNavLink } from "./homeNavUtils";
 import HomeNavIconPreview from "./HomeNavIconPreview";

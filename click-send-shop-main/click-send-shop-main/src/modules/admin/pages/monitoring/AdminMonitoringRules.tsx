@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getMonitoringRules, runMonitoringRule, updateMonitoringRule, type MonitoringRule, type MonitoringSeverity } from "@/api/admin/monitoring";
+import { getMonitoringRules, runMonitoringRule, updateMonitoringRule, type MonitoringRule, type MonitoringSeverity } from "@/services/admin/monitoringService";
 import MonitoringSubnav, { Badge, severityClass } from "./MonitoringSubnav";
 
 const severityOptions: MonitoringSeverity[] = ["P0", "P1", "P2", "P3", "INFO"];

@@ -1,5 +1,6 @@
+/* eslint-disable react-refresh/only-export-components */
 import { NavLink } from "react-router-dom";
-import type { MonitoringSeverity } from "@/api/admin/monitoring";
+import type { MonitoringSeverity } from "@/services/admin/monitoringService";
 
 const tabs = [
   { label: "数据总览", to: "/admin/monitoring" },

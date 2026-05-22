@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { executeRepairTask, getRepairTasks, type MonitoringRepairTask } from "@/api/admin/monitoring";
+import { executeRepairTask, getRepairTasks, type MonitoringRepairTask } from "@/services/admin/monitoringService";
 import MonitoringSubnav, { Badge, formatTime, JsonBlock } from "./MonitoringSubnav";
 
 export default function AdminMonitoringRepairTasks() {

@@ -94,7 +94,7 @@ export const useCartStore = create<CartState>()(
             const items = normalizeCartItems(await cartService.fetchCart());
             set((s) => ({ items, selection: mergeSelection(s.selection, items), loading: false }));
           } catch (e) {
-            if (e instanceof ApiError && e.status === 401) {
+            if (e instanceof ApiError && e.code === 401) {
               clearTokens();
               notifyAuthExpired();
               set({ loading: false, error: null });

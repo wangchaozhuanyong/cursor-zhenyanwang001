@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Shield, Plus, Trash2, Pencil, X } from "lucide-react";
@@ -49,8 +49,6 @@ export default function AdminRoles() {
   const [showResetModal, setShowResetModal] = useState<string | null>(null);
   const [resetPw, setResetPw] = useState("");
   const [confirmDeleteAdmin, setConfirmDeleteAdmin] = useState<RbacAdminUserRow | null>(null);
-  const selectedAdmin = admins.find((u) => u.id === selectedUserId) || null;
-  const selectedTargetLocked = !isSuperAdminViewer && hasPrivilegedRole(selectedAdmin);
 
   const overviewQuery = useQuery({
     queryKey: adminQueryKeys.rbacOverview(),
@@ -65,10 +63,12 @@ export default function AdminRoles() {
     staleTime: 60_000,
   });
 
-  const roles = overviewQuery.data?.roles ?? [];
-  const admins = overviewQuery.data?.admins ?? [];
-  const perms = overviewQuery.data?.perms ?? [];
+  const roles = useMemo(() => overviewQuery.data?.roles ?? [], [overviewQuery.data?.roles]);
+  const admins = useMemo(() => overviewQuery.data?.admins ?? [], [overviewQuery.data?.admins]);
+  const perms = useMemo(() => overviewQuery.data?.perms ?? [], [overviewQuery.data?.perms]);
   const loading = overviewQuery.isLoading && !overviewQuery.data;
+  const selectedAdmin = admins.find((u) => u.id === selectedUserId) || null;
+  const selectedTargetLocked = !isSuperAdminViewer && hasPrivilegedRole(selectedAdmin);
 
   const invalidateRbac = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.rbacRoot() });
 

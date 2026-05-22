@@ -93,8 +93,8 @@ export default function AdminCheckoutAbandonments() {
     setPage(1);
   };
 
-  const filterState = { keyword, status };
-  const filterChips = useMemo(() => buildCheckoutAbandonmentFilterChips(filterState), [keyword, status]);
+  const filterState = useMemo(() => ({ keyword, status }), [keyword, status]);
+  const filterChips = useMemo(() => buildCheckoutAbandonmentFilterChips(filterState), [filterState]);
   const filtersActive = hasActiveCheckoutAbandonmentFilters(filterState);
   const emptyGuide = filtersActive
     ? ADMIN_EMPTY_GUIDES.checkoutAbandonmentsFiltered

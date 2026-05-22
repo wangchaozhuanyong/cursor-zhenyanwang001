@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   createRepairTask,
@@ -7,7 +7,7 @@ import {
   rescanMonitoringAnomaly,
   resolveMonitoringAnomaly,
   type MonitoringAnomaly,
-} from "@/api/admin/monitoring";
+} from "@/services/admin/monitoringService";
 import MonitoringSubnav, { Badge, formatTime, severityClass } from "./MonitoringSubnav";
 
 const statuses = ["", "open", "investigating", "repair_pending", "repaired", "resolved", "ignored"];
@@ -22,7 +22,7 @@ export default function AdminMonitoringAnomalies() {
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true);
     getMonitoringAnomalies({ page, pageSize: 20, status, severity, keyword })
       .then((res) => {
@@ -30,9 +30,11 @@ export default function AdminMonitoringAnomalies() {
         setTotal(res.data.total);
       })
       .finally(() => setLoading(false));
-  };
+  }, [keyword, page, severity, status]);
 
-  useEffect(load, [page, status, severity]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   async function action(fn: () => Promise<unknown>) {
     await fn();

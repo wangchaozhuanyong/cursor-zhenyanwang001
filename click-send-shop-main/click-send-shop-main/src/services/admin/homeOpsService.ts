@@ -3,6 +3,8 @@ import type { HomeModuleSettings } from "@/constants/homeModules";
 import type { HomeNavItem } from "@/types/content";
 import { unwrapList } from "@/services/responseNormalize";
 
+export type { HomeNavSupportChannelOption } from "@/api/admin/homeOps";
+
 export async function fetchHomeOpsSettings(): Promise<HomeModuleSettings> {
   const res = await homeOpsApi.getHomeOpsSettings();
   return res.data;

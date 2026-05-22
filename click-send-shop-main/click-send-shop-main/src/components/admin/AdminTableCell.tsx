@@ -22,7 +22,7 @@ function useIsOverflowing(ref: React.RefObject<HTMLElement | null>, deps: unknow
     const ro = new ResizeObserver(check);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [check, deps]);
+  }, [check, deps, ref]);
 
   return overflowing;
 }

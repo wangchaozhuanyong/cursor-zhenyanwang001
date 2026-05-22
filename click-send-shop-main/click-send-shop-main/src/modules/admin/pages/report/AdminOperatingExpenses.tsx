@@ -78,7 +78,7 @@ export default function AdminOperatingExpenses() {
     staleTime: 60_000,
   });
 
-  const list = listQuery.data ?? [];
+  const list = useMemo(() => listQuery.data ?? [], [listQuery.data]);
   const loading = listQuery.isLoading && !listQuery.data;
 
   const invalidateExpenses = () =>

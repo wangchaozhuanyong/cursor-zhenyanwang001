@@ -53,8 +53,8 @@ export default function AdminCouponRecords() {
   });
   const { page, pageSize, setPage, setPageSize, paginatedData, total } = usePagination(filtered, 10);
 
-  const filterState = { search, statusFilter };
-  const filterChips = useMemo(() => buildCouponRecordFilterChips(filterState), [search, statusFilter]);
+  const filterState = useMemo(() => ({ search, statusFilter }), [search, statusFilter]);
+  const filterChips = useMemo(() => buildCouponRecordFilterChips(filterState), [filterState]);
   const filtersActive = hasActiveCouponRecordFilters(filterState);
   const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.couponRecordsFiltered : ADMIN_EMPTY_GUIDES.couponRecords;
 

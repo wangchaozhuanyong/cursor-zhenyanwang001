@@ -683,7 +683,7 @@ function AdminLayoutContent() {
               />
             </div>
             <AdminEventBell />
-            {false && (showNotifTab || canViewSecurityAlerts) && (
+            {(showNotifTab || canViewSecurityAlerts) && (
               <div ref={securityAlertsRef} className="relative shrink-0">
                 <button
                   type="button"

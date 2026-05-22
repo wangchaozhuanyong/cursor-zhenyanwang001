@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CreditCard } from "lucide-react";
 import StripeChannelConfigForm from "./StripeChannelConfigForm";
@@ -36,7 +36,7 @@ export default function AdminPaymentChannels() {
     staleTime: 60_000,
   });
 
-  const rows = channelsQuery.data ?? [];
+  const rows = useMemo(() => channelsQuery.data ?? [], [channelsQuery.data]);
   const loading = channelsQuery.isLoading && !channelsQuery.data;
 
   useEffect(() => {

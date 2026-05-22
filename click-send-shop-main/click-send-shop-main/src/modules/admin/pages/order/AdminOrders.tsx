@@ -144,25 +144,46 @@ export default function AdminOrders() {
     setPage(1);
   };
 
-  const filterState = {
-    statusFilter,
-    paymentFilter,
-    search,
-    dateFrom,
-    dateTo,
-    paymentMethod,
-    paymentChannel,
-    shippingName,
-    returnStatus,
-    refundStatus,
-    hasNote,
-    costStatus,
-    overduePayment,
-    overdueShipment,
-    buyerType,
-    amountMin,
-    amountMax,
-  };
+  const filterState = useMemo(
+    () => ({
+      statusFilter,
+      paymentFilter,
+      search,
+      dateFrom,
+      dateTo,
+      paymentMethod,
+      paymentChannel,
+      shippingName,
+      returnStatus,
+      refundStatus,
+      hasNote,
+      costStatus,
+      overduePayment,
+      overdueShipment,
+      buyerType,
+      amountMin,
+      amountMax,
+    }),
+    [
+      amountMax,
+      amountMin,
+      buyerType,
+      costStatus,
+      dateFrom,
+      dateTo,
+      hasNote,
+      overduePayment,
+      overdueShipment,
+      paymentChannel,
+      paymentFilter,
+      paymentMethod,
+      refundStatus,
+      returnStatus,
+      search,
+      shippingName,
+      statusFilter,
+    ],
+  );
   const filterChips = useMemo(() => buildOrderFilterChips(filterState), [filterState]);
   const filtersActive = hasActiveOrderFilters(filterState);
   const ordersEmptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.ordersFiltered : ADMIN_EMPTY_GUIDES.orders;

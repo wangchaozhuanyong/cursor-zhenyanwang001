@@ -94,8 +94,8 @@ export default function AdminAccounts() {
   });
   const { page, pageSize, setPage, setPageSize, paginatedData, total } = usePagination(filtered, 10);
 
-  const filterState = { search };
-  const filterChips = useMemo(() => buildAdminAccountFilterChips(filterState), [search]);
+  const filterState = useMemo(() => ({ search }), [search]);
+  const filterChips = useMemo(() => buildAdminAccountFilterChips(filterState), [filterState]);
   const filtersActive = hasActiveAdminAccountFilters(filterState);
   const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.adminAccountsFiltered : ADMIN_EMPTY_GUIDES.adminAccounts;
 
@@ -352,4 +352,3 @@ export default function AdminAccounts() {
     </div>
   );
 }
-

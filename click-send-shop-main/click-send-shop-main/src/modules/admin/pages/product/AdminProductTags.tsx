@@ -38,7 +38,7 @@ export default function AdminProductTags() {
   const tags = tagsQuery.data ?? [];
   const loading = tagsQuery.isLoading && !tagsQuery.data;
 
-  const invalidateTags = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() });
+  const invalidateTags = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.productTags() });
 
   const resetForm = () => {
     setForm(EMPTY_FORM);

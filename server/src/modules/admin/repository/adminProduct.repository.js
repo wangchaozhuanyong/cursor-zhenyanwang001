@@ -60,7 +60,7 @@ async function updateProductDynamic(setFragments, values, id) {
 
 async function updateProductDynamicWithVersion(setFragments, values, id, version) {
   const [result] = await db.query(
-    `UPDATE products SET ${setFragments.join(', ')}, version = version + 1 WHERE id = ? AND version = ?`,
+    `UPDATE products SET ${setFragments.join(', ')}, version = version + 1 WHERE id = ? AND version = ? AND deleted_at IS NULL`,
     [...values, id, Number(version)],
   );
   return result.affectedRows;

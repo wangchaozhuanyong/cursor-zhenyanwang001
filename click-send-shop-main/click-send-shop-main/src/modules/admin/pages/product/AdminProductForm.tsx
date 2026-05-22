@@ -1,7 +1,7 @@
 import { ArrowLeft, Upload, ImagePlus, Loader2, Trash2, Plus, Video } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { fetchProductById, createProduct, updateProduct, deleteProduct, fetchProductTags } from "@/services/admin/productService";
 import * as categoryService from "@/services/admin/categoryService";
@@ -89,9 +89,21 @@ function specComboKey(ids: string[]) {
 
 export default function AdminProductForm() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const goBack = useGoBack("/admin/products");
   const { id } = useParams();
   const isNew = id === "new";
+
+  const invalidateProductCaches = async () => {
+    const tasks = [
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.inventoryRoot() }),
+    ];
+    if (id && id !== "new") {
+      tasks.push(queryClient.invalidateQueries({ queryKey: adminQueryKeys.productForm(id) }));
+    }
+    await Promise.all(tasks);
+  };
 
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -527,6 +539,7 @@ export default function AdminProductForm() {
         await updateProduct(id!, payload);
         toast.success("商品更新成功");
       }
+      await invalidateProductCaches();
       navigate("/admin/products");
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败，请重试"));
@@ -541,6 +554,7 @@ export default function AdminProductForm() {
     try {
       await deleteProduct(id);
       toast.success("已删除");
+      await invalidateProductCaches();
       navigate("/admin/products");
     } catch (e) {
       toast.error(toastErrorMessage(e, "删除失败"));

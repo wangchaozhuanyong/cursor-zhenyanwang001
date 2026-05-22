@@ -1,0 +1,15 @@
+[Unit]
+Description=Click Send Shop MySQL binlog object storage sync
+Wants=network-online.target
+After=network-online.target mysql.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/www/click-send-shop/server
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm run backup:binlog
+User=root
+Group=root
+Nice=5
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6

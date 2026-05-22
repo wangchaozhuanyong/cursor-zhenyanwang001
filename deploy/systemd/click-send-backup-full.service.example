@@ -1,0 +1,15 @@
+[Unit]
+Description=Click Send Shop MySQL full backup
+Wants=network-online.target
+After=network-online.target mysql.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/www/click-send-shop/server
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm run backup:full
+User=ubuntu
+Group=ubuntu
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

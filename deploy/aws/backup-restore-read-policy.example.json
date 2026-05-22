@@ -1,0 +1,39 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowBackupReadForRestore",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:GetObjectVersion"
+      ],
+      "Resource": "arn:aws:s3:::YOUR_BACKUP_BUCKET/shop-backups/*"
+    },
+    {
+      "Sid": "AllowRestoreList",
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket"
+      ],
+      "Resource": "arn:aws:s3:::YOUR_BACKUP_BUCKET",
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": [
+            "shop-backups/*"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "DenyDeletes",
+      "Effect": "Deny",
+      "Action": [
+        "s3:DeleteObject",
+        "s3:DeleteObjectVersion",
+        "s3:BypassGovernanceRetention"
+      ],
+      "Resource": "arn:aws:s3:::YOUR_BACKUP_BUCKET/shop-backups/*"
+    }
+  ]
+}

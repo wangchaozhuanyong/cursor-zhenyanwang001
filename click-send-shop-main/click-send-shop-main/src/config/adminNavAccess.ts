@@ -30,6 +30,7 @@ const RULES: { test: (path: string) => boolean; rule: PathRule }[] = [
   { test: (p) => p.startsWith("/admin/settings/roles"), rule: { kind: "one", permission: "role.manage" } },
   { test: (p) => p.startsWith("/admin/accounts"), rule: { kind: "one", permission: "role.manage" } },
   { test: (p) => p.startsWith("/admin/data-retention"), rule: { kind: "any", permissions: ["data_cleanup.view", "data_cleanup.manage", "data_cleanup.execute"] } },
+  { test: (p) => p.startsWith("/admin/backups"), rule: { kind: "one", permission: "backup.view" } },
   { test: (p) => p.startsWith("/admin/recycle-bin"), rule: { kind: "one", permission: "recycle_bin.manage" } },
   { test: (p) => p.startsWith("/admin/coupons"), rule: { kind: "one", permission: "coupon.view" } },
   { test: (p) => p.startsWith("/admin/marketing/activities"), rule: { kind: "one", permission: "activity.manage" } },

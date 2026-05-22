@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Click Send Shop long-term full backup daily
+
+[Timer]
+OnCalendar=*-*-* 02:20:00
+Persistent=true
+RandomizedDelaySec=600
+
+[Install]
+WantedBy=timers.target

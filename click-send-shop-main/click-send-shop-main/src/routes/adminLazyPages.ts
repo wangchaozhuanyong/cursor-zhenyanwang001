@@ -68,6 +68,7 @@ export const AdminRoles = lazy(() => import("@/modules/admin/pages/rbac/AdminRol
 export const AdminLogs = lazy(() => import("@/modules/admin/pages/system/AdminLogs"));
 export const AdminRecycleBin = lazy(() => import("@/modules/admin/pages/system/AdminRecycleBin"));
 export const AdminDataRetention = lazy(() => import("@/modules/admin/pages/system/AdminDataRetention"));
+export const AdminBackupCenter = lazy(() => import("@/modules/admin/pages/system/AdminBackupCenter"));
 
 export const AdminPaymentChannels = lazy(() => import("@/modules/admin/pages/payment/AdminPaymentChannels"));
 export const AdminPaymentOrders = lazy(() => import("@/modules/admin/pages/payment/AdminPaymentOrders"));

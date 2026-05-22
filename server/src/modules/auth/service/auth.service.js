@@ -177,8 +177,15 @@ async function getProfile(userId) {
   };
 }
 
+function normalizeBirthdayInput(value) {
+  if (value === null || value === '') return null;
+  const s = String(value).trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) throw new ValidationError('生日格式应为 YYYY-MM-DD');
+  return s;
+}
+
 async function updateProfile(userId, body) {
-  const { nickname, avatar, phone, countryCode, wechat, whatsapp } = body;
+  const { nickname, avatar, phone, countryCode, wechat, whatsapp, birthday } = body;
   const fragments = [];
   const values = [];
 
@@ -209,8 +216,22 @@ async function updateProfile(userId, body) {
     fragments.push('whatsapp = ?');
     values.push(whatsapp);
   }
+  if (birthday !== undefined) {
+    const normalizedBirthday = normalizeBirthdayInput(birthday);
+    const existing = await repo.selectUserBirthdayFields(userId);
+    if (existing?.birthday_locked) {
+      throw new ValidationError('生日已锁定，请联系客服修改');
+    }
+    if (existing?.birthday && normalizedBirthday && existing.birthday !== normalizedBirthday) {
+      throw new ValidationError('生日仅可设置一次，如需修改请联系客服');
+    }
+    await repo.updateUserBirthday(userId, {
+      birthday: normalizedBirthday,
+      birthdayUpdatedAt: new Date(),
+    });
+  }
 
-  if (fragments.length === 0) throw new ValidationError('没有需要更新的字段');
+  if (fragments.length === 0 && birthday === undefined) throw new ValidationError('没有需要更新的字段');
 
   await repo.updateUserProfile(userId, fragments, values);
 

@@ -507,6 +507,12 @@ router.put('/points/product-rules/:id', adminAuth, pointsFeature, requirePermiss
 router.delete('/points/product-rules/:id', adminAuth, pointsFeature, requirePermission('points.manage'), pointsCtrl.deleteProductRule);
 router.get('/points/records', adminAuth, pointsFeature, requirePermission('points.manage'), pointsCtrl.listRecords);
 router.post('/points/expire-run', adminAuth, pointsFeature, requirePermission('points.manage'), pointsCtrl.runPointsExpireJob);
+const pointsGiftCtrl = require('../controller/adminPointsGift.controller');
+router.get('/points/gift-items', adminAuth, pointsFeature, requirePermission('points.manage'), pointsGiftCtrl.listGiftItems);
+router.post('/points/gift-items', adminAuth, pointsFeature, requirePermission('points.manage'), pointsGiftCtrl.createGiftItem);
+router.put('/points/gift-items/:id', adminAuth, pointsFeature, requirePermission('points.manage'), pointsGiftCtrl.updateGiftItem);
+router.delete('/points/gift-items/:id', adminAuth, pointsFeature, requirePermission('points.manage'), pointsGiftCtrl.deleteGiftItem);
+router.get('/points/gift-redemptions', adminAuth, pointsFeature, requirePermission('points.manage'), pointsGiftCtrl.listRedemptions);
 router.post('/users/:userId/points', adminAuth, pointsFeature, requirePermission('user.points'), userCtrl.adjustPoints);
 router.get('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.getSite);
 router.put('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.updateSite);

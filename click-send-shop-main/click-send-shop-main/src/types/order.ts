@@ -112,7 +112,9 @@ export interface Order {
     event_time: string;
     source: string;
   }[];
-  /** 下单/支付方式：whatsapp | online | reward_wallet */
+  /** 订单类型：normal | points_gift */
+  order_type?: string;
+  /** 下单/支付方式：whatsapp | online | reward_wallet | points_gift | points_plus_cash */
   payment_method?: string;
   points_used?: number;
   points_discount_amount?: number;

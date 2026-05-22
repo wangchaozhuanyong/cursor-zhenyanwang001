@@ -318,10 +318,11 @@ async function listOrders(query) {
   const { where, params } = buildAdminOrderListWhere(query);
   const total = await repo.countOrdersAdmin(where, params);
   const offset = (page - 1) * pageSize;
-  const [orders, summaryRows, operationalSummary] = await Promise.all([
+  const [orders, summaryRows, operationalSummary, globalToday] = await Promise.all([
     repo.selectOrdersAdminPage(where, params, pageSize, offset),
     repo.selectOrderStatusSummary(where, params),
     repo.selectOrderOperationalSummary(where, params),
+    repo.selectOrderGlobalTodaySummary(),
   ]);
 
   if (orders.length > 0) {
@@ -349,6 +350,16 @@ async function listOrders(query) {
     summary: {
       ...normalizeOrderSummary(summaryRows),
       ...normalizeOperationalSummary(operationalSummary),
+      ...Object.fromEntries(
+        [
+          'today_order_count',
+          'today_paid_order_count',
+          'today_paid_amount',
+          'today_refund_amount',
+          'today_gross_profit_amount',
+          'today_net_profit_amount',
+        ].map((key) => [key, Number(normalizeOperationalSummary(globalToday)[key] || 0)]),
+      ),
     },
   };
 }

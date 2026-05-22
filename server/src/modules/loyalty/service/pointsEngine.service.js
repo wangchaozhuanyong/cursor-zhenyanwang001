@@ -1,4 +1,4 @@
-const CALCULATION_VERSION = 'loyalty_engine_v1';
+const CALCULATION_VERSION = 'loyalty_engine_v2';
 
 function toNumber(value, fallback = 0) {
   const n = Number(value);
@@ -234,24 +234,53 @@ function calculateOrderEarnedPoints(params = {}) {
       reason = ruleEarn.reason;
     }
 
-    const snapshot = rule ? { ...rule } : null;
+    const bonusPercent = Math.max(toNumber(item.points_bonus_multiplier_percent, 100), 100);
+    let lineFinal = 0;
+    if (earned > 0 && !reason) {
+      const afterMember = roundPoints(earned * memberMultiplier, settings.earn_rounding);
+      lineFinal = roundPoints((afterMember * bonusPercent) / 100, settings.earn_rounding);
+    }
+
+    const snapshot = buildLinePointsSnapshot(rule, item);
     itemResults.push({
       product_id: item.product_id || item.productId || product.id,
-      earned_points: earned,
+      earned_points: lineFinal,
+      base_earned_points: earned,
       points_rule_snapshot: snapshot,
       line_points_base_amount: paidAmount,
+      points_bonus_multiplier_percent: bonusPercent,
       reason,
     });
-    total += earned;
+    total += lineFinal;
   }
 
-  const finalTotal = roundPoints(total * memberMultiplier, settings.earn_rounding);
+  let finalTotal = roundPoints(total, settings.earn_rounding);
+  const maxBonusPoints = Math.max(toInt(params.maxBonusPoints, 0), 0);
+  if (maxBonusPoints > 0) finalTotal = Math.min(finalTotal, maxBonusPoints);
+
   return {
     earned_points: finalTotal,
     item_results: itemResults,
     product_rule_snapshots: itemResults.map((x) => x.points_rule_snapshot).filter(Boolean),
+    points_bonus_snapshots: params.pointsBonusSnapshots || [],
     member_level_snapshot: params.memberLevel ? { ...params.memberLevel, points_multiplier: memberMultiplier } : { points_multiplier: 1 },
     calculation_version: CALCULATION_VERSION,
+  };
+}
+
+function buildLinePointsSnapshot(rule, item) {
+  const bonus = item.points_bonus_activity_id
+    ? {
+      activity_id: item.points_bonus_activity_id,
+      title: item.points_bonus_activity_title || '',
+      multiplier_percent: Math.max(toNumber(item.points_bonus_multiplier_percent, 100), 100),
+      bonus_kind: item.points_bonus_bonus_kind || 'normal',
+    }
+    : null;
+  if (!rule && !bonus) return null;
+  return {
+    product_rule: rule ? { ...rule } : null,
+    points_bonus: bonus,
   };
 }
 

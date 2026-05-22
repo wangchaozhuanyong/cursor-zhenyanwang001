@@ -91,7 +91,16 @@ export default function AdminRecycleBin() {
   const total = listQuery.data?.total ?? 0;
   const loading = listQuery.isLoading && !listQuery.data;
 
-  const invalidateRecycleBin = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.recycleBinRoot() });
+  const invalidateRecycleBin = async (itemType?: string) => {
+    const tasks = [queryClient.invalidateQueries({ queryKey: adminQueryKeys.recycleBinRoot() })];
+    if (itemType === "products") {
+      tasks.push(
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.inventoryRoot() }),
+      );
+    }
+    await Promise.all(tasks);
+  };
 
   const filterState = useMemo(() => ({ typeFilter }), [typeFilter]);
   const filterChips = useMemo(() => buildRecycleBinFilterChips(filterState), [filterState]);
@@ -111,9 +120,9 @@ export default function AdminRecycleBin() {
 
   const restoreMutation = useMutation({
     mutationFn: (item: RecycleBinItem) => restoreRecycleBinItem(item.id, item.type),
-    onSuccess: async () => {
+    onSuccess: async (_data, item) => {
       toast.success("已恢复");
-      await invalidateRecycleBin();
+      await invalidateRecycleBin(item.type);
     },
     onError: (e) => toast.error(toastErrorMessage(e, "恢复失败")),
   });

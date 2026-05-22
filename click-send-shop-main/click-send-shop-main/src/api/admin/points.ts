@@ -66,3 +66,44 @@ export function runPointsExpireJob() {
   return post<{ processed: number; user_count: number; skipped?: boolean }>("/admin/points/expire-run");
 }
 
+export type PointsGiftItem = {
+  id?: string;
+  product_id: string;
+  variant_id?: string | null;
+  title?: string;
+  image?: string;
+  required_points: number;
+  cash_amount?: number;
+  stock_limit?: number;
+  redeemed_count?: number;
+  limit_per_user?: number;
+  start_at?: string | null;
+  end_at?: string | null;
+  enabled?: boolean | number;
+  sort_order?: number;
+  product_name?: string;
+};
+
+export function getPointsGiftItems(params?: Record<string, string | number | boolean | undefined>) {
+  return get<{ list: PointsGiftItem[]; total: number; page: number; pageSize: number }>(
+    "/admin/points/gift-items",
+    params as Record<string, string>,
+  );
+}
+
+export function createPointsGiftItem(data: PointsGiftItem) {
+  return post<PointsGiftItem>("/admin/points/gift-items", data);
+}
+
+export function updatePointsGiftItem(id: string, data: Partial<PointsGiftItem>) {
+  return put<PointsGiftItem>(`/admin/points/gift-items/${id}`, data);
+}
+
+export function deletePointsGiftItem(id: string) {
+  return del<void>(`/admin/points/gift-items/${id}`);
+}
+
+export function getPointsGiftRedemptions(params?: Record<string, string | number | undefined>) {
+  return get<{ list: Record<string, unknown>[]; total: number }>("/admin/points/gift-redemptions", params as Record<string, string>);
+}
+

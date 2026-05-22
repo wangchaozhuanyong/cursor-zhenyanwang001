@@ -93,7 +93,10 @@ async function restoreItem(type, id, adminUserId, req) {
       await auditRecycleBinFailure(req, adminUserId, 'recycle_bin.restore', type, id, NOT_IN_RECYCLE_BIN);
       return { error: { code: 400, message: NOT_IN_RECYCLE_BIN } };
     }
-    if (type === 'banners') requireProductApi('clearCatalogCache')();
+    if (type === 'banners' || type === 'products') {
+      const clearFn = getProductApi().clearCatalogCache;
+      if (typeof clearFn === 'function') clearFn();
+    }
     await writeAuditLog({
       req,
       operatorId: adminUserId,

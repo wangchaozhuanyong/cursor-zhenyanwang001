@@ -110,6 +110,13 @@ export default function Points() {
             <CalendarCheck size={16} />
             {signingIn ? "签到中..." : signInAward && !signInAward.enabled ? "签到不可用" : "每日签到"}
           </button>
+          <button
+            type="button"
+            onClick={() => navigate("/points/gifts")}
+            className="mx-auto mt-3 block text-sm font-medium text-primary underline-offset-2 hover:underline"
+          >
+            积分兑换礼品
+          </button>
         </div>
 
         <div className="mt-6">

@@ -100,10 +100,45 @@ async function selectUserIdByInviteCode(inviteCode) {
   return row || null;
 }
 
+async function selectUserBirthdayFields(userId) {
+  try {
+    const [[row]] = await db.query(
+      `SELECT birthday, birthday_locked, birthday_updated_at
+       FROM users WHERE id = ? AND deleted_at IS NULL`,
+      [userId],
+    );
+    return row || null;
+  } catch (err) {
+    if (err?.code === 'ER_BAD_FIELD_ERROR') return null;
+    throw err;
+  }
+}
+
+async function updateUserBirthday(userId, { birthday, birthdayLocked, birthdayUpdatedAt }) {
+  const fields = [];
+  const values = [];
+  if (birthday !== undefined) {
+    fields.push('birthday = ?');
+    values.push(birthday);
+  }
+  if (birthdayLocked !== undefined) {
+    fields.push('birthday_locked = ?');
+    values.push(birthdayLocked ? 1 : 0);
+  }
+  if (birthdayUpdatedAt !== undefined) {
+    fields.push('birthday_updated_at = ?');
+    values.push(birthdayUpdatedAt);
+  }
+  if (!fields.length) return;
+  values.push(userId);
+  await db.query(`UPDATE users SET ${fields.join(', ')} WHERE id = ? AND deleted_at IS NULL`, values);
+}
+
 async function selectProfileFields(userId) {
   const withMemberLevel = `
     SELECT u.id, u.phone, u.nickname, u.avatar, u.invite_code, u.parent_invite_code,
-            u.points_balance, u.subordinate_enabled, u.role, u.wechat, u.whatsapp, u.created_at,
+            u.points_balance, u.subordinate_enabled, u.role, u.wechat, u.whatsapp,
+            u.birthday, u.birthday_locked, u.birthday_updated_at, u.created_at,
             ml.id AS member_level_id,
             ml.name AS member_level_name,
             ml.description AS member_level_description,
@@ -522,6 +557,8 @@ module.exports = {
   findUserByPhones,
   findUsersByPhones,
   selectUserIdByInviteCode,
+  selectUserBirthdayFields,
+  updateUserBirthday,
   selectProfileFields,
   findPhoneDuplicate,
   findPhoneDuplicateByPhones,

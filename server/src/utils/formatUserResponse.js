@@ -34,6 +34,16 @@ function formatUserResponse(user, role = 'user') {
     if (k in u) delete u[k];
   }
 
+  if (u.birthday !== undefined) {
+    u.birthday = u.birthday ? String(u.birthday).slice(0, 10) : null;
+  }
+  if (u.birthday_locked !== undefined) {
+    u.birthdayLocked = !!u.birthday_locked;
+  }
+  if (u.birthday_updated_at !== undefined) {
+    u.birthdayUpdatedAt = u.birthday_updated_at;
+  }
+
   if (role === 'user') {
     if (u.phone != null) u.phone = maskPhone(u.phone);
 

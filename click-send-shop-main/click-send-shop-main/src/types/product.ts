@@ -197,6 +197,13 @@ export interface ProductImportResult {
   errors?: ProductImportRowError[];
 }
 
+export interface ProductBatchStatusResult {
+  updated: number;
+  skipped: number;
+  skipped_ids?: string[];
+  requested: number;
+}
+
 export interface ProductTag {
   id: string;
   name: string;

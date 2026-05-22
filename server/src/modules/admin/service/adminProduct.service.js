@@ -695,6 +695,7 @@ async function patchProductLifecycle(id, lifecycleStatus, adminUserId, req) {
 
 async function deleteProduct(id, adminUserId, req) {
   const before = await repo.selectProductById(id);
+  if (!before) throw new BusinessError(404, '商品不存在或已删除');
   try {
     await repo.deleteProductById(id, adminUserId);
     await writeAuditLog({
@@ -763,10 +764,7 @@ function isSkuMatrixCsvRow(row) {
   return Boolean(
     String(row.variant_id || '').trim()
     || String(row.sku_code || '').trim()
-    || String(row.variant_title || '').trim()
-    || (row.cost_price !== undefined && String(row.cost_price).trim() !== '')
-    || (row.variant_enabled !== undefined && String(row.variant_enabled).trim() !== '')
-    || (row.barcode !== undefined && String(row.barcode).trim() !== ''),
+    || String(row.variant_title || row.variant_name || '').trim(),
   );
 }
 
@@ -1130,6 +1128,12 @@ async function importProductsCsvSkuMatrix(rows, adminUserId, req) {
       }
 
       const productIdHint = String(first.product_id || first.id || '').trim();
+      if (!productIdHint) {
+        const hintedUpdate = groupRows.some((r) => String(r.product_id || r.id || '').trim());
+        if (hintedUpdate) {
+          throw new BusinessError(400, '更新商品必须填写 product_id 或 id 列');
+        }
+      }
       let productId = productIdHint;
       let existing = productId ? await repo.selectProductById(productId, { includeDeleted: true }) : null;
       if (existing?.deleted_at) {
@@ -1141,13 +1145,13 @@ async function importProductsCsvSkuMatrix(rows, adminUserId, req) {
         : [];
 
       const variants = [];
+      const variantRowErrors = [];
       let defaultAssigned = false;
       for (let j = 0; j < groupRows.length; j += 1) {
         const row = groupRows[j];
         const built = buildVariantRowFromCsv(row, productId, existingVariants, generateId);
         if (built.error) {
-          errors.push({ row: rowNums[j], reason: built.error });
-          skipped += 1;
+          variantRowErrors.push({ row: rowNums[j], reason: built.error });
           continue;
         }
         let { variant } = built;
@@ -1159,6 +1163,11 @@ async function importProductsCsvSkuMatrix(rows, adminUserId, req) {
         variants.push(variant);
         skuRows += 1;
       }
+      if (variantRowErrors.length) {
+        for (const item of variantRowErrors) errors.push(item);
+        skipped += groupRows.length;
+        throw new BusinessError(400, variantRowErrors[0].reason || 'SKU 行数据无效');
+      }
       if (!variants.length) {
         throw new BusinessError(400, '至少需要一个有效 SKU（售价必填）');
       }
@@ -1168,8 +1177,8 @@ async function importProductsCsvSkuMatrix(rows, adminUserId, req) {
 
       const tagSource = groupRows.map((r) => r.tags || r.tag_names).find((t) => String(t || '').trim()) || '';
       const { ids: tagIds, unknown: unknownTags } = resolveTagNamesToIds(tagSource, enabledTags);
-      for (const tagName of unknownTags) {
-        errors.push({ row: firstRowNum, reason: `未知标签：${tagName}` });
+      if (unknownTags.length) {
+        throw new BusinessError(400, `未知标签：${unknownTags.join('、')}`);
       }
 
       const body = {
@@ -1240,6 +1249,7 @@ async function importProductsCsv(text, adminUserId, req) {
     : await importProductsCsvLegacy(rows, adminUserId, req);
 
   const { created, updated, skipped, errors, sku_rows: skuRows } = result;
+  const importResult = errors.length > 0 || skipped > 0 ? 'partial' : 'success';
 
   await writeAuditLog({
     req,
@@ -1251,7 +1261,7 @@ async function importProductsCsv(text, adminUserId, req) {
       ? `SKU 矩阵导入：新建 ${created}，更新 ${updated}，SKU 行 ${skuRows || 0}，跳过 ${skipped}`
       : `导入商品：新建 ${created}，更新 ${updated}，跳过 ${skipped}`,
     after: { created, updated, skipped, sku_rows: skuRows || 0, error_count: errors.length, mode: skuMode ? 'sku_matrix' : 'legacy' },
-    result: 'success',
+    result: importResult,
   });
   if (created > 0 || updated > 0) bumpCatalogCache();
   const parts = [`新建 ${created} 条`, `更新 ${updated} 条`];
@@ -1269,19 +1279,41 @@ async function batchUpdateStatus(ids, status, adminUserId, req) {
   const lc = lcMap[status];
   if (lc === undefined) return { error: { code: 400, message: '状态无效' } };
   const st = statusVarcharFromLifecycle(lc);
-  await repo.batchUpdateStatus(ids, st, lc);
+  const uniqueIds = [...new Set(ids.map((id) => String(id || '').trim()).filter(Boolean))];
+  const activeIds = [];
+  const skippedIds = [];
+  for (const id of uniqueIds) {
+    const row = await repo.selectProductById(id);
+    if (row) activeIds.push(id);
+    else skippedIds.push(id);
+  }
+  const updated = activeIds.length
+    ? await repo.batchUpdateStatus(activeIds, st, lc)
+    : 0;
   const verb = { active: '上架', inactive: '下架', draft: '设为草稿' }[status];
   await writeAuditLog({
     req, operatorId: adminUserId,
     actionType: 'product.batch_status',
     objectType: 'product',
-    objectId: ids.join(','),
-    summary: `批量${verb} ${ids.length} 个商品`,
-    after: { status: st, lifecycle_status: lc, count: ids.length },
-    result: 'success',
+    objectId: uniqueIds.length <= 3 ? uniqueIds.join(',') : `${uniqueIds.slice(0, 3).join(',')}…(+${uniqueIds.length})`,
+    summary: `批量${verb}：成功 ${updated}，跳过 ${skippedIds.length}`,
+    after: {
+      status: st,
+      lifecycle_status: lc,
+      requested: uniqueIds.length,
+      updated,
+      skipped: skippedIds.length,
+      skipped_ids: skippedIds,
+    },
+    result: skippedIds.length && !updated ? 'failure' : (skippedIds.length ? 'partial' : 'success'),
   });
-  bumpCatalogCache();
-  return { message: `已${verb} ${ids.length} 个商品` };
+  if (updated > 0) bumpCatalogCache();
+  const parts = [`已${verb} ${updated} 个商品`];
+  if (skippedIds.length) parts.push(`跳过 ${skippedIds.length} 个（不存在或已删除）`);
+  return {
+    data: { updated, skipped: skippedIds.length, skipped_ids: skippedIds, requested: uniqueIds.length },
+    message: parts.join('，'),
+  };
 }
 
 module.exports = {

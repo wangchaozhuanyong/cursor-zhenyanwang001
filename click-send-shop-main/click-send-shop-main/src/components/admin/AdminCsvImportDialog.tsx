@@ -110,6 +110,10 @@ export default function AdminCsvImportDialog({
           {lastResult ? (
             <div className="rounded-lg border border-border bg-card px-3 py-2 text-foreground">
               <p>
+                {lastResult.mode === "sku_matrix" ? "SKU 矩阵模式" : "经典模式"}
+                {lastResult.sku_rows ? ` · 同步 ${lastResult.sku_rows} 个 SKU` : ""}
+              </p>
+              <p>
                 新建 {lastResult.created} 条，更新 {lastResult.updated} 条
                 {lastResult.skipped ? `，跳过 ${lastResult.skipped} 条` : ""}
               </p>

@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import * as uploadService from "@/services/uploadService";
 import * as userService from "@/services/userService";
+import * as authService from "@/services/authService";
 import PageHeader from "@/components/PageHeader";
 
 const CARD = "rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
@@ -33,6 +34,8 @@ export default function Settings() {
   const [showCancelForm, setShowCancelForm] = useState(false);
   const [cancelConfirmText, setCancelConfirmText] = useState("");
   const [cancelSaving, setCancelSaving] = useState(false);
+  const [birthday, setBirthday] = useState("");
+  const [birthdayLocked, setBirthdayLocked] = useState(false);
 
   const loadWechatBinding = async () => {
     try {
@@ -110,12 +113,24 @@ export default function Settings() {
     }
   };
 
+  useEffect(() => {
+    authService.getProfile().then((p) => {
+      const b = p.birthday || "";
+      setBirthday(b ? String(b).slice(0, 10) : "");
+      setBirthdayLocked(!!(p.birthdayLocked || p.birthday_locked));
+    }).catch(() => {});
+  }, []);
+
   const handleSave = async () => {
     try {
       await saveProfile();
+      if (birthday && !birthdayLocked) {
+        await userService.updateProfile({ birthday });
+      }
+      await loadProfile();
       toast.success("资料已保存", toastPresetQuickSuccess);
-    } catch {
-      toast.error("保存失败，请重试");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "保存失败，请重试");
     }
   };
 
@@ -247,6 +262,21 @@ export default function Settings() {
                 />
               </label>
             ))}
+            <label className="block">
+              <span className="mb-1.5 block text-xs text-[var(--theme-muted)]">生日（用于生日多倍积分）</span>
+              <input
+                type="date"
+                value={birthday}
+                readOnly={birthdayLocked || !!birthday}
+                onChange={(e) => setBirthday(e.target.value)}
+                className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm outline-none ring-1 ring-[var(--theme-border)] focus:ring-2 focus:ring-[var(--theme-primary)] disabled:opacity-70"
+              />
+              {birthdayLocked ? (
+                <p className="mt-1 text-[11px] text-[var(--theme-muted)]">生日已锁定，如需修改请联系客服</p>
+              ) : birthday ? (
+                <p className="mt-1 text-[11px] text-[var(--theme-muted)]">生日保存后不可自行修改</p>
+              ) : null}
+            </label>
           </div>
         </section>
 

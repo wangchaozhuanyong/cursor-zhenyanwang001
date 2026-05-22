@@ -83,6 +83,33 @@ describe('admin product soft-delete guards', () => {
     assert.equal(Number(afterBatch.lifecycle_status), 1);
   });
 
+  test('deleteProduct returns 404 when product already deleted', async () => {
+    productId = generateId();
+    await insertTestProduct(productId);
+    await repo.deleteProductById(productId, 'test-admin');
+
+    await assert.rejects(
+      () => svc.deleteProduct(productId, 'test-admin', mockReq),
+      (err) => err instanceof BusinessError && err.statusCode === 404,
+    );
+  });
+
+  test('batchUpdateStatus reports skipped deleted ids', async () => {
+    productId = generateId();
+    await insertTestProduct(productId);
+    const activeId = generateId();
+    await insertTestProduct(activeId);
+
+    await repo.deleteProductById(productId, 'test-admin');
+
+    const result = await svc.batchUpdateStatus([productId, activeId], 'inactive', 'test-admin', mockReq);
+    assert.equal(result.data.updated, 1);
+    assert.equal(result.data.skipped, 1);
+    assert.ok(result.data.skipped_ids.includes(productId));
+
+    await db.query('DELETE FROM products WHERE id = ?', [activeId]).catch(() => {});
+  });
+
   test('CSV import skips updates to soft-deleted product id', async () => {
     productId = generateId();
     await insertTestProduct(productId);

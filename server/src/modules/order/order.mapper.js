@@ -106,6 +106,7 @@ function formatOrder(row, items, returnMeta = null) {
   return {
     id: row.id,
     order_no: row.order_no,
+    order_type: row.order_type || 'normal',
     items,
     raw_amount: parseFloat(row.raw_amount),
     discount_amount: parseFloat(row.discount_amount),

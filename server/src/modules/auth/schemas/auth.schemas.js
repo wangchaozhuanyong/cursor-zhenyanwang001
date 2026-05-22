@@ -78,6 +78,11 @@ const updateProfileBodySchema = withCountryPhoneValidation(
       countryCode: countryCodeSchema.optional(),
       wechat: z.string().trim().max(64, '微信号过长').optional(),
       whatsapp: z.string().trim().max(64, 'WhatsApp 过长').optional(),
+      birthday: z.union([
+        z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '生日格式应为 YYYY-MM-DD'),
+        z.literal(''),
+        z.null(),
+      ]).optional(),
     })
     .refine(
       (v) =>
@@ -85,7 +90,8 @@ const updateProfileBodySchema = withCountryPhoneValidation(
         || v.avatar !== undefined
         || v.phone !== undefined
         || v.wechat !== undefined
-        || v.whatsapp !== undefined,
+        || v.whatsapp !== undefined
+        || v.birthday !== undefined,
       { message: '没有需要更新的字段', path: [] },
     ),
 );

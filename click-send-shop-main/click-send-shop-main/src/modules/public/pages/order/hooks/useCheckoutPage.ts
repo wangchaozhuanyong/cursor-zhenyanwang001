@@ -210,6 +210,7 @@ export function useCheckoutPage() {
     : 0;
   const discountAmount = orderPreview?.discount_amount ?? clientCouponDiscount;
   const discountLines = orderPreview?.discount_lines ?? [];
+  const pointsBonusLines = orderPreview?.points_bonus_lines ?? [];
   const finalTotal = orderPreview?.final_amount ?? Math.max(0, rawTotal - clientCouponDiscount + shippingFee);
   const preferredCouponId = searchParams.get("coupon_id");
   const matchesPreferredCoupon = useCallback(
@@ -736,6 +737,7 @@ export function useCheckoutPage() {
     shippingFee,
     discountAmount,
     discountLines,
+    pointsBonusLines,
     finalTotal,
     totalPointsValue: Number(orderPreview?.earned_points || orderPreview?.total_points || 0),
     sstCfg,

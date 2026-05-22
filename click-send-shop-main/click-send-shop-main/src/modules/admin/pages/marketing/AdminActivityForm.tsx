@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -153,6 +153,11 @@ export default function AdminActivityForm() {
     if ((form.type === "coupon_activity" || form.type === "new_user_gift") && !selectedCouponIds.length) return "请至少选择一张优惠券";
     if (!(form.display_positions || []).length) return "请至少选择一个展示位置";
     if (WIP_ACTIVITY_TYPES.includes(form.type)) return "该活动类型尚在开发中，仅可保存草稿";
+    if (form.type === "points_bonus") {
+      const cfg = (form.activity_config || {}) as Record<string, unknown>;
+      const pct = Number(cfg.multiplier_percent ?? 0);
+      if (!Number.isFinite(pct) || pct < 100) return "积分倍率必须至少为 100（200=2倍）";
+    }
     if (form.type === "full_reduction") {
       if (!fullReductionRules.length) return "至少配置一档满减";
       for (const r of fullReductionRules) {
@@ -235,6 +240,7 @@ export default function AdminActivityForm() {
                 { k: "full_reduction" as const, t: "满减活动", d: "按门槛减免" },
                 { k: "coupon_activity" as const, t: "优惠券活动", d: "在首页领券中心展示" },
                 { k: "new_user_gift" as const, t: "新人礼包", d: "注册后自动发券" },
+                { k: "points_bonus" as const, t: "积分多倍活动", d: "下单可获得额外积分倍率" },
               ].map((x) => (
                 <button
                   key={x.k}
@@ -249,7 +255,20 @@ export default function AdminActivityForm() {
                           ? ["home_coupon_center"]
                           : x.k === "new_user_gift"
                             ? ["home_new_user_gift"]
-                            : p.display_positions,
+                            : x.k === "points_bonus"
+                              ? ["checkout_notice", "profile_center"]
+                              : p.display_positions,
+                      activity_config: x.k === "points_bonus"
+                        ? {
+                          bonus_kind: "normal",
+                          bonus_mode: "multiplier",
+                          multiplier_percent: 200,
+                          min_order_amount: 0,
+                          max_bonus_points: 0,
+                          stack_strategy: "max",
+                          apply_scope: "matched_items",
+                        }
+                        : p.activity_config,
                     }))
                   }
                   className={`rounded-xl border p-3 text-left ${form.type === x.k ? "border-gold bg-gold/5" : "border-border"}`}
@@ -336,6 +355,68 @@ export default function AdminActivityForm() {
                       })}
                     </div>
                   )}
+                </div>
+              )}
+
+              {form.type === "points_bonus" && (
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="text-sm"><Tx>活动种类</Tx>
+                    <select
+                      className="mt-1 w-full rounded-lg bg-secondary px-3 py-2"
+                      value={String((form.activity_config as Record<string, unknown>)?.bonus_kind || "normal")}
+                      onChange={(e) => setForm((p) => ({ ...p, activity_config: { ...(p.activity_config || {}), bonus_kind: e.target.value } }))}
+                    >
+                      <option value="normal">普通积分活动</option>
+                      <option value="holiday">节日多倍</option>
+                      <option value="birthday">生日多倍</option>
+                    </select>
+                  </label>
+                  <label className="text-sm"><Tx>积分倍率 %</Tx>
+                    <input
+                      type="number"
+                      className="mt-1 w-full rounded-lg bg-secondary px-3 py-2"
+                      value={String((form.activity_config as Record<string, unknown>)?.multiplier_percent ?? 200)}
+                      onChange={(e) => setForm((p) => ({ ...p, activity_config: { ...(p.activity_config || {}), multiplier_percent: Number(e.target.value) } }))}
+                    />
+                    <span className="mt-1 block text-xs text-muted-foreground">200=2倍，300=3倍</span>
+                  </label>
+                  <label className="text-sm"><Tx>最低订单金额 (RM)</Tx>
+                    <input type="number" className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" value={String((form.activity_config as Record<string, unknown>)?.min_order_amount ?? 0)} onChange={(e) => setForm((p) => ({ ...p, activity_config: { ...(p.activity_config || {}), min_order_amount: Number(e.target.value) } }))} />
+                  </label>
+                  <label className="text-sm"><Tx>额外积分上限</Tx>
+                    <input type="number" className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" value={String((form.activity_config as Record<string, unknown>)?.max_bonus_points ?? 0)} onChange={(e) => setForm((p) => ({ ...p, activity_config: { ...(p.activity_config || {}), max_bonus_points: Number(e.target.value) } }))} />
+                    <span className="mt-1 block text-xs text-muted-foreground">0 表示不限制</span>
+                  </label>
+                  <label className="text-sm"><Tx>叠加策略</Tx>
+                    <select className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" value={String((form.activity_config as Record<string, unknown>)?.stack_strategy || "max")} onChange={(e) => setForm((p) => ({ ...p, activity_config: { ...(p.activity_config || {}), stack_strategy: e.target.value } }))}>
+                      <option value="max">多个活动取最高倍率</option>
+                    </select>
+                  </label>
+                  <label className="text-sm"><Tx>生效范围</Tx>
+                    <select className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" value={String((form.activity_config as Record<string, unknown>)?.apply_scope || "matched_items")} onChange={(e) => setForm((p) => ({ ...p, activity_config: { ...(p.activity_config || {}), apply_scope: e.target.value } }))}>
+                      <option value="matched_items">仅命中范围的商品行</option>
+                      <option value="all">整单生效</option>
+                    </select>
+                  </label>
+                  {String((form.activity_config as Record<string, unknown>)?.bonus_kind || "") === "holiday" ? (
+                    <label className="text-sm md:col-span-2"><Tx>节日名称</Tx>
+                      <input className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" value={String((form.activity_config as Record<string, unknown>)?.holiday_name || "")} onChange={(e) => setForm((p) => ({ ...p, activity_config: { ...(p.activity_config || {}), holiday_name: e.target.value } }))} />
+                    </label>
+                  ) : null}
+                  {String((form.activity_config as Record<string, unknown>)?.bonus_kind || "") === "birthday" ? (
+                    <>
+                      <label className="text-sm"><Tx>生日前窗口（天）</Tx>
+                        <input type="number" className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" value={String((form.activity_config as Record<string, unknown>)?.birthday_window_before_days ?? 0)} onChange={(e) => setForm((p) => ({ ...p, activity_config: { ...(p.activity_config || {}), birthday_window_before_days: Number(e.target.value) } }))} />
+                      </label>
+                      <label className="text-sm"><Tx>生日后窗口（天）</Tx>
+                        <input type="number" className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" value={String((form.activity_config as Record<string, unknown>)?.birthday_window_after_days ?? 7)} onChange={(e) => setForm((p) => ({ ...p, activity_config: { ...(p.activity_config || {}), birthday_window_after_days: Number(e.target.value) } }))} />
+                      </label>
+                      <label className="flex items-center gap-2 text-sm md:col-span-2">
+                        <input type="checkbox" checked={(form.activity_config as Record<string, unknown>)?.once_per_year !== false} onChange={(e) => setForm((p) => ({ ...p, activity_config: { ...(p.activity_config || {}), once_per_year: e.target.checked } }))} />
+                        <Tx>每年仅享受一次（按 KL 自然年）</Tx>
+                      </label>
+                    </>
+                  ) : null}
                 </div>
               )}
 

@@ -26,6 +26,9 @@ export interface UserProfile {
   phone: string;
   wechat: string;
   whatsapp: string;
+  birthday?: string | null;
+  birthday_locked?: boolean | number;
+  birthdayLocked?: boolean;
   wechatLogin?: WechatLoginBinding;
   inviteCode: string;
   parentInviteCode: string;
@@ -69,7 +72,7 @@ export interface UserProfile {
 
 export type UserStatusOverview = NonNullable<UserProfile["status_overview"]>;
 
-export type UserEditForm = Partial<Pick<UserProfile, "nickname" | "phone" | "wechat" | "whatsapp" | "avatar">>;
+export type UserEditForm = Partial<Pick<UserProfile, "nickname" | "phone" | "wechat" | "whatsapp" | "avatar" | "birthday" | "birthday_locked">>;
 
 export interface UserTag {
   id: string;
@@ -86,4 +89,5 @@ export interface UpdateProfileParams {
   phone?: string;
   wechat?: string;
   whatsapp?: string;
+  birthday?: string | null;
 }

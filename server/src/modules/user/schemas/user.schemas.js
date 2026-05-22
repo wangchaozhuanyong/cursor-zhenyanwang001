@@ -106,6 +106,35 @@ const cancelAccountBodySchema = z.object({
   confirmText: z.string().trim().min(1, '请输入确认文本'),
 });
 
+const giftRedeemAddressSchema = z.object({
+  line1: z.string().trim().min(1, '请填写地址'),
+  line2: z.string().trim().max(255).optional(),
+  city: z.string().trim().min(1, '请填写城市'),
+  state: z.string().trim().min(1, '请填写州属'),
+  postcode: z.string().trim().min(1, '请填写邮编'),
+  country: z.string().trim().max(8).optional(),
+});
+
+const pointsGiftRedeemBodySchema = z.object({
+  gift_item_id: z.string().trim().min(1).optional(),
+  giftItemId: z.string().trim().min(1).optional(),
+  quantity: z.coerce.number().int().min(1).max(99).optional(),
+  contact_name: z.string().trim().min(1, '请填写收货人'),
+  contact_phone: z.string().trim().min(6, '请填写联系电话'),
+  address: giftRedeemAddressSchema,
+  note: z.string().trim().max(500).optional(),
+  shipping_name: z.string().trim().max(64).optional(),
+}).refine((v) => !!(v.gift_item_id || v.giftItemId), { message: '请选择礼品', path: ['gift_item_id'] })
+  .transform((v) => ({
+  gift_item_id: v.gift_item_id || v.giftItemId,
+  quantity: v.quantity,
+  contact_name: v.contact_name,
+  contact_phone: v.contact_phone,
+  address: v.address,
+  note: v.note,
+  shipping_name: v.shipping_name,
+}));
+
 module.exports = {
   paginationQuerySchema,
   addressIdParamSchema,
@@ -121,4 +150,5 @@ module.exports = {
   withdrawBodySchema,
   shippingQuoteBodySchema,
   cancelAccountBodySchema,
+  pointsGiftRedeemBodySchema,
 };

@@ -39,7 +39,7 @@ import {
   MemberHome, GuestHome, Login, BindWechatPhone,
   Categories, ProductDetail, NewArrivals, Search,
   Cart, Checkout, Orders, OrderDetail, Returns, PendingReviews,
-  Profile, Settings, AddressManage, Favorites, History, Notifications, Coupons, Points, Rewards, Invite,
+  Profile, Settings, AddressManage, Favorites, History, Notifications, Coupons, Points, PointsGiftShop, Rewards, Invite,
   Help, About, ContentCmsPage, SupportDownload, NotFound,
   AdminLogin, AdminAccount, AdminAccounts, Dashboard,
   AdminProducts, AdminProductForm, AdminCategories, AdminInventory, AdminProductTags, AdminBanners,
@@ -342,6 +342,18 @@ export function AppRoutes() {
                     <CapabilityRoute enabled={capabilities.pointsEnabled}>
                       <LoyaltyRouteGuard feature="points">
                         <Points />
+                      </LoyaltyRouteGuard>
+                    </CapabilityRoute>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/points/gifts"
+                element={
+                  <ProtectedRoute>
+                    <CapabilityRoute enabled={capabilities.pointsEnabled}>
+                      <LoyaltyRouteGuard feature="points">
+                        <PointsGiftShop />
                       </LoyaltyRouteGuard>
                     </CapabilityRoute>
                   </ProtectedRoute>

@@ -202,6 +202,7 @@ async function selectActiveFullReductionActivitiesForUpdate(q) {
      WHERE a.deleted_at IS NULL
        AND a.disabled = 0
        AND a.type = 'full_reduction'
+       AND a.status NOT IN ('draft', 'disabled')
        AND NOW() BETWEEN a.start_at AND a.end_at
      ORDER BY a.sort_order ASC, a.start_at DESC
      FOR UPDATE`,
@@ -218,6 +219,40 @@ async function selectActiveFullReductionActivitiesRead(q) {
      WHERE a.deleted_at IS NULL
        AND a.disabled = 0
        AND a.type = 'full_reduction'
+       AND a.status NOT IN ('draft', 'disabled')
+       AND NOW() BETWEEN a.start_at AND a.end_at
+     ORDER BY a.sort_order ASC, a.start_at DESC`,
+  );
+  const scopeMap = await loadActivityScopes(q, rows.map((r) => r.activity_id));
+  return rows.map((r) => ({ ...r, scopes: scopeMap.get(r.activity_id) || [] }));
+}
+
+async function selectActivePointsBonusActivitiesForUpdate(q) {
+  const [rows] = await q.query(
+    `SELECT a.id AS activity_id, a.title, a.type, a.activity_config, a.scope_type,
+            a.allow_coupon_stack, a.allow_points_stack, a.allow_reward
+     FROM marketing_activities a
+     WHERE a.deleted_at IS NULL
+       AND a.disabled = 0
+       AND a.type = 'points_bonus'
+       AND a.status NOT IN ('draft', 'disabled')
+       AND NOW() BETWEEN a.start_at AND a.end_at
+     ORDER BY a.sort_order ASC, a.start_at DESC
+     FOR UPDATE`,
+  );
+  const scopeMap = await loadActivityScopes(q, rows.map((r) => r.activity_id));
+  return rows.map((r) => ({ ...r, scopes: scopeMap.get(r.activity_id) || [] }));
+}
+
+async function selectActivePointsBonusActivitiesRead(q) {
+  const [rows] = await q.query(
+    `SELECT a.id AS activity_id, a.title, a.type, a.activity_config, a.scope_type,
+            a.allow_coupon_stack, a.allow_points_stack, a.allow_reward
+     FROM marketing_activities a
+     WHERE a.deleted_at IS NULL
+       AND a.disabled = 0
+       AND a.type = 'points_bonus'
+       AND a.status NOT IN ('draft', 'disabled')
        AND NOW() BETWEEN a.start_at AND a.end_at
      ORDER BY a.sort_order ASC, a.start_at DESC`,
   );
@@ -294,11 +329,42 @@ async function updateUserCouponUsed(q, ucId) {
   await q.query("UPDATE user_coupons SET status = 'used', used_at = NOW() WHERE id = ?", [ucId]);
 }
 
+function parseLoyaltyMeta(raw) {
+  if (!raw) return {};
+  if (typeof raw === 'object') return raw;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+async function selectBirthdayBonusActivityIdsUsedInYear(q, userId, year) {
+  const [rows] = await q.query(
+    `SELECT loyalty_meta, status FROM orders
+     WHERE user_id = ?
+       AND status NOT IN ('cancelled', 'refunded')
+       AND YEAR(CONVERT_TZ(created_at, '+00:00', '+08:00')) = ?`,
+    [userId, String(year)],
+  );
+  const ids = new Set();
+  for (const row of rows) {
+    const meta = parseLoyaltyMeta(row.loyalty_meta);
+    for (const snap of meta.points_bonus_snapshots || []) {
+      if (String(snap.bonus_kind || '') === 'birthday' && snap.activity_id) {
+        ids.add(String(snap.activity_id));
+      }
+    }
+  }
+  return [...ids];
+}
+
 async function insertOrder(q, params) {
   const {
-    id, userId, orderNo, rawAmount, discountAmount, discountMeta, couponTitle,
+    id, userId, orderNo, orderType = 'normal', rawAmount, discountAmount, discountMeta, couponTitle,
     shippingFee, shippingName, totalAmount, totalPoints,
     note, contactName, contactPhone, address, paymentMethod,
+    paymentStatus,
     taxMode, taxRate, taxLabel, taxableAmount, taxAmount, taxExclusiveAmount,
     addressLine1, addressLine2, addressCity, addressState, addressPostcode, addressCountry,
     pointsUsed, pointsDiscountAmount, rewardCashUsed, rewardCashDiscountAmount, loyaltyMeta,
@@ -306,7 +372,7 @@ async function insertOrder(q, params) {
   } = params;
   await q.query(
     `INSERT INTO orders
-       (id, user_id, order_no, raw_amount, discount_amount, discount_meta, coupon_title,
+       (id, user_id, order_no, order_type, raw_amount, discount_amount, discount_meta, coupon_title,
         shipping_fee, shipping_cost_amount, payment_fee_amount, shipping_name, total_amount,
         goods_cost_amount, goods_net_sales_amount, gross_profit_amount, net_profit_amount,
         tax_mode, tax_rate, tax_label, taxable_amount, tax_amount, tax_exclusive_amount,
@@ -317,7 +383,7 @@ async function insertOrder(q, params) {
         payment_method)
      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
-      id, userId, orderNo, rawAmount, discountAmount,
+      id, userId, orderNo, orderType || 'normal', rawAmount, discountAmount,
       discountMeta ? JSON.stringify(discountMeta) : null,
       couponTitle || '',
       shippingFee,
@@ -342,7 +408,7 @@ async function insertOrder(q, params) {
       loyaltyMeta ? JSON.stringify(loyaltyMeta) : null,
       totalPoints,
       ORDER_STATUS.PENDING,
-      PAYMENT_STATUS.PENDING,
+      paymentStatus || PAYMENT_STATUS.PENDING,
       note || '', contactName, contactPhone, contactPhone, address || '',
       addressLine1 || '', addressLine2 || '', addressCity || '', addressState || '',
       addressPostcode || '', addressCountry || 'MY',
@@ -877,6 +943,17 @@ async function updateOrderStatus(q, orderId, status) {
   await q.query('UPDATE orders SET status = ? WHERE id = ?', [status, orderId]);
 }
 
+async function updateOrderGiftRedeemPaid(q, orderId) {
+  await q.query(
+    `UPDATE orders
+     SET status = ?, payment_status = ?, payment_time = COALESCE(payment_time, NOW()),
+         payment_method = ?, payment_channel = 'points_gift', payment_provider = 'points_gift',
+         paid_at = COALESCE(paid_at, NOW())
+     WHERE id = ?`,
+    [ORDER_STATUS.PAID, PAYMENT_STATUS.PAID, 'points_gift', orderId],
+  );
+}
+
 async function updateOrderCancelled(q, orderId, reason = '') {
   await q.query(
     `UPDATE orders
@@ -1183,6 +1260,9 @@ module.exports = {
   selectFlashSaleActivityItemsRead,
   selectActiveFullReductionActivitiesForUpdate,
   selectActiveFullReductionActivitiesRead,
+  selectActivePointsBonusActivitiesForUpdate,
+  selectActivePointsBonusActivitiesRead,
+  selectBirthdayBonusActivityIdsUsedInYear,
   selectUserCouponRead,
   incrementActivitySold,
   decrementActivitySold,
@@ -1210,6 +1290,7 @@ module.exports = {
   selectOrderByIdOrOrderNoForUpdate,
   selectOrderItems,
   updateOrderStatus,
+  updateOrderGiftRedeemPaid,
   updateOrderCancelled,
   selectOrderItemQtyRows,
   restoreVariantStock,

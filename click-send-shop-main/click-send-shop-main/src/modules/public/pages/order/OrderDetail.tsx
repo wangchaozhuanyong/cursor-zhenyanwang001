@@ -11,6 +11,7 @@ import { useCartStore } from "@/stores/useCartStore";
 import type { Order } from "@/types/order";
 import type { ProductVariant } from "@/types/product";
 import { canApplyAfterSale, canUserCancelOrder, getBuyerOrderStatusText, getOrderProgressStep, hasPendingReview, isPendingPayment } from "@/utils/orderBuyerStatus";
+import { labelOrderPaymentMethod } from "@/utils/orderPaymentLabels";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { usePayPendingOrder } from "@/hooks/usePayPendingOrder";
 import { OrderPaymentCountdown } from "@/components/order/OrderPaymentCountdown";
@@ -179,7 +180,13 @@ export default function OrderDetail() {
             </button>
           </div>
           <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">下单时间</span><span>{order.created_at?.replace("T", " ").slice(0, 16)}</span></div>
-          <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">支付方式</span><span>{order.payment_method || "-"}</span></div>
+          <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">支付方式</span><span>{labelOrderPaymentMethod(order.payment_method, order.order_type)}</span></div>
+          {order.order_type === "points_gift" ? (
+            <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">订单类型</span><span>积分礼品兑换</span></div>
+          ) : null}
+          {Number(order.points_used || 0) > 0 && order.order_type === "points_gift" ? (
+            <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">消耗积分</span><span>{order.points_used}</span></div>
+          ) : null}
           {order.payment_time ? <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">支付时间</span><span>{order.payment_time?.replace("T", " ").slice(0, 16)}</span></div> : null}
           <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">收货人</span><span>{order.contact_name || "-"}</span></div>
           <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">手机号</span><span>{order.contact_phone || "-"}</span></div>

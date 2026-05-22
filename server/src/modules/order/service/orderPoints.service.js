@@ -64,9 +64,23 @@ async function resolveConfiguredSettleTiming(options = {}) {
   return SETTLE_TIMINGS.has(timing) ? timing : 'order_completed';
 }
 
+function parseOrderLoyaltyMeta(order) {
+  const raw = order?.loyalty_meta;
+  if (!raw) return {};
+  if (typeof raw === 'object') return raw;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
 async function grantOrderEarnPoints(conn, order, options = {}) {
   const amount = toInt(order?.total_points);
   if (!order?.id || !order.user_id || amount <= 0) return { skipped: true };
+
+  const loyaltyMeta = parseOrderLoyaltyMeta(order);
+  const pointsBonusSnapshots = loyaltyMeta.points_bonus_snapshots || options.pointsBonusSnapshots || [];
 
   return requireUserApi('changeUserPoints')(conn, {
     userId: order.user_id,
@@ -78,7 +92,10 @@ async function grantOrderEarnPoints(conn, order, options = {}) {
     sourceType: 'order_completion',
     relatedRecordId: `order_earn:${order.id}`,
     operatorId: options.operatorId,
-    metadata: { trigger: options.trigger || options.timing || 'order_completed' },
+    metadata: {
+      trigger: options.trigger || options.timing || 'order_completed',
+      points_bonus_snapshots: pointsBonusSnapshots,
+    },
   });
 }
 
@@ -104,6 +121,9 @@ async function reverseOrderEarnPoints(conn, order, options = {}) {
 }
 
 async function maybeGrantOrderEarnPoints(conn, order, options = {}) {
+  if (String(order?.order_type || '') === 'points_gift') {
+    return { skipped: true, reason: 'points_gift_order_no_earn' };
+  }
   const configuredTiming = await resolveConfiguredSettleTiming(options);
   const eventTiming = options.timing || configuredTiming;
   if (eventTiming !== configuredTiming) {
@@ -125,7 +145,56 @@ async function maybeGrantOrderEarnOnPaymentSuccess(conn, order, options = {}) {
   });
 }
 
+async function applyGiftRedeem(conn, order, options = {}) {
+  const pointsUsed = toInt(options.pointsUsed ?? order?.points_used);
+  if (!order?.id || !order.user_id || pointsUsed <= 0) return { skipped: true };
+  return requireUserApi('changeUserPoints')(conn, {
+    userId: order.user_id,
+    amount: -pointsUsed,
+    action: POINTS_ACTION.GIFT_REDEEM,
+    description: options.description || `积分礼品兑换 ${order.order_no}`,
+    orderId: order.id,
+    orderNo: order.order_no,
+    sourceType: 'points_gift_redeem',
+    relatedRecordId: `gift_redeem:${order.id}`,
+    operatorId: options.operatorId,
+    allowNegative: false,
+    metadata: {
+      trigger: options.trigger || 'gift_redeem',
+      gift_item_id: options.giftItemId || null,
+      redemption_id: options.redemptionId || null,
+    },
+  });
+}
+
+async function reverseGiftRedeem(conn, order, options = {}) {
+  const pointsUsed = toInt(order?.points_used);
+  if (!order?.id || !order.user_id || pointsUsed <= 0) return { skipped: true };
+  const existing = await pointsRepo.selectRecordByRelatedForUpdate(
+    conn,
+    `gift_redeem_reverse:${order.id}`,
+    POINTS_ACTION.GIFT_REDEEM_REVERSE,
+  );
+  if (existing) return { skipped: true, record: existing };
+  return requireUserApi('changeUserPoints')(conn, {
+    userId: order.user_id,
+    amount: pointsUsed,
+    action: POINTS_ACTION.GIFT_REDEEM_REVERSE,
+    description: options.description || `礼品兑换取消退回积分 ${order.order_no}`,
+    orderId: order.id,
+    orderNo: order.order_no,
+    sourceType: options.sourceType || 'gift_redeem_cancel',
+    relatedRecordId: `gift_redeem_reverse:${order.id}`,
+    operatorId: options.operatorId,
+    allowNegative: false,
+    metadata: { trigger: options.trigger || 'gift_redeem_cancel' },
+  });
+}
+
 async function refundOrderRedeemOnly(conn, order, options = {}) {
+  if (String(order.order_type || '') === 'points_gift' || String(order.payment_method || '') === 'points_gift') {
+    return reverseGiftRedeem(conn, order, options);
+  }
   return reverseOrderRedeem(conn, order, {
     operatorId: options.operatorId,
     trigger: options.trigger,
@@ -217,7 +286,9 @@ module.exports = {
   SETTLE_TIMINGS,
   resolveConfiguredSettleTiming,
   applyOrderRedeem,
+  applyGiftRedeem,
   reverseOrderRedeem,
+  reverseGiftRedeem,
   grantOrderEarnPoints,
   reverseOrderEarnPoints,
   maybeGrantOrderEarnPoints,

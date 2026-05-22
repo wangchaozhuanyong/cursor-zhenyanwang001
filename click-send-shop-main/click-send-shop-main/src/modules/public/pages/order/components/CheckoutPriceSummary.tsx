@@ -12,10 +12,17 @@ export type CheckoutDiscountLine = {
   amount: number;
 };
 
+type PointsBonusLine = {
+  type: string;
+  label: string;
+  multiplier_percent?: number;
+};
+
 interface CheckoutPriceSummaryProps {
   rawTotal: number;
   discountAmount: number;
   discountLines?: CheckoutDiscountLine[];
+  pointsBonusLines?: PointsBonusLine[];
   shippingFee: number;
   totalPoints: number;
   finalTotal: number;
@@ -28,6 +35,7 @@ export function CheckoutPriceSummary({
   rawTotal,
   discountAmount,
   discountLines = [],
+  pointsBonusLines = [],
   shippingFee,
   totalPoints,
   finalTotal,
@@ -85,9 +93,18 @@ export function CheckoutPriceSummary({
         </span>
       </div>
       <div className="mt-2 flex justify-between text-sm">
-        <span className="text-muted-foreground">可获积分</span>
+        <span className="text-muted-foreground">预计获得积分</span>
         <span className="font-medium text-foreground">{totalPoints}</span>
       </div>
+      {pointsBonusLines.length > 0 ? (
+        <div className="mt-1 space-y-1">
+          {pointsBonusLines.map((line) => (
+            <p key={`${line.type}-${line.label}`} className="text-xs text-[var(--theme-price)]">
+              已命中：{line.label}
+            </p>
+          ))}
+        </div>
+      ) : null}
       <div className="mt-3 flex items-baseline justify-between border-t border-[var(--theme-border)] pt-3">
         <span className="text-sm font-medium text-foreground">应付金额</span>
         <span className="text-2xl font-bold text-[var(--theme-price)]">RM {finalTotal}</span>

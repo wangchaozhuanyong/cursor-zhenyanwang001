@@ -280,6 +280,9 @@ export const POINTS_ACTION_LABELS: Record<string, string> = {
   admin_deduct: "后台扣减",
   admin_adjust: "后台调整",
   redeem: "积分兑换",
+  gift_redeem: "礼品兑换",
+  gift_redeem_reverse: "礼品兑换退回",
+  points_expire: "积分过期",
 };
 export function labelPointsAction(action: string): string {
   return labelFromMap(POINTS_ACTION_LABELS, action, "其他变动");

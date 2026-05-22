@@ -91,7 +91,7 @@ exports.batchUpdateStatus = asyncRoute(async (req, res) => {
   const { ids, status } = req.body;
   const r = await svc.batchUpdateStatus(ids, status, req.user?.id, req);
   if (r.error) return res.fail(r.error.code, r.error.message);
-  res.success(null, r.message);
+  res.success(r.data, r.message);
 });
 
 /* tags */

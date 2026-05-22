@@ -10,6 +10,7 @@ import { useOrderStore } from "@/stores/useOrderStore";
 import { useCartStore } from "@/stores/useCartStore";
 import * as orderService from "@/services/orderService";
 import { canApplyAfterSale, canUserCancelOrder, getBuyerOrderStatusText, hasPendingReview, isPendingPayment, matchOrderTab, orderInAfterSaleTab } from "@/utils/orderBuyerStatus";
+import { isGiftOrder } from "@/utils/orderPaymentLabels";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { usePayPendingOrder } from "@/hooks/usePayPendingOrder";
 import { safeOpenExternal } from "@/utils/safeOpen";
@@ -231,10 +232,15 @@ export default function Orders() {
             const totalItems = order.items.reduce((s, i) => s + i.qty, 0);
             return (
               <article key={order.id} className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3" onClick={() => openDetail(order)}>
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-sm font-medium">订单商品</span>
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium">
+                    {isGiftOrder(order.order_type) ? "积分礼品" : "订单商品"}
+                  </span>
                   <span className={`text-xs font-medium ${getStatusTone(order)}`}>{getBuyerOrderStatusText(order)}</span>
                 </div>
+                {isGiftOrder(order.order_type) && Number(order.points_used || 0) > 0 ? (
+                  <p className="mb-2 text-xs text-muted-foreground">消耗积分 {order.points_used}</p>
+                ) : null}
 
                 {order.status === "pending" ? (
                   <div className="mb-2.5" onClick={(e) => e.stopPropagation()}>

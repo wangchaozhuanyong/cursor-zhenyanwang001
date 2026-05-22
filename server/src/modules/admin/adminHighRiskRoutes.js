@@ -37,6 +37,7 @@ const MUTATING_PATTERNS = [
   /^\/inventory\//,
   /^\/orders\/[^/]+\/refund/,
   /^\/returns\/[^/]+/,
+  /^\/recycle-bin\/[^/]+\/restore$/,
   /^\/recycle-bin\/[^/]+\/permanent-delete/,
   /^\/exports/,
   /^\/products(\/|$)/,

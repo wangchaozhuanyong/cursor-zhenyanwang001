@@ -44,6 +44,14 @@ test('grantOrderEarnPoints always grants when order has earnable points', async 
   assert.equal(calls[0].amount, 50);
 });
 
+test('maybeGrantOrderEarnPoints skips points_gift orders', async () => {
+  const result = await orderPoints.maybeGrantOrderEarnPoints({}, { id: 'g1', user_id: 'u1', total_points: 0, order_type: 'points_gift' }, {
+    timing: 'order_completed',
+  });
+  assert.equal(result.skipped, true);
+  assert.equal(result.reason, 'points_gift_order_no_earn');
+});
+
 test('maybeGrantOrderEarnPoints respects configured settle_timing', async () => {
   const calls = [];
   userModule.api.changeUserPoints = async (_conn, payload) => {

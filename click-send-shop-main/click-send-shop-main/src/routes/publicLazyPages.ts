@@ -33,6 +33,7 @@ export const History = lazy(() => import("@/modules/public/pages/user/History"))
 export const Notifications = lazy(() => import("@/modules/public/pages/user/Notifications"));
 export const Coupons = lazy(() => import("@/modules/public/pages/user/Coupons"));
 export const Points = lazy(() => import("@/modules/public/pages/user/Points"));
+export const PointsGiftShop = lazy(() => import("@/modules/public/pages/user/PointsGiftShop"));
 export const Rewards = lazy(() => import("@/modules/public/pages/user/Rewards"));
 export const Invite = lazy(() => import("@/modules/public/pages/user/Invite"));
 

@@ -75,12 +75,13 @@ async function restoreProductById(id) {
 }
 
 async function batchUpdateStatus(ids, status, lifecycleStatus) {
-  if (!ids.length) return;
+  if (!ids.length) return 0;
   const placeholders = ids.map(() => '?').join(',');
-  await db.query(
+  const [result] = await db.query(
     `UPDATE products SET status = ?, lifecycle_status = ? WHERE id IN (${placeholders}) AND deleted_at IS NULL`,
     [status, lifecycleStatus, ...ids],
   );
+  return result.affectedRows || 0;
 }
 
 module.exports = {

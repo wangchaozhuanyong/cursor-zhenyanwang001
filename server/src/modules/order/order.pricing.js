@@ -7,6 +7,7 @@ const rewardRepo = require('../user/repository/reward.repository');
 const sstTax = require('./sstTax');
 const { computeShippingFee, estimateWeightFromItems } = require('../../utils/shippingFee');
 const pointsEngine = require('../loyalty/service/pointsEngine.service');
+const pointsBonusResolver = require('../loyalty/service/pointsBonusResolver.service');
 const siteCapabilitiesService = require('../siteCapabilities/service/siteCapabilities.service');
 
 function parseActivityConfig(raw) {
@@ -247,6 +248,27 @@ async function buildOrderPricing(userId, body, conn = null) {
   const fullReductionActivities = conn
     ? await repo.selectActiveFullReductionActivitiesForUpdate(conn)
     : await repo.selectActiveFullReductionActivitiesRead(q);
+  const pointsBonusActivitiesRaw = conn
+    ? await repo.selectActivePointsBonusActivitiesForUpdate(conn)
+    : await repo.selectActivePointsBonusActivitiesRead(q);
+  let pointsBonusUserContext = {};
+  if (userId) {
+    const authRepo = require('../../auth/repository/auth.repository');
+    const { klYear } = require('../../utils/birthdayWindow');
+    const { klDateString } = require('../../utils/klDateRange');
+    const birthdayRow = await authRepo.selectUserBirthdayFields(userId);
+    const consumedBirthdayActivityIds = await repo.selectBirthdayBonusActivityIdsUsedInYear(
+      q,
+      userId,
+      klYear(),
+    );
+    pointsBonusUserContext = {
+      birthday: birthdayRow?.birthday || null,
+      today: klDateString(),
+      consumedBirthdayActivityIds,
+    };
+  }
+  const pointsBonusActivities = pointsBonusActivitiesRaw;
 
   let rawAmount = 0;
   let legacyTotalPoints = 0;
@@ -378,6 +400,26 @@ async function buildOrderPricing(userId, body, conn = null) {
       allow_points_stack: flash ? flash.allow_points_stack !== 0 : !fullReductionBlocksPoints,
     };
   });
+  const pointsBonusResolved = pointsBonusResolver.resolvePointsBonusForPricing({
+    pointsBonusActivities,
+    orderItems,
+    productMap,
+    orderGoodsAmount: goodsInclusiveTaxable,
+    userContext: pointsBonusUserContext,
+  });
+  const bonusByProductId = new Map(
+    (pointsBonusResolved.item_results || []).map((row) => [String(row.product_id), row]),
+  );
+  const loyaltyItemsWithBonus = loyaltyItems.map((item) => {
+    const bonus = bonusByProductId.get(String(item.product_id)) || {};
+    return {
+      ...item,
+      points_bonus_multiplier_percent: bonus.points_bonus_multiplier_percent || 100,
+      points_bonus_activity_id: bonus.points_bonus_activity_id || null,
+      points_bonus_activity_title: bonus.points_bonus_activity_title || '',
+      points_bonus_bonus_kind: bonus.points_bonus_bonus_kind || 'normal',
+    };
+  });
   const pointsRedeem = hasPendingPointsReverse
     ? {
       max_usable_points: 0,
@@ -393,7 +435,7 @@ async function buildOrderPricing(userId, body, conn = null) {
     : pointsEngine.calculateMaxUsablePoints({
       settings: pointsSettings,
       userPointsBalance: pointsBalance,
-      orderItems: loyaltyItems,
+      orderItems: loyaltyItemsWithBonus,
       productMap,
       productRules,
       coupon: couponDiscount > 0 ? { title: couponTitle, type: couponType } : null,
@@ -424,18 +466,21 @@ async function buildOrderPricing(userId, body, conn = null) {
 
   const finalTotal = Math.max(0, basePayableBeforeLoyaltyWithMember - points_discount_amount - reward_cash_discount_amount);
   const paymentAllowsPoints = isPaymentMethodAllowedForPoints(pointsSettings, body.payment_method);
+  const earnOrderItems = loyaltyItemsWithBonus.map((item) => ({
+    ...item,
+    line_paid_amount: Math.max(0, item.line_paid_amount - (pointsSettings?.earn_after_points_redeem ? points_discount_amount * (item.line_paid_amount / Math.max(goodsInclusiveTaxable || 1, 1)) : 0)),
+  }));
   const pointsEarn = paymentAllowsPoints
     ? pointsEngine.calculateOrderEarnedPoints({
       settings: pointsSettings,
       productRules,
-      orderItems: loyaltyItems.map((item) => ({
-        ...item,
-        line_paid_amount: Math.max(0, item.line_paid_amount - (pointsSettings?.earn_after_points_redeem ? points_discount_amount * (item.line_paid_amount / Math.max(goodsInclusiveTaxable || 1, 1)) : 0)),
-      })),
+      orderItems: earnOrderItems,
       productMap,
       memberLevel,
       coupon: couponDiscount > 0 ? { title: couponTitle, type: couponType } : null,
       discounts: { coupon_amount: couponDiscount, full_reduction_amount: fullReductionDiscount, member_level_discount: memberLevelDiscount },
+      pointsBonusSnapshots: pointsBonusResolved.points_bonus_snapshots || [],
+      maxBonusPoints: pointsBonusResolved.max_bonus_points || 0,
     })
     : {
       earned_points: 0,
@@ -445,6 +490,18 @@ async function buildOrderPricing(userId, body, conn = null) {
       calculation_version: pointsEngine.CALCULATION_VERSION,
     };
   const earned_points = Number(pointsEarn.earned_points || 0);
+  const points_bonus_lines = (pointsBonusResolved.points_bonus_snapshots || [])
+    .filter((snap) => Number(snap.multiplier_percent || 100) > 100)
+    .map((snap) => ({
+      type: 'points_bonus',
+      label: snap.bonus_kind === 'holiday' && snap.holiday_name
+        ? `${snap.holiday_name} ${Number(snap.multiplier_percent) / 100} 倍积分`
+        : snap.bonus_kind === 'birthday'
+          ? `生日 ${Number(snap.multiplier_percent) / 100} 倍积分`
+          : `${snap.title || '积分活动'} ${Number(snap.multiplier_percent) / 100} 倍积分`,
+      multiplier_percent: Number(snap.multiplier_percent || 100),
+      activity_id: snap.activity_id,
+    }));
 
   const discount_lines = [];
   if (flashSaleDiscount > 0) {
@@ -500,6 +557,8 @@ async function buildOrderPricing(userId, body, conn = null) {
     couponTitle,
     couponType,
     discount_lines,
+    points_bonus_lines,
+    earned_points,
     loyalty: {
       use_points: usePoints,
       points_used,
@@ -531,14 +590,18 @@ async function buildOrderPricing(userId, body, conn = null) {
         discount_lines,
         disabled_reason: pointsRedeem.disabled_reason || '',
         adjusted: !!pointsRedeem.adjusted,
-        calculation_version: pointsEngine.CALCULATION_VERSION,
+        calculation_version: pointsEarn.calculation_version || pointsEngine.CALCULATION_VERSION,
+        points_bonus_lines,
+        points_bonus_snapshots: pointsBonusResolved.points_bonus_snapshots || [],
       },
       points_settings_snapshot: pointsSettings ? { ...pointsSettings } : null,
       product_rule_snapshots: pointsEarn.product_rule_snapshots || [],
       member_level_snapshot: pointsEarn.member_level_snapshot || (memberLevel ? { ...memberLevel } : { points_multiplier: 1 }),
       item_results: pointsEarn.item_results || [],
       redeem_item_results: pointsRedeem.item_results || [],
-      calculation_version: pointsEngine.CALCULATION_VERSION,
+      points_bonus_snapshots: pointsBonusResolved.points_bonus_snapshots || [],
+      points_bonus_lines,
+      calculation_version: pointsEarn.calculation_version || pointsEngine.CALCULATION_VERSION,
       point_payment_method_whitelist: pointMethods,
       reward_payment_method_whitelist: rewardMethods,
     },

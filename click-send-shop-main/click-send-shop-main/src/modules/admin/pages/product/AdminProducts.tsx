@@ -14,7 +14,7 @@ import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import AdminCsvImportDialog from "@/components/admin/AdminCsvImportDialog";
 import PermissionGate from "@/components/admin/PermissionGate";
-import { exportProductsCsv, fetchProducts, importProductsCsv, patchProductLifecycle } from "@/services/admin/productService";
+import { batchUpdateProductStatus, exportProductsCsv, fetchProducts, importProductsCsv } from "@/services/admin/productService";
 import { downloadProductCsvTemplate } from "@/utils/productCsvTemplate";
 import type { Product, ProductListParams, ProductStatus } from "@/types/product";
 import { toastErrorMessage } from "@/utils/errorMessage";
@@ -65,10 +65,6 @@ function statusMeta(status: ProductStatus | string) {
   return { label: "下架", className: THEME_BADGE_WARNING };
 }
 
-function toLifecycle(status: ProductStatus) {
-  return status === "active" ? 1 : status === "draft" ? 0 : 2;
-}
-
 function money(value: unknown) {
   return `RM ${Number(value || 0).toFixed(2)}`;
 }
@@ -117,11 +113,13 @@ export default function AdminProducts() {
   const batchStatusMutation = useMutation({
     mutationFn: async (status: ProductStatus) => {
       if (!selected.length) throw new Error("请先勾选商品");
-      await Promise.all(selected.map((id) => patchProductLifecycle(id, toLifecycle(status))));
-      return status;
+      return batchUpdateProductStatus(selected, status);
     },
-    onSuccess: async (status) => {
-      toast.success(status === "active" ? "已批量上架" : "已批量下架");
+    onSuccess: async (result, status) => {
+      const verb = status === "active" ? "上架" : status === "inactive" ? "下架" : "设为草稿";
+      const parts = [`已${verb} ${result.updated} 个商品`];
+      if (result.skipped > 0) parts.push(`跳过 ${result.skipped} 个（不存在或已删除）`);
+      toast.success(parts.join("，"));
       setSelected([]);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),

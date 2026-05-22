@@ -539,6 +539,8 @@ async function createOrder(userId, body) {
         use_reward_cash: !!use_reward_cash,
         available_points: Number(loyalty.available_points || 0),
         available_reward_balance: Number(loyalty.available_reward_balance || 0),
+        points_bonus_snapshots: loyalty.points_bonus_snapshots || [],
+        points_bonus_lines: loyalty.points_bonus_lines || [],
       },
     });
 
@@ -792,12 +794,17 @@ async function cancelPendingOrderInTransaction(conn, order, options = {}) {
     }
   }
 
-  await orderPoints.refundOrderRedeemOnly(conn, order, {
-    trigger,
-    description: pointReason,
-    redeemDescription: `Order cancellation refunds redeemed points ${order.order_no}`,
-    sourceType: 'order_cancel',
-  });
+  if (String(order.order_type || '') === 'points_gift') {
+    const giftRedemption = require('../../loyalty/service/pointsGiftRedemption.service');
+    await giftRedemption.reverseGiftRedemptionForCancelledOrder(conn, order);
+  } else {
+    await orderPoints.refundOrderRedeemOnly(conn, order, {
+      trigger,
+      description: pointReason,
+      redeemDescription: `Order cancellation refunds redeemed points ${order.order_no}`,
+      sourceType: 'order_cancel',
+    });
+  }
   if (Number(order.reward_cash_used || 0) > 0) {
     await requireApiMethod(getUserApi(), 'insertRewardTransaction')(conn, {
       id: generateId(),
@@ -933,6 +940,7 @@ async function previewOrder(userId, body) {
       max_usable_reward_cash: pricing.loyalty?.max_usable_reward_cash || 0,
       reward_cash_discount_amount: pricing.loyalty?.reward_cash_discount_amount || 0,
       discount_lines: pricing.discount_lines,
+      points_bonus_lines: pricing.points_bonus_lines || [],
       tax: pricing.taxSnap,
     },
   };

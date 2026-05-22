@@ -1,9 +1,10 @@
 const { Router } = require('express');
 const ctrl = require('../controller/points.controller');
+const giftCtrl = require('../controller/pointsGift.controller');
 const auth = require('../../../middleware/auth');
 const { validate } = require('../../../middleware/validate');
 const { requireSiteCapability } = require('../../../middleware/siteCapabilityGuard');
-const { pointsListQuerySchema } = require('../schemas/user.schemas');
+const { pointsListQuerySchema, pointsGiftRedeemBodySchema } = require('../schemas/user.schemas');
 
 const router = Router();
 
@@ -12,6 +13,9 @@ router.get('/records', auth, validate({ query: pointsListQuerySchema }), ctrl.ge
 router.get('/balance', auth, ctrl.getBalance);
 router.get('/config', auth, ctrl.getClientConfig);
 router.post('/sign-in', auth, ctrl.signIn);
+router.get('/gifts', giftCtrl.listGifts);
+router.get('/gifts/:id', giftCtrl.getGift);
+router.post('/gifts/redeem', auth, validate({ body: pointsGiftRedeemBodySchema }), giftCtrl.redeemGift);
 
 module.exports = router;
 

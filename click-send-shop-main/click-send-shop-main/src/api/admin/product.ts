@@ -4,6 +4,7 @@ import type {
   Product,
   ProductLifecycleStatus,
   ProductListParams,
+  ProductStatus,
   ProductTag,
 } from "@/types/product";
 import type { PaginatedData } from "@/types/common";
@@ -26,6 +27,13 @@ export function updateProduct(id: string, data: Partial<AdminProductUpsertPayloa
 
 export function patchProductLifecycle(id: string, lifecycle_status: ProductLifecycleStatus) {
   return patch<Product>(`/admin/products/${id}/status`, { lifecycle_status });
+}
+
+export function batchUpdateProductStatus(ids: string[], status: ProductStatus) {
+  return post<{ updated: number; skipped: number; skipped_ids: string[]; requested: number }>(
+    "/admin/products/batch-status",
+    { ids, status },
+  );
 }
 
 export function deleteProduct(id: string) {

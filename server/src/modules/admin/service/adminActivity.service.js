@@ -91,6 +91,29 @@ function assertPublishRules(payload) {
     const invalid = payload.items.find((it) => Number(it.activity_price) <= 0 || Number(it.activity_stock) < 0 || Number(it.limit_per_user) < 0);
     if (invalid) throw new BusinessError(400, '秒杀活动存在不合法商品配置（活动价/活动库存/限购）');
   }
+  if (payload.type === 'points_bonus') {
+    const cfg = payload?.activity_config || {};
+    const pct = Number(cfg.multiplier_percent ?? 0);
+    if (!Number.isFinite(pct) || pct < 100) {
+      throw new BusinessError(400, '积分倍率必须至少为 100（100=1倍，200=2倍）');
+    }
+    if (Number(cfg.min_order_amount || 0) < 0) {
+      throw new BusinessError(400, '最低订单金额不能为负数');
+    }
+    if (Number(cfg.max_bonus_points || 0) < 0) {
+      throw new BusinessError(400, '额外积分上限不能为负数');
+    }
+    if (String(cfg.bonus_kind || 'normal') === 'birthday') {
+      const before = Number(cfg.birthday_window_before_days ?? 0);
+      const after = Number(cfg.birthday_window_after_days ?? 7);
+      if (before < 0 || after < 0) {
+        throw new BusinessError(400, '生日窗口天数不能为负数');
+      }
+    }
+    if (String(cfg.bonus_kind || '') === 'holiday' && !String(cfg.holiday_name || '').trim()) {
+      throw new BusinessError(400, '节日活动请填写节日名称');
+    }
+  }
   if (payload.type === 'full_reduction') {
     const rules = payload?.activity_config?.full_reduction_rules;
     if (Array.isArray(rules) && rules.length > 0) {

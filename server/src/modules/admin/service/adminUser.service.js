@@ -232,12 +232,29 @@ async function batchSetUserTag(body, adminUserId, req) {
   return { data: { affected }, message: '批量打标成功' };
 }
 
+function normalizeAdminBirthday(value) {
+  if (value === null || value === '' || value === undefined) return null;
+  const s = String(value).trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) throw new BusinessError(400, '生日格式应为 YYYY-MM-DD');
+  return s;
+}
+
 async function updateUser(userId, body, adminUserId, req) {
   const beforeUser = await assertTargetIsNormalUser(userId);
   const fields = [];
   const values = [];
   for (const f of ['nickname', 'avatar', 'wechat', 'whatsapp']) {
     if (body[f] !== undefined) { fields.push(`${f} = ?`); values.push(body[f]); }
+  }
+  if (body.birthday !== undefined) {
+    fields.push('birthday = ?');
+    values.push(normalizeAdminBirthday(body.birthday));
+    fields.push('birthday_updated_at = NOW()');
+  }
+  if (body.birthday_locked !== undefined || body.birthdayLocked !== undefined) {
+    const locked = body.birthday_locked ?? body.birthdayLocked;
+    fields.push('birthday_locked = ?');
+    values.push(locked ? 1 : 0);
   }
   if (body.phone !== undefined) {
     const normalizedPhone = normalizeIntlPhone(body.phone, body.countryCode);

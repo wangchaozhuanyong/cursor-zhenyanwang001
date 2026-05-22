@@ -8,6 +8,7 @@ import { ADMIN_TABLE_NOWRAP_CLASS, adminTdClassName, adminThClassName } from "@/
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint, { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import AdminPointsRecords from "@/modules/admin/pages/user/AdminPointsRecords";
+import AdminPointsGifts from "@/modules/admin/pages/marketing/AdminPointsGifts";
 import {
   adjustUserPoints,
   createProductPointRule,
@@ -48,7 +49,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 
 export default function AdminMarketingPoints() {
   const queryClient = useQueryClient();
-  const tabs = useMemo(() => ["积分总览", "积分规则", "商品积分规则", "积分抵扣", "积分明细", "手动调整", "高级设置"], []);
+  const tabs = useMemo(() => ["积分总览", "积分规则", "商品积分规则", "积分抵扣", "礼品兑换", "积分明细", "手动调整", "高级设置"], []);
   const [tab, setTab] = useState(tabs[0]);
   const [settings, setSettings] = useState<LoyaltyPointsSettings>({});
   const [ruleForm, setRuleForm] = useState<ProductPointRule>(defaultRule);
@@ -282,6 +283,8 @@ export default function AdminMarketingPoints() {
         </div>
       ) : null}
 
+      {tab === "礼品兑换" ? <AdminPointsGifts /> : null}
+
       {tab === "积分明细" ? <AdminPointsRecords /> : null}
 
       {tab === "手动调整" ? (
@@ -320,7 +323,7 @@ export default function AdminMarketingPoints() {
             />
           </Field>
           <div className="md:col-span-3 flex items-center gap-2 text-xs text-muted-foreground">
-            <AdminFieldHint text={<Tx>支付方式限制同时影响积分抵扣与消费积分；积分过期任务每日自动执行（KL 时区）。生日多倍、节日多倍、礼品兑换仍为预留项。</Tx>} />
+            <AdminFieldHint text={<Tx>支付方式限制同时影响积分抵扣与消费积分；积分过期任务每日自动执行（KL 时区）。生日/节日多倍请用「活动管理 → 积分多倍活动」；礼品兑换见本页「礼品兑换」标签。</Tx>} />
           </div>
           <button type="button" onClick={() => saveSettingsMutation.mutate()} disabled={saveSettingsMutation.isPending} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"><Save className="h-4 w-4" />保存高级设置</button>
           <button type="button" onClick={() => expireRunMutation.mutate()} disabled={expireRunMutation.isPending || !settings.expire_enabled} className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm text-foreground md:col-span-2"><RefreshCw className="h-4 w-4" />立即执行过期扣减</button>

@@ -25,11 +25,11 @@
     "flash_sale",
     "full_reduction",
     "coupon_activity",
-    "new_user_gift"
+    "new_user_gift",
+    "points_bonus"
   ],
   "wipActivityTypes": [
     "member_activity",
-    "points_bonus",
     "cashback_activity"
   ]
 }

@@ -149,6 +149,7 @@ export default function Checkout() {
                 rawTotal={checkout.rawTotal}
                 discountAmount={checkout.discountAmount}
                 discountLines={checkout.discountLines}
+                pointsBonusLines={checkout.pointsBonusLines}
                 shippingFee={checkout.shippingFee}
                 totalPoints={checkout.totalPointsValue}
                 finalTotal={checkout.finalTotal}
@@ -166,6 +167,7 @@ export default function Checkout() {
                 rawTotal={checkout.rawTotal}
                 discountAmount={checkout.discountAmount}
                 discountLines={checkout.discountLines}
+                pointsBonusLines={checkout.pointsBonusLines}
                 shippingFee={checkout.shippingFee}
                 totalPoints={checkout.totalPointsValue}
                 finalTotal={checkout.finalTotal}

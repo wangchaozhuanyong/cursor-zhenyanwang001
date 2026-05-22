@@ -8,6 +8,8 @@ const POINTS_ACTION = Object.freeze({
   ADMIN_ADD: 'admin_add',
   ADMIN_DEDUCT: 'admin_deduct',
   POINTS_EXPIRE: 'points_expire',
+  GIFT_REDEEM: 'gift_redeem',
+  GIFT_REDEEM_REVERSE: 'gift_redeem_reverse',
 });
 
 module.exports = { POINTS_ACTION };

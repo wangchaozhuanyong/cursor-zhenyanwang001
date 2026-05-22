@@ -222,6 +222,34 @@ async function selectOrderOperationalSummary(where, params) {
   return row || {};
 }
 
+/** 全站今日指标（不受列表筛选条件影响） */
+async function selectOrderGlobalTodaySummary() {
+  const { schema } = await getOrderRevenueExprs();
+  const paidNet = schema.ordersRefundedAmount
+    ? 'GREATEST(0, o.total_amount - COALESCE(o.refunded_amount, 0))'
+    : 'o.total_amount';
+  const refundCol = schema.ordersRefundedAmount ? 'COALESCE(o.refunded_amount, 0)' : '0';
+  const grossCol = schema.ordersGrossProfit ? 'COALESCE(o.gross_profit_amount, 0)' : '0';
+  const netCol = schema.ordersNetProfit ? 'COALESCE(o.net_profit_amount, 0)' : '0';
+  const [[row]] = await db.query(
+    `SELECT
+       COALESCE(SUM(CASE WHEN DATE(o.created_at) = CURDATE() THEN 1 ELSE 0 END), 0) AS today_order_count,
+       COALESCE(SUM(CASE WHEN DATE(COALESCE(o.paid_at, o.payment_time)) = CURDATE()
+         AND o.payment_status IN ('paid', 'partially_refunded') THEN 1 ELSE 0 END), 0) AS today_paid_order_count,
+       COALESCE(SUM(CASE WHEN DATE(COALESCE(o.paid_at, o.payment_time)) = CURDATE()
+         AND o.payment_status IN ('paid', 'partially_refunded')
+         THEN ${paidNet} ELSE 0 END), 0) AS today_paid_amount,
+       COALESCE(SUM(CASE WHEN DATE(COALESCE(o.paid_at, o.payment_time)) = CURDATE()
+         THEN ${refundCol} ELSE 0 END), 0) AS today_refund_amount,
+       COALESCE(SUM(CASE WHEN DATE(COALESCE(o.paid_at, o.payment_time)) = CURDATE()
+         AND o.payment_status IN ('paid', 'partially_refunded') THEN ${grossCol} ELSE 0 END), 0) AS today_gross_profit_amount,
+       COALESCE(SUM(CASE WHEN DATE(COALESCE(o.paid_at, o.payment_time)) = CURDATE()
+         AND o.payment_status IN ('paid', 'partially_refunded') THEN ${netCol} ELSE 0 END), 0) AS today_net_profit_amount
+     FROM orders o`,
+  );
+  return row || {};
+}
+
 /**
  * @param {Queryable|null} q
  * @param {string} orderId
@@ -503,6 +531,7 @@ module.exports = {
   countOrdersAdmin,
   selectOrderStatusSummary,
   selectOrderOperationalSummary,
+  selectOrderGlobalTodaySummary,
   selectOrdersAdminPage,
   selectOrdersForExport,
   selectOrderById,

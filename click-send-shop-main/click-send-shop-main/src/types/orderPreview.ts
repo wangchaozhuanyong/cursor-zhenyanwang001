@@ -4,6 +4,13 @@ export type OrderDiscountLine = {
   amount: number;
 };
 
+export type OrderPointsBonusLine = {
+  type: "points_bonus";
+  label: string;
+  multiplier_percent: number;
+  activity_id?: string;
+};
+
 export type OrderPreviewResult = {
   goods_amount: number;
   flash_sale_discount: number;
@@ -29,4 +36,5 @@ export type OrderPreviewResult = {
   max_usable_reward_cash?: number;
   reward_cash_discount_amount?: number;
   discount_lines: OrderDiscountLine[];
+  points_bonus_lines?: OrderPointsBonusLine[];
 };

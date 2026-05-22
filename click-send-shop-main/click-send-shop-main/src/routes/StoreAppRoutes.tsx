@@ -35,7 +35,7 @@ import {
   MemberHome, GuestHome, Login, BindWechatPhone,
   Categories, ProductDetail, NewArrivals, Search,
   Cart, Checkout, Orders, OrderDetail, Returns, PendingReviews,
-  Profile, Settings, AddressManage, Favorites, History, Notifications, Coupons, Points, Rewards, Invite,
+  Profile, Settings, AddressManage, Favorites, History, Notifications, Coupons, Points, PointsGiftShop, Rewards, Invite,
   Help, About, ContentCmsPage, SupportDownload, NotFound,
 } from "@/routes/publicLazyPages";
 
@@ -216,6 +216,7 @@ export function StoreAppRoutes() {
               <Route path="/orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
               <Route path="/invite" element={<ProtectedRoute><LoyaltyRouteGuard feature="referral"><Invite /></LoyaltyRouteGuard></ProtectedRoute>} />
               <Route path="/points" element={<ProtectedRoute><CapabilityRoute enabled={capabilities.pointsEnabled}><LoyaltyRouteGuard feature="points"><Points /></LoyaltyRouteGuard></CapabilityRoute></ProtectedRoute>} />
+              <Route path="/points/gifts" element={<ProtectedRoute><CapabilityRoute enabled={capabilities.pointsEnabled}><LoyaltyRouteGuard feature="points"><PointsGiftShop /></LoyaltyRouteGuard></CapabilityRoute></ProtectedRoute>} />
               <Route path="/rewards" element={<ProtectedRoute><LoyaltyRouteGuard feature="reward"><Rewards /></LoyaltyRouteGuard></ProtectedRoute>} />
               <Route path="/address" element={<ProtectedRoute><AddressManage /></ProtectedRoute>} />
               <Route path="/coupons" element={<ProtectedRoute><CapabilityRoute enabled={capabilities.couponEnabled}><Coupons /></CapabilityRoute></ProtectedRoute>} />

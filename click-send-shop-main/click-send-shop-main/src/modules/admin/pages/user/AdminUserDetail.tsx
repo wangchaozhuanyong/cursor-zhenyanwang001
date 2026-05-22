@@ -197,7 +197,7 @@ export default function AdminUserDetail() {
       <section className="rounded-xl border border-border bg-card p-4">
         <h3 className="mb-3 text-sm font-semibold">快捷操作</h3>
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          <PermissionGate permission="user.update"><ActionBtn label="编辑资料" onClick={() => { setEditOpen(true); setEditForm({ nickname: user.nickname, phone: user.phone, wechat: user.wechat, whatsapp: user.whatsapp, avatar: user.avatar }); }} /></PermissionGate>
+          <PermissionGate permission="user.update"><ActionBtn label="编辑资料" onClick={() => { setEditOpen(true); setEditForm({ nickname: user.nickname, phone: user.phone, wechat: user.wechat, whatsapp: user.whatsapp, avatar: user.avatar, birthday: user.birthday ? String(user.birthday).slice(0, 10) : "", birthday_locked: !!user.birthday_locked }); }} /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label="重置密码" onClick={doResetPassword} /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label="禁用登录" disabled={(statusOverview?.account_status || user.account_status) === "disabled"} onClick={() => void doStatus("disabled")} danger /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label="恢复账号" disabled={(statusOverview?.account_status || user.account_status) === "normal"} onClick={() => void doStatus("normal")} /></PermissionGate>
@@ -231,6 +231,8 @@ export default function AdminUserDetail() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <InfoCard title="昵称" value={user.nickname || "-"} />
               <InfoCard title="手机号" value={user.phone || "-"} />
+              <InfoCard title="生日" value={user.birthday ? String(user.birthday).slice(0, 10) : "未填写"} />
+              <InfoCard title="生日锁定" value={user.birthday_locked ? "是" : "否"} />
               <InfoCard title="状态" value={user.account_status || "normal"} />
             </div>
             <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -299,8 +301,8 @@ export default function AdminUserDetail() {
               onClick={async () => {
                 const ids = Array.from(userTagIds);
                 const next = userTagIds.has(tag.id) ? ids.filter((x) => x !== tag.id) : [...ids, tag.id];
-                const nextTags = await setUserTags(id, next as string[]);
-                setUser((u) => (u ? { ...u, tags: nextTags } : u));
+                await setUserTags(id, next as string[]);
+                await invalidateUserDetail();
               }}
             >
               {tag.name}
@@ -323,6 +325,23 @@ export default function AdminUserDetail() {
                   onChange={(e) => setEditForm((s) => ({ ...s, [f]: e.target.value }))}
                 />
               ))}
+              <label className="text-xs text-muted-foreground sm:col-span-2">
+                生日 (YYYY-MM-DD)
+                <input
+                  type="date"
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  value={editForm.birthday || ""}
+                  onChange={(e) => setEditForm((s) => ({ ...s, birthday: e.target.value }))}
+                />
+              </label>
+              <label className="flex items-center gap-2 text-sm sm:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={!!editForm.birthday_locked}
+                  onChange={(e) => setEditForm((s) => ({ ...s, birthday_locked: e.target.checked }))}
+                />
+                锁定生日（用户不可自行修改）
+              </label>
             </div>
             <div className="flex justify-end gap-2 pt-1">
               <button className="rounded-lg border border-border px-3 py-1.5 text-sm" onClick={() => setEditOpen(false)}>取消</button>

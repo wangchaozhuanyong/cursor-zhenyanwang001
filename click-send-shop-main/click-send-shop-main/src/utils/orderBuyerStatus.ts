@@ -29,6 +29,13 @@ export function hasPendingReview(order: Order): boolean {
 }
 
 export function getBuyerOrderStatusText(order: Order): string {
+  if (order.order_type === "points_gift") {
+    if (order.status === "pending") return "积分兑换待付款";
+    if (order.status === "paid") return "积分兑换待发货";
+    if (order.status === "shipped") return "积分兑换待收货";
+    if (order.status === "completed") return "积分兑换已完成";
+    if (order.status === "cancelled") return "积分兑换已取消";
+  }
   if (order.status === "refunding") return "退款/售后处理中";
   if (order.status === "refunded") return "已退款";
   if (Number(order.active_return_count || 0) > 0) return "售后处理中";

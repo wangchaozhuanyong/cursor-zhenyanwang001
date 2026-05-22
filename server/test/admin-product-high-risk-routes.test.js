@@ -49,4 +49,8 @@ describe('admin high-risk product routes', () => {
   test('GET /product-tags is not high-risk', () => {
     assert.equal(isHighRiskAdminOperation(req('GET', '/product-tags')), false);
   });
+
+  test('PUT /recycle-bin/:id/restore is high-risk', () => {
+    assert.equal(isHighRiskAdminOperation(req('PUT', '/recycle-bin/item-1/restore')), true);
+  });
 });

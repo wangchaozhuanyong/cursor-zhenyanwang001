@@ -367,7 +367,9 @@ async function createStripeCheckoutForOrder(userId, orderId, returnUrlHint, idem
   if (order.status !== ORDER_STATUS.PENDING || (order.payment_status || PAYMENT_STATUS.PENDING) !== PAYMENT_STATUS.PENDING) {
     throw new ValidationError('当前订单状态不可支付');
   }
-  if (order.payment_method !== 'online') {
+  const payMethod = String(order.payment_method || '');
+  const isGiftCashOrder = String(order.order_type || '') === 'points_gift' && payMethod === 'points_plus_cash';
+  if (payMethod !== 'online' && !isGiftCashOrder) {
     throw new ValidationError('该订单非在线支付');
   }
 
@@ -516,7 +518,9 @@ async function createIntent(userId, body) {
     if (order.status !== ORDER_STATUS.PENDING || (order.payment_status || PAYMENT_STATUS.PENDING) !== PAYMENT_STATUS.PENDING) {
       throw new ValidationError('当前订单状态无法创建支付单');
     }
-    if (order.payment_method !== 'online') {
+    const payMethod = String(order.payment_method || '');
+    const isGiftCashOrder = String(order.order_type || '') === 'points_gift' && payMethod === 'points_plus_cash';
+    if (payMethod !== 'online' && !isGiftCashOrder) {
       throw new ValidationError('该订单非在线支付');
     }
     const amount = toMoney(order.total_amount);
@@ -569,16 +573,26 @@ async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionN
   if (order.status !== ORDER_STATUS.PENDING || (order.payment_status || PAYMENT_STATUS.PENDING) !== PAYMENT_STATUS.PENDING) {
     return { skipped: true, reason: 'order_not_pending' };
   }
+  const isGiftCashOrder = String(order.order_type || '') === 'points_gift';
   const paidUpdated = await orderRepo.updateOrderPaid(conn, order.id, {
     paymentTime: new Date(),
     paymentChannel: paymentOrder.channel_code,
     paymentTransactionNo: transactionNo,
-    paymentMethod: 'online',
+    paymentMethod: isGiftCashOrder ? 'points_plus_cash' : 'online',
     paymentProvider: paymentOrder.provider,
     providerPaymentId: transactionNo,
   });
   if (!paidUpdated) {
     return { skipped: true, reason: 'already_paid' };
+  }
+  if (isGiftCashOrder) {
+    const giftSvc = require('../../loyalty/service/pointsGiftRedemption.service');
+    await giftSvc.finalizeGiftOrderFulfillment(conn, order);
+  } else {
+    const lineItems = await orderRepo.selectOrderItemQtyRows(conn, order.id);
+    for (const it of lineItems) {
+      await orderRepo.incrementProductSales(conn, it.product_id, Number(it.qty));
+    }
   }
   await requireUserApi('syncStatsAfterOrderPaid')(order.user_id, toMoney(order.total_amount), order.id, conn);
   await grantPaymentSuccessPoints(conn, order, 'provider_payment_success');
@@ -608,10 +622,12 @@ async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionN
   } catch (e) {
     console.error('[markOrderPaidFromProvider] refreshUserMemberLevel failed:', e?.message || e);
   }
-  const itemRows = await orderRepo.selectOrderItemQtyRows(conn, order.id);
-  for (const it of itemRows) {
-    if (it?.product_id && Number(it.qty) > 0) {
-      await orderRepo.incrementProductSales(conn, it.product_id, Number(it.qty));
+  if (!isGiftCashOrder) {
+    const itemRows = await orderRepo.selectOrderItemQtyRows(conn, order.id);
+    for (const it of itemRows) {
+      if (it?.product_id && Number(it.qty) > 0) {
+        await orderRepo.incrementProductSales(conn, it.product_id, Number(it.qty));
+      }
     }
   }
   await payRepo.updatePaymentOrderPaid(conn, paymentOrder.id, {
@@ -852,10 +868,16 @@ async function markOrderPaidByAdmin(req, orderId, body) {
     await grantPaymentSuccessPoints(conn, order, 'admin_mark_payment_success');
     await requireUserApi('refreshUserMemberLevel')(conn, order.user_id);
 
-    const itemRows = await orderRepo.selectOrderItemQtyRows(conn, order.id);
-    for (const it of itemRows) {
-      if (it?.product_id && Number(it.qty) > 0) {
-        await orderRepo.incrementProductSales(conn, it.product_id, Number(it.qty));
+    const isGiftOrder = String(order.order_type || '') === 'points_gift';
+    if (isGiftOrder) {
+      const giftSvc = require('../../loyalty/service/pointsGiftRedemption.service');
+      await giftSvc.finalizeGiftOrderFulfillment(conn, order);
+    } else {
+      const itemRows = await orderRepo.selectOrderItemQtyRows(conn, order.id);
+      for (const it of itemRows) {
+        if (it?.product_id && Number(it.qty) > 0) {
+          await orderRepo.incrementProductSales(conn, it.product_id, Number(it.qty));
+        }
       }
     }
 

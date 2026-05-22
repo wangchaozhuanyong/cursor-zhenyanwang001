@@ -259,7 +259,8 @@ async function deleteWechatIdentityByUserId(userId) {
 async function selectUserSummaryById(userId) {
   const [[user]] = await db.query(
     `SELECT u.id, u.phone, u.password_hash, u.nickname, u.avatar, u.invite_code, u.parent_invite_code,
-            u.points_balance, u.subordinate_enabled, u.wechat, u.whatsapp, u.created_at,
+            u.points_balance, u.subordinate_enabled, u.wechat, u.whatsapp,
+            u.birthday, u.birthday_locked, u.birthday_updated_at, u.created_at,
             u.role, u.account_status,
             COALESCE(ur.order_restricted, 0) AS order_restricted,
             COALESCE(ur.coupon_restricted, 0) AS coupon_restricted,

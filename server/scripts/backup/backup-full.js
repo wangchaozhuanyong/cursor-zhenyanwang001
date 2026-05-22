@@ -66,8 +66,9 @@ async function main() {
     '--triggers',
     '--events',
     '--hex-blob',
-    '--set-gtid-purged=ON',
+    process.env.MYSQLDUMP_SET_GTID_PURGED || '--set-gtid-purged=AUTO',
     '--master-data=2',
+    '--databases',
     dbName,
   ];
 

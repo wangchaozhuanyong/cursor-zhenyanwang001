@@ -40,6 +40,11 @@ export async function batchUpdateInventoryWarningThreshold(variantIds: string[],
   return res.data;
 }
 
+export async function batchAdjustInventory(items: Array<{ variant_id: string; change_type: "in" | "out" | "adjust"; quantity: number; reason: string; remark?: string; source_no?: string; cost_price?: number }>) {
+  const res = await inventoryApi.batchAdjustInventory(items);
+  return res.data;
+}
+
 export async function fetchInventoryRecords(params?: {
   page?: number;
   pageSize?: number;

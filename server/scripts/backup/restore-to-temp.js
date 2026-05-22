@@ -109,11 +109,15 @@ async function importSql(sqlPath, tempDbName) {
   });
 }
 
-function mysqlbinlogArgs(targetTime, files) {
+function mysqlbinlogArgs(targetTime, files, tempDbName) {
   const args = [];
   if (targetTime) {
     const stop = new Date(targetTime).toISOString().slice(0, 19).replace('T', ' ');
     args.push(`--stop-datetime=${stop}`);
+  }
+  const sourceDbName = process.env.DB_NAME;
+  if (sourceDbName && tempDbName) {
+    args.push(`--rewrite-db=${sourceDbName}->${tempDbName}`);
   }
   args.push(...files);
   return args;
@@ -124,7 +128,7 @@ async function replayBinlogs(binlogPaths, tempDbName, targetTime) {
   await new Promise((resolve, reject) => {
     const mysqlbinlog = require('child_process').spawn(
       process.env.MYSQLBINLOG_BIN || 'mysqlbinlog',
-      mysqlbinlogArgs(targetTime, binlogPaths),
+      mysqlbinlogArgs(targetTime, binlogPaths, tempDbName),
       { shell: process.platform === 'win32' },
     );
     const mysqlProc = require('child_process').spawn(

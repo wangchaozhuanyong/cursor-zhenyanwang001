@@ -3,6 +3,7 @@ import type { Order, SubmitOrderParams, OrderListParams, CheckoutAbandonmentPayl
 import type { OrderPreviewResult } from "@/types/orderPreview";
 import type { PaginatedData } from "@/types/common";
 import { unwrapPaginated } from "@/services/responseNormalize";
+import { hasPendingReview } from "@/utils/orderBuyerStatus";
 
 export async function fetchOrders(params?: OrderListParams): Promise<PaginatedData<Order>> {
   const res = await orderApi.getOrders(params);
@@ -23,15 +24,13 @@ function buildOrderSummaryFromOrders(orders: Order[]): OrderSummary {
         && o.status !== "refunded")
   ).length;
   const pending_receive = orders.filter((o) => o.status === "shipped").length;
-  const pending_review = orders.reduce((acc, o) => (
-    acc + (o.status === "completed" ? o.items.filter((it) => it.can_review).length : 0)
-  ), 0);
+  const pending_review = orders.filter((o) => hasPendingReview(o)).length;
   const after_sale = orders.filter((o) =>
     o.status === "refunding"
     || o.status === "refunded"
     || Number(o.return_request_count || 0) > 0,
   ).length;
-  const completed = orders.filter((o) => o.status === "completed").length;
+  const completed = orders.filter((o) => o.status === "completed" && !hasPendingReview(o)).length;
   const cancelled = orders.filter((o) => o.status === "cancelled").length;
   return { pending_payment, pending_ship, pending_receive, pending_review, after_sale, completed, cancelled };
 }

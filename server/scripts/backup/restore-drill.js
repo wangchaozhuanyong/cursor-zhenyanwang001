@@ -14,10 +14,9 @@ async function main() {
   const tempDbName = `restore_tmp_${restoreJobId.replace(/-/g, '').slice(0, 16)}`;
   await repo.insertRestoreJob({
     id: restoreJobId,
-    restoreType: 'point_in_time',
+    restoreType: 'site',
     status: 'queued',
     sourceBackupFileId: sourceFile.id,
-    targetTime,
     tempDbName,
     requestedBy: null,
     validationResult: { drill: true, pending: true },

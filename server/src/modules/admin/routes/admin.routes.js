@@ -127,8 +127,8 @@ const highRiskAdminOperation = (req) => {
     /^\/returns\/[^/]+/,
     /^\/recycle-bin\/[^/]+\/permanent-delete/,
     /^\/exports/,
-    /^\/products\/[^/]+$/,
-    /^\/products\/[^/]+\/delete$/,
+    /^\/products(\/|$)/,
+    /^\/product-tags(\/|$)/,
   ];
   return mutatingPatterns.some((pattern) => pattern.test(req.path));
 };

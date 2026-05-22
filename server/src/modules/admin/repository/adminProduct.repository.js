@@ -21,8 +21,12 @@ async function selectProductsForExport(where, params) {
   return rows;
 }
 
-async function selectProductById(id) {
-  const [[row]] = await db.query('SELECT * FROM products WHERE id = ?', [id]);
+async function selectProductById(id, opts = {}) {
+  const includeDeleted = !!opts.includeDeleted;
+  const [[row]] = await db.query(
+    `SELECT * FROM products WHERE id = ? ${includeDeleted ? '' : 'AND deleted_at IS NULL'}`,
+    [id],
+  );
   return row || null;
 }
 
@@ -51,7 +55,7 @@ async function insertProduct(params) {
 }
 
 async function updateProductDynamic(setFragments, values, id) {
-  await db.query(`UPDATE products SET ${setFragments.join(', ')} WHERE id = ?`, [...values, id]);
+  await db.query(`UPDATE products SET ${setFragments.join(', ')} WHERE id = ? AND deleted_at IS NULL`, [...values, id]);
 }
 
 async function updateProductDynamicWithVersion(setFragments, values, id, version) {
@@ -74,7 +78,7 @@ async function batchUpdateStatus(ids, status, lifecycleStatus) {
   if (!ids.length) return;
   const placeholders = ids.map(() => '?').join(',');
   await db.query(
-    `UPDATE products SET status = ?, lifecycle_status = ? WHERE id IN (${placeholders})`,
+    `UPDATE products SET status = ?, lifecycle_status = ? WHERE id IN (${placeholders}) AND deleted_at IS NULL`,
     [status, lifecycleStatus, ...ids],
   );
 }
@@ -91,5 +95,3 @@ module.exports = {
   restoreProductById,
   batchUpdateStatus,
 };
-
-

@@ -45,7 +45,7 @@ function summaryFromOrders(orders: Order[]): OrderSummary {
     pending_ship: orders.filter((o) => o.status === "paid").length,
     shipped: orders.filter((o) => o.status === "shipped").length,
     pending_receive: orders.filter((o) => o.status === "shipped").length,
-    pending_review: orders.reduce((acc, o) => acc + (hasPendingReview(o) ? o.items.filter((i) => i.can_review).length : 0), 0),
+    pending_review: orders.filter((o) => hasPendingReview(o)).length,
     completed: orders.filter((o) => o.status === "completed" && !hasPendingReview(o)).length,
     after_sale: orders.filter((o) => orderInAfterSaleTab(o)).length,
     cancelled: orders.filter((o) => o.status === "cancelled").length,

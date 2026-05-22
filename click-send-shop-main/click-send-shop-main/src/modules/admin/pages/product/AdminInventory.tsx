@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, History, Loader2, Package, Plus, RefreshCcw, Search, SplitSquareHorizontal } from "lucide-react";
 import { toast } from "sonner";
@@ -11,6 +11,8 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import {
   adjustInventorySkuStock,
   assembleInventoryRule,
+  batchAdjustInventory,
+  batchUpdateInventoryWarningThreshold,
   createInventoryPackRule,
   deleteInventoryPackRule,
   exportInventoryRecordsCsv,
@@ -33,6 +35,8 @@ const PAGE_SIZE = 20;
 
 type TabKey = "skus" | "records" | "rules" | "conversions";
 type AdjustForm = { sku: InventorySku; change_type: "in" | "out" | "adjust"; quantity: string; reason: string; remark: string; source_no: string; cost_price: string };
+type BatchAdjustForm = { change_type: "in" | "out" | "adjust"; quantity: string; reason: string; remark: string; source_no: string; cost_price: string };
+type BatchThresholdForm = { threshold: string };
 type RuleForm = Partial<InventoryPackRule> & { id?: string };
 type ConvertForm = { type: "unpack" | "assemble"; rule: InventoryPackRule; parent_qty: string; remark: string };
 

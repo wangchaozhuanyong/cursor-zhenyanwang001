@@ -772,15 +772,20 @@ async function selectOrderSummary(q, userId) {
   const [[base]] = await q.query(
     `SELECT
       COUNT(*) AS total,
-      SUM(CASE WHEN status = 'pending' AND (payment_status IS NULL OR payment_status <> 'paid') THEN 1 ELSE 0 END) AS pending_payment,
-      SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) AS paid,
-      SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) AS pending_ship,
-      SUM(CASE WHEN status = 'shipped' THEN 1 ELSE 0 END) AS shipped,
-      SUM(CASE WHEN status = 'shipped' THEN 1 ELSE 0 END) AS pending_receive,
-      SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed,
-      SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled
-     FROM orders
-     WHERE user_id = ?`,
+      SUM(CASE WHEN o.status = 'pending' AND (o.payment_status IS NULL OR o.payment_status <> 'paid') THEN 1 ELSE 0 END) AS pending_payment,
+      SUM(CASE WHEN o.status = 'paid' THEN 1 ELSE 0 END) AS paid,
+      SUM(CASE WHEN o.status = 'paid' THEN 1 ELSE 0 END) AS pending_ship,
+      SUM(CASE WHEN o.status = 'shipped' THEN 1 ELSE 0 END) AS shipped,
+      SUM(CASE WHEN o.status = 'shipped' THEN 1 ELSE 0 END) AS pending_receive,
+      SUM(CASE WHEN o.status = 'completed'
+        AND NOT EXISTS (
+          SELECT 1 FROM order_items oi
+          LEFT JOIN product_reviews pr ON pr.order_item_id = oi.id
+          WHERE oi.order_id = o.id AND pr.id IS NULL
+        ) THEN 1 ELSE 0 END) AS completed,
+      SUM(CASE WHEN o.status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled
+     FROM orders o
+     WHERE o.user_id = ?`,
     [userId],
   );
 
@@ -792,7 +797,7 @@ async function selectOrderSummary(q, userId) {
   );
 
   const [[pendingReviewRow]] = await q.query(
-    `SELECT COUNT(*) AS pending_review
+    `SELECT COUNT(DISTINCT o.id) AS pending_review
      FROM orders o
      JOIN order_items oi ON oi.order_id = o.id
      LEFT JOIN product_reviews pr ON pr.order_item_id = oi.id

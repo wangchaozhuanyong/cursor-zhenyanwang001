@@ -778,8 +778,11 @@ async function importProductsCsv(text, adminUserId, req) {
 
     const id = (row.id || '').trim();
     if (id) {
-      const existing = await repo.selectProductById(id);
+      const existing = await repo.selectProductById(id, { includeDeleted: true });
       if (existing) {
+        if (existing.deleted_at) {
+          throw new BusinessError(400, 'Product has been deleted; restore it before importing updates');
+        }
         await updateProduct(id, {
           ...payload,
           images: JSON.parse(imagesJson),
@@ -890,7 +893,6 @@ module.exports = {
   importProductsCsv,
   batchUpdateStatus,
 };
-
 
 
 

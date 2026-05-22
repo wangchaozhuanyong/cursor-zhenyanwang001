@@ -308,7 +308,7 @@ export default function AdminAccounts() {
                             <KeyRound size={14} />
                           </button>
                         )}
-                        <button type="button" onClick={() => setConfirmDelete(a)} className={`touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground ${THEME_HOVER_TEXT_DANGER} hover:bg-[var(--theme-bg)]`} title="删除">
+                        <button type="button" onClick={() => setSecurityTarget(a)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title="删除">
                           <Trash2 size={14} />
                         </button>
                       </>

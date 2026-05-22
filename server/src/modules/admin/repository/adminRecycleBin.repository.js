@@ -1,21 +1,21 @@
 const db = require('../../../config/db');
 
 const TABLE_CONFIGS = {
-  products: { label: '商品', nameCol: 'name', selectCols: 'id, name, cover_image, category_id, deleted_at, deleted_by', permanentDelete: true, hasDeletedBy: true },
-  categories: { label: '分类', nameCol: 'name', selectCols: 'id, name, parent_id, deleted_at, deleted_by', permanentDelete: true, hasDeletedBy: true },
-  coupons: { label: '优惠券', nameCol: 'title', selectCols: 'id, title AS name, deleted_at, deleted_by', permanentDelete: true, hasDeletedBy: true },
-  banners: { label: '轮播图', nameCol: 'title', selectCols: 'id, title AS name, image AS cover_image, deleted_at, deleted_by', permanentDelete: true, hasDeletedBy: true },
-  content_pages: { label: '内容页', nameCol: 'title', selectCols: 'id, title AS name, slug, deleted_at, deleted_by', permanentDelete: true, hasDeletedBy: true },
+  products: { label: '商品', nameCol: 'name', selectCols: "id, COALESCE(NULLIF(TRIM(name), ''), '未命名商品') AS name, cover_image, category_id, deleted_at, deleted_by", permanentDelete: true, hasDeletedBy: true },
+  categories: { label: '分类', nameCol: 'name', selectCols: "id, COALESCE(NULLIF(TRIM(name), ''), '未命名分类') AS name, parent_id, deleted_at, deleted_by", permanentDelete: true, hasDeletedBy: true },
+  coupons: { label: '优惠券', nameCol: 'title', selectCols: "id, COALESCE(NULLIF(TRIM(title), ''), '未命名优惠券') AS name, deleted_at, deleted_by", permanentDelete: true, hasDeletedBy: true },
+  banners: { label: '轮播图', nameCol: 'title', selectCols: "id, COALESCE(NULLIF(TRIM(title), ''), '未命名轮播图') AS name, image AS cover_image, deleted_at, deleted_by", permanentDelete: true, hasDeletedBy: true },
+  content_pages: { label: '内容页', nameCol: 'title', selectCols: "id, COALESCE(NULLIF(TRIM(title), ''), '未命名内容页') AS name, slug, deleted_at, deleted_by", permanentDelete: true, hasDeletedBy: true },
   product_reviews: { label: '评论', nameCol: 'content', selectCols: "id, CONCAT(LEFT(content, 50), '...') AS name, product_id, user_id, deleted_at, deleted_by", permanentDelete: true, hasDeletedBy: true },
-  marketing_activities: { label: '营销活动', nameCol: 'title', selectCols: 'id, title AS name, deleted_at, deleted_by', permanentDelete: false },
-  product_tags: { label: '商品标签', nameCol: 'name', selectCols: 'id, name, image_url AS cover_image, deleted_at, NULL AS deleted_by', permanentDelete: false },
-  notifications: { label: '通知', nameCol: 'title', selectCols: 'id, title AS name, deleted_at, NULL AS deleted_by', permanentDelete: false },
-  notification_batches: { label: '通知批次', nameCol: 'title', selectCols: 'id, title AS name, deleted_at, NULL AS deleted_by', permanentDelete: false },
-  product_variants: { label: '商品规格', nameCol: 'title', selectCols: 'id, COALESCE(NULLIF(title, ""), sku_code, id) AS name, product_id, image_url AS cover_image, deleted_at, NULL AS deleted_by', permanentDelete: false },
+  marketing_activities: { label: '营销活动', nameCol: 'title', selectCols: "id, COALESCE(NULLIF(TRIM(title), ''), '未命名营销活动') AS name, deleted_at, deleted_by", permanentDelete: false },
+  product_tags: { label: '商品标签', nameCol: 'name', selectCols: "id, COALESCE(NULLIF(TRIM(name), ''), '未命名商品标签') AS name, image_url AS cover_image, deleted_at, NULL AS deleted_by", permanentDelete: false },
+  notifications: { label: '通知', nameCol: 'title', selectCols: "id, COALESCE(NULLIF(TRIM(title), ''), '未命名通知') AS name, deleted_at, NULL AS deleted_by", permanentDelete: false },
+  notification_batches: { label: '通知批次', nameCol: 'title', selectCols: "id, COALESCE(NULLIF(TRIM(title), ''), '未命名通知批次') AS name, deleted_at, NULL AS deleted_by", permanentDelete: false },
+  product_variants: { label: '商品规格', nameCol: 'title', selectCols: "id, COALESCE(NULLIF(TRIM(title), ''), NULLIF(TRIM(sku_code), ''), '未命名商品规格') AS name, product_id, image_url AS cover_image, deleted_at, NULL AS deleted_by", permanentDelete: false },
   product_spec_groups: { label: '规格组', nameCol: 'name', selectCols: 'id, name, product_id, deleted_at, NULL AS deleted_by', permanentDelete: false },
   product_spec_values: { label: '规格值', nameCol: 'value', selectCols: 'id, value AS name, product_id, image_url AS cover_image, deleted_at, NULL AS deleted_by', permanentDelete: false },
-  inventory_pack_rules: { label: '组装拆包规则', nameCol: 'remark', selectCols: "id, COALESCE(NULLIF(remark, ''), id) AS name, parent_product_id, child_product_id, deleted_at, NULL AS deleted_by", permanentDelete: false },
-  users: { label: '用户', nameCol: 'nickname', selectCols: "id, COALESCE(NULLIF(nickname, ''), phone, id) AS name, avatar AS cover_image, deleted_at, NULL AS deleted_by", permanentDelete: false },
+  inventory_pack_rules: { label: '组装拆包规则', nameCol: 'remark', selectCols: "id, COALESCE(NULLIF(TRIM(remark), ''), '未命名组装规则') AS name, parent_product_id, child_product_id, deleted_at, NULL AS deleted_by", permanentDelete: false },
+  users: { label: '用户', nameCol: 'nickname', selectCols: "id, COALESCE(NULLIF(TRIM(nickname), ''), NULLIF(TRIM(phone), ''), '未命名用户') AS name, avatar AS cover_image, deleted_at, NULL AS deleted_by", permanentDelete: false },
 };
 
 function normalizePagination(query = {}) {

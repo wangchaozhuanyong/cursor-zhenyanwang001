@@ -218,16 +218,6 @@ const DEFAULT_POLICY_DEFINITIONS = [
     where: beforeColumn('created_at'),
   },
   {
-    key: 'admin_logs',
-    title: '旧版后台操作日志',
-    category: 'security',
-    tableName: 'admin_logs',
-    dateColumn: 'created_at',
-    retentionDays: 365,
-    description: '清理旧版 admin_logs 操作日志。',
-    where: beforeColumn('created_at'),
-  },
-  {
     key: 'audit_logs',
     title: '审计日志',
     category: 'security',

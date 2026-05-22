@@ -12,6 +12,7 @@ PROJECT_DIR="${PROJECT_DIR:-/var/www/click-send-shop}"
 FRONTEND_SUB="${FRONTEND_SUB:-click-send-shop-main/click-send-shop-main}"
 FRONTEND_DIR="$PROJECT_DIR/$FRONTEND_SUB"
 DIST_DIR="$FRONTEND_DIR/dist"
+ADMIN_DIST_DIR="$FRONTEND_DIR/admin-dist"
 
 PM2_APP="${PM2_APP:-gc-api}"
 HEALTH_PORT="${HEALTH_PORT:-3001}"
@@ -63,12 +64,23 @@ ls -lah "$DIST_DIR" | head -n 10
 echo
 echo "==== 2.1 前端资源一致性检查 ===="
 node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$DIST_DIR"
-PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-$PROJECT_DIR/public-frontend}"
+PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-/var/www/flashcast/dist}"
+ADMIN_PUBLIC_FRONTEND="${ADMIN_PUBLIC_FRONTEND:-/var/www/flashcast/admin-dist}"
 if [[ -d "$PUBLIC_FRONTEND" ]]; then
   echo "📁 PUBLIC_FRONTEND=$PUBLIC_FRONTEND"
   node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$PUBLIC_FRONTEND"
 else
-  echo "ℹ️ 未发现 public-frontend，跳过 Nginx 静态目录检查"
+  echo "ℹ️ 未发现 $PUBLIC_FRONTEND，跳过 Nginx 静态目录检查（生产应为 /var/www/flashcast/dist）"
+fi
+if [[ -f "$ADMIN_PUBLIC_FRONTEND/admin-index.html" ]]; then
+  echo "[verify] ADMIN_PUBLIC_FRONTEND=$ADMIN_PUBLIC_FRONTEND"
+  node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$ADMIN_PUBLIC_FRONTEND"
+elif [[ -f "$ADMIN_DIST_DIR/admin-index.html" ]]; then
+  echo "[verify] ADMIN_DIST_DIR=$ADMIN_DIST_DIR"
+  node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$ADMIN_DIST_DIR"
+else
+  echo "admin-dist/admin-index.html missing"
+  exit 1
 fi
 
 echo

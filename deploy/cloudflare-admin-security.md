@@ -2,14 +2,14 @@
 
 Production domains:
 
-- Storefront: `flashcast.com.my`
-- Admin console: `console.flashcast.com.my`
+- Storefront: `damatong.net`, `www.damatong.net`
+- Admin console: `console.damatong.net`
 - Required access order: Cloudflare Access -> admin login -> MFA -> RBAC
 
 ## DNS and SSL
 
-- `flashcast.com.my` points to the storefront deployment.
-- `console.flashcast.com.my` points to the admin deployment.
+- `damatong.net` and `www.damatong.net` point to the storefront deployment.
+- `console.damatong.net` points to the admin deployment.
 - Both records should be proxied through Cloudflare.
 - SSL/TLS mode should be `Full (strict)`.
 
@@ -17,23 +17,23 @@ Production domains:
 
 Protect the whole admin hostname before the application login page:
 
-- Access Application domain: `console.flashcast.com.my`
+- Access Application domain: `console.damatong.net`
 - Path: `/*`
 - Policy: allow only administrator emails or administrator identity provider groups.
 - Session duration: keep short, for example 8 hours.
 
-Do not create a Cloudflare Access application for `flashcast.com.my`; the public storefront must remain public while its admin paths are blocked by WAF and origin rules.
+Do not create a Cloudflare Access application for `damatong.net` or `www.damatong.net`; the public storefront must remain public while its admin paths are blocked by WAF and origin rules.
 
 ## WAF Custom Rules
 
 Block admin paths on the public storefront hostname:
 
 ```text
-(http.host eq "flashcast.com.my" and starts_with(http.request.uri.path, "/admin"))
+(http.host in {"damatong.net" "www.damatong.net"} and starts_with(http.request.uri.path, "/admin"))
 or
-(http.host eq "flashcast.com.my" and starts_with(http.request.uri.path, "/api/admin/"))
+(http.host in {"damatong.net" "www.damatong.net"} and starts_with(http.request.uri.path, "/api/admin/"))
 or
-(http.host eq "flashcast.com.my" and http.request.uri.path eq "/api/admin")
+(http.host in {"damatong.net" "www.damatong.net"} and http.request.uri.path eq "/api/admin")
 ```
 
 Action: `Block`.
@@ -42,7 +42,7 @@ Only allow admin API on the admin hostname:
 
 ```text
 starts_with(http.request.uri.path, "/api/admin/")
-and http.host ne "console.flashcast.com.my"
+and http.host ne "console.damatong.net"
 ```
 
 Action: `Block`.
@@ -50,7 +50,7 @@ Action: `Block`.
 Challenge suspicious admin login traffic:
 
 ```text
-http.host eq "console.flashcast.com.my"
+http.host eq "console.damatong.net"
 and http.request.uri.path eq "/api/admin/auth/login"
 and (
   cf.threat_score ge 10
@@ -67,7 +67,7 @@ Create an edge rate limit for admin login:
 - Expression:
 
 ```text
-http.host eq "console.flashcast.com.my"
+http.host eq "console.damatong.net"
 and http.request.uri.path eq "/api/admin/auth/login"
 and http.request.method eq "POST"
 ```
@@ -92,14 +92,14 @@ Prevent bypassing Cloudflare Access by direct origin access:
 Set backend environment variables:
 
 ```env
-PUBLIC_APP_URL=https://flashcast.com.my
-ADMIN_PUBLIC_URL=https://console.flashcast.com.my
-ADMIN_ALLOWED_ORIGINS=https://console.flashcast.com.my
-CORS_ORIGINS=https://flashcast.com.my,https://console.flashcast.com.my
+PUBLIC_APP_URL=https://damatong.net
+ADMIN_PUBLIC_URL=https://console.damatong.net
+ADMIN_ALLOWED_ORIGINS=https://console.damatong.net
+CORS_ORIGINS=https://damatong.net,https://www.damatong.net,https://console.damatong.net
 NODE_ENV=production
 TRUST_PROXY=1
 ADMIN_MFA_SECRET_KEY=<long-random-secret>
 ADMIN_MFA_ISSUER=Flashcast Admin
 ```
 
-Keep `ADMIN_ALLOWED_ORIGINS` narrow in production. Do not include `flashcast.com.my`, localhost, wildcard origins, or the public storefront unless temporarily using `ADMIN_COMPAT_ALLOW_PUBLIC_APP_ORIGIN=1` for a controlled migration.
+Keep `ADMIN_ALLOWED_ORIGINS` narrow in production. Do not include `damatong.net`, `www.damatong.net`, localhost, wildcard origins, or the public storefront unless temporarily using `ADMIN_COMPAT_ALLOW_PUBLIC_APP_ORIGIN=1` for a controlled migration.

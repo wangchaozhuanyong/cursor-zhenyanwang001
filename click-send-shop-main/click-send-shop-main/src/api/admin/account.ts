@@ -9,6 +9,10 @@ export function verifyAdminMfa(params: { mfaTicket: string; code: string }) {
   return post<AdminLoginResult>("/admin/auth/mfa/verify", params);
 }
 
+export function reverifyAdminMfa(params: { code: string }) {
+  return post<{ mfaVerifiedAt?: number; csrfToken?: string }>("/admin/auth/mfa/reverify", params);
+}
+
 export function adminLogoutApi() {
   return post<void>("/admin/auth/logout");
 }

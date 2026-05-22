@@ -9,6 +9,7 @@ LOG_FILE="${LOG_FILE:-$PROJECT_DIR/deploy.log}"
 FRONTEND_SUB="${FRONTEND_SUB:-click-send-shop-main/click-send-shop-main}"
 FRONTEND_DIR="$PROJECT_DIR/$FRONTEND_SUB"
 BUILD_FRONTEND_ON_SERVER="${BUILD_FRONTEND_ON_SERVER:-0}"
+BACKUP_BEFORE_DEPLOY="${BACKUP_BEFORE_DEPLOY:-1}"
 
 START_TS=$(date +%s)
 PREV_HEAD=""
@@ -60,6 +61,12 @@ install_frontend_deps_if_needed() {
 
 log "📝 安装后端依赖（生产模式）"
 install_server_deps "$PROJECT_DIR/server"
+
+if [[ "$BACKUP_BEFORE_DEPLOY" == "1" ]]; then
+  log "💾 部署前强制创建 MySQL 全量备份"
+  ( cd "$PROJECT_DIR/server" && BACKUP_KIND=pre_deploy BACKUP_TRIGGER_SOURCE=deploy BACKUP_REASON="before safe update $PREV_HEAD->$NEW_HEAD" npm run backup:full ) || fail "部署前备份失败"
+  ( cd "$PROJECT_DIR/server" && BACKUP_TRIGGER_SOURCE=deploy BACKUP_REASON="before safe update $PREV_HEAD->$NEW_HEAD" npm run backup:config ) || log "⚠️ 配置快照失败，请检查备份告警"
+fi
 
 log "📝 前端依赖策略检查"
 install_frontend_deps_if_needed "$FRONTEND_DIR"

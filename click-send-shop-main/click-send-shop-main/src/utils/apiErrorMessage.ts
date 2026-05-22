@@ -108,9 +108,25 @@ const API_ERROR_ZH: Record<string, string> = {
   "授权状态无效或已过期": "授权状态无效或已过期",
   "授权状态无效": "授权状态无效",
   "Invalid account state": "账号状态异常，无法完成绑定",
+  "MFA required": "需要多因素身份验证",
+  "MFA setup required": "请先完成多因素身份验证绑定",
+  "MFA verified": "多因素验证成功",
+  "MFA code invalid": "验证码不正确或已过期",
+  "MFA challenge expired": "多因素验证已过期，请重新登录",
+  "MFA challenge invalid": "多因素验证会话无效，请重新登录",
+  "MFA verification failed": "多因素验证失败",
+  "需要多因素身份验证": "需要多因素身份验证",
+  "多因素验证已过期，请重新验证": "多因素验证已过期，请重新验证",
+  "请先完成多因素身份验证绑定": "请先完成多因素身份验证绑定",
+  "验证码不正确或已过期": "验证码不正确或已过期",
+  "数据库表字符集排序规则不一致（utf8mb4 校对冲突），请联系技术人员执行迁移 109 统一校对规则。": "数据库表字符集排序规则不一致，请联系技术人员执行数据库迁移。",
 };
 
 const API_ERROR_PATTERNS: Array<{ test: RegExp; format: (m: RegExpMatchArray) => string }> = [
+  {
+    test: /Illegal mix of collations/i,
+    format: () => "数据库表字符集排序规则不一致，请联系技术人员执行数据库迁移。",
+  },
   {
     test: /^Product (.+) not found or inactive$/i,
     format: (m) => `商品不存在或已下架（${m[1]}）`,

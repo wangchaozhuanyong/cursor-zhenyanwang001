@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getMonitoringOverview, type MonitoringOverview } from "@/services/admin/monitoringService";
-import MonitoringSubnav, { Badge, formatTime, severityClass } from "./MonitoringSubnav";
+import MonitoringSubnav from "./MonitoringSubnav";
+import { Badge, formatTime, severityClass } from "./monitoringUi";
+import {
+  formatMonitoringEntityRef,
+  formatMonitoringModuleLabel,
+  formatMonitoringRuleLabel,
+  formatMonitoringRunTypeLabel,
+} from "./monitoringLabels";
 
 export default function AdminMonitoringOverview() {
   const [data, setData] = useState<MonitoringOverview | null>(null);
@@ -42,7 +49,7 @@ export default function AdminMonitoringOverview() {
               <div className="space-y-2">
                 {(data?.moduleCounts || []).map((item) => (
                   <div key={item.module} className="flex items-center justify-between rounded bg-slate-50 px-3 py-2 text-sm">
-                    <span>{item.module}</span>
+                    <span>{formatMonitoringModuleLabel(item.module)}</span>
                     <strong>{item.count}</strong>
                   </div>
                 ))}
@@ -55,7 +62,11 @@ export default function AdminMonitoringOverview() {
               <div className="space-y-2">
                 {(data?.recentRuns || []).map((run) => (
                   <div key={run.id} className="flex items-center justify-between gap-3 rounded bg-slate-50 px-3 py-2 text-sm">
-                    <span className="truncate">{run.rule_code || run.run_type}</span>
+                    <span className="truncate" title={run.rule_code || run.run_type || undefined}>
+                      {run.rule_code
+                        ? formatMonitoringRuleLabel(run.rule_code)
+                        : formatMonitoringRunTypeLabel(run.run_type)}
+                    </span>
                     <span className="text-slate-500">{run.checked_count}/{run.anomaly_count}</span>
                     <Badge value={run.status} />
                   </div>
@@ -76,7 +87,7 @@ export default function AdminMonitoringOverview() {
                     <tr key={item.id} className="border-t">
                       <td className="p-3"><Badge value={item.severity} tone={severityClass[item.severity]} /></td>
                       <td className="p-3 font-medium text-slate-900">{item.title}</td>
-                      <td className="p-3 text-slate-600">{item.entity_type}:{item.entity_id}</td>
+                      <td className="p-3 text-slate-600">{formatMonitoringEntityRef(item.entity_type, item.entity_id)}</td>
                       <td className="p-3 text-slate-600">{formatTime(item.last_seen_at)}</td>
                       <td className="p-3"><Link className="text-blue-600" to={`/admin/monitoring/anomalies/${item.id}`}>查看</Link></td>
                     </tr>

@@ -10,7 +10,7 @@ hr(){ echo; echo "===== $* ====="; }
 
 alive(){
   local r=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3001/api/health/ready --max-time 3)
-  local p=$(curl -s -o /dev/null -w '%{http_code}' https://flashcast.com.my/ --max-time 5)
+  local p=$(curl -s -o /dev/null -w '%{http_code}' https://damatong.net/ --max-time 5)
   echo "  ready=$r  public=$p"
   [[ "$r" == "200" && "$p" == "200" ]]
 }

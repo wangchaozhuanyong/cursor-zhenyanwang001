@@ -5,6 +5,7 @@ const { BusinessError } = require('../../../errors/BusinessError');
 const { ALL_ADMIN_PERMISSION_CODES } = require('../../../constants/adminPermissions');
 const { passwordSchema } = require('../../auth/schemas/auth.schemas');
 const repo = require('../repository/rbac.repository');
+const mfaRepo = require('../repository/adminMfa.repository');
 
 const PRIVILEGED_ROLE_CODES = new Set(['super_admin', 'admin_manager']);
 
@@ -289,6 +290,150 @@ async function deleteAdminUser(userId, actor, req) {
   return { data: null, message: '管理员已删除' };
 }
 
+async function getAdminUserSecurity(userId, actor) {
+  assertCanManageAdminAccounts(actor);
+  const target = await repo.selectAdminUserById(userId);
+  if (!target) throw new BusinessError(404, '管理员不存在');
+  assertActorCanOperateTarget(actor, target, '查看安全设置');
+
+  const settings = await mfaRepo.selectMfaSettings(userId);
+  const devices = await mfaRepo.listTrustedDevices(userId);
+  return {
+    data: {
+      user: target,
+      mfa: {
+        enabled: Boolean(settings?.enabled),
+        required: target.role === 'super_admin' || Boolean(settings?.required),
+        lockedRequired: target.role === 'super_admin',
+        enabledAt: settings?.enabled_at || null,
+        lastVerifiedAt: settings?.last_verified_at || null,
+      },
+      trustedDevices: devices.map((device) => ({
+        id: device.id,
+        firstSeenAt: device.first_seen_at,
+        lastSeenAt: device.last_seen_at,
+        expiresAt: device.expires_at,
+        revokedAt: device.revoked_at,
+        active: Boolean(device.active),
+      })),
+    },
+  };
+}
+
+async function setAdminUserMfaRequired(userId, required, actor, req) {
+  assertCanManageAdminAccounts(actor);
+  if (String(userId) === String(actor.id)) throw new BusinessError(400, '不能修改自己的 MFA 要求');
+  const target = await repo.selectAdminUserById(userId);
+  if (!target) throw new BusinessError(404, '管理员不存在');
+  assertActorCanOperateTarget(actor, target, required ? '要求 MFA' : '关闭 MFA 要求');
+  if (target.role === 'super_admin' && !required) throw new BusinessError(400, '超级管理员必须启用 MFA');
+
+  if (required) {
+    await mfaRepo.setMfaRequired(userId, true);
+  } else {
+    await mfaRepo.resetMfaSettings(userId, false);
+    await mfaRepo.revokeTrustedDevices(userId);
+    await repo.bumpRefreshTokenVersion(userId);
+  }
+
+  const { writeAuditLog } = require('../../../utils/auditLog');
+  await writeAuditLog({
+    req,
+    operatorId: actor.id,
+    operatorRole: actor.role,
+    actionType: required ? 'admin.security.require_mfa' : 'admin.security.disable_mfa_requirement',
+    objectType: 'user',
+    objectId: userId,
+    summary: `${required ? '要求' : '关闭'}管理员 MFA userId=${userId}`,
+    result: 'success',
+    before: { userId, mfa: target.mfa },
+    after: { userId, required: Boolean(required) },
+  });
+
+  return { data: null, message: required ? '已要求该管理员绑定 MFA' : '已关闭该管理员 MFA 要求' };
+}
+
+async function resetAdminUserMfa(userId, actor, req) {
+  assertCanManageAdminAccounts(actor);
+  if (String(userId) === String(actor.id)) throw new BusinessError(400, '不能重置自己的 MFA');
+  const target = await repo.selectAdminUserById(userId);
+  if (!target) throw new BusinessError(404, '管理员不存在');
+  assertActorCanOperateTarget(actor, target, '重置 MFA');
+
+  await mfaRepo.resetMfaSettings(userId, true);
+  await mfaRepo.revokeTrustedDevices(userId);
+  await repo.bumpRefreshTokenVersion(userId);
+
+  const { writeAuditLog } = require('../../../utils/auditLog');
+  await writeAuditLog({
+    req,
+    operatorId: actor.id,
+    operatorRole: actor.role,
+    actionType: 'admin.security.reset_mfa',
+    objectType: 'user',
+    objectId: userId,
+    summary: `重置管理员 MFA userId=${userId}`,
+    result: 'success',
+    before: { userId, mfa: target.mfa },
+    after: { userId, required: true, enabled: false, trustedDevicesRevoked: true },
+  });
+
+  return { data: null, message: '已重置 MFA，下次登录需要重新绑定' };
+}
+
+async function revokeAdminTrustedDevices(userId, actor, req) {
+  assertCanManageAdminAccounts(actor);
+  if (String(userId) === String(actor.id)) throw new BusinessError(400, '不能在员工管理中撤销自己的可信设备');
+  const target = await repo.selectAdminUserById(userId);
+  if (!target) throw new BusinessError(404, '管理员不存在');
+  assertActorCanOperateTarget(actor, target, '撤销可信设备');
+
+  const revoked = await mfaRepo.revokeTrustedDevices(userId);
+  await repo.bumpRefreshTokenVersion(userId);
+
+  const { writeAuditLog } = require('../../../utils/auditLog');
+  await writeAuditLog({
+    req,
+    operatorId: actor.id,
+    operatorRole: actor.role,
+    actionType: 'admin.security.revoke_trusted_devices',
+    objectType: 'user',
+    objectId: userId,
+    summary: `撤销管理员可信设备 userId=${userId}`,
+    result: 'success',
+    after: { userId, revoked },
+  });
+
+  return { data: { revoked }, message: '已撤销可信设备' };
+}
+
+async function revokeAdminTrustedDevice(userId, deviceId, actor, req) {
+  assertCanManageAdminAccounts(actor);
+  if (String(userId) === String(actor.id)) throw new BusinessError(400, '不能在员工管理中撤销自己的可信设备');
+  const target = await repo.selectAdminUserById(userId);
+  if (!target) throw new BusinessError(404, '管理员不存在');
+  assertActorCanOperateTarget(actor, target, '撤销可信设备');
+
+  const affected = await mfaRepo.revokeTrustedDevice(userId, deviceId);
+  if (!affected) throw new BusinessError(404, '可信设备不存在');
+  await repo.bumpRefreshTokenVersion(userId);
+
+  const { writeAuditLog } = require('../../../utils/auditLog');
+  await writeAuditLog({
+    req,
+    operatorId: actor.id,
+    operatorRole: actor.role,
+    actionType: 'admin.security.revoke_trusted_device',
+    objectType: 'admin_trusted_device',
+    objectId: deviceId,
+    summary: `撤销管理员可信设备 userId=${userId} deviceId=${deviceId}`,
+    result: 'success',
+    after: { userId, deviceId },
+  });
+
+  return { data: { revoked: 1 }, message: '已撤销可信设备' };
+}
+
 module.exports = {
   getAccessContext,
   listPermissions,
@@ -303,9 +448,13 @@ module.exports = {
   toggleAdminUser,
   resetAdminPassword,
   deleteAdminUser,
+  getAdminUserSecurity,
+  setAdminUserMfaRequired,
+  resetAdminUserMfa,
+  revokeAdminTrustedDevices,
+  revokeAdminTrustedDevice,
   ALL_ADMIN_PERMISSION_CODES,
 };
-
 
 
 

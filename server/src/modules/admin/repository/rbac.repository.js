@@ -111,10 +111,16 @@ async function selectRolesForUser(userId) {
 async function listAdminUsers() {
   const [rows] = await db.query(
     `SELECT u.id, u.phone, u.nickname, u.email, u.role, u.account_status, u.created_at, u.last_login_at,
-            GROUP_CONCAT(r.code ORDER BY r.code) AS role_codes
+            m.enabled AS mfa_enabled,
+            m.required AS mfa_required,
+            m.last_verified_at AS mfa_last_verified_at,
+            COUNT(DISTINCT CASE WHEN d.revoked_at IS NULL AND d.expires_at > NOW() THEN d.id END) AS trusted_device_count,
+            GROUP_CONCAT(DISTINCT r.code ORDER BY r.code) AS role_codes
      FROM users u
      LEFT JOIN user_roles ur ON ur.user_id = u.id
      LEFT JOIN roles r ON r.id = ur.role_id
+     LEFT JOIN admin_mfa_settings m ON m.user_id = u.id
+     LEFT JOIN admin_trusted_devices d ON d.user_id = u.id
      WHERE u.deleted_at IS NULL
        AND (
         u.role IN ('admin', 'super_admin')
@@ -123,11 +129,18 @@ async function listAdminUsers() {
           AND EXISTS (SELECT 1 FROM user_roles ur2 WHERE ur2.user_id = u.id)
         )
        )
-     GROUP BY u.id, u.phone, u.nickname, u.email, u.role, u.account_status, u.created_at, u.last_login_at
+     GROUP BY u.id, u.phone, u.nickname, u.email, u.role, u.account_status, u.created_at, u.last_login_at,
+              m.enabled, m.required, m.last_verified_at
      ORDER BY u.created_at DESC`,
   );
   return rows.map((row) => ({
     ...row,
+    mfa: {
+      enabled: Boolean(row.mfa_enabled),
+      required: row.role === 'super_admin' || Boolean(row.mfa_required),
+      lastVerifiedAt: row.mfa_last_verified_at || null,
+      trustedDeviceCount: Number(row.trusted_device_count || 0),
+    },
     roleCodes: row.role_codes ? String(row.role_codes).split(',').filter(Boolean) : [],
   }));
 }
@@ -135,10 +148,16 @@ async function listAdminUsers() {
 async function selectAdminUserById(userId) {
   const [[row]] = await db.query(
     `SELECT u.id, u.phone, u.nickname, u.email, u.role, u.account_status, u.created_at, u.last_login_at,
-            GROUP_CONCAT(r.code ORDER BY r.code) AS role_codes
+            m.enabled AS mfa_enabled,
+            m.required AS mfa_required,
+            m.last_verified_at AS mfa_last_verified_at,
+            COUNT(DISTINCT CASE WHEN d.revoked_at IS NULL AND d.expires_at > NOW() THEN d.id END) AS trusted_device_count,
+            GROUP_CONCAT(DISTINCT r.code ORDER BY r.code) AS role_codes
      FROM users u
      LEFT JOIN user_roles ur ON ur.user_id = u.id
      LEFT JOIN roles r ON r.id = ur.role_id
+     LEFT JOIN admin_mfa_settings m ON m.user_id = u.id
+     LEFT JOIN admin_trusted_devices d ON d.user_id = u.id
      WHERE u.id = ?
        AND u.deleted_at IS NULL
        AND (
@@ -148,12 +167,19 @@ async function selectAdminUserById(userId) {
            AND EXISTS (SELECT 1 FROM user_roles ur2 WHERE ur2.user_id = u.id)
          )
        )
-     GROUP BY u.id, u.phone, u.nickname, u.email, u.role, u.account_status, u.created_at, u.last_login_at`,
+     GROUP BY u.id, u.phone, u.nickname, u.email, u.role, u.account_status, u.created_at, u.last_login_at,
+              m.enabled, m.required, m.last_verified_at`,
     [userId],
   );
   if (!row) return null;
   return {
     ...row,
+    mfa: {
+      enabled: Boolean(row.mfa_enabled),
+      required: row.role === 'super_admin' || Boolean(row.mfa_required),
+      lastVerifiedAt: row.mfa_last_verified_at || null,
+      trustedDeviceCount: Number(row.trusted_device_count || 0),
+    },
     roleCodes: row.role_codes ? String(row.role_codes).split(',').filter(Boolean) : [],
   };
 }
@@ -194,6 +220,13 @@ async function updatePasswordHash(userId, hash) {
   await db.query(
     `UPDATE users SET password_hash = ?, refresh_token_version = refresh_token_version + 1 WHERE id = ?`,
     [hash, userId],
+  );
+}
+
+async function bumpRefreshTokenVersion(userId) {
+  await db.query(
+    `UPDATE users SET refresh_token_version = refresh_token_version + 1 WHERE id = ? AND deleted_at IS NULL`,
+    [userId],
   );
 }
 
@@ -281,13 +314,12 @@ module.exports = {
   updateAdminUserEnabled,
   softDeleteAdminUser,
   updatePasswordHash,
+  bumpRefreshTokenVersion,
   createAdminUserWithRoles,
   insertRole,
   updateRoleById,
   deleteRoleById,
   replaceRolePermissions,
 };
-
-
 
 

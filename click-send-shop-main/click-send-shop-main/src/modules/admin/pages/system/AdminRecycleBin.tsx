@@ -15,6 +15,7 @@ import type { RecycleBinItem } from "@/services/admin/recycleBinService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { labelRecycleType } from "@/utils/adminDisplayLabels";
+import { formatRecycleBinItemFullText, formatRecycleBinItemName } from "@/utils/recycleBinDisplay";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
@@ -174,8 +175,8 @@ export default function AdminRecycleBin() {
                       </span>
                     </div>
                     <AdminTableCell
-                      value={item.name || item.id}
-                      fullText={item.name ? `${item.name}\n${item.id}` : item.id}
+                      value={formatRecycleBinItemName(item)}
+                      fullText={formatRecycleBinItemFullText(item)}
                       maxWidth="100%"
                     />
                     <p className="text-[11px] text-muted-foreground">删除时间: {item.deleted_at ? formatDateTime(item.deleted_at) : "—"}</p>
@@ -234,8 +235,8 @@ export default function AdminRecycleBin() {
                     <div className="flex items-center gap-2">
                       {item.cover_image && <img src={item.cover_image} alt="" className="h-8 w-8 rounded object-cover" />}
                       <AdminTableCell
-                        value={item.name || item.id}
-                        fullText={item.name ? `${item.name}\n${item.id}` : item.id}
+                        value={formatRecycleBinItemName(item)}
+                        fullText={formatRecycleBinItemFullText(item)}
                         maxWidth="12.5rem"
                       />
                     </div>
@@ -268,7 +269,11 @@ export default function AdminRecycleBin() {
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4 text-center">
             <AlertTriangle size={40} className={`mx-auto ${THEME_TEXT_DANGER}`} />
             <h3 className="font-bold text-foreground"><Tx>确认彻底删除</Tx></h3>
-            <p className="text-sm text-muted-foreground"><Tx>此操作不可恢复！</Tx><br />{confirmDelete.type_label}: {confirmDelete.name}</p>
+            <p className="text-sm text-muted-foreground">
+              <Tx>此操作不可恢复！</Tx>
+              <br />
+              {labelRecycleType(confirmDelete.type, confirmDelete.type_label)}：{formatRecycleBinItemName(confirmDelete)}
+            </p>
             <div className="flex justify-center gap-3">
               <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
               <button type="button" onClick={handlePermanentDelete} className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${THEME_BTN_DANGER_SOLID}`}><Tx>确认删除</Tx></button>

@@ -46,7 +46,7 @@ export const adminMessagesZh: AdminMessages = {
     mfaVerifying: "核实中...",
     mfaBackToPassword: "返回密码登录",
     mfaCodeRequired: "请输入 6 位验证码",
-    mfaVerifyFailed: "MFA 验证失败，请检查验证码是否正确或是否已过期",
+    mfaVerifyFailed: "多因素验证失败，请检查验证码是否正确或是否已过期",
   },
   skin: {
     title: "更换皮肤",

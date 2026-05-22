@@ -6,7 +6,9 @@
 # 可选环境变量：
 #   PROJECT_DIR        默认 /var/www/click-send-shop
 #   FRONTEND_DIR       显式指定前端目录（相对 PROJECT_DIR），否则自动探测
-#   PUBLIC_FRONTEND    静态资源输出目录，默认 $PROJECT_DIR/public-frontend（与 nginx root 一致）
+#   PUBLIC_FRONTEND    商城静态目录，默认 /var/www/flashcast/dist（damatong.net）
+#   ADMIN_PUBLIC_FRONTEND  管理端静态，默认 /var/www/flashcast/admin-dist（console.damatong.net）
+#   INSTALL_NGINX      设为 1 时安装 deploy/nginx/damatong.prod.conf（默认 0，避免覆盖生产）
 #   PM2_APP            pm2 进程名，默认 gc-api
 #   NPM_CI=1           若存在 package-lock.json 则用 npm ci 替代 npm install（根/前端/后端）
 #
@@ -25,9 +27,9 @@ echo "🚀 开始部署..."
 PROJECT_DIR="${PROJECT_DIR:-/var/www/click-send-shop}"
 PM2_APP="${PM2_APP:-gc-api}"
 LOG_FILE="$PROJECT_DIR/deploy.log"
-NGINX_SITE_SRC="$PROJECT_DIR/deploy/cursor-main-frontend.nginx.conf"
-NGINX_SITE_DST="${NGINX_SITE_DST:-/etc/nginx/sites-available/cursor-main-frontend.conf}"
-PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-$PROJECT_DIR/public-frontend}"
+INSTALL_NGINX="${INSTALL_NGINX:-0}"
+PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-/var/www/flashcast/dist}"
+ADMIN_PUBLIC_FRONTEND="${ADMIN_PUBLIC_FRONTEND:-/var/www/flashcast/admin-dist}"
 
 cd "$PROJECT_DIR" || exit 1
 
@@ -84,7 +86,9 @@ if [[ -n "$FRONTEND_SUB" ]]; then
   fi
   cd "$PROJECT_DIR/$FRONTEND_SUB" || exit 1
   npm_install_here
+  export VITE_API_BASE_URL="${VITE_API_BASE_URL:-/api}"
   npm run build
+  npm run build:admin
   if [[ -n "$ASSET_BACKUP" && -d "$ASSET_BACKUP" ]]; then
     echo "🧩 保留上一版 hashed assets，避免已打开页面懒加载旧 chunk 404" | tee -a "$LOG_FILE"
     mkdir -p "$PROJECT_DIR/$FRONTEND_SUB/dist/assets"
@@ -104,6 +108,17 @@ if [[ -n "$FRONTEND_SUB" ]]; then
     cp -a "$PROJECT_DIR/$FRONTEND_SUB/dist/." "$PUBLIC_FRONTEND/"
   fi
   node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$PUBLIC_FRONTEND" | tee -a "$LOG_FILE"
+  if [[ -d "$PROJECT_DIR/$FRONTEND_SUB/admin-dist" ]]; then
+    echo "📤 同步 admin-dist → $ADMIN_PUBLIC_FRONTEND" | tee -a "$LOG_FILE"
+    mkdir -p "$ADMIN_PUBLIC_FRONTEND"
+    if command -v rsync >/dev/null 2>&1; then
+      rsync -a --delete "$PROJECT_DIR/$FRONTEND_SUB/admin-dist/" "$ADMIN_PUBLIC_FRONTEND/"
+    else
+      rm -rf "${ADMIN_PUBLIC_FRONTEND:?}/"*
+      cp -a "$PROJECT_DIR/$FRONTEND_SUB/admin-dist/." "$ADMIN_PUBLIC_FRONTEND/"
+    fi
+    node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$ADMIN_PUBLIC_FRONTEND" | tee -a "$LOG_FILE"
+  fi
 else
   echo "⏭ 跳过前端构建（未找到 click-send-shop 或 click-send-shop-main/click-send-shop-main）" | tee -a "$LOG_FILE"
 fi
@@ -115,13 +130,11 @@ npm_install_here
 echo "🗄 执行数据库迁移..." | tee -a "$LOG_FILE"
 npm run migrate
 
-if [[ -f "$NGINX_SITE_SRC" ]]; then
-  echo "🌐 更新 Nginx 配置..." | tee -a "$LOG_FILE"
-  sudo cp "$NGINX_SITE_SRC" "$NGINX_SITE_DST"
-  sudo nginx -t
-  sudo systemctl reload nginx
+if [[ "$INSTALL_NGINX" == "1" ]]; then
+  echo "🌐 安装 damatong Nginx（并禁用 cursor-main-frontend / flashcast.com.my）..." | tee -a "$LOG_FILE"
+  bash "$PROJECT_DIR/deploy/nginx/install-damatong-nginx.sh" | tee -a "$LOG_FILE"
 else
-  echo "⏭ 跳过 Nginx（未找到 $NGINX_SITE_SRC）" | tee -a "$LOG_FILE"
+  echo "⏭ 跳过 Nginx（INSTALL_NGINX=0；生产请单独执行 deploy/nginx/install-damatong-nginx.sh）" | tee -a "$LOG_FILE"
 fi
 
 echo "🔁 (Re)启动后端（统一通过 ecosystem.config.cjs / $PM2_APP）..." | tee -a "$LOG_FILE"

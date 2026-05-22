@@ -19,7 +19,7 @@ module.exports = {
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         UNIQUE KEY uk_payment_channels_code (code),
         KEY idx_payment_channels_country_currency (country_code, currency, enabled)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
     await query(`
@@ -45,7 +45,7 @@ module.exports = {
         KEY idx_payment_orders_order (order_id),
         KEY idx_payment_orders_status (status),
         KEY idx_payment_orders_channel (channel_code)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
     await query(`
@@ -64,7 +64,7 @@ module.exports = {
         UNIQUE KEY uk_payment_events_provider_event (provider, provider_event_id),
         KEY idx_payment_events_payment_order (payment_order_id),
         KEY idx_payment_events_order (order_id)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
     await query(`
@@ -81,7 +81,7 @@ module.exports = {
         created_by VARCHAR(36) NULL,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         KEY idx_payment_recon_date (reconcile_date, provider)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
     await query(`
@@ -94,7 +94,7 @@ module.exports = {
         net_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         KEY idx_payment_fees_order (payment_order_id)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
     await query(`

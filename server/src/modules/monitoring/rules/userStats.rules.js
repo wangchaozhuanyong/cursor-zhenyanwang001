@@ -1,4 +1,5 @@
 const repo = require('../repository/monitoring.repository');
+const { eq } = require('../monitoringSql');
 
 async function userStatsMismatch() {
   const { db } = repo;
@@ -11,7 +12,7 @@ async function userStatsMismatch() {
             COALESCE(real.total_spent, 0) AS real_total_spent,
             COALESCE(real.valid_order_count, 0) AS real_valid_order_count
      FROM users u
-     LEFT JOIN user_statistics us ON us.user_id = u.id
+     LEFT JOIN user_statistics us ON ${eq('us.user_id', 'u.id')}
      LEFT JOIN (
        SELECT user_id,
               COUNT(*) AS valid_order_count,
@@ -20,7 +21,7 @@ async function userStatsMismatch() {
        WHERE payment_status IN ('paid','partially_refunded','refunded')
          AND status <> 'cancelled'
        GROUP BY user_id
-     ) real ON real.user_id = u.id
+     ) real ON ${eq('real.user_id', 'u.id')}
      WHERE u.deleted_at IS NULL
        AND (
          ABS(COALESCE(us.total_spent, 0) - COALESCE(real.total_spent, 0)) > 0.01

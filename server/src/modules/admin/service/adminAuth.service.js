@@ -2,7 +2,6 @@ const { BusinessError } = require('../../../errors/BusinessError');
 const { AuthError } = require('../../../errors');
 const authModule = require('../../auth');
 const { comparePassword, signToken, verifyToken } = require('../../../utils/helpers');
-const { logAdminAction } = require('../../../utils/adminAudit');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const rbacService = require('./rbac.service');
 const adminMfaService = require('./adminMfa.service');
@@ -182,14 +181,15 @@ async function login(body, req) {
       return mfaChallenge;
     }
 
+    const mfaVerifiedAt = await adminMfaService.resolveRecentMfaVerifiedAt(uid);
     const token = signToken(uid, rv, {
       accessExpiresIn: ADMIN_ACCESS_EXPIRES_IN,
       expiresInSeconds: ADMIN_ACCESS_EXPIRES_SECONDS,
+      accessPayload: mfaVerifiedAt ? { mfaVerifiedAt } : {},
     });
     const access = await rbacService.getAccessContext(uid, user.role);
     try { await requireAuthApi('updateLastLogin')(uid); } catch { /* non-critical */ }
     clearLoginFailures(phone, req);
-    await logAdminAction(user.nickname || phone, 'admin login', '');
     await writeAuditLog({
       req,
       operatorId: uid,
@@ -253,11 +253,20 @@ async function refresh(refreshToken) {
     await requireAuthApi('refresh')(refreshToken);
     const rv = Number.isFinite(Number(payload.rv)) ? Number(payload.rv) + 1 : 1;
     await requireAuthApi('bumpRefreshTokenVersion')(payload.userId);
+    const mfaVerifiedAt = await adminMfaService.resolveRecentMfaVerifiedAt(payload.userId);
     const token = signToken(payload.userId, rv, {
       accessExpiresIn: ADMIN_ACCESS_EXPIRES_IN,
       expiresInSeconds: ADMIN_ACCESS_EXPIRES_SECONDS,
+      accessPayload: mfaVerifiedAt ? { mfaVerifiedAt } : {},
     });
-    return { data: { accessToken: token.accessToken, refreshToken: token.refreshToken, expiresIn: token.expiresIn } };
+    return {
+      data: {
+        accessToken: token.accessToken,
+        refreshToken: token.refreshToken,
+        expiresIn: token.expiresIn,
+        mfaVerifiedAt,
+      },
+    };
   } catch (err) {
     if (err instanceof AuthError) throw new BusinessError(401, err.message || '登录已过期，请重新登录');
     throw err;
@@ -268,7 +277,6 @@ async function logout(userId, req) {
   if (userId) {
     await requireAuthApi('bumpRefreshTokenVersion')(userId);
   }
-  await logAdminAction(userId, 'admin logout', '');
   await writeAuditLog({
     req,
     operatorId: userId || null,

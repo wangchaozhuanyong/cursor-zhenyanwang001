@@ -3,6 +3,7 @@ const registry = require('./ruleRegistry.service');
 const rootCauseAnalyzer = require('./rootCauseAnalyzer.service');
 const notification = require('./monitoringNotification.service');
 const autoFix = require('./autoFix.service');
+const { localizeDbError } = require('../../../utils/localizeDbError');
 
 function normalizeAnomaly(item, rule = {}) {
   return {
@@ -73,8 +74,9 @@ async function runRule(ruleCode, options = {}) {
       autoFixTasks,
     };
   } catch (error) {
-    await repo.finishRun(runId, { status: 'failed', checkedCount: 0, anomalyCount: 0, errorMessage: error.message });
-    await repo.recordRuleEvent(ruleCode, 'rule.run.failed', { runId, error: error.message });
+    const errorMessage = localizeDbError(error.message);
+    await repo.finishRun(runId, { status: 'failed', checkedCount: 0, anomalyCount: 0, errorMessage });
+    await repo.recordRuleEvent(ruleCode, 'rule.run.failed', { runId, error: errorMessage });
     throw error;
   }
 }

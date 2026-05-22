@@ -10,7 +10,9 @@ const fs = require('fs');
 const path = require('path');
 
 const distDir = path.resolve(process.argv[2] || 'dist');
-const indexPath = path.join(distDir, 'index.html');
+const entryName = process.argv[3] || ['index.html', 'admin-index.html']
+  .find((name) => fs.existsSync(path.join(distDir, name)));
+const indexPath = entryName ? path.join(distDir, entryName) : path.join(distDir, 'index.html');
 
 function walk(dir) {
   const out = [];

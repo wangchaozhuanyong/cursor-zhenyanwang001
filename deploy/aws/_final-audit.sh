@@ -10,7 +10,7 @@ hr(){ echo; echo "================ $* ================"; }
 hr "A. PRE-CHECK"
 LIVE=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3001/api/health/live --max-time 3)
 READY=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3001/api/health/ready --max-time 3)
-PUB=$(curl -s -o /dev/null -w '%{http_code}' https://flashcast.com.my/ --max-time 5)
+PUB=$(curl -s -o /dev/null -w '%{http_code}' https://damatong.net/ --max-time 5)
 echo "  live=$LIVE  ready=$READY  public=$PUB"
 [[ "$READY" == "200" ]] || { echo "  [FATAL] business not ready, abort"; exit 1; }
 
@@ -102,7 +102,7 @@ hr "D. POST-NUKE HEALTH CHECK"
 sleep 2
 LIVE2=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3001/api/health/live --max-time 3)
 READY2=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3001/api/health/ready --max-time 3)
-PUB2=$(curl -s -o /dev/null -w '%{http_code}' https://flashcast.com.my/ --max-time 5)
+PUB2=$(curl -s -o /dev/null -w '%{http_code}' https://damatong.net/ --max-time 5)
 echo "  live=$LIVE2  ready=$READY2  public=$PUB2"
 echo "  ready body:"
 curl -s http://127.0.0.1:3001/api/health/ready --max-time 3
@@ -135,7 +135,7 @@ echo
 echo "─── 2) API 健康验证 ───"
 echo "  /api/health/live  → $LIVE2"
 echo "  /api/health/ready → $READY2"
-echo "  公网根 (https://flashcast.com.my/) → $PUB2"
+echo "  公网根 (https://damatong.net/) → $PUB2"
 RDB=$(curl -s http://127.0.0.1:3001/api/health/ready --max-time 3 | grep -o '"database":[^,}]*')
 echo "  ready.database  : $RDB"
 [[ "$LIVE2" == "200" && "$READY2" == "200" && "$PUB2" == "200" ]] && echo "  ✅ API 全部正常" || echo "  ❌ API 异常"

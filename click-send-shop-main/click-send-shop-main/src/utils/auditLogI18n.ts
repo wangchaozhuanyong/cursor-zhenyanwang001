@@ -6,6 +6,7 @@ import {
   RETURN_STATUS_META,
 } from "@/constants/statusDictionary";
 import { translateApiErrorMessage } from "@/utils/apiErrorMessage";
+import { formatSystemErrorMessage } from "@/utils/systemErrorMessage";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -40,6 +41,12 @@ const OBJECT_TYPE_ZH: Record<string, string> = {
   upload: "上传",
   notification_batch: "通知批次",
   inventory: "库存",
+  data_cleanup: "数据清理",
+  admin_api: "管理端 API",
+  rbac: "权限",
+  export_task: "导出任务",
+  export: "导出",
+  backup: "备份",
 };
 
 const ACTION_ZH: Record<string, string> = {
@@ -139,6 +146,57 @@ const ACTION_ZH: Record<string, string> = {
   "review.batch_delete": "批量删除评价",
   "review.unfeature": "取消精选评价",
   "review.feature": "设为精选评价",
+  "admin.mfa.challenge": "管理员 MFA 验证挑战",
+  "admin.mfa.verify": "管理员 MFA 验证",
+  "admin.mfa.reverify": "管理员 MFA 重新验证",
+  "data_cleanup.preview": "生成数据清理预览",
+  "data_cleanup.run": "执行数据清理",
+  "data_cleanup.run.cancel": "取消数据清理",
+  "data_cleanup.policy.update": "更新数据清理策略",
+  "data_cleanup.policy.reset_defaults": "重置数据清理策略默认值",
+  "security.admin_gateway_block": "管理端网关安全拦截",
+  "security.rbac_change": "权限配置变更",
+  "security.payment_config_change": "支付配置变更",
+  "security.refund_operation": "退款操作",
+  "security.payment_manual_change": "手动改支付状态",
+  "security.payment_event_replay": "支付事件重放",
+  "security.site_settings_change": "站点设置变更",
+  "security.notification_config_change": "通知配置变更",
+  "security.theme_change": "主题配置变更",
+  "security.inventory_change": "库存变更",
+  "security.return_operation": "售后操作",
+  "security.permanent_delete": "永久删除",
+  "security.export_operation": "导出操作",
+  "security.product_change": "商品变更",
+  "security.user_points_change": "用户积分变更",
+  "security.user_password_reset": "重置用户密码",
+  "security.user_status_change": "用户状态变更",
+  "security.data_export": "数据导出",
+  "backup.full.create": "创建全量备份",
+  "backup.restore.request": "申请备份恢复",
+  "backup.restore.approve": "批准备份恢复",
+  "order.batch_ship": "批量订单发货",
+  "content.create": "创建内容",
+  "settings.features_update": "更新功能开关",
+  "settings.telegram_update": "更新 Telegram 配置",
+  "points.settings.update": "更新积分设置",
+  "points.product_rule.create": "创建商品积分规则",
+  "points.product_rule.update": "更新商品积分规则",
+  "points.product_rule.delete": "删除商品积分规则",
+  "inventory.pack_rule.create": "创建组装拆包规则",
+  "inventory.pack_rule.update": "更新组装拆包规则",
+  "inventory.pack_rule.delete": "删除组装拆包规则",
+  "notification.trigger.test_send": "测试通知触发",
+  "notification.cancel": "取消通知",
+  "notification.revoke": "撤回通知",
+  "review.approve": "通过评价",
+  "review.reject": "驳回评价",
+  "review.complaint_update": "更新评价投诉",
+  "member_level.recalc_user": "重算用户会员等级",
+  "member_level.recalc_all": "全量重算会员等级",
+  "member_level.assign_user": "手动指定会员等级",
+  "member_level.unlock_user": "解除会员等级锁定",
+  "telegram_escalation_failed": "Telegram 告警升级失败",
 };
 
 const MODULE_ZH: Record<string, string> = {
@@ -159,6 +217,13 @@ const MODULE_ZH: Record<string, string> = {
   recycle_bin: "回收站",
   member_level: "会员等级",
   rbac: "权限",
+  security: "安全",
+  data_cleanup: "数据清理",
+  backup: "备份",
+  mfa: "多因素验证",
+  points: "积分",
+  telegram: "Telegram",
+  content: "内容",
 };
 
 const TOKEN_ZH: Record<string, string> = {
@@ -222,6 +287,56 @@ const TOKEN_ZH: Record<string, string> = {
   referral: "返现",
   level: "等级",
   bin: "回收站",
+  mfa: "多因素验证",
+  challenge: "挑战",
+  verify: "验证",
+  reverify: "重新验证",
+  gateway: "网关",
+  block: "拦截",
+  cleanup: "清理",
+  preview: "预览",
+  run: "执行",
+  defaults: "默认值",
+  reset_defaults: "重置默认值",
+  policy: "策略",
+  pack: "组装",
+  recalc: "重算",
+  assign: "指定",
+  unlock: "解锁",
+  complaint: "投诉",
+  features: "功能开关",
+  test_send: "测试发送",
+  revoke: "撤回",
+  batch_ship: "批量发货",
+  full: "全量",
+  restore: "恢复",
+  request: "申请",
+  approve: "批准",
+  escalation: "升级",
+  failed: "失败",
+  manual_change: "手动变更",
+  config_change: "配置变更",
+  operation: "操作",
+  export_operation: "导出",
+  password_reset: "重置密码",
+  status_change: "状态变更",
+  points_change: "积分变更",
+  permanent_delete: "永久删除",
+  product_change: "商品变更",
+  return_operation: "售后操作",
+  inventory_change: "库存变更",
+  theme_change: "主题变更",
+  notification_config_change: "通知配置",
+  site_settings_change: "站点设置",
+  payment_config_change: "支付配置",
+  payment_manual_change: "支付手动操作",
+  payment_event_replay: "支付事件重放",
+  rbac_change: "权限变更",
+  admin_gateway_block: "网关拦截",
+  trigger: "触发",
+  test: "测试",
+  send: "发送",
+  api: "API",
 };
 
 const FIELD_ZH: Record<string, string> = {
@@ -340,6 +455,16 @@ const SUMMARY_EXACT_ZH: Record<string, string> = {
   "Create presigned upload ticket failed": "签发预签名上传凭证失败",
   "Complete presigned upload": "预签名上传完成并发布",
   "Complete presigned upload failed": "预签名上传完成失败",
+  "admin login success": "管理员登录成功",
+  "admin login failure": "管理员登录失败",
+  "admin logout": "管理员退出登录",
+  "admin MFA verified": "管理员 MFA 验证成功",
+  "admin MFA setup required": "需配置管理员 MFA",
+  "admin MFA login required": "需完成管理员 MFA 验证",
+  "admin MFA verify failed": "管理员 MFA 验证失败",
+  "admin MFA reverify failed": "管理员 MFA 重新验证失败",
+  "admin MFA reverify success": "管理员 MFA 重新验证成功",
+  "restore job approved after MFA": "MFA 验证后批准备份恢复",
 };
 
 const ERROR_MSG_ZH: Record<string, string> = {
@@ -386,10 +511,8 @@ function humanizeActionFallback(raw: string) {
   const mod = MODULE_ZH[parts[0]] || OBJECT_TYPE_ZH[parts[0]] || parts[0];
   const rest = parts.slice(1).join("_");
   const restKey = rest.replace(/-/g, "_");
-  const restPhrase = restKey
-    .split("_")
-    .map((t) => humanizeToken(t) || t)
-    .join("");
+  const restParts = restKey.split("_").map((t) => humanizeToken(t) || t);
+  const restPhrase = restParts.join(restParts.every((p) => /^[\u4e00-\u9fff]+$/.test(p)) ? "" : " · ");
   if (restPhrase) return `${mod} · ${restPhrase}`;
   return raw;
 }
@@ -469,6 +592,19 @@ export function zhAuditSummary(summary?: string) {
     if (match) return format(match);
   }
 
+  const cleanupPatterns: Array<{ test: RegExp; format: (m: RegExpMatchArray) => string }> = [
+    { test: /^执行数据清理 #(\d+):\s*(\w+)$/i, format: (m) => `执行数据清理 #${m[1]}：${zhAuditResult(m[2].toLowerCase())}` },
+    { test: /^生成清理预览 #(\d+)$/i, format: (m) => `生成清理预览 #${m[1]}` },
+    { test: /^请求取消数据清理 #(\d+)$/i, format: (m) => `请求取消数据清理 #${m[1]}` },
+    { test: /^更新清理策略 (.+)$/i, format: (m) => `更新清理策略 ${m[1]}` },
+    { test: /^执行数据清理失败$/i, format: () => "执行数据清理失败" },
+    { test: /^Admin API security block:\s*(.+)$/i, format: (m) => `管理端 API 安全拦截：${m[1]}` },
+  ];
+  for (const { test, format } of cleanupPatterns) {
+    const match = raw.match(test);
+    if (match) return format(match);
+  }
+
   let out = raw;
   // 订单状态 pending -> paid 或 pending->paid
   out = out.replace(
@@ -487,10 +623,11 @@ export function zhAuditSummary(summary?: string) {
 export function zhAuditErrorMessage(msg?: string) {
   const raw = String(msg || "").trim();
   if (!raw) return "";
+  const localized = formatSystemErrorMessage(raw, "");
+  if (localized && localized !== "-") return localized;
   const fromApi = translateApiErrorMessage(raw);
   if (fromApi) return fromApi;
   if (ERROR_MSG_ZH[raw]) return ERROR_MSG_ZH[raw];
-  // 常见英文前缀
   if (/^Invalid/i.test(raw)) return `参数无效：${raw.replace(/^Invalid\s*/i, "")}`;
   if (/^Cannot/i.test(raw)) return `无法执行：${raw.replace(/^Cannot\s*/i, "")}`;
   return raw;

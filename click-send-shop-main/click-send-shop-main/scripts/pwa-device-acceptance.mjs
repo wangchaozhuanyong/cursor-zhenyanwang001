@@ -3,14 +3,14 @@
  * Real OS install / standalone / iOS share sheet still require physical devices.
  *
  * Usage: node scripts/pwa-device-acceptance.mjs
- * Env: PWA_ACCEPTANCE_URL=https://flashcast.com.my
+ * Env: PWA_ACCEPTANCE_URL=https://damatong.net
  */
 import { chromium, devices } from "playwright";
 import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const BASE = (process.env.PWA_ACCEPTANCE_URL || "https://flashcast.com.my").replace(/\/$/, "");
+const BASE = (process.env.PWA_ACCEPTANCE_URL || "https://damatong.net").replace(/\/$/, "");
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dirname, "../docs/PWA_DEVICE_ACCEPTANCE_RESULT_AUTO.md");
 

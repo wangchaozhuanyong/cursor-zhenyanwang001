@@ -17,8 +17,35 @@ export interface RbacAdminUserRow {
   role: string;
   account_status?: string;
   roleCodes?: string[];
+  mfa?: {
+    enabled: boolean;
+    required: boolean;
+    lastVerifiedAt: string | null;
+    trustedDeviceCount: number;
+  };
   created_at: string;
   last_login_at: string | null;
+}
+
+export interface RbacTrustedDeviceRow {
+  id: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  expiresAt: string;
+  revokedAt: string | null;
+  active: boolean;
+}
+
+export interface RbacAdminUserSecurity {
+  user: RbacAdminUserRow;
+  mfa: {
+    enabled: boolean;
+    required: boolean;
+    lockedRequired: boolean;
+    enabledAt: string | null;
+    lastVerifiedAt: string | null;
+  };
+  trustedDevices: RbacTrustedDeviceRow[];
 }
 
 export interface RbacUserRolesPayload {
@@ -76,3 +103,22 @@ export function deleteAdminUser(userId: string) {
   return post<null>(`/admin/rbac/admin-users/${userId}/delete`, {});
 }
 
+export function fetchAdminUserSecurity(userId: string) {
+  return get<RbacAdminUserSecurity>(`/admin/rbac/admin-users/${userId}/security`);
+}
+
+export function updateAdminUserMfaRequired(userId: string, required: boolean) {
+  return put<null>(`/admin/rbac/admin-users/${userId}/security/mfa-required`, { required });
+}
+
+export function resetAdminUserMfa(userId: string) {
+  return post<null>(`/admin/rbac/admin-users/${userId}/security/mfa-reset`, {});
+}
+
+export function revokeAdminTrustedDevices(userId: string) {
+  return post<{ revoked: number }>(`/admin/rbac/admin-users/${userId}/security/trusted-devices/revoke`, {});
+}
+
+export function revokeAdminTrustedDevice(userId: string, deviceId: string) {
+  return post<{ revoked: number }>(`/admin/rbac/admin-users/${userId}/security/trusted-devices/${deviceId}/revoke`, {});
+}

@@ -6,7 +6,7 @@
  */
 const crypto = require('crypto');
 
-const BASE = process.env.BASE_URL || 'https://flashcast.com.my';
+const BASE = process.env.BASE_URL || 'https://damatong.net';
 const API = `${BASE}/api`;
 const ADMIN_PHONE = process.env.ADMIN_PHONE || '18800000001';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin123456';
@@ -218,7 +218,7 @@ async function createCampaignData(adminToken, imagePool) {
     body: JSON.stringify({
       site_name: 'FlashCast 模拟联调站点',
       announcement: '当前为自动化联调数据环境',
-      support_email: 'support@flashcast.com.my',
+      support_email: 'support@damatong.net',
     }),
   });
 

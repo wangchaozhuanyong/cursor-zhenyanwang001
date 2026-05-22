@@ -1,4 +1,5 @@
 const repo = require('../repository/monitoring.repository');
+const { eq } = require('../monitoringSql');
 
 async function productStockMismatch() {
   const { db } = repo;
@@ -8,7 +9,7 @@ async function productStockMismatch() {
     `SELECT p.id, p.name, p.stock AS product_stock,
             COALESCE(SUM(CASE WHEN (v.deleted_at IS NULL) AND (v.enabled IS NULL OR v.enabled = 1) THEN v.stock ELSE 0 END), 0) AS sku_stock
      FROM products p
-     LEFT JOIN product_variants v ON v.product_id = p.id
+     LEFT JOIN product_variants v ON ${eq('v.product_id', 'p.id')}
      ${hasProductDeletedAt ? 'WHERE p.deleted_at IS NULL' : ''}
      GROUP BY p.id, p.name, p.stock
      HAVING product_stock <> sku_stock`,
@@ -44,7 +45,7 @@ async function skuNegativeStock() {
   const [rows] = await db.query(
     `SELECT v.id, v.product_id, v.sku_code, v.title, v.stock, p.name AS product_name
      FROM product_variants v
-     LEFT JOIN products p ON p.id = v.product_id
+     LEFT JOIN products p ON ${eq('p.id', 'v.product_id')}
      WHERE v.stock < 0 AND v.deleted_at IS NULL`,
   );
   return {

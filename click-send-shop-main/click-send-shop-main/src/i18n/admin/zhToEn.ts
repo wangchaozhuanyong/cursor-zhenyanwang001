@@ -439,6 +439,18 @@ export const adminZhToEn: Record<string, string> = {
   "站点名称": "Site name",
   "站点描述": "Site description",
   "站点设置": "Site settings",
+  "页面标识：": "Page ID:",
+  "前台路径：": "Public path:",
+  "（需站点设置管理权限）": "(requires site settings permission)",
+  "登录页协议、政策内容页、关于我们、常见问题在此维护；保存后前台即时生效。":
+    "Manage login agreements, policy pages, about us, and help center; changes apply on the storefront immediately.",
+  "数据预览 / 导入（可选）": "Data preview / import (optional)",
+  "从表单生成数据": "Generate data from form",
+  "从数据导入表单": "Import form from data",
+  "已导入到表单": "Imported into form",
+  "数据格式错误": "Invalid data format",
+  "页面标识（小写字母、数字、横线，如 terms-of-service）":
+    "Page ID (lowercase letters, numbers, hyphens; e.g. terms-of-service)",
   "签证留学": "Visa & study abroad",
   "管理后台": "Admin Console",
   "系统设置": "System settings",

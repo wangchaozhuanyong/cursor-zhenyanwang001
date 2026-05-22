@@ -4,6 +4,8 @@ set -euo pipefail
 ROOT_DIR="${1:-/var/www/click-send-shop}"
 FRONT_DIR="$ROOT_DIR/click-send-shop-main/click-send-shop-main"
 SERVER_DIR="$ROOT_DIR/server"
+PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-/var/www/flashcast/dist}"
+ADMIN_PUBLIC_FRONTEND="${ADMIN_PUBLIC_FRONTEND:-/var/www/flashcast/admin-dist}"
 export VITE_API_BASE_URL="${VITE_API_BASE_URL:-/api}"
 
 echo "[atomic-deploy] root: $ROOT_DIR"
@@ -29,6 +31,24 @@ rm -rf dist.__old
 rm -f dist/assets/AdminProducts-CY-imU7a.js
 rm -f dist/assets/AdminProductForm-OsdDVNdj.js
 rm -f dist/assets/AdminCoupons-BLsIu_w4.js
+
+if [ ! -f admin-dist/admin-index.html ]; then
+  echo "[atomic-deploy] admin-dist/admin-index.html missing; building admin ..."
+  npm run build:admin
+fi
+
+echo "[atomic-deploy] syncing static roots ..."
+mkdir -p "$PUBLIC_FRONTEND" "$ADMIN_PUBLIC_FRONTEND"
+if command -v rsync >/dev/null 2>&1; then
+  rsync -a --delete dist/ "$PUBLIC_FRONTEND/"
+  rsync -a --delete admin-dist/ "$ADMIN_PUBLIC_FRONTEND/"
+else
+  rm -rf "${PUBLIC_FRONTEND:?}/"* "${ADMIN_PUBLIC_FRONTEND:?}/"*
+  cp -a dist/. "$PUBLIC_FRONTEND/"
+  cp -a admin-dist/. "$ADMIN_PUBLIC_FRONTEND/"
+fi
+test -f "$PUBLIC_FRONTEND/index.html"
+test -f "$ADMIN_PUBLIC_FRONTEND/admin-index.html"
 
 echo "[atomic-deploy] restarting api ..."
 cd "$SERVER_DIR"

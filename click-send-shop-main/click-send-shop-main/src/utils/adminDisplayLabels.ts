@@ -223,6 +223,19 @@ export const ORDER_STATUS_LABELS: Record<string, string> = {
 
 export const STOCK_STATUS_LABELS: Record<string, string> = { low: "低库存", normal: "正常", out: "缺货" };
 
+/** 商品合规类型（API 值为英文枚举，管理端展示中文） */
+export const COMPLIANCE_TYPE_LABELS: Record<string, string> = {
+  normal: "普通商品",
+  age_restricted: "年龄限制商品",
+  regulated: "受监管商品",
+};
+
+export function labelComplianceType(type: string | null | undefined): string {
+  if (!type) return "-";
+  const key = String(type).trim().toLowerCase();
+  return COMPLIANCE_TYPE_LABELS[key] ?? type;
+}
+
 export const ACTIVITY_TYPE_LABELS: Record<string, string> = {
   flash_sale: "限时秒杀",
   full_reduction: "满减活动",

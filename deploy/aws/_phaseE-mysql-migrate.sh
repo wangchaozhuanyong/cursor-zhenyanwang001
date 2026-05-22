@@ -101,8 +101,8 @@ done
 echo "  ready body:"
 curl -s http://127.0.0.1:3001/api/health/ready --max-time 3
 echo
-PUB=$(curl -s -o /dev/null -w '%{http_code}' https://flashcast.com.my/ --max-time 5)
-echo "  public https://flashcast.com.my/ -> $PUB"
+PUB=$(curl -s -o /dev/null -w '%{http_code}' https://damatong.net/ --max-time 5)
+echo "  public https://damatong.net/ -> $PUB"
 
 hr "E.8 DISABLE BAOTA mysqld AUTOSTART"
 sudo update-rc.d -f mysqld remove 2>/dev/null

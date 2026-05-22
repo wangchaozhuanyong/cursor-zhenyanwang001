@@ -28,6 +28,7 @@ import {
 } from "@/utils/themeVisuals";
 import { adminTableClassName, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { COMPLIANCE_TYPE_LABELS, labelComplianceType } from "@/utils/adminDisplayLabels";
 
 type AdminSpecValue = {
   id?: string;
@@ -1274,9 +1275,14 @@ export default function AdminProductForm() {
                     }}
                     className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none"
                   >
-                    <option value="normal">normal 普通</option>
-                    <option value="age_restricted">age_restricted 年龄限制</option>
-                    <option value="regulated">regulated 受监管</option>
+                    {form.compliance_type && !COMPLIANCE_TYPE_LABELS[form.compliance_type] ? (
+                      <option value={form.compliance_type}>{labelComplianceType(form.compliance_type)}</option>
+                    ) : null}
+                    {Object.entries(COMPLIANCE_TYPE_LABELS).map(([value, label]) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

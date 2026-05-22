@@ -109,7 +109,6 @@ async function main() {
       console.log("将要执行: DELETE FROM users WHERE role NOT IN ('admin','super_admin')");
       if (WIPE_CONTENT_PAGES) console.log('将要执行: TRUNCATE content_pages');
       if (WIPE_AUDIT_LOGS) console.log('将要执行: TRUNCATE audit_logs');
-      console.log('将要执行: TRUNCATE admin_logs');
       console.log('');
       process.exit(0);
     }
@@ -135,11 +134,6 @@ async function main() {
     if (WIPE_CONTENT_PAGES && (await tableExists(conn, 'content_pages'))) {
       await truncateTable(conn, 'content_pages');
       console.log('已清空表: content_pages');
-    }
-
-    if (await tableExists(conn, 'admin_logs')) {
-      await truncateTable(conn, 'admin_logs');
-      console.log('已清空表: admin_logs');
     }
 
     // RBAC 关联：删掉非管理员在 user_roles 中的行（若存在）

@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import { executeRepairTask, getRepairTasks, type MonitoringRepairTask } from "@/services/admin/monitoringService";
-import MonitoringSubnav, { Badge, formatTime, JsonBlock } from "./MonitoringSubnav";
+import MonitoringSubnav from "./MonitoringSubnav";
+import { Badge, formatTime, JsonBlock } from "./monitoringUi";
 
 export default function AdminMonitoringRepairTasks() {
   const [list, setList] = useState<MonitoringRepairTask[]>([]);
 
   const load = () => getRepairTasks({ pageSize: 50 }).then((res) => setList(res.data.list));
-  useEffect(load, []);
+
+  useEffect(() => {
+    void load();
+  }, []);
 
   return (
     <div className="p-6">

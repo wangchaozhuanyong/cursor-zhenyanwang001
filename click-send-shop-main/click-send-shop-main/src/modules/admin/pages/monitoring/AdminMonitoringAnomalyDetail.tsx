@@ -6,17 +6,23 @@ import {
   rescanMonitoringAnomaly,
   type MonitoringAnomalyDetail,
 } from "@/services/admin/monitoringService";
-import MonitoringSubnav, { Badge, formatTime, JsonBlock, severityClass } from "./MonitoringSubnav";
+import MonitoringSubnav from "./MonitoringSubnav";
+import { Badge, formatTime, JsonBlock, severityClass } from "./monitoringUi";
+import {
+  formatMonitoringEntityRef,
+  formatMonitoringModuleLabel,
+  formatMonitoringRuleLabel,
+  formatMonitoringRootCause,
+} from "./monitoringLabels";
 
 export default function AdminMonitoringAnomalyDetail() {
   const { id = "" } = useParams();
   const [data, setData] = useState<MonitoringAnomalyDetail | null>(null);
 
-  const load = () => {
+  useEffect(() => {
     if (!id) return;
     getMonitoringAnomalyDetail(id).then((res) => setData(res.data));
-  };
-  useEffect(load, [id]);
+  }, [id]);
 
   const anomaly = data?.anomaly;
 
@@ -33,9 +39,10 @@ export default function AdminMonitoringAnomalyDetail() {
               <span className="font-semibold text-slate-900">{anomaly.title}</span>
             </div>
             <div className="grid gap-3 text-sm text-slate-600 md:grid-cols-3">
-              <div>规则：{anomaly.rule_code}</div>
-              <div>模块：{anomaly.module}</div>
-              <div>对象：{anomaly.entity_type}:{anomaly.entity_id}</div>
+              <div>规则：{formatMonitoringRuleLabel(anomaly.rule_code, anomaly.title)}</div>
+              <div>模块：{formatMonitoringModuleLabel(anomaly.module)}</div>
+              <div>对象：{formatMonitoringEntityRef(anomaly.entity_type, anomaly.entity_id)}</div>
+              <div>原因：{formatMonitoringRootCause(anomaly.root_cause_message, anomaly.root_cause_code)}</div>
               <div>首次发现：{formatTime(anomaly.first_seen_at)}</div>
               <div>最近发现：{formatTime(anomaly.last_seen_at)}</div>
               <div>出现次数：{anomaly.seen_count}</div>

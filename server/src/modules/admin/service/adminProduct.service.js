@@ -1,6 +1,5 @@
 const { generateId, formatProduct } = require('../../../utils/helpers');
 const { BusinessError } = require('../../../errors/BusinessError');
-const { logAdminAction } = require('../../../utils/adminAudit');
 const { parseCsv, parseBool } = require('../../../utils/csv');
 const { rowsToCsvLocalized, normalizeCsvImportRows } = require('../../../utils/adminCsvLabels');
 const { buildSearchKeywords, normalizeSearchKeyword } = require('../../../utils/searchKeywords');
@@ -428,7 +427,6 @@ async function createProduct(body, adminUserId, req) {
       [buildProductSearchKeywordsFromPayload(row, vrows, tagMap.get(id) || [])],
       id,
     );
-    await logAdminAction(adminUserId, '创建商品', name);
     await writeAuditLog({
       req,
       operatorId: adminUserId,
@@ -723,7 +721,7 @@ async function exportProductsCsv(query) {
   return { csv, filename: `products_${Date.now()}.csv` };
 }
 
-async function importProductsCsv(text, adminUserId) {
+async function importProductsCsv(text, adminUserId, req) {
   const { rows: rawRows } = parseCsv(text);
   const rows = normalizeCsvImportRows(rawRows);
   if (!rows.length) throw new BusinessError(400, 'CSV 无数据行');
@@ -842,7 +840,16 @@ async function importProductsCsv(text, adminUserId) {
     }
   }
 
-  await logAdminAction(adminUserId, '导入商品', `新建 ${created}，更新 ${updated}`);
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'product.import',
+    objectType: 'product',
+    objectId: 'batch',
+    summary: `导入商品：新建 ${created}，更新 ${updated}`,
+    after: { created, updated },
+    result: 'success',
+  });
   if (created > 0 || updated > 0) bumpCatalogCache();
   return {
     data: { created, updated },
@@ -883,7 +890,6 @@ module.exports = {
   importProductsCsv,
   batchUpdateStatus,
 };
-
 
 
 

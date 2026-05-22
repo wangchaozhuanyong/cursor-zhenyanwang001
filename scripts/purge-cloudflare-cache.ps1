@@ -5,12 +5,12 @@ param(
   [ValidateSet("everything", "urls")]
   [string]$Mode = "urls",
   [string]$PurgeUrls = @(
-    "https://flashcast.com.my/favicon.ico",
-    "https://flashcast.com.my/favicon.webp",
-    "https://flashcast.com.my/favicon-32x32.png",
-    "https://flashcast.com.my/favicon.svg",
-    "https://flashcast.com.my/apple-touch-icon.png",
-    "https://www.flashcast.com.my/favicon.ico"
+    "https://damatong.net/favicon.ico",
+    "https://damatong.net/favicon.webp",
+    "https://damatong.net/favicon-32x32.png",
+    "https://damatong.net/favicon.svg",
+    "https://damatong.net/apple-touch-icon.png",
+    "https://www.damatong.net/favicon.ico"
   ) -join ","
 )
 

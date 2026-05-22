@@ -38,7 +38,6 @@ const ALL_ADMIN_PERMISSION_CODES = [
   'content.manage',
   'home_ops.manage',
   'audit.view',
-  'admin_log.view',
   'role.manage',
   'review.view',
   'review.reply',

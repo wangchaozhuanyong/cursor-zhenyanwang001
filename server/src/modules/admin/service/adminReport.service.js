@@ -2,7 +2,7 @@ const repo = require('../repository/adminReport.repository');
 const { labelReportColumn, labelReportCellValue } = require('../../../utils/reportColumnLabels');
 const { generateId } = require('../../../utils/helpers');
 const { BusinessError } = require('../../../errors/BusinessError');
-const { logAdminAction } = require('../../../utils/adminAudit');
+const { writeAuditLog } = require('../../../utils/auditLog');
 
 function formatDate(date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
@@ -526,31 +526,64 @@ async function listOperatingExpenses(query = {}) {
   return { summary, list, date_from: dateFrom, date_to: dateTo };
 }
 
-async function createOperatingExpense(body, admin = {}) {
+function resolveAdminId(admin = {}) {
+  return admin.id || admin.userId || null;
+}
+
+async function createOperatingExpense(body, admin = {}, req) {
   const payload = normalizeExpensePayload(body);
+  const operatorId = resolveAdminId(admin);
   const created = await repo.insertOperatingExpense({
     id: generateId(),
     ...payload,
-    operator_id: admin.id || admin.userId || null,
+    operator_id: operatorId,
   });
-  await logAdminAction(admin.id || admin.userId || null, 'operating_expense.create', JSON.stringify({ targetId: created.id, after: created }));
+  await writeAuditLog({
+    req,
+    operatorId,
+    actionType: 'operating_expense.create',
+    objectType: 'operating_expense',
+    objectId: created.id,
+    summary: `创建经营支出 ${created.title || created.id}`,
+    after: created,
+    result: 'success',
+  });
   return created;
 }
 
-async function updateOperatingExpense(id, body, admin = {}) {
+async function updateOperatingExpense(id, body, admin = {}, req) {
   const before = await repo.selectOperatingExpenseById(id);
   if (!before) throw new BusinessError(404, '经营支出记录不存在');
   const payload = normalizeExpensePayload(body);
   const updated = await repo.updateOperatingExpense(id, payload);
-  await logAdminAction(admin.id || admin.userId || null, 'operating_expense.update', JSON.stringify({ targetId: id, before, after: updated }));
+  await writeAuditLog({
+    req,
+    operatorId: resolveAdminId(admin),
+    actionType: 'operating_expense.update',
+    objectType: 'operating_expense',
+    objectId: id,
+    summary: `更新经营支出 ${updated.title || id}`,
+    before,
+    after: updated,
+    result: 'success',
+  });
   return updated;
 }
 
-async function deleteOperatingExpense(id, admin = {}) {
+async function deleteOperatingExpense(id, admin = {}, req) {
   const before = await repo.selectOperatingExpenseById(id);
   if (!before) throw new BusinessError(404, '经营支出记录不存在');
   await repo.deleteOperatingExpense(id);
-  await logAdminAction(admin.id || admin.userId || null, 'operating_expense.delete', JSON.stringify({ targetId: id, before }));
+  await writeAuditLog({
+    req,
+    operatorId: resolveAdminId(admin),
+    actionType: 'operating_expense.delete',
+    objectType: 'operating_expense',
+    objectId: id,
+    summary: `删除经营支出 ${before.title || id}`,
+    before,
+    result: 'success',
+  });
   return { ok: true };
 }
 

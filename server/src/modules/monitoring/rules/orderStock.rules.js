@@ -1,4 +1,5 @@
 const repo = require('../repository/monitoring.repository');
+const { eq } = require('../monitoringSql');
 
 async function orderCancelledStockNotRestored() {
   const { db } = repo;
@@ -7,7 +8,7 @@ async function orderCancelledStockNotRestored() {
     `SELECT o.id, o.order_no, o.updated_at, COUNT(r.id) AS restore_records
      FROM orders o
      LEFT JOIN inventory_stock_records r
-       ON (r.source_no = o.order_no OR r.order_no_snapshot = o.order_no)
+       ON (${eq('r.source_no', 'o.order_no')} OR ${eq('r.order_no_snapshot', 'o.order_no')})
       AND r.change_type IN ('restore','cancel_restore','order_cancel','refund')
      WHERE o.status = 'cancelled'
        AND o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)

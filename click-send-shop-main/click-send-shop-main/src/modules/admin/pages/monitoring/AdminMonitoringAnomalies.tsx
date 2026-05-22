@@ -8,7 +8,14 @@ import {
   resolveMonitoringAnomaly,
   type MonitoringAnomaly,
 } from "@/services/admin/monitoringService";
-import MonitoringSubnav, { Badge, formatTime, severityClass } from "./MonitoringSubnav";
+import MonitoringSubnav from "./MonitoringSubnav";
+import { Badge, formatTime, severityClass } from "./monitoringUi";
+import {
+  formatMonitoringEntityRef,
+  formatMonitoringModuleLabel,
+  formatMonitoringRootCause,
+  MONITORING_ANOMALY_STATUS_LABELS,
+} from "./monitoringLabels";
 
 const statuses = ["", "open", "investigating", "repair_pending", "repaired", "resolved", "ignored"];
 const severities = ["", "P0", "P1", "P2", "P3", "INFO"];
@@ -47,7 +54,9 @@ export default function AdminMonitoringAnomalies() {
       <MonitoringSubnav />
       <div className="mb-4 flex flex-wrap gap-2 rounded border border-slate-200 bg-white p-3">
         <select className="rounded border px-3 py-2 text-sm" value={status} onChange={(e) => { setPage(1); setStatus(e.target.value); }}>
-          {statuses.map((s) => <option key={s} value={s}>{s || "全部状态"}</option>)}
+          {statuses.map((s) => (
+            <option key={s} value={s}>{s ? MONITORING_ANOMALY_STATUS_LABELS[s] || s : "全部状态"}</option>
+          ))}
         </select>
         <select className="rounded border px-3 py-2 text-sm" value={severity} onChange={(e) => { setPage(1); setSeverity(e.target.value); }}>
           {severities.map((s) => <option key={s} value={s}>{s || "全部等级"}</option>)}
@@ -58,19 +67,23 @@ export default function AdminMonitoringAnomalies() {
       <div className="overflow-x-auto rounded border border-slate-200 bg-white">
         <table className="w-full min-w-[1100px] text-left text-sm">
           <thead className="bg-slate-50 text-slate-500">
-            <tr><th className="p-3">等级</th><th className="p-3">模块</th><th className="p-3">异常标题</th><th className="p-3">关联对象</th><th className="p-3">可能原因</th><th className="p-3">首次发现</th><th className="p-3">最近发现</th><th className="p-3">状态</th><th className="p-3">操作</th></tr>
+            <tr><th className="p-3 w-16">等级</th><th className="p-3 w-20">模块</th><th className="p-3">异常标题</th><th className="p-3">关联对象</th><th className="p-3">可能原因</th><th className="p-3 whitespace-nowrap">首次发现</th><th className="p-3 whitespace-nowrap">最近发现</th><th className="p-3 w-24">状态</th><th className="p-3">操作</th></tr>
           </thead>
           <tbody>
             {list.map((item) => (
               <tr key={item.id} className="border-t align-top">
-                <td className="p-3"><Badge value={item.severity} tone={severityClass[item.severity]} /></td>
-                <td className="p-3">{item.module}</td>
+                <td className="whitespace-nowrap p-3"><Badge value={item.severity} tone={severityClass[item.severity]} /></td>
+                <td className="whitespace-nowrap p-3 text-slate-900">{formatMonitoringModuleLabel(item.module)}</td>
                 <td className="p-3 font-medium text-slate-900">{item.title}</td>
-                <td className="p-3 text-slate-600">{item.entity_type}:{item.entity_id}</td>
-                <td className="p-3 text-slate-600">{item.root_cause_message || item.root_cause_code || "-"}</td>
-                <td className="p-3 text-slate-600">{formatTime(item.first_seen_at)}</td>
-                <td className="p-3 text-slate-600">{formatTime(item.last_seen_at)}</td>
-                <td className="p-3"><Badge value={item.status} /></td>
+                <td className="p-3 text-slate-600" title={`${item.entity_type}:${item.entity_id}`}>
+                  {formatMonitoringEntityRef(item.entity_type, item.entity_id)}
+                </td>
+                <td className="p-3 text-slate-600">
+                  {formatMonitoringRootCause(item.root_cause_message, item.root_cause_code)}
+                </td>
+                <td className="whitespace-nowrap p-3 text-slate-600">{formatTime(item.first_seen_at)}</td>
+                <td className="whitespace-nowrap p-3 text-slate-600">{formatTime(item.last_seen_at)}</td>
+                <td className="whitespace-nowrap p-3"><Badge value={item.status} /></td>
                 <td className="p-3">
                   <div className="flex flex-wrap gap-2">
                     <Link className="text-blue-600" to={`/admin/monitoring/anomalies/${item.id}`}>详情</Link>

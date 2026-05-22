@@ -88,7 +88,7 @@ function takeChallenge(ticket) {
   const challenge = challenges.get(ticket);
   challenges.delete(ticket);
   if (!challenge || challenge.expiresAt < Date.now()) {
-    throw new BusinessError(401, 'MFA challenge expired');
+    throw new BusinessError(401, '多因素验证已过期，请重新登录');
   }
   return challenge;
 }
@@ -97,9 +97,18 @@ async function getStatus(userId) {
   const settings = await repo.selectMfaSettings(userId);
   return {
     enabled: Boolean(settings?.enabled),
-    required: true,
+    required: Boolean(settings?.required),
     lastVerifiedAt: settings?.last_verified_at || null,
   };
+}
+
+/** 若最近仍在 MFA 有效期内，返回可用于 JWT 的 unix 秒时间戳 */
+async function resolveRecentMfaVerifiedAt(userId) {
+  const settings = await repo.selectMfaSettings(userId);
+  if (!settings?.enabled || !settings.last_verified_at) return 0;
+  const verifiedMs = new Date(settings.last_verified_at).getTime();
+  if (!Number.isFinite(verifiedMs) || Date.now() - verifiedMs > MFA_RECENT_WINDOW_MS) return 0;
+  return Math.floor(verifiedMs / 1000);
 }
 
 async function isTrustedDevice(userId, req) {
@@ -121,11 +130,11 @@ async function buildLoginMfaChallenge(user, req) {
         mfaRequired: true,
         mfaTicket: putChallenge({ userId: user.id, purpose: 'login' }),
       },
-      message: 'MFA required',
+      message: '需要多因素身份验证',
     };
   }
 
-  if (user.role === 'super_admin') {
+  if (user.role === 'super_admin' || settings?.required) {
     const secret = randomBase32();
     const issuer = process.env.ADMIN_MFA_ISSUER || 'Admin Console';
     await repo.upsertPendingMfaSettings(user.id, encryptSecret(secret));
@@ -140,7 +149,7 @@ async function buildLoginMfaChallenge(user, req) {
           secret,
         }),
       },
-      message: 'MFA setup required',
+      message: '请先完成多因素身份验证绑定',
     };
   }
 
@@ -183,7 +192,7 @@ async function verifyChallenge(body, req, res) {
   const code = String(body?.code || '');
   const challenge = takeChallenge(ticket);
   const user = await repo.selectUserForMfa(challenge.userId);
-  if (!user) throw new BusinessError(401, 'MFA challenge invalid');
+  if (!user) throw new BusinessError(401, '多因素验证会话无效，请重新登录');
   if (user.account_status === 'disabled' || user.account_status === 'blacklisted') {
     throw new BusinessError(403, '管理员账号已停用');
   }
@@ -203,7 +212,7 @@ async function verifyChallenge(body, req, res) {
       result: 'failure',
       errorMessage: 'TOTP_INVALID',
     });
-    throw new BusinessError(401, 'MFA code invalid');
+    throw new BusinessError(401, '验证码不正确或已过期');
   }
 
   if (challenge.purpose === 'setup') {
@@ -223,25 +232,89 @@ async function verifyChallenge(body, req, res) {
 
   return {
     data: await issueAdminSession(user, req, Math.floor(Date.now() / 1000)),
-    message: 'MFA verified',
+    message: '多因素验证成功',
+  };
+}
+
+async function verifyReverify(body, req) {
+  const userId = req.user?.id;
+  if (!userId) throw new BusinessError(401, '请先登录');
+
+  const settings = await repo.selectMfaSettings(userId);
+  const secret = decryptSecret(settings?.totp_secret_enc);
+  if (!settings?.enabled || !secret) {
+    throw new BusinessError(403, '请先完成多因素身份验证绑定');
+  }
+
+  const code = String(body?.code || '');
+  if (!verifyTotp(secret, code)) {
+    await writeAuditLog({
+      req,
+      operatorId: userId,
+      operatorName: req.user?.nickname || req.user?.phone || '',
+      operatorRole: req.user?.role || '',
+      actionType: 'admin.mfa.reverify',
+      objectType: 'auth',
+      objectId: userId,
+      summary: 'admin MFA reverify failed',
+      result: 'failure',
+      errorMessage: 'TOTP_INVALID',
+    });
+    throw new BusinessError(401, '验证码不正确或已过期');
+  }
+
+  await repo.touchMfaVerified(userId);
+  const user = await repo.selectUserForMfa(userId);
+  if (!user) throw new BusinessError(401, '用户不存在');
+
+  const mfaVerifiedAt = Math.floor(Date.now() / 1000);
+  const rv = Number.isFinite(Number(user.refresh_token_version)) ? Number(user.refresh_token_version) : 0;
+  const token = signToken(user.id, rv, {
+    accessExpiresIn: ADMIN_ACCESS_EXPIRES_IN,
+    expiresInSeconds: ADMIN_ACCESS_EXPIRES_SECONDS,
+    accessPayload: { mfaVerifiedAt },
+  });
+
+  await writeAuditLog({
+    req,
+    operatorId: userId,
+    operatorName: user.nickname || user.phone || '',
+    operatorRole: user.role,
+    actionType: 'admin.mfa.reverify',
+    objectType: 'auth',
+    objectId: userId,
+    summary: 'admin MFA reverify success',
+    result: 'success',
+  });
+
+  return {
+    data: {
+      token,
+      mfaVerifiedAt,
+      userId: user.id,
+      role: String(user.role || ''),
+    },
+    message: '多因素验证成功',
   };
 }
 
 function requireRecentMfa(req, res, next) {
   if (!req.user) return res.fail(401, '请先登录');
   if (!req.user.mfaVerifiedAt) {
-    return res.status(403).json({ code: 403, message: 'MFA required', data: { mfaRequired: true } });
+    return res.status(403).json({ code: 403, message: '需要多因素身份验证', data: { mfaRequired: true } });
   }
   const verifiedMs = Number(req.user.mfaVerifiedAt) * 1000;
   if (!Number.isFinite(verifiedMs) || Date.now() - verifiedMs > MFA_RECENT_WINDOW_MS) {
-    return res.status(403).json({ code: 403, message: 'MFA required', data: { mfaRequired: true } });
+    return res.status(403).json({ code: 403, message: '多因素验证已过期，请重新验证', data: { mfaRequired: true } });
   }
   return next();
 }
 
 module.exports = {
   getStatus,
+  resolveRecentMfaVerifiedAt,
   buildLoginMfaChallenge,
   verifyChallenge,
+  verifyReverify,
   requireRecentMfa,
 };

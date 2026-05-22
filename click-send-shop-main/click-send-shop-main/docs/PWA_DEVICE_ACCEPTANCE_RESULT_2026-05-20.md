@@ -1,7 +1,7 @@
 # PWA 真机验收结果（2026-05-20）
 
-**生产域名**：`https://flashcast.com.my`  
-**部署**：本地 `npm run build` → SCP → EC2 `public-frontend` rsync（`scripts/remote-sync-frontend.sh`）  
+**生产域名**：`https://damatong.net`  
+**部署**：本地 `npm run build` → SCP → EC2 `/var/www/flashcast/dist`（`scripts/upload-frontend-dist-ec2.ps1`）  
 **构建产物**：`assets/index-CeLglg88.js`，`rel="manifest" href="/manifest.webmanifest"`
 
 ---
@@ -33,7 +33,7 @@
 
 **用户 / 测试人操作**：
 
-1. Chrome：设置 → 隐私 → 清除 `flashcast.com.my` 站点数据；或 DevTools → Application → Service Workers → Unregister → 硬刷新。
+1. Chrome：设置 → 隐私 → 清除 `damatong.net` 站点数据；或 DevTools → Application → Service Workers → Unregister → 硬刷新。
 2. 已安装的 PWA：卸载桌面图标后重新从客服/APP 页安装 Tab 安装。
 
 自动化浏览器会话在部署后仍可能显示离线页，直至清 SW；curl/新 HTML 已确认为新版。

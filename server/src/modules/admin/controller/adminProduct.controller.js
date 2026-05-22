@@ -23,7 +23,7 @@ exports.exportCsv = asyncRoute(async (req, res) => {
 exports.importCsv = asyncRoute(async (req, res) => {
   if (!req.file || !req.file.buffer) throw new ValidationError('请上传 CSV 文件');
   const text = decodeCsvBuffer(req.file.buffer);
-  const r = await svc.importProductsCsv(text, req.user?.id);
+  const r = await svc.importProductsCsv(text, req.user?.id, req);
   res.success(r.data, r.message);
 });
 

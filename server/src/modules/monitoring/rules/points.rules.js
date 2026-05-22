@@ -1,4 +1,5 @@
 const repo = require('../repository/monitoring.repository');
+const { eq } = require('../monitoringSql');
 
 async function pointsBalanceMismatch() {
   const { db } = repo;
@@ -9,8 +10,8 @@ async function pointsBalanceMismatch() {
               COALESCE(SUM(CASE WHEN pr.status IS NULL OR pr.status = 'success' THEN pr.amount ELSE 0 END), 0) AS ledger_balance,
               u.points_balance
        FROM users u
-       LEFT JOIN points_accounts pa ON pa.user_id = u.id
-       LEFT JOIN points_records pr ON pr.user_id = u.id
+       LEFT JOIN points_accounts pa ON ${eq('pa.user_id', 'u.id')}
+       LEFT JOIN points_records pr ON ${eq('pr.user_id', 'u.id')}
        WHERE u.deleted_at IS NULL
        GROUP BY u.id, u.phone, u.nickname, pa.balance, u.points_balance
        HAVING account_balance <> ledger_balance OR u.points_balance <> account_balance`,
@@ -20,7 +21,7 @@ async function pointsBalanceMismatch() {
               COALESCE(SUM(CASE WHEN pr.status IS NULL OR pr.status = 'success' THEN pr.amount ELSE 0 END), 0) AS ledger_balance,
               u.points_balance
        FROM users u
-       LEFT JOIN points_records pr ON pr.user_id = u.id
+       LEFT JOIN points_records pr ON ${eq('pr.user_id', 'u.id')}
        WHERE u.deleted_at IS NULL
        GROUP BY u.id, u.phone, u.nickname, u.points_balance
        HAVING account_balance <> ledger_balance`,

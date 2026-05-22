@@ -6,7 +6,6 @@
  */
 const { generateId } = require('../../../utils/helpers');
 const { BusinessError, NotFoundError, ValidationError } = require('../../../errors');
-const { logAdminAction } = require('../../../utils/adminAudit');
 const { rowsToCsvLocalized } = require('../../../utils/adminCsvLabels');
 const { maskPhone } = require('../../../utils/privacyMask');
 const { getResolvedTriggerCopy } = require('./notificationTriggerSettings.service');
@@ -529,7 +528,6 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
       }
 
       await conn.commit();
-      await logAdminAction(adminUserId, 'update order status', `${orderId} -> ${status}`);
     } catch (err) {
       await conn.rollback();
       throw err;
@@ -644,8 +642,6 @@ async function shipOrder(orderId, body, adminUserId, req) {
         content: shipCopy.content,
       });
     }
-
-    await logAdminAction(adminUserId, '订单发货', `${orderId} ${carrier} ${trackingNo}`);
 
     await writeAuditLog({
       req,

@@ -61,3 +61,28 @@ exports.removeAdminUser = asyncRoute(async (req, res) => {
   res.success(r.data, r.message);
 });
 
+exports.getAdminUserSecurity = asyncRoute(async (req, res) => {
+  const r = await svc.getAdminUserSecurity(req.params.userId, req.user);
+  res.success(r.data);
+});
+
+exports.setAdminUserMfaRequired = asyncRoute(async (req, res) => {
+  const r = await svc.setAdminUserMfaRequired(req.params.userId, Boolean(req.body?.required), req.user, req);
+  res.success(r.data, r.message);
+});
+
+exports.resetAdminUserMfa = asyncRoute(async (req, res) => {
+  const r = await svc.resetAdminUserMfa(req.params.userId, req.user, req);
+  res.success(r.data, r.message);
+});
+
+exports.revokeAdminTrustedDevices = asyncRoute(async (req, res) => {
+  const r = await svc.revokeAdminTrustedDevices(req.params.userId, req.user, req);
+  res.success(r.data, r.message);
+});
+
+exports.revokeAdminTrustedDevice = asyncRoute(async (req, res) => {
+  const r = await svc.revokeAdminTrustedDevice(req.params.userId, req.params.deviceId, req.user, req);
+  res.success(r.data, r.message);
+});
+

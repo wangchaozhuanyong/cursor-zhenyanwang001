@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { getMonitoringRuns, type MonitoringRun } from "@/services/admin/monitoringService";
-import MonitoringSubnav, { Badge, formatTime } from "./MonitoringSubnav";
+import MonitoringSubnav from "./MonitoringSubnav";
+import { Badge, formatTime } from "./monitoringUi";
+import {
+  formatMonitoringRuleLabel,
+  formatMonitoringRunTypeLabel,
+  MONITORING_RUN_STATUS_LABELS,
+} from "./monitoringLabels";
+import { formatSystemErrorMessage } from "@/utils/systemErrorMessage";
 
 export default function AdminMonitoringRuns() {
   const [runs, setRuns] = useState<MonitoringRun[]>([]);
@@ -16,7 +23,9 @@ export default function AdminMonitoringRuns() {
       <MonitoringSubnav />
       <div className="mb-4 rounded border border-slate-200 bg-white p-3">
         <select className="rounded border px-3 py-2 text-sm" value={status} onChange={(e) => setStatus(e.target.value)}>
-          {["", "running", "success", "failed", "cancelled"].map((s) => <option key={s} value={s}>{s || "全部状态"}</option>)}
+          {["", "running", "success", "failed", "cancelled"].map((s) => (
+            <option key={s} value={s}>{s ? MONITORING_RUN_STATUS_LABELS[s] || s : "全部状态"}</option>
+          ))}
         </select>
       </div>
       <div className="overflow-x-auto rounded border border-slate-200 bg-white">
@@ -27,15 +36,17 @@ export default function AdminMonitoringRuns() {
           <tbody>
             {runs.map((run) => (
               <tr key={run.id} className="border-t">
-                <td className="p-3">{run.run_type}</td>
-                <td className="p-3 font-mono text-xs">{run.rule_code || "-"}</td>
+                <td className="p-3">{formatMonitoringRunTypeLabel(run.run_type)}</td>
+                <td className="p-3 text-slate-900">{run.rule_code ? formatMonitoringRuleLabel(run.rule_code) : "-"}</td>
                 <td className="p-3"><Badge value={run.status} /></td>
                 <td className="p-3">{run.checked_count}</td>
                 <td className="p-3">{run.anomaly_count}</td>
                 <td className="p-3">{formatTime(run.started_at)}</td>
                 <td className="p-3">{formatTime(run.finished_at)}</td>
                 <td className="p-3">{run.duration_ms ? `${Math.round(run.duration_ms)} ms` : "-"}</td>
-                <td className="p-3 text-red-600">{run.error_message || "-"}</td>
+                <td className="p-3 text-red-600" title={run.error_message || ""}>
+                  {formatSystemErrorMessage(run.error_message)}
+                </td>
               </tr>
             ))}
             {!runs.length && <tr><td className="p-6 text-center text-slate-500" colSpan={9}>暂无运行记录</td></tr>}

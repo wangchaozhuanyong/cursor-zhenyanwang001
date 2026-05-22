@@ -74,8 +74,9 @@
    - 入口文件 **必须** 为 `server/src/index.js`（`server/src/app.js` 仅导出 Express app，**不会** `listen`）。
    - `server/package.json` 中的 `start` / `start:prod` 仅供测试/排障使用，生产环境一律走 PM2。
 
-7. **HTTPS**：使用 Caddy / Nginx / 云负载均衡终止 TLS，反代到 `127.0.0.1:3001`（参考 `deploy/` 下示例）。
-8. **部署后验收（强制）**：
+7. **HTTPS / Nginx（damatong.net）**：使用 `deploy/nginx/damatong.prod.conf`（商城 + `console.damatong.net` 管理端），在服务器执行 `bash deploy/nginx/install-damatong-nginx.sh` 启用并禁用旧的 `cursor-main-frontend.conf`（flashcast.com.my）。详见 `docs/PRODUCTION_DOMAINS.md`。
+8. **HTTPS（通用）**：亦可使用 Caddy / 其他 Nginx 模板，反代到 `127.0.0.1:3001`（参考 `deploy/nginx.example.conf`）。
+9. **部署后验收（强制）**：
 
    ```bash
    PM2_APP=gc-api HEALTH_PORT=3001 bash deploy/verify-pm2.sh
@@ -84,7 +85,7 @@
    - 校验 4 件事：`pm2 show` 入口路径、`3001` 端口由 node 监听、`/api/health/live` 200、`pm2-error.log` 近 200 行无关键错误。
    - 仓库内所有 `deploy/*.sh`、`scripts/deploy_ec2.sh`、`scripts/remote-deploy-gc-api.sh` 末尾均会自动执行该脚本，**任何方式**部署都必须以此通过为完成标志。
 
-9. **备份**：计划任务定期执行 `scripts/backup-mysql.ps1`，并将 `backups/` 拷到异地。
+10. **备份**：计划任务定期执行 `scripts/backup-mysql.ps1`，并将 `backups/` 拷到异地。
 
 ## 部署总失败？优先核对这几条
 

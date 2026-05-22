@@ -11,6 +11,7 @@ import { normalizeMediaUrls } from "@/utils/mediaUrl";
 import { notifyAuthExpired } from "@/lib/authSessionBridge";
 import { startGlobalLoadingDeferred, stopGlobalLoading } from "@/lib/loadingProgress";
 import { clearAdminCsrfToken, getAdminCsrfToken, setAdminCsrfToken } from "@/lib/adminCsrf";
+import { requestAdminMfaStepUp } from "@/lib/adminMfaStepUp";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
@@ -218,6 +219,35 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
   }
 
   if (!res.ok) {
+    let body: Record<string, unknown> = {};
+    try {
+      body = (await res.json()) as Record<string, unknown>;
+    } catch {
+      // ignore malformed error bodies
+    }
+
+    const bodyData = body.data as Record<string, unknown> | undefined;
+    if (
+      res.status === 403
+      && retry
+      && isAdminEndpoint
+      && bodyData?.mfaRequired
+      && typeof window !== "undefined"
+      && !endpoint.startsWith("/admin/auth/mfa/")
+    ) {
+      try {
+        await requestAdminMfaStepUp();
+        return request<T>(endpoint, options, false);
+      } catch {
+        throw new ApiError(403, extractResponseMessage(body, res.status), {
+          ...body,
+          mfaRequired: true,
+          status: res.status,
+          endpoint,
+        });
+      }
+    }
+
     if (res.status === 401 && isAdminEndpoint) {
       clearAdminTokens();
       clearAdminCsrfToken();
@@ -228,12 +258,6 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     if (res.status === 401 && !isAdminEndpoint) {
       clearTokens();
       notifyAuthExpired();
-    }
-    let body: Record<string, unknown> = {};
-    try {
-      body = (await res.json()) as Record<string, unknown>;
-    } catch {
-      // ignore malformed error bodies
     }
     throw new ApiError(res.status, extractResponseMessage(body, res.status), {
       ...body,

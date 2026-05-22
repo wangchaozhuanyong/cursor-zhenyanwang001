@@ -20,7 +20,14 @@ import {
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { formatSystemErrorMessage } from "@/utils/systemErrorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
+import {
+  formatDataCleanupCategory,
+  formatDataCleanupPolicyKey,
+  formatDataCleanupProtectedTable,
+  formatDataCleanupRunType,
+} from "@/utils/dataRetentionLabels";
 import Pagination from "@/components/admin/Pagination";
 
 type TabKey = "overview" | "policies" | "preview" | "runs" | "risk";
@@ -69,7 +76,7 @@ function Metric({ label, value, hint }: { label: string; value: string | number;
   );
 }
 
-function RunSteps({ steps }: { steps?: DataCleanupRunStep[] }) {
+function RunSteps({ steps, policyTitleByKey }: { steps?: DataCleanupRunStep[]; policyTitleByKey?: Record<string, string> }) {
   if (!steps?.length) return <div className="text-sm text-muted-foreground">暂无步骤记录</div>;
   return (
     <div className="overflow-x-auto rounded-lg border border-border">
@@ -88,14 +95,14 @@ function RunSteps({ steps }: { steps?: DataCleanupRunStep[] }) {
         <tbody>
           {steps.map((step) => (
             <tr key={step.id} className="border-t border-border">
-              <td className="px-3 py-2 font-medium text-foreground">{step.policy_key}</td>
+              <td className="px-3 py-2 font-medium text-foreground">{formatDataCleanupPolicyKey(step.policy_key, policyTitleByKey)}</td>
               <td className="px-3 py-2 text-muted-foreground">{step.table_name}</td>
               <td className="px-3 py-2"><StatusBadge status={step.status} /></td>
               <td className="px-3 py-2">{step.matched_count}</td>
               <td className="px-3 py-2">{step.deleted_count}</td>
               <td className="px-3 py-2">{step.batch_count}</td>
               <td className="max-w-[280px] truncate px-3 py-2 text-xs text-muted-foreground" title={step.error_message || ""}>
-                {step.error_message || "-"}
+                {formatSystemErrorMessage(step.error_message)}
               </td>
             </tr>
           ))}
@@ -157,6 +164,10 @@ export default function AdminDataRetention() {
   });
 
   const policies = useMemo(() => policiesQuery.data ?? [], [policiesQuery.data]);
+  const policyTitleByKey = useMemo(
+    () => Object.fromEntries(policies.map((policy) => [policy.key, policy.title])),
+    [policies],
+  );
   const groupedPolicies = useMemo(() => groupPolicies(policies), [policies]);
   const selectedPolicies = useMemo(
     () => policies.filter((policy) => selectedKeys.includes(policy.key)),
@@ -320,12 +331,12 @@ export default function AdminDataRetention() {
           </div>
           <section className="rounded-lg border border-border bg-card p-4">
             <div className="mb-3 flex items-center gap-2 font-semibold text-foreground"><History size={16} /> 最近执行</div>
-            <RunSteps steps={runDetailQuery.data?.steps} />
+            <RunSteps steps={runDetailQuery.data?.steps} policyTitleByKey={policyTitleByKey} />
             {!selectedRunId && (
               <div className="space-y-2">
                 {(overview?.recentRuns || []).map((run) => (
                   <button key={run.id} type="button" onClick={() => setSelectedRunId(run.id)} className="flex w-full items-center justify-between gap-3 rounded-lg bg-secondary/40 px-3 py-2 text-left text-sm hover:bg-secondary">
-                    <span>#{run.id} {run.run_type}</span>
+                    <span>#{run.id} {formatDataCleanupRunType(run.run_type)}</span>
                     <span className="text-muted-foreground">命中 {run.total_matched} / 删除 {run.total_deleted}</span>
                     <StatusBadge status={run.status} />
                   </button>
@@ -338,7 +349,9 @@ export default function AdminDataRetention() {
             <div className="mb-2 flex items-center gap-2 font-semibold"><AlertTriangle size={16} /> 默认保护表</div>
             <div className="flex flex-wrap gap-2">
               {(overview?.protectedTables || []).map((table) => (
-                <span key={table} className="rounded-full border border-amber-200 bg-white px-2 py-0.5 text-xs">{table}</span>
+                <span key={table} className="rounded-full border border-amber-200 bg-white px-2 py-0.5 text-xs" title={table}>
+                  {formatDataCleanupProtectedTable(table)}
+                </span>
               ))}
             </div>
           </section>
@@ -359,7 +372,7 @@ export default function AdminDataRetention() {
           </div>
           {Object.entries(groupedPolicies).map(([category, items]) => (
             <section key={category} className="rounded-lg border border-border bg-card">
-              <div className="border-b border-border px-4 py-3 font-semibold text-foreground">{category}</div>
+              <div className="border-b border-border px-4 py-3 font-semibold text-foreground">{formatDataCleanupCategory(category)}</div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[980px] text-left text-sm">
                   <thead className="bg-secondary/50 text-xs text-muted-foreground">
@@ -498,7 +511,7 @@ export default function AdminDataRetention() {
                   命中 {previewRun.total_matched} 条 <StatusBadge status={previewRun.status} />
                 </div>
               </div>
-              <RunSteps steps={previewRun.steps} />
+              <RunSteps steps={previewRun.steps} policyTitleByKey={policyTitleByKey} />
             </section>
           ) : null}
         </div>
@@ -525,7 +538,7 @@ export default function AdminDataRetention() {
                   {runs.map((run) => (
                     <tr key={run.id} className="border-t border-border">
                       <td className="px-3 py-2 font-medium text-foreground">#{run.id}</td>
-                      <td className="px-3 py-2">{run.run_type}</td>
+                      <td className="px-3 py-2">{formatDataCleanupRunType(run.run_type)}</td>
                       <td className="px-3 py-2"><StatusBadge status={run.status} /></td>
                       <td className="px-3 py-2">{run.total_matched}</td>
                       <td className="px-3 py-2">{run.total_deleted}</td>
@@ -550,7 +563,7 @@ export default function AdminDataRetention() {
             {runDetailQuery.data ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-sm">
-                  <span>#{runDetailQuery.data.id} {runDetailQuery.data.run_type}</span>
+                  <span>#{runDetailQuery.data.id} {formatDataCleanupRunType(runDetailQuery.data.run_type)}</span>
                   <StatusBadge status={runDetailQuery.data.status} />
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center text-sm">
@@ -558,8 +571,8 @@ export default function AdminDataRetention() {
                   <div className="rounded bg-secondary/50 p-2"><div className="text-xs text-muted-foreground">删除</div><strong>{runDetailQuery.data.total_deleted}</strong></div>
                   <div className="rounded bg-secondary/50 p-2"><div className="text-xs text-muted-foreground">失败</div><strong>{runDetailQuery.data.total_failed}</strong></div>
                 </div>
-                {runDetailQuery.data.error_message ? <div className="rounded border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700">{runDetailQuery.data.error_message}</div> : null}
-                <RunSteps steps={runDetailQuery.data.steps} />
+                {runDetailQuery.data.error_message ? <div className="rounded border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700">{formatSystemErrorMessage(runDetailQuery.data.error_message)}</div> : null}
+                <RunSteps steps={runDetailQuery.data.steps} policyTitleByKey={policyTitleByKey} />
               </div>
             ) : (
               <div className="text-sm text-muted-foreground">选择一条记录查看步骤。</div>
@@ -590,7 +603,15 @@ export default function AdminDataRetention() {
           </section>
           <section className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
             <h2 className="mb-2 flex items-center gap-2 font-semibold"><XCircle size={16} /> 禁止清理范围</h2>
-            <p>不得将 orders、order_items、payment_*、myinvois_*、inventory_stock_records、points_records、reward_* 加入硬删除策略。需要归档交易数据时应另行设计归档或冷存储流程。</p>
+            <p>
+              不得将
+              {" "}
+              {["orders", "order_items", "payment_*", "myinvois_*", "inventory_stock_records", "points_records", "reward_*"]
+                .map(formatDataCleanupProtectedTable)
+                .join("、")}
+              {" "}
+              加入硬删除策略。需要归档交易数据时应另行设计归档或冷存储流程。
+            </p>
           </section>
         </div>
       ) : null}

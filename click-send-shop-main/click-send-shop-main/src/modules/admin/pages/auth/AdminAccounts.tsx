@@ -1,7 +1,7 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, UserCog, Shield, Trash2, KeyRound, ToggleLeft, ToggleRight, AlertTriangle, Copy } from "lucide-react";
+import { Plus, UserCog, Shield, Trash2, KeyRound, ToggleLeft, ToggleRight, AlertTriangle, Copy, ShieldCheck, Smartphone, RotateCcw, X } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
@@ -22,6 +22,7 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import type { RbacAdminUserRow } from "@/services/admin/rbacService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
+import AdminAccountSettingsTrigger from "@/components/admin/AdminAccountSettingsTrigger";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import {
   THEME_ALERT_ERROR_SOFT,
@@ -70,6 +71,7 @@ export default function AdminAccounts() {
   const [resetTarget, setResetTarget] = useState<RbacAdminUserRow | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<RbacAdminUserRow | null>(null);
+  const [securityTarget, setSecurityTarget] = useState<RbacAdminUserRow | null>(null);
 
   const adminsQuery = useQuery({
     queryKey: adminQueryKeys.accounts(),
@@ -235,7 +237,7 @@ export default function AdminAccounts() {
         skeletonRows={8}
         skeletonCols={6}
         className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
-        tableClassName="w-full min-w-[700px] text-sm"
+        tableClassName="w-full min-w-[860px] text-sm"
         theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
         thead={(
           <tr>
@@ -275,12 +277,27 @@ export default function AdminAccounts() {
             <>
               <td className="px-4 py-3 font-medium text-foreground">{a.nickname || "-"}</td>
               <td className="px-4 py-3 text-foreground">{a.phone}</td>
-              <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>{badge.text}</span></td>
+              <td className="px-4 py-3">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}>{badge.text}</span>
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${a.mfa?.enabled ? THEME_BADGE_PRIMARY : a.mfa?.required ? "bg-amber-100 text-amber-700" : THEME_BADGE_MUTED}`}>
+                    <ShieldCheck size={11} />
+                    {a.mfa?.enabled ? "MFA 已启用" : a.mfa?.required ? "待绑定 MFA" : "未要求 MFA"}
+                  </span>
+                  {Number(a.mfa?.trustedDeviceCount || 0) > 0 ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] text-muted-foreground">
+                      <Smartphone size={11} />
+                      {a.mfa?.trustedDeviceCount} 台设备
+                    </span>
+                  ) : null}
+                </div>
+              </td>
               <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{a.created_at ? formatDateTime(a.created_at) : "-"}</td>
               <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{a.last_login_at ? formatDateTime(a.last_login_at) : <span className="italic text-muted-foreground/60"><Tx>从未登录</Tx></span>}</td>
               <td className="px-4 py-3">
-                <PermissionGate permission="role.manage">
-                  <div className="flex gap-1">
+                <div className="flex flex-wrap items-center gap-1">
+                  <AdminAccountSettingsTrigger variant="inline" />
+                  <PermissionGate permission="role.manage">
                     {!targetLocked && a.role !== "super_admin" && (
                       <>
                         <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title={a.role === "disabled" ? "启用" : "禁用"}>
@@ -299,8 +316,8 @@ export default function AdminAccounts() {
                     {targetLocked && (
                       <span className="flex items-center gap-1 text-xs text-muted-foreground"><Shield size={12} /><Tx>不可操作</Tx></span>
                     )}
-                  </div>
-                </PermissionGate>
+                  </PermissionGate>
+                </div>
               </td>
             </>
           );

@@ -45,13 +45,13 @@ exports.listOperatingExpenses = asyncRoute(async (req, res) => {
   res.success(await svc.listOperatingExpenses(req.query));
 });
 exports.createOperatingExpense = asyncRoute(async (req, res) => {
-  res.success(await svc.createOperatingExpense(req.body, req.user || {}));
+  res.success(await svc.createOperatingExpense(req.body, req.user || {}, req));
 });
 exports.updateOperatingExpense = asyncRoute(async (req, res) => {
-  res.success(await svc.updateOperatingExpense(req.params.id, req.body, req.user || {}));
+  res.success(await svc.updateOperatingExpense(req.params.id, req.body, req.user || {}, req));
 });
 exports.deleteOperatingExpense = asyncRoute(async (req, res) => {
-  res.success(await svc.deleteOperatingExpense(req.params.id, req.user || {}));
+  res.success(await svc.deleteOperatingExpense(req.params.id, req.user || {}, req));
 });
 
 exports.exportByType = asyncRoute(async (req, res) => {

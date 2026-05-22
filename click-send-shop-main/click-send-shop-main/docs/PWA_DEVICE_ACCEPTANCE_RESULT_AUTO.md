@@ -1,6 +1,6 @@
 # PWA 真机验收 — 自动化执行结果
 
-**域名**：https://flashcast.com.my  
+**域名**：https://damatong.net  
 **时间**：2026-05-20T11:28:40.352Z  
 **环境**：Playwright（清 SW + Android/iPhone 模拟 + 离线模拟）
 
@@ -12,7 +12,7 @@
 | A | A2 | ☑ | /sw.js → 200 |
 | A | A3 | ☑ | /offline.html → 200 |
 | A | A5 | ☑ | 首页无全站安装条 |
-| A | A4 | ☑ | 最终 URL: https://flashcast.com.my/support-download?tab=download |
+| A | A4 | ☑ | 最终 URL: https://damatong.net/support-download?tab=download |
 | B | B1 | ☑ | 客服/APP 页正常渲染 |
 | B | B2 | ☑ | 有安装相关 UI |
 | B | B3 | △ 待人工 | 需真机：系统安装确认框 Playwright 无法触发 |
@@ -45,5 +45,5 @@
 - 自动化可测项已通过；标 **△** 的项请用手机完成（Android 安装、iOS 主屏幕、更新 Toast 二次发版）。
 
 ```bash
-PWA_ACCEPTANCE_URL=https://flashcast.com.my node scripts/pwa-device-acceptance.mjs
+PWA_ACCEPTANCE_URL=https://damatong.net node scripts/pwa-device-acceptance.mjs
 ```

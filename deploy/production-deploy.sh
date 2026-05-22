@@ -11,13 +11,15 @@ LOG_FILE="${LOG_FILE:-$PROJECT_DIR/deploy.log}"
 DEPLOY_LOCK_FILE="${DEPLOY_LOCK_FILE:-$PROJECT_DIR/.deploy.lock}"
 HEALTH_PORT="${HEALTH_PORT:-3001}"
 HEALTH_PATH="${HEALTH_PATH:-/api/health/live}"
-PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-$PROJECT_DIR/public-frontend}"
+PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-/var/www/flashcast/dist}"
+ADMIN_PUBLIC_FRONTEND="${ADMIN_PUBLIC_FRONTEND:-/var/www/flashcast/admin-dist}"
 VITE_API_BASE_URL="${VITE_API_BASE_URL:-/api}"
 SKIP_GIT="${SKIP_GIT:-0}"
 GIT_BRANCH="${GIT_BRANCH:-main}"
 BUILD_FRONTEND_ON_SERVER="${BUILD_FRONTEND_ON_SERVER:-0}"
 FRONTEND_BUILD_HEAP_MB="${FRONTEND_BUILD_HEAP_MB:-768}"
 FAST_MODE="${FAST_MODE:-1}"
+BACKUP_BEFORE_DEPLOY="${BACKUP_BEFORE_DEPLOY:-1}"
 STATE_DIR="${PROJECT_DIR}/.deploy-state"
 
 exec 9>"$DEPLOY_LOCK_FILE"
@@ -132,6 +134,12 @@ fi
 cd "$BACKEND_DIR" || exit 1
 maybe_install_backend_deps
 
+if [[ "$BACKUP_BEFORE_DEPLOY" == "1" ]]; then
+  echo "💾 部署前强制创建 MySQL 全量备份..." | tee -a "$LOG_FILE"
+  BACKUP_KIND=pre_deploy BACKUP_TRIGGER_SOURCE=deploy BACKUP_REASON="before production deploy ${LOCAL_COMMIT}" npm run backup:full
+  BACKUP_TRIGGER_SOURCE=deploy BACKUP_REASON="before production deploy ${LOCAL_COMMIT}" npm run backup:config || true
+fi
+
 echo "🧪 部署前数据库连通检查..." | tee -a "$LOG_FILE"
 if [[ ! -f "$BACKEND_DIR/.env" ]]; then
   echo "❌ 缺少后端 .env: $BACKEND_DIR/.env" | tee -a "$LOG_FILE"
@@ -143,7 +151,7 @@ if ! node -e "require('dotenv').config({path:'$BACKEND_DIR/.env'});const mysql=r
 fi
 
 echo "🧩 执行数据库迁移..." | tee -a "$LOG_FILE"
-npm run migrate
+BACKUP_BEFORE_MIGRATION=1 npm run migrate
 npm run verify-schema
 
 if [[ ! -d "$FRONTEND_DIR" ]]; then
@@ -151,11 +159,22 @@ if [[ ! -d "$FRONTEND_DIR" ]]; then
   exit 1
 fi
 
+ADMIN_DIST_DIR="$FRONTEND_DIR/admin-dist"
+
 if [[ "$BUILD_FRONTEND_ON_SERVER" != "1" ]]; then
   echo "⏭️  默认不在服务器构建前端（BUILD_FRONTEND_ON_SERVER=$BUILD_FRONTEND_ON_SERVER）" | tee -a "$LOG_FILE"
   if [[ ! -d "$FRONTEND_DIR/dist" && ! -d "$PUBLIC_FRONTEND" ]]; then
     echo "❌ 未找到前端 dist，请先在 CI/本地构建并上传，或设置 BUILD_FRONTEND_ON_SERVER=1 强制服务器构建。" | tee -a "$LOG_FILE"
     exit 1
+  fi
+
+  if [[ ! -f "$ADMIN_DIST_DIR/admin-index.html" ]]; then
+    echo "[deploy] admin-dist/admin-index.html missing; building standalone admin UI ..." | tee -a "$LOG_FILE"
+    cd "$FRONTEND_DIR" || exit 1
+    maybe_install_frontend_deps
+    export NODE_OPTIONS="--max-old-space-size=${FRONTEND_BUILD_HEAP_MB}"
+    export VITE_API_BASE_URL
+    npm run build:admin
   fi
 else
   echo "🎨 BUILD_FRONTEND_ON_SERVER=1，执行服务器前端构建..." | tee -a "$LOG_FILE"
@@ -172,6 +191,7 @@ else
   export VITE_LEGACY_BUILD="${VITE_LEGACY_BUILD:-0}"
   export VITE_API_BASE_URL
   node ./node_modules/vite/bin/vite.js build
+  npm run build:admin
 fi
 
 if [[ -d "$FRONTEND_DIR/dist" ]]; then
@@ -183,6 +203,22 @@ if [[ -d "$FRONTEND_DIR/dist" ]]; then
     rm -rf "${PUBLIC_FRONTEND:?}/"*
     cp -a "$FRONTEND_DIR/dist/." "$PUBLIC_FRONTEND/"
   fi
+fi
+
+if [[ -f "$ADMIN_DIST_DIR/admin-index.html" ]]; then
+  echo "[deploy] Sync admin-dist -> $ADMIN_PUBLIC_FRONTEND" | tee -a "$LOG_FILE"
+  mkdir -p "$ADMIN_PUBLIC_FRONTEND"
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a --delete "$ADMIN_DIST_DIR/" "$ADMIN_PUBLIC_FRONTEND/"
+  else
+    rm -rf "${ADMIN_PUBLIC_FRONTEND:?}/"*
+    cp -a "$ADMIN_DIST_DIR/." "$ADMIN_PUBLIC_FRONTEND/"
+  fi
+fi
+
+if [[ ! -f "$ADMIN_PUBLIC_FRONTEND/admin-index.html" ]]; then
+  echo "❌ admin-index.html missing after deploy: $ADMIN_PUBLIC_FRONTEND/admin-index.html" | tee -a "$LOG_FILE"
+  exit 1
 fi
 
 PM2_APP="${PM2_APP:-gc-api}"

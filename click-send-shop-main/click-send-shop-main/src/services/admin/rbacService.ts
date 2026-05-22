@@ -1,7 +1,7 @@
 import * as rbacApi from "@/api/admin/rbac";
-import type { RbacAdminUserRow, RbacRoleRow } from "@/api/admin/rbac";
+import type { RbacAdminUserRow, RbacAdminUserSecurity, RbacRoleRow } from "@/api/admin/rbac";
 
-export type { RbacAdminUserRow, RbacRoleRow };
+export type { RbacAdminUserRow, RbacAdminUserSecurity, RbacRoleRow };
 
 export async function loadRbacRoles() {
   const res = await rbacApi.fetchRbacRoles();
@@ -60,5 +60,30 @@ export async function resetAdminPassword(userId: string, newPassword: string) {
 
 export async function deleteAdminUser(userId: string) {
   const res = await rbacApi.deleteAdminUser(userId);
+  return res.data;
+}
+
+export async function loadAdminUserSecurity(userId: string) {
+  const res = await rbacApi.fetchAdminUserSecurity(userId);
+  return res.data;
+}
+
+export async function updateAdminUserMfaRequired(userId: string, required: boolean) {
+  const res = await rbacApi.updateAdminUserMfaRequired(userId, required);
+  return res.data;
+}
+
+export async function resetAdminUserMfa(userId: string) {
+  const res = await rbacApi.resetAdminUserMfa(userId);
+  return res.data;
+}
+
+export async function revokeAdminTrustedDevices(userId: string) {
+  const res = await rbacApi.revokeAdminTrustedDevices(userId);
+  return res.data;
+}
+
+export async function revokeAdminTrustedDevice(userId: string, deviceId: string) {
+  const res = await rbacApi.revokeAdminTrustedDevice(userId, deviceId);
   return res.data;
 }

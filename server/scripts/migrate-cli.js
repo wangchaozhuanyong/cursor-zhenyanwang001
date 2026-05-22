@@ -6,6 +6,8 @@
  *   node scripts/migrate-cli.js status
  */
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+const { spawnSync } = require('child_process');
+const path = require('path');
 const {
   runPendingMigrations,
   runLastMigrationDown,
@@ -14,7 +16,27 @@ const {
 
 const cmd = process.argv[2] || 'up';
 
+function runPreMigrationBackup() {
+  if (cmd === 'status') return;
+  if (process.env.BACKUP_BEFORE_MIGRATION !== '1') return;
+  const script = path.join(__dirname, 'backup', 'backup-full.js');
+  const result = spawnSync(process.execPath, [script], {
+    cwd: path.join(__dirname, '..'),
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      BACKUP_KIND: 'pre_migration',
+      BACKUP_TRIGGER_SOURCE: 'migration',
+      BACKUP_REASON: `before npm run migrate ${cmd}`,
+    },
+  });
+  if (result.status !== 0) {
+    throw new Error('Pre-migration backup failed; migration aborted');
+  }
+}
+
 (async () => {
+  runPreMigrationBackup();
   if (cmd === 'down') {
     await runLastMigrationDown();
   } else if (cmd === 'status') {

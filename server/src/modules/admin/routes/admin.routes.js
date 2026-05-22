@@ -59,6 +59,7 @@ const paySchemas = require('../../payment/payments.schemas');
 const productSchemas = require('../schemas/adminProduct.schemas');
 const adminOrderSchemas = require('../schemas/adminOrder.schemas');
 const adminUploadCtrl = require('../controller/adminUpload.controller');
+const { isHighRiskAdminOperation } = require('../adminHighRiskRoutes');
 
 const uploadCsv = multer({
   storage: multer.memoryStorage(),
@@ -86,56 +87,9 @@ router.use((req, res, next) => {
   return ensureAdminSchemaReady(req, res, next);
 });
 
-const highRiskAdminOperation = (req) => {
-  const exportReadPatterns = [
-    /^\/orders\/export$/,
-    /^\/users\/export$/,
-    /^\/inventory\/export$/,
-    /^\/inventory\/records\/export$/,
-    /^\/reports\/export$/,
-    /^\/reports\/[^/]+\/export$/,
-    /^\/reports\/profit\/export$/,
-    /^\/exports\/[^/]+\/download$/,
-    /^\/notifications\/[^/]+\/recipients\/export$/,
-  ];
-  if (req.method === 'GET') {
-    return exportReadPatterns.some((pattern) => pattern.test(req.path));
-  }
-
-  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return false;
-  const mutatingPatterns = [
-    /^\/account\/password$/,
-    /^\/rbac\//,
-    /^\/payments\/channels/,
-    /^\/payments\/orders\/[^/]+\/refund/,
-    /^\/payments\/orders\/[^/]+\/mark-paid/,
-    /^\/payments\/events\/[^/]+\/replay/,
-    /^\/payments\/reconciliations/,
-    /^\/settings(\/|$)/,
-    /^\/telegram\/settings/,
-    /^\/system\/theme/,
-    /^\/shipping\/settings/,
-    /^\/points\/settings/,
-    /^\/points\/rules/,
-    /^\/referral-rules/,
-    /^\/home-ops\/settings/,
-    /^\/notifications\/trigger-settings/,
-    /^\/backups\//,
-    /^\/restore\//,
-    /^\/inventory\//,
-    /^\/orders\/[^/]+\/refund/,
-    /^\/returns\/[^/]+/,
-    /^\/recycle-bin\/[^/]+\/permanent-delete/,
-    /^\/exports/,
-    /^\/products(\/|$)/,
-    /^\/product-tags(\/|$)/,
-  ];
-  return mutatingPatterns.some((pattern) => pattern.test(req.path));
-};
-
 router.use((req, res, next) => {
   if (/^\/auth\//.test(req.path)) return next();
-  if (!highRiskAdminOperation(req)) return next();
+  if (!isHighRiskAdminOperation(req)) return next();
   return adminAuth(req, res, (err) => {
     if (err) return next(err);
     return adminMfaService.requireRecentMfa(req, res, next);

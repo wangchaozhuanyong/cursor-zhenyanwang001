@@ -8,6 +8,7 @@ import AppRouteFallback from "@/components/AppRouteFallback";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import AdminLayout from "@/layouts/AdminLayout";
 import { AdminI18nProvider } from "@/contexts/AdminI18nProvider";
+import AdminMfaStepUpHost from "@/components/admin/AdminMfaStepUpHost";
 import { useAdminTOptional } from "@/hooks/useAdminT";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
@@ -29,7 +30,7 @@ import {
   AdminReviews, AdminNotifications, AdminNotificationDetail, AdminEventCenter,
   AdminReports, AdminReportOverview, AdminSalesDailyReport, AdminSalesMonthlyReport, AdminProfitDailyReport, AdminOperatingExpenses, AdminProductAnalysisReport, AdminCategoryAnalysisReport, AdminOrderAnalysisReport, AdminCustomerAnalysisReport, AdminActivityAnalysisReport, AdminCouponAnalysisReport, AdminInventoryAnalysisReport, AdminSearchAnalysisReport, AdminTrafficAnalysisReport, AdminExportCenter,
   AdminSiteSettings, AdminFeatureSettings, AdminSupportDownload, AdminTelegramSettings, AdminThemeSettings, AdminContent, AdminHomeOps,
-  AdminRoles, AdminLogs, AdminRecycleBin, AdminDataRetention,
+  AdminRoles, AdminLogs, AdminRecycleBin, AdminDataRetention, AdminBackupCenter,
   AdminPaymentChannels, AdminPaymentOrders, AdminPaymentEvents, AdminPaymentReconciliations,
   AdminMonitoringOverview, AdminMonitoringAnomalies, AdminMonitoringAnomalyDetail,
   AdminMonitoringRepairTasks, AdminMonitoringRules, AdminMonitoringRuns,
@@ -134,6 +135,7 @@ function AdminTitleSync() {
       { test: (p) => p.startsWith("/admin/exports"), titleKey: "routeTitles.exports" },
       { test: (p) => p.startsWith("/admin/logs"), titleKey: "routeTitles.auditLogs" },
       { test: (p) => p.startsWith("/admin/data-retention"), titleKey: "routeTitles.dataRetention" },
+      { test: (p) => p.startsWith("/admin/backups"), titleKey: "routeTitles.dataSafety" },
       { test: (p) => p.startsWith("/admin/recycle-bin"), titleKey: "routeTitles.recycleBin" },
       { test: (p) => p.startsWith("/admin/notifications"), titleKey: "routeTitles.notifications" },
       { test: (p) => p.startsWith("/admin/event-center"), titleKey: "routeTitles.eventCenter" },
@@ -163,7 +165,11 @@ export function AdminAppRoutes() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <AdminI18nProvider>
-            <Sonner />
+            <AdminMfaStepUpHost />
+            <Sonner
+              offset={{ top: "calc(max(0.75rem, env(safe-area-inset-top)) + 3.25rem)" }}
+              mobileOffset={{ top: "calc(max(0.75rem, env(safe-area-inset-top)) + 3.25rem)" }}
+            />
             <TopProgressBar />
             <SiteIdentitySync />
             <AppScopeSync />
@@ -249,6 +255,7 @@ export function AdminAppRoutes() {
                   <Route path="accounts" element={<AdminAccounts />} />
                   <Route path="recycle-bin" element={<AdminRecycleBin />} />
                   <Route path="data-retention" element={<AdminDataRetention />} />
+                  <Route path="backups" element={<AdminBackupCenter />} />
                   <Route path="exports" element={<AdminExportCenter />} />
                   <Route path="logs" element={<AdminLogs />} />
                   <Route path="content" element={<AdminContent />} />

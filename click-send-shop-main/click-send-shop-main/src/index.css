@@ -647,6 +647,17 @@ html[data-app-scope="store"][data-store-tab-route="cart"] {
   );
 }
 
+/* 管理后台：路径、标识等拉丁字符使用正文字体，避免装饰字体导致英文显示异常 */
+html[data-app-scope="admin"] code,
+html[data-app-scope="admin"] .admin-tech-path {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  letter-spacing: 0;
+  font-weight: 500;
+  word-break: break-all;
+}
+
 /* Global loading skeleton: inherit dynamic skin variables only */
 .skeleton-base {
   position: relative;

@@ -209,7 +209,7 @@ export default function AdminContent() {
           title={<Tx>内容管理</Tx>}
           hint={
             <Tx>
-              登录页协议、政策页（/content/:slug）、关于我们（/about）、常见问题（/help）在此维护；保存后前台即时生效。
+              登录页协议、政策内容页、关于我们、常见问题在此维护；保存后前台即时生效。
             </Tx>
           }
         />
@@ -242,11 +242,17 @@ export default function AdminContent() {
           <div className="rounded-xl border border-border bg-background p-3 text-xs">
             <p className="font-medium text-foreground"><Tx>用户协议</Tx></p>
             <p className="mt-1 text-muted-foreground">
-              slug: <code className="text-[10px]">terms-of-service</code>
+              <Tx>页面标识：</Tx>
+              <code className="rounded bg-secondary px-1 py-0.5">terms-of-service</code>
             </p>
             <p className="mt-1 text-muted-foreground">
-              <Tx>路径: </Tx>
-              <Link to={policyPaths.termsPath} target="_blank" rel="noreferrer" className="text-theme-price hover:underline">
+              <Tx>前台路径：</Tx>
+              <Link
+                to={policyPaths.termsPath}
+                target="_blank"
+                rel="noreferrer"
+                className="admin-tech-path text-theme-price hover:underline"
+              >
                 {policyPaths.termsPath}
               </Link>
             </p>
@@ -273,11 +279,17 @@ export default function AdminContent() {
           <div className="rounded-xl border border-border bg-background p-3 text-xs">
             <p className="font-medium text-foreground"><Tx>隐私政策</Tx></p>
             <p className="mt-1 text-muted-foreground">
-              slug: <code className="text-[10px]">privacy-policy</code>
+              <Tx>页面标识：</Tx>
+              <code className="rounded bg-secondary px-1 py-0.5">privacy-policy</code>
             </p>
             <p className="mt-1 text-muted-foreground">
-              <Tx>路径: </Tx>
-              <Link to={policyPaths.privacyPolicyPath} target="_blank" rel="noreferrer" className="text-theme-price hover:underline">
+              <Tx>前台路径：</Tx>
+              <Link
+                to={policyPaths.privacyPolicyPath}
+                target="_blank"
+                rel="noreferrer"
+                className="admin-tech-path text-theme-price hover:underline"
+              >
                 {policyPaths.privacyPolicyPath}
               </Link>
             </p>
@@ -307,7 +319,7 @@ export default function AdminContent() {
           <Link to="/admin/settings/site#policy-paths" className="text-theme-price underline-offset-2 hover:underline">
             <Tx>站点设置 → 政策页路径</Tx>
           </Link>
-          <Tx>（需 settings.manage 权限）</Tx>
+          <Tx>（需站点设置管理权限）</Tx>
         </p>
       </div>
 
@@ -413,11 +425,11 @@ export default function AdminContent() {
           </div>
 
           <div className="rounded-xl border border-border p-3">
-            <div className="mb-2 text-xs font-semibold text-muted-foreground"><Tx>JSON 预览 / 导入（可选）</Tx></div>
+            <div className="mb-2 text-xs font-semibold text-muted-foreground"><Tx>数据预览 / 导入（可选）</Tx></div>
             <textarea value={helpJson} onChange={(e) => setHelpJson(e.target.value)} rows={8} className="w-full rounded-xl border border-border bg-background px-3 py-3 font-mono text-xs outline-none focus:border-gold" />
             <div className="mt-2 flex gap-2">
-              <button type="button" onClick={() => setHelpJson(JSON.stringify(normalizeHelpCenterConfig(helpForm), null, 2))} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>从表单生成 JSON</Tx></button>
-              <button type="button" onClick={() => { try { const parsed = normalizeHelpCenterConfig(JSON.parse(helpJson)); setHelpForm(parsed); toast.success("已从 JSON 导入到表单"); } catch (e) { toast.error(e instanceof Error ? e.message : "JSON 格式错误"); } }} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>从 JSON 导入表单</Tx></button>
+              <button type="button" onClick={() => setHelpJson(JSON.stringify(normalizeHelpCenterConfig(helpForm), null, 2))} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>从表单生成数据</Tx></button>
+              <button type="button" onClick={() => { try { const parsed = normalizeHelpCenterConfig(JSON.parse(helpJson)); setHelpForm(parsed); toast.success("已导入到表单"); } catch (e) { toast.error(e instanceof Error ? e.message : "数据格式错误"); } }} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>从数据导入表单</Tx></button>
             </div>
           </div>
         </div>
@@ -471,12 +483,12 @@ export default function AdminContent() {
                   lines={2}
                 />
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1">
-                <Tx>前台路径: </Tx>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                <Tx>前台路径：</Tx>
                 {item.slug === "about" ? (
-                  <Link to="/about" className="text-theme-price underline-offset-2 hover:underline" target="_blank" rel="noreferrer">/about</Link>
+                  <Link to="/about" className="admin-tech-path text-theme-price hover:underline" target="_blank" rel="noreferrer">/about</Link>
                 ) : (
-                  <Link to={`/content/${item.slug}`} className="text-theme-price underline-offset-2 hover:underline" target="_blank" rel="noreferrer">/content/{item.slug}</Link>
+                  <Link to={`/content/${item.slug}`} className="admin-tech-path text-theme-price hover:underline" target="_blank" rel="noreferrer">/content/{item.slug}</Link>
                 )}
               </p>
             </div>
@@ -514,7 +526,7 @@ export default function AdminContent() {
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg max-h-[80vh] overflow-y-auto rounded-2xl bg-card p-6 shadow-xl space-y-4">
             <h3 className="font-bold text-foreground">新增内容页</h3>
             <input value={createForm.title} onChange={(e) => setCreateForm((p) => ({ ...p, title: e.target.value }))} placeholder="标题" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-            <input value={createForm.slug} onChange={(e) => setCreateForm((p) => ({ ...p, slug: e.target.value }))} placeholder="slug（如 terms-of-service）" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+            <input value={createForm.slug} onChange={(e) => setCreateForm((p) => ({ ...p, slug: e.target.value }))} placeholder="页面标识（小写字母、数字、横线，如 terms-of-service）" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
             <select value={createForm.publish_status} onChange={(e) => setCreateForm((p) => ({ ...p, publish_status: e.target.value as "published" | "draft" }))} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold">
               <option value="published">已发布</option>
               <option value="draft">草稿</option>

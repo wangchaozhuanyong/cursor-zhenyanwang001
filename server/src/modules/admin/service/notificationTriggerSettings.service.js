@@ -172,8 +172,13 @@ async function updateNotificationTriggerSettings(rules) {
   for (const item of Array.isArray(rules) ? rules : []) {
     if (!item || !allowed.has(item.key)) continue;
     const enabled = item.enabled === true;
-    const title = typeof item.title === 'string' ? item.title.trim() : '';
-    const content = typeof item.content === 'string' ? item.content.trim() : '';
+    const defs = TRIGGER_DEFAULT_COPY[item.key];
+    let title = typeof item.title === 'string' ? item.title.trim() : '';
+    let content = typeof item.content === 'string' ? item.content.trim() : '';
+    if (defs) {
+      if (title && title === String(defs.title).trim()) title = '';
+      if (content && content === String(defs.content).trim()) content = '';
+    }
     const allowedPlaceholders = new Set(PLACEHOLDERS_BY_KEY[item.key] || []);
     const bad = [];
     for (const src of [title, content]) {

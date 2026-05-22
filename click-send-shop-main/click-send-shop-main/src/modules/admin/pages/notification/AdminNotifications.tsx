@@ -12,6 +12,12 @@ import type { Notification } from "@/types/notification";
 import type { NotificationPayload } from "@/services/admin/notificationService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
+import {
+  getTriggerTemplateDisplay,
+  hasCustomTriggerTemplate,
+  normalizeTriggerRuleForSave,
+  patchTriggerRuleTemplate,
+} from "./triggerRuleTemplates";
 
 const TYPE_LABELS: Record<string, string> = {
   system: "系统通知",
@@ -163,7 +169,9 @@ export default function AdminNotifications() {
   });
 
   const saveRulesMutation = useMutation({
-    mutationFn: () => notificationService.saveNotificationTriggerSettings(rulesDraft || rulesQuery.data || []),
+    mutationFn: () => notificationService.saveNotificationTriggerSettings(
+      (rulesDraft || rulesQuery.data || []).map(normalizeTriggerRuleForSave),
+    ),
     onSuccess: async (nextRules) => {
       toast.success("触发通知设置已保存");
       setRulesDraft(nextRules);
@@ -178,6 +186,14 @@ export default function AdminNotifications() {
 
   const updateRule = (key: string, patch: Partial<notificationService.NotificationTriggerRule>) => {
     setRulesDraft((current) => (current || rules).map((rule) => rule.key === key ? { ...rule, ...patch } : rule));
+  };
+
+  const updateRuleTemplate = (key: string, field: "title" | "content", displayValue: string) => {
+    setRulesDraft((current) =>
+      (current || rules).map((rule) =>
+        rule.key === key ? patchTriggerRuleTemplate(rule, field, displayValue) : rule,
+      ),
+    );
   };
 
   return (
@@ -323,11 +339,32 @@ export default function AdminNotifications() {
                   </label>
                 </div>
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
-                  <label className="text-xs font-medium text-muted-foreground">标题模板
-                    <input value={rule.title ?? rule.default_title ?? ""} onChange={(e) => updateRule(rule.key, { title: e.target.value })} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+                  <label className="block text-xs font-medium text-muted-foreground">
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                      <span>标题模板</span>
+                      {!hasCustomTriggerTemplate(rule, "title") ? (
+                        <span className="font-normal text-muted-foreground/80">系统默认</span>
+                      ) : null}
+                    </span>
+                    <input
+                      value={getTriggerTemplateDisplay(rule, "title")}
+                      onChange={(e) => updateRuleTemplate(rule.key, "title", e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                    />
                   </label>
-                  <label className="text-xs font-medium text-muted-foreground">正文模板
-                    <input value={rule.content ?? rule.default_content ?? ""} onChange={(e) => updateRule(rule.key, { content: e.target.value })} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+                  <label className="block text-xs font-medium text-muted-foreground">
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                      <span>正文模板</span>
+                      {!hasCustomTriggerTemplate(rule, "content") ? (
+                        <span className="font-normal text-muted-foreground/80">系统默认</span>
+                      ) : null}
+                    </span>
+                    <textarea
+                      value={getTriggerTemplateDisplay(rule, "content")}
+                      onChange={(e) => updateRuleTemplate(rule.key, "content", e.target.value)}
+                      rows={2}
+                      className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-y"
+                    />
                   </label>
                 </div>
               </div>

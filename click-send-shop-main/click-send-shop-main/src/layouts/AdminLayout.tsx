@@ -31,7 +31,6 @@ import {
   ScrollText,
   Truck,
   UserCog,
-  User,
   LayoutGrid,
   Shield,
   MessageSquareMore,
@@ -39,15 +38,15 @@ import {
   CreditCard,
   Crown,
   Languages,
-  Lock,
   Paintbrush,
   MousePointerClick,
   Headphones,
   AlertTriangle,
   Database,
+  DatabaseBackup,
 } from "lucide-react";
-import AdminAccountSettingsDialog from "@/components/admin/AdminAccountSettingsDialog";
-import type { AdminAccountTab } from "@/components/admin/AdminAccountPanel";
+import AdminAccountSettingsTrigger from "@/components/admin/AdminAccountSettingsTrigger";
+import { AdminAccountSettingsProvider } from "@/modules/admin/context/AdminAccountSettingsContext";
 import { getHiddenAdminHeaderTitle, resolveAdminHeaderTitle } from "@/config/adminNavTitle";
 import SkinPickerDialog from "@/components/SkinPickerDialog";
 import { useAdminT } from "@/hooks/useAdminT";
@@ -96,6 +95,7 @@ const localNavLabels: Record<string, string> = {
 };
 
 function resolveNavLabel(t: (key: string) => string, key: string) {
+  if (key === "nav.backupCenter") return "备份与恢复";
   const translated = t(key);
   return translated === key ? localNavLabels[key] || key : translated;
 }
@@ -251,6 +251,7 @@ const navItemsRaw: NavItem[] = [
       { icon: Truck, labelKey: "nav.shipping", path: "/admin/settings/shipping", permission: "shipping.manage" },
       { icon: ScrollText, labelKey: "nav.auditLogs", path: "/admin/logs", permission: "audit.view" },
       { icon: Database, labelKey: "nav.dataRetention", path: "/admin/data-retention", permission: { anyOf: ["data_cleanup.view", "data_cleanup.manage", "data_cleanup.execute"] } },
+      { icon: DatabaseBackup, labelKey: "nav.backupCenter", path: "/admin/backups", permission: "backup.view" },
       { icon: RotateCcw, labelKey: "nav.recycleBin", path: "/admin/recycle-bin", permission: "recycle_bin.manage" },
     ],
   },
@@ -483,8 +484,6 @@ function AdminLayoutContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const [skinPickerOpen, setSkinPickerOpen] = useState(false);
-  const [accountDialogOpen, setAccountDialogOpen] = useState(false);
-  const [accountDialogTab, setAccountDialogTab] = useState<AdminAccountTab>("profile");
   const [topSearch, setTopSearch] = useState("");
   const [securityAlerts, setSecurityAlerts] = useState<SecurityAlertSummary | null>(null);
   const [securityAlertsOpen, setSecurityAlertsOpen] = useState(false);
@@ -594,12 +593,6 @@ function AdminLayoutContent() {
     return resolveAdminHeaderTitle(navItems, location.pathname, t("layout.title"));
   }, [navItems, location.pathname, t]);
 
-  const openAccountDialog = useCallback((tab: AdminAccountTab) => {
-    setAccountDialogTab(tab);
-    setAccountDialogOpen(true);
-    setAvatarMenuOpen(false);
-  }, []);
-
   const tab = mobileBottomTab(location.pathname);
 
   const showNotifTab = can("notification.manage") || can("notification.view");
@@ -611,6 +604,7 @@ function AdminLayoutContent() {
 
   return (
     <AdminConfirmProvider>
+    <AdminAccountSettingsProvider>
     <div data-admin-shell className="flex min-h-[100dvh] items-start bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <aside className="hidden w-[260px] shrink-0 self-start border-r border-[var(--theme-border)] bg-[var(--theme-card)] lg:sticky lg:top-0 lg:flex lg:h-[100dvh] lg:max-h-[100dvh] lg:flex-col">
         <AdminSidebarNav
@@ -668,10 +662,10 @@ function AdminLayoutContent() {
             >
               <Menu size={22} />
             </button>
-            <h2 className="min-w-0 truncate text-sm font-semibold text-foreground sm:text-base">
+            <h2 className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground sm:text-base">
               {headerTitle}
             </h2>
-            <div className="flex-1" />
+            <div className="flex shrink-0 flex-nowrap items-center gap-1 sm:gap-2">
             <div className="hidden items-center gap-2 rounded-xl bg-secondary px-3 py-2 md:flex">
               <Search size={16} className="shrink-0 text-muted-foreground" />
               <input
@@ -687,7 +681,8 @@ function AdminLayoutContent() {
               <div ref={securityAlertsRef} className="relative shrink-0">
                 <button
                   type="button"
-                  aria-label={t("layout.notifications")}
+                  aria-label={canViewSecurityAlerts ? "安全告警" : t("layout.notifications")}
+                  title={canViewSecurityAlerts ? "安全告警" : "通知中心"}
                   className="touch-manipulation relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-secondary"
                   onClick={() => {
                     if (canViewSecurityAlerts) {
@@ -763,7 +758,7 @@ function AdminLayoutContent() {
                 ) : null}
               </div>
             )}
-            {can("order.view") && <AdminOrderVoiceNotifier />}
+            {can("order.view") ? <AdminOrderVoiceNotifier /> : null}
             <div ref={avatarRef} className="relative shrink-0">
               <button
                 type="button"
@@ -810,22 +805,8 @@ function AdminLayoutContent() {
                     </div>
                   </div>
                   <div className="mx-3 my-1 h-px bg-border" />
-                  <button
-                    type="button"
-                    onClick={() => openAccountDialog("profile")}
-                    className="flex min-h-[44px] w-full items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-secondary"
-                  >
-                    <User size={16} />
-                    {t("layout.accountSettings")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openAccountDialog("password")}
-                    className="flex min-h-[44px] w-full items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-secondary"
-                  >
-                    <Lock size={16} />
-                    {t("layout.changePassword")}
-                  </button>
+                  <AdminAccountSettingsTrigger tab="profile" onBeforeOpen={() => setAvatarMenuOpen(false)} />
+                  <AdminAccountSettingsTrigger tab="password" onBeforeOpen={() => setAvatarMenuOpen(false)} />
                   <div className="mx-3 my-1 h-px bg-border" />
                   <button
                     type="button"
@@ -837,6 +818,7 @@ function AdminLayoutContent() {
                   </button>
                 </motion.div>
               )}
+            </div>
             </div>
           </div>
 
@@ -912,12 +894,8 @@ function AdminLayoutContent() {
         switchHint={t("skin.switchHint")}
         selectedBadge={t("skin.selected")}
       />
-      <AdminAccountSettingsDialog
-        open={accountDialogOpen}
-        onOpenChange={setAccountDialogOpen}
-        initialTab={accountDialogTab}
-      />
     </div>
+    </AdminAccountSettingsProvider>
     </AdminConfirmProvider>
   );
 }

@@ -47,9 +47,9 @@ sudo cp /var/www/click-send-shop/deploy/systemd/click-send-binlog-sync.service.e
 sudo systemctl daemon-reload
 sudo systemctl enable --now click-send-binlog-sync.timer
 
-echo "=== 7) Test binlog sync once ==="
+echo "=== 7) Test binlog sync once (root, same as systemd) ==="
 cd /var/www/click-send-shop/server
-npm run backup:binlog 2>&1 | tail -5 || true
+sudo npm run backup:binlog 2>&1 | tail -8 || true
 
 echo "=== 8) Verify ==="
 systemctl list-timers 'click-send*' --no-pager

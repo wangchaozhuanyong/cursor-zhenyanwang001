@@ -80,6 +80,7 @@ export default function Cart() {
   return (
     <div className="store-page-shell store-bottom-cart-space bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
       <StorePageHeader
+        centerTitle
         title={headerTitle}
         rightSlot={
           !isEmptyCart && items.length > 0 ? (

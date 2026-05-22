@@ -186,6 +186,24 @@ async function handleStripeEvent(event) {
     console.error('[stripe webhook] syncStatsAfterOrderPaid failed:', e?.message || e);
   }
   try {
+    const orderPoints = require('../../order/service/orderPoints.service');
+    const orderRepo = require('../../order/repository/order.repository');
+    const conn = await orderRepo.getConnection();
+    try {
+      await conn.beginTransaction();
+      const fullOrder = await orderRepo.selectOrderByIdForUpdate(conn, orderId);
+      if (fullOrder) {
+        await orderPoints.maybeGrantOrderEarnOnPaymentSuccess(conn, fullOrder, {
+          trigger: 'stripe_payment_success',
+        });
+      }
+      await conn.commit();
+    } catch (innerErr) {
+      await conn.rollback();
+      throw innerErr;
+    } finally {
+      conn.release();
+    }
   } catch (e) {
     console.error('[stripe webhook] grant payment-success points failed:', e?.message || e);
   }

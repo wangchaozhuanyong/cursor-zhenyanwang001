@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Loader2, Pencil, PackageSearch } from "lucide-react";
+import { Download, FileDown, Loader2, Pencil, PackageSearch, Upload } from "lucide-react";
 import { toast } from "sonner";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
@@ -12,7 +12,10 @@ import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
-import { exportProductsCsv, fetchProducts, patchProductLifecycle } from "@/services/admin/productService";
+import AdminCsvImportDialog from "@/components/admin/AdminCsvImportDialog";
+import PermissionGate from "@/components/admin/PermissionGate";
+import { exportProductsCsv, fetchProducts, importProductsCsv, patchProductLifecycle } from "@/services/admin/productService";
+import { downloadProductCsvTemplate } from "@/utils/productCsvTemplate";
 import type { Product, ProductListParams, ProductStatus } from "@/types/product";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { THEME_BADGE_DANGER, THEME_BADGE_MUTED, THEME_BADGE_SUCCESS, THEME_BADGE_WARNING } from "@/utils/themeVisuals";
@@ -91,7 +94,8 @@ export default function AdminProducts() {
   const [stockFilter, setStockFilter] = useState<StockFilter>("");
   const [costFilter, setCostFilter] = useState<CostFilter>("");
   const [sort, setSort] = useState<SortValue>("created_desc");
-  const [exporting, setExporting] = useState(false);
+  const [exportingScope, setExportingScope] = useState<"filtered" | "selected" | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const queryParams = useMemo<ProductListParams>(() => ({
     page,
@@ -171,16 +175,47 @@ export default function AdminProducts() {
     setPage(1);
   };
 
-  const handleExport = async () => {
-    setExporting(true);
+  const exportFilterParams = useMemo<ProductListParams>(() => ({
+    keyword: search.trim() || undefined,
+    status: statusFilter || undefined,
+    stock_status: stockFilter || undefined,
+    cost_status: costFilter || undefined,
+  }), [costFilter, search, statusFilter, stockFilter]);
+
+  const handleExportFiltered = async () => {
+    setExportingScope("filtered");
     try {
-      await exportProductsCsv({ keyword: search || undefined, status: statusFilter || undefined });
-      toast.success("已开始导出商品 CSV");
+      await exportProductsCsv(exportFilterParams);
+      toast.success("已开始下载 CSV");
     } catch (error) {
       toast.error(toastErrorMessage(error, "导出失败"));
     } finally {
-      setExporting(false);
+      setExportingScope(null);
     }
+  };
+
+  const handleExportSelected = async () => {
+    if (!selected.length) {
+      toast.warning("请先勾选要导出的商品");
+      return;
+    }
+    setExportingScope("selected");
+    try {
+      await exportProductsCsv({ ids: selected });
+      toast.success(`已开始导出 ${selected.length} 个商品`);
+    } catch (error) {
+      toast.error(toastErrorMessage(error, "批量导出失败"));
+    } finally {
+      setExportingScope(null);
+    }
+  };
+
+  const handleImportSuccess = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.inventoryRoot() }),
+    ]);
+    setSelected([]);
   };
 
   return (
@@ -222,10 +257,20 @@ export default function AdminProducts() {
             <option value="margin_asc">毛利率从低到高</option>
             <option value="margin_desc">毛利率从高到低</option>
           </select>
-          <button type="button" onClick={handleExport} disabled={exporting} className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:bg-secondary disabled:opacity-60">
-            {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-            导出
+          <button type="button" onClick={handleExportFiltered} disabled={exportingScope !== null} className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:bg-secondary disabled:opacity-60">
+            {exportingScope === "filtered" ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+            导出筛选结果
           </button>
+          <PermissionGate permission="product.manage">
+            <button type="button" onClick={() => downloadProductCsvTemplate()} className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:bg-secondary">
+              <FileDown size={14} />
+              下载模板
+            </button>
+            <button type="button" onClick={() => setImportOpen(true)} className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:bg-secondary">
+              <Upload size={14} />
+              批量导入
+            </button>
+          </PermissionGate>
           <button className="rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-secondary" onClick={() => navigate("/admin/products/new")}>新增商品</button>
         </div>
       </div>
@@ -233,10 +278,45 @@ export default function AdminProducts() {
       <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={removeFilterChip} />
 
       <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs text-muted-foreground">已选 {selected.length} 件</span>
+        <button
+          type="button"
+          disabled={selected.length === 0 || exportingScope !== null}
+          onClick={handleExportSelected}
+          className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60"
+        >
+          {exportingScope === "selected" ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+          批量导出 ({selected.length})
+        </button>
+        {selected.length > 0 ? (
+          <button type="button" onClick={() => setSelected([])} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary">
+            清空选择
+          </button>
+        ) : null}
         <button type="button" disabled={batchStatusMutation.isPending || selected.length === 0} onClick={() => batchStatusMutation.mutate("active")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">批量上架 ({selected.length})</button>
         <button type="button" disabled={batchStatusMutation.isPending || selected.length === 0} onClick={() => batchStatusMutation.mutate("inactive")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">批量下架 ({selected.length})</button>
         <button type="button" onClick={() => void productsQuery.refetch()} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary">刷新</button>
       </div>
+
+      <AdminCsvImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        title="批量导入商品"
+        onImport={importProductsCsv}
+        extraHints={[
+          "ERP 格式：同一商品多行，每行一个 SKU（规格名称/SKU编码/售价/库存/成本价）",
+          "标签列填中文名，多个用逗号分隔（须在「标签管理」中已存在）",
+          "无规格编号时可用 SKU 编码匹配已有 SKU",
+        ]}
+        onSuccess={async (result) => {
+          toast.success(
+            `导入完成：新建 ${result.created} 条，更新 ${result.updated} 条${
+              result.sku_rows ? `，同步 ${result.sku_rows} 个 SKU` : ""
+            }${result.skipped ? `，跳过 ${result.skipped} 条` : ""}`,
+          );
+          await handleImportSuccess();
+        }}
+      />
 
       <AnimatedTable
         loading={productsQuery.isLoading}

@@ -1,6 +1,28 @@
 const db = require('../../../config/db');
 const { BusinessError } = require('../../../errors/BusinessError');
 
+async function selectVariantsByProductIds(productIds) {
+  const map = new Map();
+  if (!productIds.length) return map;
+  const uniq = [...new Set(productIds)];
+  const ph = uniq.map(() => '?').join(',');
+  const [rows] = await db.query(
+    `SELECT id, product_id, sku_code, title, price, original_price, stock, sort_order, is_default,
+            stock_warning_threshold, cost_price, barcode, image_url, weight, enabled
+     FROM product_variants
+     WHERE product_id IN (${ph}) AND deleted_at IS NULL
+     ORDER BY product_id ASC, is_default DESC, sort_order ASC, created_at ASC`,
+    uniq,
+  );
+  for (const id of uniq) map.set(id, []);
+  for (const row of rows) {
+    const list = map.get(row.product_id) || [];
+    list.push(row);
+    map.set(row.product_id, list);
+  }
+  return map;
+}
+
 async function selectVariantsByProductId(productId, opts = {}) {
   const includeDeleted = !!opts.includeDeleted;
   const [rows] = await db.query(
@@ -334,6 +356,7 @@ async function updateDefaultVariantPriceStock(productId, price, stock) {
 
 module.exports = {
   selectVariantsByProductId,
+  selectVariantsByProductIds,
   selectSpecGroupsByProductId,
   selectVariantSpecValuesByProductId,
   selectProductSkuMatrix,

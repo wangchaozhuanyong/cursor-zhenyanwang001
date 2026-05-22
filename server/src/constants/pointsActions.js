@@ -7,6 +7,7 @@ const POINTS_ACTION = Object.freeze({
   PENDING_REVERSE: 'pending_reverse',
   ADMIN_ADD: 'admin_add',
   ADMIN_DEDUCT: 'admin_deduct',
+  POINTS_EXPIRE: 'points_expire',
 });
 
 module.exports = { POINTS_ACTION };

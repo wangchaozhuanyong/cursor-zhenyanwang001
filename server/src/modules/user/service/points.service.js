@@ -1,6 +1,10 @@
 const { generateId } = require('../../../utils/helpers');
 const { BusinessError } = require('../../../errors/BusinessError');
 const { POINTS_ACTION } = require('../../../constants/pointsActions');
+const { klDateString } = require('../../../utils/klDateRange');
+const { normalizeSettings } = require('../../loyalty/service/pointsEngine.service');
+const { getOrderPointsHint } = require('../../loyalty/service/pointsLoyaltyHints');
+const loyaltyRepo = require('../../loyalty/repository/loyalty.repository');
 const repo = require('../repository/points.repository');
 
 function toInt(value) {
@@ -241,6 +245,8 @@ async function resolveSignInAward() {
 
 async function getClientPointsConfig() {
   const { points, enabled, hasRule } = await resolveSignInAward();
+  const pointsSettings = await loyaltyRepo.selectPointsSettings();
+  const settleTiming = pointsSettings?.settle_timing || 'order_completed';
   const p = toInt(points);
   const configInvalid = hasRule && enabled && p < 1;
   return {
@@ -257,13 +263,13 @@ async function getClientPointsConfig() {
             ? '每日签到积分必须至少为 1'
             : null,
     },
-    /** 鐠併垹宕熺粔顖氬瀻閺夈儴鍤滈崯鍡楁惂閵嗗瞼袧閸掑棗鈧鈧秴鐡у▓纰夌礉閺€顖欑帛鐎瑰本鍨氶崥搴″弳鐠?*/
-    orderPointsHint: '订单支付完成后，将按后台当前积分规则发放积分。',
+    orderPointsHint: getOrderPointsHint(settleTiming),
+    settleTiming,
   };
 }
 
 async function signIn(userId) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = klDateString();
   const existing = await repo.findSignInToday(userId, today);
   if (existing) return { error: { code: 400, message: '今天已经签到过了' } };
 
@@ -284,6 +290,8 @@ async function signIn(userId) {
 }
 
 async function adjustUserPoints(userId, amount, reason, operatorId) {
+  const pointsSettings = await loyaltyRepo.selectPointsSettings();
+  const allowNegative = !!normalizeSettings(pointsSettings || {}).allow_negative_points;
   return runInTransaction((conn) => changeUserPoints(conn, {
     userId,
     amount,
@@ -291,7 +299,7 @@ async function adjustUserPoints(userId, amount, reason, operatorId) {
     description: reason || '后台积分调整',
     sourceType: 'admin_adjust',
     operatorId,
-    allowNegative: false,
+    allowNegative,
   }));
 }
 

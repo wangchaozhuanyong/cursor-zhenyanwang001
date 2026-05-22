@@ -66,7 +66,7 @@ function normalizeSettingsBody(body = {}) {
     allow_with_coupon: body.allow_with_coupon ?? body.allowWithCoupon,
     allow_with_reward_cash: body.allow_with_reward_cash ?? body.allowWithRewardCash,
     zero_pay_allowed: body.zero_pay_allowed ?? body.zeroPayAllowed,
-    settle_timing: 'order_completed',
+    settle_timing: body.settle_timing ?? body.settleTiming ?? 'order_completed',
     expire_enabled: body.expire_enabled ?? body.expireEnabled,
     expire_days: body.expire_days ?? body.expireDays,
     allow_negative_points: body.allow_negative_points ?? body.allowNegativePoints,
@@ -203,6 +203,22 @@ async function updateProductRule(id, body, req) {
   return after;
 }
 
+async function runPointsExpireJob(req) {
+  const { runPointsExpireTick } = require('../../loyalty/service/pointsExpire.service');
+  const result = await runPointsExpireTick();
+  await writeAuditLog({
+    req,
+    operatorId: req.user?.id,
+    actionType: 'points.expire.run',
+    objectType: 'loyalty_points_settings',
+    objectId: '1',
+    summary: '手动执行积分过期扣减',
+    after: result,
+    result: 'success',
+  });
+  return result;
+}
+
 async function deleteProductRule(id, req) {
   const before = await repo.selectProductRuleById(id);
   if (!before) throw new NotFoundError('规则不存在');
@@ -229,4 +245,5 @@ module.exports = {
   createProductRule,
   updateProductRule,
   deleteProductRule,
+  runPointsExpireJob,
 };

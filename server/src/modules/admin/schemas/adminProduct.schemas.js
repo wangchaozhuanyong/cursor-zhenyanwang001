@@ -58,6 +58,7 @@ const adminProductListQuerySchema = z.object({
     'margin_asc',
     'margin_desc',
   ]).optional(),
+  ids: z.union([z.string().max(40000), z.array(z.string().max(36)).max(1000)]).optional(),
 });
 
 const adminProductCreateBodySchema = z.object({

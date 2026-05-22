@@ -32,6 +32,16 @@ import { formatDateTime } from "@/utils/formatDateTime";
 import { THEME_BADGE_SUCCESS, THEME_BADGE_WARNING, THEME_TEXT_DANGER, THEME_TEXT_SUCCESS_SOFT, THEME_TEXT_WARNING } from "@/utils/themeVisuals";
 
 const PAGE_SIZE = 20;
+const BATCH_MAX = 50;
+
+const EMPTY_BATCH_ADJUST: BatchAdjustForm = {
+  change_type: "in",
+  quantity: "",
+  reason: "",
+  remark: "",
+  source_no: "",
+  cost_price: "",
+};
 
 type TabKey = "skus" | "records" | "rules" | "conversions";
 type AdjustForm = { sku: InventorySku; change_type: "in" | "out" | "adjust"; quantity: string; reason: string; remark: string; source_no: string; cost_price: string };
@@ -71,6 +81,13 @@ function stockStatusText(sku: InventorySku) {
   return "正常";
 }
 
+function validateAdjustQuantity(changeType: "in" | "out" | "adjust", qty: number, stock: number) {
+  if (!Number.isInteger(qty)) throw new Error("数量必须为整数");
+  if (changeType === "adjust" && qty < 0) throw new Error("盘点后的库存必须大于等于 0");
+  if (changeType !== "adjust" && qty <= 0) throw new Error("数量必须大于 0");
+  if (changeType === "out" && qty > stock) throw new Error("出库数量不能超过当前库存");
+}
+
 export default function AdminInventory() {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<TabKey>("skus");
@@ -83,6 +100,10 @@ export default function AdminInventory() {
   const [changeType, setChangeType] = useState("");
   const [conversionType, setConversionType] = useState("");
   const [adjusting, setAdjusting] = useState<AdjustForm | null>(null);
+  const [selectedVariantIds, setSelectedVariantIds] = useState<string[]>([]);
+  const [skuCache, setSkuCache] = useState<Record<string, InventorySku>>({});
+  const [batchThreshold, setBatchThreshold] = useState<BatchThresholdForm | null>(null);
+  const [batchAdjust, setBatchAdjust] = useState<BatchAdjustForm | null>(null);
   const [ruleForm, setRuleForm] = useState<RuleForm | null>(null);
   const [convertForm, setConvertForm] = useState<ConvertForm | null>(null);
 
@@ -133,6 +154,55 @@ export default function AdminInventory() {
     onError: (error) => toast.error(toastErrorMessage(error, "保存预警值失败")),
   });
 
+  const batchThresholdMutation = useMutation({
+    mutationFn: async () => {
+      if (!batchThreshold || selectedVariantIds.length === 0) return;
+      if (selectedVariantIds.length > BATCH_MAX) throw new Error(`单次最多处理 ${BATCH_MAX} 个 SKU`);
+      const threshold = Number(batchThreshold.threshold);
+      if (!Number.isInteger(threshold) || threshold < 0) throw new Error("预警阈值必须为非负整数");
+      return batchUpdateInventoryWarningThreshold(selectedVariantIds, threshold);
+    },
+    onSuccess: async (result) => {
+      toast.success(`已更新 ${result?.updated ?? selectedVariantIds.length} 条预警值`);
+      setBatchThreshold(null);
+      setSelectedVariantIds([]);
+      await invalidateInventory();
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, "批量设置预警值失败")),
+  });
+
+  const batchAdjustMutation = useMutation({
+    mutationFn: async () => {
+      if (!batchAdjust || selectedVariantIds.length === 0) return;
+      if (selectedVariantIds.length > BATCH_MAX) throw new Error(`单次最多处理 ${BATCH_MAX} 个 SKU`);
+      const reason = batchAdjust.reason.trim();
+      if (!reason) throw new Error("请填写原因");
+      const qty = Number(batchAdjust.quantity);
+      const items = selectedVariantIds.map((variantId) => {
+        const sku = skuCache[variantId];
+        if (!sku) throw new Error("部分 SKU 数据未加载，请刷新后重试");
+        validateAdjustQuantity(batchAdjust.change_type, qty, sku.stock);
+        return {
+          variant_id: variantId,
+          change_type: batchAdjust.change_type,
+          quantity: qty,
+          reason,
+          remark: batchAdjust.remark.trim() || undefined,
+          source_no: batchAdjust.source_no.trim() || undefined,
+          cost_price: batchAdjust.cost_price ? Number(batchAdjust.cost_price) : undefined,
+        };
+      });
+      return batchAdjustInventory(items);
+    },
+    onSuccess: async (result) => {
+      toast.success(`已批量调整 ${result?.updated ?? selectedVariantIds.length} 条库存`);
+      setBatchAdjust(null);
+      setSelectedVariantIds([]);
+      await invalidateInventory();
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, "批量库存调整失败，请刷新后核对流水")),
+  });
+
   const saveRuleMutation = useMutation({
     mutationFn: async () => {
       if (!ruleForm) return;
@@ -175,6 +245,40 @@ export default function AdminInventory() {
 
   const summary = summaryQuery.data;
   const skus = skusQuery.data?.list || [];
+  const pageVariantIds = useMemo(() => skus.map((sku) => sku.variant_id), [skus]);
+  const allSelectedOnPage = pageVariantIds.length > 0 && pageVariantIds.every((id) => selectedVariantIds.includes(id));
+  const selectedCount = selectedVariantIds.length;
+
+  useEffect(() => {
+    if (!skus.length) return;
+    setSkuCache((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const sku of skus) {
+        if (next[sku.variant_id] !== sku) {
+          next[sku.variant_id] = sku;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [skus]);
+
+  const toggleVariantSelect = (variantId: string) => {
+    setSelectedVariantIds((prev) => (prev.includes(variantId) ? prev.filter((id) => id !== variantId) : [...prev, variantId]));
+  };
+
+  const togglePageVariantSelection = () => {
+    setSelectedVariantIds((prev) => (
+      allSelectedOnPage ? prev.filter((id) => !pageVariantIds.includes(id)) : [...new Set([...prev, ...pageVariantIds])]
+    ));
+  };
+
+  const selectedSkuPreview = useMemo(
+    () => selectedVariantIds.slice(0, 5).map((id) => skuCache[id]).filter(Boolean) as InventorySku[],
+    [selectedVariantIds, skuCache],
+  );
+
   const records = recordsQuery.data?.list || [];
   const rules = rulesQuery.data?.list || [];
   const conversions = conversionsQuery.data?.list || [];
@@ -227,7 +331,16 @@ export default function AdminInventory() {
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1); setRecordsPage(1); setRulesPage(1); setConversionsPage(1); }} placeholder="搜索商品、SKU、单据号..." className="w-full rounded-lg bg-secondary py-2.5 pl-9 pr-4 text-sm" />
             </div>
-            {tab === "skus" ? <select value={stockStatus} onChange={(e) => { setStockStatus(e.target.value as typeof stockStatus); setPage(1); }} className="rounded-lg bg-secondary px-3 py-2.5 text-sm"><option value="">全部库存状态</option><option value="normal">正常</option><option value="low">低库存</option><option value="out">缺货</option></select> : null}
+            {tab === "skus" ? (
+              <>
+                <select value={stockStatus} onChange={(e) => { setStockStatus(e.target.value as typeof stockStatus); setPage(1); }} className="rounded-lg bg-secondary px-3 py-2.5 text-sm"><option value="">全部库存状态</option><option value="normal">正常</option><option value="low">低库存</option><option value="out">缺货</option></select>
+                <button type="button" disabled={selectedCount === 0} onClick={() => setBatchThreshold({ threshold: "10" })} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm disabled:opacity-50">批量预警值 ({selectedCount})</button>
+                <button type="button" disabled={selectedCount === 0} onClick={() => setBatchAdjust({ ...EMPTY_BATCH_ADJUST })} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm disabled:opacity-50">批量库存调整 ({selectedCount})</button>
+                {selectedCount > 0 ? (
+                  <button type="button" onClick={() => setSelectedVariantIds([])} className="rounded-lg bg-secondary px-3 py-2.5 text-xs text-muted-foreground">清空选择</button>
+                ) : null}
+              </>
+            ) : null}
             {tab === "records" ? <select value={changeType} onChange={(e) => { setChangeType(e.target.value); setRecordsPage(1); }} className="rounded-lg bg-secondary px-3 py-2.5 text-sm"><option value="">全部流水类型</option>{Object.entries(CHANGE_LABEL).map(([key, value]) => <option key={key} value={key}>{value}</option>)}</select> : null}
             {tab === "conversions" ? <select value={conversionType} onChange={(e) => { setConversionType(e.target.value); setConversionsPage(1); }} className="rounded-lg bg-secondary px-3 py-2.5 text-sm"><option value="">全部单据类型</option><option value="unpack">手动拆包</option><option value="assemble">手动组装</option><option value="auto_unpack">自动拆包</option></select> : null}
             {tab === "rules" ? <button onClick={() => setRuleForm({ parent_qty: 1, child_qty: 0, enabled: true, manual_unpack_enabled: true, manual_assemble_enabled: true, auto_unpack_enabled: false })} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"><Plus size={15} />新增规则</button> : null}
@@ -237,8 +350,51 @@ export default function AdminInventory() {
 
         {tab === "skus" ? (
           <>
-            <AnimatedTable embedded loading={skusQuery.isLoading} rows={skus} rowKey={(sku) => sku.variant_id} skeletonRows={8} skeletonCols={9} tableClassName="w-full min-w-[1220px] text-left text-sm" theadClassName="border-b border-border text-xs text-muted-foreground" emptyIcon={Package} emptyTitle="暂无 SKU 库存" emptyDescription="创建商品规格后会显示库存。" thead={<tr>{["商品", "规格/SKU", "分类", "库存", "单位", "预警值", "状态", "更新时间", "操作"].map((head) => <th key={head} className="px-4 py-3 text-left">{head}</th>)}</tr>}
-              renderRow={(sku) => <><td className="max-w-[14rem] px-4 py-3 align-middle"><div className="flex items-center gap-3">{sku.cover_image ? <img src={sku.cover_image} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" /> : <div className="h-10 w-10 shrink-0 rounded-lg bg-secondary" />}<AdminTableCellGroup maxWidth="10rem" lines={[{ text: sku.product_name }, { text: sku.sku_code ? `SKU：${sku.sku_code}` : "SKU：未填写", muted: true }]} tooltipLines={[sku.product_name, sku.sku_code ? `SKU：${sku.sku_code}` : "SKU：未填写"]} /></div></td><td className="px-4 py-3"><p>{sku.variant_title || sku.spec_text || "默认规格"}</p><p className="text-xs text-muted-foreground">{sku.sku_code || "-"}</p></td><td className="px-4 py-3 text-muted-foreground">{sku.category_name || "未分类"}</td><td className="px-4 py-3"><span className={sku.out_of_stock ? `font-bold ${THEME_TEXT_DANGER}` : sku.low_stock ? `font-bold ${THEME_TEXT_WARNING}` : "font-medium"}>{sku.available_stock} {sku.unit_name || "件"}</span><span className="ml-1 text-xs text-muted-foreground">(总 {sku.stock} {sku.unit_name || "件"})</span></td><td className="px-4 py-3">{sku.unit_name || "件"}</td><td className="px-4 py-3"><input type="number" min={0} defaultValue={sku.stock_warning_threshold} onBlur={(e) => { const threshold = Number(e.target.value); if (Number.isInteger(threshold) && threshold >= 0 && threshold !== sku.stock_warning_threshold) thresholdMutation.mutate({ sku, threshold }); }} className="w-20 rounded-lg bg-secondary px-2 py-1.5 text-xs" /></td><td className="px-4 py-3 text-xs">{stockStatusText(sku)}</td><td className="px-4 py-3 text-xs text-muted-foreground">{sku.updated_at ? formatDateTime(sku.updated_at) : "-"}</td><td className="px-4 py-3"><div className="flex justify-end gap-2"><button type="button" onClick={() => setAdjusting({ sku, change_type: "in", quantity: "", reason: "", remark: "", source_no: "", cost_price: "" })} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_SUCCESS}`}>入库</button><button type="button" onClick={() => setAdjusting({ sku, change_type: "out", quantity: "", reason: "", remark: "", source_no: "", cost_price: "" })} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_WARNING}`}>出库</button><button type="button" onClick={() => setAdjusting({ sku, change_type: "adjust", quantity: String(sku.stock), reason: "", remark: "", source_no: "", cost_price: "" })} className="rounded-lg bg-gold/10 px-3 py-1.5 text-xs text-theme-price">盘点</button></div></td></>}
+            <AnimatedTable embedded loading={skusQuery.isLoading} rows={skus} rowKey={(sku) => sku.variant_id} skeletonRows={8} skeletonCols={10} tableClassName="w-full min-w-[1260px] text-left text-sm" theadClassName="border-b border-border text-xs text-muted-foreground" emptyIcon={Package} emptyTitle="暂无 SKU 库存" emptyDescription="创建商品规格后会显示库存。" thead={(
+              <tr>
+                <th className="w-10 px-4 py-3">
+                  <input type="checkbox" checked={allSelectedOnPage} onChange={togglePageVariantSelection} aria-label="全选当前页" />
+                </th>
+                {["商品", "规格/SKU", "分类", "库存", "单位", "预警值", "状态", "更新时间", "操作"].map((head) => (
+                  <th key={head} className="px-4 py-3 text-left">{head}</th>
+                ))}
+              </tr>
+            )}
+              renderRow={(sku) => {
+                const checked = selectedVariantIds.includes(sku.variant_id);
+                return (
+                  <>
+                    <td className="px-4 py-3">
+                      <input type="checkbox" checked={checked} onChange={() => toggleVariantSelect(sku.variant_id)} aria-label={`选择 ${sku.product_name}`} />
+                    </td>
+                    <td className="max-w-[14rem] px-4 py-3 align-middle">
+                      <div className="flex items-center gap-3">
+                        {sku.cover_image ? <img src={sku.cover_image} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" /> : <div className="h-10 w-10 shrink-0 rounded-lg bg-secondary" />}
+                        <AdminTableCellGroup maxWidth="10rem" lines={[{ text: sku.product_name }, { text: sku.sku_code ? `SKU：${sku.sku_code}` : "SKU：未填写", muted: true }]} tooltipLines={[sku.product_name, sku.sku_code ? `SKU：${sku.sku_code}` : "SKU：未填写"]} />
+                      </div>
+                    </td>
+                    <td className="px-4 py-3"><p>{sku.variant_title || sku.spec_text || "默认规格"}</p><p className="text-xs text-muted-foreground">{sku.sku_code || "-"}</p></td>
+                    <td className="px-4 py-3 text-muted-foreground">{sku.category_name || "未分类"}</td>
+                    <td className="px-4 py-3">
+                      <span className={sku.out_of_stock ? `font-bold ${THEME_TEXT_DANGER}` : sku.low_stock ? `font-bold ${THEME_TEXT_WARNING}` : "font-medium"}>{sku.available_stock} {sku.unit_name || "件"}</span>
+                      <span className="ml-1 text-xs text-muted-foreground">(总 {sku.stock} {sku.unit_name || "件"})</span>
+                    </td>
+                    <td className="px-4 py-3">{sku.unit_name || "件"}</td>
+                    <td className="px-4 py-3">
+                      <input type="number" min={0} defaultValue={sku.stock_warning_threshold} onBlur={(e) => { const threshold = Number(e.target.value); if (Number.isInteger(threshold) && threshold >= 0 && threshold !== sku.stock_warning_threshold) thresholdMutation.mutate({ sku, threshold }); }} className="w-20 rounded-lg bg-secondary px-2 py-1.5 text-xs" />
+                    </td>
+                    <td className="px-4 py-3 text-xs">{stockStatusText(sku)}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">{sku.updated_at ? formatDateTime(sku.updated_at) : "-"}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-2">
+                        <button type="button" onClick={() => setAdjusting({ sku, change_type: "in", quantity: "", reason: "", remark: "", source_no: "", cost_price: "" })} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_SUCCESS}`}>入库</button>
+                        <button type="button" onClick={() => setAdjusting({ sku, change_type: "out", quantity: "", reason: "", remark: "", source_no: "", cost_price: "" })} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${THEME_BADGE_WARNING}`}>出库</button>
+                        <button type="button" onClick={() => setAdjusting({ sku, change_type: "adjust", quantity: String(sku.stock), reason: "", remark: "", source_no: "", cost_price: "" })} className="rounded-lg bg-gold/10 px-3 py-1.5 text-xs text-theme-price">盘点</button>
+                      </div>
+                    </td>
+                  </>
+                );
+              }}
             />
             <Pagination total={skusQuery.data?.total || 0} page={page} pageSize={PAGE_SIZE} onPageChange={setPage} onPageSizeChange={() => undefined} />
           </>
@@ -269,6 +425,57 @@ export default function AdminInventory() {
             />
             <Pagination total={conversionsQuery.data?.total || 0} page={conversionsPage} pageSize={PAGE_SIZE} onPageChange={setConversionsPage} onPageSizeChange={() => undefined} />
           </>
+        ) : null}
+
+        {batchThreshold ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setBatchThreshold(null)}>
+            <div className="w-full max-w-md rounded-2xl bg-card p-6" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-base font-bold">批量设置预警值</h3>
+              <p className="mt-1 text-xs text-muted-foreground">已选 {selectedCount} 个 SKU（单次最多 {BATCH_MAX} 个）</p>
+              {selectedSkuPreview.length > 0 ? (
+                <ul className="mt-3 max-h-32 space-y-1 overflow-y-auto rounded-lg bg-secondary p-3 text-xs text-muted-foreground">
+                  {selectedSkuPreview.map((sku) => <li key={sku.variant_id}>{skuLabel(sku)}</li>)}
+                  {selectedCount > selectedSkuPreview.length ? <li>…等 {selectedCount} 项</li> : null}
+                </ul>
+              ) : null}
+              <input type="number" min={0} value={batchThreshold.threshold} onChange={(e) => setBatchThreshold({ threshold: e.target.value })} placeholder="预警阈值" className="mt-4 w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+              <div className="mt-5 flex justify-end gap-2">
+                <button type="button" onClick={() => setBatchThreshold(null)} className="rounded-lg border border-border px-4 py-2.5 text-sm">取消</button>
+                <button type="button" disabled={batchThresholdMutation.isPending || selectedCount === 0 || selectedCount > BATCH_MAX} onClick={() => batchThresholdMutation.mutate()} className="rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+                  {batchThresholdMutation.isPending ? "提交中..." : "确认"}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {batchAdjust ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setBatchAdjust(null)}>
+            <div className="w-full max-w-md rounded-2xl bg-card p-6" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-base font-bold">批量{CHANGE_LABEL[batchAdjust.change_type]}</h3>
+              <p className="mt-1 text-xs text-muted-foreground">已选 {selectedCount} 个 SKU，将使用相同数量与原因</p>
+              <div className="mt-4 space-y-3">
+                <select value={batchAdjust.change_type} onChange={(e) => setBatchAdjust({ ...batchAdjust, change_type: e.target.value as BatchAdjustForm["change_type"] })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm">
+                  <option value="in">入库</option>
+                  <option value="out">出库</option>
+                  <option value="adjust">盘点调整</option>
+                </select>
+                <input type="number" min={batchAdjust.change_type === "adjust" ? 0 : 1} value={batchAdjust.quantity} onChange={(e) => setBatchAdjust({ ...batchAdjust, quantity: e.target.value })} placeholder={batchAdjust.change_type === "adjust" ? "盘点后实际库存" : "数量"} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+                <input value={batchAdjust.reason} onChange={(e) => setBatchAdjust({ ...batchAdjust, reason: e.target.value })} placeholder="原因（必填）" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+                <input value={batchAdjust.remark} onChange={(e) => setBatchAdjust({ ...batchAdjust, remark: e.target.value })} placeholder="备注（可选）" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+                <div className="grid grid-cols-2 gap-2">
+                  <input value={batchAdjust.source_no} onChange={(e) => setBatchAdjust({ ...batchAdjust, source_no: e.target.value })} placeholder="来源单号" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+                  <input type="number" value={batchAdjust.cost_price} onChange={(e) => setBatchAdjust({ ...batchAdjust, cost_price: e.target.value })} placeholder="成本价" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+                </div>
+              </div>
+              <div className="mt-5 flex justify-end gap-2">
+                <button type="button" onClick={() => setBatchAdjust(null)} className="rounded-lg border border-border px-4 py-2.5 text-sm">取消</button>
+                <button type="button" disabled={batchAdjustMutation.isPending || selectedCount === 0 || selectedCount > BATCH_MAX} onClick={() => batchAdjustMutation.mutate()} className="rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+                  {batchAdjustMutation.isPending ? "提交中..." : "确认"}
+                </button>
+              </div>
+            </div>
+          </div>
         ) : null}
 
         {adjusting ? (

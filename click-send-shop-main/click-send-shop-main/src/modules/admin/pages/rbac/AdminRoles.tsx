@@ -12,6 +12,8 @@ import { AdminTabsPanelSkeleton } from "@/components/admin/AdminLoadingSkeletons
 import { LoadingButton } from "@/modules/micro-interactions";
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
+import AdminPermissionPicker from "@/components/admin/AdminPermissionPicker";
+import AdminRolePicker, { getDefaultAdminRoleIds } from "@/components/admin/AdminRolePicker";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { THEME_BTN_DANGER_SOLID, THEME_OUTLINE_DANGER, THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
@@ -45,7 +47,7 @@ export default function AdminRoles() {
   const [showRoleModal, setShowRoleModal] = useState(false);
 
   const [showAdminModal, setShowAdminModal] = useState(false);
-  const [adminForm, setAdminForm] = useState({ phone: "", password: "", nickname: "" });
+  const [adminForm, setAdminForm] = useState({ phone: "", password: "", nickname: "", roleIds: [] as number[] });
   const [showResetModal, setShowResetModal] = useState<string | null>(null);
   const [resetPw, setResetPw] = useState("");
   const [confirmDeleteAdmin, setConfirmDeleteAdmin] = useState<RbacAdminUserRow | null>(null);
@@ -69,6 +71,10 @@ export default function AdminRoles() {
   const loading = overviewQuery.isLoading && !overviewQuery.data;
   const selectedAdmin = admins.find((u) => u.id === selectedUserId) || null;
   const selectedTargetLocked = !isSuperAdminViewer && hasPrivilegedRole(selectedAdmin);
+  const assignedRoleIds = useMemo(
+    () => Object.entries(checked).filter(([, v]) => v).map(([k]) => Number(k)).filter((n) => Number.isFinite(n)),
+    [checked],
+  );
 
   const invalidateRbac = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.rbacRoot() });
 
@@ -91,7 +97,13 @@ export default function AdminRoles() {
     setChecked(next);
   }, [userRolesQuery.data]);
 
-  const toggleRole = (id: number) => setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
+  useEffect(() => {
+    if (!showAdminModal || adminForm.roleIds.length || !roles.length) return;
+    setAdminForm((prev) => ({
+      ...prev,
+      roleIds: getDefaultAdminRoleIds(roles, isSuperAdminViewer),
+    }));
+  }, [adminForm.roleIds.length, isSuperAdminViewer, roles, showAdminModal]);
 
   const handleSave = async () => {
     if (!selectedUserId) return;
@@ -192,22 +204,17 @@ export default function AdminRoles() {
                   <Tx>该账号拥有 admin_manager / super_admin 角色，仅超级管理员可调整。</Tx>
                 </p>
               ) : null}
-              <ul className="space-y-2">
-                {roles.map((r) => {
-                  const roleLocked = !isSuperAdminViewer && PRIVILEGED_ROLE_CODES.has(r.code);
-                  return (
-                  <li key={r.id} className="flex items-start gap-3">
-                    <input type="checkbox" id={`role-${r.id}`} checked={!!checked[r.id]} onChange={() => toggleRole(r.id)} disabled={selectedTargetLocked || roleLocked} className="mt-1 h-4 w-4 rounded border-border disabled:opacity-50" />
-                    <label htmlFor={`role-${r.id}`} className="flex-1 cursor-pointer text-sm">
-                      <span className="font-medium text-foreground">{r.name}</span>
-                      <span className="ml-2 text-xs text-muted-foreground">{labelRbacRoleCode(r.code)}</span>
-                      {r.is_system ? <span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground"><Tx>系统</Tx></span> : null}
-                      {roleLocked ? <span className="ml-2 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground"><Tx>仅超级管理员</Tx></span> : null}
-                    </label>
-                  </li>
-                  );
-                })}
-              </ul>
+              <AdminRolePicker
+                roles={roles}
+                selectedRoleIds={assignedRoleIds}
+                onChange={(roleIds) => {
+                  const next: Record<number, boolean> = {};
+                  for (const role of roles) next[role.id] = roleIds.includes(role.id);
+                  setChecked(next);
+                }}
+                isSuperAdminViewer={isSuperAdminViewer}
+                disabled={selectedTargetLocked}
+              />
             </PermissionGate>
           </div>
           <PermissionGate permission="role.manage">
@@ -272,7 +279,7 @@ export default function AdminRoles() {
               />
             </div>
             <PermissionGate permission="role.manage">
-              <button onClick={() => { setAdminForm({ phone: "", password: "", nickname: "" }); setShowAdminModal(true); }} className="flex items-center gap-1 theme-rounded px-3 py-2 text-xs font-medium btn-theme-gradient">
+              <button onClick={() => { setAdminForm({ phone: "", password: "", nickname: "", roleIds: [] }); setShowAdminModal(true); }} className="flex items-center gap-1 theme-rounded px-3 py-2 text-xs font-medium btn-theme-gradient">
                 <Plus size={14} /><Tx> 新增管理员
               </Tx></button>
             </PermissionGate>
@@ -335,13 +342,25 @@ export default function AdminRoles() {
               <div><label className="text-xs font-medium text-muted-foreground"><Tx>手机号</Tx></label><input value={adminForm.phone} onChange={(e) => setAdminForm((p) => ({ ...p, phone: e.target.value }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" /></div>
               <div><label className="text-xs font-medium text-muted-foreground"><Tx>密码</Tx></label><input type="password" value={adminForm.password} onChange={(e) => setAdminForm((p) => ({ ...p, password: e.target.value }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" /></div>
               <div><label className="text-xs font-medium text-muted-foreground"><Tx>昵称</Tx></label><input value={adminForm.nickname} onChange={(e) => setAdminForm((p) => ({ ...p, nickname: e.target.value }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" /></div>
+              <div>
+                <div className="mb-2 flex items-center gap-1.5">
+                  <span className="text-xs font-medium text-muted-foreground">初始角色</span>
+                  <AdminFieldHint text="创建后也可以在「用户角色分配」里继续调整。普通管理员不能分配 admin_manager / super_admin。" />
+                </div>
+                <AdminRolePicker
+                  roles={roles}
+                  selectedRoleIds={adminForm.roleIds}
+                  onChange={(roleIds) => setAdminForm((prev) => ({ ...prev, roleIds }))}
+                  isSuperAdminViewer={isSuperAdminViewer}
+                />
+              </div>
             </div>
             <LoadingButton
               type="button"
               variant="gold"
               state={saving ? "loading" : "normal"}
               loadingText="创建中..."
-              disabled={!adminForm.phone || !isStrongAdminPassword(adminForm.password)}
+              disabled={!adminForm.phone || !isStrongAdminPassword(adminForm.password) || adminForm.roleIds.length === 0}
               onClick={() =>
                 askConfirm({
                   title: "确认创建",
@@ -358,6 +377,7 @@ export default function AdminRoles() {
                         phone: adminForm.phone,
                         password: adminForm.password,
                         nickname: adminForm.nickname,
+                        roleIds: adminForm.roleIds,
                       });
                       toast.success("已创建");
                       setShowAdminModal(false);
@@ -438,15 +458,13 @@ export default function AdminRoles() {
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground"><Tx>权限</Tx></label>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  {perms.map((p) => (
-                    <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input type="checkbox" checked={!!rolePerms[p.id]} onChange={() => setRolePerms((prev) => ({ ...prev, [p.id]: !prev[p.id] }))} className="h-3.5 w-3.5 rounded border-border" />
-                      <span className="text-foreground">{p.name}</span>
-                      <span className="text-[10px] text-muted-foreground">{p.code}</span>
-                    </label>
-                  ))}
-                </div>
+                <AdminPermissionPicker
+                  key={editRole ? `edit-${editRole.id}` : "create"}
+                  className="mt-2"
+                  permissions={perms}
+                  selected={rolePerms}
+                  onChange={setRolePerms}
+                />
               </div>
             </div>
             <LoadingButton

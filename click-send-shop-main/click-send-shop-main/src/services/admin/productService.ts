@@ -2,6 +2,7 @@ import * as productApi from "@/api/admin/product";
 import type {
   AdminProductUpsertPayload,
   Product,
+  ProductImportResult,
   ProductLifecycleStatus,
   ProductListParams,
   ProductTag,
@@ -69,16 +70,19 @@ export async function updateProductTags(id: string, tagIds: string[]) {
   return res.data;
 }
 
-export async function exportProductsCsv(params?: { keyword?: string; category_id?: string; status?: string }) {
+export async function exportProductsCsv(params?: ProductListParams) {
   const qs = new URLSearchParams();
   if (params?.keyword) qs.set("keyword", params.keyword);
   if (params?.category_id) qs.set("category_id", params.category_id);
   if (params?.status) qs.set("status", params.status);
+  if (params?.stock_status) qs.set("stock_status", params.stock_status);
+  if (params?.cost_status) qs.set("cost_status", params.cost_status);
+  if (params?.ids?.length) qs.set("ids", params.ids.join(","));
   const q = qs.toString();
   await downloadAdminCsv(`/admin/products/export${q ? `?${q}` : ""}`, "products.csv");
 }
 
-export async function importProductsCsv(file: File): Promise<{ created: number; updated: number }> {
+export async function importProductsCsv(file: File): Promise<ProductImportResult> {
   const token = getAdminAccessToken();
   const csrfToken = await getAdminCsrfToken();
   const fd = new FormData();
@@ -92,7 +96,7 @@ export async function importProductsCsv(file: File): Promise<{ created: number; 
     credentials: "include",
     body: fd,
   });
-  const body = (await res.json()) as { code: number; message?: string; data?: { created: number; updated: number } };
+  const body = (await res.json()) as { code: number; message?: string; data?: ProductImportResult };
   if (!res.ok || body.code !== 0) throw new Error(body.message || "导入失败");
-  return body.data ?? { created: 0, updated: 0 };
+  return body.data ?? { created: 0, updated: 0, skipped: 0, errors: [] };
 }

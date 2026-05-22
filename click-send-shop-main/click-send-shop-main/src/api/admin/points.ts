@@ -62,3 +62,7 @@ export function deleteProductPointRule(id: string) {
   return del<void>(`/admin/points/product-rules/${id}`);
 }
 
+export function runPointsExpireJob() {
+  return post<{ processed: number; user_count: number; skipped?: boolean }>("/admin/points/expire-run");
+}
+

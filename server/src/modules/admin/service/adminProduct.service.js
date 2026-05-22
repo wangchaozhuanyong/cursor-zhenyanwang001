@@ -1,10 +1,12 @@
 const { generateId, formatProduct } = require('../../../utils/helpers');
 const { BusinessError } = require('../../../errors/BusinessError');
+const { ValidationError } = require('../../../errors');
 const { parseCsv, parseBool } = require('../../../utils/csv');
 const { rowsToCsvLocalized, normalizeCsvImportRows } = require('../../../utils/adminCsvLabels');
 const { buildSearchKeywords, normalizeSearchKeyword } = require('../../../utils/searchKeywords');
 const repo = require('../repository/adminProduct.repository');
 const variantRepo = require('../repository/adminProductVariant.repository');
+const adminExtendedRepo = require('../repository/adminExtended.repository');
 const inventoryRepo = require('../repository/adminInventory.repository');
 const {
   LIFECYCLE,
@@ -137,10 +139,30 @@ function emitProductRiskEvents(row, variants = [], adminUserId = null) {
   }
 }
 
+const MAX_PRODUCT_EXPORT_IDS = 1000;
+const MAX_PRODUCT_IMPORT_ROWS = 2000;
+
+function normalizeProductIdsInput(value) {
+  const rawItems = Array.isArray(value) ? value : String(value || '').split(',');
+  const ids = rawItems
+    .flatMap((item) => String(item || '').split(','))
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return Array.from(new Set(ids));
+}
+
 function buildListWhere(query) {
   let where = 'WHERE deleted_at IS NULL';
   const params = [];
-  const { keyword, category_id, status } = query;
+  const { keyword, category_id, status, stock_status: stockStatus, cost_status: costStatus } = query;
+  const selectedIds = normalizeProductIdsInput(query.ids || query.product_ids || query.productIds);
+  if (selectedIds.length > MAX_PRODUCT_EXPORT_IDS) {
+    throw new ValidationError(`单次最多导出 ${MAX_PRODUCT_EXPORT_IDS} 个勾选商品`);
+  }
+  if (selectedIds.length) {
+    where += ` AND id IN (${selectedIds.map(() => '?').join(',')})`;
+    params.push(...selectedIds);
+  }
   if (keyword) {
     const normalized = normalizeSearchKeyword(keyword);
     const expanded = buildSearchKeywords(normalized);
@@ -160,6 +182,34 @@ function buildListWhere(query) {
       where += ' AND status = ?';
       params.push(status);
     }
+  }
+  const stockFilter = String(stockStatus || '').trim();
+  if (stockFilter === 'out') {
+    where += ` AND (
+      stock <= 0
+      OR EXISTS (
+        SELECT 1 FROM product_variants v
+        WHERE v.product_id = products.id AND v.deleted_at IS NULL AND v.enabled = 1 AND v.stock <= 0
+      )
+    )`;
+  } else if (stockFilter === 'low') {
+    where += ' AND stock > 0 AND stock <= COALESCE(stock_warning_threshold, 5)';
+  } else if (stockFilter === 'normal') {
+    where += ' AND stock > COALESCE(stock_warning_threshold, 5)';
+  }
+  const costFilter = String(costStatus || '').trim();
+  if (costFilter === 'missing') {
+    where += ` AND EXISTS (
+      SELECT 1 FROM product_variants v
+      WHERE v.product_id = products.id AND v.deleted_at IS NULL AND v.enabled = 1
+        AND (v.cost_price IS NULL OR v.cost_price <= 0)
+    )`;
+  } else if (costFilter === 'normal') {
+    where += ` AND NOT EXISTS (
+      SELECT 1 FROM product_variants v
+      WHERE v.product_id = products.id AND v.deleted_at IS NULL AND v.enabled = 1
+        AND (v.cost_price IS NULL OR v.cost_price <= 0)
+    )`;
   }
   return { where, params };
 }
@@ -674,11 +724,162 @@ async function deleteProduct(id, adminUserId, req) {
   }
 }
 
-const EXPORT_HEADERS = [
+/** 一行一 SKU（ERP 整表同步） */
+const EXPORT_HEADERS_SKU = [
+  'product_id', 'name', 'category_id', 'cover_image', 'video_url', 'status', 'lifecycle_status',
+  'sort_order', 'description', 'points', 'sales_count', 'is_recommended', 'is_new', 'is_hot', 'images', 'tags',
+  'variant_id', 'sku_code', 'variant_title', 'price', 'original_price', 'stock', 'cost_price', 'barcode',
+  'variant_enabled', 'is_default', 'variant_sort_order', 'stock_warning_threshold',
+];
+
+/** 兼容旧版：单商品一行 */
+const EXPORT_HEADERS_LEGACY = [
   'id', 'name', 'price', 'original_price', 'sales_count', 'stock', 'category_id',
   'cover_image', 'video_url', 'status', 'lifecycle_status', 'sort_order',
   'description', 'points', 'is_recommended', 'is_new', 'is_hot', 'images',
 ];
+
+function parseTagNamesRaw(raw) {
+  return String(raw || '')
+    .split(/[,，;；|]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function resolveTagNamesToIds(raw, tagCatalog) {
+  const names = parseTagNamesRaw(raw);
+  const nameToId = new Map(tagCatalog.map((t) => [String(t.name || '').trim(), t.id]));
+  const ids = [];
+  const unknown = [];
+  for (const name of names) {
+    const id = nameToId.get(name);
+    if (id) ids.push(id);
+    else unknown.push(name);
+  }
+  return { ids: [...new Set(ids)], unknown };
+}
+
+function isSkuMatrixCsvRow(row) {
+  return Boolean(
+    String(row.variant_id || '').trim()
+    || String(row.sku_code || '').trim()
+    || String(row.variant_title || '').trim()
+    || (row.cost_price !== undefined && String(row.cost_price).trim() !== '')
+    || (row.variant_enabled !== undefined && String(row.variant_enabled).trim() !== '')
+    || (row.barcode !== undefined && String(row.barcode).trim() !== ''),
+  );
+}
+
+function isSkuMatrixImport(rows) {
+  return rows.some(isSkuMatrixCsvRow);
+}
+
+function productImagesJsonFromRow(row) {
+  let imagesJson = '[]';
+  if (row.images && String(row.images).trim()) {
+    const raw = String(row.images).trim();
+    try {
+      JSON.parse(raw);
+      imagesJson = raw;
+    } catch {
+      imagesJson = JSON.stringify([raw]);
+    }
+  }
+  return imagesJson;
+}
+
+function buildProductPayloadFromCsvRow(row) {
+  const sortOrder = row.sort_order !== undefined && row.sort_order !== '' ? parseInt(row.sort_order, 10) : 0;
+  const points = row.points !== undefined && row.points !== '' ? parseInt(row.points, 10) : 0;
+  const originalPriceRaw = row.original_price !== undefined && row.original_price !== ''
+    ? Number(row.original_price)
+    : null;
+  const salesCountRaw = row.sales_count !== undefined && row.sales_count !== ''
+    ? parseInt(row.sales_count, 10)
+    : 0;
+  const { lifecycle_status: lc, status: st } = csvStatusToLifecycle(row.status);
+  const imagesJson = productImagesJsonFromRow(row);
+  return {
+    payload: {
+      name: (row.name || '').trim(),
+      cover_image: (row.cover_image || '').trim(),
+      video_url: (row.video_url || '').trim(),
+      images: JSON.parse(imagesJson),
+      original_price: Number.isFinite(originalPriceRaw) ? originalPriceRaw : null,
+      sales_count: Number.isFinite(salesCountRaw) ? salesCountRaw : 0,
+      points: Number.isFinite(points) ? points : 0,
+      category_id: (row.category_id || '').trim(),
+      status: st,
+      lifecycle_status: lc,
+      sort_order: Number.isFinite(sortOrder) ? sortOrder : 0,
+      description: (row.description || '').trim(),
+      is_recommended: parseBool(row.is_recommended),
+      is_new: parseBool(row.is_new),
+      is_hot: parseBool(row.is_hot),
+    },
+    imagesJson,
+  };
+}
+
+function buildVariantRowFromCsv(row, productId, existingVariants, genId) {
+  const price = parseFloat(row.price);
+  if (Number.isNaN(price)) return { error: '售价格式无效' };
+  const stock = parseInt(row.stock, 10);
+  const sortOrder = row.variant_sort_order !== undefined && row.variant_sort_order !== ''
+    ? parseInt(row.variant_sort_order, 10)
+    : (row.sort_order !== undefined && row.sort_order !== '' ? parseInt(row.sort_order, 10) : 0);
+  const threshold = row.stock_warning_threshold !== undefined && row.stock_warning_threshold !== ''
+    ? parseInt(row.stock_warning_threshold, 10)
+    : 5;
+  const originalPrice = row.original_price !== undefined && row.original_price !== ''
+    ? Number(row.original_price)
+    : null;
+  const costPrice = row.cost_price !== undefined && row.cost_price !== ''
+    ? Number(row.cost_price)
+    : null;
+  let variantId = String(row.variant_id || '').trim();
+  if (!variantId) {
+    const sku = String(row.sku_code || '').trim();
+    if (sku && Array.isArray(existingVariants)) {
+      const found = existingVariants.find((v) => String(v.sku_code || '').trim() === sku);
+      if (found) variantId = found.id;
+    }
+  }
+  if (!variantId) variantId = genId();
+  return {
+    variant: {
+      id: variantId,
+      sku_code: String(row.sku_code || '').trim() || null,
+      title: String(row.variant_title || row.variant_name || '').trim(),
+      price,
+      original_price: Number.isFinite(originalPrice) ? originalPrice : null,
+      cost_price: Number.isFinite(costPrice) ? costPrice : null,
+      stock: Number.isFinite(stock) ? stock : 0,
+      stock_warning_threshold: Number.isFinite(threshold) ? threshold : 5,
+      barcode: String(row.barcode || '').trim() || null,
+      enabled: parseBool(row.variant_enabled !== undefined && row.variant_enabled !== '' ? row.variant_enabled : 1),
+      sort_order: Number.isFinite(sortOrder) ? sortOrder : 0,
+      is_default: parseBool(row.is_default),
+    },
+  };
+}
+
+function groupSkuImportRows(rows) {
+  /** @type {Map<string, { rows: Record<string, string>[], rowNums: number[] }>} */
+  const groups = new Map();
+  for (let i = 0; i < rows.length; i += 1) {
+    const row = rows[i];
+    const rowNum = i + 2;
+    const productId = String(row.product_id || row.id || '').trim();
+    const name = String(row.name || '').trim();
+    const key = productId || (name ? `__name__:${name}` : `__row__:${rowNum}`);
+    if (!groups.has(key)) groups.set(key, { rows: [], rowNums: [] });
+    const g = groups.get(key);
+    g.rows.push(row);
+    g.rowNums.push(rowNum);
+  }
+  return groups;
+}
 
 function csvStatusToLifecycle(statusRaw) {
   const t = String(statusRaw || 'active').trim().toLowerCase();
@@ -690,19 +891,23 @@ function csvStatusToLifecycle(statusRaw) {
 async function exportProductsCsv(query) {
   const { where, params } = buildListWhere(query);
   const rows = await repo.selectProductsForExport(where, params);
-  const data = rows.map((r) => {
+  const productIds = rows.map((r) => r.id);
+  const [variantMap, tagMap] = await Promise.all([
+    variantRepo.selectVariantsByProductIds(productIds),
+    requireProductApi('selectTagsByProductIds')(productIds),
+  ]);
+
+  const data = [];
+  for (const r of rows) {
     let imagesStr = '';
     if (r.images == null) imagesStr = '';
     else if (typeof r.images === 'string') imagesStr = r.images;
     else imagesStr = JSON.stringify(r.images);
     const lc = normalizeLifecycleFromRow(r);
-    return {
-      id: r.id,
+    const tags = (tagMap.get(r.id) || []).map((t) => t.name).join(',');
+    const base = {
+      product_id: r.id,
       name: r.name,
-      price: r.price,
-      original_price: r.original_price ?? '',
-      sales_count: r.sales_count ?? 0,
-      stock: r.stock,
       category_id: r.category_id || '',
       cover_image: r.cover_image || '',
       video_url: r.video_url || '',
@@ -711,27 +916,72 @@ async function exportProductsCsv(query) {
       sort_order: r.sort_order ?? 0,
       description: (r.description || '').replace(/\r\n/g, '\n'),
       points: r.points ?? 0,
+      sales_count: r.sales_count ?? 0,
       is_recommended: r.is_recommended ? 1 : 0,
       is_new: r.is_new ? 1 : 0,
       is_hot: r.is_hot ? 1 : 0,
       images: imagesStr,
+      tags,
     };
-  });
-  const csv = rowsToCsvLocalized(EXPORT_HEADERS, data);
-  return { csv, filename: `products_${Date.now()}.csv` };
+    const variants = variantMap.get(r.id) || [];
+    if (!variants.length) {
+      data.push({
+        ...base,
+        variant_id: '',
+        sku_code: '',
+        variant_title: '',
+        price: r.price,
+        original_price: r.original_price ?? '',
+        stock: r.stock,
+        cost_price: '',
+        barcode: '',
+        variant_enabled: 1,
+        is_default: 1,
+        variant_sort_order: 0,
+        stock_warning_threshold: r.stock_warning_threshold ?? 5,
+      });
+      continue;
+    }
+    for (const v of variants) {
+      data.push({
+        ...base,
+        variant_id: v.id,
+        sku_code: v.sku_code || '',
+        variant_title: v.title || '',
+        price: v.price,
+        original_price: v.original_price ?? '',
+        stock: v.stock,
+        cost_price: v.cost_price ?? '',
+        barcode: v.barcode || '',
+        variant_enabled: v.enabled !== 0 ? 1 : 0,
+        is_default: v.is_default ? 1 : 0,
+        variant_sort_order: v.sort_order ?? 0,
+        stock_warning_threshold: v.stock_warning_threshold ?? 5,
+      });
+    }
+  }
+  const csv = rowsToCsvLocalized(EXPORT_HEADERS_SKU, data);
+  return { csv, filename: `products_sku_${Date.now()}.csv` };
 }
 
-async function importProductsCsv(text, adminUserId, req) {
-  const { rows: rawRows } = parseCsv(text);
-  const rows = normalizeCsvImportRows(rawRows);
-  if (!rows.length) throw new BusinessError(400, 'CSV 无数据行');
-
+async function importProductsCsvLegacy(rows, adminUserId, req) {
   let created = 0;
   let updated = 0;
-  for (const row of rows) {
+  let skipped = 0;
+  const errors = [];
+  for (let i = 0; i < rows.length; i += 1) {
+    const row = rows[i];
+    const rowNum = i + 2;
     const name = (row.name || '').trim();
     const price = parseFloat(row.price);
-    if (!name || Number.isNaN(price)) continue;
+    if (!name || Number.isNaN(price)) {
+      skipped += 1;
+      errors.push({
+        row: rowNum,
+        reason: !name ? '缺少商品名称' : '售价格式无效',
+      });
+      continue;
+    }
 
     const stock = parseInt(row.stock, 10);
     const sortOrder = row.sort_order !== undefined && row.sort_order !== '' ? parseInt(row.sort_order, 10) : 0;
@@ -777,20 +1027,48 @@ async function importProductsCsv(text, adminUserId, req) {
     };
 
     const id = (row.id || '').trim();
-    if (id) {
-      const existing = await repo.selectProductById(id, { includeDeleted: true });
-      if (existing) {
-        if (existing.deleted_at) {
-          throw new BusinessError(400, 'Product has been deleted; restore it before importing updates');
+    try {
+      if (id) {
+        const existing = await repo.selectProductById(id, { includeDeleted: true });
+        if (existing) {
+          if (existing.deleted_at) {
+            throw new BusinessError(400, '商品已删除，请先恢复后再导入更新');
+          }
+          await updateProduct(id, {
+            ...payload,
+            images: JSON.parse(imagesJson),
+          }, adminUserId, undefined);
+          updated += 1;
+        } else {
+          await repo.insertProduct({
+            id,
+            name: payload.name,
+            cover_image: payload.cover_image,
+            video_url: payload.video_url,
+            imagesJson,
+            price: payload.price,
+            original_price: payload.original_price,
+            sales_count: payload.sales_count,
+            category_id: payload.category_id,
+            stock: payload.stock,
+            status: payload.status,
+            lifecycle_status: payload.lifecycle_status,
+            sort_order: payload.sort_order,
+            description: payload.description,
+            search_keywords: buildProductSearchKeywordsFromPayload(payload),
+            is_recommended: payload.is_recommended ? 1 : 0,
+            is_new: payload.is_new ? 1 : 0,
+            is_hot: payload.is_hot ? 1 : 0,
+          });
+          const variantRows = normalizeVariantPayloadForDb(null, generateId, payload.price, payload.stock);
+          await variantRepo.upsertProductVariants(id, variantRows);
+          await syncProductPriceStockFromDefaultVariant(id);
+          created += 1;
         }
-        await updateProduct(id, {
-          ...payload,
-          images: JSON.parse(imagesJson),
-        }, adminUserId, undefined);
-        updated += 1;
       } else {
+        const newId = generateId();
         await repo.insertProduct({
-          id,
+          id: newId,
           name: payload.name,
           cover_image: payload.cover_image,
           video_url: payload.video_url,
@@ -810,38 +1088,158 @@ async function importProductsCsv(text, adminUserId, req) {
           is_hot: payload.is_hot ? 1 : 0,
         });
         const variantRows = normalizeVariantPayloadForDb(null, generateId, payload.price, payload.stock);
-        await variantRepo.upsertProductVariants(id, variantRows);
-        await syncProductPriceStockFromDefaultVariant(id);
+        await variantRepo.upsertProductVariants(newId, variantRows);
+        await syncProductPriceStockFromDefaultVariant(newId);
         created += 1;
       }
-    } else {
-      const newId = generateId();
-      await repo.insertProduct({
-        id: newId,
-        name: payload.name,
-        cover_image: payload.cover_image,
-        video_url: payload.video_url,
-        imagesJson,
-        price: payload.price,
-        original_price: payload.original_price,
-        sales_count: payload.sales_count,
-        category_id: payload.category_id,
-        stock: payload.stock,
-        status: payload.status,
-        lifecycle_status: payload.lifecycle_status,
-        sort_order: payload.sort_order,
-        description: payload.description,
-        search_keywords: buildProductSearchKeywordsFromPayload(payload),
-        is_recommended: payload.is_recommended ? 1 : 0,
-        is_new: payload.is_new ? 1 : 0,
-        is_hot: payload.is_hot ? 1 : 0,
+    } catch (err) {
+      skipped += 1;
+      errors.push({
+        row: rowNum,
+        reason: err?.message || '导入失败',
       });
-      const variantRows = normalizeVariantPayloadForDb(null, generateId, payload.price, payload.stock);
-      await variantRepo.upsertProductVariants(newId, variantRows);
-      await syncProductPriceStockFromDefaultVariant(newId);
-      created += 1;
     }
   }
+
+  return { created, updated, skipped, errors, sku_rows: 0 };
+}
+
+async function importProductsCsvSkuMatrix(rows, adminUserId, req) {
+  let created = 0;
+  let updated = 0;
+  let skipped = 0;
+  let skuRows = 0;
+  const errors = [];
+  let tagCatalog = [];
+  try {
+    tagCatalog = await adminExtendedRepo.selectProductTags();
+  } catch (e) {
+    console.warn('[adminProduct] import tag catalog load failed:', e?.message || e);
+  }
+  const enabledTags = tagCatalog.filter((t) => t.enabled !== 0);
+
+  const groups = groupSkuImportRows(rows);
+  for (const [, group] of groups) {
+    const { rows: groupRows, rowNums } = group;
+    const firstRowNum = rowNums[0];
+    try {
+      const first = groupRows[0];
+      const { payload, imagesJson } = buildProductPayloadFromCsvRow(first);
+      if (!payload.name) {
+        throw new BusinessError(400, '缺少商品名称');
+      }
+
+      const productIdHint = String(first.product_id || first.id || '').trim();
+      let productId = productIdHint;
+      let existing = productId ? await repo.selectProductById(productId, { includeDeleted: true }) : null;
+      if (existing?.deleted_at) {
+        throw new BusinessError(400, '商品已删除，请先恢复后再导入更新');
+      }
+
+      const existingVariants = productId && existing
+        ? await variantRepo.selectVariantsByProductId(productId)
+        : [];
+
+      const variants = [];
+      let defaultAssigned = false;
+      for (let j = 0; j < groupRows.length; j += 1) {
+        const row = groupRows[j];
+        const built = buildVariantRowFromCsv(row, productId, existingVariants, generateId);
+        if (built.error) {
+          errors.push({ row: rowNums[j], reason: built.error });
+          skipped += 1;
+          continue;
+        }
+        let { variant } = built;
+        if (variant.is_default) defaultAssigned = true;
+        if (!defaultAssigned && j === groupRows.length - 1) {
+          variant = { ...variant, is_default: true };
+          defaultAssigned = true;
+        }
+        variants.push(variant);
+        skuRows += 1;
+      }
+      if (!variants.length) {
+        throw new BusinessError(400, '至少需要一个有效 SKU（售价必填）');
+      }
+      if (!defaultAssigned) {
+        variants[0] = { ...variants[0], is_default: true };
+      }
+
+      const tagSource = groupRows.map((r) => r.tags || r.tag_names).find((t) => String(t || '').trim()) || '';
+      const { ids: tagIds, unknown: unknownTags } = resolveTagNamesToIds(tagSource, enabledTags);
+      for (const tagName of unknownTags) {
+        errors.push({ row: firstRowNum, reason: `未知标签：${tagName}` });
+      }
+
+      const body = {
+        ...payload,
+        images: JSON.parse(imagesJson),
+        variants,
+        tag_ids: tagIds,
+        price: variants.find((v) => v.is_default)?.price ?? variants[0].price,
+        stock: variants.reduce((sum, v) => sum + (v.enabled ? Number(v.stock || 0) : 0), 0),
+      };
+
+      if (productId && existing) {
+        await updateProduct(productId, body, adminUserId, req);
+        updated += 1;
+      } else if (productId && !existing) {
+        await repo.insertProduct({
+          id: productId,
+          name: payload.name,
+          cover_image: payload.cover_image,
+          video_url: payload.video_url,
+          imagesJson,
+          price: body.price,
+          original_price: payload.original_price,
+          sales_count: payload.sales_count,
+          category_id: payload.category_id,
+          stock: body.stock,
+          status: payload.status,
+          lifecycle_status: payload.lifecycle_status,
+          sort_order: payload.sort_order,
+          description: payload.description,
+          search_keywords: buildProductSearchKeywordsFromPayload(payload, variants, []),
+          is_recommended: payload.is_recommended ? 1 : 0,
+          is_new: payload.is_new ? 1 : 0,
+          is_hot: payload.is_hot ? 1 : 0,
+        });
+        await variantRepo.upsertProductVariants(productId, normalizeVariantPayloadForDb(variants, generateId, body.price, body.stock));
+        await requireProductApi('replaceTagAssignments')(productId, tagIds);
+        await syncProductPriceStockFromDefaultVariant(productId);
+        created += 1;
+      } else {
+        const r = await createProduct(body, adminUserId, req);
+        productId = r.data?.id;
+        created += 1;
+      }
+    } catch (err) {
+      skipped += groupRows.length;
+      const reason = err?.message || '导入失败';
+      for (const rowNum of rowNums) {
+        errors.push({ row: rowNum, reason });
+      }
+    }
+  }
+
+  return { created, updated, skipped, errors, sku_rows: skuRows };
+}
+
+async function importProductsCsv(text, adminUserId, req) {
+  const { rows: rawRows } = parseCsv(text);
+  const rows = normalizeCsvImportRows(rawRows);
+  if (!rows.length) throw new BusinessError(400, 'CSV 无数据行');
+  if (rows.length > MAX_PRODUCT_IMPORT_ROWS) {
+    throw new BusinessError(400, `单次最多导入 ${MAX_PRODUCT_IMPORT_ROWS} 行`);
+  }
+
+  const skuMode = isSkuMatrixImport(rows);
+  const result = skuMode
+    ? await importProductsCsvSkuMatrix(rows, adminUserId, req)
+    : await importProductsCsvLegacy(rows, adminUserId, req);
+
+  const { created, updated, skipped, errors, sku_rows: skuRows } = result;
 
   await writeAuditLog({
     req,
@@ -849,14 +1247,19 @@ async function importProductsCsv(text, adminUserId, req) {
     actionType: 'product.import',
     objectType: 'product',
     objectId: 'batch',
-    summary: `导入商品：新建 ${created}，更新 ${updated}`,
-    after: { created, updated },
+    summary: skuMode
+      ? `SKU 矩阵导入：新建 ${created}，更新 ${updated}，SKU 行 ${skuRows || 0}，跳过 ${skipped}`
+      : `导入商品：新建 ${created}，更新 ${updated}，跳过 ${skipped}`,
+    after: { created, updated, skipped, sku_rows: skuRows || 0, error_count: errors.length, mode: skuMode ? 'sku_matrix' : 'legacy' },
     result: 'success',
   });
   if (created > 0 || updated > 0) bumpCatalogCache();
+  const parts = [`新建 ${created} 条`, `更新 ${updated} 条`];
+  if (skuMode && skuRows) parts.push(`同步 ${skuRows} 个 SKU`);
+  if (skipped > 0) parts.push(`跳过 ${skipped} 条`);
   return {
-    data: { created, updated },
-    message: `导入完成：新建 ${created} 条，更新 ${updated} 条`,
+    data: { created, updated, skipped, errors, sku_rows: skuRows || 0, mode: skuMode ? 'sku_matrix' : 'legacy' },
+    message: `导入完成：${parts.join('，')}`,
   };
 }
 

@@ -27,6 +27,13 @@ const EXTRA_CSV_LABELS = {
   wechat: '微信',
   whatsapp: 'WhatsApp',
   tags: '标签',
+  tag_names: '标签',
+  product_id: '商品编号',
+  cost_price: '成本价',
+  barcode: '条码',
+  variant_enabled: 'SKU启用',
+  is_default: '默认SKU',
+  variant_sort_order: 'SKU排序',
   order_no: '订单号',
   raw_amount: '原价合计',
   tax_mode: '税费模式',
@@ -89,6 +96,9 @@ for (const [key, label] of Object.entries(CSV_COLUMN_LABELS)) {
   HEADER_TO_KEY.set(label, key);
 }
 HEADER_TO_KEY.set('价格', 'price');
+HEADER_TO_KEY.set('商品ID', 'product_id');
+HEADER_TO_KEY.set('SKU价格', 'price');
+HEADER_TO_KEY.set('SKU库存', 'stock');
 
 const INVENTORY_CHANGE_LABELS = {
   in: '入库',

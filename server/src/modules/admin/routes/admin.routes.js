@@ -506,6 +506,7 @@ router.post('/points/product-rules', adminAuth, pointsFeature, requirePermission
 router.put('/points/product-rules/:id', adminAuth, pointsFeature, requirePermission('points.manage'), pointsCtrl.updateProductRule);
 router.delete('/points/product-rules/:id', adminAuth, pointsFeature, requirePermission('points.manage'), pointsCtrl.deleteProductRule);
 router.get('/points/records', adminAuth, pointsFeature, requirePermission('points.manage'), pointsCtrl.listRecords);
+router.post('/points/expire-run', adminAuth, pointsFeature, requirePermission('points.manage'), pointsCtrl.runPointsExpireJob);
 router.post('/users/:userId/points', adminAuth, pointsFeature, requirePermission('user.points'), userCtrl.adjustPoints);
 router.get('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.getSite);
 router.put('/settings', adminAuth, requirePermission('settings.manage'), settingsCtrl.updateSite);

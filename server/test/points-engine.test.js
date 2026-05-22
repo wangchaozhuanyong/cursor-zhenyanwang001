@@ -133,3 +133,72 @@ test('restricted products are excluded from redeem base', () => {
   assert.equal(result.max_usable_points, 0);
   assert.equal(result.disabled_reason, '当前商品不支持积分抵扣');
 });
+
+test('restricted products do not earn points regardless of redeem scope', () => {
+  const result = calculateOrderEarnedPoints({
+    settings: { ...baseSettings, redeem_scope: 'all' },
+    productMap: { p1: { id: 'p1', is_restricted: true } },
+    orderItems: [{ product_id: 'p1', qty: 1, price: 100, subtotal: 100, line_paid_amount: 100 }],
+  });
+  assert.equal(result.earned_points, 0);
+  assert.equal(result.item_results[0].reason, 'restricted_no_points');
+});
+
+test('earn_mode amount ignores product rules and uses global earn only', () => {
+  const rules = [
+    { id: 'prod', scope_type: 'product', scope_id: 'p1', earn_mode: 'fixed_per_item', fixed_points: 99, priority: 1, enabled: 1, earn_enabled: 1 },
+  ];
+  const result = calculateOrderEarnedPoints({
+    settings: { ...baseSettings, earn_mode: 'amount' },
+    productRules: rules,
+    productMap: { p1: { id: 'p1' } },
+    orderItems: [{ product_id: 'p1', qty: 1, price: 100, subtotal: 100, line_paid_amount: 100 }],
+  });
+  assert.equal(result.earned_points, 100);
+});
+
+test('earn_mode product_rule grants zero when no rule matches', () => {
+  const result = calculateOrderEarnedPoints({
+    settings: { ...baseSettings, earn_mode: 'product_rule' },
+    productRules: [],
+    productMap: { p1: { id: 'p1' } },
+    orderItems: [{ product_id: 'p1', qty: 1, price: 100, subtotal: 100, line_paid_amount: 100 }],
+  });
+  assert.equal(result.earned_points, 0);
+  assert.equal(result.item_results[0].reason, 'no_product_rule');
+});
+
+test('earn_after_discount off uses pre-discount subtotal for global earn', () => {
+  const result = calculateOrderEarnedPoints({
+    settings: { ...baseSettings, earn_after_discount: 0 },
+    orderItems: [{ product_id: 'p1', qty: 1, price: 100, subtotal: 100, line_paid_amount: 60 }],
+  });
+  assert.equal(result.earned_points, 100);
+  assert.equal(result.item_results[0].line_points_base_amount, 100);
+});
+
+test('member_price_no_points skips earn on lines with member discount share', () => {
+  const result = calculateOrderEarnedPoints({
+    settings: { ...baseSettings, member_price_no_points: 1 },
+    orderItems: [
+      { product_id: 'p1', qty: 1, price: 100, subtotal: 100, line_paid_amount: 90, member_discount_share: 10 },
+      { product_id: 'p2', qty: 1, price: 50, subtotal: 50, line_paid_amount: 50, member_discount_share: 0 },
+    ],
+  });
+  assert.equal(result.item_results[0].earned_points, 0);
+  assert.equal(result.item_results[0].reason, 'member_price_no_points');
+  assert.equal(result.item_results[1].earned_points, 50);
+  assert.equal(result.earned_points, 50);
+});
+
+test('allow_with_reward_cash blocks redeem when reward cash is requested', () => {
+  const result = calculateMaxUsablePoints({
+    settings: { ...baseSettings, allow_with_reward_cash: 0 },
+    userPointsBalance: 5000,
+    useRewardCash: true,
+    pointsToUse: 100,
+    orderItems: [{ product_id: 'p1', qty: 1, price: 100, subtotal: 100 }],
+  });
+  assert.equal(result.max_usable_points, 0);
+  assert.equal(result.disabled_reason, '返现余额不能与积分叠加');
+});

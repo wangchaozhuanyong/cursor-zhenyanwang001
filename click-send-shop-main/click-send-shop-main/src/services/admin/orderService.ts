@@ -79,6 +79,7 @@ export async function exportOrdersCsv(params?: OrderListParams) {
   if (params?.buyerType) qs.set("buyerType", params.buyerType);
   if (params?.amountMin !== undefined) qs.set("amountMin", String(params.amountMin));
   if (params?.amountMax !== undefined) qs.set("amountMax", String(params.amountMax));
+  if (params?.ids?.length) qs.set("ids", params.ids.join(","));
   const q = qs.toString();
   await downloadAdminCsv(`/admin/orders/export${q ? `?${q}` : ""}`, "orders.csv");
 }

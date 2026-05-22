@@ -1,4 +1,5 @@
 const db = require('../../../config/db');
+const { klDateSql } = require('../../../utils/klDateRange');
 
 function getPool() {
   return db;
@@ -81,9 +82,29 @@ async function selectUserPointsBalance(userId) {
   return user?.points_balance ?? 0;
 }
 
+async function selectUserIdsWithPositiveBalance(limit = 200) {
+  const [rows] = await db.query(
+    'SELECT user_id FROM points_accounts WHERE balance > 0 ORDER BY updated_at ASC LIMIT ?',
+    [Math.max(1, Math.trunc(Number(limit) || 200), 1)],
+  );
+  return rows.map((row) => row.user_id);
+}
+
+async function selectSuccessLedgerForUser(conn, userId) {
+  const runner = conn || db;
+  const [rows] = await runner.query(
+    `SELECT id, amount, created_at, action, status
+     FROM points_records
+     WHERE user_id = ? AND status = 'success'
+     ORDER BY created_at ASC, id ASC`,
+    [userId],
+  );
+  return rows;
+}
+
 async function findSignInToday(userId, dateStr) {
   const [[row]] = await db.query(
-    `SELECT id FROM points_records WHERE user_id = ? AND action = 'sign_in' AND DATE(created_at) = ?`,
+    `SELECT id FROM points_records WHERE user_id = ? AND action = 'sign_in' AND ${klDateSql('created_at')} = ?`,
     [userId, dateStr],
   );
   return row || null;
@@ -243,6 +264,8 @@ module.exports = {
   selectAdminRecordsPage,
   selectAdminStats,
   selectUserPointsBalance,
+  selectUserIdsWithPositiveBalance,
+  selectSuccessLedgerForUser,
   findSignInToday,
   selectSignInRule,
   ensureAccount,

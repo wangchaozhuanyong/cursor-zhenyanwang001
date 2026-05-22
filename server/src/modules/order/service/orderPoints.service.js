@@ -1,5 +1,8 @@
 const pointsRepo = require('../../user/repository/points.repository');
+const loyaltyRepo = require('../../loyalty/repository/loyalty.repository');
 const { POINTS_ACTION } = require('../../../constants/pointsActions');
+
+const SETTLE_TIMINGS = new Set(['payment_success', 'order_shipped', 'order_completed']);
 
 function getUserApi() {
   return /** @type {any} */ (require('../../user')).api || {};
@@ -54,14 +57,16 @@ async function reverseOrderRedeem(conn, order, options = {}) {
   });
 }
 
+async function resolveConfiguredSettleTiming(options = {}) {
+  if (options.settleTiming && SETTLE_TIMINGS.has(options.settleTiming)) return options.settleTiming;
+  const settings = options.pointsSettings || await loyaltyRepo.selectPointsSettings();
+  const timing = settings?.settle_timing || 'order_completed';
+  return SETTLE_TIMINGS.has(timing) ? timing : 'order_completed';
+}
+
 async function grantOrderEarnPoints(conn, order, options = {}) {
   const amount = toInt(order?.total_points);
   if (!order?.id || !order.user_id || amount <= 0) return { skipped: true };
-
-  const timing = options.timing || 'order_completed';
-  if (timing !== 'order_completed') {
-    return { skipped: true, reason: 'earn_only_on_order_completed' };
-  }
 
   return requireUserApi('changeUserPoints')(conn, {
     userId: order.user_id,
@@ -73,7 +78,7 @@ async function grantOrderEarnPoints(conn, order, options = {}) {
     sourceType: 'order_completion',
     relatedRecordId: `order_earn:${order.id}`,
     operatorId: options.operatorId,
-    metadata: { trigger: options.trigger || timing },
+    metadata: { trigger: options.trigger || options.timing || 'order_completed' },
   });
 }
 
@@ -99,8 +104,25 @@ async function reverseOrderEarnPoints(conn, order, options = {}) {
 }
 
 async function maybeGrantOrderEarnPoints(conn, order, options = {}) {
-  const timing = options.timing || 'order_completed';
-  return grantOrderEarnPoints(conn, order, { ...options, timing });
+  const configuredTiming = await resolveConfiguredSettleTiming(options);
+  const eventTiming = options.timing || configuredTiming;
+  if (eventTiming !== configuredTiming) {
+    return {
+      skipped: true,
+      reason: 'settle_timing_mismatch',
+      configured_timing: configuredTiming,
+      event_timing: eventTiming,
+    };
+  }
+  return grantOrderEarnPoints(conn, order, { ...options, timing: eventTiming });
+}
+
+async function maybeGrantOrderEarnOnPaymentSuccess(conn, order, options = {}) {
+  return maybeGrantOrderEarnPoints(conn, order, {
+    ...options,
+    timing: 'payment_success',
+    trigger: options.trigger || 'payment_success',
+  });
 }
 
 async function refundOrderRedeemOnly(conn, order, options = {}) {
@@ -192,11 +214,14 @@ async function rollbackOrderPointsForPartialRefund(conn, order, refundAmount, op
 }
 
 module.exports = {
+  SETTLE_TIMINGS,
+  resolveConfiguredSettleTiming,
   applyOrderRedeem,
   reverseOrderRedeem,
   grantOrderEarnPoints,
   reverseOrderEarnPoints,
   maybeGrantOrderEarnPoints,
+  maybeGrantOrderEarnOnPaymentSuccess,
   refundOrderRedeemOnly,
   reverseOrderEarnOnly,
   rollbackOrderPoints,

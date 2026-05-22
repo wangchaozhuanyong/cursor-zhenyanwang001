@@ -53,4 +53,9 @@ export async function removeProductPointRule(id: string) {
   await pointsApi.deleteProductPointRule(id);
 }
 
+export async function runPointsExpireJob() {
+  const res = await pointsApi.runPointsExpireJob();
+  return res.data;
+}
+
 export type { LoyaltyPointsSettings, ProductPointRule };

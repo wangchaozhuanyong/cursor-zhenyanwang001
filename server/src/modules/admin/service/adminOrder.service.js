@@ -60,10 +60,22 @@ function requireOrderApi(name) {
   return fn;
 }
 
+function normalizeOrderIdsInput(value) {
+  const rawItems = Array.isArray(value) ? value : String(value || '').split(',');
+  const orderIds = rawItems
+    .flatMap((item) => String(item || '').split(','))
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return Array.from(new Set(orderIds));
+}
+
 function buildAdminOrderListWhere(query) {
   let where = 'WHERE 1=1';
   const params = [];
   const {
+    ids,
+    order_ids: orderIds,
+    orderIds: camelOrderIds,
     status,
     paymentStatus,
     payment_method: paymentMethod,
@@ -82,6 +94,14 @@ function buildAdminOrderListWhere(query) {
     overdueShipment,
     buyerType,
   } = query;
+  const selectedOrderIds = normalizeOrderIdsInput(ids || orderIds || camelOrderIds);
+  if (selectedOrderIds.length > 1000) {
+    throw new ValidationError('单次最多导出 1000 个勾选订单');
+  }
+  if (selectedOrderIds.length) {
+    where += ` AND o.id IN (${selectedOrderIds.map(() => '?').join(',')})`;
+    params.push(...selectedOrderIds);
+  }
   if (status) {
     where += ' AND o.status = ?';
     params.push(status);
@@ -408,10 +428,9 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
         && fullOrder
       ) {
         await requireUserApi('syncStatsAfterOrderPaid')(fullOrder.user_id, fullOrder.total_amount, fullOrder.id, conn);
-        await orderPoints.maybeGrantOrderEarnPoints(conn, fullOrder, {
+        await orderPoints.maybeGrantOrderEarnOnPaymentSuccess(conn, fullOrder, {
           operatorId: adminUserId,
-          trigger: 'payment_success',
-          timing: 'payment_success',
+          trigger: 'admin_order_status_paid',
         });
         await requireUserApi('refreshUserMemberLevel')(conn, fullOrder.user_id);
         try {

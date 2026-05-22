@@ -16,6 +16,7 @@ import {
   fetchProductPointRules,
   removeProductPointRule,
   savePointsSettings,
+  runPointsExpireJob,
   saveProductPointRule,
   type LoyaltyPointsSettings,
   type ProductPointRule,
@@ -136,6 +137,15 @@ export default function AdminMarketingPoints() {
     onError: (error) => toast.error(toastErrorMessage(error, "停用规则失败")),
   });
 
+  const expireRunMutation = useMutation({
+    mutationFn: () => runPointsExpireJob(),
+    onSuccess: async (result) => {
+      toast.success(`过期任务已执行，处理 ${result?.processed ?? 0} 位用户`);
+      await invalidatePoints();
+    },
+    onError: (error) => toast.error(toastErrorMessage(error, "执行积分过期任务失败")),
+  });
+
   const adjustMutation = useMutation({
     mutationFn: () => {
       const amount = Number(adjustForm.points);
@@ -188,7 +198,14 @@ export default function AdminMarketingPoints() {
           <Field label="获得多少积分"><input className={inputCls} type="number" value={String(settings.earn_points_unit ?? 1)} onChange={(e) => setSetting("earn_points_unit", e.target.value)} /></Field>
           <Field label="取整方式"><select className={inputCls} value={String(settings.earn_rounding || "floor")} onChange={(e) => setSetting("earn_rounding", e.target.value)}><option value="floor">向下取整</option><option value="round">四舍五入</option><option value="ceil">向上取整</option></select></Field>
           <Field label="优惠后金额积分"><input type="checkbox" checked={!!settings.earn_after_discount} onChange={(e) => setSetting("earn_after_discount", e.target.checked)} /></Field>
-          <Field label="发放时机"><div className={`${inputCls} flex items-center`}>订单完成后发放（固定规则）</div></Field>
+          <Field label="积分抵扣后再计分"><input type="checkbox" checked={!!settings.earn_after_points_redeem} onChange={(e) => setSetting("earn_after_points_redeem", e.target.checked)} /></Field>
+          <Field label="发放时机">
+            <select className={inputCls} value={String(settings.settle_timing || "order_completed")} onChange={(e) => setSetting("settle_timing", e.target.value)}>
+              <option value="payment_success">支付成功后</option>
+              <option value="order_shipped">发货后</option>
+              <option value="order_completed">订单完成后</option>
+            </select>
+          </Field>
           <button type="button" onClick={() => saveSettingsMutation.mutate()} disabled={saveSettingsMutation.isPending} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground md:col-span-3"><Save className="h-4 w-4" />保存积分规则</button>
         </div>
       ) : null}
@@ -277,9 +294,36 @@ export default function AdminMarketingPoints() {
       ) : null}
 
       {tab === "高级设置" ? (
-        <div className="flex items-center gap-2 rounded-xl border border-dashed border-border bg-card px-4 py-3 text-sm text-foreground">
-          <Tx>高级设置</Tx>
-          <AdminFieldHint text={<Tx>积分有效期、生日多倍积分、节日多倍积分、会员等级自动升级、积分兑换礼品为预留功能；当前不会影响订单积分主流程。</Tx>} />
+        <div className="grid gap-4 rounded-xl border border-border bg-card p-4 md:grid-cols-3">
+          <Field label="启用积分过期"><input type="checkbox" checked={!!settings.expire_enabled} onChange={(e) => setSetting("expire_enabled", e.target.checked)} /></Field>
+          <Field label="积分有效天数"><input className={inputCls} type="number" min={1} value={String(settings.expire_days ?? 365)} onChange={(e) => setSetting("expire_days", e.target.value)} /></Field>
+          <Field label="优惠券订单不积分"><input type="checkbox" checked={!!settings.coupon_no_points} onChange={(e) => setSetting("coupon_no_points", e.target.checked)} /></Field>
+          <Field label="促销商品不积分"><input type="checkbox" checked={!!settings.promotion_no_points} onChange={(e) => setSetting("promotion_no_points", e.target.checked)} /></Field>
+          <Field label="营销活动商品不积分"><input type="checkbox" checked={!!settings.marketing_activity_no_points} onChange={(e) => setSetting("marketing_activity_no_points", e.target.checked)} /></Field>
+          <Field label="会员价商品不积分"><input type="checkbox" checked={!!settings.member_price_no_points} onChange={(e) => setSetting("member_price_no_points", e.target.checked)} /></Field>
+          <Field label="允许与优惠券叠加抵扣"><input type="checkbox" checked={settings.allow_with_coupon !== false && settings.allow_with_coupon !== 0} onChange={(e) => setSetting("allow_with_coupon", e.target.checked)} /></Field>
+          <Field label="允许与返现余额叠加"><input type="checkbox" checked={settings.allow_with_reward_cash !== false && settings.allow_with_reward_cash !== 0} onChange={(e) => setSetting("allow_with_reward_cash", e.target.checked)} /></Field>
+          <Field label="允许积分为负数（后台调账）"><input type="checkbox" checked={!!settings.allow_negative_points} onChange={(e) => setSetting("allow_negative_points", e.target.checked)} /></Field>
+          <Field label="支付方式积分限制">
+            <select className={inputCls} value={String(settings.payment_points_mode || "all")} onChange={(e) => setSetting("payment_points_mode", e.target.value)}>
+              <option value="all">全部支付方式</option>
+              <option value="disabled">全部禁用</option>
+              <option value="include">仅允许列表内</option>
+              <option value="exclude">排除列表内</option>
+            </select>
+          </Field>
+          <Field label="支付方式列表（逗号分隔）">
+            <input
+              className={inputCls}
+              value={Array.isArray(settings.allowed_payment_methods) ? settings.allowed_payment_methods.join(",") : String(settings.allowed_payment_methods || "online,whatsapp")}
+              onChange={(e) => setSetting("allowed_payment_methods", e.target.value.split(",").map((x) => x.trim()).filter(Boolean))}
+            />
+          </Field>
+          <div className="md:col-span-3 flex items-center gap-2 text-xs text-muted-foreground">
+            <AdminFieldHint text={<Tx>支付方式限制同时影响积分抵扣与消费积分；积分过期任务每日自动执行（KL 时区）。生日多倍、节日多倍、礼品兑换仍为预留项。</Tx>} />
+          </div>
+          <button type="button" onClick={() => saveSettingsMutation.mutate()} disabled={saveSettingsMutation.isPending} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"><Save className="h-4 w-4" />保存高级设置</button>
+          <button type="button" onClick={() => expireRunMutation.mutate()} disabled={expireRunMutation.isPending || !settings.expire_enabled} className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm text-foreground md:col-span-2"><RefreshCw className="h-4 w-4" />立即执行过期扣减</button>
         </div>
       ) : null}
     </div>

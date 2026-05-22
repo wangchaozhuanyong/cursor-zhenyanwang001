@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Download, Package, Truck } from "lucide-react";
+import { Download, Loader2, Package, Truck } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -122,6 +122,8 @@ export default function AdminOrders() {
   const [amountMax, setAmountMax] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const [exportingScope, setExportingScope] = useState<"filtered" | "selected" | null>(null);
 
   const clearFilters = () => {
     setStatusFilter("");
@@ -241,6 +243,9 @@ export default function AdminOrders() {
   const loading = ordersQuery.isLoading && !ordersQuery.data;
   const total = ordersQuery.data?.total ?? 0;
   const summary = ordersQuery.data?.summary ?? initialSummary;
+  const pageOrderIds = useMemo(() => orders.map((order) => order.id), [orders]);
+  const allSelectedOnPage = pageOrderIds.length > 0 && pageOrderIds.every((id) => selectedOrderIds.includes(id));
+  const someSelectedOnPage = !allSelectedOnPage && pageOrderIds.some((id) => selectedOrderIds.includes(id));
 
   const invalidateOrderQueries = async (orderId?: string) => {
     await Promise.all([
@@ -281,6 +286,19 @@ export default function AdminOrders() {
     setPage(1);
   };
 
+  const toggleOrderSelection = (orderId: string) => {
+    setSelectedOrderIds((prev) => (
+      prev.includes(orderId) ? prev.filter((id) => id !== orderId) : [...prev, orderId]
+    ));
+  };
+
+  const togglePageSelection = () => {
+    setSelectedOrderIds((prev) => {
+      if (allSelectedOnPage) return prev.filter((id) => !pageOrderIds.includes(id));
+      return Array.from(new Set([...prev, ...pageOrderIds]));
+    });
+  };
+
   const handleRemoveFilterChip = (key: string) => {
     const patch = removeOrderFilterChip(filterState, key);
     if ("search" in patch) setSearch(patch.search ?? "");
@@ -304,11 +322,30 @@ export default function AdminOrders() {
   };
 
   const handleExportCsv = async () => {
+    setExportingScope("filtered");
     try {
       await orderService.exportOrdersCsv(queryParams);
       toast.success("已开始下载 CSV");
     } catch (e) {
       toast.error(toastErrorMessage(e, "导出失败"));
+    } finally {
+      setExportingScope(null);
+    }
+  };
+
+  const handleExportSelectedCsv = async () => {
+    if (!selectedOrderIds.length) {
+      toast.warning("请先勾选要导出的订单");
+      return;
+    }
+    setExportingScope("selected");
+    try {
+      await orderService.exportOrdersCsv({ ids: selectedOrderIds });
+      toast.success(`已开始导出 ${selectedOrderIds.length} 个订单`);
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "批量导出失败"));
+    } finally {
+      setExportingScope(null);
     }
   };
 
@@ -411,6 +448,7 @@ export default function AdminOrders() {
   };
 
   const renderRow = (o: Order) => {
+    const checked = selectedOrderIds.includes(o.id);
     const afterSale = afterSaleLabel(o);
     const badges = buildOrderBadges(o);
     const discount = Number(o.discount_amount || 0) + Number(o.points_discount_amount || 0) + Number(o.reward_cash_discount_amount || 0);
@@ -429,6 +467,15 @@ export default function AdminOrders() {
 
     return (
       <>
+        <td className="w-10 px-4 py-2.5 align-middle">
+          <input
+            type="checkbox"
+            checked={checked}
+            onClick={(e) => e.stopPropagation()}
+            onChange={() => toggleOrderSelection(o.id)}
+            aria-label={`选择订单 ${o.order_no}`}
+          />
+        </td>
         <td className="max-w-[9rem] px-4 py-2.5 align-middle">
           <AdminTableCellGroup
             maxWidth="8.5rem"
@@ -637,11 +684,36 @@ export default function AdminOrders() {
                   <option value="new">新客</option>
                   <option value="repeat">老客</option>
                 </select>
-                <button type="button" onClick={handleExportCsv} className="inline-flex min-h-[44px] items-center gap-1 rounded-lg border border-[var(--theme-border)] px-3 text-sm"><Download size={14} /> 导出</button>
+                <button type="button" disabled={exportingScope !== null} onClick={handleExportCsv} className="inline-flex min-h-[44px] items-center gap-1 rounded-lg border border-[var(--theme-border)] px-3 text-sm disabled:opacity-60">
+                  {exportingScope === "filtered" ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+                  导出
+                </button>
               </div>
             </div>
           ) : null}
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs text-muted-foreground">已选 {selectedOrderIds.length} 单</span>
+        <button
+          type="button"
+          disabled={selectedOrderIds.length === 0 || exportingScope !== null}
+          onClick={handleExportSelectedCsv}
+          className="inline-flex min-h-[36px] items-center gap-1 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-xs font-medium transition hover:bg-[var(--theme-bg)] disabled:opacity-60"
+        >
+          {exportingScope === "selected" ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
+          批量导出 ({selectedOrderIds.length})
+        </button>
+        {selectedOrderIds.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => setSelectedOrderIds([])}
+            className="min-h-[36px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-xs font-medium transition hover:bg-[var(--theme-bg)]"
+          >
+            清空选择
+          </button>
+        ) : null}
       </div>
 
       <AnimatedTable
@@ -649,12 +721,23 @@ export default function AdminOrders() {
         rows={orders}
         rowKey={(o) => o.id}
         skeletonRows={8}
-        skeletonCols={11}
+        skeletonCols={12}
         className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
-        tableClassName="w-full min-w-[1320px] text-sm"
+        tableClassName="w-full min-w-[1380px] text-sm"
         theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
         thead={(
           <tr>
+            <th className="w-10 px-4 py-3">
+              <input
+                type="checkbox"
+                checked={allSelectedOnPage}
+                ref={(input) => {
+                  if (input) input.indeterminate = someSelectedOnPage;
+                }}
+                onChange={togglePageSelection}
+                aria-label="全选当前页订单"
+              />
+            </th>
             {["订单", "用户/收货人", "商品", "金额", "支付", "履约/物流", "售后", "标记", "创建时间", "操作", ""].map((h) => (
               <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{h}</th>
             ))}

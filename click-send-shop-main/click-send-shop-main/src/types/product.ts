@@ -179,6 +179,22 @@ export interface ProductListParams {
   max_margin?: number;
   page?: number;
   pageSize?: number;
+  /** 勾选导出时传入 */
+  ids?: string[];
+}
+
+export interface ProductImportRowError {
+  row: number;
+  reason: string;
+}
+
+export interface ProductImportResult {
+  created: number;
+  updated: number;
+  skipped?: number;
+  sku_rows?: number;
+  mode?: "sku_matrix" | "legacy";
+  errors?: ProductImportRowError[];
 }
 
 export interface ProductTag {

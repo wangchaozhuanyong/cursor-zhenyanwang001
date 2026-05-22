@@ -1,5 +1,5 @@
 import { formatDateTime } from "@/utils/formatDateTime";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, UserCog, Shield, Trash2, KeyRound, ToggleLeft, ToggleRight, AlertTriangle, Copy, ShieldCheck, Smartphone, RotateCcw, X } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
@@ -24,6 +24,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
 import AdminAccountSettingsTrigger from "@/components/admin/AdminAccountSettingsTrigger";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
+import AdminRolePicker, { getDefaultAdminRoleIds } from "@/components/admin/AdminRolePicker";
 import {
   THEME_ALERT_ERROR_SOFT,
   THEME_BADGE_DANGER,
@@ -67,7 +68,7 @@ export default function AdminAccounts() {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [showOpsHelp, setShowOpsHelp] = useState(false);
-  const [createForm, setCreateForm] = useState({ phone: "", password: "", nickname: "" });
+  const [createForm, setCreateForm] = useState({ phone: "", password: "", nickname: "", roleIds: [] as number[] });
   const [resetTarget, setResetTarget] = useState<RbacAdminUserRow | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<RbacAdminUserRow | null>(null);
@@ -79,8 +80,23 @@ export default function AdminAccounts() {
     staleTime: 60_000,
   });
 
+  const rolesQuery = useQuery({
+    queryKey: adminQueryKeys.rbacOverview(),
+    queryFn: rbacService.loadRbacRoles,
+    staleTime: 60_000,
+  });
+
   const admins = adminsQuery.data ?? [];
+  const roles = rolesQuery.data ?? [];
   const loading = adminsQuery.isLoading && !adminsQuery.data;
+
+  useEffect(() => {
+    if (!showCreate || createForm.roleIds.length || !roles.length) return;
+    setCreateForm((prev) => ({
+      ...prev,
+      roleIds: getDefaultAdminRoleIds(roles, isSuperAdminViewer),
+    }));
+  }, [createForm.roleIds.length, isSuperAdminViewer, roles, showCreate]);
 
   const invalidateAccounts = async () => {
     await Promise.all([
@@ -113,8 +129,16 @@ export default function AdminAccounts() {
   };
 
   const handleCreate = async () => {
-    if (!createForm.phone || !isStrongAdminPassword(createForm.password)) {
+    if (!createForm.phone) {
+      toast.error("请填写手机号");
+      return;
+    }
+    if (!isStrongAdminPassword(createForm.password)) {
       toast.error("密码至少 8 位，并包含大写字母、小写字母和数字");
+      return;
+    }
+    if (createForm.roleIds.length === 0) {
+      toast.error("请至少选择一个初始角色");
       return;
     }
     try {
@@ -122,10 +146,11 @@ export default function AdminAccounts() {
         phone: createForm.phone,
         password: createForm.password,
         nickname: createForm.nickname,
+        roleIds: createForm.roleIds,
       });
       toast.success("管理员已创建");
       setShowCreate(false);
-      setCreateForm({ phone: "", password: "", nickname: "" });
+      setCreateForm({ phone: "", password: "", nickname: "", roleIds: [] });
       void invalidateAccounts();
     } catch (err) {
       toast.error(toastErrorMessage(err, "创建失败"));
@@ -308,7 +333,10 @@ export default function AdminAccounts() {
                             <KeyRound size={14} />
                           </button>
                         )}
-                        <button type="button" onClick={() => setSecurityTarget(a)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title="删除">
+                        <button type="button" onClick={() => setSecurityTarget(a)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title="安全设置">
+                          <ShieldCheck size={14} />
+                        </button>
+                        <button type="button" onClick={() => setConfirmDelete(a)} className={`touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground ${THEME_HOVER_TEXT_DANGER} hover:bg-[var(--theme-bg)]`} title="删除">
                           <Trash2 size={14} />
                         </button>
                       </>
@@ -331,9 +359,22 @@ export default function AdminAccounts() {
             <input placeholder="手机号 *" value={createForm.phone} onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
             <input placeholder="密码 *（至少8位，含大小写和数字）" type="password" value={createForm.password} onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
             <input placeholder="昵称（可选）" value={createForm.nickname} onChange={(e) => setCreateForm({ ...createForm, nickname: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
+            <div>
+              <div className="mb-2 flex items-center gap-1.5">
+                <span className="text-xs font-medium text-muted-foreground">初始角色</span>
+                <AdminFieldHint text="创建后也可以在「角色权限」里继续调整。普通管理员不能分配 admin_manager / super_admin。" />
+              </div>
+              <AdminRolePicker
+                roles={roles}
+                selectedRoleIds={createForm.roleIds}
+                onChange={(roleIds) => setCreateForm((prev) => ({ ...prev, roleIds }))}
+                isSuperAdminViewer={isSuperAdminViewer}
+                disabled={rolesQuery.isLoading}
+              />
+            </div>
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => setShowCreate(false)} className="theme-rounded border border-[var(--theme-border)] px-4 py-2.5 text-sm hover:bg-[var(--theme-bg)]"><Tx>取消</Tx></button>
-              <button type="button" onClick={handleCreate} disabled={!createForm.phone || !isStrongAdminPassword(createForm.password)} className="theme-rounded px-4 py-2.5 text-sm font-semibold btn-theme-gradient disabled:opacity-50"><Tx>创建</Tx></button>
+              <button type="button" onClick={handleCreate} disabled={!createForm.phone || !isStrongAdminPassword(createForm.password) || createForm.roleIds.length === 0} className="theme-rounded px-4 py-2.5 text-sm font-semibold btn-theme-gradient disabled:opacity-50"><Tx>创建</Tx></button>
             </div>
           </div>
         </div>

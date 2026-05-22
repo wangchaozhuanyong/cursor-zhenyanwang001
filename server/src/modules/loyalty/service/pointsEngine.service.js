@@ -45,6 +45,7 @@ function normalizeSettings(settings = {}) {
     promotion_no_points: settings.promotion_no_points == null ? 0 : Number(!!settings.promotion_no_points),
     marketing_activity_no_points: settings.marketing_activity_no_points == null ? 0 : Number(!!settings.marketing_activity_no_points),
     coupon_no_points: settings.coupon_no_points == null ? 0 : Number(!!settings.coupon_no_points),
+    member_price_no_points: settings.member_price_no_points == null ? 0 : Number(!!settings.member_price_no_points),
     payment_points_mode: settings.payment_points_mode || 'all',
     allowed_payment_methods: Array.isArray(settings.allowed_payment_methods) ? settings.allowed_payment_methods : [],
     point_value_myr: pointValue,
@@ -57,6 +58,10 @@ function normalizeSettings(settings = {}) {
     redeem_scope: settings.redeem_scope || 'exclude_restricted',
     allow_with_coupon: settings.allow_with_coupon == null ? 1 : Number(!!settings.allow_with_coupon),
     allow_with_reward_cash: settings.allow_with_reward_cash == null ? 1 : Number(!!settings.allow_with_reward_cash),
+    allow_negative_points: settings.allow_negative_points == null ? 0 : Number(!!settings.allow_negative_points),
+    settle_timing: settings.settle_timing || 'order_completed',
+    expire_enabled: settings.expire_enabled == null ? 0 : Number(!!settings.expire_enabled),
+    expire_days: Math.max(toInt(settings.expire_days, 0), 0),
     zero_pay_allowed: settings.zero_pay_allowed == null ? 1 : Number(!!settings.zero_pay_allowed),
   };
 }
@@ -122,6 +127,56 @@ function getLineAmount(item, keyCandidates, fallback = 0) {
   return money(fallback);
 }
 
+function getLineEarnAmounts(item, product, qty, settings) {
+  const priceAmount = money(toNumber(item.price || product.price || 0) * qty);
+  if (settings.earn_after_discount) {
+    const paidAmount = getLineAmount(
+      item,
+      ['line_paid_amount', 'paid_amount', 'subtotal_after_discount', 'subtotal'],
+      priceAmount,
+    );
+    return { paidAmount, priceAmount };
+  }
+  const preDiscount = getLineAmount(item, ['subtotal', 'line_subtotal', 'line_original_amount'], priceAmount);
+  return { paidAmount: preDiscount, priceAmount };
+}
+
+function calculateEarnFromProductRule(rule, ruleMode, settings, paidAmount, priceAmount, qty, appliedFixedPerOrderRuleIds) {
+  if (!rule || !Number(rule.earn_enabled)) return { earned: 0, reason: 'rule_earn_disabled' };
+  if (ruleMode === 'no_points') return { earned: 0, reason: 'rule_no_points' };
+  if (ruleMode === 'fixed_per_item') {
+    return { earned: Math.max(toInt(rule.fixed_points, 0), 0) * qty, reason: '' };
+  }
+  if (ruleMode === 'fixed_per_order') {
+    const ruleId = String(rule.id || `${rule.scope_type}:${rule.scope_id || 'all'}`);
+    if (appliedFixedPerOrderRuleIds.has(ruleId)) return { earned: 0, reason: '' };
+    appliedFixedPerOrderRuleIds.add(ruleId);
+    return { earned: Math.max(toInt(rule.fixed_points, 0), 0), reason: '' };
+  }
+  if (ruleMode === 'amount_percent') {
+    return {
+      earned: roundPoints((paidAmount * Math.max(toNumber(rule.points_percent, 0), 0)) / 100, settings.earn_rounding),
+      reason: '',
+    };
+  }
+  if (ruleMode === 'price_percent') {
+    return {
+      earned: roundPoints((priceAmount * Math.max(toNumber(rule.points_percent, 0), 0)) / 100, settings.earn_rounding),
+      reason: '',
+    };
+  }
+  if (ruleMode === 'multiplier') {
+    return {
+      earned: roundPoints(
+        calculateGlobalEarnPoints(settings, paidAmount) * (Math.max(toNumber(rule.multiplier_percent, 100), 0) / 100),
+        settings.earn_rounding,
+      ),
+      reason: '',
+    };
+  }
+  return { earned: calculateGlobalEarnPoints(settings, paidAmount), reason: '' };
+}
+
 function calculateOrderEarnedPoints(params = {}) {
   const settings = normalizeSettings(params.settings);
   const rules = params.productRules || [];
@@ -139,43 +194,44 @@ function calculateOrderEarnedPoints(params = {}) {
     return { earned_points: 0, item_results: [], product_rule_snapshots: [], disabled_reason: '当前优惠不能与积分叠加', calculation_version: CALCULATION_VERSION };
   }
 
+  const globalEarnMode = settings.earn_mode;
   let total = 0;
   for (const item of items) {
     const product = getItemProduct(item, productMap);
     const qty = Math.max(toInt(item.qty || item.quantity, 1), 1);
-    const rule = resolveProductPointRule(product, rules);
+    const rule = globalEarnMode === 'amount' ? null : resolveProductPointRule(product, rules);
     const ruleMode = rule?.earn_mode || 'inherit';
-    const paidAmount = getLineAmount(item, ['line_paid_amount', 'paid_amount', 'subtotal_after_discount', 'subtotal'], toNumber(item.price) * qty);
-    const priceAmount = money(toNumber(item.price || product.price || 0) * qty);
+    const { paidAmount, priceAmount } = getLineEarnAmounts(item, product, qty, settings);
     const isPromotion = !!item.activity_id || !!item.activityId || !!product.is_promotion;
     const isRestricted = !!product.is_restricted || !!product.restricted || !!product.is_age_restricted;
+    const memberDiscountShare = money(item.member_discount_share || 0);
 
     let earned = 0;
     let reason = '';
     if ((settings.marketing_activity_no_points && isPromotion) || (settings.promotion_no_points && isPromotion)) {
       reason = 'activity_no_points';
-    } else if (isRestricted && settings.redeem_scope === 'exclude_restricted') {
+    } else if (settings.member_price_no_points && memberDiscountShare > 0) {
+      reason = 'member_price_no_points';
+    } else if (isRestricted) {
       reason = 'restricted_no_points';
-    } else if (rule && !Number(rule.earn_enabled)) {
-      reason = 'rule_earn_disabled';
-    } else if (ruleMode === 'no_points') {
-      reason = 'rule_no_points';
-    } else if (ruleMode === 'fixed_per_item') {
-      earned = Math.max(toInt(rule.fixed_points, 0), 0) * qty;
-    } else if (ruleMode === 'fixed_per_order') {
-      const ruleId = String(rule.id || `${rule.scope_type}:${rule.scope_id || 'all'}`);
-      if (!appliedFixedPerOrderRuleIds.has(ruleId)) {
-        earned = Math.max(toInt(rule.fixed_points, 0), 0);
-        appliedFixedPerOrderRuleIds.add(ruleId);
-      }
-    } else if (ruleMode === 'amount_percent') {
-      earned = roundPoints((paidAmount * Math.max(toNumber(rule.points_percent, 0), 0)) / 100, settings.earn_rounding);
-    } else if (ruleMode === 'price_percent') {
-      earned = roundPoints((priceAmount * Math.max(toNumber(rule.points_percent, 0), 0)) / 100, settings.earn_rounding);
-    } else if (ruleMode === 'multiplier') {
-      earned = roundPoints(calculateGlobalEarnPoints(settings, paidAmount) * (Math.max(toNumber(rule.multiplier_percent, 100), 0) / 100), settings.earn_rounding);
-    } else {
+    } else if (globalEarnMode === 'product_rule' && !rule) {
+      reason = 'no_product_rule';
+    } else if (globalEarnMode === 'amount' || !rule) {
       earned = calculateGlobalEarnPoints(settings, paidAmount);
+    } else if (ruleMode === 'inherit') {
+      earned = calculateGlobalEarnPoints(settings, paidAmount);
+    } else {
+      const ruleEarn = calculateEarnFromProductRule(
+        rule,
+        ruleMode,
+        settings,
+        paidAmount,
+        priceAmount,
+        qty,
+        appliedFixedPerOrderRuleIds,
+      );
+      earned = ruleEarn.earned;
+      reason = ruleEarn.reason;
     }
 
     const snapshot = rule ? { ...rule } : null;
@@ -213,6 +269,10 @@ function calculateMaxUsablePoints(params = {}) {
   }
   if (settings.allow_with_coupon === 0 && hasCoupon) {
     return { max_usable_points: 0, points_used: 0, points_discount_amount: 0, disabled_reason: '当前优惠不能与积分叠加', adjusted: false, calculation_version: CALCULATION_VERSION };
+  }
+  const useRewardCash = !!(params.useRewardCash ?? params.use_reward_cash);
+  if (settings.allow_with_reward_cash === 0 && useRewardCash) {
+    return { max_usable_points: 0, points_used: 0, points_discount_amount: 0, disabled_reason: '返现余额不能与积分叠加', adjusted: false, calculation_version: CALCULATION_VERSION };
   }
   if (userPointsBalance <= 0) {
     return { max_usable_points: 0, points_used: 0, points_discount_amount: 0, disabled_reason: '可用积分不足', adjusted: false, calculation_version: CALCULATION_VERSION };

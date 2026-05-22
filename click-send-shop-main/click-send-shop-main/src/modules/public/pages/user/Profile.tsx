@@ -44,6 +44,7 @@ import * as loyaltyService from "@/services/loyaltyService";
 import * as meService from "@/services/meService";
 import * as uploadService from "@/services/uploadService";
 import type { OrderSummary } from "@/types/order";
+import { hasPendingReview } from "@/utils/orderBuyerStatus";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import InvitePromoCard from "@/components/store/InvitePromoCard";
 import { formatUnreadBadge } from "@/utils/notificationBadge";
@@ -225,7 +226,7 @@ export default function Profile() {
   const orderPending = useMemo(() => orders.filter((o) => o.status === "pending" && o.payment_status !== "paid").length, [orders]);
   const orderShipping = useMemo(() => orders.filter((o) => o.status === "paid" || (o.payment_status === "paid" && o.status !== "shipped" && o.status !== "completed" && o.status !== "cancelled" && o.status !== "refunding" && o.status !== "refunded")).length, [orders]);
   const orderReceiving = useMemo(() => orders.filter((o) => o.status === "shipped").length, [orders]);
-  const pendingReviewCount = useMemo(() => orders.reduce((acc, o) => acc + (o.status === "completed" ? o.items.filter((i) => i.can_review).length : 0), 0), [orders]);
+  const pendingReviewCount = useMemo(() => orders.filter((o) => hasPendingReview(o)).length, [orders]);
   const [activeReturnCount, setActiveReturnCount] = useState(0);
   const orderRefundCount = useMemo(
     () => orders.filter((o) => o.status === "refunding" || o.status === "refunded").length,

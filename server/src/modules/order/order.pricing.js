@@ -338,9 +338,13 @@ async function buildOrderPricing(userId, body, conn = null) {
   const rewardBalance = userId ? Number(await rewardRepo.sumUserRewardTransactions(q, userId)) : 0;
 
   const usePoints = pointsEnabled && !!body.use_points;
+  const useRewardCashRequested = !!body.use_reward_cash;
   const requestPointsToUse = Number(body.points_to_use || 0);
   if (usePoints && !isPaymentMethodAllowedForPoints(pointsSettings, body.payment_method)) {
     throw new ValidationError('当前支付方式不支持积分抵扣');
+  }
+  if (usePoints && useRewardCashRequested && !pointsEngine.normalizeSettings(pointsSettings).allow_with_reward_cash) {
+    throw new ValidationError('返现余额不能与积分抵扣同时使用');
   }
   const memberLevelDiscountBase = Math.max(0, rawAmount - fullReductionDiscount - nonShippingGoodsCoupon);
   const memberLevelDiscount = memberDiscountRate < 1
@@ -357,6 +361,9 @@ async function buildOrderPricing(userId, body, conn = null) {
   const loyaltyItems = orderItems.map((oi) => {
     const lineSubtotal = oi.price * oi.qty;
     const discountShare = rawAmount > 0 ? (goodsDiscountForAllocation * lineSubtotal) / rawAmount : 0;
+    const memberDiscountShare = rawAmount > 0 && memberLevelDiscount > 0
+      ? (memberLevelDiscount * lineSubtotal) / rawAmount
+      : 0;
     const product = productMap[oi.productId] || {};
     const fullReductionBlocksPoints = fullReductionActivities.some((act) => act.allow_points_stack === 0 && lineMatchesActivityScope(oi, product, act, act.scopes || []));
     const flash = flashByProductId.get(oi.productId);
@@ -366,6 +373,7 @@ async function buildOrderPricing(userId, body, conn = null) {
       price: oi.price,
       subtotal: lineSubtotal,
       line_paid_amount: Math.max(0, lineSubtotal - discountShare),
+      member_discount_share: pointsEngine.money(memberDiscountShare),
       activity_id: oi.activityId,
       allow_points_stack: flash ? flash.allow_points_stack !== 0 : !fullReductionBlocksPoints,
     };
@@ -390,8 +398,9 @@ async function buildOrderPricing(userId, body, conn = null) {
       productRules,
       coupon: couponDiscount > 0 ? { title: couponTitle, type: couponType } : null,
       discounts: { coupon_amount: couponDiscount, full_reduction_amount: fullReductionDiscount, member_level_discount: memberLevelDiscount },
-    pointsToUse: pointsEnabled && usePoints ? (requestPointsToUse > 0 ? requestPointsToUse : pointsBalance) : 0,
-  });
+      useRewardCash: useRewardCashRequested,
+      pointsToUse: pointsEnabled && usePoints ? (requestPointsToUse > 0 ? requestPointsToUse : pointsBalance) : 0,
+    });
   const max_usable_points = pointsEnabled ? (pointsRedeem.max_usable_points || 0) : 0;
   const points_used = usePoints ? Number(pointsRedeem.points_used || 0) : 0;
   const points_discount_amount = usePoints ? Number(pointsRedeem.points_discount_amount || 0) : 0;
@@ -406,7 +415,7 @@ async function buildOrderPricing(userId, body, conn = null) {
     && afterPoints >= Number(rewardSettings?.min_redeem_amount || 0)
   ) ? clamp(Math.min(rewardBalance, rewardMaxByPercent, rewardMaxByAmount, afterPoints), 0, afterPoints) : 0;
 
-  const useRewardCash = !!body.use_reward_cash;
+  const useRewardCash = useRewardCashRequested;
   const requestRewardCash = Number(body.reward_cash_amount || 0);
   const reward_cash_used = useRewardCash
     ? clamp(requestRewardCash > 0 ? requestRewardCash : max_usable_reward_cash, 0, max_usable_reward_cash)
@@ -414,18 +423,27 @@ async function buildOrderPricing(userId, body, conn = null) {
   const reward_cash_discount_amount = reward_cash_used;
 
   const finalTotal = Math.max(0, basePayableBeforeLoyaltyWithMember - points_discount_amount - reward_cash_discount_amount);
-  const pointsEarn = pointsEngine.calculateOrderEarnedPoints({
-    settings: pointsSettings,
-    productRules,
-    orderItems: loyaltyItems.map((item) => ({
-      ...item,
-      line_paid_amount: Math.max(0, item.line_paid_amount - (pointsSettings?.earn_after_points_redeem ? points_discount_amount * (item.line_paid_amount / Math.max(goodsInclusiveTaxable || 1, 1)) : 0)),
-    })),
-    productMap,
-    memberLevel,
-    coupon: couponDiscount > 0 ? { title: couponTitle, type: couponType } : null,
-    discounts: { coupon_amount: couponDiscount, full_reduction_amount: fullReductionDiscount, member_level_discount: memberLevelDiscount },
-  });
+  const paymentAllowsPoints = isPaymentMethodAllowedForPoints(pointsSettings, body.payment_method);
+  const pointsEarn = paymentAllowsPoints
+    ? pointsEngine.calculateOrderEarnedPoints({
+      settings: pointsSettings,
+      productRules,
+      orderItems: loyaltyItems.map((item) => ({
+        ...item,
+        line_paid_amount: Math.max(0, item.line_paid_amount - (pointsSettings?.earn_after_points_redeem ? points_discount_amount * (item.line_paid_amount / Math.max(goodsInclusiveTaxable || 1, 1)) : 0)),
+      })),
+      productMap,
+      memberLevel,
+      coupon: couponDiscount > 0 ? { title: couponTitle, type: couponType } : null,
+      discounts: { coupon_amount: couponDiscount, full_reduction_amount: fullReductionDiscount, member_level_discount: memberLevelDiscount },
+    })
+    : {
+      earned_points: 0,
+      item_results: [],
+      product_rule_snapshots: [],
+      disabled_reason: '当前支付方式不支持积分',
+      calculation_version: pointsEngine.CALCULATION_VERSION,
+    };
   const earned_points = Number(pointsEarn.earned_points || 0);
 
   const discount_lines = [];

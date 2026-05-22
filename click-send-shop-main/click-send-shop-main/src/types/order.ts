@@ -186,6 +186,7 @@ export interface OrderListParams {
   buyerType?: "new" | "repeat" | "";
   amountMin?: number;
   amountMax?: number;
+  ids?: string[];
   page?: number;
   pageSize?: number;
 }

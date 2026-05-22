@@ -37,3 +37,8 @@ exports.deleteProductRule = asyncRoute(async (req, res) => {
   await svc.deleteProductRule(id, req);
   res.success(null, '规则已停用');
 });
+
+exports.runPointsExpireJob = asyncRoute(async (req, res) => {
+  const data = await svc.runPointsExpireJob(req);
+  res.success(data, '积分过期任务已执行');
+});

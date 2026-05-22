@@ -85,6 +85,16 @@ const checkoutAbandonmentRepo = {
   markPaidByOrderId: (...args) => requireOrderApi('markCheckoutAbandonmentPaidByOrderId')(...args),
 };
 
+const orderPoints = require('../../order/service/orderPoints.service');
+
+async function grantPaymentSuccessPoints(conn, order, trigger) {
+  try {
+    await orderPoints.maybeGrantOrderEarnOnPaymentSuccess(conn, order, { trigger });
+  } catch (err) {
+    console.error(`[payments] grant points on ${trigger} failed:`, err?.message || err);
+  }
+}
+
 function requireUserApi(name) {
   const fn = getUserApi()[name];
   if (typeof fn !== 'function') {
@@ -252,6 +262,7 @@ async function payWithRewardWallet(userId, orderId) {
       throw new ValidationError('订单状态已变更，请刷新后重试');
     }
     await requireUserApi('syncStatsAfterOrderPaid')(userId, payableAmount, lockedOrder.id, conn);
+    await grantPaymentSuccessPoints(conn, lockedOrder, 'reward_wallet_payment_success');
     await payRepo.insertAnalyticsEvent(conn, {
       user_id: userId,
       dedupe_key: `payment_success:${lockedOrder.id}`,
@@ -570,6 +581,7 @@ async function markOrderPaidFromProvider(conn, order, paymentOrder, transactionN
     return { skipped: true, reason: 'already_paid' };
   }
   await requireUserApi('syncStatsAfterOrderPaid')(order.user_id, toMoney(order.total_amount), order.id, conn);
+  await grantPaymentSuccessPoints(conn, order, 'provider_payment_success');
   await payRepo.insertAnalyticsEvent(conn, {
     user_id: order.user_id,
     dedupe_key: `payment_success:${order.id}`,
@@ -837,6 +849,7 @@ async function markOrderPaidByAdmin(req, orderId, body) {
       throw new ValidationError('订单状态已变更，请刷新后重试');
     }
     await requireUserApi('syncStatsAfterOrderPaid')(order.user_id, total, order.id, conn);
+    await grantPaymentSuccessPoints(conn, order, 'admin_mark_payment_success');
     await requireUserApi('refreshUserMemberLevel')(conn, order.user_id);
 
     const itemRows = await orderRepo.selectOrderItemQtyRows(conn, order.id);

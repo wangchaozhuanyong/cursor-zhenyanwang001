@@ -31,21 +31,40 @@ const baseOrder = {
   points_used: 100,
 };
 
-test('order earn points are granted only when order is completed', async () => {
+test('grantOrderEarnPoints always grants when order has earnable points', async () => {
   const calls = [];
   userModule.api.changeUserPoints = async (_conn, payload) => {
     calls.push(payload);
     return { skipped: false };
   };
 
-  assert.equal((await orderPoints.grantOrderEarnPoints({}, baseOrder, { timing: 'payment_success' })).skipped, true);
-  assert.equal((await orderPoints.grantOrderEarnPoints({}, baseOrder, { timing: 'order_shipped' })).skipped, true);
-  assert.equal(calls.length, 0);
-
-  await orderPoints.grantOrderEarnPoints({}, baseOrder, { timing: 'order_completed', trigger: 'admin_order_completed' });
+  await orderPoints.grantOrderEarnPoints({}, baseOrder, { timing: 'payment_success', trigger: 'payment_success' });
   assert.equal(calls.length, 1);
   assert.equal(calls[0].action, 'order_earn');
   assert.equal(calls[0].amount, 50);
+});
+
+test('maybeGrantOrderEarnPoints respects configured settle_timing', async () => {
+  const calls = [];
+  userModule.api.changeUserPoints = async (_conn, payload) => {
+    calls.push(payload);
+    return { skipped: false };
+  };
+
+  const mismatch = await orderPoints.maybeGrantOrderEarnPoints({}, baseOrder, {
+    timing: 'payment_success',
+    pointsSettings: { settle_timing: 'order_completed' },
+  });
+  assert.equal(mismatch.skipped, true);
+  assert.equal(mismatch.reason, 'settle_timing_mismatch');
+  assert.equal(calls.length, 0);
+
+  await orderPoints.maybeGrantOrderEarnPoints({}, baseOrder, {
+    timing: 'order_completed',
+    pointsSettings: { settle_timing: 'order_completed' },
+    trigger: 'admin_order_completed',
+  });
+  assert.equal(calls.length, 1);
   assert.equal(calls[0].relatedRecordId, 'order_earn:order-1');
 });
 

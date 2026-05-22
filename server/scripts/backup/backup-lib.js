@@ -169,6 +169,57 @@ async function fileStat(filePath) {
   return { sizeBytes: stat.size };
 }
 
+async function pathExists(filePath) {
+  try {
+    await fsp.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function removeFileQuietly(filePath) {
+  if (!filePath) return;
+  await fsp.rm(filePath, { force: true }).catch(() => {});
+}
+
+async function removeTreeQuietly(dirPath) {
+  if (!dirPath) return;
+  await fsp.rm(dirPath, { recursive: true, force: true }).catch(() => {});
+}
+
+async function findExistingParent(dirPath) {
+  let current = path.resolve(dirPath || '.');
+  while (!(await pathExists(current))) {
+    const next = path.dirname(current);
+    if (next === current) return current;
+    current = next;
+  }
+  return current;
+}
+
+function defaultMinFreeBytes(extraBytes = 0) {
+  const configured = Number(process.env.BACKUP_MIN_FREE_BYTES || 1024 * 1024 * 1024);
+  const base = Number.isFinite(configured) && configured > 0 ? configured : 1024 * 1024 * 1024;
+  return Math.max(base, Number(extraBytes) || 0);
+}
+
+async function getAvailableBytes(dirPath) {
+  if (typeof fsp.statfs !== 'function') return null;
+  const target = await findExistingParent(dirPath);
+  const stat = await fsp.statfs(target);
+  return Number(stat.bavail) * Number(stat.bsize);
+}
+
+async function assertMinFreeBytes(dirPath, minBytes, label = 'backup') {
+  const available = await getAvailableBytes(dirPath);
+  if (available == null) return;
+  const required = Number(minBytes) > 0 ? Number(minBytes) : defaultMinFreeBytes();
+  if (available < required) {
+    throw new Error(`${label} aborted: low disk space. available=${available} required=${required}`);
+  }
+}
+
 function dbEnvArgs() {
   const args = [
     `--host=${process.env.DB_HOST || 'localhost'}`,
@@ -206,6 +257,11 @@ module.exports = {
   uploadObject,
   downloadObject,
   fileStat,
+  removeFileQuietly,
+  removeTreeQuietly,
+  defaultMinFreeBytes,
+  getAvailableBytes,
+  assertMinFreeBytes,
   dbEnvArgs,
   dbAdminArgs,
 };

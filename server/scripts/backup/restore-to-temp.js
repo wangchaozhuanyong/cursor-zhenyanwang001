@@ -16,6 +16,7 @@ const {
   downloadObject,
   runCommand,
   dbAdminArgs,
+  removeTreeQuietly,
 } = require('./backup-lib');
 
 const CRITICAL_TABLES = [
@@ -100,6 +101,13 @@ async function prepareTempDatabase(tempDbName) {
   await withAdminConnection(async (conn) => {
     await conn.query(`DROP DATABASE IF EXISTS \`${tempDbName}\``);
     await conn.query(`CREATE DATABASE \`${tempDbName}\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+  });
+}
+
+async function dropTempDatabase(tempDbName) {
+  assertTempDbName(tempDbName);
+  await withAdminConnection(async (conn) => {
+    await conn.query(`DROP DATABASE IF EXISTS \`${tempDbName}\``);
   });
 }
 
@@ -257,6 +265,14 @@ async function main() {
         relatedFileId: sourceFile.id,
       });
       process.exit(2);
+    }
+
+    const drillJob = job.validation_result?.drill === true;
+    if (drillJob && process.env.BACKUP_KEEP_RESTORE_DRILL_DB !== '1') {
+      await dropTempDatabase(tempDbName);
+    }
+    if (process.env.BACKUP_KEEP_RESTORE_WORKDIR !== '1') {
+      await removeTreeQuietly(workDir);
     }
   } catch (err) {
     const finishedAt = new Date();

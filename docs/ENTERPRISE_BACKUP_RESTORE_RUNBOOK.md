@@ -7,7 +7,7 @@ Last updated: 2026-05-22
 - Full MySQL backup every 4 hours.
 - Long-term full MySQL backup daily.
 - Pre-deploy, pre-migration, and pre-cleanup backups before destructive operations.
-- Point-in-time recovery with full backup plus MySQL binlog, targeting <= 1 minute object-storage RPO.
+- Point-in-time recovery with full backup plus MySQL binlog. On small single-disk EC2 instances, sync only closed binlogs to object storage and keep active binlogs on MySQL disk until they rotate.
 - Restore to a temporary database first; production switch or merge requires super admin approval and MFA.
 
 ## Required Environment
@@ -19,7 +19,13 @@ BACKUP_S3_PREFIX=shop-backups
 BACKUP_ENCRYPTION_KEY=replace-with-secret-from-kms-or-secrets-manager
 BACKUP_ENCRYPTION_KEY_ID=prod-backup-key-v1
 MYSQL_BINLOG_DIR=/var/lib/mysql
-MYSQL_BINLOG_FILES=mysql-bin.000001
+MYSQL_BINLOG_FILES=
+BACKUP_BINLOG_INCLUDE_ACTIVE=0
+BACKUP_BINLOG_MIN_AGE_SECONDS=120
+BACKUP_KEEP_LOCAL_ENCRYPTED=0
+BACKUP_MIN_FREE_BYTES=1073741824
+BACKUP_KEEP_RESTORE_WORKDIR=0
+BACKUP_KEEP_RESTORE_DRILL_DB=0
 BACKUP_BEFORE_DEPLOY=1
 BACKUP_BEFORE_MIGRATION=1
 ```
@@ -50,7 +56,7 @@ Example cron:
 ```cron
 0 */4 * * * cd /var/www/click-send-shop/server && npm run backup:full >> /var/log/click-send-shop-backup.log 2>&1
 20 2 * * * cd /var/www/click-send-shop/server && BACKUP_KIND=long npm run backup:full >> /var/log/click-send-shop-backup.log 2>&1
-* * * * * cd /var/www/click-send-shop/server && npm run backup:binlog >> /var/log/click-send-shop-binlog.log 2>&1
+*/5 * * * * cd /var/www/click-send-shop/server && npm run backup:binlog >> /var/log/click-send-shop-binlog.log 2>&1
 30 4 * * * cd /var/www/click-send-shop/server && npm run restore:drill >> /var/log/click-send-shop-restore-drill.log 2>&1
 ```
 
@@ -73,7 +79,7 @@ Example unit/timer templates are provided under `deploy/systemd`:
 
 - `click-send-backup-full.*`: full backup every 4 hours.
 - `click-send-backup-long.*`: long-term full backup daily.
-- `click-send-binlog-sync.*`: binlog sync every minute.
+- `click-send-binlog-sync.*`: closed-binlog sync every 5 minutes by default. Do not copy the active binlog on a small system disk unless you have a separate staging disk or streaming design.
 - `click-send-restore-drill.*`: restore drill daily.
 
 Install by copying the `.example` files to `/etc/systemd/system/` without the `.example` suffix, then run:

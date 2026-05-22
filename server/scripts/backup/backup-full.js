@@ -15,6 +15,9 @@ const {
   uploadObject,
   fileStat,
   dbEnvArgs,
+  removeFileQuietly,
+  assertMinFreeBytes,
+  defaultMinFreeBytes,
 } = require('./backup-lib');
 
 async function safeRepo(label, fn) {
@@ -53,6 +56,7 @@ async function main() {
   const stamp = nowStamp();
   const dir = getBackupDir('mysql-full', stamp.slice(0, 10));
   await ensureDir(dir);
+  await assertMinFreeBytes(dir, defaultMinFreeBytes(1024 * 1024 * 1024), 'mysql full backup');
 
   const dbName = process.env.DB_NAME || 'click_send_shop';
   const sqlPath = path.join(dir, `${dbName}-${stamp}.sql`);
@@ -76,13 +80,19 @@ async function main() {
       stdio: ['ignore', require('fs').openSync(sqlPath, 'w'), 'pipe'],
     });
     await gzipFile(sqlPath, gzPath);
+    await removeFileQuietly(sqlPath);
     await encryptFile(gzPath, encPath);
+    await removeFileQuietly(gzPath);
     const sha256 = await sha256File(encPath);
     const { sizeBytes } = await fileStat(encPath);
     const storageKey = `${process.env.BACKUP_S3_PREFIX || 'shop-backups'}/mysql/full/${stamp}/${path.basename(encPath)}`;
     const uploaded = await uploadObject(encPath, storageKey);
     if (!uploaded.skipped) {
       await uploadObject(`${encPath}.meta.json`, `${storageKey}.meta.json`);
+    }
+    if (!uploaded.skipped && process.env.BACKUP_KEEP_LOCAL_ENCRYPTED !== '1') {
+      await removeFileQuietly(encPath);
+      await removeFileQuietly(`${encPath}.meta.json`);
     }
 
     await safeRepo('insert file', () => repo.insertBackupFile({
@@ -120,6 +130,8 @@ async function main() {
       message: String(err.message || err),
       relatedJobId: jobId,
     }).catch((alertErr) => console.warn('[backup-full] alert failed:', alertErr?.message || alertErr));
+    await removeFileQuietly(sqlPath);
+    await removeFileQuietly(gzPath);
     throw err;
   }
 }

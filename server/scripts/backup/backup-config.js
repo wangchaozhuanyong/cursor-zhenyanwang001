@@ -14,6 +14,9 @@ const {
   sha256File,
   uploadObject,
   fileStat,
+  removeFileQuietly,
+  assertMinFreeBytes,
+  defaultMinFreeBytes,
 } = require('./backup-lib');
 
 async function main() {
@@ -29,6 +32,7 @@ async function main() {
   const stamp = nowStamp();
   const dir = getBackupDir('config', stamp.slice(0, 10));
   await ensureDir(dir);
+  await assertMinFreeBytes(dir, defaultMinFreeBytes(256 * 1024 * 1024), 'config backup');
   const manifestPath = path.join(dir, `config-${stamp}.txt`);
   const candidates = [
     path.join(serverRoot, '.env'),
@@ -46,11 +50,20 @@ async function main() {
   const gzPath = `${manifestPath}.gz`;
   const encPath = `${gzPath}.enc`;
   await gzipFile(manifestPath, gzPath);
+  await removeFileQuietly(manifestPath);
   await encryptFile(gzPath, encPath);
+  await removeFileQuietly(gzPath);
   const sha256 = await sha256File(encPath);
   const { sizeBytes } = await fileStat(encPath);
   const storageKey = `${process.env.BACKUP_S3_PREFIX || 'shop-backups'}/config/${stamp}/${path.basename(encPath)}`;
   const uploaded = await uploadObject(encPath, storageKey);
+  if (!uploaded.skipped) {
+    await uploadObject(`${encPath}.meta.json`, `${storageKey}.meta.json`);
+  }
+  if (!uploaded.skipped && process.env.BACKUP_KEEP_LOCAL_ENCRYPTED !== '1') {
+    await removeFileQuietly(encPath);
+    await removeFileQuietly(`${encPath}.meta.json`);
+  }
   await repo.insertBackupFile({
     id: generateId(),
     backupJobId: jobId,

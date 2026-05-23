@@ -253,7 +253,7 @@ async function buildOrderPricing(userId, body, conn = null) {
     : await repo.selectActivePointsBonusActivitiesRead(q);
   let pointsBonusUserContext = {};
   if (userId) {
-    const authRepo = require('../../auth/repository/auth.repository');
+    const authRepo = require('../auth/repository/auth.repository');
     const { klYear } = require('../../utils/birthdayWindow');
     const { klDateString } = require('../../utils/klDateRange');
     const birthdayRow = await authRepo.selectUserBirthdayFields(userId);

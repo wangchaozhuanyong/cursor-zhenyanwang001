@@ -66,6 +66,31 @@ const colorTabSections: Array<{ title: string; fields: ColorFieldKey[] }> = [
   { title: "状态颜色", fields: ["successColor", "warningColor", "dangerColor"] },
 ];
 
+const THEME_EDITOR_TAB_STORAGE_KEY = "admin-theme-editor-tab";
+
+const TAB_PANEL_HINTS: Record<EditorTabId, string> = {
+  basic: "皮肤名称、适用场景和前台可见状态",
+  colors: "品牌色、页面色、文字色与状态色",
+  components: "按钮、导航、圆角、阴影、动效与页面密度",
+  product: "商品卡片、图片比例、价格与徽标样式",
+  home: "首页布局、头部、Banner、优惠券与会员卡",
+  advanced: "后台主题模式、字体与可访问性体检",
+};
+
+function isEditorTabId(value: string): value is EditorTabId {
+  return EDITOR_TABS.some((tab) => tab.id === value);
+}
+
+function readStoredEditorTab(): EditorTabId {
+  try {
+    const stored = sessionStorage.getItem(THEME_EDITOR_TAB_STORAGE_KEY);
+    if (stored && isEditorTabId(stored)) return stored;
+  } catch {
+    /* ignore */
+  }
+  return "basic";
+}
+
 function mapHealthSectionToTab(sectionId: ThemeHealthFixTarget["sectionId"]): EditorTabId {
   if (sectionId === "toolbar" || sectionId === "colors" || sectionId === "text" || sectionId === "status") return "colors";
   if (sectionId === "buttons") return "components";
@@ -85,17 +110,36 @@ export default function ThemeEditorPanel({
   onUndoOptimize,
 }: ThemeEditorPanelProps) {
   const panelRef = useRef<HTMLElement>(null);
-  const [activeTab, setActiveTab] = useState<EditorTabId>("basic");
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState<EditorTabId>(readStoredEditorTab);
   const [highlightField, setHighlightField] = useState<ColorFieldKey | null>(null);
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const selectTab = useCallback((tabId: EditorTabId) => {
+    setActiveTab(tabId);
+    try {
+      sessionStorage.setItem(THEME_EDITOR_TAB_STORAGE_KEY, tabId);
+    } catch {
+      /* ignore */
+    }
+    contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
 
   useEffect(() => () => {
     if (highlightTimer.current) clearTimeout(highlightTimer.current);
   }, []);
 
+  useEffect(() => {
+    if (!highlightField) return;
+    const frame = window.requestAnimationFrame(() => {
+      panelRef.current?.querySelector(`#theme-field-${highlightField}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeTab, highlightField]);
+
   const goToFix = useCallback(
     (target: ThemeHealthFixTarget) => {
-      setActiveTab(mapHealthSectionToTab(target.sectionId));
+      selectTab(mapHealthSectionToTab(target.sectionId));
       if (target.autoAction) {
         onAutoColor(target.autoAction);
       }
@@ -105,15 +149,8 @@ export default function ThemeEditorPanel({
         if (highlightTimer.current) clearTimeout(highlightTimer.current);
         highlightTimer.current = setTimeout(() => setHighlightField(null), 3500);
       }
-      window.requestAnimationFrame(() => {
-        if (field) {
-          panelRef.current?.querySelector(`#theme-field-${field}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-        } else {
-          panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-      });
     },
-    [onAutoColor],
+    [onAutoColor, selectTab],
   );
 
   const statusText = useMemo(() => {
@@ -124,16 +161,14 @@ export default function ThemeEditorPanel({
   return (
     <section ref={panelRef} className="min-w-0 flex-1 rounded-2xl border border-border bg-card p-4 shadow-sm">
       <div className="mb-5 rounded-2xl border border-border/70 bg-secondary/25 p-3">
-        <p className="mb-2 text-xs font-semibold text-muted-foreground">快速定位设置区</p>
+        <p className="mb-2 text-xs font-semibold text-muted-foreground">设置分类</p>
         <div className="flex flex-wrap gap-2">
         {EDITOR_TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
-            onClick={() => {
-              setActiveTab(tab.id);
-              window.requestAnimationFrame(() => panelRef.current?.querySelector(`#theme-section-${tab.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" }));
-            }}
+            aria-current={activeTab === tab.id ? "true" : undefined}
+            onClick={() => selectTab(tab.id)}
             className={`rounded-xl px-3 py-1.5 text-xs font-medium ${
               activeTab === tab.id ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]" : "bg-secondary text-muted-foreground"
             }`}
@@ -142,9 +177,11 @@ export default function ThemeEditorPanel({
           </button>
         ))}
         </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">{TAB_PANEL_HINTS[activeTab]}</p>
       </div>
 
-      <div className="space-y-5">
+      <div ref={contentRef} className="min-h-[280px] space-y-5">
+      {activeTab === "basic" ? (
       <section id="theme-section-basic" className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
         <div className="mb-3">
           <AdminSectionTitle title="基础信息" hint="皮肤名称、适用场景和前台可见状态。" />
@@ -190,7 +227,9 @@ export default function ThemeEditorPanel({
           <p className="rounded-xl bg-secondary/60 px-3 py-2 text-xs text-muted-foreground md:col-span-2">{statusText}</p>
         </div>
       </section>
+      ) : null}
 
+      {activeTab === "colors" ? (
       <section id="theme-section-colors" className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
         <div className="mb-3">
           <AdminSectionTitle title="颜色系统" hint="品牌色、页面色、文字色和状态色会同步影响前台与预览。" />
@@ -226,7 +265,9 @@ export default function ThemeEditorPanel({
           ))}
         </div>
       </section>
+      ) : null}
 
+      {activeTab === "components" ? (
       <section id="theme-section-components" className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
         <div className="mb-3">
           <AdminSectionTitle title="组件风格" hint="按钮、导航、圆角、阴影、动效与页面密度。" />
@@ -246,7 +287,9 @@ export default function ThemeEditorPanel({
           <SelectRow fieldKey="density" label="密度" value={themeConfig.density} options={enumOptions.density} onChange={(v) => onConfigChange("density", v)} />
         </div>
       </section>
+      ) : null}
 
+      {activeTab === "product" ? (
       <section id="theme-section-product" className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
         <div className="mb-3">
           <AdminSectionTitle title="商品展示" hint="商品卡片、图片比例、价格与徽标样式。" />
@@ -261,7 +304,9 @@ export default function ThemeEditorPanel({
           <SelectRow fieldKey="badgeStyle" label="标签风格" value={themeConfig.badgeStyle} options={enumOptions.badgeStyle} onChange={(v) => onConfigChange("badgeStyle", v)} />
         </div>
       </section>
+      ) : null}
 
+      {activeTab === "home" ? (
       <section id="theme-section-home" className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
         <div className="mb-3">
           <AdminSectionTitle title="首页与营销" hint="首页布局、头部、Banner、优惠券、会员卡和分类图标。" />
@@ -275,7 +320,9 @@ export default function ThemeEditorPanel({
           <SelectRow fieldKey="categoryIconStyle" label="分类图标" value={themeConfig.categoryIconStyle} options={enumOptions.categoryIconStyle} onChange={(v) => onConfigChange("categoryIconStyle", v)} />
         </div>
       </section>
+      ) : null}
 
+      {activeTab === "advanced" ? (
       <section id="theme-section-advanced" className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
         <div className="mb-3">
           <AdminSectionTitle
@@ -297,6 +344,7 @@ export default function ThemeEditorPanel({
           <ThemeHealthCheck config={themeConfig} onGoToFix={goToFix} />
         </div>
       </section>
+      ) : null}
       </div>
     </section>
   );

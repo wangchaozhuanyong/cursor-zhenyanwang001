@@ -25,7 +25,7 @@ export default function PaymentAdminSubnav() {
             }`
           }
         >
-          {tab.label}
+          {tText(tab.label)}
         </NavLink>
       ))}
     </div>

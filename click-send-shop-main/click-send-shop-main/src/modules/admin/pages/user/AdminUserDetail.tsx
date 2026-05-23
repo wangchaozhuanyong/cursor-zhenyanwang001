@@ -85,7 +85,8 @@ export default function AdminUserDetail() {
   const levelsLoadFailed = detailQuery.data?.levelsLoadFailed ?? false;
   const statusOverview = detailQuery.data?.statusOverview ?? null;
   const loading = detailQuery.isLoading && !detailQuery.data;
-  const loadError = detailQuery.isError ? toastErrorMessage(detailQuery.error, "加载用户详情失败") : null;
+  const loadError = detailQuery.isError ? toastErrorMessage(detailQuery.error, tText("加载用户详情失败")) : null;
+  const restrictedLabel = (on: boolean) => (on ? tText("已限制") : tText("未限制"));
 
   const invalidateUserDetail = () =>
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.userDetail(id) });
@@ -93,12 +94,12 @@ export default function AdminUserDetail() {
   const doResetPassword = () => {
     if (!id) return;
     confirm({ title: tText("确认重置密码"),
-      description: "将为该用户生成临时密码并复制到剪贴板。",
-      confirmText: "重置",
+      description: tText("将为该用户生成临时密码并复制到剪贴板。"),
+      confirmText: tText("重置"),
       onConfirm: async () => {
         const pwd = await resetUserPassword(id);
         await navigator.clipboard.writeText(pwd);
-        toast.success(`临时密码：${pwd}（已复制）`);
+        toast.success(tText(`临时密码：${pwd}（已复制）`));
       },
     });
   };
@@ -108,7 +109,11 @@ export default function AdminUserDetail() {
     await updateUserAccountStatus(id, status, reason);
     await invalidateUserDetail();
     toast.success(
-      status === "normal" ? "账号已恢复正常" : status === "disabled" ? "已禁用登录（会话已失效）" : "已加入黑名单",
+      status === "normal"
+        ? tText("账号已恢复正常")
+        : status === "disabled"
+          ? tText("已禁用登录（会话已失效）")
+          : tText("已加入黑名单"),
     );
   };
 
@@ -119,7 +124,7 @@ export default function AdminUserDetail() {
       return;
     }
     void applyAccountStatus(status, "").catch((e) => {
-      toast.error(toastErrorMessage(e, "状态更新失败"));
+      toast.error(toastErrorMessage(e, tText("状态更新失败")));
     });
   };
 
@@ -136,7 +141,13 @@ export default function AdminUserDetail() {
       commentRestricted: type === "comment" ? enabled : undefined,
     });
     await invalidateUserDetail();
-    toast.success(`${enabled ? "已开启" : "已取消"}${type === "order" ? "下单" : type === "coupon" ? "领券" : "评论"}限制`);
+    const typeLabel =
+      type === "order" ? tText("下单") : type === "coupon" ? tText("领券") : tText("评论");
+    toast.success(
+      enabled
+        ? tText(`已开启${typeLabel}限制`)
+        : tText(`已取消${typeLabel}限制`),
+    );
   };
 
   const doRestriction = (type: "order" | "coupon" | "comment", enabled: boolean) => {
@@ -152,7 +163,7 @@ export default function AdminUserDetail() {
       await invalidateUserDetail();
       toast.success(tText("资料已保存"));
     } catch (e) {
-      toast.error(toastErrorMessage(e, "保存失败"));
+      toast.error(toastErrorMessage(e, tText("保存失败")));
     }
   };
 
@@ -185,7 +196,7 @@ export default function AdminUserDetail() {
           <div className="min-w-0 space-y-2">
             <div className="flex items-center gap-2 text-base font-semibold">
               <UserRound size={18} />
-              <span className="truncate">{user.nickname || "未命名用户"}</span>
+              <span className="truncate">{user.nickname || tText("未命名用户")}</span>
             </div>
             <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
               <InfoItem label={tText("用户ID")} value={user.id || "-"} />
@@ -199,18 +210,18 @@ export default function AdminUserDetail() {
 
           <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-2 text-xs text-foreground">
             <span><Tx>操作提示</Tx></span>
-            <AdminFieldHint text="建议优先在「基础资料」核对状态，再处理限制类操作" />
+            <AdminFieldHint text={tText("建议优先在「基础资料」核对状态，再处理限制类操作")} />
           </div>
         </div>
         <div className="mt-3 grid gap-2 text-xs sm:grid-cols-4">
           <InfoCard title={tText("账户状态")} value={accountStatusLabel} />
-          <InfoCard title={tText("下单限制")} value={statusOverview?.restrictions?.order_restricted ? "已限制" : "未限制"} />
-          <InfoCard title={tText("领券限制")} value={statusOverview?.restrictions?.coupon_restricted ? "已限制" : "未限制"} />
-          <InfoCard title={tText("评论限制")} value={statusOverview?.restrictions?.comment_restricted ? "已限制" : "未限制"} />
+          <InfoCard title={tText("下单限制")} value={restrictedLabel(!!statusOverview?.restrictions?.order_restricted)} />
+          <InfoCard title={tText("领券限制")} value={restrictedLabel(!!statusOverview?.restrictions?.coupon_restricted)} />
+          <InfoCard title={tText("评论限制")} value={restrictedLabel(!!statusOverview?.restrictions?.comment_restricted)} />
         </div>
         {statusOverview?.latest_status_action ? (
           <p className="mt-2 text-xs text-muted-foreground">
-            最近状态操作：{statusOverview.latest_status_action.summary || "-"} / 操作人：{statusOverview.latest_status_action.operator_name || "-"} / 时间：{statusOverview.latest_status_action.created_at || "-"}
+            {tText("最近状态操作")}：{statusOverview.latest_status_action.summary || "-"} / {tText("操作人")}：{statusOverview.latest_status_action.operator_name || "-"} / {tText("时间")}：{statusOverview.latest_status_action.created_at || "-"}
           </p>
         ) : null}
       </section>
@@ -223,11 +234,11 @@ export default function AdminUserDetail() {
           <PermissionGate permission="user.update"><ActionBtn label={tText("禁用登录")} disabled={(statusOverview?.account_status || user.account_status) === "disabled"} onClick={() => void doStatus("disabled")} danger /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={tText("恢复账号")} disabled={(statusOverview?.account_status || user.account_status) === "normal"} onClick={() => void doStatus("normal")} /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={tText("加入黑名单")} disabled={(statusOverview?.account_status || user.account_status) === "blacklisted"} onClick={() => void doStatus("blacklisted")} danger /></PermissionGate>
-          <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.order_restricted ? "取消下单限制" : "开启下单限制"} onClick={() => void doRestriction("order", !statusOverview?.restrictions?.order_restricted)} /></PermissionGate>
-          <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.coupon_restricted ? "取消领券限制" : "开启领券限制"} onClick={() => void doRestriction("coupon", !statusOverview?.restrictions?.coupon_restricted)} /></PermissionGate>
-          <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.comment_restricted ? "取消评论限制" : "开启评论限制"} onClick={() => void doRestriction("comment", !statusOverview?.restrictions?.comment_restricted)} /></PermissionGate>
-          {canManageMemberLevel ? <ActionBtn label={tText("按规则重新计算")} onClick={async () => { try { await recalculateUserMemberLevel(id, { force: true }); await invalidateUserDetail(); toast.success(tText("会员等级已按规则重算")); } catch (e) { toast.error(toastErrorMessage(e, "重算失败")); } }} /> : null}
-          {canManageMemberLevel ? <ActionBtn label={tText("解除手动锁定")} disabled={!Number(user.member_level_manual_locked || 0)} onClick={async () => { try { await unlockUserMemberLevel(id); await invalidateUserDetail(); toast.success(tText("已解除手动锁定")); } catch (e) { toast.error(toastErrorMessage(e, "解除失败")); } }} /> : null}
+          <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.order_restricted ? tText("取消下单限制") : tText("开启下单限制")} onClick={() => void doRestriction("order", !statusOverview?.restrictions?.order_restricted)} /></PermissionGate>
+          <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.coupon_restricted ? tText("取消领券限制") : tText("开启领券限制")} onClick={() => void doRestriction("coupon", !statusOverview?.restrictions?.coupon_restricted)} /></PermissionGate>
+          <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.comment_restricted ? tText("取消评论限制") : tText("开启评论限制")} onClick={() => void doRestriction("comment", !statusOverview?.restrictions?.comment_restricted)} /></PermissionGate>
+          {canManageMemberLevel ? <ActionBtn label={tText("按规则重新计算")} onClick={async () => { try { await recalculateUserMemberLevel(id, { force: true }); await invalidateUserDetail(); toast.success(tText("会员等级已按规则重算")); } catch (e) { toast.error(toastErrorMessage(e, tText("重算失败"))); } }} /> : null}
+          {canManageMemberLevel ? <ActionBtn label={tText("解除手动锁定")} disabled={!Number(user.member_level_manual_locked || 0)} onClick={async () => { try { await unlockUserMemberLevel(id); await invalidateUserDetail(); toast.success(tText("已解除手动锁定")); } catch (e) { toast.error(toastErrorMessage(e, tText("解除失败"))); } }} /> : null}
         </div>
       </section>
 
@@ -240,7 +251,7 @@ export default function AdminUserDetail() {
               className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm transition-colors ${tab === t ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary/60"}`}
               onClick={() => setTab(t)}
             >
-              {t}
+              {tText(t)}
             </button>
           ))}
         </div>
@@ -252,8 +263,8 @@ export default function AdminUserDetail() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <InfoCard title={tText("昵称")} value={user.nickname || "-"} />
               <InfoCard title={tText("手机号")} value={user.phone || "-"} />
-              <InfoCard title={tText("生日")} value={user.birthday ? String(user.birthday).slice(0, 10) : "未填写"} />
-              <InfoCard title={tText("生日锁定")} value={user.birthday_locked ? "是" : "否"} />
+              <InfoCard title={tText("生日")} value={user.birthday ? String(user.birthday).slice(0, 10) : tText("未填写")} />
+              <InfoCard title={tText("生日锁定")} value={user.birthday_locked ? tText("是") : tText("否")} />
               <InfoCard title={tText("状态")} value={accountStatusLabel} />
             </div>
             <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -272,11 +283,11 @@ export default function AdminUserDetail() {
                   {levels.filter((lv) => lv.enabled !== false).map((lv) => <option key={lv.id} value={lv.id}>{lv.name}</option>)}
                 </select>
               ) : (
-                <span className="rounded-lg border border-border bg-secondary/40 px-3 py-2 text-sm">{user.member_level_name || "未设置"}</span>
+                <span className="rounded-lg border border-border bg-secondary/40 px-3 py-2 text-sm">{user.member_level_name || tText("未设置")}</span>
               )}
               {Number(user.member_level_manual_locked || 0) ? (
                 <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs text-amber-700">
-                  手动指定等级{user.member_level_manual_reason ? `：${user.member_level_manual_reason}` : ""}
+                  {tText("手动指定等级")}{user.member_level_manual_reason ? `：${user.member_level_manual_reason}` : ""}
                 </span>
               ) : null}
               {levelsLoadFailed ? <span className="text-xs text-muted-foreground"><Tx>会员等级配置加载失败，已隐藏编辑入口</Tx></span> : null}
@@ -331,7 +342,7 @@ export default function AdminUserDetail() {
         open={editOpen}
         onOpenChange={setEditOpen}
         title={tText("编辑资料")}
-        submitText="保存"
+        submitText={tText("保存")}
         onSubmit={saveProfile}
         size="md"
       >
@@ -346,7 +357,7 @@ export default function AdminUserDetail() {
             />
           ))}
           <label className="text-xs text-muted-foreground sm:col-span-2">
-            生日 (YYYY-MM-DD)
+            <Tx>生日 (YYYY-MM-DD)</Tx>
             <input
               type="date"
               className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
@@ -360,7 +371,7 @@ export default function AdminUserDetail() {
               checked={!!editForm.birthday_locked}
               onChange={(e) => setEditForm((s) => ({ ...s, birthday_locked: e.target.checked }))}
             />
-            锁定生日（用户不可自行修改）
+            <Tx>锁定生日（用户不可自行修改）</Tx>
           </label>
         </div>
       </AdminFormSheet>
@@ -373,24 +384,32 @@ export default function AdminUserDetail() {
         title={
           reasonPrompt?.kind === "status"
             ? reasonPrompt.status === "disabled"
-              ? "禁用登录"
-              : "加入黑名单"
+              ? tText("禁用登录")
+              : tText("加入黑名单")
             : reasonPrompt?.kind === "restriction"
-              ? `${reasonPrompt.enabled ? "开启" : "取消"}${
-                  reasonPrompt.type === "order" ? "下单" : reasonPrompt.type === "coupon" ? "领券" : "评论"
-                }限制`
-              : "手动指定会员等级"
+              ? reasonPrompt.enabled
+                ? tText(
+                    `开启${
+                      reasonPrompt.type === "order" ? "下单" : reasonPrompt.type === "coupon" ? "领券" : "评论"
+                    }限制`,
+                  )
+                : tText(
+                    `取消${
+                      reasonPrompt.type === "order" ? "下单" : reasonPrompt.type === "coupon" ? "领券" : "评论"
+                    }限制`,
+                  )
+              : tText("手动指定会员等级")
         }
         description={
           reasonPrompt?.kind === "memberLevel"
-            ? "可选填写原因，确认后将锁定为该等级。"
-            : "请填写操作原因，将记录到操作日志。"
+            ? tText("可选填写原因，确认后将锁定为该等级。")
+            : tText("请填写操作原因，将记录到操作日志。")
         }
         placeholder={
-          reasonPrompt?.kind === "memberLevel" ? "手动指定原因（可选）" : "请输入操作原因"
+          reasonPrompt?.kind === "memberLevel" ? tText("手动指定原因（可选）") : tText("请输入操作原因")
         }
         required={reasonPrompt?.kind !== "memberLevel"}
-        submitText="确认"
+        submitText={tText("确认")}
         onSubmit={async (reason) => {
           if (!reasonPrompt || !id) return;
           try {
@@ -404,7 +423,7 @@ export default function AdminUserDetail() {
               toast.success(tText("会员等级已手动指定并锁定"));
             }
           } catch (e) {
-            toast.error(toastErrorMessage(e, "操作失败"));
+            toast.error(toastErrorMessage(e, tText("操作失败")));
             throw e;
           }
         }}

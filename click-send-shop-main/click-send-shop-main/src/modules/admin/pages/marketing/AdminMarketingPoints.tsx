@@ -51,7 +51,10 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 export default function AdminMarketingPoints() {
   const { tText } = useAdminT();
   const queryClient = useQueryClient();
-  const tabs = useMemo(() => ["积分总览", "积分规则", "商品积分规则", "积分抵扣", "礼品兑换", "积分明细", "手动调整", "高级设置"], []);
+  const tabs = useMemo(
+    () => ["积分总览", "积分规则", "商品积分规则", "积分抵扣", "礼品兑换", "积分明细", "手动调整", "高级设置"] as const,
+    [],
+  );
   const [tab, setTab] = useState(tabs[0]);
   const [settings, setSettings] = useState<LoyaltyPointsSettings>({});
   const [ruleForm, setRuleForm] = useState<ProductPointRule>(defaultRule);
@@ -84,9 +87,9 @@ export default function AdminMarketingPoints() {
 
   useEffect(() => {
     if (overviewQuery.isError) {
-      toast.error(toastErrorMessage(overviewQuery.error, "加载积分管理数据失败"));
+      toast.error(toastErrorMessage(overviewQuery.error, tText("加载积分管理数据失败")));
     }
-  }, [overviewQuery.isError, overviewQuery.error]);
+  }, [overviewQuery.isError, overviewQuery.error, tText]);
 
   const invalidatePoints = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.pointsRoot() });
 
@@ -107,7 +110,7 @@ export default function AdminMarketingPoints() {
     mutationFn: () => {
       const pointValue = Number(settings.point_value_myr || 0);
       const step = Number(settings.redeem_step || 1);
-      if (pointValue <= 0 || step <= 0) throw new Error("积分抵扣比例和使用步长必须大于 0");
+      if (pointValue <= 0 || step <= 0) throw new Error(tText("积分抵扣比例和使用步长必须大于 0"));
       return savePointsSettings(settings);
     },
     onSuccess: async (saved) => {
@@ -115,12 +118,12 @@ export default function AdminMarketingPoints() {
       toast.success(tText("积分设置已保存"));
       await invalidatePoints();
     },
-    onError: (error) => toast.error(toastErrorMessage(error, "保存积分设置失败")),
+    onError: (error) => toast.error(toastErrorMessage(error, tText("保存积分设置失败"))),
   });
 
   const saveRuleMutation = useMutation({
     mutationFn: () => {
-      if (!ruleForm.name?.trim()) throw new Error("请输入规则名称");
+      if (!ruleForm.name?.trim()) throw new Error(tText("请输入规则名称"));
       return ruleForm.id ? saveProductPointRule(ruleForm.id, ruleForm) : createProductPointRule(ruleForm);
     },
     onSuccess: async () => {
@@ -128,7 +131,7 @@ export default function AdminMarketingPoints() {
       toast.success(tText("规则已保存"));
       await invalidatePoints();
     },
-    onError: (error) => toast.error(toastErrorMessage(error, "保存规则失败")),
+    onError: (error) => toast.error(toastErrorMessage(error, tText("保存规则失败"))),
   });
 
   const deleteRuleMutation = useMutation({
@@ -137,23 +140,23 @@ export default function AdminMarketingPoints() {
       toast.success(tText("规则已停用"));
       await invalidatePoints();
     },
-    onError: (error) => toast.error(toastErrorMessage(error, "停用规则失败")),
+    onError: (error) => toast.error(toastErrorMessage(error, tText("停用规则失败"))),
   });
 
   const expireRunMutation = useMutation({
     mutationFn: () => runPointsExpireJob(),
     onSuccess: async (result) => {
-      toast.success(`过期任务已执行，处理 ${result?.processed ?? 0} 位用户`);
+      toast.success(tText(`过期任务已执行，处理 ${result?.processed ?? 0} 位用户`));
       await invalidatePoints();
     },
-    onError: (error) => toast.error(toastErrorMessage(error, "执行积分过期任务失败")),
+    onError: (error) => toast.error(toastErrorMessage(error, tText("执行积分过期任务失败"))),
   });
 
   const adjustMutation = useMutation({
     mutationFn: () => {
       const amount = Number(adjustForm.points);
       if (!adjustForm.userId || !Number.isFinite(amount) || amount === 0 || !adjustForm.reason.trim()) {
-        throw new Error("请填写用户 ID、调整积分和原因");
+        throw new Error(tText("请填写用户 ID、调整积分和原因"));
       }
       return adjustUserPoints(adjustForm.userId, amount, adjustForm.reason);
     },
@@ -162,7 +165,7 @@ export default function AdminMarketingPoints() {
       toast.success(tText("积分已调整"));
       await invalidatePoints();
     },
-    onError: (error) => toast.error(toastErrorMessage(error, "调整积分失败")),
+    onError: (error) => toast.error(toastErrorMessage(error, tText("调整积分失败"))),
   });
 
   const editRule = (rule: ProductPointRule) => setRuleForm({ ...defaultRule, ...rule });
@@ -180,7 +183,7 @@ export default function AdminMarketingPoints() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {tabs.map((t) => <button key={t} onClick={() => setTab(t)} className={`rounded-lg px-3 py-1.5 text-sm ${tab === t ? "bg-gold/15 text-theme-price" : "bg-secondary text-muted-foreground"}`}>{t}</button>)}
+        {tabs.map((t) => <button key={t} type="button" onClick={() => setTab(t)} className={`rounded-lg px-3 py-1.5 text-sm ${tab === t ? "bg-gold/15 text-theme-price" : "bg-secondary text-muted-foreground"}`}>{tText(t)}</button>)}
       </div>
 
       {tab === "积分总览" ? (

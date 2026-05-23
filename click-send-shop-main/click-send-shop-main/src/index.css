@@ -1003,6 +1003,14 @@ html[data-app-scope="admin"] .admin-tech-path {
     border: 1px solid var(--theme-border);
     background: var(--theme-card);
   }
+
+  [data-admin-shell] .admin-table-mobile-card {
+    touch-action: manipulation;
+  }
+
+  [data-admin-shell] .admin-table-mobile-card + .admin-table-mobile-card {
+    margin-top: 0;
+  }
 }
 
 /* Fallbacks for older Chromium/WebKit shells that reject modern CSS functions. */

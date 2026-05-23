@@ -11,6 +11,10 @@ import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import AdminShipOrderDialog from "@/modules/admin/components/AdminShipOrderDialog";
 import { AdminTableCell, AdminTableCellGroup } from "@/components/admin/AdminTableCell";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
@@ -601,6 +605,76 @@ export default function AdminOrders() {
     );
   };
 
+  const renderMobileCard = (o: Order) => {
+    const checked = selectedOrderIds.includes(o.id);
+    const afterSale = afterSaleLabel(o);
+    const badges = buildOrderBadges(o);
+    const discount = Number(o.discount_amount || 0) + Number(o.points_discount_amount || 0) + Number(o.reward_cash_discount_amount || 0);
+    const phone = o.shipping_phone_masked || o.contact_phone_masked || maskPhone(o.shipping_phone || o.contact_phone) || "-";
+    const itemsSummary = o.items_summary || getFirstItemSummary(o.items);
+    const itemQty = o.items_count || o.items?.reduce((sum, item) => sum + Number(item.qty || 0), 0) || 0;
+
+    return (
+      <AdminTableMobileCard>
+        <div className="mb-3 flex items-start gap-2">
+          <input
+            type="checkbox"
+            checked={checked}
+            onClick={(e) => e.stopPropagation()}
+            onChange={() => toggleOrderSelection(o.id)}
+            aria-label={`选择订单 ${o.order_no}`}
+            className="mt-1"
+          />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate font-mono text-sm font-semibold">{o.order_no}</p>
+                <p className="text-xs text-muted-foreground">{formatDateTime(o.created_at)}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate(`/admin/orders/${o.id}`)}
+                className="shrink-0 text-xs text-[var(--theme-price)] hover:underline"
+              >
+                <Tx>详情</Tx>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-3 flex flex-wrap items-center gap-1.5">
+          <OrderStatusBadge status={o.status} />
+          <PaymentStatusBadge status={o.payment_status || PAYMENT_STATUS.PENDING} />
+          <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${afterSale.className}`}>{afterSale.text}</span>
+        </div>
+
+        <div className="space-y-2">
+          <AdminTableMobileCardField label="用户">
+            <span className="block truncate">{o.user_nickname || "未命名用户"}</span>
+            <span className="block text-xs text-muted-foreground">{phone}</span>
+          </AdminTableMobileCardField>
+          <AdminTableMobileCardField label="商品">
+            <span className="block truncate">{itemsSummary}</span>
+            <span className="block text-xs text-muted-foreground">{itemQty} 件</span>
+          </AdminTableMobileCardField>
+          <AdminTableMobileCardField label="金额">
+            <span className="font-semibold text-[var(--theme-price)]">RM {money(o.total_amount)}</span>
+            {discount > 0 ? <span className="block text-xs text-muted-foreground">优惠 RM {money(discount)}</span> : null}
+          </AdminTableMobileCardField>
+          {badges.length ? (
+            <AdminTableMobileCardField label="标记">
+              <span className="text-xs text-muted-foreground">{badges.join(" · ")}</span>
+            </AdminTableMobileCardField>
+          ) : null}
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--theme-border)] pt-3">
+          {renderActions(o)}
+        </div>
+      </AdminTableMobileCard>
+    );
+  };
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-7">
@@ -759,6 +833,7 @@ export default function AdminOrders() {
         emptyDescription={ordersEmptyGuide.description}
         emptyAction={<AdminEmptyGuideActions guide={ordersEmptyGuide} showClearFilters={filtersActive} onClearFilters={() => clearFilters()} />}
         renderRow={renderRow}
+        renderMobileCard={renderMobileCard}
       />
 
       <AdminShipOrderDialog

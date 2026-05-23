@@ -35,7 +35,8 @@ export default function AdminCouponForm() {
   const goBack = useGoBack("/admin/marketing/coupons");
   const { id } = useParams();
   const couponId = String(id || "").trim();
-  const isNew = couponId === "new";
+  // 静态路由 /coupons/new 无 :id；动态路由 /coupons/:id 可能为字面量 "new"
+  const isNew = !couponId || couponId === "new";
   const isEdit = !isNew;
 
   const [saving, setSaving] = useState(false);

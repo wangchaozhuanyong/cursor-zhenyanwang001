@@ -8,6 +8,10 @@ import Pagination from "@/components/admin/Pagination";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import type { AdminFilterChip } from "@/components/admin/AdminFilterSummaryBar";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
@@ -224,6 +228,69 @@ export default function AdminProducts() {
     setSelected([]);
   };
 
+  const renderMobileCard = (product: Product) => {
+    const meta = statusMeta(product.status, tText);
+    const checked = selected.includes(product.id);
+    const missingCost = Number(product.missing_cost_sku_count || 0) > 0;
+    const outOfStock = Number(product.out_of_stock_sku_count || 0) > 0 || Number(product.stock || 0) <= 0;
+    const margin = Number(product.gross_margin_30d || 0);
+    const marginClass = margin < 0 ? THEME_BADGE_DANGER : margin < 15 ? THEME_BADGE_WARNING : THEME_BADGE_SUCCESS;
+
+    return (
+      <AdminTableMobileCard>
+        <div className="mb-3 flex items-start gap-2">
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={() => toggleSelect(product.id)}
+            aria-label={`选择${product.name}`}
+            className="mt-1"
+          />
+          {product.cover_image ? (
+            <img src={product.cover_image} alt={product.name} className="h-12 w-12 shrink-0 rounded-lg border border-border object-cover" />
+          ) : (
+            <div className="h-12 w-12 shrink-0 rounded-lg border border-border bg-secondary" />
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <p className="line-clamp-2 text-sm font-semibold">{product.name}</p>
+              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.className}`}>{meta.label}</span>
+            </div>
+            <p className="mt-0.5 text-xs text-muted-foreground">{product.category_name || "-"}</p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <AdminTableMobileCardField label={tText("售价")}>
+            <span className="font-semibold text-[var(--theme-price)]">{skuPrice(product)}</span>
+          </AdminTableMobileCardField>
+          <AdminTableMobileCardField label={tText("库存")}>
+            <span className="font-medium">{Number(product.stock || 0)}</span>
+            {outOfStock ? <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${THEME_BADGE_DANGER}`}><Tx>缺货</Tx></span> : null}
+            {missingCost ? <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${THEME_BADGE_DANGER}`}><Tx>缺成本</Tx></span> : null}
+          </AdminTableMobileCardField>
+          <AdminTableMobileCardField label={tText("毛利率")}>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${marginClass}`}>{percent(margin)}</span>
+          </AdminTableMobileCardField>
+          <AdminTableMobileCardField label={tText("近30天")}>
+            <span className="text-xs">{Number(product.sales_qty_30d || 0)} 件 · {money(product.sales_amount_30d)}</span>
+          </AdminTableMobileCardField>
+        </div>
+
+        <div className="mt-3 border-t border-border pt-3">
+          <button
+            type="button"
+            onClick={() => navigate(`/admin/products/${product.id}`)}
+            className="touch-manipulation inline-flex w-full items-center justify-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-secondary"
+          >
+            <Pencil size={13} />
+            <Tx>编辑</Tx>
+          </button>
+        </div>
+      </AdminTableMobileCard>
+    );
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -390,6 +457,7 @@ export default function AdminProducts() {
           </tr>
         )}
         footer={<Pagination total={total} page={page} pageSize={PAGE_SIZE} onPageChange={setPage} onPageSizeChange={() => undefined} />}
+        renderMobileCard={renderMobileCard}
         renderRow={(product) => {
           const meta = statusMeta(product.status, tText);
           const checked = selected.includes(product.id);

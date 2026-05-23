@@ -15,7 +15,7 @@ import { PaymentStatusBadge } from "@/components/admin/PaymentStatusBadge";
 import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
-import { labelChannelCode, labelPaymentOrderStatus } from "@/utils/paymentAdminLabels";
+import { labelChannelCode } from "@/utils/paymentAdminLabels";
 import { shortId } from "@/utils/shortId";
 import {
   ADMIN_TABLE_NOWRAP_CLASS,
@@ -97,7 +97,7 @@ export default function AdminPaymentOrders() {
     mutationFn: async () => {
       if (!markingRow) return;
       await paymentAdmin.markAdminOrderPaid(markingRow.order_id, {
-        reason: markReason.trim() || "后台人工确认收款",
+        reason: markReason.trim() || tText("后台人工确认收款"),
         channel_code: markingRow.channel_code,
         payment_channel: markingRow.channel_code,
       });
@@ -112,7 +112,7 @@ export default function AdminPaymentOrders() {
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() }),
       ]);
     },
-    onError: (error) => toast.error(toastErrorMessage(error, "标记支付失败")),
+    onError: (error) => toast.error(toastErrorMessage(error, tText("标记支付失败"))),
   });
 
   const rows = ordersQuery.data?.list || [];
@@ -133,15 +133,15 @@ export default function AdminPaymentOrders() {
             maxWidth="9.5rem"
             lines={[
               {
-                text: row.order_id ? `订单 ${orderNo}` : orderNo,
+                text: row.order_id ? `${tText("订单")} ${orderNo}` : orderNo,
                 mono: true,
               },
-              { text: `支付单 ${shortId(row.id)}`, muted: true, mono: true },
+              { text: `${tText("支付单")} ${shortId(row.id)}`, muted: true, mono: true },
             ]}
             tooltipLines={[
-              `订单号：${row.order_no || "—"}`,
-              `订单 ID：${row.order_id}`,
-              `支付单 ID：${row.id}`,
+              `${tText("订单号")}：${row.order_no || "—"}`,
+              `${tText("订单 ID")}：${row.order_id}`,
+              `${tText("支付单 ID")}：${row.id}`,
             ]}
           />
         </td>
@@ -149,12 +149,12 @@ export default function AdminPaymentOrders() {
           <AdminTableCellGroup
             maxWidth="8.5rem"
             lines={[
-              { text: row.buyer_phone || "未留手机号", mono: Boolean(row.buyer_phone) },
-              { text: `用户 ${shortId(row.user_id)}`, muted: true, mono: true },
+              { text: row.buyer_phone || tText("未留手机号"), mono: Boolean(row.buyer_phone) },
+              { text: `${tText("用户")} ${shortId(row.user_id)}`, muted: true, mono: true },
             ]}
             tooltipLines={[
-              row.buyer_phone ? `手机号：${row.buyer_phone}` : "未留手机号",
-              `用户 ID：${row.user_id || "—"}`,
+              row.buyer_phone ? `${tText("手机号")}：${row.buyer_phone}` : tText("未留手机号"),
+              `${tText("用户 ID")}：${row.user_id || "—"}`,
             ]}
           />
         </td>
@@ -190,7 +190,7 @@ export default function AdminPaymentOrders() {
                 onClick={() => navigate(`/admin/orders/${row.order_id}`)}
                 className="text-left text-[11px] font-medium text-[var(--theme-price)] hover:underline"
               >
-                查看订单
+                <Tx>查看订单</Tx>
               </button>
             ) : null}
             <button
@@ -199,7 +199,7 @@ export default function AdminPaymentOrders() {
               onClick={() => setMarkingRow(row)}
               className="rounded-lg border border-border px-3 py-1.5 text-xs whitespace-nowrap hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
-              人工确认
+              <Tx>人工确认</Tx>
             </button>
           </div>
         </td>
@@ -221,7 +221,7 @@ export default function AdminPaymentOrders() {
             className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"
           >
             <RefreshCw size={16} className={ordersQuery.isFetching ? "animate-spin" : ""} />
-            刷新
+            <Tx>刷新</Tx>
           </button>
         </div>
 
@@ -252,7 +252,7 @@ export default function AdminPaymentOrders() {
             onClick={() => { setStatus(""); setKeyword(""); setPage(1); }}
             className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"
           >
-            清空筛选
+            <Tx>清空筛选</Tx>
           </button>
         </div>
 
@@ -263,8 +263,8 @@ export default function AdminPaymentOrders() {
           skeletonRows={8}
           skeletonCols={8}
           emptyIcon={CreditCard}
-          emptyTitle="暂无支付流水"
-          emptyDescription="当前筛选条件下没有支付记录。"
+          emptyTitle={tText("暂无支付流水")}
+          emptyDescription={tText("当前筛选条件下没有支付记录。")}
           className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
           tableClassName={adminTableClassName("min-w-[920px] w-full text-sm")}
           theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
@@ -295,10 +295,10 @@ export default function AdminPaymentOrders() {
           title={tText("人工确认收款")}
           description={
             markingRow
-              ? `订单 ${markingRow.order_no || shortId(markingRow.order_id, 8)} 将被标记为已支付，请填写操作原因，方便审计追踪。`
+              ? tText(`订单 ${markingRow.order_no || shortId(markingRow.order_id, 8)} 将被标记为已支付，请填写操作原因，方便审计追踪。`)
               : undefined
           }
-          submitText="确认收款"
+          submitText={tText("确认收款")}
           loading={markPaidMutation.isPending}
           onSubmit={() => markPaidMutation.mutateAsync()}
           size="sm"

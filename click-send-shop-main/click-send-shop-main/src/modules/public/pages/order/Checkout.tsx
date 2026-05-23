@@ -69,6 +69,7 @@ export default function Checkout() {
         onViewOrders={checkout.goOrders}
         onViewOrderDetail={() => checkout.goOrderDetail(checkout.submittedOrder!.id)}
         onPaymentTimeoutExpired={checkout.refreshSubmittedOrder}
+        onlinePaymentEnabled={checkout.onlinePaymentEnabled}
       />
     );
   }
@@ -162,7 +163,7 @@ export default function Checkout() {
 
           <aside className="mt-6 hidden self-start md:sticky md:top-20 md:mt-0 md:block">
             <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
-              <h3 className="mb-4 text-base font-semibold text-foreground">订单摘要</h3>
+              <h3 className="store-section-title mb-4 text-foreground">订单摘要</h3>
               <CheckoutPriceSummary
                 rawTotal={checkout.rawTotal}
                 discountAmount={checkout.discountAmount}

@@ -6,6 +6,7 @@ import { useCartStore } from "@/stores/useCartStore";
 import { useHistoryStore } from "@/stores/useHistoryStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import ProductCard from "@/components/ProductCard";
+import StorePriceAmount from "@/components/store/StorePriceAmount";
 import ProductReviews from "@/components/ProductReviews";
 import { useProductReviews } from "@/hooks/useProductReviews";
 import ProductImageGallery from "@/components/ProductImageGallery";
@@ -430,12 +431,14 @@ export default function ProductDetail() {
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                    <span className="text-2xl font-bold tabular-nums text-[var(--theme-price)] md:text-3xl">
-                      RM {displayPrice}
-                    </span>
+                    <StorePriceAmount
+                      amount={displayPrice}
+                      amountClassName="store-price-detail"
+                      currencyClassName="mr-1 text-[13px] font-bold leading-none sm:text-sm"
+                    />
                     {typeof product.original_price === "number" &&
                       product.original_price > Number(displayPrice) && (
-                        <span className="text-sm text-muted-foreground line-through">
+                        <span className="store-body-small text-muted-foreground line-through">
                           RM {product.original_price}
                         </span>
                       )}
@@ -456,7 +459,7 @@ export default function ProductDetail() {
                   </div>
                 ) : null}
               </div>
-              <h1 className="mt-3 font-display text-lg font-semibold leading-snug text-foreground md:text-2xl md:leading-tight">
+              <h1 className="mt-3 font-display text-lg font-semibold leading-snug text-foreground md:text-[22px] md:leading-tight">
                 {product.name}
               </h1>
               {activeActivity ? (

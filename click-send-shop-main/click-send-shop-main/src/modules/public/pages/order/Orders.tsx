@@ -264,11 +264,11 @@ export default function Orders() {
                     <div key={item.order_item_id || item.id || item.product.id} className="flex gap-2">
                       <img src={item.product.cover_image} alt={item.product.name} className="h-[72px] w-[72px] rounded-lg object-cover" />
                       <div className="min-w-0 flex-1">
-                        <p className="line-clamp-2 text-sm">{item.product.name}</p>
-                        <p className="mt-1 truncate text-xs text-[var(--theme-text-muted)]">{item.variant_name || item.sku_code || "默认规格"}</p>
+                        <p className="store-card-title line-clamp-2">{item.product.name}</p>
+                        <p className="store-caption mt-1 truncate text-[var(--theme-text-muted)]">{item.variant_name || item.sku_code || "默认规格"}</p>
                       </div>
                       <div className="shrink-0 text-right">
-                        <p className="text-sm font-medium">RM {Number(item.unit_price ?? item.product.price ?? 0).toFixed(2)}</p>
+                        <p className="text-[15px] font-semibold text-[var(--theme-price)]">RM {Number(item.unit_price ?? item.product.price ?? 0).toFixed(2)}</p>
                         <p className="mt-1 text-xs text-[var(--theme-text-muted)]">x{item.qty}</p>
                       </div>
                     </div>
@@ -278,7 +278,7 @@ export default function Orders() {
                 {order.items.length > 3 ? <p className="mt-2 text-xs text-[var(--theme-text-muted)]">共 {totalItems} 件商品</p> : null}
 
                 <div className="mt-3 flex justify-end text-sm">
-                  <span>共 {totalItems} 件商品，实付款 <span className="font-semibold text-[var(--theme-price)]">RM {Number(order.total_amount || 0).toFixed(2)}</span></span>
+                  <span className="store-body-small">共 {totalItems} 件商品，实付款 <span className="text-[15px] font-semibold text-[var(--theme-price)]">RM {Number(order.total_amount || 0).toFixed(2)}</span></span>
                 </div>
 
                 <div className="mt-3 flex flex-wrap justify-end gap-2">

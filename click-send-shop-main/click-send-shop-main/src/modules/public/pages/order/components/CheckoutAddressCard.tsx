@@ -37,7 +37,7 @@ export function CheckoutAddressCard({
   return (
     <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground">1. 收货信息</h3>
+        <h3 className="text-[15px] font-semibold text-foreground">1. 收货信息</h3>
         <button
           type="button"
           onClick={onChooseAddress}

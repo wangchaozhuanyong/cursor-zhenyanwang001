@@ -29,6 +29,7 @@ export function CheckoutOrderSuccess({
   onViewOrders,
   onViewOrderDetail,
   onPaymentTimeoutExpired,
+  onlinePaymentEnabled = true,
 }: {
   order: Order;
   postSubmitOnlineError: string | null;
@@ -45,6 +46,7 @@ export function CheckoutOrderSuccess({
   onViewOrders: () => void;
   onViewOrderDetail: () => void;
   onPaymentTimeoutExpired?: () => void;
+  onlinePaymentEnabled?: boolean;
 }) {
   const [alternatePayOpen, setAlternatePayOpen] = useState(false);
   const [moreWaysOpen, setMoreWaysOpen] = useState(false);
@@ -199,13 +201,15 @@ export function CheckoutOrderSuccess({
           <p className="px-0.5 text-xs font-semibold text-muted-foreground">下一步操作</p>
           {isOnlinePending && (
             <>
-              <button
-                type="button"
-                onClick={onPayOnline}
-                className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
-              >
-                {postSubmitOnlineError ? "重新支付" : "继续支付"}
-              </button>
+              {onlinePaymentEnabled ? (
+                <button
+                  type="button"
+                  onClick={onPayOnline}
+                  className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
+                >
+                  {postSubmitOnlineError ? "重新支付" : "继续支付"}
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={onViewOrderDetail}
@@ -247,13 +251,15 @@ export function CheckoutOrderSuccess({
 
           {isWalletPending && postSubmitWalletError && (
             <>
-              <button
-                type="button"
-                onClick={onPayOnline}
-                className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
-              >
-                改用在线支付
-              </button>
+              {onlinePaymentEnabled ? (
+                <button
+                  type="button"
+                  onClick={onPayOnline}
+                  className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
+                >
+                  改用在线支付
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={onWhatsApp}
@@ -281,13 +287,15 @@ export function CheckoutOrderSuccess({
               >
                 {payingWallet ? "支付中…" : `使用返现钱包支付（可用 RM ${rewardBalance.toFixed(2)}）`}
               </button>
-              <button
-                type="button"
-                onClick={onPayOnline}
-                className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
-              >
-                改用在线支付
-              </button>
+              {onlinePaymentEnabled ? (
+                <button
+                  type="button"
+                  onClick={onPayOnline}
+                  className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
+                >
+                  改用在线支付
+                </button>
+              ) : null}
             </>
           )}
 
@@ -325,13 +333,15 @@ export function CheckoutOrderSuccess({
               </button>
               {moreWaysOpen && (
                 <div className="space-y-2 rounded-xl border border-border bg-card p-3">
-                  <button
-                    type="button"
-                    onClick={onPayOnline}
-                    className="flex w-full items-center justify-center rounded-full border border-border py-3 text-sm font-semibold text-foreground hover:bg-secondary"
-                  >
-                    在线支付
-                  </button>
+                  {onlinePaymentEnabled ? (
+                    <button
+                      type="button"
+                      onClick={onPayOnline}
+                      className="flex w-full items-center justify-center rounded-full border border-border py-3 text-sm font-semibold text-foreground hover:bg-secondary"
+                    >
+                      在线支付
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     onClick={onPayRewardWallet}
@@ -345,7 +355,7 @@ export function CheckoutOrderSuccess({
             </>
           )}
 
-          {isPending && !isOnlinePending && !isWalletPending && !isWhatsappPending && (
+          {isPending && !isOnlinePending && !isWalletPending && !isWhatsappPending && onlinePaymentEnabled && (
             <>
               <button
                 type="button"
@@ -417,7 +427,7 @@ export function CheckoutOrderSuccess({
             </div>
             <div className="flex justify-between text-sm border-t border-border pt-2">
               <span className="text-foreground font-medium">应付金额</span>
-              <span className="text-lg font-bold text-theme-price">RM {order.total_amount}</span>
+              <span className="text-[18px] font-extrabold text-theme-price sm:text-xl">RM {order.total_amount}</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">获得积分</span>

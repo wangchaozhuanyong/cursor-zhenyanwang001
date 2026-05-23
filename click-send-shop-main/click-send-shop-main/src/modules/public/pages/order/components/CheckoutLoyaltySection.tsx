@@ -50,7 +50,7 @@ export function CheckoutLoyaltySection({
 
   return (
     <section className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow space-y-4">
-      <h3 className="text-base font-semibold text-foreground">优惠与抵扣</h3>
+      <h3 className="text-[15px] font-semibold text-foreground">优惠与抵扣</h3>
 
       {pointsRedeemEnabled ? (
         <div className="rounded-xl border border-[var(--theme-border)] p-3">

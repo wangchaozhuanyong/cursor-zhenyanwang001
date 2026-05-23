@@ -15,6 +15,7 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { parseSstEnabled } from "@/utils/sstTax";
 import MarketingPositionNotices from "@/modules/public/components/marketing/MarketingPositionNotices";
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
+import StorePriceAmount from "@/components/store/StorePriceAmount";
 
 export default function Cart() {
   useDocumentTitle("购物车");
@@ -206,16 +207,17 @@ export default function Cart() {
                         <div>
                           <h3
                             onClick={() => navigate(`/product/${item.product.id}`)}
-                            className="cursor-pointer text-[13px] font-medium leading-tight text-foreground line-clamp-2 hover:text-theme-price md:text-sm"
+                            className="store-card-title cursor-pointer leading-tight text-foreground line-clamp-2 hover:text-theme-price"
                           >
                             {item.product.name}
                           </h3>
-                          {item.variant_name ? <p className="mt-1 text-[11px] text-muted-foreground">规格：{item.variant_name}</p> : null}
+                          {item.variant_name ? <p className="store-caption mt-1 text-muted-foreground">规格：{item.variant_name}</p> : null}
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-base font-bold text-theme-price md:text-lg">
-                            RM {item.product.price}
-                          </span>
+                          <StorePriceAmount
+                            amount={item.product.price}
+                            amountClassName="text-[15px] font-extrabold leading-tight sm:text-base"
+                          />
                           <div className="flex items-center gap-3">
                             <SquishButton
                               type="button"
@@ -281,7 +283,7 @@ export default function Cart() {
           {items.length > 0 && (
             <aside className="mt-6 hidden self-start md:sticky md:top-20 md:mt-0 md:block">
               <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
-                <h3 className="mb-4 text-base font-semibold text-foreground">结算摘要</h3>
+                <h3 className="store-section-title mb-4 text-foreground">结算摘要</h3>
                 <div className="space-y-2.5 text-sm">
                   <div className="flex items-center justify-between rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-xs">
                     <span className="text-muted-foreground">下单前可先领券，结算页自动匹配最优优惠</span>
@@ -309,7 +311,7 @@ export default function Cart() {
                   <div className="my-3 border-t border-[var(--theme-border)]" />
                   <div className="flex items-baseline justify-between">
                     <span className="text-sm text-foreground">合计</span>
-                    <span className="text-2xl font-bold text-[var(--theme-price)]">
+                    <span className="text-[18px] font-extrabold text-[var(--theme-price)] sm:text-xl">
                       <AnimatedNumber value={totalAmountSelected()} decimals={2} format={(n) => `RM ${n.toFixed(2)}`} />
                     </span>
                   </div>
@@ -359,7 +361,7 @@ export default function Cart() {
               <div>
                 <p className="text-sm text-foreground">
                   合计（已选）:{" "}
-                  <span className="text-xl font-bold text-[var(--theme-price)]">
+                  <span className="text-[18px] font-extrabold text-[var(--theme-price)]">
                     <AnimatedNumber value={totalAmountSelected()} decimals={2} format={(n) => `RM ${n.toFixed(2)}`} />
                   </span>
                 </p>

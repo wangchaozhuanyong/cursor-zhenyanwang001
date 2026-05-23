@@ -31,6 +31,8 @@ interface CheckoutPriceSummaryProps {
   sstCustomerNote: string;
 }
 
+import StorePriceAmount from "@/components/store/StorePriceAmount";
+
 export function CheckoutPriceSummary({
   rawTotal,
   discountAmount,
@@ -51,7 +53,7 @@ export function CheckoutPriceSummary({
       {sstShowInCatalog && sstCustomerNote ? (
         <p className="mb-3 text-[11px] leading-relaxed text-muted-foreground">{sstCustomerNote}</p>
       ) : null}
-      <div className="flex justify-between text-sm">
+      <div className="store-body-small flex justify-between">
         <span className="text-muted-foreground">{sstShowInCatalog ? "商品总额（含税）" : "商品总额"}</span>
         <span className="font-medium text-foreground">RM {rawTotal}</span>
       </div>
@@ -107,7 +109,10 @@ export function CheckoutPriceSummary({
       ) : null}
       <div className="mt-3 flex items-baseline justify-between border-t border-[var(--theme-border)] pt-3">
         <span className="text-sm font-medium text-foreground">应付金额</span>
-        <span className="text-2xl font-bold text-[var(--theme-price)]">RM {finalTotal}</span>
+        <StorePriceAmount
+          amount={finalTotal}
+          amountClassName="text-[18px] font-extrabold leading-none sm:text-xl"
+        />
       </div>
     </div>
   );

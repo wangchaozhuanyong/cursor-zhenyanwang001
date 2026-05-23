@@ -23,7 +23,7 @@ export function CheckoutCouponSection({
 }: CheckoutCouponSectionProps) {
   return (
     <div className={SECTION_SHELL}>
-      <h3 className="mb-3 text-sm font-semibold text-foreground">3. 优惠券</h3>
+      <h3 className="mb-3 text-[15px] font-semibold text-foreground">3. 优惠券</h3>
       <CouponPicker
         embedded
         totalAmount={rawTotal}

@@ -15,7 +15,7 @@ export function CheckoutSubmitBar({ finalTotal, paymentMethod, submitting, onSub
       <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3.5">
         <div>
           <p className="text-xs text-muted-foreground">合计</p>
-          <p className="text-xl font-bold text-[var(--theme-price)]">
+          <p className="text-[18px] font-extrabold text-[var(--theme-price)]">
             <AnimatedNumber value={finalTotal} decimals={2} format={(n) => `RM ${n.toFixed(2)}`} />
           </p>
         </div>

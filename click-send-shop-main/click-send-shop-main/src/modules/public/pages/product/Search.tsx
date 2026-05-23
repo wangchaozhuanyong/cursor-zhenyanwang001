@@ -228,7 +228,7 @@ export default function Search() {
                 {history.length > 0 && (
                   <section>
                     <div className="mb-3 flex items-center justify-between">
-                      <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                      <h3 className="store-section-title flex items-center gap-1.5 text-foreground">
                         <Clock size={14} className="text-muted-foreground" /> 搜索历史
                       </h3>
                       <button
@@ -256,7 +256,7 @@ export default function Search() {
 
                 {hotTerms.length > 0 && (
                   <section>
-                    <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                    <h3 className="store-section-title mb-3 flex items-center gap-1.5 text-foreground">
                       <TrendingUp size={14} className="text-theme-price" /> 热门搜索
                     </h3>
                     <div className="space-y-2">
@@ -284,7 +284,7 @@ export default function Search() {
                 {history.length > 0 && (
                   <section>
                     <div className="mb-3 flex items-center justify-between">
-                      <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                      <h3 className="store-section-title flex items-center gap-1.5 text-foreground">
                         <Clock size={14} className="text-muted-foreground" /> 搜索历史
                       </h3>
                       <button
@@ -322,7 +322,7 @@ export default function Search() {
 
                 {hotTerms.length > 0 && (
                   <section>
-                    <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                    <h3 className="store-section-title mb-3 flex items-center gap-1.5 text-foreground">
                       <TrendingUp size={14} className="text-theme-price" /> 热门搜索
                     </h3>
                     <div className="flex flex-wrap gap-2">

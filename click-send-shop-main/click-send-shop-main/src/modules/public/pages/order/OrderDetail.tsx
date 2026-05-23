@@ -150,11 +150,11 @@ export default function OrderDetail() {
               <div key={item.order_item_id || item.id || `${item.product.id}-${item.variant_id}`} className="flex gap-2">
                 <img src={item.product.cover_image} alt={item.product.name} className="h-[72px] w-[72px] rounded-lg object-cover" />
                 <div className="min-w-0 flex-1">
-                  <p className="line-clamp-2 text-sm">{item.product.name}</p>
-                  <p className="mt-1 truncate text-xs text-muted-foreground">{item.variant_name || item.sku_code || "默认规格"}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">RM {Number(item.unit_price ?? item.product.price ?? 0).toFixed(2)} x {item.qty}</p>
+                  <p className="store-card-title line-clamp-2">{item.product.name}</p>
+                  <p className="store-caption mt-1 truncate text-muted-foreground">{item.variant_name || item.sku_code || "默认规格"}</p>
+                  <p className="store-caption mt-1 text-muted-foreground">RM {Number(item.unit_price ?? item.product.price ?? 0).toFixed(2)} x {item.qty}</p>
                 </div>
-                <div className="shrink-0 text-right text-sm">RM {lineTotal.toFixed(2)}</div>
+                <div className="store-body-small shrink-0 text-right font-semibold">RM {lineTotal.toFixed(2)}</div>
               </div>
             );
           })}
@@ -168,7 +168,7 @@ export default function OrderDetail() {
           {Number(order.reward_cash_discount_amount || 0) > 0 ? <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">返现抵扣</span><span className="text-[var(--theme-danger)]">-RM {Number(order.reward_cash_discount_amount || 0).toFixed(2)}</span></div> : null}
           <OrderDiscountLines order={order} />
           <div className="mt-2 flex justify-between text-sm"><span className="text-muted-foreground">运费</span><span className={Number(order.shipping_fee || 0) === 0 ? "text-[var(--theme-success)]" : undefined}>{Number(order.shipping_fee || 0) === 0 ? "包邮" : `RM ${Number(order.shipping_fee || 0).toFixed(2)}`}</span></div>
-          <div className="mt-3 flex justify-between text-sm font-semibold"><span>实付款</span><span className="text-[var(--theme-price)]">RM {Number(order.total_amount || 0).toFixed(2)}</span></div>
+          <div className="mt-3 flex items-baseline justify-between font-semibold"><span className="store-body-small">实付款</span><span className="text-[18px] font-extrabold text-[var(--theme-price)] sm:text-xl">RM {Number(order.total_amount || 0).toFixed(2)}</span></div>
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-3">

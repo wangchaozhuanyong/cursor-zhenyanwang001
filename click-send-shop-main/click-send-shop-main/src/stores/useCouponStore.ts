@@ -3,6 +3,8 @@ import type { UserCoupon } from "@/types/coupon";
 import * as couponService from "@/services/couponService";
 import { isLoggedIn } from "@/utils/token";
 
+const COUPON_PAGE_SIZE = 50;
+
 interface CouponState {
   coupons: UserCoupon[];
   loading: boolean;
@@ -18,7 +20,8 @@ export const useCouponStore = create<CouponState>((set, get) => ({
   error: null,
 
   loadCoupons: async () => {
-    set({ loading: true, error: null });
+    const hasCached = get().coupons.length > 0;
+    set({ loading: !hasCached, error: null });
     try {
       if (!isLoggedIn()) {
         set({ coupons: [], loading: false });
@@ -26,10 +29,24 @@ export const useCouponStore = create<CouponState>((set, get) => ({
       }
 
       const available = await couponService.fetchAvailableCoupons(0);
-      const userData = await couponService.fetchUserCoupons();
-      const claimedIds = new Set(userData.list.map((item) => item.coupon?.id));
-      const unclaimed = available.filter((item) => !claimedIds.has(item.coupon?.id));
-      set({ coupons: [...unclaimed, ...userData.list], loading: false });
+      const userCoupons: UserCoupon[] = [];
+      let page = 1;
+      let total = 0;
+      let lastBatchSize = 0;
+
+      do {
+        const userData = await couponService.fetchUserCoupons({
+          status: "available",
+          page,
+          pageSize: COUPON_PAGE_SIZE,
+        });
+        userCoupons.push(...userData.list);
+        total = userData.total;
+        lastBatchSize = userData.list.length;
+        page += 1;
+      } while (lastBatchSize > 0 && userCoupons.length < total);
+
+      set({ coupons: [...available, ...userCoupons], loading: false });
     } catch (err) {
       set({
         loading: false,

@@ -1,6 +1,24 @@
 const { generateId } = require('../../../utils/helpers');
 const repo = require('../repository/coupon.repository');
 
+function normalizeCouponType(type) {
+  if (type === 'amount') return 'fixed';
+  if (type === 'percent') return 'percentage';
+  return type;
+}
+
+function dateOnly(value) {
+  if (!value) return '';
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return String(value).slice(0, 10);
+}
+
+function normalizeCouponStatus(status, endDate) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (status === 'available' && dateOnly(endDate) && dateOnly(endDate) < today) return 'expired';
+  return status;
+}
+
 function mapUserCouponRow(r) {
   const categoryIds = typeof r.category_ids === 'string' && r.category_ids
     ? r.category_ids.split(',').filter(Boolean)
@@ -17,12 +35,12 @@ function mapUserCouponRow(r) {
       id: r.coupon_id,
       code: r.code,
       title: r.title,
-      type: r.type,
+      type: normalizeCouponType(r.type),
       value: parseFloat(r.value),
       min_amount: parseFloat(r.min_amount),
       start_date: r.start_date,
       end_date: r.end_date,
-      status: r.coupon_status,
+      status: normalizeCouponStatus(r.coupon_status, r.end_date),
       description: r.description || undefined,
       scope_type: r.scope_type || 'all',
       display_badge: r.display_badge || '',
@@ -47,12 +65,12 @@ function mapCouponEntity(c) {
       id: c.id,
       code: c.code,
       title: c.title,
-      type: c.type,
+      type: normalizeCouponType(c.type),
       value: parseFloat(c.value),
       min_amount: parseFloat(c.min_amount),
       start_date: c.start_date,
       end_date: c.end_date,
-      status: c.status,
+      status: normalizeCouponStatus(c.status, c.end_date),
       description: c.description || undefined,
       scope_type: c.scope_type || 'all',
       display_badge: c.display_badge || '',
@@ -75,10 +93,10 @@ async function getUserCoupons(userId, query) {
 
 async function getAvailableCoupons(userId) {
   const coupons = await repo.selectAvailableCoupons();
-  const claimed = await repo.selectClaimedCouponIds(userId);
-  const claimedSet = new Set(claimed.map((r) => r.coupon_id));
+  const claimed = await repo.selectUserCouponClaimCounts(userId);
+  const claimedCountMap = new Map(claimed.map((r) => [String(r.coupon_id), Number(r.cnt || 0)]));
   return coupons
-    .filter((c) => !claimedSet.has(c.id))
+    .filter((c) => Number(claimedCountMap.get(String(c.id)) || 0) < Math.max(1, Number(c.per_user_limit || 1)))
     .filter((c) => !c.auto_issue)
     .map(mapCouponEntity);
 }
@@ -123,9 +141,6 @@ async function claimCoupon(userId, body) {
   const claimErr = await assertCouponClaimable(userId, coupon);
   if (claimErr) return claimErr;
 
-  const existing = await repo.findUserCoupon(userId, coupon.id);
-  if (existing) return { error: { code: 409, message: '您已领取过该优惠券' } };
-
   const id = generateId();
   await repo.insertUserCoupon(id, userId, coupon.id);
 
@@ -138,12 +153,12 @@ async function claimCoupon(userId, body) {
         id: coupon.id,
         code: coupon.code,
         title: coupon.title,
-        type: coupon.type,
+        type: normalizeCouponType(coupon.type),
         value: parseFloat(coupon.value),
         min_amount: parseFloat(coupon.min_amount),
         start_date: coupon.start_date,
         end_date: coupon.end_date,
-        status: coupon.status,
+        status: normalizeCouponStatus(coupon.status, coupon.end_date),
         description: coupon.description || undefined,
         scope_type: coupon.scope_type || 'all',
         display_badge: coupon.display_badge || '',

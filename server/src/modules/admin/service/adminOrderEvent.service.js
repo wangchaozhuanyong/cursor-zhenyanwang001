@@ -11,9 +11,13 @@ function parseSince(value) {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return fallback;
 
-  const oldestAllowed = Date.now() - MAX_LOOKBACK_MS;
+  const now = Date.now();
+  const oldestAllowed = now - MAX_LOOKBACK_MS;
   if (parsed.getTime() < oldestAllowed) {
     return new Date(oldestAllowed);
+  }
+  if (parsed.getTime() > now) {
+    return new Date(now);
   }
   return parsed;
 }
@@ -53,6 +57,7 @@ function mapPaid(row) {
 }
 
 async function listRecentOrderEvents(query = {}) {
+  const checkedAt = new Date();
   const since = parseSince(query.since);
   const [createdRows, paidRows] = await Promise.all([
     repo.selectCreatedOrderEvents(since, MAX_EVENTS),
@@ -66,7 +71,7 @@ async function listRecentOrderEvents(query = {}) {
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
     .slice(0, MAX_EVENTS);
 
-  return { events };
+  return { events, checkedAt: checkedAt.toISOString() };
 }
 
 module.exports = {

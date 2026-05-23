@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, RefreshCw, Search, Send } from "lucide-react";
 import { toast } from "sonner";
@@ -50,8 +51,16 @@ const AUDIENCE_LABELS: Record<string, string> = {
   no_order: "无订单用户",
 };
 
+const NOTIFICATION_PAGE_PERMISSIONS = ["notification.view", "notification.manage"];
+const NOTIFICATION_COMPOSE_PERMISSIONS = ["notification.create", "notification.send", "notification.manage"];
+const NOTIFICATION_TRIGGER_PERMISSIONS = ["notification.trigger", "notification.manage"];
+const NOTIFICATION_DRAFT_PERMISSIONS = ["notification.create", "notification.manage"];
+const NOTIFICATION_SEND_PERMISSIONS = ["notification.send", "notification.manage"];
+const NOTIFICATION_REVOKE_PERMISSIONS = ["notification.revoke", "notification.manage"];
+
 type TabKey = "list" | "manual" | "settings";
 type AudienceType = NotificationPayload["audience_type"];
+type RowAction = "deleteDraft" | "cancelScheduled" | "revokeSent";
 
 type ManualForm = {
   title: string;
@@ -91,7 +100,22 @@ function buildPayload(form: ManualForm): NotificationPayload {
   };
 }
 
+function getRowAction(row: Notification): { action: RowAction; label: string; permissions: string[] } | null {
+  const status = row.send_status || row.workflow_status;
+  if (row.workflow_status === "draft" || status === "draft") {
+    return { action: "deleteDraft", label: "删除草稿", permissions: NOTIFICATION_DRAFT_PERMISSIONS };
+  }
+  if (status === "scheduled") {
+    return { action: "cancelScheduled", label: "取消定时", permissions: NOTIFICATION_SEND_PERMISSIONS };
+  }
+  if (status === "sent") {
+    return { action: "revokeSent", label: "撤回", permissions: NOTIFICATION_REVOKE_PERMISSIONS };
+  }
+  return null;
+}
+
 export default function AdminNotifications() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<TabKey>("list");
   const [page, setPage] = useState(1);
@@ -153,12 +177,15 @@ export default function AdminNotifications() {
 
   const deleteMutation = useMutation({
     mutationFn: async (row: Notification) => {
-      if (row.send_status === "draft" || row.workflow_status === "draft") {
+      const action = getRowAction(row)?.action;
+      if (action === "deleteDraft") {
         await notificationService.deleteDraftNotification(row.id);
-      } else if (row.send_status === "scheduled") {
+      } else if (action === "cancelScheduled") {
         await notificationService.cancelScheduledNotification(row.id);
+      } else if (action === "revokeSent") {
+        await notificationService.revokeSentNotification(row.id);
       } else {
-        await notificationService.deleteNotification(row.id);
+        throw new Error("当前通知状态不支持该操作");
       }
     },
     onSuccess: async () => {
@@ -197,7 +224,7 @@ export default function AdminNotifications() {
   };
 
   return (
-    <PermissionGate permission="notification.manage">
+    <PermissionGate anyOf={NOTIFICATION_PAGE_PERMISSIONS}>
       <div className="p-4 md:p-6">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -211,15 +238,19 @@ export default function AdminNotifications() {
         </div>
 
         <div className="mb-4 flex flex-wrap gap-2 border-b border-[var(--theme-border)] pb-3">
-          {([
-            ["list", "通知列表"],
-            ["manual", "手动发送"],
-            ["settings", "触发设置"],
-          ] as const).map(([value, labelText]) => (
-            <button key={value} type="button" onClick={() => setTab(value)} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === value ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
-              {labelText}
+          <button type="button" onClick={() => setTab("list")} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === "list" ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
+            通知列表
+          </button>
+          <PermissionGate anyOf={NOTIFICATION_COMPOSE_PERMISSIONS}>
+            <button type="button" onClick={() => setTab("manual")} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === "manual" ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
+              手动发送
             </button>
-          ))}
+          </PermissionGate>
+          <PermissionGate anyOf={NOTIFICATION_TRIGGER_PERMISSIONS}>
+            <button type="button" onClick={() => setTab("settings")} className={`rounded-full px-4 py-2 text-sm font-medium ${tab === "settings" ? "bg-[var(--theme-price)]/15 text-[var(--theme-price)]" : "text-muted-foreground hover:bg-secondary"}`}>
+              触发设置
+            </button>
+          </PermissionGate>
         </div>
 
         {tab === "list" ? (
@@ -254,7 +285,9 @@ export default function AdminNotifications() {
               theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
               thead={<tr>{['标题', '类型', '受众', '发送状态', '触达 / 已读', '时间', '操作'].map((head) => <th key={head} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{head}</th>)}</tr>}
               footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
-              renderRow={(row) => (
+              renderRow={(row) => {
+                const rowAction = getRowAction(row);
+                return (
                 <>
                   <td className="max-w-[18rem] px-4 py-3 align-middle">
                     <AdminTableCellGroup
@@ -272,17 +305,28 @@ export default function AdminNotifications() {
                   <td className="px-4 py-3 text-sm text-muted-foreground">{row.recipient_count || 0} / {row.read_count || 0}</td>
                   <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(row.sent_at || row.scheduled_at || row.created_at)}</td>
                   <td className="px-4 py-3">
-                    <button type="button" onClick={() => deleteMutation.mutate(row)} disabled={deleteMutation.isPending} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-60">
-                      {row.send_status === "scheduled" ? "取消" : "删除"}
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" onClick={() => navigate(`/admin/notifications/${row.id}`)} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary">
+                        详情
+                      </button>
+                      {rowAction ? (
+                        <PermissionGate anyOf={rowAction.permissions}>
+                          <button type="button" onClick={() => deleteMutation.mutate(row)} disabled={deleteMutation.isPending} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-60">
+                            {rowAction.label}
+                          </button>
+                        </PermissionGate>
+                      ) : null}
+                    </div>
                   </td>
                 </>
-              )}
+                );
+              }}
             />
           </>
         ) : null}
 
         {tab === "manual" ? (
+          <PermissionGate anyOf={NOTIFICATION_COMPOSE_PERMISSIONS}>
           <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow">
             <div className="grid gap-4 md:grid-cols-2">
               <label className="text-xs font-medium text-muted-foreground">通知类型
@@ -314,16 +358,22 @@ export default function AdminNotifications() {
               </div>
             </div>
             <div className="mt-5 flex justify-end gap-2">
-              <button type="button" onClick={() => sendMutation.mutate("draft")} disabled={sendMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-60">保存草稿</button>
-              <button type="button" onClick={() => sendMutation.mutate("send")} disabled={sendMutation.isPending} className="inline-flex items-center gap-2 rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
-                <Send size={16} />
-                立即发送
-              </button>
+              <PermissionGate anyOf={NOTIFICATION_DRAFT_PERMISSIONS}>
+                <button type="button" onClick={() => sendMutation.mutate("draft")} disabled={sendMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-60">保存草稿</button>
+              </PermissionGate>
+              <PermissionGate anyOf={NOTIFICATION_SEND_PERMISSIONS}>
+                <button type="button" onClick={() => sendMutation.mutate("send")} disabled={sendMutation.isPending} className="inline-flex items-center gap-2 rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
+                  <Send size={16} />
+                  立即发送
+                </button>
+              </PermissionGate>
             </div>
           </div>
+          </PermissionGate>
         ) : null}
 
         {tab === "settings" ? (
+          <PermissionGate anyOf={NOTIFICATION_TRIGGER_PERMISSIONS}>
           <div className="space-y-4">
             {rulesQuery.isLoading ? <p className="text-sm text-muted-foreground">正在加载触发规则...</p> : null}
             {rules.map((rule) => (
@@ -373,6 +423,7 @@ export default function AdminNotifications() {
               <button type="button" onClick={() => saveRulesMutation.mutate()} disabled={saveRulesMutation.isPending} className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">保存触发设置</button>
             </div>
           </div>
+          </PermissionGate>
         ) : null}
       </div>
     </PermissionGate>

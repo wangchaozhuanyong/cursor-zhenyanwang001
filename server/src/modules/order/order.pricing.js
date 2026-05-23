@@ -35,7 +35,7 @@ function parseIdList(raw) {
 }
 
 function calculateCouponDiscount(coupon, rawAmount, shippingFee) {
-  const type = coupon.type;
+  const type = coupon.type === 'amount' ? 'fixed' : coupon.type === 'percent' ? 'percentage' : coupon.type;
   const value = parseFloat(coupon.value) || 0;
   if (type === 'fixed') return Math.min(value, rawAmount);
   if (type === 'percentage') return Math.min(rawAmount, Math.floor(rawAmount * value / 100));
@@ -411,7 +411,7 @@ async function buildOrderPricing(userId, body, conn = null) {
     (pointsBonusResolved.item_results || []).map((row) => [String(row.product_id), row]),
   );
   const loyaltyItemsWithBonus = loyaltyItems.map((item) => {
-    const bonus = bonusByProductId.get(String(item.product_id)) || {};
+    const bonus = /** @type {any} */ (bonusByProductId.get(String(item.product_id)) || {});
     return {
       ...item,
       points_bonus_multiplier_percent: bonus.points_bonus_multiplier_percent || 100,

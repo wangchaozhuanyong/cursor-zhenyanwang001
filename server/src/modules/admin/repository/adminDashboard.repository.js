@@ -77,17 +77,17 @@ async function sumCompletedRevenue() {
   return row.totalRevenue;
 }
 
-async function selectTodaySummary(todayYmd) {
+async function selectTodaySummary(dateFrom, dateTo) {
   const { NET_SALES, afterSale, lowStockCountSql, outOfStockCountSql } = await getSqlContext();
   const [[row]] = await db.query(
     `SELECT
       (SELECT COALESCE(SUM(${NET_SALES}), 0) FROM orders
-        WHERE payment_status IN (${PAID_PAYMENT_SQL}) AND ${ORDER_KL_DATE} = ?) AS todayRevenue,
+        WHERE payment_status IN (${PAID_PAYMENT_SQL}) AND ${rangeBetween(ORDER_KL_DATE)}) AS todayRevenue,
       (SELECT COUNT(*) FROM orders
-        WHERE payment_status IN (${PAID_PAYMENT_SQL}) AND ${ORDER_KL_DATE} = ?) AS todayPaidOrders,
+        WHERE payment_status IN (${PAID_PAYMENT_SQL}) AND ${rangeBetween(ORDER_KL_DATE)}) AS todayPaidOrders,
       (SELECT COUNT(*) FROM orders
-        WHERE status != '${ORDER_STATUS.CANCELLED}' AND ${ORDER_KL_DATE} = ?) AS todayOrders,
-      (SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND ${USER_KL_DATE} = ?) AS todayNewUsers,
+        WHERE status != '${ORDER_STATUS.CANCELLED}' AND ${rangeBetween(ORDER_KL_DATE)}) AS todayOrders,
+      (SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND ${rangeBetween(USER_KL_DATE)}) AS todayNewUsers,
       (SELECT COUNT(*) FROM orders
         WHERE status = '${ORDER_STATUS.PENDING}' OR payment_status IN ('${PAYMENT_STATUS.PENDING}', 'unpaid')) AS pendingPayment,
       (SELECT COUNT(*) FROM orders WHERE status = '${ORDER_STATUS.PAID}') AS pendingShip,
@@ -95,10 +95,14 @@ async function selectTodaySummary(todayYmd) {
       ${lowStockCountSql} AS lowStock,
       ${outOfStockCountSql} AS outOfStock`,
     [
-      todayYmd,
-      todayYmd,
-      todayYmd,
-      todayYmd,
+      dateFrom,
+      dateTo,
+      dateFrom,
+      dateTo,
+      dateFrom,
+      dateTo,
+      dateFrom,
+      dateTo,
       ...afterSale.params,
     ],
   );

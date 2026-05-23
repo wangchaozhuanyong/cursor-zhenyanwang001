@@ -121,6 +121,57 @@ export default function AdminInvites() {
           )}
         />
       </div>
+      <div className="space-y-3 md:hidden">
+        {loading ? (
+          Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="rounded-xl border border-border bg-card p-4">
+              <div className="skeleton-base skeleton-shimmer h-4 w-32 rounded" />
+              <div className="skeleton-base skeleton-shimmer mt-3 h-3 w-44 rounded" />
+            </div>
+          ))
+        ) : invites.length === 0 ? (
+          <div className="rounded-xl border border-border bg-card p-6 text-center">
+            <Users className="mx-auto h-8 w-8 text-muted-foreground" />
+            <p className="mt-2 text-sm font-medium text-foreground">{emptyGuide.title}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{emptyGuide.description}</p>
+            {filtersActive ? (
+              <button type="button" onClick={clearFilters} className="mt-3 rounded-lg border border-border px-3 py-1.5 text-xs">
+                <Tx>清除筛选</Tx>
+              </button>
+            ) : null}
+          </div>
+        ) : (
+          invites.map((inv) => (
+            <div key={inv.id} className="rounded-xl border border-border bg-card p-4 text-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-foreground">{inv.nickname || "-"}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{inv.phone || "-"}</p>
+                </div>
+                <PermissionGate permission="user.view" fallback={null}>
+                  <button type="button" onClick={() => navigate(`/admin/users/${inv.id}`)} className="shrink-0 text-xs text-theme-price hover:underline">
+                    <Tx>查看用户</Tx>
+                  </button>
+                </PermissionGate>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                <span>邀请人：{inv.inviter_nickname || "-"}</span>
+                <span>邀请码：{inv.parent_invite_code || "-"}</span>
+                <span className="col-span-2">注册时间：{inv.created_at ? formatDateTime(inv.created_at) : "-"}</span>
+              </div>
+            </div>
+          ))
+        )}
+        {total > 0 ? (
+          <Pagination
+            total={total}
+            page={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(v) => { setPageSize(v); setPage(1); }}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }

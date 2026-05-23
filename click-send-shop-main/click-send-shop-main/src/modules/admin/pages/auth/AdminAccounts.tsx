@@ -22,7 +22,6 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import type { RbacAdminUserRow } from "@/services/admin/rbacService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
-import AdminAccountSettingsTrigger from "@/components/admin/AdminAccountSettingsTrigger";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import AdminRolePicker, { getDefaultAdminRoleIds } from "@/components/admin/AdminRolePicker";
 import {
@@ -311,7 +310,6 @@ export default function AdminAccounts() {
               <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{a.last_login_at ? formatDateTime(a.last_login_at) : <span className="italic text-muted-foreground/60"><Tx>从未登录</Tx></span>}</td>
               <td className="px-4 py-3">
                 <div className="flex flex-wrap items-center gap-1">
-                  <AdminAccountSettingsTrigger variant="inline" />
                   <PermissionGate permission="role.manage">
                     {!targetLocked && a.role !== "super_admin" && (
                       <>

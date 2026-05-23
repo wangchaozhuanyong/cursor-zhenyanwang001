@@ -26,6 +26,14 @@ import {
   removeActivityFilterChip,
 } from "@/utils/adminActivityFilters";
 
+function getActivityPreviewPath(activity: MarketingActivity) {
+  const positions = activity.display_positions || [];
+  if (positions.includes("profile_center")) return "/profile";
+  if (positions.includes("checkout_notice")) return "/checkout";
+  if (positions.includes("cart_notice")) return "/cart";
+  return "/";
+}
+
 const TABS: Array<{ key: "" | ActivityStatus; label: string }> = [
   { key: "", label: "全部" },
   { key: "active", label: "进行中" },
@@ -114,6 +122,11 @@ export default function AdminActivities() {
     { label: "优惠券", to: "/admin/marketing/coupons/new" },
   ], []);
 
+  const openPreview = (activity: MarketingActivity) => {
+    const path = getActivityPreviewPath(activity);
+    window.open(path, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -196,7 +209,7 @@ export default function AdminActivities() {
                 {formatAdminDateTime(activity.end_at)}
               </td>
               <td className="px-4 py-3 text-xs text-muted-foreground">商品 {activity.product_count || 0}<br />库存 {activity.activity_stock_total || 0} / 已售 {activity.sold_count_total || 0}</td>
-              <td className="px-4 py-3 text-xs text-muted-foreground"><Tx>参与数据预留</Tx></td>
+              <td className="px-4 py-3 text-xs text-muted-foreground"><Tx>点击“查看数据”进入活动分析</Tx></td>
               <td className="max-w-[12rem] px-4 py-3 align-middle">
                 <AdminTableCell
                   value={labelDisplayPositions(activity.display_positions)}
@@ -209,8 +222,8 @@ export default function AdminActivities() {
                 <div className="flex flex-wrap gap-2 text-xs">
                   <button type="button" onClick={() => navigate(`/admin/marketing/activities/${activity.id}/edit`)} className="rounded border border-border px-2 py-1"><Tx>编辑</Tx></button>
                   <button type="button" onClick={() => navigate(`/admin/marketing/activities/new?copy_from=${activity.id}`)} className="rounded border border-border px-2 py-1"><Copy className="mr-1 inline h-3 w-3" /><Tx>复制</Tx></button>
-                  <button type="button" className="rounded border border-border px-2 py-1"><Eye className="mr-1 inline h-3 w-3" /><Tx>预览</Tx></button>
-                  <button type="button" className="rounded border border-border px-2 py-1"><Tx>查看数据</Tx></button>
+                  <button type="button" onClick={() => openPreview(activity)} className="rounded border border-border px-2 py-1"><Eye className="mr-1 inline h-3 w-3" /><Tx>预览</Tx></button>
+                  <button type="button" onClick={() => navigate(`/admin/reports/activities?activity_id=${encodeURIComponent(activity.id)}`)} className="rounded border border-border px-2 py-1"><Tx>查看数据</Tx></button>
                   <button
                     type="button"
                     disabled={toggleDisabledMutation.isPending}

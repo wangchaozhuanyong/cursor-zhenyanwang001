@@ -290,9 +290,16 @@ export default function AdminOrderVoiceNotifier() {
     if (!enabledRef.current || pollingRef.current) return;
     pollingRef.current = true;
     try {
-      const since = window.localStorage.getItem(LAST_CHECKED_KEY) || new Date().toISOString();
-      const checkedAt = new Date().toISOString();
-      const events = await orderService.fetchRecentOrderEvents(since);
+      const since = window.localStorage.getItem(LAST_CHECKED_KEY) || undefined;
+      const result = await orderService.fetchRecentOrderEvents(since);
+      const events = result.events || [];
+      const checkedAt = result.checkedAt || new Date().toISOString();
+
+      if (!since) {
+        window.localStorage.setItem(LAST_CHECKED_KEY, checkedAt);
+        return;
+      }
+
       const playedIds = readPlayedIds();
       const playedSet = new Set(playedIds);
       const freshEvents = events.filter((event) => !playedSet.has(event.id));
@@ -350,14 +357,13 @@ export default function AdminOrderVoiceNotifier() {
   const persistEnabled = async (next: boolean) => {
     const res = await updateAdminOrderVoiceSettings(next);
     applyEnabled(Boolean(res.data?.enabled));
-    if (next) {
-      window.localStorage.setItem(LAST_CHECKED_KEY, new Date().toISOString());
-    } else {
+    if (!next) {
       if (getSpeechSupport()) {
         window.speechSynthesis.cancel();
       }
       queueRef.current = [];
       playingRef.current = false;
+      window.localStorage.removeItem(LAST_CHECKED_KEY);
     }
   };
 

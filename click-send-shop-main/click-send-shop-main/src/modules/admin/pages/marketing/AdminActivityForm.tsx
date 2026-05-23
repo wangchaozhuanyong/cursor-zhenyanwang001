@@ -35,6 +35,7 @@ export default function AdminActivityForm() {
   const { id } = useParams();
   const isEdit = !!id;
   const [search] = useSearchParams();
+  const copyFromId = !isEdit ? search.get("copy_from") : null;
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -73,6 +74,13 @@ export default function AdminActivityForm() {
     staleTime: 60_000,
   });
 
+  const copySourceQuery = useQuery({
+    queryKey: adminQueryKeys.activityDetail(copyFromId || ""),
+    queryFn: () => activityService.fetchActivity(copyFromId!),
+    enabled: !!copyFromId,
+    staleTime: 60_000,
+  });
+
   const couponsQuery = useQuery({
     queryKey: adminQueryKeys.activityFormCoupons(),
     queryFn: () => fetchCoupons({ page: 1, pageSize: 200 }).then((res) => res.list || []),
@@ -107,10 +115,43 @@ export default function AdminActivityForm() {
       display_positions: d.display_positions || [],
       activity_config: d.activity_config || {},
       sort_order: d.sort_order || 0,
-      items: d.items || [],
+      items: (d.items || []).map(({ id: _id, sold_count: _soldCount, ...item }) => ({
+        ...item,
+        sold_count: 0,
+      })),
     });
     setStatusLabel(d.status_label || "草稿");
   }, [activityQuery.data]);
+
+  useEffect(() => {
+    if (!copySourceQuery.data) return;
+    const d = copySourceQuery.data;
+    setForm({
+      type: d.type,
+      title: `${d.title || ""} 副本`.trim(),
+      subtitle: d.subtitle || "",
+      description: d.description || "",
+      start_at: "",
+      end_at: "",
+      status: "draft",
+      disabled: false,
+      threshold_amount: d.threshold_amount ?? null,
+      discount_amount: d.discount_amount ?? null,
+      scope_type: d.scope_type || "product",
+      scope_ids: d.scope_ids || [],
+      allow_coupon_stack: d.allow_coupon_stack ?? true,
+      allow_points_stack: d.allow_points_stack ?? true,
+      allow_reward: d.allow_reward ?? false,
+      publish_at: null,
+      internal_note: d.internal_note || "",
+      display_positions: d.display_positions || [],
+      activity_config: d.activity_config || {},
+      sort_order: d.sort_order || 0,
+      items: d.items || [],
+    });
+    setStatusLabel("草稿");
+    toast.success("已载入复制活动内容，请重新设置活动时间后发布");
+  }, [copySourceQuery.data]);
 
   const selectedCouponIds = useMemo(
     () => (Array.isArray((form.activity_config as { coupon_ids?: string[] })?.coupon_ids)

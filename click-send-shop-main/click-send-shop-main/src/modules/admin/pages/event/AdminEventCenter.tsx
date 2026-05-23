@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, Eye, RefreshCw, Shield, XCircle } from "lucide-react";
+import PermissionGate from "@/components/admin/PermissionGate";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import * as eventService from "@/services/admin/eventCenterService";
 
@@ -22,6 +23,9 @@ const categoryLabels: Record<string, string> = {
   security: "安全",
   system: "系统",
 };
+
+const EVENT_VIEW_PERMISSIONS = ["event.view", "event.manage"];
+const EVENT_MANAGE_PERMISSIONS = ["event.manage"];
 
 function severityClass(severity: string) {
   if (severity === "P0") return "bg-red-600 text-white";
@@ -141,11 +145,15 @@ export default function AdminEventCenter() {
             </div>
             <div className="text-muted-foreground">{item.status}</div>
             <div className="flex flex-wrap gap-1">
-              <button type="button" className="rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "read" })}><Eye size={13} className="mr-1 inline" />已读</button>
-              <button type="button" className="rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ack" })}>确认</button>
-              <button type="button" className="rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "progress" })}>处理中</button>
-              <button type="button" className="rounded px-2 py-1 text-xs text-emerald-700 hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "resolve" })}><CheckCircle2 size={13} className="mr-1 inline" />完成</button>
-              <button type="button" className="rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ignore" })}><XCircle size={13} className="mr-1 inline" />忽略</button>
+              <PermissionGate anyOf={EVENT_VIEW_PERMISSIONS}>
+                <button type="button" className="rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "read" })}><Eye size={13} className="mr-1 inline" />已读</button>
+              </PermissionGate>
+              <PermissionGate anyOf={EVENT_MANAGE_PERMISSIONS}>
+                <button type="button" className="rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ack" })}>确认</button>
+                <button type="button" className="rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "progress" })}>处理中</button>
+                <button type="button" className="rounded px-2 py-1 text-xs text-emerald-700 hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "resolve" })}><CheckCircle2 size={13} className="mr-1 inline" />完成</button>
+                <button type="button" className="rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ignore" })}><XCircle size={13} className="mr-1 inline" />忽略</button>
+              </PermissionGate>
             </div>
           </div>
         )) : (

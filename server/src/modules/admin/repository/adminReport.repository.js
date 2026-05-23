@@ -1,5 +1,10 @@
 const db = require('../../../config/db');
-const { PAID_PAYMENT_SQL } = require('../../../utils/orderRevenueSql');
+const {
+  PAID_PAYMENT_SQL,
+  isEffectiveOrderExpr,
+  reportDateExpr,
+  reportMonthExpr,
+} = require('../report/reportMetricDefinitions');
 const { getReportExprs } = require('./adminReport.expr');
 const { getProfitDailySqlParts } = require('../../../db/schemaContract');
 
@@ -44,6 +49,38 @@ async function isAnalyticsEventsReady() {
     }
   }
   return analyticsEventsReady;
+}
+
+let searchTermsReady;
+const REQUIRED_SEARCH_TERMS_COLUMNS = [
+  'keyword',
+  'search_count',
+  'result_count',
+  'last_searched_at',
+  'created_at',
+];
+
+async function isSearchTermsReady() {
+  if (searchTermsReady !== undefined) return searchTermsReady;
+  try {
+    await db.query('SELECT 1 FROM search_terms LIMIT 1');
+    const [columns] = await db.query('SHOW COLUMNS FROM search_terms');
+    const columnSet = new Set((columns || []).map((c) => String(c.Field || '').toLowerCase()));
+    const missingColumns = REQUIRED_SEARCH_TERMS_COLUMNS.filter((name) => !columnSet.has(name));
+    if (missingColumns.length > 0) {
+      console.warn(`[admin-report] search_terms 缺少字段，搜索分析已降级: ${missingColumns.join(', ')}`);
+      searchTermsReady = false;
+      return searchTermsReady;
+    }
+    searchTermsReady = true;
+  } catch (e) {
+    if (e.code === 'ER_NO_SUCH_TABLE' || e.code === 'ER_BAD_FIELD_ERROR') {
+      searchTermsReady = false;
+    } else {
+      throw e;
+    }
+  }
+  return searchTermsReady;
 }
 
 let analyticsUserIdReady;
@@ -158,14 +195,14 @@ function buildOrderScopeSql(filters = {}, alias = 'o') {
 }
 
 function salesPeriodExpr(granularity = 'day', alias = 'o') {
-  const at = `${alias}.created_at`;
   if (granularity === 'month') {
-    return `DATE_FORMAT(DATE_ADD(${at}, INTERVAL 8 HOUR),'%Y-%m')`;
+    return reportMonthExpr(alias);
   }
   if (granularity === 'week') {
+    const at = `${alias}.created_at`;
     return `DATE_FORMAT(DATE_SUB(DATE_ADD(${at}, INTERVAL 8 HOUR), INTERVAL WEEKDAY(DATE_ADD(${at}, INTERVAL 8 HOUR)) DAY),'%Y-%m-%d')`;
   }
-  return `DATE(DATE_ADD(${at}, INTERVAL 8 HOUR))`;
+  return reportDateExpr(alias);
 }
 
 async function queryOne(sql, params = []) {
@@ -517,8 +554,7 @@ async function selectSimpleCategoryAnalysis(dateFrom, dateTo, filters = {}) {
     ? 'CASE WHEN COALESCE(oi.net_sales_amount,0) > 0 THEN oi.net_sales_amount ELSE oi.subtotal END'
     : 'oi.subtotal';
   const grossProfitExpr = itemSchema.orderItemsGrossProfit ? 'oi.gross_profit_amount' : '0';
-  const paidOrderJoin = `o.payment_status IN (${PAID_PAYMENT_SQL})
-       AND o.status <> 'cancelled'
+  const paidOrderJoin = `${isEffectiveOrderExpr('o')}
        AND ${rangeWhere('DATE(DATE_ADD(o.created_at, INTERVAL 8 HOUR))')}`;
   const categoryScope = buildCategoryScopeSql(filters);
 
@@ -621,8 +657,7 @@ async function selectSimpleCustomerAnalysis(dateFrom, dateTo) {
      FROM (
        SELECT user_id
        FROM orders
-       WHERE payment_status IN (${PAID_PAYMENT_SQL})
-         AND status <> 'cancelled'
+       WHERE ${isEffectiveOrderExpr('')}
          AND ${orderDateRange}
        GROUP BY user_id
        HAVING COUNT(*) >= 2
@@ -795,8 +830,7 @@ async function selectSimpleActivitiesAnalysis(dateFrom, dateTo, filters = {}) {
        INNER JOIN orders o ON BINARY o.id = BINARY oi.order_id
        WHERE oi.activity_id IS NOT NULL
          AND TRIM(oi.activity_id) <> ''
-         AND o.payment_status IN (${PAID_PAYMENT_SQL})
-         AND o.status <> 'cancelled'
+         AND ${isEffectiveOrderExpr('o')}
          AND ${rangeWhere('DATE(DATE_ADD(o.created_at, INTERVAL 8 HOUR))')}
        GROUP BY oi.activity_id
      ) sales ON BINARY sales.activity_id = BINARY a.id
@@ -901,7 +935,7 @@ async function selectSimpleCouponsAnalysis(dateFrom, dateTo) {
 }
 
 async function selectInventoryAnalysis() {
-  const paidOrderFilter = `o.payment_status IN (${PAID_PAYMENT_SQL}) AND o.status <> 'cancelled'`;
+  const paidOrderFilter = isEffectiveOrderExpr('o');
   const salesDateExpr = 'DATE(DATE_ADD(o.created_at, INTERVAL 8 HOUR))';
   const last7Start = 'DATE(DATE_SUB(DATE(DATE_ADD(NOW(), INTERVAL 8 HOUR)), INTERVAL 6 DAY))';
   const last30Start = 'DATE(DATE_SUB(DATE(DATE_ADD(NOW(), INTERVAL 8 HOUR)), INTERVAL 29 DAY))';
@@ -940,13 +974,16 @@ async function selectSimpleInventoryAnalysis() {
 }
 
 async function selectSimpleSearchAnalysis(dateFrom, dateTo) {
+  if (!(await isSearchTermsReady())) return [];
+
   const baseTermsSql = `
      FROM (
-       SELECT keyword,COUNT(*) AS search_count,
-         SUM(CASE WHEN result_count=0 THEN 1 ELSE 0 END) AS no_result_count,
-         MAX(created_at) AS last_searched_at
+       SELECT keyword,
+         COALESCE(SUM(search_count), 0) AS search_count,
+         COALESCE(SUM(CASE WHEN result_count=0 THEN search_count ELSE 0 END), 0) AS no_result_count,
+         MAX(COALESCE(last_searched_at, created_at)) AS last_searched_at
        FROM search_terms
-       WHERE DATE(DATE_ADD(created_at, INTERVAL 8 HOUR)) BETWEEN ? AND ?
+       WHERE DATE(DATE_ADD(COALESCE(last_searched_at, created_at), INTERVAL 8 HOUR)) BETWEEN ? AND ?
        GROUP BY keyword
      ) st`;
 
@@ -1253,6 +1290,7 @@ async function selectTrafficLastUpdated(dateFrom, dateTo, filters = {}) {
 
 module.exports = {
   isAnalyticsEventsReady,
+  isSearchTermsReady,
   isOrderItemsActivitySnapshotReady,
   selectOverviewSummary,
   selectOverviewTopProducts,

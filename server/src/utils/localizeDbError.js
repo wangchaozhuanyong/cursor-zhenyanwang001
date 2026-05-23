@@ -1,6 +1,7 @@
 /**
  * 将 MySQL / Node 原始英文错误转为管理端可展示的中文说明。
  */
+/** @type {Array<{ test: RegExp; message?: string; format?: (msg: string) => string }>} */
 const PATTERNS = [
   {
     test: /Illegal mix of collations/i,
@@ -37,7 +38,7 @@ function localizeDbError(message) {
   if (!raw) return '';
   for (const item of PATTERNS) {
     if (!item.test.test(raw)) continue;
-    return typeof item.format === 'function' ? item.format(raw) : item.message;
+    return typeof item.format === 'function' ? item.format(raw) : (item.message || raw);
   }
   if (/[\u4e00-\u9fff]/.test(raw)) return raw;
   return raw.length > 160 ? `${raw.slice(0, 160)}…` : raw;

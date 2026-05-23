@@ -65,7 +65,7 @@ async function settleDashboardQuery(label, fn, fallback) {
 }
 
 async function getStats(query = {}, user = {}) {
-  const { dateFrom, dateTo, preset, todayYmd } = resolveKLDateRange(query);
+  const { dateFrom, dateTo, preset } = resolveKLDateRange(query);
   const viewOrders = canViewOrders(user);
 
   const emptyToday = {
@@ -106,7 +106,7 @@ async function getStats(query = {}, user = {}) {
     settleDashboardQuery('countUsers', () => repo.countUsers(), 0),
     settleDashboardQuery('countProducts', () => repo.countProducts(), 0),
     settleDashboardQuery('sumRevenue', () => repo.sumCompletedRevenue(), 0),
-    settleDashboardQuery('todaySummary', () => repo.selectTodaySummary(todayYmd), emptyToday),
+    settleDashboardQuery('rangeSummary', () => repo.selectTodaySummary(dateFrom, dateTo), emptyToday),
     settleDashboardQuery('todos', () => repo.selectTodos(), emptyTodos),
     settleDashboardQuery('salesTrend', () => repo.selectSalesTrend(dateFrom, dateTo), []),
     settleDashboardQuery('categoryShare', () => repo.selectCategorySalesShare(dateFrom, dateTo), []),

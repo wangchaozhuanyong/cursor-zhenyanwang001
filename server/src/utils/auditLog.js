@@ -69,7 +69,7 @@ async function getOperatorMeta(userId) {
  *   summary?: string;
  *   before?: unknown;
  *   after?: unknown;
- *   result: 'success'|'failure';
+ *   result: 'success'|'failure'|'partial';
  *   errorMessage?: string;
  * }} params
  */

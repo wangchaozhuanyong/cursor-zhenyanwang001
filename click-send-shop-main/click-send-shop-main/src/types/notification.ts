@@ -17,9 +17,9 @@ export interface Notification {
   content: string;
   is_read: boolean;
   created_at: string;
-  audience_type?: "all" | "single" | "specific";
+  audience_type?: "all" | "single" | "specific" | "user_tag" | "member_level" | "has_order" | "no_order";
   send_status?: "draft" | "sent" | "scheduled" | "cancelled";
-  workflow_status?: "draft" | "published" | "cancelled";
+  workflow_status?: "draft" | "published" | "cancelled" | "revoked";
   recipient_count?: number;
   read_count?: number;
   scheduled_at?: string | null;

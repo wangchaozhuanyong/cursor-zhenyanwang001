@@ -103,7 +103,12 @@ async function countAllUserCoupons() {
 
 async function selectAllCouponRecordsPage(pageSize, offset) {
   const [rows] = await db.query(
-    `SELECT uc.*, u.nickname, u.phone, c.title AS coupon_title
+    `SELECT uc.*,
+            CASE
+              WHEN uc.status = 'available' AND c.end_date < CURDATE() THEN 'expired'
+              ELSE uc.status
+            END AS status,
+            u.nickname, u.phone, c.title AS coupon_title
      FROM user_coupons uc
      LEFT JOIN users u ON BINARY uc.user_id = BINARY u.id
      LEFT JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
@@ -123,7 +128,12 @@ async function countUserCouponsByCouponId(couponId) {
 
 async function selectCouponRecordsPage(couponId, pageSize, offset) {
   const [rows] = await db.query(
-    `SELECT uc.*, u.nickname, u.phone, c.title AS coupon_title
+    `SELECT uc.*,
+            CASE
+              WHEN uc.status = 'available' AND c.end_date < CURDATE() THEN 'expired'
+              ELSE uc.status
+            END AS status,
+            u.nickname, u.phone, c.title AS coupon_title
      FROM user_coupons uc
      LEFT JOIN users u ON BINARY uc.user_id = BINARY u.id
      LEFT JOIN coupons c ON BINARY uc.coupon_id = BINARY c.id
@@ -136,7 +146,7 @@ async function selectCouponRecordsPage(couponId, pageSize, offset) {
 
 async function selectCouponBaseById(couponId) {
   const [[row]] = await db.query(
-    `SELECT id, title, code, status, start_date, end_date, deleted_at
+    `SELECT id, title, code, status, start_date, end_date, deleted_at, total_quantity, per_user_limit
      FROM coupons
      WHERE BINARY id = BINARY ? LIMIT 1`,
     [couponId],
@@ -159,23 +169,30 @@ async function selectUserIdsByTagIds(tagIds) {
   return rows.map((r) => r.id);
 }
 
-async function batchIssueCouponToUsers(couponId, userIds, genId) {
+async function batchIssueCouponToUsers(couponId, userIds, genId, options = {}) {
   if (!Array.isArray(userIds) || !userIds.length) return 0;
+  const perUserLimit = Math.max(1, Number(options.perUserLimit || 1));
+  let remaining = Number.isFinite(Number(options.remaining)) ? Math.max(0, Number(options.remaining)) : Infinity;
+  if (remaining <= 0) return 0;
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
     let affected = 0;
     for (const userId of userIds) {
+      if (remaining <= 0) break;
       const [exists] = await conn.query(
-        'SELECT id FROM user_coupons WHERE BINARY user_id = BINARY ? AND BINARY coupon_id = BINARY ? LIMIT 1',
+        'SELECT COUNT(*) AS cnt FROM user_coupons WHERE BINARY user_id = BINARY ? AND BINARY coupon_id = BINARY ?',
         [userId, couponId],
       );
-      if (Array.isArray(exists) && exists.length) continue;
+      const userClaims = Number(exists?.[0]?.cnt || 0);
+      if (userClaims >= perUserLimit) continue;
       const [r] = await conn.query(
         'INSERT INTO user_coupons (id, user_id, coupon_id, claimed_at, status) VALUES (?,?,?,NOW(),?)',
         [genId(), userId, couponId, 'available'],
       );
-      affected += Number(r?.affectedRows || 0);
+      const inserted = Number(r?.affectedRows || 0);
+      affected += inserted;
+      remaining -= inserted;
     }
     await conn.commit();
     return affected;

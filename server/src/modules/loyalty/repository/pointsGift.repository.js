@@ -19,6 +19,10 @@ async function selectActiveGiftItems(q) {
   return rows;
 }
 
+/**
+ * @param {any} q
+ * @param {{ page?: number|string; pageSize?: number|string; enabled?: boolean|number|string }} [options]
+ */
 async function selectGiftItemsPage(q, { page = 1, pageSize = 20, enabled } = {}) {
   const where = ['1=1'];
   const params = [];
@@ -120,6 +124,10 @@ async function selectGiftRedemptionByOrderId(q, orderId) {
   return row || null;
 }
 
+/**
+ * @param {any} q
+ * @param {{ page?: number|string; pageSize?: number|string; userId?: string; giftItemId?: string }} [options]
+ */
 async function selectGiftRedemptionsPage(q, { page = 1, pageSize = 20, userId, giftItemId } = {}) {
   const where = ['1=1'];
   const params = [];

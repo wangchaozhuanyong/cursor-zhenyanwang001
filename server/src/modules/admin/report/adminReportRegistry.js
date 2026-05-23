@@ -27,7 +27,7 @@ const REPORT_REGISTRY = [
     exportPermission: 'report.export',
     serviceHandler: 'getSalesDaily',
     filenamePrefix: 'sales-daily',
-    csvColumns: ['date', 'order_count', 'paid_order_count', 'gross_sales', 'net_sales', 'refund_amount', 'discount_amount', 'average_order_value', 'payment_rate', 'refund_rate'],
+    csvColumns: ['date', 'order_count', 'paid_order_count', 'gross_sales', 'net_sales', 'refund_amount', 'discount_amount', 'average_order_value', 'payment_rate', 'refund_rate', 'goods_cost_amount', 'gross_profit_amount', 'gross_margin', 'expense_amount', 'net_profit_amount', 'net_margin', 'missing_cost_order_count', 'missing_cost_item_count'],
   },
   {
     type: 'sales_monthly',

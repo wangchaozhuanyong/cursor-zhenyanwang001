@@ -227,6 +227,7 @@ async function updateProfile(userId, body) {
     }
     await repo.updateUserBirthday(userId, {
       birthday: normalizedBirthday,
+      birthdayLocked: !!normalizedBirthday,
       birthdayUpdatedAt: new Date(),
     });
   }

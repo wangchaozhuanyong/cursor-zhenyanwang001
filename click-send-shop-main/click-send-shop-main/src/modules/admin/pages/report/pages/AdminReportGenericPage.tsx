@@ -278,7 +278,7 @@ export default function AdminReportGenericPage({
         <h2 className="text-sm font-semibold text-[var(--theme-text)]">明细数据</h2>
         {summaryOnly ? (
           <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-5 text-sm text-[var(--theme-text-muted)]">
-            该报表仅展示汇总指标。
+            该报表当前仅展示汇总指标。
           </div>
         ) : (
           <AnimatedTable

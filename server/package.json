@@ -11,6 +11,7 @@
     "check:service-layer": "node scripts/check-service-layer.js",
     "check:module-structure": "node scripts/check-module-structure.js",
     "check:tracked-artifacts": "node scripts/check-tracked-artifacts.js",
+    "check:report-registry": "node scripts/check-report-registry.js",
     "db:init": "node scripts/migrate-cli.js up",
     "db:create-test": "node scripts/create-test-database.js --migrate",
     "db:grant-test": "node scripts/grant-test-database.js",
@@ -33,12 +34,14 @@
     "smoke:user-tag-marketing": "node scripts/smoke-user-tag-marketing.js",
     "test": "npm run test:unit",
     "test:redis": "node -r tsx/cjs --test test/redis-standard.test.js",
-    "test:integration": "node scripts/run-db-integration-tests.js test/auth-flow.test.js test/payment-channels.test.js test/admin-user-tags.test.js",
     "test:flow": "node scripts/run-db-integration-tests.js test/flow-smoke.test.js",
     "test:smoke": "node scripts/run-db-integration-tests.js test/flow-smoke.test.js",
     "test:stripe": "node -r tsx/cjs --test test/stripe-amount.test.js",
     "test:unit": "node -r tsx/cjs --test --test-force-exit test/health.test.js test/stripe-amount.test.js test/order-state-machine.test.js test/order-summary.test.js test/return-state-machine.test.js test/file-magic.test.js test/upload-presign.test.js test/sms-otp-adapter.test.js test/auth-cookies.test.js test/manual-webhook-security.test.js test/cms-sanitize.test.js test/admin-order-schemas.test.js test/points-engine.test.js test/points-bonus.test.js test/birthday-window.test.js test/order-points.test.js test/sign-in-timezone.test.js test/points-adjust.test.js test/points-expire.test.js test/points-loyalty-hints.test.js test/monitoring-cron.test.js test/monitoring-auto-fix.test.js test/admin-gateway-guard.test.js test/admin-event-service.test.js test/data-retention-service.test.js test/admin-product-high-risk-routes.test.js test/rbac-authorization.test.js",
     "test:integration": "node scripts/run-db-integration-tests.js test/auth-flow.test.js test/payment-channels.test.js test/admin-user-tags.test.js test/admin-product-soft-delete.test.js test/rbac-authorization.test.js test/order-pay-capability.test.js",
+    "test:reports": "node scripts/run-db-integration-tests.js test/admin-report-regression.test.js",
+    "test:report-contract": "node scripts/run-db-integration-tests.js test/admin-report-contract.test.js",
+    "test:report-export": "node scripts/run-db-integration-tests.js test/admin-report-export.test.js",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:smoke"
   },
   "dependencies": {

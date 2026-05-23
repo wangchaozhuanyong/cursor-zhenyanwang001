@@ -1,5 +1,5 @@
 const { generateId, generateOrderNo } = require('../../../utils/helpers');
-const { ValidationError, NotFoundError, BusinessError } = require('../../../errors/BusinessError');
+const { ValidationError, NotFoundError, BusinessError } = require('../../../errors');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 const orderRepo = require('../../order/repository/order.repository');
 const giftRepo = require('../repository/pointsGift.repository');
@@ -274,7 +274,7 @@ async function redeemGift(userId, body) {
         order_no: orderNo,
       }, [{ product_id: gift.product_id, qty: quantity }]);
       try {
-        const userApi = require('../../user').api || {};
+        const userApi = /** @type {any} */ (require('../../user')).api || {};
         if (typeof userApi.syncStatsAfterOrderPaid === 'function') {
           await userApi.syncStatsAfterOrderPaid(userId, cashAmount, orderId, conn);
         }

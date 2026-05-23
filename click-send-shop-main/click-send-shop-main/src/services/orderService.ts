@@ -73,6 +73,10 @@ export async function confirmReceive(id: string) {
   await orderApi.confirmReceive(id);
 }
 
+export async function deleteOrder(id: string) {
+  await orderApi.deleteOrder(id);
+}
+
 export async function createStripeCheckoutSession(id: string) {
   const res = await orderApi.createStripeCheckoutSession(id);
   return res.data;

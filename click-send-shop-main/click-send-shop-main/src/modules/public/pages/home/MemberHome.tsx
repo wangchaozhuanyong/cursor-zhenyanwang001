@@ -186,7 +186,6 @@ export default function MemberHome() {
           </div>
         ) : null}
         {isHomeModuleEnabled(homeModules, "member_coupons", "member") ? (
-        <AnimatedSection delay={0.1}>
         <section>
           <Header title="会员专属礼包" icon={Ticket} />
           <div className="no-scrollbar -mx-[var(--store-page-x)] flex items-stretch gap-3 overflow-x-auto overflow-y-hidden px-[var(--store-page-x)] pb-2 snap-x snap-mandatory md:mx-0 md:grid md:grid-cols-2 md:gap-4 md:overflow-visible md:px-0 md:pb-0 md:snap-none lg:grid-cols-3 lg:gap-5">
@@ -195,7 +194,7 @@ export default function MemberHome() {
                 return (
                   <div
                     key={i}
-                    className="snap-center min-h-[5.5rem] w-[min(88vw,360px)] shrink-0 animate-pulse rounded-xl bg-[var(--theme-surface)]/70 ring-1 ring-[var(--theme-border)] md:w-full"
+                    className="snap-center min-h-[6.75rem] w-[min(88vw,360px)] shrink-0 animate-pulse rounded-xl bg-[var(--theme-surface)]/70 ring-1 ring-[var(--theme-border)] md:w-full"
                   />
                 );
               }
@@ -248,7 +247,6 @@ export default function MemberHome() {
             </div>
           ) : null}
         </section>
-        </AnimatedSection>
         ) : null}
         {isHomeModuleEnabled(homeModules, "new_arrivals", "member") ? (
         <AnimatedSection delay={0.12}>

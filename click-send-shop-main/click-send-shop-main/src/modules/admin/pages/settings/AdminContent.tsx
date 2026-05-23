@@ -21,6 +21,7 @@ import { THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
+import { refreshSiteInfo } from "@/hooks/useSiteInfo";
 
 interface ContentItem {
   id: string;
@@ -112,6 +113,7 @@ export default function AdminContent() {
       const normalized = normalizeHelpCenterConfig(helpForm);
       const payload = JSON.stringify(normalized);
       await updateSiteSettings({ helpCenterConfig: payload });
+      await refreshSiteInfo();
       setHelpForm(normalized);
       setHelpJson(JSON.stringify(normalized, null, 2));
       toast.success("帮助中心配置已保存");

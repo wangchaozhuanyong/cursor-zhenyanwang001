@@ -14,6 +14,7 @@ import { isGiftOrder } from "@/utils/orderPaymentLabels";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { usePayPendingOrder } from "@/hooks/usePayPendingOrder";
 import { safeOpenExternal } from "@/utils/safeOpen";
+import { BottomSheetConfirm, ResponsiveSheet } from "@/modules/micro-interactions";
 
 const TABS: Array<{ key: OrderTab; label: string }> = [
   { key: "all", label: "全部" },
@@ -87,6 +88,15 @@ function getStatusTone(order: Order) {
   return "text-[var(--theme-text-muted)]";
 }
 
+function canBuyerDeleteOrder(order: Order) {
+  if (Number(order.active_return_count || 0) > 0) return false;
+  return order.status === "completed" || order.status === "cancelled" || order.status === "refunded";
+}
+
+function canViewLogistics(order: Order) {
+  return order.status === "shipped" || order.status === "completed" || order.status === "refunded";
+}
+
 export default function Orders() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -96,11 +106,13 @@ export default function Orders() {
   const { paying, payPendingOrder } = usePayPendingOrder();
   const tabs = useMemo(() => TABS.filter((t) => t.key !== "pending_review" || capabilities.reviewEnabled), [capabilities.reviewEnabled]);
 
-  const { orders, loading, error, loadOrders, cancelOrder, confirmReceive } = useOrderStore();
+  const { orders, loading, error, loadOrders, cancelOrder, confirmReceive, deleteOrder } = useOrderStore();
   const { addToCart, clearBuyNow, setSelectAll } = useCartStore();
 
   const [summary, setSummary] = useState<OrderSummary | null>(null);
   const [actingId, setActingId] = useState("");
+  const [moreOrder, setMoreOrder] = useState<Order | null>(null);
+  const [deleteConfirmOrder, setDeleteConfirmOrder] = useState<Order | null>(null);
 
   const handleViewLogistics = async (order: Order) => {
     if (order.logistics_provider?.tracking_url) {
@@ -158,17 +170,6 @@ export default function Orders() {
     });
   };
 
-  const addOrderToCart = async (order: Order) => {
-    try {
-      for (const item of order.items) {
-        await addToCart(item.product, item.qty, buildVariantFromOrderItem(item));
-      }
-      toast.success("已加入购物车");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "加入购物车失败");
-    }
-  };
-
   const repurchaseOrder = async (order: Order) => {
     try {
       clearBuyNow();
@@ -185,6 +186,20 @@ export default function Orders() {
     }
   };
 
+  const handleDeleteOrder = async (order: Order) => {
+    setActingId(order.id);
+    try {
+      await deleteOrder(order.id);
+      toast.success("订单已删除");
+      setSummary(null);
+      await loadOrders({ page: 1, tab, status: undefined });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "删除订单失败");
+    } finally {
+      setActingId("");
+    }
+  };
+
   const emptyText: Record<OrderTab, string> = {
     all: "暂无订单",
     pending_payment: "暂无待付款订单",
@@ -198,6 +213,7 @@ export default function Orders() {
 
   const actionBtn = "min-h-8 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs leading-none whitespace-nowrap";
   const primaryActionBtn = "min-h-8 rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1.5 text-xs leading-none whitespace-nowrap text-[var(--theme-primary-foreground)]";
+  const moreActionBtn = "flex w-full items-center justify-between rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-left text-sm font-semibold text-[var(--theme-text)]";
 
   return (
     <StoreAccountLayout title="我的订单" onBack={() => navigate("/profile", { replace: true })} mainClassName="sm:p-0 lg:py-6">
@@ -279,84 +295,154 @@ export default function Orders() {
                   <span className="store-body-small">共 {totalItems} 件商品，实付款 <span className="text-[15px] font-semibold text-[var(--theme-price)]">RM {Number(order.total_amount || 0).toFixed(2)}</span></span>
                 </div>
 
-                <div className="mt-3 flex flex-wrap justify-end gap-2">
-                  {canUserCancelOrder(order) ? (
-                    <button
-                      className={actionBtn}
-                      disabled={actingId === order.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActingId(order.id);
-                        cancelOrder(order.id).then(() => loadOrders({ page: 1, tab })).finally(() => setActingId(""));
-                      }}
-                    >
-                      取消订单
-                    </button>
-                  ) : null}
-                  {isPendingPayment(order) ? (
-                    <button
-                      className={primaryActionBtn}
-                      disabled={actingId === order.id || paying}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActingId(order.id);
-                        void payPendingOrder(order, () => loadOrders({ page: 1, tab })).finally(() => setActingId(""));
-                      }}
-                    >
-                      {paying && actingId === order.id ? "处理中..." : "去付款"}
-                    </button>
-                  ) : null}
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    className={actionBtn}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMoreOrder(order);
+                    }}
+                  >
+                    更多
+                  </button>
+                  <div className="flex min-w-0 flex-1 flex-wrap justify-end gap-2">
+                    {canUserCancelOrder(order) ? (
+                      <button
+                        className={actionBtn}
+                        disabled={actingId === order.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActingId(order.id);
+                          cancelOrder(order.id).then(() => loadOrders({ page: 1, tab })).finally(() => setActingId(""));
+                        }}
+                      >
+                        取消订单
+                      </button>
+                    ) : null}
+                    {isPendingPayment(order) ? (
+                      <button
+                        className={primaryActionBtn}
+                        disabled={actingId === order.id || paying}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActingId(order.id);
+                          void payPendingOrder(order, () => loadOrders({ page: 1, tab })).finally(() => setActingId(""));
+                        }}
+                      >
+                        {paying && actingId === order.id ? "处理中..." : "去付款"}
+                      </button>
+                    ) : null}
 
-                  {order.status === "paid" ? (
-                    <>
-                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void addOrderToCart(order); }}>加入购物车</button>
-                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void repurchaseOrder(order); }}>再买一单</button>
+                    {order.status === "paid" ? (
                       <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate("/help"); }}>联系客服</button>
-                    </>
-                  ) : null}
+                    ) : null}
 
-                  {order.status === "shipped" ? (
-                    <>
-                      <div className="flex w-full justify-end gap-2">
-                        <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void addOrderToCart(order); }}>加入购物车</button>
-                        <button className={primaryActionBtn} onClick={(e) => { e.stopPropagation(); void repurchaseOrder(order); }}>再买一单</button>
-                      </div>
-                      <div className="flex w-full flex-wrap justify-end gap-2">
-                        <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void handleViewLogistics(order); }}>查看物流</button>
+                    {order.status === "shipped" ? (
+                      <>
                         {canApplyAfterSale(order) ? (
                           <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate(`/returns?apply=${order.id}`); }}>申请售后</button>
                         ) : null}
                         <button className={primaryActionBtn} disabled={actingId === order.id} onClick={(e) => { e.stopPropagation(); setActingId(order.id); confirmReceive(order.id).then(() => loadOrders({ page: 1, tab })).finally(() => setActingId("")); }}>确认收货</button>
-                      </div>
-                    </>
-                  ) : null}
+                      </>
+                    ) : null}
 
-                  {order.status === "completed" ? (
-                    <>
-                      {hasPendingReview(order) ? <button className={actionBtn} onClick={(e) => { e.stopPropagation(); openDetail(order); }}>评价</button> : null}
-                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void addOrderToCart(order); }}>加入购物车</button>
+                    {order.status === "completed" ? (
+                      <>
+                        {canApplyAfterSale(order) ? (
+                          <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate(`/returns?apply=${order.id}`); }}>申请售后</button>
+                        ) : null}
+                        <button className={primaryActionBtn} onClick={(e) => { e.stopPropagation(); void repurchaseOrder(order); }}>再买一单</button>
+                      </>
+                    ) : null}
+
+                    {order.status === "cancelled" ? (
                       <button className={primaryActionBtn} onClick={(e) => { e.stopPropagation(); void repurchaseOrder(order); }}>再买一单</button>
-                      {canApplyAfterSale(order) ? (
-                        <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate(`/returns?apply=${order.id}`); }}>申请售后</button>
-                      ) : null}
-                    </>
-                  ) : null}
+                    ) : null}
 
-                  {order.status === "cancelled" ? (
-                    <>
-                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); void addOrderToCart(order); }}>加入购物车</button>
-                      <button className={primaryActionBtn} onClick={(e) => { e.stopPropagation(); void repurchaseOrder(order); }}>再买一单</button>
-                    </>
-                  ) : null}
-
-                  {orderInAfterSaleTab(order) ? (
-                    <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate("/returns"); }}>查看售后</button>
-                  ) : null}
+                    {orderInAfterSaleTab(order) ? (
+                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate("/returns"); }}>查看售后</button>
+                    ) : null}
+                  </div>
                 </div>
               </article>
             );
           })}
         </div>
+        <ResponsiveSheet
+          open={Boolean(moreOrder)}
+          onClose={() => setMoreOrder(null)}
+          title="更多操作"
+          height="auto"
+        >
+          {moreOrder ? (
+            <div className="space-y-2">
+              {capabilities.reviewEnabled && hasPendingReview(moreOrder) ? (
+                <button
+                  type="button"
+                  className={moreActionBtn}
+                  onClick={() => {
+                    const order = moreOrder;
+                    setMoreOrder(null);
+                    openDetail(order);
+                  }}
+                >
+                  <span>评价</span>
+                  <span className="text-xs font-normal text-[var(--theme-text-muted)]">去订单详情评价</span>
+                </button>
+              ) : null}
+              {canViewLogistics(moreOrder) ? (
+                <button
+                  type="button"
+                  className={moreActionBtn}
+                  onClick={() => {
+                    const order = moreOrder;
+                    setMoreOrder(null);
+                    void handleViewLogistics(order);
+                  }}
+                >
+                  <span>查看物流</span>
+                </button>
+              ) : null}
+              {canBuyerDeleteOrder(moreOrder) ? (
+                <button
+                  type="button"
+                  className={`${moreActionBtn} text-[var(--theme-danger)]`}
+                  onClick={() => {
+                    setDeleteConfirmOrder(moreOrder);
+                    setMoreOrder(null);
+                  }}
+                >
+                  <span>删除订单</span>
+                  <span className="text-xs font-normal text-[var(--theme-text-muted)]">仅从我的订单隐藏</span>
+                </button>
+              ) : null}
+              {!(
+                (capabilities.reviewEnabled && hasPendingReview(moreOrder))
+                || canViewLogistics(moreOrder)
+                || canBuyerDeleteOrder(moreOrder)
+              ) ? (
+                <p className="rounded-2xl bg-[var(--theme-bg)] px-4 py-5 text-center text-sm text-[var(--theme-text-muted)]">
+                  当前订单暂无更多操作
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </ResponsiveSheet>
+        <BottomSheetConfirm
+          open={Boolean(deleteConfirmOrder)}
+          onClose={() => setDeleteConfirmOrder(null)}
+          title="删除订单"
+          description="删除后该订单将不再显示在你的订单列表中，后台仍会保留必要记录用于售后、财务和审计。"
+          confirmText="删除"
+          cancelText="取消"
+          danger
+          loading={Boolean(deleteConfirmOrder && actingId === deleteConfirmOrder.id)}
+          onConfirm={async () => {
+            if (!deleteConfirmOrder) return;
+            await handleDeleteOrder(deleteConfirmOrder);
+          }}
+        />
     </StoreAccountLayout>
   );
 }

@@ -13,6 +13,12 @@ export function getCachedHomeBootstrap() {
   return cachedBootstrap;
 }
 
+export function invalidateHomeBootstrapCache() {
+  cachedBootstrap = null;
+  cachedAt = 0;
+  inflightBootstrap = null;
+}
+
 export async function fetchHomeBootstrap(options?: { force?: boolean }): Promise<HomeBootstrap> {
   const force = options?.force === true;
   const cached = !force ? getCachedHomeBootstrap() : null;

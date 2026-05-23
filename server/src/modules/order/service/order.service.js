@@ -80,6 +80,16 @@ function requireLogisticsApi(name) {
   return fn;
 }
 
+function canBuyerDeleteOrder(order, returnSummary = null) {
+  if (!order) return false;
+  if (Number(returnSummary?.active_return_count || order.active_return_count || 0) > 0) return false;
+  return [
+    ORDER_STATUS.CANCELLED,
+    ORDER_STATUS.COMPLETED,
+    ORDER_STATUS.REFUNDED,
+  ].includes(order.status);
+}
+
 async function assertOrderCapabilityUsage(body = {}) {
   const [pointsEnabled, couponEnabled] = await Promise.all([
     siteCapabilitiesService.isCapabilityEnabled('pointsEnabled'),
@@ -94,7 +104,7 @@ async function assertOrderCapabilityUsage(body = {}) {
 }
 
 function calculateCouponDiscount(coupon, rawAmount, shippingFee) {
-  const type = coupon.type;
+  const type = coupon.type === 'amount' ? 'fixed' : coupon.type === 'percent' ? 'percentage' : coupon.type;
   const value = parseFloat(coupon.value) || 0;
   if (type === 'fixed') {
     return Math.min(value, rawAmount);
@@ -435,7 +445,6 @@ async function createOrder(userId, body) {
       }
       couponType = uc.type;
       discountAmount += couponDiscountValue;
-      await repo.updateUserCouponUsed(conn, uc.uc_id);
       usedCouponUcId = uc.uc_id;
       usedCouponTitle = uc.title || coupon_title;
     }
@@ -473,6 +482,9 @@ async function createOrder(userId, body) {
       reward_cash_discount: Number(loyalty.reward_cash_discount_amount || 0),
       lines: pricing.discount_lines || [],
     };
+    if (usedCouponUcId) {
+      await repo.updateUserCouponUsed(conn, usedCouponUcId);
+    }
     const normalizedAddress = normalizeMalaysiaAddress(address, contact_name, contact_phone);
     const profitSnapshot = allocateOrderProfitSnapshot(orderItems, {
       rawAmount,
@@ -769,6 +781,17 @@ async function getOrderById(userId, orderId) {
   return { data };
 }
 
+async function deleteOrderForBuyer(userId, orderId) {
+  const order = await repo.selectOrderByIdAndUser(orderDb, orderId, userId);
+  if (!order) throw new NotFoundError('订单不存在');
+  const [returnSummary] = await returnRepo.selectReturnSummaryByOrderIds(userId, [order.id]);
+  if (!canBuyerDeleteOrder(order, returnSummary)) {
+    throw new ValidationError('当前订单状态不支持删除');
+  }
+  await repo.markOrderBuyerDeleted(orderDb, orderId, userId);
+  return { data: null, message: '订单已删除' };
+}
+
 async function cancelPendingOrderInTransaction(conn, order, options = {}) {
   const trigger = options.trigger || 'order_cancel';
   const cancelReason = options.cancelReason || `订单 ${order.order_no} 取消`;
@@ -952,6 +975,7 @@ module.exports = {
   getOrders,
   getOrderSummary,
   getOrderById,
+  deleteOrderForBuyer,
   cancelOrder,
   payOrder,
   createStripeCheckoutSession,

@@ -121,9 +121,15 @@ export default function Dashboard() {
   const trendConfig = TREND_METRICS.find((item) => item.key === trendMetric) ?? TREND_METRICS[0];
   const trendChartData = salesTrend.map((row: any) => ({ ...row, metric: row[trendMetric] ?? 0 }));
   const error = dashboardQuery.error ? getErrorMessage(dashboardQuery.error, "加载仪表盘数据失败") : null;
+  const rangeMetricPrefix = rangePreset === "today" ? "今日" : "筛选范围";
   const rangeMeta = stats?.range
     ? `统计时区：${formatTimezoneLabel(stats.range.timezone, locale)} · ${stats.range.dateFrom} 至 ${stats.range.dateTo}`
     : null;
+  const overviewReportPath = `/admin/reports/overview?range_preset=${encodeURIComponent(rangePreset)}${
+    rangePreset === "custom"
+      ? `&date_from=${encodeURIComponent(dateFrom)}&date_to=${encodeURIComponent(dateTo)}`
+      : ""
+  }`;
 
   if (dashboardQuery.isLoading && !stats) {
     return (
@@ -193,16 +199,16 @@ export default function Dashboard() {
       ) : null}
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold text-foreground">今日经营</h2>
+        <h2 className="mb-3 text-sm font-semibold text-foreground">经营概览</h2>
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-          <StatsCard icon={DollarSign} label="今日销售额" value={money(today.revenue ?? stats?.todayRevenue)} onClick={() => navigate("/admin/reports/overview?range_preset=today")} />
-          <StatsCard icon={ShoppingCart} label="今日支付订单" value={today.paidOrders ?? 0} onClick={() => navigate("/admin/orders?payment_status=paid")} />
-          <StatsCard icon={Package} label="今日下单数" value={today.orderCount ?? stats?.todayOrders ?? 0} onClick={() => navigate("/admin/orders")} />
-          <StatsCard icon={Users} label="今日新增用户" value={today.newUsers ?? stats?.todayNewUsers ?? 0} onClick={() => navigate("/admin/users")} />
-          <StatsCard icon={AlertTriangle} label="待付款" value={today.pendingPayment ?? 0} onClick={() => navigate("/admin/orders?payment_status=pending")} />
-          <StatsCard icon={Truck} label="待发货" value={today.pendingShip ?? stats?.pendingOrders ?? 0} onClick={() => navigate("/admin/orders?status=paid")} />
-          <StatsCard icon={RefreshCw} label="待售后" value={today.pendingAfterSale ?? 0} onClick={() => navigate("/admin/returns")} />
-          <StatsCard icon={Package} label="低库存" value={today.lowStock ?? 0} onClick={() => navigate("/admin/inventory")} />
+          <StatsCard icon={DollarSign} label={`${rangeMetricPrefix}销售额`} value={money(today.revenue ?? stats?.todayRevenue)} onClick={() => navigate(overviewReportPath)} />
+          <StatsCard icon={ShoppingCart} label={`${rangeMetricPrefix}支付订单`} value={today.paidOrders ?? 0} onClick={() => navigate("/admin/orders?payment_status=paid")} />
+          <StatsCard icon={Package} label={`${rangeMetricPrefix}下单数`} value={today.orderCount ?? stats?.todayOrders ?? 0} onClick={() => navigate("/admin/orders")} />
+          <StatsCard icon={Users} label={`${rangeMetricPrefix}新增用户`} value={today.newUsers ?? stats?.todayNewUsers ?? 0} onClick={() => navigate("/admin/users")} />
+          <StatsCard icon={AlertTriangle} label="当前待付款" value={today.pendingPayment ?? 0} onClick={() => navigate("/admin/orders?payment_status=pending")} />
+          <StatsCard icon={Truck} label="当前待发货" value={today.pendingShip ?? stats?.pendingOrders ?? 0} onClick={() => navigate("/admin/orders?status=paid")} />
+          <StatsCard icon={RefreshCw} label="当前待售后" value={today.pendingAfterSale ?? 0} onClick={() => navigate("/admin/returns")} />
+          <StatsCard icon={Package} label="当前低库存" value={today.lowStock ?? 0} onClick={() => navigate("/admin/inventory")} />
         </div>
       </section>
 

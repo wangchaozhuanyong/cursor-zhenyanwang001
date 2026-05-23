@@ -18,6 +18,9 @@ function formatCouponRow(row) {
     : [];
   r.total_quantity = Number(r.total_quantity || 0);
   r.per_user_limit = Number(r.per_user_limit || 1);
+  if (r.status === 'available' && dateOnly(r.end_date) && dateOnly(r.end_date) < new Date().toISOString().slice(0, 10)) {
+    r.status = 'expired';
+  }
   r.new_user_only = !!r.new_user_only;
   r.member_only = !!r.member_only;
   r.auto_issue = !!r.auto_issue;
@@ -26,6 +29,49 @@ function formatCouponRow(row) {
   try { r.usable_product_ids = r.usable_product_ids ? JSON.parse(r.usable_product_ids) : []; } catch { r.usable_product_ids = []; }
   try { r.usable_category_ids = r.usable_category_ids ? JSON.parse(r.usable_category_ids) : []; } catch { r.usable_category_ids = []; }
   return r;
+}
+
+function dateOnly(value) {
+  if (!value) return '';
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return String(value).slice(0, 10);
+}
+
+function assertCouponActiveForIssue(coupon) {
+  if (coupon.status !== 'available') {
+    throw new BusinessError(400, '该优惠券未启用，不能发放');
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  if (dateOnly(coupon.start_date) > today || dateOnly(coupon.end_date) < today) {
+    throw new BusinessError(400, '该优惠券不在有效期内，不能发放');
+  }
+}
+
+function assertCouponPayloadValid(body, options = {}) {
+  const partial = !!options.partial;
+  const type = body.type || 'fixed';
+  if ((!partial || body.type !== undefined) && !['fixed', 'percentage', 'shipping'].includes(type)) {
+    throw new BusinessError(400, '优惠券类型无效');
+  }
+  if (!partial || body.value !== undefined) {
+    const value = Number(body.value || 0);
+    if (!Number.isFinite(value) || value < 0) throw new BusinessError(400, '优惠券面额无效');
+    if (type !== 'shipping' && value <= 0) throw new BusinessError(400, '优惠券面额必须大于 0');
+    if (type === 'percentage' && value > 100) throw new BusinessError(400, '折扣比例需在 0-100 之间');
+  }
+  if (!partial || body.min_amount !== undefined) {
+    const minAmount = Number(body.min_amount || 0);
+    if (!Number.isFinite(minAmount) || minAmount < 0) throw new BusinessError(400, '优惠券使用门槛无效');
+  }
+  if (body.start_date && body.end_date && dateOnly(body.start_date) > dateOnly(body.end_date)) {
+    throw new BusinessError(400, '优惠券结束日期不能早于开始日期');
+  }
+  if (body.total_quantity !== undefined && Number(body.total_quantity) < 0) {
+    throw new BusinessError(400, '发放总量不能小于 0');
+  }
+  if (body.per_user_limit !== undefined && Number(body.per_user_limit) < 1) {
+    throw new BusinessError(400, '每人领取上限不能小于 1');
+  }
 }
 
 async function listCoupons(query) {
@@ -45,6 +91,7 @@ async function createCoupon(body, adminUserId, req) {
     usable_scope_type, usable_product_ids, usable_category_ids, stackable_with_activity,
   } = body;
   if (!code || !title) throw new BusinessError(400, '编码和标题不能为空');
+  assertCouponPayloadValid({ ...body, type: type || 'fixed' });
   const id = generateId();
   const scopeType = scope_type === 'category' ? 'category' : 'all';
   const normalizedCategoryIds = Array.isArray(category_ids)
@@ -82,6 +129,7 @@ async function createCoupon(body, adminUserId, req) {
 }
 
 async function updateCoupon(id, body, adminUserId, req) {
+  assertCouponPayloadValid(body, { partial: true });
   const fragments = [];
   const values = [];
   for (const f of ['code', 'title', 'type', 'description', 'start_date', 'end_date', 'scope_type', 'display_badge', 'total_quantity', 'per_user_limit', 'usable_scope_type']) {
@@ -157,13 +205,21 @@ async function getCouponRecords(couponId, query) {
 async function issueCouponByTag(couponId, body, adminUserId, req) {
   const coupon = await repo.selectCouponBaseById(couponId);
   if (!coupon || coupon.deleted_at) throw new BusinessError(404, '优惠券不存在');
+  assertCouponActiveForIssue(coupon);
   const tagIds = Array.isArray(body?.tagIds)
     ? [...new Set(body.tagIds.map((x) => String(x).trim()).filter(Boolean))]
     : [];
   if (!tagIds.length) throw new BusinessError(400, 'tagIds 不能为空');
   const userIds = await repo.selectUserIdsByTagIds(tagIds);
   if (!userIds.length) throw new BusinessError(400, '当前标签下无可发放用户');
-  const affected = await repo.batchIssueCouponToUsers(couponId, userIds, generateId);
+  const totalQty = Number(coupon.total_quantity || 0);
+  const totalClaims = totalQty > 0 ? await repo.countUserCouponsByCouponId(couponId) : 0;
+  const remaining = totalQty > 0 ? Math.max(0, totalQty - totalClaims) : Infinity;
+  if (remaining <= 0) throw new BusinessError(409, '优惠券已发放完');
+  const affected = await repo.batchIssueCouponToUsers(couponId, userIds, generateId, {
+    perUserLimit: coupon.per_user_limit,
+    remaining,
+  });
   await writeAuditLog({
     req,
     operatorId: adminUserId,

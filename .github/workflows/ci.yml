@@ -56,8 +56,18 @@ jobs:
           cache-dependency-path: server/package-lock.json
       - run: npm ci
       - run: npm run check:service-layer
+      - run: npm run check:report-registry
       - run: npm run typecheck
       - run: npm run test:unit
+        env:
+          NODE_ENV: test
+      - run: npm run test:reports
+        env:
+          NODE_ENV: test
+      - run: npm run test:report-contract
+        env:
+          NODE_ENV: test
+      - run: npm run test:report-export
         env:
           NODE_ENV: test
 

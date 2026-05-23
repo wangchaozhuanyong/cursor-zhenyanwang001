@@ -67,6 +67,35 @@ exports.getOrderById = asyncRoute(async (req, res) => {
   res.success(result.data);
 });
 
+exports.deleteOrderForBuyer = asyncRoute(async (req, res) => {
+  const orderId = orderIdParam(req);
+  try {
+    const result = await orderService.deleteOrderForBuyer(req.user.id, orderId);
+    await writeAuditLog({
+      req,
+      operatorId: req.user.id,
+      actionType: 'order.buyer_delete',
+      objectType: 'order',
+      objectId: orderId,
+      summary: `用户删除订单 ${orderId}`,
+      result: 'success',
+    });
+    res.success(result.data, result.message);
+  } catch (err) {
+    await writeAuditLog({
+      req,
+      operatorId: req.user?.id,
+      actionType: 'order.buyer_delete',
+      objectType: 'order',
+      objectId: orderId,
+      summary: '用户删除订单失败',
+      result: 'failure',
+      errorMessage: err?.message || String(err),
+    });
+    throw err;
+  }
+});
+
 exports.cancelOrder = asyncRoute(async (req, res) => {
   const orderId = orderIdParam(req);
   try {

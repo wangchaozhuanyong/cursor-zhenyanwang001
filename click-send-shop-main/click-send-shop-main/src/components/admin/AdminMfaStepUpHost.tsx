@@ -89,7 +89,7 @@ export default function AdminMfaStepUpHost() {
         </div>
         {mfaEnabled === false ? (
           <p className="mt-2 text-sm text-muted-foreground">
-            当前账号尚未绑定身份验证器，无法完成二次验证。请退出后重新登录并完成 MFA 绑定；或由超级管理员在「管理员账号」中为您重置 MFA 后重新绑定。
+            当前账号尚未绑定身份验证器，无法完成二次验证。请退出后重新登录并完成 MFA 绑定；或由超级管理员在「员工账号」中为您重置 MFA 后重新绑定。
           </p>
         ) : (
           <p className="mt-2 text-sm text-muted-foreground">

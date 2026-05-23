@@ -96,7 +96,23 @@ async function loadOnce(): Promise<SiteInfo> {
 export function refreshSiteInfo() {
   cachedInfo = null;
   inflight = null;
-  return loadOnce();
+  homeService.invalidateHomeBootstrapCache();
+  inflight = homeService.fetchHomeBootstrap({ force: true }).then((b) => b.siteInfo).catch(() => contentService.fetchSiteInfo())
+    .then((data) => {
+      const merged: SiteInfo = sanitizeSiteInfo({ ...FALLBACK, ...(data ?? {}) });
+      cachedInfo = merged;
+      notifyAll(merged);
+      return merged;
+    })
+    .catch(() => {
+      cachedInfo = FALLBACK;
+      notifyAll(FALLBACK);
+      return FALLBACK;
+    })
+    .finally(() => {
+      inflight = null;
+    });
+  return inflight;
 }
 
 export function useSiteInfo(): SiteInfo {

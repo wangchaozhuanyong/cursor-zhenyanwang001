@@ -1,11 +1,11 @@
 import * as orderApi from "@/api/admin/order";
-import type { AdminOrderVoiceEvent } from "@/api/admin/order";
-
-export type { AdminOrderVoiceEvent };
+import type { AdminOrderVoiceEvent, AdminOrderVoiceEventsResponse } from "@/api/admin/order";
 import type { AdminOrderSummary, CheckoutAbandonment, CheckoutAbandonmentStatus, Order, OrderListParams } from "@/types/order";
 import type { PaginatedData } from "@/types/common";
 import { downloadAdminCsv } from "@/utils/adminCsvDownload";
 import { unwrapPaginated } from "@/services/responseNormalize";
+
+export type { AdminOrderVoiceEvent };
 
 export async function fetchOrders(params?: OrderListParams): Promise<PaginatedData<Order> & { summary?: AdminOrderSummary }> {
   const res = await orderApi.getOrders(params);
@@ -45,9 +45,9 @@ export async function refreshOrderLogistics(id: string) {
   return res.data;
 }
 
-export async function fetchRecentOrderEvents(since?: string): Promise<AdminOrderVoiceEvent[]> {
+export async function fetchRecentOrderEvents(since?: string): Promise<AdminOrderVoiceEventsResponse> {
   const res = await orderApi.getRecentOrderEvents(since);
-  return res.data.events;
+  return res.data;
 }
 
 export async function fetchCheckoutAbandonments(params?: {

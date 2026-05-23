@@ -22,6 +22,7 @@ import { IMAGE_UPLOAD_HINT_BANNER_LAYOUT } from "@/constants/imageUploadHints";
 import { isAspectRatioWithinTolerance, readImageSize } from "@/utils/imageRatio";
 import type { Banner } from "@/types/banner";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { invalidateHomeBannersCache } from "@/hooks/useHomeBanners";
 
 const BANNER_RATIO_LABEL = `${BANNER_ASPECT_RATIO.toFixed(2)}:1`;
 
@@ -47,6 +48,11 @@ export default function AdminBanners() {
 
   const invalidateBanners = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.banners() });
 
+  const invalidateBannerPublicCaches = async () => {
+    invalidateHomeBannersCache();
+    await invalidateBanners();
+  };
+
   const toggleBanner = (id: string) => {
     const banner = banners.find((b) => b.id === id);
     if (!banner) return;
@@ -54,7 +60,7 @@ export default function AdminBanners() {
       .updateBanner(id, { enabled: !banner.enabled })
       .then(async () => {
         toast.success("状态已更新");
-        await invalidateBanners();
+        await invalidateBannerPublicCaches();
       })
       .catch((e) => toast.error(toastErrorMessage(e, "更新失败")));
   };
@@ -64,7 +70,7 @@ export default function AdminBanners() {
       .deleteBanner(id)
       .then(async () => {
         toast.success("已删除");
-        await invalidateBanners();
+        await invalidateBannerPublicCaches();
       })
       .catch((e) => toast.error(toastErrorMessage(e, "删除失败")));
   };
@@ -101,7 +107,7 @@ export default function AdminBanners() {
         setForm({ title: "", link: "", image: "" });
         toast.success("Banner 已添加");
       }
-      await invalidateBanners();
+      await invalidateBannerPublicCaches();
     } catch (e) {
       toast.error(toastErrorMessage(e, editingId ? "更新失败" : "添加失败"));
     } finally {
@@ -118,6 +124,7 @@ export default function AdminBanners() {
         ordered.map((b, idx) => ({ ...b, sort_order: idx + 1 })),
       );
       toast.success("Banner 排序已更新");
+      invalidateHomeBannersCache();
     } catch (e) {
       toast.error(toastErrorMessage(e, "排序保存失败，请重试"));
     } finally {

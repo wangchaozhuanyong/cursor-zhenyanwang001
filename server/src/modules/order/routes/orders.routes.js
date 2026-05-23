@@ -33,6 +33,7 @@ router.post('/preview', mallFeature, validate({ body: previewOrderBodySchema }),
 router.post('/', mallFeature, validate({ body: createOrderBodySchema }), ctrl.createOrder);
 
 router.get('/:id', validate({ params: orderIdParamSchema }), ctrl.getOrderById);
+router.delete('/:id', validate({ params: orderIdParamSchema }), ctrl.deleteOrderForBuyer);
 router.post('/:id/cancel', validate({ params: orderIdParamSchema }), ctrl.cancelOrder);
 router.post(
   '/:id/stripe-checkout',

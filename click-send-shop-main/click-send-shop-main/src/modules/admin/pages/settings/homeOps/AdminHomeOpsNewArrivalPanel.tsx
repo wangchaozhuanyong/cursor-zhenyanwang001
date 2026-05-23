@@ -8,6 +8,7 @@ import { fetchSiteSettings, updateSiteSettings } from "@/services/admin/settings
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { refreshSiteInfo } from "@/hooks/useSiteInfo";
 
 type NewArrivalForm = {
   newArrivalSectionTitle: string;
@@ -63,6 +64,7 @@ export default function AdminHomeOpsNewArrivalPanel() {
         ...form,
         newArrivalDisplayCount: String(count),
       });
+      await refreshSiteInfo();
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.siteSettings() });
       toast.success("新品配置已保存");
     } catch (e) {

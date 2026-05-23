@@ -117,6 +117,10 @@ async function selectCouponsByIds(couponIds) {
        AND c.status = 'available'
        AND c.end_date >= CURDATE()
        AND c.start_date <= CURDATE()
+       AND (
+         c.total_quantity <= 0
+         OR (SELECT COUNT(*) FROM user_coupons uc WHERE BINARY uc.coupon_id = BINARY c.id) < c.total_quantity
+       )
        AND c.id IN (${ids.map(() => '?').join(',')})
      ORDER BY FIELD(c.id, ${ids.map(() => '?').join(',')})`,
     [...ids, ...ids],

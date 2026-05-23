@@ -77,6 +77,54 @@ function rate(part, total) {
   return t > 0 ? safeNumber((p / t) * 100) : 0;
 }
 
+function salesPeriodKey(dateValue, granularity = 'day') {
+  const dateKey = dateValue instanceof Date
+    ? formatDate(dateValue)
+    : String(dateValue || '').slice(0, 10);
+  if (!dateKey) return '';
+  if (granularity === 'month') return dateKey.slice(0, 7);
+  if (granularity === 'week') {
+    const d = new Date(`${dateKey}T00:00:00Z`);
+    if (Number.isNaN(d.getTime())) return dateKey;
+    const day = d.getUTCDay();
+    const offset = day === 0 ? 6 : day - 1;
+    d.setUTCDate(d.getUTCDate() - offset);
+    return d.toISOString().slice(0, 10);
+  }
+  return dateKey;
+}
+
+function aggregateProfitRowsForSalesPeriod(profitRows = [], granularity = 'day') {
+  const grouped = new Map();
+  for (const row of profitRows) {
+    const key = salesPeriodKey(row.date, granularity);
+    if (!key) continue;
+    const normalized = normalizeProfitRow(row);
+    const current = grouped.get(key) || {};
+    grouped.set(key, normalizeProfitRow({
+      date: key,
+      paid_order_count: Number(current.paid_order_count || 0) + Number(normalized.paid_order_count || 0),
+      paid_amount: Number(current.paid_amount || 0) + Number(normalized.paid_amount || 0),
+      product_sales_amount: Number(current.product_sales_amount || 0) + Number(normalized.product_sales_amount || 0),
+      discount_amount: Number(current.discount_amount || 0) + Number(normalized.discount_amount || 0),
+      points_discount_amount: Number(current.points_discount_amount || 0) + Number(normalized.points_discount_amount || 0),
+      reward_cash_discount_amount: Number(current.reward_cash_discount_amount || 0) + Number(normalized.reward_cash_discount_amount || 0),
+      net_goods_sales_amount: Number(current.net_goods_sales_amount || 0) + Number(normalized.net_goods_sales_amount || 0),
+      goods_cost_amount: Number(current.goods_cost_amount || 0) + Number(normalized.goods_cost_amount || 0),
+      gross_profit_amount: Number(current.gross_profit_amount || 0) + Number(normalized.gross_profit_amount || 0),
+      shipping_income: Number(current.shipping_income || 0) + Number(normalized.shipping_income || 0),
+      shipping_cost_amount: Number(current.shipping_cost_amount || 0) + Number(normalized.shipping_cost_amount || 0),
+      payment_fee_amount: Number(current.payment_fee_amount || 0) + Number(normalized.payment_fee_amount || 0),
+      refund_amount: Number(current.refund_amount || 0) + Number(normalized.refund_amount || 0),
+      expense_amount: Number(current.expense_amount || 0) + Number(normalized.expense_amount || 0),
+      net_profit_amount: Number(current.net_profit_amount || 0) + Number(normalized.net_profit_amount || 0),
+      missing_cost_order_count: Number(current.missing_cost_order_count || 0) + Number(normalized.missing_cost_order_count || 0),
+      missing_cost_item_count: Number(current.missing_cost_item_count || 0) + Number(normalized.missing_cost_item_count || 0),
+    }));
+  }
+  return grouped;
+}
+
 function buildTrafficFunnel(raw = {}) {
   const steps = [
     ['访问网站', raw.visit_count],
@@ -174,17 +222,38 @@ async function getOverview(query) {
 async function getSalesDaily(query) {
   const { dateFrom, dateTo } = resolveDateRange(query);
   const filters = parseReportFilters(query);
-  const list = await repo.selectSalesDaily(dateFrom, dateTo, filters);
-  const normalized = list.map((r) => {
+  let list = [];
+  let profitRows = [];
+  try {
+    [list, profitRows] = await Promise.all([
+      repo.selectSalesDaily(dateFrom, dateTo, filters),
+      repo.selectProfitDaily(dateFrom, dateTo),
+    ]);
+  } catch (error) {
+    if (canDowngradeReportError(error)) {
+      console.warn(`[admin-report] sales daily downgraded: ${error.message}`);
+      list = [];
+      profitRows = [];
+    } else {
+      throw error;
+    }
+  }
+  const profitByPeriod = aggregateProfitRowsForSalesPeriod(profitRows, filters.granularity || 'day');
+  const salesPeriods = new Set(list.map((r) => salesPeriodKey(r.date, filters.granularity || 'day')));
+  const normalizeSalesRow = (r, profitRow = {}) => {
     const paid = Number(r.paid_order_count || 0);
     const orderCount = Number(r.order_count || 0);
     const items = Number(r.items_sold || 0);
     const grossSales = safeNumber(r.gross_sales);
     const refundAmount = safeNumber(r.refund_amount);
+    const netGoodsSales = safeNumber(profitRow.net_goods_sales_amount);
+    const grossProfit = safeNumber(profitRow.gross_profit_amount);
+    const netProfit = safeNumber(profitRow.net_profit_amount);
     const paymentRate = orderCount > 0 ? safeNumber((paid / orderCount) * 100) : 0;
     const refundRate = paid > 0 ? safeNumber((Number(r.refund_order_count || 0) / paid) * 100) : 0;
     return {
       ...r,
+      date: salesPeriodKey(r.date, filters.granularity || 'day'),
       gross_sales: grossSales,
       refund_amount: refundAmount,
       net_sales: safeNumber(grossSales - refundAmount),
@@ -192,8 +261,33 @@ async function getSalesDaily(query) {
       units_per_order: paid > 0 ? safeNumber(items / paid) : 0,
       payment_rate: paymentRate,
       refund_rate: refundRate,
+      product_sales_amount: safeNumber(profitRow.product_sales_amount),
+      net_goods_sales_amount: netGoodsSales,
+      goods_cost_amount: safeNumber(profitRow.goods_cost_amount),
+      gross_profit_amount: grossProfit,
+      gross_margin: netGoodsSales > 0 ? safeNumber((grossProfit / netGoodsSales) * 100) : 0,
+      expense_amount: safeNumber(profitRow.expense_amount),
+      net_profit_amount: netProfit,
+      net_margin: grossSales > 0 ? safeNumber((netProfit / grossSales) * 100) : 0,
+      missing_cost_order_count: Number(profitRow.missing_cost_order_count || r.missing_cost_order_count || 0),
+      missing_cost_item_count: Number(profitRow.missing_cost_item_count || 0),
     };
-  });
+  };
+  const normalized = list.map((r) => normalizeSalesRow(r, profitByPeriod.get(salesPeriodKey(r.date, filters.granularity || 'day'))));
+  for (const [date, profitRow] of profitByPeriod) {
+    if (salesPeriods.has(date)) continue;
+    normalized.push(normalizeSalesRow({
+      date,
+      order_count: 0,
+      paid_order_count: profitRow.paid_order_count,
+      refund_order_count: 0,
+      gross_sales: 0,
+      refund_amount: profitRow.refund_amount,
+      discount_amount: profitRow.discount_amount,
+      items_sold: 0,
+    }, profitRow));
+  }
+  normalized.sort((a, b) => String(a.date).localeCompare(String(b.date)));
   const summary = normalized.reduce((acc, row) => ({
     gross_sales: safeNumber(acc.gross_sales + Number(row.gross_sales || 0)),
     net_sales: safeNumber(acc.net_sales + Number(row.net_sales || 0)),
@@ -201,7 +295,34 @@ async function getSalesDaily(query) {
     order_count: acc.order_count + Number(row.order_count || 0),
     refund_amount: safeNumber(acc.refund_amount + Number(row.refund_amount || 0)),
     discount_amount: safeNumber(acc.discount_amount + Number(row.discount_amount || 0)),
-  }), { gross_sales: 0, net_sales: 0, paid_order_count: 0, order_count: 0, refund_amount: 0, discount_amount: 0 });
+    product_sales_amount: safeNumber(acc.product_sales_amount + Number(row.product_sales_amount || 0)),
+    net_goods_sales_amount: safeNumber(acc.net_goods_sales_amount + Number(row.net_goods_sales_amount || 0)),
+    goods_cost_amount: safeNumber(acc.goods_cost_amount + Number(row.goods_cost_amount || 0)),
+    gross_profit_amount: safeNumber(acc.gross_profit_amount + Number(row.gross_profit_amount || 0)),
+    expense_amount: safeNumber(acc.expense_amount + Number(row.expense_amount || 0)),
+    net_profit_amount: safeNumber(acc.net_profit_amount + Number(row.net_profit_amount || 0)),
+    missing_cost_order_count: acc.missing_cost_order_count + Number(row.missing_cost_order_count || 0),
+    missing_cost_item_count: acc.missing_cost_item_count + Number(row.missing_cost_item_count || 0),
+  }), {
+    gross_sales: 0,
+    net_sales: 0,
+    paid_order_count: 0,
+    order_count: 0,
+    refund_amount: 0,
+    discount_amount: 0,
+    product_sales_amount: 0,
+    net_goods_sales_amount: 0,
+    goods_cost_amount: 0,
+    gross_profit_amount: 0,
+    expense_amount: 0,
+    net_profit_amount: 0,
+    missing_cost_order_count: 0,
+    missing_cost_item_count: 0,
+  });
+  summary.gross_margin = summary.net_goods_sales_amount > 0
+    ? safeNumber((summary.gross_profit_amount / summary.net_goods_sales_amount) * 100)
+    : 0;
+  summary.net_margin = summary.gross_sales > 0 ? safeNumber((summary.net_profit_amount / summary.gross_sales) * 100) : 0;
   return { summary, list: normalized, date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
 }
 
@@ -464,7 +585,15 @@ async function getCustomersAnalysis(query) {
   const { dateFrom, dateTo } = resolveDateRange(query);
   const raw = await repo.selectSimpleCustomerAnalysis(dateFrom, dateTo);
   const summary = buildCustomerSummary(raw);
-  return { summary, list: [], date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
+  return {
+    summary,
+    list: [],
+    summary_only: true,
+    data_scope_note: '客户分析当前为汇总型报表，统计所选时间内新用户、下单用户、付款用户、复购用户。',
+    date_from: dateFrom,
+    date_to: dateTo,
+    last_updated_at: new Date().toISOString(),
+  };
 }
 
 function normalizeActivityAnalysisRow(row, salesTrackingAvailable) {
@@ -705,6 +834,18 @@ async function getInventoryAnalysis(query = {}) {
 
 async function getSearchAnalysis(query) {
   const { dateFrom, dateTo } = resolveDateRange(query);
+  const searchTermsReady = await repo.isSearchTermsReady();
+  if (!searchTermsReady) {
+    return {
+      summary: { 关键词数: 0 },
+      list: [],
+      analytics_downgraded: true,
+      warnings: ['搜索词表未就绪，暂无法统计搜索关键词。'],
+      date_from: dateFrom,
+      date_to: dateTo,
+      last_updated_at: new Date().toISOString(),
+    };
+  }
   const analyticsReady = await repo.isAnalyticsEventsReady();
   const list = await repo.selectSimpleSearchAnalysis(dateFrom, dateTo);
   return {
@@ -1033,6 +1174,10 @@ async function exportByType(type, query) {
     assertExportRows(rows, '流量分析暂无可导出数据');
     const csv = buildCsvFromRecords(rows);
     return { csv, filename: `traffic-analysis-${data.date_from}-${data.date_to}.csv` };
+  }
+
+  if (type === 'search_analysis' && !(await repo.isSearchTermsReady())) {
+    throw new BusinessError(400, '搜索词表未就绪，暂无法导出搜索分析');
   }
 
   const handlers = {

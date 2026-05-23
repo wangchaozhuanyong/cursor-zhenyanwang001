@@ -4,8 +4,14 @@ async function countUserCoupons(userId, status) {
   let where = 'WHERE BINARY uc.user_id = BINARY ? AND c.deleted_at IS NULL';
   const params = [userId];
   if (status) {
-    where += ' AND BINARY uc.status = BINARY ?';
-    params.push(status);
+    if (status === 'available') {
+      where += " AND uc.status = 'available' AND c.status = 'available' AND c.start_date <= CURDATE() AND c.end_date >= CURDATE()";
+    } else if (status === 'expired') {
+      where += " AND (uc.status = 'expired' OR (uc.status = 'available' AND c.end_date < CURDATE()))";
+    } else {
+      where += ' AND BINARY uc.status = BINARY ?';
+      params.push(status);
+    }
   }
   const [[{ total }]] = await db.query(
     `SELECT COUNT(*) AS total
@@ -21,11 +27,21 @@ async function selectUserCouponsPage(userId, status, pageSize, offset) {
   let where = 'WHERE BINARY uc.user_id = BINARY ? AND c.deleted_at IS NULL';
   const params = [userId];
   if (status) {
-    where += ' AND BINARY uc.status = BINARY ?';
-    params.push(status);
+    if (status === 'available') {
+      where += " AND uc.status = 'available' AND c.status = 'available' AND c.start_date <= CURDATE() AND c.end_date >= CURDATE()";
+    } else if (status === 'expired') {
+      where += " AND (uc.status = 'expired' OR (uc.status = 'available' AND c.end_date < CURDATE()))";
+    } else {
+      where += ' AND BINARY uc.status = BINARY ?';
+      params.push(status);
+    }
   }
   const [rows] = await db.query(
-    `SELECT uc.id, uc.claimed_at, uc.used_at, uc.status,
+    `SELECT uc.id, uc.claimed_at, uc.used_at,
+            CASE
+              WHEN uc.status = 'available' AND c.end_date < CURDATE() THEN 'expired'
+              ELSE uc.status
+            END AS status,
             c.id AS coupon_id, c.code, c.title, c.type, c.value,
             c.min_amount, c.start_date, c.end_date, c.status AS coupon_status, c.description,
             c.scope_type, c.display_badge,
@@ -67,6 +83,10 @@ async function selectAvailableCoupons() {
      FROM coupons c
      WHERE c.deleted_at IS NULL
        AND c.status = 'available' AND c.end_date >= CURDATE() AND c.start_date <= CURDATE()
+       AND (
+         c.total_quantity <= 0
+         OR (SELECT COUNT(*) FROM user_coupons uc WHERE BINARY uc.coupon_id = BINARY c.id) < c.total_quantity
+       )
      ORDER BY c.created_at DESC`,
   );
   return rows;
@@ -75,6 +95,17 @@ async function selectAvailableCoupons() {
 async function selectClaimedCouponIds(userId) {
   const [rows] = await db.query(
     'SELECT coupon_id FROM user_coupons WHERE BINARY user_id = BINARY ?',
+    [userId],
+  );
+  return rows;
+}
+
+async function selectUserCouponClaimCounts(userId) {
+  const [rows] = await db.query(
+    `SELECT coupon_id, COUNT(*) AS cnt
+     FROM user_coupons
+     WHERE BINARY user_id = BINARY ?
+     GROUP BY coupon_id`,
     [userId],
   );
   return rows;
@@ -148,6 +179,7 @@ module.exports = {
   selectUserCouponsPage,
   selectAvailableCoupons,
   selectClaimedCouponIds,
+  selectUserCouponClaimCounts,
   selectCouponByCodeOrId,
   findUserCoupon,
   insertUserCoupon,

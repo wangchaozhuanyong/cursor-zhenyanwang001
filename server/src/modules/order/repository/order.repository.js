@@ -781,7 +781,7 @@ async function selectOrderById(q, orderId) {
 
 function buildOrderListWhere(filters = {}) {
   const { userId, status, tab } = filters;
-  let where = 'WHERE o.user_id = ?';
+  let where = 'WHERE o.user_id = ? AND o.buyer_deleted_at IS NULL';
   const params = [userId];
 
   if (tab && tab !== 'all') {
@@ -851,14 +851,14 @@ async function selectOrderSummary(q, userId) {
         ) THEN 1 ELSE 0 END) AS completed,
       SUM(CASE WHEN o.status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled
      FROM orders o
-     WHERE o.user_id = ?`,
+     WHERE o.user_id = ? AND o.buyer_deleted_at IS NULL`,
     [userId],
   );
 
   const [[afterSaleRow]] = await q.query(
     `SELECT COUNT(*) AS after_sale
      FROM orders o
-     WHERE o.user_id = ? AND ${orderAfterSalePredicate('o')}`,
+     WHERE o.user_id = ? AND o.buyer_deleted_at IS NULL AND ${orderAfterSalePredicate('o')}`,
     [userId, ...orderAfterSaleParams()],
   );
 
@@ -868,6 +868,7 @@ async function selectOrderSummary(q, userId) {
      JOIN order_items oi ON oi.order_id = o.id
      LEFT JOIN product_reviews pr ON pr.order_item_id = oi.id
      WHERE o.user_id = ?
+       AND o.buyer_deleted_at IS NULL
        AND o.status = 'completed'
        AND pr.id IS NULL`,
     [userId],
@@ -900,16 +901,27 @@ async function selectOrderItemsByOrderIds(q, orderIds) {
 }
 
 async function selectOrderByIdAndUser(q, orderId, userId) {
-  const [[row]] = await q.query('SELECT * FROM orders WHERE id = ? AND user_id = ?', [orderId, userId]);
+  const [[row]] = await q.query(
+    'SELECT * FROM orders WHERE id = ? AND user_id = ? AND buyer_deleted_at IS NULL',
+    [orderId, userId],
+  );
   return row || null;
 }
 
 async function selectOrderByIdAndUserForUpdate(q, orderId, userId) {
   const [[row]] = await q.query(
-    'SELECT * FROM orders WHERE id = ? AND user_id = ? FOR UPDATE',
+    'SELECT * FROM orders WHERE id = ? AND user_id = ? AND buyer_deleted_at IS NULL FOR UPDATE',
     [orderId, userId],
   );
   return row || null;
+}
+
+async function markOrderBuyerDeleted(q, orderId, userId) {
+  const [result] = await q.query(
+    'UPDATE orders SET buyer_deleted_at = NOW() WHERE id = ? AND user_id = ? AND buyer_deleted_at IS NULL',
+    [orderId, userId],
+  );
+  return result.affectedRows || 0;
 }
 
 async function selectOrderByIdForUpdate(q, orderId) {
@@ -1286,6 +1298,7 @@ module.exports = {
   selectOrderItemsByOrderIds,
   selectOrderByIdAndUser,
   selectOrderByIdAndUserForUpdate,
+  markOrderBuyerDeleted,
   selectOrderByIdForUpdate,
   selectOrderByIdOrOrderNoForUpdate,
   selectOrderItems,

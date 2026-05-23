@@ -71,15 +71,14 @@ export default function Coupons() {
   const coupons = rawCoupons.map((uc) => toDisplayCoupon(uc));
 
   const available = coupons.filter((c) => c.status === "available");
-  const mine = coupons.filter((c) => c.status !== "available");
-  const claimedCount = coupons.filter((c) => c.status === "claimed").length;
+  const mine = coupons.filter((c) => c.status === "claimed");
+  const claimedCount = mine.length;
 
   const handleClaim = async (coupon: DisplayCoupon) => {
     setClaimingId(coupon.id);
     try {
       await claimCoupon(coupon.code);
       toast.success("领取成功！已添加到我的优惠券", toastPresetQuickSuccess);
-      loadCoupons();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "领取失败");
     } finally {
@@ -187,7 +186,12 @@ export default function Coupons() {
                 className="flex flex-col items-center py-16 text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]"
               >
                 <Ticket size={48} className="mb-3 opacity-20" />
-                <p className="text-sm">暂无优惠券</p>
+                <p className="text-sm">{tab === "mine" ? "暂无可用优惠券" : "暂无可领取优惠券"}</p>
+                {tab === "mine" ? (
+                  <p className="mt-1 text-xs text-[color-mix(in_srgb,var(--theme-text-on-surface)_60%,var(--theme-text-muted))]">
+                    已使用或已过期的券不再展示
+                  </p>
+                ) : null}
               </motion.div>
             )}
             {list.map((coupon, i) => (

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Shield, Plus, Trash2, Pencil, X } from "lucide-react";
+import { Shield, Plus, Trash2, Pencil } from "lucide-react";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import * as rbacService from "@/services/admin/rbacService";
@@ -13,25 +13,18 @@ import { LoadingButton } from "@/modules/micro-interactions";
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import AdminPermissionPicker from "@/components/admin/AdminPermissionPicker";
-import AdminRolePicker, { getDefaultAdminRoleIds } from "@/components/admin/AdminRolePicker";
+import AdminRolePicker from "@/components/admin/AdminRolePicker";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
-import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
-import { THEME_BTN_DANGER_SOLID, THEME_OUTLINE_DANGER, THEME_TEXT_DANGER } from "@/utils/themeVisuals";
+import { THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
-interface PermRow { id: number; code: string; name: string; sort_order: number }
-
-type Tab = "assign" | "manage" | "admins";
+type Tab = "assign" | "manage";
 const PRIVILEGED_ROLE_CODES = new Set(["super_admin", "admin_manager"]);
 
 function hasPrivilegedRole(user?: RbacAdminUserRow | null) {
   if (!user) return false;
   return user.role === "super_admin" || (user.roleCodes || []).some((code) => PRIVILEGED_ROLE_CODES.has(code));
-}
-
-function isStrongAdminPassword(password: string) {
-  return password.length >= 8 && /[a-z]/.test(password) && /[A-Z]/.test(password) && /\d/.test(password);
 }
 
 export default function AdminRoles() {
@@ -48,10 +41,6 @@ export default function AdminRoles() {
   const [rolePerms, setRolePerms] = useState<Record<number, boolean>>({});
   const [showRoleModal, setShowRoleModal] = useState(false);
 
-  const [showAdminModal, setShowAdminModal] = useState(false);
-  const [adminForm, setAdminForm] = useState({ phone: "", password: "", nickname: "", roleIds: [] as number[] });
-  const [showResetModal, setShowResetModal] = useState<string | null>(null);
-  const [resetPw, setResetPw] = useState("");
   const overviewQuery = useQuery({
     queryKey: adminQueryKeys.rbacOverview(),
     queryFn: async () => {
@@ -96,14 +85,6 @@ export default function AdminRoles() {
     for (const id of userRolesQuery.data.roleIds) next[id] = true;
     setChecked(next);
   }, [userRolesQuery.data]);
-
-  useEffect(() => {
-    if (!showAdminModal || adminForm.roleIds.length || !roles.length) return;
-    setAdminForm((prev) => ({
-      ...prev,
-      roleIds: getDefaultAdminRoleIds(roles, isSuperAdminViewer),
-    }));
-  }, [adminForm.roleIds.length, isSuperAdminViewer, roles, showAdminModal]);
 
   const handleSave = async () => {
     if (!selectedUserId) return;
@@ -177,7 +158,6 @@ export default function AdminRoles() {
       <div className="flex flex-wrap gap-2">
         <button onClick={() => setTab("assign")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "assign" ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}><Tx>用户角色分配</Tx></button>
         {isSuperAdminViewer && <button onClick={() => setTab("manage")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "manage" ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}><Tx>角色管理</Tx></button>}
-        <button onClick={() => setTab("admins")} className={`theme-rounded px-4 py-2 text-sm font-medium ${tab === "admins" ? "btn-theme-price" : "bg-secondary text-muted-foreground"}`}><Tx>管理员账号</Tx></button>
       </div>
 
       {loading ? (
@@ -188,7 +168,7 @@ export default function AdminRoles() {
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-sm font-medium text-foreground">
             <Tx>用户角色分配</Tx>
-            <AdminFieldHint text={<Tx>为后台管理员账号分配 RBAC 角色。超级管理员角色仅超级管理员账号可分配。</Tx>} />
+            <AdminFieldHint text={<Tx>为后台管理员账号分配 RBAC 角色。账号创建、禁用与 MFA 请到「员工账号」。超级管理员角色仅超级管理员账号可分配。</Tx>} />
           </div>
           <div className="space-y-2">
             <label className="text-xs font-medium text-muted-foreground"><Tx>选择管理员</Tx></label>
@@ -268,163 +248,8 @@ export default function AdminRoles() {
           </div>
         </div>
       )}
-
-      {tab === "admins" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <Tx>管理员账号</Tx>
-              <AdminFieldHint
-                text={<Tx>管理管理员账号。拥有「角色权限」权限即可创建/禁用/重置密码；删除与普通管理员管理规则同「账号管理」页（不可删除超级管理员）。</Tx>}
-              />
-            </div>
-            <PermissionGate permission="role.manage">
-              <button onClick={() => { setAdminForm({ phone: "", password: "", nickname: "", roleIds: [] }); setShowAdminModal(true); }} className="flex items-center gap-1 theme-rounded px-3 py-2 text-xs font-medium btn-theme-gradient">
-                <Plus size={14} /><Tx> 新增管理员
-              </Tx></button>
-            </PermissionGate>
-          </div>
-          <div className="space-y-3">
-            {admins.map((u) => (
-              <div key={u.id} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 flex items-center justify-between gap-3 theme-shadow">
-                <div>
-                  <span className="font-medium text-foreground">{u.nickname || u.phone}</span>
-                  <span className="ml-2 text-xs text-muted-foreground">{u.phone}</span>
-                  <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-medium ${u.role === "super_admin" ? "bg-[var(--theme-price)]/20 text-[var(--theme-price)]" : "bg-secondary text-muted-foreground"}`}>{labelAdminLegacyRole(u.role)}</span>
-                </div>
-                <PermissionGate permission="role.manage">
-                  <div className="flex gap-2">
-                    {(isSuperAdminViewer || !hasPrivilegedRole(u)) && u.role !== "super_admin" && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          askConfirm({
-                            title: u.role === "disabled" ? "确认启用" : "确认禁用",
-                            description: `确定${u.role === "disabled" ? "启用" : "禁用"}管理员「${u.nickname || u.phone}」？`,
-                            confirmText: u.role === "disabled" ? "启用" : "禁用",
-                            danger: u.role !== "disabled",
-                            onConfirm: async () => {
-                              await rbacService.toggleAdminUser(u.id, u.role === "disabled");
-                              toast.success("已更新");
-                              void invalidateRbac();
-                            },
-                          })
-                        }
-                        className="theme-rounded px-2 py-1 text-xs border border-[var(--theme-border)] hover:bg-[var(--theme-bg)]"
-                      >
-                        {u.role === "disabled" ? "启用" : "禁用"}
-                      </button>
-                    )}
-                    {(isSuperAdminViewer || !hasPrivilegedRole(u)) && (
-                      <button onClick={() => { setShowResetModal(u.id); setResetPw(""); }} className="theme-rounded px-2 py-1 text-xs border border-[var(--theme-border)] hover:bg-[var(--theme-bg)]"><Tx>重置密码</Tx></button>
-                    )}
-                    {(isSuperAdminViewer || !hasPrivilegedRole(u)) && u.role !== "super_admin" && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          adminConfirmDelete(askConfirm, u.nickname || u.phone, async () => {
-                            await rbacService.deleteAdminUser(u.id);
-                            toast.success("已删除");
-                            void invalidateRbac();
-                          })
-                        }
-                        className={`theme-rounded px-2 py-1 text-xs ${THEME_OUTLINE_DANGER}`}
-                      ><Tx>删除</Tx></button>
-                    )}
-                  </div>
-                </PermissionGate>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
       </>
       )}
-
-      <AdminResponsiveSheet
-        open={showAdminModal}
-        onOpenChange={setShowAdminModal}
-        title={<Tx>新增管理员</Tx>}
-        size="sm"
-      >
-        <div className="space-y-3">
-              <div><label className="text-xs font-medium text-muted-foreground"><Tx>手机号</Tx></label><input value={adminForm.phone} onChange={(e) => setAdminForm((p) => ({ ...p, phone: e.target.value }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" /></div>
-              <div><label className="text-xs font-medium text-muted-foreground"><Tx>密码</Tx></label><input type="password" value={adminForm.password} onChange={(e) => setAdminForm((p) => ({ ...p, password: e.target.value }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" /></div>
-              <div><label className="text-xs font-medium text-muted-foreground"><Tx>昵称</Tx></label><input value={adminForm.nickname} onChange={(e) => setAdminForm((p) => ({ ...p, nickname: e.target.value }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" /></div>
-              <div>
-                <div className="mb-2 flex items-center gap-1.5">
-                  <span className="text-xs font-medium text-muted-foreground">初始角色</span>
-                  <AdminFieldHint text="创建后也可以在「用户角色分配」里继续调整。普通管理员不能分配 admin_manager / super_admin。" />
-                </div>
-                <AdminRolePicker
-                  roles={roles}
-                  selectedRoleIds={adminForm.roleIds}
-                  onChange={(roleIds) => setAdminForm((prev) => ({ ...prev, roleIds }))}
-                  isSuperAdminViewer={isSuperAdminViewer}
-                />
-              </div>
-        <LoadingButton
-              type="button"
-              variant="gold"
-              state={saving ? "loading" : "normal"}
-              loadingText="创建中..."
-              disabled={!adminForm.phone || !isStrongAdminPassword(adminForm.password) || adminForm.roleIds.length === 0}
-              onClick={() =>
-                askConfirm({
-                  title: "确认创建",
-                  description: `确定创建管理员账号「${adminForm.phone}」？`,
-                  confirmText: "创建",
-                  onConfirm: async () => {
-                    setSaving(true);
-                    try {
-                      if (!isStrongAdminPassword(adminForm.password)) {
-                        toast.error("密码至少 8 位，并包含大写字母、小写字母和数字");
-                        return;
-                      }
-                      await rbacService.createAdminUser({
-                        phone: adminForm.phone,
-                        password: adminForm.password,
-                        nickname: adminForm.nickname,
-                        roleIds: adminForm.roleIds,
-                      });
-                      toast.success("已创建");
-                      setShowAdminModal(false);
-                      void invalidateRbac();
-                    } catch (e) {
-                      toast.error(toastErrorMessage(e, "创建失败"));
-                    } finally {
-                      setSaving(false);
-                    }
-                  },
-                })
-              }
-              className="w-full rounded-xl py-3 text-sm font-semibold"
-            ><Tx>
-              创建
-            </Tx>            </LoadingButton>
-        </div>
-      </AdminResponsiveSheet>
-
-      <AdminFormSheet
-        open={!!showResetModal}
-        onOpenChange={(open) => !open && setShowResetModal(null)}
-        title={<Tx>重置密码</Tx>}
-        submitText="确认重置"
-        submitDisabled={!isStrongAdminPassword(resetPw)}
-        onSubmit={async () => {
-          if (!showResetModal) return;
-          if (!isStrongAdminPassword(resetPw)) {
-            toast.error("密码至少 8 位，并包含大写字母、小写字母和数字");
-            throw new Error("weak password");
-          }
-          await rbacService.resetAdminPassword(showResetModal, resetPw);
-          toast.success("密码已重置");
-          setResetPw("");
-        }}
-        size="sm"
-      >
-        <input type="password" value={resetPw} onChange={(e) => setResetPw(e.target.value)} placeholder="输入新密码（至少8位，含大小写和数字）" className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" />
-      </AdminFormSheet>
 
       <AdminResponsiveSheet
         open={showRoleModal}

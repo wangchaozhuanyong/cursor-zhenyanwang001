@@ -8,9 +8,8 @@ import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import * as marketingService from "@/services/marketingService";
 import * as homeService from "@/services/homeService";
 import { marketingCouponToPremiumDisplay } from "@/utils/couponDisplay";
-import { AnimatedSection } from "@/modules/micro-interactions";
 
-export default function MarketingCouponCenterSection({ delay = 0 }: { delay?: number }) {
+export default function MarketingCouponCenterSection({ delay: _delay = 0 }: { delay?: number }) {
   const navigate = useNavigate();
   const claimCoupon = useCouponStore((s) => s.claimCoupon);
   const [payload, setPayload] = useState<Awaited<ReturnType<typeof marketingService.fetchCouponCenter>>>(null);
@@ -40,7 +39,6 @@ export default function MarketingCouponCenterSection({ delay = 0 }: { delay?: nu
   if (!payload?.coupons?.length) return null;
 
   return (
-    <AnimatedSection delay={delay}>
     <section className="w-full">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="store-section-title flex items-center gap-2 text-[var(--theme-text-on-surface)]">
@@ -86,6 +84,5 @@ export default function MarketingCouponCenterSection({ delay = 0 }: { delay?: nu
         })}
       </div>
     </section>
-    </AnimatedSection>
   );
 }

@@ -90,6 +90,16 @@ export function useHomeBanners(opts?: UseHomeBannersOpts) {
   return { banners, loading };
 }
 
+export function invalidateHomeBannersCache() {
+  homeService.invalidateHomeBootstrapCache();
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.removeItem(BANNER_CACHE_KEY);
+  } catch {
+    // ignore storage failures
+  }
+}
+
 function readBannerCache(): Banner[] {
   if (typeof window === "undefined") return [];
   try {

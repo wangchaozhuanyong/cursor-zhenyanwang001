@@ -1,4 +1,4 @@
-import { get, post } from "@/api/request";
+import { del, get, post } from "@/api/request";
 import type { Order, SubmitOrderParams, OrderListParams, CheckoutAbandonmentPayload } from "@/types/order";
 import type { OrderPreviewResult } from "@/types/orderPreview";
 import type { PaginatedData } from "@/types/common";
@@ -34,6 +34,10 @@ export function cancelOrder(id: string) {
 
 export function confirmReceive(id: string) {
   return post<void>(`/orders/${id}/confirm`);
+}
+
+export function deleteOrder(id: string) {
+  return del<void>(`/orders/${id}`);
 }
 
 /** Stripe Checkout锛氳繑鍥炶烦杞?URL */

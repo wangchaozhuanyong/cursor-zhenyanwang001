@@ -49,6 +49,7 @@ export function invalidateHomeModuleSettingsCache() {
   cachedSettings = null;
   cachedNavItems = null;
   inflight = null;
+  homeService.invalidateHomeBootstrapCache();
 }
 
 export function useHomeModuleSettings() {

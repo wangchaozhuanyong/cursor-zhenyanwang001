@@ -163,6 +163,7 @@ export default function AdminSupportDownload() {
       setForm(normalized);
       await refreshSiteInfo();
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.siteSettings() });
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.homeOpsNav() });
       toast.success("客服中心配置已保存，前台将立即生效");
     } catch (error) {
       toast.error(toastErrorMessage(error, "保存失败"));

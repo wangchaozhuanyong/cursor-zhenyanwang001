@@ -12,6 +12,7 @@ import type { HomeNavItem } from "@/types/content";
 import type { Category } from "@/types/category";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { invalidateHomeModuleSettingsCache } from "@/hooks/useHomeModuleSettings";
 import { emptyNavForm, flattenCategories, moveNavItemToPosition, type NavForm } from "./homeNavUtils";
 import HomeNavFormPanel from "./HomeNavFormPanel";
 import HomeNavSortableList from "./HomeNavSortableList";
@@ -119,6 +120,7 @@ export default function AdminHomeNavEditor() {
       }
       toast.success(editingNavId ? "导航已更新" : "导航已新增");
       resetForm();
+      invalidateHomeModuleSettingsCache();
       await invalidateHomeOps();
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存导航失败"));
@@ -132,6 +134,7 @@ export default function AdminHomeNavEditor() {
       try {
         await homeOpsService.deleteHomeNavItem(item.id);
         if (editingNavId === item.id) resetForm();
+        invalidateHomeModuleSettingsCache();
         await invalidateHomeOps();
         toast.success("已删除");
       } catch (e) {

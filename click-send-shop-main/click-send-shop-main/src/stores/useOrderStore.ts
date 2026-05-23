@@ -24,6 +24,7 @@ interface OrderState {
   submitOrder: (params: SubmitOrderParams) => Promise<Order>;
   cancelOrder: (id: string) => Promise<void>;
   confirmReceive: (id: string) => Promise<void>;
+  deleteOrder: (id: string) => Promise<void>;
   setFilterStatus: (status: OrderStatus | "all") => void;
   clearError: () => void;
 }
@@ -126,6 +127,19 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       }));
     } catch (e) {
       set({ error: e instanceof Error ? e.message : "确认收货失败" });
+      throw e;
+    }
+  },
+
+  deleteOrder: async (id) => {
+    try {
+      await orderService.deleteOrder(id);
+      set((s) => ({
+        orders: s.orders.filter((o) => o.id !== id),
+        currentOrder: s.currentOrder?.id === id ? null : s.currentOrder,
+      }));
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : "删除订单失败" });
       throw e;
     }
   },

@@ -15,6 +15,7 @@ export interface AdminOrderVoiceEvent {
 
 export interface AdminOrderVoiceEventsResponse {
   events: AdminOrderVoiceEvent[];
+  checkedAt?: string;
 }
 
 export function getOrders(params?: OrderListParams) {

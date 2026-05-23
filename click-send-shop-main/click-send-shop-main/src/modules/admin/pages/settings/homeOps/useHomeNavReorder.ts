@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { invalidateHomeModuleSettingsCache } from "@/hooks/useHomeModuleSettings";
 import * as homeOpsService from "@/services/admin/homeOpsService";
 import type { HomeNavItem } from "@/types/content";
 import { toastErrorMessage } from "@/utils/errorMessage";
@@ -36,6 +37,7 @@ export function useHomeNavReorder(navItems: HomeNavItem[]) {
       setNavCache(normalized);
       try {
         await homeOpsService.sortHomeNavItems(toSortPayload(normalized));
+        invalidateHomeModuleSettingsCache();
         toast.success(successMessage);
       } catch (e) {
         await queryClient.invalidateQueries({ queryKey: adminQueryKeys.homeOpsNav() });

@@ -22,33 +22,29 @@ async function loadOnce(): Promise<SiteCapabilities> {
   if (cachedCapabilities) return cachedCapabilities;
   if (inflight) return inflight;
 
-  const bootstrapPromise = homeService.fetchHomeBootstrap()
-    .then((bootstrap) => {
-      const capabilities = normalize(bootstrap.siteCapabilities || bootstrap.runtimeConfig?.features);
-      cachedCapabilities = capabilities;
-      cachedRuntimeConfig = bootstrap.runtimeConfig || null;
-      notifyAll(capabilities);
-      return capabilities;
-    })
-    .catch(() => {
-      cachedCapabilities = DEFAULT_SITE_CAPABILITIES;
-      notifyAll(DEFAULT_SITE_CAPABILITIES);
-      return DEFAULT_SITE_CAPABILITIES;
-    });
+  const fallbackCapabilities = (): SiteCapabilities => {
+    if (cachedCapabilities) return cachedCapabilities;
+    cachedCapabilities = DEFAULT_SITE_CAPABILITIES;
+    notifyAll(DEFAULT_SITE_CAPABILITIES);
+    return DEFAULT_SITE_CAPABILITIES;
+  };
 
-  const timed = new Promise<SiteCapabilities>((resolve) => {
-    window.setTimeout(() => {
-      if (cachedCapabilities) {
-        resolve(cachedCapabilities);
-        return;
-      }
-      cachedCapabilities = DEFAULT_SITE_CAPABILITIES;
-      notifyAll(DEFAULT_SITE_CAPABILITIES);
-      resolve(DEFAULT_SITE_CAPABILITIES);
-    }, CAPABILITIES_READY_TIMEOUT_MS);
-  });
-
-  inflight = Promise.race([bootstrapPromise, timed]).finally(() => {
+  inflight = new Promise<SiteCapabilities>((resolve) => {
+    const timer = window.setTimeout(() => resolve(fallbackCapabilities()), CAPABILITIES_READY_TIMEOUT_MS);
+    homeService.fetchHomeBootstrap()
+      .then((bootstrap) => {
+        const capabilities = normalize(bootstrap.siteCapabilities || bootstrap.runtimeConfig?.features);
+        cachedCapabilities = capabilities;
+        cachedRuntimeConfig = bootstrap.runtimeConfig || null;
+        notifyAll(capabilities);
+        return capabilities;
+      })
+      .catch(() => fallbackCapabilities())
+      .then((capabilities) => {
+        window.clearTimeout(timer);
+        resolve(capabilities);
+      });
+  }).finally(() => {
     inflight = null;
   });
   return inflight;

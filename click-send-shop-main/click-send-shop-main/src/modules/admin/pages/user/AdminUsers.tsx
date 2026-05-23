@@ -688,6 +688,7 @@ export default function AdminUsers() {
           </tr>
         }
         footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
+        renderMobileCard={renderMobileCard}
         renderRow={(user) => (
           <>
             <td className="px-4 py-3">

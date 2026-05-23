@@ -11,6 +11,13 @@
   </head>
   <body>
     <div id="root"></div>
+    <script type="module">
+      try {
+        if (typeof import.meta.resolve !== "function") {
+          import.meta.resolve = (specifier) => specifier;
+        }
+      } catch (_) {}
+    </script>
     <script type="module" src="/src/admin-main.tsx"></script>
   </body>
 </html>

@@ -68,7 +68,7 @@ export default function AdminPaymentReconciliations() {
       setDiffAmount("");
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.paymentReconciliationsRoot() });
     },
-    onError: (e) => toast.error(toastErrorMessage(e, "创建失败")),
+    onError: (e) => toast.error(toastErrorMessage(e, tText("创建失败"))),
   });
 
   const create = () => createMutation.mutate();
@@ -106,7 +106,7 @@ export default function AdminPaymentReconciliations() {
               >
                 {PAYMENT_PROVIDER_FILTER_OPTIONS.filter((o) => o.value).map((o) => (
                   <option key={o.value} value={o.value}>
-                    {o.label}
+                    {tText(o.label)}
                   </option>
                 ))}
               </select>
@@ -120,7 +120,7 @@ export default function AdminPaymentReconciliations() {
               >
                 {PAYMENT_CHANNEL_FILTER_OPTIONS.map((o) => (
                   <option key={o.value || "any"} value={o.value}>
-                    {o.label}
+                    {tText(o.label)}
                   </option>
                 ))}
               </select>
@@ -147,8 +147,8 @@ export default function AdminPaymentReconciliations() {
             type="button"
             onClick={() =>
               confirm({ title: tText("确认创建"),
-                description: `确定创建 ${reconcileDate} 的对账草稿？`,
-                confirmText: "创建",
+                description: tText(`确定创建 ${reconcileDate} 的对账草稿？`),
+                confirmText: tText("创建"),
                 onConfirm: () => create(),
               })
             }

@@ -124,7 +124,7 @@ function humanizeTechnicalDescription(text: string): string {
 
 /**
  * Cron 五段式 → 中文说明（常见调度）
- * 例：*/30 * * * * → 每 30 分钟；0 4 * * * → 每天 04:00
+ * 例：分钟步进 30 → 每 30 分钟；0 4 * * * → 每天 04:00
  */
 export function formatCronScheduleLabel(cron?: string | null): string {
   const raw = (cron || "").trim();

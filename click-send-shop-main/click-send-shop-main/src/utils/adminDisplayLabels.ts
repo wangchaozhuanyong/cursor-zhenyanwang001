@@ -60,6 +60,12 @@ export const REPORT_COLUMN_LABELS: Record<string, string> = {
   refund_qty: "退款件数",
   current_stock: "当前库存",
   inventory_cost_value: "库存成本",
+  sales_7d: "近7天销量",
+  sales_30d: "近30天销量",
+  avg_daily_sales: "日均销量",
+  available_stock_days: "可售天数",
+  warning_stock: "预警库存",
+  stock_status: "库存状态",
   view_count: "浏览量",
   add_cart_count: "加购量",
   favorite_count: "收藏量",
@@ -79,10 +85,25 @@ export const REPORT_COLUMN_LABELS: Record<string, string> = {
   paying_users: "付费用户数",
   active_users: "活跃用户数",
   order_users: "下单用户数",
-  new_users: "新用户数",
+  new_users: "新注册用户",
+  repeat_buyer_count: "复购用户数",
+  repeat_purchase_rate: "复购率",
+  average_orders_per_buyer: "人均订单数",
+  total_paid_amount: "付费总额",
   active_product_count: "在售商品数",
   stock_qty: "库存件数",
   product_count: "商品数",
+  商品数: "商品数",
+  分类数: "分类数",
+  活动数: "活动数",
+  优惠券数: "优惠券数",
+  关键词数: "关键词数",
+  今日销售额: "销售额",
+  今日净销售额: "净销售额",
+  今日支付订单数: "支付订单数",
+  今日客单价: "客单价",
+  今日退款金额: "退款金额",
+  今日优惠金额: "优惠金额",
   search_count: "搜索次数",
   no_result_count: "无结果次数",
   user_count: "搜索用户数",
@@ -221,7 +242,14 @@ export const ORDER_STATUS_LABELS: Record<string, string> = {
   refunded: "已退款",
 };
 
-export const STOCK_STATUS_LABELS: Record<string, string> = { low: "低库存", normal: "正常", out: "缺货" };
+export const STOCK_STATUS_LABELS: Record<string, string> = {
+  low: "低库存",
+  low_stock: "低库存",
+  normal: "正常",
+  out: "缺货",
+  out_of_stock: "缺货",
+  slow_moving: "滞销",
+};
 
 /** 商品合规类型（API 值为英文枚举，管理端展示中文） */
 export const COMPLIANCE_TYPE_LABELS: Record<string, string> = {
@@ -260,6 +288,11 @@ export function labelReportCellValue(key: string, value: unknown): string {
   if (key === "payment_status") return labelFromMap(PAYMENT_STATUS_LABELS, s, s);
   if (key === "status") return labelFromMap(ORDER_STATUS_LABELS, s, s);
   if (key === "type" && ACTIVITY_TYPE_LABELS[s]) return labelFromMap(ACTIVITY_TYPE_LABELS, s, s);
+  if (key === "roi" || key === "综合投入产出比") {
+    if (value === null || value === undefined || value === "") return "-";
+    const n = Number(value);
+    return Number.isFinite(n) ? n.toFixed(2) : "-";
+  }
   if (key.endsWith("_rate") && !Number.isNaN(Number(s))) return `${s}%`;
   if (key.endsWith("_id") && /[0-9a-f-]{8,}/i.test(s)) return formatInternalIdDisplay(s);
   return s;
@@ -379,6 +412,7 @@ export const EXPORT_TYPE_LABELS: Record<string, string> = {
   sales_daily: "销售日报",
   sales_monthly: "销售月报",
   profit_daily: "利润日报",
+  profit_monthly: "利润月报",
   product_analysis: "商品分析",
   category_analysis: "分类分析",
   order_analysis: "订单分析",
@@ -396,11 +430,32 @@ export const RECYCLE_TYPE_LABELS: Record<string, string> = {
   categories: "分类",
   coupons: "优惠券",
   activities: "活动",
-  banners: "Banner",
+  marketing_activities: "营销活动",
+  banners: "轮播图",
+  content_pages: "内容页",
+  product_reviews: "评论",
+  product_tags: "商品标签",
+  notifications: "通知",
+  notification_batches: "通知批次",
+  product_variants: "商品规格",
+  product_spec_groups: "规格组",
+  product_spec_values: "规格值",
+  inventory_pack_rules: "组装拆包规则",
   users: "用户",
-  product_reviews: "商品评价",
 };
-export function labelRecycleType(type: string): string { return labelFromMap(RECYCLE_TYPE_LABELS, type, "其他"); }
+
+export function labelRecycleType(type: string, typeLabel?: string | null): string {
+  const apiLabel = String(typeLabel ?? "").trim();
+  if (apiLabel && /[\u4e00-\u9fff]/.test(apiLabel)) return apiLabel;
+  const key = String(type ?? "").trim();
+  if (!key) return "-";
+  return labelFromMap(RECYCLE_TYPE_LABELS, key, apiLabel || "其他类型");
+}
+
+export const RECYCLE_TYPE_FILTER_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "", label: "全部类型" },
+  ...Object.entries(RECYCLE_TYPE_LABELS).map(([value, label]) => ({ value, label })),
+];
 
 export function formatUserDisplay(nickname?: string | null, phone?: string | null): string {
   const name = String(nickname || "").trim();

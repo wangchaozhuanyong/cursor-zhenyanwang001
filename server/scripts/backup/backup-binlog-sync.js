@@ -149,7 +149,7 @@ main().then(() => process.exit(0)).catch(async (err) => {
   await backupService.emitBackupAlert({
     alertType: String(err.message || '').includes('S3') ? 's3_upload_failed' : 'binlog_upload_failed',
     severity: 'P0',
-    title: 'MySQL binlog upload failed',
+    title: '数据库增量日志上传失败',
     message: String(err.message || err),
   }).catch(() => {});
   process.exit(1);

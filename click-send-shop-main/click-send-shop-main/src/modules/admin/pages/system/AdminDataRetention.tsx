@@ -25,8 +25,10 @@ import { formatDateTime } from "@/utils/formatDateTime";
 import {
   formatDataCleanupCategory,
   formatDataCleanupPolicyKey,
+  formatDataCleanupPolicyTitle,
   formatDataCleanupProtectedTable,
   formatDataCleanupRunType,
+  formatDataCleanupTableName,
 } from "@/utils/dataRetentionLabels";
 import Pagination from "@/components/admin/Pagination";
 
@@ -84,7 +86,7 @@ function RunSteps({ steps, policyTitleByKey }: { steps?: DataCleanupRunStep[]; p
         <thead className="bg-secondary/50 text-xs text-muted-foreground">
           <tr>
             <th className="px-3 py-2">策略</th>
-            <th className="px-3 py-2">表/对象</th>
+            <th className="px-3 py-2">清理对象</th>
             <th className="px-3 py-2">状态</th>
             <th className="px-3 py-2">命中</th>
             <th className="px-3 py-2">删除</th>
@@ -96,7 +98,7 @@ function RunSteps({ steps, policyTitleByKey }: { steps?: DataCleanupRunStep[]; p
           {steps.map((step) => (
             <tr key={step.id} className="border-t border-border">
               <td className="px-3 py-2 font-medium text-foreground">{formatDataCleanupPolicyKey(step.policy_key, policyTitleByKey)}</td>
-              <td className="px-3 py-2 text-muted-foreground">{step.table_name}</td>
+              <td className="px-3 py-2 text-muted-foreground">{formatDataCleanupTableName(step.table_name, step.policy_key)}</td>
               <td className="px-3 py-2"><StatusBadge status={step.status} /></td>
               <td className="px-3 py-2">{step.matched_count}</td>
               <td className="px-3 py-2">{step.deleted_count}</td>
@@ -165,7 +167,7 @@ export default function AdminDataRetention() {
 
   const policies = useMemo(() => policiesQuery.data ?? [], [policiesQuery.data]);
   const policyTitleByKey = useMemo(
-    () => Object.fromEntries(policies.map((policy) => [policy.key, policy.title])),
+    () => Object.fromEntries(policies.map((policy) => [policy.key, formatDataCleanupPolicyTitle(policy)])),
     [policies],
   );
   const groupedPolicies = useMemo(() => groupPolicies(policies), [policies]);
@@ -364,7 +366,7 @@ export default function AdminDataRetention() {
             <button
               type="button"
               disabled={!canManage || resetMutation.isPending}
-              onClick={() => confirm({ title: "恢复默认策略", description: "将重置 enabled、retention_days 和 batch_size。", confirmText: "恢复默认", onConfirm: () => resetMutation.mutateAsync() })}
+              onClick={() => confirm({ title: "恢复默认策略", description: "将重置启用状态、保留天数和批处理大小。", confirmText: "恢复默认", onConfirm: () => resetMutation.mutateAsync() })}
               className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm hover:bg-secondary disabled:opacity-50"
             >
               <RefreshCw size={15} /> 恢复默认
@@ -378,7 +380,7 @@ export default function AdminDataRetention() {
                   <thead className="bg-secondary/50 text-xs text-muted-foreground">
                     <tr>
                       <th className="px-3 py-2">策略</th>
-                      <th className="px-3 py-2">表/对象</th>
+                      <th className="px-3 py-2">清理对象</th>
                       <th className="px-3 py-2">保留天数</th>
                       <th className="px-3 py-2">批大小</th>
                       <th className="px-3 py-2">启用</th>
@@ -395,11 +397,10 @@ export default function AdminDataRetention() {
                       return (
                         <tr key={policy.key} className="border-t border-border align-top">
                           <td className="px-3 py-3">
-                            <div className="font-medium text-foreground">{policy.title}</div>
-                            <div className="mt-1 max-w-[320px] text-xs text-muted-foreground">{policy.description}</div>
-                            <div className="mt-1 text-[11px] text-muted-foreground">{policy.key}</div>
+                            <div className="font-medium text-foreground">{formatDataCleanupPolicyTitle(policy)}</div>
+                            <div className="mt-1 max-w-[360px] text-xs leading-relaxed text-muted-foreground">{policy.description}</div>
                           </td>
-                          <td className="px-3 py-3 text-muted-foreground">{policy.table_name}</td>
+                          <td className="px-3 py-3 text-muted-foreground">{formatDataCleanupTableName(policy.table_name, policy.key)}</td>
                           <td className="px-3 py-3">
                             <input
                               type="number"
@@ -465,7 +466,7 @@ export default function AdminDataRetention() {
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="font-semibold text-foreground">选择策略并生成预览</h2>
-                <p className="text-sm text-muted-foreground">执行清理必须使用最近一次预览生成的 preview_run_id。</p>
+                <p className="text-sm text-muted-foreground">请先勾选策略并「生成预览」，确认命中条数后再执行清理；不可跳过预览直接删除。</p>
               </div>
               <div className="flex gap-2">
                 <button type="button" onClick={() => { setSelectedKeys(policies.filter((p) => p.enabled).map((p) => p.key)); setPreviewRun(null); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">选择启用项</button>
@@ -477,8 +478,10 @@ export default function AdminDataRetention() {
                 <label key={policy.key} className="flex min-h-[48px] items-start gap-2 rounded-lg border border-border p-3 text-sm hover:bg-secondary/50">
                   <input type="checkbox" checked={selectedKeys.includes(policy.key)} onChange={() => togglePolicySelection(policy.key)} className="mt-1 h-4 w-4" />
                   <span>
-                    <span className="block font-medium text-foreground">{policy.title}</span>
-                    <span className="block text-xs text-muted-foreground">{policy.table_name} · {policy.retention_days} 天</span>
+                    <span className="block font-medium text-foreground">{formatDataCleanupPolicyTitle(policy)}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {formatDataCleanupTableName(policy.table_name, policy.key)} · 保留 {policy.retention_days} 天
+                    </span>
                   </span>
                 </label>
               ))}
@@ -525,7 +528,7 @@ export default function AdminDataRetention() {
               <table className="w-full min-w-[820px] text-left text-sm">
                 <thead className="bg-secondary/50 text-xs text-muted-foreground">
                   <tr>
-                    <th className="px-3 py-2">ID</th>
+                    <th className="px-3 py-2">编号</th>
                     <th className="px-3 py-2">类型</th>
                     <th className="px-3 py-2">状态</th>
                     <th className="px-3 py-2">命中</th>
@@ -587,12 +590,12 @@ export default function AdminDataRetention() {
             <h2 className="mb-3 flex items-center gap-2 font-semibold text-foreground"><Shield size={16} /> 防误删机制</h2>
             <div className="grid gap-3 md:grid-cols-2">
               {[
-                ["不允许任意 SQL", "后台只能修改 retention_days、enabled、batch_size。"],
-                ["必须先预览", "执行接口必须携带最近生成且未使用的 preview_run_id。"],
+                ["禁止自定义 SQL", "后台仅允许修改保留天数、启用状态、批处理大小，不可编写或执行任意删除语句。"],
+                ["必须先预览", "执行清理须关联最近一次生成、且尚未用于正式删除的预览任务编号，不可跳过预览。"],
                 ["保护核心交易表", "订单、支付、发票、库存流水、积分流水、返现流水默认禁止硬删除。"],
-                ["批量删除", "每批限制在 500-2000 条，降低锁表风险。"],
+                ["批量删除", "每批限制在 500～2000 条，降低锁表风险。"],
                 ["执行锁", "同一时间只能有一个清理任务持有全局锁。"],
-                ["审计留痕", "预览、执行、取消、策略变更都会写入 audit_logs。"],
+                ["审计留痕", "预览、执行、取消及策略变更均会写入审计日志，便于追溯。"],
               ].map(([title, text]) => (
                 <div key={title} className="rounded-lg border border-border bg-background p-3">
                   <div className="mb-1 flex items-center gap-2 font-medium text-foreground"><CheckCircle2 size={15} className="text-emerald-600" /> {title}</div>

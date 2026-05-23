@@ -14,7 +14,7 @@ import {
 import type { RecycleBinItem } from "@/services/admin/recycleBinService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { labelRecycleType } from "@/utils/adminDisplayLabels";
+import { labelRecycleType, RECYCLE_TYPE_FILTER_OPTIONS } from "@/utils/adminDisplayLabels";
 import { formatRecycleBinItemFullText, formatRecycleBinItemName } from "@/utils/recycleBinDisplay";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { AnimatedTable } from "@/modules/micro-interactions";
@@ -40,25 +40,6 @@ import {
   THEME_BTN_DANGER_SOLID,
 } from "@/utils/themeVisuals";
 
-const TYPE_OPTIONS = [
-  { value: "", label: "全部类型" },
-  { value: "products", label: "商品" },
-  { value: "categories", label: "分类" },
-  { value: "coupons", label: "优惠券" },
-  { value: "banners", label: "Banner" },
-  { value: "content_pages", label: "内容页" },
-  { value: "product_reviews", label: "评论" },
-  { value: "marketing_activities", label: "营销活动" },
-  { value: "product_tags", label: "商品标签" },
-  { value: "notifications", label: "通知" },
-  { value: "notification_batches", label: "通知批次" },
-  { value: "product_variants", label: "商品规格" },
-  { value: "product_spec_groups", label: "规格组" },
-  { value: "product_spec_values", label: "规格值" },
-  { value: "inventory_pack_rules", label: "组装拆包规则" },
-  { value: "users", label: "用户" },
-];
-
 const TYPE_BADGE: Record<string, string> = {
   products: THEME_BADGE_PRIMARY,
   categories: THEME_BADGE_ACCENT,
@@ -66,6 +47,15 @@ const TYPE_BADGE: Record<string, string> = {
   banners: THEME_BADGE_WARNING,
   content_pages: THEME_BADGE_PRICE,
   product_reviews: THEME_BADGE_DANGER,
+  marketing_activities: THEME_BADGE_SUCCESS,
+  product_tags: THEME_BADGE_ACCENT,
+  notifications: THEME_BADGE_PRIMARY,
+  notification_batches: THEME_BADGE_PRIMARY,
+  product_variants: THEME_BADGE_PRIMARY,
+  product_spec_groups: THEME_BADGE_ACCENT,
+  product_spec_values: THEME_BADGE_ACCENT,
+  inventory_pack_rules: THEME_BADGE_WARNING,
+  users: "bg-muted text-muted-foreground",
 };
 
 export default function AdminRecycleBin() {
@@ -146,7 +136,7 @@ export default function AdminRecycleBin() {
             <h2 className="text-lg font-bold text-foreground"><Tx>回收站</Tx></h2>
           </div>
           <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
-            {TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            {RECYCLE_TYPE_FILTER_OPTIONS.map((o) => <option key={o.value || "__all"} value={o.value}>{o.label}</option>)}
           </select>
         </div>
         <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />

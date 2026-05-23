@@ -5,19 +5,21 @@ import { toast } from "sonner";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import * as backupService from "@/services/admin/backupService";
 import PermissionGate from "@/components/admin/PermissionGate";
-
-const statusClass: Record<string, string> = {
-  success: "text-emerald-700",
-  running: "text-blue-700",
-  queued: "text-amber-700",
-  failed: "text-red-700",
-  open: "text-red-700",
-  resolved: "text-emerald-700",
-};
+import { formatDateTime } from "@/utils/formatDateTime";
+import {
+  backupStatusTone,
+  formatBackupAlertMessage,
+  formatBackupAlertTitle,
+  formatBackupFileKind,
+  formatBackupStatus,
+  formatBackupStorageLocation,
+  formatRestoreTempDatabase,
+  formatRestoreType,
+} from "@/utils/backupLabels";
 
 function fmt(value?: string | null) {
   if (!value) return "-";
-  return new Date(value).toLocaleString();
+  return formatDateTime(value);
 }
 
 function bytes(value?: number) {
@@ -28,8 +30,13 @@ function bytes(value?: number) {
   return `${n} B`;
 }
 
-function StatusText({ value }: { value?: string }) {
-  return <span className={statusClass[value || ""] || "text-muted-foreground"}>{value || "-"}</span>;
+function StatusBadge({ value }: { value?: string }) {
+  const label = formatBackupStatus(value);
+  return (
+    <span className={`inline-flex items-center rounded-full border border-current/20 px-2 py-0.5 text-xs font-medium ${backupStatusTone(value)}`}>
+      {label}
+    </span>
+  );
 }
 
 export default function AdminBackupCenter() {
@@ -99,7 +106,7 @@ export default function AdminBackupCenter() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-foreground">备份与恢复</h1>
-          <p className="mt-1 text-sm text-muted-foreground">系统设置 / 数据安全</p>
+          <p className="mt-1 text-sm text-muted-foreground">管理系统全量/增量备份、恢复任务与演练记录。</p>
         </div>
         <PermissionGate permission="backup.create">
           <button
@@ -128,7 +135,7 @@ export default function AdminBackupCenter() {
           <div className="mt-2 text-base font-semibold">{fmt(overview?.latestRecoverableAt)}</div>
         </div>
         <div className="rounded-lg border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground"><ShieldCheck size={15} /> Binlog 状态</div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground"><ShieldCheck size={15} /> 增量日志状态</div>
           <div className={`mt-2 text-base font-semibold ${overview?.binlogHealthy ? "text-emerald-700" : "text-red-700"}`}>
             {overview?.binlogHealthy ? "正常" : "延迟或未配置"}
           </div>
@@ -144,23 +151,37 @@ export default function AdminBackupCenter() {
                 <tr>
                   <th className="px-4 py-2 text-left">类型</th>
                   <th className="px-4 py-2 text-left">状态</th>
-                  <th className="px-4 py-2 text-left">存储</th>
+                  <th className="px-4 py-2 text-left">存储位置</th>
                   <th className="px-4 py-2 text-left">大小</th>
                   <th className="px-4 py-2 text-left">可恢复时间</th>
                   <th className="px-4 py-2 text-left">校验</th>
                 </tr>
               </thead>
               <tbody>
-                {(filesQuery.data?.list || []).map((file) => (
-                  <tr key={file.id} className="border-t border-border">
-                    <td className="px-4 py-3">{file.file_kind}</td>
-                    <td className="px-4 py-3"><StatusText value={file.job_status} /></td>
-                    <td className="max-w-[260px] truncate px-4 py-3" title={file.storage_key}>{file.storage_provider}:{file.bucket || "local"}</td>
-                    <td className="px-4 py-3">{bytes(file.size_bytes)}</td>
-                    <td className="px-4 py-3">{fmt(file.recoverable_at)}</td>
-                    <td className="px-4 py-3">{file.verified_at ? <CheckCircle2 size={16} className="text-emerald-700" /> : "-"}</td>
-                  </tr>
-                ))}
+                {(filesQuery.data?.list || []).map((file) => {
+                  const storage = formatBackupStorageLocation(file);
+                  return (
+                    <tr key={file.id} className="border-t border-border">
+                      <td className="px-4 py-3 font-medium text-foreground">{formatBackupFileKind(file.file_kind)}</td>
+                      <td className="px-4 py-3"><StatusBadge value={file.job_status} /></td>
+                      <td className="max-w-[220px] truncate px-4 py-3 text-muted-foreground" title={storage.title}>
+                        {storage.label}
+                      </td>
+                      <td className="px-4 py-3">{bytes(file.size_bytes)}</td>
+                      <td className="px-4 py-3">{fmt(file.recoverable_at)}</td>
+                      <td className="px-4 py-3">
+                        {file.verified_at ? (
+                          <span className="inline-flex items-center gap-1 text-emerald-700">
+                            <CheckCircle2 size={16} />
+                            已校验
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">待校验</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
                 {!filesQuery.data?.list?.length ? (
                   <tr><td className="px-4 py-8 text-center text-muted-foreground" colSpan={6}>暂无备份文件</td></tr>
                 ) : null}
@@ -171,6 +192,7 @@ export default function AdminBackupCenter() {
 
         <section className="rounded-lg border border-border bg-card p-4">
           <div className="font-semibold">创建恢复任务</div>
+          <p className="mt-1 text-xs text-muted-foreground">恢复将先写入临时数据库，校验通过后再由管理员确认切换。</p>
           <div className="mt-4 space-y-3">
             <label className="block text-sm">
               <span className="text-muted-foreground">恢复类型</span>
@@ -217,10 +239,10 @@ export default function AdminBackupCenter() {
             {(restoreJobsQuery.data?.list || []).map((job) => (
               <div key={job.id} className="px-4 py-3 text-sm">
                 <div className="flex items-center justify-between gap-2">
-                  <span>{job.restore_type}</span>
-                  <StatusText value={job.status} />
+                  <span className="font-medium text-foreground">{formatRestoreType(job.restore_type)}</span>
+                  <StatusBadge value={job.status} />
                 </div>
-                <div className="mt-1 truncate text-xs text-muted-foreground">{job.temp_db_name}</div>
+                <div className="mt-1 text-xs text-muted-foreground">{formatRestoreTempDatabase(job.temp_db_name)}</div>
               </div>
             ))}
             {!restoreJobsQuery.data?.list?.length ? <div className="px-4 py-8 text-center text-sm text-muted-foreground">暂无恢复任务</div> : null}
@@ -234,7 +256,7 @@ export default function AdminBackupCenter() {
               <div key={drill.id} className="px-4 py-3 text-sm">
                 <div className="flex items-center justify-between gap-2">
                   <span>{fmt(drill.created_at)}</span>
-                  <StatusText value={drill.status} />
+                  <StatusBadge value={drill.status} />
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground">耗时 {drill.duration_seconds ?? "-"} 秒</div>
               </div>
@@ -249,10 +271,14 @@ export default function AdminBackupCenter() {
             {(alertsQuery.data || []).map((alert) => (
               <div key={alert.id} className="px-4 py-3 text-sm">
                 <div className="flex items-center gap-2">
-                  <AlertTriangle size={15} className="text-red-700" />
-                  <span className="font-medium">{alert.title}</span>
+                  <AlertTriangle size={15} className="shrink-0 text-red-700" />
+                  <span className="font-medium text-foreground">
+                    {formatBackupAlertTitle(alert.title, alert.alert_type)}
+                  </span>
                 </div>
-                <div className="mt-1 text-xs text-muted-foreground">{alert.message || alert.alert_type}</div>
+                <div className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  {formatBackupAlertMessage(alert.message, alert.alert_type)}
+                </div>
               </div>
             ))}
             {!alertsQuery.data?.length ? <div className="px-4 py-8 text-center text-sm text-muted-foreground">暂无告警</div> : null}

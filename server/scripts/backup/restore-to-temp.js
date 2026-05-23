@@ -259,7 +259,7 @@ async function main() {
       await backupService.emitBackupAlert({
         alertType: 'restore_failed',
         severity: 'P0',
-        title: 'Restore validation failed',
+        title: '恢复校验失败',
         message: `Restore job ${restoreJobId} failed validation`,
         relatedJobId: restoreJobId,
         relatedFileId: sourceFile.id,
@@ -284,7 +284,7 @@ async function main() {
     await backupService.emitBackupAlert({
       alertType: 'restore_failed',
       severity: 'P0',
-      title: 'Restore to temporary database failed',
+      title: '恢复到临时库失败',
       message: String(err.message || err),
       relatedJobId: restoreJobId,
     }).catch(() => {});

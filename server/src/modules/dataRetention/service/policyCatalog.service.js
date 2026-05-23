@@ -43,7 +43,7 @@ function isProtectedTable(tableName) {
 const DEFAULT_POLICY_DEFINITIONS = [
   {
     key: 'otp_send_logs',
-    title: 'OTP 发送日志',
+    title: '验证码发送日志',
     category: 'auth',
     tableName: 'otp_send_logs',
     dateColumn: 'created_at',
@@ -63,12 +63,12 @@ const DEFAULT_POLICY_DEFINITIONS = [
   },
   {
     key: 'oauth_states',
-    title: 'OAuth state',
+    title: '第三方登录状态',
     category: 'auth',
     tableName: 'oauth_states',
     dateColumn: 'created_at',
     retentionDays: 7,
-    description: '清理 OAuth 登录过程中的 state 防重放记录。',
+    description: '清理第三方登录过程中的临时状态与防重放记录。',
     where: beforeColumn('created_at'),
   },
   {
@@ -88,7 +88,7 @@ const DEFAULT_POLICY_DEFINITIONS = [
     tableName: 'auth_login_tickets',
     dateColumn: 'created_at',
     retentionDays: 7,
-    description: '清理 OAuth/社交登录一次性票据。',
+    description: '清理社交与第三方登录一次性票据。',
     where: beforeColumn('created_at'),
   },
   {

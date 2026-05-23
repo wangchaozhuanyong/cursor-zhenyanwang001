@@ -126,7 +126,7 @@ async function main() {
     await backupService.emitBackupAlert({
       alertType: String(err.message || '').includes('S3') ? 's3_upload_failed' : 'full_failed',
       severity: 'P0',
-      title: 'MySQL full backup failed',
+      title: '数据库全量备份失败',
       message: String(err.message || err),
       relatedJobId: jobId,
     }).catch((alertErr) => console.warn('[backup-full] alert failed:', alertErr?.message || alertErr));

@@ -32,7 +32,7 @@ async function main() {
     await backupService.emitBackupAlert({
       alertType: 'restore_drill_failed',
       severity: 'P0',
-      title: 'Automatic restore drill failed',
+      title: '自动恢复演练失败',
       message: String(err.message || err),
       relatedJobId: restoreJobId,
       relatedFileId: sourceFile.id,

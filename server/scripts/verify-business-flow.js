@@ -21,6 +21,7 @@ async function main() {
   const phone = `01${`${Date.now()}`.slice(-8)}`;
   const password = 'VerifyFlow1';
   let token;
+  let userId;
   let productId;
   let orderId;
 
@@ -55,6 +56,7 @@ async function main() {
     process.exitCode = 1;
     return;
   }
+  userId = login.body.data?.userId || userId;
   token = login.body.data?.token?.accessToken || login.body.data?.token;
   if (typeof token === 'object') token = token.accessToken;
 
@@ -78,7 +80,9 @@ async function main() {
     await db.end().catch(() => {});
     return;
   }
-  productId = plist[0].id;
+  const pick =
+    plist.find((p) => Number(p.stock) > 0 && Number(p.price) > 0 && Number(p.price) <= 50000) || plist[0];
+  productId = pick.id;
 
   // 2) 商品详情
   const detail = await request(app).get(`/api/products/${productId}`);
@@ -145,7 +149,7 @@ async function main() {
   // DB 校验
   console.log('\n' + '='.repeat(60));
   console.log('数据库校验');
-  const [[u]] = await db.query('SELECT id, phone FROM users WHERE phone = ? LIMIT 1', [phone]);
+  const [[u]] = await db.query('SELECT id, phone FROM users WHERE id = ? LIMIT 1', [userId]);
   const [[o]] = await db.query(
     'SELECT id, order_no, user_id, total_amount, status FROM orders WHERE id = ? LIMIT 1',
     [orderId],

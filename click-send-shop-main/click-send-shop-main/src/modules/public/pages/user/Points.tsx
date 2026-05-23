@@ -21,7 +21,7 @@ import {
   THEME_TEXT_DANGER,
   THEME_TEXT_SUCCESS,
 } from "@/utils/themeVisuals";
-import PageHeader from "@/components/PageHeader";
+import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { formatPointsRecordLabel, normalizePointsHintText } from "@/utils/pointsDisplayLabels";
 
 const POINTS_HINT_FALLBACK = "订单支付完成后，将按后台当前积分规则发放积分。";
@@ -88,10 +88,7 @@ export default function Points() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader title="我的积分" onBack={goBack} />
-
-      <main className="mx-auto w-full px-[var(--store-page-x)] py-4 sm:max-w-lg sm:px-4 sm:py-6">
+    <StoreAccountLayout title="我的积分" onBack={goBack} mainClassName="sm:py-6 lg:py-6">
         <div className={`rounded-2xl p-8 text-center ${THEME_ACCENT_HERO_SHELL}`}>
           <Star size={36} className={`mx-auto ${THEME_ACCENT_HERO_ICON}`} />
           <p className={`mt-3 ${THEME_ACCENT_HERO_LABEL} normal-case tracking-normal`}>当前积分</p>
@@ -163,7 +160,6 @@ export default function Points() {
             </div>
           )}
         </div>
-      </main>
-    </div>
+    </StoreAccountLayout>
   );
 }

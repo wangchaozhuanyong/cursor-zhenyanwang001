@@ -9,7 +9,7 @@ import PremiumCouponCard from "@/components/PremiumCouponCard";
 import type { UserCoupon } from "@/types/coupon";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import { cn } from "@/lib/utils";
-import PageHeader from "@/components/PageHeader";
+import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import {
   THEME_ACCENT_HERO_ICON,
   THEME_ACCENT_HERO_ICON_WRAP,
@@ -113,10 +113,7 @@ export default function Coupons() {
   }
 
   return (
-    <div className="store-page min-h-screen pb-6">
-      <PageHeader title="优惠券" onBack={goBack} />
-
-      <main className="mx-auto w-full px-[var(--store-page-x)] sm:max-w-lg sm:px-4">
+    <StoreAccountLayout title="优惠券" onBack={goBack} className="store-page pb-6" mainClassName="sm:px-4 lg:py-6">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -181,7 +178,7 @@ export default function Coupons() {
           ))}
         </div>
 
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
           <AnimatePresence mode="popLayout">
             {list.length === 0 && (
               <motion.div
@@ -204,8 +201,7 @@ export default function Coupons() {
             ))}
           </AnimatePresence>
         </div>
-      </main>
-    </div>
+    </StoreAccountLayout>
   );
 }
 

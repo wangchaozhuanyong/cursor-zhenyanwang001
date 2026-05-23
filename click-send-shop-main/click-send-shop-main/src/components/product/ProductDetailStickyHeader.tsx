@@ -73,7 +73,7 @@ export default function ProductDetailStickyHeader({
   return (
     <header
       className={cn(
-        "pointer-events-none fixed inset-x-0 top-0 z-header pt-[env(safe-area-inset-top,0px)]",
+        "pointer-events-none fixed inset-x-0 top-0 z-header pt-[env(safe-area-inset-top,0px)] lg:hidden",
         "transition-[background-color,box-shadow,border-color] duration-200 ease-out",
         solid
           ? cn("border-b shadow-[var(--theme-shadow)] backdrop-blur-xl", surfaceClass)

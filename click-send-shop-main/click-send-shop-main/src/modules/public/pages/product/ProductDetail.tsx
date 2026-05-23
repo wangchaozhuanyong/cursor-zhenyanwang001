@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Headphones } from "lucide-react";
+import { ArrowLeft, Headphones } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useCartStore } from "@/stores/useCartStore";
@@ -11,6 +11,7 @@ import ProductReviews from "@/components/ProductReviews";
 import { useProductReviews } from "@/hooks/useProductReviews";
 import ProductImageGallery from "@/components/ProductImageGallery";
 import ProductDetailStickyHeader from "@/components/product/ProductDetailStickyHeader";
+import { STORE_DETAIL_STICKY_TOP_CLASS } from "@/constants/storeLayout";
 import { useProductDetailHeaderSolid } from "@/hooks/useProductDetailHeaderSolid";
 import ProductTagList from "@/components/ProductTagList";
 import { BottomSheet, FavoriteMotionButton, useMediaSheetMode } from "@/modules/micro-interactions";
@@ -382,7 +383,7 @@ export default function ProductDetail() {
   };
 
   return (
-    <div className="store-bottom-action-space min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
+    <div className="store-bottom-action-space min-h-screen bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0 lg:pb-0">
       <SeoHead
         title={`${product.name}｜${siteName}`}
         description={productDescription}
@@ -401,9 +402,17 @@ export default function ProductDetail() {
         onShare={handleShare}
         onCart={() => navigate("/cart")}
       />
-      <main className="mx-auto w-full max-w-screen-xl px-0 md:px-6">
-        <div className="md:grid md:grid-cols-2 md:gap-10 md:items-start md:py-10">
-          <div className="md:sticky md:top-[calc(var(--store-tab-header-height,3.5rem)+env(safe-area-inset-top,0px)+1.5rem)] md:self-start">
+      <main className="mx-auto w-full max-w-screen-xl px-0 md:px-6 lg:px-8">
+        <button
+          type="button"
+          onClick={goBack}
+          className="mb-4 hidden items-center gap-1.5 px-[var(--store-page-x)] text-sm font-medium text-[var(--theme-text-muted)] hover:text-[var(--theme-text)] lg:inline-flex lg:px-0"
+        >
+          <ArrowLeft size={16} />
+          返回
+        </button>
+        <div className="md:grid md:grid-cols-2 md:gap-10 md:items-start md:py-6 lg:gap-12 lg:py-8">
+          <div className={cn("md:sticky md:self-start", STORE_DETAIL_STICKY_TOP_CLASS)}>
             <div className="relative overflow-hidden md:theme-rounded md:border md:border-[var(--theme-border)]">
               <ProductImageGallery
                 images={galleryImages}
@@ -415,19 +424,20 @@ export default function ProductDetail() {
 
           {/* 右：商品信息 + 操作 */}
           <div>
-            <div
-              ref={headerSentinelRef}
-              className="pointer-events-none h-px w-full shrink-0"
-              aria-hidden
-            />
-            <div
-              className="px-[var(--store-page-x)] pt-5 md:px-0 md:pt-0"
-              style={
-                headerSolid
-                  ? { scrollMarginTop: "calc(var(--store-tab-header-height, 3.5rem) + env(safe-area-inset-top, 0px))" }
-                  : undefined
-              }
-            >
+            <div className={cn("md:sticky md:self-start", STORE_DETAIL_STICKY_TOP_CLASS)}>
+              <div
+                ref={headerSentinelRef}
+                className="pointer-events-none h-px w-full shrink-0"
+                aria-hidden
+              />
+              <div
+                className="px-[var(--store-page-x)] pt-5 md:px-0 md:pt-0"
+                style={
+                  headerSolid
+                    ? { scrollMarginTop: "calc(var(--store-tab-header-height, 3.5rem) + env(safe-area-inset-top, 0px))" }
+                    : undefined
+                }
+              >
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -475,17 +485,18 @@ export default function ProductDetail() {
                 />
               ) : null}
               <ProductTagList tags={product.tags} max={6} size="md" className="mt-3" />
-            <div className="mt-4 hidden px-[var(--store-page-x)] md:block md:px-0">
-              <DetailPurchaseBar
-                soldOut={soldOut}
-                purchaseBlocked={purchaseAgeBlocked}
-                isFavorite={isFavorite}
-                onFavorite={handleFavorite}
-                onCustomerService={() => void handleCustomerService()}
-                onAddToCart={handleAddToCart}
-                onBuyNow={handleBuyNow}
-              />
-            </div>
+              </div>
+              <div className="mt-4 hidden max-w-xl md:block">
+                <DetailPurchaseBar
+                  soldOut={soldOut}
+                  purchaseBlocked={purchaseAgeBlocked}
+                  isFavorite={isFavorite}
+                  onFavorite={handleFavorite}
+                  onCustomerService={() => void handleCustomerService()}
+                  onAddToCart={handleAddToCart}
+                  onBuyNow={handleBuyNow}
+                />
+              </div>
             </div>
 
             {/* TrustInfo - 信任三件套（详情页使用 card 强转化样式） */}

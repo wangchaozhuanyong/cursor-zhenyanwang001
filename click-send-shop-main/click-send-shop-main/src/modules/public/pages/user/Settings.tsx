@@ -13,7 +13,7 @@ import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import * as uploadService from "@/services/uploadService";
 import * as userService from "@/services/userService";
 import * as authService from "@/services/authService";
-import PageHeader from "@/components/PageHeader";
+import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 
 const CARD = "rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
 
@@ -169,10 +169,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="store-page min-h-screen text-[var(--theme-text)]">
-      <PageHeader title="个人资料" onBack={goBack} />
-
-      <main className="mx-auto w-full space-y-3 px-[var(--store-page-x)] py-[var(--store-page-y)] pb-24 sm:max-w-lg sm:px-4 sm:py-4">
+    <StoreAccountLayout title="账户设置" onBack={goBack} className="store-page text-[var(--theme-text)]" mainClassName="space-y-3 pb-24 sm:py-4 lg:pb-12">
         <section className={CARD}>
           <div className="flex flex-col items-center py-2">
             <div className="relative">
@@ -318,7 +315,6 @@ export default function Settings() {
         <button onClick={handleSave} disabled={profileSaving} className="w-full rounded-full bg-[var(--theme-primary)] py-3.5 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
           {profileSaving ? "保存中..." : "保存修改"}
         </button>
-      </main>
-    </div>
+    </StoreAccountLayout>
   );
 }

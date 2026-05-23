@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import PageHeader from "@/components/PageHeader";
+import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { OrderPaymentCountdown } from "@/components/order/OrderPaymentCountdown";
 import { OrderAutoConfirmCountdown } from "@/components/order/OrderAutoConfirmCountdown";
 import type { Order, OrderSummary, OrderTab } from "@/types/order";
@@ -200,10 +200,8 @@ export default function Orders() {
   const primaryActionBtn = "min-h-8 rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1.5 text-xs leading-none whitespace-nowrap text-[var(--theme-primary-foreground)]";
 
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader title="我的订单" onBack={() => navigate("/profile", { replace: true })} />
-      <main className="mx-auto w-full px-[var(--store-page-x)] py-[var(--store-page-y)] sm:max-w-lg sm:p-4">
-        <div className="sticky top-0 z-10 -mx-[var(--store-page-x)] mb-3 border-b border-[var(--theme-border)] bg-background px-[var(--store-page-x)] py-2 sm:-mx-4 sm:px-4">
+    <StoreAccountLayout title="我的订单" onBack={() => navigate("/profile", { replace: true })} mainClassName="sm:p-0 lg:py-6">
+        <div className="sticky top-0 z-10 -mx-[var(--store-page-x)] mb-3 border-b border-[var(--theme-border)] bg-background px-[var(--store-page-x)] py-2 sm:-mx-4 sm:px-4 lg:top-[calc(var(--store-desktop-header-height,4rem)+0.5rem)] lg:mx-0 lg:rounded-xl lg:border lg:bg-[var(--theme-surface)] lg:px-4">
           <div className="flex gap-2 overflow-x-auto pb-1">
             {tabs.map((t) => {
               const active = t.key === tab;
@@ -359,7 +357,6 @@ export default function Orders() {
             );
           })}
         </div>
-      </main>
-    </div>
+    </StoreAccountLayout>
   );
 }

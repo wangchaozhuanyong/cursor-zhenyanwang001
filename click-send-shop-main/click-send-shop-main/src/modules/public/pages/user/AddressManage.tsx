@@ -8,7 +8,7 @@ import { BottomSheetForm } from "@/modules/micro-interactions";
 import { MALAYSIA_STATES } from "@/types/address";
 import { formatAddressForDisplay } from "@/services/addressService";
 import { THEME_ACCENT_CHIP_CLASS } from "@/utils/themeVisuals";
-import PageHeader from "@/components/PageHeader";
+import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 
 type AddressForm = Omit<Address, "id">;
 const CARD = "rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
@@ -96,20 +96,27 @@ export default function AddressManage() {
     }
   };
 
+  const addAddressButton = (
+    <button
+      type="button"
+      onClick={openAdd}
+      className="inline-flex items-center gap-1 rounded-full bg-[var(--theme-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]"
+    >
+      <Plus size={14} />
+      新增
+    </button>
+  );
+
   return (
-    <div className="store-page min-h-screen text-[var(--theme-text)]">
-      <PageHeader
+    <>
+      <StoreAccountLayout
         title="收货地址"
         onBack={goBack}
-        rightSlot={
-          <button onClick={openAdd} className="inline-flex items-center gap-1 rounded-full bg-[var(--theme-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)]">
-            <Plus size={14} />
-            新增
-          </button>
-        }
-      />
-
-      <main className="mx-auto w-full px-[var(--store-page-x)] py-[var(--store-page-y)] pb-24 sm:max-w-lg sm:px-4 sm:py-4">
+        rightSlot={addAddressButton}
+        className="store-page text-[var(--theme-text)]"
+        mainClassName="pb-24 sm:py-4 lg:pb-12"
+      >
+        <div className="mb-3 hidden justify-end lg:flex">{addAddressButton}</div>
         {addressLoading ? (
           <div className="flex flex-col items-center py-20 text-[var(--theme-muted)]">
             <Loader2 size={24} className="mb-3 animate-spin" />
@@ -163,7 +170,7 @@ export default function AddressManage() {
             ))}
           </div>
         )}
-      </main>
+      </StoreAccountLayout>
 
       <BottomSheetForm
         open={open}
@@ -197,6 +204,6 @@ export default function AddressManage() {
           </label>
         </div>
       </BottomSheetForm>
-    </div>
+    </>
   );
 }

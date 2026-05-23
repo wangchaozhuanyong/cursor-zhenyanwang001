@@ -29,7 +29,7 @@ import {
   THEME_BADGE_SUCCESS,
   THEME_BADGE_WARNING,
 } from "@/utils/themeVisuals";
-import PageHeader from "@/components/PageHeader";
+import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 
 const typeConfig: Record<NotificationType, { icon: typeof Bell; color: string }> = {
   order: { icon: Package, color: THEME_BADGE_PRIMARY },
@@ -90,30 +90,31 @@ export default function Notifications() {
     );
   }
 
+  const notificationTitle = (
+    <span className="inline-flex items-center gap-2">
+      <span>消息通知</span>
+      {unreadBadgeText ? (
+        <span className="inline-flex h-5 min-w-[24px] items-center justify-center rounded-full btn-theme-price px-1.5 text-[10px] font-bold leading-none text-primary-foreground">
+          {unreadBadgeText}
+        </span>
+      ) : null}
+    </span>
+  );
+
   return (
-    <div className="min-h-screen bg-background pb-6">
-      <PageHeader
-        title={
-          <span className="inline-flex items-center gap-2">
-            <span>消息通知</span>
-            {unreadBadgeText ? (
-              <span className="inline-flex h-5 min-w-[24px] items-center justify-center rounded-full btn-theme-price px-1.5 text-[10px] font-bold leading-none text-primary-foreground">
-                {unreadBadgeText}
-              </span>
-            ) : null}
-          </span>
-        }
+    <div className="pb-6">
+      <StoreAccountLayout
+        title={notificationTitle}
         onBack={goBack}
         rightSlot={
           unreadCount > 0 ? (
-            <button onClick={markAllAsRead} className="flex items-center gap-1 text-xs text-theme-price active:opacity-70">
+            <button type="button" onClick={markAllAsRead} className="flex items-center gap-1 text-xs text-theme-price active:opacity-70">
               <Check size={14} /> 全部已读
             </button>
           ) : undefined
         }
-      />
-
-      <main className="mx-auto w-full px-[var(--store-page-x)] sm:max-w-lg sm:px-4">
+        mainClassName="sm:px-4 lg:py-6"
+      >
         {!loading && notifications.length === 0 && (
           <div className="flex flex-col items-center py-20 text-muted-foreground">
             <Bell size={48} className="mb-3 opacity-20" />
@@ -156,7 +157,7 @@ export default function Notifications() {
             })}
           </AnimatePresence>
         </div>
-      </main>
+      </StoreAccountLayout>
 
       {active ? (
         <div className="fixed inset-0 z-50 flex items-end bg-black/45 md:items-center md:justify-center" onClick={() => setActiveId(null)}>

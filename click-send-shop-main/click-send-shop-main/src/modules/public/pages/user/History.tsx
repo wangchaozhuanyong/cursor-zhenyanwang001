@@ -5,7 +5,7 @@ import { useHistoryStore } from "@/stores/useHistoryStore";
 import { isLoggedIn } from "@/utils/token";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import PageHeader from "@/components/PageHeader";
+import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 
 export default function History() {
   const navigate = useNavigate();
@@ -16,19 +16,18 @@ export default function History() {
   }, [loadHistory]);
 
   return (
-    <div className="min-h-screen bg-background pb-6">
-      <PageHeader
-        title="浏览历史"
-        rightSlot={
-          history.length > 0 ? (
-            <button onClick={clearHistory} className="flex items-center gap-1 text-xs text-[var(--theme-danger)] active:opacity-70">
-              <Trash2 size={14} /> 清空
-            </button>
-          ) : undefined
-        }
-      />
-
-      <main className="mx-auto w-full px-[var(--store-page-x)] sm:max-w-lg sm:px-4">
+    <StoreAccountLayout
+      title="浏览历史"
+      rightSlot={
+        history.length > 0 ? (
+          <button type="button" onClick={clearHistory} className="flex items-center gap-1 text-xs text-[var(--theme-danger)] active:opacity-70">
+            <Trash2 size={14} /> 清空
+          </button>
+        ) : undefined
+      }
+      className="pb-6"
+      mainClassName="sm:px-4 lg:py-6"
+    >
         {!isLoggedIn() && (
           <div className="mb-3 rounded-xl border border-gold/30 bg-gold/5 px-4 py-3 text-xs text-foreground">
             <span className="text-muted-foreground">未登录时仅在本机记录浏览；</span>
@@ -75,7 +74,6 @@ export default function History() {
             </AnimatePresence>
           </div>
         )}
-      </main>
-    </div>
+    </StoreAccountLayout>
   );
 }

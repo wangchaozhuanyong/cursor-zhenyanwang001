@@ -27,10 +27,10 @@ export async function saveSystemThemeConfig(data: ThemeConfig) {
 
 export async function fetchThemeSkins(): Promise<ThemeSkinsPayload> {
   const res = await themeApi.getThemeSkins();
-  return assertApiSuccess(res);
+  return assertApiSuccess<ThemeSkinsPayload>(res);
 }
 
 export async function saveSystemThemeSkins(data: ThemeSkinsPayload): Promise<ThemeSkinsPayload> {
   const res = await themeApi.updateSystemThemeSkins(data);
-  return assertApiSuccess(res);
+  return assertApiSuccess<ThemeSkinsPayload>(res);
 }

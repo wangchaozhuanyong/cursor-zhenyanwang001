@@ -22,6 +22,10 @@ export function updateSystemThemeSkins(data: {
   activeSkinId: string;
   skins: Array<{ id: string; name: string; clientEnabled?: boolean; config: ThemeConfig }>;
 }) {
-  return put("/admin/system/theme/skins", data);
+  return put<{
+    defaultSkinId: string;
+    activeSkinId: string;
+    skins: Array<{ id: string; name: string; clientEnabled?: boolean; config: ThemeConfig }>;
+  }>("/admin/system/theme/skins", data);
 }
 

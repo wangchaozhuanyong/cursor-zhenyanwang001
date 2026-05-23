@@ -5,8 +5,15 @@ import { useHomeTrackingSessionId } from "@/hooks/useHomeTrackingSessionId";
 import * as productService from "@/services/productService";
 import type { Product } from "@/types/product";
 import { cn } from "@/lib/utils";
+import { HOME_SECTION_HEADER_MB } from "@/constants/homeLayout";
 import type { NewArrivalClickTarget } from "./newArrivalOps";
 import HomeNewArrivalCard from "./HomeNewArrivalCard";
+import {
+  HOME_PRODUCT_CARD_SHELL,
+  HOME_PRODUCT_CARD_MEDIA,
+  HOME_PRODUCT_IMAGE_PRODUCT_CLASS,
+  HOME_PRODUCT_INFO_CLASS,
+} from "@/constants/homeProductCard";
 
 interface NewArrivalSectionProps {
   products: Product[];
@@ -69,7 +76,7 @@ export default function NewArrivalSection({
 
   return (
     <section className={cn("rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 md:p-4", className)}>
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className={cn("flex items-center justify-between gap-3", HOME_SECTION_HEADER_MB)}>
         <div className="min-w-0">
           <h2 className="store-section-title tracking-wide text-[var(--theme-text-on-surface)]">{normalizedTitle}</h2>
         </div>
@@ -91,10 +98,13 @@ export default function NewArrivalSection({
           ? Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
-                className="w-[132px] shrink-0 snap-start overflow-hidden rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] animate-pulse"
+                className={cn(
+                  HOME_PRODUCT_CARD_SHELL,
+                  "w-[132px] shrink-0 snap-start animate-pulse",
+                )}
               >
-                <div className="aspect-square w-full bg-[var(--theme-surface)]" />
-                <div className="space-y-2 px-2 py-2">
+                <div className={cn(HOME_PRODUCT_CARD_MEDIA, HOME_PRODUCT_IMAGE_PRODUCT_CLASS, "bg-[var(--theme-bg)]")} />
+                <div className={cn(HOME_PRODUCT_INFO_CLASS, "space-y-2")}>
                   <div className="h-3 w-4/5 rounded bg-[var(--theme-surface)]" />
                   <div className="h-3 w-1/2 rounded bg-[var(--theme-surface)]" />
                 </div>

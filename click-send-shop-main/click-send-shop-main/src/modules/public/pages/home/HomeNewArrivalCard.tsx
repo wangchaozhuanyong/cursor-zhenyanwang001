@@ -6,6 +6,18 @@ import { ProgressiveImage } from "@/modules/micro-interactions";
 import { resolveProductImageSrc } from "@/utils/uploadImageVariant";
 import { resolveNewArrivalImage } from "./newArrivalOps";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
+import {
+  HOME_PRODUCT_BADGE_CLASS,
+  HOME_PRODUCT_CARD_MEDIA,
+  HOME_PRODUCT_CARD_SHELL,
+  HOME_PRODUCT_IMAGE_IMG_CLASS,
+  HOME_PRODUCT_IMAGE_PRODUCT_CLASS,
+  HOME_PRODUCT_INFO_CLASS,
+  HOME_PRODUCT_PRICE_AMOUNT_CLASS,
+  HOME_PRODUCT_PRICE_CURRENCY_CLASS,
+  HOME_PRODUCT_TITLE_CLASS,
+} from "@/constants/homeProductCard";
+import { cn } from "@/lib/utils";
 
 interface HomeNewArrivalCardProps {
   product: Product;
@@ -49,10 +61,13 @@ export default function HomeNewArrivalCard({
       ref={cardRef}
       to={`/product/${product.id}`}
       onClick={() => onClick?.(product, index)}
-      className="theme-rounded w-[132px] shrink-0 snap-start overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-bg)] p-1.5"
+      className={cn(
+        HOME_PRODUCT_CARD_SHELL,
+        "w-[132px] shrink-0 snap-start",
+      )}
       aria-label={`查看 ${product.name}`}
     >
-      <div className="theme-rounded relative aspect-square w-full overflow-hidden bg-[var(--theme-surface)]">
+      <div className={cn(HOME_PRODUCT_CARD_MEDIA, HOME_PRODUCT_IMAGE_PRODUCT_CLASS)}>
         {imageSrc ? (
           <ProgressiveImage
             src={imageSrc}
@@ -60,21 +75,26 @@ export default function HomeNewArrivalCard({
             blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
             alt={product.name}
             className="h-full w-full"
-            imgClassName="h-full w-full object-cover"
+            imgClassName={HOME_PRODUCT_IMAGE_IMG_CLASS}
           />
         ) : null}
-        <span className="absolute left-1.5 top-1.5 rounded-full bg-[var(--theme-primary)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--theme-primary-foreground)]">
+        <span
+          className={cn(
+            HOME_PRODUCT_BADGE_CLASS,
+            "absolute left-1.5 top-1.5 border-transparent bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]",
+          )}
+        >
           新品
         </span>
       </div>
-      <div className="px-0.5 pb-1 pt-2">
-        <p className="line-clamp-1 text-xs font-semibold text-[var(--theme-text-on-surface)]">{product.name}</p>
+      <div className={HOME_PRODUCT_INFO_CLASS}>
+        <p className={HOME_PRODUCT_TITLE_CLASS}>{product.name}</p>
         {showPrice ? (
-          <div className="mt-1">
+          <div className="mt-1.5">
             <StorePriceAmount
               amount={product.price}
-              amountClassName="text-[13px] font-bold leading-none"
-              currencyClassName="mr-0.5 text-[10px] font-bold leading-none"
+              amountClassName={HOME_PRODUCT_PRICE_AMOUNT_CLASS}
+              currencyClassName={HOME_PRODUCT_PRICE_CURRENCY_CLASS}
             />
           </div>
         ) : null}

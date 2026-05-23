@@ -1,6 +1,12 @@
-/** 首页主内容区：模块之间统一纵向间距（移动端 20px，桌面 24px） */
+/** 首页模块标题与内容区间距（约 10px） */
+export const HOME_SECTION_HEADER_MB = "mb-2.5";
+
+/** 首页两列商品网格（今日热销等） */
+export const HOME_PRODUCT_GRID_CLASS = "grid grid-cols-2 gap-3 sm:gap-4";
+
+/** 首页主内容区：模块之间统一纵向间距（移动端 16px，桌面逐级加大） */
 export const HOME_PAGE_MAIN_CLASS =
-  "mx-auto flex w-full max-w-screen-xl flex-col gap-3 px-[var(--store-page-x)] pt-[var(--store-page-y)] pb-6 sm:gap-5 md:gap-6 md:px-6 md:pb-10 lg:gap-8 lg:px-8 lg:pb-12";
+  "mx-auto flex w-full max-w-screen-xl flex-col gap-4 px-[var(--store-page-x)] pt-[var(--store-page-y)] pb-6 sm:gap-5 md:gap-6 md:px-6 md:pb-10 lg:gap-8 lg:px-8 lg:pb-12";
 
 /** 未登录首页：主内容区底部留白略减（页脚卡片自带内边距） */
 export const HOME_GUEST_MAIN_CLASS =

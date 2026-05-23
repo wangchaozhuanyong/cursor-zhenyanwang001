@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Flame, Gift, RefreshCw, ShoppingCart, Star, Ticket } from "lucide-react";
+import { Gift, RefreshCw, ShoppingCart, Star, Ticket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
@@ -16,6 +16,7 @@ import { useHomeBanners } from "@/hooks/useHomeBanners";
 import HomeOpsBlocks from "./HomeOpsBlocks";
 import { AnimatedSection } from "@/modules/micro-interactions";
 import NewArrivalSection from "./NewArrivalOpsSection";
+import HomeHotSalesSection from "./HomeHotSalesSection";
 import FlashSaleSection from "./FlashSaleSection";
 import MarketingCouponCenterSection from "./MarketingCouponCenterSection";
 import MarketingNewUserGiftSection from "./MarketingNewUserGiftSection";
@@ -276,29 +277,13 @@ export default function MemberHome() {
         ) : null}
         {isHomeModuleEnabled(homeModules, "hot_sales", "member") ? (
         <AnimatedSection delay={0.14}>
-        <section>
-          <div className="mb-3 flex items-center justify-between md:mb-4">
-            <h2 className="flex items-center gap-2 store-section-title tracking-widest text-[var(--theme-text-on-surface)]">
-              <Flame className="h-5 w-5 text-[var(--theme-price)]" />
-              今日热销
-            </h2>
-            {hotBatches.length > 1 ? (
-              <button
-                type="button"
-                onClick={() => setHotBatchIndex((prev) => (prev + 1) % hotBatches.length)}
-                className="flex items-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs text-[var(--theme-text-muted)]"
-              >
-                <RefreshCw size={12} />
-                换一批              </button>
-            ) : null}
-          </div>
-          <SilkProductGrid
+          <HomeHotSalesSection
             products={hot}
-            className={productGridClass}
+            loading={homeLoading && hot.length === 0}
             skeletonCount={HOT_BATCH_SIZE}
-            showFullSkeleton={homeLoading && hot.length === 0}
+            showRotate={hotBatches.length > 1}
+            onRotate={() => setHotBatchIndex((prev) => (prev + 1) % hotBatches.length)}
           />
-        </section>
         </AnimatedSection>
         ) : null}
         {isHomeModuleEnabled(homeModules, "recommend", "member") ? (

@@ -16,6 +16,7 @@ function printStep(title, reqInfo, resStatus, resBody) {
 }
 
 async function main() {
+  const countryCode = '+60';
   const phone = `1${`${Date.now()}`.slice(-10)}`;
   const password = 'VerifyFlow1';
   let token;
@@ -24,13 +25,14 @@ async function main() {
 
   // 0) 注册 + 登录（订单接口需要 JWT）
   const reg = await request(app).post('/api/auth/register').send({
+    countryCode,
     phone,
     password,
     nickname: 'flow-verify',
   });
   printStep(
     '0) POST /api/auth/register',
-    { method: 'POST', path: '/api/auth/register', body: { phone, password: '***', nickname: 'flow-verify' } },
+    { method: 'POST', path: '/api/auth/register', body: { countryCode, phone, password: '***', nickname: 'flow-verify' } },
     reg.status,
     reg.body,
   );
@@ -40,10 +42,10 @@ async function main() {
     return;
   }
 
-  const login = await request(app).post('/api/auth/login').send({ phone, password });
+  const login = await request(app).post('/api/auth/login').send({ countryCode, phone, password });
   printStep(
     '0b) POST /api/auth/login',
-    { method: 'POST', path: '/api/auth/login', body: { phone, password: '***' } },
+    { method: 'POST', path: '/api/auth/login', body: { countryCode, phone, password: '***' } },
     login.status,
     login.body,
   );

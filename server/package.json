@@ -29,6 +29,7 @@
     "purge:demo-products": "node scripts/purge-demo-products.js",
     "seed:content-pages": "node scripts/seed-content-pages.js",
     "seed:policy-paths": "node scripts/seed-policy-paths.js",
+    "seed:products": "node scripts/seed-products.js",
     "smoke:user-tag-marketing": "node scripts/smoke-user-tag-marketing.js",
     "test": "npm run test:unit",
     "test:redis": "node -r tsx/cjs --test test/redis-standard.test.js",

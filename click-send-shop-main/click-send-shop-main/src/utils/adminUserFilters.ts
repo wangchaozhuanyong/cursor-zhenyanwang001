@@ -23,6 +23,11 @@ const ACCOUNT_STATUS_LABELS: Record<string, string> = {
   blacklisted: "黑名单",
 };
 
+export function formatAccountStatusLabel(status?: string | null): string {
+  const key = String(status || "normal").trim();
+  return ACCOUNT_STATUS_LABELS[key] || key || ACCOUNT_STATUS_LABELS.normal;
+}
+
 function boundLabel(prefix: string, value: string) {
   if (value === "1") return `${prefix}：已绑定`;
   if (value === "0") return `${prefix}：未绑定`;

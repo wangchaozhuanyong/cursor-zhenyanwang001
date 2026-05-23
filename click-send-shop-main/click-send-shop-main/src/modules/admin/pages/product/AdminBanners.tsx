@@ -23,10 +23,12 @@ import { isAspectRatioWithinTolerance, readImageSize } from "@/utils/imageRatio"
 import type { Banner } from "@/types/banner";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { invalidateHomeBannersCache } from "@/hooks/useHomeBanners";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const BANNER_RATIO_LABEL = `${BANNER_ASPECT_RATIO.toFixed(2)}:1`;
 
 export default function AdminBanners() {
+  const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
@@ -59,7 +61,7 @@ export default function AdminBanners() {
     bannerService
       .updateBanner(id, { enabled: !banner.enabled })
       .then(async () => {
-        toast.success("状态已更新");
+        toast.success(tText("状态已更新"));
         await invalidateBannerPublicCaches();
       })
       .catch((e) => toast.error(toastErrorMessage(e, "更新失败")));
@@ -69,7 +71,7 @@ export default function AdminBanners() {
     bannerService
       .deleteBanner(id)
       .then(async () => {
-        toast.success("已删除");
+        toast.success(tText("已删除"));
         await invalidateBannerPublicCaches();
       })
       .catch((e) => toast.error(toastErrorMessage(e, "删除失败")));
@@ -84,7 +86,7 @@ export default function AdminBanners() {
 
   const handleSave = async () => {
     if (!form.image) {
-      toast.error("请上传图片");
+      toast.error(tText("请上传图片"));
       return;
     }
     setSaving(true);
@@ -94,7 +96,7 @@ export default function AdminBanners() {
         setShowForm(false);
         setEditingId(null);
         setForm({ title: "", link: "", image: "" });
-        toast.success("Banner 已更新");
+        toast.success(tText("Banner 已更新"));
       } else {
         await bannerService.createBanner({
           title: form.title,
@@ -105,7 +107,7 @@ export default function AdminBanners() {
         });
         setShowForm(false);
         setForm({ title: "", link: "", image: "" });
-        toast.success("Banner 已添加");
+        toast.success(tText("Banner 已添加"));
       }
       await invalidateBannerPublicCaches();
     } catch (e) {
@@ -123,7 +125,7 @@ export default function AdminBanners() {
         adminQueryKeys.banners(),
         ordered.map((b, idx) => ({ ...b, sort_order: idx + 1 })),
       );
-      toast.success("Banner 排序已更新");
+      toast.success(tText("Banner 排序已更新"));
       invalidateHomeBannersCache();
     } catch (e) {
       toast.error(toastErrorMessage(e, "排序保存失败，请重试"));
@@ -157,9 +159,9 @@ export default function AdminBanners() {
   const handleCopyBannerPresets = async () => {
     try {
       await navigator.clipboard.writeText(BANNER_SIZE_PRESETS);
-      toast.success("推荐尺寸已复制");
+      toast.success(tText("推荐尺寸已复制"));
     } catch {
-      toast.error("复制失败，请手动复制");
+      toast.error(tText("复制失败，请手动复制"));
     }
   };
 
@@ -243,7 +245,7 @@ export default function AdminBanners() {
             </div>
             <PermissionGate permission="banner.manage">
               <div className="flex flex-shrink-0 items-center gap-2">
-                <button onClick={() => openEdit(b)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-theme-price" title="编辑">
+                <button onClick={() => openEdit(b)} className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-theme-price" title={tText("编辑")}>
                   <Pencil size={16} />
                 </button>
                 <button
@@ -315,7 +317,7 @@ export default function AdminBanners() {
                         toast.error(`读取图片尺寸失败，无法进行严格 ${BANNER_RATIO_LABEL} 校验。请关闭严格校验后重试，或换一张 JPG/PNG/WebP 图片。`);
                         return;
                       }
-                      toast.warning("读取图片尺寸失败，已跳过比例提示并继续上传。");
+                      toast.warning(tText("读取图片尺寸失败，已跳过比例提示并继续上传。"));
                     }
                     if (size && size.width > 0 && size.height > 0) {
                       const { width, height } = size;
@@ -330,15 +332,15 @@ export default function AdminBanners() {
                     }
                     const res = await uploadService.uploadSingleWithProgress(file, { mode: "banner" });
                     if (res.url) setForm({ ...form, image: res.url });
-                    else toast.error("上传失败");
+                    else toast.error(tText("上传失败"));
                   } catch (e) {
                     toast.error(toastErrorMessage(e, "上传失败"));
                   }
                 }}
               />
             </label>
-            <input placeholder="Banner 标题" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-            <input placeholder="跳转链接（如 /categories）" value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+            <input placeholder={tText("Banner 标题")} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+            <input placeholder={tText("跳转链接（如 /categories）")} value={form.link} onChange={(e) => setForm({ ...form, link: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
             <PermissionGate permission="banner.manage">
               <LoadingButton
                 type="button"

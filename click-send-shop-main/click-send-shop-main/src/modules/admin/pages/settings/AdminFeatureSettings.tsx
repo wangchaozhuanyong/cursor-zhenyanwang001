@@ -7,6 +7,8 @@ import * as settingsService from "@/services/admin/settingsService";
 import { DEFAULT_SITE_CAPABILITIES, type SiteCapabilities } from "@/types/siteCapabilities";
 import { refreshSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const FEATURE_ITEMS: Array<{ key: keyof SiteCapabilities; label: string; desc: string }> = [
   { key: "mallEnabled", label: "商城模块", desc: "控制商品、购物车等商城入口展示。" },
@@ -26,6 +28,7 @@ const FEATURE_ITEMS: Array<{ key: keyof SiteCapabilities; label: string; desc: s
 ];
 
 export default function AdminFeatureSettings() {
+  const { tText } = useAdminT();
   const queryClient = useQueryClient();
   const [values, setValues] = useState<SiteCapabilities>(DEFAULT_SITE_CAPABILITIES);
   const [saving, setSaving] = useState(false);
@@ -59,9 +62,9 @@ export default function AdminFeatureSettings() {
       setValues({ ...DEFAULT_SITE_CAPABILITIES, ...(next ?? {}) });
       await refreshSiteCapabilities();
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.siteCapabilities() });
-      toast.success("功能开关已保存");
+      toast.success(tText("功能开关已保存"));
     } catch {
-      toast.error("保存失败");
+      toast.error(tText("保存失败"));
     } finally {
       setSaving(false);
     }
@@ -69,11 +72,11 @@ export default function AdminFeatureSettings() {
 
   return (
     <div className="space-y-4 p-4">
-      <PageHeader title="功能开关" />
+      <PageHeader title={tText("功能开关")} />
       <section className="rounded-2xl border border-border bg-card">
         <div className="flex items-center justify-between gap-3 border-b border-border p-4">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-foreground">站点功能能力</h2>
+            <h2 className="text-lg font-semibold text-foreground"><Tx>站点功能能力</Tx></h2>
             <AdminFieldHint
               text={`当前启用 ${enabledCount} / ${visibleFeatureItems.length} 项。保存后立即作用于前台入口与相关接口。`}
             />

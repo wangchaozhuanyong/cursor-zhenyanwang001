@@ -1,6 +1,8 @@
 import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import type { ThemeConfig } from "@/types/theme";
 import { getThemeHealthChecks } from "@/utils/themeContrast";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type Props = {
   config: ThemeConfig;
@@ -20,7 +22,7 @@ export default function ThemeHealthSummary({ config, onOptimizeTextContrast, onT
     <div className="rounded-xl border border-border bg-background/70 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-xs font-semibold text-foreground">健康检查</p>
+          <p className="text-xs font-semibold text-foreground"><Tx>健康检查</Tx></p>
           <p className="text-[11px] text-muted-foreground">
             {issueCount === 0 ? "全部通过" : `${issueCount} 个问题`} · 通过 {pass} · 警告 {warn} · 失败 {fail}
           </p>

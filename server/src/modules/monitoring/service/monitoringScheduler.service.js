@@ -58,6 +58,43 @@ async function tickScheduledRules() {
   }
 }
 
+async function tickScheduledRulesInline() {
+  const rules = await refreshRulesCache();
+  const now = new Date();
+  const key = minuteKey(now);
+
+  for (const rule of rules) {
+    if (!rule.schedule_cron || !cronMatcher.matches(rule.schedule_cron, now)) continue;
+    if (lastTriggered.get(rule.code) === key) continue;
+    lastTriggered.set(rule.code, key);
+    try {
+      await engine.runRule(rule.code, { runType: 'scheduled_cron', force: false });
+    } catch (error) {
+      console.warn(`[monitoringScheduler] inline rule ${rule.code} failed:`, error?.message || error);
+    }
+  }
+}
+
+/** 无 Redis 时直接执行规则（适合本地开发；生产建议配置 Redis） */
+function startMonitoringSchedulerInline() {
+  if (started || process.env.MONITORING_SCHEDULER_DISABLED === '1') return;
+  started = true;
+
+  timers.push(setInterval(() => {
+    tickScheduledRulesInline().catch((error) => {
+      console.warn('[monitoringScheduler] inline cron tick failed:', error?.message || error);
+    });
+  }, 60 * 1000));
+
+  setTimeout(() => {
+    refreshRulesCache(true)
+      .then(() => tickScheduledRulesInline())
+      .catch((error) => {
+        console.warn('[monitoringScheduler] inline initial cron tick failed:', error?.message || error);
+      });
+  }, 5000);
+}
+
 function startMonitoringScheduler() {
   if (started || process.env.MONITORING_SCHEDULER_DISABLED === '1') return;
   started = true;
@@ -100,6 +137,7 @@ function stopMonitoringScheduler() {
 
 module.exports = {
   startMonitoringScheduler,
+  startMonitoringSchedulerInline,
   stopMonitoringScheduler,
   enqueueRule,
   enqueueAll,

@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { adminTableClassName } from "@/utils/adminTableClasses";
+import { AdminTableScrollContainer } from "@/components/admin/AdminTableScrollContainer";
+import { adminTableClassName, ADMIN_TABLE_STICKY_FIRST_CLASS } from "@/utils/adminTableClasses";
 import type { LucideIcon } from "lucide-react";
 import { useMotionConfig } from "../hooks/useMotionConfig";
 import { tableRowTransition } from "../motionConfig";
@@ -19,6 +20,8 @@ type AnimatedTableProps<T> = {
   footer?: ReactNode;
   /** 嵌入外层卡片时使用：去掉内层圆角/边框，分页栏在横向滚动区域外渲染 */
   embedded?: boolean;
+  /** 移动端/平板冻结首列，便于宽表横滑时定位主键列 */
+  stickyFirstColumn?: boolean;
   emptyIcon: LucideIcon;
   emptyTitle: string;
   emptyDescription?: string;
@@ -54,20 +57,24 @@ function TableFrame({
   footer?: ReactNode;
   children: ReactNode;
 }) {
-  const scrollClass = cn("overflow-x-auto", className);
+  const scrollArea = (
+    <AdminTableScrollContainer className={embedded ? className : undefined}>
+      {children}
+    </AdminTableScrollContainer>
+  );
 
   if (embedded) {
     return (
       <>
-        <div className={scrollClass}>{children}</div>
+        {scrollArea}
         {footer}
       </>
     );
   }
 
   return (
-    <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card)]">
-      <div className={scrollClass}>{children}</div>
+    <div className={cn("rounded-xl border border-[var(--theme-border)] bg-[var(--theme-card)]", className)}>
+      {scrollArea}
       {footer}
     </div>
   );
@@ -84,6 +91,7 @@ export function AnimatedTable<T>({
   theadClassName,
   footer,
   embedded,
+  stickyFirstColumn = true,
   emptyIcon,
   emptyTitle,
   emptyDescription,
@@ -92,11 +100,21 @@ export function AnimatedTable<T>({
   tableClassName,
 }: AnimatedTableProps<T>) {
   const { level, enabled } = useMotionConfig();
+  const resolvedTableClass = adminTableClassName(
+    cn(
+      "w-full text-sm text-[var(--theme-text)]",
+      stickyFirstColumn && ADMIN_TABLE_STICKY_FIRST_CLASS,
+      tableClassName,
+    ),
+  );
+  const loadingTableClass = adminTableClassName(
+    cn("w-full text-sm", stickyFirstColumn && ADMIN_TABLE_STICKY_FIRST_CLASS, tableClassName),
+  );
 
   if (loading) {
     return (
       <TableFrame embedded={embedded} className={className} footer={footer}>
-        <table className={adminTableClassName(cn("w-full text-sm", tableClassName))}>
+        <table className={loadingTableClass}>
           {thead ? <thead className={theadClassName}>{thead}</thead> : null}
           <tbody>
             <TableSkeleton rows={skeletonRows} cols={skeletonCols} />
@@ -120,7 +138,7 @@ export function AnimatedTable<T>({
 
   return (
     <TableFrame embedded={embedded} className={className} footer={footer}>
-      <table className={adminTableClassName(cn("w-full text-sm text-[var(--theme-text)]", tableClassName))}>
+      <table className={resolvedTableClass}>
         {thead ? <thead className={theadClassName}>{thead}</thead> : null}
         <tbody>
           <AnimatePresence initial={false}>

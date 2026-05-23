@@ -1,4 +1,6 @@
+import { Tx } from "@/components/admin/AdminText";
 import { NavLink } from "react-router-dom";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const tabs = [
   { to: "/admin/payments/channels", label: "渠道配置" },
@@ -8,6 +10,7 @@ const tabs = [
 ];
 
 export default function PaymentAdminSubnav() {
+  const { tText } = useAdminT();
   return (
     <div className="mb-6 flex flex-wrap gap-2 border-b border-[var(--theme-border)] pb-3">
       {tabs.map((tab) => (

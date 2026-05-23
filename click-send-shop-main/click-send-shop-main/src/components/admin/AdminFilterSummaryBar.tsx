@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 export type AdminFilterChip = {
   key: string;

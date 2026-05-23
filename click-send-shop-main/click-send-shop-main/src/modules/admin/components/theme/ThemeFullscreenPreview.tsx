@@ -8,6 +8,7 @@ import StoreHomePreview from "./StoreHomePreview";
 import type { FullscreenPreviewMode, PreviewDevice } from "./themeStudioConstants";
 import { DEVICE_WIDTH, PREVIEW_DEVICE_LABELS } from "./themeStudioConstants";
 import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const FULLSCREEN_MODES: { id: FullscreenPreviewMode; label: string }[] = [
   { id: "home", label: "前台首页" },
@@ -27,6 +28,7 @@ type Props = {
 };
 
 export default function ThemeFullscreenPreview({ open, config, onClose }: Props) {
+  const { tText } = useAdminT();
   const [mode, setMode] = useState<FullscreenPreviewMode>("home");
   const [device, setDevice] = useState<PreviewDevice>("desktop");
 
@@ -68,7 +70,7 @@ export default function ThemeFullscreenPreview({ open, config, onClose }: Props)
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="全屏预览"
+      aria-label={tText("全屏预览")}
       className="fixed inset-0 z-[100] flex flex-col bg-black/60 backdrop-blur-sm"
     >
       <header className="flex shrink-0 items-center gap-3 border-b border-white/10 bg-neutral-900 px-4 py-3 text-white">
@@ -99,7 +101,7 @@ export default function ThemeFullscreenPreview({ open, config, onClose }: Props)
             </button>
           ))}
         </div>
-        <button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-white/10" aria-label="关闭">
+        <button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-white/10" aria-label={tText("关闭")}>
           <X size={20} />
         </button>
       </header>

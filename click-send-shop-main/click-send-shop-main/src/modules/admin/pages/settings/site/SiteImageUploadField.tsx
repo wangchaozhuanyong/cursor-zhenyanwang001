@@ -5,6 +5,7 @@ import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_SITE_ASSET } from "@/constants
 import { THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 import { Tx } from "@/components/admin/AdminText";
 import type { SiteSettings } from "@/types/admin";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type Props = {
   fieldKey: keyof SiteSettings;
@@ -25,6 +26,7 @@ export default function SiteImageUploadField({
   onChange,
   onUpload,
 }: Props) {
+  const { tText } = useAdminT();
   const inputRef = useRef<HTMLInputElement>(null);
   const isSiteAsset = fieldKey === "logoUrl" || fieldKey === "faviconUrl";
   const imageHint = (
@@ -53,7 +55,7 @@ export default function SiteImageUploadField({
             type="text"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="图片 URL"
+            placeholder={tText("图片 URL")}
             className="w-full rounded-lg bg-secondary px-4 py-2 text-xs text-foreground outline-none placeholder:text-muted-foreground"
           />
           <div className="flex flex-wrap gap-2">

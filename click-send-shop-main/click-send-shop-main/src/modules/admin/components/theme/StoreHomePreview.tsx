@@ -18,10 +18,12 @@ import {
 } from "@/utils/themeVisuals";
 import { previewBanner, previewProduct } from "./themePreviewData";
 import { getProductGridClassName } from "@/utils/productGridClasses";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const categories = ["美食", "生活", "签证", "好物", "促销"];
 
 export default function StoreHomePreview({ config }: { config: ThemeConfig }) {
+  const { tText } = useAdminT();
   return (
     <div className="relative space-y-3 pb-14" data-theme-home-layout={config.homeLayout}>
       <div className="-mx-3 pointer-events-none">
@@ -43,7 +45,7 @@ export default function StoreHomePreview({ config }: { config: ThemeConfig }) {
       <PremiumCouponCard
         colorScheme="invite"
         layout="home"
-        title="中秋9.5折"
+        title={tText("中秋9.5折")}
         amount="95%"
         amountPrefix=""
         minSpendText="满 RM 100 可用"

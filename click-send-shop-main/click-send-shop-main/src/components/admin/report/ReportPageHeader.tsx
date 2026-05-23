@@ -1,6 +1,7 @@
 import { Download, Loader2 } from "lucide-react";
 import { Tx } from "@/components/admin/AdminText";
 import PermissionGate from "@/components/admin/PermissionGate";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type Props = {
   title: string;
@@ -17,11 +18,12 @@ export default function ReportPageHeader({
   exportLabel = "导出当前报表",
   onExport,
 }: Props) {
+  const { tText } = useAdminT();
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0 space-y-1">
-        <h1 className="text-xl font-bold text-foreground">{title}</h1>
-        <p className="text-sm leading-relaxed text-[var(--theme-text-muted)]">{description}</p>
+        <h1 className="text-xl font-bold text-foreground">{tText(title)}</h1>
+        <p className="text-sm leading-relaxed text-[var(--theme-text-muted)]">{tText(description)}</p>
       </div>
       {onExport ? (
         <PermissionGate permission="report.export">

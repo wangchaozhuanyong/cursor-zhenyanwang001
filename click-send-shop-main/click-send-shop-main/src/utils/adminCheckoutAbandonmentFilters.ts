@@ -13,6 +13,8 @@ const STATUS_LABELS: Record<CheckoutAbandonmentStatus, string> = {
   closed: "已关闭",
 };
 
+export const CHECKOUT_ABANDONMENT_DEFAULT_STATUS_LABEL = "待处理";
+
 export function hasActiveCheckoutAbandonmentFilters(state: CheckoutAbandonmentFilterState): boolean {
   return Boolean(state.keyword.trim() || state.status);
 }

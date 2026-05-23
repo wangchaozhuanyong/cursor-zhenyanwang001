@@ -9,6 +9,8 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { refreshSiteInfo } from "@/hooks/useSiteInfo";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type NewArrivalForm = {
   newArrivalSectionTitle: string;
@@ -27,6 +29,7 @@ const empty: NewArrivalForm = {
 };
 
 export default function AdminHomeOpsNewArrivalPanel() {
+  const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<NewArrivalForm>(empty);
@@ -55,7 +58,7 @@ export default function AdminHomeOpsNewArrivalPanel() {
   const save = async () => {
     const count = parseInt(form.newArrivalDisplayCount.trim(), 10);
     if (!Number.isFinite(count) || count < 1 || count > 16) {
-      toast.error("展示数量须为 1–16 之间的整数");
+      toast.error(tText("展示数量须为 1–16 之间的整数"));
       return;
     }
     setSaving(true);
@@ -66,7 +69,7 @@ export default function AdminHomeOpsNewArrivalPanel() {
       });
       await refreshSiteInfo();
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.siteSettings() });
-      toast.success("新品配置已保存");
+      toast.success(tText("新品配置已保存"));
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败"));
     } finally {
@@ -78,34 +81,34 @@ export default function AdminHomeOpsNewArrivalPanel() {
     <section className="rounded-2xl border border-border bg-card p-3 sm:p-4">
       <div className="mb-4">
         <AdminSectionTitle
-          title="新品配置"
+          title={tText("新品配置")}
           hint="控制首页「新品上市」横滑模块的标题、展示数量与补位规则。"
         />
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 md:gap-4">
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted-foreground">模块标题</span>
+          <span className="text-xs font-medium text-muted-foreground"><Tx>模块标题</Tx></span>
           <input
             className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
             disabled={loading}
             value={form.newArrivalSectionTitle}
             onChange={(e) => setForm((f) => ({ ...f, newArrivalSectionTitle: e.target.value }))}
-            placeholder="新品上市"
+            placeholder={tText("新品上市")}
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted-foreground">模块副标题</span>
+          <span className="text-xs font-medium text-muted-foreground"><Tx>模块副标题</Tx></span>
           <input
             className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
             disabled={loading}
             value={form.newArrivalSectionSubtitle}
             onChange={(e) => setForm((f) => ({ ...f, newArrivalSectionSubtitle: e.target.value }))}
-            placeholder="选填；前台当前未展示时可留空"
+            placeholder={tText("选填；前台当前未展示时可留空")}
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted-foreground">展示数量</span>
+          <span className="text-xs font-medium text-muted-foreground"><Tx>展示数量</Tx></span>
           <input
             className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
             disabled={loading}
@@ -118,20 +121,20 @@ export default function AdminHomeOpsNewArrivalPanel() {
           </div>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted-foreground">显示价格</span>
+          <span className="text-xs font-medium text-muted-foreground"><Tx>显示价格</Tx></span>
           <select
             className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
             disabled={loading}
             value={form.newArrivalShowPrice}
             onChange={(e) => setForm((f) => ({ ...f, newArrivalShowPrice: e.target.value }))}
           >
-            <option value="1">显示</option>
-            <option value="0">隐藏</option>
+            <option value="1"><Tx>显示</Tx></option>
+            <option value="0"><Tx>隐藏</Tx></option>
           </select>
         </label>
         <label className="flex flex-col gap-1 md:col-span-2">
           <AdminLabelWithHint
-            label="补位商品仅展示有库存"
+            label={tText("补位商品仅展示有库存")}
             hint="首页新品位优先展示后台标记为「新品」的商品；数量不足时，用最近 14 天内上架的商品补足。选「是」时，补位只拉取库存 > 0 的商品；选「否」时补位可含零库存商品。"
             className="mb-0"
           />
@@ -141,8 +144,8 @@ export default function AdminHomeOpsNewArrivalPanel() {
             value={form.newArrivalOnlyInStock}
             onChange={(e) => setForm((f) => ({ ...f, newArrivalOnlyInStock: e.target.value }))}
           >
-            <option value="1">是（推荐）</option>
-            <option value="0">否</option>
+            <option value="1"><Tx>是（推荐）</Tx></option>
+            <option value="0"><Tx>否</Tx></option>
           </select>
         </label>
       </div>

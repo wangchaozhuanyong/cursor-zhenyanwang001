@@ -19,8 +19,10 @@ import {
   removeCouponRecordFilterChip,
 } from "@/utils/adminCouponRecordFilters";
 import { Tx } from "@/components/admin/AdminText";
-import { formatUserDisplay, labelCouponRecordStatus } from "@/utils/adminDisplayLabels";
+import { formatUserDisplay } from "@/utils/adminDisplayLabels";
+import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { THEME_BADGE_SUCCESS } from "@/utils/themeVisuals";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const statusLabels: Record<string, { label: string; color: string }> = {
   available: { label: "未使用", color: "bg-gold/10 text-theme-price" },
@@ -29,6 +31,8 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 };
 
 export default function AdminCouponRecords() {
+  const { tText } = useAdminT();
+  const { couponRecordStatus: labelCouponRecordStatus, text: L } = useAdminDisplayLabel();
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
 
@@ -86,7 +90,7 @@ export default function AdminCouponRecords() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <SearchBar placeholder="搜索用户/优惠券" value={search} onChange={(value) => { setSearch(value); setPage(1); }} />
+        <SearchBar placeholder={tText("搜索用户/优惠券")} value={search} onChange={(value) => { setSearch(value); setPage(1); }} />
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
@@ -140,7 +144,7 @@ export default function AdminCouponRecords() {
             </td>
             <td className="px-4 py-3">
               <span className={`rounded-full px-2 py-0.5 text-xs ${statusLabels[record.status]?.color || "bg-secondary text-foreground"}`}>
-                {statusLabels[record.status]?.label || labelCouponRecordStatus(record.status)}
+                {statusLabels[record.status]?.label ? L(statusLabels[record.status].label) : labelCouponRecordStatus(record.status)}
               </span>
             </td>
             <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(record.claimed_at)}</td>

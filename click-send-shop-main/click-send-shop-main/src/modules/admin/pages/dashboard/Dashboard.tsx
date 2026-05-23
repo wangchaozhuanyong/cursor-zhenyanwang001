@@ -11,10 +11,11 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import type { DashboardRangePreset } from "@/types/admin";
 import { getErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
-import { getOrderStatusBadgeClass, getOrderStatusLabel } from "@/constants/statusDictionary";
+import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { useAdminTOptional } from "@/hooks/useAdminT";
 import { formatTimezoneLabel } from "@/utils/formatTimezoneLabel";
+import { Tx } from "@/components/admin/AdminText";
 
 const RANGE_OPTIONS: { value: DashboardRangePreset; label: string }[] = [
   { value: "today", label: "今天" },
@@ -40,6 +41,7 @@ function money(value: unknown) {
 }
 
 export default function Dashboard() {
+  const { tText } = useAdminT();
   const navigate = useNavigate();
   const can = useAdminPermissionStore((s) => s.can);
   const { locale } = useAdminTOptional();
@@ -100,11 +102,11 @@ export default function Dashboard() {
 
   const applyCustomRange = () => {
     if (!draftFrom || !draftTo) {
-      toast.error("请选择开始和结束日期");
+      toast.error(tText("请选择开始和结束日期"));
       return;
     }
     if (draftFrom > draftTo) {
-      toast.error("开始日期不能晚于结束日期");
+      toast.error(tText("开始日期不能晚于结束日期"));
       return;
     }
     setDateFrom(draftFrom);
@@ -150,7 +152,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-5 sm:space-y-6">
       <header className="flex min-w-0 items-center gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <h1 className="shrink-0 text-lg font-bold text-foreground sm:text-xl">经营仪表盘</h1>
+        <h1 className="shrink-0 text-lg font-bold text-foreground sm:text-xl"><Tx>经营仪表盘</Tx></h1>
         {rangeMeta ? (
           <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">{rangeMeta}</span>
         ) : null}
@@ -194,33 +196,33 @@ export default function Dashboard() {
       {error ? (
         <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--theme-danger)]/30 bg-[color-mix(in_srgb,var(--theme-danger)_8%,transparent)] px-3 py-2 text-xs text-[var(--theme-danger)]">
           <span>{error}</span>
-          <button type="button" onClick={() => void dashboardQuery.refetch()} className="font-semibold underline">重试</button>
+          <button type="button" onClick={() => void dashboardQuery.refetch()} className="font-semibold underline"><Tx>重试</Tx></button>
         </div>
       ) : null}
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold text-foreground">经营概览</h2>
+        <h2 className="mb-3 text-sm font-semibold text-foreground"><Tx>经营概览</Tx></h2>
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <StatsCard icon={DollarSign} label={`${rangeMetricPrefix}销售额`} value={money(today.revenue ?? stats?.todayRevenue)} onClick={() => navigate(overviewReportPath)} />
           <StatsCard icon={ShoppingCart} label={`${rangeMetricPrefix}支付订单`} value={today.paidOrders ?? 0} onClick={() => navigate("/admin/orders?payment_status=paid")} />
           <StatsCard icon={Package} label={`${rangeMetricPrefix}下单数`} value={today.orderCount ?? stats?.todayOrders ?? 0} onClick={() => navigate("/admin/orders")} />
           <StatsCard icon={Users} label={`${rangeMetricPrefix}新增用户`} value={today.newUsers ?? stats?.todayNewUsers ?? 0} onClick={() => navigate("/admin/users")} />
-          <StatsCard icon={AlertTriangle} label="当前待付款" value={today.pendingPayment ?? 0} onClick={() => navigate("/admin/orders?payment_status=pending")} />
-          <StatsCard icon={Truck} label="当前待发货" value={today.pendingShip ?? stats?.pendingOrders ?? 0} onClick={() => navigate("/admin/orders?status=paid")} />
-          <StatsCard icon={RefreshCw} label="当前待售后" value={today.pendingAfterSale ?? 0} onClick={() => navigate("/admin/returns")} />
-          <StatsCard icon={Package} label="当前低库存" value={today.lowStock ?? 0} onClick={() => navigate("/admin/inventory")} />
+          <StatsCard icon={AlertTriangle} label={tText("当前待付款")} value={today.pendingPayment ?? 0} onClick={() => navigate("/admin/orders?payment_status=pending")} />
+          <StatsCard icon={Truck} label={tText("当前待发货")} value={today.pendingShip ?? stats?.pendingOrders ?? 0} onClick={() => navigate("/admin/orders?status=paid")} />
+          <StatsCard icon={RefreshCw} label={tText("当前待售后")} value={today.pendingAfterSale ?? 0} onClick={() => navigate("/admin/returns")} />
+          <StatsCard icon={Package} label={tText("当前低库存")} value={today.lowStock ?? 0} onClick={() => navigate("/admin/inventory")} />
         </div>
       </section>
 
       <section className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-5 theme-shadow">
-        <h2 className="mb-3 text-sm font-semibold text-foreground">待办中心</h2>
+        <h2 className="mb-3 text-sm font-semibold text-foreground"><Tx>待办中心</Tx></h2>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           {[
-            { label: "待发货订单", value: todos.pendingShip ?? 0, path: "/admin/orders?status=paid" },
-            { label: "退款/售后", value: todos.afterSale ?? 0, path: "/admin/returns" },
-            { label: "付款失败", value: todos.paymentFailed ?? 0, path: "/admin/orders?payment_status=failed" },
-            { label: "低库存", value: todos.lowStock ?? 0, path: "/admin/inventory" },
-            { label: "缺货商品", value: todos.outOfStock ?? 0, path: "/admin/inventory" },
+            { label: tText("待发货订单"), value: todos.pendingShip ?? 0, path: "/admin/orders?status=paid" },
+            { label: tText("退款/售后"), value: todos.afterSale ?? 0, path: "/admin/returns" },
+            { label: tText("付款失败"), value: todos.paymentFailed ?? 0, path: "/admin/orders?payment_status=failed" },
+            { label: tText("低库存"), value: todos.lowStock ?? 0, path: "/admin/inventory" },
+            { label: tText("缺货商品"), value: todos.outOfStock ?? 0, path: "/admin/inventory" },
           ].map((item) => (
             <button key={item.label} type="button" onClick={() => navigate(item.path)} className="touch-manipulation rounded-xl border border-[var(--theme-border)] p-3 text-left transition hover:bg-[var(--theme-bg)]">
               <p className="text-[11px] text-muted-foreground">{item.label}</p>
@@ -233,7 +235,7 @@ export default function Dashboard() {
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-5 theme-shadow">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-sm font-semibold text-foreground">经营趋势</h3>
+            <h3 className="text-sm font-semibold text-foreground"><Tx>经营趋势</Tx></h3>
             <div className="flex flex-wrap gap-1">
               {TREND_METRICS.map((metric) => (
                 <button key={metric.key} type="button" onClick={() => setTrendMetric(metric.key)} className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${trendMetric === metric.key ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]" : "border border-[var(--theme-border)] text-muted-foreground"}`}>
@@ -254,16 +256,16 @@ export default function Dashboard() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-          ) : <p className="py-8 text-center text-sm text-muted-foreground">暂无趋势数据</p>}
+          ) : <p className="py-8 text-center text-sm text-muted-foreground"><Tx>暂无趋势数据</Tx></p>}
         </div>
 
         <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-5 theme-shadow">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">累计概览</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground"><Tx>累计概览</Tx></h3>
           <div className="space-y-3 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">累计订单</span><strong>{stats?.totalOrders ?? 0}</strong></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">累计销售额</span><strong>{money(stats?.totalRevenue)}</strong></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">用户总数</span><strong>{stats?.totalUsers ?? 0}</strong></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">在售商品</span><strong>{stats?.totalProducts ?? 0}</strong></div>
+            <div className="flex justify-between"><span className="text-muted-foreground"><Tx>累计订单</Tx></span><strong>{stats?.totalOrders ?? 0}</strong></div>
+            <div className="flex justify-between"><span className="text-muted-foreground"><Tx>累计销售额</Tx></span><strong>{money(stats?.totalRevenue)}</strong></div>
+            <div className="flex justify-between"><span className="text-muted-foreground"><Tx>用户总数</Tx></span><strong>{stats?.totalUsers ?? 0}</strong></div>
+            <div className="flex justify-between"><span className="text-muted-foreground"><Tx>在售商品</Tx></span><strong>{stats?.totalProducts ?? 0}</strong></div>
           </div>
         </div>
       </section>
@@ -271,8 +273,8 @@ export default function Dashboard() {
       {canViewOrders ? (
         <section className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 sm:p-5 theme-shadow">
           <div className="mb-3 flex items-center justify-between gap-2">
-            <h3 className="text-sm font-semibold text-foreground">最近订单</h3>
-            <button type="button" onClick={() => navigate("/admin/orders")} className="text-xs text-[var(--theme-price)] hover:underline">查看全部</button>
+            <h3 className="text-sm font-semibold text-foreground"><Tx>最近订单</Tx></h3>
+            <button type="button" onClick={() => navigate("/admin/orders")} className="text-xs text-[var(--theme-price)] hover:underline"><Tx>查看全部</Tx></button>
           </div>
           {(stats?.recentOrders ?? []).length > 0 ? (
             <div className="divide-y divide-[var(--theme-border)]">
@@ -284,12 +286,12 @@ export default function Dashboard() {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-foreground">{money(o.total_amount)}</p>
-                    <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] ${getOrderStatusBadgeClass(o.status)}`}>{getOrderStatusLabel(o.status)}</span>
+                    <span className="mt-1 inline-flex"><OrderStatusBadge status={o.status} /></span>
                   </div>
                 </button>
               ))}
             </div>
-          ) : <p className="py-4 text-center text-sm text-muted-foreground">暂无订单</p>}
+          ) : <p className="py-4 text-center text-sm text-muted-foreground"><Tx>暂无订单</Tx></p>}
         </section>
       ) : null}
     </div>

@@ -39,7 +39,11 @@ def should_skip(s: str) -> bool:
 
 
 def collect_from_file(path: Path, found: set[str]) -> None:
-    text = path.read_text(encoding="utf-8")
+    try:
+        text = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        text = path.read_text(encoding="utf-8", errors="replace")
+        print(f"[extract_admin_zh] warning: repaired invalid UTF-8 in {path}")
     for m in STRING_RE.finditer(text):
         s = m.group(1) or m.group(2) or ""
         s = s.strip()

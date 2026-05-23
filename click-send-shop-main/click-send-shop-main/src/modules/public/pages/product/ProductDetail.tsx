@@ -32,7 +32,7 @@ import { THEME_ALERT_DANGER_SHELL, THEME_BTN_ACCENT_SOLID } from "@/utils/themeV
 import { trackEvent } from "@/services/analyticsService";
 import { buildProductSharePayload } from "@/utils/productShare";
 import { getProductSalesCount, hasProductSales, productSalesDetailLabel } from "@/utils/productSales";
-import { openCustomerService } from "@/utils/customerService";
+import { buildSupportPageUrl, openCustomerService } from "@/utils/customerService";
 import { cn } from "@/lib/utils";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical, stripHtml, truncateText } from "@/utils/seo";
@@ -340,8 +340,8 @@ export default function ProductDetail() {
       else toast.error("复制失败，请手动复制微信号");
       return;
     }
-    if (result.action === "contact_page") {
-      navigate("/content/contact-us");
+    if (result.action === "support_page") {
+      navigate(buildSupportPageUrl(result.channelId));
     }
   };
 

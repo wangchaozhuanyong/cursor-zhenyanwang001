@@ -28,12 +28,16 @@ import { AdminInputSheet } from "@/modules/admin/components/AdminInputSheet";
 import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
 import type { MemberLevel, UserEditForm, UserProfile, UserStatusOverview, UserTag } from "@/types/user";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
+import { formatAccountStatusLabel } from "@/utils/adminUserFilters";
 
 const tabs = ["基础资料", "订单记录", "地址信息", "积分/优惠券", "邀请/返现", "售后记录", "评论记录", "操作日志"] as const;
 
 type TabType = (typeof tabs)[number];
 
 export default function AdminUserDetail() {
+  const { tText } = useAdminT();
   const navigate = useNavigate();
   const goBack = useGoBack("/admin/users");
   const { id = "" } = useParams();
@@ -88,8 +92,7 @@ export default function AdminUserDetail() {
 
   const doResetPassword = () => {
     if (!id) return;
-    confirm({
-      title: "确认重置密码",
+    confirm({ title: tText("确认重置密码"),
       description: "将为该用户生成临时密码并复制到剪贴板。",
       confirmText: "重置",
       onConfirm: async () => {
@@ -147,24 +150,26 @@ export default function AdminUserDetail() {
       await updateUserProfile(id, editForm);
       setEditOpen(false);
       await invalidateUserDetail();
-      toast.success("资料已保存");
+      toast.success(tText("资料已保存"));
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败"));
     }
   };
 
-  if (loading && !user) return <div className="p-6">加载中...</div>;
+  if (loading && !user) return <div className="p-6"><Tx>加载中...</Tx></div>;
   if (loadError && !user) {
     return (
       <div className="space-y-3 p-6">
         <p className="text-sm text-[var(--theme-danger)]">{loadError}</p>
-        <button type="button" className="rounded border px-3 py-1.5 text-xs" onClick={goBack}>返回用户列表</button>
+        <button type="button" className="rounded border px-3 py-1.5 text-xs" onClick={goBack}><Tx>返回用户列表</Tx></button>
       </div>
     );
   }
-  if (!user) return <div className="p-6">用户不存在</div>;
+  if (!user) return <div className="p-6"><Tx>用户不存在</Tx></div>;
 
   const userTagIds = new Set((user.tags || []).map((t) => t.id));
+  const accountStatusRaw = statusOverview?.account_status || user.account_status || "normal";
+  const accountStatusLabel = tText(formatAccountStatusLabel(accountStatusRaw));
 
   return (
     <div className="space-y-4">
@@ -172,7 +177,7 @@ export default function AdminUserDetail() {
         <button type="button" onClick={goBack} className="rounded-md border border-border p-1.5 hover:bg-secondary">
           <ArrowLeft size={16} />
         </button>
-        <h2 className="text-lg font-semibold">用户详情</h2>
+        <h2 className="text-lg font-semibold"><Tx>用户详情</Tx></h2>
       </div>
 
       <section className="rounded-xl border border-border bg-card p-4">
@@ -183,25 +188,25 @@ export default function AdminUserDetail() {
               <span className="truncate">{user.nickname || "未命名用户"}</span>
             </div>
             <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-              <InfoItem label="用户ID" value={user.id || "-"} />
-              <InfoItem label="手机号" value={user.phone || "-"} />
-              <InfoItem label="微信" value={user.wechat || "-"} />
+              <InfoItem label={tText("用户ID")} value={user.id || "-"} />
+              <InfoItem label={tText("手机号")} value={user.phone || "-"} />
+              <InfoItem label={tText("微信")} value={user.wechat || "-"} />
               <InfoItem label="WhatsApp" value={user.whatsapp || "-"} />
-              <InfoItem label="账号状态" value={statusOverview?.account_status || user.account_status || "normal"} />
-              <InfoItem label="邀请码" value={user.invite_code || "-"} />
+              <InfoItem label={tText("账号状态")} value={accountStatusLabel} />
+              <InfoItem label={tText("邀请码")} value={user.invite_code || "-"} />
             </div>
           </div>
 
           <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-2 text-xs text-foreground">
-            <span>操作提示</span>
+            <span><Tx>操作提示</Tx></span>
             <AdminFieldHint text="建议优先在「基础资料」核对状态，再处理限制类操作" />
           </div>
         </div>
         <div className="mt-3 grid gap-2 text-xs sm:grid-cols-4">
-          <InfoCard title="账户状态" value={statusOverview?.account_status || "normal"} />
-          <InfoCard title="下单限制" value={statusOverview?.restrictions?.order_restricted ? "已限制" : "未限制"} />
-          <InfoCard title="领券限制" value={statusOverview?.restrictions?.coupon_restricted ? "已限制" : "未限制"} />
-          <InfoCard title="评论限制" value={statusOverview?.restrictions?.comment_restricted ? "已限制" : "未限制"} />
+          <InfoCard title={tText("账户状态")} value={accountStatusLabel} />
+          <InfoCard title={tText("下单限制")} value={statusOverview?.restrictions?.order_restricted ? "已限制" : "未限制"} />
+          <InfoCard title={tText("领券限制")} value={statusOverview?.restrictions?.coupon_restricted ? "已限制" : "未限制"} />
+          <InfoCard title={tText("评论限制")} value={statusOverview?.restrictions?.comment_restricted ? "已限制" : "未限制"} />
         </div>
         {statusOverview?.latest_status_action ? (
           <p className="mt-2 text-xs text-muted-foreground">
@@ -211,18 +216,18 @@ export default function AdminUserDetail() {
       </section>
 
       <section className="rounded-xl border border-border bg-card p-4">
-        <h3 className="mb-3 text-sm font-semibold">快捷操作</h3>
+        <h3 className="mb-3 text-sm font-semibold"><Tx>快捷操作</Tx></h3>
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          <PermissionGate permission="user.update"><ActionBtn label="编辑资料" onClick={() => { setEditOpen(true); setEditForm({ nickname: user.nickname, phone: user.phone, wechat: user.wechat, whatsapp: user.whatsapp, avatar: user.avatar, birthday: user.birthday ? String(user.birthday).slice(0, 10) : "", birthday_locked: !!user.birthday_locked }); }} /></PermissionGate>
-          <PermissionGate permission="user.update"><ActionBtn label="重置密码" onClick={doResetPassword} /></PermissionGate>
-          <PermissionGate permission="user.update"><ActionBtn label="禁用登录" disabled={(statusOverview?.account_status || user.account_status) === "disabled"} onClick={() => void doStatus("disabled")} danger /></PermissionGate>
-          <PermissionGate permission="user.update"><ActionBtn label="恢复账号" disabled={(statusOverview?.account_status || user.account_status) === "normal"} onClick={() => void doStatus("normal")} /></PermissionGate>
-          <PermissionGate permission="user.update"><ActionBtn label="加入黑名单" disabled={(statusOverview?.account_status || user.account_status) === "blacklisted"} onClick={() => void doStatus("blacklisted")} danger /></PermissionGate>
+          <PermissionGate permission="user.update"><ActionBtn label={tText("编辑资料")} onClick={() => { setEditOpen(true); setEditForm({ nickname: user.nickname, phone: user.phone, wechat: user.wechat, whatsapp: user.whatsapp, avatar: user.avatar, birthday: user.birthday ? String(user.birthday).slice(0, 10) : "", birthday_locked: !!user.birthday_locked }); }} /></PermissionGate>
+          <PermissionGate permission="user.update"><ActionBtn label={tText("重置密码")} onClick={doResetPassword} /></PermissionGate>
+          <PermissionGate permission="user.update"><ActionBtn label={tText("禁用登录")} disabled={(statusOverview?.account_status || user.account_status) === "disabled"} onClick={() => void doStatus("disabled")} danger /></PermissionGate>
+          <PermissionGate permission="user.update"><ActionBtn label={tText("恢复账号")} disabled={(statusOverview?.account_status || user.account_status) === "normal"} onClick={() => void doStatus("normal")} /></PermissionGate>
+          <PermissionGate permission="user.update"><ActionBtn label={tText("加入黑名单")} disabled={(statusOverview?.account_status || user.account_status) === "blacklisted"} onClick={() => void doStatus("blacklisted")} danger /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.order_restricted ? "取消下单限制" : "开启下单限制"} onClick={() => void doRestriction("order", !statusOverview?.restrictions?.order_restricted)} /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.coupon_restricted ? "取消领券限制" : "开启领券限制"} onClick={() => void doRestriction("coupon", !statusOverview?.restrictions?.coupon_restricted)} /></PermissionGate>
           <PermissionGate permission="user.update"><ActionBtn label={statusOverview?.restrictions?.comment_restricted ? "取消评论限制" : "开启评论限制"} onClick={() => void doRestriction("comment", !statusOverview?.restrictions?.comment_restricted)} /></PermissionGate>
-          {canManageMemberLevel ? <ActionBtn label="按规则重新计算" onClick={async () => { try { await recalculateUserMemberLevel(id, { force: true }); await invalidateUserDetail(); toast.success("会员等级已按规则重算"); } catch (e) { toast.error(toastErrorMessage(e, "重算失败")); } }} /> : null}
-          {canManageMemberLevel ? <ActionBtn label="解除手动锁定" disabled={!Number(user.member_level_manual_locked || 0)} onClick={async () => { try { await unlockUserMemberLevel(id); await invalidateUserDetail(); toast.success("已解除手动锁定"); } catch (e) { toast.error(toastErrorMessage(e, "解除失败")); } }} /> : null}
+          {canManageMemberLevel ? <ActionBtn label={tText("按规则重新计算")} onClick={async () => { try { await recalculateUserMemberLevel(id, { force: true }); await invalidateUserDetail(); toast.success(tText("会员等级已按规则重算")); } catch (e) { toast.error(toastErrorMessage(e, "重算失败")); } }} /> : null}
+          {canManageMemberLevel ? <ActionBtn label={tText("解除手动锁定")} disabled={!Number(user.member_level_manual_locked || 0)} onClick={async () => { try { await unlockUserMemberLevel(id); await invalidateUserDetail(); toast.success(tText("已解除手动锁定")); } catch (e) { toast.error(toastErrorMessage(e, "解除失败")); } }} /> : null}
         </div>
       </section>
 
@@ -245,14 +250,14 @@ export default function AdminUserDetail() {
         {tab === "基础资料" && (
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <InfoCard title="昵称" value={user.nickname || "-"} />
-              <InfoCard title="手机号" value={user.phone || "-"} />
-              <InfoCard title="生日" value={user.birthday ? String(user.birthday).slice(0, 10) : "未填写"} />
-              <InfoCard title="生日锁定" value={user.birthday_locked ? "是" : "否"} />
-              <InfoCard title="状态" value={user.account_status || "normal"} />
+              <InfoCard title={tText("昵称")} value={user.nickname || "-"} />
+              <InfoCard title={tText("手机号")} value={user.phone || "-"} />
+              <InfoCard title={tText("生日")} value={user.birthday ? String(user.birthday).slice(0, 10) : "未填写"} />
+              <InfoCard title={tText("生日锁定")} value={user.birthday_locked ? "是" : "否"} />
+              <InfoCard title={tText("状态")} value={accountStatusLabel} />
             </div>
             <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="text-muted-foreground">会员等级</span>
+              <span className="text-muted-foreground"><Tx>会员等级</Tx></span>
               {canManageMemberLevel && !levelsLoadFailed ? (
                 <select
                   className="min-w-[12rem] rounded-lg border border-border bg-background px-2.5 py-2 text-sm"
@@ -263,7 +268,7 @@ export default function AdminUserDetail() {
                     setReasonPrompt({ kind: "memberLevel", levelId });
                   }}
                 >
-                  <option value="">未设置</option>
+                  <option value=""><Tx>未设置</Tx></option>
                   {levels.filter((lv) => lv.enabled !== false).map((lv) => <option key={lv.id} value={lv.id}>{lv.name}</option>)}
                 </select>
               ) : (
@@ -274,35 +279,35 @@ export default function AdminUserDetail() {
                   手动指定等级{user.member_level_manual_reason ? `：${user.member_level_manual_reason}` : ""}
                 </span>
               ) : null}
-              {levelsLoadFailed ? <span className="text-xs text-muted-foreground">会员等级配置加载失败，已隐藏编辑入口</span> : null}
+              {levelsLoadFailed ? <span className="text-xs text-muted-foreground"><Tx>会员等级配置加载失败，已隐藏编辑入口</Tx></span> : null}
             </div>
           </div>
         )}
 
-        {tab === "订单记录" && <DataList title="最近订单" rows={user.related?.recent_orders} onAll={() => navigate(`/admin/orders?userId=${user.id}`)} />}
-        {tab === "地址信息" && <DataList title="地址列表" rows={user.related?.addresses} />}
+        {tab === "订单记录" && <DataList title={tText("最近订单")} rows={user.related?.recent_orders} onAll={() => navigate(`/admin/orders?userId=${user.id}`)} />}
+        {tab === "地址信息" && <DataList title={tText("地址列表")} rows={user.related?.addresses} />}
         {tab === "积分/优惠券" && (
           <div className="space-y-4">
             <div className="rounded-lg border border-border bg-secondary/30 p-3 text-sm">
-              <span className="text-muted-foreground">优惠券统计：</span>
+              <span className="text-muted-foreground"><Tx>优惠券统计：</Tx></span>
               <span className="ml-1 break-all">{JSON.stringify(user.related?.coupon_stats || {})}</span>
             </div>
-            <DataList title="积分记录" rows={user.related?.points_records} onAll={() => navigate(`/admin/points/records?userId=${user.id}`)} />
+            <DataList title={tText("积分记录")} rows={user.related?.points_records} onAll={() => navigate(`/admin/points/records?userId=${user.id}`)} />
           </div>
         )}
         {tab === "邀请/返现" && (
           <div className="space-y-4">
-            <DataList title="直属邀请" rows={user.related?.invite_relation?.direct_invites} onAll={() => navigate(`/admin/marketing/invites?keyword=${user.invite_code || ""}`)} />
-            <DataList title="返现记录" rows={user.related?.cashback_records} onAll={() => navigate(`/admin/rewards/records?userId=${user.id}`)} />
+            <DataList title={tText("直属邀请")} rows={user.related?.invite_relation?.direct_invites} onAll={() => navigate(`/admin/marketing/invites?keyword=${user.invite_code || ""}`)} />
+            <DataList title={tText("返现记录")} rows={user.related?.cashback_records} onAll={() => navigate(`/admin/rewards/records?userId=${user.id}`)} />
           </div>
         )}
-        {tab === "售后记录" && <DataList title="售后记录" rows={user.related?.after_sales} onAll={() => navigate(`/admin/returns?userId=${user.id}`)} />}
-        {tab === "评论记录" && <DataList title="评论记录" rows={user.related?.review_records} onAll={() => navigate(`/admin/reviews?keyword=${user.id}`)} />}
-        {tab === "操作日志" && <DataList title="操作日志" rows={user.operation_logs} onAll={() => navigate(`/admin/audit-logs?objectType=user&objectId=${user.id}`)} />}
+        {tab === "售后记录" && <DataList title={tText("售后记录")} rows={user.related?.after_sales} onAll={() => navigate(`/admin/returns?userId=${user.id}`)} />}
+        {tab === "评论记录" && <DataList title={tText("评论记录")} rows={user.related?.review_records} onAll={() => navigate(`/admin/reviews?keyword=${user.id}`)} />}
+        {tab === "操作日志" && <DataList title={tText("操作日志")} rows={user.operation_logs} onAll={() => navigate(`/admin/audit-logs?objectType=user&objectId=${user.id}`)} />}
       </section>
 
       <section className="rounded-xl border border-border bg-card p-4">
-        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold"><ShieldAlert size={15} /> 用户标签</h3>
+        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold"><ShieldAlert size={15} /><Tx>用户标签</Tx></h3>
         <div className="flex flex-wrap gap-2">
           {allTags.map((tag) => (
             <button
@@ -325,7 +330,7 @@ export default function AdminUserDetail() {
       <AdminFormSheet
         open={editOpen}
         onOpenChange={setEditOpen}
-        title="编辑资料"
+        title={tText("编辑资料")}
         submitText="保存"
         onSubmit={saveProfile}
         size="md"
@@ -396,7 +401,7 @@ export default function AdminUserDetail() {
             } else {
               await assignUserMemberLevel(id, reasonPrompt.levelId, reason);
               await invalidateUserDetail();
-              toast.success("会员等级已手动指定并锁定");
+              toast.success(tText("会员等级已手动指定并锁定"));
             }
           } catch (e) {
             toast.error(toastErrorMessage(e, "操作失败"));
@@ -440,10 +445,10 @@ function DataList({ title, rows, onAll }: { title: string; rows?: Record<string,
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-semibold">{title}</h4>
-        {onAll ? <button type="button" className="text-xs text-[var(--theme-price)] hover:underline" onClick={onAll}>查看全部</button> : null}
+        {onAll ? <button type="button" className="text-xs text-[var(--theme-price)] hover:underline" onClick={onAll}><Tx>查看全部</Tx></button> : null}
       </div>
       {list.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-background p-4 text-sm text-muted-foreground">暂无数据</div>
+        <div className="rounded-lg border border-dashed border-border bg-background p-4 text-sm text-muted-foreground"><Tx>暂无数据</Tx></div>
       ) : (
         <div className="space-y-2">
           {list.slice(0, 8).map((row, i) => (
@@ -451,7 +456,7 @@ function DataList({ title, rows, onAll }: { title: string; rows?: Record<string,
               <p className="break-all">{toReadableText(row)}</p>
             </article>
           ))}
-          {list.length > 8 ? <p className="text-xs text-muted-foreground">仅展示前 8 条，请点击“查看全部”</p> : null}
+          {list.length > 8 ? <p className="text-xs text-muted-foreground"><Tx>仅展示前 8 条，请点击“查看全部”</Tx></p> : null}
         </div>
       )}
     </div>

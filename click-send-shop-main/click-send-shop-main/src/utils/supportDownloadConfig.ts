@@ -1,7 +1,6 @@
 import type {
   DownloadPlatform,
   DownloadPlatformType,
-  SiteInfo,
   SupportChannelType,
   SupportDownloadChannel,
   SupportDownloadConfig,
@@ -170,16 +169,18 @@ export function normalizeSupportDownloadConfig(config: LegacySupportDownloadConf
   };
 }
 
-export function parseSupportDownloadConfig(
-  raw: string | undefined,
-  siteInfo?: SiteInfo,
-): SupportDownloadConfig {
+/** 前台客服中心页默认入口（与底部导航、订单「联系客服」一致） */
+export const SUPPORT_PAGE_PATH = "/support-download?tab=support";
+
+export function buildSupportPageUrl(channelId?: string): string {
+  const id = trim(channelId);
+  if (!id) return SUPPORT_PAGE_PATH;
+  return `/support-download?channelId=${encodeURIComponent(id)}&tab=support`;
+}
+
+export function parseSupportDownloadConfig(raw: string | undefined): SupportDownloadConfig {
   if (!raw?.trim()) {
-    const base = normalizeSupportDownloadConfig(DEFAULT_SUPPORT_DOWNLOAD_CONFIG);
-    if (siteInfo?.businessHours) {
-      return { ...base, support: { ...base.support, workingHours: trim(siteInfo.businessHours) } };
-    }
-    return base;
+    return normalizeSupportDownloadConfig(DEFAULT_SUPPORT_DOWNLOAD_CONFIG);
   }
   try {
     const parsed = JSON.parse(raw) as LegacySupportDownloadConfig;

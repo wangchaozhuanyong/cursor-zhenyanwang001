@@ -7,6 +7,7 @@ import AdminHomeOpsDisplayPanel from "./homeOps/AdminHomeOpsDisplayPanel";
 import AdminHomeOpsModulePanel from "./homeOps/AdminHomeOpsModulePanel";
 import AdminHomeOpsNewArrivalPanel from "./homeOps/AdminHomeOpsNewArrivalPanel";
 import AdminHomeNavEditor from "./homeOps/AdminHomeNavEditor";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type HomeOpsTab = "modules" | "display" | "nav" | "newArrival";
 
@@ -18,6 +19,7 @@ const HOME_OPS_TABS: { id: HomeOpsTab; label: string; icon: React.ElementType; d
 ];
 
 export default function AdminHomeOps() {
+  const { tText } = useAdminT();
   const [activeTab, setActiveTab] = useState<HomeOpsTab>("modules");
 
   return (
@@ -31,7 +33,7 @@ export default function AdminHomeOps() {
       <div className="space-y-4">
         <nav
           className="flex flex-wrap gap-2 border-b border-border pb-3"
-          aria-label="首页运营分区"
+          aria-label={tText("首页运营分区")}
         >
           {HOME_OPS_TABS.map((tab) => {
             const Icon = tab.icon;

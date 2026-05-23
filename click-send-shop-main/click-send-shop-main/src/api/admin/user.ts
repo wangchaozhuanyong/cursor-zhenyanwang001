@@ -40,10 +40,6 @@ export function updateUser(id: string, data: Partial<UserProfile>) {
   return put<UserProfile>(`/admin/users/${id}`, data);
 }
 
-export function updateUserStatus(id: string, accountStatus: string) {
-  return put<void>(`/admin/users/${id}/status`, { accountStatus });
-}
-
 export function updateUserAccountStatus(id: string, accountStatus: string, reason?: string) {
   return put<void>(`/admin/users/${id}/account-status`, { accountStatus, reason });
 }

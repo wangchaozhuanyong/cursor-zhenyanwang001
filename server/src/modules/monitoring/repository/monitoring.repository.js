@@ -301,9 +301,11 @@ async function listRepairTasks(query = {}) {
   if (query.anomalyId) { where += ' AND t.anomaly_id = ?'; params.push(query.anomalyId); }
   const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total FROM data_repair_tasks t ${where}`, params);
   const [rows] = await db.query(
-    `SELECT t.*, a.title AS anomaly_title, a.rule_code, a.severity, a.entity_type, a.entity_id
+    `SELECT t.*, a.title AS anomaly_title, a.rule_code, a.severity, a.entity_type, a.entity_id,
+            COALESCE(NULLIF(u.nickname, ''), u.phone, t.operator_id) AS operator_label
      FROM data_repair_tasks t
      JOIN data_consistency_anomalies a ON a.id = t.anomaly_id
+     LEFT JOIN users u ON u.id = t.operator_id AND u.deleted_at IS NULL
      ${where}
      ORDER BY t.created_at DESC LIMIT ? OFFSET ?`,
     [...params, pageSize, offset],

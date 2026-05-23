@@ -1,43 +1,62 @@
+import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { copyToClipboard } from "@/utils/clipboard";
+import { useSupportRuntime } from "@/hooks/useSupportRuntime";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import type { SiteInfo } from "@/types/content";
+import { buildTelegramLink, buildWhatsAppLink, getChannelTitle } from "@/utils/supportChannels";
 
 export type SiteSocialLinksProps = Pick<
   SiteInfo,
-  | "whatsappUrl"
-  | "contactWhatsApp"
-  | "wechatId"
-  | "instagramUrl"
-  | "facebookUrl"
-  | "tiktokUrl"
-  | "xhsUrl"
+  "instagramUrl" | "facebookUrl" | "tiktokUrl" | "xhsUrl"
 > & {
   className?: string;
   /** pill：卡片页（关于我们）；footer / profile：主题变量，与页脚、个人中心一致 */
   tone?: "pill" | "footer" | "profile";
 };
 
-function buildSocialEntries(site: SiteSocialLinksProps) {
-  const wechatId = site.wechatId?.trim();
-  const wa = (site.whatsappUrl || "").trim();
-  return [
-    { label: "WhatsApp", url: wa, isWechat: false as const },
-    { label: "WeChat", url: "", isWechat: true as const },
-    { label: "Instagram", url: (site.instagramUrl || "").trim(), isWechat: false as const },
-    { label: "Facebook", url: (site.facebookUrl || "").trim(), isWechat: false as const },
-    { label: "TikTok", url: (site.tiktokUrl || "").trim(), isWechat: false as const },
-    { label: "小红书", url: (site.xhsUrl || "").trim(), isWechat: false as const },
-  ].filter((s) => (s.isWechat ? Boolean(wechatId) : Boolean(s.url)));
-}
+type SocialEntry = {
+  key: string;
+  label: string;
+  url: string;
+  wechatAccount?: string;
+};
 
 /**
- * 站点设置的社交媒体入口（WhatsApp / 微信复制 / IG / FB / TikTok / 小红书）。
- * 无任一可展示项时不渲染。
+ * 客服渠道（supportDownloadConfig）+ 纯社交媒体链接。
  */
-export function SiteSocialLinks({ className, tone = "pill", ...site }: SiteSocialLinksProps) {
-  const wechatId = site.wechatId?.trim();
-  const entries = buildSocialEntries(site);
+export function SiteSocialLinks({ className, tone = "pill", ...social }: SiteSocialLinksProps) {
+  const { channels } = useSupportRuntime();
+
+  const entries = useMemo<SocialEntry[]>(() => {
+    const fromChannels: SocialEntry[] = channels
+      .map((channel) => {
+        if (channel.type === "whatsapp") {
+          const url = buildWhatsAppLink(channel);
+          return url ? { key: channel.id, label: getChannelTitle(channel), url } : null;
+        }
+        if (channel.type === "wechat") {
+          const account = channel.account?.trim();
+          if (!account) return null;
+          return { key: channel.id, label: getChannelTitle(channel), url: "", wechatAccount: account };
+        }
+        if (channel.type === "telegram") {
+          const url = buildTelegramLink(channel);
+          return url ? { key: channel.id, label: getChannelTitle(channel), url } : null;
+        }
+        return null;
+      })
+      .filter((item): item is SocialEntry => Boolean(item));
+
+    const media: SocialEntry[] = [
+      { key: "instagram", label: "Instagram", url: (social.instagramUrl || "").trim() },
+      { key: "facebook", label: "Facebook", url: (social.facebookUrl || "").trim() },
+      { key: "tiktok", label: "TikTok", url: (social.tiktokUrl || "").trim() },
+      { key: "xhs", label: "小红书", url: (social.xhsUrl || "").trim() },
+    ].filter((s) => s.url);
+
+    return [...fromChannels, ...media];
+  }, [channels, social.facebookUrl, social.instagramUrl, social.tiktokUrl, social.xhsUrl]);
 
   if (entries.length === 0) return null;
 
@@ -52,13 +71,13 @@ export function SiteSocialLinks({ className, tone = "pill", ...site }: SiteSocia
     <div className={cn("flex flex-wrap justify-center gap-3", className)}>
       {entries.map((s) => (
         <button
-          key={s.label}
+          key={s.key}
           type="button"
           onClick={async () => {
             if (s.url) {
               window.open(s.url, "_blank", "noopener,noreferrer");
-            } else if (s.isWechat && wechatId) {
-              const [{ toast }, copied] = await Promise.all([import("sonner"), copyToClipboard(wechatId)]);
+            } else if (s.wechatAccount) {
+              const [{ toast }, copied] = await Promise.all([import("sonner"), copyToClipboard(s.wechatAccount)]);
               if (copied) {
                 toast.success("微信号已复制", toastPresetQuickSuccess);
               } else {
@@ -75,6 +94,22 @@ export function SiteSocialLinks({ className, tone = "pill", ...site }: SiteSocia
   );
 }
 
-export function hasAnySocialLink(site: SiteSocialLinksProps): boolean {
-  return buildSocialEntries(site).length > 0;
+export function hasAnySocialLink(
+  site: SiteSocialLinksProps & Pick<SiteInfo, "supportDownloadConfig">,
+): boolean {
+  const config = site.supportDownloadConfig;
+  const hasMedia = Boolean(
+    site.instagramUrl?.trim()
+    || site.facebookUrl?.trim()
+    || site.tiktokUrl?.trim()
+    || site.xhsUrl?.trim(),
+  );
+  if (hasMedia) return true;
+  try {
+    const parsed = config ? JSON.parse(config) : null;
+    const list = parsed?.support?.channels;
+    return Array.isArray(list) && list.some((c: { enabled?: boolean }) => c?.enabled !== false);
+  } catch {
+    return false;
+  }
 }

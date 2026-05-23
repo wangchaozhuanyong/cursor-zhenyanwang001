@@ -28,6 +28,7 @@ import { iconMatteProgressToast, iconMatteSuccessToast } from "@/utils/iconMatte
 import type { Category } from "@/types/category";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
+import { useAdminT } from "@/hooks/useAdminT";
 import {
   THEME_BADGE_MUTED,
   THEME_BADGE_SUCCESS,
@@ -85,12 +86,16 @@ function siblingSortPayload(nodes: Category[], parentId: string | null) {
 
 const LEVEL_LABELS = ["一级分类", "二级分类", "三级分类"] as const;
 
-function categorySubtitle(cat: FlatCategory, nameById: Map<string, string>): string {
-  const levelLabel = LEVEL_LABELS[cat.level] ?? `第 ${cat.level + 1} 级`;
+function categorySubtitle(
+  cat: FlatCategory,
+  nameById: Map<string, string>,
+  tText: (zh: string) => string,
+): string {
+  const levelLabel = LEVEL_LABELS[cat.level] ? tText(LEVEL_LABELS[cat.level]) : tText(`第 ${cat.level + 1} 级`);
   const parentId = cat.parent_id;
   if (parentId) {
     const parentName = nameById.get(parentId);
-    if (parentName) return `${levelLabel} · 上级：${parentName}`;
+    if (parentName) return `${levelLabel} · ${tText("上级")}：${parentName}`;
   }
   return levelLabel;
 }
@@ -119,6 +124,7 @@ function reorderSiblings(nodes: Category[], draggedId: string, targetId: string)
 }
 
 export default function AdminCategories() {
+  const { tText } = useAdminT();
   const queryClient = useQueryClient();
   const expandedInitialized = useRef(false);
   const [saving, setSaving] = useState(false);
@@ -185,7 +191,7 @@ export default function AdminCategories() {
 
   const handleAdd = async () => {
     if (!formData.name.trim()) {
-      toast.error("请填写分类名称");
+      toast.error(tText("请填写分类名称"));
       return;
     }
     setSaving(true);
@@ -200,7 +206,7 @@ export default function AdminCategories() {
       });
       setShowForm(false);
       setFormData(EMPTY_FORM);
-      toast.success("分类已添加");
+      toast.success(tText("分类已添加"));
       await invalidateCategories();
     } catch (e) {
       toast.error(toastErrorMessage(e, "添加失败"));
@@ -223,7 +229,7 @@ export default function AdminCategories() {
 
   const handleEditSave = async (id: string) => {
     if (!editData.name.trim()) {
-      toast.error("分类名称不能为空");
+      toast.error(tText("分类名称不能为空"));
       return;
     }
     setSaving(true);
@@ -237,7 +243,7 @@ export default function AdminCategories() {
         is_visible: editData.is_visible,
       });
       setEditingId(null);
-      toast.success("分类已更新");
+      toast.success(tText("分类已更新"));
       await invalidateCategories();
     } catch (e) {
       toast.error(toastErrorMessage(e, "更新失败"));
@@ -260,7 +266,7 @@ export default function AdminCategories() {
     if (!deleteTarget) return;
     try {
       await categoryService.deleteCategory(deleteTarget.id);
-      toast.success("分类已删除");
+      toast.success(tText("分类已删除"));
       setDeleteTarget(null);
       await invalidateCategories();
     } catch (e) {
@@ -273,7 +279,7 @@ export default function AdminCategories() {
     const dragged = allRows.find((x) => x.id === draggingId);
     const target = allRows.find((x) => x.id === targetId);
     if (!dragged || !target || (dragged.parent_id || "") !== (target.parent_id || "")) {
-      toast.error("当前仅支持同级分类内拖拽排序");
+      toast.error(tText("当前仅支持同级分类内拖拽排序"));
       setDraggingId(null);
       return;
     }
@@ -286,7 +292,7 @@ export default function AdminCategories() {
     setDraggingId(null);
     try {
       await categoryService.updateCategorySort(payload);
-      toast.success("排序已保存");
+      toast.success(tText("排序已保存"));
     } catch (e) {
       toast.error(toastErrorMessage(e, "排序保存失败"));
       await invalidateCategories();
@@ -343,7 +349,7 @@ export default function AdminCategories() {
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>分类名称</Tx></label>
               <input
-                placeholder="输入分类名称"
+                placeholder={tText("输入分类名称")}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full rounded-lg bg-secondary px-4 py-2.5 text-sm text-foreground outline-none"
@@ -352,7 +358,7 @@ export default function AdminCategories() {
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>符号图标</Tx></label>
               <input
-                placeholder="如 🛍️"
+                placeholder={tText("如 🛍️")}
                 value={formData.icon}
                 onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
                 className="w-full rounded-lg bg-secondary px-3 py-2.5 text-sm text-foreground outline-none"
@@ -365,7 +371,7 @@ export default function AdminCategories() {
               />
               <div className="flex gap-2">
                 <input
-                  placeholder="可粘贴 URL 或上传"
+                  placeholder={tText("可粘贴 URL 或上传")}
                   value={formData.icon_url}
                   onChange={(e) => setFormData({ ...formData, icon_url: e.target.value })}
                   className="min-w-0 flex-1 rounded-lg bg-secondary px-3 py-2.5 text-sm text-foreground outline-none"
@@ -420,7 +426,7 @@ export default function AdminCategories() {
       )}
 
       <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <div className="grid grid-cols-[1fr_100px_90px_110px_120px] gap-3 border-b border-border px-4 py-3 text-xs font-medium text-muted-foreground">
+        <div className="hidden grid-cols-[1fr_100px_90px_110px_120px] gap-3 border-b border-border px-4 py-3 text-xs font-medium text-muted-foreground md:grid">
           <span><Tx>分类</Tx></span>
           <span><Tx>商品数</Tx></span>
           <span><Tx>显示</Tx></span>
@@ -429,7 +435,7 @@ export default function AdminCategories() {
         </div>
         {loading
           ? Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="grid grid-cols-[1fr_100px_90px_110px_120px] items-center gap-3 border-b border-border px-4 py-3">
+            <div key={i} className="hidden grid-cols-[1fr_100px_90px_110px_120px] items-center gap-3 border-b border-border px-4 py-3 md:grid">
               <div className="skeleton-base skeleton-shimmer h-9 w-48 rounded-lg" />
               <div className="skeleton-base skeleton-shimmer h-4 w-12 rounded" />
               <div className="skeleton-base skeleton-shimmer h-4 w-10 rounded" />
@@ -447,9 +453,9 @@ export default function AdminCategories() {
               onDragStart={() => setDraggingId(cat.id)}
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => handleDrop(cat.id)}
-              className={`grid grid-cols-[1fr_100px_90px_110px_120px] items-center gap-3 px-4 py-3 text-sm ${
-                i < flatRows.length - 1 ? "border-b border-border" : ""
-              } ${draggingId === cat.id ? "bg-secondary/70 opacity-70" : ""}`}
+              className={`border-b border-border px-3 py-3 text-sm md:grid md:grid-cols-[1fr_100px_90px_110px_120px] md:items-center md:gap-3 md:px-4 ${
+                draggingId === cat.id ? "bg-secondary/70 opacity-70" : ""
+              }`}
             >
               <div className="flex min-w-0 items-center gap-2" style={{ paddingLeft: cat.level * 24 }}>
                 <GripVertical size={15} className="shrink-0 cursor-grab text-muted-foreground" />
@@ -475,14 +481,14 @@ export default function AdminCategories() {
                       <input
                         value={editData.icon}
                         onChange={(e) => setEditData({ ...editData, icon: e.target.value })}
-                        placeholder="符号"
+                        placeholder={tText("符号")}
                         className="rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none"
                       />
                       <div className="flex gap-2">
                         <input
                           value={editData.icon_url}
                           onChange={(e) => setEditData({ ...editData, icon_url: e.target.value })}
-                          placeholder="图标 URL（建议 128×128 正方形）"
+                          placeholder={tText("图标 URL（建议 128×128 正方形）")}
                           className="min-w-0 flex-1 rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none"
                         />
                         <label className="flex cursor-pointer items-center rounded-lg border border-border px-2 text-muted-foreground hover:text-foreground">
@@ -499,14 +505,15 @@ export default function AdminCategories() {
                       maxWidth="14rem"
                       lines={[
                         { text: cat.name },
-                        { text: categorySubtitle(cat, categoryNameById), muted: true },
+                        { text: categorySubtitle(cat, categoryNameById, tText), muted: true },
                       ]}
-                      tooltipLines={[cat.name, categorySubtitle(cat, categoryNameById), cat.id]}
+                      tooltipLines={[cat.name, categorySubtitle(cat, categoryNameById, tText), cat.id]}
                     />
                   </div>
                 )}
               </div>
-              <span className="text-xs text-muted-foreground">{cat.productCount ?? 0}</span>
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/50 pt-3 md:mt-0 md:contents md:border-0 md:pt-0">
+              <span className="text-xs text-muted-foreground md:text-left"><span className="mr-1 text-[10px] uppercase tracking-wide text-muted-foreground/80 md:hidden">商品</span>{cat.productCount ?? 0}</span>
               <PermissionGate permission="category.manage">
                 <button
                   type="button"
@@ -529,7 +536,7 @@ export default function AdminCategories() {
               ) : (
                 <span className="text-xs text-muted-foreground">{cat.sort_order ?? 0}</span>
               )}
-              <div className="flex justify-end gap-1">
+              <div className="ml-auto flex justify-end gap-1 md:ml-0">
                 {isEditing ? (
                   <>
                     <PermissionGate permission="category.manage">
@@ -556,6 +563,7 @@ export default function AdminCategories() {
                   </>
                 )}
               </div>
+              </div>
             </div>
           );
         })}
@@ -565,7 +573,7 @@ export default function AdminCategories() {
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         danger
-        title="删除分类"
+        title={tText("删除分类")}
         description={deleteTarget ? `确定删除分类「${deleteTarget.name}」？` : ""}
         confirmText="删除"
         onConfirm={confirmDeleteCategory}

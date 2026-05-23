@@ -84,8 +84,16 @@ function buildAdminWhere(query) {
   }
   const keyword = String(query.keyword || '').trim();
   if (keyword) {
-    where += ' AND (ca.order_no LIKE ? OR ca.contact_name LIKE ? OR ca.user_id LIKE ?)';
-    params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
+    const like = `%${keyword}%`;
+    where += ` AND (
+      ca.order_no LIKE ?
+      OR ca.order_id LIKE ?
+      OR ca.contact_name LIKE ?
+      OR ca.contact_phone_masked LIKE ?
+      OR ca.user_id LIKE ?
+      OR CAST(ca.items_summary AS CHAR) LIKE ?
+    )`;
+    params.push(like, like, like, like, like, like);
   }
   return { where, params };
 }
@@ -101,20 +109,61 @@ function parseItemsSummary(value) {
   }
 }
 
-async function listAdminCheckoutAbandonments(query) {
-  const page = Math.max(1, Number.parseInt(query.page, 10) || 1);
-  const pageSize = Math.min(50, Math.max(1, Number.parseInt(query.pageSize, 10) || 20));
-  const { where, params } = buildAdminWhere(query);
-  const total = await repo.countAdmin(where, params);
-  const rows = await repo.selectAdminPage(where, params, pageSize, (page - 1) * pageSize);
-  const list = rows.map((row) => ({
-    ...row,
-    items_summary: parseItemsSummary(row.items_summary),
+function checkoutIdSuffix(id) {
+  const raw = String(id || '').replace(/-/g, '');
+  return raw.slice(-8) || String(id || '').slice(-8);
+}
+
+function buildItemsPreview(items, itemsCount) {
+  if (!items.length) return '无商品摘要';
+  const parts = items.slice(0, 2).map((item) => `${item.name || '未命名商品'} x${item.qty}`);
+  if (items.length > 2) {
+    const count = Number(itemsCount) > 0 ? Number(itemsCount) : items.reduce((sum, item) => sum + item.qty, 0);
+    return `${parts.join('，')}，等 ${count} 件`;
+  }
+  return parts.join('，');
+}
+
+function mapAdminCheckoutAbandonmentRow(row) {
+  const orderId = String(row.order_id || '').trim();
+  const orderNo = String(row.order_no || '').trim();
+  const hasOrder = Boolean(orderId);
+  const itemsSummary = parseItemsSummary(row.items_summary);
+  const snapshotCount = Math.max(1, Number.parseInt(row.snapshot_count, 10) || 1);
+
+  return {
+    id: row.id,
+    group_key: row.group_key,
+    display_id: orderNo || checkoutIdSuffix(row.id),
+    display_type: hasOrder ? 'order' : 'checkout',
+    status: row.status,
+    order_id: orderId || null,
+    order_no: orderNo,
+    snapshot_count: snapshotCount,
+    has_duplicates: snapshotCount > 1,
+    action_type: hasOrder ? 'view_order' : 'view_checkout',
+    contact_name: row.contact_name,
+    contact_phone_masked: row.contact_phone_masked,
+    items_count: row.items_count,
+    items_summary: itemsSummary,
+    items_preview: buildItemsPreview(itemsSummary, row.items_count),
     raw_amount: money(row.raw_amount),
     discount_amount: money(row.discount_amount),
     shipping_fee: money(row.shipping_fee),
     total_amount: money(row.total_amount),
-  }));
+    payment_method: row.payment_method,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+async function listAdminCheckoutAbandonments(query) {
+  const page = Math.max(1, Number.parseInt(query.page, 10) || 1);
+  const pageSize = Math.min(50, Math.max(1, Number.parseInt(query.pageSize, 10) || 20));
+  const { where, params } = buildAdminWhere(query);
+  const total = await repo.countAdminGrouped(where, params);
+  const rows = await repo.selectAdminGroupedPage(where, params, pageSize, (page - 1) * pageSize);
+  const list = rows.map(mapAdminCheckoutAbandonmentRow);
   return { kind: 'paginate', list, total, page, pageSize };
 }
 
@@ -140,7 +189,10 @@ module.exports = {
   listAdminCheckoutAbandonments,
   listDueCheckoutReminders,
   markCheckoutReminderSent,
+  buildAdminWhere,
+  buildItemsPreview,
+  mapAdminCheckoutAbandonmentRow,
+  parseItemsSummary,
+  checkoutIdSuffix,
+  OPEN_STATUSES,
 };
-
-
-

@@ -17,8 +17,10 @@ import { emptyNavForm, flattenCategories, moveNavItemToPosition, type NavForm } 
 import HomeNavFormPanel from "./HomeNavFormPanel";
 import HomeNavSortableList from "./HomeNavSortableList";
 import { useHomeNavReorder } from "./useHomeNavReorder";
+import { useAdminT } from "@/hooks/useAdminT";
 
 export default function AdminHomeNavEditor() {
+  const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
   const capabilities = useSiteCapabilities();
@@ -84,20 +86,20 @@ export default function AdminHomeNavEditor() {
 
   const saveNav = async () => {
     if (!navForm.title.trim()) {
-      toast.error("请填写标题");
+      toast.error(tText("请填写标题"));
       return;
     }
     if (navForm.target_type === "category" && !String(navForm.target_category_id || "").trim()) {
-      toast.error("请选择要跳转的分类");
+      toast.error(tText("请选择要跳转的分类"));
       return;
     }
     if (navForm.target_type === "support") {
       if (!supportNavEnabled) {
-        toast.error("请先在站点能力中开启「客服/APP 页」");
+        toast.error(tText("请先在站点能力中开启「客服/APP 页」"));
         return;
       }
       if (!String(navForm.target_support_channel_id || "").trim()) {
-        toast.error("请选择客服账号");
+        toast.error(tText("请选择客服账号"));
         return;
       }
     }
@@ -136,7 +138,7 @@ export default function AdminHomeNavEditor() {
         if (editingNavId === item.id) resetForm();
         invalidateHomeModuleSettingsCache();
         await invalidateHomeOps();
-        toast.success("已删除");
+        toast.success(tText("已删除"));
       } catch (e) {
         toast.error(toastErrorMessage(e, "删除失败"));
       }

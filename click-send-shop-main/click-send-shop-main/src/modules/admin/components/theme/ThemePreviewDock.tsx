@@ -6,6 +6,8 @@ import ThemeHealthSummary from "./ThemeHealthSummary";
 import ThemePreviewCanvas from "./ThemePreviewCanvas";
 import ThemePreviewToolbar from "./ThemePreviewToolbar";
 import type { PreviewDevice, PreviewMode } from "./themeStudioConstants";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 export type ThemePreviewDockProps = {
   config: ThemeConfig;
@@ -28,6 +30,7 @@ export default function ThemePreviewDock({
   onFullscreen,
   onOptimizeTextContrast,
 }: ThemePreviewDockProps) {
+  const { tText } = useAdminT();
   const [collapsed, setCollapsed] = useState(false);
   const [healthOpen, setHealthOpen] = useState(false);
 
@@ -56,14 +59,14 @@ export default function ThemePreviewDock({
   return (
     <aside className="w-full shrink-0 rounded-2xl border border-border bg-card shadow-sm 2xl:sticky 2xl:top-24 2xl:flex 2xl:h-[calc(100vh-112px)] 2xl:w-[clamp(430px,28vw,540px)] 2xl:flex-col 2xl:overflow-hidden">
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
-        <p className="text-sm font-semibold text-foreground">实时预览</p>
+        <p className="text-sm font-semibold text-foreground"><Tx>实时预览</Tx></p>
         <div className="flex items-center gap-1">
           {onFullscreen ? (
-            <button type="button" onClick={onFullscreen} className="rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title="全屏预览">
+            <button type="button" onClick={onFullscreen} className="rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title={tText("全屏预览")}>
               <Maximize2 size={14} />
             </button>
           ) : null}
-          <button type="button" onClick={() => setCollapsed(true)} className="rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title="收起预览">
+          <button type="button" onClick={() => setCollapsed(true)} className="rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title={tText("收起预览")}>
             <PanelRightClose size={14} />
           </button>
         </div>

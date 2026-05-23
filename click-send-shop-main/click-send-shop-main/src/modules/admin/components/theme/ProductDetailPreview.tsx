@@ -4,6 +4,7 @@ import StorePrice from "@/components/ui/StorePrice";
 import type { ThemeConfig } from "@/types/theme";
 import { previewProduct } from "./themePreviewData";
 import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 function PreviewBtn({
   children,

@@ -13,13 +13,18 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatAdminDateTime } from "@/utils/formatDateTime";
 import { Tx } from "@/components/admin/AdminText";
 import { THEME_OUTLINE_DANGER } from "@/utils/themeVisuals";
-import { labelDisplayPositions } from "@/constants/marketingDisplayPositions";
-import { labelActivityType } from "@/utils/adminDisplayLabels";
+import {
+  DISPLAY_POSITION_LABELS,
+  normalizeDisplayPositions,
+} from "@/constants/marketingDisplayPositions";
+import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
+import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import { AdminTableCell, AdminTableCellGroup } from "@/components/admin/AdminTableCell";
 import { AnimatedConfirmDialog, AnimatedTable } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import { useAdminT } from "@/hooks/useAdminT";
 import {
   buildActivityFilterChips,
   hasActiveActivityFilters,
@@ -43,6 +48,16 @@ const TABS: Array<{ key: "" | ActivityStatus; label: string }> = [
 ];
 
 export default function AdminActivities() {
+  const { tText } = useAdminT();
+  const { activityType: labelActivityType } = useAdminDisplayLabel();
+  const tabsLocalized = useLocalizedOptions(
+    TABS.map((tab) => ({ value: tab.key, label: tab.label })),
+  );
+  const labelDisplayPositionsLocalized = (positions: string[] | undefined) => {
+    const normalized = normalizeDisplayPositions(positions);
+    if (!normalized.length) return "--";
+    return normalized.map((p) => tText(DISPLAY_POSITION_LABELS[p] || p)).join(tText("、"));
+  };
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [keyword, setKeyword] = useState("");
@@ -87,7 +102,7 @@ export default function AdminActivities() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => activityService.deleteActivity(id),
     onSuccess: async () => {
-      toast.success("已删除");
+      toast.success(tText("已删除"));
       setDeleteId(null);
       await invalidateActivities();
     },
@@ -117,9 +132,9 @@ export default function AdminActivities() {
   };
 
   const quickButtons = useMemo(() => [
-    { label: "秒杀", to: "/admin/marketing/activities/new?type=flash_sale" },
-    { label: "满减", to: "/admin/marketing/activities/new?type=full_reduction" },
-    { label: "优惠券", to: "/admin/marketing/coupons/new" },
+    { label: tText("秒杀"), to: "/admin/marketing/activities/new?type=flash_sale" },
+    { label: tText("满减"), to: "/admin/marketing/activities/new?type=full_reduction" },
+    { label: tText("优惠券"), to: "/admin/marketing/coupons/new" },
   ], []);
 
   const openPreview = (activity: MarketingActivity) => {
@@ -141,11 +156,11 @@ export default function AdminActivities() {
 
       <div className="flex flex-wrap gap-2">{quickButtons.map((button) => <button key={button.label} onClick={() => navigate(button.to)} className="rounded-lg border border-border px-3 py-1.5 text-sm">{button.label}</button>)}</div>
 
-      <div className="flex flex-wrap gap-2">{TABS.map((tab) => <button key={tab.label} type="button" onClick={() => { setStatus(tab.key); setPage(1); }} className={`rounded-lg px-3 py-1.5 text-sm ${status === tab.key ? "bg-gold/15 text-theme-price" : "bg-secondary text-muted-foreground"}`}>{tab.label}</button>)}</div>
+      <div className="flex flex-wrap gap-2">{tabsLocalized.map((tab) => <button key={String(tab.value)} type="button" onClick={() => { setStatus(tab.value); setPage(1); }} className={`rounded-lg px-3 py-1.5 text-sm ${status === tab.value ? "bg-gold/15 text-theme-price" : "bg-secondary text-muted-foreground"}`}>{tab.label}</button>)}</div>
 
       <div className="space-y-2">
         <div className="grid gap-3 md:grid-cols-[1fr_160px_auto]">
-          <SearchBar placeholder="搜索活动名称" value={keyword} onChange={(value) => { setKeyword(value); setPage(1); }} />
+          <SearchBar placeholder={tText("搜索活动名称")} value={keyword} onChange={(value) => { setKeyword(value); setPage(1); }} />
           <select value={type} onChange={(e) => { setType(e.target.value as ActivityType | ""); setPage(1); }} className="rounded-lg bg-secondary px-3 py-2 text-sm"><option value=""><Tx>全部类型</Tx></option><option value="flash_sale"><Tx>限时秒杀</Tx></option><option value="full_reduction"><Tx>满减活动</Tx></option></select>
           <button type="button" onClick={() => setPage(1)} className="rounded-lg border border-border px-4 py-2 text-sm"><Tx>查询</Tx></button>
         </div>
@@ -202,18 +217,22 @@ export default function AdminActivities() {
                 />
               </td>
               <td className="px-4 py-3">{labelActivityType(activity.type)}</td>
-              <td className="px-4 py-3 text-xs">{activity.status_label}</td>
+              <td className="px-4 py-3 text-xs">{activity.status_label ? tText(activity.status_label) : "-"}</td>
               <td className="px-4 py-3 whitespace-nowrap text-xs text-muted-foreground">
                 {formatAdminDateTime(activity.start_at)}
                 <br />
                 {formatAdminDateTime(activity.end_at)}
               </td>
-              <td className="px-4 py-3 text-xs text-muted-foreground">商品 {activity.product_count || 0}<br />库存 {activity.activity_stock_total || 0} / 已售 {activity.sold_count_total || 0}</td>
+              <td className="px-4 py-3 text-xs text-muted-foreground">
+                {tText("商品")} {activity.product_count || 0}
+                <br />
+                {tText("库存")} {activity.activity_stock_total || 0} / {tText("已售")} {activity.sold_count_total || 0}
+              </td>
               <td className="px-4 py-3 text-xs text-muted-foreground"><Tx>点击“查看数据”进入活动分析</Tx></td>
               <td className="max-w-[12rem] px-4 py-3 align-middle">
                 <AdminTableCell
-                  value={labelDisplayPositions(activity.display_positions)}
-                  fullText={labelDisplayPositions(activity.display_positions)}
+                  value={labelDisplayPositionsLocalized(activity.display_positions)}
+                  fullText={labelDisplayPositionsLocalized(activity.display_positions)}
                   maxWidth="11rem"
                   muted
                 />
@@ -244,7 +263,7 @@ export default function AdminActivities() {
         open={!!deleteId}
         onOpenChange={(open) => !open && setDeleteId(null)}
         danger
-        title="删除活动"
+        title={tText("删除活动")}
         description="活动已有参与数据时删除将影响统计，确认删除？"
         confirmText="删除"
         onConfirm={() => {

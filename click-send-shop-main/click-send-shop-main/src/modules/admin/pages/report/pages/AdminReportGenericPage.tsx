@@ -22,7 +22,9 @@ import { toast } from "sonner";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
-import { labelReportCellValue, labelReportColumn } from "@/utils/adminDisplayLabels";
+import { useAdminReportLabel } from "@/hooks/useAdminReportLabel";
+import { useAdminT } from "@/hooks/useAdminT";
+import { Tx } from "@/components/admin/AdminText";
 import { getReportColumnMaxWidthStyle } from "@/utils/adminTableColumnPolicy";
 import {
   buildReportTableColumns,
@@ -39,23 +41,6 @@ import {
 import { exportProfitDailyCsv, exportReportCsv } from "@/services/admin/reportService";
 import { formatAdminDate, formatAdminDateTimeAuto } from "@/utils/formatDateTime";
 
-function formatCellValue(key: string, value: unknown) {
-  if (value === null || value === undefined || value === "") return "-";
-  if (key === "month" && typeof value === "string") return value;
-  if (key === "date") return formatAdminDate(String(value));
-  if (
-    key.endsWith("_at")
-    || key.endsWith("_date")
-    || key === "start_date"
-    || key === "end_date"
-    || key === "start_at"
-    || key === "end_at"
-  ) {
-    return formatAdminDateTimeAuto(value);
-  }
-  return labelReportCellValue(key, value);
-}
-
 type Props = {
   config: ReportPageConfig;
   fetcher: (params: Record<string, string>) => Promise<Record<string, unknown>>;
@@ -71,6 +56,8 @@ export default function AdminReportGenericPage({
   summaryPriorityKeys: summaryPriorityKeysProp,
   summaryMaxCards: summaryMaxCardsProp,
 }: Props) {
+  const { tText } = useAdminT();
+  const { column: labelReportColumn, cell: labelReportCell } = useAdminReportLabel();
   const {
     title,
     description,
@@ -91,6 +78,27 @@ export default function AdminReportGenericPage({
   const summaryPriorityKeys = summaryPriorityKeysProp ?? summaryPriorityKeysConfig ?? kpiPriorityKeys;
   const summaryMaxCards =
     summaryMaxCardsProp ?? summaryMaxCardsConfig ?? (summaryPriorityKeys?.length ? 0 : (maxKpis ?? 8));
+
+  const formatCellValueLocalized = useCallback(
+    (key: string, value: unknown) => {
+      if (value === null || value === undefined || value === "") return "-";
+      if (key === "month" && typeof value === "string") return value;
+      if (key === "date") return formatAdminDate(String(value));
+      if (
+        key.endsWith("_at")
+        || key.endsWith("_date")
+        || key === "start_date"
+        || key === "end_date"
+        || key === "start_at"
+        || key === "end_at"
+      ) {
+        return formatAdminDateTimeAuto(value);
+      }
+      return labelReportCell(key, value);
+    },
+    [labelReportCell],
+  );
+
   const [searchParams, setSearchParams] = useSearchParams();
   const [previewImageUrl, setPreviewImageUrl] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -219,18 +227,18 @@ export default function AdminReportGenericPage({
       } else {
         await exportReportCsv(exportType, filterParams);
       }
-      toast.success("报表导出已开始下载");
+      toast.success(tText("报表导出已开始下载"));
     } catch (e) {
-      toast.error(toastErrorMessage(e, "导出失败"));
+      toast.error(toastErrorMessage(e, tText("导出失败")));
     } finally {
       setExporting(false);
     }
-  }, [exportType, exportMode, filterParams]);
+  }, [exportType, exportMode, filterParams, tText]);
 
   const openCoverPreview = (url: unknown) => {
     const source = String(url ?? "").trim();
     if (!source) {
-      toast.error("封面图地址为空");
+      toast.error(tText("封面图地址为空"));
       return;
     }
     setPreviewImageUrl(source);
@@ -265,20 +273,20 @@ export default function AdminReportGenericPage({
       <ReportAlertBanners alerts={alerts} />
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-[var(--theme-text)]">核心指标</h2>
+        <h2 className="text-sm font-semibold text-[var(--theme-text)]"><Tx>核心指标</Tx></h2>
         <ReportKpiGrid
           loading={loading}
           entries={kpiEntries}
-          formatValue={formatCellValue}
+          formatValue={formatCellValueLocalized}
           skeletonCount={kpiProfile === "profit" ? (summaryPriorityKeys?.length ?? 9) : 6}
         />
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-[var(--theme-text)]">明细数据</h2>
+        <h2 className="text-sm font-semibold text-[var(--theme-text)]"><Tx>明细数据</Tx></h2>
         {summaryOnly ? (
           <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-5 text-sm text-[var(--theme-text-muted)]">
-            该报表当前仅展示汇总指标。
+            <Tx>该报表当前仅展示汇总指标。</Tx>
           </div>
         ) : (
           <AnimatedTable
@@ -322,7 +330,7 @@ export default function AdminReportGenericPage({
             renderRow={(row) => (
               <>
                 {columns.map((k) => {
-                  const display = formatCellValue(k, row[k]);
+                  const display = formatCellValueLocalized(k, row[k]);
                   const sticky = stickyKeys.has(k);
                   return (
                     <td
@@ -359,21 +367,21 @@ export default function AdminReportGenericPage({
 
       {dataScopeNote ? (
         <section className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm text-[var(--theme-text-muted)]">
-          <span className="font-medium text-[var(--theme-text)]">数据口径：</span>{dataScopeNote}
+          <span className="font-medium text-[var(--theme-text)]"><Tx>数据口径：</Tx></span>{dataScopeNote}
         </section>
       ) : null}
 
       <AdminResponsiveSheet
         open={previewOpen}
         onOpenChange={setPreviewOpen}
-        title="封面图预览"
+        title={tText("封面图预览")}
         size="xl"
       >
         <div className="overflow-auto rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] p-2">
           {previewImageUrl ? (
             <img src={previewImageUrl} alt="封面图预览" className="mx-auto max-h-[65vh] w-auto max-w-full object-contain" />
           ) : (
-            <p className="text-sm text-[var(--theme-text-muted)]">暂无可预览图片</p>
+            <p className="text-sm text-[var(--theme-text-muted)]"><Tx>暂无可预览图片</Tx></p>
           )}
         </div>
       </AdminResponsiveSheet>

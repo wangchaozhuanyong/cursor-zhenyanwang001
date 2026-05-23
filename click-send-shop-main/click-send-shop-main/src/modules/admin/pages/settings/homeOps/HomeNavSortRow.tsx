@@ -6,6 +6,7 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import type { HomeNavItem } from "@/types/content";
 import { THEME_BADGE_MUTED, THEME_BADGE_SUCCESS, THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 import HomeNavIconPreview from "./HomeNavIconPreview";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type Props = {
   item: HomeNavItem;
@@ -38,6 +39,7 @@ export default function HomeNavSortRow({
   onDelete,
   onPositionChange,
 }: Props) {
+  const { tText } = useAdminT();
   const [editingSort, setEditingSort] = useState(false);
   const [sortDraft, setSortDraft] = useState(String(displayIndex));
   const [savingSort, setSavingSort] = useState(false);
@@ -142,7 +144,7 @@ export default function HomeNavSortRow({
             type="button"
             className="rounded-lg p-2 text-muted-foreground hover:bg-secondary hover:text-theme-price"
             onClick={onEdit}
-            title="编辑"
+            title={tText("编辑")}
           >
             <Pencil size={15} />
           </button>
@@ -150,7 +152,7 @@ export default function HomeNavSortRow({
             type="button"
             className={`rounded-lg p-2 text-muted-foreground hover:bg-secondary ${THEME_HOVER_TEXT_DANGER}`}
             onClick={onDelete}
-            title="删除"
+            title={tText("删除")}
           >
             <Trash2 size={15} />
           </button>

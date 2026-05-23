@@ -81,7 +81,7 @@ export function canAccessAdminPath(
   canAny: (codes: string[]) => boolean,
 ): boolean {
   const rule = getPathAccessRule(pathname);
-  if (!rule) return true;
+  if (!rule) return false;
   if (rule.kind === "one") return can(rule.permission);
   return canAny(rule.permissions);
 }

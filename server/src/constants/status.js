@@ -57,6 +57,12 @@ const PAID_PAYMENT_STATUS_LIST = Object.freeze([
   PAYMENT_STATUS.PARTIALLY_REFUNDED,
 ]);
 
+/** 历史库可能仍存 unpaid，与 pending 语义相同 */
+const UNPAID_PAYMENT_STATUS_LIST = Object.freeze([
+  PAYMENT_STATUS.PENDING,
+  'unpaid',
+]);
+
 module.exports = {
   ORDER_STATUS,
   PAYMENT_STATUS,
@@ -69,4 +75,5 @@ module.exports = {
   REWARD_STATUS_LIST,
   EXPORT_TASK_STATUS_LIST,
   PAID_PAYMENT_STATUS_LIST,
+  UNPAID_PAYMENT_STATUS_LIST,
 };

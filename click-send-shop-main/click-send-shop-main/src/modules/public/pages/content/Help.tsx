@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, MessageCircle, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, Search } from "lucide-react";
+import SupportContactSection from "@/components/support/SupportContactSection";
 import { DEFAULT_FAQS, DEFAULT_FAQ_CATEGORIES } from "@/constants/help";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
@@ -10,7 +11,7 @@ import { STORE_READING_MAIN_CLASS } from "@/constants/storeLayout";
 import type { FaqItem } from "@/constants/help";
 import type { HelpCenterConfig } from "@/types/content";
 
-function parseHelpConfig(raw?: string): { categories: string[]; faqs: FaqItem[]; contactNote?: string } | null {
+function parseHelpConfig(raw?: string): { categories: string[]; faqs: FaqItem[] } | null {
   if (!raw?.trim()) return null;
   try {
     const parsed = JSON.parse(raw) as HelpCenterConfig;
@@ -32,7 +33,6 @@ function parseHelpConfig(raw?: string): { categories: string[]; faqs: FaqItem[];
     return {
       categories: enabledCategories.map((cat) => cat.name),
       faqs,
-      contactNote: parsed.contactNote,
     };
   } catch {
     return null;
@@ -124,14 +124,8 @@ export default function Help() {
             </div>
           ))}
         </div>
-        <div className="mt-6 rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
-          <p>{configuredHelp?.contactNote || "需要人工协助时，可通过平台客服入口联系。"}</p>
-          {siteInfo.whatsappUrl ? (
-            <a href={siteInfo.whatsappUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-theme-price">
-              <MessageCircle size={14} />
-              联系客服
-            </a>
-          ) : null}
+        <div className="mt-6 rounded-xl border border-border bg-card p-4">
+          <SupportContactSection />
         </div>
       </main>
     </div>

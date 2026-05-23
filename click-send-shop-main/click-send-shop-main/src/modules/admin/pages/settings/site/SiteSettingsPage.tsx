@@ -36,12 +36,14 @@ import SiteSettingField from "./SiteSettingField";
 import PolicyPathFields from "./PolicyPathFields";
 import FooterNavEditor from "./FooterNavEditor";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { useAdminT } from "@/hooks/useAdminT";
 
 function mergeSettings(data: Partial<SiteSettings> | null | undefined): SiteSettings {
   return { ...EMPTY_SITE_SETTINGS, ...(data && typeof data === "object" ? data : {}) };
 }
 
 export default function SiteSettingsPage() {
+  const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
   const location = useLocation();
@@ -111,8 +113,7 @@ export default function SiteSettingsPage() {
   const requestSectionChange = (nextId: SiteSettingsSectionId) => {
     if (nextId === activeSectionId) return;
     if (activeDirty) {
-      confirm({
-        title: "未保存的修改",
+      confirm({ title: tText("未保存的修改"),
         description: "当前分组有未保存修改，是否继续切换？",
         confirmText: "继续切换",
         onConfirm: () => setActiveSectionId(nextId),
@@ -174,10 +175,10 @@ export default function SiteSettingsPage() {
         setSettings((prev) => ({ ...prev, logoUrl: res.url, faviconUrl: res.url }));
         setSaved((prev) => ({ ...prev, logoUrl: res.url, faviconUrl: res.url }));
         await refreshSiteInfo();
-        toast.success("图片已上传并保存");
+        toast.success(tText("图片已上传并保存"));
       } else {
         setSettings((prev) => ({ ...prev, [key]: res.url }));
-        toast.success("图片已上传，请保存当前分组");
+        toast.success(tText("图片已上传，请保存当前分组"));
       }
     } catch (e) {
       toast.error(toastErrorMessage(e, "上传失败"));
@@ -193,8 +194,8 @@ export default function SiteSettingsPage() {
   };
 
   const saveHandlers = {
-    onSaveSection: () => adminConfirmSave(confirm, activeSection.title, () => runSave("section")),
-    onSaveAll: () => adminConfirmSave(confirm, "全部站点设置", () => runSave("all")),
+    onSaveSection: () => adminConfirmSave(confirm, tText(activeSection.title), () => runSave("section")),
+    onSaveAll: () => adminConfirmSave(confirm, tText("全部站点设置"), () => runSave("all")),
     onDiscard: activeDirty ? discardActiveSection : undefined,
   };
 
@@ -202,7 +203,7 @@ export default function SiteSettingsPage() {
     if (activeSectionId === "footer") {
       return (
         <div className="space-y-4">
-          <SiteSettingCard title="页脚品牌">
+          <SiteSettingCard title={tText("页脚品牌")}>
             {(["footerCompanyName", "footerCopyright", "footerIcpNo"] as const).map((key) => (
               <SiteSettingField
                 key={key}
@@ -223,10 +224,10 @@ export default function SiteSettingsPage() {
               />
             ))}
           </SiteSettingCard>
-          <SiteSettingCard title="政策页路径">
+          <SiteSettingCard title={tText("政策页路径")}>
             <PolicyPathFields settings={settings} onChange={setField} />
           </SiteSettingCard>
-          <SiteSettingCard title="页脚导航菜单">
+          <SiteSettingCard title={tText("页脚导航菜单")}>
             <FooterNavEditor
               value={String(settings.footerNav ?? "")}
               onChange={(json) => setField("footerNav", json)}
@@ -241,7 +242,7 @@ export default function SiteSettingsPage() {
       return (
         <div className="space-y-4">
           <SiteSettingCard
-            title="页脚导航 JSON"
+            title={tText("页脚导航 JSON")}
             description="直接编辑 footerNav 字符串；保存高级配置仅提交 footerNav 字段。"
           >
             <button
@@ -264,7 +265,7 @@ export default function SiteSettingsPage() {
               </p>
             )}
           </SiteSettingCard>
-          <SiteSettingCard title="全部字段提交预览（只读）">
+          <SiteSettingCard title={tText("全部字段提交预览（只读）")}>
             <pre className="max-h-64 overflow-auto rounded-lg bg-secondary p-3 text-[10px] text-muted-foreground">
               {JSON.stringify(preview, null, 2)}
             </pre>
@@ -276,7 +277,7 @@ export default function SiteSettingsPage() {
     const fields = activeSection.fields.filter((f) => f.type !== "custom" && !f.custom);
 
     return (
-      <SiteSettingCard title={activeSection.title} description={activeSection.description}>
+      <SiteSettingCard title={tText(activeSection.title)} description={activeSection.description ? tText(activeSection.description) : undefined}>
         <div className="space-y-4">
           {fields.map((field) => (
             <SiteSettingField
@@ -304,7 +305,7 @@ export default function SiteSettingsPage() {
       onSectionChange={requestSectionChange}
       header={
         <SiteSettingsHeader
-          sectionTitle={activeSection.title}
+          sectionTitle={tText(activeSection.title)}
           saving={saving}
           dirty={activeDirty}
           {...saveHandlers}

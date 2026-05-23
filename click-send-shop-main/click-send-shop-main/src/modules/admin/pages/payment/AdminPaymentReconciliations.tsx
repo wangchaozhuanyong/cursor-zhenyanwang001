@@ -23,8 +23,10 @@ import {
   PAYMENT_PROVIDER_FILTER_OPTIONS,
 } from "@/utils/paymentAdminLabels";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { useAdminT } from "@/hooks/useAdminT";
 
 export default function AdminPaymentReconciliations() {
+  const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
@@ -61,7 +63,7 @@ export default function AdminPaymentReconciliations() {
         notes: notes.trim() || undefined,
       }),
     onSuccess: async () => {
-      toast.success("已创建对账草稿");
+      toast.success(tText("已创建对账草稿"));
       setNotes("");
       setDiffAmount("");
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.paymentReconciliationsRoot() });
@@ -144,8 +146,7 @@ export default function AdminPaymentReconciliations() {
           <button
             type="button"
             onClick={() =>
-              confirm({
-                title: "确认创建",
+              confirm({ title: tText("确认创建"),
                 description: `确定创建 ${reconcileDate} 的对账草稿？`,
                 confirmText: "创建",
                 onConfirm: () => create(),

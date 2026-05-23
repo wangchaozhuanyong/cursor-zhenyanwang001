@@ -59,10 +59,6 @@ export function validateSection(
     if (email && !EMAIL_RE.test(email)) {
       issues.push({ level: "error", message: "客服邮箱格式不正确" });
     }
-    const wa = String(settings.whatsappUrl ?? "").trim();
-    if (wa && !wa.startsWith("https://")) {
-      issues.push({ level: "error", message: "WhatsApp 链接须以 https:// 开头" });
-    }
   }
 
   if (sectionId === "orders") {

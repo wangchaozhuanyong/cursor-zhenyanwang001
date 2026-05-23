@@ -14,7 +14,9 @@ import {
 import type { RecycleBinItem } from "@/services/admin/recycleBinService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { labelRecycleType, RECYCLE_TYPE_FILTER_OPTIONS } from "@/utils/adminDisplayLabels";
+import { RECYCLE_TYPE_FILTER_OPTIONS } from "@/utils/adminDisplayLabels";
+import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
+import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import { formatRecycleBinItemFullText, formatRecycleBinItemName } from "@/utils/recycleBinDisplay";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { AnimatedTable } from "@/modules/micro-interactions";
@@ -39,6 +41,7 @@ import {
   THEME_HOVER_BG_DANGER,
 } from "@/utils/themeVisuals";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const TYPE_BADGE: Record<string, string> = {
   products: THEME_BADGE_PRIMARY,
@@ -59,6 +62,9 @@ const TYPE_BADGE: Record<string, string> = {
 };
 
 export default function AdminRecycleBin() {
+  const { tText } = useAdminT();
+  const { recycleType: labelRecycleType } = useAdminDisplayLabel();
+  const typeFilterOptions = useLocalizedOptions(RECYCLE_TYPE_FILTER_OPTIONS);
   const queryClient = useQueryClient();
   const { confirm } = useAdminConfirm();
   const [page, setPage] = useState(1);
@@ -111,15 +117,14 @@ export default function AdminRecycleBin() {
   const restoreMutation = useMutation({
     mutationFn: (item: RecycleBinItem) => restoreRecycleBinItem(item.id, item.type),
     onSuccess: async (_data, item) => {
-      toast.success("已恢复");
+      toast.success(tText("已恢复"));
       await invalidateRecycleBin(item.type);
     },
     onError: (e) => toast.error(toastErrorMessage(e, "恢复失败")),
   });
 
   const confirmPermanentDelete = (item: RecycleBinItem) => {
-    confirm({
-      title: "确认彻底删除",
+    confirm({ title: tText("确认彻底删除"),
       description: (
         <>
           此操作不可恢复！
@@ -131,7 +136,7 @@ export default function AdminRecycleBin() {
       danger: true,
       onConfirm: async () => {
         await permanentlyDeleteRecycleBinItem(item.id, item.type);
-        toast.success("已彻底删除");
+        toast.success(tText("已彻底删除"));
         await invalidateRecycleBin(item.type);
       },
     });
@@ -146,7 +151,7 @@ export default function AdminRecycleBin() {
             <h2 className="text-lg font-bold text-foreground"><Tx>回收站</Tx></h2>
           </div>
           <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none">
-            {RECYCLE_TYPE_FILTER_OPTIONS.map((o) => <option key={o.value || "__all"} value={o.value}>{o.label}</option>)}
+            {typeFilterOptions.map((o) => <option key={o.value || "__all"} value={o.value}>{o.label}</option>)}
           </select>
         </div>
         <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
@@ -254,10 +259,10 @@ export default function AdminRecycleBin() {
                   <td className="px-4 py-3">
                     <PermissionGate permission="recycle_bin.manage">
                       <div className="flex gap-1">
-                        <button type="button" onClick={() => restoreMutation.mutate(item)} className={`touch-manipulation rounded-lg border border-[var(--theme-border)] p-1.5 ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`} title="恢复">
+                        <button type="button" onClick={() => restoreMutation.mutate(item)} className={`touch-manipulation rounded-lg border border-[var(--theme-border)] p-1.5 ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`} title={tText("恢复")}>
                           <RotateCcw size={14} />
                         </button>
-                        <button type="button" onClick={() => confirmPermanentDelete(item)} className={`touch-manipulation rounded-lg border p-1.5 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`} title="彻底删除">
+                        <button type="button" onClick={() => confirmPermanentDelete(item)} className={`touch-manipulation rounded-lg border p-1.5 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`} title={tText("彻底删除")}>
                           <Trash2 size={14} />
                         </button>
                       </div>

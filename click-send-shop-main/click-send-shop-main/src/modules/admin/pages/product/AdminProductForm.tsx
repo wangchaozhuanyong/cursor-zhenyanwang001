@@ -27,8 +27,11 @@ import {
   THEME_TEXT_DANGER,
 } from "@/utils/themeVisuals";
 import { adminTableClassName, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
+import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
-import { COMPLIANCE_TYPE_LABELS, labelComplianceType } from "@/utils/adminDisplayLabels";
+import { COMPLIANCE_TYPE_LABELS } from "@/utils/adminDisplayLabels";
+import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type AdminSpecValue = {
   id?: string;
@@ -88,6 +91,8 @@ function specComboKey(ids: string[]) {
 }
 
 export default function AdminProductForm() {
+  const { tText } = useAdminT();
+  const { complianceType: labelComplianceType, text: L } = useAdminDisplayLabel();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const goBack = useGoBack("/admin/products");
@@ -258,7 +263,7 @@ export default function AdminProductForm() {
       throw new Error("图片大小不能超过 15MB");
     }
     if (type === "image/gif") {
-      toast.warning("GIF 上传后可能转为静态图");
+      toast.warning(tText("GIF 上传后可能转为静态图"));
     }
   };
 
@@ -278,7 +283,7 @@ export default function AdminProductForm() {
       });
       const url = res.url || "";
       if (!url) {
-        toast.error("服务器未返回图片地址，请检查存储配置或稍后重试");
+        toast.error(tText("服务器未返回图片地址，请检查存储配置或稍后重试"));
         return;
       }
       if (field === "cover") {
@@ -286,7 +291,7 @@ export default function AdminProductForm() {
       } else {
         setForm((f) => ({ ...f, images: [...f.images, url] }));
       }
-      toast.success("图片已上传");
+      toast.success(tText("图片已上传"));
     } catch (e) {
       toast.error(toastErrorMessage(e, "图片上传失败"));
     } finally {
@@ -317,7 +322,7 @@ export default function AdminProductForm() {
       });
       const url = String(res.url || "").trim();
       if (!url) {
-        toast.error("服务器未返回图片地址，请检查存储配置或稍后重试");
+        toast.error(tText("服务器未返回图片地址，请检查存储配置或稍后重试"));
         return;
       }
       setForm((f) => {
@@ -325,7 +330,7 @@ export default function AdminProductForm() {
         nv[variantIndex] = { ...nv[variantIndex], image_url: url };
         return { ...f, variants: nv };
       });
-      toast.success("SKU 图片已上传");
+      toast.success(tText("SKU 图片已上传"));
     } catch (e) {
       toast.error(toastErrorMessage(e, "SKU 图片上传失败"));
     } finally {
@@ -347,22 +352,22 @@ export default function AdminProductForm() {
     if (!file) return;
     const allowed = ["video/mp4", "video/webm", "video/quicktime", "video/x-m4v"];
     if (!allowed.includes(file.type)) {
-      toast.error("视频仅支持 MP4、WebM、MOV 格式");
+      toast.error(tText("视频仅支持 MP4、WebM、MOV 格式"));
       return;
     }
     if (file.size > 50 * 1024 * 1024) {
-      toast.error("视频大小不能超过 50MB");
+      toast.error(tText("视频大小不能超过 50MB"));
       return;
     }
     try {
       const res = await uploadService.uploadSingle(file, { mode: "video" });
       const url = res.url || "";
       if (!url) {
-        toast.error("服务器未返回视频地址，请检查存储配置或稍后重试");
+        toast.error(tText("服务器未返回视频地址，请检查存储配置或稍后重试"));
         return;
       }
       setForm((f) => ({ ...f, video_url: url }));
-      toast.success("视频已上传");
+      toast.success(tText("视频已上传"));
     } catch (e) {
       toast.error(toastErrorMessage(e, "视频上传失败"));
     }
@@ -456,11 +461,11 @@ export default function AdminProductForm() {
 
   const handleSave = async (publish = false) => {
     if (uploadingCover || uploadingGallery) {
-      toast.error("图片仍在上传中，请等待上传完成后再保存商品。");
+      toast.error(tText("图片仍在上传中，请等待上传完成后再保存商品。"));
       return;
     }
-    if (!form.name) { toast.error("请输入商品名称"); return; }
-    if (!form.variants.length) { toast.error("至少保留一条规格"); return; }
+    if (!form.name) { toast.error(tText("请输入商品名称")); return; }
+    if (!form.variants.length) { toast.error(tText("至少保留一条规格")); return; }
     setSaving(true);
     try {
       const opNum = parseFloat(form.original_price);
@@ -534,10 +539,10 @@ export default function AdminProductForm() {
       if (isNew) {
         payload.stock = mainStock;
         await createProduct(payload);
-        toast.success("商品创建成功");
+        toast.success(tText("商品创建成功"));
       } else {
         await updateProduct(id!, payload);
-        toast.success("商品更新成功");
+        toast.success(tText("商品更新成功"));
       }
       await invalidateProductCaches();
       navigate("/admin/products");
@@ -553,7 +558,7 @@ export default function AdminProductForm() {
     setDeleting(true);
     try {
       await deleteProduct(id);
-      toast.success("已删除");
+      toast.success(tText("已删除"));
       await invalidateProductCaches();
       navigate("/admin/products");
     } catch (e) {
@@ -586,8 +591,8 @@ export default function AdminProductForm() {
         }
       >
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-2">
-          <div className="rounded-xl border border-border bg-card p-6">
+        <div className="order-2 space-y-4 lg:order-none lg:col-span-2">
+          <div className="rounded-xl border border-border bg-card p-4 sm:p-6">
             <div className="mb-3">
               <AdminSectionTitle
                 title={<Tx>商品图片</Tx>}
@@ -689,7 +694,7 @@ export default function AdminProductForm() {
                   <input
                     value={form.video_url}
                     onChange={(e) => setForm({ ...form, video_url: e.target.value })}
-                    placeholder="填写视频 URL，或点击右侧上传"
+                    placeholder={tText("填写视频 URL，或点击右侧上传")}
                     className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                   />
                   <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-4 py-3 text-sm font-medium text-foreground hover:border-gold/50 hover:bg-secondary">
@@ -725,7 +730,7 @@ export default function AdminProductForm() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>商品名称</Tx></label>
-                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="输入商品名称" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={tText("输入商品名称")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>售价 (RM)</Tx></label>
@@ -733,7 +738,7 @@ export default function AdminProductForm() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>划线原价 (RM)</Tx></label>
-                <input value={form.original_price} onChange={(e) => setForm({ ...form, original_price: e.target.value })} placeholder="留空则不展示" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
+                <input value={form.original_price} onChange={(e) => setForm({ ...form, original_price: e.target.value })} placeholder={tText("留空则不展示")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
                 <div className="mt-1 flex justify-end">
                   <AdminFieldHint text={<Tx>仅当大于售价时，前台商品卡/详情页才会以删除线显示。</Tx>} />
                 </div>
@@ -812,7 +817,7 @@ export default function AdminProductForm() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-semibold text-foreground">规格矩阵</p>
+                    <p className="text-xs font-semibold text-foreground"><Tx>规格矩阵</Tx></p>
                     <AdminFieldHint
                       text={`最多 ${MAX_SPEC_GROUPS} 组，每组 ${MAX_SPEC_VALUES_PER_GROUP} 个值，自动生成 SKU 组合。`}
                     />
@@ -852,14 +857,14 @@ export default function AdminProductForm() {
                         const value = e.target.value;
                         updateSpecGroups((groups) => groups.map((g, i) => i === groupIdx ? { ...g, name: value } : g));
                       }}
-                      placeholder="如：颜色"
+                      placeholder={tText("如：颜色")}
                       className="min-w-0 flex-1 rounded-md bg-secondary px-2 py-1.5 text-xs outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => updateSpecGroups((groups) => groups.filter((_, i) => i !== groupIdx))}
                       className={THEME_TEXT_DANGER}
-                      title="删除规格组"
+                      title={tText("删除规格组")}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -876,7 +881,7 @@ export default function AdminProductForm() {
                               values: g.values.map((v, vi) => vi === valueIdx ? { ...v, value: text } : v),
                             } : g));
                           }}
-                          placeholder="规格值"
+                          placeholder={tText("规格值")}
                           className="w-20 bg-transparent text-xs outline-none"
                         />
                         <button
@@ -886,7 +891,7 @@ export default function AdminProductForm() {
                             values: g.values.filter((_, vi) => vi !== valueIdx),
                           } : g))}
                           className={THEME_TEXT_DANGER}
-                          title="删除规格值"
+                          title={tText("删除规格值")}
                         >
                           ×
                         </button>
@@ -907,21 +912,20 @@ export default function AdminProductForm() {
                 </div>
               ))}
             </div>
-            <div className="overflow-x-auto">
-              <table className={adminTableClassName("w-full min-w-[520px] text-xs")}>
+            <AdminNativeTable tableClassName="min-w-[520px] text-xs">
                 <thead>
                   <tr className="border-b border-border text-left text-muted-foreground">
                     <th className={adminThClassName("w-10")}><Tx>默认</Tx></th>
                     <th className={adminThClassName()}><Tx>规格名</Tx></th>
                     <th className={adminThClassName()}>SKU</th>
                     <th className={adminThClassName()}><Tx>价格</Tx></th>
-                    <th className={adminThClassName()}>原价</th>
-                    <th className={adminThClassName()}>成本</th>
+                    <th className={adminThClassName()}><Tx>原价</Tx></th>
+                    <th className={adminThClassName()}><Tx>成本</Tx></th>
                     <th className={adminThClassName()}><Tx>库存</Tx></th>
-                    <th className={adminThClassName()}>预警</th>
-                    <th className={adminThClassName()}>条码</th>
-                    <th className={adminThClassName()}>图片</th>
-                    <th className={adminThClassName()}>启用</th>
+                    <th className={adminThClassName()}><Tx>预警</Tx></th>
+                    <th className={adminThClassName()}><Tx>条码</Tx></th>
+                    <th className={adminThClassName()}><Tx>图片</Tx></th>
+                    <th className={adminThClassName()}><Tx>启用</Tx></th>
                     <th className={adminThClassName("w-10")} />
                   </tr>
                 </thead>
@@ -953,7 +957,7 @@ export default function AdminProductForm() {
                               return { ...f, variants: nv };
                             });
                           }}
-                          placeholder="如：标准版"
+                          placeholder={tText("如：标准版")}
                           className="w-full min-w-[96px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
                         />
                       </td>
@@ -968,7 +972,7 @@ export default function AdminProductForm() {
                               return { ...f, variants: nv };
                             });
                           }}
-                          placeholder="可选"
+                          placeholder={tText("可选")}
                           className="w-full min-w-[80px] rounded-md bg-secondary px-2 py-1.5 text-foreground outline-none"
                         />
                       </td>
@@ -1159,7 +1163,7 @@ export default function AdminProductForm() {
                             });
                           }}
                           className={`${THEME_TEXT_DANGER} disabled:opacity-30`}
-                          title="删除此行"
+                          title={tText("删除此行")}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -1167,8 +1171,7 @@ export default function AdminProductForm() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+            </AdminNativeTable>
           </div>
 
           <div className="rounded-xl border border-border bg-card p-6 space-y-3">
@@ -1218,14 +1221,14 @@ export default function AdminProductForm() {
               rows={4}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="简短商品描述..."
+              placeholder={tText("简短商品描述...")}
               className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
             />
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="rounded-xl border border-border bg-card p-6 space-y-3">
+        <div className="order-1 space-y-4 lg:order-none">
+          <div className="sticky top-4 z-10 rounded-xl border border-border bg-card p-4 space-y-3 sm:p-6 lg:static lg:z-auto">
             <h3 className="text-sm font-semibold text-foreground"><Tx>状态设置</Tx></h3>
             <div className="rounded-lg border border-border p-3">
               <AdminLabelWithHint
@@ -1245,9 +1248,9 @@ export default function AdminProductForm() {
               </select>
             </div>
             <div className="rounded-lg border border-border p-3 space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">合规与收录</p>
+              <p className="text-xs font-medium text-muted-foreground"><Tx>合规与收录</Tx></p>
               <label className="flex items-center justify-between">
-                <span className="text-sm text-foreground">是否受年龄限制</span>
+                <span className="text-sm text-foreground"><Tx>是否受年龄限制</Tx></span>
                 <input
                   type="checkbox"
                   className="accent-gold"
@@ -1265,18 +1268,18 @@ export default function AdminProductForm() {
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="mb-1 block text-[10px] text-muted-foreground">最低年龄</label>
+                  <label className="mb-1 block text-[10px] text-muted-foreground"><Tx>最低年龄</Tx></label>
                   <input
                     type="number"
                     min={0}
                     value={form.minimum_age}
                     onChange={(e) => setForm((prev) => ({ ...prev, minimum_age: e.target.value }))}
                     className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none"
-                    placeholder="例如 18"
+                    placeholder={tText("例如 18")}
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-[10px] text-muted-foreground">合规类型</label>
+                  <label className="mb-1 block text-[10px] text-muted-foreground"><Tx>合规类型</Tx></label>
                   <select
                     value={form.compliance_type}
                     onChange={(e) => {
@@ -1294,7 +1297,7 @@ export default function AdminProductForm() {
                     ) : null}
                     {Object.entries(COMPLIANCE_TYPE_LABELS).map(([value, label]) => (
                       <option key={value} value={value}>
-                        {label}
+                        {L(label)}
                       </option>
                     ))}
                   </select>
@@ -1303,18 +1306,18 @@ export default function AdminProductForm() {
               <input
                 value={form.region_notice}
                 onChange={(e) => setForm((prev) => ({ ...prev, region_notice: e.target.value }))}
-                placeholder="地区适用说明"
+                placeholder={tText("地区适用说明")}
                 className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none"
               />
               <textarea
                 rows={2}
                 value={form.compliance_notice}
                 onChange={(e) => setForm((prev) => ({ ...prev, compliance_notice: e.target.value }))}
-                placeholder="合规说明"
+                placeholder={tText("合规说明")}
                 className="w-full rounded-lg bg-secondary px-3 py-2 text-sm text-foreground outline-none"
               />
               <label className="flex items-center justify-between">
-                <span className="text-sm text-foreground">允许搜索引擎收录</span>
+                <span className="text-sm text-foreground"><Tx>允许搜索引擎收录</Tx></span>
                 <input
                   type="checkbox"
                   className="accent-gold"
@@ -1325,9 +1328,9 @@ export default function AdminProductForm() {
             </div>
             {(
               [
-                { label: "热门", desc: "显示热门标签", key: "is_hot" as const },
-                { label: "是否标记为新品", desc: "显示新品标签并进入新品上市专题页", key: "is_new" as const },
-                { label: "推荐", desc: "首页推荐展示", key: "is_recommended" as const },
+                { label: tText("热门"), desc: "显示热门标签", key: "is_hot" as const },
+                { label: tText("是否标记为新品"), desc: "显示新品标签并进入新品上市专题页", key: "is_new" as const },
+                { label: tText("推荐"), desc: "首页推荐展示", key: "is_recommended" as const },
               ] as const
             ).map((t) => (
               <label key={t.key} className="flex items-center justify-between rounded-lg border border-border p-3">
@@ -1425,7 +1428,7 @@ export default function AdminProductForm() {
         open={deleteConfirmOpen}
         onOpenChange={setDeleteConfirmOpen}
         danger
-        title="删除商品"
+        title={tText("删除商品")}
         description={`确定删除「${form.name || id}」？删除后可在回收站恢复。`}
         confirmText="删除"
         onConfirm={handleDelete}

@@ -1,4 +1,6 @@
+import { Tx } from "@/components/admin/AdminText";
 import type { SiteSettings } from "@/types/admin";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type Props = {
   settings: SiteSettings;
@@ -17,9 +19,9 @@ export default function TaxPreviewCard({ settings }: Props) {
 
   return (
     <div className="rounded-xl border border-border bg-background p-3 text-xs">
-      <p className="font-medium text-foreground">税务预览</p>
+      <p className="font-medium text-foreground"><Tx>税务预览</Tx></p>
       {!enabled ? (
-        <p className="mt-2 text-muted-foreground">SST 展示已关闭</p>
+        <p className="mt-2 text-muted-foreground"><Tx>SST 展示已关闭</Tx></p>
       ) : (
         <ul className="mt-2 space-y-1 text-muted-foreground">
           <li>RM{gross} 商品（含税示意）</li>

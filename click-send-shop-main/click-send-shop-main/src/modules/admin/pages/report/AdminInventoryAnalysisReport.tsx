@@ -8,11 +8,14 @@ import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
-import { labelReportCellValue, labelReportColumn } from "@/utils/adminDisplayLabels";
+import { useAdminReportLabel } from "@/hooks/useAdminReportLabel";
+import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import { getReportColumnMaxWidthStyle, reportTableThClassName } from "@/utils/adminTableColumnPolicy";
 import ReportPageHeader from "@/components/admin/report/ReportPageHeader";
 import { exportReportCsv, fetchInventoryAnalysisReport } from "@/services/admin/reportService";
 import { REPORT_REGISTRY_BY_KEY } from "./reportRegistry";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const TABLE_COLUMNS = [
   "product_name",
@@ -54,17 +57,20 @@ function formatNumber(value: unknown, digits = 0) {
   return digits > 0 ? n.toFixed(digits) : String(Math.round(n));
 }
 
-function formatCell(key: string, value: unknown) {
-  if (value === null || value === undefined || value === "") return "-";
-  if (key === "stock_status") return labelReportCellValue(key, value);
-  if (key === "product_name") return String(value);
-  if (key === "avg_daily_sales") return formatNumber(value, 2);
-  if (key === "available_stock_days") return formatNumber(value, 1);
-  if (key.endsWith("_stock") || key.endsWith("_7d") || key.endsWith("_30d")) return formatNumber(value);
-  return String(value);
-}
-
 export default function AdminInventoryAnalysisReport() {
+  const { tText } = useAdminT();
+  const { column: labelReportColumn, cell: labelReportCell } = useAdminReportLabel();
+  const sortOptions = useLocalizedOptions([...SORT_OPTIONS]);
+
+  const formatCell = (key: string, value: unknown) => {
+    if (value === null || value === undefined || value === "") return "-";
+    if (key === "stock_status") return labelReportCell(key, value);
+    if (key === "product_name") return String(value);
+    if (key === "avg_daily_sales") return formatNumber(value, 2);
+    if (key === "available_stock_days") return formatNumber(value, 1);
+    if (key.endsWith("_stock") || key.endsWith("_7d") || key.endsWith("_30d")) return formatNumber(value);
+    return String(value);
+  };
   const [searchParams, setSearchParams] = useSearchParams();
   const [exporting, setExporting] = useState(false);
   const filterParams = useMemo(() => searchParamsRecord(searchParams), [searchParams]);
@@ -117,7 +123,7 @@ export default function AdminInventoryAnalysisReport() {
     setExporting(true);
     try {
       await exportReportCsv(config.exportType, filterParams);
-      toast.success("报表导出已开始下载");
+      toast.success(tText("报表导出已开始下载"));
     } catch (e) {
       toast.error(toastErrorMessage(e, "导出失败"));
     } finally {
@@ -142,7 +148,7 @@ export default function AdminInventoryAnalysisReport() {
             value={sortBy}
             onChange={(e) => updateSort(e.target.value, sortOrder)}
           >
-            {SORT_OPTIONS.map((opt) => (
+            {sortOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
@@ -156,8 +162,8 @@ export default function AdminInventoryAnalysisReport() {
             value={sortOrder}
             onChange={(e) => updateSort(sortBy, e.target.value)}
           >
-            <option value="asc">升序</option>
-            <option value="desc">降序</option>
+            <option value="asc"><Tx>升序</Tx></option>
+            <option value="desc"><Tx>降序</Tx></option>
           </select>
         </label>
       </div>
@@ -225,7 +231,7 @@ export default function AdminInventoryAnalysisReport() {
       />
 
       <section className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm text-[var(--theme-text-muted)]">
-        <span className="font-medium text-[var(--theme-text)]">数据口径：</span>{config.dataScopeNote}
+        <span className="font-medium text-[var(--theme-text)]"><Tx>数据口径：</Tx></span>{config.dataScopeNote}
       </section>
     </div>
   );

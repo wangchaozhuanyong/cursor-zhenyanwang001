@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Calendar } from "lucide-react";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 import {
   SEGMENT_DAY_LEN,
   SEGMENT_MONTH_LEN,
@@ -55,6 +57,7 @@ export default function SegmentedDateInput({
   disabled = false,
   id,
 }: SegmentedDateInputProps) {
+  const { tText } = useAdminT();
   const parsed = parseDateValue(value);
   const [y, setY] = useState(parsed.y);
   const [m, setM] = useState(parsed.m);
@@ -122,12 +125,12 @@ export default function SegmentedDateInput({
           type="text"
           inputMode="numeric"
           autoComplete="off"
-          placeholder="年"
+          placeholder={tText("年")}
           disabled={disabled}
           maxLength={SEGMENT_YEAR_LEN}
           size={SEGMENT_YEAR_LEN}
           value={y}
-          aria-label="年（4 位）"
+          aria-label={tText("年（4 位）")}
           className={SEGMENT_YEAR_INPUT_CLASS}
           onChange={(e) => setYearFromInput(e.target.value)}
           onInput={(e) => setYearFromInput(e.currentTarget.value)}
@@ -144,11 +147,11 @@ export default function SegmentedDateInput({
           type="text"
           inputMode="numeric"
           autoComplete="off"
-          placeholder="月"
+          placeholder={tText("月")}
           disabled={disabled}
           maxLength={SEGMENT_MONTH_LEN}
           value={m}
-          aria-label="月（2 位）"
+          aria-label={tText("月（2 位）")}
           className="w-[2.75ch] min-w-0 tabular-nums bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
           onChange={(e) => {
             const v = segmentDigits(e.target.value, SEGMENT_MONTH_LEN);
@@ -179,11 +182,11 @@ export default function SegmentedDateInput({
           type="text"
           inputMode="numeric"
           autoComplete="off"
-          placeholder="日"
+          placeholder={tText("日")}
           disabled={disabled}
           maxLength={SEGMENT_DAY_LEN}
           value={d}
-          aria-label="日（2 位）"
+          aria-label={tText("日（2 位）")}
           className="w-[2.75ch] min-w-0 tabular-nums bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
           onChange={(e) => {
             const v = segmentDigits(e.target.value, SEGMENT_DAY_LEN);
@@ -201,7 +204,7 @@ export default function SegmentedDateInput({
         <button
           type="button"
           disabled={disabled}
-          title="打开日历"
+          title={tText("打开日历")}
           className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-background/80 hover:text-foreground disabled:opacity-40"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => {

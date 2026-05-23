@@ -3,6 +3,8 @@ import type { ThemeConfig } from "@/types/theme";
 import { getThemeHealthChecks, type ThemeHealthStatus } from "@/utils/themeContrast";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import { getThemeHealthFixHint, getThemeHealthFixTarget, type ThemeHealthFixTarget } from "./themeHealthFixMeta";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const statusIcon: Record<ThemeHealthStatus, typeof CheckCircle2> = {
   pass: CheckCircle2,
@@ -29,7 +31,7 @@ export default function ThemeHealthCheck({ config, onGoToFix }: Props) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 rounded-lg border border-border bg-secondary/30 px-3 py-2 text-xs text-foreground">
-        <span>皮肤体检</span>
+        <span><Tx>皮肤体检</Tx></span>
         <AdminFieldHint
           text={
             failCount === 0 && warnCount === 0

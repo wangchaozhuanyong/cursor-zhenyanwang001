@@ -22,6 +22,7 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import { refreshSiteInfo } from "@/hooks/useSiteInfo";
+import { useAdminT } from "@/hooks/useAdminT";
 
 interface ContentItem {
   id: string;
@@ -40,6 +41,7 @@ const DEFAULT_POLICY_PATHS = {
 };
 
 export default function AdminContent() {
+  const { tText } = useAdminT();
   const queryClient = useQueryClient();
   const { confirm } = useAdminConfirm();
   const [editing, setEditing] = useState<ContentItem | null>(null);
@@ -90,13 +92,13 @@ export default function AdminContent() {
 
   const handleSave = async () => {
     if (!form.title || !form.content || !editing) {
-      toast.error("请填写完整");
+      toast.error(tText("请填写完整"));
       return;
     }
     setSaving(true);
     try {
       await updateContentPage(editing.id, { title: form.title, content: form.content });
-      toast.success("内容已更新");
+      toast.success(tText("内容已更新"));
       setShowForm(false);
       setEditing(null);
       await invalidateContent();
@@ -116,7 +118,7 @@ export default function AdminContent() {
       await refreshSiteInfo();
       setHelpForm(normalized);
       setHelpJson(JSON.stringify(normalized, null, 2));
-      toast.success("帮助中心配置已保存");
+      toast.success(tText("帮助中心配置已保存"));
       await invalidateContent();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "帮助中心配置保存失败");
@@ -136,11 +138,11 @@ export default function AdminContent() {
     const slug = createForm.slug.trim().toLowerCase();
     const content = createForm.content.trim();
     if (!title || !slug || !content) {
-      toast.error("请填写标题、slug 和正文");
+      toast.error(tText("请填写标题、slug 和正文"));
       return;
     }
     if (!/^[a-z0-9-]+$/.test(slug)) {
-      toast.error("slug 仅允许小写字母、数字和中横线");
+      toast.error(tText("slug 仅允许小写字母、数字和中横线"));
       return;
     }
     setSaving(true);
@@ -154,7 +156,7 @@ export default function AdminContent() {
       });
       setShowCreateForm(false);
       setCreateForm({ title: "", slug: "", content: "", publish_status: "published", sort_order: "" });
-      toast.success("内容页已创建");
+      toast.success(tText("内容页已创建"));
       await invalidateContent();
     } catch (e) {
       toast.error(toastErrorMessage(e, "创建失败"));
@@ -333,30 +335,13 @@ export default function AdminContent() {
         <p className="mb-3 text-xs text-muted-foreground">
           <Tx>可视化维护 FAQ 分类、问题、答案、排序与启用状态；前台</Tx>{" "}
           <Link to="/help" className="text-theme-price underline-offset-2 hover:underline" target="_blank" rel="noreferrer">/help</Link>
-          <Tx> 优先读取此处配置（未保存前前台仍使用内置默认）。</Tx>
+          <Tx>优先读取此处配置（未保存前前台仍使用内置默认）。客服渠道、工作时间与「联系客服」入口请在</Tx>{" "}
+          <Link to="/admin/support-download" className="text-theme-price underline-offset-2 hover:underline">
+            <Tx>页面装修 / 客服与安装</Tx>
+          </Link>
+          <Tx>统一维护。</Tx>
         </p>
         <div className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-2">
-            <label className="text-xs text-muted-foreground"><Tx>
-              工作时间
-              </Tx><input
-                value={helpForm.workingHours}
-                onChange={(e) => setHelpForm((prev) => ({ ...prev, workingHours: e.target.value }))}
-                className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
-                placeholder="例如：每天 9:00 - 22:00"
-              />
-            </label>
-            <label className="text-xs text-muted-foreground"><Tx>
-              客服联系方式说明
-              </Tx><input
-                value={helpForm.contactNote || ""}
-                onChange={(e) => setHelpForm((prev) => ({ ...prev, contactNote: e.target.value }))}
-                className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
-                placeholder="例如：WhatsApp / 电话 / 邮箱"
-              />
-            </label>
-          </div>
-
           <div className="rounded-xl border border-border p-3">
             <div className="mb-2 flex items-center justify-between">
               <h4 className="text-sm font-semibold"><Tx>FAQ 分类</Tx></h4>
@@ -379,7 +364,7 @@ export default function AdminContent() {
               {categories.map((cat) => (
                 <div key={cat.id} draggable onDragStart={() => setDragCatId(cat.id)} onDragOver={(e) => e.preventDefault()} onDrop={() => { reorderCategories(dragCatId, cat.id); setDragCatId(""); }} className="grid gap-2 rounded-lg border border-border bg-background p-2 md:grid-cols-[32px,1fr,56px,56px,80px,56px]">
                   <button type="button" onClick={() => setCollapsedCategoryIds((prev) => ({ ...prev, [cat.id]: !prev[cat.id] }))} className="inline-flex items-center justify-center rounded-lg border border-border bg-card">{collapsedCategoryIds[cat.id] ? <ChevronRight size={14} /> : <ChevronDown size={14} />}</button>
-                  <input value={cat.name} onChange={(e) => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => x.id === cat.id ? { ...x, name: e.target.value } : x) }))} placeholder="分类名称" className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-gold" />
+                  <input value={cat.name} onChange={(e) => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => x.id === cat.id ? { ...x, name: e.target.value } : x) }))} placeholder={tText("分类名称")} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-gold" />
                   <button type="button" onClick={() => reorderCategories(cat.id, categories[Math.max(0, categories.findIndex((c) => c.id === cat.id) - 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowUp size={14} /></button>
                   <button type="button" onClick={() => reorderCategories(cat.id, categories[Math.min(categories.length - 1, categories.findIndex((c) => c.id === cat.id) + 1)]?.id || "")} className="inline-flex items-center justify-center rounded-lg border border-border bg-card"><ArrowDown size={14} /></button>
                   <label className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1.5 text-xs"><input type="checkbox" checked={cat.enabled} onChange={(e) => setHelpForm((prev) => ({ ...prev, categories: prev.categories.map((x) => x.id === cat.id ? { ...x, enabled: e.target.checked } : x) }))} /><Tx>启用</Tx></label>
@@ -412,7 +397,7 @@ export default function AdminContent() {
               {faqs.map((faq) => (
                 <div key={faq.id} draggable onDragStart={() => setDragFaqId(faq.id)} onDragOver={(e) => e.preventDefault()} onDrop={() => { reorderFaqs(dragFaqId, faq.id); setDragFaqId(""); }} className="space-y-2 rounded-lg border border-border bg-background p-2">
                   <div className={`grid gap-2 ${collapsedCategoryIds[faq.categoryId] ? "hidden" : "md:grid-cols-[1fr,100px,56px,56px,80px,56px]"}`}>
-                    <input value={faq.question} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, question: e.target.value } : x) }))} placeholder="问题" className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-gold" />
+                    <input value={faq.question} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, question: e.target.value } : x) }))} placeholder={tText("问题")} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-gold" />
                     <select value={faq.categoryId} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, categoryId: e.target.value } : x) }))} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-gold">
                       <option value=""><Tx>未分类</Tx></option>
                       {categories.map((cat) => <option key={cat.id} value={cat.id}>{cat.name || "未命名分类"}</option>)}
@@ -422,7 +407,7 @@ export default function AdminContent() {
                     <label className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-2 py-1.5 text-xs"><input type="checkbox" checked={faq.enabled} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, enabled: e.target.checked } : x) }))} /><Tx>启用</Tx></label>
                     <button type="button" onClick={() => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.filter((x) => x.id !== faq.id) }))} className={`inline-flex items-center justify-center rounded-lg border border-border bg-card ${THEME_TEXT_DANGER}`}><Trash2 size={14} /></button>
                   </div>
-                  {!collapsedCategoryIds[faq.categoryId] ? <textarea value={faq.answer} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, answer: e.target.value } : x) }))} rows={3} placeholder="答案" className="w-full rounded-lg border border-border bg-card px-2 py-2 text-xs outline-none focus:border-gold" /> : null}
+                  {!collapsedCategoryIds[faq.categoryId] ? <textarea value={faq.answer} onChange={(e) => setHelpForm((prev) => ({ ...prev, faqs: prev.faqs.map((x) => x.id === faq.id ? { ...x, answer: e.target.value } : x) }))} rows={3} placeholder={tText("答案")} className="w-full rounded-lg border border-border bg-card px-2 py-2 text-xs outline-none focus:border-gold" /> : null}
                 </div>
               ))}
               {faqs.length === 0 ? <p className="text-xs text-muted-foreground"><Tx>暂无问题，请新增 FAQ。</Tx></p> : null}
@@ -434,7 +419,7 @@ export default function AdminContent() {
             <textarea value={helpJson} onChange={(e) => setHelpJson(e.target.value)} rows={8} className="w-full rounded-xl border border-border bg-background px-3 py-3 font-mono text-xs outline-none focus:border-gold" />
             <div className="mt-2 flex gap-2">
               <button type="button" onClick={() => setHelpJson(JSON.stringify(normalizeHelpCenterConfig(helpForm), null, 2))} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>从表单生成数据</Tx></button>
-              <button type="button" onClick={() => { try { const parsed = normalizeHelpCenterConfig(JSON.parse(helpJson)); setHelpForm(parsed); toast.success("已导入到表单"); } catch (e) { toast.error(e instanceof Error ? e.message : "数据格式错误"); } }} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>从数据导入表单</Tx></button>
+              <button type="button" onClick={() => { try { const parsed = normalizeHelpCenterConfig(JSON.parse(helpJson)); setHelpForm(parsed); toast.success(tText("已导入到表单")); } catch (e) { toast.error(e instanceof Error ? e.message : "数据格式错误"); } }} className="rounded-lg border border-border px-3 py-1.5 text-xs"><Tx>从数据导入表单</Tx></button>
             </div>
           </div>
         </div>
@@ -443,8 +428,7 @@ export default function AdminContent() {
             <button
               type="button"
               onClick={() => {
-                confirm({
-                  title: "恢复默认 FAQ",
+                confirm({ title: tText("恢复默认 FAQ"),
                   description: "将覆盖当前表单内容（需再点保存才写入数据库）。确定继续？",
                   confirmText: "恢复默认",
                   danger: true,
@@ -452,7 +436,7 @@ export default function AdminContent() {
                     const defaults = buildDefaultHelpCenterConfig();
                     setHelpForm(defaults);
                     setHelpJson(JSON.stringify(defaults, null, 2));
-                    toast.success("已载入默认 FAQ，请点击保存帮助中心配置");
+                    toast.success(tText("已载入默认 FAQ，请点击保存帮助中心配置"));
                   },
                 });
               }}
@@ -539,19 +523,19 @@ export default function AdminContent() {
       <AdminResponsiveSheet
         open={showCreateForm}
         onOpenChange={setShowCreateForm}
-        title="新增内容页"
+        title={tText("新增内容页")}
         size="md"
         height="70vh"
       >
         <div className="space-y-4">
-          <input value={createForm.title} onChange={(e) => setCreateForm((p) => ({ ...p, title: e.target.value }))} placeholder="标题" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-          <input value={createForm.slug} onChange={(e) => setCreateForm((p) => ({ ...p, slug: e.target.value }))} placeholder="页面标识（小写字母、数字、横线，如 terms-of-service）" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+          <input value={createForm.title} onChange={(e) => setCreateForm((p) => ({ ...p, title: e.target.value }))} placeholder={tText("标题")} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+          <input value={createForm.slug} onChange={(e) => setCreateForm((p) => ({ ...p, slug: e.target.value }))} placeholder={tText("页面标识（小写字母、数字、横线，如 terms-of-service）")} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
           <select value={createForm.publish_status} onChange={(e) => setCreateForm((p) => ({ ...p, publish_status: e.target.value as "published" | "draft" }))} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold">
-            <option value="published">已发布</option>
-            <option value="draft">草稿</option>
+            <option value="published"><Tx>已发布</Tx></option>
+            <option value="draft"><Tx>草稿</Tx></option>
           </select>
-          <input value={createForm.sort_order} onChange={(e) => setCreateForm((p) => ({ ...p, sort_order: e.target.value }))} placeholder="排序（可选）" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-          <textarea rows={10} value={createForm.content} onChange={(e) => setCreateForm((p) => ({ ...p, content: e.target.value }))} placeholder="正文内容" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold resize-none" />
+          <input value={createForm.sort_order} onChange={(e) => setCreateForm((p) => ({ ...p, sort_order: e.target.value }))} placeholder={tText("排序（可选）")} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+          <textarea rows={10} value={createForm.content} onChange={(e) => setCreateForm((p) => ({ ...p, content: e.target.value }))} placeholder={tText("正文内容")} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold resize-none" />
           <PermissionGate permission="content.manage">
             <LoadingButton
               type="button"

@@ -2,6 +2,8 @@ import { useRef, useState } from "react";
 import { Loader2, Upload } from "lucide-react";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import type { ProductImportResult } from "@/types/product";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type Props = {
   open: boolean;
@@ -93,10 +95,10 @@ export default function AdminCsvImportDialog({
     >
       <div className="space-y-3 text-sm text-muted-foreground">
         <ul className="list-disc space-y-1 pl-5">
-          <li>ERP 模式：同一商品多行，每行一个 SKU（商品名称、售价必填）</li>
-          <li>填写商品编号则更新；留空则按商品名称归组新建</li>
-          <li>标签：中文名，逗号分隔；SKU 编码可匹配已有规格</li>
-          <li>状态填 active / draft / inactive</li>
+          <li><Tx>ERP 模式：同一商品多行，每行一个 SKU（商品名称、售价必填）</Tx></li>
+          <li><Tx>填写商品编号则更新；留空则按商品名称归组新建</Tx></li>
+          <li><Tx>标签：中文名，逗号分隔；SKU 编码可匹配已有规格</Tx></li>
+          <li><Tx>状态填 active / draft / inactive</Tx></li>
           {extraHints.map((hint) => (
             <li key={hint}>{hint}</li>
           ))}
@@ -105,7 +107,7 @@ export default function AdminCsvImportDialog({
         <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-secondary/30 px-4 py-8 transition hover:bg-secondary/50">
           <Upload size={20} className="text-muted-foreground" />
           <span className="font-medium text-foreground">{file ? file.name : "点击选择 CSV 文件"}</span>
-          <span className="text-xs text-muted-foreground">最大 5MB</span>
+          <span className="text-xs text-muted-foreground"><Tx>最大 5MB</Tx></span>
           <input
             ref={inputRef}
             type="file"

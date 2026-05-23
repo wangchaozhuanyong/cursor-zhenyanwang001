@@ -12,6 +12,8 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import type { PaymentEventAdminRow } from "@/types/adminPayment";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const VERIFY_LABELS: Record<string, string> = { pending: "待验签", success: "验签通过", failed: "验签失败", manual: "人工确认" };
 const RESULT_LABELS: Record<string, string> = { pending: "待处理", success: "处理成功", failed: "处理失败", rejected: "已拒绝", logged: "已记录", refunded: "已退款", partially_refunded: "部分退款" };
@@ -35,6 +37,7 @@ function labelEventType(type: string) {
 }
 
 export default function AdminPaymentEvents() {
+  const { tText } = useAdminT();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -58,7 +61,7 @@ export default function AdminPaymentEvents() {
   const replayMutation = useMutation({
     mutationFn: (row: PaymentEventAdminRow) => paymentAdmin.replayAdminPaymentEvent(row.id),
     onSuccess: async () => {
-      toast.success("事件已重新处理，支付与订单数据会自动刷新");
+      toast.success(tText("事件已重新处理，支付与订单数据会自动刷新"));
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.paymentsRoot() }),
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.ordersRoot() }),
@@ -76,8 +79,8 @@ export default function AdminPaymentEvents() {
       <div className="p-4 md:p-6">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold text-foreground">支付回调 / 事件</h1>
-            <p className="mt-1 text-sm text-muted-foreground">回调事件使用低频轮询兜底，SSE 到达时会精准刷新。</p>
+            <h1 className="text-xl font-bold text-foreground"><Tx>支付回调 / 事件</Tx></h1>
+            <p className="mt-1 text-sm text-muted-foreground"><Tx>回调事件使用低频轮询兜底，SSE 到达时会精准刷新。</Tx></p>
           </div>
           <button type="button" onClick={() => void eventsQuery.refetch()} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
             <RefreshCw size={16} className={eventsQuery.isFetching ? "animate-spin" : ""} />
@@ -89,11 +92,11 @@ export default function AdminPaymentEvents() {
 
         <div className="mb-4 grid gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 md:grid-cols-[220px_1fr_auto]">
           <select value={provider} onChange={(e) => { setProvider(e.target.value); setPage(1); }} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
-            <option value="">全部网关</option>
+            <option value=""><Tx>全部网关</Tx></option>
             {Object.entries(PROVIDER_LABELS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
           </select>
-          <input value={orderId} onChange={(e) => { setOrderId(e.target.value); setPage(1); }} placeholder="按订单 ID / 支付单 ID 筛选" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-          <button type="button" onClick={() => { setProvider(""); setOrderId(""); setPage(1); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">清空筛选</button>
+          <input value={orderId} onChange={(e) => { setOrderId(e.target.value); setPage(1); }} placeholder={tText("按订单 ID / 支付单 ID 筛选")} className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+          <button type="button" onClick={() => { setProvider(""); setOrderId(""); setPage(1); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>清空筛选</Tx></button>
         </div>
 
         <AnimatedTable
@@ -135,7 +138,7 @@ export default function AdminPaymentEvents() {
               </td>
               <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(row.created_at)}</td>
               <td className="px-4 py-3">
-                <button type="button" onClick={() => replayMutation.mutate(row)} disabled={replayMutation.isPending} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-60">重新处理</button>
+                <button type="button" onClick={() => replayMutation.mutate(row)} disabled={replayMutation.isPending} className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-secondary disabled:opacity-60"><Tx>重新处理</Tx></button>
               </td>
             </>
           )}

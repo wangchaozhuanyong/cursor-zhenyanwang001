@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Save } from "lucide-react";
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
+import { useAdminT } from "@/hooks/useAdminT";
 import {
   CHECKOUT_MODE_LABELS,
   formatPaymentConfigSummary,
@@ -24,6 +25,7 @@ type Props = {
 };
 
 export default function StripeChannelConfigForm({ draft, onDraftChange, onSave }: Props) {
+  const { tText } = useAdminT();
   const config = useMemo(() => parseDraft(draft), [draft]);
   const checkoutMode = String(config.checkoutMode ?? "session");
   const feeRate =
@@ -45,7 +47,7 @@ export default function StripeChannelConfigForm({ draft, onDraftChange, onSave }
   return (
     <div className="mt-3">
       <div className="mb-2 flex items-center gap-2 text-xs text-foreground">
-        <span>扩展配置</span>
+        <span><Tx>扩展配置</Tx></span>
         <AdminFieldHint text={`用于对账手续费估算：${formatPaymentConfigSummary(config)}`} />
       </div>
       <div className="grid gap-3 md:grid-cols-3">
@@ -71,7 +73,7 @@ export default function StripeChannelConfigForm({ draft, onDraftChange, onSave }
             min="0"
             className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             value={feeRate}
-            placeholder="如 2.9"
+            placeholder={tText("如 2.9")}
             onChange={(e) =>
               patchConfig({
                 fee_rate_percent: e.target.value === "" ? "" : Number(e.target.value),
@@ -87,7 +89,7 @@ export default function StripeChannelConfigForm({ draft, onDraftChange, onSave }
             min="0"
             className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             value={feeFixed}
-            placeholder="如 1.0"
+            placeholder={tText("如 1.0")}
             onChange={(e) =>
               patchConfig({
                 fee_fixed: e.target.value === "" ? "" : Number(e.target.value),

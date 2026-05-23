@@ -1,6 +1,7 @@
 const { ORDER_STATUS, PAYMENT_STATUS, PAID_PAYMENT_STATUS_LIST } = require('../../../constants/status');
 const {
   PAID_PAYMENT_SQL,
+  UNPAID_PAYMENT_SQL,
   netSalesExpr,
   refundedAmountExpr,
   orderNetRatioExpr,
@@ -58,6 +59,7 @@ module.exports = {
   REPORT_DATE_FIELD,
   REPORT_TIMEZONE_OFFSET_HOURS,
   PAID_PAYMENT_SQL,
+  UNPAID_PAYMENT_SQL,
   netSalesExpr,
   refundedAmountExpr,
   orderNetRatioExpr,

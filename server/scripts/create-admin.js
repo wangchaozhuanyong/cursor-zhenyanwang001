@@ -33,8 +33,16 @@ async function main() {
     console.error("手机号不能为空");
     process.exit(1);
   }
-  if (password.length < 6) {
-    console.error("密码至少 6 位");
+  if (password.length < 8) {
+    console.error("密码至少 8 位，并包含大写字母、小写字母和数字");
+    process.exit(1);
+  }
+  if (password.length > 64) {
+    console.error("密码不能超过 64 位");
+    process.exit(1);
+  }
+  if (!/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password)) {
+    console.error("密码必须包含大写字母、小写字母和数字");
     process.exit(1);
   }
 

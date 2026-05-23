@@ -11,8 +11,10 @@ import { Tx } from "@/components/admin/AdminText";
 import { AdminSectionTitle } from "@/components/admin/AdminFieldHint";
 import { adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { useAdminT } from "@/hooks/useAdminT";
 
 export default function AdminHomeOpsDisplayPanel() {
+  const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
   const [settings, setSettings] = useState<HomeModuleSettings>(DEFAULT_HOME_MODULE_SETTINGS);
@@ -42,7 +44,7 @@ export default function AdminHomeOpsDisplayPanel() {
       setSettings(mergeHomeModuleSettings(saved));
       invalidateHomeModuleSettingsCache();
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.homeOpsSettings() });
-      toast.success("展示规则已保存");
+      toast.success(tText("展示规则已保存"));
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败"));
     } finally {

@@ -12,6 +12,7 @@ import { Tx } from "@/components/admin/AdminText";
 import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { THEME_HOVER_BG_DANGER, THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const EMPTY_FORM = {
   name: "",
@@ -22,6 +23,7 @@ const EMPTY_FORM = {
 };
 
 export default function AdminProductTags() {
+  const { tText } = useAdminT();
   const queryClient = useQueryClient();
   const { confirm } = useAdminConfirm();
   const [showForm, setShowForm] = useState(false);
@@ -64,15 +66,15 @@ export default function AdminProductTags() {
   };
 
   const handleSave = async () => {
-    if (!form.name.trim()) { toast.error("请输入标签名称"); return; }
+    if (!form.name.trim()) { toast.error(tText("请输入标签名称")); return; }
     setSaving(true);
     try {
       if (editingId) {
         await updateProductTag(editingId, form);
-        toast.success("标签已保存");
+        toast.success(tText("标签已保存"));
       } else {
         await createProductTag(form);
-        toast.success("标签已创建");
+        toast.success(tText("标签已创建"));
       }
       resetForm();
       await invalidateTags();
@@ -86,7 +88,7 @@ export default function AdminProductTags() {
   const deleteMutation = useMutation({
     mutationFn: deleteProductTag,
     onSuccess: async () => {
-      toast.success("标签已删除");
+      toast.success(tText("标签已删除"));
       await invalidateTags();
     },
     onError: (e) => toast.error(toastErrorMessage(e, "删除标签失败")),
@@ -124,7 +126,7 @@ export default function AdminProductTags() {
           <div className="flex flex-wrap items-end gap-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>标签名称</Tx></label>
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="输入标签名称" className="rounded-lg bg-secondary px-4 py-2.5 text-sm text-foreground outline-none" />
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={tText("输入标签名称")} className="rounded-lg bg-secondary px-4 py-2.5 text-sm text-foreground outline-none" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>背景色</Tx></label>

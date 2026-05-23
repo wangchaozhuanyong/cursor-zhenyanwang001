@@ -7,6 +7,8 @@ import {
   type ReportFilterKey,
 } from "@/utils/reportFilters";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type Props = {
   filterProfile?: ReportFilterProfile;
@@ -44,6 +46,7 @@ export default function ReportFilterBar({
   categoryOptions = [],
   onChange,
 }: Props) {
+  const { tText } = useAdminT();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const enabledFilters = useMemo(
@@ -129,7 +132,7 @@ export default function ReportFilterBar({
               onChange={(v) => update({ date_from: v })}
               className="min-w-[9.5rem]"
             />
-            <span className="text-xs text-[var(--theme-text-muted)]">至</span>
+            <span className="text-xs text-[var(--theme-text-muted)]"><Tx>至</Tx></span>
             <SegmentedDateInput
               disabled={!isCustom}
               value={dateTo}
@@ -149,7 +152,7 @@ export default function ReportFilterBar({
 
         {isFilterEnabled(enabledFilters, "categoryId") ? (
           <select value={categoryId} onChange={(e) => update({ category_id: e.target.value })} className={selectClass}>
-            <option value="">全部分类</option>
+            <option value=""><Tx>全部分类</Tx></option>
             {categoryOptions.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
@@ -160,8 +163,8 @@ export default function ReportFilterBar({
           <input
             value={productId}
             onChange={(e) => update({ product_id: e.target.value })}
-            placeholder="商品 ID（可选）"
-            title="系统内部 ID，从商品编辑页复制"
+            placeholder={tText("商品 ID（可选）")}
+            title={tText("系统内部 ID，从商品编辑页复制")}
             className={`${selectClass} min-w-[10rem]`}
           />
         ) : null}
@@ -170,7 +173,7 @@ export default function ReportFilterBar({
           <input
             value={activityId}
             onChange={(e) => update({ activity_id: e.target.value })}
-            placeholder="活动 ID（可选）"
+            placeholder={tText("活动 ID（可选）")}
             className={`${selectClass} min-w-[10rem]`}
           />
         ) : null}
@@ -179,40 +182,40 @@ export default function ReportFilterBar({
           <input
             value={couponId}
             onChange={(e) => update({ coupon_id: e.target.value })}
-            placeholder="优惠券 ID（可选）"
+            placeholder={tText("优惠券 ID（可选）")}
             className={`${selectClass} min-w-[10rem]`}
           />
         ) : null}
 
         {isFilterEnabled(enabledFilters, "orderStatus") ? (
           <select value={orderStatus} onChange={(e) => update({ order_status: e.target.value })} className={selectClass}>
-            <option value="">全部订单状态</option>
-            <option value="pending">待付款</option>
-            <option value="paid">已支付</option>
-            <option value="shipped">已发货</option>
-            <option value="completed">已完成</option>
-            <option value="cancelled">已取消</option>
-            <option value="refunded">已退款</option>
+            <option value=""><Tx>全部订单状态</Tx></option>
+            <option value="pending"><Tx>待付款</Tx></option>
+            <option value="paid"><Tx>已支付</Tx></option>
+            <option value="shipped"><Tx>已发货</Tx></option>
+            <option value="completed"><Tx>已完成</Tx></option>
+            <option value="cancelled"><Tx>已取消</Tx></option>
+            <option value="refunded"><Tx>已退款</Tx></option>
           </select>
         ) : null}
 
         {isFilterEnabled(enabledFilters, "paymentStatus") ? (
           <select value={paymentStatus} onChange={(e) => update({ payment_status: e.target.value })} className={selectClass}>
-            <option value="">全部支付状态</option>
-            <option value="unpaid">未支付</option>
-            <option value="paid">已支付</option>
-            <option value="partially_refunded">部分退款</option>
-            <option value="refunded">已全额退款</option>
+            <option value=""><Tx>全部支付状态</Tx></option>
+            <option value="unpaid"><Tx>未支付</Tx></option>
+            <option value="paid"><Tx>已支付</Tx></option>
+            <option value="partially_refunded"><Tx>部分退款</Tx></option>
+            <option value="refunded"><Tx>已全额退款</Tx></option>
           </select>
         ) : null}
 
         {isFilterEnabled(enabledFilters, "paymentMethod") ? (
           <select value={paymentMethod} onChange={(e) => update({ payment_method: e.target.value })} className={selectClass}>
-            <option value="">全部支付方式</option>
+            <option value=""><Tx>全部支付方式</Tx></option>
             <option value="fpx">FPX</option>
-            <option value="card">银行卡</option>
-            <option value="wallet">电子钱包</option>
-            <option value="cod">货到付款</option>
+            <option value="card"><Tx>银行卡</Tx></option>
+            <option value="wallet"><Tx>电子钱包</Tx></option>
+            <option value="cod"><Tx>货到付款</Tx></option>
           </select>
         ) : null}
       </div>

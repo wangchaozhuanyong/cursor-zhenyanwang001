@@ -18,6 +18,7 @@ import { LoadingButton } from "@/modules/micro-interactions";
 import * as homeOpsService from "@/services/admin/homeOpsService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const CATEGORY_LABELS: Record<string, string> = {
   common: "通用模块（登录 / 未登录均可能展示）",
@@ -26,6 +27,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export default function AdminHomeOpsModulePanel() {
+  const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
   const [settings, setSettings] = useState<HomeModuleSettings>(DEFAULT_HOME_MODULE_SETTINGS);
@@ -58,7 +60,7 @@ export default function AdminHomeOpsModulePanel() {
       setSettings(mergeHomeModuleSettings(saved));
       invalidateHomeModuleSettingsCache();
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.homeOpsSettings() });
-      toast.success("模块开关已保存，前台刷新后生效");
+      toast.success(tText("模块开关已保存，前台刷新后生效"));
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败"));
     } finally {

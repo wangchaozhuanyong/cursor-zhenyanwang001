@@ -7,7 +7,7 @@ import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import * as rbacService from "@/services/admin/rbacService";
 import type { RbacAdminUserRow, RbacRoleRow } from "@/services/admin/rbacService";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { labelAdminLegacyRole, labelRbacRoleCode } from "@/utils/adminDisplayLabels";
+import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { AdminTabsPanelSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { Tx } from "@/components/admin/AdminText";
@@ -18,6 +18,7 @@ import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import { THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type Tab = "assign" | "manage";
 const PRIVILEGED_ROLE_CODES = new Set(["super_admin", "admin_manager"]);
@@ -28,6 +29,8 @@ function hasPrivilegedRole(user?: RbacAdminUserRow | null) {
 }
 
 export default function AdminRoles() {
+  const { tText } = useAdminT();
+  const { adminLegacyRole: labelAdminLegacyRole, rbacRoleCode: labelRbacRoleCode } = useAdminDisplayLabel();
   const { confirm: askConfirm } = useAdminConfirm();
   const queryClient = useQueryClient();
   const isSuperAdminViewer = useAdminPermissionStore((s) => s.isSuperAdmin);
@@ -89,21 +92,21 @@ export default function AdminRoles() {
   const handleSave = async () => {
     if (!selectedUserId) return;
     if (selectedTargetLocked) {
-      toast.error("仅超级管理员可修改 admin_manager / super_admin 账号角色");
+      toast.error(tText("仅超级管理员可修改 admin_manager / super_admin 账号角色"));
       return;
     }
     const roleIds = Object.entries(checked).filter(([, v]) => v).map(([k]) => Number(k)).filter((n) => Number.isFinite(n));
     setSaving(true);
     try {
       await rbacService.saveUserRoles(selectedUserId, roleIds);
-      toast.success("已保存");
+      toast.success(tText("已保存"));
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.rbacUserRoles(selectedUserId) });
     } catch (e) { toast.error(toastErrorMessage(e, "保存失败")); }
     finally { setSaving(false); }
   };
 
   const openRoleCreate = () => {
-    if (!isSuperAdminViewer) { toast.error("仅超级管理员可创建角色"); return; }
+    if (!isSuperAdminViewer) { toast.error(tText("仅超级管理员可创建角色")); return; }
     setEditRole(null);
     setRoleForm({ code: "", name: "", description: "" });
     setRolePerms({});
@@ -111,7 +114,7 @@ export default function AdminRoles() {
   };
 
   const openRoleEdit = (r: RbacRoleRow) => {
-    if (!isSuperAdminViewer) { toast.error("仅超级管理员可修改角色"); return; }
+    if (!isSuperAdminViewer) { toast.error(tText("仅超级管理员可修改角色")); return; }
     setEditRole(r);
     setRoleForm({ code: r.code, name: r.name, description: r.description || "" });
     const rp: Record<number, boolean> = {};
@@ -121,16 +124,16 @@ export default function AdminRoles() {
   };
 
   const handleRoleSave = async () => {
-    if (!isSuperAdminViewer) { toast.error("仅超级管理员可管理角色"); return; }
+    if (!isSuperAdminViewer) { toast.error(tText("仅超级管理员可管理角色")); return; }
     const pids = Object.entries(rolePerms).filter(([, v]) => v).map(([k]) => Number(k));
     setSaving(true);
     try {
       if (editRole) {
         await rbacService.updateRole(editRole.id, { name: roleForm.name, description: roleForm.description, permissionIds: pids });
-        toast.success("角色已更新");
+        toast.success(tText("角色已更新"));
       } else {
         await rbacService.createRole({ code: roleForm.code, name: roleForm.name, description: roleForm.description, permissionIds: pids });
-        toast.success("角色已创建");
+        toast.success(tText("角色已创建"));
       }
       setShowRoleModal(false);
       void invalidateRbac();
@@ -139,11 +142,11 @@ export default function AdminRoles() {
   };
 
   const handleRoleDelete = (r: RbacRoleRow) => {
-    if (!isSuperAdminViewer) { toast.error("仅超级管理员可删除角色"); return; }
-    if (r.is_system) { toast.error("系统角色不可删除"); return; }
+    if (!isSuperAdminViewer) { toast.error(tText("仅超级管理员可删除角色")); return; }
+    if (r.is_system) { toast.error(tText("系统角色不可删除")); return; }
     adminConfirmDelete(askConfirm, r.name, async () => {
       await rbacService.deleteRole(r.id);
-      toast.success("已删除");
+      toast.success(tText("已删除"));
       void invalidateRbac();
     });
   };
@@ -261,11 +264,11 @@ export default function AdminRoles() {
         <div className="space-y-3">
               <div>
                 <label className="text-xs font-medium text-muted-foreground"><Tx>编码</Tx></label>
-                <input value={roleForm.code} onChange={(e) => setRoleForm((p) => ({ ...p, code: e.target.value }))} disabled={!!editRole} className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm disabled:opacity-50" placeholder="如 shichang（英文标识，创建后不可改）" />
+                <input value={roleForm.code} onChange={(e) => setRoleForm((p) => ({ ...p, code: e.target.value }))} disabled={!!editRole} className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm disabled:opacity-50" placeholder={tText("如 shichang（英文标识，创建后不可改）")} />
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground"><Tx>名称</Tx></label>
-                <input value={roleForm.name} onChange={(e) => setRoleForm((p) => ({ ...p, name: e.target.value }))} className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm" placeholder="如 市场专员" />
+                <input value={roleForm.name} onChange={(e) => setRoleForm((p) => ({ ...p, name: e.target.value }))} className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm" placeholder={tText("如 市场专员")} />
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground"><Tx>描述</Tx></label>

@@ -2,6 +2,8 @@ import { useState } from "react";
 import { CircleHelp } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type AdminFieldHintProps = {
   text: React.ReactNode;
@@ -23,6 +25,7 @@ export default function AdminFieldHint({
   side = "top",
   align = "start",
 }: AdminFieldHintProps) {
+  const { tText } = useAdminT();
   const [open, setOpen] = useState(false);
   const iconSize = ICON_SIZE[size];
 
@@ -31,7 +34,7 @@ export default function AdminFieldHint({
       <TooltipTrigger asChild>
         <button
           type="button"
-          aria-label="查看说明"
+          aria-label={tText("查看说明")}
           aria-expanded={open}
           className={cn(
             "inline-flex shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:text-[var(--theme-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)]/40",

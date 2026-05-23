@@ -66,6 +66,7 @@ export type MonitoringRepairTask = {
   after_snapshot?: unknown;
   suggestion?: Record<string, unknown> | null;
   operator_id?: string | null;
+  operator_label?: string | null;
   remark?: string | null;
   executed_at?: string | null;
   created_at?: string;

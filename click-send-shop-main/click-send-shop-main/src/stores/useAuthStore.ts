@@ -18,6 +18,8 @@ import { registerAuthExpiredHandler } from "@/lib/authSessionBridge";
 
 interface AuthState {
   isAuthenticated: boolean;
+  /** 启动时与 Cookie/Profile 对齐完成前为 false，避免双源状态导致路由闪烁 */
+  authHydrated: boolean;
   loading: boolean;
   error: string | null;
 
@@ -34,6 +36,7 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       isAuthenticated: authService.isAuthenticated(),
+      authHydrated: false,
       loading: false,
       error: null,
 
@@ -45,7 +48,7 @@ export const useAuthStore = create<AuthState>()(
         set({ loading: true, error: null });
         try {
           await authService.login(params);
-          set({ isAuthenticated: true });
+          set({ isAuthenticated: true, authHydrated: true });
           await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
           await useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts);
           await useHistoryStore.getState().mergeLocalThenSync(localHistorySnapshot).catch(() => {});
@@ -68,7 +71,7 @@ export const useAuthStore = create<AuthState>()(
         set({ loading: true, error: null });
         try {
           await authService.register(params);
-          set({ isAuthenticated: true });
+          set({ isAuthenticated: true, authHydrated: true });
           await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
           await useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts);
           await useHistoryStore.getState().mergeLocalThenSync(localHistorySnapshot).catch(() => {});
@@ -91,7 +94,7 @@ export const useAuthStore = create<AuthState>()(
         set({ loading: true, error: null });
         try {
           await authService.loginWithOtp(params);
-          set({ isAuthenticated: true });
+          set({ isAuthenticated: true, authHydrated: true });
           await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
           await useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts);
           await useHistoryStore.getState().mergeLocalThenSync(localHistorySnapshot).catch(() => {});
@@ -114,7 +117,7 @@ export const useAuthStore = create<AuthState>()(
         set({ loading: true, error: null });
         try {
           await authService.exchangeOAuthTicket(params);
-          set({ isAuthenticated: true });
+          set({ isAuthenticated: true, authHydrated: true });
           await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
           await useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts);
           await useHistoryStore.getState().mergeLocalThenSync(localHistorySnapshot).catch(() => {});
@@ -137,7 +140,7 @@ export const useAuthStore = create<AuthState>()(
         set({ loading: true, error: null });
         try {
           await authService.bindWechatPhone(params);
-          set({ isAuthenticated: true });
+          set({ isAuthenticated: true, authHydrated: true });
           await useCartStore.getState().mergeLocalThenSync(localCartSnapshot);
           await useFavoritesStore.getState().mergeLocalThenSync(localFavoriteIds, localFavoriteProducts);
           await useHistoryStore.getState().mergeLocalThenSync(localHistorySnapshot).catch(() => {});
@@ -170,5 +173,5 @@ export const useAuthStore = create<AuthState>()(
 );
 
 registerAuthExpiredHandler(() => {
-  useAuthStore.setState({ isAuthenticated: false });
+  useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
 });

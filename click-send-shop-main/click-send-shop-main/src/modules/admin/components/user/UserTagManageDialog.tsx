@@ -3,6 +3,8 @@ import { Loader2, Trash2 } from "lucide-react";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import { productTagBadgeClass } from "@/utils/productTagBadge";
 import type { UserTag } from "@/types/user";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const TAG_COLORS = ["红色", "绿色", "蓝色", "金色"] as const;
 
@@ -27,6 +29,7 @@ export default function UserTagManageDialog({
   onDelete,
   onFilterByTag,
 }: Props) {
+  const { tText } = useAdminT();
   const [name, setName] = useState("");
   const [color, setColor] = useState<string>("金色");
 
@@ -57,19 +60,19 @@ export default function UserTagManageDialog({
     <AdminResponsiveSheet
       open={open}
       onOpenChange={onOpenChange}
-      title="标签管理"
+      title={tText("标签管理")}
       description="创建用户标签，或删除不再使用的标签。"
       footer={footer}
       size="sm"
     >
       <div className="space-y-4">
         <div className="space-y-2">
-          <p className="text-sm font-medium text-foreground">新建标签</p>
+          <p className="text-sm font-medium text-foreground"><Tx>新建标签</Tx></p>
           <div className="flex flex-wrap items-end gap-2">
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="标签名称"
+              placeholder={tText("标签名称")}
               className="min-h-[40px] min-w-[8rem] flex-1 rounded-lg bg-secondary px-3 py-2 text-sm"
               onKeyDown={(e) => {
                 if (e.key === "Enter") handleCreate();
@@ -98,7 +101,7 @@ export default function UserTagManageDialog({
         </div>
 
         <div className="space-y-2">
-          <p className="text-sm font-medium text-foreground">已有标签</p>
+          <p className="text-sm font-medium text-foreground"><Tx>已有标签</Tx></p>
           {tags.length ? (
             <ul className="max-h-56 space-y-2 overflow-y-auto">
               {tags.map((tag) => (
@@ -135,7 +138,7 @@ export default function UserTagManageDialog({
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-muted-foreground">暂无标签</p>
+            <p className="text-sm text-muted-foreground"><Tx>暂无标签</Tx></p>
           )}
         </div>
       </div>

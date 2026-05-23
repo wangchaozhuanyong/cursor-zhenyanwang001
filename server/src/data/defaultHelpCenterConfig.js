@@ -3,8 +3,6 @@
  * 用于迁移种子、seed 脚本；勿覆盖后台已保存的 helpCenterConfig。
  */
 const DEFAULT_HELP_CENTER_CONFIG = {
-  workingHours: '每天 09:00 - 22:00',
-  contactNote: '需要人工协助时，可通过平台客服入口联系。',
   categories: [
     { id: 'platform', name: '平台介绍', sortOrder: 1, enabled: true },
     { id: 'visa', name: '签证留学', sortOrder: 2, enabled: true },

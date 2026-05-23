@@ -11,16 +11,14 @@ import ActivityProductPicker from "@/components/admin/ActivityProductPicker";
 import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
 import { Tx } from "@/components/admin/AdminText";
 import { DISPLAY_POSITIONS, DISPLAY_POSITION_LABELS, WIP_ACTIVITY_TYPES, type DisplayPosition } from "@/constants/marketingDisplayPositions";
-import { labelActivityType } from "@/utils/adminDisplayLabels";
+import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { fetchCoupons } from "@/services/admin/couponService";
 import type { Coupon } from "@/types/coupon";
-import { adminTableClassName, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
+import { adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
+import AdminNativeTable from "@/components/admin/AdminNativeTable";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const STEPS = ["选择类型", "基础信息", "活动规则", "适用范围", "展示设置", "预览发布"] as const;
-
-function labelType(type: ActivityType) {
-  return labelActivityType(type);
-}
 
 function toggleDisplayPosition(current: string[] | undefined, key: DisplayPosition) {
   const set = new Set(current || []);
@@ -30,6 +28,8 @@ function toggleDisplayPosition(current: string[] | undefined, key: DisplayPositi
 }
 
 export default function AdminActivityForm() {
+  const { tText } = useAdminT();
+  const { activityType: labelType } = useAdminDisplayLabel();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { id } = useParams();
@@ -150,7 +150,7 @@ export default function AdminActivityForm() {
       items: d.items || [],
     });
     setStatusLabel("草稿");
-    toast.success("已载入复制活动内容，请重新设置活动时间后发布");
+    toast.success(tText("已载入复制活动内容，请重新设置活动时间后发布"));
   }, [copySourceQuery.data]);
 
   const selectedCouponIds = useMemo(
@@ -221,10 +221,10 @@ export default function AdminActivityForm() {
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.activitiesRoot() }),
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.marketingDashboard() }),
       ]);
-      toast.success(targetStatus === "draft" ? "草稿已保存" : "活动已发布");
+      toast.success(targetStatus === "draft" ? tText("草稿已保存") : tText("活动已发布"));
       navigate("/admin/marketing/activities");
     } catch (e) {
-      toast.error(toastErrorMessage(e, "保存失败"));
+      toast.error(toastErrorMessage(e, tText("保存失败")));
     } finally {
       setSaving(false);
     }
@@ -233,7 +233,7 @@ export default function AdminActivityForm() {
   const validateAndSave = async (targetStatus: ActivityStatus) => {
     const err = localValidate();
     if (targetStatus !== "draft" && err) {
-      toast.error(err);
+      toast.error(tText(err));
       return;
     }
     if (targetStatus !== "draft") {
@@ -244,7 +244,10 @@ export default function AdminActivityForm() {
     await performSave(targetStatus);
   };
 
-  const previewHint = useMemo(() => (localValidate() ? "请先完成活动规则" : "配置完整，可发布"), [localValidate]);
+  const previewHint = useMemo(
+    () => (localValidate() ? tText("请先完成活动规则") : tText("配置完整，可发布")),
+    [localValidate, tText],
+  );
 
   const updateItem = (idx: number, patch: Partial<ActivityProductItem>) => {
     setForm((prev) => {
@@ -259,16 +262,33 @@ export default function AdminActivityForm() {
       <div className="flex items-center justify-between">
         <div>
           <button onClick={() => navigate(-1)} className="text-sm text-muted-foreground"><Tx>返回</Tx></button>
-          <h1 className="text-xl font-bold text-foreground">活动管理 / {isEdit ? "编辑活动" : "新建活动"}</h1>
-          <p className="text-xs text-muted-foreground">状态：{statusLabel}</p>
+          <h1 className="text-xl font-bold text-foreground">{tText("活动管理")} / {isEdit ? tText("编辑活动") : tText("新建活动")}</h1>
+          <p className="text-xs text-muted-foreground">{tText("状态")}：{tText(statusLabel)}</p>
+        </div>
+      </div>
+
+      <div className="-mx-1 overflow-x-auto pb-1 lg:hidden">
+        <div className="flex w-max gap-2 px-1">
+          {STEPS.map((s, i) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setStep(i)}
+              className={`touch-manipulation shrink-0 rounded-lg px-3 py-2 text-xs font-medium ${
+                i === step ? "bg-gold/15 text-theme-price" : "bg-secondary text-muted-foreground"
+              }`}
+            >
+              {i + 1}. {tText(s)}
+            </button>
+          ))}
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[220px_1fr_340px]">
-        <div className="rounded-xl border border-border bg-card p-3">
+        <div className="hidden rounded-xl border border-border bg-card p-3 lg:block">
           {STEPS.map((s, i) => (
             <button key={s} onClick={() => setStep(i)} className={`mb-2 block w-full rounded-lg px-3 py-2 text-left text-sm ${i === step ? "bg-gold/15 text-theme-price" : "text-muted-foreground hover:bg-secondary"}`}>
-              {i + 1}. {s}
+              {i + 1}. {tText(s)}
             </button>
           ))}
         </div>
@@ -314,8 +334,8 @@ export default function AdminActivityForm() {
                   }
                   className={`rounded-xl border p-3 text-left ${form.type === x.k ? "border-gold bg-gold/5" : "border-border"}`}
                 >
-                  <p className="font-semibold">{x.t}</p>
-                  <p className="text-xs text-muted-foreground">{x.d}</p>
+                  <p className="font-semibold">{tText(x.t)}</p>
+                  <p className="text-xs text-muted-foreground">{tText(x.d)}</p>
                 </button>
               ))}
             </div>
@@ -341,8 +361,7 @@ export default function AdminActivityForm() {
                     <p className="text-sm text-muted-foreground"><Tx>活动商品配置</Tx></p>
                     <button type="button" onClick={() => setPickerOpen(true)} className="rounded-lg border border-border px-3 py-1.5 text-sm"><Tx>选择商品</Tx></button>
                   </div>
-                  <div className="overflow-x-auto rounded-lg border border-border">
-                    <table className={adminTableClassName("min-w-full text-sm")}>
+                  <AdminNativeTable tableClassName="min-w-[720px] text-sm">
                       <thead className="bg-secondary/60">
                         <tr>
                           <th className={adminThClassName()}><Tx>商品</Tx></th>
@@ -367,8 +386,7 @@ export default function AdminActivityForm() {
                           </tr>
                         ))}
                       </tbody>
-                    </table>
-                  </div>
+                  </AdminNativeTable>
                 </>
               )}
 
@@ -407,9 +425,9 @@ export default function AdminActivityForm() {
                       value={String((form.activity_config as Record<string, unknown>)?.bonus_kind || "normal")}
                       onChange={(e) => setForm((p) => ({ ...p, activity_config: { ...(p.activity_config || {}), bonus_kind: e.target.value } }))}
                     >
-                      <option value="normal">普通积分活动</option>
-                      <option value="holiday">节日多倍</option>
-                      <option value="birthday">生日多倍</option>
+                      <option value="normal"><Tx>普通积分活动</Tx></option>
+                      <option value="holiday"><Tx>节日多倍</Tx></option>
+                      <option value="birthday"><Tx>生日多倍</Tx></option>
                     </select>
                   </label>
                   <label className="text-sm"><Tx>积分倍率 %</Tx>
@@ -419,24 +437,24 @@ export default function AdminActivityForm() {
                       value={String((form.activity_config as Record<string, unknown>)?.multiplier_percent ?? 200)}
                       onChange={(e) => setForm((p) => ({ ...p, activity_config: { ...(p.activity_config || {}), multiplier_percent: Number(e.target.value) } }))}
                     />
-                    <span className="mt-1 block text-xs text-muted-foreground">200=2倍，300=3倍</span>
+                    <span className="mt-1 block text-xs text-muted-foreground"><Tx>200=2倍，300=3倍</Tx></span>
                   </label>
                   <label className="text-sm"><Tx>最低订单金额 (RM)</Tx>
                     <input type="number" className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" value={String((form.activity_config as Record<string, unknown>)?.min_order_amount ?? 0)} onChange={(e) => setForm((p) => ({ ...p, activity_config: { ...(p.activity_config || {}), min_order_amount: Number(e.target.value) } }))} />
                   </label>
                   <label className="text-sm"><Tx>额外积分上限</Tx>
                     <input type="number" className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" value={String((form.activity_config as Record<string, unknown>)?.max_bonus_points ?? 0)} onChange={(e) => setForm((p) => ({ ...p, activity_config: { ...(p.activity_config || {}), max_bonus_points: Number(e.target.value) } }))} />
-                    <span className="mt-1 block text-xs text-muted-foreground">0 表示不限制</span>
+                    <span className="mt-1 block text-xs text-muted-foreground"><Tx>0 表示不限制</Tx></span>
                   </label>
                   <label className="text-sm"><Tx>叠加策略</Tx>
                     <select className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" value={String((form.activity_config as Record<string, unknown>)?.stack_strategy || "max")} onChange={(e) => setForm((p) => ({ ...p, activity_config: { ...(p.activity_config || {}), stack_strategy: e.target.value } }))}>
-                      <option value="max">多个活动取最高倍率</option>
+                      <option value="max"><Tx>多个活动取最高倍率</Tx></option>
                     </select>
                   </label>
                   <label className="text-sm"><Tx>生效范围</Tx>
                     <select className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" value={String((form.activity_config as Record<string, unknown>)?.apply_scope || "matched_items")} onChange={(e) => setForm((p) => ({ ...p, activity_config: { ...(p.activity_config || {}), apply_scope: e.target.value } }))}>
-                      <option value="matched_items">仅命中范围的商品行</option>
-                      <option value="all">整单生效</option>
+                      <option value="matched_items"><Tx>仅命中范围的商品行</Tx></option>
+                      <option value="all"><Tx>整单生效</Tx></option>
                     </select>
                   </label>
                   {String((form.activity_config as Record<string, unknown>)?.bonus_kind || "") === "holiday" ? (
@@ -485,11 +503,11 @@ export default function AdminActivityForm() {
           {step === 3 && (
             <div className="grid gap-2 md:grid-cols-2">
               <label className="text-sm"><Tx>适用范围</Tx><select value={form.scope_type || "product"} onChange={(e) => setForm((p) => ({ ...p, scope_type: e.target.value as ActivityPayload["scope_type"] }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2">
-                <option value="all">全场</option>
-                <option value="category">指定分类</option>
-                <option value="product">指定商品</option>
-                <option value="new_user">新用户</option>
-                <option value="old_user">老用户</option>
+                <option value="all"><Tx>全场</Tx></option>
+                <option value="category"><Tx>指定分类</Tx></option>
+                <option value="product"><Tx>指定商品</Tx></option>
+                <option value="new_user"><Tx>新用户</Tx></option>
+                <option value="old_user"><Tx>老用户</Tx></option>
               </select></label>
               <label className="text-sm"><Tx>范围 ID 列表（逗号分隔）</Tx><input value={(form.scope_ids || []).join(",")} onChange={(e) => setForm((p) => ({ ...p, scope_ids: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) }))} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2" /></label>
             </div>
@@ -505,7 +523,7 @@ export default function AdminActivityForm() {
                     return (
                       <label key={key} className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs ${checked ? "border-gold bg-gold/10" : "border-border"}`}>
                         <input type="checkbox" checked={checked} onChange={() => setForm((p) => ({ ...p, display_positions: toggleDisplayPosition(p.display_positions, key) }))} />
-                        {DISPLAY_POSITION_LABELS[key]}
+                        {tText(DISPLAY_POSITION_LABELS[key])}
                       </label>
                     );
                   })}
@@ -520,15 +538,15 @@ export default function AdminActivityForm() {
 
         <div className="rounded-xl border border-border bg-card p-4">
           <h3 className="mb-2 text-sm font-semibold"><Tx>活动摘要</Tx></h3>
-          <p className="text-sm">类型：{labelType(form.type)}</p>
-          <p className="text-sm">名称：{form.title || "-"}</p>
-          <p className="text-sm">时间：{form.start_at || "-"} ~ {form.end_at || "-"}</p>
-          <p className="text-sm">商品数：{form.items.length}</p>
-          <div className="mt-3 rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">前台预览：{previewHint}</div>
+          <p className="text-sm">{tText("类型")}：{labelType(form.type)}</p>
+          <p className="text-sm">{tText("名称")}：{form.title || "-"}</p>
+          <p className="text-sm">{tText("时间")}：{form.start_at || "-"} ~ {form.end_at || "-"}</p>
+          <p className="text-sm">{tText("商品数")}：{form.items.length}</p>
+          <div className="mt-3 rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">{tText("前台预览")}：{previewHint}</div>
         </div>
       </div>
 
-      <div className="sticky bottom-0 z-10 flex justify-end gap-2 rounded-xl border border-border bg-card p-3">
+      <div className="sticky bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-10 flex flex-wrap justify-end gap-2 rounded-xl border border-border bg-card/95 p-3 backdrop-blur-md lg:bottom-0">
         <button onClick={() => setStep((s) => Math.max(0, s - 1))} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>上一步</Tx></button>
         <LoadingButton type="button" variant="outline" state={saving ? "loading" : "normal"} loadingText="保存中..." onClick={() => void validateAndSave("draft")} className="rounded-lg px-3 py-2 text-sm"><Tx>保存草稿</Tx></LoadingButton>
         <button onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))} className="rounded-lg border border-border px-3 py-2 text-sm"><Tx>下一步</Tx></button>
@@ -539,7 +557,7 @@ export default function AdminActivityForm() {
       <AnimatedConfirmDialog
         open={publishConfirmOpen}
         onOpenChange={setPublishConfirmOpen}
-        title="确认发布活动"
+        title={tText("确认发布活动")}
         description={pendingPublishStatus ? (
           <span className="block whitespace-pre-line text-sm">
             {`活动名称：${form.title}\n类型：${labelType(form.type)}\n时间：${form.start_at} ~ ${form.end_at}\n商品数：${form.items.length}\n发布后不可回退为草稿。`}

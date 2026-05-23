@@ -2,6 +2,8 @@ import { MoreHorizontal, Plus, Search, Sparkles } from "lucide-react";
 import type { ThemeSceneTag, ThemeSkin } from "@/types/theme";
 import { useThemeStudioLabel } from "@/hooks/useThemeStudioLabel";
 import { SCENE_FILTER_OPTIONS, SCENE_TAG_LABELS } from "./themeStudioConstants";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type StarterTemplate = { id: string; label: string };
 
@@ -68,7 +70,7 @@ export default function ThemeSkinSidebar({
     <aside className="w-full shrink-0 self-start rounded-2xl border border-border bg-card p-4 shadow-sm 2xl:sticky 2xl:top-24 2xl:w-[320px]">
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-foreground">皮肤库</p>
+          <p className="text-sm font-semibold text-foreground"><Tx>皮肤库</Tx></p>
           <button
             type="button"
             onClick={onAdd}
@@ -156,13 +158,13 @@ export default function ThemeSkinSidebar({
                     </div>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-1">
-                    {isDefault ? <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-700">默认</span> : null}
+                    {isDefault ? <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-700"><Tx>默认</Tx></span> : null}
                     {selected ? (
-                      <span className="rounded-full bg-[var(--theme-primary)]/15 px-1.5 py-0.5 text-[10px] text-[var(--theme-primary)]">编辑中</span>
+                      <span className="rounded-full bg-[var(--theme-primary)]/15 px-1.5 py-0.5 text-[10px] text-[var(--theme-primary)]"><Tx>编辑中</Tx></span>
                     ) : null}
-                    {isActive ? <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-700">当前生效</span> : null}
+                    {isActive ? <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-700"><Tx>当前生效</Tx></span> : null}
                     {skin.clientEnabled !== false ? (
-                      <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">前台可切换</span>
+                      <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground"><Tx>前台可切换</Tx></span>
                     ) : null}
                     {skin.sceneTag ? (
                       <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">{tl(SCENE_TAG_LABELS[skin.sceneTag])}</span>
@@ -204,7 +206,7 @@ export default function ThemeSkinSidebar({
 
           {filtered.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border py-8 text-center">
-              <p className="text-sm text-muted-foreground">没有匹配的皮肤</p>
+              <p className="text-sm text-muted-foreground"><Tx>没有匹配的皮肤</Tx></p>
               <button
                 type="button"
                 onClick={() => {

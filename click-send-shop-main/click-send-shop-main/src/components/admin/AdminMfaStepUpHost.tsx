@@ -9,10 +9,13 @@ import {
 } from "@/lib/adminMfaStepUp";
 import { fetchAdminProfile, reverifyAdminMfa } from "@/services/admin/accountService";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const MFA_REVERIFY_TIMEOUT_MS = 15_000;
 
 export default function AdminMfaStepUpHost() {
+  const { tText } = useAdminT();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
@@ -51,7 +54,7 @@ export default function AdminMfaStepUpHost() {
   const handleSubmit = async () => {
     const normalized = code.replace(/\D/g, "").slice(0, 6);
     if (normalized.length !== 6) {
-      toast.error("请输入身份验证器中的 6 位验证码");
+      toast.error(tText("请输入身份验证器中的 6 位验证码"));
       return;
     }
     abortController?.abort();
@@ -64,10 +67,10 @@ export default function AdminMfaStepUpHost() {
       await reverifyAdminMfa(normalized, { signal: controller.signal });
       setOpen(false);
       completeAdminMfaStepUp();
-      toast.success("身份验证已通过");
+      toast.success(tText("身份验证已通过"));
     } catch (err) {
       if (controller.signal.aborted && !suppressAbortToastRef.current) {
-        toast.error("验证请求超时或已取消，请重新点击确认验证");
+        toast.error(tText("验证请求超时或已取消，请重新点击确认验证"));
       } else if (!controller.signal.aborted) {
         toast.error(toastErrorMessage(err, "验证失败"));
       }
@@ -98,7 +101,7 @@ export default function AdminMfaStepUpHost() {
         )}
         {mfaEnabled !== false ? (
           <>
-            <label className="mt-4 block text-xs font-medium text-muted-foreground">验证码</label>
+            <label className="mt-4 block text-xs font-medium text-muted-foreground"><Tx>验证码</Tx></label>
             <input
               type="text"
               inputMode="numeric"

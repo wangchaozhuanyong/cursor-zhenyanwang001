@@ -13,6 +13,7 @@ import {
 import { shortId } from "@/utils/shortId";
 import { Tx } from "@/components/admin/AdminText";
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
+import { useAdminT } from "@/hooks/useAdminT";
 
 function SnapshotBlock({ title, rows }: { title: string; rows: AuditSnapshotRow[] }) {
   if (rows.length === 0) return null;
@@ -38,6 +39,7 @@ type Props = {
 };
 
 export default function AuditLogDetailPanel({ detail, onClose, embedded = false }: Props) {
+  const { tText } = useAdminT();
   const changes = buildAuditChangeSummary(detail.before_json, detail.after_json);
   const beforeRows = buildAuditSnapshotRows(detail.before_json);
   const afterRows = buildAuditSnapshotRows(detail.after_json);
@@ -86,7 +88,7 @@ export default function AuditLogDetailPanel({ detail, onClose, embedded = false 
 
       {userAgent.full ? (
         <details className="mt-2 text-[11px] text-muted-foreground">
-          <summary className="cursor-pointer select-none hover:text-foreground">查看完整浏览器标识（技术信息）</summary>
+          <summary className="cursor-pointer select-none hover:text-foreground"><Tx>查看完整浏览器标识（技术信息）</Tx></summary>
           <p className="mt-1 break-all rounded-lg bg-secondary/60 p-2 font-mono text-[10px] leading-relaxed">{userAgent.full}</p>
         </details>
       ) : null}
@@ -115,35 +117,35 @@ export default function AuditLogDetailPanel({ detail, onClose, embedded = false 
 
       {changes.length === 0 && afterRows.length > 0 ? (
         <div className="mt-3">
-          <SnapshotBlock title="本次记录" rows={afterRows} />
+          <SnapshotBlock title={tText("本次记录")} rows={afterRows} />
         </div>
       ) : null}
 
       {changes.length === 0 && beforeRows.length > 0 && afterRows.length === 0 ? (
         <div className="mt-3">
-          <SnapshotBlock title="变更前快照" rows={beforeRows} />
+          <SnapshotBlock title={tText("变更前快照")} rows={beforeRows} />
         </div>
       ) : null}
 
       {changes.length === 0 && beforeRows.length > 0 && afterRows.length > 0 ? (
         <div className="mt-3 space-y-2">
-          <SnapshotBlock title="变更前" rows={beforeRows} />
-          <SnapshotBlock title="变更后" rows={afterRows} />
+          <SnapshotBlock title={tText("变更前")} rows={beforeRows} />
+          <SnapshotBlock title={tText("变更后")} rows={afterRows} />
         </div>
       ) : null}
 
       {(detail.before_json != null || detail.after_json != null) ? (
         <details className="mt-3 text-[11px] text-muted-foreground">
-          <summary className="cursor-pointer select-none hover:text-foreground">查看原始 JSON（开发调试）</summary>
+          <summary className="cursor-pointer select-none hover:text-foreground"><Tx>查看原始 JSON（开发调试）</Tx></summary>
           <div className="mt-2 space-y-2">
             <div>
-              <p className="mb-1 text-muted-foreground">变更前</p>
+              <p className="mb-1 text-muted-foreground"><Tx>变更前</Tx></p>
               <pre className="max-h-32 overflow-auto rounded-lg bg-secondary p-2 font-mono text-[10px]">
                 {detail.before_json != null ? JSON.stringify(detail.before_json, null, 2) : "—"}
               </pre>
             </div>
             <div>
-              <p className="mb-1 text-muted-foreground">变更后</p>
+              <p className="mb-1 text-muted-foreground"><Tx>变更后</Tx></p>
               <pre className="max-h-32 overflow-auto rounded-lg bg-secondary p-2 font-mono text-[10px]">
                 {detail.after_json != null ? JSON.stringify(detail.after_json, null, 2) : "—"}
               </pre>

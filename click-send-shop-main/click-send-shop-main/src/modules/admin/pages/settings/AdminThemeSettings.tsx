@@ -18,6 +18,8 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { canDeleteThemeSkin, normalizeThemeConfig, normalizeThemeSkinsPayload } from "@/utils/themeConfig";
 import { applyAutoColorAction, type AutoColorAction } from "@/utils/themeStudioAuto";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 function applyThemePayload(
   normalized: ReturnType<typeof normalizeThemeSkinsPayload>,
@@ -44,6 +46,7 @@ function applyThemePayload(
 }
 
 export default function AdminThemeSettings() {
+  const { tText } = useAdminT();
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [skins, setSkins] = useState<ThemeSkin[]>([]);
@@ -190,20 +193,20 @@ export default function AdminThemeSettings() {
     if (exists) {
       setSelectedSkinId(starterId);
       setThemeConfig(normalizeThemeConfig(skins.find((s) => s.id === starterId)?.config));
-      toast.info("该推荐皮肤已存在，已为你选中");
+      toast.info(tText("该推荐皮肤已存在，已为你选中"));
       return;
     }
-    if (skins.length >= 20) return toast.info("最多保留 20 套皮肤");
+    if (skins.length >= 20) return toast.info(tText("最多保留 20 套皮肤"));
     const normalized = { ...starter, config: normalizeThemeConfig(starter.config) };
     setSkins((prev) => [...prev, normalized]);
     setSelectedSkinId(starterId);
     setThemeConfig(normalized.config);
     setDirty(true);
-    toast.success("已添加推荐皮肤，请保存后生效");
+    toast.success(tText("已添加推荐皮肤，请保存后生效"));
   };
 
   const onAddSkin = () => {
-    if (skins.length >= 20) return toast.info("最多保留 20 套皮肤");
+    if (skins.length >= 20) return toast.info(tText("最多保留 20 套皮肤"));
     const newId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `skin_${Date.now()}`;
     const newSkin: ThemeSkin = {
       id: newId,
@@ -223,14 +226,14 @@ export default function AdminThemeSettings() {
     const sourceId = id || selectedSkinId;
     const source = skins.find((s) => s.id === sourceId);
     if (!source) return;
-    if (skins.length >= 20) return toast.info("最多保留 20 套皮肤");
+    if (skins.length >= 20) return toast.info(tText("最多保留 20 套皮肤"));
     const newId = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `skin_${Date.now()}`;
     const clone: ThemeSkin = { ...source, id: newId, name: `${source.name} 副本`, clientEnabled: source.clientEnabled !== false };
     setSkins((prev) => [...prev, clone]);
     setSelectedSkinId(newId);
     setThemeConfig(clone.config);
     setDirty(true);
-    toast.success("已复制皮肤，请保存后生效");
+    toast.success(tText("已复制皮肤，请保存后生效"));
   };
 
   const onDeleteSkin = async (id: string) => {
@@ -261,9 +264,9 @@ export default function AdminThemeSettings() {
   };
 
   const onSetDefault = async (id: string) => {
-    if (id === defaultSkinId) return toast.info("已是默认皮肤");
+    if (id === defaultSkinId) return toast.info(tText("已是默认皮肤"));
     const nextSkins = id === selectedSkinId ? buildNextSkins() : skins;
-    if (!nextSkins) return toast.error("皮肤名称不能为空");
+    if (!nextSkins) return toast.error(tText("皮肤名称不能为空"));
     try {
       await persist(nextSkins, id, activeSkinId, "已设为默认皮肤");
     } catch {
@@ -273,7 +276,7 @@ export default function AdminThemeSettings() {
 
   const onSaveDraft = async () => {
     const nextSkins = buildNextSkins();
-    if (!nextSkins) return toast.error("皮肤名称不能为空");
+    if (!nextSkins) return toast.error(tText("皮肤名称不能为空"));
     try {
       await persist(nextSkins, defaultSkinId, activeSkinId, "已保存皮肤配置", { selectedSkinId });
     } catch {
@@ -283,7 +286,7 @@ export default function AdminThemeSettings() {
 
   const onSaveAndApply = async () => {
     const nextSkins = buildNextSkins();
-    if (!nextSkins) return toast.error("皮肤名称不能为空");
+    if (!nextSkins) return toast.error(tText("皮肤名称不能为空"));
     try {
       await persist(nextSkins, defaultSkinId, selectedSkinId, "已保存并应用到全站", { selectedSkinId });
     } catch {
@@ -297,7 +300,7 @@ export default function AdminThemeSettings() {
     setThemeConfig(next);
     setSkins((prev) => prev.map((s) => (s.id === selectedSkinId ? { ...s, config: next } : s)));
     setDirty(true);
-    toast.success("已自动优化，可在预览区确认效果");
+    toast.success(tText("已自动优化，可在预览区确认效果"));
   };
 
   return (
@@ -318,7 +321,7 @@ export default function AdminThemeSettings() {
             onSaveAndApply={() => void onSaveAndApply()}
             onCopy={() => onCopySkin()}
             onAdd={onAddSkin}
-            onAddStarter={() => toast.info("请在左侧“从模板新建”区域选择模板")}
+            onAddStarter={() => toast.info(tText("请在左侧“从模板新建”区域选择模板"))}
             onSetDefault={() => void onSetDefault(selectedSkinId)}
             canDelete={canDeleteThemeSkin(selectedSkinId, defaultSkinId, skins.length).ok}
             onDelete={() => {
@@ -328,7 +331,7 @@ export default function AdminThemeSettings() {
             }}
           />
 
-          <div className="grid grid-cols-1 gap-4 2xl:grid-cols-[300px_minmax(0,1fr)_clamp(430px,28vw,540px)] 2xl:items-start">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_minmax(0,1fr)] xl:items-start 2xl:grid-cols-[300px_minmax(0,1fr)_clamp(430px,28vw,540px)]">
             <ThemeSkinSidebar
               skins={skins}
               selectedSkinId={selectedSkinId}
@@ -388,7 +391,7 @@ export default function AdminThemeSettings() {
           <AnimatedConfirmDialog
             open={!!pendingSkinId}
             onOpenChange={(open) => !open && setPendingSkinId(null)}
-            title="切换皮肤"
+            title={tText("切换皮肤")}
             description="当前有未保存修改，切换后将丢失这些修改，确定继续吗？"
             confirmText="切换"
             danger
@@ -401,7 +404,7 @@ export default function AdminThemeSettings() {
           <AnimatedConfirmDialog
             open={!!pendingDeleteId}
             onOpenChange={(open) => !open && setPendingDeleteId(null)}
-            title="删除皮肤"
+            title={tText("删除皮肤")}
             description="删除后不可恢复。默认皮肤无法删除，请先将其他皮肤设为默认。"
             confirmText="删除"
             danger

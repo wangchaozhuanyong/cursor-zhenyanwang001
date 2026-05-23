@@ -14,6 +14,7 @@ import { isGiftOrder } from "@/utils/orderPaymentLabels";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { usePayPendingOrder } from "@/hooks/usePayPendingOrder";
 import { safeOpenExternal } from "@/utils/safeOpen";
+import { SUPPORT_PAGE_PATH } from "@/utils/supportDownloadConfig";
 import { BottomSheetConfirm, ResponsiveSheet } from "@/modules/micro-interactions";
 
 const TABS: Array<{ key: OrderTab; label: string }> = [
@@ -335,7 +336,7 @@ export default function Orders() {
                     ) : null}
 
                     {order.status === "paid" ? (
-                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate("/help"); }}>联系客服</button>
+                      <button className={actionBtn} onClick={(e) => { e.stopPropagation(); navigate(SUPPORT_PAGE_PATH); }}>联系客服</button>
                     ) : null}
 
                     {order.status === "shipped" ? (

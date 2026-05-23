@@ -18,24 +18,19 @@ import {
 import type { ExportTask } from "@/services/admin/exportCenterService";
 import { getAdminAccessToken } from "@/utils/token";
 import { EXPORT_TASK_STATUS, EXPORT_TASK_STATUS_META } from "@/constants/statusDictionary";
-import { labelExportType } from "@/utils/adminDisplayLabels";
+import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import { THEME_TEXT_DANGER, THEME_TEXT_SUCCESS, THEME_TEXT_WARNING } from "@/utils/themeVisuals";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { EXPORTABLE_REPORTS } from "./reportRegistry";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
   pending: <Clock size={14} className={`animate-pulse ${THEME_TEXT_WARNING}`} />,
   success: <CheckCircle2 size={14} className={THEME_TEXT_SUCCESS} />,
   failed: <XCircle size={14} className={THEME_TEXT_DANGER} />,
-};
-
-const STATUS_TEXT: Record<string, string> = {
-  pending: EXPORT_TASK_STATUS_META.pending.label,
-  success: EXPORT_TASK_STATUS_META.success.label,
-  failed: EXPORT_TASK_STATUS_META.failed.label,
 };
 
 function formatBytes(bytes: number) {
@@ -46,6 +41,16 @@ function formatBytes(bytes: number) {
 }
 
 export default function AdminExportCenter() {
+  const { tText } = useAdminT();
+  const { exportType: labelExportType } = useAdminDisplayLabel();
+  const exportStatusText = useMemo(
+    () => ({
+      pending: tText(EXPORT_TASK_STATUS_META.pending.label),
+      success: tText(EXPORT_TASK_STATUS_META.success.label),
+      failed: tText(EXPORT_TASK_STATUS_META.failed.label),
+    }),
+    [tText],
+  );
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
   const capabilities = useSiteCapabilities();
@@ -85,7 +90,7 @@ export default function AdminExportCenter() {
         date_from: dateFrom || undefined,
         date_to: dateTo || undefined,
       });
-      toast.success("导出任务已创建");
+      toast.success(tText("导出任务已创建"));
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.exportTasks() });
     } catch (e) {
       toast.error(toastErrorMessage(e, "创建失败"));
@@ -108,11 +113,11 @@ export default function AdminExportCenter() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="flex items-center gap-2 text-lg font-bold text-foreground"><FileSpreadsheet size={20} /><Tx> 导出中心</Tx></h2>
+            <h2 className="flex items-center gap-2 text-lg font-bold text-foreground"><FileSpreadsheet size={20} /><Tx>导出中心</Tx></h2>
             <AdminFieldHint text={<Tx>支持按报表类型与日期范围创建导出任务</Tx>} />
           </div>
         </div>
-        <button type="button" onClick={() => void tasksQuery.refetch()} className="touch-manipulation rounded-xl border border-border p-2.5 text-muted-foreground hover:bg-secondary" title="刷新">
+        <button type="button" onClick={() => void tasksQuery.refetch()} className="touch-manipulation rounded-xl border border-border p-2.5 text-muted-foreground hover:bg-secondary" title={tText("刷新")}>
           <RefreshCw size={16} />
         </button>
       </div>
@@ -131,8 +136,7 @@ export default function AdminExportCenter() {
             state={creating ? "loading" : "normal"}
             loadingText="创建中..."
             onClick={() =>
-              confirm({
-                title: "确认导出",
+              confirm({ title: tText("确认导出"),
                 description: "确定创建导出任务？完成后可在列表下载文件。",
                 confirmText: "开始导出",
                 onConfirm: () => handleCreate(),
@@ -169,13 +173,13 @@ export default function AdminExportCenter() {
           <>
             <td className="px-4 py-3 text-foreground">{t.file_name}</td>
             <td className="px-4 py-3 text-xs text-muted-foreground">{exportTypes.find((x) => x.value === t.type)?.label || labelExportType(t.type)}</td>
-            <td className="px-4 py-3"><div className="flex items-center gap-1 text-xs">{STATUS_ICON[t.status]} {STATUS_TEXT[t.status] || "未知"}</div></td>
+            <td className="px-4 py-3"><div className="flex items-center gap-1 text-xs">{STATUS_ICON[t.status]} {exportStatusText[t.status] || tText("未知")}</div></td>
             <td className="px-4 py-3 text-xs text-muted-foreground">{formatBytes(t.file_size)}</td>
             <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{t.created_at ? formatDateTime(t.created_at) : "-"}</td>
             <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{t.finished_at ? formatDateTime(t.finished_at) : "-"}</td>
             <td className="px-4 py-3">
               {t.status === EXPORT_TASK_STATUS.SUCCESS ? (
-                <button type="button" onClick={() => handleDownload(t)} className="touch-manipulation rounded-lg border border-border p-1.5 text-theme-price hover:bg-secondary" title="下载">
+                <button type="button" onClick={() => handleDownload(t)} className="touch-manipulation rounded-lg border border-border p-1.5 text-theme-price hover:bg-secondary" title={tText("下载")}>
                   <Download size={14} />
                 </button>
               ) : t.status === EXPORT_TASK_STATUS.PENDING ? <Loader2 size={14} className="animate-spin text-muted-foreground" /> : <span className="text-xs text-muted-foreground">-</span>}

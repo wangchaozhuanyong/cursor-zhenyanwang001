@@ -10,6 +10,8 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { THEME_BORDER_DANGER_SOFT, THEME_TEXT_DANGER } from "@/utils/themeVisuals";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type Draft = Omit<MemberLevel, "id" | "created_at" | "updated_at"> & {
   id?: string;
@@ -59,6 +61,7 @@ function validateDraft(draft: Draft) {
 }
 
 export default function AdminMemberLevels() {
+  const { tText } = useAdminT();
   const queryClient = useQueryClient();
   const { confirm } = useAdminConfirm();
   const [levels, setLevels] = useState<MemberLevel[]>([]);
@@ -104,7 +107,7 @@ export default function AdminMemberLevels() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">会员等级配置</h2>
+        <h2 className="text-lg font-semibold"><Tx>会员等级配置</Tx></h2>
         <div className="flex flex-wrap gap-2">
           <LoadingButton
             type="button"
@@ -119,8 +122,7 @@ export default function AdminMemberLevels() {
             variant="outline"
             state={recalculateMutation.isPending ? "loading" : "normal"}
             onClick={() => {
-              confirm({
-                title: "确认强制重算",
+              confirm({ title: tText("确认强制重算"),
                 description: "强制重算会覆盖管理员手动指定等级，确认继续？",
                 confirmText: "继续重算",
                 danger: true,
@@ -136,18 +138,18 @@ export default function AdminMemberLevels() {
       </div>
 
       <section className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
-        <h3 className="mb-3 text-sm font-semibold text-foreground">新增等级</h3>
+        <h3 className="mb-3 text-sm font-semibold text-foreground"><Tx>新增等级</Tx></h3>
         <div className="grid gap-2 md:grid-cols-4">
-          <input value={newLevel.name || ""} onChange={(e) => setNewLevel((s) => ({ ...s, name: e.target.value }))} placeholder="等级名称" className="rounded border px-2 py-1" />
-          <input value={newLevel.description || ""} onChange={(e) => setNewLevel((s) => ({ ...s, description: e.target.value }))} placeholder="描述" className="rounded border px-2 py-1" />
-          <input type="number" value={newLevel.min_spent || 0} onChange={(e) => setNewLevel((s) => ({ ...s, min_spent: Number(e.target.value) }))} placeholder="累计消费" className="rounded border px-2 py-1" />
-          <input type="number" value={newLevel.min_orders || 0} onChange={(e) => setNewLevel((s) => ({ ...s, min_orders: Number(e.target.value) }))} placeholder="累计订单" className="rounded border px-2 py-1" />
-          <input type="number" step="0.01" value={newLevel.discount_rate || 1} onChange={(e) => setNewLevel((s) => ({ ...s, discount_rate: Number(e.target.value) }))} placeholder="折扣率" className="rounded border px-2 py-1" />
-          <input type="number" step="0.01" value={newLevel.points_multiplier || 1} onChange={(e) => setNewLevel((s) => ({ ...s, points_multiplier: Number(e.target.value) }))} placeholder="积分倍率" className="rounded border px-2 py-1" />
-          <input type="number" step="1" value={newLevel.sort_order || 0} onChange={(e) => setNewLevel((s) => ({ ...s, sort_order: Number(e.target.value) }))} placeholder="排序" className="rounded border px-2 py-1" />
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={newLevel.free_shipping_enabled || false} onChange={(e) => setNewLevel((s) => ({ ...s, free_shipping_enabled: e.target.checked }))} />免邮</label>
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={newLevel.enabled !== false} onChange={(e) => setNewLevel((s) => ({ ...s, enabled: e.target.checked, is_default: e.target.checked ? s.is_default : false }))} />启用</label>
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={newLevel.is_default || false} onChange={(e) => setNewLevel((s) => ({ ...s, is_default: e.target.checked, enabled: e.target.checked ? true : s.enabled }))} />默认等级</label>
+          <input value={newLevel.name || ""} onChange={(e) => setNewLevel((s) => ({ ...s, name: e.target.value }))} placeholder={tText("等级名称")} className="rounded border px-2 py-1" />
+          <input value={newLevel.description || ""} onChange={(e) => setNewLevel((s) => ({ ...s, description: e.target.value }))} placeholder={tText("描述")} className="rounded border px-2 py-1" />
+          <input type="number" value={newLevel.min_spent || 0} onChange={(e) => setNewLevel((s) => ({ ...s, min_spent: Number(e.target.value) }))} placeholder={tText("累计消费")} className="rounded border px-2 py-1" />
+          <input type="number" value={newLevel.min_orders || 0} onChange={(e) => setNewLevel((s) => ({ ...s, min_orders: Number(e.target.value) }))} placeholder={tText("累计订单")} className="rounded border px-2 py-1" />
+          <input type="number" step="0.01" value={newLevel.discount_rate || 1} onChange={(e) => setNewLevel((s) => ({ ...s, discount_rate: Number(e.target.value) }))} placeholder={tText("折扣率")} className="rounded border px-2 py-1" />
+          <input type="number" step="0.01" value={newLevel.points_multiplier || 1} onChange={(e) => setNewLevel((s) => ({ ...s, points_multiplier: Number(e.target.value) }))} placeholder={tText("积分倍率")} className="rounded border px-2 py-1" />
+          <input type="number" step="1" value={newLevel.sort_order || 0} onChange={(e) => setNewLevel((s) => ({ ...s, sort_order: Number(e.target.value) }))} placeholder={tText("排序")} className="rounded border px-2 py-1" />
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={newLevel.free_shipping_enabled || false} onChange={(e) => setNewLevel((s) => ({ ...s, free_shipping_enabled: e.target.checked }))} /><Tx>免邮</Tx></label>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={newLevel.enabled !== false} onChange={(e) => setNewLevel((s) => ({ ...s, enabled: e.target.checked, is_default: e.target.checked ? s.is_default : false }))} /><Tx>启用</Tx></label>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={newLevel.is_default || false} onChange={(e) => setNewLevel((s) => ({ ...s, is_default: e.target.checked, enabled: e.target.checked ? true : s.enabled }))} /><Tx>默认等级</Tx></label>
         </div>
         <LoadingButton
           className="mt-3"
@@ -165,7 +167,7 @@ export default function AdminMemberLevels() {
               await userService.createMemberLevel(toPayload(newLevel));
               setNewLevel(emptyDraft);
               await invalidateLevels();
-              toast.success("已创建");
+              toast.success(tText("已创建"));
             } catch (e) {
               toast.error(toastErrorMessage(e, "创建失败"));
             } finally {
@@ -177,7 +179,7 @@ export default function AdminMemberLevels() {
         </LoadingButton>
       </section>
 
-      {loading ? <div>加载中...</div> : levels.map((level) => (
+      {loading ? <div><Tx>加载中...</Tx></div> : levels.map((level) => (
         <div key={level.id} className="theme-rounded space-y-2 border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
           <div className="grid gap-2 md:grid-cols-4">
             <input value={level.name || ""} onChange={(e) => updateLocal(level.id, { name: e.target.value })} className="rounded border px-2 py-1" />
@@ -187,9 +189,9 @@ export default function AdminMemberLevels() {
             <input type="number" step="0.01" value={level.discount_rate || 1} onChange={(e) => updateLocal(level.id, { discount_rate: Number(e.target.value) })} className="rounded border px-2 py-1" />
             <input type="number" step="0.01" value={level.points_multiplier || 1} onChange={(e) => updateLocal(level.id, { points_multiplier: Number(e.target.value) })} className="rounded border px-2 py-1" />
             <input type="number" step="1" value={level.sort_order || 0} onChange={(e) => updateLocal(level.id, { sort_order: Number(e.target.value) })} className="rounded border px-2 py-1" />
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!level.free_shipping_enabled} onChange={(e) => updateLocal(level.id, { free_shipping_enabled: e.target.checked })} />免邮</label>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={level.enabled !== false} onChange={(e) => updateLocal(level.id, { enabled: e.target.checked, is_default: e.target.checked ? level.is_default : false })} />启用</label>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!level.is_default} onChange={(e) => updateLocal(level.id, { is_default: e.target.checked, enabled: e.target.checked ? true : level.enabled })} />默认等级</label>
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!level.free_shipping_enabled} onChange={(e) => updateLocal(level.id, { free_shipping_enabled: e.target.checked })} /><Tx>免邮</Tx></label>
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={level.enabled !== false} onChange={(e) => updateLocal(level.id, { enabled: e.target.checked, is_default: e.target.checked ? level.is_default : false })} /><Tx>启用</Tx></label>
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!level.is_default} onChange={(e) => updateLocal(level.id, { is_default: e.target.checked, enabled: e.target.checked ? true : level.enabled })} /><Tx>默认等级</Tx></label>
           </div>
           <div className="flex gap-2">
             <LoadingButton
@@ -206,7 +208,7 @@ export default function AdminMemberLevels() {
                 try {
                   await userService.updateMemberLevel(level.id, toPayload(level));
                   await invalidateLevels();
-                  toast.success("已保存");
+                  toast.success(tText("已保存"));
                 } catch (e) {
                   toast.error(toastErrorMessage(e, "保存失败"));
                 } finally {
@@ -233,7 +235,7 @@ export default function AdminMemberLevels() {
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         danger
-        title="删除会员等级"
+        title={tText("删除会员等级")}
         description={deleteTarget ? `确定删除 ${deleteTarget.name}？` : ""}
         confirmText="删除"
         onConfirm={async () => {
@@ -242,7 +244,7 @@ export default function AdminMemberLevels() {
           try {
             await userService.deleteMemberLevel(deleteTarget.id);
             await invalidateLevels();
-            toast.success("已删除");
+            toast.success(tText("已删除"));
             setDeleteTarget(null);
           } catch (e) {
             toast.error(toastErrorMessage(e, "删除失败"));

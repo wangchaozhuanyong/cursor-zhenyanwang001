@@ -13,6 +13,7 @@ import {
   type PointsGiftItem,
 } from "@/services/admin/pointsService";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const inputCls = "rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground w-full";
 
@@ -29,6 +30,7 @@ const emptyForm: PointsGiftItem = {
 };
 
 export default function AdminPointsGifts() {
+  const { tText } = useAdminT();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<PointsGiftItem>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -79,7 +81,7 @@ export default function AdminPointsGifts() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => removePointsGiftItem(id),
     onSuccess: () => {
-      toast.success("已删除");
+      toast.success(tText("已删除"));
       queryClient.invalidateQueries({ queryKey: ["admin", "points-gift-items"] });
     },
     onError: (e) => toast.error(toastErrorMessage(e)),
@@ -95,7 +97,7 @@ export default function AdminPointsGifts() {
           <label className="text-xs text-muted-foreground"><Tx>关联商品</Tx>
             <input
               className={inputCls}
-              placeholder="搜索商品名称"
+              placeholder={tText("搜索商品名称")}
               value={productKeyword}
               onChange={(e) => setProductKeyword(e.target.value)}
             />
@@ -113,7 +115,7 @@ export default function AdminPointsGifts() {
                 }));
               }}
             >
-              <option value="">请选择商品</option>
+              <option value=""><Tx>请选择商品</Tx></option>
               {productOptions.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}（库存 {p.stock ?? 0}）</option>
               ))}
@@ -147,7 +149,7 @@ export default function AdminPointsGifts() {
             type="button"
             onClick={() => {
               if (!form.product_id) {
-                toast.error("请选择关联商品");
+                toast.error(tText("请选择关联商品"));
                 return;
               }
               saveMutation.mutate();

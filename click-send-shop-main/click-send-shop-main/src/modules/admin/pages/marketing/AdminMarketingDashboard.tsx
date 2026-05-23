@@ -12,6 +12,7 @@ import { fetchAdminRewardRecords } from "@/services/admin/rewardService";
 import type { MarketingActivity } from "@/types/activity";
 import type { PointsRecord } from "@/types/points";
 import type { RewardRecord } from "@/types/reward";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const EMPTY_MARKETING_STATS = {
   active: 0,

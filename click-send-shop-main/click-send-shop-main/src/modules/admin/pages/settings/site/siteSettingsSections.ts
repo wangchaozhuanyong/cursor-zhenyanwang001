@@ -58,14 +58,12 @@ export const SITE_SETTINGS_SECTIONS: SiteSettingsSectionDef[] = [
   {
     id: "contact",
     title: "联系方式",
+    description:
+      "电话、邮箱、地址等法定/展示类联系信息。即时客服（微信 / WhatsApp / Telegram）、二维码、服务时间与「添加到桌面」请在「页面装修 → 客服与安装」统一维护。",
     fields: [
       { key: "contactPhone", label: "客服电话", placeholder: "+60 12-345 6789" },
       { key: "contactEmail", label: "客服邮箱", placeholder: "support@example.com" },
-      { key: "contactWhatsApp", label: "WhatsApp 号码", placeholder: "60123456789", hint: "仅数字，用于生成 wa.me" },
-      { key: "whatsappUrl", label: "WhatsApp 完整链接", placeholder: "https://wa.me/60xxxxxxxxxx" },
-      { key: "wechatId", label: "微信号", placeholder: "客服微信号" },
       { key: "address", label: "公司地址", placeholder: "Kuala Lumpur, Malaysia" },
-      { key: "businessHours", label: "营业时间", placeholder: "周一至周日 09:00 - 22:00" },
     ],
   },
   {
@@ -153,8 +151,15 @@ export const SITE_SETTINGS_SECTIONS: SiteSettingsSectionDef[] = [
   {
     id: "shopping",
     title: "购物说明",
+    description: "用于结算页、商品页等「信任三件套」短文案，与即时客服渠道无关。",
     fields: [
-      { key: "supportText", label: "客服支持说明", type: "textarea", rows: 2 },
+      {
+        key: "supportText",
+        label: "售后/信任文案",
+        type: "textarea",
+        rows: 2,
+        hint: "例：7 天无理由退换；勿填写 WhatsApp/微信号",
+      },
       { key: "shippingNotice", label: "配送说明", type: "textarea", rows: 2 },
       { key: "paymentNotice", label: "支付说明", type: "textarea", rows: 2 },
     ],
@@ -215,7 +220,8 @@ export const SECTION_HELP: Record<
     impacts: ["网站 Logo", "浏览器 Favicon", "登录页 Logo"],
   },
   contact: {
-    impacts: ["页脚联系方式", "关于我们", "订单详情客服入口"],
+    impacts: ["页脚电话/邮箱/地址", "关于我们"],
+    tips: ["即时客服请在「页面装修 → 客服与安装」配置"],
   },
   social: {
     impacts: ["页脚社交图标", "关于我们社交链接"],

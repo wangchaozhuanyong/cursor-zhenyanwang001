@@ -71,8 +71,8 @@ export default function SupportDownload() {
   const siteInfo = useSiteInfo();
   const [searchParams, setSearchParams] = useSearchParams();
   const config = useMemo(
-    () => parseSupportDownloadConfig(siteInfo.supportDownloadConfig, siteInfo),
-    [siteInfo],
+    () => parseSupportDownloadConfig(siteInfo.supportDownloadConfig),
+    [siteInfo.supportDownloadConfig],
   );
 
   const [browserEnv, setBrowserEnv] = useState(() => detectBrowserEnv());

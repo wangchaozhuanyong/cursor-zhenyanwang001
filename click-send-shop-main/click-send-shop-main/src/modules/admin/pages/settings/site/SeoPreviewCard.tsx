@@ -1,4 +1,6 @@
+import { Tx } from "@/components/admin/AdminText";
 import type { SiteSettings } from "@/types/admin";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type Props = {
   settings: SiteSettings;
@@ -12,12 +14,12 @@ export default function SeoPreviewCard({ settings }: Props) {
   return (
     <div className="space-y-3 text-xs">
       <div className="rounded-xl border border-border bg-background p-3">
-        <p className="mb-2 font-medium text-foreground">搜索预览</p>
+        <p className="mb-2 font-medium text-foreground"><Tx>搜索预览</Tx></p>
         <p className="truncate text-[#1a0dab]">{title}</p>
         <p className="mt-0.5 line-clamp-2 text-muted-foreground">{desc}</p>
       </div>
       <div className="rounded-xl border border-border bg-background p-3">
-        <p className="mb-2 font-medium text-foreground">分享卡片</p>
+        <p className="mb-2 font-medium text-foreground"><Tx>分享卡片</Tx></p>
         {og ? (
           <img src={og} alt="" className="mb-2 aspect-[1.91/1] w-full rounded-lg border border-border object-cover" />
         ) : (

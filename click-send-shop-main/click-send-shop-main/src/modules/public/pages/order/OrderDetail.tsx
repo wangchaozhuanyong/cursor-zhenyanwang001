@@ -16,6 +16,7 @@ import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { usePayPendingOrder } from "@/hooks/usePayPendingOrder";
 import { OrderDiscountLines } from "./components/OrderDiscountLines";
 import { safeOpenExternal } from "@/utils/safeOpen";
+import { SUPPORT_PAGE_PATH } from "@/utils/supportDownloadConfig";
 
 const steps = ["待付款", "已付款", "已发货", "已完成"];
 
@@ -59,7 +60,7 @@ function OrderDetailQuickActions({
       <button
         type="button"
         className="rounded-full border border-[var(--theme-border)] px-3 py-2 text-xs"
-        onClick={() => navigate("/help")}
+        onClick={() => navigate(SUPPORT_PAGE_PATH)}
       >
         客服
       </button>
@@ -297,7 +298,7 @@ export default function OrderDetail() {
               {paying ? "处理中..." : "去付款"}
             </button>
           ) : null}
-          {order.status === "paid" ? <><button className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate("/help")}>联系客服</button></> : null}
+          {order.status === "paid" ? <><button className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate(SUPPORT_PAGE_PATH)}>联系客服</button></> : null}
           {order.status === "shipped" ? (
             <>
               <button className="rounded-full border px-3 py-1 text-xs" onClick={() => { void handleViewLogistics(); }}>查看物流</button>

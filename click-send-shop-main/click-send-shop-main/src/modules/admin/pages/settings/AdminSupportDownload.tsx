@@ -18,6 +18,7 @@ import {
 } from "@/utils/supportDownloadConfig";
 import type { DownloadPlatform, SupportChannelType, SupportDownloadChannel, SupportDownloadConfig, SupportDownloadTab } from "@/types/content";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const inputClass = "w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-[var(--theme-primary)]";
 
@@ -67,6 +68,7 @@ function updateInstruction(platform: DownloadPlatform, value: string): DownloadP
 }
 
 export default function AdminSupportDownload() {
+  const { tText } = useAdminT();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<SupportDownloadConfig>(DEFAULT_SUPPORT_DOWNLOAD_CONFIG);
   const [saving, setSaving] = useState(false);
@@ -133,7 +135,7 @@ export default function AdminSupportDownload() {
     try {
       const res = await uploadSingle(file, { mode: "asset" });
       updateChannel(channelId, { qrUrl: res.url });
-      toast.success("二维码已上传");
+      toast.success(tText("二维码已上传"));
     } catch (error) {
       toast.error(toastErrorMessage(error, "二维码上传失败"));
     } finally {
@@ -164,7 +166,7 @@ export default function AdminSupportDownload() {
       await refreshSiteInfo();
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.siteSettings() });
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.homeOpsNav() });
-      toast.success("客服中心配置已保存，前台将立即生效");
+      toast.success(tText("客服中心配置已保存，前台将立即生效"));
     } catch (error) {
       toast.error(toastErrorMessage(error, "保存失败"));
     } finally {
@@ -185,59 +187,66 @@ export default function AdminSupportDownload() {
     <PermissionGate permission="settings.manage">
       <div className="space-y-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <AdminPageTitle title="客服中心配置" hint="配置前台客服渠道与手机添加到桌面说明。" />
+          <AdminPageTitle
+            title={tText("客服与安装")}
+            hint="全站唯一 IM 客服配置：客服中心页、底部/顶栏客服、商品与订单「联系客服」、帮助中心联系区、页脚社交渠道、首页金刚区客服导航均读取本页。"
+          />
           <button type="button" onClick={save} disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--theme-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
             {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}
             保存配置
           </button>
         </div>
 
+        <p className="rounded-xl border border-dashed border-border bg-secondary/40 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+          电话、邮箱、公司地址请在「站点设置 → 联系方式」维护；FAQ 请在「页面装修 → 内容管理 → 帮助中心」维护。部署后请执行数据库迁移 115，将旧 IM 字段一次性并入本配置。
+        </p>
+
         <section className="rounded-xl border border-border bg-card p-4">
-          <h2 className="font-semibold text-foreground">页面内容</h2>
+          <h2 className="font-semibold text-foreground"><Tx>页面内容</Tx></h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <label className="block text-sm font-medium">页面是否启用<select className={`${inputClass} mt-1`} value={form.enabled ? "1" : "0"} onChange={(e) => setForm((prev) => ({ ...prev, enabled: e.target.value === "1" }))}><option value="1">启用</option><option value="0">关闭</option></select></label>
-            <label className="block text-sm font-medium">默认打开 Tab<select className={`${inputClass} mt-1`} value={form.defaultTab} onChange={(e) => setForm((prev) => ({ ...prev, defaultTab: e.target.value as SupportDownloadTab }))}><option value="support">联系客服</option><option value="download">添加到桌面</option></select></label>
-            <label className="block text-sm font-medium">页面标题<input className={`${inputClass} mt-1`} value={form.title} onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))} /></label>
-            <label className="block text-sm font-medium">页面副标题<input className={`${inputClass} mt-1`} value={form.subtitle} onChange={(e) => setForm((prev) => ({ ...prev, subtitle: e.target.value }))} /></label>
+            <label className="block text-sm font-medium"><Tx>页面是否启用</Tx><select className={`${inputClass} mt-1`} value={form.enabled ? "1" : "0"} onChange={(e) => setForm((prev) => ({ ...prev, enabled: e.target.value === "1" }))}><option value="1"><Tx>启用</Tx></option><option value="0"><Tx>关闭</Tx></option></select></label>
+            <label className="block text-sm font-medium"><Tx>默认打开 Tab</Tx><select className={`${inputClass} mt-1`} value={form.defaultTab} onChange={(e) => setForm((prev) => ({ ...prev, defaultTab: e.target.value as SupportDownloadTab }))}><option value="support"><Tx>联系客服</Tx></option><option value="download"><Tx>添加到桌面</Tx></option></select></label>
+            <label className="block text-sm font-medium"><Tx>页面标题</Tx><input className={`${inputClass} mt-1`} value={form.title} onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))} /></label>
+            <label className="block text-sm font-medium"><Tx>页面副标题</Tx><input className={`${inputClass} mt-1`} value={form.subtitle} onChange={(e) => setForm((prev) => ({ ...prev, subtitle: e.target.value }))} /></label>
           </div>
         </section>
 
         <section className="rounded-xl border border-border bg-card p-4">
-          <h2 className="font-semibold text-foreground">客服配置</h2>
+          <h2 className="font-semibold text-foreground"><Tx>客服配置</Tx></h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <label className="block text-sm font-medium">客服 Tab 标题<input className={`${inputClass} mt-1`} value={form.support.title} onChange={(e) => setForm((prev) => ({ ...prev, support: { ...prev.support, title: e.target.value } }))} /></label>
-            <label className="block text-sm font-medium">工作时间<input className={`${inputClass} mt-1`} value={form.support.workingHours} onChange={(e) => setForm((prev) => ({ ...prev, support: { ...prev.support, workingHours: e.target.value } }))} /></label>
-            <label className="block text-sm font-medium md:col-span-2">客服说明<textarea className={`${inputClass} mt-1`} rows={3} value={form.support.description} onChange={(e) => setForm((prev) => ({ ...prev, support: { ...prev.support, description: e.target.value } }))} /></label>
+            <label className="block text-sm font-medium"><Tx>客服 Tab 标题</Tx><input className={`${inputClass} mt-1`} value={form.support.title} onChange={(e) => setForm((prev) => ({ ...prev, support: { ...prev.support, title: e.target.value } }))} /></label>
+            <label className="block text-sm font-medium"><Tx>工作时间</Tx><input className={`${inputClass} mt-1`} value={form.support.workingHours} onChange={(e) => setForm((prev) => ({ ...prev, support: { ...prev.support, workingHours: e.target.value } }))} /></label>
+            <label className="block text-sm font-medium md:col-span-2"><Tx>客服说明</Tx><textarea className={`${inputClass} mt-1`} rows={3} value={form.support.description} onChange={(e) => setForm((prev) => ({ ...prev, support: { ...prev.support, description: e.target.value } }))} /></label>
           </div>
         </section>
 
         <section className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="font-semibold text-foreground">客服渠道列表</h2>
-              <p className="text-xs text-muted-foreground">前台只展示已启用渠道，并以渠道切换形式显示。</p>
+              <h2 className="font-semibold text-foreground"><Tx>客服渠道列表</Tx></h2>
+              <p className="text-xs text-muted-foreground"><Tx>前台只展示已启用渠道，并以渠道切换形式显示。</Tx></p>
             </div>
-            <button type="button" onClick={() => setForm((prev) => ({ ...prev, support: { ...prev.support, channels: [...prev.support.channels, createChannel(prev.support.channels.length + 1)] } }))} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Plus size={14} />新增渠道</button>
+            <button type="button" onClick={() => setForm((prev) => ({ ...prev, support: { ...prev.support, channels: [...prev.support.channels, createChannel(prev.support.channels.length + 1)] } }))} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Plus size={14} /><Tx>新增渠道</Tx></button>
           </div>
           <div className="mt-4 space-y-4">
             {channels.map((channel) => (
               <div key={channel.id} className="rounded-xl border border-border/80 bg-background p-4">
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <p className="font-medium text-foreground">{channel.name || "客服入口"}</p>
-                  <button type="button" onClick={() => removeChannel(channel.id)} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-destructive hover:bg-secondary"><Trash2 size={13} />删除</button>
+                  <button type="button" onClick={() => removeChannel(channel.id)} className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-destructive hover:bg-secondary"><Trash2 size={13} /><Tx>删除</Tx></button>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   <select className={inputClass} value={channel.type} onChange={(e) => updateChannel(channel.id, { type: e.target.value as SupportChannelType })}>{CHANNEL_TYPES.map((item) => <option key={item} value={item}>{CHANNEL_TYPE_LABELS[item]}</option>)}</select>
-                  <select className={inputClass} value={channel.enabled ? "1" : "0"} onChange={(e) => updateChannel(channel.id, { enabled: e.target.value === "1" })}><option value="1">启用</option><option value="0">关闭</option></select>
-                  <input className={inputClass} value={channel.name} onChange={(e) => updateChannel(channel.id, { name: e.target.value })} placeholder="渠道名称" />
-                  <input className={inputClass} type="number" value={channel.sortOrder} onChange={(e) => updateChannel(channel.id, { sortOrder: Number(e.target.value) || 0 })} placeholder="排序" />
-                  <input className={inputClass} value={channel.account} onChange={(e) => updateChannel(channel.id, { account: e.target.value })} placeholder="微信号 / 手机号 / Telegram 用户名" />
-                  <input className={inputClass} value={channel.linkUrl} onChange={(e) => updateChannel(channel.id, { linkUrl: e.target.value })} placeholder="外部跳转链接（可选）" />
-                  <textarea className={`${inputClass} md:col-span-2`} rows={2} value={channel.description} onChange={(e) => updateChannel(channel.id, { description: e.target.value })} placeholder="渠道说明" />
+                  <select className={inputClass} value={channel.enabled ? "1" : "0"} onChange={(e) => updateChannel(channel.id, { enabled: e.target.value === "1" })}><option value="1"><Tx>启用</Tx></option><option value="0"><Tx>关闭</Tx></option></select>
+                  <input className={inputClass} value={channel.name} onChange={(e) => updateChannel(channel.id, { name: e.target.value })} placeholder={tText("渠道名称")} />
+                  <input className={inputClass} type="number" value={channel.sortOrder} onChange={(e) => updateChannel(channel.id, { sortOrder: Number(e.target.value) || 0 })} placeholder={tText("排序")} />
+                  <input className={inputClass} value={channel.account} onChange={(e) => updateChannel(channel.id, { account: e.target.value })} placeholder={tText("微信号 / 手机号 / Telegram 用户名")} />
+                  <input className={inputClass} value={channel.linkUrl} onChange={(e) => updateChannel(channel.id, { linkUrl: e.target.value })} placeholder={tText("外部跳转链接（可选）")} />
+                  <textarea className={`${inputClass} md:col-span-2`} rows={2} value={channel.description} onChange={(e) => updateChannel(channel.id, { description: e.target.value })} placeholder={tText("渠道说明")} />
                   <div className="md:col-span-2">
                     <div className="flex flex-wrap items-center gap-2">
                       {channel.qrUrl ? <img src={channel.qrUrl} alt="二维码预览" className="h-16 w-16 rounded-lg border border-border bg-white object-contain p-1" /> : <span className="inline-flex h-16 w-16 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground"><ImagePlus size={18} /></span>}
-                      <input className={`${inputClass} min-w-[220px] flex-1`} value={channel.qrUrl} onChange={(e) => updateChannel(channel.id, { qrUrl: e.target.value })} placeholder="二维码图片 URL" />
+                      <input className={`${inputClass} min-w-[220px] flex-1`} value={channel.qrUrl} onChange={(e) => updateChannel(channel.id, { qrUrl: e.target.value })} placeholder={tText("二维码图片 URL")} />
                       <input ref={(node) => { fileInputs.current[channel.id] = node; }} type="file" accept="image/*" className="hidden" onChange={(e) => void uploadQr(channel.id, e.target.files?.[0])} />
                       <button type="button" onClick={() => fileInputs.current[channel.id]?.click()} disabled={uploadingId === channel.id} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary disabled:opacity-60">{uploadingId === channel.id ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}上传二维码</button>
                     </div>
@@ -249,11 +258,11 @@ export default function AdminSupportDownload() {
         </section>
 
         <section className="rounded-xl border border-border bg-card p-4">
-          <h2 className="font-semibold text-foreground">手机添加到桌面说明</h2>
+          <h2 className="font-semibold text-foreground"><Tx>手机添加到桌面说明</Tx></h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <label className="block text-sm font-medium">添加到桌面 Tab 是否启用<select className={`${inputClass} mt-1`} value={form.download.enabled ? "1" : "0"} onChange={(e) => setForm((prev) => ({ ...prev, download: { ...prev.download, enabled: e.target.value === "1" } }))}><option value="1">启用</option><option value="0">关闭</option></select></label>
-            <label className="block text-sm font-medium">添加到桌面 Tab 标题<input className={`${inputClass} mt-1`} value={form.download.title} onChange={(e) => setForm((prev) => ({ ...prev, download: { ...prev.download, title: e.target.value } }))} /></label>
-            <label className="block text-sm font-medium md:col-span-2">添加到桌面说明<textarea className={`${inputClass} mt-1`} rows={3} value={form.download.description} onChange={(e) => setForm((prev) => ({ ...prev, download: { ...prev.download, description: e.target.value } }))} /></label>
+            <label className="block text-sm font-medium"><Tx>添加到桌面 Tab 是否启用</Tx><select className={`${inputClass} mt-1`} value={form.download.enabled ? "1" : "0"} onChange={(e) => setForm((prev) => ({ ...prev, download: { ...prev.download, enabled: e.target.value === "1" } }))}><option value="1"><Tx>启用</Tx></option><option value="0"><Tx>关闭</Tx></option></select></label>
+            <label className="block text-sm font-medium"><Tx>添加到桌面 Tab 标题</Tx><input className={`${inputClass} mt-1`} value={form.download.title} onChange={(e) => setForm((prev) => ({ ...prev, download: { ...prev.download, title: e.target.value } }))} /></label>
+            <label className="block text-sm font-medium md:col-span-2"><Tx>添加到桌面说明</Tx><textarea className={`${inputClass} mt-1`} rows={3} value={form.download.description} onChange={(e) => setForm((prev) => ({ ...prev, download: { ...prev.download, description: e.target.value } }))} /></label>
           </div>
 
           <div className="mt-4 space-y-4">
@@ -261,14 +270,14 @@ export default function AdminSupportDownload() {
               <div key={platform.id} className="rounded-xl border border-border/80 bg-background p-4">
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <p className="font-medium text-foreground">{PLATFORM_LABELS[platform.type]}</p>
-                  <select className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none" value={platform.enabled ? "1" : "0"} onChange={(e) => updatePlatform(platform.id, { enabled: e.target.value === "1" })}><option value="1">启用</option><option value="0">隐藏</option></select>
+                  <select className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none" value={platform.enabled ? "1" : "0"} onChange={(e) => updatePlatform(platform.id, { enabled: e.target.value === "1" })}><option value="1"><Tx>启用</Tx></option><option value="0"><Tx>隐藏</Tx></option></select>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
-                  <input className={inputClass} value={platform.title} onChange={(e) => updatePlatform(platform.id, { title: e.target.value })} placeholder="标题" />
-                  <input className={inputClass} type="number" value={platform.sortOrder} onChange={(e) => updatePlatform(platform.id, { sortOrder: Number(e.target.value) || 0 })} placeholder="排序" />
-                  <input className={inputClass} value={platform.buttonText} onChange={(e) => updatePlatform(platform.id, { buttonText: e.target.value })} placeholder="按钮文案" />
-                  <input className={inputClass} value={platform.description} onChange={(e) => updatePlatform(platform.id, { description: e.target.value })} placeholder="说明" />
-                  <label className="block text-sm font-medium md:col-span-2">步骤说明（一行一步）<textarea className={`${inputClass} mt-1`} rows={4} value={platform.instructions.join("\n")} onChange={(e) => updatePlatform(platform.id, updateInstruction(platform, e.target.value))} /></label>
+                  <input className={inputClass} value={platform.title} onChange={(e) => updatePlatform(platform.id, { title: e.target.value })} placeholder={tText("标题")} />
+                  <input className={inputClass} type="number" value={platform.sortOrder} onChange={(e) => updatePlatform(platform.id, { sortOrder: Number(e.target.value) || 0 })} placeholder={tText("排序")} />
+                  <input className={inputClass} value={platform.buttonText} onChange={(e) => updatePlatform(platform.id, { buttonText: e.target.value })} placeholder={tText("按钮文案")} />
+                  <input className={inputClass} value={platform.description} onChange={(e) => updatePlatform(platform.id, { description: e.target.value })} placeholder={tText("说明")} />
+                  <label className="block text-sm font-medium md:col-span-2"><Tx>步骤说明（一行一步）</Tx><textarea className={`${inputClass} mt-1`} rows={4} value={platform.instructions.join("\n")} onChange={(e) => updatePlatform(platform.id, updateInstruction(platform, e.target.value))} /></label>
                 </div>
               </div>
             ))}

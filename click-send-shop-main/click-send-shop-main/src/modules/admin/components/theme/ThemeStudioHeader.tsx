@@ -5,6 +5,8 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import StoreBadge from "@/components/ui/StoreBadge";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import { THEME_BADGE_WARNING, THEME_OUTLINE_DANGER } from "@/utils/themeVisuals";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 export type ThemeStudioHeaderProps = {
   skinName: string;
@@ -51,16 +53,16 @@ export default function ThemeStudioHeader({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 space-y-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-foreground">皮肤设计</h1>
+            <h1 className="text-xl font-bold text-foreground"><Tx>皮肤设计</Tx></h1>
             <AdminFieldHint text="统一管理前台、移动端和管理后台的视觉风格" size="md" />
           </div>
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <span className="max-w-[260px] truncate rounded-full border border-border bg-secondary/50 px-2.5 py-1 text-xs font-medium text-foreground">
               当前编辑：{skinName || "未命名皮肤"}
             </span>
-            {isDefault ? <StoreBadge type="success">默认皮肤</StoreBadge> : null}
+            {isDefault ? <StoreBadge type="success"><Tx>默认皮肤</Tx></StoreBadge> : null}
             {clientEnabled ? (
-              <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground">前台可切换</span>
+              <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground"><Tx>前台可切换</Tx></span>
             ) : null}
             {dirty ? (
               <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${THEME_BADGE_WARNING}`}>{statusText}</span>

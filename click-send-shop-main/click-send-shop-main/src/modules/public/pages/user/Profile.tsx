@@ -21,6 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
 import { isLoggedIn } from "@/utils/token";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { toast } from "sonner";
@@ -242,9 +243,9 @@ export default function Profile() {
   );
   const afterSaleCount = Math.max(orderSummary?.after_sale ?? orderRefundCount, activeReturnCount);
 
-  const pointsEnabled = capabilities.pointsEnabled && (loyaltyConfig?.points?.displayEnabled ?? true);
-  const rewardsEnabled = loyaltyConfig?.reward?.displayEnabled ?? true;
-  const inviteEnabled = loyaltyConfig?.reward?.referralEnabled ?? true;
+  const pointsEnabled = isLoyaltyFeatureEnabled("points", capabilities, loyaltyConfig);
+  const rewardsEnabled = isLoyaltyFeatureEnabled("reward", capabilities, loyaltyConfig);
+  const inviteEnabled = isLoyaltyFeatureEnabled("referral", capabilities, loyaltyConfig);
   const assetItems = [
     { key: "points", label: "我的积分", value: String(pointsBalance), path: "/points", auth: true },
     { key: "favorites", label: "我的收藏", value: String(favoriteCount), path: "/favorites", auth: false },
@@ -426,19 +427,19 @@ export default function Profile() {
         <section className={`${CARD_CLASS} ${SECTION_PADDING}`}>
           <div className="grid grid-cols-4 gap-x-2 gap-y-2.5">
             {[
-              { label: "收货地址", icon: MapPin, path: "/address", auth: true },
-              { label: "浏览记录", icon: Clock3, path: "/history", auth: false },
-              { label: "我的积分", icon: Gift, path: "/points", auth: true },
-              { label: "帮助中心", icon: CircleHelp, path: "/help", auth: false },
-              { label: "邀请有礼", icon: Gift, path: "/invite", auth: true },
-              { label: "消息通知", icon: Bell, path: "/notifications", auth: true, badgeText: notificationBadgeText },
-              { label: "账户设置", icon: Settings, path: "/settings", auth: true },
-              { label: "我的收藏", icon: Heart, path: "/favorites", auth: false },
+              { key: "address", label: "收货地址", icon: MapPin, path: "/address", auth: true },
+              { key: "favorites", label: "我的收藏", icon: Heart, path: "/favorites", auth: false },
+              { key: "points", label: "我的积分", icon: Gift, path: "/points", auth: true },
+              { key: "invite", label: "邀请有礼", icon: Gift, path: "/invite", auth: true },
+              { key: "notifications", label: "消息通知", icon: Bell, path: "/notifications", auth: true, badgeText: notificationBadgeText },
+              { key: "history", label: "浏览记录", icon: Clock3, path: "/history", auth: false },
+              { key: "help", label: "帮助中心", icon: CircleHelp, path: "/help", auth: false },
+              { key: "settings", label: "账户设置", icon: Settings, path: "/settings", auth: true },
             ].filter((item) => (
               (item.path !== "/points" || pointsEnabled)
               && (item.path !== "/invite" || inviteEnabled)
             )).map((item) => (
-              <button key={item.label} type="button" onClick={() => gateNavigate(navigate, item.path, item.auth)} className={`relative min-h-[76px] rounded-2xl bg-[var(--theme-bg)] px-1 py-2 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_60%,transparent)] ${MENU_TAP}`}>
+              <button key={item.key} type="button" onClick={() => gateNavigate(navigate, item.path, item.auth)} className={`relative min-h-[76px] rounded-2xl bg-[var(--theme-bg)] px-1 py-2 text-center ring-1 ring-[color-mix(in_srgb,var(--theme-border)_60%,transparent)] ${MENU_TAP}`}>
                 {item.badgeText ? (
                   <span className="absolute right-3 top-2 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[var(--theme-danger)] px-1 text-[10px] leading-none text-[var(--theme-danger-foreground)]">
                     {item.badgeText}

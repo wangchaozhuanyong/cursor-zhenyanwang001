@@ -19,6 +19,16 @@ import { downloadProductCsvTemplate } from "@/utils/productCsvTemplate";
 import type { Product, ProductListParams, ProductStatus } from "@/types/product";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { THEME_BADGE_DANGER, THEME_BADGE_MUTED, THEME_BADGE_SUCCESS, THEME_BADGE_WARNING } from "@/utils/themeVisuals";
+import { Tx } from "@/components/admin/AdminText";
+import AdminTableSortHeader from "@/components/admin/AdminTableSortHeader";
+import { useAdminT } from "@/hooks/useAdminT";
+import {
+  DEFAULT_PRODUCT_LIST_SORT,
+  PRODUCT_SORT_LABELS,
+  cycleProductColumnSort,
+  getProductSortDirection,
+  type ProductSortColumn,
+} from "@/utils/adminProductSort";
 
 const PAGE_SIZE = 20;
 
@@ -43,26 +53,10 @@ const COST_LABELS: Record<Exclude<CostFilter, "">, string> = {
   missing: "缺成本",
 };
 
-const SORT_LABELS: Record<SortValue, string> = {
-  default: "默认排序",
-  sales: "销量优先",
-  newest: "最新商品",
-  "price-asc": "价格从低到高",
-  "price-desc": "价格从高到低",
-  created_desc: "最新创建",
-  sales_30d_desc: "近30天销量",
-  sales_amount_30d_desc: "近30天销售额",
-  gross_profit_30d_desc: "近30天毛利",
-  stock_asc: "库存从低到高",
-  stock_desc: "库存从高到低",
-  margin_asc: "毛利率从低到高",
-  margin_desc: "毛利率从高到低",
-};
-
-function statusMeta(status: ProductStatus | string) {
-  if (status === "active") return { label: "上架", className: THEME_BADGE_SUCCESS };
-  if (status === "draft") return { label: "草稿", className: THEME_BADGE_MUTED };
-  return { label: "下架", className: THEME_BADGE_WARNING };
+function statusMeta(status: ProductStatus | string, tText: (zh: string) => string) {
+  if (status === "active") return { label: tText("上架"), className: THEME_BADGE_SUCCESS };
+  if (status === "draft") return { label: tText("草稿"), className: THEME_BADGE_MUTED };
+  return { label: tText("下架"), className: THEME_BADGE_WARNING };
 }
 
 function money(value: unknown) {
@@ -81,6 +75,7 @@ function skuPrice(product: Product) {
 }
 
 export default function AdminProducts() {
+  const { tText } = useAdminT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
@@ -89,7 +84,7 @@ export default function AdminProducts() {
   const [statusFilter, setStatusFilter] = useState<"" | ProductStatus>("");
   const [stockFilter, setStockFilter] = useState<StockFilter>("");
   const [costFilter, setCostFilter] = useState<CostFilter>("");
-  const [sort, setSort] = useState<SortValue>("created_desc");
+  const [sort, setSort] = useState<SortValue>(DEFAULT_PRODUCT_LIST_SORT);
   const [exportingScope, setExportingScope] = useState<"filtered" | "selected" | null>(null);
   const [importOpen, setImportOpen] = useState(false);
 
@@ -112,38 +107,45 @@ export default function AdminProducts() {
 
   const batchStatusMutation = useMutation({
     mutationFn: async (status: ProductStatus) => {
-      if (!selected.length) throw new Error("请先勾选商品");
+      if (!selected.length) throw new Error(tText("请先勾选商品"));
       return batchUpdateProductStatus(selected, status);
     },
     onSuccess: async (result, status) => {
-      const verb = status === "active" ? "上架" : status === "inactive" ? "下架" : "设为草稿";
-      const parts = [`已${verb} ${result.updated} 个商品`];
-      if (result.skipped > 0) parts.push(`跳过 ${result.skipped} 个（不存在或已删除）`);
-      toast.success(parts.join("，"));
+      const verb =
+        status === "active" ? tText("上架") : status === "inactive" ? tText("下架") : tText("设为草稿");
+      const parts = [`${tText("已")}${verb} ${result.updated} ${tText("个商品")}`];
+      if (result.skipped > 0) {
+        parts.push(`${tText("跳过")} ${result.skipped} ${tText("个（不存在或已删除）")}`);
+      }
+      toast.success(parts.join(tText("，")));
       setSelected([]);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.inventoryRoot() }),
       ]);
     },
-    onError: (error) => toast.error(toastErrorMessage(error, "批量更新状态失败")),
+    onError: (error) => toast.error(toastErrorMessage(error, tText("批量更新状态失败"))),
   });
 
   const products = useMemo(() => productsQuery.data?.list || [], [productsQuery.data?.list]);
   const total = productsQuery.data?.total || 0;
   const pageIds = useMemo(() => products.map((product) => product.id), [products]);
   const allSelectedOnPage = pageIds.length > 0 && pageIds.every((id) => selected.includes(id));
-  const hasProductFilters = Boolean(search.trim() || statusFilter || stockFilter || costFilter || sort !== "created_desc");
+  const hasProductFilters = Boolean(
+    search.trim() || statusFilter || stockFilter || costFilter || sort !== DEFAULT_PRODUCT_LIST_SORT,
+  );
 
   const filterChips = useMemo(() => {
     const chips: AdminFilterChip[] = [];
-    if (search.trim()) chips.push({ key: "search", label: `关键词：${search.trim()}` });
-    if (statusFilter) chips.push({ key: "status", label: `状态：${PRODUCT_STATUS_LABELS[statusFilter]}` });
-    if (stockFilter) chips.push({ key: "stock", label: `库存：${STOCK_LABELS[stockFilter]}` });
-    if (costFilter) chips.push({ key: "cost", label: `成本：${COST_LABELS[costFilter]}` });
-    if (sort !== "created_desc") chips.push({ key: "sort", label: `排序：${SORT_LABELS[sort] || sort}` });
+    if (search.trim()) chips.push({ key: "search", label: `${tText("关键词")}：${search.trim()}` });
+    if (statusFilter) chips.push({ key: "status", label: `${tText("状态")}：${tText(PRODUCT_STATUS_LABELS[statusFilter])}` });
+    if (stockFilter) chips.push({ key: "stock", label: `${tText("库存")}：${tText(STOCK_LABELS[stockFilter])}` });
+    if (costFilter) chips.push({ key: "cost", label: `${tText("成本")}：${tText(COST_LABELS[costFilter])}` });
+    if (sort !== DEFAULT_PRODUCT_LIST_SORT) {
+      chips.push({ key: "sort", label: `${tText("排序")}：${tText(PRODUCT_SORT_LABELS[sort] || sort)}` });
+    }
     return chips;
-  }, [costFilter, search, sort, statusFilter, stockFilter]);
+  }, [costFilter, search, sort, statusFilter, stockFilter, tText]);
 
   const emptyGuide = hasProductFilters ? ADMIN_EMPTY_GUIDES.productsFiltered : ADMIN_EMPTY_GUIDES.products;
 
@@ -160,7 +162,12 @@ export default function AdminProducts() {
     setStatusFilter("");
     setStockFilter("");
     setCostFilter("");
-    setSort("created_desc");
+    setSort(DEFAULT_PRODUCT_LIST_SORT);
+    setPage(1);
+  };
+
+  const handleColumnSort = (column: ProductSortColumn) => {
+    setSort((current) => cycleProductColumnSort(current, column));
     setPage(1);
   };
 
@@ -169,7 +176,7 @@ export default function AdminProducts() {
     if (key === "status") setStatusFilter("");
     if (key === "stock") setStockFilter("");
     if (key === "cost") setCostFilter("");
-    if (key === "sort") setSort("created_desc");
+    if (key === "sort") setSort(DEFAULT_PRODUCT_LIST_SORT);
     setPage(1);
   };
 
@@ -178,15 +185,16 @@ export default function AdminProducts() {
     status: statusFilter || undefined,
     stock_status: stockFilter || undefined,
     cost_status: costFilter || undefined,
-  }), [costFilter, search, statusFilter, stockFilter]);
+    sort: sort !== DEFAULT_PRODUCT_LIST_SORT ? sort : undefined,
+  }), [costFilter, search, sort, statusFilter, stockFilter]);
 
   const handleExportFiltered = async () => {
     setExportingScope("filtered");
     try {
       await exportProductsCsv(exportFilterParams);
-      toast.success("已开始下载 CSV");
+      toast.success(tText("已开始下载 CSV"));
     } catch (error) {
-      toast.error(toastErrorMessage(error, "导出失败"));
+      toast.error(toastErrorMessage(error, tText("导出失败")));
     } finally {
       setExportingScope(null);
     }
@@ -194,15 +202,15 @@ export default function AdminProducts() {
 
   const handleExportSelected = async () => {
     if (!selected.length) {
-      toast.warning("请先勾选要导出的商品");
+      toast.warning(tText("请先勾选要导出的商品"));
       return;
     }
     setExportingScope("selected");
     try {
       await exportProductsCsv({ ids: selected });
-      toast.success(`已开始导出 ${selected.length} 个商品`);
+      toast.success(`${tText("已开始导出")} ${selected.length} ${tText("个商品")}`);
     } catch (error) {
-      toast.error(toastErrorMessage(error, "批量导出失败"));
+      toast.error(toastErrorMessage(error, tText("批量导出失败")));
     } finally {
       setExportingScope(null);
     }
@@ -220,7 +228,7 @@ export default function AdminProducts() {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <SearchBar
-          placeholder="搜索商品名称 / 分类"
+          placeholder={tText("搜索商品名称 / 分类")}
           value={search}
           onChange={(value) => {
             setSearch(value);
@@ -229,35 +237,25 @@ export default function AdminProducts() {
         />
         <div className="flex flex-wrap items-center gap-2">
           <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value as "" | ProductStatus); setPage(1); }} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm">
-            <option value="">全部状态</option>
-            <option value="active">上架</option>
-            <option value="draft">草稿</option>
-            <option value="inactive">下架</option>
+            <option value=""><Tx>全部状态</Tx></option>
+            <option value="active"><Tx>上架</Tx></option>
+            <option value="draft"><Tx>草稿</Tx></option>
+            <option value="inactive"><Tx>下架</Tx></option>
           </select>
           <select value={stockFilter} onChange={(e) => { setStockFilter(e.target.value as StockFilter); setPage(1); }} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm">
-            <option value="">全部库存</option>
-            <option value="normal">库存正常</option>
-            <option value="low">库存预警</option>
-            <option value="out">缺货</option>
+            <option value=""><Tx>全部库存</Tx></option>
+            <option value="normal"><Tx>库存正常</Tx></option>
+            <option value="low"><Tx>库存预警</Tx></option>
+            <option value="out"><Tx>缺货</Tx></option>
           </select>
           <select value={costFilter} onChange={(e) => { setCostFilter(e.target.value as CostFilter); setPage(1); }} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm">
-            <option value="">全部成本</option>
-            <option value="normal">成本正常</option>
-            <option value="missing">缺成本</option>
-          </select>
-          <select value={sort} onChange={(e) => { setSort(e.target.value as SortValue); setPage(1); }} className="rounded-lg border border-border bg-card px-3 py-2.5 text-sm">
-            <option value="created_desc">最新创建</option>
-            <option value="sales_30d_desc">近30天销量</option>
-            <option value="sales_amount_30d_desc">近30天销售额</option>
-            <option value="gross_profit_30d_desc">近30天毛利</option>
-            <option value="stock_asc">库存从低到高</option>
-            <option value="stock_desc">库存从高到低</option>
-            <option value="margin_asc">毛利率从低到高</option>
-            <option value="margin_desc">毛利率从高到低</option>
+            <option value=""><Tx>全部成本</Tx></option>
+            <option value="normal"><Tx>成本正常</Tx></option>
+            <option value="missing"><Tx>缺成本</Tx></option>
           </select>
           <button type="button" onClick={handleExportFiltered} disabled={exportingScope !== null} className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:bg-secondary disabled:opacity-60">
             {exportingScope === "filtered" ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-            导出筛选结果
+            <Tx>导出筛选结果</Tx>
           </button>
           <PermissionGate permission="product.manage">
             <button type="button" onClick={() => downloadProductCsvTemplate()} className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:bg-secondary">
@@ -269,14 +267,14 @@ export default function AdminProducts() {
               批量导入
             </button>
           </PermissionGate>
-          <button className="rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-secondary" onClick={() => navigate("/admin/products/new")}>新增商品</button>
+          <button className="rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition hover:bg-secondary" onClick={() => navigate("/admin/products/new")}><Tx>新增商品</Tx></button>
         </div>
       </div>
 
       <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={removeFilterChip} />
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-muted-foreground">已选 {selected.length} 件</span>
+        <span className="text-xs text-muted-foreground">{tText("已选")} {selected.length} {tText("件")}</span>
         <button
           type="button"
           disabled={selected.length === 0 || exportingScope !== null}
@@ -284,27 +282,27 @@ export default function AdminProducts() {
           className="inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60"
         >
           {exportingScope === "selected" ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-          批量导出 ({selected.length})
+          {tText("批量导出")} ({selected.length})
         </button>
         {selected.length > 0 ? (
           <button type="button" onClick={() => setSelected([])} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary">
-            清空选择
+            <Tx>清空选择</Tx>
           </button>
         ) : null}
-        <button type="button" disabled={batchStatusMutation.isPending || selected.length === 0} onClick={() => batchStatusMutation.mutate("active")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">批量上架 ({selected.length})</button>
-        <button type="button" disabled={batchStatusMutation.isPending || selected.length === 0} onClick={() => batchStatusMutation.mutate("inactive")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">批量下架 ({selected.length})</button>
-        <button type="button" onClick={() => void productsQuery.refetch()} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary">刷新</button>
+        <button type="button" disabled={batchStatusMutation.isPending || selected.length === 0} onClick={() => batchStatusMutation.mutate("active")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">{tText("批量上架")} ({selected.length})</button>
+        <button type="button" disabled={batchStatusMutation.isPending || selected.length === 0} onClick={() => batchStatusMutation.mutate("inactive")} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary disabled:opacity-60">{tText("批量下架")} ({selected.length})</button>
+        <button type="button" onClick={() => void productsQuery.refetch()} className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium transition hover:bg-secondary"><Tx>刷新</Tx></button>
       </div>
 
       <AdminCsvImportDialog
         open={importOpen}
         onOpenChange={setImportOpen}
-        title="批量导入商品"
+        title={tText("批量导入商品")}
         onImport={importProductsCsv}
         extraHints={[
-          "ERP 格式：同一商品多行，每行一个 SKU（规格名称/SKU编码/售价/库存/成本价）",
-          "标签列填中文名，多个用逗号分隔（须在「标签管理」中已存在）",
-          "无规格编号时可用 SKU 编码匹配已有 SKU",
+          tText("ERP 格式：同一商品多行，每行一个 SKU（规格名称/SKU编码/售价/库存/成本价）"),
+          tText("标签列填中文名，多个用逗号分隔（须在「标签管理」中已存在）"),
+          tText("无规格编号时可用 SKU 编码匹配已有 SKU"),
         ]}
         onSuccess={async (result) => {
           toast.success(
@@ -331,15 +329,69 @@ export default function AdminProducts() {
         theadClassName="border-b border-border text-xs text-muted-foreground"
         thead={(
           <tr>
-            <th className="px-4 py-3 w-10"><input type="checkbox" checked={allSelectedOnPage} onChange={togglePageSelection} aria-label="全选当前页" /></th>
-            {['商品', '分类', 'SKU', '售价', '成本', '毛利率', '库存', '近7天销量', '近30天销量', '近30天销售额', '近30天毛利', '状态', '操作'].map((head) => (
-              <th key={head} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{head}</th>
-            ))}
+            <th className="px-4 py-3 w-10"><input type="checkbox" checked={allSelectedOnPage} onChange={togglePageSelection} aria-label={tText("全选当前页")} /></th>
+            <AdminTableSortHeader
+              label={tText("商品")}
+              direction={getProductSortDirection(sort, "name")}
+              onSort={() => handleColumnSort("name")}
+            />
+            <AdminTableSortHeader
+              label={tText("分类")}
+              direction={getProductSortDirection(sort, "category")}
+              onSort={() => handleColumnSort("category")}
+            />
+            <AdminTableSortHeader
+              label="SKU"
+              direction={getProductSortDirection(sort, "sku")}
+              onSort={() => handleColumnSort("sku")}
+            />
+            <AdminTableSortHeader
+              label={tText("售价")}
+              direction={getProductSortDirection(sort, "price")}
+              onSort={() => handleColumnSort("price")}
+            />
+            <AdminTableSortHeader
+              label={tText("成本")}
+              direction={getProductSortDirection(sort, "cost")}
+              onSort={() => handleColumnSort("cost")}
+            />
+            <AdminTableSortHeader
+              label={tText("毛利率")}
+              direction={getProductSortDirection(sort, "margin")}
+              onSort={() => handleColumnSort("margin")}
+            />
+            <AdminTableSortHeader
+              label={tText("库存")}
+              direction={getProductSortDirection(sort, "stock")}
+              onSort={() => handleColumnSort("stock")}
+            />
+            <AdminTableSortHeader
+              label={tText("近7天销量")}
+              direction={getProductSortDirection(sort, "sales_7d")}
+              onSort={() => handleColumnSort("sales_7d")}
+            />
+            <AdminTableSortHeader
+              label={tText("近30天销量")}
+              direction={getProductSortDirection(sort, "sales_30d")}
+              onSort={() => handleColumnSort("sales_30d")}
+            />
+            <AdminTableSortHeader
+              label={tText("近30天销售额")}
+              direction={getProductSortDirection(sort, "sales_amount_30d")}
+              onSort={() => handleColumnSort("sales_amount_30d")}
+            />
+            <AdminTableSortHeader
+              label={tText("近30天毛利")}
+              direction={getProductSortDirection(sort, "gross_profit_30d")}
+              onSort={() => handleColumnSort("gross_profit_30d")}
+            />
+            <AdminTableSortHeader label={tText("状态")} sortable={false} />
+            <AdminTableSortHeader label={tText("操作")} sortable={false} className="text-right" />
           </tr>
         )}
         footer={<Pagination total={total} page={page} pageSize={PAGE_SIZE} onPageChange={setPage} onPageSizeChange={() => undefined} />}
         renderRow={(product) => {
-          const meta = statusMeta(product.status);
+          const meta = statusMeta(product.status, tText);
           const checked = selected.includes(product.id);
           const missingCost = Number(product.missing_cost_sku_count || 0) > 0;
           const stockWarning = Number(product.stock_warning_sku_count || 0) > 0;
@@ -364,14 +416,14 @@ export default function AdminProducts() {
               <td className="px-4 py-3">
                 <div className="space-y-1">
                   <span className="font-medium text-foreground">{product.min_cost_price ? money(product.min_cost_price) : '-'}</span>
-                  {missingCost ? <span className={`block w-fit rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_DANGER}`}>缺成本</span> : null}
+                  {missingCost ? <span className={`block w-fit rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_DANGER}`}><Tx>缺成本</Tx></span> : null}
                 </div>
               </td>
               <td className="px-4 py-3"><span className={`rounded-full px-2 py-1 text-xs font-semibold ${marginClass}`}>{percent(margin)}</span></td>
               <td className="px-4 py-3">
                 <div className="space-y-1">
                   <span className="font-medium text-foreground">{Number(product.stock || 0)}</span>
-                  {outOfStock ? <span className={`block w-fit rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_DANGER}`}>缺货</span> : stockWarning ? <span className={`block w-fit rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_WARNING}`}>库存预警</span> : null}
+                  {outOfStock ? <span className={`block w-fit rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_DANGER}`}><Tx>缺货</Tx></span> : stockWarning ? <span className={`block w-fit rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_WARNING}`}><Tx>库存预警</Tx></span> : null}
                 </div>
               </td>
               <td className="px-4 py-3 whitespace-nowrap">{Number(product.sales_qty_7d || 0)}</td>
@@ -380,7 +432,7 @@ export default function AdminProducts() {
               <td className="px-4 py-3 whitespace-nowrap">{money(product.gross_profit_30d)}</td>
               <td className="px-4 py-3"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${meta.className}`}>{meta.label}</span></td>
               <td className="px-4 py-3 text-right">
-                <button type="button" onClick={() => navigate(`/admin/products/${product.id}`)} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-secondary"><Pencil size={13} />编辑</button>
+                <button type="button" onClick={() => navigate(`/admin/products/${product.id}`)} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-secondary"><Pencil size={13} /><Tx>编辑</Tx></button>
               </td>
             </>
           );

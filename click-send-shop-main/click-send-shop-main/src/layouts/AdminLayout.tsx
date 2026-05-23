@@ -63,6 +63,7 @@ import type { SiteCapabilities } from "@/types/siteCapabilities";
 import { useAdminEvents } from "@/hooks/admin/useAdminEvents";
 import { getSecurityAlerts, type SecurityAlertSummary } from "@/api/admin/audit";
 import { REPORT_REGISTRY, type ReportGroup } from "@/modules/admin/pages/report/reportRegistry";
+import { Tx } from "@/components/admin/AdminText";
 
 type NavPerm = string | { anyOf: string[] };
 
@@ -829,7 +830,7 @@ function AdminLayoutContent() {
                     <div className="flex items-center justify-between px-2 py-2">
                       <div className="flex min-w-0 items-center gap-2">
                         <Shield size={16} className="shrink-0 text-destructive" />
-                        <p className="truncate text-sm font-semibold text-foreground">安全监控</p>
+                        <p className="truncate text-sm font-semibold text-foreground"><Tx>安全监控</Tx></p>
                       </div>
                       <button
                         type="button"
@@ -862,7 +863,7 @@ function AdminLayoutContent() {
                           </button>
                         ))
                       ) : (
-                        <div className="px-2 py-6 text-center text-xs text-muted-foreground">近 24 小时暂无安全告警</div>
+                        <div className="px-2 py-6 text-center text-xs text-muted-foreground"><Tx>近 24 小时暂无安全告警</Tx></div>
                       )}
                     </div>
                     {showNotifTab ? (

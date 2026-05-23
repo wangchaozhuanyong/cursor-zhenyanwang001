@@ -10,7 +10,9 @@ import { fetchAdminPointsRecords, fetchPointsRules, updatePointsRule } from "@/s
 import type { PointsAction, PointsRecord, PointsRule, PointsRuleEditRow, PointsStats } from "@/types/points";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { formatUserDisplay, labelPointsAction } from "@/utils/adminDisplayLabels";
+import { formatUserDisplay } from "@/utils/adminDisplayLabels";
+import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
+import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import { formatPointsRecordLabel } from "@/utils/pointsDisplayLabels";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
@@ -26,6 +28,7 @@ import {
 } from "@/utils/adminPointsRecordFilters";
 import { THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const actionOptions: Array<{ value: "" | PointsAction; label: string }> = [
   { value: "", label: "全部类型" },
@@ -53,10 +56,6 @@ const actionLabels: Record<string, string> = {
   redeem: "积分抵扣",
 };
 
-function labelPointRuleAction(action: string) {
-  if (!action) return "通用规则";
-  return actionLabels[action] || "通用规则";
-}
 
 const emptyStats: PointsStats = {
   totalEarned: 0,
@@ -81,6 +80,13 @@ function normalizePointsRules(data: PointsRule[]): PointsRuleEditRow[] {
 }
 
 export default function AdminPointsRecords() {
+  const { tText } = useAdminT();
+  const { pointsAction: labelPointsAction, text: L } = useAdminDisplayLabel();
+  const actionOptionsLocalized = useLocalizedOptions(actionOptions);
+  const labelPointRuleAction = (action: string) => {
+    if (!action) return tText("通用规则");
+    return L(actionLabels[action] || "通用规则");
+  };
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const [keyword, setKeyword] = useState(searchParams.get("userId") || "");
@@ -135,7 +141,7 @@ export default function AdminPointsRecords() {
       for (const rule of rules) {
         await updatePointsRule(rule.id, { name: rule.name, enabled: rule.enabled, sign_in_points: rule.points });
       }
-      toast.success("积分规则已保存");
+      toast.success(tText("积分规则已保存"));
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.pointsRules() });
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存积分规则失败"));
@@ -163,10 +169,10 @@ export default function AdminPointsRecords() {
   };
 
   const cards = [
-    { label: "累计增加", value: String(intValue(stats.totalEarned)), icon: TrendingUp, className: "text-[var(--theme-price)]" },
-    { label: "累计扣减/回滚", value: String(intValue(stats.totalDeducted)), icon: TrendingDown, className: THEME_TEXT_DANGER },
-    { label: "流水总数", value: String(intValue(stats.totalRecords)), icon: Star, className: "text-[var(--theme-price)]" },
-    { label: "涉及用户", value: String(intValue(stats.activeUsers)), icon: Users, className: "text-[var(--theme-primary)]" },
+    { label: tText("累计增加"), value: String(intValue(stats.totalEarned)), icon: TrendingUp, className: "text-[var(--theme-price)]" },
+    { label: tText("累计扣减/回滚"), value: String(intValue(stats.totalDeducted)), icon: TrendingDown, className: THEME_TEXT_DANGER },
+    { label: tText("流水总数"), value: String(intValue(stats.totalRecords)), icon: Star, className: "text-[var(--theme-price)]" },
+    { label: tText("涉及用户"), value: String(intValue(stats.activeUsers)), icon: Users, className: "text-[var(--theme-primary)]" },
   ];
 
   return (
@@ -270,7 +276,7 @@ export default function AdminPointsRecords() {
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <div className="flex-1">
             <SearchBar
-              placeholder="搜索订单号 / 描述 / 昵称 / 手机号..."
+              placeholder={tText("搜索订单号 / 描述 / 昵称 / 手机号...")}
               value={keyword}
               onChange={(v) => { setKeyword(v); setPage(1); }}
             />
@@ -280,7 +286,7 @@ export default function AdminPointsRecords() {
             onChange={(e) => { setAction(e.target.value as "" | PointsAction); setPage(1); }}
             className="min-h-[44px] rounded-xl border border-[var(--theme-border)] bg-theme-surface px-3 text-sm text-[var(--theme-text-on-surface)] outline-none"
           >
-            {actionOptions.map((opt) => (
+            {actionOptionsLocalized.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>

@@ -23,14 +23,10 @@ export interface SiteInfo {
   faviconUrl?: string;
   appleTouchIcon?: string;
 
-  /* ─ 联系方式 ─ */
+  /* ─ 联系方式（IM 客服见 supportDownloadConfig） ─ */
   contactPhone?: string;
   contactEmail?: string;
-  contactWhatsApp?: string;
-  whatsappUrl?: string;
-  wechatId?: string;
   address?: string;
-  businessHours?: string;
 
   /* ─ 社交 ─ */
   instagramUrl?: string;
@@ -165,9 +161,8 @@ export interface HelpCenterFaq {
   enabled: boolean;
 }
 
+/** 帮助中心仅维护 FAQ；客服渠道与工作时间见 supportDownloadConfig */
 export interface HelpCenterConfig {
-  workingHours: string;
-  contactNote?: string;
   categories: HelpCenterCategory[];
   faqs: HelpCenterFaq[];
 }

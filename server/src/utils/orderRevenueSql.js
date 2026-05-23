@@ -1,7 +1,10 @@
-const { PAYMENT_STATUS, PAID_PAYMENT_STATUS_LIST } = require('../constants/status');
+const { PAYMENT_STATUS, PAID_PAYMENT_STATUS_LIST, UNPAID_PAYMENT_STATUS_LIST } = require('../constants/status');
 
 /** 已产生支付收入的 payment_status（含部分退款，需扣 refunded_amount） */
 const PAID_PAYMENT_SQL = PAID_PAYMENT_STATUS_LIST.map((s) => `'${s}'`).join(',');
+
+/** 待支付 payment_status（pending 与历史 unpaid 等价） */
+const UNPAID_PAYMENT_SQL = UNPAID_PAYMENT_STATUS_LIST.map((s) => `'${s}'`).join(',');
 
 /** @param {string} alias 空字符串表示无表别名（单表 orders 查询） */
 function orderCol(alias, column) {
@@ -59,6 +62,7 @@ function isPaidOrderExpr(alias = 'o') {
 
 module.exports = {
   PAID_PAYMENT_SQL,
+  UNPAID_PAYMENT_SQL,
   netSalesExpr,
   refundedAmountExpr,
   orderNetRatioExpr,

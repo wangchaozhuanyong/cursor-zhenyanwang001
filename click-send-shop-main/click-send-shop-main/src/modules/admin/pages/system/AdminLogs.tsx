@@ -34,8 +34,10 @@ import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import { THEME_BADGE_DANGER } from "@/utils/themeVisuals";
 import { adminQueryKeys, type AuditLogListParams } from "@/lib/adminQueryKeys";
+import { useAdminT } from "@/hooks/useAdminT";
 
 export default function AdminLogs() {
+  const { tText } = useAdminT();
   const can = useAdminPermissionStore((s) => s.can);
   const isSuperAdmin = useAdminPermissionStore((s) => s.isSuperAdmin);
   const canAudit = isSuperAdmin || can("audit.view");
@@ -211,7 +213,7 @@ export default function AdminLogs() {
           <div className="flex items-center gap-1.5 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
             <Search size={14} className="text-muted-foreground shrink-0" />
             <input
-              placeholder="摘要 / 操作人 / 动作 / 对象编号 / 错误信息"
+              placeholder={tText("摘要 / 操作人 / 动作 / 对象编号 / 错误信息")}
               value={auditKeyword}
               onChange={(e) => setAuditKeyword(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAuditSearch()}
@@ -222,8 +224,8 @@ export default function AdminLogs() {
         <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
         <details className="group theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
           <summary className="cursor-pointer list-none text-sm font-medium text-foreground marker:content-none">
-            <span className="text-muted-foreground group-open:hidden">展开高级筛选</span>
-            <span className="hidden group-open:inline">收起高级筛选</span>
+            <span className="text-muted-foreground group-open:hidden"><Tx>展开高级筛选</Tx></span>
+            <span className="hidden group-open:inline"><Tx>收起高级筛选</Tx></span>
           </summary>
           <div className="mt-3 flex flex-col gap-3 border-t border-[var(--theme-border)] pt-3 lg:flex-row lg:flex-wrap lg:items-end">
             <div>
@@ -245,7 +247,7 @@ export default function AdminLogs() {
                 onChange={(e) => setOperatorId(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAuditSearch()}
                 className="w-full min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
-                placeholder="管理员或用户编号（可填尾部几位）"
+                placeholder={tText("管理员或用户编号（可填尾部几位）")}
               />
             </div>
             <div className="min-w-[9rem] flex-1">
@@ -268,7 +270,7 @@ export default function AdminLogs() {
                 onChange={(e) => setObjectId(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAuditSearch()}
                 className="w-full min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
-                placeholder="订单、用户等对象编号"
+                placeholder={tText("订单、用户等对象编号")}
               />
             </div>
             <div className="min-w-[11rem] flex-[1.2]">
@@ -442,7 +444,7 @@ export default function AdminLogs() {
         onOpenChange={(open) => {
           if (!open) setDetail(null);
         }}
-        title="审计详情"
+        title={tText("审计详情")}
         size="md"
         height="70vh"
       >

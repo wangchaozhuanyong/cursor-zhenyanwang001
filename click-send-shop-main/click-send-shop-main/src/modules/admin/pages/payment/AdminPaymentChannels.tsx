@@ -12,6 +12,7 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { useAdminT } from "@/hooks/useAdminT";
 
 function parseConfig(row: PaymentChannelRow): Record<string, unknown> {
   const c = row.config_json;
@@ -27,6 +28,7 @@ function parseConfig(row: PaymentChannelRow): Record<string, unknown> {
 }
 
 export default function AdminPaymentChannels() {
+  const { tText } = useAdminT();
   const queryClient = useQueryClient();
   const [configDraft, setConfigDraft] = useState<Record<string, string>>({});
 
@@ -55,7 +57,7 @@ export default function AdminPaymentChannels() {
     mutationFn: ({ id, patch }: { id: string; patch: Parameters<typeof paymentAdmin.updateAdminPaymentChannel>[1] }) =>
       paymentAdmin.updateAdminPaymentChannel(id, patch),
     onSuccess: async () => {
-      toast.success("已保存");
+      toast.success(tText("已保存"));
       await invalidateChannels();
     },
     onError: (e) => toast.error(toastErrorMessage(e, "保存失败")),
@@ -72,7 +74,7 @@ export default function AdminPaymentChannels() {
       try {
         parsed = JSON.parse(raw) as Record<string, unknown>;
       } catch {
-        toast.error("配置 JSON 格式无效");
+        toast.error(tText("配置 JSON 格式无效"));
         return;
       }
     }

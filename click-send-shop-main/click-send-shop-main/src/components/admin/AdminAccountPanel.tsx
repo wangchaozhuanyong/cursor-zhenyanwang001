@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { fetchAdminProfile, updateAdminProfile, changeAdminPassword } from "@/services/admin/accountService";
 import { Tx } from "@/components/admin/AdminText";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { useAdminT } from "@/hooks/useAdminT";
 
 export type AdminAccountTab = "profile" | "password";
 
@@ -15,6 +16,7 @@ interface AdminAccountPanelProps {
 }
 
 export default function AdminAccountPanel({ initialTab = "profile", embedded = false }: AdminAccountPanelProps) {
+  const { tText } = useAdminT();
   const [activeTab, setActiveTab] = useState<AdminAccountTab>(initialTab);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -47,7 +49,7 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
         email: profile.email,
         phone: profile.phone,
       });
-      toast.success("个人信息已更新");
+      toast.success(tText("个人信息已更新"));
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存失败"));
     } finally {
@@ -57,21 +59,21 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
 
   const handleChangePwd = async () => {
     if (!pwd.old || !pwd.new1 || !pwd.new2) {
-      toast.error("请填写完整");
+      toast.error(tText("请填写完整"));
       return;
     }
     if (pwd.new1 !== pwd.new2) {
-      toast.error("两次密码不一致");
+      toast.error(tText("两次密码不一致"));
       return;
     }
     if (pwd.new1.length < 6) {
-      toast.error("密码至少6位");
+      toast.error(tText("密码至少6位"));
       return;
     }
     setSaving(true);
     try {
       await changeAdminPassword(pwd.old, pwd.new1);
-      toast.success("密码已修改");
+      toast.success(tText("密码已修改"));
       setPwd({ old: "", new1: "", new2: "" });
     } catch (e) {
       toast.error(toastErrorMessage(e, "修改失败，请检查原密码"));
@@ -81,8 +83,8 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
   };
 
   const tabs = [
-    { key: "profile" as const, label: "个人信息", icon: User },
-    { key: "password" as const, label: "修改密码", icon: Lock },
+    { key: "profile" as const, label: tText("个人信息"), icon: User },
+    { key: "password" as const, label: tText("修改密码"), icon: Lock },
   ];
 
   return (
@@ -185,9 +187,9 @@ export default function AdminAccountPanel({ initialTab = "profile", embedded = f
             <Tx>修改密码</Tx>
           </h3>
           {[
-            { label: "当前密码", key: "old" as const, placeholder: "请输入当前密码" },
-            { label: "新密码", key: "new1" as const, placeholder: "请输入新密码（至少6位）" },
-            { label: "确认密码", key: "new2" as const, placeholder: "请再次输入新密码" },
+            { label: tText("当前密码"), key: "old" as const, placeholder: "请输入当前密码" },
+            { label: tText("新密码"), key: "new1" as const, placeholder: "请输入新密码（至少6位）" },
+            { label: tText("确认密码"), key: "new2" as const, placeholder: "请再次输入新密码" },
           ].map((f) => (
             <label key={f.key} className="block">
               <span className="text-xs font-medium text-muted-foreground">{f.label}</span>

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CalendarClock } from "lucide-react";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 import {
   SEGMENT_DAY_LEN,
   SEGMENT_HOUR_LEN,
@@ -92,6 +94,7 @@ export default function SegmentedDateTimeInput({
   disabled = false,
   id,
 }: SegmentedDateTimeInputProps) {
+  const { tText } = useAdminT();
   const parsed = parseDateTimeLocal(value);
   const [y, setY] = useState(parsed.y);
   const [m, setM] = useState(parsed.m);
@@ -187,11 +190,11 @@ export default function SegmentedDateTimeInput({
           type="text"
           inputMode="numeric"
           autoComplete="off"
-          placeholder="年"
+          placeholder={tText("年")}
           disabled={disabled}
           maxLength={4}
           value={y}
-          aria-label="年（4 位）"
+          aria-label={tText("年（4 位）")}
           className="w-[4.25ch] min-w-0 bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
           onChange={(e) => {
             const v = segmentDigits(e.target.value, 4);
@@ -211,11 +214,11 @@ export default function SegmentedDateTimeInput({
           type="text"
           inputMode="numeric"
           autoComplete="off"
-          placeholder="月"
+          placeholder={tText("月")}
           disabled={disabled}
           maxLength={2}
           value={m}
-          aria-label="月（2 位）"
+          aria-label={tText("月（2 位）")}
           className="w-[2.75ch] min-w-0 bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
           onChange={(e) => {
             const v = segmentDigits(e.target.value, SEGMENT_MONTH_LEN);
@@ -246,11 +249,11 @@ export default function SegmentedDateTimeInput({
           type="text"
           inputMode="numeric"
           autoComplete="off"
-          placeholder="日"
+          placeholder={tText("日")}
           disabled={disabled}
           maxLength={2}
           value={d}
-          aria-label="日（2 位）"
+          aria-label={tText("日（2 位）")}
           className="w-[2.75ch] min-w-0 bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
           onChange={(e) => {
             const v = segmentDigits(e.target.value, SEGMENT_DAY_LEN);
@@ -283,11 +286,11 @@ export default function SegmentedDateTimeInput({
           type="text"
           inputMode="numeric"
           autoComplete="off"
-          placeholder="时"
+          placeholder={tText("时")}
           disabled={disabled}
           maxLength={2}
           value={h}
-          aria-label="时（0–23，2 位）"
+          aria-label={tText("时（0–23，2 位）")}
           className="w-[2.75ch] min-w-0 bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
           onChange={(e) => {
             const v = segmentDigits(e.target.value, 2);
@@ -312,11 +315,11 @@ export default function SegmentedDateTimeInput({
           type="text"
           inputMode="numeric"
           autoComplete="off"
-          placeholder="分"
+          placeholder={tText("分")}
           disabled={disabled}
           maxLength={2}
           value={mi}
-          aria-label="分（0–59，2 位）"
+          aria-label={tText("分（0–59，2 位）")}
           className="w-[2.75ch] min-w-0 bg-transparent text-center outline-none placeholder:text-muted-foreground disabled:opacity-50"
           onChange={(e) => {
             const v = segmentDigits(e.target.value, SEGMENT_MINUTE_LEN);
@@ -335,7 +338,7 @@ export default function SegmentedDateTimeInput({
         <button
           type="button"
           disabled={disabled}
-          title="打开日期与时间"
+          title={tText("打开日期与时间")}
           className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-background/80 hover:text-foreground disabled:opacity-40"
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => {

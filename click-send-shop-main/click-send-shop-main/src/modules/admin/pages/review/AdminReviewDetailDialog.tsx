@@ -2,6 +2,8 @@ import { formatDateTime } from "@/utils/formatDateTime";
 import { Star } from "lucide-react";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import type { ReviewDetailPayload } from "@/services/admin/reviewService";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type Props = {
   detail: ReviewDetailPayload | null;
@@ -18,19 +20,20 @@ export default function AdminReviewDetailDialog({
   onOpenChange,
   previewImage,
 }: Props) {
+  const { tText } = useAdminT();
   const r = detail?.review;
 
   return (
     <AdminResponsiveSheet
       open={open}
       onOpenChange={onOpenChange}
-      title="评论详情"
+      title={tText("评论详情")}
       size="lg"
     >
       {loading ? (
-        <p className="text-sm text-muted-foreground">加载中...</p>
+        <p className="text-sm text-muted-foreground"><Tx>加载中...</Tx></p>
       ) : !r ? (
-        <p className="text-sm text-muted-foreground">暂无数据</p>
+        <p className="text-sm text-muted-foreground"><Tx>暂无数据</Tx></p>
       ) : (
         <div className="space-y-4 text-sm">
           <div className="flex flex-wrap items-center gap-2">
@@ -67,17 +70,17 @@ export default function AdminReviewDetailDialog({
           ) : null}
 
           <dl className="grid gap-2 sm:grid-cols-2">
-            <Info label="商品" value={r.product_name || r.product_id} />
-            <Info label="状态" value={r.status} />
-            <Info label="订单号" value={r.order_no || "-"} />
+            <Info label={tText("商品")} value={r.product_name || r.product_id} />
+            <Info label={tText("状态")} value={r.status} />
+            <Info label={tText("订单号")} value={r.order_no || "-"} />
             <Info label="SKU" value={r.sku_text || "-"} />
-            <Info label="已购验证" value={r.is_verified_purchase ? "是" : "否"} />
-            <Info label="精选" value={r.is_featured ? "是" : "否"} />
+            <Info label={tText("已购验证")} value={r.is_verified_purchase ? "是" : "否"} />
+            <Info label={tText("精选")} value={r.is_featured ? "是" : "否"} />
           </dl>
 
           {r.admin_reply ? (
             <div className="rounded-lg border border-border bg-card p-3">
-              <p className="mb-1 text-xs font-medium text-muted-foreground">官方回复</p>
+              <p className="mb-1 text-xs font-medium text-muted-foreground"><Tx>官方回复</Tx></p>
               <p className="whitespace-pre-wrap">{r.admin_reply}</p>
               {r.admin_reply_at ? (
                 <p className="mt-1 text-xs text-muted-foreground">{formatDateTime(r.admin_reply_at)}</p>
@@ -87,7 +90,7 @@ export default function AdminReviewDetailDialog({
 
           {detail?.audit_logs?.length ? (
             <div>
-              <p className="mb-2 text-xs font-medium text-muted-foreground">操作记录</p>
+              <p className="mb-2 text-xs font-medium text-muted-foreground"><Tx>操作记录</Tx></p>
               <ul className="max-h-40 space-y-2 overflow-y-auto text-xs">
                 {detail.audit_logs.map((log) => (
                   <li key={log.id} className="rounded border border-border px-2 py-1.5">

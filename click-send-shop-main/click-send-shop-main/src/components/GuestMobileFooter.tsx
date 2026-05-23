@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import type { FooterNavItem } from "@/types/content";
 import { SiteSocialLinks, hasAnySocialLink } from "@/components/SiteSocialLinks";
+import { useSiteInfo } from "@/hooks/useSiteInfo";
+import { useSupportRuntime } from "@/hooks/useSupportRuntime";
 
 export function GuestFooterBrandMark({ siteName }: { siteName: string }) {
   const base = siteName.trim().replace(/\.\s*$/, "");
@@ -63,11 +65,7 @@ type GuestMobileFooterProps = {
   policyNav: FooterNavItem[];
   contactPhone?: string;
   contactEmail?: string;
-  contactWhatsApp?: string;
-  businessHours?: string;
   address?: string;
-  whatsappUrl?: string;
-  wechatId?: string;
   instagramUrl?: string;
   facebookUrl?: string;
   tiktokUrl?: string;
@@ -86,11 +84,7 @@ export default function GuestMobileFooter({
   policyNav,
   contactPhone,
   contactEmail,
-  contactWhatsApp,
-  businessHours,
   address,
-  whatsappUrl,
-  wechatId,
   instagramUrl,
   facebookUrl,
   tiktokUrl,
@@ -100,8 +94,17 @@ export default function GuestMobileFooter({
   footerIcpNo,
   onNavigate,
 }: GuestMobileFooterProps) {
-  const hasContactBlock = !!(contactPhone || contactEmail || contactWhatsApp || businessHours || address);
-  const socialProps = { whatsappUrl, contactWhatsApp, wechatId, instagramUrl, facebookUrl, tiktokUrl, xhsUrl };
+  const siteInfo = useSiteInfo();
+  const { channels, workingHours: serviceHours } = useSupportRuntime();
+  const whatsappDisplay = channels.find((channel) => channel.type === "whatsapp")?.account?.trim();
+  const hasContactBlock = !!(contactPhone || contactEmail || whatsappDisplay || serviceHours || address);
+  const socialProps = {
+    supportDownloadConfig: siteInfo.supportDownloadConfig,
+    instagramUrl,
+    facebookUrl,
+    tiktokUrl,
+    xhsUrl,
+  };
   const hasSocial = hasAnySocialLink(socialProps);
 
   const legalCompany = (footerCompanyName || siteName || "").trim();
@@ -172,16 +175,16 @@ export default function GuestMobileFooter({
                     {contactEmail}
                   </p>
                 ) : null}
-                {contactWhatsApp ? (
+                {whatsappDisplay ? (
                   <p className="text-sm text-[var(--theme-text-muted)]">
-                    <span className="font-medium text-[var(--theme-text)]">客服专线：</span>
-                    {contactWhatsApp}
+                    <span className="font-medium text-[var(--theme-text)]">WhatsApp：</span>
+                    {whatsappDisplay}
                   </p>
                 ) : null}
-                {businessHours ? (
+                {serviceHours ? (
                   <p className="text-sm text-[var(--theme-text-muted)]">
                     <span className="font-medium text-[var(--theme-text)]">服务时间：</span>
-                    {businessHours}
+                    {serviceHours}
                   </p>
                 ) : null}
                 {address ? (
@@ -211,16 +214,16 @@ export default function GuestMobileFooter({
                   <span className="text-right text-[14px] font-semibold tracking-wide text-[var(--theme-text)] break-all">{contactEmail}</span>
                 </div>
               ) : null}
-              {contactWhatsApp ? (
+              {whatsappDisplay ? (
                 <div className="grid grid-cols-[minmax(0,auto)_1fr] items-start gap-x-4 gap-y-1 border-b border-[color-mix(in_srgb,var(--theme-border)_85%,transparent)] py-[0.875rem]">
-                  <span className="pt-0.5 text-[14px] font-medium leading-snug text-[var(--theme-text-muted)]">客服专线</span>
-                  <span className="text-right text-[14px] font-semibold tracking-wide text-[var(--theme-text)] break-all">{contactWhatsApp}</span>
+                  <span className="pt-0.5 text-[14px] font-medium leading-snug text-[var(--theme-text-muted)]">WhatsApp</span>
+                  <span className="text-right text-[14px] font-semibold tracking-wide text-[var(--theme-text)] break-all">{whatsappDisplay}</span>
                 </div>
               ) : null}
-              {businessHours ? (
+              {serviceHours ? (
                 <div className="grid grid-cols-[minmax(0,auto)_1fr] items-start gap-x-4 gap-y-1 border-b border-[color-mix(in_srgb,var(--theme-border)_85%,transparent)] py-[0.875rem]">
                   <span className="pt-0.5 text-[14px] font-medium leading-snug text-[var(--theme-text-muted)]">服务时间</span>
-                  <span className="text-right text-[14px] font-semibold leading-snug text-[var(--theme-text)] break-words">{businessHours}</span>
+                  <span className="text-right text-[14px] font-semibold leading-snug text-[var(--theme-text)] break-words">{serviceHours}</span>
                 </div>
               ) : null}
               {address ? (

@@ -7,10 +7,8 @@ export interface FaqItem {
   category: string;
 }
 
-/** 与 server/src/data/defaultHelpCenterConfig.js 保持一致 */
+/** 与 server/src/data/defaultHelpCenterConfig.js 保持一致（仅 FAQ） */
 export const DEFAULT_HELP_CENTER_CONFIG: HelpCenterConfig = {
-  workingHours: "每天 09:00 - 22:00",
-  contactNote: "需要人工协助时，可通过平台客服入口联系。",
   categories: [
     { id: "platform", name: "平台介绍", sortOrder: 1, enabled: true },
     { id: "visa", name: "签证留学", sortOrder: 2, enabled: true },
@@ -37,7 +35,7 @@ export const DEFAULT_HELP_CENTER_CONFIG: HelpCenterConfig = {
     { id: "compliance-1", categoryId: "compliance", question: "平台是否展示受监管商品？", answer: "平台可能展示部分受年龄、地区或当地规则限制的商品信息。此类内容仅面向符合法定年龄并符合当地规定的用户展示，具体是否可咨询或处理，以当地法律法规、平台规则和客服确认为准。", sortOrder: 1, enabled: true },
     { id: "compliance-2", categoryId: "compliance", question: "未成年人可以浏览或购买受监管商品吗？", answer: "不可以。涉及年龄限制、特殊监管或不适合未成年人的商品或服务，不面向未成年人展示、咨询或处理。", sortOrder: 2, enabled: true },
     { id: "privacy-1", categoryId: "privacy", question: "可以删除或修改个人资料吗？", answer: "如需修改或删除账户资料，可以联系客服处理。部分订单、交易、合规或售后记录可能需要根据平台规则或法律要求保留一定时间。", sortOrder: 1, enabled: true },
-    { id: "contact-1", categoryId: "contact", question: "如何联系客服？", answer: "你可以通过页面中的 WhatsApp、微信或其他客服入口联系平台。客服工作时间以帮助中心页面显示为准。", sortOrder: 1, enabled: true },
+    { id: "contact-1", categoryId: "contact", question: "如何联系客服？", answer: "请通过页面底部「客服」或帮助中心下方的「前往客服中心」，选择微信、WhatsApp、Telegram 等官方渠道联系。", sortOrder: 1, enabled: true },
   ],
 };
 
@@ -79,7 +77,10 @@ export const DEFAULT_FAQ_CATEGORIES = derived.categories;
 export const DEFAULT_FAQS = derived.faqs;
 
 export function normalizeHelpCenterConfig(input: unknown): HelpCenterConfig {
-  const obj = (input || {}) as Partial<HelpCenterConfig>;
+  const obj = (input || {}) as Partial<HelpCenterConfig> & {
+    workingHours?: string;
+    contactNote?: string;
+  };
   const categories = Array.isArray(obj.categories) ? obj.categories : [];
   const faqs = Array.isArray(obj.faqs) ? obj.faqs : [];
   const normalizedCategories = categories.map((c, idx) => ({
@@ -98,8 +99,6 @@ export function normalizeHelpCenterConfig(input: unknown): HelpCenterConfig {
     enabled: f.enabled !== false,
   }));
   return {
-    workingHours: String(obj.workingHours || DEFAULT_HELP_CENTER_CONFIG.workingHours).trim(),
-    contactNote: String(obj.contactNote ?? DEFAULT_HELP_CENTER_CONFIG.contactNote ?? "").trim(),
     categories: normalizedCategories.length ? normalizedCategories : DEFAULT_HELP_CENTER_CONFIG.categories,
     faqs: normalizedFaqs.length ? normalizedFaqs : DEFAULT_HELP_CENTER_CONFIG.faqs,
   };

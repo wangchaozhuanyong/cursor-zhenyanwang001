@@ -11,7 +11,9 @@ import type { ReferralRule, ReferralRuleEditRow } from "@/types/invite";
 import type { RewardRecord, RewardStats, RewardStatus } from "@/types/reward";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { formatUserDisplay, labelRewardStatus } from "@/utils/adminDisplayLabels";
+import { formatUserDisplay } from "@/utils/adminDisplayLabels";
+import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
+import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
@@ -33,6 +35,7 @@ import {
   THEME_TEXT_DANGER,
 } from "@/utils/themeVisuals";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const statusOptions: Array<{ value: "" | RewardStatus; label: string }> = [
   { value: "", label: "全部状态" },
@@ -74,6 +77,9 @@ function normalizeReferralRules(data: ReferralRule[]): ReferralRuleEditRow[] {
 }
 
 export default function AdminRewardRecords() {
+  const { tText } = useAdminT();
+  const { rewardStatus: labelRewardStatus, text: L } = useAdminDisplayLabel();
+  const statusOptionsLocalized = useLocalizedOptions(statusOptions);
   const queryClient = useQueryClient();
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState<"" | RewardStatus>("");
@@ -125,7 +131,7 @@ export default function AdminRewardRecords() {
           enabled: rule.enabled,
         });
       }
-      toast.success("返现规则已保存");
+      toast.success(tText("返现规则已保存"));
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.referralRules() });
     } catch (e) {
       toast.error(toastErrorMessage(e, "保存返现规则失败"));
@@ -153,10 +159,10 @@ export default function AdminRewardRecords() {
   };
 
   const cards = [
-    { label: "累计入账", value: `RM ${money(stats.settledAmount)}`, icon: TrendingUp, className: "text-[var(--theme-price)]" },
-    { label: "累计冲正", value: `RM ${money(stats.reversedAmount)}`, icon: TrendingDown, className: THEME_TEXT_DANGER },
-    { label: "返现记录", value: String(stats.totalRecords || 0), icon: RotateCcw, className: "text-[var(--theme-price)]" },
-    { label: "获奖用户", value: String(stats.rewardedUsers || 0), icon: Users, className: "text-[var(--theme-primary)]" },
+    { label: tText("累计入账"), value: `RM ${money(stats.settledAmount)}`, icon: TrendingUp, className: "text-[var(--theme-price)]" },
+    { label: tText("累计冲正"), value: `RM ${money(stats.reversedAmount)}`, icon: TrendingDown, className: THEME_TEXT_DANGER },
+    { label: tText("返现记录"), value: String(stats.totalRecords || 0), icon: RotateCcw, className: "text-[var(--theme-price)]" },
+    { label: tText("获奖用户"), value: String(stats.rewardedUsers || 0), icon: Users, className: "text-[var(--theme-primary)]" },
   ];
 
   return (
@@ -253,7 +259,7 @@ export default function AdminRewardRecords() {
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <div className="flex-1">
             <SearchBar
-              placeholder="搜索订单号 / 昵称 / 手机号..."
+              placeholder={tText("搜索订单号 / 昵称 / 手机号...")}
               value={keyword}
               onChange={(v) => { setKeyword(v); setPage(1); }}
             />
@@ -263,7 +269,7 @@ export default function AdminRewardRecords() {
             onChange={(e) => { setStatus(e.target.value as "" | RewardStatus); setPage(1); }}
             className="min-h-[44px] rounded-xl border border-[var(--theme-border)] bg-theme-surface px-3 text-sm text-[var(--theme-text-on-surface)] outline-none"
           >
-            {statusOptions.map((opt) => (
+            {statusOptionsLocalized.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
@@ -299,7 +305,9 @@ export default function AdminRewardRecords() {
           />
         )}
         renderRow={(record) => {
-          const label = statusLabels[record.status] || {
+          const label = statusLabels[record.status]
+            ? { label: L(statusLabels[record.status].label), className: statusLabels[record.status].className }
+            : {
             label: labelRewardStatus(record.status),
             className: "bg-muted text-muted-foreground",
           };
@@ -311,7 +319,7 @@ export default function AdminRewardRecords() {
                 </p>
               </td>
               <td className="px-4 py-3 font-mono text-xs text-[var(--theme-text-on-surface)]">{record.order_no || "—"}</td>
-              <td className="px-4 py-3 text-theme-muted">L{record.level || 1}</td>
+              <td className="px-4 py-3 text-theme-muted">{record.level || 1}</td>
               <td className="px-4 py-3 text-theme-muted">RM {money(record.order_amount)}</td>
               <td className="px-4 py-3 text-theme-muted">{money(record.rate)}%</td>
               <td className="px-4 py-3 font-semibold text-[var(--theme-price)]">RM {money(record.amount)}</td>

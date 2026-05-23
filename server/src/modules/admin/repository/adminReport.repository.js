@@ -1,6 +1,7 @@
 const db = require('../../../config/db');
 const {
   PAID_PAYMENT_SQL,
+  UNPAID_PAYMENT_SQL,
   isEffectiveOrderExpr,
   reportDateExpr,
   reportMonthExpr,
@@ -178,7 +179,7 @@ function buildOrderScopeSql(filters = {}, alias = 'o') {
   }
   if (filters.payment_status) {
     if (filters.payment_status === 'unpaid') {
-      clauses.push(`(${alias}.payment_status IN ('unpaid','pending'))`);
+      clauses.push(`(${alias}.payment_status IN (${UNPAID_PAYMENT_SQL}))`);
     } else {
       clauses.push(`${alias}.payment_status = ?`);
       params.push(filters.payment_status);
@@ -604,7 +605,7 @@ async function selectSimpleOrderAnalysis(dateFrom, dateTo, filters = {}) {
     `SELECT
       COUNT(*) AS order_count,
       COUNT(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN 1 END) AS paid_order_count,
-      COUNT(CASE WHEN payment_status='unpaid' THEN 1 END) AS unpaid_order_count,
+      COUNT(CASE WHEN payment_status IN (${UNPAID_PAYMENT_SQL}) THEN 1 END) AS unpaid_order_count,
       COUNT(CASE WHEN status='cancelled' THEN 1 END) AS cancelled_order_count,
       COUNT(CASE WHEN status='refunded' OR payment_status='refunded' THEN 1 END) AS refund_order_count,
       COALESCE(SUM(${NET_SALES}),0) AS paid_amount,
@@ -624,7 +625,7 @@ async function selectOrderAnalysisDaily(dateFrom, dateTo, filters = {}) {
       DATE(DATE_ADD(created_at, INTERVAL 8 HOUR)) AS date,
       COUNT(*) AS order_count,
       COUNT(CASE WHEN payment_status IN (${PAID_PAYMENT_SQL}) THEN 1 END) AS paid_order_count,
-      COUNT(CASE WHEN payment_status='unpaid' THEN 1 END) AS unpaid_order_count,
+      COUNT(CASE WHEN payment_status IN (${UNPAID_PAYMENT_SQL}) THEN 1 END) AS unpaid_order_count,
       COUNT(CASE WHEN status='cancelled' THEN 1 END) AS cancelled_order_count,
       COUNT(CASE WHEN status='refunded' OR payment_status='refunded' THEN 1 END) AS refund_order_count,
       COALESCE(SUM(${NET_SALES}),0) AS paid_amount,

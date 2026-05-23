@@ -1,5 +1,5 @@
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
-import { labelReportColumn } from "@/utils/adminDisplayLabels";
+import { useAdminReportLabel } from "@/hooks/useAdminReportLabel";
 
 type Props = {
   loading?: boolean;
@@ -9,6 +9,7 @@ type Props = {
 };
 
 export default function ReportKpiGrid({ loading, entries, formatValue, skeletonCount = 6 }: Props) {
+  const { column: labelReportColumn } = useAdminReportLabel();
   if (loading) {
     return (
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">

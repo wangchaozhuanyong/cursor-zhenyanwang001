@@ -3,6 +3,7 @@ import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Plus, Trash2 } from "luc
 import type { FooterNavEditorItem } from "@/types/content";
 import { Tx } from "@/components/admin/AdminText";
 import { THEME_TEXT_DANGER } from "@/utils/themeVisuals";
+import { useAdminT } from "@/hooks/useAdminT";
 import {
   DEFAULT_FOOTER_NAV_ITEMS,
   parseFooterNavJson,
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export default function FooterNavEditor({ value, onChange }: Props) {
+  const { tText } = useAdminT();
   const [items, setItems] = useState<FooterNavEditorItem[]>(DEFAULT_FOOTER_NAV_ITEMS);
   const [parseError, setParseError] = useState<string | null>(null);
   const [showJson, setShowJson] = useState(false);
@@ -106,7 +108,7 @@ export default function FooterNavEditor({ value, onChange }: Props) {
               <input
                 value={item.label}
                 onChange={(e) => updateAt(idx, { label: e.target.value })}
-                placeholder="名称"
+                placeholder={tText("名称")}
                 className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs outline-none focus:border-gold"
               />
               <input

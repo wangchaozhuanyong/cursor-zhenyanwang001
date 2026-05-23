@@ -7,6 +7,7 @@ import type { SiteSettingsSectionId } from "@/types/admin";
 import { SECTION_HELP } from "./siteSettingsSections";
 import TaxPreviewCard from "./TaxPreviewCard";
 import SeoPreviewCard from "./SeoPreviewCard";
+import { useAdminT } from "@/hooks/useAdminT";
 
 export type SiteSettingsHelpPanelProps = {
   sectionId: SiteSettingsSectionId;
@@ -15,6 +16,7 @@ export type SiteSettingsHelpPanelProps = {
 };
 
 function HelpPanelContent({ sectionId, settings, validationWarnings }: SiteSettingsHelpPanelProps) {
+  const { tText } = useAdminT();
   const help = SECTION_HELP[sectionId];
 
   return (
@@ -23,7 +25,7 @@ function HelpPanelContent({ sectionId, settings, validationWarnings }: SiteSetti
         <h3 className="text-sm font-semibold text-foreground"><Tx>前台影响</Tx></h3>
         <ul className="mt-2 list-inside list-disc space-y-1 text-xs text-muted-foreground">
           {help.impacts.map((line) => (
-            <li key={line}>{line}</li>
+            <li key={line}>{tText(line)}</li>
           ))}
         </ul>
       </div>
@@ -33,7 +35,7 @@ function HelpPanelContent({ sectionId, settings, validationWarnings }: SiteSetti
           <h3 className="text-sm font-semibold text-foreground"><Tx>必填检查</Tx></h3>
           <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
             {help.required.map((line) => (
-              <li key={line}>· {line}</li>
+              <li key={line}>· {tText(line)}</li>
             ))}
           </ul>
         </div>

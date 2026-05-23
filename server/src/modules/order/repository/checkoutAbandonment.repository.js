@@ -1,6 +1,11 @@
 const db = require('../../../config/db');
 const { generateId } = require('../../../utils/helpers');
 
+const GROUP_KEY_EXPR = `CASE
+  WHEN ca.order_id IS NOT NULL AND ca.order_id <> '' THEN CONCAT('order:', ca.order_id)
+  ELSE CONCAT('checkout:', ca.id)
+END`;
+
 function getPool() {
   return db;
 }
@@ -113,17 +118,40 @@ async function markClosedByOrderId(q, orderId) {
   );
 }
 
-async function countAdmin(where, params) {
-  const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total FROM checkout_abandonments ca ${where}`, params);
+async function countAdminGrouped(where, params) {
+  const [[{ total }]] = await db.query(
+    `SELECT COUNT(*) AS total
+       FROM (
+         SELECT ${GROUP_KEY_EXPR} AS group_key
+           FROM checkout_abandonments ca
+          ${where}
+          GROUP BY group_key
+       ) grouped`,
+    params,
+  );
   return total;
 }
 
-async function selectAdminPage(where, params, pageSize, offset) {
+async function selectAdminGroupedPage(where, params, pageSize, offset) {
   const [rows] = await db.query(
-    `SELECT ca.*
+    `WITH ranked AS (
+       SELECT
+         ca.*,
+         ${GROUP_KEY_EXPR} AS group_key,
+         ROW_NUMBER() OVER (
+           PARTITION BY ${GROUP_KEY_EXPR}
+           ORDER BY ca.updated_at DESC, ca.created_at DESC
+         ) AS rn,
+         COUNT(*) OVER (
+           PARTITION BY ${GROUP_KEY_EXPR}
+         ) AS snapshot_count
        FROM checkout_abandonments ca
-      ${where}
-      ORDER BY ca.updated_at DESC
+       ${where}
+     )
+     SELECT *
+       FROM ranked
+      WHERE rn = 1
+      ORDER BY updated_at DESC
       LIMIT ? OFFSET ?`,
     [...params, pageSize, offset],
   );
@@ -168,10 +196,9 @@ module.exports = {
   markOrdered,
   markPaidByOrderId,
   markClosedByOrderId,
-  countAdmin,
-  selectAdminPage,
+  countAdminGrouped,
+  selectAdminGroupedPage,
   selectDueReminders,
   markReminderSent,
+  GROUP_KEY_EXPR,
 };
-
-

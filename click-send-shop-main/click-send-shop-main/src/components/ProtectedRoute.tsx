@@ -1,10 +1,17 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { isLoggedIn } from "@/utils/token";
+import AppRouteFallback from "@/components/AppRouteFallback";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const authHydrated = useAuthStore((s) => s.authHydrated);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  if (!isLoggedIn()) {
+  if (!authHydrated) {
+    return <AppRouteFallback />;
+  }
+
+  if (!isAuthenticated) {
     return (
       <Navigate
         to="/login"

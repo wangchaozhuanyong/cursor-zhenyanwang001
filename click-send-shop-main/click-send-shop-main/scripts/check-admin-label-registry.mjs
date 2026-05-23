@@ -122,7 +122,7 @@ const enRoutes = new Set(extractMessageSectionKeys(enSource, "routeTitles"));
 
 const layoutSrc = read("src/layouts/AdminLayout.tsx");
 const navTitleSrc = read("src/config/adminNavTitle.ts");
-const routesSrc = read("src/routes/AppRoutes.tsx");
+const routesSrc = read("src/routes/AdminAppRoutes.tsx");
 
 const i18nKeys = [
   ...collectI18nKeysFromSource(layoutSrc),

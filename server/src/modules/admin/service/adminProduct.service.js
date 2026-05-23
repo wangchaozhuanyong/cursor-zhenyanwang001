@@ -152,7 +152,7 @@ function normalizeProductIdsInput(value) {
 }
 
 function buildListWhere(query) {
-  let where = 'WHERE deleted_at IS NULL';
+  let where = 'WHERE p.deleted_at IS NULL';
   const params = [];
   const { keyword, category_id, status, stock_status: stockStatus, cost_status: costStatus } = query;
   const selectedIds = normalizeProductIdsInput(query.ids || query.product_ids || query.productIds);
@@ -160,54 +160,54 @@ function buildListWhere(query) {
     throw new ValidationError(`单次最多导出 ${MAX_PRODUCT_EXPORT_IDS} 个勾选商品`);
   }
   if (selectedIds.length) {
-    where += ` AND id IN (${selectedIds.map(() => '?').join(',')})`;
+    where += ` AND p.id IN (${selectedIds.map(() => '?').join(',')})`;
     params.push(...selectedIds);
   }
   if (keyword) {
     const normalized = normalizeSearchKeyword(keyword);
     const expanded = buildSearchKeywords(normalized);
-    where += ' AND (name LIKE ? OR description LIKE ? OR search_keywords LIKE ? OR search_keywords LIKE ?)';
+    where += ' AND (p.name LIKE ? OR p.description LIKE ? OR p.search_keywords LIKE ? OR p.search_keywords LIKE ?)';
     params.push(`%${normalized}%`, `%${normalized}%`, `%${normalized}%`, `%${expanded}%`);
   }
   if (category_id) {
-    where += ' AND category_id = ?';
+    where += ' AND p.category_id = ?';
     params.push(category_id);
   }
   if (status) {
     const lc = lifecycleFromFilter(status);
     if (lc !== null) {
-      where += ' AND lifecycle_status = ?';
+      where += ' AND p.lifecycle_status = ?';
       params.push(lc);
     } else {
-      where += ' AND status = ?';
+      where += ' AND p.status = ?';
       params.push(status);
     }
   }
   const stockFilter = String(stockStatus || '').trim();
   if (stockFilter === 'out') {
     where += ` AND (
-      stock <= 0
+      p.stock <= 0
       OR EXISTS (
         SELECT 1 FROM product_variants v
-        WHERE v.product_id = products.id AND v.deleted_at IS NULL AND v.enabled = 1 AND v.stock <= 0
+        WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1 AND v.stock <= 0
       )
     )`;
   } else if (stockFilter === 'low') {
-    where += ' AND stock > 0 AND stock <= COALESCE(stock_warning_threshold, 5)';
+    where += ' AND p.stock > 0 AND p.stock <= COALESCE(p.stock_warning_threshold, 5)';
   } else if (stockFilter === 'normal') {
-    where += ' AND stock > COALESCE(stock_warning_threshold, 5)';
+    where += ' AND p.stock > COALESCE(p.stock_warning_threshold, 5)';
   }
   const costFilter = String(costStatus || '').trim();
   if (costFilter === 'missing') {
     where += ` AND EXISTS (
       SELECT 1 FROM product_variants v
-      WHERE v.product_id = products.id AND v.deleted_at IS NULL AND v.enabled = 1
+      WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1
         AND (v.cost_price IS NULL OR v.cost_price <= 0)
     )`;
   } else if (costFilter === 'normal') {
     where += ` AND NOT EXISTS (
       SELECT 1 FROM product_variants v
-      WHERE v.product_id = products.id AND v.deleted_at IS NULL AND v.enabled = 1
+      WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.enabled = 1
         AND (v.cost_price IS NULL OR v.cost_price <= 0)
     )`;
   }
@@ -332,14 +332,38 @@ function normalizeVariantPayloadForDb(variants, genId, mainPrice, mainStock) {
   });
 }
 
+function formatAdminProductListRow(row) {
+  const base = formatProduct(row);
+  if (!base) return null;
+  return {
+    ...base,
+    category_name: row.category_name || '',
+    sku_count: Number(row.sku_count || 0),
+    enabled_sku_count: Number(row.enabled_sku_count || 0),
+    min_sku_price: row.min_sku_price != null ? parseFloat(row.min_sku_price) : null,
+    max_sku_price: row.max_sku_price != null ? parseFloat(row.max_sku_price) : null,
+    min_cost_price: row.min_cost_price != null ? parseFloat(row.min_cost_price) : null,
+    max_cost_price: row.max_cost_price != null ? parseFloat(row.max_cost_price) : null,
+    missing_cost_sku_count: Number(row.missing_cost_sku_count || 0),
+    out_of_stock_sku_count: Number(row.out_of_stock_sku_count || 0),
+    stock_warning_sku_count: Number(row.stock_warning_sku_count || 0),
+    sales_qty_7d: Number(row.sales_qty_7d || 0),
+    sales_qty_30d: Number(row.sales_qty_30d || 0),
+    sales_amount_30d: parseFloat(row.sales_amount_30d || 0),
+    gross_profit_30d: parseFloat(row.gross_profit_30d || 0),
+    gross_margin_30d: row.gross_margin_30d != null ? parseFloat(row.gross_margin_30d) : null,
+  };
+}
+
 async function attachTagsToProducts(rows) {
   if (!rows.length) return [];
+  const formatted = rows.map((r) => formatAdminProductListRow(r)).filter(Boolean);
   try {
     const map = await requireProductApi('selectTagsByProductIds')(rows.map((r) => r.id));
-    return rows.map((r) => ({ ...formatProduct(r), tags: map.get(r.id) || [] }));
+    return formatted.map((r) => ({ ...r, tags: map.get(r.id) || [] }));
   } catch (e) {
     console.error('[adminProduct] attachTagsToProducts failed (listing without tags):', e.code || e.message);
-    return rows.map((r) => ({ ...formatProduct(r), tags: [] }));
+    return formatted.map((r) => ({ ...r, tags: [] }));
   }
 }
 
@@ -362,7 +386,7 @@ async function listProducts(query) {
   const { where, params } = buildListWhere(query);
   const total = await repo.countProducts(where, params);
   const offset = (page - 1) * pageSize;
-  const rows = await repo.selectProductsPage(where, params, pageSize, offset);
+  const rows = await repo.selectProductsPage(where, params, pageSize, offset, query.sort);
   const list = await attachTagsToProducts(rows);
   return {
     kind: 'paginate',
@@ -888,7 +912,7 @@ function csvStatusToLifecycle(statusRaw) {
 
 async function exportProductsCsv(query) {
   const { where, params } = buildListWhere(query);
-  const rows = await repo.selectProductsForExport(where, params);
+  const rows = await repo.selectProductsForExport(where, params, query.sort);
   const productIds = rows.map((r) => r.id);
   const [variantMap, tagMap] = await Promise.all([
     variantRepo.selectVariantsByProductIds(productIds),

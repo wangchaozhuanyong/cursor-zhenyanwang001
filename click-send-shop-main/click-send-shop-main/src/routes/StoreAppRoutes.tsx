@@ -13,10 +13,10 @@ import AgeGate from "@/components/compliance/AgeGate";
 import LanguageGate from "@/components/LanguageGate";
 import FrontLayout from "@/layouts/FrontLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AuthSessionSync from "@/components/AuthSessionSync";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { isLoggedIn, clearTokens } from "@/utils/token";
-import * as authService from "@/services/authService";
+import { isLoggedIn } from "@/utils/token";
 import {
   DEFAULT_APPLE_TOUCH_ICON,
   DEFAULT_FAVICON_ICO,
@@ -24,6 +24,7 @@ import {
 } from "@/constants/siteBrand";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { syncLockedInviteCodeBySearch } from "@/utils/inviteReferral";
+import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { trackEvent } from "@/services/analyticsService";
@@ -37,23 +38,6 @@ import {
   Profile, Settings, AddressManage, Favorites, History, Notifications, Coupons, Points, PointsGiftShop, Rewards, Invite,
   Help, About, ContentCmsPage, SupportDownload, NotFound,
 } from "@/routes/publicLazyPages";
-
-function AuthTokenSync() {
-  useLayoutEffect(() => {
-    const flagged = isLoggedIn();
-    useAuthStore.setState({ isAuthenticated: flagged });
-    if (!flagged) return;
-    void authService.getProfile()
-      .then(() => {
-        useAuthStore.setState({ isAuthenticated: true });
-      })
-      .catch(() => {
-        clearTokens();
-        useAuthStore.setState({ isAuthenticated: false });
-      });
-  }, []);
-  return null;
-}
 
 function SiteIdentitySync() {
   const siteInfo = useSiteInfo();
@@ -117,8 +101,10 @@ function AppScopeSync() {
 }
 
 function HomeRoute() {
+  const authHydrated = useAuthStore((s) => s.authHydrated);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  return isAuthenticated && isLoggedIn() ? <MemberHome /> : <GuestHome />;
+  if (!authHydrated) return <AppRouteFallback />;
+  return isAuthenticated ? <MemberHome /> : <GuestHome />;
 }
 
 function RoutePreloadOnIdle() {
@@ -146,13 +132,9 @@ function RoutePreloadOnIdle() {
 }
 
 function LoyaltyRouteGuard({ feature, children }: { feature: "points" | "reward" | "referral"; children: ReactNode }) {
+  const capabilities = useSiteCapabilities();
   const { config, loading } = useLoyaltyVisibility();
-  const enabled =
-    feature === "points"
-      ? Boolean(config?.points?.displayEnabled)
-      : feature === "reward"
-        ? Boolean(config?.reward?.displayEnabled)
-        : Boolean(config?.reward?.referralEnabled);
+  const enabled = isLoyaltyFeatureEnabled(feature, capabilities, config);
   if (loading) return <AppRouteFallback />;
   if (!enabled) return <Navigate to="/profile" replace />;
   return <>{children}</>;
@@ -174,7 +156,7 @@ export function StoreAppRoutes() {
           <Sonner />
           <TopProgressBar />
           <RoutePreloadOnIdle />
-          <AuthTokenSync />
+          <AuthSessionSync />
           <SiteIdentitySync />
           <ReferralInviteSync />
           <PwaStandaloneAnalytics />

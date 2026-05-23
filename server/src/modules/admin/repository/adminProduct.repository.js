@@ -1,23 +1,27 @@
 const db = require('../../../config/db');
+const { PRODUCT_LIST_FROM, buildProductListQuery } = require('./adminProductListQuery');
 
 async function countProducts(where, params) {
-  const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total FROM products ${where}`, params);
+  const [[{ total }]] = await db.query(
+    `SELECT COUNT(*) AS total ${PRODUCT_LIST_FROM} ${where}`,
+    params,
+  );
   return total;
 }
 
-async function selectProductsPage(where, params, pageSize, offset) {
-  const [rows] = await db.query(
-    `SELECT * FROM products ${where} ORDER BY sort_order ASC, created_at DESC LIMIT ? OFFSET ?`,
-    [...params, pageSize, offset],
-  );
+async function selectProductsPage(where, params, pageSize, offset, sort) {
+  const { sql, params: queryParams } = buildProductListQuery(where, params, {
+    pageSize,
+    offset,
+    sort,
+  });
+  const [rows] = await db.query(sql, queryParams);
   return rows;
 }
 
-async function selectProductsForExport(where, params) {
-  const [rows] = await db.query(
-    `SELECT * FROM products ${where} ORDER BY sort_order ASC, created_at DESC`,
-    params,
-  );
+async function selectProductsForExport(where, params, sort) {
+  const { sql, params: queryParams } = buildProductListQuery(where, params, { sort });
+  const [rows] = await db.query(sql, queryParams);
   return rows;
 }
 

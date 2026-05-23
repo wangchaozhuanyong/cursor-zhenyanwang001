@@ -11,7 +11,8 @@ import PaymentAdminSubnav from "./PaymentAdminSubnav";
 import * as paymentAdmin from "@/services/admin/paymentAdminService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import type { PaymentOrderAdminRow } from "@/types/adminPayment";
-import { getPaymentStatusBadgeClass, getPaymentStatusLabel } from "@/constants/statusDictionary";
+import { PaymentStatusBadge } from "@/components/admin/PaymentStatusBadge";
+import { useLocalizedOptions } from "@/hooks/useLocalizedOptions";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { labelChannelCode, labelPaymentOrderStatus } from "@/utils/paymentAdminLabels";
@@ -23,6 +24,8 @@ import {
   adminThClassName,
 } from "@/utils/adminTableClasses";
 import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const STATUS_FILTER_OPTIONS = [
   { value: "pending", label: "待支付" },
@@ -49,28 +52,24 @@ function money(value: unknown, currency = "MYR") {
   return `${currency || "MYR"} ${amount.toFixed(2)}`;
 }
 
-function resolvePaymentStatusLabel(status: string) {
-  const mapped = getPaymentStatusLabel(status);
-  return mapped === "未知支付状态" ? labelPaymentOrderStatus(status) : mapped;
-}
-
-function resolvePaymentStatusBadge(status: string) {
-  const badge = getPaymentStatusBadgeClass(status);
-  if (badge !== "bg-secondary text-muted-foreground") return badge;
-  if (status === "cancelled") return "bg-secondary text-muted-foreground";
-  return badge;
-}
-
-function resolveChannelLabel(code: string) {
+function resolveChannelLabel(code: string, tText: (zh: string) => string) {
   const full = labelChannelCode(code);
   if (full.length <= 8) return full;
-  if (code === "manual_bank") return "银行转账";
+  if (code === "manual_bank") return tText("银行转账");
   if (code === "stripe_checkout") return "Stripe";
-  if (code === "reward_wallet") return "返现钱包";
+  if (code === "reward_wallet") return tText("返现钱包");
   return full.split(/[/·]/)[0]?.trim() || full;
 }
 
 export default function AdminPaymentOrders() {
+  const { tText } = useAdminT();
+  const statusFilterOptions = useLocalizedOptions(
+    STATUS_FILTER_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
+  );
+  const tableHeaders = useMemo(
+    () => TABLE_HEADERS.map((h) => ({ ...h, label: tText(h.label) })),
+    [tText],
+  );
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
@@ -104,7 +103,7 @@ export default function AdminPaymentOrders() {
       });
     },
     onSuccess: async () => {
-      toast.success("已标记为已支付，相关订单数据会自动刷新");
+      toast.success(tText("已标记为已支付，相关订单数据会自动刷新"));
       setMarkingRow(null);
       setMarkReason("");
       await Promise.all([
@@ -121,8 +120,7 @@ export default function AdminPaymentOrders() {
 
   const renderRow = (row: PaymentOrderAdminRow) => {
     const orderNo = row.order_no || shortId(row.order_id, 8);
-    const channelLabel = resolveChannelLabel(row.channel_code);
-    const statusLabel = resolvePaymentStatusLabel(row.status);
+    const channelLabel = resolveChannelLabel(row.channel_code, tText);
     const txnRaw = row.payment_transaction_no?.trim() || "";
     const txnNo = txnRaw || "—";
     const txnDisplay = txnRaw && txnRaw.length > 18 ? shortId(txnRaw, 10) : txnNo;
@@ -171,9 +169,7 @@ export default function AdminPaymentOrders() {
           />
         </td>
         <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} px-4 py-2.5`)}>
-          <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${resolvePaymentStatusBadge(row.status)}`}>
-            {statusLabel}
-          </span>
+          <PaymentStatusBadge status={row.status} />
         </td>
         <td className={adminTdClassName("max-w-[8rem] px-4 py-2.5")}>
           <AdminTableCell
@@ -216,8 +212,8 @@ export default function AdminPaymentOrders() {
       <div className="p-4 md:p-6">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold text-foreground">支付流水</h1>
-            <p className="mt-1 text-sm text-muted-foreground">使用 Query 缓存和 SSE 自动刷新，人工补记后会同步订单与仪表盘。</p>
+            <h1 className="text-xl font-bold text-foreground"><Tx>支付流水</Tx></h1>
+            <p className="mt-1 text-sm text-muted-foreground"><Tx>使用 Query 缓存和 SSE 自动刷新，人工补记后会同步订单与仪表盘。</Tx></p>
           </div>
           <button
             type="button"
@@ -237,8 +233,8 @@ export default function AdminPaymentOrders() {
             onChange={(e) => { setStatus(e.target.value); setPage(1); }}
             className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
           >
-            <option value="">全部状态</option>
-            {STATUS_FILTER_OPTIONS.map((opt) => (
+            <option value=""><Tx>全部状态</Tx></option>
+            {statusFilterOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
@@ -247,7 +243,7 @@ export default function AdminPaymentOrders() {
             <input
               value={keyword}
               onChange={(e) => { setKeyword(e.target.value); setPage(1); }}
-              placeholder="搜索订单号、交易号或手机号"
+              placeholder={tText("搜索订单号、交易号或手机号")}
               className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm"
             />
           </div>
@@ -274,7 +270,7 @@ export default function AdminPaymentOrders() {
           theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
           thead={(
             <tr>
-              {TABLE_HEADERS.map((head) => (
+              {tableHeaders.map((head) => (
                 <th
                   key={head.key}
                   className={adminThClassName(`${head.className} px-4 py-3 whitespace-nowrap`)}
@@ -296,7 +292,7 @@ export default function AdminPaymentOrders() {
               setMarkReason("");
             }
           }}
-          title="人工确认收款"
+          title={tText("人工确认收款")}
           description={
             markingRow
               ? `订单 ${markingRow.order_no || shortId(markingRow.order_id, 8)} 将被标记为已支付，请填写操作原因，方便审计追踪。`
@@ -312,7 +308,7 @@ export default function AdminPaymentOrders() {
             onChange={(e) => setMarkReason(e.target.value)}
             rows={4}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            placeholder="例如：已核对银行入账流水"
+            placeholder={tText("例如：已核对银行入账流水")}
           />
         </AdminFormSheet>
       </div>

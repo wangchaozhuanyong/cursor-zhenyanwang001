@@ -13,6 +13,8 @@ import type { Notification } from "@/types/notification";
 import type { NotificationPayload } from "@/services/admin/notificationService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 import {
   getTriggerTemplateDisplay,
   hasCustomTriggerTemplate,
@@ -115,6 +117,7 @@ function getRowAction(row: Notification): { action: RowAction; label: string; pe
 }
 
 export default function AdminNotifications() {
+  const { tText } = useAdminT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<TabKey>("list");
@@ -189,7 +192,7 @@ export default function AdminNotifications() {
       }
     },
     onSuccess: async () => {
-      toast.success("通知已处理");
+      toast.success(tText("通知已处理"));
       await invalidateNotifications();
     },
     onError: (error) => toast.error(toastErrorMessage(error, "处理通知失败")),
@@ -200,7 +203,7 @@ export default function AdminNotifications() {
       (rulesDraft || rulesQuery.data || []).map(normalizeTriggerRuleForSave),
     ),
     onSuccess: async (nextRules) => {
-      toast.success("触发通知设置已保存");
+      toast.success(tText("触发通知设置已保存"));
       setRulesDraft(nextRules);
       await invalidateNotifications();
     },
@@ -228,8 +231,8 @@ export default function AdminNotifications() {
       <div className="p-4 md:p-6">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold text-foreground">通知中心</h1>
-            <p className="mt-1 text-sm text-muted-foreground">通知列表和触发设置已接入 Query，发送、保存或删除后自动刷新。</p>
+            <h1 className="text-xl font-bold text-foreground"><Tx>通知中心</Tx></h1>
+            <p className="mt-1 text-sm text-muted-foreground"><Tx>通知列表和触发设置已接入 Query，发送、保存或删除后自动刷新。</Tx></p>
           </div>
           <button type="button" onClick={() => void notificationsQuery.refetch()} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
             <RefreshCw size={16} className={notificationsQuery.isFetching ? "animate-spin" : ""} />
@@ -257,18 +260,18 @@ export default function AdminNotifications() {
           <>
             <div className="mb-4 grid gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 md:grid-cols-[180px_180px_1fr_auto]">
               <select value={type} onChange={(e) => { setType(e.target.value); setPage(1); }} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
-                <option value="">全部类型</option>
+                <option value=""><Tx>全部类型</Tx></option>
                 {Object.entries(TYPE_LABELS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
               </select>
               <select value={sendStatus} onChange={(e) => { setSendStatus(e.target.value); setPage(1); }} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
-                <option value="">全部状态</option>
+                <option value=""><Tx>全部状态</Tx></option>
                 {Object.entries(STATUS_LABELS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
               </select>
               <div className="relative">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1); }} placeholder="搜索标题或正文" className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm" />
+                <input value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(1); }} placeholder={tText("搜索标题或正文")} className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm" />
               </div>
-              <button type="button" onClick={() => { setType(""); setSendStatus(""); setKeyword(""); setPage(1); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">清空筛选</button>
+              <button type="button" onClick={() => { setType(""); setSendStatus(""); setKeyword(""); setPage(1); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>清空筛选</Tx></button>
             </div>
 
             <AnimatedTable
@@ -346,20 +349,20 @@ export default function AdminNotifications() {
                 <textarea value={form.content} onChange={(e) => setForm((prev) => ({ ...prev, content: e.target.value }))} rows={5} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
               </label>
               <label className="text-xs font-medium text-muted-foreground">用户 ID / 手机号（单个或多个）
-                <textarea value={form.identifiers} onChange={(e) => setForm((prev) => ({ ...prev, identifiers: e.target.value }))} rows={3} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="单个用户或指定用户时填写，多个用换行/逗号分隔" />
+                <textarea value={form.identifiers} onChange={(e) => setForm((prev) => ({ ...prev, identifiers: e.target.value }))} rows={3} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder={tText("单个用户或指定用户时填写，多个用换行/逗号分隔")} />
               </label>
               <div className="space-y-4">
                 <label className="block text-xs font-medium text-muted-foreground">定时发送时间
                   <input type="datetime-local" value={form.scheduled_at} onChange={(e) => setForm((prev) => ({ ...prev, scheduled_at: e.target.value }))} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
                 </label>
                 <label className="block text-xs font-medium text-muted-foreground">跳转链接
-                  <input value={form.link_url} onChange={(e) => setForm((prev) => ({ ...prev, link_url: e.target.value }))} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="/orders 或完整 URL" />
+                  <input value={form.link_url} onChange={(e) => setForm((prev) => ({ ...prev, link_url: e.target.value }))} className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder={tText("/orders 或完整 URL")} />
                 </label>
               </div>
             </div>
             <div className="mt-5 flex justify-end gap-2">
               <PermissionGate anyOf={NOTIFICATION_DRAFT_PERMISSIONS}>
-                <button type="button" onClick={() => sendMutation.mutate("draft")} disabled={sendMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-60">保存草稿</button>
+                <button type="button" onClick={() => sendMutation.mutate("draft")} disabled={sendMutation.isPending} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary disabled:opacity-60"><Tx>保存草稿</Tx></button>
               </PermissionGate>
               <PermissionGate anyOf={NOTIFICATION_SEND_PERMISSIONS}>
                 <button type="button" onClick={() => sendMutation.mutate("send")} disabled={sendMutation.isPending} className="inline-flex items-center gap-2 rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">
@@ -375,7 +378,7 @@ export default function AdminNotifications() {
         {tab === "settings" ? (
           <PermissionGate anyOf={NOTIFICATION_TRIGGER_PERMISSIONS}>
           <div className="space-y-4">
-            {rulesQuery.isLoading ? <p className="text-sm text-muted-foreground">正在加载触发规则...</p> : null}
+            {rulesQuery.isLoading ? <p className="text-sm text-muted-foreground"><Tx>正在加载触发规则...</Tx></p> : null}
             {rules.map((rule) => (
               <div key={rule.key} className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -391,9 +394,9 @@ export default function AdminNotifications() {
                 <div className="mt-4 grid gap-3 md:grid-cols-2">
                   <label className="block text-xs font-medium text-muted-foreground">
                     <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                      <span>标题模板</span>
+                      <span><Tx>标题模板</Tx></span>
                       {!hasCustomTriggerTemplate(rule, "title") ? (
-                        <span className="font-normal text-muted-foreground/80">系统默认</span>
+                        <span className="font-normal text-muted-foreground/80"><Tx>系统默认</Tx></span>
                       ) : null}
                     </span>
                     <input
@@ -404,9 +407,9 @@ export default function AdminNotifications() {
                   </label>
                   <label className="block text-xs font-medium text-muted-foreground">
                     <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                      <span>正文模板</span>
+                      <span><Tx>正文模板</Tx></span>
                       {!hasCustomTriggerTemplate(rule, "content") ? (
-                        <span className="font-normal text-muted-foreground/80">系统默认</span>
+                        <span className="font-normal text-muted-foreground/80"><Tx>系统默认</Tx></span>
                       ) : null}
                     </span>
                     <textarea
@@ -420,7 +423,7 @@ export default function AdminNotifications() {
               </div>
             ))}
             <div className="flex justify-end">
-              <button type="button" onClick={() => saveRulesMutation.mutate()} disabled={saveRulesMutation.isPending} className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60">保存触发设置</button>
+              <button type="button" onClick={() => saveRulesMutation.mutate()} disabled={saveRulesMutation.isPending} className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"><Tx>保存触发设置</Tx></button>
             </div>
           </div>
           </PermissionGate>

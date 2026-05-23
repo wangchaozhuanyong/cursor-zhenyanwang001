@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type Props = {
   open: boolean;
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export default function AdminShipOrderDialog({ open, orderNo, onOpenChange, onConfirm }: Props) {
+  const { tText } = useAdminT();
   const [trackingNo, setTrackingNo] = useState("");
   const [carrier, setCarrier] = useState("");
   const [shippingCostAmount, setShippingCostAmount] = useState("");
@@ -57,7 +59,7 @@ export default function AdminShipOrderDialog({ open, orderNo, onOpenChange, onCo
         <input
           value={carrier}
           onChange={(e) => setCarrier(e.target.value)}
-          placeholder="例如 J&T、Pos Laju"
+          placeholder={tText("例如 J&T、Pos Laju")}
           className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
         />
       </div>
@@ -66,16 +68,16 @@ export default function AdminShipOrderDialog({ open, orderNo, onOpenChange, onCo
         <input
           value={trackingNo}
           onChange={(e) => setTrackingNo(e.target.value)}
-          placeholder="填写物流单号"
+          placeholder={tText("填写物流单号")}
           className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
         />
       </div>
       <div>
-        <label className="mb-1.5 block text-xs font-medium text-muted-foreground">实际物流成本 (RM，可选)</label>
+        <label className="mb-1.5 block text-xs font-medium text-muted-foreground"><Tx>实际物流成本 (RM，可选)</Tx></label>
         <input
           value={shippingCostAmount}
           onChange={(e) => setShippingCostAmount(e.target.value)}
-          placeholder="例如 8.50"
+          placeholder={tText("例如 8.50")}
           inputMode="decimal"
           className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
         />

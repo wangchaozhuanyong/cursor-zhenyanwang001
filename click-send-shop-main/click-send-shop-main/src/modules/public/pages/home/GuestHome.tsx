@@ -363,11 +363,7 @@ export default function GuestHome() {
             policyNav={policyNav}
             contactPhone={siteInfo.contactPhone}
             contactEmail={siteInfo.contactEmail}
-            contactWhatsApp={siteInfo.contactWhatsApp}
-            businessHours={siteInfo.businessHours}
             address={siteInfo.address}
-            whatsappUrl={siteInfo.whatsappUrl}
-            wechatId={siteInfo.wechatId}
             instagramUrl={siteInfo.instagramUrl}
             facebookUrl={siteInfo.facebookUrl}
             tiktokUrl={siteInfo.tiktokUrl}

@@ -6,6 +6,8 @@ import {
   updateAdminOrderVoiceSettings,
 } from "@/api/admin/orderVoice";
 import type { AdminOrderVoiceEvent } from "@/services/admin/orderService";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const LAST_CHECKED_KEY = "admin_order_voice_last_checked_at";
 const PLAYED_IDS_KEY = "admin_order_voice_played_event_ids";
@@ -158,10 +160,14 @@ async function playBeep(volume: number) {
   await new Promise((resolve) => window.setTimeout(resolve, 220));
 }
 
+const TEST_PLAY_SAMPLE = "叮咚，您有新的订单，请及时处理。";
+
 export default function AdminOrderVoiceNotifier() {
+  const { tText } = useAdminT();
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
   const volumeRef = useRef(readVolume());
   const enabledRef = useRef(false);
   const pollingRef = useRef(false);
@@ -269,7 +275,7 @@ export default function AdminOrderVoiceNotifier() {
           try {
             await playBeep(volumeRef.current);
           } catch {
-            toast.error("浏览器阻止了声音播放，请检查系统音量或浏览器权限。");
+            toast.error(tText("浏览器阻止了声音播放，请检查系统音量或浏览器权限。"));
             break;
           }
           toast.info(item.fallbackToast);
@@ -367,16 +373,35 @@ export default function AdminOrderVoiceNotifier() {
     }
   };
 
+  const handleTestPlay = async () => {
+    if (loading || saving || testing) return;
+    setTesting(true);
+    try {
+      await ensureAudioUnlocked();
+      try {
+        await speakText(TEST_PLAY_SAMPLE, { interrupt: true, allowCanceled: false });
+        toast.success(tText("测试播放完成"));
+      } catch {
+        await playBeep(volumeRef.current);
+        toast.success(tText("当前为提示音模式，测试播放完成"));
+      }
+    } catch {
+      toast.error(tText("浏览器阻止了声音播放，请检查系统音量或浏览器权限。"));
+    } finally {
+      setTesting(false);
+    }
+  };
+
   const handleToggle = async () => {
-    if (loading || saving) return;
+    if (loading || saving || testing) return;
 
     if (enabled) {
       setSaving(true);
       try {
         await persistEnabled(false);
-        toast.success("订单语音提醒已关闭");
+        toast.success(tText("订单语音提醒已关闭"));
       } catch {
-        toast.error("保存失败，请稍后重试");
+        toast.error(tText("保存失败，请稍后重试"));
       } finally {
         setSaving(false);
       }
@@ -393,29 +418,43 @@ export default function AdminOrderVoiceNotifier() {
           : "订单语音提醒已开启（当前为提示音模式）",
       );
     } catch {
-      toast.error("浏览器阻止了声音播放，无法开启提醒。请再点一次「未开启」，或检查标签页是否静音。");
+      toast.error(tText("浏览器阻止了声音播放，无法开启提醒。请再点一次「未开启」，或检查标签页是否静音。"));
     } finally {
       setSaving(false);
     }
   };
 
+  const busy = loading || saving || testing;
   const statusLabel = loading || saving ? "处理中" : enabled ? "已开启" : "未开启";
+  const testLabel = testing ? "播放中" : "测试播放";
 
   return (
-    <button
-      type="button"
-      disabled={loading || saving}
-      onClick={handleToggle}
-      aria-pressed={enabled}
-      title={enabled ? "订单语音提醒已开启，点击关闭" : "订单语音提醒未开启，点击开启"}
-      aria-label={enabled ? "订单语音提醒已开启，点击关闭" : "订单语音提醒未开启，点击开启"}
-      className={
-        enabled
-          ? "inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-primary)] px-2.5 text-xs font-medium text-[var(--theme-primary-foreground)] hover:opacity-90 disabled:opacity-60 sm:px-3"
-          : "inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-border bg-secondary px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted disabled:opacity-60 sm:px-3"
-      }
-    >
-      <span className="max-w-[4.5rem] truncate sm:max-w-none">{statusLabel}</span>
-    </button>
+    <div className="flex shrink-0 items-center gap-1">
+      <button
+        type="button"
+        disabled={busy}
+        onClick={handleTestPlay}
+        title={tText("播放一条示例订单语音，用于检查浏览器与系统音量")}
+        aria-label={tText("测试播放订单语音提醒")}
+        className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-border bg-secondary px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted disabled:opacity-60 sm:px-3"
+      >
+        <span className="max-w-[4.5rem] truncate sm:max-w-none">{testLabel}</span>
+      </button>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={handleToggle}
+        aria-pressed={enabled}
+        title={enabled ? "订单语音提醒已开启，点击关闭" : "订单语音提醒未开启，点击开启"}
+        aria-label={enabled ? "订单语音提醒已开启，点击关闭" : "订单语音提醒未开启，点击开启"}
+        className={
+          enabled
+            ? "inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-primary)] px-2.5 text-xs font-medium text-[var(--theme-primary-foreground)] hover:opacity-90 disabled:opacity-60 sm:px-3"
+            : "inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-border bg-secondary px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted disabled:opacity-60 sm:px-3"
+        }
+      >
+        <span className="max-w-[4.5rem] truncate sm:max-w-none">{statusLabel}</span>
+      </button>
+    </div>
   );
 }

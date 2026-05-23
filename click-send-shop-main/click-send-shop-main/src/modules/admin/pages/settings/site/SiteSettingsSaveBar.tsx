@@ -1,5 +1,6 @@
 import { Tx } from "@/components/admin/AdminText";
 import SiteSettingsSaveActions from "./SiteSettingsSaveActions";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type Props = {
   saving: boolean;

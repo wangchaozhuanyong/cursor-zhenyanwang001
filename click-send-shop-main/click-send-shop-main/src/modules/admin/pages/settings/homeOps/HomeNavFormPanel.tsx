@@ -16,6 +16,7 @@ import type { HomeNavSupportChannelOption } from "@/services/admin/homeOpsServic
 import type { NavForm } from "./homeNavUtils";
 import { buildSupportNavLink } from "./homeNavUtils";
 import HomeNavIconPreview from "./HomeNavIconPreview";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const SUPPORT_TYPE_LABELS: Record<string, string> = {
   wechat: "微信",
@@ -46,6 +47,7 @@ export default function HomeNavFormPanel({
   supportNavEnabled,
   nextSortOrder,
 }: Props) {
+  const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
   const [navIconUploading, setNavIconUploading] = useState(false);
   const navIconFileRef = useRef<HTMLInputElement>(null);
@@ -84,7 +86,7 @@ export default function HomeNavFormPanel({
         <div className="flex flex-wrap items-stretch gap-2">
           <input
             className="min-w-0 flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
-            placeholder="支持图片 URL、站内路径或 Emoji"
+            placeholder={tText("支持图片 URL、站内路径或 Emoji")}
             value={navForm.icon_url}
             onChange={(e) => setNavForm({ ...navForm, icon_url: e.target.value })}
           />
@@ -106,7 +108,7 @@ export default function HomeNavFormPanel({
           </button>
           <div
             className="flex shrink-0 items-center justify-center rounded-xl border border-dashed border-border bg-background/50 px-1 py-1"
-            title="图标预览"
+            title={tText("图标预览")}
           >
             <HomeNavIconPreview value={navForm.icon_url} />
           </div>
@@ -126,7 +128,7 @@ export default function HomeNavFormPanel({
         <span className="text-[11px] font-medium text-muted-foreground"><Tx>标题</Tx></span>
         <input
           className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
-          placeholder="导航标题"
+          placeholder={tText("导航标题")}
           value={navForm.title}
           onChange={(e) => setNavForm({ ...navForm, title: e.target.value })}
         />
@@ -214,7 +216,7 @@ export default function HomeNavFormPanel({
         {navForm.target_type === "url" ? (
           <input
             className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
-            placeholder="/categories 或 https://..."
+            placeholder={tText("/categories 或 https://...")}
             value={navForm.link_url}
             onChange={(e) => setNavForm({ ...navForm, link_url: e.target.value })}
           />
@@ -228,7 +230,7 @@ export default function HomeNavFormPanel({
                 ? "将自动跳转到对应分类页"
                 : navForm.target_type === "support"
                   ? supportNavEnabled
-                    ? "账号在「客服/APP」中维护，仅显示已启用账号"
+                    ? "账号在「页面装修 → 客服与安装」中维护，仅显示已启用账号"
                     : "请先在站点能力中开启「客服/APP 页」"
                   : "支持站内路径和完整 URL"
             }
@@ -241,7 +243,7 @@ export default function HomeNavFormPanel({
           <input
             type="number"
             min={1}
-            title="排序值越小越靠前"
+            title={tText("排序值越小越靠前")}
             className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
             value={navForm.sort_order}
             onChange={(e) => setNavForm({ ...navForm, sort_order: Math.max(1, Number(e.target.value) || 1) })}
@@ -268,7 +270,7 @@ export default function HomeNavFormPanel({
         </span>
       </label>
       <div className="flex flex-col justify-end gap-1">
-        <span className="text-[11px] font-medium text-muted-foreground opacity-0 select-none">操作</span>
+        <span className="text-[11px] font-medium text-muted-foreground opacity-0 select-none"><Tx>操作</Tx></span>
         <PermissionGate permission="home_ops.manage">
           <LoadingButton
             type="button"

@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Eye, Loader2, RefreshCw, Save, Send } from "lucide-react";
 import { toast } from "sonner";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
+import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
@@ -19,7 +20,6 @@ import { refreshSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import {
   ADMIN_TABLE_NOWRAP_CLASS,
-  adminTableClassName,
   adminTdClassName,
   adminThClassName,
 } from "@/utils/adminTableClasses";
@@ -30,6 +30,7 @@ import {
   type TelegramNotifyConfig,
 } from "@/utils/telegramNotifyConfig";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const inputClass =
   "w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-[var(--theme-primary)]";
@@ -42,6 +43,7 @@ function formatDate(value?: string) {
 }
 
 export default function AdminTelegramSettings() {
+  const { tText } = useAdminT();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<TelegramNotifyConfig>(normalizeTelegramNotifyConfig({}));
   const [botTokenMasked, setBotTokenMasked] = useState("");
@@ -120,7 +122,7 @@ export default function AdminTelegramSettings() {
       await refreshSiteCapabilities();
       await loadPreview(settingsToForm(saved));
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.telegramSettings() });
-      toast.success("Telegram 设置已保存");
+      toast.success(tText("Telegram 设置已保存"));
     } catch (error) {
       toast.error(toastErrorMessage(error, "保存失败"));
     } finally {
@@ -132,7 +134,7 @@ export default function AdminTelegramSettings() {
     setTesting(true);
     try {
       await sendTelegramTest();
-      toast.success("测试消息已发送");
+      toast.success(tText("测试消息已发送"));
       const logsData = await fetchTelegramLogs(20);
       setLogs(Array.isArray(logsData) ? logsData : []);
     } catch (error) {
@@ -214,12 +216,12 @@ export default function AdminTelegramSettings() {
         ) : (
           <>
             <section className="rounded-xl border border-border bg-card p-4 md:p-5">
-              <h2 className="mb-4 font-semibold text-foreground">连接配置</h2>
+              <h2 className="mb-4 font-semibold text-foreground"><Tx>连接配置</Tx></h2>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="flex items-center justify-between gap-3 rounded-lg border border-border p-4 md:col-span-2">
                   <div>
-                    <div className="font-medium text-foreground">启用 Telegram 订单通知</div>
-                    <p className="text-xs text-muted-foreground">关闭后不会发送付款成功提醒，并同步关闭「功能开关」中的 Telegram 项。</p>
+                    <div className="font-medium text-foreground"><Tx>启用 Telegram 订单通知</Tx></div>
+                    <p className="text-xs text-muted-foreground"><Tx>关闭后不会发送付款成功提醒，并同步关闭「功能开关」中的 Telegram 项。</Tx></p>
                   </div>
                   <input
                     type="checkbox"
@@ -258,7 +260,7 @@ export default function AdminTelegramSettings() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">解析模式</label>
+                  <label className="text-sm font-medium text-foreground"><Tx>解析模式</Tx></label>
                   <select
                     className={inputClass}
                     value={form.parseMode}
@@ -271,20 +273,20 @@ export default function AdminTelegramSettings() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">后台链接域名</label>
+                  <label className="text-sm font-medium text-foreground"><Tx>后台链接域名</Tx></label>
                   <input
                     className={inputClass}
                     value={form.adminFrontendUrl}
                     onChange={(e) => patchForm({ adminFrontendUrl: e.target.value })}
                     placeholder="https://admin.example.com"
                   />
-                  <p className="text-xs text-muted-foreground">用于消息末尾「后台查看」链接，请填写管理后台访问地址。</p>
+                  <p className="text-xs text-muted-foreground"><Tx>用于消息末尾「后台查看」链接，请填写管理后台访问地址。</Tx></p>
                 </div>
 
                 <label className="flex items-center justify-between gap-3 rounded-lg border border-border p-4">
                   <div>
-                    <div className="font-medium text-foreground">包含商品明细</div>
-                    <p className="text-xs text-muted-foreground">关闭后仅发送订单摘要，不含逐行商品。</p>
+                    <div className="font-medium text-foreground"><Tx>包含商品明细</Tx></div>
+                    <p className="text-xs text-muted-foreground"><Tx>关闭后仅发送订单摘要，不含逐行商品。</Tx></p>
                   </div>
                   <input
                     type="checkbox"
@@ -295,7 +297,7 @@ export default function AdminTelegramSettings() {
                 </label>
 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">单条消息长度上限</label>
+                  <label className="text-sm font-medium text-foreground"><Tx>单条消息长度上限</Tx></label>
                   <input
                     className={inputClass}
                     type="number"
@@ -304,7 +306,7 @@ export default function AdminTelegramSettings() {
                     value={form.maxMessageLength}
                     onChange={(e) => patchForm({ maxMessageLength: Number(e.target.value) || 3900 })}
                   />
-                  <p className="text-xs text-muted-foreground">超出时自动拆分为多条 Telegram 消息（500–4096）。</p>
+                  <p className="text-xs text-muted-foreground"><Tx>超出时自动拆分为多条 Telegram 消息（500–4096）。</Tx></p>
                 </div>
               </div>
             </section>
@@ -312,7 +314,7 @@ export default function AdminTelegramSettings() {
             <section className="rounded-xl border border-border bg-card p-4 md:p-5">
               <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="font-semibold text-foreground">付款成功通知 · 模板预览</h2>
+                  <h2 className="font-semibold text-foreground"><Tx>付款成功通知 · 模板预览</Tx></h2>
                   <p className="text-xs text-muted-foreground">
                     示例订单 {preview?.sampleOrderNo || "ORD202605200001"} · 解析模式 {preview?.parseMode || form.parseMode}
                     {preview && preview.totalParts > 1 ? ` · 共 ${preview.totalParts} 条消息` : ""}
@@ -347,19 +349,18 @@ export default function AdminTelegramSettings() {
 
             <section className="rounded-xl border border-border bg-card p-4">
               <div className="mb-3">
-                <h2 className="font-semibold text-foreground">最近 20 条 Telegram 通知日志</h2>
-                <p className="text-xs text-muted-foreground">不显示完整 Bot Token，仅展示发送状态与错误摘要。</p>
+                <h2 className="font-semibold text-foreground"><Tx>最近 20 条 Telegram 通知日志</Tx></h2>
+                <p className="text-xs text-muted-foreground"><Tx>不显示完整 Bot Token，仅展示发送状态与错误摘要。</Tx></p>
               </div>
-              <div className="overflow-x-auto">
-                <table className={adminTableClassName("w-full min-w-[760px] text-left text-sm")}>
+              <AdminNativeTable tableClassName="min-w-[760px] text-left text-sm">
                   <thead className="border-b border-border text-xs text-muted-foreground">
                     <tr>
-                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>时间</th>
-                      <th className={adminThClassName()}>事件</th>
-                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>订单</th>
-                      <th className={adminThClassName()}>状态</th>
+                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>时间</Tx></th>
+                      <th className={adminThClassName()}><Tx>事件</Tx></th>
+                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>订单</Tx></th>
+                      <th className={adminThClassName()}><Tx>状态</Tx></th>
                       <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>Telegram ID</th>
-                      <th className={adminThClassName()}>错误</th>
+                      <th className={adminThClassName()}><Tx>错误</Tx></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -385,8 +386,7 @@ export default function AdminTelegramSettings() {
                       </tr>
                     )}
                   </tbody>
-                </table>
-              </div>
+              </AdminNativeTable>
             </section>
           </>
         )}

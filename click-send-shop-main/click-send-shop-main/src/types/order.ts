@@ -203,14 +203,24 @@ export interface CheckoutAbandonmentItem {
   price?: number;
 }
 
+export type CheckoutAbandonmentDisplayType = "order" | "checkout";
+export type CheckoutAbandonmentActionType = "view_order" | "view_checkout";
+
 export interface CheckoutAbandonment {
   id: string;
-  user_id: string;
+  group_key?: string;
+  display_id: string;
+  display_type: CheckoutAbandonmentDisplayType;
+  action_type: CheckoutAbandonmentActionType;
+  user_id?: string;
   status: CheckoutAbandonmentStatus;
   order_id?: string | null;
   order_no?: string;
+  snapshot_count: number;
+  has_duplicates: boolean;
   items_count: number;
   items_summary: CheckoutAbandonmentItem[];
+  items_preview: string;
   raw_amount: number;
   discount_amount: number;
   shipping_fee: number;

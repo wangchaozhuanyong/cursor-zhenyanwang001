@@ -20,6 +20,8 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { productTagBadgeClass } from "@/utils/productTagBadge";
 import type { MemberLevel, UserProfile, UserTag } from "@/types/user";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const PAGE_SIZE = 20;
 
@@ -30,7 +32,7 @@ const ACCOUNT_STATUS_LABELS: Record<string, string> = {
 };
 
 function UserTagBadges({ tags }: { tags?: UserTag[] }) {
-  if (!tags?.length) return <span className="text-xs text-muted-foreground">无标签</span>;
+  if (!tags?.length) return <span className="text-xs text-muted-foreground"><Tx>无标签</Tx></span>;
   return (
     <div className="flex flex-wrap gap-1">
       {tags.map((tag) => (
@@ -51,7 +53,7 @@ function UserStatusBadges({ user }: { user: UserProfile }) {
     Number(user.coupon_restricted || 0) ? "限制领券" : null,
     Number(user.comment_restricted || 0) ? "限制评论" : null,
   ].filter(Boolean) as string[];
-  if (!items.length) return <span className="text-xs text-emerald-700">正常</span>;
+  if (!items.length) return <span className="text-xs text-emerald-700"><Tx>正常</Tx></span>;
   return (
     <div className="flex flex-wrap gap-1">
       {items.map((item) => (
@@ -76,6 +78,7 @@ function restrictionLabel(prefix: string, value: string) {
 }
 
 export default function AdminUsers() {
+  const { tText } = useAdminT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
@@ -149,7 +152,7 @@ export default function AdminUsers() {
   const createTagMutation = useMutation({
     mutationFn: (payload: { name: string; color: string }) => userService.createUserTag(payload),
     onSuccess: async () => {
-      toast.success("标签已创建");
+      toast.success(tText("标签已创建"));
       await invalidateUsers();
     },
     onError: (error) => toast.error(toastErrorMessage(error, "创建标签失败")),
@@ -158,7 +161,7 @@ export default function AdminUsers() {
   const deleteTagMutation = useMutation({
     mutationFn: (id: string) => userService.deleteUserTag(id),
     onSuccess: async () => {
-      toast.success("标签已删除");
+      toast.success(tText("标签已删除"));
       setDeletingTagId(null);
       await invalidateUsers();
     },
@@ -264,7 +267,7 @@ export default function AdminUsers() {
   const handleExportCsv = async () => {
     try {
       await userService.exportUsersCsv(queryParams);
-      toast.success("已开始导出 CSV");
+      toast.success(tText("已开始导出 CSV"));
     } catch (error) {
       toast.error(toastErrorMessage(error, "导出失败"));
     }
@@ -272,8 +275,7 @@ export default function AdminUsers() {
 
   const handleDeleteTag = async (tag: UserTag) => {
     const impact = await userService.fetchUserTagImpact(tag.id).catch(() => tag.count || 0);
-    confirm({
-      title: "确认删除标签",
+    confirm({ title: tText("确认删除标签"),
       description: `该标签当前影响 ${impact} 位用户，确认删除？`,
       confirmText: "删除",
       danger: true,
@@ -290,9 +292,9 @@ export default function AdminUsers() {
   };
 
   const statCards = [
-    { label: "匹配用户数", value: String(total), highlight: filtersActive },
-    { label: "今日新增", value: String(summary.todayNew || 0), highlight: false },
-    { label: "被邀请用户", value: String(summary.invitedUsers || 0), highlight: false },
+    { label: tText("匹配用户数"), value: String(total), highlight: filtersActive },
+    { label: tText("今日新增"), value: String(summary.todayNew || 0), highlight: false },
+    { label: tText("被邀请用户"), value: String(summary.invitedUsers || 0), highlight: false },
   ] as const;
 
   return (
@@ -331,7 +333,7 @@ export default function AdminUsers() {
                 }}
                 className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               >
-                <option value="">全部标签</option>
+                <option value=""><Tx>全部标签</Tx></option>
                 {tags.map((tag) => (
                   <option key={tag.id} value={tag.id}>
                     {tag.name}
@@ -346,9 +348,9 @@ export default function AdminUsers() {
                 }}
                 className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               >
-                <option value="">微信绑定（全部）</option>
-                <option value="1">已绑定</option>
-                <option value="0">未绑定</option>
+                <option value=""><Tx>微信绑定（全部）</Tx></option>
+                <option value="1"><Tx>已绑定</Tx></option>
+                <option value="0"><Tx>未绑定</Tx></option>
               </select>
               <select
                 value={phoneBoundFilter}
@@ -358,9 +360,9 @@ export default function AdminUsers() {
                 }}
                 className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               >
-                <option value="">手机号（全部）</option>
-                <option value="1">已绑定</option>
-                <option value="0">未绑定</option>
+                <option value=""><Tx>手机号（全部）</Tx></option>
+                <option value="1"><Tx>已绑定</Tx></option>
+                <option value="0"><Tx>未绑定</Tx></option>
               </select>
               {memberLevels.length > 0 ? (
                 <select
@@ -371,7 +373,7 @@ export default function AdminUsers() {
                   }}
                   className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
                 >
-                  <option value="">会员等级（全部）</option>
+                  <option value=""><Tx>会员等级（全部）</Tx></option>
                   {memberLevels.map((level) => (
                     <option key={level.id} value={level.id}>
                       {level.name}
@@ -388,10 +390,10 @@ export default function AdminUsers() {
                 }}
                 className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               >
-                <option value="">账号状态（全部）</option>
-                <option value="normal">正常</option>
-                <option value="disabled">禁用登录</option>
-                <option value="blacklisted">黑名单</option>
+                <option value=""><Tx>账号状态（全部）</Tx></option>
+                <option value="normal"><Tx>正常</Tx></option>
+                <option value="disabled"><Tx>禁用登录</Tx></option>
+                <option value="blacklisted"><Tx>黑名单</Tx></option>
               </select>
               <select
                 value={orderRestrictedFilter}
@@ -401,9 +403,9 @@ export default function AdminUsers() {
                 }}
                 className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               >
-                <option value="">下单限制（全部）</option>
-                <option value="1">已限制</option>
-                <option value="0">未限制</option>
+                <option value=""><Tx>下单限制（全部）</Tx></option>
+                <option value="1"><Tx>已限制</Tx></option>
+                <option value="0"><Tx>未限制</Tx></option>
               </select>
               <select
                 value={couponRestrictedFilter}
@@ -413,9 +415,9 @@ export default function AdminUsers() {
                 }}
                 className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               >
-                <option value="">领券限制（全部）</option>
-                <option value="1">已限制</option>
-                <option value="0">未限制</option>
+                <option value=""><Tx>领券限制（全部）</Tx></option>
+                <option value="1"><Tx>已限制</Tx></option>
+                <option value="0"><Tx>未限制</Tx></option>
               </select>
               <select
                 value={commentRestrictedFilter}
@@ -425,9 +427,9 @@ export default function AdminUsers() {
                 }}
                 className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
               >
-                <option value="">评论限制（全部）</option>
-                <option value="1">已限制</option>
-                <option value="0">未限制</option>
+                <option value=""><Tx>评论限制（全部）</Tx></option>
+                <option value="1"><Tx>已限制</Tx></option>
+                <option value="0"><Tx>未限制</Tx></option>
               </select>
               <PermissionGate permission="user.view">
                 <button
@@ -456,7 +458,7 @@ export default function AdminUsers() {
                 onChange={(e) => setBatchTagId(e.target.value)}
                 className="min-h-[40px] rounded-lg bg-secondary px-3 py-2 text-sm"
               >
-                <option value="">选择要批量打的标签</option>
+                <option value=""><Tx>选择要批量打的标签</Tx></option>
                 {tags.map((tag) => (
                   <option key={tag.id} value={tag.id}>
                     {tag.name}
@@ -487,7 +489,7 @@ export default function AdminUsers() {
             </PermissionGate>
             <div className="min-w-0 flex-1 basis-[12rem]">
               <SearchBar
-                placeholder="搜索昵称 / 手机号 / 微信 / 邀请码"
+                placeholder={tText("搜索昵称 / 手机号 / 微信 / 邀请码")}
                 value={search}
                 onChange={(value) => {
                   setSearch(value);

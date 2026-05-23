@@ -28,14 +28,17 @@ import {
 import {
   ORDER_STATUS,
   PAYMENT_STATUS,
-  ORDER_STATUS_FILTER_OPTIONS,
-  PAYMENT_STATUS_FILTER_OPTIONS,
   getOrderStatusBadgeClass,
-  getOrderStatusLabel,
-  getPaymentStatusBadgeClass,
-  getPaymentStatusLabel,
 } from "@/constants/statusDictionary";
+import { PaymentStatusBadge } from "@/components/admin/PaymentStatusBadge";
+import {
+  useAdminOrderStatusFilterOptions,
+  useAdminPaymentStatusFilterOptions,
+} from "@/hooks/useAdminStatusLabels";
 import { THEME_OUTLINE_DANGER, THEME_OUTLINE_PRIMARY, THEME_OUTLINE_SUCCESS } from "@/utils/themeVisuals";
+import { Tx } from "@/components/admin/AdminText";
+import { OrderStatusBadge } from "@/components/admin/OrderStatusBadge";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const initialSummary: AdminOrderSummary = {
   pending: 0,
@@ -98,6 +101,17 @@ function afterSaleLabel(order: Order): { text: string; className: string } {
 }
 
 export default function AdminOrders() {
+  const { tText } = useAdminT();
+  const orderStatusFilterOptions = useAdminOrderStatusFilterOptions();
+  const paymentStatusFilterOptions = useAdminPaymentStatusFilterOptions();
+  const paymentMethodOptionsLocalized = useMemo(
+    () => paymentMethodOptions.map((o) => ({ ...o, label: tText(o.label) })),
+    [tText],
+  );
+  const shippingOptionsLocalized = useMemo(
+    () => shippingOptions.map((o) => ({ ...o, label: tText(o.label) })),
+    [tText],
+  );
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { confirm } = useAdminConfirm();
@@ -269,13 +283,13 @@ export default function AdminOrders() {
 
   const stats = useMemo(
     () => [
-      { label: "待付款", value: summary.pending, status: ORDER_STATUS.PENDING, sub: `RM ${money(summary.pending_payment_amount)}` },
-      { label: "待发货", value: summary.pending_shipment_count ?? summary.paid, status: ORDER_STATUS.PAID, sub: `RM ${money(summary.pending_shipment_amount)}` },
-      { label: "售后中", value: summary.active_return_count ?? summary.refunding, status: ORDER_STATUS.REFUNDING, sub: `退款 RM ${money(summary.today_refund_amount)}` },
-      { label: "今日订单", value: summary.today_order_count ?? 0, status: "", sub: `全站 · ${summary.today_paid_order_count ?? 0} 单已支付` },
-      { label: "今日实收", value: `RM ${money(summary.today_paid_amount)}`, status: "", sub: "全站 · 按支付时间" },
-      { label: "今日毛利", value: `RM ${money(summary.today_gross_profit_amount)}`, status: "", sub: "全站 · 商品毛利" },
-      { label: "今日净利润", value: `RM ${money(summary.today_net_profit_amount ?? summary.today_gross_profit_amount)}`, status: "", sub: "全站 · 含物流/手续费" },
+      { label: tText("待付款"), value: summary.pending, status: ORDER_STATUS.PENDING, sub: `RM ${money(summary.pending_payment_amount)}` },
+      { label: tText("待发货"), value: summary.pending_shipment_count ?? summary.paid, status: ORDER_STATUS.PAID, sub: `RM ${money(summary.pending_shipment_amount)}` },
+      { label: tText("售后中"), value: summary.active_return_count ?? summary.refunding, status: ORDER_STATUS.REFUNDING, sub: `退款 RM ${money(summary.today_refund_amount)}` },
+      { label: tText("今日订单"), value: summary.today_order_count ?? 0, status: "", sub: `全站 · ${summary.today_paid_order_count ?? 0} 单已支付` },
+      { label: tText("今日实收"), value: `RM ${money(summary.today_paid_amount)}`, status: "", sub: "全站 · 按支付时间" },
+      { label: tText("今日毛利"), value: `RM ${money(summary.today_gross_profit_amount)}`, status: "", sub: "全站 · 商品毛利" },
+      { label: tText("今日净利润"), value: `RM ${money(summary.today_net_profit_amount ?? summary.today_gross_profit_amount)}`, status: "", sub: "全站 · 含物流/手续费" },
     ],
     [summary],
   );
@@ -325,7 +339,7 @@ export default function AdminOrders() {
     setExportingScope("filtered");
     try {
       await orderService.exportOrdersCsv(queryParams);
-      toast.success("已开始下载 CSV");
+      toast.success(tText("已开始下载 CSV"));
     } catch (e) {
       toast.error(toastErrorMessage(e, "导出失败"));
     } finally {
@@ -335,7 +349,7 @@ export default function AdminOrders() {
 
   const handleExportSelectedCsv = async () => {
     if (!selectedOrderIds.length) {
-      toast.warning("请先勾选要导出的订单");
+      toast.warning(tText("请先勾选要导出的订单"));
       return;
     }
     setExportingScope("selected");
@@ -444,7 +458,7 @@ export default function AdminOrders() {
       );
     }
 
-    return <span className="text-xs text-muted-foreground">只读</span>;
+    return <span className="text-xs text-muted-foreground"><Tx>只读</Tx></span>;
   };
 
   const renderRow = (o: Order) => {
@@ -526,9 +540,7 @@ export default function AdminOrders() {
         </td>
         <td className="max-w-[9rem] px-4 py-2.5 align-middle">
           <div className="min-w-0 space-y-1">
-            <span className={`inline-block max-w-full truncate rounded-full px-2 py-0.5 text-[10px] font-medium ${getPaymentStatusBadgeClass(o.payment_status || PAYMENT_STATUS.PENDING)}`}>
-              {getPaymentStatusLabel(o.payment_status || PAYMENT_STATUS.PENDING)}
-            </span>
+            <PaymentStatusBadge status={o.payment_status || PAYMENT_STATUS.PENDING} />
             <AdminTableCell
               value={`${o.payment_method || "-"}${o.payment_channel ? ` / ${o.payment_channel}` : ""}`}
               fullText={`${o.payment_method || "-"}${o.payment_channel ? ` / ${o.payment_channel}` : ""}\n${formatDateTime(o.paid_at || o.payment_time || "") || "未支付"}`}
@@ -539,9 +551,7 @@ export default function AdminOrders() {
         </td>
         <td className="max-w-[9rem] px-4 py-2.5 align-middle">
           <div className="min-w-0 space-y-1">
-            <span className={`inline-block max-w-full truncate rounded-full px-2 py-0.5 text-[10px] font-medium ${getOrderStatusBadgeClass(o.status)}`}>
-              {getOrderStatusLabel(o.status)}
-            </span>
+            <OrderStatusBadge status={o.status} />
             <AdminTableCell
               value={shippedWithoutTracking ? "已发货·无单号" : (o.tracking_no || "无单号")}
               fullText={[
@@ -586,7 +596,7 @@ export default function AdminOrders() {
           <AdminTableCell value={formatDateTime(o.created_at)} columnKey="created_at" maxWidth="8.5rem" />
         </td>
         <td className="px-4 py-3 align-top">{renderActions(o)}</td>
-        <td className="px-4 py-3 align-top"><button type="button" onClick={() => navigate(`/admin/orders/${o.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">详情</button></td>
+        <td className="px-4 py-3 align-top"><button type="button" onClick={() => navigate(`/admin/orders/${o.id}`)} className="text-xs text-[var(--theme-price)] hover:underline"><Tx>详情</Tx></button></td>
       </>
     );
   };
@@ -616,7 +626,7 @@ export default function AdminOrders() {
       </div>
 
       <div className="space-y-2">
-        <SearchBar placeholder="搜索订单号、昵称、收货人、手机号、用户ID、物流单号" value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
+        <SearchBar placeholder={tText("搜索订单号、昵称、收货人、手机号、用户ID、物流单号")} value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
         <AdminFilterSummaryBar chips={filterChips} onClearAll={() => clearFilters()} onRemove={handleRemoveFilterChip} />
         <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
           <button
@@ -632,57 +642,57 @@ export default function AdminOrders() {
               <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
                 <SegmentedDateInput value={dateFrom} onChange={(v) => { setDateFrom(v); setPage(1); }} />
                 <SegmentedDateInput value={dateTo} onChange={(v) => { setDateTo(v); setPage(1); }} />
-                <input value={amountMin} onChange={(e) => { setAmountMin(e.target.value); setPage(1); }} placeholder="最低金额" className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm" />
-                <input value={amountMax} onChange={(e) => { setAmountMax(e.target.value); setPage(1); }} placeholder="最高金额" className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm" />
+                <input value={amountMin} onChange={(e) => { setAmountMin(e.target.value); setPage(1); }} placeholder={tText("最低金额")} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm" />
+                <input value={amountMax} onChange={(e) => { setAmountMax(e.target.value); setPage(1); }} placeholder={tText("最高金额")} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm" />
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
-                  {ORDER_STATUS_FILTER_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  {orderStatusFilterOptions.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
                 <select value={paymentFilter} onChange={(e) => { setPaymentFilter(e.target.value as "" | PaymentStatus); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
-                  {PAYMENT_STATUS_FILTER_OPTIONS.map((s) => <option key={s.value || "all"} value={s.value}>{s.label}</option>)}
+                  {paymentStatusFilterOptions.map((s) => <option key={s.value || "all"} value={s.value}>{s.label}</option>)}
                 </select>
                 <select value={paymentMethod} onChange={(e) => { setPaymentMethod(e.target.value); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
-                  {paymentMethodOptions.map((s) => <option key={s.value || "all"} value={s.value}>{s.label}</option>)}
+                  {paymentMethodOptionsLocalized.map((s) => <option key={s.value || "all"} value={s.value}>{s.label}</option>)}
                 </select>
-                <input value={paymentChannel} onChange={(e) => { setPaymentChannel(e.target.value); setPage(1); }} placeholder="支付渠道" className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm" />
+                <input value={paymentChannel} onChange={(e) => { setPaymentChannel(e.target.value); setPage(1); }} placeholder={tText("支付渠道")} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm" />
                 <select value={shippingName} onChange={(e) => { setShippingName(e.target.value); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
-                  {shippingOptions.map((s) => <option key={s.value || "all"} value={s.value}>{s.label}</option>)}
+                  {shippingOptionsLocalized.map((s) => <option key={s.value || "all"} value={s.value}>{s.label}</option>)}
                 </select>
                 <select value={returnStatus} onChange={(e) => { setReturnStatus(e.target.value as "" | "none" | "active" | "any"); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
-                  <option value="">全部售后</option>
-                  <option value="none">无售后</option>
-                  <option value="active">售后中</option>
-                  <option value="any">有售后</option>
+                  <option value=""><Tx>全部售后</Tx></option>
+                  <option value="none"><Tx>无售后</Tx></option>
+                  <option value="active"><Tx>售后中</Tx></option>
+                  <option value="any"><Tx>有售后</Tx></option>
                 </select>
                 <select value={refundStatus} onChange={(e) => { setRefundStatus(e.target.value); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
-                  <option value="">全部退款</option>
-                  <option value="none">无退款</option>
-                  <option value="partially_refunded">部分退款</option>
-                  <option value="refunded">全额退款</option>
+                  <option value=""><Tx>全部退款</Tx></option>
+                  <option value="none"><Tx>无退款</Tx></option>
+                  <option value="partially_refunded"><Tx>部分退款</Tx></option>
+                  <option value="refunded"><Tx>全额退款</Tx></option>
                 </select>
                 <select value={hasNote} onChange={(e) => { setHasNote(e.target.value as "" | "1" | "0"); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
-                  <option value="">备注不限</option>
-                  <option value="1">有买家备注</option>
-                  <option value="0">无买家备注</option>
+                  <option value=""><Tx>备注不限</Tx></option>
+                  <option value="1"><Tx>有买家备注</Tx></option>
+                  <option value="0"><Tx>无买家备注</Tx></option>
                 </select>
                 <select value={costStatus} onChange={(e) => { setCostStatus(e.target.value as "" | "normal" | "missing"); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
-                  <option value="">成本不限</option>
-                  <option value="normal">成本正常</option>
-                  <option value="missing">缺成本</option>
+                  <option value=""><Tx>成本不限</Tx></option>
+                  <option value="normal"><Tx>成本正常</Tx></option>
+                  <option value="missing"><Tx>缺成本</Tx></option>
                 </select>
                 <select value={overduePayment} onChange={(e) => { setOverduePayment(e.target.value as "" | "1" | "0"); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
-                  <option value="">付款时效不限</option>
-                  <option value="1">超时未支付</option>
+                  <option value=""><Tx>付款时效不限</Tx></option>
+                  <option value="1"><Tx>超时未支付</Tx></option>
                 </select>
                 <select value={overdueShipment} onChange={(e) => { setOverdueShipment(e.target.value as "" | "1" | "0"); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
-                  <option value="">发货时效不限</option>
-                  <option value="1">待发货超24h</option>
+                  <option value=""><Tx>发货时效不限</Tx></option>
+                  <option value="1"><Tx>待发货超24h</Tx></option>
                 </select>
                 <select value={buyerType} onChange={(e) => { setBuyerType(e.target.value as "" | "new" | "repeat"); setPage(1); }} className="min-h-[44px] rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 text-sm">
-                  <option value="">全部客户</option>
-                  <option value="new">新客</option>
-                  <option value="repeat">老客</option>
+                  <option value=""><Tx>全部客户</Tx></option>
+                  <option value="new"><Tx>新客</Tx></option>
+                  <option value="repeat"><Tx>老客</Tx></option>
                 </select>
                 <button type="button" disabled={exportingScope !== null} onClick={handleExportCsv} className="inline-flex min-h-[44px] items-center gap-1 rounded-lg border border-[var(--theme-border)] px-3 text-sm disabled:opacity-60">
                   {exportingScope === "filtered" ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
@@ -735,7 +745,7 @@ export default function AdminOrders() {
                   if (input) input.indeterminate = someSelectedOnPage;
                 }}
                 onChange={togglePageSelection}
-                aria-label="全选当前页订单"
+                aria-label={tText("全选当前页订单")}
               />
             </th>
             {["订单", "用户/收货人", "商品", "金额", "支付", "履约/物流", "售后", "标记", "创建时间", "操作", ""].map((h) => (

@@ -17,13 +17,15 @@ import { formatDateTime } from "@/utils/formatDateTime";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import {
   ADMIN_TABLE_NOWRAP_CLASS,
-  adminTableClassName,
   adminTdClassName,
   adminThClassName,
 } from "@/utils/adminTableClasses";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import ReportPageHeader from "@/components/admin/report/ReportPageHeader";
+import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { REPORT_REGISTRY_BY_KEY } from "./reportRegistry";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type FormState = {
   expense_date: string;
@@ -52,6 +54,7 @@ function emptyForm(): FormState {
 }
 
 export default function AdminOperatingExpenses() {
+  const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
@@ -112,9 +115,9 @@ export default function AdminOperatingExpenses() {
 
   async function handleSubmit() {
     const amount = Number(form.amount);
-    if (!form.expense_date) return toast.error("请选择日期");
-    if (!Number.isFinite(amount) || amount < 0) return toast.error("金额必须大于等于 0");
-    if (!form.title.trim()) return toast.error("请填写支出标题");
+    if (!form.expense_date) return toast.error(tText("请选择日期"));
+    if (!Number.isFinite(amount) || amount < 0) return toast.error(tText("金额必须大于等于 0"));
+    if (!form.title.trim()) return toast.error(tText("请填写支出标题"));
     setSaving(true);
     try {
       const payload = {
@@ -126,10 +129,10 @@ export default function AdminOperatingExpenses() {
       };
       if (editingId) {
         await updateOperatingExpense(editingId, payload);
-        toast.success("经营支出已更新");
+        toast.success(tText("经营支出已更新"));
       } else {
         await createOperatingExpense(payload);
-        toast.success("经营支出已新增");
+        toast.success(tText("经营支出已新增"));
       }
       resetForm();
       await invalidateExpenses();
@@ -144,7 +147,7 @@ export default function AdminOperatingExpenses() {
     await adminConfirmDelete(confirm, title, async () => {
       try {
         await removeOperatingExpense(id);
-        toast.success("经营支出已删除");
+        toast.success(tText("经营支出已删除"));
         await invalidateExpenses();
       } catch (error) {
         toast.error(toastErrorMessage(error, "删除经营支出失败"));
@@ -157,7 +160,7 @@ export default function AdminOperatingExpenses() {
     setExporting(true);
     try {
       await exportReportCsv(config.exportType, queryParams);
-      toast.success("报表导出已开始下载");
+      toast.success(tText("报表导出已开始下载"));
     } catch (error) {
       toast.error(toastErrorMessage(error, "导出经营支出失败"));
     } finally {
@@ -175,27 +178,27 @@ export default function AdminOperatingExpenses() {
       />
 
       <div className="rounded-xl border border-border bg-card p-4">
-        <h2 className="text-base font-semibold text-foreground">经营支出录入</h2>
-        <p className="mt-1 text-xs text-muted-foreground">用于利润日报中的经营支出汇总（广告、包材、人工、房租等）。</p>
+        <h2 className="text-base font-semibold text-foreground"><Tx>经营支出录入</Tx></h2>
+        <p className="mt-1 text-xs text-muted-foreground"><Tx>用于利润日报中的经营支出汇总（广告、包材、人工、房租等）。</Tx></p>
         <div className="mt-4 grid gap-3 md:grid-cols-5">
-          <SegmentedDateInput label="支出日期" value={form.expense_date} onChange={(v) => setForm((s) => ({ ...s, expense_date: v }))} />
+          <SegmentedDateInput label={tText("支出日期")} value={form.expense_date} onChange={(v) => setForm((s) => ({ ...s, expense_date: v }))} />
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">分类</label>
+            <label className="mb-1 block text-xs text-muted-foreground"><Tx>分类</Tx></label>
             <select value={form.category} onChange={(e) => setForm((s) => ({ ...s, category: e.target.value }))} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
               {CATEGORY_OPTIONS.map((x) => <option key={x.value} value={x.value}>{x.label}</option>)}
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">金额 (RM)</label>
+            <label className="mb-1 block text-xs text-muted-foreground"><Tx>金额 (RM)</Tx></label>
             <input value={form.amount} onChange={(e) => setForm((s) => ({ ...s, amount: e.target.value }))} placeholder="0.00" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">标题</label>
-            <input value={form.title} onChange={(e) => setForm((s) => ({ ...s, title: e.target.value }))} placeholder="例如：5月 Facebook 广告费" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+            <label className="mb-1 block text-xs text-muted-foreground"><Tx>标题</Tx></label>
+            <input value={form.title} onChange={(e) => setForm((s) => ({ ...s, title: e.target.value }))} placeholder={tText("例如：5月 Facebook 广告费")} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">备注</label>
-            <input value={form.remark} onChange={(e) => setForm((s) => ({ ...s, remark: e.target.value }))} placeholder="可选" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+            <label className="mb-1 block text-xs text-muted-foreground"><Tx>备注</Tx></label>
+            <input value={form.remark} onChange={(e) => setForm((s) => ({ ...s, remark: e.target.value }))} placeholder={tText("可选")} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
           </div>
         </div>
         <div className="mt-3 flex items-center gap-2">
@@ -204,48 +207,47 @@ export default function AdminOperatingExpenses() {
             {editingId ? "保存修改" : "新增支出"}
           </button>
           {editingId ? (
-            <button onClick={resetForm} className="rounded-lg border border-border px-4 py-2 text-sm">取消编辑</button>
+            <button onClick={resetForm} className="rounded-lg border border-border px-4 py-2 text-sm"><Tx>取消编辑</Tx></button>
           ) : null}
         </div>
       </div>
 
       <div className="rounded-xl border border-border bg-card p-4">
         <div className="flex flex-wrap items-end gap-3">
-          <SegmentedDateInput label="开始日期" value={dateFrom} onChange={setDateFrom} />
-          <SegmentedDateInput label="结束日期" value={dateTo} onChange={setDateTo} />
+          <SegmentedDateInput label={tText("开始日期")} value={dateFrom} onChange={setDateFrom} />
+          <SegmentedDateInput label={tText("结束日期")} value={dateTo} onChange={setDateTo} />
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">分类筛选</label>
+            <label className="mb-1 block text-xs text-muted-foreground"><Tx>分类筛选</Tx></label>
             <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
-              <option value="">全部</option>
+              <option value=""><Tx>全部</Tx></option>
               {CATEGORY_OPTIONS.map((x) => <option key={x.value} value={x.value}>{x.label}</option>)}
             </select>
           </div>
-          <div className="ml-auto text-sm text-muted-foreground">合计：<span className="font-semibold text-foreground">RM {totalAmount.toFixed(2)}</span></div>
+          <div className="ml-auto text-sm text-muted-foreground"><Tx>合计：</Tx><span className="font-semibold text-foreground">RM {totalAmount.toFixed(2)}</span></div>
         </div>
 
-        <div className="mt-4 overflow-x-auto">
-          <table className={adminTableClassName("w-full min-w-[860px] text-left text-sm")}>
+        <AdminNativeTable className="mt-4" tableClassName="min-w-[860px] text-left text-sm">
             <thead className="border-b border-border text-xs text-muted-foreground">
               <tr>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>日期</th>
-                <th className={adminThClassName()}>分类</th>
-                <th className={adminThClassName()}>标题</th>
-                <th className={adminThClassName()}>备注</th>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>金额</th>
-                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>创建时间</th>
-                <th className={adminThClassName("text-right")}>操作</th>
+                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>日期</Tx></th>
+                <th className={adminThClassName()}><Tx>分类</Tx></th>
+                <th className={adminThClassName()}><Tx>标题</Tx></th>
+                <th className={adminThClassName()}><Tx>备注</Tx></th>
+                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>金额</Tx></th>
+                <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>创建时间</Tx></th>
+                <th className={adminThClassName("text-right")}><Tx>操作</Tx></th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
                   <td colSpan={7} className="py-6 text-center text-muted-foreground">
-                    <span className="inline-flex items-center gap-2"><Loader2 size={14} className="animate-spin" />加载中...</span>
+                    <span className="inline-flex items-center gap-2"><Loader2 size={14} className="animate-spin" /><Tx>加载中...</Tx></span>
                   </td>
                 </tr>
               ) : list.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-muted-foreground">暂无经营支出记录</td>
+                  <td colSpan={7} className="py-8 text-center text-muted-foreground"><Tx>暂无经营支出记录</Tx></td>
                 </tr>
               ) : (
                 list.map((row) => (
@@ -270,12 +272,11 @@ export default function AdminOperatingExpenses() {
                 ))
               )}
             </tbody>
-          </table>
-        </div>
+        </AdminNativeTable>
       </div>
 
       <section className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm text-[var(--theme-text-muted)]">
-        <span className="font-medium text-[var(--theme-text)]">数据口径：</span>{config.dataScopeNote}
+        <span className="font-medium text-[var(--theme-text)]"><Tx>数据口径：</Tx></span>{config.dataScopeNote}
       </section>
     </div>
   );

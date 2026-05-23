@@ -13,8 +13,10 @@ import { LoadingButton } from "@/modules/micro-interactions";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import { THEME_BADGE_MUTED, THEME_BADGE_SUCCESS, THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
+import { useAdminT } from "@/hooks/useAdminT";
 
 export default function AdminShipping() {
+  const { tText } = useAdminT();
   const queryClient = useQueryClient();
   const { confirm } = useAdminConfirm();
   const [editing, setEditing] = useState<ShippingTemplate | null>(null);
@@ -34,12 +36,12 @@ export default function AdminShipping() {
   const invalidateShipping = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.shippingRoot() });
 
   const handleSave = async () => {
-    if (!form.name || !form.regions) { toast.error("请填写完整信息"); return; }
+    if (!form.name || !form.regions) { toast.error(tText("请填写完整信息")); return; }
     setSaving(true);
     try {
       if (editing) {
         await shippingService.updateTemplate(editing.id, { name: form.name, regions: form.regions, baseFee: form.baseFee, freeAbove: form.freeAbove, extraPerKg: form.extraPerKg });
-        toast.success("运费模板已更新");
+        toast.success(tText("运费模板已更新"));
       } else {
         const makeDefault = templates.length === 0;
         await shippingService.createTemplate({
@@ -74,7 +76,7 @@ export default function AdminShipping() {
     try {
       await shippingService.deleteTemplate(id);
       await invalidateShipping();
-      toast.success("已删除");
+      toast.success(tText("已删除"));
     } catch (e) {
       toast.error(toastErrorMessage(e, "删除失败"));
     }
@@ -171,8 +173,7 @@ export default function AdminShipping() {
                   <button
                     type="button"
                     onClick={() =>
-                      confirm({
-                        title: "设为默认生效",
+                      confirm({ title: tText("设为默认生效"),
                         description: `将「${t.name}」设为默认运费模板？当前默认模板将自动停用。`,
                         confirmText: "设为默认",
                         onConfirm: () => handleSetDefault(t.id),
@@ -203,8 +204,8 @@ export default function AdminShipping() {
         size="sm"
       >
         <div className="space-y-4">
-          <input placeholder="模板名称" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-          <input placeholder="适用区域（如：雪兰莪、吉隆坡）" value={form.regions} onChange={(e) => setForm({ ...form, regions: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+          <input placeholder={tText("模板名称")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+          <input placeholder={tText("适用区域（如：雪兰莪、吉隆坡）")} value={form.regions} onChange={(e) => setForm({ ...form, regions: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
           <div className="grid grid-cols-3 gap-3">
             <label className="block"><span className="text-xs text-muted-foreground"><Tx>基础运费</Tx></span><input type="number" value={form.baseFee} onChange={(e) => setForm({ ...form, baseFee: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>
             <label className="block"><span className="text-xs text-muted-foreground"><Tx>包邮门槛</Tx></span><input type="number" value={form.freeAbove} onChange={(e) => setForm({ ...form, freeAbove: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>

@@ -1,6 +1,7 @@
 import { Tx } from "@/components/admin/AdminText";
 import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import AdminRewardRecords from "@/modules/admin/pages/user/AdminRewardRecords";
+import { useAdminT } from "@/hooks/useAdminT";
 
 export default function AdminMarketingRewards() {
   return (

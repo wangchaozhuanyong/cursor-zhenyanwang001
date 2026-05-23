@@ -1,6 +1,9 @@
 const repo = require('../repository/adminSiteSettings.repository');
 const { writeAuditLog } = require('../../../utils/auditLog');
 const { BusinessError } = require('../../../errors');
+const { LEGACY_IM_KEYS, stripHelpCenterConfig } = require('../../../data/supportDownloadMigration');
+
+const BLOCKED_SITE_SETTING_KEYS = new Set(LEGACY_IM_KEYS);
 const { invalidatePaymentTimeoutSettingsCache } = require('../../order/orderPaymentDeadline');
 const sharp = require('sharp');
 const { isS3StorageEnabled, uploadBufferToS3 } = require('../../../utils/objectStorage');
@@ -84,6 +87,12 @@ async function updateSiteSettings(body, adminUserId, req) {
     }
     for (const [key, value] of Object.entries(normalizedBody)) {
       if (key === 'version') continue;
+      if (BLOCKED_SITE_SETTING_KEYS.has(key)) continue;
+      if (key === 'helpCenterConfig') {
+        const { json } = stripHelpCenterConfig(value);
+        await repo.upsertSetting(key, json ? JSON.stringify(json) : value);
+        continue;
+      }
       await repo.upsertSetting(key, value);
     }
     if (

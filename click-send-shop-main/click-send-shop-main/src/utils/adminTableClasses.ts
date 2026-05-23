@@ -9,6 +9,9 @@ export const ADMIN_TABLE_FIXED_CLASS = "admin-table-fixed";
 /** 单元格不换行（订单号、操作列等） */
 export const ADMIN_TABLE_NOWRAP_CLASS = "admin-table-nowrap";
 
+/** 移动端/平板冻结首列 */
+export const ADMIN_TABLE_STICKY_FIRST_CLASS = "admin-table-sticky-first";
+
 export function adminTableClassName(
   extra?: string,
   options?: { fixed?: boolean },

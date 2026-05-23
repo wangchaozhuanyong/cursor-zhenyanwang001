@@ -308,44 +308,12 @@ async function resetUserPassword(userId, adminUserId, req) {
   return { data: { password: plain }, message: '密码已重置' };
 }
 
-async function updateUserStatus(userId, body, adminUserId, req) {
-  const beforeUser = await assertTargetIsNormalUser(userId);
-  const nextStatus = String(body?.accountStatus || body?.account_status || '').trim();
-  const valid = ['normal', 'disabled', 'blacklisted', 'order_limited', 'coupon_limited', 'comment_limited'];
-  if (!valid.includes(nextStatus)) throw new BusinessError(400, '账号状态不合法');
-  const reason = String(body?.reason || '').trim();
-  const restrictionsBefore = await repo.selectUserRestrictions(userId);
+async function persistUserAccountStatus(userId, accountStatus, bumpRefreshTokenVersion = false) {
+  await repo.updateUserStatus(userId, accountStatus, bumpRefreshTokenVersion);
+}
 
-  let nextAccountStatus = beforeUser.account_status || 'normal';
-  let nextRestrictions = { ...restrictionsBefore };
-  if (nextStatus === 'normal') {
-    nextAccountStatus = 'normal';
-    nextRestrictions = { order_restricted: 0, coupon_restricted: 0, comment_restricted: 0 };
-  } else if (nextStatus === 'disabled' || nextStatus === 'blacklisted') {
-    nextAccountStatus = nextStatus;
-  } else if (nextStatus === 'order_limited') {
-    nextRestrictions.order_restricted = 1;
-  } else if (nextStatus === 'coupon_limited') {
-    nextRestrictions.coupon_restricted = 1;
-  } else if (nextStatus === 'comment_limited') {
-    nextRestrictions.comment_restricted = 1;
-  }
-
-  const bump = nextAccountStatus === 'disabled' || nextAccountStatus === 'blacklisted';
-  await repo.updateUserStatus(userId, nextAccountStatus, bump);
-  await repo.upsertUserRestrictions(userId, nextRestrictions);
-  await writeAuditLog({
-    req,
-    operatorId: adminUserId,
-    actionType: 'user.status_update',
-    objectType: 'user',
-    objectId: userId,
-    summary: `兼容更新用户状态 ${nextStatus}`,
-    before: { account_status: beforeUser.account_status || 'normal', restrictions: restrictionsBefore },
-    after: { account_status: nextAccountStatus, restrictions: nextRestrictions, reason, bumped_refresh_token_version: bump },
-    result: 'success',
-  });
-  return { data: null, message: '状态已更新' };
+async function persistUserRestrictions(userId, restrictions) {
+  await repo.upsertUserRestrictions(userId, restrictions);
 }
 
 async function updateUserAccountStatus(userId, body, adminUserId, req) {
@@ -355,7 +323,7 @@ async function updateUserAccountStatus(userId, body, adminUserId, req) {
   const valid = ['normal', 'disabled', 'blacklisted'];
   if (!valid.includes(nextStatus)) throw new BusinessError(400, '账号状态不合法');
   const bump = nextStatus === 'disabled' || nextStatus === 'blacklisted';
-  await repo.updateUserStatus(userId, nextStatus, bump);
+  await persistUserAccountStatus(userId, nextStatus, bump);
   await writeAuditLog({
     req,
     operatorId: adminUserId,
@@ -379,7 +347,7 @@ async function updateUserRestrictions(userId, body, adminUserId, req) {
     coupon_restricted: body?.couponRestricted === undefined ? before.coupon_restricted : (body.couponRestricted ? 1 : 0),
     comment_restricted: body?.commentRestricted === undefined ? before.comment_restricted : (body.commentRestricted ? 1 : 0),
   };
-  await repo.upsertUserRestrictions(userId, after);
+  await persistUserRestrictions(userId, after);
   await writeAuditLog({
     req,
     operatorId: adminUserId,
@@ -459,7 +427,6 @@ module.exports = {
   resetUserPassword,
   adminUnbindWechat,
   exportUsersCsv,
-  updateUserStatus,
   updateUserAccountStatus,
   updateUserRestrictions,
   getUserStatusOverview,

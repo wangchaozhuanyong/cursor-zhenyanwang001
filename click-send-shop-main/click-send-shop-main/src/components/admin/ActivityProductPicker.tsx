@@ -4,6 +4,7 @@ import type { ActivityProductItem } from "@/types/activity";
 import type { ActivityProductOption } from "@/api/admin/activity";
 import * as activityService from "@/services/admin/activityService";
 import { getProducts } from "@/api/admin/product";
+import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 
 type Props = {
   open: boolean;
@@ -65,13 +66,22 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
     void load();
   }, [open, keyword]);
 
+  useEffect(() => {
+    if (!open) {
+      setSelected({});
+      setKeyword("");
+      setBatchDiscount("");
+      setBatchStock("");
+      setBatchLimit("");
+    }
+  }, [open]);
+
   const filtered = useMemo(
     () => list.filter((p) => !existingIds.includes(p.id)),
     [list, existingIds],
   );
   const selectedList = useMemo(() => Object.values(selected), [selected]);
 
-  if (!open) return null;
 
   const toggle = (p: ActivityProductOption) => {
     setSelected((prev) => {
@@ -109,8 +119,21 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
   };
 
   return (
-    <div className="fixed inset-0 z-[90] bg-black/50 p-4">
-      <div className="mx-auto grid h-full w-full max-w-6xl grid-cols-1 gap-3 rounded-xl bg-card p-4 lg:grid-cols-[1fr_340px]">
+    <AdminResponsiveSheet
+      open={open}
+      onOpenChange={(next) => !next && onClose()}
+      title="选择活动商品"
+      size="xl"
+      height="90vh"
+      footer={(
+        <div className="flex gap-2">
+          <button type="button" onClick={confirm} disabled={!selectedList.length} className="touch-manipulation flex-1 rounded-lg bg-gold px-3 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">加入活动</button>
+          <button type="button" onClick={onClose} className="touch-manipulation rounded-lg border border-border px-3 py-2.5 text-sm">取消</button>
+        </div>
+      )}
+      stickyFooter
+    >
+      <div className="grid min-h-0 gap-3 lg:grid-cols-[1fr_280px]">
         <div className="min-h-0 overflow-hidden rounded-lg border border-border">
           <div className="flex items-center gap-2 border-b border-border p-3">
             <Search className="h-4 w-4 text-muted-foreground" />
@@ -118,10 +141,10 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               placeholder="搜索商品名称"
-              className="w-full rounded-lg bg-secondary px-3 py-2 text-sm"
+              className="min-h-[40px] w-full rounded-lg bg-secondary px-3 py-2 text-sm"
             />
           </div>
-          <div className="max-h-[70vh] overflow-auto p-3">
+          <div className="max-h-[50vh] lg:max-h-[60vh] overflow-auto p-3">
             {loading ? <div className="text-sm text-muted-foreground">加载中...</div> : null}
             {!loading && filtered.length === 0 ? <div className="text-sm text-muted-foreground">暂无可选商品</div> : null}
             <div className="space-y-2">
@@ -132,7 +155,7 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
                     key={p.id}
                     type="button"
                     onClick={() => toggle(p)}
-                    className={`flex w-full items-center gap-3 rounded-lg border p-2 text-left ${checked ? "border-gold bg-gold/5" : "border-border"}`}
+                    className={`touch-manipulation flex w-full items-center gap-3 rounded-lg border p-2 text-left ${checked ? "border-gold bg-gold/5" : "border-border"}`}
                   >
                     <input type="checkbox" checked={checked} readOnly />
                     <img src={p.cover_image || ""} alt={p.name} className="h-12 w-12 rounded object-cover bg-secondary" />
@@ -157,7 +180,7 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
             <input value={batchStock} onChange={(e) => setBatchStock(e.target.value)} placeholder="统一活动库存" className="rounded-lg bg-secondary px-3 py-2 text-sm" />
             <input value={batchLimit} onChange={(e) => setBatchLimit(e.target.value)} placeholder="统一每人限购" className="rounded-lg bg-secondary px-3 py-2 text-sm" />
           </div>
-          <div className="mt-3 min-h-0 flex-1 overflow-auto space-y-2">
+          <div className="mt-3 max-h-40 space-y-2 overflow-auto lg:max-h-none lg:flex-1">
             {selectedList.map((p) => (
               <div key={p.id} className="flex items-center justify-between rounded border border-border p-2 text-xs">
                 <span className="truncate">{p.name}</span>
@@ -165,12 +188,8 @@ export default function ActivityProductPicker({ open, onClose, onConfirm, existi
               </div>
             ))}
           </div>
-          <div className="mt-3 flex gap-2">
-            <button type="button" onClick={confirm} disabled={!selectedList.length} className="flex-1 rounded-lg bg-gold px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">加入活动</button>
-            <button type="button" onClick={onClose} className="rounded-lg border border-border px-3 py-2 text-sm">取消</button>
-          </div>
         </div>
       </div>
-    </div>
+    </AdminResponsiveSheet>
   );
 }

@@ -409,7 +409,6 @@ router.post('/users/:id/reset-password', adminAuth, requirePermission('user.upda
 router.post('/users/:id/unbind-wechat', adminAuth, requirePermission('user.update'), userCtrl.unbindWechat);
 router.get('/users/:id', adminAuth, requirePermission('user.view'), userQueryLimiter, userCtrl.getById);
 router.put('/users/:id', adminAuth, requirePermission('user.update'), userCtrl.update);
-router.put('/users/:id/status', adminAuth, requirePermission('user.update'), userCtrl.updateStatus);
 router.put('/users/:id/account-status', adminAuth, requirePermission('user.update'), userCtrl.updateAccountStatus);
 router.put('/users/:id/restrictions', adminAuth, requirePermission('user.update'), userCtrl.updateRestrictions);
 router.get('/users/:id/status-overview', adminAuth, requirePermission('user.view'), userCtrl.getStatusOverview);

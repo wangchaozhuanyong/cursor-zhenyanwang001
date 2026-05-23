@@ -19,6 +19,7 @@ import { adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/Admin
 import { flattenCategories } from "@/utils/categoryTree";
 import type { Product } from "@/types/product";
 import type { CouponUpsertPayload } from "@/types/coupon";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const couponTypes = [
   { value: "fixed", label: "满减券" },
@@ -27,6 +28,7 @@ const couponTypes = [
 ];
 
 export default function AdminCouponForm() {
+  const { tText } = useAdminT();
   const queryClient = useQueryClient();
   const { confirm } = useAdminConfirm();
   const navigate = useNavigate();
@@ -105,13 +107,13 @@ export default function AdminCouponForm() {
   useEffect(() => {
     if (!isEdit) return;
     if (!couponId) {
-      toast.error("优惠券参数异常，已返回列表");
+      toast.error(tText("优惠券参数异常，已返回列表"));
       navigate("/admin/marketing/coupons", { replace: true });
       return;
     }
     if (!couponQuery.isError) return;
     if (couponQuery.error instanceof Error && couponQuery.error.message === "NOT_FOUND") {
-      toast.error("未找到该优惠券，可能已删除");
+      toast.error(tText("未找到该优惠券，可能已删除"));
     } else {
       toast.error(toastErrorMessage(couponQuery.error, "加载优惠券失败"));
     }
@@ -146,16 +148,16 @@ export default function AdminCouponForm() {
   }, [couponQuery.data]);
 
   const handleSave = async () => {
-    if (!form.title) { toast.error("请输入优惠券名称"); return; }
-    if (!form.code) { toast.error("请输入优惠券编码"); return; }
+    if (!form.title) { toast.error(tText("请输入优惠券名称")); return; }
+    if (!form.code) { toast.error(tText("请输入优惠券编码")); return; }
     if (form.scope_type === "category" && form.category_ids.length === 0) {
-      toast.error("请选择至少一个适用分类");
+      toast.error(tText("请选择至少一个适用分类"));
       return;
     }
     if (form.type === "percentage") {
       const percent = parseFloat(form.value);
       if (!Number.isFinite(percent) || percent <= 0 || percent > 100) {
-        toast.error("折扣比例需在 0-100 之间");
+        toast.error(tText("折扣比例需在 0-100 之间"));
         return;
       }
     }
@@ -164,11 +166,11 @@ export default function AdminCouponForm() {
     const normalizedUsableProductIds = [...new Set(form.usable_product_ids)];
 
     if (form.usable_scope_type === "category" && normalizedUsableCategoryIds.length === 0) {
-      toast.error("使用范围为指定分类时，请至少选择一个分类");
+      toast.error(tText("使用范围为指定分类时，请至少选择一个分类"));
       return;
     }
     if (form.usable_scope_type === "product" && normalizedUsableProductIds.length === 0) {
-      toast.error("使用范围为指定商品时，请至少选择一个商品");
+      toast.error(tText("使用范围为指定商品时，请至少选择一个商品"));
       return;
     }
 
@@ -198,10 +200,10 @@ export default function AdminCouponForm() {
       };
       if (isNew) {
         await createCoupon(payload);
-        toast.success("优惠券创建成功");
+        toast.success(tText("优惠券创建成功"));
       } else {
         await updateCoupon(couponId, payload);
-        toast.success("优惠券更新成功");
+        toast.success(tText("优惠券更新成功"));
       }
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.couponsRoot() });
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.marketingDashboard() });
@@ -258,7 +260,7 @@ export default function AdminCouponForm() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>展示角标</Tx></label>
-                <input value={form.display_badge} onChange={(e) => setForm({ ...form, display_badge: e.target.value })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none" placeholder="如：限时 / 新人专享" />
+                <input value={form.display_badge} onChange={(e) => setForm({ ...form, display_badge: e.target.value })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none" placeholder={tText("如：限时 / 新人专享")} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -322,8 +324,8 @@ export default function AdminCouponForm() {
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">已选 {form.usable_category_ids.length} 项</span>
                   <div className="flex gap-2">
-                    <button type="button" className="rounded border border-border px-2 py-1" onClick={() => setForm((prev) => ({ ...prev, usable_category_ids: categoryOptions.map((x) => x.id) }))}>全选</button>
-                    <button type="button" className="rounded border border-border px-2 py-1" onClick={() => setForm((prev) => ({ ...prev, usable_category_ids: [] }))}>清空</button>
+                    <button type="button" className="rounded border border-border px-2 py-1" onClick={() => setForm((prev) => ({ ...prev, usable_category_ids: categoryOptions.map((x) => x.id) }))}><Tx>全选</Tx></button>
+                    <button type="button" className="rounded border border-border px-2 py-1" onClick={() => setForm((prev) => ({ ...prev, usable_category_ids: [] }))}><Tx>清空</Tx></button>
                   </div>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2">
@@ -358,7 +360,7 @@ export default function AdminCouponForm() {
                       setProductPage(1);
                     }}
                     className="w-full rounded-lg bg-card px-3 py-2 text-sm text-foreground outline-none"
-                    placeholder="搜索商品名"
+                    placeholder={tText("搜索商品名")}
                   />
                   <span className="whitespace-nowrap text-xs text-muted-foreground">已选 {form.usable_product_ids.length}</span>
                 </div>
@@ -386,7 +388,7 @@ export default function AdminCouponForm() {
                   </button>
                 </div>
                 <div className="max-h-56 space-y-2 overflow-auto">
-                  {productLoading ? <p className="text-xs text-muted-foreground">商品加载中...</p> : null}
+                  {productLoading ? <p className="text-xs text-muted-foreground"><Tx>商品加载中...</Tx></p> : null}
                   {filteredProducts.map((p) => {
                     const checked = form.usable_product_ids.includes(p.id);
                     return (
@@ -408,13 +410,13 @@ export default function AdminCouponForm() {
                       </label>
                     );
                   })}
-                  {!productLoading && !filteredProducts.length ? <p className="text-xs text-muted-foreground">未找到匹配商品</p> : null}
+                  {!productLoading && !filteredProducts.length ? <p className="text-xs text-muted-foreground"><Tx>未找到匹配商品</Tx></p> : null}
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>第 {productPage} 页 · 共 {Math.max(1, Math.ceil(productTotal / 50))} 页</span>
                   <div className="flex gap-2">
-                    <button type="button" disabled={productPage <= 1 || productLoading} className="rounded border border-border px-2 py-1 disabled:opacity-50" onClick={() => setProductPage((p) => Math.max(1, p - 1))}>上一页</button>
-                    <button type="button" disabled={productPage >= Math.max(1, Math.ceil(productTotal / 50)) || productLoading} className="rounded border border-border px-2 py-1 disabled:opacity-50" onClick={() => setProductPage((p) => p + 1)}>下一页</button>
+                    <button type="button" disabled={productPage <= 1 || productLoading} className="rounded border border-border px-2 py-1 disabled:opacity-50" onClick={() => setProductPage((p) => Math.max(1, p - 1))}><Tx>上一页</Tx></button>
+                    <button type="button" disabled={productPage >= Math.max(1, Math.ceil(productTotal / 50)) || productLoading} className="rounded border border-border px-2 py-1 disabled:opacity-50" onClick={() => setProductPage((p) => p + 1)}><Tx>下一页</Tx></button>
                   </div>
                 </div>
               </div>

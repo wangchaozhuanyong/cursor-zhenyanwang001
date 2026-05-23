@@ -916,6 +916,93 @@ html[data-app-scope="admin"] .admin-tech-path {
     overflow-wrap: normal;
     width: 1%;
   }
+
+  /* 表格横向滚动：左右渐变阴影提示 */
+  [data-admin-shell] .admin-table-scroll-wrap::before,
+  [data-admin-shell] .admin-table-scroll-wrap::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1.25rem;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  [data-admin-shell] .admin-table-scroll-wrap::before {
+    left: 0;
+    background: linear-gradient(to right, var(--theme-card, #fff) 20%, transparent);
+  }
+
+  [data-admin-shell] .admin-table-scroll-wrap::after {
+    right: 0;
+    background: linear-gradient(to left, var(--theme-card, #fff) 20%, transparent);
+  }
+
+  [data-admin-shell] .admin-table-scroll-wrap[data-scroll-left]::before {
+    opacity: 1;
+  }
+
+  [data-admin-shell] .admin-table-scroll-wrap[data-scroll-right]::after {
+    opacity: 1;
+  }
+
+  [data-admin-shell] .admin-table-scroll {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  /* 移动端/平板：冻结首列 */
+  @media (max-width: 1023px) {
+    [data-admin-shell] .admin-table-scope table.admin-table-sticky-first th:first-child,
+    [data-admin-shell] .admin-table-scope table.admin-table-sticky-first td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      background: var(--theme-card);
+      box-shadow: 2px 0 6px -2px color-mix(in srgb, var(--theme-text) 12%, transparent);
+    }
+
+    [data-admin-shell] .admin-table-scope table.admin-table-sticky-first thead th:first-child {
+      z-index: 2;
+      background: color-mix(in srgb, var(--theme-bg) 85%, var(--theme-card));
+    }
+
+    [data-admin-shell] .admin-table-scope table.admin-table-sticky-first tbody tr:hover td:first-child {
+      background: color-mix(in srgb, var(--theme-bg) 80%, var(--theme-card));
+    }
+
+    [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) {
+      font-size: 0.8125rem;
+    }
+  }
+
+  @media (max-width: 767px) {
+    :root {
+      --admin-table-cell-px: 0.375rem;
+      --admin-table-cell-py: 0.5rem;
+    }
+  }
+
+  @media (min-width: 768px) and (max-width: 1023px) {
+    :root {
+      --admin-table-cell-px: 0.625rem;
+    }
+
+    [data-admin-shell] .admin-mobile-main {
+      padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
+
+  /* 监控等子模块原生表格容器 */
+  [data-admin-shell] .admin-native-table-card {
+    overflow: hidden;
+    border-radius: 0.75rem;
+    border: 1px solid var(--theme-border);
+    background: var(--theme-card);
+  }
 }
 
 /* Fallbacks for older Chromium/WebKit shells that reject modern CSS functions. */

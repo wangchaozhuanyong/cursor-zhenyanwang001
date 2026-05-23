@@ -3,6 +3,8 @@ import type { Product } from "@/types/product";
 import { getPublicSiteUrl, stripHtml, toAbsoluteUrl, truncateText } from "@/utils/seo";
 import { isRestrictedProduct } from "@/utils/restrictedProduct";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
+import { getEnabledSupportChannels, parseSupportDownloadConfig } from "@/utils/supportDownloadConfig";
+import { buildTelegramLink, buildWhatsAppLink } from "@/utils/supportChannels";
 
 export function buildWebsiteJsonLd(siteInfo: SiteInfo) {
   const siteUrl = getPublicSiteUrl();
@@ -33,7 +35,23 @@ export function buildOrganizationJsonLd(siteInfo: SiteInfo) {
   } catch {
     extraLinks = [];
   }
-  const links = [siteInfo.whatsappUrl, siteInfo.facebookUrl, siteInfo.instagramUrl, siteInfo.tiktokUrl, siteInfo.xhsUrl, siteInfo.youtubeUrl, ...extraLinks]
+  const supportChannels = getEnabledSupportChannels(parseSupportDownloadConfig(siteInfo.supportDownloadConfig));
+  const channelLinks = supportChannels
+    .map((channel) => {
+      if (channel.type === "whatsapp") return buildWhatsAppLink(channel);
+      if (channel.type === "telegram") return buildTelegramLink(channel);
+      return channel.linkUrl?.trim() || "";
+    })
+    .filter(Boolean);
+  const links = [
+    ...channelLinks,
+    siteInfo.facebookUrl,
+    siteInfo.instagramUrl,
+    siteInfo.tiktokUrl,
+    siteInfo.xhsUrl,
+    siteInfo.youtubeUrl,
+    ...extraLinks,
+  ]
     .map((s) => String(s || "").trim())
     .filter(Boolean);
   return {

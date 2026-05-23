@@ -28,10 +28,6 @@ export async function updateUserProfile(id: string, data: Partial<UserProfile>) 
   await userApi.updateUser(id, data);
 }
 
-export async function updateUserStatus(id: string, accountStatus: string) {
-  await userApi.updateUserStatus(id, accountStatus);
-}
-
 export async function updateUserAccountStatus(id: string, accountStatus: string, reason?: string) {
   await userApi.updateUserAccountStatus(id, accountStatus, reason);
 }

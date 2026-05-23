@@ -8,6 +8,7 @@ const {
 const { klDateSql } = require('../../../utils/klDateRange');
 const {
   PAID_PAYMENT_SQL,
+  UNPAID_PAYMENT_SQL,
   netSalesExpr,
   refundedAmountExpr,
   orderNetRatioExpr,
@@ -89,7 +90,7 @@ async function selectTodaySummary(dateFrom, dateTo) {
         WHERE status != '${ORDER_STATUS.CANCELLED}' AND ${rangeBetween(ORDER_KL_DATE)}) AS todayOrders,
       (SELECT COUNT(*) FROM users WHERE deleted_at IS NULL AND ${rangeBetween(USER_KL_DATE)}) AS todayNewUsers,
       (SELECT COUNT(*) FROM orders
-        WHERE status = '${ORDER_STATUS.PENDING}' OR payment_status IN ('${PAYMENT_STATUS.PENDING}', 'unpaid')) AS pendingPayment,
+        WHERE status = '${ORDER_STATUS.PENDING}' OR payment_status IN (${UNPAID_PAYMENT_SQL})) AS pendingPayment,
       (SELECT COUNT(*) FROM orders WHERE status = '${ORDER_STATUS.PAID}') AS pendingShip,
       (SELECT COUNT(*) FROM orders o WHERE ${afterSale.sql}) AS pendingAfterSale,
       ${lowStockCountSql} AS lowStock,

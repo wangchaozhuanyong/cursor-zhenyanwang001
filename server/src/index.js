@@ -11,7 +11,10 @@ const { startAutoConfirmReceiveScheduler } = require('./modules/order/service/or
 const { startPaymentTimeoutScheduler } = require('./modules/order/service/orderPaymentTimeout.service');
 const { startOrderTimeoutEventScheduler } = require('./modules/order/service/orderEventTimeout.service');
 const { startMyInvoisRetryScheduler } = require('./modules/myinvois/service/myinvois.service');
-const { startMonitoringScheduler } = require('./modules/monitoring/service/monitoringScheduler.service');
+const {
+  startMonitoringScheduler,
+  startMonitoringSchedulerInline,
+} = require('./modules/monitoring/service/monitoringScheduler.service');
 const { startDataRetentionScheduler } = require('./modules/dataRetention/service/dataRetention.service');
 const { startPointsExpireScheduler } = require('./modules/loyalty/service/pointsExpireScheduler.service');
 const { getRedisUrl, pingRedis } = require('./config/redis');
@@ -88,7 +91,14 @@ bootPromise
     if (process.env.MONITORING_SCHEDULER_DISABLED !== '1') {
       const redisConfigured = Boolean(getRedisUrl() || process.env.REDIS_ENABLED === '1');
       if (!redisConfigured) {
-        console.log(`${instanceLogPrefix('Monitoring')} scheduler skipped: Redis not configured`);
+        const allowInline = process.env.MONITORING_INLINE_SCHEDULER === '1'
+          || process.env.NODE_ENV !== 'production';
+        if (allowInline) {
+          startMonitoringSchedulerInline();
+          console.log(`${instanceLogPrefix('Monitoring')} scheduler started (inline, no Redis)`);
+        } else {
+          console.log(`${instanceLogPrefix('Monitoring')} scheduler skipped: Redis not configured`);
+        }
       } else {
         try {
           const redisPing = await pingRedis();

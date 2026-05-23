@@ -188,7 +188,7 @@ async function updateNotificationTriggerSettings(rules) {
       }
     }
     if (bad.length) {
-      throw new BusinessError(400, `瑙勫垯 ${item.key} 瀛樺湪鏈煡鍗犱綅绗? ${[...new Set(bad)].join(', ')}`);
+      throw new BusinessError(400, `规则 ${item.key} 存在未知占位符：${[...new Set(bad)].join(', ')}`);
     }
 
     if (!enabled && !title && !content) {
@@ -213,7 +213,7 @@ async function isNotificationTriggerEnabled(key) {
 }
 
 /**
- * 鎸夊悗鍙伴厤缃В鏋愭渶缁堟爣棰樹笌姝ｆ枃锛涙湭寮€鍚垨鏈煡 key 鏃惰繑鍥?null
+ * 按后台配置解析最终标题与正文；未开启或未知 key 时返回 null
  * @param {string} key
  * @param {Record<string, string | number>} vars
  */

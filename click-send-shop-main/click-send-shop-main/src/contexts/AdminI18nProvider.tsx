@@ -30,9 +30,8 @@ const AdminI18nContext = createContext<AdminI18nContextValue | null>(null);
 
 function readStoredLocale(): AdminLocale {
   try {
-    if (localStorage.getItem(ADMIN_LOCALE_STORAGE_KEY) !== DEFAULT_ADMIN_LOCALE) {
-      localStorage.setItem(ADMIN_LOCALE_STORAGE_KEY, DEFAULT_ADMIN_LOCALE);
-    }
+    const stored = localStorage.getItem(ADMIN_LOCALE_STORAGE_KEY);
+    if (stored === "en" || stored === "zh") return stored;
   } catch {
     /* ignore */
   }
@@ -42,10 +41,10 @@ function readStoredLocale(): AdminLocale {
 export function AdminI18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<AdminLocale>(() => readStoredLocale());
 
-  const setLocale = useCallback((_next: AdminLocale) => {
-    setLocaleState(DEFAULT_ADMIN_LOCALE);
+  const setLocale = useCallback((next: AdminLocale) => {
+    setLocaleState(next);
     try {
-      localStorage.setItem(ADMIN_LOCALE_STORAGE_KEY, DEFAULT_ADMIN_LOCALE);
+      localStorage.setItem(ADMIN_LOCALE_STORAGE_KEY, next);
     } catch {
       /* ignore */
     }

@@ -1,5 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import type { MonitoringSeverity } from "@/services/admin/monitoringService";
+import { useAdminT } from "@/hooks/useAdminT";
 import {
   formatMonitoringSeverityLabel,
   formatMonitoringStatusLabel,
@@ -40,8 +41,10 @@ function resolveBadgeLabel(value?: string | null): string {
 }
 
 export function Badge({ value, tone }: { value?: string | null; tone?: string }) {
+  const { tText } = useAdminT();
   const className = tone || statusClass[value || ""] || severityClass[value as MonitoringSeverity] || "bg-slate-100 text-slate-600";
-  const label = resolveBadgeLabel(value);
+  const raw = resolveBadgeLabel(value);
+  const label = raw === "-" ? raw : tText(raw);
   return (
     <span className={`inline-flex shrink-0 whitespace-nowrap rounded px-2 py-0.5 text-xs font-semibold ${className}`}>
       {label}

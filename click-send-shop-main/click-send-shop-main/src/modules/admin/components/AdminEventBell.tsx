@@ -5,6 +5,9 @@ import { useNavigate } from "react-router-dom";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import * as eventService from "@/services/admin/eventCenterService";
 import type { AdminEventRecord } from "@/services/admin/eventCenterService";
+import { formatAdminEventSubtitle } from "@/utils/adminEventLabels";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const P0_SOUND_PLAYED_KEY = "admin_event_p0_sound_played_ids";
 const MAX_SOUND_PLAYED_IDS = 300;
@@ -73,6 +76,7 @@ function shouldPlayP0Sound(event: AdminEventRecord, locallyPlayed: Set<string>) 
 }
 
 export default function AdminEventBell() {
+  const { tText } = useAdminT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const anchorRef = useRef<HTMLDivElement | null>(null);
@@ -141,17 +145,17 @@ export default function AdminEventBell() {
   }, [markSoundPlayed, p0SoundQuery.data?.list]);
 
   const counts = useMemo(() => [
-    { label: "未读", value: summary?.unreadCount || 0 },
-    { label: "未处理", value: summary?.unresolvedCount || 0 },
+    { label: tText("未读"), value: summary?.unreadCount || 0 },
+    { label: tText("未处理"), value: summary?.unresolvedCount || 0 },
     { label: "P0", value: summary?.p0Count || 0 },
-    { label: "安全", value: summary?.securityCount || 0 },
+    { label: tText("安全"), value: summary?.securityCount || 0 },
   ], [summary]);
 
   return (
     <div ref={anchorRef} className="relative shrink-0">
       <button
         type="button"
-        aria-label="后台事件中心"
+        aria-label={tText("后台事件中心")}
         className={`touch-manipulation relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl hover:bg-secondary ${hasP0 ? "text-red-600" : "text-muted-foreground"}`}
         onClick={() => setOpen((v) => !v)}
       >
@@ -167,7 +171,7 @@ export default function AdminEventBell() {
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
               <AlertTriangle size={17} className={hasP0 ? "text-red-600" : "text-muted-foreground"} />
-              <p className="truncate text-sm font-semibold text-foreground">后台事件监控</p>
+              <p className="truncate text-sm font-semibold text-foreground"><Tx>后台事件监控</Tx></p>
             </div>
             <button
               type="button"
@@ -217,19 +221,19 @@ export default function AdminEventBell() {
                       <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${severityClass(item.severity)}`}>{item.severity}</span>
                       <span className="truncate text-xs font-medium text-foreground">{item.title}</span>
                     </span>
-                    <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{item.message || item.eventType}</span>
+                    <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{formatAdminEventSubtitle(item.message, item.eventType)}</span>
                   </span>
                 </button>
                 <div className="mt-1 flex flex-wrap gap-1 pl-7">
-                  <button type="button" className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "read" })}><Eye size={12} className="mr-1 inline" />已读</button>
-                  <button type="button" className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ack" })}>确认</button>
-                  <button type="button" className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "progress" })}>处理中</button>
-                  <button type="button" className="rounded px-2 py-1 text-[11px] text-emerald-700 hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "resolve" })}><CheckCircle2 size={12} className="mr-1 inline" />完成</button>
-                  <button type="button" className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ignore" })}><XCircle size={12} className="mr-1 inline" />忽略</button>
+                  <button type="button" className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "read" })}><Eye size={12} className="mr-1 inline" /><Tx>已读</Tx></button>
+                  <button type="button" className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ack" })}><Tx>确认</Tx></button>
+                  <button type="button" className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "progress" })}><Tx>处理中</Tx></button>
+                  <button type="button" className="rounded px-2 py-1 text-[11px] text-emerald-700 hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "resolve" })}><CheckCircle2 size={12} className="mr-1 inline" /><Tx>完成</Tx></button>
+                  <button type="button" className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ignore" })}><XCircle size={12} className="mr-1 inline" /><Tx>忽略</Tx></button>
                 </div>
               </div>
             )) : (
-              <div className="py-8 text-center text-xs text-muted-foreground">暂无事件</div>
+              <div className="py-8 text-center text-xs text-muted-foreground"><Tx>暂无事件</Tx></div>
             )}
           </div>
         </div>

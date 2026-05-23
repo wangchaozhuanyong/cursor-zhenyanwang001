@@ -5,6 +5,7 @@ import StorePrice from "@/components/ui/StorePrice";
 import type { ThemeConfig } from "@/types/theme";
 import { previewProduct } from "./themePreviewData";
 import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 function Btn({ label, variant = "primary" }: { label: string; variant?: "primary" | "secondary" | "danger" | "ghost" | "success" }) {
   const styles: Record<string, string> = {
@@ -22,21 +23,22 @@ function Btn({ label, variant = "primary" }: { label: string; variant?: "primary
 }
 
 export default function ComponentGalleryPreview({ config: _config }: { config: ThemeConfig }) {
+  const { tText } = useAdminT();
   return (
     <div className="space-y-4 text-[var(--theme-text)]">
       <section>
         <p className="mb-2 text-xs font-semibold text-[var(--theme-text-muted)]"><Tx>按钮</Tx></p>
         <div className="flex flex-wrap gap-2">
-          <Btn label="主按钮" />
-          <Btn label="次按钮" variant="secondary" />
-          <Btn label="危险按钮" variant="danger" />
-          <Btn label="成功按钮" variant="success" />
-          <Btn label="禁用按钮" variant="ghost" />
+          <Btn label={tText("主按钮")} />
+          <Btn label={tText("次按钮")} variant="secondary" />
+          <Btn label={tText("危险按钮")} variant="danger" />
+          <Btn label={tText("成功按钮")} variant="success" />
+          <Btn label={tText("禁用按钮")} variant="ghost" />
         </div>
       </section>
       <section>
         <p className="mb-2 text-xs font-semibold text-[var(--theme-text-muted)]"><Tx>输入</Tx></p>
-        <input className="mb-2 h-9 w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-xs" placeholder="输入框" />
+        <input className="mb-2 h-9 w-full rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-xs" placeholder={tText("输入框")} />
         <div className="flex h-9 items-center gap-2 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3">
           <span className="text-[var(--theme-text-muted)]">🔍</span>
           <span className="text-xs text-[var(--theme-text-muted)]"><Tx>搜索框</Tx></span>
@@ -54,7 +56,7 @@ export default function ComponentGalleryPreview({ config: _config }: { config: T
       <PremiumCouponCard
         colorScheme="invite"
         layout="home"
-        title="中秋9.5折"
+        title={tText("中秋9.5折")}
         amount="95%"
         amountPrefix=""
         minSpendText="满 RM 100 可用"

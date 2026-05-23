@@ -8,8 +8,8 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
  *  - variant="row"  紧凑多行（默认）— 每项含标题 + 后台短文案（最多 3 行），适合 Checkout / 购物车
  *  - variant="card" 主副文案的 3 栏卡片 — 适合商品详情页等需要强转化的位置
  *
- * 副文案优先取后台 site_settings 中的 paymentNotice / shippingNotice / supportText，
- * 未配置时回退到默认文案。
+ * 副文案优先取后台 site_settings 中的 paymentNotice / shippingNotice / supportText（售后信任文案，非客服渠道）。
+ * 未配置时回退到默认文案。联系客服请走「客服与安装」配置。
  */
 interface Props {
   className?: string;
@@ -33,7 +33,7 @@ export default function TrustInfo({ className = "", variant = "row" }: Props) {
     {
       icon: RefreshCcw,
       title: "售后无忧",
-      desc: site.supportText || "7 天无理由退换，专属客服在线响应",
+      desc: site.supportText || "7 天无理由退换，售后政策以页面说明为准",
     },
   ];
 

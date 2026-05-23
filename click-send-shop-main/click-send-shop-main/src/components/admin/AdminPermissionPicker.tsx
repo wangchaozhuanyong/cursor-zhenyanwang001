@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import { groupAdminPermissions, type AdminPermissionRow } from "@/utils/adminPermissionGroups";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type AdminPermissionPickerProps = {
   permissions: AdminPermissionRow[];
@@ -18,6 +20,7 @@ export default function AdminPermissionPicker({
   disabled = false,
   className = "",
 }: AdminPermissionPickerProps) {
+  const { tText } = useAdminT();
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
@@ -38,13 +41,13 @@ export default function AdminPermissionPicker({
   const isGroupCollapsed = (key: string) => collapsed[key] ?? false;
 
   if (!permissions.length) {
-    return <p className="text-xs text-muted-foreground">暂无权限数据</p>;
+    return <p className="text-xs text-muted-foreground"><Tx>暂无权限数据</Tx></p>;
   }
 
   return (
     <div className={`space-y-3 ${className}`}>
       <SearchBar
-        placeholder="搜索权限名称或编码..."
+        placeholder={tText("搜索权限名称或编码...")}
         value={search}
         onChange={setSearch}
       />

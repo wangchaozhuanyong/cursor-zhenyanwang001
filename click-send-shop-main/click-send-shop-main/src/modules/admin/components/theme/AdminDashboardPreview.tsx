@@ -1,6 +1,7 @@
 import { LayoutDashboard, Package, Settings } from "lucide-react";
 import type { ThemeConfig } from "@/types/theme";
 import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const rows = [
   { id: "1001", name: "精选商品 A", status: "在售", amount: "RM 88.00" },
@@ -9,6 +10,7 @@ const rows = [
 ];
 
 export default function AdminDashboardPreview({ config: _config }: { config: ThemeConfig }) {
+  const { tText } = useAdminT();
   return (
     <div className="flex min-h-[420px] overflow-hidden rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <aside className="w-28 shrink-0 border-r border-[var(--theme-border)] bg-[var(--theme-surface)] p-2 text-[10px]">
@@ -42,7 +44,7 @@ export default function AdminDashboardPreview({ config: _config }: { config: The
         </div>
         <div className="mb-2 flex gap-2">
           <input
-            placeholder="筛选商品..."
+            placeholder={tText("筛选商品...")}
             className="h-8 flex-1 rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2 text-[10px] outline-none"
           />
           <button type="button" className="h-8 rounded-md border border-[var(--theme-border)] px-2 text-[10px]"><Tx>

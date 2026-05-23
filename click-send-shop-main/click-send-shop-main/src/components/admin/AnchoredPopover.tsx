@@ -1,6 +1,8 @@
 import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useLayoutEffect, useState, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type PanelPosition = {
   top: number;
@@ -56,6 +58,7 @@ export default function AnchoredPopover({
   panelClassName,
   ariaLabel = "弹出面板",
 }: Props) {
+  const { tText } = useAdminT();
   const [position, setPosition] = useState<PanelPosition | null>(null);
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT,
@@ -107,7 +110,7 @@ export default function AnchoredPopover({
     <div className={cn("fixed inset-0 z-[70]", className)} role="presentation">
       <button
         type="button"
-        aria-label="关闭"
+        aria-label={tText("关闭")}
         className="absolute inset-0 cursor-default bg-black/20"
         onClick={onClose}
       />

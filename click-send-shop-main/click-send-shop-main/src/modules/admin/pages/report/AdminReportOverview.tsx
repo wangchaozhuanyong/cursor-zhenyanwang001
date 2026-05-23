@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { Tx } from "@/components/admin/AdminText";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
-import { labelReportCellValue } from "@/utils/adminDisplayLabels";
+import { useAdminReportLabel } from "@/hooks/useAdminReportLabel";
 import {
   buildReportFilterChips,
   clearReportFilters,
@@ -20,16 +20,17 @@ import {
 } from "@/utils/adminReportFilters";
 import { getEnabledFilters, pickReportQueryParams, sanitizeReportSearchParams } from "@/utils/reportFilters";
 import { buildReportAlerts, pickSummaryKpiEntries } from "@/utils/reportSummaryKpi";
+import { useAdminT } from "@/hooks/useAdminT";
 
 const OVERVIEW_CONFIG = REPORT_PAGES.overview;
 const EMPTY_REPORT_OVERVIEW = {};
 
-function formatOverviewValue(key: string, value: unknown) {
-  if (value === null || value === undefined || value === "") return "-";
-  return labelReportCellValue(key, value);
-}
-
 export default function AdminReportOverview() {
+  const { cell: labelReportCell } = useAdminReportLabel();
+  const formatOverviewValue = (key: string, value: unknown) => {
+    if (value === null || value === undefined || value === "") return "-";
+    return labelReportCell(key, value);
+  };
   const [searchParams, setSearchParams] = useSearchParams();
   const enabledFilters = useMemo(
     () => OVERVIEW_CONFIG.filters ?? getEnabledFilters(OVERVIEW_CONFIG.filterProfile),
@@ -118,7 +119,7 @@ export default function AdminReportOverview() {
       <ReportAlertBanners alerts={alerts} />
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-[var(--theme-text)]">核心指标</h2>
+        <h2 className="text-sm font-semibold text-[var(--theme-text)]"><Tx>核心指标</Tx></h2>
         <ReportKpiGrid
           loading={loading}
           entries={kpiEntries}
@@ -134,7 +135,7 @@ export default function AdminReportOverview() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-[var(--theme-text)]">商品排行</h2>
+        <h2 className="text-sm font-semibold text-[var(--theme-text)]"><Tx>商品排行</Tx></h2>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4">
             <p className="mb-3 text-sm font-semibold text-[var(--theme-text)]"><Tx>热销商品 TOP 10</Tx></p>
@@ -152,7 +153,7 @@ export default function AdminReportOverview() {
                     <span className="shrink-0 text-[var(--theme-text-muted)]">{String(r.sales_qty || 0)} 件</span>
                   </div>
                 ))}
-                {topHot.length === 0 ? <p className="text-sm text-[var(--theme-text-muted)]">暂无数据</p> : null}
+                {topHot.length === 0 ? <p className="text-sm text-[var(--theme-text-muted)]"><Tx>暂无数据</Tx></p> : null}
               </div>
             )}
           </div>
@@ -172,7 +173,7 @@ export default function AdminReportOverview() {
                     <span className="shrink-0 text-[var(--theme-text-muted)]">{String(r.sales_qty || 0)} 件</span>
                   </div>
                 ))}
-                {topSlow.length === 0 ? <p className="text-sm text-[var(--theme-text-muted)]">暂无数据</p> : null}
+                {topSlow.length === 0 ? <p className="text-sm text-[var(--theme-text-muted)]"><Tx>暂无数据</Tx></p> : null}
               </div>
             )}
           </div>
@@ -181,7 +182,7 @@ export default function AdminReportOverview() {
 
       {OVERVIEW_CONFIG.dataScopeNote ? (
         <section className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm text-[var(--theme-text-muted)]">
-          <span className="font-medium text-[var(--theme-text)]">数据口径：</span>{OVERVIEW_CONFIG.dataScopeNote}
+          <span className="font-medium text-[var(--theme-text)]"><Tx>数据口径：</Tx></span>{OVERVIEW_CONFIG.dataScopeNote}
         </section>
       ) : null}
     </div>

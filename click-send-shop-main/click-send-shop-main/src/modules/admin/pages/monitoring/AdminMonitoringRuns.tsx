@@ -1,57 +1,111 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getMonitoringRuns, type MonitoringRun } from "@/services/admin/monitoringService";
 import MonitoringSubnav from "./MonitoringSubnav";
+import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { Badge, formatTime } from "./monitoringUi";
-import {
-  formatMonitoringRuleLabel,
-  formatMonitoringRunTypeLabel,
-  MONITORING_RUN_STATUS_LABELS,
-} from "./monitoringLabels";
+import { MONITORING_RUN_STATUS_LABELS } from "./monitoringLabels";
 import { formatSystemErrorMessage } from "@/utils/systemErrorMessage";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
+import {
+  ADMIN_TABLE_NOWRAP_CLASS,
+  adminTdClassName,
+  adminThClassName,
+} from "@/utils/adminTableClasses";
+import { useMonitoringLabel } from "@/hooks/useMonitoringLabel";
 
 export default function AdminMonitoringRuns() {
+  const { tText } = useAdminT();
+  const ml = useMonitoringLabel();
   const [runs, setRuns] = useState<MonitoringRun[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [status, setStatus] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    setError(null);
+    setLoading(true);
+    return getMonitoringRuns({ page, pageSize: 20, status: status || undefined })
+      .then((res) => {
+        setRuns(res.data.list);
+        setTotal(res.data.total);
+      })
+      .catch((err: unknown) => {
+        setRuns([]);
+        setTotal(0);
+        setError(err instanceof Error ? err.message : "加载运行记录失败");
+      })
+      .finally(() => setLoading(false));
+  }, [page, status]);
 
   useEffect(() => {
-    getMonitoringRuns({ pageSize: 50, status }).then((res) => setRuns(res.data.list));
-  }, [status]);
+    void load();
+  }, [load]);
 
   return (
-    <div className="p-6">
-      <h1 className="mb-4 text-2xl font-bold text-slate-900">运行记录</h1>
+    <div className="space-y-4">
+      <h1 className="text-xl font-bold text-slate-900 sm:text-2xl"><Tx>运行记录</Tx></h1>
       <MonitoringSubnav />
-      <div className="mb-4 rounded border border-slate-200 bg-white p-3">
-        <select className="rounded border px-3 py-2 text-sm" value={status} onChange={(e) => setStatus(e.target.value)}>
+      {error ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
+      <div className="rounded-xl border border-slate-200 bg-white p-3">
+        <select
+          className="w-full rounded border px-3 py-2.5 text-sm sm:w-auto"
+          value={status}
+          onChange={(e) => { setPage(1); setStatus(e.target.value); }}
+        >
           {["", "running", "success", "failed", "cancelled"].map((s) => (
-            <option key={s} value={s}>{s ? MONITORING_RUN_STATUS_LABELS[s] || s : "全部状态"}</option>
+            <option key={s} value={s}>{s ? ml.status(s) || s : tText("全部状态")}</option>
           ))}
         </select>
       </div>
-      <div className="overflow-x-auto rounded border border-slate-200 bg-white">
-        <table className="w-full min-w-[980px] text-left text-sm">
+      <AdminNativeTable>
           <thead className="bg-slate-50 text-slate-500">
-            <tr><th className="p-3">运行类型</th><th className="p-3">规则</th><th className="p-3">状态</th><th className="p-3">检查数量</th><th className="p-3">异常数量</th><th className="p-3">开始时间</th><th className="p-3">结束时间</th><th className="p-3">耗时</th><th className="p-3">错误信息</th></tr>
+            <tr>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>运行类型</Tx></th>
+              <th className={adminThClassName()}><Tx>规则</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>状态</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>检查数量</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>异常数量</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>开始时间</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>结束时间</Tx></th>
+              <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>耗时</Tx></th>
+              <th className={adminThClassName()}><Tx>错误信息</Tx></th>
+            </tr>
           </thead>
           <tbody>
             {runs.map((run) => (
               <tr key={run.id} className="border-t">
-                <td className="p-3">{formatMonitoringRunTypeLabel(run.run_type)}</td>
-                <td className="p-3 text-slate-900">{run.rule_code ? formatMonitoringRuleLabel(run.rule_code) : "-"}</td>
-                <td className="p-3"><Badge value={run.status} /></td>
-                <td className="p-3">{run.checked_count}</td>
-                <td className="p-3">{run.anomaly_count}</td>
-                <td className="p-3">{formatTime(run.started_at)}</td>
-                <td className="p-3">{formatTime(run.finished_at)}</td>
-                <td className="p-3">{run.duration_ms ? `${Math.round(run.duration_ms)} ms` : "-"}</td>
-                <td className="p-3 text-red-600" title={run.error_message || ""}>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{ml.runType(run.run_type)}</td>
+                <td className={adminTdClassName("text-slate-900")}>{run.rule_code ? ml.rule(run.rule_code) : "-"}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Badge value={run.status} /></td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{run.checked_count}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{run.anomaly_count}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{formatTime(run.started_at)}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{formatTime(run.finished_at)}</td>
+                <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{run.duration_ms ? `${Math.round(run.duration_ms)} ms` : "-"}</td>
+                <td className={adminTdClassName("text-red-600")} title={run.error_message || ""}>
                   {formatSystemErrorMessage(run.error_message)}
                 </td>
               </tr>
             ))}
-            {!runs.length && <tr><td className="p-6 text-center text-slate-500" colSpan={9}>暂无运行记录</td></tr>}
+            {!runs.length && (
+              <tr>
+                <td className={adminTdClassName("py-6 text-center text-slate-500")} colSpan={9}>
+                  {loading ? "加载中..." : "暂无运行记录"}
+                </td>
+              </tr>
+            )}
           </tbody>
-        </table>
+      </AdminNativeTable>
+      <div className="flex flex-col gap-2 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+        <span>共 {total} 条</span>
+        <div className="flex gap-2">
+          <button type="button" className="rounded border px-3 py-1 disabled:opacity-40" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}><Tx>上一页</Tx></button>
+          <span className="px-2 py-1">{page}</span>
+          <button type="button" className="rounded border px-3 py-1 disabled:opacity-40" disabled={page * 20 >= total} onClick={() => setPage((p) => p + 1)}><Tx>下一页</Tx></button>
+        </div>
       </div>
     </div>
   );

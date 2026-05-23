@@ -1,4 +1,5 @@
 import { AdminLabelWithHint } from "@/components/admin/AdminFieldHint";
+import { useAdminT } from "@/hooks/useAdminT";
 import type { SiteSettings } from "@/types/admin";
 import type { SiteSettingFieldDef } from "./siteSettingsSections";
 import SettingSwitch from "./SettingSwitch";
@@ -13,7 +14,11 @@ type Props = {
 };
 
 export default function SiteSettingField({ field, value, onChange, uploadingKey, onUploadImage }: Props) {
+  const { tText } = useAdminT();
   const id = `site-field-${String(field.key)}`;
+  const label = tText(field.label);
+  const hint = field.hint ? tText(field.hint) : undefined;
+  const placeholder = field.placeholder ? tText(field.placeholder) : undefined;
 
   if (field.type === "custom") return null;
 
@@ -21,8 +26,8 @@ export default function SiteSettingField({ field, value, onChange, uploadingKey,
     return (
       <SettingSwitch
         id={id}
-        label={field.label}
-        hint={field.hint}
+        label={label}
+        hint={hint}
         checked={value === "1"}
         onCheckedChange={(checked) => onChange(field.key, checked ? "1" : "0")}
       />
@@ -32,13 +37,13 @@ export default function SiteSettingField({ field, value, onChange, uploadingKey,
   if (field.type === "textarea") {
     return (
       <div>
-        <AdminLabelWithHint htmlFor={id} label={field.label} hint={field.hint} />
+        <AdminLabelWithHint htmlFor={id} label={label} hint={hint} />
         <textarea
           id={id}
           rows={field.rows ?? 2}
           value={value}
           onChange={(e) => onChange(field.key, e.target.value)}
-          placeholder={field.placeholder}
+          placeholder={placeholder}
           className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-gold"
         />
       </div>
@@ -48,7 +53,7 @@ export default function SiteSettingField({ field, value, onChange, uploadingKey,
   if (field.type === "select") {
     return (
       <div>
-        <AdminLabelWithHint htmlFor={id} label={field.label} hint={field.hint} />
+        <AdminLabelWithHint htmlFor={id} label={label} hint={hint} />
         <select
           id={id}
           value={value}
@@ -57,7 +62,7 @@ export default function SiteSettingField({ field, value, onChange, uploadingKey,
         >
           {field.options?.map((opt) => (
             <option key={opt.value} value={opt.value}>
-              {opt.label}
+              {tText(opt.label)}
             </option>
           ))}
         </select>
@@ -69,8 +74,8 @@ export default function SiteSettingField({ field, value, onChange, uploadingKey,
     return (
       <SiteImageUploadField
         fieldKey={field.key}
-        label={field.label}
-        hint={field.hint}
+        label={label}
+        hint={hint}
         value={value}
         isUploading={uploadingKey === String(field.key)}
         onChange={(v) => onChange(field.key, v)}
@@ -81,13 +86,13 @@ export default function SiteSettingField({ field, value, onChange, uploadingKey,
 
   return (
     <div>
-      <AdminLabelWithHint htmlFor={id} label={field.label} hint={field.hint} />
+      <AdminLabelWithHint htmlFor={id} label={label} hint={hint} />
       <input
         id={id}
         type="text"
         value={value}
         onChange={(e) => onChange(field.key, e.target.value)}
-        placeholder={field.placeholder}
+        placeholder={placeholder}
         className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-gold"
       />
     </div>

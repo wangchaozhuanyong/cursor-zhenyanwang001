@@ -1,25 +1,99 @@
-import type { SiteInfo } from "@/types/content";
+import type { SiteInfo, SupportDownloadChannel } from "@/types/content";
+import {
+  buildSupportPageUrl,
+  getEnabledSupportChannels,
+  parseSupportDownloadConfig,
+} from "@/utils/supportDownloadConfig";
+import {
+  buildTelegramLink,
+  buildWhatsAppLink,
+  buildWeChatLink,
+  cleanSupportText,
+} from "@/utils/supportChannels";
 
-/** 打开客服渠道：优先 WhatsApp，其次复制微信号，最后跳转联系页 */
-export function openCustomerService(siteInfo: Pick<SiteInfo, "whatsappUrl" | "contactWhatsApp" | "wechatId">): {
-  action: "whatsapp" | "wechat_copy" | "contact_page";
+export type CustomerServiceAction = "whatsapp" | "wechat_copy" | "telegram" | "support_page";
+
+export type CustomerServiceResult = {
+  action: CustomerServiceAction;
   wechatId?: string;
-} {
-  const whatsappUrl =
-    (siteInfo.whatsappUrl || "").trim() ||
-    (siteInfo.contactWhatsApp
-      ? `https://wa.me/${siteInfo.contactWhatsApp.replace(/\D/g, "")}?text=${encodeURIComponent("你好，我想咨询商品")}`
-      : "");
+  channelId?: string;
+};
 
-  if (whatsappUrl) {
-    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-    return { action: "whatsapp" };
-  }
+export type CustomerServiceSiteInfo = Pick<SiteInfo, "supportDownloadConfig">;
 
-  const wechatId = (siteInfo.wechatId || "").trim();
-  if (wechatId) {
-    return { action: "wechat_copy", wechatId };
-  }
+const DEFAULT_WHATSAPP_TEXT = "你好，我想咨询商品";
 
-  return { action: "contact_page" };
+function appendWhatsAppText(url: string, text = DEFAULT_WHATSAPP_TEXT): string {
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}text=${encodeURIComponent(text)}`;
 }
+
+/** 打开指定客服渠道；无法直接打开时返回 none */
+export function openSupportChannel(channel: SupportDownloadChannel): CustomerServiceAction | "none" {
+  if (channel.type === "whatsapp") {
+    const url = buildWhatsAppLink(channel);
+    if (url) {
+      window.open(appendWhatsAppText(url), "_blank", "noopener,noreferrer");
+      return "whatsapp";
+    }
+    return "none";
+  }
+  if (channel.type === "wechat") {
+    const account = cleanSupportText(channel.account);
+    const link = buildWeChatLink(channel);
+    if (link) {
+      window.open(link, "_blank", "noopener,noreferrer");
+      return "telegram";
+    }
+    if (account) return "wechat_copy";
+    return "none";
+  }
+  const telegramUrl = buildTelegramLink(channel);
+  if (telegramUrl) {
+    window.open(telegramUrl, "_blank", "noopener,noreferrer");
+    return "telegram";
+  }
+  return "none";
+}
+
+/**
+ * 打开客服：按后台「客服中心配置」渠道顺序尝试 WhatsApp → 微信 → Telegram，
+ * 均不可用时跳转客服中心页。
+ */
+export function openCustomerService(siteInfo: CustomerServiceSiteInfo): CustomerServiceResult {
+  const config = parseSupportDownloadConfig(siteInfo.supportDownloadConfig);
+  const channels = getEnabledSupportChannels(config);
+
+  for (const channel of channels) {
+    if (channel.type !== "whatsapp") continue;
+    const opened = openSupportChannel(channel);
+    if (opened === "whatsapp") {
+      return { action: "whatsapp", channelId: channel.id };
+    }
+  }
+
+  for (const channel of channels) {
+    if (channel.type !== "wechat") continue;
+    const account = cleanSupportText(channel.account);
+    const link = buildWeChatLink(channel);
+    if (link) {
+      window.open(link, "_blank", "noopener,noreferrer");
+      return { action: "whatsapp", channelId: channel.id };
+    }
+    if (account) {
+      return { action: "wechat_copy", wechatId: account, channelId: channel.id };
+    }
+  }
+
+  for (const channel of channels) {
+    if (channel.type !== "telegram") continue;
+    const opened = openSupportChannel(channel);
+    if (opened === "telegram") {
+      return { action: "telegram", channelId: channel.id };
+    }
+  }
+
+  return { action: "support_page" };
+}
+
+export { buildSupportPageUrl };

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Eye, EyeOff, Phone, Lock, User, KeyRound } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { FormFieldShake } from "@/modules/micro-interactions";
 import { authErrorMessage, validatePhoneForCountry, validateStrongPassword } from "@/utils/authValidation";
 import { useFormFieldFocus } from "@/hooks/useFormFieldFocus";
+import { useSupportRuntime } from "@/hooks/useSupportRuntime";
 
 const REMEMBER_KEY = "login_remembered_phone";
 /** text-base(16px) 避免 iOS 聚焦时自动缩放视口导致整页闪动 */
@@ -48,8 +49,11 @@ export default function Login() {
   const logoSrc = resolveSiteLogoUrl(siteInfo);
   const siteName = siteInfo.siteName || "官方商城";
   const slogan = siteInfo.siteSlogan || "Premium Lifestyle";
-  const supportContact =
-    siteInfo.contactWhatsApp || siteInfo.contactPhone || "客服";
+  const { channels } = useSupportRuntime();
+  const supportContact = useMemo(() => {
+    const wa = channels.find((channel) => channel.type === "whatsapp");
+    return wa?.account?.trim() || siteInfo.contactPhone || siteInfo.contactEmail || "客服";
+  }, [channels, siteInfo.contactEmail, siteInfo.contactPhone]);
   const loginState = location.state as { from?: string; fromState?: unknown } | null;
   const rawFrom = loginState?.from;
   const fromState = loginState?.fromState;

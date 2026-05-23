@@ -4,10 +4,13 @@ import { cn } from "@/lib/utils";
 import { REPORT_REGISTRY_BY_KEY } from "./reportRegistry";
 import { fetchProfitDailyReport, fetchProfitMonthlyReport } from "@/services/admin/reportService";
 import AdminReportGenericPage from "./pages/AdminReportGenericPage";
+import { Tx } from "@/components/admin/AdminText";
+import { useAdminT } from "@/hooks/useAdminT";
 
 type ProfitPeriod = "daily" | "monthly";
 
 export default function AdminProfitDailyReport() {
+  const { tText } = useAdminT();
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -42,12 +45,12 @@ export default function AdminProfitDailyReport() {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-[var(--theme-text-muted)]">统计粒度</span>
+        <span className="text-xs text-[var(--theme-text-muted)]"><Tx>统计粒度</Tx></span>
         <div className="inline-flex rounded-lg border border-[var(--theme-border)] bg-[var(--theme-bg)] p-0.5">
           {(
             [
-              { id: "daily" as const, label: "按日" },
-              { id: "monthly" as const, label: "按月" },
+              { id: "daily" as const, label: tText("按日") },
+              { id: "monthly" as const, label: tText("按月") },
             ] as const
           ).map((item) => (
             <button

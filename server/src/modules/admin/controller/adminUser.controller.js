@@ -69,20 +69,6 @@ exports.update = asyncRoute(async (req, res) => {
   res.success(r.data, r.message);
 });
 
-exports.updateStatus = asyncRoute(async (req, res) => {
-  const before = await svc.getUserById(req.params.id).then((r) => r.data).catch(() => null);
-  const r = await svc.updateUserStatus(req.params.id, req.body, req.user?.id, req);
-  await dataChangeTracker.trackFromRequest(req, {
-    module: 'user',
-    entityType: 'user',
-    entityId: req.params.id,
-    action: 'status.update',
-    beforeData: before,
-    afterData: r.data,
-  });
-  res.success(r.data, r.message);
-});
-
 exports.updateAccountStatus = asyncRoute(async (req, res) => {
   const before = await svc.getUserById(req.params.id).then((r) => r.data).catch(() => null);
   const r = await svc.updateUserAccountStatus(req.params.id, req.body, req.user?.id, req);

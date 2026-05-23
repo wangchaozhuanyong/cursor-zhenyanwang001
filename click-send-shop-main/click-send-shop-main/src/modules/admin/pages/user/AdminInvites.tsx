@@ -19,8 +19,10 @@ import {
   removeInviteRecordFilterChip,
 } from "@/utils/adminInviteRecordFilters";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { useAdminT } from "@/hooks/useAdminT";
 
 export default function AdminInvites() {
+  const { tText } = useAdminT();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -62,14 +64,14 @@ export default function AdminInvites() {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <SearchBar placeholder="搜索邀请人 / 被邀请人 / 邀请码..." value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
+        <SearchBar placeholder={tText("搜索邀请人 / 被邀请人 / 邀请码...")} value={search} onChange={(v) => { setSearch(v); setPage(1); }} />
         <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={handleRemoveFilterChip} />
       </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         {[
-          { label: "总邀请记录", value: String(summary.totalRecords || total || 0) },
-          { label: "邀请人数", value: String(summary.inviterUsers || 0) },
-          { label: "被邀请人数", value: String(summary.inviteeUsers || 0) },
+          { label: tText("总邀请记录"), value: String(summary.totalRecords || total || 0) },
+          { label: tText("邀请人数"), value: String(summary.inviterUsers || 0) },
+          { label: tText("被邀请人数"), value: String(summary.inviteeUsers || 0) },
         ].map((stat) => (
           <div key={stat.label} className="rounded-xl border border-border bg-card p-4 text-center">
             <p className="text-lg font-bold text-foreground">{stat.value}</p>

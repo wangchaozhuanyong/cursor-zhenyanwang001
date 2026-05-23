@@ -163,11 +163,7 @@ export interface SiteSettings {
   /* 联系方式 */
   contactPhone?: string;
   contactEmail?: string;
-  contactWhatsApp?: string;
-  whatsappUrl?: string;
-  wechatId?: string;
   address?: string;
-  businessHours?: string;
 
   /* 社交 */
   instagramUrl?: string;

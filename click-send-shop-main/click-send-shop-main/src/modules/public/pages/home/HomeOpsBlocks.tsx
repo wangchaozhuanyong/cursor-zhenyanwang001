@@ -124,7 +124,7 @@ export default function HomeOpsBlocks() {
 
   return (
     <section className="border-y border-[color-mix(in_srgb,var(--theme-border)_80%,transparent)] bg-[var(--theme-surface)]">
-      <div className="grid grid-cols-5 gap-x-1 gap-y-3 px-3 py-3.5 sm:grid-cols-6 sm:px-4" role="navigation" aria-label="快捷入口">
+      <div className="grid grid-cols-5 gap-x-1 gap-y-3 px-3 py-3.5 sm:grid-cols-6 sm:px-4 md:grid-cols-6 lg:grid-cols-8 lg:gap-x-2 lg:px-6" role="navigation" aria-label="快捷入口">
         {navSource.slice(0, 12).map((item) => (
           <button
             key={item.id}

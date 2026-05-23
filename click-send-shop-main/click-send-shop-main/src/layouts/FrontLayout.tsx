@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigationType } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
 import { StoreOutletFallback } from "@/components/AppRouteFallback";
 import FrontPageTransition from "@/components/FrontPageTransition";
+import StoreShell from "@/layouts/StoreShell";
 import { isStoreTabPath } from "@/utils/storeBottomInset";
 
 /**
@@ -33,14 +34,16 @@ const FrontLayout = React.forwardRef<HTMLDivElement>((_, ref) => {
 
   return (
     <div ref={ref} className="relative overflow-x-clip">
-      <div className="relative isolate w-full">
-        <FrontPageTransition>
-          <Suspense fallback={<StoreOutletFallback />}>
-            <Outlet />
-          </Suspense>
-        </FrontPageTransition>
-      </div>
-      <BottomNav />
+      <StoreShell>
+        <div className="relative isolate w-full">
+          <FrontPageTransition>
+            <Suspense fallback={<StoreOutletFallback />}>
+              <Outlet />
+            </Suspense>
+          </FrontPageTransition>
+        </div>
+        <BottomNav />
+      </StoreShell>
     </div>
   );
 });

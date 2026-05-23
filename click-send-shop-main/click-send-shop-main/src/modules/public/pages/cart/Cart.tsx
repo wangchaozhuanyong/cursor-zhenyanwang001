@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Minus, Plus, Trash2, ShoppingBag, Loader2, Check } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import StorePageHeader from "@/components/store/StorePageHeader";
+import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
 import { cartLineKey, useCartStore } from "@/stores/useCartStore";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { isLoggedIn } from "@/utils/token";
@@ -79,8 +80,9 @@ export default function Cart() {
   };
 
   return (
-    <div className="store-page-shell store-bottom-cart-space bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0">
+    <div className="store-page-shell store-bottom-cart-space bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0 lg:pb-0">
       <StorePageHeader
+        className={STORE_MOBILE_PAGE_HEADER_CLASS}
         centerTitle
         title={headerTitle}
         rightSlot={

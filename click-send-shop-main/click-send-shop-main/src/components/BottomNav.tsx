@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useCartStore } from "@/stores/useCartStore";
 import { isLoggedIn } from "@/utils/token";
+import { cn } from "@/lib/utils";
 import { getBottomNavInnerClassName, getBottomNavShellClassName } from "@/utils/themeVisuals";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 
@@ -134,7 +135,7 @@ export default function BottomNav() {
 
   return (
     <nav
-      className={getBottomNavShellClassName(navStyle, "fixed")}
+      className={cn(getBottomNavShellClassName(navStyle, "fixed"), "lg:hidden")}
       data-theme-nav-style={navStyle}
       style={{
         paddingBottom: "max(env(safe-area-inset-bottom), 0px)",

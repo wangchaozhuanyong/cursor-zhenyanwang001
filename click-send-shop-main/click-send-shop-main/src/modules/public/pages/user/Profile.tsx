@@ -29,6 +29,7 @@ import SkinPickerDialog from "@/components/SkinPickerDialog";
 import { BottomSheetConfirm } from "@/modules/micro-interactions";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import StorePageHeader from "@/components/store/StorePageHeader";
+import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useCouponStore } from "@/stores/useCouponStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
@@ -70,6 +71,47 @@ function gateNavigate(navigate: ReturnType<typeof useNavigate>, path: string, re
     return;
   }
   navigate(path, { state: { from: "/profile" } });
+}
+
+function ProfileDesktopNav({
+  loggedIn,
+  onNavigate,
+}: {
+  loggedIn: boolean;
+  onNavigate: (path: string, auth?: boolean) => void;
+}) {
+  const items = [
+    { label: "个人概览", path: "/profile", auth: false },
+    { label: "我的订单", path: "/orders", auth: true },
+    { label: "收货地址", path: "/address", auth: true },
+    { label: "我的优惠券", path: "/coupons", auth: true },
+    { label: "我的收藏", path: "/favorites", auth: false },
+    { label: "账户设置", path: "/settings", auth: true },
+  ];
+
+  return (
+    <nav className="sticky top-[calc(var(--store-desktop-header-height,4rem)+1.5rem)] space-y-1" aria-label="账户导航">
+      {items.map((item) => (
+        <button
+          key={item.path}
+          type="button"
+          onClick={() => onNavigate(item.path, item.auth)}
+          className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[var(--theme-text-muted)] transition-colors hover:bg-[var(--theme-bg)] hover:text-[var(--theme-text)]"
+        >
+          {item.label}
+        </button>
+      ))}
+      {!loggedIn ? (
+        <button
+          type="button"
+          onClick={() => onNavigate("/login", false)}
+          className="mt-2 w-full rounded-xl bg-[var(--theme-primary)] py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)]"
+        >
+          登录 / 注册
+        </button>
+      ) : null}
+    </nav>
+  );
 }
 
 function SectionTitle({ title, rightLabel, onRightClick }: { title: string; rightLabel?: string; onRightClick?: () => void }) {
@@ -274,6 +316,7 @@ export default function Profile() {
   return (
     <div className="store-page store-page-shell store-bottom-safe text-[var(--theme-text)]">
       <StorePageHeader
+        className={STORE_MOBILE_PAGE_HEADER_CLASS}
         title={
           <span className="inline-flex min-w-0 items-center gap-2.5">
             <img
@@ -305,7 +348,11 @@ export default function Profile() {
           </>
         )}
       />
-      <main className="mx-auto w-full space-y-3 px-[var(--store-page-x)] pt-[var(--store-page-y)] sm:max-w-lg sm:space-y-4 sm:px-4 sm:pt-4">
+      <main className="mx-auto w-full max-w-screen-xl space-y-3 px-[var(--store-page-x)] pt-[var(--store-page-y)] sm:max-w-lg sm:space-y-4 sm:px-4 sm:pt-4 lg:grid lg:max-w-none lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start lg:gap-8 lg:space-y-0 lg:px-8 lg:pb-12 lg:pt-6">
+        <aside className="hidden lg:block">
+          <ProfileDesktopNav loggedIn={loggedIn} onNavigate={(path, auth) => gateNavigate(navigate, path, auth ?? true)} />
+        </aside>
+        <div className="min-w-0 space-y-3 sm:space-y-4">
         <section className="space-y-3">
           {!loggedIn ? (
             <div className={`${CARD_CLASS} relative overflow-hidden ${SECTION_PADDING}`}>
@@ -458,6 +505,7 @@ export default function Profile() {
             退出登录
           </button>
         ) : null}
+        </div>
       </main>
 
       <BottomSheetConfirm

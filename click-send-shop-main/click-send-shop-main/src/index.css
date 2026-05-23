@@ -358,6 +358,24 @@
         env(safe-area-inset-bottom, 0px)
     );
   }
+
+  @media (min-width: 1024px) {
+    :root {
+      --store-bottom-nav-height: 0px;
+      --store-desktop-header-height: 4rem;
+      --store-tablet-header-height: 3.25rem;
+      --store-page-x: 24px;
+    }
+
+    .store-bottom-safe {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    .store-bottom-cart-space,
+    .store-bottom-action-space {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+  }
   .store-floating-nav-space {
     padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px));
   }

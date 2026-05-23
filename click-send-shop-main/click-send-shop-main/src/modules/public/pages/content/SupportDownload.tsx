@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Copy, Smartphone } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import StorePageHeader from "@/components/store/StorePageHeader";
+import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
 import SeoHead from "@/components/SeoHead";
 import SupportChannelCard from "@/components/support/SupportChannelCard";
 import InstallPlatformCard from "@/components/support/InstallPlatformCard";
@@ -185,9 +186,9 @@ export default function SupportDownload() {
         canonical={buildCanonical("/support-download")}
         robots="index,follow"
       />
-      <StorePageHeader title={config.title} centerTitle />
+      <StorePageHeader className={STORE_MOBILE_PAGE_HEADER_CLASS} title={config.title} centerTitle />
 
-      <main className="mx-auto w-full max-w-lg space-y-3 px-[var(--store-page-x)] py-[var(--store-page-y)] pb-6 sm:px-4 sm:py-4">
+      <main className="mx-auto w-full max-w-lg space-y-3 px-[var(--store-page-x)] py-[var(--store-page-y)] pb-6 sm:px-4 sm:py-4 md:max-w-screen-xl md:px-6 lg:px-8">
         {availableViews.length > 0 ? (
           <div
             className="grid gap-2 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-1 shadow-[var(--theme-shadow)]"

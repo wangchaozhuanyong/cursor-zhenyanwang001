@@ -244,7 +244,7 @@ export default function GuestHome() {
           <div className={HOME_HERO_STACK_CLASS}>
         {guestBannerEnabled ? (
           <AnimatedSection>
-            <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
+            <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow lg:max-h-[26rem]" : "lg:max-h-[26rem] lg:overflow-hidden lg:rounded-2xl"}>
               <BannerCarousel
                 banners={banners}
                 loading={bannersLoading}

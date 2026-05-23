@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, type ReactNode } from "react
 import { useSearchParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import StorePageHeader from "@/components/store/StorePageHeader";
+import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import { motion } from "framer-motion";
 import { useMotionConfig } from "@/modules/micro-interactions";
@@ -243,6 +244,7 @@ export default function Categories() {
     <div className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <SeoHead title={title} description={description} canonical={canonical} robots={robots} />
       <StorePageHeader
+        className={STORE_MOBILE_PAGE_HEADER_CLASS}
         title="分类"
         titleInlineSlot={
           <StoreSearchField

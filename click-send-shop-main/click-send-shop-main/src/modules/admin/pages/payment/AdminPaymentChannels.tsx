@@ -60,7 +60,7 @@ export default function AdminPaymentChannels() {
       toast.success(tText("已保存"));
       await invalidateChannels();
     },
-    onError: (e) => toast.error(toastErrorMessage(e, "保存失败")),
+    onError: (e) => toast.error(toastErrorMessage(e, tText("保存失败"))),
   });
 
   const saveRow = async (id: string, patch: Parameters<typeof paymentAdmin.updateAdminPaymentChannel>[1]) => {
@@ -148,8 +148,8 @@ export default function AdminPaymentChannels() {
                       value={row.environment}
                       onChange={(e) => void saveRow(row.id, { environment: e.target.value as "live" | "sandbox" })}
                     >
-                      <option value="live">{labelPaymentEnvironment("live")}</option>
-                      <option value="sandbox">{labelPaymentEnvironment("sandbox")}</option>
+                      <option value="live">{tText(labelPaymentEnvironment("live"))}</option>
+                      <option value="sandbox">{tText(labelPaymentEnvironment("sandbox"))}</option>
                     </select>
                   </label>
                 </div>

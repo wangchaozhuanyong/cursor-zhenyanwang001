@@ -20,4 +20,4 @@ export const HOME_NAV_ICON_FRAME_CLASS =
   "flex h-12 w-12 shrink-0 items-center justify-center";
 
 export const HOME_NAV_LABEL_CLASS =
-  "w-full truncate px-0.5 text-[11px] font-normal leading-tight text-[var(--theme-text-muted-on-surface)]";
+  "store-caption w-full truncate px-0.5 font-medium leading-tight text-[var(--theme-text-muted-on-surface)]";

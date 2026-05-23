@@ -301,7 +301,7 @@ export default function GuestHome() {
         {isHomeModuleEnabled(homeModules, "guest_recommend", "guest") ? (
         <AnimatedSection delay={0.12}>
         <section>
-          <h2 className="mb-3 flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text)] md:mb-4">
+          <h2 className="store-section-title mb-3 flex items-center gap-2 tracking-widest text-[var(--theme-text)] md:mb-4">
             <Sparkles className="h-5 w-5 text-[var(--theme-price)]" />
             全网爆款
           </h2>

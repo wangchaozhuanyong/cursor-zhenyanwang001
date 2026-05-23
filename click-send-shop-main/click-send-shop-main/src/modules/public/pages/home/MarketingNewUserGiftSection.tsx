@@ -50,7 +50,7 @@ export default function MarketingNewUserGiftSection({ delay = 0 }: { delay?: num
             <Gift size={22} className="text-[var(--theme-gift-badge-foreground)]" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-base font-bold text-[var(--theme-invite-promo-foreground)]">
+            <h2 className="store-section-title text-[var(--theme-invite-promo-foreground)]">
               {payload.activity.title || "新人礼包"}
             </h2>
             <p className={`mt-1 text-xs ${THEME_INVITE_PROMO_MUTED}`}>

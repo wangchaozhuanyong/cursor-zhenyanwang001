@@ -65,7 +65,7 @@ export default function FlashSaleSection({ delay = 0 }: { delay?: number }) {
     <section className="w-full">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <h2 className="truncate text-base font-bold text-[var(--theme-text)]">{activity.title}</h2>
+          <h2 className="store-section-title truncate text-[var(--theme-text)]">{activity.title}</h2>
           {activity.subtitle ? (
             <p className="truncate text-xs text-[var(--theme-text-muted)]">{activity.subtitle}</p>
           ) : null}

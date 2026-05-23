@@ -43,7 +43,7 @@ import SilkProductGrid from "@/components/motion/SilkProductGrid";
 function Header({ title, icon: Icon, subtitle }: { title: string; icon?: React.ElementType; subtitle?: string }) {
   return (
     <div className="mb-3 md:mb-4">
-      <h2 className="flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text-on-surface)]">
+      <h2 className="flex items-center gap-2 store-section-title tracking-widest text-[var(--theme-text-on-surface)]">
         {Icon && <Icon className="h-5 w-5 text-[var(--theme-price)]" />}
         {title}
       </h2>
@@ -278,7 +278,7 @@ export default function MemberHome() {
         <AnimatedSection delay={0.14}>
         <section>
           <div className="mb-3 flex items-center justify-between md:mb-4">
-            <h2 className="flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text-on-surface)]">
+            <h2 className="flex items-center gap-2 store-section-title tracking-widest text-[var(--theme-text-on-surface)]">
               <Flame className="h-5 w-5 text-[var(--theme-price)]" />
               今日热销
             </h2>
@@ -306,7 +306,7 @@ export default function MemberHome() {
         <section>
           <div className="mb-3 flex items-center justify-between md:mb-4">
             <div>
-              <h2 className="flex items-center gap-2 text-base font-bold tracking-widest text-[var(--theme-text-on-surface)]">
+              <h2 className="flex items-center gap-2 store-section-title tracking-widest text-[var(--theme-text-on-surface)]">
                 <Star className="h-5 w-5 text-[var(--theme-price)]" />
                 猜你喜欢
               </h2>

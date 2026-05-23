@@ -16,6 +16,7 @@ import { getProductSalesCount, hasProductSales, productSalesLabel } from "@/util
 import { trackEvent } from "@/services/analyticsService";
 import { cn } from "@/lib/utils";
 import { isProductNewArrival } from "@/utils/productNewArrival";
+import StorePriceAmount from "@/components/store/StorePriceAmount";
 
 export type ProductCardSiteContext = {
   restrictedComplianceEnabled: boolean;
@@ -126,9 +127,10 @@ function ProductCardInner({
 
   const nameRow = (
     <h3
-      className={`line-clamp-2 text-[13px] font-medium leading-snug text-[var(--theme-text)] ${
-        cardCenter ? "text-center" : ""
-      }`}
+      className={cn(
+        "line-clamp-2 text-[13.5px] font-semibold leading-snug text-[var(--theme-text)]",
+        cardCenter && "text-center",
+      )}
     >
       {product.name}
     </h3>
@@ -142,24 +144,23 @@ function ProductCardInner({
   const formatMoney = (v: number) => v.toFixed(2).replace(/\.00$/, "");
   const metaRow = (
     <div className={cn("w-full min-w-0", cardCenter && !isHorizontal ? "text-center" : "")}>
-      <p
-        className={cn(
-          "font-extrabold leading-none text-[var(--theme-price)]",
-          "whitespace-nowrap",
-          isHorizontal ? "text-base" : "text-[28px]",
-        )}
-        style={{ whiteSpace: "nowrap" }}
-      >
-        RM&nbsp;{formatMoney(priceNum)}
-      </p>
+      {isHorizontal ? (
+        <StorePriceAmount
+          amount={formatMoney(priceNum)}
+          amountClassName="text-[15px] font-extrabold leading-tight sm:text-base"
+          currencyClassName="mr-0.5 text-[11px] font-bold leading-none sm:text-xs"
+        />
+      ) : (
+        <StorePriceAmount amount={formatMoney(priceNum)} />
+      )}
       <div className={cn("mt-1 flex min-w-0 items-center justify-between gap-2")}>
         {showOriginal ? (
-          <span className="truncate text-xs text-[var(--theme-muted)] line-through">
+          <span className="store-caption truncate text-[var(--theme-muted)] line-through">
             RM {formatMoney(originalPriceNum)}
           </span>
         ) : <span />}
         {showSales ? (
-          <span className="shrink-0 text-xs tabular-nums text-[var(--theme-text-muted)]">
+          <span className="store-caption shrink-0 tabular-nums text-[var(--theme-text-muted)]">
             {productSalesLabel(salesCount)}
           </span>
         ) : null}

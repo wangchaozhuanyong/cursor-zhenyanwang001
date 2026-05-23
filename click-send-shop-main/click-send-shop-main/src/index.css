@@ -215,6 +215,104 @@
     background: transparent;
     color: var(--theme-text);
   }
+
+  .store-page-title {
+    font-size: 17px;
+    line-height: 1.25;
+    font-weight: 650;
+  }
+
+  .store-section-title {
+    font-size: 17px;
+    line-height: 1.25;
+    font-weight: 700;
+  }
+
+  .store-card-title {
+    font-size: 14px;
+    line-height: 1.35;
+    font-weight: 600;
+  }
+
+  .store-body-text {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .store-body-small {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .store-caption {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .store-micro {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  .store-price-card {
+    font-size: 17px;
+    line-height: 1;
+    font-weight: 800;
+  }
+
+  .store-price-detail {
+    font-size: 23px;
+    line-height: 1;
+    font-weight: 800;
+  }
+
+  .store-stat-value {
+    font-size: 30px;
+    line-height: 1;
+    font-weight: 800;
+  }
+
+  .store-coupon-amount-home {
+    font-size: 18px;
+    line-height: 1;
+    font-weight: 800;
+  }
+
+  .store-coupon-amount-list {
+    font-size: 20px;
+    line-height: 1;
+    font-weight: 800;
+  }
+
+  @media (min-width: 640px) {
+    .store-page-title {
+      font-size: 18px;
+    }
+
+    .store-section-title {
+      font-size: 18px;
+    }
+
+    .store-price-card {
+      font-size: 18px;
+    }
+
+    .store-price-detail {
+      font-size: 26px;
+    }
+
+    .store-stat-value {
+      font-size: 34px;
+    }
+
+    .store-coupon-amount-home {
+      font-size: 20px;
+    }
+
+    .store-coupon-amount-list {
+      font-size: 22px;
+    }
+  }
   .store-card {
     background: var(--theme-surface);
     border: 1px solid var(--theme-border);
@@ -381,7 +479,12 @@
     color: var(--theme-invite-promo-muted);
   }
 
-  /** 优惠券列表卡（premium/deal）：与邀请推广条同一套 shell / CTA 变量 */
+  .theme-invite-promo-cta {
+    background: var(--theme-invite-promo-cta-bg);
+    color: var(--theme-invite-promo-cta-fg);
+  }
+
+  /** 优惠券列表卡（premium/deal）：优惠券活动专属 shell / CTA 变量 */
   .bg-theme-coupon-card-shell {
     background: var(--theme-coupon-card-shell-bg);
     color: var(--theme-coupon-card-shell-fg);

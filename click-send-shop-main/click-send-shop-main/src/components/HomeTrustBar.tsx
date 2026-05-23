@@ -33,12 +33,12 @@ export default function HomeTrustBar({ className }: HomeTrustBarProps) {
             aria-hidden
           >
             <Icon
-              size={15}
+              size={16}
               strokeWidth={1.75}
               className="text-[color-mix(in_srgb,var(--theme-text)_58%,var(--theme-text-muted))]"
             />
           </span>
-          <span className="w-full whitespace-nowrap text-[10px] font-medium leading-none tracking-[0.02em] text-[color-mix(in_srgb,var(--theme-text)_82%,var(--theme-text-muted))] sm:text-[11px]">
+          <span className="store-caption w-full whitespace-nowrap font-medium leading-none tracking-[0.02em] text-[color-mix(in_srgb,var(--theme-text)_82%,var(--theme-text-muted))]">
             {label}
           </span>
         </div>

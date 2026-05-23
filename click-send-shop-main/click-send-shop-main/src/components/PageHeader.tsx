@@ -23,7 +23,7 @@ export default function PageHeader({ title, onBack, backFallback, rightSlot }: P
           >
             <ArrowLeft size={20} className="text-foreground" />
           </button>
-          <h1 className="text-base font-semibold text-foreground">{title}</h1>
+          <h1 className="store-page-title text-foreground">{title}</h1>
         </div>
         {rightSlot && <div>{rightSlot}</div>}
       </div>

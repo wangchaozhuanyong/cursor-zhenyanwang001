@@ -189,7 +189,7 @@ export default function BottomNav() {
                   )}
                 </span>
                 <span
-                  className={`text-[11px] leading-tight ${
+                  className={`text-xs leading-tight ${
                     isActive
                       ? "font-bold text-[var(--theme-primary)]"
                       : "font-medium text-[var(--theme-text-muted)]"

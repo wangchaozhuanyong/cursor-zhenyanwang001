@@ -43,7 +43,7 @@ export default function MarketingCouponCenterSection({ delay = 0 }: { delay?: nu
     <AnimatedSection delay={delay}>
     <section className="w-full">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-base font-bold text-[var(--theme-text-on-surface)]">
+        <h2 className="store-section-title flex items-center gap-2 text-[var(--theme-text-on-surface)]">
           <Ticket className="h-5 w-5 text-[var(--theme-primary)]" />
           {payload.activity.title || "领券中心"}
         </h2>

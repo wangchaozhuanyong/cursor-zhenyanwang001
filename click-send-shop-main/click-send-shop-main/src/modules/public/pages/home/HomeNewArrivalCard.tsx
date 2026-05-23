@@ -5,6 +5,7 @@ import { PRODUCT_BLUR_PLACEHOLDER } from "@/constants/productBlurPlaceholder";
 import { ProgressiveImage } from "@/modules/micro-interactions";
 import { resolveProductImageSrc } from "@/utils/uploadImageVariant";
 import { resolveNewArrivalImage } from "./newArrivalOps";
+import StorePriceAmount from "@/components/store/StorePriceAmount";
 
 interface HomeNewArrivalCardProps {
   product: Product;
@@ -69,9 +70,13 @@ export default function HomeNewArrivalCard({
       <div className="px-0.5 pb-1 pt-2">
         <p className="line-clamp-1 text-xs font-semibold text-[var(--theme-text-on-surface)]">{product.name}</p>
         {showPrice ? (
-          <p className="mt-1 whitespace-nowrap text-xs font-bold text-[var(--theme-price)]">
-            RM&nbsp;{product.price}
-          </p>
+          <div className="mt-1">
+            <StorePriceAmount
+              amount={product.price}
+              amountClassName="text-[13px] font-bold leading-none"
+              currencyClassName="mr-0.5 text-[10px] font-bold leading-none"
+            />
+          </div>
         ) : null}
       </div>
     </Link>

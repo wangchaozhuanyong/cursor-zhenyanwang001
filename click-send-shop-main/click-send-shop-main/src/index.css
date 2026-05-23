@@ -376,8 +376,17 @@
       padding-bottom: env(safe-area-inset-bottom, 0px);
     }
   }
+
+  /* 悬浮底栏（navStyle=floating）比贴底栏更高，统一抬高 --store-bottom-nav-height */
+  @media (max-width: 1023px) {
+    html[data-app-scope="store"][data-theme-nav-style="floating"] {
+      --store-bottom-nav-height: 86px;
+    }
+  }
+
+  /* 与 store-bottom-safe 等价；保留类名供按需显式使用 */
   .store-floating-nav-space {
-    padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(var(--store-bottom-nav-height, 72px) + env(safe-area-inset-bottom, 0px));
   }
   .z-header { z-index: 40; }
   .z-bottom-nav { z-index: 50; }

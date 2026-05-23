@@ -3,10 +3,9 @@ const path = require('path');
 const { generateId } = require('../../../utils/helpers');
 const repo = require('../repository/adminExport.repository');
 const adminReportService = require('./adminReport.service');
-const adminProductService = require('./adminProduct.service');
-const adminOrderService = require('./adminOrder.service');
-const adminUserService = require('./adminUser.service');
 const { EXPORT_TASK_STATUS } = require('../../../constants/status');
+const { getReportDefinition, listExportableReports } = require('../report/adminReportRegistry');
+const siteCapabilitiesService = require('../../siteCapabilities/service/siteCapabilities.service');
 const {
   deleteExpiredExportFiles,
   ensureExportDir,
@@ -39,31 +38,17 @@ function startCleanupScheduler() {
   if (_cleanupTimer.unref) _cleanupTimer.unref();
 }
 
-const TYPE_GENERATORS = {
-  sales_daily: async (params) => adminReportService.exportByType("sales_daily", params),
-  sales_monthly: async (params) => adminReportService.exportByType("sales_monthly", params),
-  profit_daily: async (params) => adminReportService.exportByType("profit_daily", params),
-  profit_monthly: async (params) => adminReportService.exportByType("profit_monthly", params),
-  product_analysis: async (params) => adminReportService.exportByType("product_analysis", params),
-  category_analysis: async (params) => adminReportService.exportByType("category_analysis", params),
-  order_analysis: async (params) => adminReportService.exportByType("order_analysis", params),
-  customer_analysis: async (params) => adminReportService.exportByType("customer_analysis", params),
-  activity_analysis: async (params) => adminReportService.exportByType("activity_analysis", params),
-  coupon_analysis: async (params) => adminReportService.exportByType("coupon_analysis", params),
-  inventory_analysis: async (params) => adminReportService.exportByType("inventory_analysis", params),
-  search_analysis: async (params) => adminReportService.exportByType("search_analysis", params),
-  traffic_analysis: async (params) => adminReportService.exportByType("traffic_analysis", params),
-  sales: async (params) => adminReportService.exportByType("sales_daily", params),
-  users_report: async (params) => adminReportService.exportByType("customer_analysis", params),
-  products_report: async (params) => adminReportService.exportByType("product_analysis", params),
-  products: async (params) => adminProductService.exportProductsCsv(params),
-  orders: async (params) => adminOrderService.exportOrdersCsv(params),
-  users: async (params) => adminUserService.exportUsersCsv(params),
-};
+function isSupportedExportType(type) {
+  return listExportableReports().some((report) => report.type === type);
+}
 
 async function createExportTask(type, params, adminUserId) {
-  if (!TYPE_GENERATORS[type]) {
+  const definition = getReportDefinition(type);
+  if (!definition || !isSupportedExportType(type)) {
     return { error: { code: 400, message: `不支持的导出类型: ${type}` } };
+  }
+  if (definition.capability && !(await siteCapabilitiesService.isCapabilityEnabled(definition.capability))) {
+    return { error: { code: 403, message: '该导出类型对应功能已关闭' } };
   }
 
   const id = generateId();
@@ -75,8 +60,7 @@ async function createExportTask(type, params, adminUserId) {
   setImmediate(async () => {
     try {
       ensureExportDir();
-      const generator = TYPE_GENERATORS[type];
-      const { csv, filename: suggestedName } = await generator(params || {});
+      const { csv, filename: suggestedName } = await adminReportService.exportByType(type, params || {});
       const finalName = suggestedName || fileName;
       const filePath = path.join(getExportDir(), `${id}_${finalName}`);
       fs.writeFileSync(filePath, `\uFEFF${csv}`, 'utf8');

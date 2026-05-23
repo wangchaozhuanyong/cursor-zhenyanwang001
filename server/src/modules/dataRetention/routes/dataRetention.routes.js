@@ -1,6 +1,5 @@
 const { Router } = require('express');
 const adminAuth = require('../../../middleware/adminAuth');
-const adminMfaService = require('../../admin/service/adminMfa.service');
 const controller = require('../controller/dataRetention.controller');
 
 const router = Router();
@@ -8,7 +7,7 @@ const requirePermission = adminAuth.requirePermission;
 const requireAnyPermission = adminAuth.requireAnyPermission;
 
 const canView = requireAnyPermission(['data_cleanup.view', 'data_cleanup.manage', 'data_cleanup.execute']);
-const requireRecentMfa = adminMfaService.requireRecentMfa;
+const requireRecentMfa = adminAuth.requireRecentMfa;
 
 router.use(adminAuth);
 

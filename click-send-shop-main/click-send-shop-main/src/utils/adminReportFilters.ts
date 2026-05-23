@@ -175,7 +175,7 @@ function sanitizeReportChipParams(
   params.forEach((value, urlKey) => {
     if (allowed.has(urlKey)) next.set(urlKey, value);
   });
-  if (!next.has("range_preset")) {
+  if (allowed.has("range_preset") && !next.has("range_preset")) {
     next.set("range_preset", "last_7_days");
   }
   if (enabled.includes("granularity") && !next.has("granularity")) {

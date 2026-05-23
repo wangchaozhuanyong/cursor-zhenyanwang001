@@ -62,28 +62,32 @@ import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import type { SiteCapabilities } from "@/types/siteCapabilities";
 import { useAdminEvents } from "@/hooks/admin/useAdminEvents";
 import { getSecurityAlerts, type SecurityAlertSummary } from "@/api/admin/audit";
+import { REPORT_REGISTRY, type ReportGroup } from "@/modules/admin/pages/report/reportRegistry";
 
 type NavPerm = string | { anyOf: string[] };
 
 interface NavChild {
-  icon: LucideIcon;
-  labelKey: string;
-  path: string;
+  icon?: LucideIcon;
+  labelKey?: string;
+  label?: string;
+  path?: string;
   permission?: NavPerm;
   /** 站点功能开关；关闭时不展示该子菜单项 */
   capability?: keyof SiteCapabilities;
+  children?: NavChild[];
 }
 
 interface NavItem {
   icon: LucideIcon;
-  labelKey: string;
+  labelKey?: string;
+  label?: string;
   path: string;
   permission?: NavPerm;
   capability?: keyof SiteCapabilities;
   children?: NavChild[];
 }
 
-type ResolvedNavChild = NavChild & { label: string };
+type ResolvedNavChild = NavChild & { label: string; children?: ResolvedNavChild[] };
 type ResolvedNavItem = Omit<NavItem, "children"> & { label: string; children?: ResolvedNavChild[] };
 
 const localNavLabels: Record<string, string> = {
@@ -95,12 +99,86 @@ const localNavLabels: Record<string, string> = {
   "nav.monitoringRules": "监控规则",
   "nav.monitoringRuns": "运行记录",
   "nav.dataRetention": "数据保存与清理中心",
+  "nav.reportSalesProfitGroup": "销售与利润",
+  "nav.reportProductInventoryGroup": "商品与库存",
+  "nav.reportOrderCustomerGroup": "订单与客户",
+  "nav.reportMarketingGroup": "营销分析",
+  "nav.reportTrafficSearchGroup": "流量与搜索",
 };
 
-function resolveNavLabel(t: (key: string) => string, key: string) {
+function resolveNavLabel(t: (key: string) => string, key?: string, label?: string) {
+  if (label) return label;
+  if (!key) return "";
   if (key === "nav.backupCenter") return "备份与恢复";
   const translated = t(key);
   return translated === key ? localNavLabels[key] || key : translated;
+}
+
+const REPORT_NAV_ICON_BY_KEY: Record<string, LucideIcon> = {
+  overview: LayoutDashboard,
+  sales_daily: BarChart3,
+  sales_monthly: BarChart3,
+  profit_daily: BarChart3,
+  profit_monthly: BarChart3,
+  operating_expenses: ClipboardList,
+  product_analysis: Package,
+  category_analysis: FolderTree,
+  inventory_analysis: Package,
+  order_analysis: ShoppingCart,
+  customer_analysis: Users,
+  activity_analysis: Megaphone,
+  coupon_analysis: Ticket,
+  search_analysis: Search,
+  traffic_analysis: MousePointerClick,
+};
+
+const REPORT_GROUP_LABEL_KEY: Partial<Record<ReportGroup, string>> = {
+  "销售与利润": "nav.reportSalesProfitGroup",
+  "商品与库存": "nav.reportProductInventoryGroup",
+  "订单与客户": "nav.reportOrderCustomerGroup",
+  "营销分析": "nav.reportMarketingGroup",
+  "流量与搜索": "nav.reportTrafficSearchGroup",
+};
+
+function buildDataCenterNavChildren(): NavChild[] {
+  const directKeys = new Set(["overview"]);
+  const children: NavChild[] = REPORT_REGISTRY
+    .filter((report) => directKeys.has(report.key))
+    .map((report) => ({
+      icon: REPORT_NAV_ICON_BY_KEY[report.key] ?? BarChart3,
+      label: report.title,
+      path: report.routePath,
+      permission: report.permission,
+      capability: report.capability,
+    }));
+
+  const groupedReports = REPORT_REGISTRY.filter((report) => !directKeys.has(report.key) && report.group !== "数据导出");
+  const groups: ReportGroup[] = ["销售与利润", "商品与库存", "订单与客户", "营销分析", "流量与搜索"];
+  for (const group of groups) {
+    const reports = groupedReports.filter((report) => report.group === group);
+    if (reports.length === 0) continue;
+    children.push({
+      icon: BarChart3,
+      labelKey: REPORT_GROUP_LABEL_KEY[group],
+      path: reports[0].routePath,
+      permission: "report.view",
+      children: reports.map((report) => ({
+        icon: REPORT_NAV_ICON_BY_KEY[report.key] ?? BarChart3,
+        label: report.title,
+        path: report.routePath,
+        permission: report.permission,
+        capability: report.capability,
+      })),
+    });
+  }
+
+  children.push({
+    icon: FileText,
+    labelKey: "nav.exports",
+    path: "/admin/exports",
+    permission: "report.export",
+  });
+  return children;
 }
 
 const navItemsRaw: NavItem[] = [
@@ -215,24 +293,8 @@ const navItemsRaw: NavItem[] = [
     icon: BarChart3,
     labelKey: "nav.dataCenter",
     path: "/admin/reports/overview",
-    permission: "report.view",
-    children: [
-      { icon: LayoutDashboard, labelKey: "nav.reportOverview", path: "/admin/reports/overview", permission: "report.view" },
-      { icon: BarChart3, labelKey: "nav.reportDaily", path: "/admin/reports/daily", permission: "report.view" },
-      { icon: BarChart3, labelKey: "nav.reportMonthly", path: "/admin/reports/monthly", permission: "report.view" },
-      { icon: BarChart3, labelKey: "nav.reportProfit", path: "/admin/reports/profit", permission: "report.view" },
-      { icon: ClipboardList, labelKey: "nav.reportExpenses", path: "/admin/reports/expenses", permission: "report.view" },
-      { icon: Package, labelKey: "nav.reportProducts", path: "/admin/reports/products", permission: "report.view" },
-      { icon: FolderTree, labelKey: "nav.reportCategories", path: "/admin/reports/categories", permission: "report.view" },
-      { icon: ShoppingCart, labelKey: "nav.reportOrders", path: "/admin/reports/orders", permission: "report.view" },
-      { icon: Users, labelKey: "nav.reportCustomers", path: "/admin/reports/customers", permission: "report.view" },
-      { icon: Megaphone, labelKey: "nav.reportActivities", path: "/admin/reports/activities", permission: "report.view" },
-      { icon: Ticket, labelKey: "nav.reportCoupons", path: "/admin/reports/coupons", permission: "report.view", capability: "couponEnabled" },
-      { icon: Package, labelKey: "nav.reportInventory", path: "/admin/reports/inventory", permission: "report.view", capability: "inventoryEnabled" },
-      { icon: Search, labelKey: "nav.reportSearch", path: "/admin/reports/search", permission: "report.view" },
-      { icon: MousePointerClick, labelKey: "nav.reportTraffic", path: "/admin/reports/traffic", permission: "report.view", capability: "trafficAnalyticsEnabled" },
-      { icon: FileText, labelKey: "nav.exports", path: "/admin/exports", permission: "report.export" },
-    ],
+    permission: { anyOf: ["report.view", "report.export"] },
+    children: buildDataCenterNavChildren(),
   },
   {
     icon: UserCog,
@@ -262,10 +324,17 @@ const navItemsRaw: NavItem[] = [
 ];
 
 function resolveNavLabels(items: NavItem[], t: (key: string) => string): ResolvedNavItem[] {
+  const resolveChildren = (children?: NavChild[]): ResolvedNavChild[] | undefined =>
+    children?.map((c) => ({
+      ...c,
+      label: resolveNavLabel(t, c.labelKey, c.label),
+      children: resolveChildren(c.children),
+    }));
+
   return items.map((item) => ({
     ...item,
-    label: resolveNavLabel(t, item.labelKey),
-    children: item.children?.map((c) => ({ ...c, label: resolveNavLabel(t, c.labelKey) })),
+    label: resolveNavLabel(t, item.labelKey, item.label),
+    children: resolveChildren(item.children),
   }));
 }
 
@@ -293,13 +362,28 @@ function filterNav(
   canAny: (a: string[]) => boolean,
   capabilities: SiteCapabilities,
 ): NavItem[] {
+  const filterChildren = (children: NavChild[]): NavChild[] => {
+    const out: NavChild[] = [];
+    for (const child of children) {
+      if (!passesNavCapability(child.capability, capabilities)) continue;
+      const nested = child.children?.length ? filterChildren(child.children) : undefined;
+      if (child.children?.length) {
+        if (!nested?.length) continue;
+        if (child.permission !== undefined && !passNavPerm(child.permission, can, canAny)) continue;
+        out.push({ ...child, children: nested });
+        continue;
+      }
+      if (!passNavPerm(child.permission, can, canAny)) continue;
+      out.push(child);
+    }
+    return out;
+  };
+
   const out: NavItem[] = [];
   for (const item of items) {
     if (!passesNavCapability(item.capability, capabilities)) continue;
     if (item.children?.length) {
-      const children = item.children.filter(
-        (c) => passesNavCapability(c.capability, capabilities) && passNavPerm(c.permission, can, canAny),
-      );
+      const children = filterChildren(item.children);
       if (children.length === 0) continue;
       if (item.permission !== undefined && !passNavPerm(item.permission, can, canAny)) continue;
       out.push({ ...item, children });
@@ -350,16 +434,20 @@ function AdminSidebarNav({
   logoutLabel: string;
 }) {
   const [expandedPath, setExpandedPath] = useState<string | null>(null);
+  const childMatchesPath = useCallback((child: ResolvedNavChild, currentPath: string): boolean => {
+    const ownPath = child.path ? currentPath === child.path || currentPath.startsWith(child.path) : false;
+    return ownPath || Boolean(child.children?.some((nested) => childMatchesPath(nested, currentPath)));
+  }, []);
 
   useEffect(() => {
     const activeGroup = navItems.find((item) => {
       if (!item.children?.length) return false;
       const active = pathname === item.path || (item.path !== "/admin" && pathname.startsWith(item.path));
-      const childActive = item.children.some((c) => pathname === c.path || pathname.startsWith(c.path));
+      const childActive = item.children.some((c) => childMatchesPath(c, pathname));
       return active || childActive;
     });
     if (activeGroup) setExpandedPath(activeGroup.path);
-  }, [navItems, pathname]);
+  }, [childMatchesPath, navItems, pathname]);
 
   const listClassName =
     scrollMode === "overlay"
@@ -380,7 +468,7 @@ function AdminSidebarNav({
       <div className={listClassName}>
         {navItems.map((item) => {
           const active = pathname === item.path || (item.path !== "/admin" && pathname.startsWith(item.path));
-          const childActive = item.children?.some((c) => pathname === c.path || pathname.startsWith(c.path));
+          const childActive = item.children?.some((c) => childMatchesPath(c, pathname));
           const isExpanded = expandedPath === item.path;
           return (
             <div key={item.path}>
@@ -414,19 +502,47 @@ function AdminSidebarNav({
                   className="relative z-0 ml-4 mt-0.5 overflow-hidden space-y-0.5 border-l border-border pl-3"
                 >
                   {item.children.map((child) => {
-                    const cActive = child.path === item.path
-                      ? pathname === child.path
-                      : pathname === child.path || pathname.startsWith(child.path);
+                    const cActive = childMatchesPath(child, pathname);
+                    const ChildIcon = child.icon ?? BarChart3;
+                    if (child.children?.length) {
+                      return (
+                        <div key={child.path ?? child.label} className="space-y-0.5">
+                          <div className="mt-2 flex items-center gap-2 px-2.5 py-1.5 text-[11px] font-semibold text-[var(--theme-text-muted)]">
+                            <ChildIcon size={14} />
+                            <span>{child.label}</span>
+                          </div>
+                          <div className="space-y-0.5 pl-4">
+                            {child.children.map((nested) => {
+                              const nestedActive = childMatchesPath(nested, pathname);
+                              const NestedIcon = nested.icon ?? BarChart3;
+                              return (
+                                <button
+                                  type="button"
+                                  key={nested.path ?? nested.label}
+                                  onClick={() => nested.path && onNavigate(nested.path)}
+                                  className={`flex min-h-[40px] w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors active:bg-secondary/80 ${
+                                    nestedActive ? "font-semibold text-[var(--theme-primary)]" : "text-muted-foreground hover:text-foreground"
+                                  }`}
+                                >
+                                  <NestedIcon size={16} />
+                                  {nested.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    }
                     return (
                       <button
                         type="button"
-                        key={child.path}
-                        onClick={() => onNavigate(child.path)}
+                        key={child.path ?? child.label}
+                        onClick={() => child.path && onNavigate(child.path)}
                         className={`flex min-h-[44px] w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-sm transition-colors active:bg-secondary/80 ${
                           cActive ? "font-semibold text-[var(--theme-primary)]" : "text-muted-foreground hover:text-foreground"
                         }`}
                       >
-                        <child.icon size={18} />
+                        <ChildIcon size={18} />
                         {child.label}
                       </button>
                     );
@@ -565,11 +681,17 @@ function AdminLayoutContent() {
     const q = topSearch.trim();
     if (!q) return;
     const lq = q.toLowerCase();
-    const match = navItems.find(
-      (n) => n.label.includes(lq) || n.children?.some((c) => c.label.includes(lq)),
-    );
+    const findChild = (children?: ResolvedNavChild[]): ResolvedNavChild | undefined => {
+      for (const child of children ?? []) {
+        if (child.label.includes(lq)) return child;
+        const nested = findChild(child.children);
+        if (nested) return nested;
+      }
+      return undefined;
+    };
+    const match = navItems.find((n) => n.label.includes(lq) || findChild(n.children));
     if (match) {
-      const child = match.children?.find((c) => c.label.includes(lq));
+      const child = findChild(match.children);
       navigate(child?.path ?? match.path);
     }
     setTopSearch("");

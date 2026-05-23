@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -10,7 +10,9 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import { labelReportCellValue, labelReportColumn } from "@/utils/adminDisplayLabels";
 import { getReportColumnMaxWidthStyle, reportTableThClassName } from "@/utils/adminTableColumnPolicy";
-import { fetchInventoryAnalysisReport } from "@/services/admin/reportService";
+import ReportPageHeader from "@/components/admin/report/ReportPageHeader";
+import { exportReportCsv, fetchInventoryAnalysisReport } from "@/services/admin/reportService";
+import { REPORT_REGISTRY_BY_KEY } from "./reportRegistry";
 
 const TABLE_COLUMNS = [
   "product_name",
@@ -64,7 +66,9 @@ function formatCell(key: string, value: unknown) {
 
 export default function AdminInventoryAnalysisReport() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [exporting, setExporting] = useState(false);
   const filterParams = useMemo(() => searchParamsRecord(searchParams), [searchParams]);
+  const config = REPORT_REGISTRY_BY_KEY.inventory_analysis;
 
   const sortBy = filterParams.sort_by || "available_stock_days";
   const sortOrder = filterParams.sort_order || "asc";
@@ -89,7 +93,10 @@ export default function AdminInventoryAnalysisReport() {
     () => (Array.isArray(payload.list) ? (payload.list as Record<string, unknown>[]) : []),
     [payload.list],
   );
-  const summary = (payload.summary || {}) as Record<string, unknown>;
+  const summary = useMemo(
+    () => (payload.summary || {}) as Record<string, unknown>,
+    [payload.summary],
+  );
 
   const summaryEntries = useMemo(() => {
     const keys = ["商品数", "缺货商品", "低库存商品", "滞销商品", "当前库存总量", "近7天销量", "近30天销量"];
@@ -105,14 +112,27 @@ export default function AdminInventoryAnalysisReport() {
     setSearchParams(next, { replace: true });
   };
 
+  const handleExport = async () => {
+    if (!config.exportType) return;
+    setExporting(true);
+    try {
+      await exportReportCsv(config.exportType, filterParams);
+      toast.success("报表导出已开始下载");
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "导出失败"));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-bold text-foreground">库存分析</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          近 7/30 天销量按已支付订单统计；可售天数 = 当前库存 ÷ 日均销量（近30天 ÷ 30）。默认可售天数升序，便于发现快售罄商品。
-        </p>
-      </div>
+      <ReportPageHeader
+        title={config.title}
+        description={config.description}
+        exporting={exporting}
+        onExport={handleExport}
+      />
 
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3">
         <label className="flex flex-col gap-1 text-xs text-muted-foreground">
@@ -203,6 +223,10 @@ export default function AdminInventoryAnalysisReport() {
           </>
         )}
       />
+
+      <section className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm text-[var(--theme-text-muted)]">
+        <span className="font-medium text-[var(--theme-text)]">数据口径：</span>{config.dataScopeNote}
+      </section>
     </div>
   );
 }

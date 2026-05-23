@@ -1,5 +1,5 @@
-const db = require('../../../config/db');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
+const timeoutRepo = require('../repository/orderEventTimeout.repository');
 
 let schedulerTimer = null;
 
@@ -20,50 +20,6 @@ function getSettings() {
 
 function eventFingerprint(eventType, orderId) {
   return { eventType, entityType: 'order', entityId: orderId };
-}
-
-function paidStatusSql() {
-  return `'${PAYMENT_STATUS.PAID}', '${PAYMENT_STATUS.PARTIALLY_REFUNDED}'`;
-}
-
-async function selectPaidUnhandledOrders(minutes, limit = 100) {
-  const [rows] = await db.query(
-    `SELECT id, order_no, user_id, status, payment_status, total_amount, paid_at, payment_time, created_at
-     FROM orders
-     WHERE status = ?
-       AND payment_status IN (${paidStatusSql()})
-       AND COALESCE(paid_at, payment_time, created_at) <= DATE_SUB(NOW(), INTERVAL ? MINUTE)
-     ORDER BY COALESCE(paid_at, payment_time, created_at) ASC
-     LIMIT ?`,
-    [ORDER_STATUS.PAID, minutes, limit],
-  );
-  return rows;
-}
-
-async function selectShipTimeoutOrders(minutes, limit = 100) {
-  const [rows] = await db.query(
-    `SELECT id, order_no, user_id, status, payment_status, total_amount, paid_at, payment_time, created_at
-     FROM orders
-     WHERE status = ?
-       AND payment_status IN (${paidStatusSql()})
-       AND COALESCE(paid_at, payment_time, created_at) <= DATE_SUB(NOW(), INTERVAL ? MINUTE)
-     ORDER BY COALESCE(paid_at, payment_time, created_at) ASC
-     LIMIT ?`,
-    [ORDER_STATUS.PAID, minutes, limit],
-  );
-  return rows;
-}
-
-async function selectOrderStates(orderIds = []) {
-  if (!orderIds.length) return new Map();
-  const placeholders = orderIds.map(() => '?').join(',');
-  const [rows] = await db.query(
-    `SELECT id, status, payment_status
-     FROM orders
-     WHERE id IN (${placeholders})`,
-    orderIds,
-  );
-  return new Map(rows.map((row) => [row.id, row]));
 }
 
 async function emitOrderTimeoutEvents(orders, eventType, options = {}) {
@@ -99,7 +55,7 @@ async function autoResolveRecoveredOrderEvents(activeEvents) {
   if (!activeEvents.length) return 0;
   const eventService = require('../../admin/service/adminEvent.service');
   const ids = [...new Set(activeEvents.map((event) => event.entity_id).filter(Boolean))];
-  const orderById = await selectOrderStates(ids);
+  const orderById = await timeoutRepo.selectOrderStates(ids);
   let resolved = 0;
 
   for (const event of activeEvents) {
@@ -123,8 +79,8 @@ async function runOrderTimeoutEventScan() {
 
   const eventRepo = require('../../admin/repository/adminEvent.repository');
   const [paidUnhandled, shipTimeout, activeEvents] = await Promise.all([
-    selectPaidUnhandledOrders(settings.paidUnhandledMinutes),
-    selectShipTimeoutOrders(settings.shipTimeoutMinutes),
+    timeoutRepo.selectPaidUnhandledOrders(settings.paidUnhandledMinutes),
+    timeoutRepo.selectShipTimeoutOrders(settings.shipTimeoutMinutes),
     eventRepo.listActiveRecordsByTypes(['order.paid_unhandled_timeout', 'order.ship_timeout']),
   ]);
 

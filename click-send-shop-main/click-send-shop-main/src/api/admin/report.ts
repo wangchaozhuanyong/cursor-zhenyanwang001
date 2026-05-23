@@ -20,6 +20,9 @@ export type ReportQuery = {
   page?: number;
   pageSize?: number;
   sort?: string;
+  sort_by?: string;
+  sort_order?: string;
+  category?: string;
 };
 
 export type OperatingExpenseRecord = {

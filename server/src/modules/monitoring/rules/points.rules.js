@@ -1,31 +1,7 @@
 const repo = require('../repository/monitoring.repository');
-const { eq } = require('../monitoringSql');
 
 async function pointsBalanceMismatch() {
-  const { db } = repo;
-  const hasAccounts = await repo.tableExists('points_accounts');
-  const [rows] = hasAccounts
-    ? await db.query(
-      `SELECT u.id AS user_id, u.phone, u.nickname, COALESCE(pa.balance, u.points_balance, 0) AS account_balance,
-              COALESCE(SUM(CASE WHEN pr.status IS NULL OR pr.status = 'success' THEN pr.amount ELSE 0 END), 0) AS ledger_balance,
-              u.points_balance
-       FROM users u
-       LEFT JOIN points_accounts pa ON ${eq('pa.user_id', 'u.id')}
-       LEFT JOIN points_records pr ON ${eq('pr.user_id', 'u.id')}
-       WHERE u.deleted_at IS NULL
-       GROUP BY u.id, u.phone, u.nickname, pa.balance, u.points_balance
-       HAVING account_balance <> ledger_balance OR u.points_balance <> account_balance`,
-    )
-    : await db.query(
-      `SELECT u.id AS user_id, u.phone, u.nickname, u.points_balance AS account_balance,
-              COALESCE(SUM(CASE WHEN pr.status IS NULL OR pr.status = 'success' THEN pr.amount ELSE 0 END), 0) AS ledger_balance,
-              u.points_balance
-       FROM users u
-       LEFT JOIN points_records pr ON ${eq('pr.user_id', 'u.id')}
-       WHERE u.deleted_at IS NULL
-       GROUP BY u.id, u.phone, u.nickname, u.points_balance
-       HAVING account_balance <> ledger_balance`,
-    );
+  const { rows, hasAccounts } = await repo.selectPointsBalanceMismatches();
   return {
     checkedCount: rows.length,
     anomalies: rows.map((row) => ({

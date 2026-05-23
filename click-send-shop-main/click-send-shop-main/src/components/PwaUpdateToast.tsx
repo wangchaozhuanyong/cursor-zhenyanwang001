@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
+import { useLocation } from "react-router-dom";
 import { useRegisterSW } from "virtual:pwa-register/react";
 import { trackEvent } from "@/services/analyticsService";
+import { getStoreFixedBottomOffset } from "@/utils/storeBottomInset";
 import {
   clearDismissedSwToken,
   fetchSwVersionToken,
@@ -13,7 +16,10 @@ const SW_UPDATE_TIMEOUT_MS = 2000;
 /** 后台定期检查 SW 更新（避免 immediate 一进站就频繁弹窗） */
 const SW_PERIODIC_CHECK_MS = 60 * 60 * 1000;
 
+const PWA_TOAST_ABOVE_BAR_GAP = "0.75rem";
+
 export default function PwaUpdateToast() {
+  const location = useLocation();
   const trackedAvailableRef = useRef(false);
   const reloadStartedRef = useRef(false);
   const registrationRef = useRef<ServiceWorkerRegistration | undefined>(undefined);
@@ -149,6 +155,13 @@ export default function PwaUpdateToast() {
     reloadOnce();
   }, [refreshing, reloadOnce, setNeedRefresh, updateServiceWorker, waitForControllerChange]);
 
+  const mobileBottomStyle = useMemo((): CSSProperties => {
+    const barOffset = getStoreFixedBottomOffset(location.pathname);
+    return {
+      "--pwa-toast-bottom": `calc(${barOffset} + ${PWA_TOAST_ABOVE_BAR_GAP})`,
+    } as CSSProperties;
+  }, [location.pathname]);
+
   if (!showPrompt) return null;
 
   return (
@@ -156,7 +169,8 @@ export default function PwaUpdateToast() {
       role="alertdialog"
       aria-labelledby="pwa-update-title"
       aria-describedby="pwa-update-desc"
-      className="pointer-events-auto fixed bottom-[calc(env(safe-area-inset-bottom,0px)+5.75rem)] left-1/2 z-[120] w-[min(92vw,420px)] -translate-x-1/2 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)] md:bottom-4"
+      style={mobileBottomStyle}
+      className="pointer-events-auto fixed left-1/2 z-[120] w-[min(92vw,420px)] -translate-x-1/2 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)] max-lg:bottom-[var(--pwa-toast-bottom,5.75rem)] lg:bottom-4"
     >
       <p id="pwa-update-title" className="text-sm font-semibold text-[var(--theme-text)]">
         发现新版本

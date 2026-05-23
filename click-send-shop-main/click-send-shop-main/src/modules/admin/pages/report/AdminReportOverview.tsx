@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { REPORT_PAGES } from "@/config/reportPageConfig";
 import ReportFilterBar from "@/components/admin/report/ReportFilterBar";
 import ReportPageHeader from "@/components/admin/report/ReportPageHeader";
 import ReportKpiGrid from "@/components/admin/report/ReportKpiGrid";
+import ReportAlertBanners from "@/components/admin/report/ReportAlertBanners";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { fetchReportOverview } from "@/services/admin/reportService";
 import { toast } from "sonner";
@@ -18,7 +19,7 @@ import {
   removeReportFilterChip,
 } from "@/utils/adminReportFilters";
 import { getEnabledFilters, pickReportQueryParams, sanitizeReportSearchParams } from "@/utils/reportFilters";
-import { pickSummaryKpiEntries } from "@/utils/reportSummaryKpi";
+import { buildReportAlerts, pickSummaryKpiEntries } from "@/utils/reportSummaryKpi";
 
 const OVERVIEW_CONFIG = REPORT_PAGES.overview;
 const EMPTY_REPORT_OVERVIEW = {};
@@ -31,7 +32,7 @@ function formatOverviewValue(key: string, value: unknown) {
 export default function AdminReportOverview() {
   const [searchParams, setSearchParams] = useSearchParams();
   const enabledFilters = useMemo(
-    () => getEnabledFilters(OVERVIEW_CONFIG.filterProfile),
+    () => OVERVIEW_CONFIG.filters ?? getEnabledFilters(OVERVIEW_CONFIG.filterProfile),
     [],
   );
 
@@ -68,13 +69,17 @@ export default function AdminReportOverview() {
   const topSlow = useMemo(() => (Array.isArray(data.topSlowProducts) ? data.topSlowProducts : []), [data]);
 
   const kpiEntries = useMemo(
-    () => pickSummaryKpiEntries(summary, OVERVIEW_CONFIG.kpiProfile, OVERVIEW_CONFIG.maxKpis),
+    () => pickSummaryKpiEntries(summary, OVERVIEW_CONFIG.kpiProfile, OVERVIEW_CONFIG.maxKpis, OVERVIEW_CONFIG.kpiPriorityKeys),
     [summary],
   );
 
   const filterChips = useMemo(
     () => buildReportFilterChips(searchParams, enabledFilters),
     [searchParams, enabledFilters],
+  );
+  const alerts = useMemo(
+    () => buildReportAlerts(OVERVIEW_CONFIG.reportKey, data as Record<string, unknown>, summary, []),
+    [data, summary],
   );
 
   const handleClearFilters = useCallback(() => {
@@ -110,6 +115,8 @@ export default function AdminReportOverview() {
         />
       </div>
 
+      <ReportAlertBanners alerts={alerts} />
+
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-[var(--theme-text)]">核心指标</h2>
         <ReportKpiGrid
@@ -118,6 +125,12 @@ export default function AdminReportOverview() {
           formatValue={formatOverviewValue}
           skeletonCount={6}
         />
+        <Link
+          to={`/admin/reports/profit/daily?${new URLSearchParams(queryParams).toString()}`}
+          className="inline-flex text-sm font-medium text-[var(--theme-primary)] hover:underline"
+        >
+          查看利润日报
+        </Link>
       </section>
 
       <section className="space-y-3">
@@ -165,6 +178,12 @@ export default function AdminReportOverview() {
           </div>
         </div>
       </section>
+
+      {OVERVIEW_CONFIG.dataScopeNote ? (
+        <section className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm text-[var(--theme-text-muted)]">
+          <span className="font-medium text-[var(--theme-text)]">数据口径：</span>{OVERVIEW_CONFIG.dataScopeNote}
+        </section>
+      ) : null}
     </div>
   );
 }

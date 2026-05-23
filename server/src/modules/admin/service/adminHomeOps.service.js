@@ -1,5 +1,4 @@
 const { generateId } = require('../../../utils/helpers');
-const db = require('../../../config/db');
 const repo = require('../repository/adminHomeOps.repository');
 const homeModuleSettings = require('../homeModuleSettings');
 const supportChannels = require('../homeNavSupportChannels');
@@ -169,10 +168,7 @@ async function updateNavItem(id, body) {
     || body.targetSupportChannelId !== undefined;
 
   if (targetTouched) {
-    const [[current]] = await db.query(
-      'SELECT target_type, target_category_id, target_support_channel_id, link_url FROM home_nav_items WHERE id = ? LIMIT 1',
-      [id],
-    );
+    const current = await repo.selectNavTargetById(id);
     if (!current) return { error: { code: 404, message: '导航不存在' } };
     const merged = {
       target_type: body.target_type ?? body.targetType ?? current.target_type,

@@ -34,6 +34,14 @@ async function updateNavItem(id, fields, values) {
   await db.query(`UPDATE home_nav_items SET ${fields.join(', ')} WHERE id = ?`, [...values, id]);
 }
 
+async function selectNavTargetById(id) {
+  const [[row]] = await db.query(
+    'SELECT target_type, target_category_id, target_support_channel_id, link_url FROM home_nav_items WHERE id = ? LIMIT 1',
+    [id],
+  );
+  return row || null;
+}
+
 async function deleteNavItem(id) {
   await db.query('DELETE FROM home_nav_items WHERE id = ?', [id]);
 }
@@ -57,6 +65,7 @@ async function batchUpdateNavSort(items) {
 
 module.exports = {
   selectNavItems,
+  selectNavTargetById,
   insertNavItem,
   updateNavItem,
   deleteNavItem,

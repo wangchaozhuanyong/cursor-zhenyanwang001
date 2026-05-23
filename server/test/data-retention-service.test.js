@@ -316,6 +316,7 @@ test('route blocks execute without recent MFA', async () => {
   }
   adminAuth.requirePermission = () => (_req, _res, next) => next();
   adminAuth.requireAnyPermission = () => (_req, _res, next) => next();
+  adminAuth.requireRecentMfa = require('../src/modules/admin/service/adminMfa.service').requireRecentMfa;
 
   require.cache[adminAuthPath] = { id: adminAuthPath, filename: adminAuthPath, loaded: true, exports: adminAuth };
   require.cache[controllerPath] = {

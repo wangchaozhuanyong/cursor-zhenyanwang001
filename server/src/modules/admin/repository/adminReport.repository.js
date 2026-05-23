@@ -397,7 +397,7 @@ async function selectProfitDaily(dateFrom, dateTo) {
        d.date,
        ${PROFIT_REPORT_SELECT}
      FROM (
-       SELECT DATE(DATE_ADD(created_at, INTERVAL 8 HOUR)) AS date
+       SELECT DISTINCT DATE(DATE_ADD(created_at, INTERVAL 8 HOUR)) AS date
        FROM orders
        WHERE ${rangeWhere("DATE(DATE_ADD(created_at, INTERVAL 8 HOUR))")}
        ${expenseDateUnion}
@@ -447,7 +447,7 @@ async function selectProfitMonthly(dateFrom, dateTo) {
        d.month,
        ${PROFIT_REPORT_SELECT}
      FROM (
-       SELECT DATE_FORMAT(DATE_ADD(created_at, INTERVAL 8 HOUR),'%Y-%m') AS month
+       SELECT DISTINCT DATE_FORMAT(DATE_ADD(created_at, INTERVAL 8 HOUR),'%Y-%m') AS month
        FROM orders
        WHERE ${rangeWhere("DATE(DATE_ADD(created_at, INTERVAL 8 HOUR))")}
        ${expenseMonthUnion}
@@ -955,13 +955,8 @@ async function selectSimpleSearchAnalysis(dateFrom, dateTo) {
       `SELECT
         st.keyword,
         st.search_count,
-        0 AS user_count,
         st.no_result_count,
-        st.last_searched_at,
-        0 AS product_click_count,
-        0 AS add_cart_count,
-        0 AS order_count,
-        0 AS sales_amount
+        st.last_searched_at
        ${baseTermsSql}
        ORDER BY st.search_count DESC
        LIMIT 200`,

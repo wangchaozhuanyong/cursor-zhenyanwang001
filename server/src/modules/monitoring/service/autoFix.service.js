@@ -20,11 +20,7 @@ function isAutoFixCandidate(dbRule, anomaly) {
 }
 
 async function hasPendingRepairTask(anomalyId) {
-  const [[row]] = await repo.db.query(
-    `SELECT id FROM data_repair_tasks WHERE anomaly_id = ? AND repair_status = 'pending' LIMIT 1`,
-    [anomalyId],
-  );
-  return Boolean(row);
+  return repo.hasPendingRepairTask(anomalyId);
 }
 
 async function processRuleAutoFix(dbRule, savedAnomalies = [], options = {}) {

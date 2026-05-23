@@ -70,7 +70,7 @@ export function sanitizeReportSearchParams(
   params.forEach((value, urlKey) => {
     if (allowed.has(urlKey)) next.set(urlKey, value);
   });
-  if (!allowed.has("range_preset") && !next.has("range_preset")) {
+  if (allowed.has("range_preset") && !next.has("range_preset")) {
     next.set("range_preset", "last_7_days");
   }
   return next;
@@ -93,12 +93,17 @@ export function pickReportQueryParams(
     if (value === undefined || value === null || String(value).trim() === "") continue;
     out[urlKey] = String(value).trim();
   }
-  if (!out.range_preset) out.range_preset = "last_7_days";
+  if (allowed.has("range_preset") && !out.range_preset) {
+    out.range_preset = "last_7_days";
+  }
   return out;
 }
 
 export function defaultReportSearchParams(enabled: ReportFilterKey[]): URLSearchParams {
-  const next = new URLSearchParams({ range_preset: "last_7_days" });
+  const next = new URLSearchParams();
+  if (enabled.includes("dateRange")) {
+    next.set("range_preset", "last_7_days");
+  }
   if (enabled.includes("granularity")) {
     next.set("granularity", "day");
   }

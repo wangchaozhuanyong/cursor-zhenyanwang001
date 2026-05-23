@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { KeyRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -10,23 +10,28 @@ import {
 import { fetchAdminProfile, reverifyAdminMfa } from "@/services/admin/accountService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 
+const MFA_REVERIFY_TIMEOUT_MS = 15_000;
+
 export default function AdminMfaStepUpHost() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [mfaEnabled, setMfaEnabled] = useState<boolean | null>(null);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const suppressAbortToastRef = useRef(false);
 
   const show = useCallback(() => {
     setCode("");
-    setMfaEnabled(null);
+    setLoading(false);
+    setMfaEnabled(true);
     setOpen(true);
     void fetchAdminProfile()
       .then((profile) => {
         const enabled = Boolean((profile as { mfa?: { enabled?: boolean } }).mfa?.enabled);
         setMfaEnabled(enabled);
       })
-      .catch(() => setMfaEnabled(null));
+      .catch(() => setMfaEnabled(true));
   }, []);
 
   useEffect(() => {
@@ -35,6 +40,10 @@ export default function AdminMfaStepUpHost() {
   }, [show]);
 
   const handleClose = () => {
+    suppressAbortToastRef.current = true;
+    abortController?.abort();
+    setAbortController(null);
+    setLoading(false);
     setOpen(false);
     cancelAdminMfaStepUp();
   };
@@ -45,16 +54,27 @@ export default function AdminMfaStepUpHost() {
       toast.error("请输入身份验证器中的 6 位验证码");
       return;
     }
+    abortController?.abort();
+    const controller = new AbortController();
+    suppressAbortToastRef.current = false;
+    setAbortController(controller);
     setLoading(true);
+    const timeoutId = window.setTimeout(() => controller.abort(), MFA_REVERIFY_TIMEOUT_MS);
     try {
-      await reverifyAdminMfa(normalized);
+      await reverifyAdminMfa(normalized, { signal: controller.signal });
       setOpen(false);
       completeAdminMfaStepUp();
       toast.success("身份验证已通过");
     } catch (err) {
-      toast.error(toastErrorMessage(err, "验证失败"));
+      if (controller.signal.aborted && !suppressAbortToastRef.current) {
+        toast.error("验证请求超时或已取消，请重新点击确认验证");
+      } else if (!controller.signal.aborted) {
+        toast.error(toastErrorMessage(err, "验证失败"));
+      }
     } finally {
+      window.clearTimeout(timeoutId);
       setLoading(false);
+      setAbortController((current) => (current === controller ? null : current));
     }
   };
 
@@ -115,7 +135,7 @@ export default function AdminMfaStepUpHost() {
             <button
               type="button"
               className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
-              disabled={loading || mfaEnabled === null}
+              disabled={loading}
               onClick={() => void handleSubmit()}
             >
               {loading ? "验证中..." : "确认验证"}

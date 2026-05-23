@@ -312,10 +312,10 @@ async function userMustStepUpMfa(user) {
 
 function requireRecentMfa(req, res, next) {
   (async () => {
-    if (!req.user) return res.fail(401, '请先登录');
-    const mustVerify = await userMustStepUpMfa(req.user);
-    if (!mustVerify) return next();
-
+    if (!req.user) {
+      if (typeof res.fail === 'function') return res.fail(401, '请先登录');
+      return res.status(401).json({ code: 401, message: '请先登录' });
+    }
     if (!req.user.mfaVerifiedAt) {
       return mfaRequiredResponse(res, '需要多因素身份验证');
     }
@@ -323,6 +323,8 @@ function requireRecentMfa(req, res, next) {
     if (!Number.isFinite(verifiedMs) || Date.now() - verifiedMs > MFA_RECENT_WINDOW_MS) {
       return mfaRequiredResponse(res, '多因素验证已过期，请重新验证');
     }
+    const mustVerify = await userMustStepUpMfa(req.user);
+    if (!mustVerify) return next();
     return next();
   })().catch(next);
 }

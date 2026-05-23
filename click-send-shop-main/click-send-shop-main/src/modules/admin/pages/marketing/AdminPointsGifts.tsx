@@ -6,12 +6,12 @@ import { Plus, Trash2 } from "lucide-react";
 import { Tx } from "@/components/admin/AdminText";
 import {
   createPointsGiftItem,
-  deletePointsGiftItem,
-  getPointsGiftItems,
-  getPointsGiftRedemptions,
-  updatePointsGiftItem,
+  fetchPointsGiftItems,
+  fetchPointsGiftRedemptions,
+  removePointsGiftItem,
+  savePointsGiftItem,
   type PointsGiftItem,
-} from "@/api/admin/points";
+} from "@/services/admin/pointsService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 
 const inputCls = "rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground w-full";
@@ -49,22 +49,22 @@ export default function AdminPointsGifts() {
   const itemsQuery = useQuery({
     queryKey: ["admin", "points-gift-items"],
     queryFn: async () => {
-      const res = await getPointsGiftItems({ pageSize: 100 });
-      return res.data?.list || [];
+      const data = await fetchPointsGiftItems({ pageSize: 100 });
+      return data?.list || [];
     },
   });
 
   const redemptionsQuery = useQuery({
     queryKey: ["admin", "points-gift-redemptions"],
     queryFn: async () => {
-      const res = await getPointsGiftRedemptions({ pageSize: 20 });
-      return res.data?.list || [];
+      const data = await fetchPointsGiftRedemptions({ pageSize: 20 });
+      return data?.list || [];
     },
   });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (editingId) return updatePointsGiftItem(editingId, form);
+      if (editingId) return savePointsGiftItem(editingId, form);
       return createPointsGiftItem(form);
     },
     onSuccess: () => {
@@ -77,7 +77,7 @@ export default function AdminPointsGifts() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => deletePointsGiftItem(id),
+    mutationFn: (id: string) => removePointsGiftItem(id),
     onSuccess: () => {
       toast.success("已删除");
       queryClient.invalidateQueries({ queryKey: ["admin", "points-gift-items"] });

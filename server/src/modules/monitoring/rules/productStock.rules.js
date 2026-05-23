@@ -1,19 +1,8 @@
 const repo = require('../repository/monitoring.repository');
-const { eq } = require('../monitoringSql');
 
 async function productStockMismatch() {
-  const { db } = repo;
   if (!(await repo.tableExists('product_variants'))) return { checkedCount: 0, anomalies: [] };
-  const hasProductDeletedAt = await repo.columnExists('products', 'deleted_at');
-  const [rows] = await db.query(
-    `SELECT p.id, p.name, p.stock AS product_stock,
-            COALESCE(SUM(CASE WHEN (v.deleted_at IS NULL) AND (v.enabled IS NULL OR v.enabled = 1) THEN v.stock ELSE 0 END), 0) AS sku_stock
-     FROM products p
-     LEFT JOIN product_variants v ON ${eq('v.product_id', 'p.id')}
-     ${hasProductDeletedAt ? 'WHERE p.deleted_at IS NULL' : ''}
-     GROUP BY p.id, p.name, p.stock
-     HAVING product_stock <> sku_stock`,
-  );
+  const rows = await repo.selectProductStockMismatches();
   return {
     checkedCount: rows.length,
     anomalies: rows.map((row) => ({
@@ -40,14 +29,8 @@ async function productStockMismatch() {
 }
 
 async function skuNegativeStock() {
-  const { db } = repo;
   if (!(await repo.tableExists('product_variants'))) return { checkedCount: 0, anomalies: [] };
-  const [rows] = await db.query(
-    `SELECT v.id, v.product_id, v.sku_code, v.title, v.stock, p.name AS product_name
-     FROM product_variants v
-     LEFT JOIN products p ON ${eq('p.id', 'v.product_id')}
-     WHERE v.stock < 0 AND v.deleted_at IS NULL`,
-  );
+  const rows = await repo.selectNegativeSkuStocks();
   return {
     checkedCount: rows.length,
     anomalies: rows.map((row) => ({

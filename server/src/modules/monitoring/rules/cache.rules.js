@@ -1,13 +1,8 @@
 const repo = require('../repository/monitoring.repository');
 
 async function cacheStaleAfterAdminUpdate() {
-  const { db } = repo;
   if (!(await repo.tableExists('cache_meta'))) return { checkedCount: 0, anomalies: [] };
-  const [rows] = await db.query(
-    `SELECT cache_key, module, entity_type, entity_id, cache_updated_at, db_updated_at
-     FROM cache_meta
-     WHERE db_updated_at IS NOT NULL AND cache_updated_at < db_updated_at`,
-  );
+  const rows = await repo.selectStaleCacheRecords();
   return {
     checkedCount: rows.length,
     anomalies: rows.map((row) => ({

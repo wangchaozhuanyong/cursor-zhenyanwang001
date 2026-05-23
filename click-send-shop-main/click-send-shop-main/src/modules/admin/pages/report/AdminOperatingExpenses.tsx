@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import {
   createOperatingExpense,
+  exportReportCsv,
   fetchOperatingExpenses,
   removeOperatingExpense,
   updateOperatingExpense,
@@ -21,6 +22,8 @@ import {
   adminThClassName,
 } from "@/utils/adminTableClasses";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import ReportPageHeader from "@/components/admin/report/ReportPageHeader";
+import { REPORT_REGISTRY_BY_KEY } from "./reportRegistry";
 
 type FormState = {
   expense_date: string;
@@ -52,6 +55,7 @@ export default function AdminOperatingExpenses() {
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [category, setCategory] = useState("");
@@ -88,6 +92,7 @@ export default function AdminOperatingExpenses() {
     () => list.reduce((sum, row) => sum + Number(row.amount || 0), 0),
     [list],
   );
+  const config = REPORT_REGISTRY_BY_KEY.operating_expenses;
 
   function startEdit(row: OperatingExpenseRecord) {
     setEditingId(row.id);
@@ -147,8 +152,28 @@ export default function AdminOperatingExpenses() {
     });
   }
 
+  async function handleExport() {
+    if (!config.exportType) return;
+    setExporting(true);
+    try {
+      await exportReportCsv(config.exportType, queryParams);
+      toast.success("报表导出已开始下载");
+    } catch (error) {
+      toast.error(toastErrorMessage(error, "导出经营支出失败"));
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
+      <ReportPageHeader
+        title={config.title}
+        description={config.description}
+        exporting={exporting}
+        onExport={handleExport}
+      />
+
       <div className="rounded-xl border border-border bg-card p-4">
         <h2 className="text-base font-semibold text-foreground">经营支出录入</h2>
         <p className="mt-1 text-xs text-muted-foreground">用于利润日报中的经营支出汇总（广告、包材、人工、房租等）。</p>
@@ -248,6 +273,10 @@ export default function AdminOperatingExpenses() {
           </table>
         </div>
       </div>
+
+      <section className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm text-[var(--theme-text-muted)]">
+        <span className="font-medium text-[var(--theme-text)]">数据口径：</span>{config.dataScopeNote}
+      </section>
     </div>
   );
 }

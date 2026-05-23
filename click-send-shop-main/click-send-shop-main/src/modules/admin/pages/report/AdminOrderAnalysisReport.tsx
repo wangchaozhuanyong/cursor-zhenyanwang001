@@ -1,7 +1,7 @@
-import { REPORT_PAGES } from "@/config/reportPageConfig";
+import { REPORT_REGISTRY_BY_KEY } from "./reportRegistry";
 import { fetchOrderAnalysisReport } from "@/services/admin/reportService";
 import AdminReportGenericPage from "./pages/AdminReportGenericPage";
 
 export default function AdminOrderAnalysisReport() {
-  return <AdminReportGenericPage config={REPORT_PAGES.order_analysis} fetcher={fetchOrderAnalysisReport as never} />;
+  return <AdminReportGenericPage config={REPORT_REGISTRY_BY_KEY.order_analysis} fetcher={fetchOrderAnalysisReport as never} />;
 }

@@ -4,8 +4,7 @@ import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
-import * as pointsApi from "@/api/modules/points";
-import type { PointsGiftCatalogItem } from "@/api/modules/points";
+import { fetchPointsGifts, redeemPointsGift, type PointsGiftCatalogItem } from "@/services/pointsService";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { usePayPendingOrder } from "@/hooks/usePayPendingOrder";
@@ -22,8 +21,8 @@ export default function PointsGiftShop() {
 
   useEffect(() => {
     loadProfile().catch(() => {});
-    pointsApi.getPointsGifts()
-      .then((res) => setGifts(res.data?.list || []))
+    fetchPointsGifts()
+      .then(setGifts)
       .catch((e) => toast.error(toastErrorMessage(e)))
       .finally(() => setLoading(false));
   }, [loadProfile]);
@@ -37,7 +36,7 @@ export default function PointsGiftShop() {
     }
     setRedeemingId(gift.id);
     try {
-      const res = await pointsApi.redeemPointsGift({
+      const res = await redeemPointsGift({
         gift_item_id: gift.id,
         quantity: 1,
         contact_name: addr.recipient_name || "",

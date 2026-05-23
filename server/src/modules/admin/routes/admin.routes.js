@@ -14,7 +14,7 @@ const multer = require('multer');
 const adminAuth = require('../../../middleware/adminAuth');
 const requirePermission = adminAuth.requirePermission;
 const requireAnyPermission = adminAuth.requireAnyPermission;
-const adminMfaService = require('../service/adminMfa.service');
+const requireRecentMfa = adminAuth.requireRecentMfa;
 const { adminSecurityAudit } = require('../../../middleware/adminSecurityAudit');
 const { userQueryLimiter } = require('../../../middleware/rateLimiters');
 const { paginationCap } = require('../../../middleware/paginationCap');
@@ -92,7 +92,7 @@ router.use((req, res, next) => {
   if (!isHighRiskAdminOperation(req)) return next();
   return adminAuth(req, res, (err) => {
     if (err) return next(err);
-    return adminMfaService.requireRecentMfa(req, res, next);
+    return requireRecentMfa(req, res, next);
   });
 });
 
@@ -147,7 +147,7 @@ router.post(
   '/restore/jobs/:id/approve',
   adminAuth,
   requirePermission('backup.restore.approve'),
-  adminMfaService.requireRecentMfa,
+  requireRecentMfa,
   backupCtrl.approveRestoreJob,
 );
 router.get('/restore/drills', adminAuth, requirePermission('backup.view'), backupCtrl.listDrillReports);

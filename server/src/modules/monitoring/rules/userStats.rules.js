@@ -1,33 +1,8 @@
 const repo = require('../repository/monitoring.repository');
-const { eq } = require('../monitoringSql');
 
 async function userStatsMismatch() {
-  const { db } = repo;
   if (!(await repo.tableExists('user_statistics'))) return { checkedCount: 0, anomalies: [] };
-  const hasRefundedAmount = await repo.columnExists('orders', 'refunded_amount');
-  const [rows] = await db.query(
-    `SELECT u.id AS user_id, u.phone, u.nickname,
-            COALESCE(us.total_spent, 0) AS stat_total_spent,
-            COALESCE(us.valid_order_count, 0) AS stat_valid_order_count,
-            COALESCE(real.total_spent, 0) AS real_total_spent,
-            COALESCE(real.valid_order_count, 0) AS real_valid_order_count
-     FROM users u
-     LEFT JOIN user_statistics us ON ${eq('us.user_id', 'u.id')}
-     LEFT JOIN (
-       SELECT user_id,
-              COUNT(*) AS valid_order_count,
-              SUM(total_amount${hasRefundedAmount ? ' - COALESCE(refunded_amount, 0)' : ''}) AS total_spent
-       FROM orders
-       WHERE payment_status IN ('paid','partially_refunded','refunded')
-         AND status <> 'cancelled'
-       GROUP BY user_id
-     ) real ON ${eq('real.user_id', 'u.id')}
-     WHERE u.deleted_at IS NULL
-       AND (
-         ABS(COALESCE(us.total_spent, 0) - COALESCE(real.total_spent, 0)) > 0.01
-         OR COALESCE(us.valid_order_count, 0) <> COALESCE(real.valid_order_count, 0)
-       )`,
-  );
+  const rows = await repo.selectUserStatsMismatches();
   return {
     checkedCount: rows.length,
     anomalies: rows.map((row) => ({

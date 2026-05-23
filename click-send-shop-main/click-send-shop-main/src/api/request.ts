@@ -158,6 +158,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
   const isAuthLogout = endpoint.startsWith("/auth/logout");
   const isAdminAuthLogin = endpoint.startsWith("/admin/auth/login");
   const isAdminAuthRefresh = endpoint.startsWith("/admin/auth/refresh");
+  const isAdminMfaEndpoint = endpoint.startsWith("/admin/auth/mfa/");
   const isAdminCsrfEndpoint = endpoint.startsWith("/admin/auth/csrf");
   const isAccountCancel = endpoint.startsWith("/user/account/cancel");
   const token = isAdminEndpoint ? getAdminAccessToken() : getAccessToken();
@@ -208,7 +209,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     }
   }
 
-  if (res.status === 401 && retry && isAdminEndpoint && !isAdminAuthLogin && !isAdminAuthRefresh) {
+  if (res.status === 401 && retry && isAdminEndpoint && !isAdminAuthLogin && !isAdminAuthRefresh && !isAdminMfaEndpoint) {
     if (!adminRefreshing) {
       adminRefreshing = tryRefreshAdminSession().finally(() => { adminRefreshing = null; });
     }
@@ -237,7 +238,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
       && isAdminEndpoint
       && mfaRequired
       && typeof window !== "undefined"
-      && !endpoint.startsWith("/admin/auth/mfa/")
+      && !isAdminMfaEndpoint
     ) {
       try {
         await requestAdminMfaStepUp();
@@ -282,12 +283,17 @@ export function get<T>(endpoint: string, params?: Record<string, unknown>, optio
   });
 }
 
-export function post<T>(endpoint: string, body?: unknown, options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode">) {
+export function post<T>(
+  endpoint: string,
+  body?: unknown,
+  options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode" | "signal">,
+) {
   return request<ApiResponse<T>>(endpoint, {
     method: "POST",
     body: body ? JSON.stringify(body) : undefined,
     skipGlobalLoading: options?.skipGlobalLoading,
     loadingMode: options?.loadingMode,
+    signal: options?.signal,
   });
 }
 

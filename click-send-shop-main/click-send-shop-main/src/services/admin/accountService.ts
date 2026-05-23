@@ -67,8 +67,8 @@ export async function verifyAdminMfa(
   return applyAdminLoginPayload(res.data as unknown as Record<string, unknown>, params.username || "");
 }
 
-export async function reverifyAdminMfa(code: string): Promise<void> {
-  const res = await accountApi.reverifyAdminMfa({ code });
+export async function reverifyAdminMfa(code: string, options?: { signal?: AbortSignal }): Promise<void> {
+  const res = await accountApi.reverifyAdminMfa({ code }, options);
   setAdminCsrfToken(res.data?.csrfToken);
 }
 

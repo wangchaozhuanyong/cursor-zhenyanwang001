@@ -1,5 +1,5 @@
 import { formatDateTime } from "@/utils/formatDateTime";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Loader2, RefreshCw, CheckCircle2, XCircle, Clock, FileSpreadsheet } from "lucide-react";
 import { AnimatedTable, LoadingButton } from "@/modules/micro-interactions";
@@ -23,25 +23,8 @@ import { toastErrorMessage } from "@/utils/errorMessage";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import { THEME_TEXT_DANGER, THEME_TEXT_SUCCESS, THEME_TEXT_WARNING } from "@/utils/themeVisuals";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
-
-const EXPORT_TYPES = [
-  { value: "sales_daily", label: "销售日报" },
-  { value: "sales_monthly", label: "销售月报" },
-  { value: "profit_daily", label: "利润日报" },
-  { value: "profit_monthly", label: "利润月报" },
-  { value: "product_analysis", label: "商品分析" },
-  { value: "category_analysis", label: "分类分析" },
-  { value: "order_analysis", label: "订单分析" },
-  { value: "customer_analysis", label: "客户分析" },
-  { value: "activity_analysis", label: "活动分析" },
-  { value: "coupon_analysis", label: "优惠券分析" },
-  { value: "inventory_analysis", label: "库存分析" },
-  { value: "search_analysis", label: "搜索分析" },
-  { value: "traffic_analysis", label: "流量分析" },
-  { value: "products", label: "商品数据" },
-  { value: "orders", label: "订单数据" },
-  { value: "users", label: "用户数据" },
-];
+import { EXPORTABLE_REPORTS } from "./reportRegistry";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
   pending: <Clock size={14} className={`animate-pulse ${THEME_TEXT_WARNING}`} />,
@@ -65,10 +48,24 @@ function formatBytes(bytes: number) {
 export default function AdminExportCenter() {
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
+  const capabilities = useSiteCapabilities();
   const [creating, setCreating] = useState(false);
-  const [selectedType, setSelectedType] = useState("sales_daily");
+  const exportTypes = useMemo(
+    () => EXPORTABLE_REPORTS
+      .filter((report) => !report.capability || capabilities[report.capability])
+      .map((report) => ({ value: report.exportType!, label: report.title })),
+    [capabilities],
+  );
+  const [selectedType, setSelectedType] = useState(exportTypes[0]?.value ?? "sales_daily");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+
+  useEffect(() => {
+    if (exportTypes.length === 0) return;
+    if (!exportTypes.some((item) => item.value === selectedType)) {
+      setSelectedType(exportTypes[0].value);
+    }
+  }, [exportTypes, selectedType]);
 
   const tasksQuery = useQuery({
     queryKey: adminQueryKeys.exportTasks(),
@@ -124,7 +121,7 @@ export default function AdminExportCenter() {
         <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center">
           <span className="text-sm font-medium text-foreground"><Tx>创建导出:</Tx></span>
           <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)} className="touch-manipulation min-h-[44px] rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none">
-            {EXPORT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+            {exportTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
           <SegmentedDateInput value={dateFrom} onChange={setDateFrom} className="min-w-[12rem]" />
           <SegmentedDateInput value={dateTo} onChange={setDateTo} className="min-w-[12rem]" />
@@ -171,7 +168,7 @@ export default function AdminExportCenter() {
         renderRow={(t) => (
           <>
             <td className="px-4 py-3 text-foreground">{t.file_name}</td>
-            <td className="px-4 py-3 text-xs text-muted-foreground">{EXPORT_TYPES.find((x) => x.value === t.type)?.label || labelExportType(t.type)}</td>
+            <td className="px-4 py-3 text-xs text-muted-foreground">{exportTypes.find((x) => x.value === t.type)?.label || labelExportType(t.type)}</td>
             <td className="px-4 py-3"><div className="flex items-center gap-1 text-xs">{STATUS_ICON[t.status]} {STATUS_TEXT[t.status] || "未知"}</div></td>
             <td className="px-4 py-3 text-xs text-muted-foreground">{formatBytes(t.file_size)}</td>
             <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{t.created_at ? formatDateTime(t.created_at) : "-"}</td>

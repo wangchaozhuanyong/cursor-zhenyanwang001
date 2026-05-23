@@ -1,30 +1,32 @@
 import { useCallback, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { REPORT_PAGES } from "@/config/reportPageConfig";
+import { REPORT_REGISTRY_BY_KEY } from "./reportRegistry";
 import { fetchProfitDailyReport, fetchProfitMonthlyReport } from "@/services/admin/reportService";
 import AdminReportGenericPage from "./pages/AdminReportGenericPage";
 
 type ProfitPeriod = "daily" | "monthly";
 
 export default function AdminProfitDailyReport() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const period: ProfitPeriod = searchParams.get("profit_period") === "monthly" ? "monthly" : "daily";
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const period: ProfitPeriod = location.pathname.endsWith("/monthly") || searchParams.get("profit_period") === "monthly" ? "monthly" : "daily";
 
   const setPeriod = useCallback(
     (next: ProfitPeriod) => {
       const params = new URLSearchParams(searchParams);
-      if (next === "daily") params.delete("profit_period");
-      else params.set("profit_period", "monthly");
-      setSearchParams(params, { replace: true });
+      params.delete("profit_period");
+      const query = params.toString();
+      navigate(`/admin/reports/profit/${next}${query ? `?${query}` : ""}`, { replace: true });
     },
-    [searchParams, setSearchParams],
+    [navigate, searchParams],
   );
 
   const config = useMemo(
     () => ({
-      ...(period === "monthly" ? REPORT_PAGES.profit_monthly : REPORT_PAGES.profit_daily),
-      title: period === "monthly" ? "利润报表 · 按月" : "利润报表 · 按日",
+      ...(period === "monthly" ? REPORT_REGISTRY_BY_KEY.profit_monthly : REPORT_REGISTRY_BY_KEY.profit_daily),
+      title: period === "monthly" ? "利润月报" : "利润日报",
     }),
     [period],
   );

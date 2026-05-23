@@ -55,6 +55,8 @@ type TrafficPayload = {
   topPages: TableRow[];
   sources: TableRow[];
   devices: TableRow[];
+  analytics_downgraded?: boolean;
+  warnings?: string[];
   last_updated_at?: string;
 };
 
@@ -306,6 +308,12 @@ export default function AdminTrafficAnalysisReport() {
           {exporting ? "导出中..." : "导出 CSV"}
         </button>
       </div>
+
+      {payload?.analytics_downgraded ? (
+        <div className="rounded-xl border border-sky-500/40 bg-sky-500/10 px-3 py-2.5 text-sm text-[var(--theme-text)]">
+          {(payload.warnings || []).join("；") || "流量分析数据已降级展示，请检查埋点表和字段是否完整。"}
+        </div>
+      ) : null}
 
       <div className="theme-rounded grid gap-3 border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow sm:grid-cols-2 lg:grid-cols-6">
         <FilterSelect label="时间范围" value={String(filters.range_preset || "last_7_days")} onChange={(value) => setFilters((prev) => ({ ...prev, range_preset: value }))} options={[

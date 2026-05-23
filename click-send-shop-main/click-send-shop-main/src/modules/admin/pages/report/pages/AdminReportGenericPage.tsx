@@ -77,14 +77,18 @@ export default function AdminReportGenericPage({
     exportType,
     exportMode,
     filterProfile,
+    filters,
     supportsGranularity,
     kpiProfile,
     maxKpis,
     reportKey,
+    columns: configuredColumns,
+    dataScopeNote,
+    kpiPriorityKeys,
     summaryPriorityKeys: summaryPriorityKeysConfig,
     summaryMaxCards: summaryMaxCardsConfig,
   } = config;
-  const summaryPriorityKeys = summaryPriorityKeysProp ?? summaryPriorityKeysConfig;
+  const summaryPriorityKeys = summaryPriorityKeysProp ?? summaryPriorityKeysConfig ?? kpiPriorityKeys;
   const summaryMaxCards =
     summaryMaxCardsProp ?? summaryMaxCardsConfig ?? (summaryPriorityKeys?.length ? 0 : (maxKpis ?? 8));
   const [searchParams, setSearchParams] = useSearchParams();
@@ -93,8 +97,8 @@ export default function AdminReportGenericPage({
   const [exporting, setExporting] = useState(false);
 
   const enabledFilters = useMemo(
-    () => getEnabledFilters(filterProfile, { supportsGranularity }),
-    [filterProfile, supportsGranularity],
+    () => filters ?? getEnabledFilters(filterProfile, { supportsGranularity }),
+    [filterProfile, filters, supportsGranularity],
   );
 
   const needsCategories =
@@ -143,7 +147,10 @@ export default function AdminReportGenericPage({
   });
 
   const loading = reportQuery.isLoading && !reportQuery.data;
-  const payload = (reportQuery.data ?? {}) as Record<string, unknown>;
+  const payload = useMemo(
+    () => (reportQuery.data ?? {}) as Record<string, unknown>,
+    [reportQuery.data],
+  );
 
   useEffect(() => {
     if (reportQuery.isError) {
@@ -155,9 +162,27 @@ export default function AdminReportGenericPage({
     () => (Array.isArray(payload.list) ? (payload.list as Record<string, unknown>[]) : []),
     [payload.list],
   );
-  const summary = (payload.summary || {}) as Record<string, unknown>;
+  const summary = useMemo(
+    () => (payload.summary || {}) as Record<string, unknown>,
+    [payload.summary],
+  );
 
-  const { columns, stickyKeys } = useMemo(() => buildReportTableColumns(list), [list]);
+  const hideActivitySalesMetrics = reportKey === "activity_analysis" && payload.sales_tracking_available === false;
+
+  const { columns, stickyKeys } = useMemo(() => {
+    if (configuredColumns?.length && list.length > 0) {
+      const available = new Set(Object.keys(list[0]));
+      const visibleColumns = configuredColumns.filter((key) => available.has(key));
+      if (visibleColumns.length > 0) {
+        const fallback = buildReportTableColumns(list, { hideActivitySalesMetrics });
+        const columns = hideActivitySalesMetrics
+          ? visibleColumns.filter((key) => fallback.columns.includes(key))
+          : visibleColumns;
+        return { columns, stickyKeys: fallback.stickyKeys };
+      }
+    }
+    return buildReportTableColumns(list, { hideActivitySalesMetrics });
+  }, [configuredColumns, hideActivitySalesMetrics, list]);
 
   const kpiEntries = useMemo(
     () => pickSummaryKpiEntries(summary, kpiProfile, summaryMaxCards, summaryPriorityKeys),
@@ -175,6 +200,7 @@ export default function AdminReportGenericPage({
   );
   const filtersActive = hasActiveReportFilters(searchParams, enabledFilters);
   const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.reportDataFiltered : ADMIN_EMPTY_GUIDES.reportData;
+  const summaryOnly = list.length === 0 && Object.keys(summary).length > 0;
 
   const handleClearFilters = () => {
     setSearchParams(clearReportFilters(enabledFilters), { replace: true });
@@ -250,80 +276,92 @@ export default function AdminReportGenericPage({
 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-[var(--theme-text)]">明细数据</h2>
-        <AnimatedTable
-          loading={loading}
-          rows={list}
-          rowKey={(row) => String(list.indexOf(row))}
-          skeletonRows={8}
-          skeletonCols={Math.max(columns.length, 5)}
-          className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-0 overflow-auto"
-          tableClassName="w-full min-w-[720px] table-fixed text-[13px] leading-snug"
-          theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-surface)]"
-          thead={(
-            <tr>
-              {columns.map((k) => {
-                const sticky = stickyKeys.has(k);
-                return (
-                  <th
-                    key={k}
-                    className={reportTableHeadCellClass(sticky)}
-                    style={{
-                      ...getReportColumnMaxWidthStyle(k),
-                      ...getReportStickyCellStyle(k, columns, stickyKeys),
-                    }}
-                  >
-                    {labelReportColumn(k)}
-                  </th>
-                );
-              })}
-            </tr>
-          )}
-          emptyIcon={emptyGuide.icon}
-          emptyTitle={emptyGuide.title}
-          emptyDescription={emptyGuide.description}
-          emptyAction={(
-            <AdminEmptyGuideActions
-              guide={emptyGuide}
-              showClearFilters={filtersActive}
-              onClearFilters={handleClearFilters}
-            />
-          )}
-          renderRow={(row) => (
-            <>
-              {columns.map((k) => {
-                const display = formatCellValue(k, row[k]);
-                const sticky = stickyKeys.has(k);
-                return (
-                  <td
-                    key={k}
-                    className={reportTableBodyCellClass(sticky)}
-                    style={{
-                      ...getReportColumnMaxWidthStyle(k),
-                      ...getReportStickyCellStyle(k, columns, stickyKeys),
-                    }}
-                  >
-                    {k === "cover_image" ? (
-                      <button
-                        type="button"
-                        className="inline-flex h-8 items-center rounded-md border border-[var(--theme-border)] bg-transparent px-2.5 text-[13px] text-foreground hover:bg-secondary"
-                        onClick={() => openCoverPreview(row[k])}
-                      >
-                        查看图片
-                      </button>
-                    ) : (
-                      <AdminTableCell
-                        value={display}
-                        columnKey={k}
-                        fullText={display === "-" ? "" : display}
-                      />
-                    )}
-                  </td>
-                );
-              })}
-            </>
-          )}
-        />
+        {summaryOnly ? (
+          <div className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-5 text-sm text-[var(--theme-text-muted)]">
+            该报表仅展示汇总指标。
+          </div>
+        ) : (
+          <AnimatedTable
+            loading={loading}
+            rows={list}
+            rowKey={(row) => String(list.indexOf(row))}
+            skeletonRows={8}
+            skeletonCols={Math.max(columns.length, 5)}
+            className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-0 overflow-auto"
+            tableClassName="w-full min-w-[720px] table-fixed text-[13px] leading-snug"
+            theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-surface)]"
+            thead={(
+              <tr>
+                {columns.map((k) => {
+                  const sticky = stickyKeys.has(k);
+                  return (
+                    <th
+                      key={k}
+                      className={reportTableHeadCellClass(sticky)}
+                      style={{
+                        ...getReportColumnMaxWidthStyle(k),
+                        ...getReportStickyCellStyle(k, columns, stickyKeys),
+                      }}
+                    >
+                      {labelReportColumn(k)}
+                    </th>
+                  );
+                })}
+              </tr>
+            )}
+            emptyIcon={emptyGuide.icon}
+            emptyTitle={emptyGuide.title}
+            emptyDescription={emptyGuide.description}
+            emptyAction={(
+              <AdminEmptyGuideActions
+                guide={emptyGuide}
+                showClearFilters={filtersActive}
+                onClearFilters={handleClearFilters}
+              />
+            )}
+            renderRow={(row) => (
+              <>
+                {columns.map((k) => {
+                  const display = formatCellValue(k, row[k]);
+                  const sticky = stickyKeys.has(k);
+                  return (
+                    <td
+                      key={k}
+                      className={reportTableBodyCellClass(sticky)}
+                      style={{
+                        ...getReportColumnMaxWidthStyle(k),
+                        ...getReportStickyCellStyle(k, columns, stickyKeys),
+                      }}
+                    >
+                      {k === "cover_image" ? (
+                        <button
+                          type="button"
+                          className="inline-flex h-8 items-center rounded-md border border-[var(--theme-border)] bg-transparent px-2.5 text-[13px] text-foreground hover:bg-secondary"
+                          onClick={() => openCoverPreview(row[k])}
+                        >
+                          查看图片
+                        </button>
+                      ) : (
+                        <AdminTableCell
+                          value={display}
+                          columnKey={k}
+                          fullText={display === "-" ? "" : display}
+                        />
+                      )}
+                    </td>
+                  );
+                })}
+              </>
+            )}
+          />
+        )}
       </section>
+
+      {dataScopeNote ? (
+        <section className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm text-[var(--theme-text-muted)]">
+          <span className="font-medium text-[var(--theme-text)]">数据口径：</span>{dataScopeNote}
+        </section>
+      ) : null}
 
       <AdminResponsiveSheet
         open={previewOpen}

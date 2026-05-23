@@ -37,52 +37,15 @@ async function executeRepairTask(taskId, operatorId) {
   }
 
   const anomaly = await repo.findAnomalyById(task.anomaly_id);
-  const { db } = repo;
   let afterSnapshot = null;
 
   if (task.repair_type === 'sync_product_stock_from_variants' && task.entity_type === 'product') {
-    const [[before]] = await db.query(`SELECT id, stock FROM products WHERE id = ?`, [task.entity_id]);
-    await db.query(
-      `UPDATE products p
-       SET p.stock = COALESCE((
-         SELECT SUM(v.stock)
-         FROM product_variants v
-         WHERE v.product_id = p.id
-           AND v.deleted_at IS NULL
-           AND (v.enabled IS NULL OR v.enabled = 1)
-       ), 0)
-       WHERE p.id = ?`,
-      [task.entity_id],
-    );
-    const [[after]] = await db.query(`SELECT id, stock FROM products WHERE id = ?`, [task.entity_id]);
-    afterSnapshot = { before, after };
+    afterSnapshot = await repo.syncProductStockFromVariants(task.entity_id);
   } else if (task.repair_type === 'clear_cache_key') {
-    await db.query(`DELETE FROM cache_meta WHERE cache_key = ?`, [task.suggestion?.cacheKey || task.entity_id]);
+    await repo.clearCacheKey(task.suggestion?.cacheKey || task.entity_id);
     afterSnapshot = { cacheKey: task.suggestion?.cacheKey || task.entity_id, cleared: true };
   } else if (task.repair_type === 'recalculate_user_statistics' && task.entity_type === 'user') {
-    const [[real]] = await db.query(
-      `SELECT COUNT(*) AS valid_order_count, COALESCE(SUM(total_amount - COALESCE(refunded_amount, 0)), 0) AS total_spent
-       FROM orders
-       WHERE user_id = ? AND payment_status IN ('paid','partially_refunded','refunded') AND status <> 'cancelled'`,
-      [task.entity_id],
-    );
-    await db.query(
-      `INSERT INTO user_statistics (user_id, total_spent, valid_order_count, average_order_value)
-       VALUES (?, ?, ?, IF(? > 0, ? / ?, 0))
-       ON DUPLICATE KEY UPDATE
-         total_spent = VALUES(total_spent),
-         valid_order_count = VALUES(valid_order_count),
-         average_order_value = VALUES(average_order_value),
-         updated_at = NOW()`,
-      [
-        task.entity_id,
-        Number(real.total_spent || 0),
-        Number(real.valid_order_count || 0),
-        Number(real.valid_order_count || 0),
-        Number(real.total_spent || 0),
-        Number(real.valid_order_count || 0),
-      ],
-    );
+    const real = await repo.recalculateUserStatistics(task.entity_id);
     afterSnapshot = { recalculated: real };
   } else {
     await repo.updateRepairTask(taskId, { repair_status: 'failed', remark: '当前修复类型未开放自动执行' });

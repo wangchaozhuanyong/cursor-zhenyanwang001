@@ -1,13 +1,8 @@
 const repo = require('../repository/monitoring.repository');
 
 async function refundAmountExceedsPaid() {
-  const { db } = repo;
   if (!(await repo.columnExists('orders', 'refunded_amount'))) return { checkedCount: 0, anomalies: [] };
-  const [rows] = await db.query(
-    `SELECT id, order_no, total_amount, refunded_amount, payment_status, refund_status
-     FROM orders
-     WHERE refunded_amount > total_amount + 0.01`,
-  );
+  const rows = await repo.selectRefundAmountExceedsPaidOrders();
   return {
     checkedCount: rows.length,
     anomalies: rows.map((row) => ({

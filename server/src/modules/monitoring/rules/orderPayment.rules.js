@@ -1,18 +1,8 @@
 const repo = require('../repository/monitoring.repository');
-const { eq } = require('../monitoringSql');
 
 async function paymentSuccessOrderUnpaid() {
-  const { db } = repo;
   if (!(await repo.tableExists('payment_orders'))) return { checkedCount: 0, anomalies: [] };
-  const [rows] = await db.query(
-    `SELECT po.id AS payment_order_id, po.order_id, po.order_no, po.amount, po.status AS payment_order_status,
-            po.payment_transaction_no, o.status AS order_status, o.payment_status, o.total_amount
-     FROM payment_orders po
-     JOIN orders o ON ${eq('o.id', 'po.order_id')}
-     WHERE po.status = 'paid'
-       AND (o.payment_status IS NULL OR o.payment_status <> 'paid')
-       AND o.status NOT IN ('refunded','cancelled')`,
-  );
+  const rows = await repo.selectPaymentSuccessUnpaidOrders();
   return {
     checkedCount: rows.length,
     anomalies: rows.map((row) => ({
@@ -44,18 +34,8 @@ async function paymentSuccessOrderUnpaid() {
 }
 
 async function orderPaymentAmountMismatch() {
-  const { db } = repo;
   if (!(await repo.tableExists('payment_orders'))) return { checkedCount: 0, anomalies: [] };
-  const [rows] = await db.query(
-    `SELECT o.id AS order_id, o.order_no, o.total_amount,
-            COALESCE(SUM(po.amount), 0) AS paid_amount,
-            GROUP_CONCAT(po.id ORDER BY po.created_at) AS payment_order_ids
-     FROM orders o
-     JOIN payment_orders po ON ${eq('po.order_id', 'o.id')} AND po.status = 'paid'
-     WHERE o.payment_status IN ('paid','partially_refunded','refunded') OR o.status IN ('paid','shipped','completed','refunding','refunded')
-     GROUP BY o.id, o.order_no, o.total_amount
-     HAVING ABS(COALESCE(SUM(po.amount), 0) - o.total_amount) > 0.01`,
-  );
+  const rows = await repo.selectOrderPaymentAmountMismatches();
   return {
     checkedCount: rows.length,
     anomalies: rows.map((row) => ({

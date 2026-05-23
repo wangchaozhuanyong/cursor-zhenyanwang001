@@ -4,6 +4,8 @@ const { labelReportColumn, labelReportCellValue } = require('../../../utils/repo
 const { generateId } = require('../../../utils/helpers');
 const { BusinessError } = require('../../../errors/BusinessError');
 const { writeAuditLog } = require('../../../utils/auditLog');
+const siteCapabilitiesService = require('../../siteCapabilities/service/siteCapabilities.service');
+const { getReportDefinition } = require('../report/adminReportRegistry');
 
 function formatDate(date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
@@ -124,6 +126,8 @@ function emptyTrafficPayload(dateFrom, dateTo) {
     topPages: [],
     sources: [],
     devices: [],
+    analytics_downgraded: true,
+    warnings: ['流量分析埋点表或必要字段未就绪，暂无法统计 PV、UV、来源、设备和漏斗数据。'],
     date_from: dateFrom,
     date_to: dateTo,
     last_updated_at: new Date().toISOString(),
@@ -132,6 +136,7 @@ function emptyTrafficPayload(dateFrom, dateTo) {
 
 async function getOverview(query) {
   const { dateFrom, dateTo } = resolveDateRange(query);
+  const analyticsReady = await repo.isAnalyticsEventsReady();
   const summaryRaw = await repo.selectOverviewSummary(dateFrom, dateTo);
   const behaviorRaw = await repo.selectOverviewBehaviorSummary(dateFrom, dateTo);
   const hot = await repo.selectOverviewTopProducts(dateFrom, dateTo, false);
@@ -143,12 +148,12 @@ async function getOverview(query) {
 
   return {
     summary: {
-      今日销售额: gross,
-      今日净销售额: net,
-      今日支付订单数: paidOrders,
-      今日客单价: paidOrders > 0 ? safeNumber(gross / paidOrders) : 0,
-      今日退款金额: refund,
-      今日优惠金额: safeNumber(summaryRaw.discount_amount),
+      销售额: gross,
+      净销售额: net,
+      支付订单数: paidOrders,
+      客单价: paidOrders > 0 ? safeNumber(gross / paidOrders) : 0,
+      退款金额: refund,
+      优惠金额: safeNumber(summaryRaw.discount_amount),
       待处理订单: Number(summaryRaw.pending_orders || 0),
       商品浏览次数: Number(behaviorRaw.product_view_count || 0),
       商品点击次数: Number(behaviorRaw.product_click_count || 0),
@@ -158,6 +163,8 @@ async function getOverview(query) {
     },
     topHotProducts: hot,
     topSlowProducts: slow,
+    analytics_downgraded: !analyticsReady,
+    warnings: analyticsReady ? [] : ['行为埋点表未就绪，商品浏览、加购和发起结算等行为指标已降级。'],
     date_from: dateFrom,
     date_to: dateTo,
     last_updated_at: new Date().toISOString(),
@@ -698,8 +705,17 @@ async function getInventoryAnalysis(query = {}) {
 
 async function getSearchAnalysis(query) {
   const { dateFrom, dateTo } = resolveDateRange(query);
+  const analyticsReady = await repo.isAnalyticsEventsReady();
   const list = await repo.selectSimpleSearchAnalysis(dateFrom, dateTo);
-  return { summary: { 关键词数: list.length }, list, date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
+  return {
+    summary: { 关键词数: list.length },
+    list,
+    analytics_downgraded: !analyticsReady,
+    warnings: analyticsReady ? [] : ['搜索点击、加购、下单和销售额依赖 analytics_events 埋点，当前仅展示搜索词和无结果词。'],
+    date_from: dateFrom,
+    date_to: dateTo,
+    last_updated_at: new Date().toISOString(),
+  };
 }
 
 async function getTrafficAnalysis(query = {}) {
@@ -832,12 +848,15 @@ function buildCsv(headers, rows) {
   return `${BOM}${h}\r\n${body}`;
 }
 
-function buildCsvFromRecords(records) {
+function buildCsvFromRecords(records, preferredKeys) {
   if (!records?.length) return buildCsv([], []);
-  const keys = Array.from(records.reduce((set, record) => {
+  const availableKeys = records.reduce((set, record) => {
     Object.keys(record || {}).forEach((key) => set.add(key));
     return set;
-  }, new Set()));
+  }, new Set());
+  const keys = preferredKeys?.length
+    ? preferredKeys.filter((key) => availableKeys.has(key))
+    : Array.from(availableKeys);
   const preferPath = keys.includes('category_path');
   const exportKeys = preferPath
     ? keys.filter((k) => !['category_id', 'category_name', 'parent_category_id', 'parent_category_name'].includes(k))
@@ -875,6 +894,12 @@ const ACTIVITY_EXPORT_BASE_KEYS = [
   'end_at',
   'product_count',
 ];
+
+async function assertReportCapability(definition) {
+  if (!definition?.capability) return;
+  const enabled = await siteCapabilitiesService.isCapabilityEnabled(definition.capability);
+  if (!enabled) throw new BusinessError(403, '该报表对应功能已关闭');
+}
 
 function buildTrafficExportRows(data) {
   const rows = [];
@@ -992,85 +1017,10 @@ async function deleteOperatingExpense(id, admin = {}, req) {
 }
 
 async function exportByType(type, query) {
-  if (type === 'sales_daily') {
-    const data = await getSalesDaily(query);
-    assertExportRows(data.list, '销售日报在所选时间范围内暂无明细数据，无法导出');
-    const csv = buildCsvFromRecords(data.list);
-    return { csv, filename: `sales-daily-${data.date_from}-${data.date_to}.csv` };
-  }
-  if (type === 'sales_monthly') {
-    const data = await getSalesMonthly(query);
-    assertExportRows(data.list, '销售月报在所选时间范围内暂无明细数据，无法导出');
-    const csv = buildCsvFromRecords(data.list);
-    return { csv, filename: `sales-monthly-${data.date_from}-${data.date_to}.csv` };
-  }
-  if (type === 'profit_daily') {
-    const data = await getProfitDaily(query);
-    assertExportRows(data.list, '利润日报在所选时间范围内暂无明细数据，无法导出');
-    const csv = buildCsvFromRecords(data.list);
-    return { csv, filename: `profit-daily-${data.date_from}-${data.date_to}.csv` };
-  }
-  if (type === 'profit_monthly') {
-    const data = await getProfitMonthly(query);
-    assertExportRows(data.list, '利润月报在所选时间范围内暂无明细数据，无法导出');
-    const csv = buildCsvFromRecords(data.list);
-    return { csv, filename: `profit-monthly-${data.date_from}-${data.date_to}.csv` };
-  }
-  if (type === 'product_analysis') {
-    const data = await getProductsAnalysis(query);
-    assertExportRows(data.list, '商品分析在所选时间范围内暂无明细数据，无法导出');
-    const csv = buildCsvFromRecords(data.list);
-    return { csv, filename: `product-analysis-${data.date_from}-${data.date_to}.csv` };
-  }
-  if (type === 'category_analysis') {
-    const data = await getCategoriesAnalysis(query);
-    assertExportRows(data.list, '分类分析在所选时间范围内暂无明细数据，无法导出');
-    const csv = buildCsvFromRecords(data.list);
-    return { csv, filename: `category-analysis-${data.date_from}-${data.date_to}.csv` };
-  }
-  if (type === 'order_analysis') {
-    const data = await getOrdersAnalysis(query);
-    assertExportRows(data.list, '订单分析在所选时间范围内暂无按日明细，无法导出');
-    const csv = buildCsvFromRecords(data.list);
-    return { csv, filename: `order-analysis-${data.date_from}-${data.date_to}.csv` };
-  }
-  if (type === 'customer_analysis') {
-    const data = await getCustomersAnalysis(query);
-    const summary = data.summary || {};
-    assertExportRows(
-      Object.keys(summary).length ? [summary] : [],
-      '客户分析暂无汇总数据，无法导出',
-    );
-    const csv = buildCsvFromRecords([summary]);
-    return { csv, filename: `customer-analysis-${data.date_from}-${data.date_to}.csv` };
-  }
-  if (type === 'activity_analysis') {
-    const data = await getActivitiesAnalysis(query);
-    assertExportRows(data.list, '活动分析在所选时间范围内暂无活动数据，无法导出');
-    const exportList = data.sales_tracking_available
-      ? data.list
-      : data.list.map((row) => pickRecordKeys(row, ACTIVITY_EXPORT_BASE_KEYS));
-    const csv = buildCsvFromRecords(exportList);
-    return { csv, filename: `activity-analysis-${data.date_from}-${data.date_to}.csv` };
-  }
-  if (type === 'coupon_analysis') {
-    const data = await getCouponsAnalysis(query);
-    assertExportRows(data.list, '优惠券分析在所选时间范围内暂无明细数据，无法导出');
-    const csv = buildCsvFromRecords(data.list);
-    return { csv, filename: `coupon-analysis-${data.date_from}-${data.date_to}.csv` };
-  }
-  if (type === 'inventory_analysis') {
-    const data = await getInventoryAnalysis(query);
-    assertExportRows(data.list, '库存分析暂无商品库存数据，无法导出');
-    const csv = buildCsvFromRecords(data.list);
-    return { csv, filename: `inventory-analysis.csv` };
-  }
-  if (type === 'search_analysis') {
-    const data = await getSearchAnalysis(query);
-    assertExportRows(data.list, '搜索分析在所选时间范围内暂无搜索词数据，无法导出');
-    const csv = buildCsvFromRecords(data.list);
-    return { csv, filename: `search-analysis-${data.date_from}-${data.date_to}.csv` };
-  }
+  const definition = getReportDefinition(type);
+  if (!definition) throw new BusinessError(400, `不支持的报表类型: ${type}`);
+  await assertReportCapability(definition);
+
   if (type === 'traffic_analysis') {
     if (!(await repo.isAnalyticsEventsReady())) {
       throw new BusinessError(400, '流量分析埋点未就绪，暂无法导出');
@@ -1084,7 +1034,40 @@ async function exportByType(type, query) {
     const csv = buildCsvFromRecords(rows);
     return { csv, filename: `traffic-analysis-${data.date_from}-${data.date_to}.csv` };
   }
-  throw new BusinessError(400, `不支持的报表类型: ${type}`);
+
+  const handlers = {
+    getSalesDaily,
+    getSalesMonthly,
+    getProfitDaily,
+    getProfitMonthly,
+    listOperatingExpenses,
+    getProductsAnalysis,
+    getCategoriesAnalysis,
+    getInventoryAnalysis,
+    getOrdersAnalysis,
+    getCustomersAnalysis,
+    getActivitiesAnalysis,
+    getCouponsAnalysis,
+    getSearchAnalysis,
+  };
+  const handler = handlers[definition.serviceHandler];
+  if (!handler) throw new BusinessError(400, `导出类型未绑定处理器: ${type}`);
+  const data = await handler(query);
+
+  let rows = Array.isArray(data.list) ? data.list : [];
+  if (type === 'customer_analysis' && rows.length === 0 && data.summary && Object.keys(data.summary).length > 0) {
+    rows = [data.summary];
+  }
+  if (type === 'activity_analysis' && data.sales_tracking_available === false) {
+    rows = rows.map((row) => pickRecordKeys(row, definition.degradedCsvColumns || ACTIVITY_EXPORT_BASE_KEYS));
+  }
+  assertExportRows(rows, `${definition.filenamePrefix} 在所选范围内暂无可导出数据`);
+  const columns = type === 'activity_analysis' && data.sales_tracking_available === false
+    ? definition.degradedCsvColumns
+    : definition.csvColumns;
+  const csv = buildCsvFromRecords(rows, columns);
+  const dateRange = data.date_from && data.date_to ? `-${data.date_from}-${data.date_to}` : '';
+  return { csv, filename: `${definition.filenamePrefix}${dateRange}.csv` };
 }
 
 module.exports = {

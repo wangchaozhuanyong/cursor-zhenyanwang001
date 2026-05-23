@@ -62,24 +62,19 @@ async function objectPathExists(urlPath) {
 }
 
 async function fileObjectMissing() {
-  const { db } = repo;
   const rows = [];
-  const [products] = await db.query(`SELECT id, name, cover_image, images FROM products`);
+  const { products, variants, banners } = await repo.selectFileReferenceRows();
   for (const product of products) {
     const paths = [...extractPaths(product.cover_image), ...extractPaths(product.images)];
     for (const filePath of paths) {
       if (!(await objectPathExists(filePath))) rows.push({ entityType: 'product', entityId: product.id, title: product.name, filePath });
     }
   }
-  if (await repo.tableExists('product_variants')) {
-    const [variants] = await db.query(`SELECT id, product_id, title, image_url FROM product_variants WHERE image_url IS NOT NULL AND image_url <> ''`);
-    for (const variant of variants) {
-      for (const filePath of extractPaths(variant.image_url)) {
-        if (!(await objectPathExists(filePath))) rows.push({ entityType: 'product_variant', entityId: variant.id, title: variant.title, filePath, productId: variant.product_id });
-      }
+  for (const variant of variants) {
+    for (const filePath of extractPaths(variant.image_url)) {
+      if (!(await objectPathExists(filePath))) rows.push({ entityType: 'product_variant', entityId: variant.id, title: variant.title, filePath, productId: variant.product_id });
     }
   }
-  const [banners] = await db.query(`SELECT id, title, image FROM banners WHERE image IS NOT NULL AND image <> ''`);
   for (const banner of banners) {
     for (const filePath of extractPaths(banner.image)) {
       if (!(await objectPathExists(filePath))) rows.push({ entityType: 'banner', entityId: banner.id, title: banner.title, filePath });

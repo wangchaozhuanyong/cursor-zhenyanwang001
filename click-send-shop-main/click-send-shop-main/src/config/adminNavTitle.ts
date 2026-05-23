@@ -1,14 +1,40 @@
 type AdminNavTitleItem = {
   label: string;
   path: string;
-  children?: { label: string; path: string }[];
+  children?: AdminNavTitleChild[];
 };
 
-function childIsActive(pathname: string, childPath: string, parentPath: string): boolean {
+type AdminNavTitleChild = {
+  label: string;
+  path?: string;
+  children?: AdminNavTitleChild[];
+};
+
+function childIsActive(pathname: string, childPath: string | undefined, parentPath: string): boolean {
+  if (!childPath) return false;
   if (childPath === parentPath) {
     return pathname === childPath || pathname.startsWith(`${childPath}/`);
   }
   return pathname === childPath || pathname.startsWith(`${childPath}/`);
+}
+
+function resolveChildTitle(
+  pathname: string,
+  parent: AdminNavTitleItem,
+  child: AdminNavTitleChild,
+  parents: string[] = [],
+): string | null {
+  const labels = [...parents, child.label];
+  if (child.children?.length) {
+    for (const nested of child.children) {
+      const nestedTitle = resolveChildTitle(pathname, parent, nested, labels);
+      if (nestedTitle) return nestedTitle;
+    }
+  }
+  if (childIsActive(pathname, child.path, parent.path)) {
+    return `${parent.label} / ${labels.join(" / ")}`;
+  }
+  return null;
 }
 
 /** 隐藏/详情页三级顶栏标题（优先于侧栏二级匹配） */
@@ -71,9 +97,8 @@ export function resolveAdminHeaderTitle(
   for (const item of navItems) {
     if (item.children?.length) {
       for (const child of item.children) {
-        if (childIsActive(pathname, child.path, item.path)) {
-          return `${item.label} / ${child.label}`;
-        }
+        const childTitle = resolveChildTitle(pathname, item, child);
+        if (childTitle) return childTitle;
       }
     }
     if (pathname === item.path || (item.path !== "/admin" && pathname.startsWith(item.path))) {

@@ -1,5 +1,5 @@
 import * as pointsApi from "@/api/admin/points";
-import type { LoyaltyPointsSettings, ProductPointRule } from "@/api/admin/points";
+import type { LoyaltyPointsSettings, PointsGiftItem, ProductPointRule } from "@/api/admin/points";
 import type { AdminPointsRecordsResponse, PointsListParams, PointsRule } from "@/types/points";
 import { unwrapList } from "@/services/responseNormalize";
 
@@ -58,4 +58,28 @@ export async function runPointsExpireJob() {
   return res.data;
 }
 
-export type { LoyaltyPointsSettings, ProductPointRule };
+export async function fetchPointsGiftItems(params?: Record<string, string | number | boolean | undefined>) {
+  const res = await pointsApi.getPointsGiftItems(params);
+  return res.data;
+}
+
+export async function createPointsGiftItem(data: PointsGiftItem) {
+  const res = await pointsApi.createPointsGiftItem(data);
+  return res.data;
+}
+
+export async function savePointsGiftItem(id: string, data: Partial<PointsGiftItem>) {
+  const res = await pointsApi.updatePointsGiftItem(id, data);
+  return res.data;
+}
+
+export async function removePointsGiftItem(id: string) {
+  await pointsApi.deletePointsGiftItem(id);
+}
+
+export async function fetchPointsGiftRedemptions(params?: Record<string, string | number | undefined>) {
+  const res = await pointsApi.getPointsGiftRedemptions(params);
+  return res.data;
+}
+
+export type { LoyaltyPointsSettings, PointsGiftItem, ProductPointRule };

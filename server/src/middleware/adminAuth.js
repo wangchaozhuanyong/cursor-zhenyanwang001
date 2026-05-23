@@ -1,6 +1,7 @@
 const { verifyToken } = require('../utils/helpers');
 const authRepo = require('../modules/auth/repository/auth.repository');
 const rbacService = require('../modules/admin/service/rbac.service');
+const adminMfaService = require('../modules/admin/service/adminMfa.service');
 const { getAccessTokenFromRequest } = require('../utils/authCookies');
 
 async function adminAuthMiddleware(req, res, next) {
@@ -66,5 +67,6 @@ function requireAnyPermission(codes) {
 
 adminAuthMiddleware.requirePermission = requirePermission;
 adminAuthMiddleware.requireAnyPermission = requireAnyPermission;
+adminAuthMiddleware.requireRecentMfa = adminMfaService.requireRecentMfa;
 
 module.exports = adminAuthMiddleware;

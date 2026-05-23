@@ -32,7 +32,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
     <div className="border-t border-border px-4 py-8 md:px-0 md:py-10">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-foreground">商品评价</h3>
+          <h3 className="text-[15px] font-semibold text-foreground">商品评价</h3>
           <span className="text-xs text-muted-foreground">({reviewTotal})</span>
         </div>
         <button type="button" onClick={openReview} className="rounded-full bg-gold/10 px-3 py-1.5 text-xs font-medium text-theme-price">
@@ -41,7 +41,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
       </div>
 
       <div className="mt-4 flex items-center gap-3 rounded-xl bg-secondary p-3 md:p-4">
-        <span className="text-3xl font-bold text-theme-price">{avgRating.toFixed(1)}</span>
+        <span className="text-[26px] font-bold leading-none text-theme-price sm:text-[28px]">{avgRating.toFixed(1)}</span>
         <div>
           <div className="flex gap-0.5">{[1, 2, 3, 4, 5].map((s) => <Star key={s} size={14} className={s <= Math.round(avgRating) ? "fill-theme-price text-theme-price" : "text-border"} />)}</div>
           <p className="mt-0.5 text-[11px] text-muted-foreground">{reviewTotal} 条评价</p>
@@ -60,7 +60,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
               <span className="text-[11px] text-muted-foreground">{timeAgo(review.created_at)}</span>
             </div>
             {review.is_verified_purchase && <span className="mt-1 inline-block rounded bg-gold/10 px-1.5 py-0.5 text-[10px] text-theme-price">已购评价</span>}
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{review.content}</p>
+            <p className="store-body-text mt-2 text-muted-foreground">{review.content}</p>
             <button type="button" onClick={() => handleLike(review.id)} className={`mt-2 flex items-center gap-1 text-xs ${likedIds.has(review.id) ? "text-theme-price" : "text-muted-foreground"}`}>
               <ThumbsUp size={13} className={likedIds.has(review.id) ? "fill-theme-price" : ""} />{review.likes_count || 0}
             </button>

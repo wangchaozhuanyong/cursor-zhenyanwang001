@@ -135,7 +135,7 @@ export default function Coupons() {
             <div>
               <p className={THEME_ACCENT_HERO_LABEL}>我的优惠券</p>
               <div className="mt-2 flex items-baseline gap-2">
-                <span className={`text-5xl ${THEME_ACCENT_HERO_VALUE}`}>{claimedCount}</span>
+                <span className={`store-stat-value ${THEME_ACCENT_HERO_VALUE}`}>{claimedCount}</span>
                 <span className={`text-sm ${THEME_ACCENT_HERO_MUTED}`}>张可用</span>
               </div>
               <p className={`mt-2 ${THEME_ACCENT_HERO_SUBTLE}`}>

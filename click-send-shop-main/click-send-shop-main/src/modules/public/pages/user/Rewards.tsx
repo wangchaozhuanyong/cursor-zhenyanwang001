@@ -86,7 +86,10 @@ export default function Rewards() {
         <div className={`rounded-xl p-6 text-center ${THEME_ACCENT_HERO_SHELL}`}>
           <Gift size={32} className={`mx-auto ${THEME_ACCENT_HERO_ICON}`} />
           <p className={`mt-2 ${THEME_ACCENT_HERO_LABEL} normal-case tracking-normal`}>可提现余额</p>
-          <p className={`text-4xl ${THEME_ACCENT_HERO_VALUE}`}>RM {Number(balance).toFixed(2)}</p>
+          <p className={`store-stat-value inline-flex items-baseline ${THEME_ACCENT_HERO_VALUE}`}>
+            <span className="mr-1 text-[14px] font-bold leading-none sm:text-base">RM</span>
+            <span>{Number(balance).toFixed(2)}</span>
+          </p>
           {pendingAmount > 0 && <p className={`mt-1 ${THEME_ACCENT_HERO_SUBTLE}`}>待审核：RM {Number(pendingAmount).toFixed(2)}</p>}
           <p className={`mt-4 text-xs leading-5 ${THEME_ACCENT_HERO_SUBTLE}`}>{"\u8fd4\u73b0\u91d1\u989d\u4ec5\u53ef\u7528\u4e8e\u8d2d\u7269\u3002"}</p>
         </div>

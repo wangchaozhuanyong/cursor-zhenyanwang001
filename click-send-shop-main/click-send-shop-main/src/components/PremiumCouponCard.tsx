@@ -88,8 +88,8 @@ function CouponInfoRow({
         className={cn(
           "min-w-0 flex-1 leading-snug",
           prominent
-            ? cn("line-clamp-2 text-[13px] font-bold", titleClass)
-            : cn("truncate text-[11px]", mutedClass),
+            ? cn("store-card-title line-clamp-2 font-bold", titleClass)
+            : cn("store-micro truncate", mutedClass),
         )}
       >
         {children}
@@ -125,6 +125,7 @@ export default function PremiumCouponCard({
 
   const minSpendText = minSpendTextProp ?? conditionText ?? "无门槛可用";
   const leftValue = `${amountPrefix}${amount}`.trim();
+  const amountRmMatch = leftValue.match(/^(RM)\s*(.+)$/i);
   const expireLabel = expireText.includes("有效期") ? expireText : `有效期至：${expireText}`;
   const displayActionLabel = actionLabel ? formatCouponActionLabel(actionLabel, layout) : "";
 
@@ -191,7 +192,16 @@ export default function PremiumCouponCard({
       )}
     >
       <div className={cn("flex min-h-[3.25rem] flex-col items-center justify-center rounded-lg px-1.5 py-1 text-center", skin.valuePaneClass)}>
-        <p className={cn(skin.amountSize, "font-black tracking-tight text-[var(--theme-price)]")}>{leftValue}</p>
+        <p className="inline-flex items-baseline font-black tracking-tight text-[var(--theme-price)]">
+          {amountRmMatch ? (
+            <>
+              <span className="mr-0.5 text-[11px] font-bold leading-none sm:text-xs">{amountRmMatch[1]}</span>
+              <span className={skin.amountSize}>{amountRmMatch[2]}</span>
+            </>
+          ) : (
+            <span className={skin.amountSize}>{leftValue}</span>
+          )}
+        </p>
       </div>
 
       <div

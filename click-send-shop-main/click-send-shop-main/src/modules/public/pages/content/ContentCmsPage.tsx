@@ -65,7 +65,7 @@ export default function ContentCmsPage() {
       <PageHeader title={loading ? "加载中..." : page?.title || (isContactUs ? "联系我们" : "内容")} onBack={goBack} />
       <main className="mx-auto max-w-lg px-4 pt-4">
         {error && !loading ? <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">{error}</p> : null}
-        {page?.content && !loading && !error ? <article className="prose prose-sm max-w-none text-muted-foreground" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(page.content) }} /> : null}
+        {page?.content && !loading && !error ? <article className="store-body-text max-w-none leading-relaxed text-muted-foreground [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-semibold" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(page.content) }} /> : null}
         {isContactUs && !loading && !error ? <ContactUsContent intro={!page?.content ? "如需订单、支付、物流、售后等协助，请通过以下方式联系我们。" : undefined} /> : null}
       </main>
     </div>

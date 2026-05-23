@@ -182,7 +182,7 @@ export default function Invite() {
             <p className="text-xl font-bold">邀请好友得奖励</p>
             <p className="mt-1 text-xs text-[var(--theme-text-muted)]">好友下单即可获得现金返现</p>
             <p className="mt-3 text-xs text-[var(--theme-text-muted)]">我的邀请码</p>
-            <p className="text-2xl font-black tracking-wide text-[var(--theme-price)]">{inviteCode || "----"}</p>
+            <p className="text-xl font-black tracking-wide text-[var(--theme-price)] sm:text-[22px]">{inviteCode || "----"}</p>
             <motion.div
               className="mt-3 inline-block rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3"
               initial={motionEnabled ? { opacity: 0, scale: 0.92 } : false}

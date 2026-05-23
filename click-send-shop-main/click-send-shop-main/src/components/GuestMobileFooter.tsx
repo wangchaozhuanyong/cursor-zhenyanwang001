@@ -6,7 +6,7 @@ import { SiteSocialLinks, hasAnySocialLink } from "@/components/SiteSocialLinks"
 export function GuestFooterBrandMark({ siteName }: { siteName: string }) {
   const base = siteName.trim().replace(/\.\s*$/, "");
   return (
-    <h2 className="text-center text-[1.875rem] font-bold leading-none tracking-tight text-[var(--theme-text)]">
+    <h2 className="text-center text-[24px] font-bold leading-none tracking-tight text-[var(--theme-text)] sm:text-[26px]">
       {base}
       <span className="text-[var(--theme-price)]">.</span>
     </h2>

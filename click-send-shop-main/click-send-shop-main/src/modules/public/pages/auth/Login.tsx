@@ -39,7 +39,6 @@ type AuthMode = "login" | "register";
 type CredentialMode = "password" | "otp";
 
 export default function Login() {
-  useDocumentTitle("登录");
   const navigate = useNavigate();
   const location = useLocation();
   const authStore = useAuthStore();
@@ -54,10 +53,13 @@ export default function Login() {
   const rawFrom = loginState?.from;
   const fromState = loginState?.fromState;
   const from =
-    rawFrom && rawFrom !== "/login" && !rawFrom.startsWith("/admin")
+    rawFrom && rawFrom !== "/login" && rawFrom !== "/register" && !rawFrom.startsWith("/admin")
       ? rawFrom
       : "/";
-  const [mode, setMode] = useState<AuthMode>("login");
+  const [mode, setMode] = useState<AuthMode>(() =>
+    location.pathname === "/register" ? "register" : "login",
+  );
+  useDocumentTitle(mode === "register" ? "注册" : "登录");
   const [credentialMode, setCredentialMode] = useState<CredentialMode>("password");
   const [countryCode, setCountryCode] = useState("+60");
   const [phone, setPhone] = useState("");
@@ -112,12 +114,31 @@ export default function Login() {
   }, []);
 
   useEffect(() => {
+    if (location.pathname === "/register") {
+      setMode("register");
+      setCredentialMode("password");
+    } else if (location.pathname === "/login" && !syncLockedInviteCodeBySearch(location.search)) {
+      setMode("login");
+    }
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
     const normalized = syncLockedInviteCodeBySearch(location.search);
     if (!normalized) return;
     setMode("register");
     setLockedInviteCode(normalized);
     setInviteCode(normalized);
   }, [location.search]);
+
+  const switchAuthMode = (m: AuthMode) => {
+    setMode(m);
+    setShowReset(false);
+    if (m === "register") setCredentialMode("password");
+    const target = m === "register" ? "/register" : "/login";
+    if (location.pathname !== target) {
+      navigate(target, { replace: true, state: location.state });
+    }
+  };
 
   useEffect(() => {
     if (otpCooldown <= 0) return;
@@ -387,7 +408,7 @@ export default function Login() {
         ) : null}
 
         <section className="mb-5 shrink-0">
-          <h2 className="font-display text-2xl font-bold text-foreground">
+          <h2 className="font-display text-xl font-bold text-foreground sm:text-[22px]">
             {mode === "login" ? "欢迎回来" : "创建账号"}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -401,11 +422,7 @@ export default function Login() {
               <button
                 key={m}
                 type="button"
-                onClick={() => {
-                  setMode(m);
-                  setShowReset(false);
-                  if (m === "register") setCredentialMode("password");
-                }}
+                onClick={() => switchAuthMode(m)}
                 className={`relative flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all ${
                   mode === m
                     ? "bg-card text-foreground shadow-sm"

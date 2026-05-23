@@ -39,7 +39,7 @@ export default function About() {
       <PageHeader title="关于我们" onBack={goBack} />
       <main className="mx-auto max-w-lg space-y-4 px-4 pt-4">
         {cmsBody ? (
-          <article className="prose prose-sm max-w-none rounded-2xl border border-border bg-card p-5 text-muted-foreground" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(cmsBody) }} />
+          <article className="store-body-text max-w-none rounded-2xl border border-border bg-card p-5 leading-relaxed text-muted-foreground [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-semibold" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(cmsBody) }} />
         ) : (
           <>
             <section className="rounded-2xl border border-border bg-card p-5">

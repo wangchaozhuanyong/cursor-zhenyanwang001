@@ -38,7 +38,7 @@ export function formatCouponActionLabel(label: string, layout: CouponCardLayout)
 export type CouponCardPresentation = {
   couponStyle: CouponStyle;
   layout: CouponCardLayout;
-  /** premium/deal 使用与邀请推广条一致的 shell + CTA 令牌 */
+  /** premium/deal 或 forceInvitePalette：使用优惠券活动专属 shell + CTA 令牌（--theme-coupon-card-*） */
   useThemedMarketingShell: boolean;
   shellClass: string;
   gridClass: string;
@@ -97,9 +97,9 @@ export function getCouponCardPresentation(
   };
 
   const amountSizeByLayout: Record<CouponCardLayout, string> = {
-    home: "text-xl leading-none sm:text-2xl",
-    compact: "text-xl leading-none",
-    default: "text-2xl leading-none",
+    home: "store-coupon-amount-home",
+    compact: "store-coupon-amount-list",
+    default: "store-coupon-amount-list",
   };
 
   /** 操作区统一竖排一字一行（如「使」「用」），贴右侧窄条 */

@@ -95,7 +95,7 @@ export default function Points() {
         <div className={`rounded-2xl p-8 text-center ${THEME_ACCENT_HERO_SHELL}`}>
           <Star size={36} className={`mx-auto ${THEME_ACCENT_HERO_ICON}`} />
           <p className={`mt-3 ${THEME_ACCENT_HERO_LABEL} normal-case tracking-normal`}>当前积分</p>
-          <p className={`mt-1 text-5xl ${THEME_ACCENT_HERO_VALUE}`}>{pointsBalance}</p>
+          <p className={`store-stat-value mt-1 ${THEME_ACCENT_HERO_VALUE}`}>{pointsBalance}</p>
           <p className={`mt-3 px-2 text-xs leading-relaxed ${THEME_ACCENT_HERO_MUTED}`}>{pointsHint || POINTS_HINT_FALLBACK}</p>
           {signInAward && (
             <p className={`mt-1 ${THEME_ACCENT_HERO_SUBTLE}`}>

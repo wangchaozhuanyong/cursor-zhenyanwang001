@@ -22,7 +22,7 @@ export function LoginAgreementFooter({
   return (
     <footer
       className={cn(
-        "auth-page-footer shrink-0 border-t border-border/50 bg-background px-[var(--store-page-x)] py-3 text-center text-[11px] leading-relaxed text-muted-foreground",
+        "auth-page-footer store-caption shrink-0 border-t border-border/50 bg-background px-[var(--store-page-x)] py-3 text-center leading-relaxed text-muted-foreground",
         hiddenOnKeyboard && "max-md:hidden",
         className,
       )}

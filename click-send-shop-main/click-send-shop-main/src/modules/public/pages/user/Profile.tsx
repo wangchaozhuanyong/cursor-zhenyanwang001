@@ -121,7 +121,7 @@ function ProfileHeroCard({
         </button>
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <p className="max-w-full truncate text-2xl font-bold leading-tight">{userName}</p>
+            <p className="store-page-title max-w-full truncate leading-tight">{userName}</p>
             <span
               className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold shadow-md"
               style={{
@@ -356,7 +356,7 @@ export default function Profile() {
                 <span className={cn("mx-auto flex h-9 w-9 items-center justify-center rounded-2xl", THEME_ACCENT_ICON_SHELL_CLASS)}>
                   <item.icon size={17} strokeWidth={2} />
                 </span>
-                <p className="mt-2 truncate whitespace-nowrap text-[11px] font-medium leading-none">{item.label}</p>
+                <p className="store-caption mt-2 truncate whitespace-nowrap font-medium leading-none">{item.label}</p>
               </button>
             ))}
           </div>

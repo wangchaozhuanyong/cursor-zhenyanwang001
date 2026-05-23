@@ -6,6 +6,7 @@ import { buildCanonical } from "@/utils/seo";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useGoBack } from "@/hooks/useGoBack";
 import PageHeader from "@/components/PageHeader";
+import { STORE_READING_MAIN_CLASS } from "@/constants/storeLayout";
 import type { FaqItem } from "@/constants/help";
 import type { HelpCenterConfig } from "@/types/content";
 
@@ -93,7 +94,7 @@ export default function Help() {
             className="w-full rounded-xl border border-border bg-card py-2.5 pl-9 pr-3 text-sm outline-none"
           />
         </div>
-        <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
+        <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto lg:flex-wrap lg:overflow-visible">
           <button
             type="button"
             onClick={() => setActiveCategory(null)}

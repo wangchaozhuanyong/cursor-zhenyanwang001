@@ -6,7 +6,7 @@ import { SiteSocialLinks, hasAnySocialLink } from "@/components/SiteSocialLinks"
 export function GuestFooterBrandMark({ siteName }: { siteName: string }) {
   const base = siteName.trim().replace(/\.\s*$/, "");
   return (
-    <h2 className="text-center text-[24px] font-bold leading-none tracking-tight text-[var(--theme-text)] sm:text-[26px]">
+    <h2 className="text-center text-[24px] font-bold leading-none tracking-tight text-[var(--theme-text)] sm:text-[26px] lg:text-left">
       {base}
       <span className="text-[var(--theme-price)]">.</span>
     </h2>
@@ -109,10 +109,30 @@ export default function GuestMobileFooter({
   const legalIcp = (footerIcpNo || "").trim();
   const hasLegal = Boolean(legalCompany || legalCopyright || legalIcp);
 
+  const supportLinks = (
+    <ul className="space-y-3 lg:space-y-2.5">
+      {supportNav.map((item, idx) => (
+        <li key={`${item.label}-${item.path}-${idx}`}>
+          <FooterNavButton item={item} onNavigate={onNavigate} />
+        </li>
+      ))}
+    </ul>
+  );
+
+  const policyLinks = (
+    <ul className="space-y-3 lg:space-y-2.5">
+      {policyNav.map((item, idx) => (
+        <li key={`${item.label}-${item.path}-${idx}`}>
+          <FooterNavButton item={item} onNavigate={onNavigate} />
+        </li>
+      ))}
+    </ul>
+  );
+
   return (
-    <footer className="relative isolate z-0 w-full max-w-lg md:mx-auto">
-      <div className="rounded-none border-x-0 border-t border-[var(--theme-border)] bg-[var(--theme-surface)] px-5 pb-6 pt-8 shadow-none sm:rounded-[1.75rem] sm:border sm:theme-shadow md:pb-8">
-        <div className="flex flex-col items-center px-1 text-center">
+    <footer className="relative isolate z-0 w-full max-w-lg md:mx-auto lg:max-w-none">
+      <div className="rounded-none border-x-0 border-t border-[var(--theme-border)] bg-[var(--theme-surface)] px-5 pb-6 pt-8 shadow-none sm:rounded-[1.75rem] sm:border sm:theme-shadow md:pb-8 lg:px-10 lg:pb-10 lg:pt-10">
+        <div className="flex flex-col items-center px-1 text-center lg:items-start lg:text-left">
           <GuestFooterBrandMark siteName={siteName || "站点"} />
           <div className="mt-4 space-y-1">
             <p className="text-[15px] font-semibold leading-snug text-[var(--theme-text)]">{slogan}</p>
@@ -122,30 +142,61 @@ export default function GuestMobileFooter({
 
         <div className="mx-auto mt-7 h-px w-full max-w-none bg-[var(--theme-border)]" />
 
-        <div className="mt-0">
-          <AccordionItem title="服务支持">
-            <ul className="space-y-4">
-              {supportNav.map((item, idx) => (
-                <li key={`${item.label}-${item.path}-${idx}`}>
-                  <FooterNavButton item={item} onNavigate={onNavigate} />
-                </li>
-              ))}
-            </ul>
-          </AccordionItem>
+        <div className="mt-0 lg:hidden">
+          <AccordionItem title="服务支持">{supportLinks}</AccordionItem>
+          <AccordionItem title="政策与说明">{policyLinks}</AccordionItem>
+        </div>
 
-          <AccordionItem title="政策与说明">
-            <ul className="space-y-4">
-              {policyNav.map((item, idx) => (
-                <li key={`${item.label}-${item.path}-${idx}`}>
-                  <FooterNavButton item={item} onNavigate={onNavigate} />
-                </li>
-              ))}
-            </ul>
-          </AccordionItem>
+        <div className="mt-7 hidden gap-8 lg:grid lg:grid-cols-2 xl:grid-cols-4">
+          <div>
+            <h3 className="mb-4 text-[15px] font-semibold text-[var(--theme-text)]">服务支持</h3>
+            {supportLinks}
+          </div>
+          <div>
+            <h3 className="mb-4 text-[15px] font-semibold text-[var(--theme-text)]">政策与说明</h3>
+            {policyLinks}
+          </div>
+          {hasContactBlock ? (
+            <div className="xl:col-span-2">
+              <h3 className="mb-4 text-[15px] font-semibold text-[var(--theme-text)]">联系我们</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {contactPhone ? (
+                  <p className="text-sm text-[var(--theme-text-muted)]">
+                    <span className="font-medium text-[var(--theme-text)]">客服电话：</span>
+                    {contactPhone}
+                  </p>
+                ) : null}
+                {contactEmail ? (
+                  <p className="text-sm text-[var(--theme-text-muted)]">
+                    <span className="font-medium text-[var(--theme-text)]">邮箱：</span>
+                    {contactEmail}
+                  </p>
+                ) : null}
+                {contactWhatsApp ? (
+                  <p className="text-sm text-[var(--theme-text-muted)]">
+                    <span className="font-medium text-[var(--theme-text)]">客服专线：</span>
+                    {contactWhatsApp}
+                  </p>
+                ) : null}
+                {businessHours ? (
+                  <p className="text-sm text-[var(--theme-text-muted)]">
+                    <span className="font-medium text-[var(--theme-text)]">服务时间：</span>
+                    {businessHours}
+                  </p>
+                ) : null}
+                {address ? (
+                  <p className="text-sm text-[var(--theme-text-muted)] sm:col-span-2">
+                    <span className="font-medium text-[var(--theme-text)]">地址：</span>
+                    {address}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {hasContactBlock ? (
-          <section className="mt-8">
+          <section className="mt-8 lg:hidden">
             <h3 className="mb-4 text-[15px] font-medium text-[var(--theme-text)]">联系我们</h3>
             <div className="flex flex-col">
               {contactPhone ? (
@@ -183,14 +234,14 @@ export default function GuestMobileFooter({
         ) : null}
 
         {hasSocial ? (
-          <section className="mt-8">
+          <section className="mt-8 lg:mt-10">
             <h3 className="mb-4 text-[15px] font-medium text-[var(--theme-text)]">关注我们</h3>
-            <SiteSocialLinks {...socialProps} tone="footer" className="justify-start sm:justify-center" />
+            <SiteSocialLinks {...socialProps} tone="footer" className="justify-start sm:justify-center lg:justify-start" />
           </section>
         ) : null}
 
         {hasLegal ? (
-          <section className="mt-8 border-t border-[color-mix(in_srgb,var(--theme-border)_85%,transparent)] pt-4 text-center">
+          <section className="mt-8 border-t border-[color-mix(in_srgb,var(--theme-border)_85%,transparent)] pt-4 text-center lg:text-left">
             {legalCompany ? <p className="text-xs text-[var(--theme-text-muted)]">{legalCompany}</p> : null}
             {legalCopyright ? <p className="mt-1 text-xs text-[var(--theme-text-muted)]">{legalCopyright}</p> : null}
             {legalIcp ? <p className="mt-1 text-xs text-[var(--theme-text-muted)]">{legalIcp}</p> : null}

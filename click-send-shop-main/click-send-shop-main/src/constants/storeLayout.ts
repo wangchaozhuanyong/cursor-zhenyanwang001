@@ -8,3 +8,14 @@ export const STORE_MOBILE_PAGE_HEADER_CLASS = "md:hidden";
 /** 商详右侧购买区 sticky（平板用 Tab 顶栏高度，桌面用全局顶栏高度） */
 export const STORE_DETAIL_STICKY_TOP_CLASS =
   "md:top-[calc(var(--store-tab-header-height,3.5rem)+env(safe-area-inset-top,0px)+1.5rem)] lg:top-[calc(var(--store-desktop-header-height,4rem)+1rem)]";
+
+/** 帮助 / 关于等阅读型页面主内容区 */
+export const STORE_READING_MAIN_CLASS =
+  "mx-auto w-full max-w-lg px-[var(--store-page-x)] pt-4 sm:px-4 lg:max-w-3xl lg:px-8 lg:pt-6";
+
+/** 登录注册页：桌面居中卡片 */
+export const STORE_AUTH_SHELL_CLASS =
+  "auth-page-shell flex flex-col overflow-hidden bg-background lg:min-h-[100dvh] lg:justify-center lg:bg-[color-mix(in_srgb,var(--theme-bg)_94%,var(--theme-surface))]";
+
+export const STORE_AUTH_MAIN_CLASS =
+  "auth-page-main mx-auto min-h-0 w-full max-w-lg flex-1 overflow-y-auto overscroll-contain px-[var(--store-page-x)] pt-3 pb-4 lg:max-h-none lg:max-w-md lg:flex-none lg:overflow-visible lg:rounded-2xl lg:border lg:border-[var(--theme-border)] lg:bg-[var(--theme-surface)] lg:p-8 lg:shadow-[var(--theme-shadow)]";

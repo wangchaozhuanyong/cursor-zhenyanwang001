@@ -21,6 +21,7 @@ import {
 } from "@/utils/inviteReferral";
 import { SMS_OTP_LOGIN_BUILD_HINT, THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 import { readCachedAuthFeatures, writeCachedAuthFeatures } from "@/utils/authFeaturesCache";
+import { STORE_AUTH_MAIN_CLASS, STORE_AUTH_SHELL_CLASS } from "@/constants/storeLayout";
 import { cn } from "@/lib/utils";
 import { FormFieldShake } from "@/modules/micro-interactions";
 import { authErrorMessage, validatePhoneForCountry, validateStrongPassword } from "@/utils/authValidation";
@@ -389,8 +390,8 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-page-shell flex flex-col overflow-hidden bg-background">
-      <header className="relative z-20 flex shrink-0 items-center gap-3 border-b border-border/40 bg-background px-5 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
+    <div className={STORE_AUTH_SHELL_CLASS}>
+      <header className="relative z-20 flex shrink-0 items-center gap-3 border-b border-border/40 bg-background px-5 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] lg:hidden">
         <img src={logoSrc} alt={siteName} width={44} height={44} className="rounded-xl object-contain" loading="eager" decoding="async" />
         <div className="min-w-0 flex flex-col">
           <h1 className="font-display text-xl font-bold leading-tight tracking-tight text-foreground">
@@ -400,9 +401,14 @@ export default function Login() {
         </div>
       </header>
 
-      <main className="auth-page-main mx-auto min-h-0 w-full max-w-lg flex-1 overflow-y-auto overscroll-contain px-[var(--store-page-x)] pt-3 pb-4">
+      <main className={STORE_AUTH_MAIN_CLASS}>
+        <div className="mb-6 hidden text-center lg:block">
+          <img src={logoSrc} alt="" width={56} height={56} className="mx-auto rounded-2xl object-contain" />
+          <h1 className="mt-3 font-display text-2xl font-bold text-foreground">{renderBrandTitle(siteName)}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{slogan}</p>
+        </div>
         {banners.length > 0 && !layoutCompact ? (
-          <section className="mb-4">
+          <section className="mb-4 lg:hidden">
             <LoginBannerCarousel banners={banners} paused={formCompact} />
           </section>
         ) : null}

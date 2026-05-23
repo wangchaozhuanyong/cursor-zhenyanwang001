@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
-import PageHeader from "@/components/PageHeader";
+import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { OrderAutoConfirmCountdown } from "@/components/order/OrderAutoConfirmCountdown";
 import ReviewComposerSheet from "@/components/review/ReviewComposerSheet";
 import { BottomSheetConfirm } from "@/modules/micro-interactions";
@@ -14,7 +14,6 @@ import { canApplyAfterSale, canUserCancelOrder, getBuyerOrderStatusText, getOrde
 import { labelOrderPaymentMethod } from "@/utils/orderPaymentLabels";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { usePayPendingOrder } from "@/hooks/usePayPendingOrder";
-import { OrderPaymentCountdown } from "@/components/order/OrderPaymentCountdown";
 import { OrderDiscountLines } from "./components/OrderDiscountLines";
 import { safeOpenExternal } from "@/utils/safeOpen";
 
@@ -35,6 +34,62 @@ function buildVariantFromOrderItem(item: Order["items"][number]): ProductVariant
   };
 }
 
+type OrderDetailQuickActionsProps = {
+  reviewEnabled: boolean;
+  hasReview: boolean;
+  firstReviewableId: string;
+  onReview: (orderItemId: string) => void;
+  onAddToCart: () => void;
+  onRepurchase: () => void;
+  className?: string;
+};
+
+function OrderDetailQuickActions({
+  reviewEnabled,
+  hasReview,
+  firstReviewableId,
+  onReview,
+  onAddToCart,
+  onRepurchase,
+  className,
+}: OrderDetailQuickActionsProps) {
+  const navigate = useNavigate();
+  return (
+    <div className={className}>
+      <button
+        type="button"
+        className="rounded-full border border-[var(--theme-border)] px-3 py-2 text-xs"
+        onClick={() => navigate("/help")}
+      >
+        客服
+      </button>
+      {reviewEnabled && hasReview ? (
+        <button
+          type="button"
+          className="rounded-full border border-[var(--theme-border)] px-3 py-2 text-xs"
+          onClick={() => onReview(firstReviewableId)}
+        >
+          评价
+        </button>
+      ) : null}
+      <button
+        type="button"
+        className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs"
+        onClick={onAddToCart}
+      >
+        加入购物车
+      </button>
+      <button
+        type="button"
+        className="min-w-[7rem] flex-1 rounded-full bg-[var(--theme-primary)] px-3 py-2 text-xs font-medium text-[var(--theme-primary-foreground)] md:flex-none"
+        onClick={onRepurchase}
+      >
+        再买一单
+      </button>
+    </div>
+  );
+}
+
 export default function OrderDetail() {
   const { id } = useParams();
   const location = useLocation();
@@ -43,6 +98,7 @@ export default function OrderDetail() {
   const { addToCart, clearBuyNow, setSelectAll } = useCartStore();
 
   const fromOrders = (location.state as { from?: string } | null)?.from || "/orders";
+  const handleBack = () => navigate(fromOrders, { replace: true });
   const [reviewItemId, setReviewItemId] = useState("");
   const [confirmReviewOpen, setConfirmReviewOpen] = useState(false);
   const [firstReviewableId, setFirstReviewableId] = useState("");
@@ -114,16 +170,44 @@ export default function OrderDetail() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-background"><PageHeader title="订单详情" onBack={() => navigate(fromOrders, { replace: true })} /><div className="px-[var(--store-page-x)] py-[var(--store-page-y)] text-sm">加载中...</div></div>;
-  if (error || !order) return <div className="min-h-screen bg-background"><PageHeader title="订单详情" onBack={() => navigate(fromOrders, { replace: true })} /><div className="px-[var(--store-page-x)] py-[var(--store-page-y)] text-sm">{error || "订单不存在"}</div></div>;
+  const quickActionProps = order
+    ? {
+        reviewEnabled: capabilities.reviewEnabled,
+        hasReview: hasPendingReview(order),
+        firstReviewableId: reviewableItems[0]?.order_item_id || "",
+        onReview: setReviewItemId,
+        onAddToCart: () => { void addOrderToCart(); },
+        onRepurchase: () => { void repurchaseOrder(); },
+      }
+    : null;
+
+  if (loading) {
+    return (
+      <StoreAccountLayout title="订单详情" onBack={handleBack}>
+        <div className="text-sm text-muted-foreground">加载中...</div>
+      </StoreAccountLayout>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <StoreAccountLayout title="订单详情" onBack={handleBack}>
+        <div className="text-sm text-muted-foreground">{error || "订单不存在"}</div>
+      </StoreAccountLayout>
+    );
+  }
+
+  const pageTitle = getBuyerOrderStatusText(order);
 
   return (
-    <div className="min-h-screen bg-background">
-      <PageHeader title={getBuyerOrderStatusText(order)} onBack={() => navigate(fromOrders, { replace: true })} />
-
-      <main className="mx-auto w-full space-y-3 px-[var(--store-page-x)] py-[var(--store-page-y)] pb-[calc(88px+env(safe-area-inset-bottom,0px))] text-sm sm:max-w-lg sm:p-4">
+    <StoreAccountLayout
+      title={pageTitle}
+      onBack={handleBack}
+      mainClassName="pb-[calc(88px+env(safe-area-inset-bottom,0px))] md:pb-0 lg:pb-12"
+    >
+      <div className="space-y-3 text-sm">
         <div className="rounded-2xl border border-border bg-card p-3">
-          <p className="text-sm font-medium">当前状态：{getBuyerOrderStatusText(order)}</p>
+          <p className="text-sm font-medium">当前状态：{pageTitle}</p>
           <p className="mt-1 text-xs text-muted-foreground">
             {order.logistics_provider?.carrier || order.tracking_no ? `物流：${order.logistics_provider?.carrier || order.carrier || ""} ${order.logistics_provider?.tracking_no || order.tracking_no || ""}` : "暂无物流信息"}
           </p>
@@ -253,19 +337,25 @@ export default function OrderDetail() {
             <button className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate("/returns")}>查看售后进度</button>
           ) : null}
         </div>
-      </main>
 
-      <div className="fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
-        <div className="mx-auto flex max-w-lg items-center gap-2 px-4 py-3">
-          <button className="rounded-full border border-[var(--theme-border)] px-3 py-2 text-xs" onClick={() => navigate("/help")}>客服</button>
-          {capabilities.reviewEnabled && hasPendingReview(order) ? <button className="rounded-full border border-[var(--theme-border)] px-3 py-2 text-xs" onClick={() => setReviewItemId(reviewableItems[0]?.order_item_id || "")}>评价</button> : null}
-          <button className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs" onClick={() => { void addOrderToCart(); }}>加入购物车</button>
-          <button className="flex-1 rounded-full bg-[var(--theme-primary)] px-3 py-2 text-xs font-medium text-[var(--theme-primary-foreground)]" onClick={() => { void repurchaseOrder(); }}>再买一单</button>
-        </div>
+        {quickActionProps ? (
+          <OrderDetailQuickActions
+            {...quickActionProps}
+            className="hidden flex-wrap items-center justify-end gap-2 border-t border-[var(--theme-border)] pt-4 md:flex"
+          />
+        ) : null}
       </div>
+
+      {quickActionProps ? (
+        <div className="fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
+          <div className="mx-auto flex max-w-lg items-center gap-2 px-4 py-3">
+            <OrderDetailQuickActions {...quickActionProps} className="flex w-full items-center gap-2" />
+          </div>
+        </div>
+      ) : null}
 
       <ReviewComposerSheet open={!!reviewItemId} onClose={() => setReviewItemId("")} orderItemId={reviewItemId} onSuccess={() => { void reload(); }} />
       <BottomSheetConfirm open={confirmReviewOpen} onClose={() => setConfirmReviewOpen(false)} title="已确认收货" description="现在去评价商品吗？" confirmText="去评价" cancelText="稍后再说" onConfirm={async () => { setConfirmReviewOpen(false); setReviewItemId(firstReviewableId); }} />
-    </div>
+    </StoreAccountLayout>
   );
 }

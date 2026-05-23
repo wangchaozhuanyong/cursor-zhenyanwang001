@@ -4,6 +4,7 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import PageHeader from "@/components/PageHeader";
+import { STORE_READING_MAIN_CLASS } from "@/constants/storeLayout";
 import * as contentService from "@/services/contentService";
 import type { ContentPage } from "@/types/content";
 import { stripHtml, truncateText } from "@/utils/seo";
@@ -37,7 +38,7 @@ export default function About() {
         robots="index,follow"
       />
       <PageHeader title="关于我们" onBack={goBack} />
-      <main className="mx-auto max-w-lg space-y-4 px-4 pt-4">
+      <main className={`${STORE_READING_MAIN_CLASS} space-y-4`}>
         {cmsBody ? (
           <article className="store-body-text max-w-none rounded-2xl border border-border bg-card p-5 leading-relaxed text-muted-foreground [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-semibold" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(cmsBody) }} />
         ) : (

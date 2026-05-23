@@ -10,6 +10,7 @@ import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint, { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import { THEME_HOVER_TEXT_DANGER, THEME_TEXT_SUCCESS_SOFT } from "@/utils/themeVisuals";
 import {
   BANNER_ASPECT_CLASS,
@@ -265,10 +266,13 @@ export default function AdminBanners() {
         ))}
       </div>
 
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowForm(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md space-y-4 rounded-2xl bg-card p-6 shadow-xl">
-            <h3 className="font-bold text-foreground">{editingId ? "编辑 Banner" : "添加 Banner"}</h3>
+      <AdminResponsiveSheet
+        open={showForm}
+        onOpenChange={setShowForm}
+        title={editingId ? "编辑 Banner" : "添加 Banner"}
+        size="sm"
+      >
+        <div className="space-y-4">
             <label className="flex items-center gap-2 text-xs text-muted-foreground">
               <input
                 type="checkbox"
@@ -340,9 +344,8 @@ export default function AdminBanners() {
                 {editingId ? "保存修改" : "确认添加"}
               </LoadingButton>
             </PermissionGate>
-          </div>
         </div>
-      )}
+      </AdminResponsiveSheet>
     </div>
   );
 }

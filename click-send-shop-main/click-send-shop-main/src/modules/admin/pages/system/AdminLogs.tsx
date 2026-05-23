@@ -20,6 +20,7 @@ import { fetchAuditLogs } from "@/services/admin/logService";
 import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
 import type { AuditLogRow } from "@/services/admin/logService";
 import AuditLogDetailPanel from "@/components/admin/AuditLogDetailPanel";
+import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import {
   getAuditActionTypeFilterOptions,
   getAuditObjectTypeFilterOptions,
@@ -436,11 +437,17 @@ export default function AdminLogs() {
         )}
       </div>
 
-      {detail ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setDetail(null)}>
-          <AuditLogDetailPanel detail={detail} onClose={() => setDetail(null)} />
-        </div>
-      ) : null}
+      <AdminResponsiveSheet
+        open={!!detail}
+        onOpenChange={(open) => {
+          if (!open) setDetail(null);
+        }}
+        title="审计详情"
+        size="md"
+        height="70vh"
+      >
+        {detail ? <AuditLogDetailPanel detail={detail} embedded onClose={() => setDetail(null)} /> : null}
+      </AdminResponsiveSheet>
     </div>
   );
 }

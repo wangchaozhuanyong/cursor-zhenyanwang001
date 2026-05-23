@@ -20,6 +20,7 @@ import { AdminContentPageSkeleton } from "@/components/admin/AdminLoadingSkeleto
 import { THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 
 interface ContentItem {
   id: string;
@@ -508,55 +509,61 @@ export default function AdminContent() {
       </>
       )}
 
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowForm(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg max-h-[80vh] overflow-y-auto rounded-2xl bg-card p-6 shadow-xl space-y-4">
-            <h3 className="font-bold text-foreground">编辑 - {editing?.title}</h3>
-            <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-            <textarea rows={10} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold resize-none" />
-            <PermissionGate permission="content.manage">
-              <LoadingButton
-                type="button"
-                variant="gold"
-                state={saving ? "loading" : "normal"}
-                loadingText="保存中..."
-                onClick={() => void handleSave()}
-                className="w-full rounded-xl py-3 text-sm font-bold"
-              ><Tx>
-                保存
-              </Tx></LoadingButton>
-            </PermissionGate>
-          </div>
+      <AdminResponsiveSheet
+        open={showForm}
+        onOpenChange={setShowForm}
+        title={`编辑 - ${editing?.title || ""}`}
+        size="md"
+        height="70vh"
+      >
+        <div className="space-y-4">
+          <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+          <textarea rows={10} value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold resize-none" />
+          <PermissionGate permission="content.manage">
+            <LoadingButton
+              type="button"
+              variant="gold"
+              state={saving ? "loading" : "normal"}
+              loadingText="保存中..."
+              onClick={() => void handleSave()}
+              className="w-full rounded-xl py-3 text-sm font-bold"
+            >
+              <Tx>保存</Tx>
+            </LoadingButton>
+          </PermissionGate>
         </div>
-      )}
+      </AdminResponsiveSheet>
 
-      {showCreateForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowCreateForm(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg max-h-[80vh] overflow-y-auto rounded-2xl bg-card p-6 shadow-xl space-y-4">
-            <h3 className="font-bold text-foreground">新增内容页</h3>
-            <input value={createForm.title} onChange={(e) => setCreateForm((p) => ({ ...p, title: e.target.value }))} placeholder="标题" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-            <input value={createForm.slug} onChange={(e) => setCreateForm((p) => ({ ...p, slug: e.target.value }))} placeholder="页面标识（小写字母、数字、横线，如 terms-of-service）" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-            <select value={createForm.publish_status} onChange={(e) => setCreateForm((p) => ({ ...p, publish_status: e.target.value as "published" | "draft" }))} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold">
-              <option value="published">已发布</option>
-              <option value="draft">草稿</option>
-            </select>
-            <input value={createForm.sort_order} onChange={(e) => setCreateForm((p) => ({ ...p, sort_order: e.target.value }))} placeholder="排序（可选）" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-            <textarea rows={10} value={createForm.content} onChange={(e) => setCreateForm((p) => ({ ...p, content: e.target.value }))} placeholder="正文内容" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold resize-none" />
-            <PermissionGate permission="content.manage">
-              <LoadingButton
-                type="button"
-                variant="gold"
-                state={saving ? "loading" : "normal"}
-                loadingText="创建中..."
-                onClick={() => void handleCreate()}
-                className="w-full rounded-xl py-3 text-sm font-bold"
-              >
-                创建
-              </LoadingButton>
-            </PermissionGate>
-          </div>
+      <AdminResponsiveSheet
+        open={showCreateForm}
+        onOpenChange={setShowCreateForm}
+        title="新增内容页"
+        size="md"
+        height="70vh"
+      >
+        <div className="space-y-4">
+          <input value={createForm.title} onChange={(e) => setCreateForm((p) => ({ ...p, title: e.target.value }))} placeholder="标题" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+          <input value={createForm.slug} onChange={(e) => setCreateForm((p) => ({ ...p, slug: e.target.value }))} placeholder="页面标识（小写字母、数字、横线，如 terms-of-service）" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+          <select value={createForm.publish_status} onChange={(e) => setCreateForm((p) => ({ ...p, publish_status: e.target.value as "published" | "draft" }))} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold">
+            <option value="published">已发布</option>
+            <option value="draft">草稿</option>
+          </select>
+          <input value={createForm.sort_order} onChange={(e) => setCreateForm((p) => ({ ...p, sort_order: e.target.value }))} placeholder="排序（可选）" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+          <textarea rows={10} value={createForm.content} onChange={(e) => setCreateForm((p) => ({ ...p, content: e.target.value }))} placeholder="正文内容" className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold resize-none" />
+          <PermissionGate permission="content.manage">
+            <LoadingButton
+              type="button"
+              variant="gold"
+              state={saving ? "loading" : "normal"}
+              loadingText="创建中..."
+              onClick={() => void handleCreate()}
+              className="w-full rounded-xl py-3 text-sm font-bold"
+            >
+              创建
+            </LoadingButton>
+          </PermissionGate>
         </div>
-      )}
+      </AdminResponsiveSheet>
     </div>
   );
 }

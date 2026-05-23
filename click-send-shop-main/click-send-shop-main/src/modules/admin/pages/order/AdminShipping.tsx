@@ -11,6 +11,7 @@ import { Tx } from "@/components/admin/AdminText";
 import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { LoadingButton } from "@/modules/micro-interactions";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import { THEME_BADGE_MUTED, THEME_BADGE_SUCCESS, THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 
 export default function AdminShipping() {
@@ -195,32 +196,34 @@ export default function AdminShipping() {
         )}
       </div>
 
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowForm(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl space-y-4">
-            <h3 className="font-bold text-foreground">{editing ? "编辑运费模板" : "新建运费模板"}</h3>
-            <input placeholder="模板名称" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-            <input placeholder="适用区域（如：雪兰莪、吉隆坡）" value={form.regions} onChange={(e) => setForm({ ...form, regions: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-            <div className="grid grid-cols-3 gap-3">
-              <label className="block"><span className="text-xs text-muted-foreground"><Tx>基础运费</Tx></span><input type="number" value={form.baseFee} onChange={(e) => setForm({ ...form, baseFee: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>
-              <label className="block"><span className="text-xs text-muted-foreground"><Tx>包邮门槛</Tx></span><input type="number" value={form.freeAbove} onChange={(e) => setForm({ ...form, freeAbove: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>
-              <label className="block"><span className="text-xs text-muted-foreground"><Tx>续重/kg</Tx></span><input type="number" value={form.extraPerKg} onChange={(e) => setForm({ ...form, extraPerKg: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>
-            </div>
-            <PermissionGate permission="shipping.manage">
-              <LoadingButton
-                type="button"
-                variant="gold"
-                state={saving ? "loading" : "normal"}
-                loadingText="保存中..."
-                onClick={() => adminConfirmSave(confirm, editing ? "运费模板修改" : "新运费模板", () => handleSave())}
-                className="w-full rounded-xl py-3 text-sm font-bold"
-              >
-                <Tx>保存</Tx>
-              </LoadingButton>
-            </PermissionGate>
+      <AdminResponsiveSheet
+        open={showForm}
+        onOpenChange={setShowForm}
+        title={editing ? "编辑运费模板" : "新建运费模板"}
+        size="sm"
+      >
+        <div className="space-y-4">
+          <input placeholder="模板名称" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+          <input placeholder="适用区域（如：雪兰莪、吉隆坡）" value={form.regions} onChange={(e) => setForm({ ...form, regions: e.target.value })} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+          <div className="grid grid-cols-3 gap-3">
+            <label className="block"><span className="text-xs text-muted-foreground"><Tx>基础运费</Tx></span><input type="number" value={form.baseFee} onChange={(e) => setForm({ ...form, baseFee: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>
+            <label className="block"><span className="text-xs text-muted-foreground"><Tx>包邮门槛</Tx></span><input type="number" value={form.freeAbove} onChange={(e) => setForm({ ...form, freeAbove: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>
+            <label className="block"><span className="text-xs text-muted-foreground"><Tx>续重/kg</Tx></span><input type="number" value={form.extraPerKg} onChange={(e) => setForm({ ...form, extraPerKg: Number(e.target.value) })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold" /></label>
           </div>
+          <PermissionGate permission="shipping.manage">
+            <LoadingButton
+              type="button"
+              variant="gold"
+              state={saving ? "loading" : "normal"}
+              loadingText="保存中..."
+              onClick={() => adminConfirmSave(confirm, editing ? "运费模板修改" : "新运费模板", () => handleSave())}
+              className="w-full rounded-xl py-3 text-sm font-bold"
+            >
+              <Tx>保存</Tx>
+            </LoadingButton>
+          </PermissionGate>
         </div>
-      )}
+      </AdminResponsiveSheet>
     </div>
   );
 }

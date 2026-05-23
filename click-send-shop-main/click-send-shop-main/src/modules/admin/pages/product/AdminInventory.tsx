@@ -7,6 +7,7 @@ import Pagination from "@/components/admin/Pagination";
 import { AdminTableCell, AdminTableCellGroup } from "@/components/admin/AdminTableCell";
 import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
 import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
+import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import {
   adjustInventorySkuStock,

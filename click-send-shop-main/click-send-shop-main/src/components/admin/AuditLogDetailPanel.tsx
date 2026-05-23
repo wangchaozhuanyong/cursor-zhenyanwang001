@@ -34,9 +34,10 @@ function SnapshotBlock({ title, rows }: { title: string; rows: AuditSnapshotRow[
 type Props = {
   detail: AuditLogRow;
   onClose: () => void;
+  embedded?: boolean;
 };
 
-export default function AuditLogDetailPanel({ detail, onClose }: Props) {
+export default function AuditLogDetailPanel({ detail, onClose, embedded = false }: Props) {
   const changes = buildAuditChangeSummary(detail.before_json, detail.after_json);
   const beforeRows = buildAuditSnapshotRows(detail.before_json);
   const afterRows = buildAuditSnapshotRows(detail.after_json);
@@ -46,9 +47,13 @@ export default function AuditLogDetailPanel({ detail, onClose }: Props) {
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      className="max-h-[85vh] w-full max-w-lg overflow-y-auto theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow"
+      className={
+        embedded
+          ? "w-full"
+          : "max-h-[85vh] w-full max-w-lg overflow-y-auto theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow"
+      }
     >
-      <h3 className="mb-3 text-sm font-bold text-foreground"><Tx>审计详情</Tx></h3>
+      {!embedded ? <h3 className="mb-3 text-sm font-bold text-foreground"><Tx>审计详情</Tx></h3> : null}
       <dl className="space-y-2.5 text-xs">
         <div className="flex justify-between gap-2">
           <dt className="text-muted-foreground"><Tx>动作</Tx></dt>
@@ -147,9 +152,11 @@ export default function AuditLogDetailPanel({ detail, onClose }: Props) {
         </details>
       ) : null}
 
-      <button type="button" onClick={onClose} className="mt-4 w-full theme-rounded border border-[var(--theme-border)] py-2 text-sm">
-        <Tx>关闭</Tx>
-      </button>
+      {!embedded ? (
+        <button type="button" onClick={onClose} className="mt-4 w-full theme-rounded border border-[var(--theme-border)] py-2 text-sm">
+          <Tx>关闭</Tx>
+        </button>
+      ) : null}
     </div>
   );
 }

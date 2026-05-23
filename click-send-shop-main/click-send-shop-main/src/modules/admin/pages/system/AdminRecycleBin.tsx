@@ -1,7 +1,7 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Trash2, RotateCcw, Loader2, AlertTriangle, Archive } from "lucide-react";
+import { Trash2, RotateCcw, Loader2, Archive } from "lucide-react";
 import Pagination from "@/components/admin/Pagination";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { toast } from "sonner";
@@ -37,8 +37,8 @@ import {
   THEME_TEXT_DANGER,
   THEME_BORDER_DANGER_SOFT,
   THEME_HOVER_BG_DANGER,
-  THEME_BTN_DANGER_SOLID,
 } from "@/utils/themeVisuals";
+import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 
 const TYPE_BADGE: Record<string, string> = {
   products: THEME_BADGE_PRIMARY,
@@ -60,10 +60,10 @@ const TYPE_BADGE: Record<string, string> = {
 
 export default function AdminRecycleBin() {
   const queryClient = useQueryClient();
+  const { confirm } = useAdminConfirm();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [typeFilter, setTypeFilter] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState<RecycleBinItem | null>(null);
 
   const queryParams = useMemo(
     () => ({ ...(typeFilter ? { type: typeFilter } : {}), page, pageSize }),
@@ -117,14 +117,24 @@ export default function AdminRecycleBin() {
     onError: (e) => toast.error(toastErrorMessage(e, "恢复失败")),
   });
 
-  const handlePermanentDelete = async () => {
-    if (!confirmDelete) return;
-    try {
-      await permanentlyDeleteRecycleBinItem(confirmDelete.id, confirmDelete.type);
-      toast.success("已彻底删除");
-      setConfirmDelete(null);
-      await invalidateRecycleBin();
-    } catch (e) { toast.error(toastErrorMessage(e, "删除失败")); }
+  const confirmPermanentDelete = (item: RecycleBinItem) => {
+    confirm({
+      title: "确认彻底删除",
+      description: (
+        <>
+          此操作不可恢复！
+          <br />
+          {labelRecycleType(item.type, item.type_label)}：{formatRecycleBinItemName(item)}
+        </>
+      ),
+      confirmText: "确认删除",
+      danger: true,
+      onConfirm: async () => {
+        await permanentlyDeleteRecycleBinItem(item.id, item.type);
+        toast.success("已彻底删除");
+        await invalidateRecycleBin(item.type);
+      },
+    });
   };
 
   return (
@@ -184,7 +194,7 @@ export default function AdminRecycleBin() {
                         <button type="button" onClick={() => restoreMutation.mutate(item)} className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border border-[var(--theme-border)] py-1.5 text-xs ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`}>
                           <RotateCcw size={12} className="mr-1 inline" /><Tx>恢复
                         </Tx></button>
-                        <button type="button" onClick={() => setConfirmDelete(item)} className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border py-1.5 text-xs ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`}>
+                        <button type="button" onClick={() => confirmPermanentDelete(item)} className={`touch-manipulation min-h-[40px] flex-1 rounded-lg border py-1.5 text-xs ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`}>
                           <Trash2 size={12} className="mr-1 inline" /><Tx>彻底删除
                         </Tx></button>
                       </div>
@@ -247,7 +257,7 @@ export default function AdminRecycleBin() {
                         <button type="button" onClick={() => restoreMutation.mutate(item)} className={`touch-manipulation rounded-lg border border-[var(--theme-border)] p-1.5 ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`} title="恢复">
                           <RotateCcw size={14} />
                         </button>
-                        <button type="button" onClick={() => setConfirmDelete(item)} className={`touch-manipulation rounded-lg border p-1.5 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`} title="彻底删除">
+                        <button type="button" onClick={() => confirmPermanentDelete(item)} className={`touch-manipulation rounded-lg border p-1.5 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`} title="彻底删除">
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -261,24 +271,6 @@ export default function AdminRecycleBin() {
             )}
           </div>
         </>
-      )}
-      {/* Permanent delete confirm */}
-      {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDelete(null)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4 text-center">
-            <AlertTriangle size={40} className={`mx-auto ${THEME_TEXT_DANGER}`} />
-            <h3 className="font-bold text-foreground"><Tx>确认彻底删除</Tx></h3>
-            <p className="text-sm text-muted-foreground">
-              <Tx>此操作不可恢复！</Tx>
-              <br />
-              {labelRecycleType(confirmDelete.type, confirmDelete.type_label)}：{formatRecycleBinItemName(confirmDelete)}
-            </p>
-            <div className="flex justify-center gap-3">
-              <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
-              <button type="button" onClick={handlePermanentDelete} className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${THEME_BTN_DANGER_SOLID}`}><Tx>确认删除</Tx></button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );

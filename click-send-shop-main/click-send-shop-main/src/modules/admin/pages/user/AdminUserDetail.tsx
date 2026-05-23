@@ -25,6 +25,7 @@ import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { AdminInputSheet } from "@/modules/admin/components/AdminInputSheet";
+import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
 import type { MemberLevel, UserEditForm, UserProfile, UserStatusOverview, UserTag } from "@/types/user";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
@@ -321,45 +322,43 @@ export default function AdminUserDetail() {
         </div>
       </section>
 
-      {editOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4" onClick={() => setEditOpen(false)}>
-          <div className="w-full max-w-lg space-y-3 rounded-xl border border-border bg-card p-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-base font-semibold">编辑资料</h3>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {( ["nickname", "phone", "wechat", "whatsapp", "avatar"] as const).map((f) => (
-                <input
-                  key={f}
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                  placeholder={f}
-                  value={editForm[f] || ""}
-                  onChange={(e) => setEditForm((s) => ({ ...s, [f]: e.target.value }))}
-                />
-              ))}
-              <label className="text-xs text-muted-foreground sm:col-span-2">
-                生日 (YYYY-MM-DD)
-                <input
-                  type="date"
-                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                  value={editForm.birthday || ""}
-                  onChange={(e) => setEditForm((s) => ({ ...s, birthday: e.target.value }))}
-                />
-              </label>
-              <label className="flex items-center gap-2 text-sm sm:col-span-2">
-                <input
-                  type="checkbox"
-                  checked={!!editForm.birthday_locked}
-                  onChange={(e) => setEditForm((s) => ({ ...s, birthday_locked: e.target.checked }))}
-                />
-                锁定生日（用户不可自行修改）
-              </label>
-            </div>
-            <div className="flex justify-end gap-2 pt-1">
-              <button className="rounded-lg border border-border px-3 py-1.5 text-sm" onClick={() => setEditOpen(false)}>取消</button>
-              <button className="rounded-lg border border-border bg-secondary px-3 py-1.5 text-sm" onClick={saveProfile}>保存</button>
-            </div>
-          </div>
+      <AdminFormSheet
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        title="编辑资料"
+        submitText="保存"
+        onSubmit={saveProfile}
+        size="md"
+      >
+        <div className="grid gap-2 sm:grid-cols-2">
+          {(["nickname", "phone", "wechat", "whatsapp", "avatar"] as const).map((f) => (
+            <input
+              key={f}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              placeholder={f}
+              value={editForm[f] || ""}
+              onChange={(e) => setEditForm((s) => ({ ...s, [f]: e.target.value }))}
+            />
+          ))}
+          <label className="text-xs text-muted-foreground sm:col-span-2">
+            生日 (YYYY-MM-DD)
+            <input
+              type="date"
+              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              value={editForm.birthday || ""}
+              onChange={(e) => setEditForm((s) => ({ ...s, birthday: e.target.value }))}
+            />
+          </label>
+          <label className="flex items-center gap-2 text-sm sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={!!editForm.birthday_locked}
+              onChange={(e) => setEditForm((s) => ({ ...s, birthday_locked: e.target.checked }))}
+            />
+            锁定生日（用户不可自行修改）
+          </label>
         </div>
-      )}
+      </AdminFormSheet>
 
       <AdminInputSheet
         open={reasonPrompt !== null}

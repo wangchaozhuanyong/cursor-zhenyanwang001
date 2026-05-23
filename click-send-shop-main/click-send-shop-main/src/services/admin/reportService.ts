@@ -20,6 +20,10 @@ export async function fetchProfitDailyReport(params?: ReportQuery) {
   const res = await reportApi.getProfitDaily(params);
   return res.data;
 }
+export async function fetchProfitMonthlyReport(params?: ReportQuery) {
+  const res = await reportApi.getProfitMonthly(params);
+  return res.data;
+}
 export async function fetchProductAnalysisReport(params?: ReportQuery) {
   const res = await reportApi.getProductsAnalysis(params);
   return res.data;
@@ -57,14 +61,18 @@ export async function fetchTrafficAnalysisReport(params?: ReportQuery) {
   return res.data;
 }
 
-export async function exportTrafficAnalysisCsv(params?: ReportQuery) {
-  const q = new URLSearchParams({ type: "traffic_analysis" });
+export async function exportReportCsv(type: string, params?: ReportQuery, fallbackName?: string) {
+  const q = new URLSearchParams({ type });
   Object.entries(params || {}).forEach(([key, value]) => {
     if (value !== undefined && value !== null && String(value).trim() !== "") {
       q.set(key, String(value));
     }
   });
-  await downloadAdminCsv(`/admin/reports/export?${q.toString()}`, "traffic-analysis.csv");
+  await downloadAdminCsv(`/admin/reports/export?${q.toString()}`, fallbackName || `${type}.csv`);
+}
+
+export async function exportTrafficAnalysisCsv(params?: ReportQuery) {
+  await exportReportCsv("traffic_analysis", params, "traffic-analysis.csv");
 }
 
 export async function exportProfitDailyCsv(params?: ReportQuery) {
@@ -75,6 +83,16 @@ export async function exportProfitDailyCsv(params?: ReportQuery) {
     }
   });
   await downloadAdminCsv(`/admin/reports/profit/export${q.toString() ? `?${q.toString()}` : ""}`, "profit-daily.csv");
+}
+
+export async function exportProfitMonthlyCsv(params?: ReportQuery) {
+  const q = new URLSearchParams({ type: "profit_monthly" });
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      q.set(key, String(value));
+    }
+  });
+  await downloadAdminCsv(`/admin/reports/export?${q.toString()}`, "profit-monthly.csv");
 }
 
 export async function fetchOperatingExpenses(params?: { range_preset?: string; date_from?: string; date_to?: string; category?: string }) {

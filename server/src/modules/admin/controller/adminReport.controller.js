@@ -13,6 +13,9 @@ exports.getSalesMonthly = asyncRoute(async (req, res) => {
 exports.getProfitDaily = asyncRoute(async (req, res) => {
   res.success(await svc.getProfitDaily(req.query));
 });
+exports.getProfitMonthly = asyncRoute(async (req, res) => {
+  res.success(await svc.getProfitMonthly(req.query));
+});
 exports.getProductsAnalysis = asyncRoute(async (req, res) => {
   res.success(await svc.getProductsAnalysis(req.query));
 });

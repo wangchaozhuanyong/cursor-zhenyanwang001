@@ -42,6 +42,8 @@ function startCleanupScheduler() {
 const TYPE_GENERATORS = {
   sales_daily: async (params) => adminReportService.exportByType("sales_daily", params),
   sales_monthly: async (params) => adminReportService.exportByType("sales_monthly", params),
+  profit_daily: async (params) => adminReportService.exportByType("profit_daily", params),
+  profit_monthly: async (params) => adminReportService.exportByType("profit_monthly", params),
   product_analysis: async (params) => adminReportService.exportByType("product_analysis", params),
   category_analysis: async (params) => adminReportService.exportByType("category_analysis", params),
   order_analysis: async (params) => adminReportService.exportByType("order_analysis", params),
@@ -50,6 +52,7 @@ const TYPE_GENERATORS = {
   coupon_analysis: async (params) => adminReportService.exportByType("coupon_analysis", params),
   inventory_analysis: async (params) => adminReportService.exportByType("inventory_analysis", params),
   search_analysis: async (params) => adminReportService.exportByType("search_analysis", params),
+  traffic_analysis: async (params) => adminReportService.exportByType("traffic_analysis", params),
   sales: async (params) => adminReportService.exportByType("sales_daily", params),
   users_report: async (params) => adminReportService.exportByType("customer_analysis", params),
   products_report: async (params) => adminReportService.exportByType("product_analysis", params),

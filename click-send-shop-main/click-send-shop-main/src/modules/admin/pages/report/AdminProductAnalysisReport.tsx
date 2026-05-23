@@ -1,3 +1,7 @@
-import AdminReportGenericPage from "./pages/AdminReportGenericPage";
+import { REPORT_PAGES } from "@/config/reportPageConfig";
 import { fetchProductAnalysisReport } from "@/services/admin/reportService";
-export default function AdminProductAnalysisReport() { return <AdminReportGenericPage title="商品分析" fetcher={fetchProductAnalysisReport as never} />; }
+import AdminReportGenericPage from "./pages/AdminReportGenericPage";
+
+export default function AdminProductAnalysisReport() {
+  return <AdminReportGenericPage config={REPORT_PAGES.product_analysis} fetcher={fetchProductAnalysisReport as never} />;
+}

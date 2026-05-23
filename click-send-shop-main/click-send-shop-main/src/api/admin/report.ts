@@ -46,6 +46,9 @@ export function getSalesMonthly(params?: ReportQuery) {
 export function getProfitDaily(params?: ReportQuery) {
   return get<Record<string, unknown>>("/admin/reports/profit/daily", params as unknown as Record<string, unknown>);
 }
+export function getProfitMonthly(params?: ReportQuery) {
+  return get<Record<string, unknown>>("/admin/reports/profit/monthly", params as unknown as Record<string, unknown>);
+}
 export function getProductsAnalysis(params?: ReportQuery) {
   return get<Record<string, unknown>>("/admin/reports/products/analysis", params as unknown as Record<string, unknown>);
 }

@@ -1,3 +1,7 @@
-import AdminReportGenericPage from "./pages/AdminReportGenericPage";
+import { REPORT_PAGES } from "@/config/reportPageConfig";
 import { fetchSalesMonthlyReport } from "@/services/admin/reportService";
-export default function AdminSalesMonthlyReport() { return <AdminReportGenericPage title="销售月报" fetcher={fetchSalesMonthlyReport as never} />; }
+import AdminReportGenericPage from "./pages/AdminReportGenericPage";
+
+export default function AdminSalesMonthlyReport() {
+  return <AdminReportGenericPage config={REPORT_PAGES.sales_monthly} fetcher={fetchSalesMonthlyReport as never} />;
+}

@@ -1,4 +1,5 @@
 const repo = require('../repository/adminReport.repository');
+const { parseReportFilters } = require('./adminReportFilters');
 const { labelReportColumn, labelReportCellValue } = require('../../../utils/reportColumnLabels');
 const { generateId } = require('../../../utils/helpers');
 const { BusinessError } = require('../../../errors/BusinessError');
@@ -165,7 +166,8 @@ async function getOverview(query) {
 
 async function getSalesDaily(query) {
   const { dateFrom, dateTo } = resolveDateRange(query);
-  const list = await repo.selectSalesDaily(dateFrom, dateTo);
+  const filters = parseReportFilters(query);
+  const list = await repo.selectSalesDaily(dateFrom, dateTo, filters);
   const normalized = list.map((r) => {
     const paid = Number(r.paid_order_count || 0);
     const orderCount = Number(r.order_count || 0);
@@ -205,40 +207,8 @@ function canDowngradeReportError(error) {
     || /unknown column|doesn't exist|no such table/i.test(msg);
 }
 
-async function getSalesMonthly(query) {
-  const { dateFrom, dateTo } = resolveDateRange(query);
-  let list;
-  try {
-    list = await repo.selectSalesMonthly(dateFrom, dateTo);
-  } catch (error) {
-    if (canDowngradeReportError(error)) {
-      console.warn(`[admin-report] sales monthly downgraded: ${error.message}`);
-      list = [];
-    } else {
-      throw error;
-    }
-  }
-  let prev = null;
-  const normalized = list.map((r) => {
-    const gross = safeNumber(r.gross_sales);
-    const paid = Number(r.paid_order_count || 0);
-    const mom = prev ? (prev > 0 ? safeNumber(((gross - prev) / prev) * 100) : 0) : 0;
-    prev = gross;
-    return {
-      ...r,
-      gross_sales: gross,
-      net_sales: safeNumber(r.net_sales),
-      average_order_value: paid > 0 ? safeNumber(gross / paid) : 0,
-      refund_rate: gross > 0 ? safeNumber((Number(r.refund_amount || 0) / gross) * 100) : 0,
-      mom_growth_rate: mom,
-    };
-  });
-  return { summary: { 月份数: normalized.length }, list: normalized, date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
-}
-
-async function getProfitDaily(query) {
-  const { dateFrom, dateTo } = resolveDateRange(query);
-  const list = (await repo.selectProfitDaily(dateFrom, dateTo)).map((row) => ({
+function normalizeProfitRow(row) {
+  return {
     ...row,
     paid_amount: safeNumber(row.paid_amount),
     product_sales_amount: safeNumber(row.product_sales_amount),
@@ -259,7 +229,10 @@ async function getProfitDaily(query) {
     paid_order_count: Number(row.paid_order_count || 0),
     missing_cost_order_count: Number(row.missing_cost_order_count || 0),
     missing_cost_item_count: Number(row.missing_cost_item_count || 0),
-  }));
+  };
+}
+
+function buildProfitSummary(list) {
   const summary = list.reduce((acc, row) => ({
     paid_order_count: acc.paid_order_count + Number(row.paid_order_count || 0),
     paid_amount: safeNumber(acc.paid_amount + Number(row.paid_amount || 0)),
@@ -295,59 +268,433 @@ async function getProfitDaily(query) {
     ? safeNumber((summary.gross_profit_amount / summary.net_goods_sales_amount) * 100)
     : 0;
   summary.net_margin = summary.paid_amount > 0 ? safeNumber((summary.net_profit_amount / summary.paid_amount) * 100) : 0;
+  return summary;
+}
+
+function mergeSalesMonthlyWithProfit(salesRow, profitRow = {}) {
+  const gross = safeNumber(salesRow.gross_sales);
+  const paid = Number(salesRow.paid_order_count || 0);
+  return {
+    ...salesRow,
+    gross_sales: gross,
+    net_sales: safeNumber(salesRow.net_sales),
+    average_order_value: paid > 0 ? safeNumber(gross / paid) : 0,
+    refund_rate: gross > 0 ? safeNumber((Number(salesRow.refund_amount || 0) / gross) * 100) : 0,
+    product_sales_amount: safeNumber(profitRow.product_sales_amount),
+    net_goods_sales_amount: safeNumber(profitRow.net_goods_sales_amount),
+    goods_cost_amount: safeNumber(profitRow.goods_cost_amount),
+    gross_profit_amount: safeNumber(profitRow.gross_profit_amount),
+    gross_margin: safeNumber(profitRow.gross_margin),
+    expense_amount: safeNumber(profitRow.expense_amount),
+    net_profit_amount: safeNumber(profitRow.net_profit_amount),
+    net_margin: safeNumber(profitRow.net_margin),
+    missing_cost_order_count: Number(profitRow.missing_cost_order_count || 0),
+    missing_cost_item_count: Number(profitRow.missing_cost_item_count || 0),
+  };
+}
+
+async function getSalesMonthly(query) {
+  const { dateFrom, dateTo } = resolveDateRange(query);
+  let list = [];
+  let profitRows = [];
+  try {
+    [list, profitRows] = await Promise.all([
+      repo.selectSalesMonthly(dateFrom, dateTo),
+      repo.selectProfitMonthly(dateFrom, dateTo),
+    ]);
+  } catch (error) {
+    if (canDowngradeReportError(error)) {
+      console.warn(`[admin-report] sales monthly downgraded: ${error.message}`);
+      list = [];
+      profitRows = [];
+    } else {
+      throw error;
+    }
+  }
+  const profitByMonth = new Map(
+    profitRows.map((row) => [String(row.month), normalizeProfitRow(row)]),
+  );
+  const salesMonths = new Set(list.map((r) => String(r.month)));
+  let prev = null;
+  const normalized = list.map((r) => {
+    const month = String(r.month);
+    const merged = mergeSalesMonthlyWithProfit(r, profitByMonth.get(month));
+    const mom = prev ? (prev > 0 ? safeNumber(((merged.gross_sales - prev) / prev) * 100) : 0) : 0;
+    prev = merged.gross_sales;
+    return { ...merged, mom_growth_rate: mom };
+  });
+  for (const [month, profitRow] of profitByMonth) {
+    if (salesMonths.has(month)) continue;
+    const merged = mergeSalesMonthlyWithProfit(
+      {
+        month,
+        gross_sales: 0,
+        net_sales: 0,
+        paid_order_count: profitRow.paid_order_count,
+        refund_amount: profitRow.refund_amount,
+        discount_amount: profitRow.discount_amount,
+      },
+      profitRow,
+    );
+    normalized.push({ ...merged, mom_growth_rate: 0 });
+  }
+  normalized.sort((a, b) => String(a.month).localeCompare(String(b.month)));
+  const profitSummary = buildProfitSummary([...profitByMonth.values()]);
+  return {
+    summary: { 月份数: normalized.length, ...profitSummary },
+    list: normalized,
+    date_from: dateFrom,
+    date_to: dateTo,
+    last_updated_at: new Date().toISOString(),
+  };
+}
+
+async function getProfitDaily(query) {
+  const { dateFrom, dateTo } = resolveDateRange(query);
+  let list;
+  try {
+    list = (await repo.selectProfitDaily(dateFrom, dateTo)).map(normalizeProfitRow);
+  } catch (error) {
+    if (canDowngradeReportError(error)) {
+      console.warn(`[admin-report] profit daily downgraded: ${error.message}`);
+      list = [];
+    } else {
+      throw error;
+    }
+  }
+  const summary = buildProfitSummary(list);
+  return { summary, list, date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
+}
+
+async function getProfitMonthly(query) {
+  const { dateFrom, dateTo } = resolveDateRange(query);
+  let list;
+  try {
+    list = (await repo.selectProfitMonthly(dateFrom, dateTo)).map(normalizeProfitRow);
+  } catch (error) {
+    if (canDowngradeReportError(error)) {
+      console.warn(`[admin-report] profit monthly downgraded: ${error.message}`);
+      list = [];
+    } else {
+      throw error;
+    }
+  }
+  const summary = buildProfitSummary(list);
   return { summary, list, date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
 }
 
 async function getProductsAnalysis(query) {
   const { dateFrom, dateTo } = resolveDateRange(query);
-  const list = await repo.selectProductsAnalysis(dateFrom, dateTo);
+  const filters = parseReportFilters(query);
+  const list = await repo.selectProductsAnalysis(dateFrom, dateTo, filters);
   return { summary: { 商品数: list.length }, list, date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
 }
 
 async function getCategoriesAnalysis(query) {
   const { dateFrom, dateTo } = resolveDateRange(query);
-  const list = await repo.selectSimpleCategoryAnalysis(dateFrom, dateTo);
+  const filters = parseReportFilters(query);
+  const list = await repo.selectSimpleCategoryAnalysis(dateFrom, dateTo, filters);
   return { summary: { 分类数: list.length }, list, date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
+}
+
+function normalizeOrderAnalysisRow(row) {
+  const orderCount = Number(row.order_count || 0);
+  const paid = Number(row.paid_order_count || 0);
+  const paidAmount = safeNumber(row.paid_amount);
+  const refundAmount = safeNumber(row.refund_amount);
+  const refundOrders = Number(row.refund_order_count || 0);
+  return {
+    ...row,
+    order_count: orderCount,
+    paid_order_count: paid,
+    unpaid_order_count: Number(row.unpaid_order_count || 0),
+    cancelled_order_count: Number(row.cancelled_order_count || 0),
+    refund_order_count: refundOrders,
+    paid_amount: paidAmount,
+    refund_amount: refundAmount,
+    average_order_value: paid > 0 ? safeNumber(paidAmount / paid) : 0,
+    payment_rate: orderCount > 0 ? safeNumber((paid / orderCount) * 100) : 0,
+    refund_rate: paid > 0 ? safeNumber((refundOrders / paid) * 100) : 0,
+  };
 }
 
 async function getOrdersAnalysis(query) {
   const { dateFrom, dateTo } = resolveDateRange(query);
-  const summary = await repo.selectSimpleOrderAnalysis(dateFrom, dateTo);
-  return { summary, list: [], date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
+  const filters = parseReportFilters(query);
+  const [summaryRaw, listRaw] = await Promise.all([
+    repo.selectSimpleOrderAnalysis(dateFrom, dateTo, filters),
+    repo.selectOrderAnalysisDaily(dateFrom, dateTo, filters),
+  ]);
+  const list = listRaw.map(normalizeOrderAnalysisRow);
+  const summary = normalizeOrderAnalysisRow(summaryRaw);
+  return { summary, list, date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
+}
+
+function buildCustomerSummary(raw = {}) {
+  const payingUsers = Number(raw.paying_users || 0);
+  const paidOrderCount = Number(raw.paid_order_count || 0);
+  const repeatBuyers = Number(raw.repeat_buyer_count || 0);
+  const totalPaidAmount = safeNumber(raw.total_paid_amount);
+
+  const summary = {
+    new_users: Number(raw.new_users || 0),
+    order_users: Number(raw.order_users || 0),
+    paying_users: payingUsers,
+    repeat_buyer_count: repeatBuyers,
+    repeat_purchase_rate: payingUsers > 0 ? safeNumber((repeatBuyers / payingUsers) * 100) : 0,
+    average_order_value: paidOrderCount > 0 ? safeNumber(totalPaidAmount / paidOrderCount) : 0,
+    average_orders_per_buyer: payingUsers > 0 ? safeNumber(paidOrderCount / payingUsers) : 0,
+    total_paid_amount: totalPaidAmount,
+    paid_order_count: paidOrderCount,
+  };
+  if (raw.active_users != null) {
+    summary.active_users = Number(raw.active_users || 0);
+  }
+  return summary;
 }
 
 async function getCustomersAnalysis(query) {
   const { dateFrom, dateTo } = resolveDateRange(query);
-  const summary = await repo.selectSimpleCustomerAnalysis(dateFrom, dateTo);
+  const raw = await repo.selectSimpleCustomerAnalysis(dateFrom, dateTo);
+  const summary = buildCustomerSummary(raw);
   return { summary, list: [], date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
+}
+
+function normalizeActivityAnalysisRow(row, salesTrackingAvailable) {
+  const base = {
+    activity_id: row.activity_id,
+    activity_title: row.activity_title,
+    activity_type: row.activity_type,
+    start_at: row.start_at,
+    end_at: row.end_at,
+    product_count: Number(row.product_count || 0),
+  };
+  if (!salesTrackingAvailable) return base;
+
+  const paidOrderCount = Number(row.paid_order_count || 0);
+  const viewCount = Number(row.view_count || 0);
+  const normalized = {
+    ...base,
+    paid_order_count: paidOrderCount,
+    sales_qty: Number(row.sales_qty || 0),
+    sales_amount: Number(row.sales_amount || 0),
+    discount_amount: Number(row.discount_amount || 0),
+    gross_profit_amount: Number(row.gross_profit_amount || 0),
+  };
+  if (viewCount > 0) {
+    normalized.view_count = viewCount;
+    if (row.conversion_rate != null) {
+      normalized.conversion_rate = Number(row.conversion_rate);
+    }
+  }
+  return normalized;
+}
+
+function buildActivityAnalysisSummary(list, salesTrackingAvailable) {
+  const summary = { 活动数: list.length };
+  if (!salesTrackingAvailable) return summary;
+  summary.有销售活动数 = list.filter((r) => Number(r.paid_order_count || 0) > 0).length;
+  summary.支付订单数 = list.reduce((sum, r) => sum + Number(r.paid_order_count || 0), 0);
+  summary.销量 = list.reduce((sum, r) => sum + Number(r.sales_qty || 0), 0);
+  summary.销售额 = list.reduce((sum, r) => sum + Number(r.sales_amount || 0), 0);
+  summary.优惠金额 = list.reduce((sum, r) => sum + Number(r.discount_amount || 0), 0);
+  summary.商品毛利 = list.reduce((sum, r) => sum + Number(r.gross_profit_amount || 0), 0);
+  return summary;
 }
 
 async function getActivitiesAnalysis(query) {
   const { dateFrom, dateTo } = resolveDateRange(query);
-  const list = await repo.selectSimpleActivitiesAnalysis(dateFrom, dateTo);
-  return { summary: { 活动数: list.length }, list, date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
+  const filters = parseReportFilters(query);
+  const salesTrackingAvailable = await repo.isOrderItemsActivitySnapshotReady();
+  const listRaw = await repo.selectSimpleActivitiesAnalysis(dateFrom, dateTo, filters);
+  const list = listRaw.map((row) => normalizeActivityAnalysisRow(row, salesTrackingAvailable));
+  const warnings = salesTrackingAvailable
+    ? []
+    : ['订单明细尚未记录活动 ID 快照，无法统计活动带来的订单与销售额。'];
+  return {
+    sales_tracking_available: salesTrackingAvailable,
+    summary: buildActivityAnalysisSummary(list, salesTrackingAvailable),
+    list,
+    warnings,
+    date_from: dateFrom,
+    date_to: dateTo,
+    last_updated_at: new Date().toISOString(),
+  };
+}
+
+function computeCouponRoi(row) {
+  const paidOrders = Number(row.paid_order_count || 0);
+  const discountAmount = Number(row.discount_amount || 0);
+  const grossProfit = Number(row.gross_profit_amount || 0);
+  if (paidOrders <= 0) return null;
+  if (discountAmount <= 0) return null;
+  return safeNumber(grossProfit / discountAmount, 4);
+}
+
+function normalizeCouponAnalysisRow(row) {
+  const issued = Number(row.issued_count || 0);
+  const claimed = Number(row.claimed_count || 0);
+  const used = Number(row.used_count || 0);
+  const expired = Number(row.expired_count || 0);
+  const paidOrderCount = Number(row.paid_order_count || 0);
+  const salesAmount = safeNumber(row.sales_amount);
+  const discountAmount = safeNumber(row.discount_amount);
+  const netSales = safeNumber(row.net_sales);
+  const grossProfitAmount = safeNumber(row.gross_profit_amount);
+
+  const base = {
+    coupon_title: row.coupon_title || '',
+    claimed_count: claimed,
+    used_count: used,
+    expired_count: expired,
+    claim_rate: issued > 0 ? safeNumber((claimed / issued) * 100) : (claimed > 0 ? 100 : 0),
+    use_rate: claimed > 0 ? safeNumber((used / claimed) * 100) : 0,
+    paid_order_count: paidOrderCount,
+    sales_amount: salesAmount,
+    discount_amount: discountAmount,
+    net_sales: netSales,
+    gross_profit_amount: grossProfitAmount,
+    roi: computeCouponRoi({
+      paid_order_count: paidOrderCount,
+      discount_amount: discountAmount,
+      gross_profit_amount: grossProfitAmount,
+    }),
+  };
+
+  return base;
 }
 
 async function getCouponsAnalysis(query) {
   const { dateFrom, dateTo } = resolveDateRange(query);
-  const list = await repo.selectSimpleCouponsAnalysis(dateFrom, dateTo);
-  const normalized = list.map((r) => {
-    const issued = Number(r.issued_count || 0);
-    const claimed = Number(r.claimed_count || 0);
-    const used = Number(r.used_count || 0);
-    return {
-      ...r,
-      claim_rate: issued > 0 ? safeNumber((claimed / issued) * 100) : 0,
-      use_rate: claimed > 0 ? safeNumber((used / claimed) * 100) : 0,
-      roi: 0,
-    };
+  const filters = parseReportFilters(query);
+  const list = await repo.selectCouponsAnalysis(dateFrom, dateTo, filters);
+  const normalized = list.map(normalizeCouponAnalysisRow);
+  const summary = normalized.reduce((acc, row) => ({
+    优惠券数: acc.优惠券数 + 1,
+    领取总量: acc.领取总量 + row.claimed_count,
+    使用总量: acc.使用总量 + row.used_count,
+    过期总量: acc.过期总量 + row.expired_count,
+    支付订单数: acc.支付订单数 + row.paid_order_count,
+    带动销售额: safeNumber(acc.带动销售额 + row.sales_amount),
+    优惠成本: safeNumber(acc.优惠成本 + row.discount_amount),
+    净销售额: safeNumber(acc.净销售额 + row.net_sales),
+    商品毛利: safeNumber(acc.商品毛利 + row.gross_profit_amount),
+  }), {
+    优惠券数: 0,
+    领取总量: 0,
+    使用总量: 0,
+    过期总量: 0,
+    支付订单数: 0,
+    带动销售额: 0,
+    优惠成本: 0,
+    净销售额: 0,
+    商品毛利: 0,
   });
-  return { summary: { 优惠券数: normalized.length }, list: normalized, date_from: dateFrom, date_to: dateTo, last_updated_at: new Date().toISOString() };
+  summary.综合投入产出比 = summary.优惠成本 > 0 && summary.支付订单数 > 0
+    ? safeNumber(summary.商品毛利 / summary.优惠成本, 4)
+    : null;
+
+  return {
+    summary,
+    list: normalized,
+    date_from: dateFrom,
+    date_to: dateTo,
+    last_updated_at: new Date().toISOString(),
+  };
 }
 
-async function getInventoryAnalysis(_query = {}) {
-  const list = await repo.selectSimpleInventoryAnalysis();
-  return { summary: { 商品数: list.length }, list, last_updated_at: new Date().toISOString() };
+const INVENTORY_SORT_COLUMNS = new Set(['current_stock', 'sales_7d', 'sales_30d', 'available_stock_days', 'product_name']);
+
+function resolveInventorySort(query = {}) {
+  const sortBy = String(query.sort_by || query.sortBy || 'available_stock_days').trim();
+  const sortOrder = String(query.sort_order || query.sortOrder || 'asc').toLowerCase() === 'desc' ? 'desc' : 'asc';
+  return {
+    sortBy: INVENTORY_SORT_COLUMNS.has(sortBy) ? sortBy : 'available_stock_days',
+    sortOrder,
+  };
+}
+
+function normalizeInventoryRow(row) {
+  const sales7d = Number(row.sales_7d || 0);
+  const sales30d = Number(row.sales_30d || 0);
+  const currentStock = Number(row.current_stock || 0);
+  const warningStock = Number(row.warning_stock || 0);
+  const avgDailySales = safeNumber(sales30d / 30, 4);
+  const availableStockDays = avgDailySales > 0 ? safeNumber(currentStock / avgDailySales, 1) : null;
+
+  let stockStatus = 'normal';
+  if (currentStock <= 0) {
+    stockStatus = 'out_of_stock';
+  } else if (warningStock > 0 && currentStock <= warningStock) {
+    stockStatus = 'low_stock';
+  } else if (sales30d <= 0) {
+    stockStatus = 'slow_moving';
+  } else if (availableStockDays !== null && availableStockDays >= 60) {
+    stockStatus = 'slow_moving';
+  }
+
+  return {
+    product_name: row.product_name || '',
+    current_stock: currentStock,
+    warning_stock: warningStock,
+    sales_7d: sales7d,
+    sales_30d: sales30d,
+    avg_daily_sales: avgDailySales,
+    available_stock_days: availableStockDays,
+    stock_status: stockStatus,
+  };
+}
+
+function sortInventoryRows(rows, { sortBy, sortOrder }) {
+  const dir = sortOrder === 'asc' ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    if (sortBy === 'product_name') {
+      const cmp = String(a.product_name || '').localeCompare(String(b.product_name || ''), 'zh-CN');
+      return cmp * dir;
+    }
+    const av = a[sortBy];
+    const bv = b[sortBy];
+    const aNull = av === null || av === undefined;
+    const bNull = bv === null || bv === undefined;
+    if (aNull && bNull) return String(a.product_name || '').localeCompare(String(b.product_name || ''), 'zh-CN');
+    if (aNull) return 1;
+    if (bNull) return -1;
+    const diff = Number(av) - Number(bv);
+    if (diff === 0) return String(a.product_name || '').localeCompare(String(b.product_name || ''), 'zh-CN');
+    return diff * dir;
+  });
+}
+
+async function getInventoryAnalysis(query = {}) {
+  const { sortBy, sortOrder } = resolveInventorySort(query);
+  const rows = await repo.selectInventoryAnalysis();
+  const normalized = sortInventoryRows(rows.map(normalizeInventoryRow), { sortBy, sortOrder });
+
+  const summary = normalized.reduce((acc, row) => ({
+    商品数: acc.商品数 + 1,
+    缺货商品: acc.缺货商品 + (row.stock_status === 'out_of_stock' ? 1 : 0),
+    低库存商品: acc.低库存商品 + (row.stock_status === 'low_stock' ? 1 : 0),
+    滞销商品: acc.滞销商品 + (row.stock_status === 'slow_moving' ? 1 : 0),
+    当前库存总量: acc.当前库存总量 + row.current_stock,
+    近7天销量: acc.近7天销量 + row.sales_7d,
+    近30天销量: acc.近30天销量 + row.sales_30d,
+  }), {
+    商品数: 0,
+    缺货商品: 0,
+    低库存商品: 0,
+    滞销商品: 0,
+    当前库存总量: 0,
+    近7天销量: 0,
+    近30天销量: 0,
+  });
+
+  return {
+    summary,
+    list: normalized,
+    sort_by: sortBy,
+    sort_order: sortOrder,
+    last_updated_at: new Date().toISOString(),
+  };
 }
 
 async function getSearchAnalysis(query) {
@@ -496,10 +843,68 @@ function buildCsvFromRecords(records) {
   const exportKeys = preferPath
     ? keys.filter((k) => !['category_id', 'category_name', 'parent_category_id', 'parent_category_name'].includes(k))
     : keys;
+  if (exportKeys.includes('section')) {
+    const rest = exportKeys.filter((k) => k !== 'section');
+    exportKeys.splice(0, exportKeys.length, 'section', ...rest);
+  }
   return buildCsv(
     exportKeys.map(labelReportColumn),
     records.map((r) => exportKeys.map((k) => labelReportCellValue(k, r[k]))),
   );
+}
+
+function assertExportRows(rows, message) {
+  if (!rows?.length) {
+    throw new BusinessError(400, message);
+  }
+}
+
+function pickRecordKeys(record, keys) {
+  const out = {};
+  keys.forEach((key) => {
+    if (record[key] !== undefined && record[key] !== null) {
+      out[key] = record[key];
+    }
+  });
+  return out;
+}
+
+const ACTIVITY_EXPORT_BASE_KEYS = [
+  'activity_title',
+  'activity_type',
+  'start_at',
+  'end_at',
+  'product_count',
+];
+
+function buildTrafficExportRows(data) {
+  const rows = [];
+  Object.entries(data.summary || {}).forEach(([key, value]) => {
+    rows.push({
+      section: '核心指标',
+      metric: labelReportColumn(key),
+      value: labelReportCellValue(key, value),
+    });
+  });
+  const appendSection = (section, list) => {
+    (list || []).forEach((row) => {
+      rows.push({ section, ...row });
+    });
+  };
+  appendSection('趋势', data.trend);
+  appendSection('转化漏斗', data.funnel);
+  appendSection('页面排行', data.topPages);
+  appendSection('来源排行', data.sources);
+  appendSection('设备排行', data.devices);
+  return rows;
+}
+
+function hasTrafficExportData(data) {
+  const summary = data.summary || {};
+  const hasSummaryMetric = Object.values(summary).some((v) => Number(v) > 0);
+  const hasTrend = (data.trend || []).some((row) => Number(row.pv || 0) > 0 || Number(row.uv || 0) > 0);
+  const hasPages = (data.topPages || []).length > 0;
+  return hasSummaryMetric || hasTrend || hasPages;
 }
 
 function normalizeExpensePayload(body = {}) {
@@ -590,73 +995,97 @@ async function deleteOperatingExpense(id, admin = {}, req) {
 async function exportByType(type, query) {
   if (type === 'sales_daily') {
     const data = await getSalesDaily(query);
+    assertExportRows(data.list, '销售日报在所选时间范围内暂无明细数据，无法导出');
     const csv = buildCsvFromRecords(data.list);
     return { csv, filename: `sales-daily-${data.date_from}-${data.date_to}.csv` };
   }
   if (type === 'sales_monthly') {
     const data = await getSalesMonthly(query);
+    assertExportRows(data.list, '销售月报在所选时间范围内暂无明细数据，无法导出');
     const csv = buildCsvFromRecords(data.list);
     return { csv, filename: `sales-monthly-${data.date_from}-${data.date_to}.csv` };
   }
   if (type === 'profit_daily') {
     const data = await getProfitDaily(query);
+    assertExportRows(data.list, '利润日报在所选时间范围内暂无明细数据，无法导出');
     const csv = buildCsvFromRecords(data.list);
     return { csv, filename: `profit-daily-${data.date_from}-${data.date_to}.csv` };
   }
+  if (type === 'profit_monthly') {
+    const data = await getProfitMonthly(query);
+    assertExportRows(data.list, '利润月报在所选时间范围内暂无明细数据，无法导出');
+    const csv = buildCsvFromRecords(data.list);
+    return { csv, filename: `profit-monthly-${data.date_from}-${data.date_to}.csv` };
+  }
   if (type === 'product_analysis') {
     const data = await getProductsAnalysis(query);
+    assertExportRows(data.list, '商品分析在所选时间范围内暂无明细数据，无法导出');
     const csv = buildCsvFromRecords(data.list);
     return { csv, filename: `product-analysis-${data.date_from}-${data.date_to}.csv` };
   }
   if (type === 'category_analysis') {
     const data = await getCategoriesAnalysis(query);
+    assertExportRows(data.list, '分类分析在所选时间范围内暂无明细数据，无法导出');
     const csv = buildCsvFromRecords(data.list);
     return { csv, filename: `category-analysis-${data.date_from}-${data.date_to}.csv` };
   }
   if (type === 'order_analysis') {
     const data = await getOrdersAnalysis(query);
-    const csv = buildCsvFromRecords([data.summary || {}]);
+    assertExportRows(data.list, '订单分析在所选时间范围内暂无按日明细，无法导出');
+    const csv = buildCsvFromRecords(data.list);
     return { csv, filename: `order-analysis-${data.date_from}-${data.date_to}.csv` };
   }
   if (type === 'customer_analysis') {
     const data = await getCustomersAnalysis(query);
-    const csv = buildCsvFromRecords([data.summary || {}]);
+    const summary = data.summary || {};
+    assertExportRows(
+      Object.keys(summary).length ? [summary] : [],
+      '客户分析暂无汇总数据，无法导出',
+    );
+    const csv = buildCsvFromRecords([summary]);
     return { csv, filename: `customer-analysis-${data.date_from}-${data.date_to}.csv` };
   }
   if (type === 'activity_analysis') {
     const data = await getActivitiesAnalysis(query);
-    const csv = buildCsvFromRecords(data.list);
+    assertExportRows(data.list, '活动分析在所选时间范围内暂无活动数据，无法导出');
+    const exportList = data.sales_tracking_available
+      ? data.list
+      : data.list.map((row) => pickRecordKeys(row, ACTIVITY_EXPORT_BASE_KEYS));
+    const csv = buildCsvFromRecords(exportList);
     return { csv, filename: `activity-analysis-${data.date_from}-${data.date_to}.csv` };
   }
   if (type === 'coupon_analysis') {
     const data = await getCouponsAnalysis(query);
+    assertExportRows(data.list, '优惠券分析在所选时间范围内暂无明细数据，无法导出');
     const csv = buildCsvFromRecords(data.list);
     return { csv, filename: `coupon-analysis-${data.date_from}-${data.date_to}.csv` };
   }
   if (type === 'inventory_analysis') {
     const data = await getInventoryAnalysis(query);
+    assertExportRows(data.list, '库存分析暂无商品库存数据，无法导出');
     const csv = buildCsvFromRecords(data.list);
     return { csv, filename: `inventory-analysis.csv` };
   }
   if (type === 'search_analysis') {
     const data = await getSearchAnalysis(query);
+    assertExportRows(data.list, '搜索分析在所选时间范围内暂无搜索词数据，无法导出');
     const csv = buildCsvFromRecords(data.list);
     return { csv, filename: `search-analysis-${data.date_from}-${data.date_to}.csv` };
   }
   if (type === 'traffic_analysis') {
+    if (!(await repo.isAnalyticsEventsReady())) {
+      throw new BusinessError(400, '流量分析埋点未就绪，暂无法导出');
+    }
     const data = await getTrafficAnalysis(query);
-    const rows = [
-      ...Object.entries(data.summary || {}).map(([key, value]) => ({ type: '核心指标', name: labelReportColumn(key), value })),
-      ...data.trend.map((row) => ({ type: '趋势数据', ...row })),
-      ...data.funnel.map((row) => ({ type: '转化漏斗', ...row })),
-      ...data.topPages.map((row) => ({ type: '页面排行', ...row })),
-      ...data.sources.map((row) => ({ type: '来源排行', ...row })),
-      ...data.devices.map((row) => ({ type: '设备排行', ...row })),
-    ];
+    if (!hasTrafficExportData(data)) {
+      throw new BusinessError(400, '所选时间范围内暂无流量数据，无法导出');
+    }
+    const rows = buildTrafficExportRows(data);
+    assertExportRows(rows, '流量分析暂无可导出数据');
     const csv = buildCsvFromRecords(rows);
     return { csv, filename: `traffic-analysis-${data.date_from}-${data.date_to}.csv` };
   }
-  throw new Error(`不支持的报表类型: ${type}`);
+  throw new BusinessError(400, `不支持的报表类型: ${type}`);
 }
 
 module.exports = {
@@ -664,6 +1093,7 @@ module.exports = {
   getSalesDaily,
   getSalesMonthly,
   getProfitDaily,
+  getProfitMonthly,
   getProductsAnalysis,
   getCategoriesAnalysis,
   getOrdersAnalysis,

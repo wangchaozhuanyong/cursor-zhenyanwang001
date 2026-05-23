@@ -43,6 +43,14 @@ const REPORT_COLUMN_LABELS = {
   net_sales_amount: '净销售额',
   cost_amount: '成本金额',
   buyer_count: '购买用户',
+  new_users: '新注册用户',
+  order_users: '下单用户',
+  paying_users: '付费用户',
+  active_users: '活跃用户',
+  repeat_buyer_count: '复购用户',
+  repeat_purchase_rate: '复购率',
+  average_orders_per_buyer: '人均订单数',
+  total_paid_amount: '付费总额',
   refund_qty: '退款件数',
   current_stock: '当前库存',
   inventory_cost_value: '库存成本',
@@ -67,8 +75,21 @@ const REPORT_COLUMN_LABELS = {
   sales_30d: '近30日销量',
   avg_daily_sales: '日均销量',
   stock_status: '库存状态',
+  sales_7d: '近7天销量',
+  sales_30d: '近30天销量',
+  avg_daily_sales: '日均销量',
+  available_stock_days: '可售天数',
+  warning_stock: '预警库存',
   activity_title: '活动名称',
   activity_type: '活动类型',
+  product_count: '活动商品数',
+  活动数: '活动数',
+  有销售活动数: '有销售活动数',
+  支付订单数: '支付订单数',
+  销量: '销量',
+  销售额: '销售额',
+  优惠金额: '优惠金额',
+  商品毛利: '商品毛利',
   coupon_title: '优惠券名称',
   start_at: '开始时间',
   end_at: '结束时间',
@@ -102,6 +123,14 @@ const REPORT_COLUMN_LABELS = {
   payment_success_count: '支付成功次数',
   status: '状态',
   type: '类型',
+  section: '数据分区',
+  metric: '指标',
+  drop_rate: '流失率',
+  product_views: '商品浏览',
+  add_to_cart: '加购',
+  checkout_start: '发起结算',
+  order_submit: '提交订单',
+  payment_success: '支付成功',
   provider: '支付网关',
   channel_code: '支付渠道',
   payment_method: '支付方式',
@@ -158,7 +187,14 @@ function labelReportColumn(key) {
   return REPORT_COLUMN_LABELS[key] ?? humanizeColumnKey(key);
 }
 
-const STOCK_STATUS_LABELS = { low: '低库存', normal: '正常', out: '缺货' };
+const STOCK_STATUS_LABELS = {
+  low: '低库存',
+  low_stock: '低库存',
+  normal: '正常',
+  out: '缺货',
+  out_of_stock: '缺货',
+  slow_moving: '滞销',
+};
 const ACTIVITY_TYPE_LABELS = {
   flash_sale: '限时秒杀', full_reduction: '满减活动', coupon_activity: '优惠券活动', new_user_gift: '新人礼包',
   member_activity: '会员活动', points_bonus: '积分赠送', cashback_activity: '返现活动',
@@ -186,6 +222,7 @@ function labelReportCellValue(key, value) {
   if (key === 'traffic_source') return labelFromMap(TRAFFIC_SOURCE_LABELS, s, s);
   if (key === 'page_type') return labelFromMap(PAGE_TYPE_LABELS, s, s);
   if (key === 'device') return labelFromMap(DEVICE_LABELS, s, s);
+  if (key === 'roi' && (value === null || value === undefined || value === '')) return '';
   if (key.endsWith('_rate') && !Number.isNaN(Number(s))) return `${s}%`;
   return s;
 }

@@ -1,3 +1,7 @@
-import AdminReportGenericPage from "./pages/AdminReportGenericPage";
+import { REPORT_PAGES } from "@/config/reportPageConfig";
 import { fetchSearchAnalysisReport } from "@/services/admin/reportService";
-export default function AdminSearchAnalysisReport() { return <AdminReportGenericPage title="搜索分析" fetcher={fetchSearchAnalysisReport as never} />; }
+import AdminReportGenericPage from "./pages/AdminReportGenericPage";
+
+export default function AdminSearchAnalysisReport() {
+  return <AdminReportGenericPage config={REPORT_PAGES.search_analysis} fetcher={fetchSearchAnalysisReport as never} />;
+}

@@ -27,6 +27,8 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 const EXPORT_TYPES = [
   { value: "sales_daily", label: "销售日报" },
   { value: "sales_monthly", label: "销售月报" },
+  { value: "profit_daily", label: "利润日报" },
+  { value: "profit_monthly", label: "利润月报" },
   { value: "product_analysis", label: "商品分析" },
   { value: "category_analysis", label: "分类分析" },
   { value: "order_analysis", label: "订单分析" },
@@ -35,6 +37,7 @@ const EXPORT_TYPES = [
   { value: "coupon_analysis", label: "优惠券分析" },
   { value: "inventory_analysis", label: "库存分析" },
   { value: "search_analysis", label: "搜索分析" },
+  { value: "traffic_analysis", label: "流量分析" },
   { value: "products", label: "商品数据" },
   { value: "orders", label: "订单数据" },
   { value: "users", label: "用户数据" },

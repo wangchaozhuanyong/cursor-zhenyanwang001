@@ -1,3 +1,7 @@
-import AdminReportGenericPage from "./pages/AdminReportGenericPage";
+import { REPORT_PAGES } from "@/config/reportPageConfig";
 import { fetchOrderAnalysisReport } from "@/services/admin/reportService";
-export default function AdminOrderAnalysisReport() { return <AdminReportGenericPage title="订单分析" fetcher={fetchOrderAnalysisReport as never} />; }
+import AdminReportGenericPage from "./pages/AdminReportGenericPage";
+
+export default function AdminOrderAnalysisReport() {
+  return <AdminReportGenericPage config={REPORT_PAGES.order_analysis} fetcher={fetchOrderAnalysisReport as never} />;
+}

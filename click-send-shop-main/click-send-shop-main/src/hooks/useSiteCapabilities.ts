@@ -7,6 +7,9 @@ let cachedRuntimeConfig: RuntimeConfig | null = null;
 let inflight: Promise<SiteCapabilities> | null = null;
 const subscribers = new Set<(capabilities: SiteCapabilities) => void>();
 
+/** 避免弱网/国产浏览器下 bootstrap 长时间挂起，导致全屏遮罩挡住所有点击 */
+const CAPABILITIES_READY_TIMEOUT_MS = 8_000;
+
 function normalize(value?: Partial<SiteCapabilities> | null): SiteCapabilities {
   return { ...DEFAULT_SITE_CAPABILITIES, ...(value ?? {}) };
 }
@@ -18,7 +21,8 @@ function notifyAll(capabilities: SiteCapabilities) {
 async function loadOnce(): Promise<SiteCapabilities> {
   if (cachedCapabilities) return cachedCapabilities;
   if (inflight) return inflight;
-  inflight = homeService.fetchHomeBootstrap()
+
+  const bootstrapPromise = homeService.fetchHomeBootstrap()
     .then((bootstrap) => {
       const capabilities = normalize(bootstrap.siteCapabilities || bootstrap.runtimeConfig?.features);
       cachedCapabilities = capabilities;
@@ -30,10 +34,23 @@ async function loadOnce(): Promise<SiteCapabilities> {
       cachedCapabilities = DEFAULT_SITE_CAPABILITIES;
       notifyAll(DEFAULT_SITE_CAPABILITIES);
       return DEFAULT_SITE_CAPABILITIES;
-    })
-    .finally(() => {
-      inflight = null;
     });
+
+  const timed = new Promise<SiteCapabilities>((resolve) => {
+    window.setTimeout(() => {
+      if (cachedCapabilities) {
+        resolve(cachedCapabilities);
+        return;
+      }
+      cachedCapabilities = DEFAULT_SITE_CAPABILITIES;
+      notifyAll(DEFAULT_SITE_CAPABILITIES);
+      resolve(DEFAULT_SITE_CAPABILITIES);
+    }, CAPABILITIES_READY_TIMEOUT_MS);
+  });
+
+  inflight = Promise.race([bootstrapPromise, timed]).finally(() => {
+    inflight = null;
+  });
   return inflight;
 }
 

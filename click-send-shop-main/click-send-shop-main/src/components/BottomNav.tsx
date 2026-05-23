@@ -1,5 +1,5 @@
 import { Headphones, Home, LayoutGrid, ShoppingCart, User } from "lucide-react";
-import { type PointerEvent, useEffect, useRef, useState } from "react";
+import { type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -36,6 +36,7 @@ export default function BottomNav() {
   const capabilities = useSiteCapabilities();
   const totalItems = useCartStore((s) => s.totalItems());
   const activePointerRef = useRef<ActivePointer | null>(null);
+  const lastNavTapRef = useRef<{ path: string; at: number } | null>(null);
   const [badgeBump, setBadgeBump] = useState(false);
 
   useEffect(() => {
@@ -62,7 +63,7 @@ export default function BottomNav() {
   };
   const visibleTabs = tabs.filter((tab) => capabilities.mallEnabled || !["/categories", "/cart"].includes(tab.path.split("?")[0]));
 
-  const handleNavigate = (path: string) => {
+  const handleNavigate = useCallback((path: string) => {
     const base = path.split("?")[0];
     const targetSearch = path.includes("?") ? `?${path.split("?")[1]}` : "";
     if (location.pathname === base) {
@@ -78,7 +79,16 @@ export default function BottomNav() {
       return;
     }
     navigate(path);
-  };
+  }, [location.pathname, location.search, navigate]);
+
+  /** 避免 pointerup + click 双触发；兼容不支持 Pointer Events 的浏览器 */
+  const activateTab = useCallback((path: string) => {
+    const now = Date.now();
+    const last = lastNavTapRef.current;
+    if (last && last.path === path && now - last.at < 400) return;
+    lastNavTapRef.current = { path, at: now };
+    handleNavigate(path);
+  }, [handleNavigate]);
 
   const isTapIntent = (active: ActivePointer) => active.maxMove <= TAP_MOVE_THRESHOLD;
 
@@ -95,7 +105,11 @@ export default function BottomNav() {
   const handlePointerDown = (event: PointerEvent<HTMLButtonElement>, path: string) => {
     if (event.button !== 0) return;
     const target = event.currentTarget;
-    target.setPointerCapture(event.pointerId);
+    try {
+      target.setPointerCapture(event.pointerId);
+    } catch {
+      // 部分国产浏览器不支持 pointer capture
+    }
     activePointerRef.current = {
       path,
       pointerId: event.pointerId,
@@ -122,8 +136,7 @@ export default function BottomNav() {
 
     if (!isTapIntent(active)) return;
 
-    event.preventDefault();
-    handleNavigate(path);
+    activateTab(path);
   };
 
   const handlePointerCancel = (event: PointerEvent<HTMLButtonElement>) => {
@@ -139,11 +152,11 @@ export default function BottomNav() {
       data-theme-nav-style={navStyle}
       style={{
         paddingBottom: "max(env(safe-area-inset-bottom), 0px)",
-        touchAction: "none",
+        touchAction: "manipulation",
         WebkitTapHighlightColor: "transparent",
       }}
     >
-      <div className={getBottomNavInnerClassName(navStyle)} style={{ touchAction: "none" }}>
+      <div className={getBottomNavInnerClassName(navStyle)} style={{ touchAction: "manipulation" }}>
         <div className="grid h-[68px] items-center px-1" style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0, 1fr))` }}>
           {visibleTabs.map((tab) => {
             const isActive = isTabActive(tab.path);
@@ -158,13 +171,7 @@ export default function BottomNav() {
                 onPointerMove={handlePointerMove}
                 onPointerUp={(event) => finishPointer(event, tab.path)}
                 onPointerCancel={handlePointerCancel}
-                onClick={(event) => {
-                  if (event.pointerType === "touch") {
-                    event.preventDefault();
-                    return;
-                  }
-                  handleNavigate(tab.path);
-                }}
+                onClick={() => activateTab(tab.path)}
                 className="relative flex min-h-0 w-full cursor-pointer select-none flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 py-2"
               >
                 <span

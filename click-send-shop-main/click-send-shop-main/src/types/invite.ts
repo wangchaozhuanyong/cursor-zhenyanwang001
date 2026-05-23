@@ -21,8 +21,8 @@ export interface InviteStats {
 export interface ReferralRule {
   id: string;
   level: number;
-  commission_rate: number;
-  description: string;
+  name: string;
+  rewardPercent: number;
   enabled: boolean;
 }
 
@@ -33,7 +33,7 @@ export interface InviteRecordsSummary {
   inviteeUsers?: number;
 }
 
-/** 返现规则编辑行（表单字段与 API commission_rate 映射） */
+/** 返现规则编辑行（表单本地状态） */
 export interface ReferralRuleEditRow {
   id: string;
   level: number;

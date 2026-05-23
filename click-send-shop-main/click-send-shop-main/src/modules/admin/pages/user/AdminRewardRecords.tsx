@@ -70,8 +70,8 @@ function normalizeReferralRules(data: ReferralRule[]): ReferralRuleEditRow[] {
   return data.map((r, idx) => ({
     id: String(r.id ?? idx),
     level: Number(r.level ?? idx + 1),
-    name: String(r.description || `等级 ${idx + 1}`),
-    rewardPercent: Number(r.commission_rate ?? 0),
+    name: String(r.name || `等级 ${idx + 1}`),
+    rewardPercent: Number(r.rewardPercent ?? 0),
     enabled: Boolean(r.enabled ?? true),
   }));
 }
@@ -126,8 +126,8 @@ export default function AdminRewardRecords() {
     try {
       for (const rule of rules) {
         await updateReferralRule(rule.id, {
-          description: rule.name,
-          commission_rate: rule.rewardPercent,
+          name: rule.name,
+          rewardPercent: rule.rewardPercent,
           enabled: rule.enabled,
         });
       }

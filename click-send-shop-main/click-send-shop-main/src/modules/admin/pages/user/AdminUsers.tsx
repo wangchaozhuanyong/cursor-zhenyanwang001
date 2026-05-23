@@ -9,6 +9,10 @@ import PermissionGate from "@/components/admin/PermissionGate";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import type { AdminFilterChip } from "@/components/admin/AdminFilterSummaryBar";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
@@ -216,8 +220,10 @@ export default function AdminUsers() {
     if (phone) chips.push({ key: "phone", label: phone });
     if (memberLevelIdFilter) chips.push({ key: "memberLevel", label: tText(`会员：${selectedMemberLevelName || memberLevelIdFilter}`) });
     if (accountStatusFilter) {
-      const statusZh = ACCOUNT_STATUS_LABELS[accountStatusFilter] || accountStatusFilter;
-      chips.push({ key: "accountStatus", label: tText(`账号：${tText(statusZh)}`) });
+      chips.push({
+        key: "accountStatus",
+        label: tText(`账号：${ACCOUNT_STATUS_LABELS[accountStatusFilter] || accountStatusFilter}`),
+      });
     }
     const order = restrictionLabel(tText, tText("下单"), orderRestrictedFilter);
     if (order) chips.push({ key: "orderRestricted", label: order });
@@ -279,15 +285,15 @@ export default function AdminUsers() {
       await userService.exportUsersCsv(queryParams);
       toast.success(tText("已开始导出 CSV"));
     } catch (error) {
-      toast.error(toastErrorMessage(error, "导出失败"));
+      toast.error(toastErrorMessage(error, tText("导出失败")));
     }
   };
 
   const handleDeleteTag = async (tag: UserTag) => {
     const impact = await userService.fetchUserTagImpact(tag.id).catch(() => tag.count || 0);
     confirm({ title: tText("确认删除标签"),
-      description: `该标签当前影响 ${impact} 位用户，确认删除？`,
-      confirmText: "删除",
+      description: tText(`该标签当前影响 ${impact} 位用户，确认删除？`),
+      confirmText: tText("删除"),
       danger: true,
       onConfirm: async () => {
         setDeletingTagId(tag.id);
@@ -306,6 +312,57 @@ export default function AdminUsers() {
     { label: tText("今日新增"), value: String(summary.todayNew || 0), highlight: false },
     { label: tText("被邀请用户"), value: String(summary.invitedUsers || 0), highlight: false },
   ] as const;
+
+  const renderMobileCard = (user: UserProfile) => {
+    const checked = selectedUserIds.includes(user.id);
+    return (
+      <AdminTableMobileCard>
+        <div className="mb-3 flex items-start gap-2">
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={(e) =>
+              setSelectedUserIds((prev) => (e.target.checked ? [...prev, user.id] : prev.filter((id) => id !== user.id)))
+            }
+            className="mt-1"
+            aria-label={`选择用户 ${user.nickname || user.phone || user.id}`}
+          />
+          <div className="min-w-0 flex-1">
+            <motion.div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{user.nickname || user.phone || user.id}</p>
+                <p className="text-xs text-muted-foreground">{user.phone || "-"}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => navigate(`/admin/users/${user.id}`)}
+                className="shrink-0 text-xs text-[var(--theme-price)] hover:underline"
+              >
+                详情
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {user.member_level_name || user.memberLevel?.name || "普通会员"} · 积分 {user.points_balance ?? user.pointsBalance ?? 0}
+            </p>
+          </div>
+        </div>
+        <div className="mb-3">
+          <UserStatusBadges user={user} />
+        </div>
+        <div className="space-y-2">
+          <AdminTableMobileCardField label="标签">
+            <UserTagBadges tags={user.tags} />
+          </AdminTableMobileCardField>
+          <AdminTableMobileCardField label="邀请码">
+            <span className="font-mono text-xs">{user.invite_code || user.inviteCode || "-"}</span>
+          </AdminTableMobileCardField>
+          <AdminTableMobileCardField label="注册">
+            <span className="text-xs text-muted-foreground">{user.created_at ? formatDateTime(user.created_at) : "-"}</span>
+          </AdminTableMobileCardField>
+        </div>
+      </AdminTableMobileCard>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -331,7 +388,7 @@ export default function AdminUsers() {
             className="w-full text-left text-sm font-medium text-foreground"
             aria-expanded={advancedFiltersOpen}
           >
-            {advancedFiltersOpen ? "收起高级筛选" : "展开高级筛选"}
+            {advancedFiltersOpen ? tText("收起高级筛选") : tText("展开高级筛选")}
           </button>
           {advancedFiltersOpen ? (
             <div className="mt-3 flex flex-col gap-3 border-t border-[var(--theme-border)] pt-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -387,7 +444,7 @@ export default function AdminUsers() {
                   {memberLevels.map((level) => (
                     <option key={level.id} value={level.id}>
                       {level.name}
-                      {level.enabled === false ? "（已禁用）" : ""}
+                      {level.enabled === false ? tText("（已禁用）") : ""}
                     </option>
                   ))}
                 </select>
@@ -447,7 +504,7 @@ export default function AdminUsers() {
                   onClick={handleExportCsv}
                   className="touch-manipulation flex min-h-[44px] shrink-0 items-center gap-1.5 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2.5 text-sm"
                 >
-                  <Download size={16} /> 导出
+                  <Download size={16} /> <Tx>导出</Tx>
                 </button>
               </PermissionGate>
             </div>
@@ -461,7 +518,7 @@ export default function AdminUsers() {
           <PermissionGate permission="user.update">
             <div className="flex flex-wrap items-center gap-2">
               <span className={`text-xs ${selectedUserIds.length ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
-                已选 {selectedUserIds.length} 人
+                {tText(`已选 ${selectedUserIds.length} 人`)}
               </span>
               <select
                 value={batchTagId}
@@ -481,7 +538,7 @@ export default function AdminUsers() {
                 onClick={() => batchTagMutation.mutate()}
                 className="min-h-[40px] rounded-lg bg-[var(--theme-price)] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
               >
-                批量打标
+                <Tx>批量打标</Tx>
               </button>
             </div>
           </PermissionGate>
@@ -494,7 +551,7 @@ export default function AdminUsers() {
                 className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-lg border border-[var(--theme-border)] px-3 py-2 text-sm font-medium hover:bg-secondary"
               >
                 <Plus size={16} />
-                添加标签
+                <Tx>添加标签</Tx>
               </button>
             </PermissionGate>
             <div className="min-w-0 flex-1 basis-[12rem]">
@@ -550,6 +607,57 @@ export default function AdminUsers() {
         />
       </PermissionGate>
 
+      const renderMobileCard = (user: UserProfile) => {
+        const checked = selectedUserIds.includes(user.id);
+        return (
+          <AdminTableMobileCard>
+            <motion.div className="mb-3 flex items-start gap-2">
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={(e) =>
+                  setSelectedUserIds((prev) => (e.target.checked ? [...prev, user.id] : prev.filter((id) => id !== user.id)))
+                }
+                className="mt-1"
+                aria-label={`选择用户 ${user.nickname || user.phone || user.id}`}
+              />
+              <div className="min-w-0 flex-1">
+                <motion.div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold">{user.nickname || user.phone || user.id}</p>
+                    <p className="text-xs text-muted-foreground">{user.phone || "-"}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/admin/users/${user.id}`)}
+                    className="shrink-0 text-xs text-[var(--theme-price)] hover:underline"
+                  >
+                    详情
+                  </button>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {user.member_level_name || user.memberLevel?.name || "普通会员"} · 积分 {user.points_balance ?? user.pointsBalance ?? 0}
+                </p>
+              </div>
+            </div>
+            <div className="mb-3">
+              <UserStatusBadges user={user} />
+            </div>
+            <div className="space-y-2">
+              <AdminTableMobileCardField label="标签">
+                <UserTagBadges tags={user.tags} />
+              </AdminTableMobileCardField>
+              <AdminTableMobileCardField label="邀请码">
+                <span className="font-mono text-xs">{user.invite_code || user.inviteCode || "-"}</span>
+              </AdminTableMobileCardField>
+              <AdminTableMobileCardField label="注册">
+                <span className="text-xs text-muted-foreground">{user.created_at ? formatDateTime(user.created_at) : "-"}</span>
+              </AdminTableMobileCardField>
+            </div>
+          </AdminTableMobileCard>
+        );
+      };
+
       <AnimatedTable
         loading={usersQuery.isLoading}
         rows={users}
@@ -572,7 +680,7 @@ export default function AdminUsers() {
                 onChange={(e) => setSelectedUserIds(e.target.checked ? users.map((user) => user.id) : [])}
               />
             </th>
-            {["用户", "手机号", "状态", "会员等级", "标签", "邀请码", "上级邀请码", "积分", "注册时间", "操作"].map((head) => (
+            {tableHeaders.map((head) => (
               <th key={head} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">
                 {head}
               </th>
@@ -602,7 +710,7 @@ export default function AdminUsers() {
             <td className="px-4 py-3">
               <UserStatusBadges user={user} />
             </td>
-            <td className="px-4 py-3 whitespace-nowrap">{user.member_level_name || user.memberLevel?.name || "普通会员"}</td>
+            <td className="px-4 py-3 whitespace-nowrap">{user.member_level_name || user.memberLevel?.name || tText("普通会员")}</td>
             <td className="px-4 py-3">
               <UserTagBadges tags={user.tags} />
             </td>
@@ -613,4 +721,13 @@ export default function AdminUsers() {
               {user.created_at ? formatDateTime(user.created_at) : "-"}
             </td>
             <td className="px-4 py-3">
-              <button type="button" onClick={(
+              <button type="button" onClick={() => navigate(`/admin/users/${user.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">
+                <Tx>详情</Tx>
+              </button>
+            </td>
+          </>
+        )}
+      />
+    </div>
+  );
+}

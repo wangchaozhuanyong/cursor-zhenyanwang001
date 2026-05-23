@@ -258,12 +258,14 @@ function ProductCardInner({
         />
         <div className="absolute left-2 top-2 z-[1] flex flex-wrap gap-1">
           {product.active_activity && (
-            <StoreBadge type="sale">{product.active_activity.type === "flash_sale" ? "秒杀" : "满减"}</StoreBadge>
+            <StoreBadge type="sale" onMedia>
+              {product.active_activity.type === "flash_sale" ? "秒杀" : "满减"}
+            </StoreBadge>
           )}
-          {product.is_hot && <StoreBadge type="hot">热销</StoreBadge>}
+          {product.is_hot ? <StoreBadge type="hot" onMedia>热销</StoreBadge> : null}
           {showNewBadge ? (
             <button type="button" onClick={openNewArrivals} className="cursor-pointer">
-              <StoreBadge type="new">新品</StoreBadge>
+              <StoreBadge type="new" onMedia>新品</StoreBadge>
             </button>
           ) : null}
           <ProductTagList tags={product.tags} max={2} />

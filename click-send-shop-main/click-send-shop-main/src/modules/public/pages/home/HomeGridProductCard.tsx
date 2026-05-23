@@ -97,17 +97,17 @@ export default function HomeGridProductCard({
         {hasBadges ? (
           <div className="pointer-events-none absolute left-1.5 top-1.5 z-[1] flex max-w-[calc(100%-0.75rem)] flex-wrap gap-1">
             {product.active_activity ? (
-              <StoreBadge type="sale" className={HOME_PRODUCT_BADGE_CLASS}>
+              <StoreBadge type="sale" onMedia className={HOME_PRODUCT_BADGE_CLASS}>
                 {product.active_activity.type === "flash_sale" ? "秒杀" : "满减"}
               </StoreBadge>
             ) : null}
             {product.is_hot ? (
-              <StoreBadge type="hot" className={HOME_PRODUCT_BADGE_CLASS}>
+              <StoreBadge type="hot" onMedia className={HOME_PRODUCT_BADGE_CLASS}>
                 热销
               </StoreBadge>
             ) : null}
             {showNewBadge ? (
-              <StoreBadge type="new" className={HOME_PRODUCT_BADGE_CLASS}>
+              <StoreBadge type="new" onMedia className={HOME_PRODUCT_BADGE_CLASS}>
                 新品
               </StoreBadge>
             ) : null}

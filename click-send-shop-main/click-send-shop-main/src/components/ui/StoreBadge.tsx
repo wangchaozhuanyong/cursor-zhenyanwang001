@@ -6,6 +6,8 @@ type BadgeType = "hot" | "new" | "sale" | "coupon" | "success" | "warning" | "da
 
 interface StoreBadgeProps {
   type?: BadgeType;
+  /** 叠在商品图等复杂背景上：使用主题实色 + 自动前景色，忽略半透明 outline/soft */
+  onMedia?: boolean;
   className?: string;
 }
 
@@ -33,6 +35,7 @@ const typeForeground: Record<BadgeType, string> = {
 
 export default function StoreBadge({
   type = "neutral",
+  onMedia = false,
   className,
   children,
 }: PropsWithChildren<StoreBadgeProps>) {
@@ -40,17 +43,25 @@ export default function StoreBadge({
   const tone = typeTone[type];
   const foreground = typeForeground[type];
 
-  const style =
-    themeConfig.badgeStyle === "solid"
+  const style = onMedia
+    ? {
+        backgroundColor: tone,
+        color: foreground,
+        borderColor: "color-mix(in srgb, var(--theme-text) 18%, transparent)",
+        boxShadow:
+          "0 1px 2px color-mix(in srgb, var(--theme-text) 28%, transparent), 0 0 0 1px color-mix(in srgb, var(--theme-surface) 35%, transparent)",
+      }
+    : themeConfig.badgeStyle === "solid"
       ? { backgroundColor: tone, color: foreground, borderColor: "transparent" }
       : themeConfig.badgeStyle === "outline"
         ? { backgroundColor: "transparent", color: tone, borderColor: tone }
-        : { backgroundColor: `color-mix(in srgb, ${tone} 16%, white)`, color: tone, borderColor: "transparent" };
+        : { backgroundColor: `color-mix(in srgb, ${tone} 16%, var(--theme-surface))`, color: tone, borderColor: "transparent" };
 
   return (
     <span
       className={cn(
         "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold leading-none",
+        onMedia && "shadow-sm backdrop-blur-[2px]",
         className,
       )}
       style={style}

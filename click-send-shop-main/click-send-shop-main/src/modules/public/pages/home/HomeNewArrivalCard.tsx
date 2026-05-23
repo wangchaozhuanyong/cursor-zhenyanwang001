@@ -5,6 +5,7 @@ import { PRODUCT_BLUR_PLACEHOLDER } from "@/constants/productBlurPlaceholder";
 import { ProgressiveImage } from "@/modules/micro-interactions";
 import { resolveProductImageSrc } from "@/utils/uploadImageVariant";
 import { resolveNewArrivalImage } from "./newArrivalOps";
+import StoreBadge from "@/components/ui/StoreBadge";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
 import {
   HOME_PRODUCT_BADGE_CLASS,
@@ -78,14 +79,9 @@ export default function HomeNewArrivalCard({
             imgClassName={HOME_PRODUCT_IMAGE_IMG_CLASS}
           />
         ) : null}
-        <span
-          className={cn(
-            HOME_PRODUCT_BADGE_CLASS,
-            "absolute left-1.5 top-1.5 border-transparent bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]",
-          )}
-        >
+        <StoreBadge type="new" onMedia className={cn(HOME_PRODUCT_BADGE_CLASS, "absolute left-1.5 top-1.5")}>
           新品
-        </span>
+        </StoreBadge>
       </div>
       <div className={HOME_PRODUCT_INFO_CLASS}>
         <p className={HOME_PRODUCT_TITLE_CLASS}>{product.name}</p>

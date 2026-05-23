@@ -12,6 +12,20 @@ export const MONITORING_RULE_LABELS: Record<string, string> = {
   USER_STATS_MISMATCH: "用户统计数据不一致",
 };
 
+/** 规则说明（面向运营，避免表名字段名英文） */
+export const MONITORING_RULE_DESCRIPTIONS: Record<string, string> = {
+  PRODUCT_STOCK_MISMATCH: "商品列表上的库存数量，与所有规格 SKU 库存合计不一致。",
+  SKU_NEGATIVE_STOCK: "某个商品规格的库存数量小于 0。",
+  PAYMENT_SUCCESS_ORDER_UNPAID: "支付记录已成功，但对应订单仍显示未付款。",
+  ORDER_PAYMENT_AMOUNT_MISMATCH: "订单应付金额与成功支付金额不一致。",
+  REFUND_AMOUNT_EXCEEDS_PAID: "累计退款金额大于订单实付金额。",
+  POINTS_BALANCE_MISMATCH: "用户积分余额与积分变动流水汇总不一致。",
+  ORDER_CANCELLED_STOCK_NOT_RESTORED: "订单已取消，但缺少库存回滚相关记录。",
+  CACHE_STALE_AFTER_ADMIN_UPDATE: "后台修改数据后，前台缓存可能未及时更新。",
+  FILE_OBJECT_MISSING: "商品、规格、轮播图等内容引用的图片在存储中不存在。",
+  USER_STATS_MISMATCH: "用户订单/退款/积分等统计字段与真实业务数据不一致。",
+};
+
 export const MONITORING_MODULE_LABELS: Record<string, string> = {
   product: "商品",
   payment: "支付",
@@ -50,8 +64,12 @@ export const MONITORING_REPAIR_STATUS_LABELS: Record<string, string> = {
 export const MONITORING_RUN_TYPE_LABELS: Record<string, string> = {
   manual: "手动执行",
   scheduled: "定时任务",
+  scheduled_cron: "定时任务",
+  scheduled_all: "全量定时扫描",
   cron: "定时任务",
   auto: "自动检测",
+  rescan: "异常重扫",
+  auto_fix: "自动修复",
 };
 
 export const MONITORING_ENTITY_TYPE_LABELS: Record<string, string> = {
@@ -76,6 +94,71 @@ export function formatMonitoringRuleLabel(code?: string | null, title?: string |
   if (title?.trim()) return title.trim();
   if (!code) return "-";
   return MONITORING_RULE_LABELS[code] || code;
+}
+
+export function formatMonitoringRuleDescription(code?: string | null, description?: string | null): string {
+  if (!code) return (description || "").trim() || "-";
+  const mapped = MONITORING_RULE_DESCRIPTIONS[code];
+  if (mapped) return mapped;
+  const raw = (description || "").trim();
+  if (!raw) return "-";
+  return humanizeTechnicalDescription(raw);
+}
+
+/** 将种子数据里带表名的英文描述尽量翻成可读中文 */
+function humanizeTechnicalDescription(text: string): string {
+  return text
+    .replace(/\bproducts\.stock\b/gi, "商品库存")
+    .replace(/\bproduct_variants\.stock\b/gi, "规格库存")
+    .replace(/\bpayment_orders\b/gi, "支付记录")
+    .replace(/\borders\b/gi, "订单")
+    .replace(/\borders\.total_amount\b/gi, "订单金额")
+    .replace(/\borders\.refunded_amount\b/gi, "已退金额")
+    .replace(/\bpoints_accounts\b/gi, "积分账户")
+    .replace(/\bpoints_records\b/gi, "积分流水")
+    .replace(/\buser_statistics\b/gi, "用户统计")
+    .replace(/\busers\b/gi, "用户")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Cron 五段式 → 中文说明（常见调度）
+ * 例：*/30 * * * * → 每 30 分钟；0 4 * * * → 每天 04:00
+ */
+export function formatCronScheduleLabel(cron?: string | null): string {
+  const raw = (cron || "").trim();
+  if (!raw) return "未设置定时";
+
+  const parts = raw.split(/\s+/);
+  if (parts.length !== 5) return "自定义计划";
+
+  const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
+  if (dayOfMonth !== "*" || month !== "*" || dayOfWeek !== "*") {
+    return "自定义计划";
+  }
+
+  const everyMinute = minute.match(/^\*\/(\d+)$/);
+  if (everyMinute && hour === "*") {
+    return `每 ${everyMinute[1]} 分钟`;
+  }
+
+  if (minute === "0" && hour === "*") {
+    return "每小时整点";
+  }
+
+  const everyHour = hour.match(/^\*\/(\d+)$/);
+  if (minute === "0" && everyHour) {
+    return `每 ${everyHour[1]} 小时`;
+  }
+
+  if (/^\d+$/.test(minute) && /^\d+$/.test(hour)) {
+    const h = hour.padStart(2, "0");
+    const m = minute.padStart(2, "0");
+    return `每天 ${h}:${m}`;
+  }
+
+  return "自定义计划";
 }
 
 export function formatMonitoringModuleLabel(module?: string | null): string {
@@ -136,5 +219,13 @@ export function formatMonitoringStatusLabel(value?: string | null): string {
 
 export function formatMonitoringRunTypeLabel(value?: string | null): string {
   if (!value) return "-";
-  return MONITORING_RUN_TYPE_LABELS[value] || value;
+  const raw = value.trim();
+  const key = raw.toLowerCase();
+  if (MONITORING_RUN_TYPE_LABELS[key]) return MONITORING_RUN_TYPE_LABELS[key];
+  if (MONITORING_RUN_TYPE_LABELS[raw]) return MONITORING_RUN_TYPE_LABELS[raw];
+  if (key.startsWith("scheduled")) return "定时任务";
+  if (key.includes("manual")) return "手动执行";
+  if (key.includes("rescan")) return "异常重扫";
+  if (key.includes("auto_fix") || key.includes("autofix")) return "自动修复";
+  return "系统任务";
 }

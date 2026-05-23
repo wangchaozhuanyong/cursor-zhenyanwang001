@@ -298,16 +298,33 @@ async function verifyReverify(body, req) {
   };
 }
 
+function mfaRequiredResponse(res, message) {
+  return res.status(403).json({ code: 403, message, data: { mfaRequired: true } });
+}
+
+async function userMustStepUpMfa(user) {
+  const settings = await repo.selectMfaSettings(user.id);
+  const enabled = Boolean(settings?.enabled);
+  const required = user.role === 'super_admin' || Boolean(settings?.required);
+  if (!enabled && !required) return false;
+  return true;
+}
+
 function requireRecentMfa(req, res, next) {
-  if (!req.user) return res.fail(401, '请先登录');
-  if (!req.user.mfaVerifiedAt) {
-    return res.status(403).json({ code: 403, message: '需要多因素身份验证', data: { mfaRequired: true } });
-  }
-  const verifiedMs = Number(req.user.mfaVerifiedAt) * 1000;
-  if (!Number.isFinite(verifiedMs) || Date.now() - verifiedMs > MFA_RECENT_WINDOW_MS) {
-    return res.status(403).json({ code: 403, message: '多因素验证已过期，请重新验证', data: { mfaRequired: true } });
-  }
-  return next();
+  (async () => {
+    if (!req.user) return res.fail(401, '请先登录');
+    const mustVerify = await userMustStepUpMfa(req.user);
+    if (!mustVerify) return next();
+
+    if (!req.user.mfaVerifiedAt) {
+      return mfaRequiredResponse(res, '需要多因素身份验证');
+    }
+    const verifiedMs = Number(req.user.mfaVerifiedAt) * 1000;
+    if (!Number.isFinite(verifiedMs) || Date.now() - verifiedMs > MFA_RECENT_WINDOW_MS) {
+      return mfaRequiredResponse(res, '多因素验证已过期，请重新验证');
+    }
+    return next();
+  })().catch(next);
 }
 
 module.exports = {

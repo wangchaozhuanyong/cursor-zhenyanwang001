@@ -23,6 +23,7 @@ import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
+import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import type { MemberLevel, UserEditForm, UserProfile, UserStatusOverview, UserTag } from "@/types/user";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
@@ -41,6 +42,7 @@ export default function AdminUserDetail() {
   const capabilities = useSiteCapabilities();
   const hasMemberLevelPermission = useAdminPermissionStore((s) => s.can("member_level.manage"));
   const canManageMemberLevel = capabilities.memberLevelEnabled && hasMemberLevelPermission;
+  const { confirm } = useAdminConfirm();
 
   const detailQuery = useQuery({
     queryKey: adminQueryKeys.userDetail(id),
@@ -75,16 +77,18 @@ export default function AdminUserDetail() {
   const invalidateUserDetail = () =>
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.userDetail(id) });
 
-  const doResetPassword = async () => {
+  const doResetPassword = () => {
     if (!id) return;
-    if (!window.confirm("确认重置该用户密码？")) return;
-    try {
-      const pwd = await resetUserPassword(id);
-      await navigator.clipboard.writeText(pwd);
-      toast.success(`临时密码：${pwd}（已复制）`);
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "重置失败"));
-    }
+    confirm({
+      title: "确认重置密码",
+      description: "将为该用户生成临时密码并复制到剪贴板。",
+      confirmText: "重置",
+      onConfirm: async () => {
+        const pwd = await resetUserPassword(id);
+        await navigator.clipboard.writeText(pwd);
+        toast.success(`临时密码：${pwd}（已复制）`);
+      },
+    });
   };
 
   const doStatus = async (status: "normal" | "disabled" | "blacklisted") => {

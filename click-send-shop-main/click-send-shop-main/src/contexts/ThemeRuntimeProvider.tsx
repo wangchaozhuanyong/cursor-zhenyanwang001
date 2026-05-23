@@ -3,8 +3,6 @@ import type { ReactNode } from "react";
 import {
   ADMIN_SAFE_THEME_OVERRIDES,
   DEFAULT_SKIN_ID,
-  PROMO_ADMIN_BG_OVERRIDES,
-  PROMO_SKIN_ID,
   THEME_PRESETS,
 } from "@/constants/themePresets";
 import { THEME_REVISION_KEY } from "@/lib/themeRevision";
@@ -44,20 +42,14 @@ function isAdminScope() {
 
 function resolveThemeConfigForScope(
   config: ThemeConfig,
-  skinId: string,
+  _skinId: string,
   inAdmin: boolean,
   options?: { adminManualPreview?: boolean },
 ): ThemeConfig {
   if (!inAdmin) return config;
-  /** 后台手动预览某套皮肤时展示真实配色，不因 adminThemeMode=fixed 被压成同一套灰白 */
+  /** 后台手动预览某套皮肤时展示真实配色，不因 safe 覆盖被压成同一套灰白 */
   if (options?.adminManualPreview) return config;
-  if (config.adminThemeMode === "fixed") {
-    return normalizeThemeConfig({ ...config, ...ADMIN_SAFE_THEME_OVERRIDES });
-  }
-  if (skinId === PROMO_SKIN_ID) {
-    return normalizeThemeConfig({ ...config, ...PROMO_ADMIN_BG_OVERRIDES });
-  }
-  return config;
+  return normalizeThemeConfig({ ...config, ...ADMIN_SAFE_THEME_OVERRIDES });
 }
 
 function applyThemeDataAttributes(root: HTMLElement, config: ThemeConfig) {
@@ -109,8 +101,8 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   const loadTheme = useCallback(async () => {
     const base = import.meta.env.VITE_API_BASE_URL ?? "/api";
     try {
-      const response = await fetch(`${base}/theme/skins`, {
-        cache: "default",
+      const response = await fetch(`${base}/theme/skins?_=${Date.now()}`, {
+        cache: "no-store",
         credentials: "same-origin",
         headers: { Accept: "application/json" },
       });

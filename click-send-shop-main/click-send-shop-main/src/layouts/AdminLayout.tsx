@@ -70,6 +70,8 @@ interface NavChild {
   labelKey: string;
   path: string;
   permission?: NavPerm;
+  /** 站点功能开关；关闭时不展示该子菜单项 */
+  capability?: keyof SiteCapabilities;
 }
 
 interface NavItem {
@@ -77,6 +79,7 @@ interface NavItem {
   labelKey: string;
   path: string;
   permission?: NavPerm;
+  capability?: keyof SiteCapabilities;
   children?: NavChild[];
 }
 
@@ -110,7 +113,7 @@ const navItemsRaw: NavItem[] = [
     children: [
       { icon: Package, labelKey: "nav.productManage", path: "/admin/products", permission: "product.view" },
       { icon: FolderTree, labelKey: "nav.categories", path: "/admin/categories", permission: "product.view" },
-      { icon: Package, labelKey: "nav.inventory", path: "/admin/inventory", permission: "inventory.manage" },
+      { icon: Package, labelKey: "nav.inventory", path: "/admin/inventory", permission: "inventory.manage", capability: "inventoryEnabled" },
       { icon: Tags, labelKey: "nav.tags", path: "/admin/tags", permission: "product.view" },
     ],
   },
@@ -129,11 +132,12 @@ const navItemsRaw: NavItem[] = [
     labelKey: "nav.paymentCenter",
     path: "/admin/payments/channels",
     permission: "payment.manage",
+    capability: "onlinePaymentEnabled",
     children: [
-      { icon: CreditCard, labelKey: "nav.paymentChannels", path: "/admin/payments/channels", permission: "payment.manage" },
-      { icon: ClipboardList, labelKey: "nav.paymentOrders", path: "/admin/payments/orders", permission: "payment.manage" },
-      { icon: ScrollText, labelKey: "nav.paymentEvents", path: "/admin/payments/events", permission: "payment.manage" },
-      { icon: BarChart3, labelKey: "nav.paymentReconciliations", path: "/admin/payments/reconciliations", permission: "payment.manage" },
+      { icon: CreditCard, labelKey: "nav.paymentChannels", path: "/admin/payments/channels", permission: "payment.manage", capability: "onlinePaymentEnabled" },
+      { icon: ClipboardList, labelKey: "nav.paymentOrders", path: "/admin/payments/orders", permission: "payment.manage", capability: "onlinePaymentEnabled" },
+      { icon: ScrollText, labelKey: "nav.paymentEvents", path: "/admin/payments/events", permission: "payment.manage", capability: "onlinePaymentEnabled" },
+      { icon: BarChart3, labelKey: "nav.paymentReconciliations", path: "/admin/payments/reconciliations", permission: "payment.manage", capability: "onlinePaymentEnabled" },
     ],
   },
   {
@@ -152,8 +156,8 @@ const navItemsRaw: NavItem[] = [
     permission: { anyOf: ["user.view", "member_level.manage", "review.view", "review.manage"] },
     children: [
       { icon: Users, labelKey: "nav.userManage", path: "/admin/users", permission: "user.view" },
-      { icon: Crown, labelKey: "nav.memberLevels", path: "/admin/member-levels", permission: "member_level.manage" },
-      { icon: MessageSquareMore, labelKey: "nav.reviews", path: "/admin/reviews", permission: { anyOf: ["review.view", "review.manage"] } },
+      { icon: Crown, labelKey: "nav.memberLevels", path: "/admin/member-levels", permission: "member_level.manage", capability: "memberLevelEnabled" },
+      { icon: MessageSquareMore, labelKey: "nav.reviews", path: "/admin/reviews", permission: { anyOf: ["review.view", "review.manage"] }, capability: "reviewEnabled" },
     ],
   },
   {
@@ -164,9 +168,9 @@ const navItemsRaw: NavItem[] = [
     children: [
       { icon: LayoutGrid, labelKey: "nav.marketingOverview", path: "/admin/marketing", permission: { anyOf: ["activity.manage", "coupon.view", "points.manage", "referral.manage", "invite.view"] } },
       { icon: Megaphone, labelKey: "nav.activities", path: "/admin/marketing/activities", permission: "activity.manage" },
-      { icon: Ticket, labelKey: "nav.coupons", path: "/admin/marketing/coupons", permission: "coupon.view" },
-      { icon: ClipboardList, labelKey: "nav.couponRecords", path: "/admin/marketing/coupons/records", permission: "coupon.view" },
-      { icon: Star, labelKey: "nav.points", path: "/admin/marketing/points", permission: "points.manage" },
+      { icon: Ticket, labelKey: "nav.coupons", path: "/admin/marketing/coupons", permission: "coupon.view", capability: "couponEnabled" },
+      { icon: ClipboardList, labelKey: "nav.couponRecords", path: "/admin/marketing/coupons/records", permission: "coupon.view", capability: "couponEnabled" },
+      { icon: Star, labelKey: "nav.points", path: "/admin/marketing/points", permission: "points.manage", capability: "pointsEnabled" },
       { icon: Gift, labelKey: "nav.rewards", path: "/admin/marketing/rewards", permission: "referral.manage" },
       { icon: Link2, labelKey: "nav.invites", path: "/admin/marketing/invites", permission: "invite.view" },
     ],
@@ -179,7 +183,7 @@ const navItemsRaw: NavItem[] = [
     children: [
       { icon: LayoutGrid, labelKey: "nav.homeDesign", path: "/admin/home-ops", permission: "home_ops.manage" },
       { icon: Image, labelKey: "nav.banners", path: "/admin/banners", permission: "banner.manage" },
-      { icon: Headphones, labelKey: "nav.supportDownload", path: "/admin/support-download", permission: "settings.manage" },
+      { icon: Headphones, labelKey: "nav.supportDownload", path: "/admin/support-download", permission: "settings.manage", capability: "customerServiceDownloadEnabled" },
       { icon: Palette, labelKey: "nav.themeSettings", path: "/admin/settings/theme", permission: "settings.manage" },
       { icon: FileText, labelKey: "nav.content", path: "/admin/content", permission: "content.manage" },
     ],
@@ -223,10 +227,10 @@ const navItemsRaw: NavItem[] = [
       { icon: ShoppingCart, labelKey: "nav.reportOrders", path: "/admin/reports/orders", permission: "report.view" },
       { icon: Users, labelKey: "nav.reportCustomers", path: "/admin/reports/customers", permission: "report.view" },
       { icon: Megaphone, labelKey: "nav.reportActivities", path: "/admin/reports/activities", permission: "report.view" },
-      { icon: Ticket, labelKey: "nav.reportCoupons", path: "/admin/reports/coupons", permission: "report.view" },
-      { icon: Package, labelKey: "nav.reportInventory", path: "/admin/reports/inventory", permission: "report.view" },
+      { icon: Ticket, labelKey: "nav.reportCoupons", path: "/admin/reports/coupons", permission: "report.view", capability: "couponEnabled" },
+      { icon: Package, labelKey: "nav.reportInventory", path: "/admin/reports/inventory", permission: "report.view", capability: "inventoryEnabled" },
       { icon: Search, labelKey: "nav.reportSearch", path: "/admin/reports/search", permission: "report.view" },
-      { icon: MousePointerClick, labelKey: "nav.reportTraffic", path: "/admin/reports/traffic", permission: "report.view" },
+      { icon: MousePointerClick, labelKey: "nav.reportTraffic", path: "/admin/reports/traffic", permission: "report.view", capability: "trafficAnalyticsEnabled" },
       { icon: FileText, labelKey: "nav.exports", path: "/admin/exports", permission: "report.export" },
     ],
   },
@@ -248,7 +252,7 @@ const navItemsRaw: NavItem[] = [
       { icon: Settings, labelKey: "nav.siteSettings", path: "/admin/settings/site", permission: "settings.manage" },
       { icon: Settings, labelKey: "nav.featureSettings", path: "/admin/settings/features", permission: "settings.manage" },
       { icon: Bell, labelKey: "nav.telegramNotifications", path: "/admin/settings/telegram", permission: "settings.manage" },
-      { icon: Truck, labelKey: "nav.shipping", path: "/admin/settings/shipping", permission: "shipping.manage" },
+      { icon: Truck, labelKey: "nav.shipping", path: "/admin/settings/shipping", permission: "shipping.manage", capability: "shippingEnabled" },
       { icon: ScrollText, labelKey: "nav.auditLogs", path: "/admin/audit-logs", permission: "audit.view" },
       { icon: Database, labelKey: "nav.dataRetention", path: "/admin/data-retention", permission: { anyOf: ["data_cleanup.view", "data_cleanup.manage", "data_cleanup.execute"] } },
       { icon: DatabaseBackup, labelKey: "nav.backupCenter", path: "/admin/backups", permission: "backup.view" },
@@ -275,30 +279,27 @@ function passNavPerm(
   return canAny(p.anyOf);
 }
 
+function passesNavCapability(
+  capability: keyof SiteCapabilities | undefined,
+  capabilities: SiteCapabilities,
+): boolean {
+  if (capability === undefined) return true;
+  return capabilities[capability];
+}
+
 function filterNav(
   items: NavItem[],
   can: (c: string) => boolean,
   canAny: (a: string[]) => boolean,
   capabilities: SiteCapabilities,
 ): NavItem[] {
-  const hiddenByCapability = (path?: string) => {
-    if (!path) return false;
-    if (path.includes("/payments/")) return !capabilities.onlinePaymentEnabled;
-    if (path.includes("/marketing/coupons") || path.includes("/reports/coupons")) return !capabilities.couponEnabled;
-    if (path.includes("/marketing/points")) return !capabilities.pointsEnabled;
-    if (path.includes("/member-levels")) return !capabilities.memberLevelEnabled;
-    if (path.includes("/reviews")) return !capabilities.reviewEnabled;
-    if (path.includes("/inventory") || path.includes("/reports/inventory")) return !capabilities.inventoryEnabled;
-    if (path.includes("/settings/shipping")) return !capabilities.shippingEnabled;
-    if (path.includes("/support-download")) return !capabilities.customerServiceDownloadEnabled;
-    if (path.includes("/reports/traffic")) return !capabilities.trafficAnalyticsEnabled;
-    return false;
-  };
   const out: NavItem[] = [];
   for (const item of items) {
-    if (hiddenByCapability(item.path)) continue;
+    if (!passesNavCapability(item.capability, capabilities)) continue;
     if (item.children?.length) {
-      const children = item.children.filter((c) => !hiddenByCapability(c.path) && passNavPerm(c.permission, can, canAny));
+      const children = item.children.filter(
+        (c) => passesNavCapability(c.capability, capabilities) && passNavPerm(c.permission, can, canAny),
+      );
       if (children.length === 0) continue;
       if (item.permission !== undefined && !passNavPerm(item.permission, can, canAny)) continue;
       out.push({ ...item, children });

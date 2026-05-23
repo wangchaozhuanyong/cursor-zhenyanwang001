@@ -3,6 +3,16 @@ import type { PublicPaymentChannel } from "@/services/paymentService";
 
 export type PaymentMethod = "online" | "reward_wallet" | "whatsapp";
 
+export function shouldShowPaymentOption(
+  id: PaymentMethod,
+  showOnline: boolean,
+  showCustomerService: boolean,
+): boolean {
+  if (id === "online") return showOnline;
+  if (id === "whatsapp") return showCustomerService;
+  return true;
+}
+
 interface PaymentMethodPickerProps {
   value: PaymentMethod;
   onChange: (method: PaymentMethod) => void;
@@ -60,7 +70,7 @@ export default function PaymentMethodPicker({
       disabled: false,
       disabledHint: "",
     },
-  ].filter((opt) => (opt.id === "online" ? showOnline : showCustomerService));
+  ].filter((opt) => shouldShowPaymentOption(opt.id, showOnline, showCustomerService));
 
   return (
     <div className="space-y-2">

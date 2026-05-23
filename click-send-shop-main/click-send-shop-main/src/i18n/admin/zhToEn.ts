@@ -166,6 +166,7 @@ export const adminZhToEn: Record<string, string> = {
   "低库存": "Low stock",
   "内容页": "Content page",
   "分类页": "Category page",
+  "全部分类": "All categories",
   "券样式": "Coupon style",
   "单用户": "Per user",
   "危险色": "Danger color",

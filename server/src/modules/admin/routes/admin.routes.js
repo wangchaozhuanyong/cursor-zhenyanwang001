@@ -552,14 +552,15 @@ router.get('/reports/overview', adminAuth, requirePermission('report.view'), rep
 router.get('/reports/sales/daily', adminAuth, requirePermission('report.view'), reportCtrl.getSalesDaily);
 router.get('/reports/sales/monthly', adminAuth, requirePermission('report.view'), reportCtrl.getSalesMonthly);
 router.get('/reports/profit/daily', adminAuth, requirePermission('report.view'), reportCtrl.getProfitDaily);
+router.get('/reports/profit/monthly', adminAuth, requirePermission('report.view'), reportCtrl.getProfitMonthly);
 router.get('/reports/profit/export', adminAuth, requirePermission('report.export'), reportCtrl.exportProfit);
 router.get('/reports/products/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getProductsAnalysis);
 router.get('/reports/categories/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getCategoriesAnalysis);
 router.get('/reports/orders/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getOrdersAnalysis);
 router.get('/reports/customers/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getCustomersAnalysis);
 router.get('/reports/activities/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getActivitiesAnalysis);
-router.get('/reports/coupons/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getCouponsAnalysis);
-router.get('/reports/inventory/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getInventoryAnalysis);
+router.get('/reports/coupons/analysis', adminAuth, couponFeature, requirePermission('report.view'), reportCtrl.getCouponsAnalysis);
+router.get('/reports/inventory/analysis', adminAuth, inventoryFeature, requirePermission('report.view'), reportCtrl.getInventoryAnalysis);
 router.get('/reports/search/analysis', adminAuth, requirePermission('report.view'), reportCtrl.getSearchAnalysis);
 router.get('/reports/traffic', adminAuth, requireSiteCapability('trafficAnalyticsEnabled', '流量分析功能已关闭'), requirePermission('report.view'), reportCtrl.getTrafficAnalysis);
 

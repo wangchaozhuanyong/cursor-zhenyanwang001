@@ -328,25 +328,68 @@ function buildMemberCardSurface(
   };
 }
 
-/** ??? / premium?deal ????????????? + ?? CTA */
+/** 优惠券活动壳：局部红金（danger/price/warning），与邀请推广条解耦 */
+function buildCouponCampaignSurface(colors: {
+  danger: RGB;
+  price: RGB;
+  warning: RGB;
+  surface: RGB;
+  isDarkBg: boolean;
+}): GradientSurfaceTokens & {
+  bg: string;
+  border: string;
+  ctaBg: string;
+  ctaFg: string;
+  valuePaneBg: string;
+  divider: string;
+} {
+  const start = mixColors(colors.danger, WHITE, colors.isDarkBg ? 0.72 : 0.84);
+  const end = mixColors(
+    colors.warning,
+    mixColors(colors.price, colors.danger, 0.38),
+    colors.isDarkBg ? 0.42 : 0.28,
+  );
+  const surface = paletteForGradientSurface(start, end, 0.45);
+  const mid = parseColor(surface.midCss);
+  const ctaEnd = mixColors(colors.price, BLACK, colors.isDarkBg ? 0.72 : 0.82);
+  const cta = paletteForGradientSurface(colors.price, ctaEnd, 0.48);
+  const borderRgb = mixColors(colors.danger, mid, colors.isDarkBg ? 0.38 : 0.3);
+  const valuePaneBg = mixColors(colors.surface, WHITE, colors.isDarkBg ? 0.12 : 0.55);
+  return {
+    ...surface,
+    bg: `linear-gradient(110deg, ${rgbToCss(start)}, ${rgbToCss(end)})`,
+    border: rgbToCss(borderRgb),
+    ctaBg: `linear-gradient(135deg, ${rgbToCss(colors.price)}, ${rgbToCss(ctaEnd)})`,
+    ctaFg: cta.foreground,
+    valuePaneBg: rgbToCss(valuePaneBg),
+    divider: rgbToCss(mixColors(borderRgb, colors.surface, colors.isDarkBg ? 0.35 : 0.5)),
+  };
+}
+
+/** 邀请好友推广条：香槟金 / 品牌金 / 深棕金，不用 danger 促销红 */
 function buildInvitePromoSurface(colors: {
   secondary: RGB;
   price: RGB;
   surface: RGB;
   primary: RGB;
-  danger: RGB;
+  isDarkBg: boolean;
 }): GradientSurfaceTokens & { bg: string; border: string; ctaBg: string; ctaFg: string } {
-  const rose = colors.danger;
-  const start = mixColors(rose, WHITE, 0.84);
-  const end = mixColors(rose, mixColors(colors.price, colors.secondary, 0.45), 0.28);
-  const surface = paletteForGradientSurface(start, end, 0.45);
-  const ctaEnd = mixColors(colors.primary, BLACK, 0.88);
-  const cta = paletteForGradientSurface(colors.primary, ctaEnd, 0.5);
+  const champagne = mixColors(colors.secondary, colors.price, 0.28);
+  const start = mixColors(champagne, WHITE, colors.isDarkBg ? 0.68 : 0.86);
+  const end = mixColors(
+    colors.price,
+    mixColors(colors.primary, colors.secondary, 0.35),
+    colors.isDarkBg ? 0.48 : 0.32,
+  );
+  const surface = paletteForGradientSurface(start, end, 0.44);
+  const mid = parseColor(surface.midCss);
+  const ctaEnd = mixColors(colors.price, mixColors(colors.primary, BLACK, 0.88), 0.55);
+  const cta = paletteForGradientSurface(colors.price, ctaEnd, 0.5);
   return {
     ...surface,
     bg: `linear-gradient(110deg, ${rgbToCss(start)}, ${rgbToCss(end)})`,
-    border: rgbToCss(mixColors(rose, parseColor(surface.midCss), 0.32)),
-    ctaBg: `linear-gradient(135deg, ${rgbToCss(colors.primary)}, ${rgbToCss(ctaEnd)})`,
+    border: rgbToCss(mixColors(colors.price, mid, colors.isDarkBg ? 0.28 : 0.22)),
+    ctaBg: `linear-gradient(135deg, ${rgbToCss(colors.price)}, ${rgbToCss(ctaEnd)})`,
     ctaFg: cta.foreground,
   };
 }
@@ -451,7 +494,8 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     bg,
     surface,
   });
-  const invitePromoSurface = buildInvitePromoSurface({ secondary, price, surface, primary, danger });
+  const couponCampaignSurface = buildCouponCampaignSurface({ danger, price, warning, surface, isDarkBg });
+  const invitePromoSurface = buildInvitePromoSurface({ secondary, price, surface, primary, isDarkBg });
   const giftBadgeSurface = buildGiftBadgeSurface(price, surface);
   const couponCardPremiumLight = buildCouponCardLightSurface("premium", { primary, secondary, danger, warning });
   const couponCardDealLight = buildCouponCardLightSurface("deal", { primary, secondary, danger, warning });
@@ -510,16 +554,14 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     "--theme-coupon-card-premium-muted": couponCardPremiumLight.muted,
     "--theme-coupon-card-deal-fg": couponCardDealLight.fg,
     "--theme-coupon-card-deal-muted": couponCardDealLight.muted,
-    "--theme-coupon-card-shell-bg": invitePromoSurface.bg,
-    "--theme-coupon-card-shell-border": invitePromoSurface.border,
-    "--theme-coupon-card-shell-fg": invitePromoSurface.foreground,
-    "--theme-coupon-card-shell-muted": invitePromoSurface.muted,
-    "--theme-coupon-card-cta-bg": invitePromoSurface.ctaBg,
-    "--theme-coupon-card-cta-fg": invitePromoSurface.ctaFg,
-    "--theme-coupon-card-value-pane-bg": rgbToCss(mixColors(surface, WHITE, isDarkBg ? 0.12 : 0.55)),
-    "--theme-coupon-card-divider": rgbToCss(
-      mixColors(parseColor(invitePromoSurface.border), parseColor(surfaceCss), isDarkBg ? 0.35 : 0.5),
-    ),
+    "--theme-coupon-card-shell-bg": couponCampaignSurface.bg,
+    "--theme-coupon-card-shell-border": couponCampaignSurface.border,
+    "--theme-coupon-card-shell-fg": couponCampaignSurface.foreground,
+    "--theme-coupon-card-shell-muted": couponCampaignSurface.muted,
+    "--theme-coupon-card-cta-bg": couponCampaignSurface.ctaBg,
+    "--theme-coupon-card-cta-fg": couponCampaignSurface.ctaFg,
+    "--theme-coupon-card-value-pane-bg": couponCampaignSurface.valuePaneBg,
+    "--theme-coupon-card-divider": couponCampaignSurface.divider,
     "--theme-bg": bgCss,
     "--theme-surface": surfaceCss,
     "--theme-border": rgbToCss(border),
@@ -622,6 +664,18 @@ function borderDistinctRatio(border: string, bg: string) {
   const delta =
     Math.abs(b.r - background.r) + Math.abs(b.g - background.g) + Math.abs(b.b - background.b);
   return delta / 765;
+}
+
+function formatThemeHealthMessage(
+  checkId: string,
+  label: string,
+  ratio: number,
+  minRatio: number,
+): string {
+  if (checkId.includes("border")) {
+    return `${label} 当前 ${ratio}，建议 ≥ ${minRatio}`;
+  }
+  return `${label} 当前 ${ratio}:1，建议 ≥ ${minRatio}:1`;
 }
 
 export function getThemeHealthChecks(adminConfig: ThemeConfig): ThemeHealthCheck[] {
@@ -766,7 +820,7 @@ export function getThemeHealthChecks(adminConfig: ThemeConfig): ThemeHealthCheck
       message:
         status === "pass"
           ? undefined
-          : `${row.label} ${ratio}${row.id.includes("border") ? "" : `:1`}??? ? ${minRatio}${row.id.includes("border") ? "" : ":1"}?`,
+          : formatThemeHealthMessage(row.id, row.label, ratio, minRatio),
     };
   });
 }

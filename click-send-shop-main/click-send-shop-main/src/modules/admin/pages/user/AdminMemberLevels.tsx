@@ -7,7 +7,8 @@ import type { MemberLevelPayload } from "@/services/admin/userService";
 import type { MemberLevel } from "@/types/user";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
+import { LoadingButton } from "@/modules/micro-interactions";
+import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { THEME_BORDER_DANGER_SOFT, THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 
 type Draft = Omit<MemberLevel, "id" | "created_at" | "updated_at"> & {
@@ -59,6 +60,7 @@ function validateDraft(draft: Draft) {
 
 export default function AdminMemberLevels() {
   const queryClient = useQueryClient();
+  const { confirm } = useAdminConfirm();
   const [levels, setLevels] = useState<MemberLevel[]>([]);
   const [newLevel, setNewLevel] = useState<Draft>(emptyDraft);
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -117,8 +119,15 @@ export default function AdminMemberLevels() {
             variant="outline"
             state={recalculateMutation.isPending ? "loading" : "normal"}
             onClick={() => {
-              if (!window.confirm("强制重算会覆盖管理员手动指定等级，确认继续？")) return;
-              recalculateMutation.mutate(true);
+              confirm({
+                title: "确认强制重算",
+                description: "强制重算会覆盖管理员手动指定等级，确认继续？",
+                confirmText: "继续重算",
+                danger: true,
+                onConfirm: async () => {
+                  recalculateMutation.mutate(true);
+                },
+              });
             }}
           >
             强制重算全部

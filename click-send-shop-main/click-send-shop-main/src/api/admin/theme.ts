@@ -14,7 +14,7 @@ export function getThemeSkins() {
     defaultSkinId: string;
     activeSkinId: string;
     skins: Array<{ id: string; name: string; clientEnabled?: boolean; config: ThemeConfig }>;
-  }>("/theme/skins");
+  }>(`/theme/skins?_=${Date.now()}`);
 }
 
 export function updateSystemThemeSkins(data: {

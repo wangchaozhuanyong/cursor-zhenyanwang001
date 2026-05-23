@@ -150,7 +150,7 @@ export const THEME_MEMBER_CARD_SHELL = "bg-theme-member-card";
 export const THEME_MEMBER_CARD_MUTED = "theme-member-card-muted";
 export const THEME_INVITE_PROMO_SHELL = "bg-theme-invite-promo";
 export const THEME_INVITE_PROMO_MUTED = "theme-invite-promo-muted";
-export const THEME_INVITE_PROMO_CTA = "btn-theme-gradient text-xs font-semibold shadow-md";
+export const THEME_INVITE_PROMO_CTA = "theme-invite-promo-cta text-xs font-semibold shadow-md";
 export const THEME_GIFT_BADGE_SHELL = "bg-theme-gift-badge ring-1";
 
 /** @deprecated 使用 THEME_MEMBER_CARD_SHELL */

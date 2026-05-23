@@ -163,7 +163,7 @@ export function normalizeThemeConfig(input: Partial<ThemeConfig> | null | undefi
     motionLevel: pickEnum(raw.motionLevel, MOTION_VALUES, base.motionLevel),
     density: pickEnum(raw.density, DENSITY_VALUES, base.density),
 
-    adminThemeMode: pickEnum(raw.adminThemeMode, ADMIN_MODE_VALUES, "follow_store"),
+    adminThemeMode: pickEnum(raw.adminThemeMode, ADMIN_MODE_VALUES, "fixed"),
   };
 }
 

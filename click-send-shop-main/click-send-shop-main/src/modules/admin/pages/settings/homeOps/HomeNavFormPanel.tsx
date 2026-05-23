@@ -137,21 +137,31 @@ export default function HomeNavFormPanel({
           className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
           value={navForm.target_type || "url"}
           onChange={(e) => {
-            const next = e.target.value === "category"
-              ? "category"
-              : e.target.value === "support"
-                ? "support"
-                : "url";
+            const raw = e.target.value;
+            const next =
+              raw === "category"
+                ? "category"
+                : raw === "categories"
+                  ? "categories"
+                  : raw === "support"
+                    ? "support"
+                    : "url";
             setNavForm((prev) => ({
               ...prev,
               target_type: next,
               target_category_id: next === "category" ? prev.target_category_id : null,
               target_support_channel_id: next === "support" ? prev.target_support_channel_id : null,
-              link_url: next === "url" ? prev.link_url : "",
+              link_url:
+                next === "url"
+                  ? prev.link_url
+                  : next === "categories"
+                    ? "/categories"
+                    : "",
             }));
           }}
         >
           <option value="url"><Tx>URL / 站内路径</Tx></option>
+          <option value="categories"><Tx>全部分类</Tx></option>
           <option value="category"><Tx>分类页</Tx></option>
           <option value="support" disabled={!supportNavEnabled}>
             <Tx>联系客服</Tx>
@@ -212,7 +222,9 @@ export default function HomeNavFormPanel({
         <div className="flex justify-end">
           <AdminFieldHint
             text={
-              navForm.target_type === "category"
+              navForm.target_type === "categories"
+                ? "将跳转到分类 Tab 的全部分类列表（/categories）"
+                : navForm.target_type === "category"
                 ? "将自动跳转到对应分类页"
                 : navForm.target_type === "support"
                   ? supportNavEnabled

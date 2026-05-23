@@ -5,6 +5,7 @@ import { upsertMetaByName } from "@/utils/seo";
 const NOINDEX_NOFOLLOW_PATTERNS = [
   /^\/admin(\/|$)/,
   /^\/login(\/|$)/,
+  /^\/register(\/|$)/,
   /^\/cart(\/|$)/,
   /^\/checkout(\/|$)/,
   /^\/profile(\/|$)/,

@@ -98,7 +98,7 @@ export const adminMessagesEn: AdminMessages = {
     reportOverview: "Overview",
     reportDaily: "Daily report",
     reportMonthly: "Monthly report",
-    reportProfit: "Profit daily report",
+    reportProfit: "Profit report",
     reportExpenses: "Operating expenses",
     reportProducts: "Product analytics",
     reportCategories: "Category analytics",

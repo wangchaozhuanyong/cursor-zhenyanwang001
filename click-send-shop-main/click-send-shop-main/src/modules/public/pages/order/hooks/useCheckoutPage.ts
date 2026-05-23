@@ -39,6 +39,10 @@ import type { Address } from "@/types/address";
 import { formatAddressForDisplay } from "@/services/addressService";
 import { generateOrderText } from "../utils/checkoutText";
 import { safeOpenExternal } from "@/utils/safeOpen";
+import {
+  canStartOnlinePayment,
+  resolveEffectivePaymentMethod,
+} from "@/utils/checkoutPaymentMethod";
 
 export function useCheckoutPage() {
   const navigate = useNavigate();
@@ -432,7 +436,7 @@ export function useCheckoutPage() {
         discount_amount: discountAmount,
         shipping_fee: shippingFee,
         total_amount: finalTotal,
-        payment_method: capabilities.onlinePaymentEnabled ? paymentMethod : "whatsapp",
+        payment_method: resolveEffectivePaymentMethod(paymentMethod, capabilities.onlinePaymentEnabled),
         contact_name: name,
         contact_phone: phone,
       }).then((snapshot) => {
@@ -509,7 +513,7 @@ export function useCheckoutPage() {
         coupon_title: capabilities.couponEnabled ? selectedCoupon?.title ?? "" : "",
         shipping_template_id: selectedTemplate?.id,
         shipping_name: selectedTemplate?.name ?? "",
-        payment_method: capabilities.onlinePaymentEnabled ? paymentMethod : "whatsapp",
+        payment_method: resolveEffectivePaymentMethod(paymentMethod, capabilities.onlinePaymentEnabled),
         estimated_weight_kg: weightKg,
         checkout_abandonment_id: checkoutAbandonmentIdRef.current || checkoutAbandonmentId || undefined,
         use_points: capabilities.pointsEnabled && usePoints,
@@ -621,6 +625,10 @@ export function useCheckoutPage() {
 
   const payOnlineNow = async () => {
     if (!submittedOrder) return;
+    if (!capabilities.onlinePaymentEnabled) {
+      toast.info("在线支付未开启，请联系客服完成付款");
+      return;
+    }
     setPostSubmitOnlineError(null);
     setPostSubmitOnlineNote(null);
     try {
@@ -702,6 +710,7 @@ export function useCheckoutPage() {
     setPaymentMethod,
     showOnline,
     showCustomerService,
+    onlinePaymentEnabled: capabilities.onlinePaymentEnabled,
     pointsRedeemEnabled,
     rewardCashRedeemEnabled,
     stripeReady,

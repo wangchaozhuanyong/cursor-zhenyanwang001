@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Trash2, Users } from "lucide-react";
+import { Download, Plus, Users } from "lucide-react";
 import { toast } from "sonner";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
@@ -12,6 +12,8 @@ import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import AnimatedTable from "@/modules/micro-interactions/components/AnimatedTable";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
 import { ADMIN_EMPTY_GUIDES } from "@/config/adminEmptyStateGuides";
+import UserTagManageDialog from "@/modules/admin/components/user/UserTagManageDialog";
+import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import * as userService from "@/services/admin/userService";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
@@ -29,7 +31,15 @@ const ACCOUNT_STATUS_LABELS: Record<string, string> = {
 
 function UserTagBadges({ tags }: { tags?: UserTag[] }) {
   if (!tags?.length) return <span className="text-xs text-muted-foreground">无标签</span>;
-  return <div className="flex flex-wrap gap-1">{tags.map((tag) => <span key={tag.id} className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${productTagBadgeClass(tag.color)}`}>{tag.name}</span>)}</div>;
+  return (
+    <div className="flex flex-wrap gap-1">
+      {tags.map((tag) => (
+        <span key={tag.id} className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${productTagBadgeClass(tag.color)}`}>
+          {tag.name}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 function UserStatusBadges({ user }: { user: UserProfile }) {
@@ -42,7 +52,15 @@ function UserStatusBadges({ user }: { user: UserProfile }) {
     Number(user.comment_restricted || 0) ? "限制评论" : null,
   ].filter(Boolean) as string[];
   if (!items.length) return <span className="text-xs text-emerald-700">正常</span>;
-  return <div className="flex flex-wrap gap-1">{items.map((item) => <span key={item} className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700">{item}</span>)}</div>;
+  return (
+    <div className="flex flex-wrap gap-1">
+      {items.map((item) => (
+        <span key={item} className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700">
+          {item}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 function filterBoundLabel(prefix: string, value: string) {
@@ -71,24 +89,41 @@ export default function AdminUsers() {
   const [orderRestrictedFilter, setOrderRestrictedFilter] = useState("");
   const [couponRestrictedFilter, setCouponRestrictedFilter] = useState("");
   const [commentRestrictedFilter, setCommentRestrictedFilter] = useState("");
-  const [newTagName, setNewTagName] = useState("");
-  const [newTagColor, setNewTagColor] = useState("金色");
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [batchTagId, setBatchTagId] = useState("");
+  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
+  const [tagDialogOpen, setTagDialogOpen] = useState(false);
+  const [deletingTagId, setDeletingTagId] = useState<string | null>(null);
+  const { confirm } = useAdminConfirm();
 
-  const queryParams = useMemo<userService.UserListQuery>(() => ({
-    page,
-    pageSize,
-    keyword: search.trim() || undefined,
-    tagId: selectedTagId || undefined,
-    wechatBound: wechatBoundFilter || undefined,
-    phoneBound: phoneBoundFilter || undefined,
-    memberLevelId: memberLevelIdFilter || undefined,
-    accountStatus: accountStatusFilter || undefined,
-    orderRestricted: orderRestrictedFilter || undefined,
-    couponRestricted: couponRestrictedFilter || undefined,
-    commentRestricted: commentRestrictedFilter || undefined,
-  }), [accountStatusFilter, commentRestrictedFilter, couponRestrictedFilter, memberLevelIdFilter, orderRestrictedFilter, page, pageSize, phoneBoundFilter, search, selectedTagId, wechatBoundFilter]);
+  const queryParams = useMemo<userService.UserListQuery>(
+    () => ({
+      page,
+      pageSize,
+      keyword: search.trim() || undefined,
+      tagId: selectedTagId || undefined,
+      wechatBound: wechatBoundFilter || undefined,
+      phoneBound: phoneBoundFilter || undefined,
+      memberLevelId: memberLevelIdFilter || undefined,
+      accountStatus: accountStatusFilter || undefined,
+      orderRestricted: orderRestrictedFilter || undefined,
+      couponRestricted: couponRestrictedFilter || undefined,
+      commentRestricted: commentRestrictedFilter || undefined,
+    }),
+    [
+      accountStatusFilter,
+      commentRestrictedFilter,
+      couponRestrictedFilter,
+      memberLevelIdFilter,
+      orderRestrictedFilter,
+      page,
+      pageSize,
+      phoneBoundFilter,
+      search,
+      selectedTagId,
+      wechatBoundFilter,
+    ],
+  );
 
   const usersQuery = useQuery({
     queryKey: [...adminQueryKeys.usersRoot(), "list", queryParams],
@@ -96,23 +131,41 @@ export default function AdminUsers() {
     staleTime: 60_000,
     refetchInterval: 90_000,
   });
-  const tagsQuery = useQuery({ queryKey: [...adminQueryKeys.usersRoot(), "tags"], queryFn: userService.fetchUserTags, staleTime: 60_000 });
-  const memberLevelsQuery = useQuery({ queryKey: [...adminQueryKeys.usersRoot(), "member-levels"], queryFn: userService.fetchMemberLevels, staleTime: 60_000 });
+  const tagsQuery = useQuery({
+    queryKey: [...adminQueryKeys.usersRoot(), "tags"],
+    queryFn: userService.fetchUserTags,
+    staleTime: 60_000,
+  });
+  const memberLevelsQuery = useQuery({
+    queryKey: [...adminQueryKeys.usersRoot(), "member-levels"],
+    queryFn: userService.fetchMemberLevels,
+    staleTime: 60_000,
+  });
 
   const invalidateUsers = async () => {
     await queryClient.invalidateQueries({ queryKey: adminQueryKeys.usersRoot() });
   };
 
   const createTagMutation = useMutation({
-    mutationFn: () => userService.createUserTag({ name: newTagName.trim(), color: newTagColor }),
-    onSuccess: async () => { toast.success("标签已创建"); setNewTagName(""); await invalidateUsers(); },
+    mutationFn: (payload: { name: string; color: string }) => userService.createUserTag(payload),
+    onSuccess: async () => {
+      toast.success("标签已创建");
+      await invalidateUsers();
+    },
     onError: (error) => toast.error(toastErrorMessage(error, "创建标签失败")),
   });
 
   const deleteTagMutation = useMutation({
     mutationFn: (id: string) => userService.deleteUserTag(id),
-    onSuccess: async () => { toast.success("标签已删除"); await invalidateUsers(); },
-    onError: (error) => toast.error(toastErrorMessage(error, "删除标签失败")),
+    onSuccess: async () => {
+      toast.success("标签已删除");
+      setDeletingTagId(null);
+      await invalidateUsers();
+    },
+    onError: (error) => {
+      setDeletingTagId(null);
+      toast.error(toastErrorMessage(error, "删除标签失败"));
+    },
   });
 
   const batchTagMutation = useMutation({
@@ -121,7 +174,11 @@ export default function AdminUsers() {
       if (!selectedUserIds.length) throw new Error("请先勾选用户");
       return userService.batchSetUserTag(batchTagId, selectedUserIds);
     },
-    onSuccess: async (affected) => { toast.success(`批量打标完成：${affected}/${selectedUserIds.length}`); setSelectedUserIds([]); await invalidateUsers(); },
+    onSuccess: async (affected) => {
+      toast.success(`批量打标完成：${affected}/${selectedUserIds.length}`);
+      setSelectedUserIds([]);
+      await invalidateUsers();
+    },
     onError: (error) => toast.error(toastErrorMessage(error, "批量打标失败")),
   });
 
@@ -133,7 +190,18 @@ export default function AdminUsers() {
 
   const selectedTagName = tags.find((tag) => tag.id === selectedTagId)?.name;
   const selectedMemberLevelName = memberLevels.find((level: MemberLevel) => level.id === memberLevelIdFilter)?.name;
-  const filtersActive = Boolean(search.trim() || selectedTagId || wechatBoundFilter || phoneBoundFilter || memberLevelIdFilter || accountStatusFilter || orderRestrictedFilter || couponRestrictedFilter || commentRestrictedFilter);
+  const filtersActive = Boolean(
+    search.trim()
+      || selectedTagId
+      || wechatBoundFilter
+      || phoneBoundFilter
+      || memberLevelIdFilter
+      || accountStatusFilter
+      || orderRestrictedFilter
+      || couponRestrictedFilter
+      || commentRestrictedFilter,
+  );
+
   const filterChips = useMemo(() => {
     const chips: AdminFilterChip[] = [];
     if (search.trim()) chips.push({ key: "search", label: `关键词：${search.trim()}` });
@@ -151,7 +219,19 @@ export default function AdminUsers() {
     const comment = restrictionLabel("评论", commentRestrictedFilter);
     if (comment) chips.push({ key: "commentRestricted", label: comment });
     return chips;
-  }, [accountStatusFilter, commentRestrictedFilter, couponRestrictedFilter, memberLevelIdFilter, orderRestrictedFilter, phoneBoundFilter, search, selectedMemberLevelName, selectedTagId, selectedTagName, wechatBoundFilter]);
+  }, [
+    accountStatusFilter,
+    commentRestrictedFilter,
+    couponRestrictedFilter,
+    memberLevelIdFilter,
+    orderRestrictedFilter,
+    phoneBoundFilter,
+    search,
+    selectedMemberLevelName,
+    selectedTagId,
+    selectedTagName,
+    wechatBoundFilter,
+  ]);
 
   const usersEmptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.usersFiltered : ADMIN_EMPTY_GUIDES.users;
 
@@ -190,52 +270,272 @@ export default function AdminUsers() {
     }
   };
 
+  const handleDeleteTag = async (tag: UserTag) => {
+    const impact = await userService.fetchUserTagImpact(tag.id).catch(() => tag.count || 0);
+    confirm({
+      title: "确认删除标签",
+      description: `该标签当前影响 ${impact} 位用户，确认删除？`,
+      confirmText: "删除",
+      danger: true,
+      onConfirm: async () => {
+        setDeletingTagId(tag.id);
+        await deleteTagMutation.mutateAsync(tag.id);
+      },
+    });
+  };
+
+  const toggleTagFilter = (tagId: string) => {
+    setSelectedTagId((prev) => (prev === tagId ? "" : tagId));
+    setPage(1);
+  };
+
+  const statCards = [
+    { label: "匹配用户数", value: String(total), highlight: filtersActive },
+    { label: "今日新增", value: String(summary.todayNew || 0), highlight: false },
+    { label: "被邀请用户", value: String(summary.invitedUsers || 0), highlight: false },
+  ] as const;
+
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <SearchBar placeholder="搜索昵称 / 手机号 / 微信 / 邀请码" value={search} onChange={(value) => { setSearch(value); setPage(1); }} />
-        <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={removeFilterChip} />
-        <details className="group theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
-          <summary className="cursor-pointer list-none text-sm font-medium text-foreground marker:content-none"><span className="text-muted-foreground group-open:hidden">展开高级筛选</span><span className="hidden group-open:inline">收起高级筛选</span></summary>
-          <div className="mt-3 flex flex-col gap-3 border-t border-[var(--theme-border)] pt-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <select value={selectedTagId} onChange={(e) => { setSelectedTagId(e.target.value); setPage(1); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">全部标签</option>{tags.map((tag) => <option key={tag.id} value={tag.id}>{tag.name}</option>)}</select>
-            <select value={wechatBoundFilter} onChange={(e) => { setWechatBoundFilter(e.target.value); setPage(1); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">微信绑定（全部）</option><option value="1">已绑定</option><option value="0">未绑定</option></select>
-            <select value={phoneBoundFilter} onChange={(e) => { setPhoneBoundFilter(e.target.value); setPage(1); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">手机号（全部）</option><option value="1">已绑定</option><option value="0">未绑定</option></select>
-            {memberLevels.length > 0 ? <select value={memberLevelIdFilter} onChange={(e) => { setMemberLevelIdFilter(e.target.value); setPage(1); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">会员等级（全部）</option>{memberLevels.map((level) => <option key={level.id} value={level.id}>{level.name}{level.enabled === false ? "（已禁用）" : ""}</option>)}</select> : null}
-            <select value={accountStatusFilter} onChange={(e) => { setAccountStatusFilter(e.target.value); setPage(1); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">账号状态（全部）</option><option value="normal">正常</option><option value="disabled">禁用登录</option><option value="blacklisted">黑名单</option></select>
-            <select value={orderRestrictedFilter} onChange={(e) => { setOrderRestrictedFilter(e.target.value); setPage(1); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">下单限制（全部）</option><option value="1">已限制</option><option value="0">未限制</option></select>
-            <select value={couponRestrictedFilter} onChange={(e) => { setCouponRestrictedFilter(e.target.value); setPage(1); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">领券限制（全部）</option><option value="1">已限制</option><option value="0">未限制</option></select>
-            <select value={commentRestrictedFilter} onChange={(e) => { setCommentRestrictedFilter(e.target.value); setPage(1); }} className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"><option value="">评论限制（全部）</option><option value="1">已限制</option><option value="0">未限制</option></select>
-            <PermissionGate permission="user.view"><button type="button" onClick={handleExportCsv} className="touch-manipulation flex min-h-[44px] shrink-0 items-center gap-1.5 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2.5 text-sm"><Download size={16} /> 导出</button></PermissionGate>
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+        {statCards.map((item) => (
+          <div
+            key={item.label}
+            className={`theme-rounded border bg-[var(--theme-surface)] p-4 text-center theme-shadow ${
+              item.highlight ? "border-[var(--theme-price)]" : "border-[var(--theme-border)]"
+            }`}
+          >
+            <p className="text-lg font-bold text-foreground">{item.value}</p>
+            <p className="text-[10px] text-muted-foreground">{item.label}</p>
           </div>
-        </details>
+        ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">{[
-        { label: "匹配用户数", value: String(total) },
-        { label: "今日新增", value: String(summary.todayNew || 0) },
-        { label: "被邀请用户", value: String(summary.invitedUsers || 0) },
-      ].map((item) => <div key={item.label} className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-center theme-shadow"><p className="text-lg font-bold text-foreground">{item.value}</p><p className="text-[10px] text-muted-foreground">{item.label}</p></div>)}</div>
+      <div className="space-y-2">
+        <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2">
+          <button
+            type="button"
+            onClick={() => setAdvancedFiltersOpen((v) => !v)}
+            className="w-full text-left text-sm font-medium text-foreground"
+            aria-expanded={advancedFiltersOpen}
+          >
+            {advancedFiltersOpen ? "收起高级筛选" : "展开高级筛选"}
+          </button>
+          {advancedFiltersOpen ? (
+            <div className="mt-3 flex flex-col gap-3 border-t border-[var(--theme-border)] pt-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <select
+                value={selectedTagId}
+                onChange={(e) => {
+                  setSelectedTagId(e.target.value);
+                  setPage(1);
+                }}
+                className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+              >
+                <option value="">全部标签</option>
+                {tags.map((tag) => (
+                  <option key={tag.id} value={tag.id}>
+                    {tag.name}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={wechatBoundFilter}
+                onChange={(e) => {
+                  setWechatBoundFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+              >
+                <option value="">微信绑定（全部）</option>
+                <option value="1">已绑定</option>
+                <option value="0">未绑定</option>
+              </select>
+              <select
+                value={phoneBoundFilter}
+                onChange={(e) => {
+                  setPhoneBoundFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+              >
+                <option value="">手机号（全部）</option>
+                <option value="1">已绑定</option>
+                <option value="0">未绑定</option>
+              </select>
+              {memberLevels.length > 0 ? (
+                <select
+                  value={memberLevelIdFilter}
+                  onChange={(e) => {
+                    setMemberLevelIdFilter(e.target.value);
+                    setPage(1);
+                  }}
+                  className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+                >
+                  <option value="">会员等级（全部）</option>
+                  {memberLevels.map((level) => (
+                    <option key={level.id} value={level.id}>
+                      {level.name}
+                      {level.enabled === false ? "（已禁用）" : ""}
+                    </option>
+                  ))}
+                </select>
+              ) : null}
+              <select
+                value={accountStatusFilter}
+                onChange={(e) => {
+                  setAccountStatusFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+              >
+                <option value="">账号状态（全部）</option>
+                <option value="normal">正常</option>
+                <option value="disabled">禁用登录</option>
+                <option value="blacklisted">黑名单</option>
+              </select>
+              <select
+                value={orderRestrictedFilter}
+                onChange={(e) => {
+                  setOrderRestrictedFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+              >
+                <option value="">下单限制（全部）</option>
+                <option value="1">已限制</option>
+                <option value="0">未限制</option>
+              </select>
+              <select
+                value={couponRestrictedFilter}
+                onChange={(e) => {
+                  setCouponRestrictedFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+              >
+                <option value="">领券限制（全部）</option>
+                <option value="1">已限制</option>
+                <option value="0">未限制</option>
+              </select>
+              <select
+                value={commentRestrictedFilter}
+                onChange={(e) => {
+                  setCommentRestrictedFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="min-h-[44px] theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-sm"
+              >
+                <option value="">评论限制（全部）</option>
+                <option value="1">已限制</option>
+                <option value="0">未限制</option>
+              </select>
+              <PermissionGate permission="user.view">
+                <button
+                  type="button"
+                  onClick={handleExportCsv}
+                  className="touch-manipulation flex min-h-[44px] shrink-0 items-center gap-1.5 theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2.5 text-sm"
+                >
+                  <Download size={16} /> 导出
+                </button>
+              </PermissionGate>
+            </div>
+          ) : null}
+        </div>
+        <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={removeFilterChip} />
+      </div>
+
+      <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 theme-shadow">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <PermissionGate permission="user.update">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={`text-xs ${selectedUserIds.length ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+                已选 {selectedUserIds.length} 人
+              </span>
+              <select
+                value={batchTagId}
+                onChange={(e) => setBatchTagId(e.target.value)}
+                className="min-h-[40px] rounded-lg bg-secondary px-3 py-2 text-sm"
+              >
+                <option value="">选择要批量打的标签</option>
+                {tags.map((tag) => (
+                  <option key={tag.id} value={tag.id}>
+                    {tag.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                disabled={batchTagMutation.isPending}
+                onClick={() => batchTagMutation.mutate()}
+                className="min-h-[40px] rounded-lg bg-[var(--theme-price)] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                批量打标
+              </button>
+            </div>
+          </PermissionGate>
+
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:max-w-xl lg:justify-end">
+            <PermissionGate permission="user.update">
+              <button
+                type="button"
+                onClick={() => setTagDialogOpen(true)}
+                className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-lg border border-[var(--theme-border)] px-3 py-2 text-sm font-medium hover:bg-secondary"
+              >
+                <Plus size={16} />
+                添加标签
+              </button>
+            </PermissionGate>
+            <div className="min-w-0 flex-1 basis-[12rem]">
+              <SearchBar
+                placeholder="搜索昵称 / 手机号 / 微信 / 邀请码"
+                value={search}
+                onChange={(value) => {
+                  setSearch(value);
+                  setPage(1);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {tags.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          {tags.map((tag) => {
+            const active = selectedTagId === tag.id;
+            return (
+              <button
+                key={tag.id}
+                type="button"
+                onClick={() => toggleTagFilter(tag.id)}
+                className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                  active
+                    ? "ring-2 ring-[var(--theme-price)] ring-offset-1"
+                    : ""
+                } ${productTagBadgeClass(tag.color)}`}
+              >
+                {tag.name}
+                <span className="opacity-70">({tag.count ?? 0})</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
 
       <PermissionGate permission="user.update">
-        <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
-          <div className="flex flex-wrap gap-2 items-end">
-            <input value={newTagName} onChange={(e) => setNewTagName(e.target.value)} placeholder="新标签名称" className="min-h-[40px] rounded-lg bg-secondary px-3 py-2 text-sm" />
-            <select value={newTagColor} onChange={(e) => setNewTagColor(e.target.value)} className="min-h-[40px] rounded-lg bg-secondary px-3 py-2 text-sm"><option>红色</option><option>绿色</option><option>蓝色</option><option>金色</option></select>
-            <button type="button" disabled={createTagMutation.isPending || !newTagName.trim()} onClick={() => createTagMutation.mutate()} className="min-h-[40px] rounded-lg bg-[var(--theme-price)] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">添加</button>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">{tags.map((tag) => <span key={tag.id} className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${productTagBadgeClass(tag.color)}`}>{tag.name}<span className="opacity-70">({tag.count ?? 0})</span><button type="button" onClick={async () => { const impact = await userService.fetchUserTagImpact(tag.id).catch(() => tag.count || 0); if (window.confirm(`该标签当前影响 ${impact} 位用户，确认删除？`)) deleteTagMutation.mutate(tag.id); }} className="ml-1 rounded-full p-0.5 hover:bg-black/10" aria-label={`删除${tag.name}`}><Trash2 size={12} /></button></span>)}</div>
-        </div>
-      </PermissionGate>
-
-      <PermissionGate permission="user.update">
-        <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 theme-shadow">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-muted-foreground">已选 {selectedUserIds.length} 人</span>
-            <select value={batchTagId} onChange={(e) => setBatchTagId(e.target.value)} className="min-h-[40px] rounded-lg bg-secondary px-3 py-2 text-sm"><option value="">选择要批量打的标签</option>{tags.map((tag) => <option key={tag.id} value={tag.id}>{tag.name}</option>)}</select>
-            <button type="button" disabled={batchTagMutation.isPending} onClick={() => batchTagMutation.mutate()} className="min-h-[40px] rounded-lg bg-[var(--theme-price)] px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">批量打标</button>
-          </div>
-        </div>
+        <UserTagManageDialog
+          open={tagDialogOpen}
+          onOpenChange={setTagDialogOpen}
+          tags={tags}
+          creating={createTagMutation.isPending}
+          deletingId={deletingTagId}
+          onCreate={(payload) => createTagMutation.mutate(payload)}
+          onDelete={handleDeleteTag}
+          onFilterByTag={(tagId) => {
+            setSelectedTagId(tagId);
+            setPage(1);
+          }}
+        />
       </PermissionGate>
 
       <AnimatedTable
@@ -251,9 +551,62 @@ export default function AdminUsers() {
         emptyTitle={usersEmptyGuide.title}
         emptyDescription={usersEmptyGuide.description}
         emptyAction={<AdminEmptyGuideActions guide={usersEmptyGuide} showClearFilters={filtersActive} onClearFilters={clearFilters} />}
-        thead={<tr><th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap"><input type="checkbox" checked={users.length > 0 && selectedUserIds.length === users.length} onChange={(e) => setSelectedUserIds(e.target.checked ? users.map((user) => user.id) : [])} /></th>{["用户", "手机号", "状态", "会员等级", "标签", "邀请码", "上级邀请码", "积分", "注册时间", "操作"].map((head) => <th key={head} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{head}</th>)}</tr>}
+        thead={
+          <tr>
+            <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={users.length > 0 && selectedUserIds.length === users.length}
+                onChange={(e) => setSelectedUserIds(e.target.checked ? users.map((user) => user.id) : [])}
+              />
+            </th>
+            {["用户", "手机号", "状态", "会员等级", "标签", "邀请码", "上级邀请码", "积分", "注册时间", "操作"].map((head) => (
+              <th key={head} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">
+                {head}
+              </th>
+            ))}
+          </tr>
+        }
         footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
-        renderRow={(user) => <><td className="px-4 py-3"><input type="checkbox" checked={selectedUserIds.includes(user.id)} onChange={(e) => setSelectedUserIds((prev) => e.target.checked ? [...prev, user.id] : prev.filter((id) => id !== user.id))} /></td><td className="max-w-[11rem] px-4 py-3 align-middle"><AdminTableCell value={user.nickname || user.phone || user.id} fullText={[user.nickname, user.phone, user.id].filter(Boolean).join("\n")} maxWidth="10.5rem" /></td><td className="px-4 py-3 text-foreground whitespace-nowrap">{user.phone || "-"}</td><td className="px-4 py-3"><UserStatusBadges user={user} /></td><td className="px-4 py-3 whitespace-nowrap">{user.member_level_name || user.memberLevel?.name || "普通会员"}</td><td className="px-4 py-3"><UserTagBadges tags={user.tags} /></td><td className="px-4 py-3 font-mono text-xs text-foreground">{user.invite_code || user.inviteCode || "-"}</td><td className="px-4 py-3 font-mono text-xs text-muted-foreground">{user.parent_invite_code || user.parentInviteCode || "-"}</td><td className="px-4 py-3 text-foreground">{user.points_balance ?? user.pointsBalance ?? 0}</td><td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{user.created_at ? formatDateTime(user.created_at) : "-"}</td><td className="px-4 py-3"><button type="button" onClick={() => navigate(`/admin/users/${user.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">详情</button></td></>}
+        renderRow={(user) => (
+          <>
+            <td className="px-4 py-3">
+              <input
+                type="checkbox"
+                checked={selectedUserIds.includes(user.id)}
+                onChange={(e) =>
+                  setSelectedUserIds((prev) => (e.target.checked ? [...prev, user.id] : prev.filter((id) => id !== user.id)))
+                }
+              />
+            </td>
+            <td className="max-w-[11rem] px-4 py-3 align-middle">
+              <AdminTableCell
+                value={user.nickname || user.phone || user.id}
+                fullText={[user.nickname, user.phone, user.id].filter(Boolean).join("\n")}
+                maxWidth="10.5rem"
+              />
+            </td>
+            <td className="px-4 py-3 text-foreground whitespace-nowrap">{user.phone || "-"}</td>
+            <td className="px-4 py-3">
+              <UserStatusBadges user={user} />
+            </td>
+            <td className="px-4 py-3 whitespace-nowrap">{user.member_level_name || user.memberLevel?.name || "普通会员"}</td>
+            <td className="px-4 py-3">
+              <UserTagBadges tags={user.tags} />
+            </td>
+            <td className="px-4 py-3 font-mono text-xs text-foreground">{user.invite_code || user.inviteCode || "-"}</td>
+            <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{user.parent_invite_code || user.parentInviteCode || "-"}</td>
+            <td className="px-4 py-3 text-foreground">{user.points_balance ?? user.pointsBalance ?? 0}</td>
+            <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+              {user.created_at ? formatDateTime(user.created_at) : "-"}
+            </td>
+            <td className="px-4 py-3">
+              <button type="button" onClick={() => navigate(`/admin/users/${user.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">
+                详情
+              </button>
+            </td>
+          </>
+        )}
       />
     </div>
   );

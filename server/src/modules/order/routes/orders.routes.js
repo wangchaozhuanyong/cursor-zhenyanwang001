@@ -15,6 +15,13 @@ const {
 
 const router = Router();
 const mallFeature = requireSiteCapability('mallEnabled', '商城功能已关闭');
+const onlinePaymentFeature = requireSiteCapability('onlinePaymentEnabled', '本站未启用在线支付');
+
+function allowWalletOrEnabledOnline(req, res, next) {
+  const channel = String(req.body?.channel || '').trim();
+  if (channel === 'reward_wallet') return next();
+  return onlinePaymentFeature(req, res, next);
+}
 
 router.use(auth);
 router.use(guardByAction('order'));
@@ -35,8 +42,8 @@ router.post(
 );
 router.post(
   '/:id/pay',
-  requireSiteCapability('onlinePaymentEnabled', '本站未启用在线支付'),
   validate({ params: orderIdParamSchema, body: payOrderBodySchema }),
+  allowWalletOrEnabledOnline,
   ctrl.payOrder,
 );
 router.post('/:id/confirm', validate({ params: orderIdParamSchema }), ctrl.confirmReceive);

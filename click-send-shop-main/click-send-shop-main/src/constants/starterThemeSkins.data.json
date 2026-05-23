@@ -39,7 +39,7 @@
       "categoryIconStyle": "soft",
       "motionLevel": "rich",
       "density": "comfortable",
-      "adminThemeMode": "follow_store"
+      "adminThemeMode": "fixed"
     }
   },
   {
@@ -82,7 +82,7 @@
       "categoryIconStyle": "outline",
       "motionLevel": "soft",
       "density": "comfortable",
-      "adminThemeMode": "follow_store"
+      "adminThemeMode": "fixed"
     }
   },
   {
@@ -297,7 +297,7 @@
       "categoryIconStyle": "soft",
       "motionLevel": "rich",
       "density": "comfortable",
-      "adminThemeMode": "follow_store"
+      "adminThemeMode": "fixed"
     }
   },
   {
@@ -340,7 +340,7 @@
       "categoryIconStyle": "soft",
       "motionLevel": "soft",
       "density": "comfortable",
-      "adminThemeMode": "follow_store"
+      "adminThemeMode": "fixed"
     }
   }
 ]

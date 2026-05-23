@@ -98,7 +98,7 @@ export const adminMessagesZh: AdminMessages = {
     reportOverview: "数据总览",
     reportDaily: "日报表",
     reportMonthly: "月报表",
-    reportProfit: "利润日报",
+    reportProfit: "利润报表",
     reportExpenses: "经营支出",
     reportProducts: "商品分析",
     reportCategories: "分类分析",

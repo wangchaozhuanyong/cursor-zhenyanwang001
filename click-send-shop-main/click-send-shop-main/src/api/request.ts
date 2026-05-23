@@ -82,7 +82,12 @@ function isPublicStorefrontPath(pathname: string): boolean {
 
 function shouldRedirectToLogin(options: RequestOptions, isAuthLogout: boolean, isAccountCancel: boolean): boolean {
   if (typeof window === "undefined") return false;
-  if (isAuthLogout || isAccountCancel || window.location.pathname.startsWith("/login")) return false;
+  if (
+    isAuthLogout
+    || isAccountCancel
+    || window.location.pathname.startsWith("/login")
+    || window.location.pathname === "/register"
+  ) return false;
   if (options.skipGlobalLoading || options.loadingMode === "silent") {
     return !isPublicStorefrontPath(window.location.pathname);
   }
@@ -227,11 +232,12 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     }
 
     const bodyData = body.data as Record<string, unknown> | undefined;
+    const mfaRequired = Boolean(bodyData?.mfaRequired);
     if (
       res.status === 403
       && retry
       && isAdminEndpoint
-      && bodyData?.mfaRequired
+      && mfaRequired
       && typeof window !== "undefined"
       && !endpoint.startsWith("/admin/auth/mfa/")
     ) {

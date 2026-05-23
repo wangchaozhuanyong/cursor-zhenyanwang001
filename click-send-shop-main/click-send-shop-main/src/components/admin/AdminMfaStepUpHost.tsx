@@ -1,22 +1,32 @@
 import { useCallback, useEffect, useState } from "react";
 import { KeyRound } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   cancelAdminMfaStepUp,
   completeAdminMfaStepUp,
   registerAdminMfaStepUpOpener,
 } from "@/lib/adminMfaStepUp";
-import { reverifyAdminMfa } from "@/services/admin/accountService";
+import { fetchAdminProfile, reverifyAdminMfa } from "@/services/admin/accountService";
 import { toastErrorMessage } from "@/utils/errorMessage";
 
 export default function AdminMfaStepUpHost() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mfaEnabled, setMfaEnabled] = useState<boolean | null>(null);
 
   const show = useCallback(() => {
     setCode("");
+    setMfaEnabled(null);
     setOpen(true);
+    void fetchAdminProfile()
+      .then((profile) => {
+        const enabled = Boolean((profile as { mfa?: { enabled?: boolean } }).mfa?.enabled);
+        setMfaEnabled(enabled);
+      })
+      .catch(() => setMfaEnabled(null));
   }, []);
 
   useEffect(() => {
@@ -57,20 +67,30 @@ export default function AdminMfaStepUpHost() {
           <KeyRound size={18} />
           需要二次身份验证
         </div>
-        <p className="mt-2 text-sm text-muted-foreground">
-          该操作需要更高安全等级。请打开身份验证器（如 Google Authenticator），输入当前 6 位验证码后继续。
-        </p>
-        <label className="mt-4 block text-xs font-medium text-muted-foreground">验证码</label>
-        <input
-          type="text"
-          inputMode="numeric"
-          autoFocus
-          value={code}
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-          placeholder="000000"
-          className="mt-1.5 w-full rounded-lg border border-border bg-secondary px-3 py-2.5 text-center font-mono text-lg tracking-widest text-foreground outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
-          onKeyDown={(e) => e.key === "Enter" && void handleSubmit()}
-        />
+        {mfaEnabled === false ? (
+          <p className="mt-2 text-sm text-muted-foreground">
+            当前账号尚未绑定身份验证器，无法完成二次验证。请退出后重新登录并完成 MFA 绑定；或由超级管理员在「管理员账号」中为您重置 MFA 后重新绑定。
+          </p>
+        ) : (
+          <p className="mt-2 text-sm text-muted-foreground">
+            该操作需要更高安全等级。请打开身份验证器（如 Google Authenticator），输入当前 6 位验证码后继续。
+          </p>
+        )}
+        {mfaEnabled !== false ? (
+          <>
+            <label className="mt-4 block text-xs font-medium text-muted-foreground">验证码</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              autoFocus
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              placeholder="000000"
+              className="mt-1.5 w-full rounded-lg border border-border bg-secondary px-3 py-2.5 text-center font-mono text-lg tracking-widest text-foreground outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
+              onKeyDown={(e) => e.key === "Enter" && void handleSubmit()}
+            />
+          </>
+        ) : null}
         <div className="mt-5 flex justify-end gap-2">
           <button
             type="button"
@@ -80,14 +100,27 @@ export default function AdminMfaStepUpHost() {
           >
             取消
           </button>
-          <button
-            type="button"
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
-            disabled={loading}
-            onClick={() => void handleSubmit()}
-          >
-            {loading ? "验证中..." : "确认验证"}
-          </button>
+          {mfaEnabled === false ? (
+            <button
+              type="button"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+              onClick={() => {
+                handleClose();
+                navigate("/admin/login");
+              }}
+            >
+              前往登录页
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+              disabled={loading || mfaEnabled === null}
+              onClick={() => void handleSubmit()}
+            >
+              {loading ? "验证中..." : "确认验证"}
+            </button>
+          )}
         </div>
       </div>
     </div>

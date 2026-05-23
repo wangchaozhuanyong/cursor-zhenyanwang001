@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tx } from "@/components/admin/AdminText";
+import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
 
 type Props = {
   open: boolean;
@@ -32,70 +32,54 @@ export default function AdminShipOrderDialog({ open, orderNo, onOpenChange, onCo
         ? undefined
         : Math.max(0, parsed);
       await onConfirm(trackingNo.trim(), carrier.trim(), cost);
-      onOpenChange(false);
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle><Tx>确认发货</Tx></DialogTitle>
-        </DialogHeader>
-        <p className="text-sm text-muted-foreground">
+    <AdminFormSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title={<Tx>确认发货</Tx>}
+      description={
+        <>
           <Tx>订单号</Tx>：<span className="font-mono text-foreground">{orderNo}</span>
-        </p>
-        <div className="mt-4 space-y-3">
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-muted-foreground"><Tx>承运商（选填）</Tx></label>
-            <input
-              value={carrier}
-              onChange={(e) => setCarrier(e.target.value)}
-              placeholder="例如 J&T、Pos Laju"
-              className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-muted-foreground"><Tx>运单号（选填）</Tx></label>
-            <input
-              value={trackingNo}
-              onChange={(e) => setTrackingNo(e.target.value)}
-              placeholder="填写物流单号"
-              className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-muted-foreground">实际物流成本 (RM，可选)</label>
-            <input
-              value={shippingCostAmount}
-              onChange={(e) => setShippingCostAmount(e.target.value)}
-              placeholder="例如 8.50"
-              inputMode="decimal"
-              className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
-            />
-          </div>
-        </div>
-        <div className="mt-6 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => onOpenChange(false)}
-            disabled={submitting}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary disabled:opacity-60"
-          >
-            <Tx>取消</Tx>
-          </button>
-          <button
-            type="button"
-            onClick={() => void handleSubmit()}
-            disabled={submitting}
-            className="rounded-lg btn-theme-price px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
-          >
-            {submitting ? <Tx>提交中...</Tx> : <Tx>确认发货</Tx>}
-          </button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </>
+      }
+      submitText={submitting ? "提交中..." : "确认发货"}
+      loading={submitting}
+      size="sm"
+      onSubmit={handleSubmit}
+    >
+      <div>
+        <label className="mb-1.5 block text-xs font-medium text-muted-foreground"><Tx>承运商（选填）</Tx></label>
+        <input
+          value={carrier}
+          onChange={(e) => setCarrier(e.target.value)}
+          placeholder="例如 J&T、Pos Laju"
+          className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
+        />
+      </div>
+      <div>
+        <label className="mb-1.5 block text-xs font-medium text-muted-foreground"><Tx>运单号（选填）</Tx></label>
+        <input
+          value={trackingNo}
+          onChange={(e) => setTrackingNo(e.target.value)}
+          placeholder="填写物流单号"
+          className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
+        />
+      </div>
+      <div>
+        <label className="mb-1.5 block text-xs font-medium text-muted-foreground">实际物流成本 (RM，可选)</label>
+        <input
+          value={shippingCostAmount}
+          onChange={(e) => setShippingCostAmount(e.target.value)}
+          placeholder="例如 8.50"
+          inputMode="decimal"
+          className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
+        />
+      </div>
+    </AdminFormSheet>
   );
 }

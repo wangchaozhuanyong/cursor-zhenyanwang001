@@ -19,6 +19,7 @@ import { AdminPageTitle } from "@/components/admin/AdminFieldHint";
 import { AdminContentPageSkeleton } from "@/components/admin/AdminLoadingSkeletons";
 import { THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 
 interface ContentItem {
   id: string;
@@ -38,6 +39,7 @@ const DEFAULT_POLICY_PATHS = {
 
 export default function AdminContent() {
   const queryClient = useQueryClient();
+  const { confirm } = useAdminConfirm();
   const [editing, setEditing] = useState<ContentItem | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -438,11 +440,18 @@ export default function AdminContent() {
             <button
               type="button"
               onClick={() => {
-                if (!window.confirm("确定恢复为系统默认 FAQ？将覆盖当前表单内容（需再点保存才写入数据库）。")) return;
-                const defaults = buildDefaultHelpCenterConfig();
-                setHelpForm(defaults);
-                setHelpJson(JSON.stringify(defaults, null, 2));
-                toast.success("已载入默认 FAQ，请点击保存帮助中心配置");
+                confirm({
+                  title: "恢复默认 FAQ",
+                  description: "将覆盖当前表单内容（需再点保存才写入数据库）。确定继续？",
+                  confirmText: "恢复默认",
+                  danger: true,
+                  onConfirm: async () => {
+                    const defaults = buildDefaultHelpCenterConfig();
+                    setHelpForm(defaults);
+                    setHelpJson(JSON.stringify(defaults, null, 2));
+                    toast.success("已载入默认 FAQ，请点击保存帮助中心配置");
+                  },
+                });
               }}
               className="rounded-xl border border-border px-4 py-2 text-sm hover:bg-secondary"
             >

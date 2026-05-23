@@ -314,6 +314,7 @@ export function AppRoutes() {
               {/* Public pages */}
               <Route path="/product/:id" element={<CapabilityRoute enabled={capabilities.mallEnabled}><ProductDetail /></CapabilityRoute>} />
               <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Login />} />
               <Route path="/login/bind-phone" element={<BindWechatPhone />} />
               <Route path="/help" element={<Help />} />
               <Route path="/about" element={<About />} />

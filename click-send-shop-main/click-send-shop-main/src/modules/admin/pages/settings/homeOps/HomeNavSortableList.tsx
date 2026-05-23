@@ -30,6 +30,9 @@ export default function HomeNavSortableList({
   onPositionChange,
 }: Props) {
   const getLinkLabel = (item: HomeNavItem) => {
+    if (item.target_type === "categories") {
+      return "全部分类（/categories）";
+    }
     if (item.target_type === "category" && item.target_category_id) {
       return `分类：${categoryNameMap.get(item.target_category_id) || item.target_category_id}`;
     }

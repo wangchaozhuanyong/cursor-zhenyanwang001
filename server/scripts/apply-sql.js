@@ -5,6 +5,7 @@
 require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
 const fs = require("fs");
 const path = require("path");
+const { spawnSync } = require("child_process");
 const mysql = require("mysql2/promise");
 
 const FILES = ["init.sql", "extend.sql", "extend2.sql", "extend3.sql", "seed.sql"];
@@ -20,13 +21,14 @@ async function main() {
 
   const dir = path.join(__dirname, "..", "sql");
   if (!fs.existsSync(dir)) {
-    console.error(
-      `\n❌  sql 目录不存在: ${dir}\n\n` +
-      `请先创建 server/sql/ 目录并放入以下文件：\n` +
-      FILES.map((f) => `  - ${f}`).join("\n") + "\n\n" +
-      `可参考 server/SETUP.md 获取完整建库流程说明。\n`,
-    );
-    process.exit(1);
+    await conn.end();
+    console.warn(`\n⚠️  未找到 ${dir}，自动回退到迁移链路（npm run migrate）\n`);
+    const result = spawnSync(process.execPath, [path.join(__dirname, "migrate-cli.js"), "up"], {
+      cwd: path.join(__dirname, ".."),
+      stdio: "inherit",
+      env: process.env,
+    });
+    process.exit(result.status ?? 1);
   }
   for (const f of FILES) {
     const p = path.join(dir, f);

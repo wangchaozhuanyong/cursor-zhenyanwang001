@@ -37,7 +37,7 @@ export const DEFAULT_LIFE_GREEN_CONFIG: ThemeConfig = {
   categoryIconStyle: "soft",
   motionLevel: "soft",
   density: "comfortable",
-  adminThemeMode: "follow_store",
+  adminThemeMode: "fixed",
 };
 
 /** @deprecated 使用 DEFAULT_LIFE_GREEN_CONFIG */

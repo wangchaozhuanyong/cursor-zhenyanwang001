@@ -9,6 +9,7 @@ import { generateOrderText } from "@/modules/public/pages/order/utils/checkoutTe
 import { copyToClipboard } from "@/utils/clipboard";
 import { safeOpenExternal } from "@/utils/safeOpen";
 import { paymentInstructionToastMessage } from "@/utils/paymentClientInstructions";
+import { canStartOnlinePayment } from "@/utils/checkoutPaymentMethod";
 
 export function usePayPendingOrder() {
   const capabilities = useSiteCapabilities();
@@ -23,9 +24,8 @@ export function usePayPendingOrder() {
     setPaying(true);
     try {
       const method = order.payment_method || "whatsapp";
-      const onlineLike = method === "online" || method === "points_plus_cash";
 
-      if (onlineLike && capabilities.onlinePaymentEnabled) {
+      if (canStartOnlinePayment(method, capabilities.onlinePaymentEnabled)) {
         const channels = await paymentService.getPaymentChannels();
         const channelCode = channels[0]?.code || "stripe_checkout";
         const intent = await paymentService.createPaymentIntent({
@@ -49,7 +49,7 @@ export function usePayPendingOrder() {
         return;
       }
 
-      if (onlineLike && !capabilities.onlinePaymentEnabled) {
+      if ((method === "online" || method === "points_plus_cash") && !capabilities.onlinePaymentEnabled) {
         toast.info("在线支付未开启，请联系客服完成付款");
         const copied = await copyToClipboard(generateOrderText(order));
         if (copied) toast.success("订单内容已复制");

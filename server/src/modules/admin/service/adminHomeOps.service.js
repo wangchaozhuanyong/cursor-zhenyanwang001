@@ -22,6 +22,7 @@ function normalizeBool(value, fallback = true) {
 function normalizeTargetType(value) {
   const raw = trimString(value, 20);
   if (raw === 'category') return 'category';
+  if (raw === 'categories') return 'categories';
   if (raw === 'support') return 'support';
   return 'url';
 }
@@ -51,6 +52,15 @@ async function resolveNavTarget(body) {
       targetCategoryId,
       targetSupportChannelId: null,
       linkUrl: `/categories?cat=${targetCategoryId}`,
+    };
+  }
+
+  if (targetType === 'categories') {
+    return {
+      targetType: 'categories',
+      targetCategoryId: null,
+      targetSupportChannelId: null,
+      linkUrl: '/categories',
     };
   }
 

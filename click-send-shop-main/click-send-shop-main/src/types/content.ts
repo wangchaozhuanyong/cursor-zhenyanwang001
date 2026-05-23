@@ -192,7 +192,7 @@ export interface HomeNavItem {
   icon_url: string;
   title: string;
   link_url: string;
-  target_type?: "url" | "category" | "support";
+  target_type?: "url" | "category" | "categories" | "support";
   target_category_id?: string | null;
   target_support_channel_id?: string | null;
   sort_order: number;

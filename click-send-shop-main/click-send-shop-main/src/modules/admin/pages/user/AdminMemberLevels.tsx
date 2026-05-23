@@ -7,7 +7,7 @@ import type { MemberLevelPayload } from "@/services/admin/userService";
 import type { MemberLevel } from "@/types/user";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { toastErrorMessage } from "@/utils/errorMessage";
-import { LoadingButton } from "@/modules/micro-interactions";
+import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { THEME_BORDER_DANGER_SOFT, THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 

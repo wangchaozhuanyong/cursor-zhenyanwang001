@@ -47,7 +47,7 @@ export default function AdminShipOrderDialog({ open, orderNo, onOpenChange, onCo
           <Tx>订单号</Tx>：<span className="font-mono text-foreground">{orderNo}</span>
         </>
       }
-      submitText={submitting ? "提交中..." : "确认发货"}
+      submitText="确认发货"
       loading={submitting}
       size="sm"
       onSubmit={handleSubmit}

@@ -473,21 +473,20 @@ function normalizeActivityAnalysisRow(row, salesTrackingAvailable) {
 
   const paidOrderCount = Number(row.paid_order_count || 0);
   const viewCount = Number(row.view_count || 0);
-  const normalized = {
+  return {
     ...base,
     paid_order_count: paidOrderCount,
     sales_qty: Number(row.sales_qty || 0),
     sales_amount: Number(row.sales_amount || 0),
     discount_amount: Number(row.discount_amount || 0),
     gross_profit_amount: Number(row.gross_profit_amount || 0),
+    ...(viewCount > 0
+      ? {
+          view_count: viewCount,
+          ...(row.conversion_rate != null ? { conversion_rate: Number(row.conversion_rate) } : {}),
+        }
+      : {}),
   };
-  if (viewCount > 0) {
-    normalized.view_count = viewCount;
-    if (row.conversion_rate != null) {
-      normalized.conversion_rate = Number(row.conversion_rate);
-    }
-  }
-  return normalized;
 }
 
 function buildActivityAnalysisSummary(list, salesTrackingAvailable) {

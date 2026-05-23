@@ -31,7 +31,7 @@ export default function AdminMfaStepUpHost() {
 
   useEffect(() => {
     registerAdminMfaStepUpOpener(show);
-    return () => registerAdminMfaStepUpOpener(() => {});
+    return () => registerAdminMfaStepUpOpener(null);
   }, [show]);
 
   const handleClose = () => {

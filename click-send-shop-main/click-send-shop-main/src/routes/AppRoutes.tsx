@@ -16,6 +16,7 @@ import { LegacyCouponRedirect } from "@/routes/adminLegacyRedirects";
 import FrontLayout from "@/layouts/FrontLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import AdminMfaStepUpHost from "@/components/admin/AdminMfaStepUpHost";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { isLoggedIn, clearTokens } from "@/utils/token";
 import * as authService from "@/services/authService";
@@ -290,6 +291,7 @@ export function AppRoutes() {
           <PwaStandaloneAnalytics />
           <AppScopeSync />
           <AdminI18nScope>
+          <AdminMfaStepUpHost />
           <AdminTitleSync />
           <TrackingManager />
           <RouteAnalyticsTracker />

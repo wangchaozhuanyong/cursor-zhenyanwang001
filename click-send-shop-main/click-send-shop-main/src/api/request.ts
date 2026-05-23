@@ -11,7 +11,7 @@ import { normalizeMediaUrls } from "@/utils/mediaUrl";
 import { notifyAuthExpired } from "@/lib/authSessionBridge";
 import { startGlobalLoadingDeferred, stopGlobalLoading } from "@/lib/loadingProgress";
 import { clearAdminCsrfToken, getAdminCsrfToken, setAdminCsrfToken } from "@/lib/adminCsrf";
-import { requestAdminMfaStepUp } from "@/lib/adminMfaStepUp";
+import { isAdminMfaRequiredResponse, requestAdminMfaStepUp } from "@/lib/adminMfaStepUp";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
@@ -231,11 +231,9 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
       // ignore malformed error bodies
     }
 
-    const bodyData = body.data as Record<string, unknown> | undefined;
-    const mfaRequired = Boolean(bodyData?.mfaRequired);
+    const mfaRequired = isAdminMfaRequiredResponse(res.status, body);
     if (
-      res.status === 403
-      && retry
+      retry
       && isAdminEndpoint
       && mfaRequired
       && typeof window !== "undefined"

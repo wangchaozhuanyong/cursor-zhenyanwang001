@@ -8,6 +8,7 @@ import {
 } from "@/utils/token";
 import { normalizeMediaUrls } from "@/utils/mediaUrl";
 import { getAdminCsrfToken } from "@/lib/adminCsrf";
+import { isAdminMfaRequiredResponse, requestAdminMfaStepUp } from "@/lib/adminMfaStepUp";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 const IMAGE_MAX_SIZE = 15 * 1024 * 1024;
@@ -338,6 +339,12 @@ async function authorizedJsonPost<T>(
     }
   }
 
+  if (adminMode && isAdminMfaRequiredResponse(result.status, result.payload as Record<string, unknown>)) {
+    await requestAdminMfaStepUp();
+    csrfToken = await getAdminCsrfToken();
+    result = await xhrJsonPost<T>(url, body, getAdminAccessToken(), options, csrfToken);
+  }
+
   return unwrapEnvelope(result);
 }
 
@@ -371,6 +378,12 @@ async function doUpload<T>(url: string, formData: FormData, options: UploadReque
       }
       throw new Error(extractMessageFromBody((result.payload ?? {}) as Record<string, unknown>) || "管理员登录已过期，请重新登录");
     }
+  }
+
+  if (adminMode && isAdminMfaRequiredResponse(result.status, result.payload as Record<string, unknown>)) {
+    await requestAdminMfaStepUp();
+    csrfToken = await getAdminCsrfToken();
+    result = await xhrUpload<T>(url, formData, getAdminAccessToken(), options, csrfToken);
   }
 
   const data = unwrapEnvelope<T>(result);

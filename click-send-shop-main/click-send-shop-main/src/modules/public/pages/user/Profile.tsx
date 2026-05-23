@@ -19,10 +19,10 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import logoWebp from "@/assets/logo.webp";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { isLoggedIn } from "@/utils/token";
+import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import SkinPickerDialog from "@/components/SkinPickerDialog";
@@ -115,7 +115,13 @@ function ProfileHeroCard({
             className="flex h-[76px] w-[76px] items-center justify-center rounded-full border-2 bg-black/30 p-1"
             style={{ borderColor: "var(--theme-member-card-avatar-ring)" }}
           >
-            <img src={avatar || logoSrc} alt={userName} className="h-full w-full rounded-full object-cover" />
+            {avatar || logoSrc ? (
+              <img src={avatar || logoSrc} alt={userName} className="h-full w-full rounded-full object-cover" />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center rounded-full bg-black/25 text-lg font-bold">
+                {userName.slice(0, 1)}
+              </span>
+            )}
           </span>
           <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]">
             <Camera size={11} />
@@ -149,7 +155,7 @@ export default function Profile() {
   const siteInfo = useSiteInfo();
   const capabilities = useSiteCapabilities();
   const siteName = siteInfo.siteName || "官方商城";
-  const logoSrc = siteInfo.logoUrl || logoWebp;
+  const logoSrc = resolveSiteLogoUrl(siteInfo);
   const authStore = useAuthStore();
   const { nickname, avatar, pointsBalance, inviteCode, memberLevel, wechatLogin, loadProfile } = useUserStore();
   const { orders, loadOrders } = useOrderStore();
@@ -279,15 +285,17 @@ export default function Profile() {
         className={STORE_MOBILE_PAGE_HEADER_CLASS}
         title={
           <span className="inline-flex min-w-0 items-center gap-2.5">
-            <img
-              src={logoSrc}
-              alt=""
-              width={28}
-              height={28}
-              className="h-7 w-7 shrink-0 rounded-md object-contain"
-              loading="eager"
-              decoding="async"
-            />
+            {logoSrc ? (
+              <img
+                src={logoSrc}
+                alt=""
+                width={28}
+                height={28}
+                className="h-7 w-7 shrink-0 rounded-md object-contain"
+                loading="eager"
+                decoding="async"
+              />
+            ) : null}
             <span className="truncate">个人中心</span>
           </span>
         }
@@ -318,7 +326,9 @@ export default function Profile() {
             <div className={`${CARD_CLASS} relative overflow-hidden ${SECTION_PADDING}`}>
               <div className="absolute inset-x-0 top-0 h-1 bg-[var(--theme-primary)]" />
               <div className="flex items-center gap-3">
-                <img src={logoSrc} alt={siteName} className="h-14 w-14 rounded-2xl object-cover ring-1 ring-[var(--theme-border)]" />
+                {logoSrc ? (
+                  <img src={logoSrc} alt={siteName} className="h-14 w-14 rounded-2xl object-cover ring-1 ring-[var(--theme-border)]" />
+                ) : null}
                 <div className="min-w-0">
                   <p className="truncate text-lg font-bold">欢迎来到 {siteName}</p>
                   <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--theme-text-muted-on-surface)]">登录后可查看订单、积分、优惠券、收藏、返现与邀请奖励</p>

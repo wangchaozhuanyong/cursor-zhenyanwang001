@@ -8,11 +8,11 @@ import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import LoginBannerCarousel from "@/components/LoginBannerCarousel";
 import { LoginAgreementFooter } from "@/components/auth/LoginAgreementFooter";
-import logoWebp from "@/assets/logo.webp";
 import { ApiError } from "@/types/common";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { renderBrandTitle } from "@/utils/brand";
+import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
 import {
   clearLockedInviteCode,
@@ -45,7 +45,7 @@ export default function Login() {
   const authStore = useAuthStore();
   const { banners } = useHomeBanners();
   const siteInfo = useSiteInfo();
-  const logoSrc = siteInfo.logoUrl || logoWebp;
+  const logoSrc = resolveSiteLogoUrl(siteInfo);
   const siteName = siteInfo.siteName || "官方商城";
   const slogan = siteInfo.siteSlogan || "Premium Lifestyle";
   const supportContact =
@@ -392,7 +392,9 @@ export default function Login() {
   return (
     <div className={STORE_AUTH_SHELL_CLASS}>
       <header className="relative z-20 flex shrink-0 items-center gap-3 border-b border-border/40 bg-background px-5 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] lg:hidden">
-        <img src={logoSrc} alt={siteName} width={44} height={44} className="rounded-xl object-contain" loading="eager" decoding="async" />
+        {logoSrc ? (
+          <img src={logoSrc} alt={siteName} width={44} height={44} className="rounded-xl object-contain" loading="eager" decoding="async" />
+        ) : null}
         <div className="min-w-0 flex flex-col">
           <h1 className="font-display text-xl font-bold leading-tight tracking-tight text-foreground">
             {renderBrandTitle(siteName)}
@@ -403,7 +405,9 @@ export default function Login() {
 
       <main className={STORE_AUTH_MAIN_CLASS}>
         <div className="mb-6 hidden text-center lg:block">
-          <img src={logoSrc} alt="" width={56} height={56} className="mx-auto rounded-2xl object-contain" />
+          {logoSrc ? (
+            <img src={logoSrc} alt="" width={56} height={56} className="mx-auto rounded-2xl object-contain" />
+          ) : null}
           <h1 className="mt-3 font-display text-2xl font-bold text-foreground">{renderBrandTitle(siteName)}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{slogan}</p>
         </div>

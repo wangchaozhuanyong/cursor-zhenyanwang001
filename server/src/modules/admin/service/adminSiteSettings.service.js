@@ -18,8 +18,30 @@ function rowsToMap(rows) {
     settings[r.setting_key] = r.setting_value;
     version = Math.max(version, Number(r.version || 1));
   });
+  if (settings.logoUrl || settings.faviconUrl) {
+    const unified = String(settings.logoUrl || settings.faviconUrl || '').trim();
+    settings.logoUrl = unified;
+    settings.faviconUrl = unified;
+  }
   settings.version = version;
   return settings;
+}
+
+function withUnifiedBrandAssets(body) {
+  const next = { ...body };
+  const hasLogo = Object.prototype.hasOwnProperty.call(next, 'logoUrl');
+  const hasFavicon = Object.prototype.hasOwnProperty.call(next, 'faviconUrl');
+  if (!hasLogo && !hasFavicon) return next;
+  const unified = String(next.logoUrl || next.faviconUrl || '').trim();
+  next.logoUrl = unified;
+  next.faviconUrl = unified;
+  return next;
+}
+
+function omitBrandAssetsForAudit(value) {
+  if (!value || typeof value !== 'object') return value;
+  const { logoUrl, faviconUrl, ...rest } = value;
+  return rest;
 }
 
 async function getShippingSettings() {
@@ -52,20 +74,21 @@ async function getSiteSettings() {
 async function updateSiteSettings(body, adminUserId, req) {
   const beforeRows = await repo.selectNonShippingSettingsRows();
   const beforeMap = rowsToMap(beforeRows);
+  const normalizedBody = withUnifiedBrandAssets(body);
   try {
-    const expectedVersion = body.version === undefined || body.version === null || body.version === ''
+    const expectedVersion = normalizedBody.version === undefined || normalizedBody.version === null || normalizedBody.version === ''
       ? null
-      : Number(body.version);
+      : Number(normalizedBody.version);
     if (expectedVersion !== null && Number(beforeMap.version || 1) !== expectedVersion) {
       throw new BusinessError(409, '数据已被其他管理员修改，请刷新后再编辑');
     }
-    for (const [key, value] of Object.entries(body)) {
+    for (const [key, value] of Object.entries(normalizedBody)) {
       if (key === 'version') continue;
       await repo.upsertSetting(key, value);
     }
     if (
-      Object.prototype.hasOwnProperty.call(body, 'orderPaymentTimeoutEnabled')
-      || Object.prototype.hasOwnProperty.call(body, 'orderPaymentTimeoutMinutes')
+      Object.prototype.hasOwnProperty.call(normalizedBody, 'orderPaymentTimeoutEnabled')
+      || Object.prototype.hasOwnProperty.call(normalizedBody, 'orderPaymentTimeoutMinutes')
     ) {
       invalidatePaymentTimeoutSettingsCache();
     }
@@ -76,8 +99,8 @@ async function updateSiteSettings(body, adminUserId, req) {
       objectType: 'site_settings',
       objectId: null,
       summary: '更新站点基础设置',
-      before: beforeMap,
-      after: { ...beforeMap, ...body },
+      before: omitBrandAssetsForAudit(beforeMap),
+      after: omitBrandAssetsForAudit({ ...beforeMap, ...normalizedBody }),
       result: 'success',
     });
     return { data: null, message: '设置已更新' };
@@ -89,7 +112,7 @@ async function updateSiteSettings(body, adminUserId, req) {
       objectType: 'site_settings',
       objectId: null,
       summary: '站点设置更新失败',
-      before: beforeMap,
+      before: omitBrandAssetsForAudit(beforeMap),
       result: 'failure',
       errorMessage: err.message || String(err),
     });
@@ -127,16 +150,20 @@ async function uploadSiteAsset(file, key, adminUserId, req) {
     finalUrl = uploaded.url;
   }
 
-  await repo.upsertSetting(key, finalUrl);
+  await repo.upsertSetting('logoUrl', finalUrl);
+  await repo.upsertSetting('faviconUrl', finalUrl);
   await writeAuditLog({
     req,
     operatorId: adminUserId,
     actionType: 'settings.site_asset_upload',
     objectType: 'site_settings',
-    objectId: key,
-    summary: `上传站点图片 ${key}`,
-    before: { [key]: beforeMap[key] || '' },
-    after: { [key]: finalUrl },
+    objectId: 'brandAssets',
+    summary: `上传站点品牌图片 ${key}`,
+    before: {
+      logoUrl: beforeMap.logoUrl ? '[replaced]' : '',
+      faviconUrl: beforeMap.faviconUrl ? '[replaced]' : '',
+    },
+    after: { logoUrl: finalUrl, faviconUrl: finalUrl },
     result: 'success',
   });
 

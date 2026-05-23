@@ -1,12 +1,12 @@
 import { Headphones, Home, LayoutGrid, ShoppingCart, Sparkles, User } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import logoWebp from "@/assets/logo.webp";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/stores/useCartStore";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
+import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { isLoggedIn } from "@/utils/token";
 
@@ -20,7 +20,7 @@ export default function StoreDesktopHeader({ className }: { className?: string }
   const { themeConfig } = useThemeRuntime();
   const totalItems = useCartStore((s) => s.totalItems());
   const siteName = siteInfo.siteName || "官方商城";
-  const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
+  const logoSrc = resolveSiteLogoUrl(siteInfo);
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
   const loggedIn = isLoggedIn();
 
@@ -48,7 +48,9 @@ export default function StoreDesktopHeader({ className }: { className?: string }
     >
       <div className="mx-auto flex h-full w-full max-w-screen-xl items-center gap-6 px-6 lg:px-8">
         <Link to="/" className="flex shrink-0 items-center gap-2.5" aria-label={`${siteName} 首页`}>
-          <img src={logoSrc} alt="" width={32} height={32} className="h-8 w-8 rounded-md object-contain" />
+          {logoSrc ? (
+            <img src={logoSrc} alt="" width={32} height={32} className="h-8 w-8 rounded-md object-contain" />
+          ) : null}
           <span className="max-w-[10rem] truncate text-base font-bold tracking-wide text-[var(--theme-text-on-surface)]">
             {siteName}
           </span>

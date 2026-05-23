@@ -1,11 +1,11 @@
 import { Search, ShoppingCart } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import logoWebp from "@/assets/logo.webp";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/stores/useCartStore";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
+import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 
 /** 平板 Tab 页精简顶栏（768–1023px）；手机仍用各页 StoreTabHeader / StorePageHeader */
@@ -16,7 +16,7 @@ export default function StoreTabletBar({ className }: { className?: string }) {
   const { themeConfig } = useThemeRuntime();
   const totalItems = useCartStore((s) => s.totalItems());
   const siteName = siteInfo.siteName || "官方商城";
-  const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
+  const logoSrc = resolveSiteLogoUrl(siteInfo);
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
 
   return (
@@ -30,7 +30,9 @@ export default function StoreTabletBar({ className }: { className?: string }) {
     >
       <div className="mx-auto flex h-full w-full max-w-screen-xl items-center gap-3 px-6">
         <Link to="/" className="flex shrink-0 items-center gap-2" aria-label={`${siteName} 首页`}>
-          <img src={logoSrc} alt="" width={28} height={28} className="h-7 w-7 rounded-md object-contain" />
+          {logoSrc ? (
+            <img src={logoSrc} alt="" width={28} height={28} className="h-7 w-7 rounded-md object-contain" />
+          ) : null}
           <span className="hidden max-w-[8rem] truncate text-sm font-semibold text-[var(--theme-text-on-surface)] sm:inline">
             {siteName}
           </span>

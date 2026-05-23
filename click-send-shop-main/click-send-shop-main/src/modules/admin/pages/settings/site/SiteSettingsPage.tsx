@@ -170,12 +170,13 @@ export default function SiteSettingsPage() {
         key === "logoUrl" || key === "faviconUrl"
           ? await uploadSiteAsset(key, file)
           : await uploadSingle(file, { mode: "asset" });
-      setSettings((prev) => ({ ...prev, [key]: res.url }));
       if (key === "logoUrl" || key === "faviconUrl") {
-        setSaved((prev) => ({ ...prev, [key]: res.url }));
+        setSettings((prev) => ({ ...prev, logoUrl: res.url, faviconUrl: res.url }));
+        setSaved((prev) => ({ ...prev, logoUrl: res.url, faviconUrl: res.url }));
         await refreshSiteInfo();
         toast.success("图片已上传并保存");
       } else {
+        setSettings((prev) => ({ ...prev, [key]: res.url }));
         toast.success("图片已上传，请保存当前分组");
       }
     } catch (e) {

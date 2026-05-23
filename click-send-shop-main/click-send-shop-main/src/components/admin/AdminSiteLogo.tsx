@@ -1,6 +1,6 @@
-import logoWebp from "@/assets/logo.webp";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { cn } from "@/lib/utils";
+import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 
 type AdminSiteLogoProps = {
   /** sm：侧栏 36px；lg：登录页 64px */
@@ -10,13 +10,28 @@ type AdminSiteLogoProps = {
 
 export default function AdminSiteLogo({ size = "sm", className }: AdminSiteLogoProps) {
   const siteInfo = useSiteInfo();
-  const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
+  const logoSrc = resolveSiteLogoUrl(siteInfo);
   const alt = siteInfo.siteName?.trim() || "站点 Logo";
 
   const boxClass =
     size === "lg"
       ? "h-16 w-16 rounded-2xl"
       : "h-9 w-9 rounded-lg";
+
+  if (!logoSrc) {
+    return (
+      <div
+        className={cn(
+          boxClass,
+          "flex shrink-0 items-center justify-center bg-[var(--theme-surface)] text-sm font-bold text-[var(--theme-text-on-surface)] ring-1 ring-[color-mix(in_srgb,var(--theme-border)_80%,transparent)]",
+          className,
+        )}
+        aria-label={alt}
+      >
+        {alt.slice(0, 1)}
+      </div>
+    );
+  }
 
   return (
     <img

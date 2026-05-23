@@ -9,6 +9,7 @@ import { HOME_SECTION_HEADER_MB } from "@/constants/homeLayout";
 import type { NewArrivalClickTarget } from "./newArrivalOps";
 import HomeNewArrivalCard from "./HomeNewArrivalCard";
 import {
+  HOME_NEW_ARRIVAL_CARD_WIDTH_CLASS,
   HOME_PRODUCT_CARD_SHELL,
   HOME_PRODUCT_CARD_MEDIA,
   HOME_PRODUCT_IMAGE_PRODUCT_CLASS,
@@ -75,8 +76,13 @@ export default function NewArrivalSection({
   if (!loading && items.length === 0) return null;
 
   return (
-    <section className={cn("rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 md:p-4", className)}>
-      <div className={cn("flex items-center justify-between gap-3", HOME_SECTION_HEADER_MB)}>
+    <section
+      className={cn(
+        "rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] py-3 md:py-4",
+        className,
+      )}
+    >
+      <div className={cn("flex items-center justify-between gap-3 px-3", HOME_SECTION_HEADER_MB)}>
         <div className="min-w-0">
           <h2 className="store-section-title tracking-wide text-[var(--theme-text-on-surface)]">{normalizedTitle}</h2>
         </div>
@@ -93,14 +99,15 @@ export default function NewArrivalSection({
         </button>
       </div>
 
-      <div className="no-scrollbar -mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-1">
+      <div className="no-scrollbar flex items-start snap-x snap-mandatory gap-2 overflow-x-auto px-2 pb-1">
         {loading
           ? Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
                 className={cn(
                   HOME_PRODUCT_CARD_SHELL,
-                  "w-[132px] shrink-0 snap-start animate-pulse",
+                  HOME_NEW_ARRIVAL_CARD_WIDTH_CLASS,
+                  "animate-pulse",
                 )}
               >
                 <div className={cn(HOME_PRODUCT_CARD_MEDIA, HOME_PRODUCT_IMAGE_PRODUCT_CLASS, "bg-[var(--theme-bg)]")} />

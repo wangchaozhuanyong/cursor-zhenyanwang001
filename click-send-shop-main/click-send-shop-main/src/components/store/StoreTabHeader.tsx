@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import logoWebp from "@/assets/logo.webp";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
+import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { cn } from "@/lib/utils";
 
 export type StoreTabHeaderSearchMode = "navigate" | "filter" | "none";
@@ -44,7 +44,7 @@ export default function StoreTabHeader({
   const unreadCount = useNotificationStore((s) => s.unreadCount);
 
   const siteName = siteInfo.siteName || "官方商城";
-  const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
+  const logoSrc = resolveSiteLogoUrl(siteInfo);
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
 
   const goSearch = () => navigate("/search");
@@ -71,15 +71,17 @@ export default function StoreTabHeader({
           onClick={() => navigate("/")}
           aria-label={`${siteName} 首页`}
         >
-          <img
-            src={logoSrc}
-            alt=""
-            width={28}
-            height={28}
-            className="h-7 w-7 shrink-0 rounded-md object-contain"
-            loading="eager"
-            decoding="async"
-          />
+          {logoSrc ? (
+            <img
+              src={logoSrc}
+              alt=""
+              width={28}
+              height={28}
+              className="h-7 w-7 shrink-0 rounded-md object-contain"
+              loading="eager"
+              decoding="async"
+            />
+          ) : null}
           {showSiteName ? <span className={nameClass}>{siteName}</span> : null}
         </button>
 

@@ -21,8 +21,6 @@ import {
   DEFAULT_APPLE_TOUCH_ICON,
   DEFAULT_FAVICON_ICO,
   DEFAULT_FAVICON_PNG,
-  DEFAULT_FAVICON_SVG,
-  DEFAULT_FAVICON_WEBP,
 } from "@/constants/siteBrand";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { syncLockedInviteCodeBySearch } from "@/utils/inviteReferral";
@@ -31,6 +29,7 @@ import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { trackEvent } from "@/services/analyticsService";
 import { isStandaloneApp } from "@/utils/pwa";
 import { queryClient } from "@/lib/queryClient";
+import { resolveSiteFaviconUrl } from "@/utils/siteBrandAssets";
 import {
   MemberHome, GuestHome, Login, BindWechatPhone,
   Categories, ProductDetail, NewArrivals, Search,
@@ -60,18 +59,15 @@ function SiteIdentitySync() {
   const siteInfo = useSiteInfo();
 
   useLayoutEffect(() => {
-    const raw = (siteInfo.faviconUrl || "").trim();
+    const raw = resolveSiteFaviconUrl(siteInfo);
     const custom = raw && !raw.startsWith("data:") && !/lovable/i.test(raw) ? raw : "";
     const iconTargets: Array<{ rel: string; href: string; type?: string; sizes?: string }> = custom
       ? [
           { rel: "icon", href: custom },
-          { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+          { rel: "apple-touch-icon", href: custom },
         ]
       : [
-          { rel: "icon", href: DEFAULT_FAVICON_ICO, sizes: "any" },
-          { rel: "icon", href: DEFAULT_FAVICON_SVG, type: "image/svg+xml" },
-          { rel: "icon", href: DEFAULT_FAVICON_PNG, type: "image/png", sizes: "32x32" },
-          { rel: "icon", href: DEFAULT_FAVICON_WEBP, type: "image/webp" },
+          { rel: "icon", href: DEFAULT_FAVICON_PNG, type: "image/png", sizes: "192x192" },
           { rel: "shortcut icon", href: DEFAULT_FAVICON_ICO },
           { rel: "apple-touch-icon", href: DEFAULT_APPLE_TOUCH_ICON },
         ];
@@ -88,7 +84,7 @@ function SiteIdentitySync() {
       if (sizes) link.sizes = sizes;
       document.head.appendChild(link);
     });
-  }, [siteInfo.faviconUrl]);
+  }, [siteInfo.faviconUrl, siteInfo.logoUrl]);
 
   return null;
 }

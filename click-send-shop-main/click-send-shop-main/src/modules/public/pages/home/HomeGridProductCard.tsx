@@ -73,10 +73,7 @@ export default function HomeGridProductCard({
       onClick={() => {
         void trackEvent({ event_type: "product_click", module: "hot_sales", product_id: product.id });
       }}
-      className={cn(
-        HOME_PRODUCT_CARD_SHELL,
-        "group flex min-w-0 flex-col transform-gpu",
-      )}
+      className={cn(HOME_PRODUCT_CARD_SHELL, "group min-w-0 transform-gpu")}
       aria-label={`查看 ${product.name}`}
     >
       <div className={cn(HOME_PRODUCT_CARD_MEDIA, homeProductImageAspectClass(product))}>

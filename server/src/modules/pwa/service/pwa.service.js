@@ -1,6 +1,5 @@
 // @ts-nocheck
 const fs = require('fs');
-const path = require('path');
 const crypto = require('crypto');
 const dns = require('dns').promises;
 const net = require('net');
@@ -98,6 +97,11 @@ async function loadSiteInfoSafe() {
 
 async function loadImageBuffer(sourceUrl) {
   if (!sourceUrl) return null;
+  if (String(sourceUrl).startsWith('data:image/')) {
+    const match = String(sourceUrl).match(/^data:image\/[a-zA-Z0-9.+-]+;base64,(.+)$/);
+    if (!match) throw new Error('Invalid PWA data image');
+    return Buffer.from(match[1], 'base64');
+  }
   await assertSafeRemoteImageUrl(sourceUrl);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 3000);
@@ -126,13 +130,7 @@ async function loadImageBuffer(sourceUrl) {
 }
 
 function getFallbackLogoPath() {
-  const root = path.resolve(__dirname, '../../../../../click-send-shop-main/click-send-shop-main');
-  const candidates = [
-    path.join(root, 'src/assets/logo.webp'),
-    path.join(root, 'src/assets/logo.png'),
-    path.join(root, 'src/assets/logo-icon.png'),
-  ];
-  return candidates.find((file) => fs.existsSync(file)) || null;
+  return null;
 }
 
 async function buildIconBuffer({ logoUrl, size, maskable, fallbackPath }) {
@@ -141,9 +139,26 @@ async function buildIconBuffer({ logoUrl, size, maskable, fallbackPath }) {
   if (cachedBuffer) return cachedBuffer;
 
   let sourceBuffer = null;
-  if (logoUrl) sourceBuffer = await loadImageBuffer(logoUrl);
+  if (logoUrl) {
+    try {
+      sourceBuffer = await loadImageBuffer(logoUrl);
+    } catch (error) {
+      console.warn('[pwa] failed to load brand logo:', error.message || error);
+    }
+  }
   if (!sourceBuffer && fallbackPath) sourceBuffer = await fs.promises.readFile(fallbackPath);
-  if (!sourceBuffer) throw new Error('No PWA icon source available');
+  if (!sourceBuffer) {
+    return sharp({
+      create: {
+        width: size,
+        height: size,
+        channels: 4,
+        background: maskable
+          ? { r: 255, g: 255, b: 255, alpha: 1 }
+          : { r: 255, g: 255, b: 255, alpha: 0 },
+      },
+    }).png().toBuffer();
+  }
 
   const safeLogoSize = maskable ? Math.round(size * 0.66) : size;
   const logo = await sharp(sourceBuffer)

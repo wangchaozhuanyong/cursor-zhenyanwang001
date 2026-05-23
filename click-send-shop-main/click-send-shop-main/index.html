@@ -24,12 +24,9 @@
     <meta name="twitter:description" content="本平台提供商品、服务与客户支持信息。" />
     <meta name="twitter:image" content="/og-default.png" />
 
-    <!-- 浏览器默认请求 /favicon.ico，须与品牌图一致 -->
-    <link rel="icon" href="/favicon.ico" sizes="any" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/webp" href="/favicon.webp" />
-    <link rel="shortcut icon" href="/favicon.ico" />
+    <!-- 初始图标走后端动态品牌图，React 启动后会继续同步数据库 Logo。 -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/api/pwa/icon-192x192.png" />
+    <link rel="shortcut icon" href="/api/pwa/icon-192x192.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
   </head>

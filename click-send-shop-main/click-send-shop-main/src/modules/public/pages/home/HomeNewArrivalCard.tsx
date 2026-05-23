@@ -1,13 +1,12 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import type { Product } from "@/types/product";
-import { PRODUCT_BLUR_PLACEHOLDER } from "@/constants/productBlurPlaceholder";
-import { ProgressiveImage } from "@/modules/micro-interactions";
-import { resolveProductImageSrc } from "@/utils/uploadImageVariant";
+import ProductCoverImage from "@/components/ProductCoverImage";
 import { resolveNewArrivalImage } from "./newArrivalOps";
 import StoreBadge from "@/components/ui/StoreBadge";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
 import {
+  HOME_NEW_ARRIVAL_CARD_WIDTH_CLASS,
   HOME_PRODUCT_BADGE_CLASS,
   HOME_PRODUCT_CARD_MEDIA,
   HOME_PRODUCT_CARD_SHELL,
@@ -35,8 +34,7 @@ export default function HomeNewArrivalCard({
   onClick,
   registerImpression,
 }: HomeNewArrivalCardProps) {
-  const image = resolveNewArrivalImage(product, index);
-  const { src: imageSrc, fallbackSrc } = resolveProductImageSrc(image, "card");
+  const imageUrl = resolveNewArrivalImage(product, index);
   const cardRef = useRef<HTMLAnchorElement | null>(null);
 
   useEffect(() => {
@@ -62,23 +60,18 @@ export default function HomeNewArrivalCard({
       ref={cardRef}
       to={`/product/${product.id}`}
       onClick={() => onClick?.(product, index)}
-      className={cn(
-        HOME_PRODUCT_CARD_SHELL,
-        "w-[132px] shrink-0 snap-start",
-      )}
+      className={cn(HOME_PRODUCT_CARD_SHELL, HOME_NEW_ARRIVAL_CARD_WIDTH_CLASS)}
       aria-label={`查看 ${product.name}`}
     >
       <div className={cn(HOME_PRODUCT_CARD_MEDIA, HOME_PRODUCT_IMAGE_PRODUCT_CLASS)}>
-        {imageSrc ? (
-          <ProgressiveImage
-            src={imageSrc}
-            fallbackSrc={fallbackSrc}
-            blurDataUrl={PRODUCT_BLUR_PLACEHOLDER}
-            alt={product.name}
-            className="h-full w-full"
-            imgClassName={HOME_PRODUCT_IMAGE_IMG_CLASS}
-          />
-        ) : null}
+        <ProductCoverImage
+          url={imageUrl || undefined}
+          alt={`${product.name} 商品图片`}
+          className="h-full w-full"
+          imgClassName={HOME_PRODUCT_IMAGE_IMG_CLASS}
+          sizes="(max-width: 768px) 28vw, 128px"
+          loading={index < 4 ? "eager" : "lazy"}
+        />
         <StoreBadge type="new" onMedia className={cn(HOME_PRODUCT_BADGE_CLASS, "absolute left-1.5 top-1.5")}>
           新品
         </StoreBadge>

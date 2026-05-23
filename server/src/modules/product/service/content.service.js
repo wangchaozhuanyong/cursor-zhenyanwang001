@@ -68,6 +68,11 @@ exports.getPublicSiteInfo = async () => {
   const [rows] = await contentRepo.getSiteSettingsByKeys(PUBLIC_SITE_KEYS);
   const info = {};
   rows.forEach((r) => { info[r.setting_key] = r.setting_value; });
+  if (info.logoUrl || info.faviconUrl) {
+    const unified = String(info.logoUrl || info.faviconUrl || '').trim();
+    info.logoUrl = unified;
+    info.faviconUrl = unified;
+  }
   return info;
 };
 

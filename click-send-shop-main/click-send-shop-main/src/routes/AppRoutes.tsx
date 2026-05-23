@@ -13,6 +13,7 @@ import AgeGate from "@/components/compliance/AgeGate";
 import LanguageGate from "@/components/LanguageGate";
 import AdminLayout from "@/layouts/AdminLayout";
 import { LegacyCouponRedirect } from "@/routes/adminLegacyRedirects";
+import { renderAdminReportRoutes } from "@/routes/adminReportRoutes";
 import FrontLayout from "@/layouts/FrontLayout";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -24,8 +25,6 @@ import {
   DEFAULT_APPLE_TOUCH_ICON,
   DEFAULT_FAVICON_ICO,
   DEFAULT_FAVICON_PNG,
-  DEFAULT_FAVICON_SVG,
-  DEFAULT_FAVICON_WEBP,
 } from "@/constants/siteBrand";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { syncLockedInviteCodeBySearch } from "@/utils/inviteReferral";
@@ -36,6 +35,7 @@ import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { trackEvent } from "@/services/analyticsService";
 import { isStandaloneApp } from "@/utils/pwa";
 import { queryClient } from "@/lib/queryClient";
+import { resolveSiteFaviconUrl } from "@/utils/siteBrandAssets";
 import {
   MemberHome, GuestHome, Login, BindWechatPhone,
   Categories, ProductDetail, NewArrivals, Search,
@@ -48,7 +48,6 @@ import {
   AdminUsers, AdminUserDetail, AdminMemberLevels, AdminInvites,
   AdminCoupons, AdminCouponForm, AdminCouponRecords, AdminActivities, AdminMarketingDashboard, AdminActivityForm, AdminMarketingPoints, AdminMarketingRewards,
   AdminReviews, AdminNotifications, AdminNotificationDetail, AdminEventCenter,
-  AdminReports, AdminReportOverview, AdminSalesDailyReport, AdminSalesMonthlyReport, AdminProfitDailyReport, AdminOperatingExpenses, AdminProductAnalysisReport, AdminCategoryAnalysisReport, AdminOrderAnalysisReport, AdminCustomerAnalysisReport, AdminActivityAnalysisReport, AdminCouponAnalysisReport, AdminInventoryAnalysisReport, AdminSearchAnalysisReport, AdminTrafficAnalysisReport, AdminExportCenter,
   AdminSiteSettings, AdminFeatureSettings, AdminSupportDownload, AdminTelegramSettings, AdminThemeSettings, AdminContent, AdminHomeOps,
   AdminRoles, AdminLogs, AdminRecycleBin, AdminDataRetention,
   AdminPaymentChannels, AdminPaymentOrders, AdminPaymentEvents, AdminPaymentReconciliations,
@@ -78,20 +77,17 @@ function SiteIdentitySync() {
   const siteInfo = useSiteInfo();
 
   useLayoutEffect(() => {
-    const raw = (siteInfo.faviconUrl || "").trim();
+    const raw = resolveSiteFaviconUrl(siteInfo);
     const custom =
       raw && !raw.startsWith("data:") && !/lovable/i.test(raw) ? raw : "";
 
     const iconTargets: Array<{ rel: string; href: string; type?: string; sizes?: string }> = custom
       ? [
           { rel: "icon", href: custom },
-          { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+          { rel: "apple-touch-icon", href: custom },
         ]
       : [
-          { rel: "icon", href: DEFAULT_FAVICON_ICO, sizes: "any" },
-          { rel: "icon", href: DEFAULT_FAVICON_SVG, type: "image/svg+xml" },
-          { rel: "icon", href: DEFAULT_FAVICON_PNG, type: "image/png", sizes: "32x32" },
-          { rel: "icon", href: DEFAULT_FAVICON_WEBP, type: "image/webp" },
+          { rel: "icon", href: DEFAULT_FAVICON_PNG, type: "image/png", sizes: "192x192" },
           { rel: "shortcut icon", href: DEFAULT_FAVICON_ICO },
           { rel: "apple-touch-icon", href: DEFAULT_APPLE_TOUCH_ICON },
         ];
@@ -110,7 +106,7 @@ function SiteIdentitySync() {
       if (sizes) link.sizes = sizes;
       document.head.appendChild(link);
     });
-  }, [siteInfo.faviconUrl]);
+  }, [siteInfo.faviconUrl, siteInfo.logoUrl]);
 
   return null;
 }
@@ -440,25 +436,10 @@ export function AppRoutes() {
                 <Route path="monitoring/runs" element={<AdminMonitoringRuns />} />
                 <Route path="account" element={<AdminAccount />} />
                 <Route path="banners" element={<AdminBanners />} />
-                <Route path="reports" element={<AdminReports />} />
-                <Route path="reports/overview" element={<AdminReportOverview />} />
-                <Route path="reports/daily" element={<AdminSalesDailyReport />} />
-                <Route path="reports/monthly" element={<AdminSalesMonthlyReport />} />
-                <Route path="reports/profit" element={<AdminProfitDailyReport />} />
-                <Route path="reports/expenses" element={<AdminOperatingExpenses />} />
-                <Route path="reports/products" element={<AdminProductAnalysisReport />} />
-                <Route path="reports/categories" element={<AdminCategoryAnalysisReport />} />
-                <Route path="reports/orders" element={<AdminOrderAnalysisReport />} />
-                <Route path="reports/customers" element={<AdminCustomerAnalysisReport />} />
-                <Route path="reports/activities" element={<AdminActivityAnalysisReport />} />
-                <Route path="reports/coupons" element={<CapabilityRoute enabled={capabilities.couponEnabled}><AdminCouponAnalysisReport /></CapabilityRoute>} />
-                <Route path="reports/inventory" element={<CapabilityRoute enabled={capabilities.inventoryEnabled}><AdminInventoryAnalysisReport /></CapabilityRoute>} />
-                <Route path="reports/search" element={<AdminSearchAnalysisReport />} />
-                <Route path="reports/traffic" element={<CapabilityRoute enabled={capabilities.trafficAnalyticsEnabled}><AdminTrafficAnalysisReport /></CapabilityRoute>} />
+                {renderAdminReportRoutes(capabilities)}
                 <Route path="accounts" element={<AdminAccounts />} />
                 <Route path="recycle-bin" element={<AdminRecycleBin />} />
                 <Route path="data-retention" element={<AdminDataRetention />} />
-                <Route path="exports" element={<AdminExportCenter />} />
                 <Route path="audit-logs" element={<AdminLogs />} />
                 <Route path="content" element={<AdminContent />} />
               </Route>

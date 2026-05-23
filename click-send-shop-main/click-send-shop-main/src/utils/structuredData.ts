@@ -2,6 +2,7 @@ import type { SiteInfo } from "@/types/content";
 import type { Product } from "@/types/product";
 import { getPublicSiteUrl, stripHtml, toAbsoluteUrl, truncateText } from "@/utils/seo";
 import { isRestrictedProduct } from "@/utils/restrictedProduct";
+import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 
 export function buildWebsiteJsonLd(siteInfo: SiteInfo) {
   const siteUrl = getPublicSiteUrl();
@@ -40,7 +41,7 @@ export function buildOrganizationJsonLd(siteInfo: SiteInfo) {
     "@type": "Organization",
     name: siteName,
     url: siteUrl,
-    logo: toAbsoluteUrl(siteInfo.logoUrl || ""),
+    logo: toAbsoluteUrl(resolveSiteLogoUrl(siteInfo)),
     description,
     sameAs: links,
   };

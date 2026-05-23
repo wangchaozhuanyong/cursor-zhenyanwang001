@@ -39,6 +39,7 @@ import { HOME_HERO_STACK_CLASS, HOME_PAGE_MAIN_CLASS } from "@/constants/homeLay
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/utils/structuredData";
+import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
 
 function Header({ title, icon: Icon, subtitle }: { title: string; icon?: React.ElementType; subtitle?: string }) {
@@ -86,7 +87,7 @@ export default function MemberHome() {
     siteInfo.seoDescription ||
     siteInfo.siteDescription ||
     "本平台提供商品、服务与客户支持信息。";
-  const seoImage = siteInfo.ogImageUrl || siteInfo.defaultOgImageUrl || siteInfo.logoUrl || "/og-default.png";
+  const seoImage = siteInfo.ogImageUrl || siteInfo.defaultOgImageUrl || resolveSiteLogoUrl(siteInfo) || "/og-default.png";
 
   useEffect(() => {
     const state = useProductStore.getState();

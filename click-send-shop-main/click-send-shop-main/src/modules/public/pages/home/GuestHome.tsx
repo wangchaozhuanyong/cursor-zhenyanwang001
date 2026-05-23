@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
-import logoWebp from "@/assets/logo.webp";
 import StoreTabHeader from "@/components/store/StoreTabHeader";
 import BannerCarousel from "@/components/BannerCarousel";
 import HomeTrustBar from "@/components/HomeTrustBar";
@@ -35,6 +34,7 @@ import { cn } from "@/lib/utils";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/utils/structuredData";
+import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPanel";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
 
@@ -99,7 +99,7 @@ export default function GuestHome() {
     [siteCapabilities.restrictedProductComplianceEnabled, siteInfo],
   );
   const siteName = siteInfo.siteName || "官方商城";
-  const logoSrc = (siteInfo.logoUrl || "").trim() || logoWebp;
+  const logoSrc = resolveSiteLogoUrl(siteInfo);
   const slogan = siteInfo.siteSlogan || "官方商品与服务平台";
   const description = siteInfo.siteDescription || "本平台提供商品、服务与客户支持信息。";
   const { banners, loading: bannersLoading } = useHomeBanners();
@@ -187,7 +187,7 @@ export default function GuestHome() {
   const seoTitle = siteInfo.seoTitle || siteName;
   const seoDescription = siteInfo.seoDescription || description;
   const canonical = buildCanonical("/");
-  const seoImage = siteInfo.ogImageUrl || siteInfo.defaultOgImageUrl || siteInfo.logoUrl || "/og-default.png";
+  const seoImage = siteInfo.ogImageUrl || siteInfo.defaultOgImageUrl || logoSrc || "/og-default.png";
   return (
     <div className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]" data-theme-home-layout={themeConfig.homeLayout}>
       <SeoHead

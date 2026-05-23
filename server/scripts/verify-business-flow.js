@@ -17,7 +17,8 @@ function printStep(title, reqInfo, resStatus, resBody) {
 
 async function main() {
   const countryCode = '+60';
-  const phone = `1${`${Date.now()}`.slice(-10)}`;
+  // 马来西亚本地号：01 + 8 位数字（校验规则为去掉国家码后 /^1\d{8,9}$/）
+  const phone = `01${`${Date.now()}`.slice(-8)}`;
   const password = 'VerifyFlow1';
   let token;
   let productId;

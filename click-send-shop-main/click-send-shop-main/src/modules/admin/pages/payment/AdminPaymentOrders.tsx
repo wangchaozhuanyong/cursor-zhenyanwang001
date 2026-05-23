@@ -22,6 +22,7 @@ import {
   adminTdClassName,
   adminThClassName,
 } from "@/utils/adminTableClasses";
+import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
 
 const STATUS_FILTER_OPTIONS = [
   { value: "pending", label: "待支付" },
@@ -287,34 +288,33 @@ export default function AdminPaymentOrders() {
           renderRow={renderRow}
         />
 
-        {markingRow ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-md rounded-2xl bg-background p-5 shadow-xl">
-              <h2 className="text-lg font-semibold text-foreground">人工确认收款</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                订单 {markingRow.order_no || shortId(markingRow.order_id, 8)} 将被标记为已支付，请填写操作原因，方便审计追踪。
-              </p>
-              <textarea
-                value={markReason}
-                onChange={(e) => setMarkReason(e.target.value)}
-                rows={4}
-                className="mt-4 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                placeholder="例如：已核对银行入账流水"
-              />
-              <div className="mt-4 flex justify-end gap-2">
-                <button type="button" onClick={() => setMarkingRow(null)} className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-secondary">取消</button>
-                <button
-                  type="button"
-                  onClick={() => markPaidMutation.mutate()}
-                  disabled={markPaidMutation.isPending}
-                  className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                >
-                  {markPaidMutation.isPending ? "处理中..." : "确认收款"}
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : null}
+        <AdminFormSheet
+          open={!!markingRow}
+          onOpenChange={(open) => {
+            if (!open) {
+              setMarkingRow(null);
+              setMarkReason("");
+            }
+          }}
+          title="人工确认收款"
+          description={
+            markingRow
+              ? `订单 ${markingRow.order_no || shortId(markingRow.order_id, 8)} 将被标记为已支付，请填写操作原因，方便审计追踪。`
+              : undefined
+          }
+          submitText="确认收款"
+          loading={markPaidMutation.isPending}
+          onSubmit={() => markPaidMutation.mutateAsync()}
+          size="sm"
+        >
+          <textarea
+            value={markReason}
+            onChange={(e) => setMarkReason(e.target.value)}
+            rows={4}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            placeholder="例如：已核对银行入账流水"
+          />
+        </AdminFormSheet>
       </div>
     </PermissionGate>
   );

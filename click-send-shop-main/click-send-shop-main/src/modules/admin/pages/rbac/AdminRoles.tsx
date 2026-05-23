@@ -15,6 +15,8 @@ import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import AdminPermissionPicker from "@/components/admin/AdminPermissionPicker";
 import AdminRolePicker, { getDefaultAdminRoleIds } from "@/components/admin/AdminRolePicker";
 import { adminConfirmDelete, adminConfirmSave, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
+import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import { THEME_BTN_DANGER_SOLID, THEME_OUTLINE_DANGER, THEME_TEXT_DANGER } from "@/utils/themeVisuals";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
@@ -50,8 +52,6 @@ export default function AdminRoles() {
   const [adminForm, setAdminForm] = useState({ phone: "", password: "", nickname: "", roleIds: [] as number[] });
   const [showResetModal, setShowResetModal] = useState<string | null>(null);
   const [resetPw, setResetPw] = useState("");
-  const [confirmDeleteAdmin, setConfirmDeleteAdmin] = useState<RbacAdminUserRow | null>(null);
-
   const overviewQuery = useQuery({
     queryKey: adminQueryKeys.rbacOverview(),
     queryFn: async () => {
@@ -319,7 +319,17 @@ export default function AdminRoles() {
                       <button onClick={() => { setShowResetModal(u.id); setResetPw(""); }} className="theme-rounded px-2 py-1 text-xs border border-[var(--theme-border)] hover:bg-[var(--theme-bg)]"><Tx>重置密码</Tx></button>
                     )}
                     {(isSuperAdminViewer || !hasPrivilegedRole(u)) && u.role !== "super_admin" && (
-                      <button type="button" onClick={() => setConfirmDeleteAdmin(u)} className={`theme-rounded px-2 py-1 text-xs ${THEME_OUTLINE_DANGER}`}><Tx>删除</Tx></button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          adminConfirmDelete(askConfirm, u.nickname || u.phone, async () => {
+                            await rbacService.deleteAdminUser(u.id);
+                            toast.success("已删除");
+                            void invalidateRbac();
+                          })
+                        }
+                        className={`theme-rounded px-2 py-1 text-xs ${THEME_OUTLINE_DANGER}`}
+                      ><Tx>删除</Tx></button>
                     )}
                   </div>
                 </PermissionGate>
@@ -331,14 +341,13 @@ export default function AdminRoles() {
       </>
       )}
 
-      {showAdminModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowAdminModal(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md theme-rounded bg-[var(--theme-surface)] p-6 theme-shadow space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-foreground"><Tx>新增管理员</Tx></h3>
-              <button onClick={() => setShowAdminModal(false)} className="theme-rounded p-1 hover:bg-[var(--theme-bg)]"><X size={18} /></button>
-            </div>
-            <div className="space-y-3">
+      <AdminResponsiveSheet
+        open={showAdminModal}
+        onOpenChange={setShowAdminModal}
+        title={<Tx>新增管理员</Tx>}
+        size="sm"
+      >
+        <div className="space-y-3">
               <div><label className="text-xs font-medium text-muted-foreground"><Tx>手机号</Tx></label><input value={adminForm.phone} onChange={(e) => setAdminForm((p) => ({ ...p, phone: e.target.value }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" /></div>
               <div><label className="text-xs font-medium text-muted-foreground"><Tx>密码</Tx></label><input type="password" value={adminForm.password} onChange={(e) => setAdminForm((p) => ({ ...p, password: e.target.value }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" /></div>
               <div><label className="text-xs font-medium text-muted-foreground"><Tx>昵称</Tx></label><input value={adminForm.nickname} onChange={(e) => setAdminForm((p) => ({ ...p, nickname: e.target.value }))} className="mt-1 w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" /></div>
@@ -354,8 +363,7 @@ export default function AdminRoles() {
                   isSuperAdminViewer={isSuperAdminViewer}
                 />
               </div>
-            </div>
-            <LoadingButton
+        <LoadingButton
               type="button"
               variant="gold"
               state={saving ? "loading" : "normal"}
@@ -393,57 +401,38 @@ export default function AdminRoles() {
               className="w-full rounded-xl py-3 text-sm font-semibold"
             ><Tx>
               创建
-            </Tx></LoadingButton>
-          </div>
-        </div>
-      )}
+            </Tx>            </LoadingButton>
+      </AdminResponsiveSheet>
 
-      {showResetModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowResetModal(null)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm theme-rounded bg-[var(--theme-surface)] p-6 theme-shadow space-y-4">
-            <h3 className="font-bold text-foreground"><Tx>重置密码</Tx></h3>
-            <input type="password" value={resetPw} onChange={(e) => setResetPw(e.target.value)} placeholder="输入新密码（至少8位，含大小写和数字）" className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" />
-            <button onClick={async () => { if (!isStrongAdminPassword(resetPw)) { toast.error("密码至少 8 位，并包含大写字母、小写字母和数字"); return; } try { await rbacService.resetAdminPassword(showResetModal, resetPw); toast.success("密码已重置"); setShowResetModal(null); } catch (e) { toast.error(toastErrorMessage(e, "重置失败")); } }} disabled={!isStrongAdminPassword(resetPw)} className="w-full theme-rounded py-3 text-sm font-semibold btn-theme-gradient disabled:opacity-50"><Tx>确认重置</Tx></button>
-          </div>
-        </div>
-      )}
+      <AdminFormSheet
+        open={!!showResetModal}
+        onOpenChange={(open) => !open && setShowResetModal(null)}
+        title={<Tx>重置密码</Tx>}
+        submitText="确认重置"
+        submitDisabled={!isStrongAdminPassword(resetPw)}
+        onSubmit={async () => {
+          if (!showResetModal) return;
+          if (!isStrongAdminPassword(resetPw)) {
+            toast.error("密码至少 8 位，并包含大写字母、小写字母和数字");
+            throw new Error("weak password");
+          }
+          await rbacService.resetAdminPassword(showResetModal, resetPw);
+          toast.success("密码已重置");
+          setResetPw("");
+        }}
+        size="sm"
+      >
+        <input type="password" value={resetPw} onChange={(e) => setResetPw(e.target.value)} placeholder="输入新密码（至少8位，含大小写和数字）" className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-sm" />
+      </AdminFormSheet>
 
-      {confirmDeleteAdmin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDeleteAdmin(null)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm theme-rounded bg-[var(--theme-surface)] p-6 theme-shadow space-y-4">
-            <h3 className="font-bold text-foreground"><Tx>删除管理员</Tx></h3>
-            <p className="text-sm text-muted-foreground">确定删除「{confirmDeleteAdmin.nickname || confirmDeleteAdmin.phone}」({confirmDeleteAdmin.phone})？该账号将标记为已删除且无法登录后台。</p>
-            <div className="flex gap-2">
-              <button type="button" onClick={() => setConfirmDeleteAdmin(null)} className="flex-1 theme-rounded border border-[var(--theme-border)] py-2.5 text-sm"><Tx>取消</Tx></button>
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    await rbacService.deleteAdminUser(confirmDeleteAdmin.id);
-                    toast.success("已删除");
-                    setConfirmDeleteAdmin(null);
-                    void invalidateRbac();
-                  } catch (e) {
-                    toast.error(toastErrorMessage(e, "删除失败"));
-                  }
-                }}
-                className={`flex-1 theme-rounded py-2.5 text-sm font-semibold ${THEME_BTN_DANGER_SOLID}`}
-              ><Tx>
-                删除
-              </Tx></button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showRoleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowRoleModal(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl bg-card p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-foreground">{editRole ? "编辑角色" : "新建角色"}</h3>
-              <button onClick={() => setShowRoleModal(false)} className="rounded-lg p-1 hover:bg-secondary"><X size={18} /></button>
-            </div>
-            <div className="space-y-3">
+      <AdminResponsiveSheet
+        open={showRoleModal}
+        onOpenChange={setShowRoleModal}
+        title={editRole ? "编辑角色" : "新建角色"}
+        size="md"
+        height="70vh"
+      >
+        <div className="space-y-3">
               <div>
                 <label className="text-xs font-medium text-muted-foreground"><Tx>编码</Tx></label>
                 <input value={roleForm.code} onChange={(e) => setRoleForm((p) => ({ ...p, code: e.target.value }))} disabled={!!editRole} className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm disabled:opacity-50" placeholder="如 shichang（英文标识，创建后不可改）" />
@@ -477,10 +466,9 @@ export default function AdminRoles() {
               className="w-full rounded-xl py-3 text-sm font-semibold"
             ><Tx>
               保存
-            </Tx></LoadingButton>
-          </div>
+            </Tx>            </LoadingButton>
         </div>
-      )}
+      </AdminResponsiveSheet>
     </div>
   );
 }

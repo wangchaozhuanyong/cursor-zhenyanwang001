@@ -11,6 +11,7 @@ import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import type { ApproveReturnParams, ReturnDetail, ReturnRequest } from "@/types/return";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatDateTime } from "@/utils/formatDateTime";
+import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 
 const STATUS_LABELS: Record<string, string> = {
   pending: "待审核",
@@ -202,18 +203,20 @@ export default function AdminReturns() {
           )}
         />
 
-        {selectedId ? (
-          <div className="fixed inset-0 z-50 flex justify-end bg-black/40">
-            <aside className="h-full w-full max-w-xl overflow-y-auto bg-background p-5 shadow-xl">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">售后详情</h2>
-                  <p className="mt-1 text-xs text-muted-foreground">{selectedId}</p>
-                </div>
-                <button type="button" onClick={() => { setSelectedId(null); setReviewMode(null); }} className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-secondary">关闭</button>
-              </div>
-
-              {detailQuery.isLoading ? <p className="mt-6 text-sm text-muted-foreground">正在加载详情...</p> : null}
+        <AdminResponsiveSheet
+          open={!!selectedId}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedId(null);
+              setReviewMode(null);
+            }
+          }}
+          title="售后详情"
+          description={selectedId ?? undefined}
+          size="lg"
+          height="85vh"
+        >
+              {detailQuery.isLoading ? <p className="mt-2 text-sm text-muted-foreground">正在加载详情...</p> : null}
               {detail ? (
                 <div className="mt-5 space-y-4 text-sm">
                   <div className="rounded-xl border border-border p-4">
@@ -270,9 +273,7 @@ export default function AdminReturns() {
                   ) : null}
                 </div>
               ) : null}
-            </aside>
-          </div>
-        ) : null}
+        </AdminResponsiveSheet>
       </div>
     </PermissionGate>
   );

@@ -428,90 +428,129 @@ export default function AdminInventory() {
           </>
         ) : null}
 
-        {batchThreshold ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setBatchThreshold(null)}>
-            <div className="w-full max-w-md rounded-2xl bg-card p-6" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-base font-bold">批量设置预警值</h3>
-              <p className="mt-1 text-xs text-muted-foreground">已选 {selectedCount} 个 SKU（单次最多 {BATCH_MAX} 个）</p>
-              {selectedSkuPreview.length > 0 ? (
-                <ul className="mt-3 max-h-32 space-y-1 overflow-y-auto rounded-lg bg-secondary p-3 text-xs text-muted-foreground">
-                  {selectedSkuPreview.map((sku) => <li key={sku.variant_id}>{skuLabel(sku)}</li>)}
-                  {selectedCount > selectedSkuPreview.length ? <li>…等 {selectedCount} 项</li> : null}
-                </ul>
-              ) : null}
-              <input type="number" min={0} value={batchThreshold.threshold} onChange={(e) => setBatchThreshold({ threshold: e.target.value })} placeholder="预警阈值" className="mt-4 w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
-              <div className="mt-5 flex justify-end gap-2">
-                <button type="button" onClick={() => setBatchThreshold(null)} className="rounded-lg border border-border px-4 py-2.5 text-sm">取消</button>
-                <button type="button" disabled={batchThresholdMutation.isPending || selectedCount === 0 || selectedCount > BATCH_MAX} onClick={() => batchThresholdMutation.mutate()} className="rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
-                  {batchThresholdMutation.isPending ? "提交中..." : "确认"}
-                </button>
+        <AdminFormSheet
+          open={!!batchThreshold}
+          onOpenChange={(open) => !open && setBatchThreshold(null)}
+          title="批量设置预警值"
+          description={`已选 ${selectedCount} 个 SKU（单次最多 ${BATCH_MAX} 个）`}
+          submitText="确认"
+          loading={batchThresholdMutation.isPending}
+          submitDisabled={selectedCount === 0 || selectedCount > BATCH_MAX}
+          onSubmit={async () => { await batchThresholdMutation.mutateAsync(); }}
+          size="sm"
+        >
+          {selectedSkuPreview.length > 0 ? (
+            <ul className="max-h-32 space-y-1 overflow-y-auto rounded-lg bg-secondary p-3 text-xs text-muted-foreground">
+              {selectedSkuPreview.map((sku) => <li key={sku.variant_id}>{skuLabel(sku)}</li>)}
+              {selectedCount > selectedSkuPreview.length ? <li>…等 {selectedCount} 项</li> : null}
+            </ul>
+          ) : null}
+          <input type="number" min={0} value={batchThreshold?.threshold ?? ""} onChange={(e) => setBatchThreshold({ threshold: e.target.value })} placeholder="预警阈值" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+        </AdminFormSheet>
+
+        <AdminFormSheet
+          open={!!batchAdjust}
+          onOpenChange={(open) => !open && setBatchAdjust(null)}
+          title={batchAdjust ? `批量${CHANGE_LABEL[batchAdjust.change_type]}` : "批量调整"}
+          description={`已选 ${selectedCount} 个 SKU，将使用相同数量与原因`}
+          submitText="确认"
+          loading={batchAdjustMutation.isPending}
+          submitDisabled={selectedCount === 0 || selectedCount > BATCH_MAX}
+          onSubmit={async () => { await batchAdjustMutation.mutateAsync(); }}
+          size="sm"
+        >
+          {batchAdjust ? (
+            <div className="space-y-3">
+              <select value={batchAdjust.change_type} onChange={(e) => setBatchAdjust({ ...batchAdjust, change_type: e.target.value as BatchAdjustForm["change_type"] })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm">
+                <option value="in">入库</option>
+                <option value="out">出库</option>
+                <option value="adjust">盘点调整</option>
+              </select>
+              <input type="number" min={batchAdjust.change_type === "adjust" ? 0 : 1} value={batchAdjust.quantity} onChange={(e) => setBatchAdjust({ ...batchAdjust, quantity: e.target.value })} placeholder={batchAdjust.change_type === "adjust" ? "盘点后实际库存" : "数量"} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+              <input value={batchAdjust.reason} onChange={(e) => setBatchAdjust({ ...batchAdjust, reason: e.target.value })} placeholder="原因（必填）" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+              <input value={batchAdjust.remark} onChange={(e) => setBatchAdjust({ ...batchAdjust, remark: e.target.value })} placeholder="备注（可选）" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+              <div className="grid grid-cols-2 gap-2">
+                <input value={batchAdjust.source_no} onChange={(e) => setBatchAdjust({ ...batchAdjust, source_no: e.target.value })} placeholder="来源单号" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+                <input type="number" value={batchAdjust.cost_price} onChange={(e) => setBatchAdjust({ ...batchAdjust, cost_price: e.target.value })} placeholder="成本价" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
               </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
+        </AdminFormSheet>
 
-        {batchAdjust ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setBatchAdjust(null)}>
-            <div className="w-full max-w-md rounded-2xl bg-card p-6" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-base font-bold">批量{CHANGE_LABEL[batchAdjust.change_type]}</h3>
-              <p className="mt-1 text-xs text-muted-foreground">已选 {selectedCount} 个 SKU，将使用相同数量与原因</p>
-              <div className="mt-4 space-y-3">
-                <select value={batchAdjust.change_type} onChange={(e) => setBatchAdjust({ ...batchAdjust, change_type: e.target.value as BatchAdjustForm["change_type"] })} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm">
-                  <option value="in">入库</option>
-                  <option value="out">出库</option>
-                  <option value="adjust">盘点调整</option>
-                </select>
-                <input type="number" min={batchAdjust.change_type === "adjust" ? 0 : 1} value={batchAdjust.quantity} onChange={(e) => setBatchAdjust({ ...batchAdjust, quantity: e.target.value })} placeholder={batchAdjust.change_type === "adjust" ? "盘点后实际库存" : "数量"} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
-                <input value={batchAdjust.reason} onChange={(e) => setBatchAdjust({ ...batchAdjust, reason: e.target.value })} placeholder="原因（必填）" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
-                <input value={batchAdjust.remark} onChange={(e) => setBatchAdjust({ ...batchAdjust, remark: e.target.value })} placeholder="备注（可选）" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
-                <div className="grid grid-cols-2 gap-2">
-                  <input value={batchAdjust.source_no} onChange={(e) => setBatchAdjust({ ...batchAdjust, source_no: e.target.value })} placeholder="来源单号" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
-                  <input type="number" value={batchAdjust.cost_price} onChange={(e) => setBatchAdjust({ ...batchAdjust, cost_price: e.target.value })} placeholder="成本价" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
-                </div>
-              </div>
-              <div className="mt-5 flex justify-end gap-2">
-                <button type="button" onClick={() => setBatchAdjust(null)} className="rounded-lg border border-border px-4 py-2.5 text-sm">取消</button>
-                <button type="button" disabled={batchAdjustMutation.isPending || selectedCount === 0 || selectedCount > BATCH_MAX} onClick={() => batchAdjustMutation.mutate()} className="rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
-                  {batchAdjustMutation.isPending ? "提交中..." : "确认"}
-                </button>
+        <AdminFormSheet
+          open={!!adjusting}
+          onOpenChange={(open) => !open && setAdjusting(null)}
+          title={adjusting ? `${CHANGE_LABEL[adjusting.change_type]}：${adjusting.sku.product_name}` : "库存调整"}
+          description={adjusting ? `当前 ${adjusting.sku.stock} ${adjusting.sku.unit_name || "件"}，调整后 ${projectedStock} ${adjusting.sku.unit_name || "件"}` : undefined}
+          submitText="确认"
+          loading={adjustMutation.isPending}
+          onSubmit={async () => { await adjustMutation.mutateAsync(); }}
+          size="sm"
+        >
+          {adjusting ? (
+            <div className="space-y-3">
+              <input type="number" min={adjusting.change_type === "adjust" ? 0 : 1} value={adjusting.quantity} onChange={(e) => setAdjusting({ ...adjusting, quantity: e.target.value })} placeholder={adjusting.change_type === "adjust" ? "盘点后实际库存" : "数量"} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+              <input value={adjusting.reason} onChange={(e) => setAdjusting({ ...adjusting, reason: e.target.value })} placeholder="原因（必填）" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+              <input value={adjusting.remark} onChange={(e) => setAdjusting({ ...adjusting, remark: e.target.value })} placeholder="备注（可选）" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+              <div className="grid grid-cols-2 gap-2">
+                <input value={adjusting.source_no} onChange={(e) => setAdjusting({ ...adjusting, source_no: e.target.value })} placeholder="来源单号" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+                <input type="number" value={adjusting.cost_price} onChange={(e) => setAdjusting({ ...adjusting, cost_price: e.target.value })} placeholder="成本价" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
               </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
+        </AdminFormSheet>
 
-        {adjusting ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setAdjusting(null)}>
-            <div className="w-full max-w-md rounded-2xl bg-card p-6" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-base font-bold">{CHANGE_LABEL[adjusting.change_type]}：{adjusting.sku.product_name}</h3>
-              <p className="mt-1 text-xs text-muted-foreground">当前 {adjusting.sku.stock} {adjusting.sku.unit_name || "件"}，调整后 {projectedStock} {adjusting.sku.unit_name || "件"}</p>
-              <div className="mt-4 space-y-3"><input type="number" min={adjusting.change_type === "adjust" ? 0 : 1} value={adjusting.quantity} onChange={(e) => setAdjusting({ ...adjusting, quantity: e.target.value })} placeholder={adjusting.change_type === "adjust" ? "盘点后实际库存" : "数量"} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" /><input value={adjusting.reason} onChange={(e) => setAdjusting({ ...adjusting, reason: e.target.value })} placeholder="原因（必填）" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" /><input value={adjusting.remark} onChange={(e) => setAdjusting({ ...adjusting, remark: e.target.value })} placeholder="备注（可选）" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" /><div className="grid grid-cols-2 gap-2"><input value={adjusting.source_no} onChange={(e) => setAdjusting({ ...adjusting, source_no: e.target.value })} placeholder="来源单号" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" /><input type="number" value={adjusting.cost_price} onChange={(e) => setAdjusting({ ...adjusting, cost_price: e.target.value })} placeholder="成本价" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" /></div></div>
-              <div className="mt-5 flex justify-end gap-2"><button onClick={() => setAdjusting(null)} className="rounded-lg border border-border px-4 py-2.5 text-sm">取消</button><button type="button" disabled={adjustMutation.isPending} onClick={() => adjustMutation.mutate()} className="rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{adjustMutation.isPending ? "提交中..." : "确认"}</button></div>
-            </div>
-          </div>
-        ) : null}
+        <AdminFormSheet
+          open={!!ruleForm}
+          onOpenChange={(open) => !open && setRuleForm(null)}
+          title={ruleForm?.id ? "编辑组装拆包规则" : "新增组装拆包规则"}
+          submitText="保存"
+          loading={saveRuleMutation.isPending}
+          onSubmit={async () => { await saveRuleMutation.mutateAsync(); }}
+          size="lg"
+        >
+          {ruleForm ? (
+            <>
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="space-y-1 text-sm"><span>大包装 SKU</span><select value={ruleForm.parent_variant_id || ""} onChange={(e) => setRuleForm({ ...ruleForm, parent_variant_id: e.target.value })} className="w-full rounded-lg bg-secondary px-3 py-2.5"><option value="">请选择</option>{renderSkuOptions(ruleForm.parent_variant_id)}</select></label>
+                <label className="space-y-1 text-sm"><span>小包装 SKU</span><select value={ruleForm.child_variant_id || ""} onChange={(e) => setRuleForm({ ...ruleForm, child_variant_id: e.target.value })} className="w-full rounded-lg bg-secondary px-3 py-2.5"><option value="">请选择</option>{renderSkuOptions(ruleForm.child_variant_id)}</select></label>
+                <label className="space-y-1 text-sm"><span>大包装数量</span><input type="number" min={1} value={ruleForm.parent_qty ?? 1} onChange={(e) => setRuleForm({ ...ruleForm, parent_qty: Number(e.target.value) })} className="w-full rounded-lg bg-secondary px-3 py-2.5" /></label>
+                <label className="space-y-1 text-sm"><span>小包装数量</span><input type="number" min={2} value={ruleForm.child_qty ?? ""} onChange={(e) => setRuleForm({ ...ruleForm, child_qty: Number(e.target.value) })} className="w-full rounded-lg bg-secondary px-3 py-2.5" /></label>
+              </div>
+              <div className="grid gap-2 md:grid-cols-4">
+                {([["enabled", "启用规则"], ["auto_unpack_enabled", "自动拆包"], ["manual_unpack_enabled", "允许手动拆包"], ["manual_assemble_enabled", "允许手动组装"]] as const).map(([key, label]) => (
+                  <label key={key} className="flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-sm">
+                    <input type="checkbox" checked={ruleForm[key] !== false && !!ruleForm[key]} onChange={(e) => setRuleForm({ ...ruleForm, [key]: e.target.checked })} />
+                    {label}
+                  </label>
+                ))}
+              </div>
+              <textarea value={ruleForm.remark || ""} onChange={(e) => setRuleForm({ ...ruleForm, remark: e.target.value })} placeholder="备注" className="min-h-20 w-full rounded-lg bg-secondary px-3 py-2.5 text-sm" />
+            </>
+          ) : null}
+        </AdminFormSheet>
 
-        {ruleForm ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setRuleForm(null)}>
-            <div className="w-full max-w-2xl rounded-2xl bg-card p-6" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-base font-bold">{ruleForm.id ? "编辑组装拆包规则" : "新增组装拆包规则"}</h3>
-              <div className="mt-4 grid gap-3 md:grid-cols-2"><label className="space-y-1 text-sm"><span>大包装 SKU</span><select value={ruleForm.parent_variant_id || ""} onChange={(e) => setRuleForm({ ...ruleForm, parent_variant_id: e.target.value })} className="w-full rounded-lg bg-secondary px-3 py-2.5"><option value="">请选择</option>{renderSkuOptions(ruleForm.parent_variant_id)}</select></label><label className="space-y-1 text-sm"><span>小包装 SKU</span><select value={ruleForm.child_variant_id || ""} onChange={(e) => setRuleForm({ ...ruleForm, child_variant_id: e.target.value })} className="w-full rounded-lg bg-secondary px-3 py-2.5"><option value="">请选择</option>{renderSkuOptions(ruleForm.child_variant_id)}</select></label><label className="space-y-1 text-sm"><span>大包装数量</span><input type="number" min={1} value={ruleForm.parent_qty ?? 1} onChange={(e) => setRuleForm({ ...ruleForm, parent_qty: Number(e.target.value) })} className="w-full rounded-lg bg-secondary px-3 py-2.5" /></label><label className="space-y-1 text-sm"><span>小包装数量</span><input type="number" min={2} value={ruleForm.child_qty ?? ""} onChange={(e) => setRuleForm({ ...ruleForm, child_qty: Number(e.target.value) })} className="w-full rounded-lg bg-secondary px-3 py-2.5" /></label></div>
-              <div className="mt-4 grid gap-2 md:grid-cols-4">{([ ["enabled", "启用规则"], ["auto_unpack_enabled", "自动拆包"], ["manual_unpack_enabled", "允许手动拆包"], ["manual_assemble_enabled", "允许手动组装"] ] as const).map(([key, label]) => <label key={key} className="flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-sm"><input type="checkbox" checked={ruleForm[key] !== false && !!ruleForm[key]} onChange={(e) => setRuleForm({ ...ruleForm, [key]: e.target.checked })} />{label}</label>)}</div>
-              <textarea value={ruleForm.remark || ""} onChange={(e) => setRuleForm({ ...ruleForm, remark: e.target.value })} placeholder="备注" className="mt-4 min-h-20 w-full rounded-lg bg-secondary px-3 py-2.5 text-sm" />
-              <div className="mt-5 flex justify-end gap-2"><button onClick={() => setRuleForm(null)} className="rounded-lg border border-border px-4 py-2.5 text-sm">取消</button><button type="button" disabled={saveRuleMutation.isPending} onClick={() => saveRuleMutation.mutate()} className="rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{saveRuleMutation.isPending ? "保存中..." : "保存"}</button></div>
-            </div>
-          </div>
-        ) : null}
-
-        {convertForm ? (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConvertForm(null)}>
-            <div className="w-full max-w-lg rounded-2xl bg-card p-6" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-base font-bold">{convertForm.type === "unpack" ? "立即拆包" : "立即组装"}</h3>
-              <div className="mt-4 rounded-xl bg-secondary p-4 text-sm text-muted-foreground"><p>规则：{convertForm.rule.parent_qty} {convertForm.rule.parent_unit_name} = {convertForm.rule.child_qty} {convertForm.rule.child_unit_name}</p><p className="mt-1">大包装当前库存：{convertForm.rule.parent_stock}</p><p>小包装当前库存：{convertForm.rule.child_stock}</p></div>
-              <div className="mt-4 space-y-3"><input type="number" min={1} value={convertForm.parent_qty} onChange={(e) => setConvertForm({ ...convertForm, parent_qty: e.target.value })} placeholder="大包装数量" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" /><input value={convertForm.remark} onChange={(e) => setConvertForm({ ...convertForm, remark: e.target.value })} placeholder="备注" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" /></div>
-              <div className="mt-5 flex justify-end gap-2"><button onClick={() => setConvertForm(null)} className="rounded-lg border border-border px-4 py-2.5 text-sm">取消</button><button type="button" disabled={conversionMutation.isPending} onClick={() => conversionMutation.mutate()} className="rounded-lg bg-[var(--theme-price)] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{conversionMutation.isPending ? "提交中..." : "确认"}</button></div>
-            </div>
-          </div>
-        ) : null}
+        <AdminFormSheet
+          open={!!convertForm}
+          onOpenChange={(open) => !open && setConvertForm(null)}
+          title={convertForm?.type === "unpack" ? "立即拆包" : "立即组装"}
+          submitText="确认"
+          loading={conversionMutation.isPending}
+          onSubmit={async () => { await conversionMutation.mutateAsync(); }}
+          size="sm"
+        >
+          {convertForm ? (
+            <>
+              <div className="rounded-xl bg-secondary p-4 text-sm text-muted-foreground">
+                <p>规则：{convertForm.rule.parent_qty} {convertForm.rule.parent_unit_name} = {convertForm.rule.child_qty} {convertForm.rule.child_unit_name}</p>
+                <p className="mt-1">大包装当前库存：{convertForm.rule.parent_stock}</p>
+                <p>小包装当前库存：{convertForm.rule.child_stock}</p>
+              </div>
+              <input type="number" min={1} value={convertForm.parent_qty} onChange={(e) => setConvertForm({ ...convertForm, parent_qty: e.target.value })} placeholder="大包装数量" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+              <input value={convertForm.remark} onChange={(e) => setConvertForm({ ...convertForm, remark: e.target.value })} placeholder="备注" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm" />
+            </>
+          ) : null}
+        </AdminFormSheet>
       </div>
     </PermissionGate>
   );

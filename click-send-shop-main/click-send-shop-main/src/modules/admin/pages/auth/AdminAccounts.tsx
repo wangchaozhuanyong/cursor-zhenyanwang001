@@ -1,7 +1,7 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, UserCog, Shield, Trash2, KeyRound, ToggleLeft, ToggleRight, AlertTriangle, Copy, ShieldCheck, Smartphone, RotateCcw, X } from "lucide-react";
+import { Plus, UserCog, Shield, Trash2, KeyRound, ToggleLeft, ToggleRight, Copy, ShieldCheck, Smartphone, RotateCcw } from "lucide-react";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
@@ -30,11 +30,13 @@ import {
   THEME_BADGE_DANGER,
   THEME_BADGE_MUTED,
   THEME_BADGE_PRIMARY,
-  THEME_BTN_DANGER_SOLID,
   THEME_HOVER_TEXT_DANGER,
   THEME_TEXT_DANGER,
   THEME_TEXT_SUCCESS_SOFT,
 } from "@/utils/themeVisuals";
+import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
+import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
+import { adminConfirmDelete, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 
 const ROLE_BADGE: Record<string, { cls: string; text: string }> = {
   super_admin: { cls: THEME_BADGE_DANGER, text: "超级管理员" },
@@ -63,6 +65,7 @@ function isStrongAdminPassword(password: string) {
 }
 
 export default function AdminAccounts() {
+  const { confirm: askConfirm } = useAdminConfirm();
   const isSuperAdminViewer = useAdminPermissionStore((s) => s.isSuperAdmin);
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -71,7 +74,6 @@ export default function AdminAccounts() {
   const [createForm, setCreateForm] = useState({ phone: "", password: "", nickname: "", roleIds: [] as number[] });
   const [resetTarget, setResetTarget] = useState<RbacAdminUserRow | null>(null);
   const [newPassword, setNewPassword] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState<RbacAdminUserRow | null>(null);
   const [securityTarget, setSecurityTarget] = useState<RbacAdminUserRow | null>(null);
 
   const adminsQuery = useQuery({
@@ -180,18 +182,6 @@ export default function AdminAccounts() {
       setNewPassword("");
     } catch (err) {
       toast.error(toastErrorMessage(err, "重置失败"));
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!confirmDelete) return;
-    try {
-      await rbacService.deleteAdminUser(confirmDelete.id);
-      toast.success("管理员已删除");
-      setConfirmDelete(null);
-      void invalidateAccounts();
-    } catch (err) {
-      toast.error(toastErrorMessage(err, "删除失败"));
     }
   };
 
@@ -336,7 +326,18 @@ export default function AdminAccounts() {
                         <button type="button" onClick={() => setSecurityTarget(a)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title="安全设置">
                           <ShieldCheck size={14} />
                         </button>
-                        <button type="button" onClick={() => setConfirmDelete(a)} className={`touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground ${THEME_HOVER_TEXT_DANGER} hover:bg-[var(--theme-bg)]`} title="删除">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            adminConfirmDelete(askConfirm, a.nickname || a.phone, async () => {
+                              await rbacService.deleteAdminUser(a.id);
+                              toast.success("管理员已删除");
+                              void invalidateAccounts();
+                            })
+                          }
+                          className={`touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground ${THEME_HOVER_TEXT_DANGER} hover:bg-[var(--theme-bg)]`}
+                          title="删除"
+                        >
                           <Trash2 size={14} />
                         </button>
                       </>
@@ -352,80 +353,72 @@ export default function AdminAccounts() {
         }}
       />
 
-      {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowCreate(false)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md theme-rounded bg-[var(--theme-surface)] p-6 theme-shadow space-y-4">
-            <h3 className="flex items-center gap-2 font-bold text-foreground"><UserCog size={18} /><Tx>创建管理员</Tx></h3>
-            <input placeholder="手机号 *" value={createForm.phone} onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
-            <input placeholder="密码 *（至少8位，含大小写和数字）" type="password" value={createForm.password} onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
-            <input placeholder="昵称（可选）" value={createForm.nickname} onChange={(e) => setCreateForm({ ...createForm, nickname: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
-            <div>
-              <div className="mb-2 flex items-center gap-1.5">
-                <span className="text-xs font-medium text-muted-foreground">初始角色</span>
-                <AdminFieldHint text="创建后也可以在「角色权限」里继续调整。普通管理员不能分配 admin_manager / super_admin。" />
-              </div>
-              <AdminRolePicker
-                roles={roles}
-                selectedRoleIds={createForm.roleIds}
-                onChange={(roleIds) => setCreateForm((prev) => ({ ...prev, roleIds }))}
-                isSuperAdminViewer={isSuperAdminViewer}
-                disabled={rolesQuery.isLoading}
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setShowCreate(false)} className="theme-rounded border border-[var(--theme-border)] px-4 py-2.5 text-sm hover:bg-[var(--theme-bg)]"><Tx>取消</Tx></button>
-              <button type="button" onClick={handleCreate} disabled={!createForm.phone || !isStrongAdminPassword(createForm.password) || createForm.roleIds.length === 0} className="theme-rounded px-4 py-2.5 text-sm font-semibold btn-theme-gradient disabled:opacity-50"><Tx>创建</Tx></button>
-            </div>
+      <AdminFormSheet
+        open={showCreate}
+        onOpenChange={setShowCreate}
+        title={<span className="flex items-center gap-2"><UserCog size={18} /><Tx>创建管理员</Tx></span>}
+        submitText="创建"
+        submitDisabled={!createForm.phone || !isStrongAdminPassword(createForm.password) || createForm.roleIds.length === 0}
+        onSubmit={handleCreate}
+        size="sm"
+      >
+        <input placeholder="手机号 *" value={createForm.phone} onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
+        <input placeholder="密码 *（至少8位，含大小写和数字）" type="password" value={createForm.password} onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
+        <input placeholder="昵称（可选）" value={createForm.nickname} onChange={(e) => setCreateForm({ ...createForm, nickname: e.target.value })} className="w-full theme-rounded border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm outline-none focus:border-[var(--theme-price)]" />
+        <div>
+          <div className="mb-2 flex items-center gap-1.5">
+            <span className="text-xs font-medium text-muted-foreground">初始角色</span>
+            <AdminFieldHint text="创建后也可以在「角色权限」里继续调整。普通管理员不能分配 admin_manager / super_admin。" />
           </div>
+          <AdminRolePicker
+            roles={roles}
+            selectedRoleIds={createForm.roleIds}
+            onChange={(roleIds) => setCreateForm((prev) => ({ ...prev, roleIds }))}
+            isSuperAdminViewer={isSuperAdminViewer}
+            disabled={rolesQuery.isLoading}
+          />
         </div>
-      )}
+      </AdminFormSheet>
 
-      {resetTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setResetTarget(null)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4">
-            <h3 className="font-bold text-foreground"><Tx>重置密码</Tx></h3>
-            <p className="text-sm text-muted-foreground">为 {resetTarget.nickname || resetTarget.phone} 设置新密码</p>
-            <input placeholder="新密码（至少8位，含大小写和数字）" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
-            <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setResetTarget(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
-              <button type="button" onClick={handleReset} disabled={!isStrongAdminPassword(newPassword)} className="rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"><Tx>确认重置</Tx></button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AdminFormSheet
+        open={!!resetTarget}
+        onOpenChange={(open) => {
+          if (!open) {
+            setResetTarget(null);
+            setNewPassword("");
+          }
+        }}
+        title={<Tx>重置密码</Tx>}
+        description={resetTarget ? `为 ${resetTarget.nickname || resetTarget.phone} 设置新密码` : undefined}
+        submitText="确认重置"
+        submitDisabled={!isStrongAdminPassword(newPassword)}
+        onSubmit={handleReset}
+        size="sm"
+      >
+        <input placeholder="新密码（至少8位，含大小写和数字）" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold" />
+      </AdminFormSheet>
 
-      {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDelete(null)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4 text-center">
-            <AlertTriangle size={40} className={`mx-auto ${THEME_TEXT_DANGER}`} />
-            <h3 className="font-bold text-foreground"><Tx>确认删除管理员</Tx></h3>
-            <p className="text-sm text-muted-foreground">将移除 {confirmDelete.nickname || confirmDelete.phone} 的管理员权限。</p>
-            <div className="flex justify-center gap-3">
-              <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
-              <button type="button" onClick={handleDelete} className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${THEME_BTN_DANGER_SOLID}`}><Tx>确认删除</Tx></button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {securityTarget && (
+      {securityTarget ? (
         <AdminSecurityDialog
           target={securityTarget}
-          onClose={() => setSecurityTarget(null)}
+          open
+          onOpenChange={(open) => !open && setSecurityTarget(null)}
           onChanged={() => void invalidateAccounts()}
         />
-      )}
+      ) : null}
     </div>
   );
 }
 
 function AdminSecurityDialog({
   target,
-  onClose,
+  open,
+  onOpenChange,
   onChanged,
 }: {
   target: RbacAdminUserRow;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onChanged: () => void;
 }) {
   const queryClient = useQueryClient();
@@ -487,21 +480,19 @@ function AdminSecurityDialog({
     || revokeDeviceMutation.isPending;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-2xl theme-rounded bg-[var(--theme-surface)] p-5 theme-shadow">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="flex items-center gap-2 text-base font-bold text-foreground">
-              <ShieldCheck size={18} />
-              员工安全设置
-            </h3>
-            <p className="mt-1 text-xs text-muted-foreground">{target.nickname || target.phone} · {target.phone}</p>
-          </div>
-          <button type="button" className="rounded border border-border p-1.5 text-muted-foreground hover:bg-secondary" onClick={onClose} title="关闭">
-            <X size={16} />
-          </button>
-        </div>
-
+    <AdminResponsiveSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title={
+        <span className="flex items-center gap-2">
+          <ShieldCheck size={18} />
+          员工安全设置
+        </span>
+      }
+      description={`${target.nickname || target.phone} · ${target.phone}`}
+      size="xl"
+      height="85vh"
+    >
         {securityQuery.isLoading ? (
           <div className="mt-5 rounded-lg border border-border bg-secondary/40 p-4 text-sm text-muted-foreground">正在加载安全状态...</div>
         ) : securityQuery.isError ? (
@@ -600,8 +591,7 @@ function AdminSecurityDialog({
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </AdminResponsiveSheet>
   );
 }
 

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Download, FileSpreadsheet, MousePointerClick, Timer, TrendingUp, Users, X } from "lucide-react";
+import { Download, FileSpreadsheet, MousePointerClick, Timer, TrendingUp, Users } from "lucide-react";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip as ChartTooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import { exportTrafficAnalysisCsv, fetchTrafficAnalysisReport } from "@/services
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { adminTableClassName, adminTdClassName, adminThClassName } from "@/utils/adminTableClasses";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 
 type Summary = {
   pv: number;
@@ -442,32 +443,25 @@ export default function AdminTrafficAnalysisReport() {
         ]} />
       </div>
 
-      {drawer ? (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/20" onClick={() => setDrawer(null)}>
-          <aside
-            className="h-full w-full max-w-md overflow-auto border-l border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs text-[var(--theme-text-muted)]">{drawer.title}</p>
-                <h3 className="text-lg font-bold text-[var(--theme-text)]">明细</h3>
+      <AdminResponsiveSheet
+        open={!!drawer}
+        onOpenChange={(open) => !open && setDrawer(null)}
+        title="明细"
+        description={drawer?.title}
+        size="md"
+        height="70vh"
+      >
+        {drawer ? (
+          <div className="space-y-2">
+            {Object.entries(drawer.row).map(([key, value]) => (
+              <div key={key} className="rounded-xl border border-[var(--theme-border)] p-3">
+                <p className="text-xs text-[var(--theme-text-muted)]">{labelField(key)}</p>
+                <p className="mt-1 break-all text-sm font-medium text-[var(--theme-text)]">{labelValue(key, value)}</p>
               </div>
-              <button type="button" onClick={() => setDrawer(null)} className="rounded-full p-2 text-[var(--theme-text-muted)] hover:bg-[var(--theme-primary-soft)] hover:text-[var(--theme-text)]">
-                <X size={18} />
-              </button>
-            </div>
-            <div className="space-y-2">
-              {Object.entries(drawer.row).map(([key, value]) => (
-                <div key={key} className="rounded-xl border border-[var(--theme-border)] p-3">
-                  <p className="text-xs text-[var(--theme-text-muted)]">{labelField(key)}</p>
-                  <p className="mt-1 break-all text-sm font-medium text-[var(--theme-text)]">{labelValue(key, value)}</p>
-                </div>
-              ))}
-            </div>
-          </aside>
-        </div>
-      ) : null}
+            ))}
+          </div>
+        ) : null}
+      </AdminResponsiveSheet>
     </div>
   );
 }

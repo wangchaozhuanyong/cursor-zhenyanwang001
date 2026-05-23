@@ -33,13 +33,6 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "已取消",
 };
 
-const TYPE_LABELS: Record<string, string> = {
-  refund: "仅退款",
-  return_refund: "退货退款",
-  exchange: "换货",
-  repair: "维修",
-};
-
 function money(value: unknown) {
   return `RM ${Number(value || 0).toFixed(2)}`;
 }
@@ -274,7 +267,7 @@ export default function AdminReturns() {
                           disabled={approveMutation.isPending || rejectMutation.isPending}
                           className="rounded-lg bg-[var(--theme-price)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                         >
-                          提交处理
+                          <Tx>提交处理</Tx>
                         </button>
                       </div>
                     </div>

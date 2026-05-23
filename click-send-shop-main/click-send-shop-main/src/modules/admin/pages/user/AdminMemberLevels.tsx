@@ -48,20 +48,19 @@ function toPayload(draft: Draft): MemberLevelPayload {
   };
 }
 
-function validateDraft(draft: Draft) {
-  const payload = toPayload(draft);
-  if (!payload.name) return "等级名称不能为空";
-  if (payload.min_spent < 0) return "累计消费不能小于 0";
-  if (payload.min_orders < 0) return "累计订单不能小于 0";
-  if (payload.discount_rate <= 0 || payload.discount_rate > 1) return "折扣率必须在 0.01 - 1 之间";
-  if (payload.points_multiplier < 0 || payload.points_multiplier > 10) return "积分倍率必须在 0 - 10 之间";
-  if (!Number.isInteger(payload.sort_order)) return "排序值必须为整数";
-  if (payload.is_default && !payload.enabled) return "默认等级必须启用";
-  return "";
-}
-
 export default function AdminMemberLevels() {
   const { tText } = useAdminT();
+  const validateDraft = (draft: Draft) => {
+    const payload = toPayload(draft);
+    if (!payload.name) return tText("等级名称不能为空");
+    if (payload.min_spent < 0) return tText("累计消费不能小于 0");
+    if (payload.min_orders < 0) return tText("累计订单不能小于 0");
+    if (payload.discount_rate <= 0 || payload.discount_rate > 1) return tText("折扣率必须在 0.01 - 1 之间");
+    if (payload.points_multiplier < 0 || payload.points_multiplier > 10) return tText("积分倍率必须在 0 - 10 之间");
+    if (!Number.isInteger(payload.sort_order)) return tText("排序值必须为整数");
+    if (payload.is_default && !payload.enabled) return tText("默认等级必须启用");
+    return "";
+  };
   const queryClient = useQueryClient();
   const { confirm } = useAdminConfirm();
   const [levels, setLevels] = useState<MemberLevel[]>([]);
@@ -91,11 +90,11 @@ export default function AdminMemberLevels() {
     onSuccess: (result, force) => {
       toast.success(
         force
-          ? `强制重算完成：${result?.changed || 0}/${result?.total || 0}`
-          : `重算完成：${result?.changed || 0}/${result?.total || 0}，跳过锁定 ${result?.skippedLocked || 0}`,
+          ? tText(`强制重算完成：${result?.changed || 0}/${result?.total || 0}`)
+          : tText(`重算完成：${result?.changed || 0}/${result?.total || 0}，跳过锁定 ${result?.skippedLocked || 0}`),
       );
     },
-    onError: (error) => toast.error(toastErrorMessage(error, "重算失败")),
+    onError: (error) => toast.error(toastErrorMessage(error, tText("重算失败"))),
   });
 
   const updateLocal = (id: string, patch: Partial<MemberLevel>) => {
@@ -115,7 +114,7 @@ export default function AdminMemberLevels() {
             state={recalculateMutation.isPending ? "loading" : "normal"}
             onClick={() => recalculateMutation.mutate(false)}
           >
-            跳过锁定重算
+            <Tx>跳过锁定重算</Tx>
           </LoadingButton>
           <LoadingButton
             type="button"
@@ -123,8 +122,8 @@ export default function AdminMemberLevels() {
             state={recalculateMutation.isPending ? "loading" : "normal"}
             onClick={() => {
               confirm({ title: tText("确认强制重算"),
-                description: "强制重算会覆盖管理员手动指定等级，确认继续？",
-                confirmText: "继续重算",
+                description: tText("强制重算会覆盖管理员手动指定等级，确认继续？"),
+                confirmText: tText("继续重算"),
                 danger: true,
                 onConfirm: async () => {
                   recalculateMutation.mutate(true);
@@ -132,7 +131,7 @@ export default function AdminMemberLevels() {
               });
             }}
           >
-            强制重算全部
+            <Tx>强制重算全部</Tx>
           </LoadingButton>
         </div>
       </div>
@@ -169,13 +168,13 @@ export default function AdminMemberLevels() {
               await invalidateLevels();
               toast.success(tText("已创建"));
             } catch (e) {
-              toast.error(toastErrorMessage(e, "创建失败"));
+              toast.error(toastErrorMessage(e, tText("创建失败")));
             } finally {
               setSavingId(null);
             }
           }}
         >
-          新增
+          <Tx>新增</Tx>
         </LoadingButton>
       </section>
 
@@ -210,13 +209,13 @@ export default function AdminMemberLevels() {
                   await invalidateLevels();
                   toast.success(tText("已保存"));
                 } catch (e) {
-                  toast.error(toastErrorMessage(e, "保存失败"));
+                  toast.error(toastErrorMessage(e, tText("保存失败")));
                 } finally {
                   setSavingId(null);
                 }
               }}
             >
-              保存
+              <Tx>保存</Tx>
             </LoadingButton>
             <button
               type="button"
@@ -225,7 +224,7 @@ export default function AdminMemberLevels() {
               className={`inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border px-3 text-sm disabled:opacity-40 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER}`}
             >
               <Trash2 size={15} />
-              删除
+              <Tx>删除</Tx>
             </button>
           </div>
         </div>
@@ -236,8 +235,8 @@ export default function AdminMemberLevels() {
         onOpenChange={(open) => !open && setDeleteTarget(null)}
         danger
         title={tText("删除会员等级")}
-        description={deleteTarget ? `确定删除 ${deleteTarget.name}？` : ""}
-        confirmText="删除"
+        description={deleteTarget ? tText(`确定删除 ${deleteTarget.name}？`) : ""}
+        confirmText={tText("删除")}
         onConfirm={async () => {
           if (!deleteTarget) return;
           setSavingId(deleteTarget.id);
@@ -247,7 +246,7 @@ export default function AdminMemberLevels() {
             toast.success(tText("已删除"));
             setDeleteTarget(null);
           } catch (e) {
-            toast.error(toastErrorMessage(e, "删除失败"));
+            toast.error(toastErrorMessage(e, tText("删除失败")));
           } finally {
             setSavingId(null);
           }

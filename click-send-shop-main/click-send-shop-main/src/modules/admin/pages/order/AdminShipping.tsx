@@ -53,14 +53,14 @@ export default function AdminShipping() {
           enabled: true,
           isDefault: makeDefault,
         });
-        toast.success(makeDefault ? "运费模板已创建并设为默认生效" : "运费模板已创建，可在列表中设为默认生效");
+        toast.success(makeDefault ? tText("运费模板已创建并设为默认生效") : tText("运费模板已创建，可在列表中设为默认生效"));
       }
       setShowForm(false);
       setEditing(null);
       setForm({ name: "", regions: "", baseFee: 0, freeAbove: 0, extraPerKg: 0 });
       await invalidateShipping();
     } catch (e) {
-      toast.error(toastErrorMessage(e, "保存失败"));
+      toast.error(toastErrorMessage(e, tText("保存失败")));
     } finally {
       setSaving(false);
     }
@@ -78,7 +78,7 @@ export default function AdminShipping() {
       await invalidateShipping();
       toast.success(tText("已删除"));
     } catch (e) {
-      toast.error(toastErrorMessage(e, "删除失败"));
+      toast.error(toastErrorMessage(e, tText("删除失败")));
     }
   };
 
@@ -88,9 +88,9 @@ export default function AdminShipping() {
     try {
       await shippingService.updateTemplate(id, { isDefault: true });
       await invalidateShipping();
-      toast.success(`「${t.name}」已设为默认生效，其他模板已自动停用`);
+      toast.success(tText(`「${t.name}」已设为默认生效，其他模板已自动停用`));
     } catch (e) {
-      toast.error(toastErrorMessage(e, "操作失败"));
+      toast.error(toastErrorMessage(e, tText("操作失败")));
     }
   };
 
@@ -137,7 +137,7 @@ export default function AdminShipping() {
                 <h3 className="font-bold text-foreground">{t.name}</h3>
               </div>
               <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${t.isDefault ? THEME_BADGE_SUCCESS : THEME_BADGE_MUTED}`}>
-                {t.isDefault ? "默认生效" : "未生效"}
+                {t.isDefault ? tText("默认生效") : tText("未生效")}
               </span>
             </div>
             <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -174,18 +174,18 @@ export default function AdminShipping() {
                     type="button"
                     onClick={() =>
                       confirm({ title: tText("设为默认生效"),
-                        description: `将「${t.name}」设为默认运费模板？当前默认模板将自动停用。`,
-                        confirmText: "设为默认",
+                        description: tText(`将「${t.name}」设为默认运费模板？当前默认模板将自动停用。`),
+                        confirmText: tText("设为默认"),
                         onConfirm: () => handleSetDefault(t.id),
                       })
                     }
                     className="flex-1 rounded-xl border border-gold/40 bg-gold/10 py-2 text-xs font-semibold text-theme-price hover:bg-gold/20"
                   >
-                    设为默认生效
+                    <Tx>设为默认生效</Tx>
                   </button>
                 ) : (
                   <span className="flex flex-1 items-center justify-center rounded-xl border border-border bg-secondary/50 py-2 text-xs text-muted-foreground">
-                    当前默认
+                    <Tx>当前默认</Tx>
                   </span>
                 )}
               </div>
@@ -200,7 +200,7 @@ export default function AdminShipping() {
       <AdminResponsiveSheet
         open={showForm}
         onOpenChange={setShowForm}
-        title={editing ? "编辑运费模板" : "新建运费模板"}
+        title={editing ? tText("编辑运费模板") : tText("新建运费模板")}
         size="sm"
       >
         <div className="space-y-4">
@@ -216,8 +216,8 @@ export default function AdminShipping() {
               type="button"
               variant="gold"
               state={saving ? "loading" : "normal"}
-              loadingText="保存中..."
-              onClick={() => adminConfirmSave(confirm, editing ? "运费模板修改" : "新运费模板", () => handleSave())}
+              loadingText={tText("保存中...")}
+              onClick={() => adminConfirmSave(confirm, editing ? tText("运费模板修改") : tText("新运费模板"), () => handleSave())}
               className="w-full rounded-xl py-3 text-sm font-bold"
             >
               <Tx>保存</Tx>

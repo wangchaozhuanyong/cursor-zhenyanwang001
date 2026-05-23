@@ -45,7 +45,7 @@
   {
     "id": "haute_blanc",
     "name": "高定流白",
-    "description": "黑白高级基调搭配清晰商品卡边界与左对齐信息层级，适合深色商品图的全品类卖货商城，兼顾质感与转化。",
+    "description": "黑白高级基调配合清晰卡片边界与左对齐商品信息，减弱空泛留白，适合深色商品图的全品类卖货商城。",
     "sceneTag": "premium",
     "clientEnabled": true,
     "config": {
@@ -260,7 +260,7 @@
   {
     "id": "aetherial_blanc",
     "name": "无界谧白·空间建构",
-    "description": "干净白底与孔雀石绿主色，配合饱满商品图与清晰卡壳边界，适合强调品质感与上新节奏的全品类商城。",
+    "description": "干净白底与孔雀石绿主色，1:1 饱满商品图与清晰卡片边界，强调品质感与上新转化，适合全品类卖货商城。",
     "sceneTag": "premium",
     "clientEnabled": true,
     "config": {
@@ -295,7 +295,7 @@
       "couponStyle": "minimal",
       "memberCardStyle": "light",
       "categoryIconStyle": "soft",
-      "motionLevel": "rich",
+      "motionLevel": "soft",
       "density": "comfortable",
       "adminThemeMode": "fixed"
     }
@@ -303,7 +303,7 @@
   {
     "id": "organic_sandstone",
     "name": "质朴之境·原生砂岩",
-    "description": "温润大地色系与清晰商品卡结构，适合全品类卖货商城；在高级感与价格可读性之间取得平衡，推荐作为默认商城皮肤。",
+    "description": "温润大地色系与清晰商品卡结构，兼顾高级感与价格可读性，适合作为默认全品类卖货商城皮肤。",
     "sceneTag": "mall",
     "clientEnabled": true,
     "config": {

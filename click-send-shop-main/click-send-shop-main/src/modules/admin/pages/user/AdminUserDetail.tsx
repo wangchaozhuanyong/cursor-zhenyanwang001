@@ -24,6 +24,7 @@ import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useGoBack } from "@/hooks/useGoBack";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import { AdminInputSheet } from "@/modules/admin/components/AdminInputSheet";
 import type { MemberLevel, UserEditForm, UserProfile, UserStatusOverview, UserTag } from "@/types/user";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 
@@ -43,6 +44,13 @@ export default function AdminUserDetail() {
   const hasMemberLevelPermission = useAdminPermissionStore((s) => s.can("member_level.manage"));
   const canManageMemberLevel = capabilities.memberLevelEnabled && hasMemberLevelPermission;
   const { confirm } = useAdminConfirm();
+
+  type ReasonPrompt =
+    | { kind: "status"; status: "disabled" | "blacklisted" }
+    | { kind: "restriction"; type: "order" | "coupon" | "comment"; enabled: boolean }
+    | { kind: "memberLevel"; levelId: string };
+
+  const [reasonPrompt, setReasonPrompt] = useState<ReasonPrompt | null>(null);
 
   const detailQuery = useQuery({
     queryKey: adminQueryKeys.userDetail(id),
@@ -91,42 +99,45 @@ export default function AdminUserDetail() {
     });
   };
 
-  const doStatus = async (status: "normal" | "disabled" | "blacklisted") => {
+  const applyAccountStatus = async (status: "normal" | "disabled" | "blacklisted", reason: string) => {
     if (!id) return;
-    const needReason = status === "disabled" || status === "blacklisted";
-    const reason = needReason ? window.prompt("请输入操作原因（必填）", "")?.trim() || "" : "";
-    if (needReason && !reason) {
-      toast.error("请填写操作原因");
-      return;
-    }
-    try {
-      await updateUserAccountStatus(id, status, reason);
-      await invalidateUserDetail();
-      toast.success(status === "normal" ? "账号已恢复正常" : status === "disabled" ? "已禁用登录（会话已失效）" : "已加入黑名单");
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "状态更新失败"));
-    }
+    await updateUserAccountStatus(id, status, reason);
+    await invalidateUserDetail();
+    toast.success(
+      status === "normal" ? "账号已恢复正常" : status === "disabled" ? "已禁用登录（会话已失效）" : "已加入黑名单",
+    );
   };
 
-  const doRestriction = async (type: "order" | "coupon" | "comment", enabled: boolean) => {
+  const doStatus = (status: "normal" | "disabled" | "blacklisted") => {
     if (!id) return;
-    const reason = window.prompt(`请输入${enabled ? "开启" : "取消"}限制原因（必填）`, "")?.trim() || "";
-    if (!reason) {
-      toast.error("请填写操作原因");
+    if (status === "disabled" || status === "blacklisted") {
+      setReasonPrompt({ kind: "status", status });
       return;
     }
-    try {
-      await updateUserRestrictions(id, {
-        reason,
-        orderRestricted: type === "order" ? enabled : undefined,
-        couponRestricted: type === "coupon" ? enabled : undefined,
-        commentRestricted: type === "comment" ? enabled : undefined,
-      });
-      await invalidateUserDetail();
-      toast.success(`${enabled ? "已开启" : "已取消"}${type === "order" ? "下单" : type === "coupon" ? "领券" : "评论"}限制`);
-    } catch (e) {
-      toast.error(toastErrorMessage(e, "限制更新失败"));
-    }
+    void applyAccountStatus(status, "").catch((e) => {
+      toast.error(toastErrorMessage(e, "状态更新失败"));
+    });
+  };
+
+  const applyRestriction = async (
+    type: "order" | "coupon" | "comment",
+    enabled: boolean,
+    reason: string,
+  ) => {
+    if (!id) return;
+    await updateUserRestrictions(id, {
+      reason,
+      orderRestricted: type === "order" ? enabled : undefined,
+      couponRestricted: type === "coupon" ? enabled : undefined,
+      commentRestricted: type === "comment" ? enabled : undefined,
+    });
+    await invalidateUserDetail();
+    toast.success(`${enabled ? "已开启" : "已取消"}${type === "order" ? "下单" : type === "coupon" ? "领券" : "评论"}限制`);
+  };
+
+  const doRestriction = (type: "order" | "coupon" | "comment", enabled: boolean) => {
+    if (!id) return;
+    setReasonPrompt({ kind: "restriction", type, enabled });
   };
 
   const saveProfile = async () => {
@@ -245,15 +256,10 @@ export default function AdminUserDetail() {
                 <select
                   className="min-w-[12rem] rounded-lg border border-border bg-background px-2.5 py-2 text-sm"
                   value={user.member_level_id || ""}
-                  onChange={async (e) => {
-                    const reason = window.prompt("请输入手动指定原因（可选）", "")?.trim() || "";
-                    try {
-                      await assignUserMemberLevel(id, e.target.value, reason);
-                      await invalidateUserDetail();
-                      toast.success("会员等级已手动指定并锁定");
-                    } catch (err) {
-                      toast.error(toastErrorMessage(err, "更新失败"));
-                    }
+                  onChange={(e) => {
+                    const levelId = e.target.value;
+                    if (levelId === (user.member_level_id || "")) return;
+                    setReasonPrompt({ kind: "memberLevel", levelId });
                   }}
                 >
                   <option value="">未设置</option>
@@ -354,6 +360,51 @@ export default function AdminUserDetail() {
           </div>
         </div>
       )}
+
+      <AdminInputSheet
+        open={reasonPrompt !== null}
+        onOpenChange={(next) => {
+          if (!next) setReasonPrompt(null);
+        }}
+        title={
+          reasonPrompt?.kind === "status"
+            ? reasonPrompt.status === "disabled"
+              ? "禁用登录"
+              : "加入黑名单"
+            : reasonPrompt?.kind === "restriction"
+              ? `${reasonPrompt.enabled ? "开启" : "取消"}${
+                  reasonPrompt.type === "order" ? "下单" : reasonPrompt.type === "coupon" ? "领券" : "评论"
+                }限制`
+              : "手动指定会员等级"
+        }
+        description={
+          reasonPrompt?.kind === "memberLevel"
+            ? "可选填写原因，确认后将锁定为该等级。"
+            : "请填写操作原因，将记录到操作日志。"
+        }
+        placeholder={
+          reasonPrompt?.kind === "memberLevel" ? "手动指定原因（可选）" : "请输入操作原因"
+        }
+        required={reasonPrompt?.kind !== "memberLevel"}
+        submitText="确认"
+        onSubmit={async (reason) => {
+          if (!reasonPrompt || !id) return;
+          try {
+            if (reasonPrompt.kind === "status") {
+              await applyAccountStatus(reasonPrompt.status, reason);
+            } else if (reasonPrompt.kind === "restriction") {
+              await applyRestriction(reasonPrompt.type, reasonPrompt.enabled, reason);
+            } else {
+              await assignUserMemberLevel(id, reasonPrompt.levelId, reason);
+              await invalidateUserDetail();
+              toast.success("会员等级已手动指定并锁定");
+            }
+          } catch (e) {
+            toast.error(toastErrorMessage(e, "操作失败"));
+            throw e;
+          }
+        }}
+      />
     </div>
   );
 }

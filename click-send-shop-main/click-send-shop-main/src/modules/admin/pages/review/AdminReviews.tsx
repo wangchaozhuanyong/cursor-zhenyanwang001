@@ -24,6 +24,8 @@ import {
 } from "@/utils/adminReviewFilters";
 import { Tx } from "@/components/admin/AdminText";
 import { adminConfirmDelete, useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
+import { AdminFormSheet } from "@/modules/admin/components/AdminFormSheet";
+import { AdminResponsiveSheet } from "@/modules/admin/components/AdminResponsiveSheet";
 import {
   THEME_BADGE_DANGER,
   THEME_BADGE_MUTED,
@@ -38,7 +40,6 @@ import {
   THEME_HOVER_TEXT_DANGER,
   THEME_BORDER_DANGER_SOFT,
   THEME_HOVER_BG_DANGER,
-  THEME_BTN_DANGER_SOLID,
 } from "@/utils/themeVisuals";
 
 const STATUS_OPTIONS = [
@@ -119,7 +120,6 @@ export default function AdminReviews() {
   const [selected, setSelected] = useState<string[]>([]);
   const [replyTarget, setReplyTarget] = useState<AdminReview | null>(null);
   const [replyText, setReplyText] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState<{ id: string; permanent: boolean } | null>(null);
   const [detail, setDetail] = useState<ReviewDetailPayload | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -248,12 +248,19 @@ export default function AdminReviews() {
   };
 
   const handlePermanentDelete = async (id: string) => {
-    try {
-      await reviewService.permanentDeleteReview(id);
-      toast.success("已彻底删除");
-      setConfirmDelete(null);
-      void invalidateReviews();
-    } catch (e) { toast.error(toastErrorMessage(e, "删除失败")); }
+    await reviewService.permanentDeleteReview(id);
+    toast.success("已彻底删除");
+    void invalidateReviews();
+  };
+
+  const confirmPermanentDelete = (id: string) => {
+    confirm({
+      title: "确认彻底删除",
+      description: "此操作不可恢复，评论数据将被永久删除。",
+      confirmText: "确认删除",
+      danger: true,
+      onConfirm: () => handlePermanentDelete(id),
+    });
   };
 
   const handleReply = async () => {
@@ -429,7 +436,7 @@ export default function AdminReviews() {
                             <button type="button" onClick={() => handleRestore(r.id)} className={`touch-manipulation min-h-[40px] rounded-lg border border-[var(--theme-border)] px-3 py-1.5 text-xs ${THEME_TEXT_SUCCESS_SOFT} hover:bg-[var(--theme-bg)]`}>
                               <RotateCcw size={12} className="mr-1 inline" /><Tx>恢复</Tx>
                             </button>
-                            <button type="button" onClick={() => setConfirmDelete({ id: r.id, permanent: true })} className={`touch-manipulation min-h-[40px] rounded-lg border px-3 py-1.5 text-xs ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`}><Tx>彻底删除</Tx></button>
+                            <button type="button" onClick={() => confirmPermanentDelete(r.id)} className={`touch-manipulation min-h-[40px] rounded-lg border px-3 py-1.5 text-xs ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER} ${THEME_HOVER_BG_DANGER}`}><Tx>彻底删除</Tx></button>
                           </PermissionGate>
                         )}
                       </div>
@@ -533,7 +540,7 @@ export default function AdminReviews() {
                     {r.status === "deleted" && (
                       <PermissionGate anyOf={REVIEW_DELETE}>
                         <button type="button" onClick={() => handleRestore(r.id)} className={`touch-manipulation rounded-lg border border-[var(--theme-border)] p-1.5 ${THEME_TEXT_SUCCESS_SOFT}`}><RotateCcw size={14} /></button>
-                        <button type="button" onClick={() => setConfirmDelete({ id: r.id, permanent: true })} className={`touch-manipulation rounded-lg border p-1.5 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER}`}><Trash2 size={14} /></button>
+                        <button type="button" onClick={() => confirmPermanentDelete(r.id)} className={`touch-manipulation rounded-lg border p-1.5 ${THEME_BORDER_DANGER_SOFT} ${THEME_TEXT_DANGER}`}><Trash2 size={14} /></button>
                       </PermissionGate>
                     )}
                   </div>
@@ -548,75 +555,84 @@ export default function AdminReviews() {
       </div>
 
 
-      {(detail || detailLoading) && (
-        <AdminReviewDetailDialog
-          detail={detail}
-          loading={detailLoading}
-          onClose={() => setDetail(null)}
-          previewImage={setImagePreview}
+      <AdminReviewDetailDialog
+        open={Boolean(detail || detailLoading)}
+        detail={detail}
+        loading={detailLoading}
+        onOpenChange={(next) => {
+          if (!next) setDetail(null);
+        }}
+        previewImage={setImagePreview}
+      />
+
+      <AdminResponsiveSheet
+        open={Boolean(imagePreview)}
+        onOpenChange={(next) => {
+          if (!next) setImagePreview(null);
+        }}
+        title="图片预览"
+        size="xl"
+      >
+        {imagePreview ? (
+          <img src={imagePreview} alt="" className="mx-auto max-h-[70vh] w-auto max-w-full rounded-lg object-contain" />
+        ) : null}
+      </AdminResponsiveSheet>
+
+      <AdminFormSheet
+        open={Boolean(complaintTarget)}
+        onOpenChange={(next) => {
+          if (!next) setComplaintTarget(null);
+        }}
+        title={<Tx>差评处理</Tx>}
+        submitText="保存"
+        onSubmit={handleSaveComplaint}
+        size="sm"
+      >
+        <select
+          value={complaintForm.status}
+          onChange={(e) => setComplaintForm((f) => ({ ...f, status: e.target.value as ComplaintStatus }))}
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+        >
+          {COMPLAINT_OPTIONS.filter((o) => o.value).map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        <textarea
+          value={complaintForm.note}
+          onChange={(e) => setComplaintForm((f) => ({ ...f, note: e.target.value }))}
+          placeholder="内部备注..."
+          rows={3}
+          className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm"
         />
-      )}
+      </AdminFormSheet>
 
-      {imagePreview && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4" onClick={() => setImagePreview(null)}>
-          <img src={imagePreview} alt="" className="max-h-[90vh] max-w-full rounded-lg object-contain" onClick={(e) => e.stopPropagation()} />
-        </div>
-      )}
-
-      {complaintTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setComplaintTarget(null)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl space-y-4">
-            <h3 className="font-bold text-foreground"><Tx>差评处理</Tx></h3>
-            <select value={complaintForm.status} onChange={(e) => setComplaintForm((f) => ({ ...f, status: e.target.value as ComplaintStatus }))} className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm">
-              {COMPLAINT_OPTIONS.filter((o) => o.value).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-            <textarea value={complaintForm.note} onChange={(e) => setComplaintForm((f) => ({ ...f, note: e.target.value }))} placeholder="内部备注..." rows={3} className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm resize-none" />
-            <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setComplaintTarget(null)} className="rounded-xl border border-border px-4 py-2 text-sm"><Tx>取消</Tx></button>
-              <button type="button" onClick={handleSaveComplaint} className="rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-primary-foreground"><Tx>保存</Tx></button>
-            </div>
+      <AdminFormSheet
+        open={Boolean(replyTarget)}
+        onOpenChange={(next) => {
+          if (!next) setReplyTarget(null);
+        }}
+        title={<Tx>官方回复</Tx>}
+        submitText="提交回复"
+        submitDisabled={!replyText.trim()}
+        onSubmit={handleReply}
+        size="sm"
+      >
+        {replyTarget ? (
+          <div className="rounded-lg bg-secondary/50 p-3 text-sm text-muted-foreground">
+            <p className="mb-1 text-xs font-medium text-foreground">
+              {replyTarget.nickname} ({replyTarget.rating}星)
+            </p>
+            <p>{replyTarget.content}</p>
           </div>
-        </div>
-      )}
-
-      {/* Reply modal */}
-      {replyTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setReplyTarget(null)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl space-y-4">
-            <h3 className="font-bold text-foreground"><Tx>官方回复</Tx></h3>
-            <div className="rounded-lg bg-secondary/50 p-3 text-sm text-muted-foreground">
-              <p className="text-xs font-medium text-foreground mb-1">{replyTarget.nickname} ({replyTarget.rating}星)</p>
-              <p>{replyTarget.content}</p>
-            </div>
-            <textarea
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              placeholder="输入官方回复..."
-              rows={4}
-              className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:border-gold resize-none"
-            />
-            <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setReplyTarget(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
-              <button type="button" onClick={handleReply} disabled={!replyText.trim()} className="rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"><Tx>提交回复</Tx></button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Permanent delete confirm */}
-      {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setConfirmDelete(null)}>
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl space-y-4 text-center">
-            <AlertTriangle size={40} className={`mx-auto ${THEME_TEXT_DANGER}`} />
-            <h3 className="font-bold text-foreground"><Tx>确认彻底删除</Tx></h3>
-            <p className="text-sm text-muted-foreground"><Tx>此操作不可恢复，评论数据将被永久删除。</Tx></p>
-            <div className="flex justify-center gap-3">
-              <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-xl border border-border px-4 py-2.5 text-sm hover:bg-secondary"><Tx>取消</Tx></button>
-              <button type="button" onClick={() => handlePermanentDelete(confirmDelete.id)} className={`rounded-xl px-4 py-2.5 text-sm font-semibold ${THEME_BTN_DANGER_SOLID}`}><Tx>确认删除</Tx></button>
-            </div>
-          </div>
-        </div>
-      )}
+        ) : null}
+        <textarea
+          value={replyText}
+          onChange={(e) => setReplyText(e.target.value)}
+          placeholder="输入官方回复..."
+          rows={4}
+          className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
+        />
+      </AdminFormSheet>
     </div>
   );
 }

@@ -1,0 +1,94 @@
+import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
+import { AdminFormSheet } from "./AdminFormSheet";
+
+export type AdminInputSheetProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: ReactNode;
+  description?: ReactNode;
+  placeholder?: string;
+  submitText?: string;
+  cancelText?: string;
+  required?: boolean;
+  multiline?: boolean;
+  rows?: number;
+  defaultValue?: string;
+  onSubmit: (value: string) => void | Promise<void>;
+};
+
+/** 管理端文本输入弹层（替代 window.prompt） */
+export function AdminInputSheet({
+  open,
+  onOpenChange,
+  title,
+  description,
+  placeholder = "请输入",
+  submitText = "确认",
+  cancelText = "取消",
+  required = true,
+  multiline = true,
+  rows = 3,
+  defaultValue = "",
+  onSubmit,
+}: AdminInputSheetProps) {
+  const [value, setValue] = useState(defaultValue);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setValue(defaultValue);
+      setError(null);
+    }
+  }, [open, defaultValue]);
+
+  const handleSubmit = async () => {
+    const trimmed = value.trim();
+    if (required && !trimmed) {
+      setError("请填写内容");
+      return;
+    }
+    setError(null);
+    await onSubmit(trimmed);
+  };
+
+  const inputClass =
+    "w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20";
+
+  return (
+    <AdminFormSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title={title}
+      description={description}
+      submitText={submitText}
+      cancelText={cancelText}
+      onSubmit={handleSubmit}
+      size="sm"
+    >
+      {multiline ? (
+        <textarea
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            if (error) setError(null);
+          }}
+          placeholder={placeholder}
+          rows={rows}
+          className={`${inputClass} resize-none`}
+        />
+      ) : (
+        <input
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            if (error) setError(null);
+          }}
+          placeholder={placeholder}
+          className={inputClass}
+        />
+      )}
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+    </AdminFormSheet>
+  );
+}

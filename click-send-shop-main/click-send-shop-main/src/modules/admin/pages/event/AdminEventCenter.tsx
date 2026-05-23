@@ -89,7 +89,7 @@ export default function AdminEventCenter() {
         </div>
         <button type="button" onClick={refresh} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
           <RefreshCw size={16} className={eventsQuery.isFetching ? "animate-spin" : ""} />
-          刷新
+          <Tx>刷新</Tx>
         </button>
       </div>
 
@@ -97,7 +97,7 @@ export default function AdminEventCenter() {
         {metricItems.map(([label, value]) => (
           <div key={label} className="rounded-lg border border-border bg-card px-3 py-2">
             <div className="text-lg font-semibold text-foreground">{value}</div>
-            <div className="text-xs text-muted-foreground">{label}</div>
+            <div className="text-xs text-muted-foreground">{tText(label)}</div>
           </div>
         ))}
       </div>
@@ -110,15 +110,15 @@ export default function AdminEventCenter() {
             className={`rounded-lg px-3 py-2 text-sm ${tab === item.key ? "bg-foreground text-background" : "border border-border text-muted-foreground hover:bg-secondary"}`}
             onClick={() => setTab(item.key)}
           >
-            {item.label}
+            {tText(item.label)}
           </button>
         ))}
         <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">
           <option value=""><Tx>全部分类</Tx></option>
-          {Object.entries(ADMIN_EVENT_CATEGORY_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+          {Object.entries(ADMIN_EVENT_CATEGORY_LABELS).map(([key, label]) => <option key={key} value={key}>{tText(label)}</option>)}
         </select>
         <div className="ml-auto text-sm text-muted-foreground">
-          未读 {summaryQuery.data?.unreadCount || 0} / 未处理 {summaryQuery.data?.unresolvedCount || 0} / P0 {summaryQuery.data?.p0Count || 0}
+          {tText(`未读 ${summaryQuery.data?.unreadCount || 0} / 未处理 ${summaryQuery.data?.unresolvedCount || 0} / P0 ${summaryQuery.data?.p0Count || 0}`)}
         </div>
       </div>
 
@@ -135,13 +135,13 @@ export default function AdminEventCenter() {
             <div><span className={`rounded px-2 py-1 text-xs font-bold ${severityClass(item.severity)}`}>{item.severity}</span></div>
             <div className="flex items-center gap-1 text-muted-foreground">
               {item.category === "security" ? <Shield size={14} className="text-red-600" /> : <AlertTriangle size={14} className="text-amber-600" />}
-              {labelAdminEventCategory(item.category)}
+              {tText(labelAdminEventCategory(item.category))}
             </div>
             <div className="min-w-0">
               <div className="truncate font-medium text-foreground">{item.title}</div>
-              <div className="mt-1 truncate text-xs text-muted-foreground">{formatAdminEventSubtitle(item.message, item.eventType)}</div>
+              <div className="mt-1 truncate text-xs text-muted-foreground">{tText(formatAdminEventSubtitle(item.message, item.eventType))}</div>
             </div>
-            <div className="text-muted-foreground">{labelAdminEventStatus(item.status)}</div>
+            <div className="text-muted-foreground">{tText(labelAdminEventStatus(item.status))}</div>
             <div className="flex flex-wrap gap-1">
               <PermissionGate anyOf={EVENT_VIEW_PERMISSIONS}>
                 <button type="button" className="rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "read" })}><Eye size={13} className="mr-1 inline" /><Tx>已读</Tx></button>

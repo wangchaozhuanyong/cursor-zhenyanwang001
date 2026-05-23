@@ -328,7 +328,7 @@ export default function AdminUsers() {
             aria-label={`选择用户 ${user.nickname || user.phone || user.id}`}
           />
           <div className="min-w-0 flex-1">
-            <motion.div className="flex items-start justify-between gap-2">
+            <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold">{user.nickname || user.phone || user.id}</p>
                 <p className="text-xs text-muted-foreground">{user.phone || "-"}</p>
@@ -622,7 +622,7 @@ export default function AdminUsers() {
                 aria-label={`选择用户 ${user.nickname || user.phone || user.id}`}
               />
               <div className="min-w-0 flex-1">
-                <motion.div className="flex items-start justify-between gap-2">
+                <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">{user.nickname || user.phone || user.id}</p>
                     <p className="text-xs text-muted-foreground">{user.phone || "-"}</p>

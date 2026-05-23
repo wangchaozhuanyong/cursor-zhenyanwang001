@@ -186,12 +186,12 @@ export default function AdminPaymentReconciliations() {
           renderRow={(r) => (
             <>
               <td className="px-3 py-2">{r.reconcile_date}</td>
-              <td className="px-3 py-2">{labelProvider(r.provider)}</td>
-              <td className="px-3 py-2">{r.channel_code ? labelChannelCode(r.channel_code) : "—"}</td>
+              <td className="px-3 py-2">{tText(labelProvider(r.provider))}</td>
+              <td className="px-3 py-2">{r.channel_code ? tText(labelChannelCode(r.channel_code)) : "—"}</td>
               <td className="px-3 py-2">{r.order_count}</td>
               <td className="px-3 py-2">RM {Number(r.success_amount).toFixed(2)}</td>
               <td className="px-3 py-2">RM {Number(r.diff_amount).toFixed(2)}</td>
-              <td className="px-3 py-2">{labelReconciliationStatus(r.status)}</td>
+              <td className="px-3 py-2">{tText(labelReconciliationStatus(r.status))}</td>
             </>
           )}
         />

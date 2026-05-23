@@ -46,7 +46,14 @@ export default function AdminInvites() {
   const loading = listQuery.isLoading && !listQuery.data;
 
   const filterState = useMemo(() => ({ search }), [search]);
-  const filterChips = useMemo(() => buildInviteRecordFilterChips(filterState), [filterState]);
+  const filterChips = useMemo(
+    () => buildInviteRecordFilterChips(filterState).map((chip) => ({ ...chip, label: tText(chip.label) })),
+    [filterState, tText],
+  );
+  const tableHeaders = useMemo(
+    () => ["被邀请人", "手机号", "邀请人", "邀请码", "注册时间", "操作"].map((h) => tText(h)),
+    [tText],
+  );
   const filtersActive = hasActiveInviteRecordFilters(filterState);
   const emptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.invitesFiltered : ADMIN_EMPTY_GUIDES.invites;
 
@@ -91,7 +98,7 @@ export default function AdminInvites() {
           theadClassName="border-b border-border bg-secondary/50"
           thead={(
             <tr>
-              {["被邀请人", "手机号", "邀请人", "邀请码", "注册时间", "操作"].map((h) => (
+              {tableHeaders.map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{h}</th>
               ))}
             </tr>
@@ -157,9 +164,9 @@ export default function AdminInvites() {
                 </PermissionGate>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                <span>邀请人：{inv.inviter_nickname || "-"}</span>
-                <span>邀请码：{inv.parent_invite_code || "-"}</span>
-                <span className="col-span-2">注册时间：{inv.created_at ? formatDateTime(inv.created_at) : "-"}</span>
+                <span>{tText("邀请人")}：{inv.inviter_nickname || "-"}</span>
+                <span>{tText("邀请码")}：{inv.parent_invite_code || "-"}</span>
+                <span className="col-span-2">{tText("注册时间")}：{inv.created_at ? formatDateTime(inv.created_at) : "-"}</span>
               </div>
             </div>
           ))

@@ -14,6 +14,7 @@ function toMoney(value: unknown) {
 }
 
 export default function AdminOrderDetail() {
+  const { tText } = useAdminT();
   const navigate = useNavigate();
   const { id = "" } = useParams();
 
@@ -65,7 +66,7 @@ export default function AdminOrderDetail() {
                 <img src={item.product?.cover_image || ""} alt={item.product?.name || "product"} className="h-14 w-14 rounded object-cover bg-secondary" />
                 <div className="min-w-0 flex-1">
                   <AdminTableCell value={item.product?.name || "-"} fullText={item.product?.name || ""} maxWidth="100%" />
-                  <p className="text-xs text-muted-foreground">{item.variant_name || item.sku_code || "默认规格"}</p>
+                  <p className="text-xs text-muted-foreground">{item.variant_name || item.sku_code || tText("默认规格")}</p>
                   <p className="text-xs text-muted-foreground">{toMoney(item.unit_price || 0)} x {item.qty}</p>
                 </div>
                 <div className="shrink-0 font-semibold">{toMoney(lineTotal)}</div>
@@ -88,8 +89,10 @@ export default function AdminOrderDetail() {
       <div className="rounded-xl border border-border bg-card p-4">
         <h3 className="mb-1 font-semibold"><Tx>利润拆解</Tx></h3>
         <p className="mb-3 text-xs text-muted-foreground">
-          净利润 = 商品毛利 + 运费收入 − 实际物流成本 − 支付手续费
-          {Number(order.refund_amount || 0) > 0 ? "（未在公式中扣减退款，退款见下方）" : ""}
+          <Tx>净利润 = 商品毛利 + 运费收入 − 实际物流成本 − 支付手续费</Tx>
+          {Number(order.refund_amount || 0) > 0 ? (
+            <Tx>（未在公式中扣减退款，退款见下方）</Tx>
+          ) : null}
         </p>
         <div className="space-y-2">
           <div className="flex justify-between"><span className="text-muted-foreground"><Tx>商品成本</Tx></span><span>{toMoney(order.goods_cost_amount)}</span></div>

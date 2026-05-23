@@ -19,21 +19,22 @@ const VERIFY_LABELS: Record<string, string> = { pending: "待验签", success: "
 const RESULT_LABELS: Record<string, string> = { pending: "待处理", success: "处理成功", failed: "处理失败", rejected: "已拒绝", logged: "已记录", refunded: "已退款", partially_refunded: "部分退款" };
 const PROVIDER_LABELS: Record<string, string> = { stripe: "Stripe", manual: "人工", internal: "内部", malaysia_local: "马来西亚本地支付" };
 
-function label(map: Record<string, string>, value: string) {
-  return map[value] || value || "-";
-}
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  payment_success: "支付成功",
+  "payment_intent.succeeded": "Stripe 支付成功",
+  admin_mark_paid: "后台补记支付",
+  reward_wallet_paid: "返现钱包扣款",
+  manual_webhook_received: "手动回调记录",
+  "refund.provider_recorded": "渠道退款记录",
+  "refund.manual_recorded": "人工退款记录",
+};
 
-function labelEventType(type: string) {
-  const map: Record<string, string> = {
-    payment_success: "支付成功",
-    "payment_intent.succeeded": "Stripe 支付成功",
-    admin_mark_paid: "后台补记支付",
-    reward_wallet_paid: "返现钱包扣款",
-    manual_webhook_received: "手动回调记录",
-    "refund.provider_recorded": "渠道退款记录",
-    "refund.manual_recorded": "人工退款记录",
-  };
-  return map[type] || type || "-";
+const TABLE_HEADERS = ["事件", "网关", "支付单", "验签", "处理结果", "错误信息", "创建时间", "操作"] as const;
+
+function localizedMapLabel(map: Record<string, string>, value: string, tText: (zh: string) => string) {
+  const zh = map[value];
+  if (zh) return tText(zh);
+  return value || "-";
 }
 
 export default function AdminPaymentEvents() {
@@ -43,6 +44,17 @@ export default function AdminPaymentEvents() {
   const [pageSize, setPageSize] = useState(20);
   const [provider, setProvider] = useState("");
   const [orderId, setOrderId] = useState("");
+
+  const tableHeaders = useMemo(() => TABLE_HEADERS.map((h) => tText(h)), [tText]);
+  const providerOptions = useMemo(
+    () => Object.entries(PROVIDER_LABELS).map(([value, label]) => ({ value, label: tText(label) })),
+    [tText],
+  );
+
+  const labelEventType = (type: string) => {
+    const zh = EVENT_TYPE_LABELS[type];
+    return zh ? tText(zh) : type || "-";
+  };
 
   const params = useMemo(() => {
     const next: Record<string, string> = { page: String(page), pageSize: String(pageSize) };
@@ -68,7 +80,7 @@ export default function AdminPaymentEvents() {
         queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() }),
       ]);
     },
-    onError: (error) => toast.error(toastErrorMessage(error, "重放事件失败")),
+    onError: (error) => toast.error(toastErrorMessage(error, tText("重放事件失败"))),
   });
 
   const rows = eventsQuery.data?.list || [];
@@ -84,7 +96,7 @@ export default function AdminPaymentEvents() {
           </div>
           <button type="button" onClick={() => void eventsQuery.refetch()} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary">
             <RefreshCw size={16} className={eventsQuery.isFetching ? "animate-spin" : ""} />
-            刷新
+            <Tx>刷新</Tx>
           </button>
         </div>
 
@@ -93,7 +105,7 @@ export default function AdminPaymentEvents() {
         <div className="mb-4 grid gap-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 md:grid-cols-[220px_1fr_auto]">
           <select value={provider} onChange={(e) => { setProvider(e.target.value); setPage(1); }} className="rounded-lg border border-border bg-background px-3 py-2 text-sm">
             <option value=""><Tx>全部网关</Tx></option>
-            {Object.entries(PROVIDER_LABELS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
+            {providerOptions.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
           </select>
           <input value={orderId} onChange={(e) => { setOrderId(e.target.value); setPage(1); }} placeholder={tText("按订单 ID / 支付单 ID 筛选")} className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
           <button type="button" onClick={() => { setProvider(""); setOrderId(""); setPage(1); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>清空筛选</Tx></button>
@@ -106,12 +118,12 @@ export default function AdminPaymentEvents() {
           skeletonRows={8}
           skeletonCols={8}
           emptyIcon={Radio}
-          emptyTitle="暂无支付事件"
-          emptyDescription="当前筛选条件下没有回调或支付事件。"
+          emptyTitle={tText("暂无支付事件")}
+          emptyDescription={tText("当前筛选条件下没有回调或支付事件。")}
           className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
           tableClassName="min-w-[1040px] w-full text-sm"
           theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
-          thead={<tr>{['事件', '网关', '支付单', '验签', '处理结果', '错误信息', '创建时间', '操作'].map((head) => <th key={head} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{head}</th>)}</tr>}
+          thead={<tr>{tableHeaders.map((head) => <th key={head} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{head}</th>)}</tr>}
           footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={setPageSize} />}
           renderRow={(row) => (
             <>
@@ -124,10 +136,10 @@ export default function AdminPaymentEvents() {
                   ]}
                 />
               </td>
-              <td className="px-4 py-3 text-sm text-foreground">{label(PROVIDER_LABELS, row.provider)}</td>
+              <td className="px-4 py-3 text-sm text-foreground">{localizedMapLabel(PROVIDER_LABELS, row.provider, tText)}</td>
               <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{row.payment_order_id || row.order_id || '-'}</td>
-              <td className="px-4 py-3"><span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{label(VERIFY_LABELS, row.verify_status)}</span></td>
-              <td className="px-4 py-3"><span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{label(RESULT_LABELS, row.processing_result)}</span></td>
+              <td className="px-4 py-3"><span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{localizedMapLabel(VERIFY_LABELS, row.verify_status, tText)}</span></td>
+              <td className="px-4 py-3"><span className="rounded-full bg-secondary px-2.5 py-1 text-xs">{localizedMapLabel(RESULT_LABELS, row.processing_result, tText)}</span></td>
               <td className="max-w-[15rem] px-4 py-3 align-middle">
                 <AdminTableCell
                   value={row.error_message || '-'}
@@ -147,4 +159,3 @@ export default function AdminPaymentEvents() {
     </PermissionGate>
   );
 }
-

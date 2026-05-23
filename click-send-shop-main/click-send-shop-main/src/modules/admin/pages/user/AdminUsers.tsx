@@ -45,13 +45,14 @@ function UserTagBadges({ tags }: { tags?: UserTag[] }) {
 }
 
 function UserStatusBadges({ user }: { user: UserProfile }) {
+  const { tText } = useAdminT();
   const accountStatus = String(user.account_status || "normal");
   const items = [
-    accountStatus === "disabled" ? "禁用登录" : null,
-    accountStatus === "blacklisted" ? "黑名单" : null,
-    Number(user.order_restricted || 0) ? "限制下单" : null,
-    Number(user.coupon_restricted || 0) ? "限制领券" : null,
-    Number(user.comment_restricted || 0) ? "限制评论" : null,
+    accountStatus === "disabled" ? tText("禁用登录") : null,
+    accountStatus === "blacklisted" ? tText("黑名单") : null,
+    Number(user.order_restricted || 0) ? tText("限制下单") : null,
+    Number(user.coupon_restricted || 0) ? tText("限制领券") : null,
+    Number(user.comment_restricted || 0) ? tText("限制评论") : null,
   ].filter(Boolean) as string[];
   if (!items.length) return <span className="text-xs text-emerald-700"><Tx>正常</Tx></span>;
   return (
@@ -65,15 +66,15 @@ function UserStatusBadges({ user }: { user: UserProfile }) {
   );
 }
 
-function filterBoundLabel(prefix: string, value: string) {
-  if (value === "1") return `${prefix}：已绑定`;
-  if (value === "0") return `${prefix}：未绑定`;
+function filterBoundLabel(tText: (zh: string) => string, prefix: string, value: string) {
+  if (value === "1") return tText(`${prefix}：已绑定`);
+  if (value === "0") return tText(`${prefix}：未绑定`);
   return "";
 }
 
-function restrictionLabel(prefix: string, value: string) {
-  if (value === "1") return `${prefix}：已限制`;
-  if (value === "0") return `${prefix}：未限制`;
+function restrictionLabel(tText: (zh: string) => string, prefix: string, value: string) {
+  if (value === "1") return tText(`${prefix}：已限制`);
+  if (value === "0") return tText(`${prefix}：未限制`);
   return "";
 }
 
@@ -155,7 +156,7 @@ export default function AdminUsers() {
       toast.success(tText("标签已创建"));
       await invalidateUsers();
     },
-    onError: (error) => toast.error(toastErrorMessage(error, "创建标签失败")),
+    onError: (error) => toast.error(toastErrorMessage(error, tText("创建标签失败"))),
   });
 
   const deleteTagMutation = useMutation({
@@ -167,22 +168,22 @@ export default function AdminUsers() {
     },
     onError: (error) => {
       setDeletingTagId(null);
-      toast.error(toastErrorMessage(error, "删除标签失败"));
+      toast.error(toastErrorMessage(error, tText("删除标签失败")));
     },
   });
 
   const batchTagMutation = useMutation({
     mutationFn: async () => {
-      if (!batchTagId) throw new Error("请先选择标签");
-      if (!selectedUserIds.length) throw new Error("请先勾选用户");
+      if (!batchTagId) throw new Error(tText("请先选择标签"));
+      if (!selectedUserIds.length) throw new Error(tText("请先勾选用户"));
       return userService.batchSetUserTag(batchTagId, selectedUserIds);
     },
     onSuccess: async (affected) => {
-      toast.success(`批量打标完成：${affected}/${selectedUserIds.length}`);
+      toast.success(tText(`批量打标完成：${affected}/${selectedUserIds.length}`));
       setSelectedUserIds([]);
       await invalidateUsers();
     },
-    onError: (error) => toast.error(toastErrorMessage(error, "批量打标失败")),
+    onError: (error) => toast.error(toastErrorMessage(error, tText("批量打标失败"))),
   });
 
   const users = usersQuery.data?.list || [];
@@ -207,19 +208,22 @@ export default function AdminUsers() {
 
   const filterChips = useMemo(() => {
     const chips: AdminFilterChip[] = [];
-    if (search.trim()) chips.push({ key: "search", label: `关键词：${search.trim()}` });
-    if (selectedTagId) chips.push({ key: "tag", label: `标签：${selectedTagName || selectedTagId}` });
-    const wechat = filterBoundLabel("微信", wechatBoundFilter);
+    if (search.trim()) chips.push({ key: "search", label: tText(`关键词：${search.trim()}`) });
+    if (selectedTagId) chips.push({ key: "tag", label: tText(`标签：${selectedTagName || selectedTagId}`) });
+    const wechat = filterBoundLabel(tText, tText("微信"), wechatBoundFilter);
     if (wechat) chips.push({ key: "wechat", label: wechat });
-    const phone = filterBoundLabel("手机号", phoneBoundFilter);
+    const phone = filterBoundLabel(tText, tText("手机号"), phoneBoundFilter);
     if (phone) chips.push({ key: "phone", label: phone });
-    if (memberLevelIdFilter) chips.push({ key: "memberLevel", label: `会员：${selectedMemberLevelName || memberLevelIdFilter}` });
-    if (accountStatusFilter) chips.push({ key: "accountStatus", label: `账号：${ACCOUNT_STATUS_LABELS[accountStatusFilter] || accountStatusFilter}` });
-    const order = restrictionLabel("下单", orderRestrictedFilter);
+    if (memberLevelIdFilter) chips.push({ key: "memberLevel", label: tText(`会员：${selectedMemberLevelName || memberLevelIdFilter}`) });
+    if (accountStatusFilter) {
+      const statusZh = ACCOUNT_STATUS_LABELS[accountStatusFilter] || accountStatusFilter;
+      chips.push({ key: "accountStatus", label: tText(`账号：${tText(statusZh)}`) });
+    }
+    const order = restrictionLabel(tText, tText("下单"), orderRestrictedFilter);
     if (order) chips.push({ key: "orderRestricted", label: order });
-    const coupon = restrictionLabel("领券", couponRestrictedFilter);
+    const coupon = restrictionLabel(tText, tText("领券"), couponRestrictedFilter);
     if (coupon) chips.push({ key: "couponRestricted", label: coupon });
-    const comment = restrictionLabel("评论", commentRestrictedFilter);
+    const comment = restrictionLabel(tText, tText("评论"), commentRestrictedFilter);
     if (comment) chips.push({ key: "commentRestricted", label: comment });
     return chips;
   }, [
@@ -234,7 +238,13 @@ export default function AdminUsers() {
     selectedTagId,
     selectedTagName,
     wechatBoundFilter,
+    tText,
   ]);
+
+  const tableHeaders = useMemo(
+    () => ["用户", "手机号", "状态", "会员等级", "标签", "邀请码", "上级邀请码", "积分", "注册时间", "操作"].map((h) => tText(h)),
+    [tText],
+  );
 
   const usersEmptyGuide = filtersActive ? ADMIN_EMPTY_GUIDES.usersFiltered : ADMIN_EMPTY_GUIDES.users;
 
@@ -603,13 +613,4 @@ export default function AdminUsers() {
               {user.created_at ? formatDateTime(user.created_at) : "-"}
             </td>
             <td className="px-4 py-3">
-              <button type="button" onClick={() => navigate(`/admin/users/${user.id}`)} className="text-xs text-[var(--theme-price)] hover:underline">
-                详情
-              </button>
-            </td>
-          </>
-        )}
-      />
-    </div>
-  );
-}
+              <button type="button" onClick={(

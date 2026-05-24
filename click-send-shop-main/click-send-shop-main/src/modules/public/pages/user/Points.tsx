@@ -55,14 +55,12 @@ function PointsHeroCard({
   configReady,
   signingIn,
   onSignIn,
-  onGiftShop,
 }: {
   balance: number;
   signInConfig: SignInConfig | null;
   configReady: boolean;
   signingIn: boolean;
   onSignIn: () => void;
-  onGiftShop: () => void;
 }) {
   const signInEnabled = configReady && Boolean(signInConfig?.enabled);
   const signInLabel = signingIn ? "签到中..." : signInEnabled ? "每日签到" : "签到不可用";
@@ -79,7 +77,7 @@ function PointsHeroCard({
         {signInHintText(signInConfig, configReady)}
       </p>
 
-      <div className="mt-4 flex flex-col items-center gap-3">
+      <div className="mt-4 flex justify-center">
         <button
           type="button"
           onClick={onSignIn}
@@ -88,13 +86,6 @@ function PointsHeroCard({
         >
           <CalendarCheck size={16} aria-hidden />
           {signInLabel}
-        </button>
-        <button
-          type="button"
-          onClick={onGiftShop}
-          className="text-sm font-medium text-primary-foreground/90 underline-offset-2 hover:underline"
-        >
-          积分兑换礼品
         </button>
       </div>
     </section>
@@ -209,7 +200,6 @@ export default function Points() {
           configReady={configReady}
           signingIn={signingIn}
           onSignIn={() => void handleSignIn()}
-          onGiftShop={() => navigate("/points/gifts")}
         />
 
         <section className="min-w-0" aria-labelledby="points-records-heading">

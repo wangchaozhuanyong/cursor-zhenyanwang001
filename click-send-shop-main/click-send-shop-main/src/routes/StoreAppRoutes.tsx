@@ -32,6 +32,7 @@ import { trackEvent } from "@/services/analyticsService";
 import { isStandaloneApp } from "@/utils/pwa";
 import { queryClient } from "@/lib/queryClient";
 import { resolveSiteFaviconUrl } from "@/utils/siteBrandAssets";
+import { POINTS_GIFT_REDEEM_CLIENT_ENABLED } from "@/constants/pointsClientFeatures";
 import {
   MemberHome, GuestHome, Login, BindWechatPhone,
   Categories, ProductDetail, NewArrivals, Search,
@@ -197,7 +198,22 @@ export function StoreAppRoutes() {
               <Route path="/orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
               <Route path="/invite" element={<ProtectedRoute><LoyaltyRouteGuard feature="referral"><Invite /></LoyaltyRouteGuard></ProtectedRoute>} />
               <Route path="/points" element={<ProtectedRoute><CapabilityRoute enabled={capabilities.pointsEnabled}><LoyaltyRouteGuard feature="points"><Points /></LoyaltyRouteGuard></CapabilityRoute></ProtectedRoute>} />
-              <Route path="/points/gifts" element={<ProtectedRoute><CapabilityRoute enabled={capabilities.pointsEnabled}><LoyaltyRouteGuard feature="points"><PointsGiftShop /></LoyaltyRouteGuard></CapabilityRoute></ProtectedRoute>} />
+              <Route
+                path="/points/gifts"
+                element={
+                  POINTS_GIFT_REDEEM_CLIENT_ENABLED ? (
+                    <ProtectedRoute>
+                      <CapabilityRoute enabled={capabilities.pointsEnabled}>
+                        <LoyaltyRouteGuard feature="points">
+                          <PointsGiftShop />
+                        </LoyaltyRouteGuard>
+                      </CapabilityRoute>
+                    </ProtectedRoute>
+                  ) : (
+                    <Navigate to="/points" replace />
+                  )
+                }
+              />
               <Route path="/rewards" element={<ProtectedRoute><LoyaltyRouteGuard feature="reward"><Rewards /></LoyaltyRouteGuard></ProtectedRoute>} />
               <Route path="/address" element={<ProtectedRoute><AddressManage /></ProtectedRoute>} />
               <Route path="/coupons" element={<ProtectedRoute><CapabilityRoute enabled={capabilities.couponEnabled}><Coupons /></CapabilityRoute></ProtectedRoute>} />

@@ -14,7 +14,7 @@ export const HOME_PRODUCT_CARD_MEDIA =
   "relative w-full shrink-0 overflow-hidden bg-[var(--theme-bg)]";
 
 export const HOME_PRODUCT_IMAGE_PRODUCT_CLASS = "aspect-square w-full max-h-none";
-export const HOME_PRODUCT_IMAGE_SERVICE_CLASS = "aspect-[4/3] w-full max-h-none";
+export const HOME_PRODUCT_IMAGE_SERVICE_CLASS = HOME_PRODUCT_IMAGE_PRODUCT_CLASS;
 
 export const HOME_PRODUCT_IMAGE_IMG_CLASS = "h-full w-full object-cover";
 

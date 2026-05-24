@@ -56,7 +56,11 @@ import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { canAccessAdminPath, getFirstAllowedAdminPath } from "@/config/adminNavAccess";
 import { AdminConfirmProvider } from "@/modules/admin/context/AdminConfirmContext";
 import AdminSiteLogo from "@/components/admin/AdminSiteLogo";
-import AdminOrderVoiceNotifier from "@/modules/admin/components/AdminOrderVoiceNotifier";
+import {
+  AdminOrderVoiceMenuItems,
+  AdminOrderVoiceProvider,
+  AdminOrderVoiceToolbar,
+} from "@/modules/admin/components/AdminOrderVoiceNotifier";
 import AdminEventBell from "@/modules/admin/components/AdminEventBell";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import type { SiteCapabilities } from "@/types/siteCapabilities";
@@ -738,6 +742,7 @@ function AdminLayoutContent() {
   return (
     <AdminConfirmProvider>
     <AdminAccountSettingsProvider>
+    <AdminOrderVoiceProvider>
     <div data-admin-shell className="flex min-h-[100dvh] items-start bg-[var(--theme-bg)] text-[var(--theme-text)]">
       <aside className="hidden w-[260px] shrink-0 self-start border-r border-[var(--theme-border)] bg-[var(--theme-card)] lg:sticky lg:top-0 lg:flex lg:h-[100dvh] lg:max-h-[100dvh] lg:flex-col">
         <AdminSidebarNav
@@ -895,7 +900,7 @@ function AdminLayoutContent() {
                 ) : null}
               </div>
             )}
-            {can("order.view") ? <AdminOrderVoiceNotifier /> : null}
+            {can("order.view") ? <AdminOrderVoiceToolbar /> : null}
             <div ref={avatarRef} className="relative shrink-0">
               <button
                 type="button"
@@ -919,6 +924,12 @@ function AdminLayoutContent() {
                     <Palette size={16} />
                     {t("layout.changeSkin")}
                   </button>
+                  {can("order.view") ? (
+                    <>
+                      <div className="mx-3 my-1 h-px bg-border sm:hidden" />
+                      <AdminOrderVoiceMenuItems onClose={() => setAvatarMenuOpen(false)} />
+                    </>
+                  ) : null}
                   <div className="px-4 py-2">
                     <p className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
                       <Languages size={14} />
@@ -1032,6 +1043,7 @@ function AdminLayoutContent() {
         selectedBadge={t("skin.selected")}
       />
     </div>
+    </AdminOrderVoiceProvider>
     </AdminAccountSettingsProvider>
     </AdminConfirmProvider>
   );

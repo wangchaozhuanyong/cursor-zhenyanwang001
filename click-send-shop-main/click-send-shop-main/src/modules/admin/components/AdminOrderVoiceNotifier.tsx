@@ -1,5 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { Play, Volume2 } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import * as orderService from "@/services/admin/orderService";
 import {
   getAdminOrderVoiceSettings,
@@ -189,7 +200,26 @@ async function playBeep(volume: number) {
 
 const TEST_PLAY_SAMPLE = "叮咚，您有新的订单，请及时处理。";
 
-export default function AdminOrderVoiceNotifier() {
+type AdminOrderVoiceContextValue = {
+  enabled: boolean;
+  busy: boolean;
+  statusLabel: string;
+  testLabel: string;
+  handleTestPlay: () => void;
+  handleToggle: () => void;
+};
+
+const AdminOrderVoiceContext = createContext<AdminOrderVoiceContextValue | null>(null);
+
+function useAdminOrderVoice() {
+  const ctx = useContext(AdminOrderVoiceContext);
+  if (!ctx) {
+    throw new Error("useAdminOrderVoice must be used within AdminOrderVoiceProvider");
+  }
+  return ctx;
+}
+
+export function AdminOrderVoiceProvider({ children }: { children: ReactNode }) {
   const { tText } = useAdminT();
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -458,17 +488,37 @@ export default function AdminOrderVoiceNotifier() {
   const statusLabel = loading || saving ? "处理中" : enabled ? "已开启" : "未开启";
   const testLabel = testing ? "播放中" : "测试播放";
 
+  const value = useMemo<AdminOrderVoiceContextValue>(
+    () => ({
+      enabled,
+      busy,
+      statusLabel,
+      testLabel,
+      handleTestPlay: () => void handleTestPlay(),
+      handleToggle: () => void handleToggle(),
+    }),
+    [busy, enabled, handleTestPlay, handleToggle, statusLabel, testLabel],
+  );
+
+  return <AdminOrderVoiceContext.Provider value={value}>{children}</AdminOrderVoiceContext.Provider>;
+}
+
+/** 桌面端顶栏：测试播放 + 开启/关闭 */
+export function AdminOrderVoiceToolbar() {
+  const { tText } = useAdminT();
+  const { busy, statusLabel, testLabel, handleTestPlay, handleToggle, enabled } = useAdminOrderVoice();
+
   return (
-    <div className="flex shrink-0 items-center gap-1">
+    <div className="hidden shrink-0 items-center gap-1 sm:flex">
       <button
         type="button"
         disabled={busy}
         onClick={handleTestPlay}
         title={tText("播放一条示例订单语音，用于检查浏览器与系统音量")}
         aria-label={tText("测试播放订单语音提醒")}
-        className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-border bg-secondary px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted disabled:opacity-60 sm:px-3"
+        className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-border bg-secondary px-3 text-xs font-medium text-muted-foreground hover:bg-muted disabled:opacity-60"
       >
-        <span className="max-w-[4.5rem] truncate sm:max-w-none">{testLabel}</span>
+        {testLabel}
       </button>
       <button
         type="button"
@@ -479,12 +529,70 @@ export default function AdminOrderVoiceNotifier() {
         aria-label={enabled ? "订单语音提醒已开启，点击关闭" : "订单语音提醒未开启，点击开启"}
         className={
           enabled
-            ? "inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-primary)] px-2.5 text-xs font-medium text-[var(--theme-primary-foreground)] hover:opacity-90 disabled:opacity-60 sm:px-3"
-            : "inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-border bg-secondary px-2.5 text-xs font-medium text-muted-foreground hover:bg-muted disabled:opacity-60 sm:px-3"
+            ? "inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-[var(--theme-primary)] px-3 text-xs font-medium text-[var(--theme-primary-foreground)] hover:opacity-90 disabled:opacity-60"
+            : "inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-border bg-secondary px-3 text-xs font-medium text-muted-foreground hover:bg-muted disabled:opacity-60"
         }
       >
-        <span className="max-w-[4.5rem] truncate sm:max-w-none">{statusLabel}</span>
+        {statusLabel}
       </button>
     </div>
+  );
+}
+
+/** 移动端：头像下拉菜单内的语音提醒项 */
+export function AdminOrderVoiceMenuItems({ onClose }: { onClose?: () => void }) {
+  const { busy, statusLabel, testLabel, handleTestPlay, handleToggle, enabled } = useAdminOrderVoice();
+
+  const runAndClose = (action: () => void) => {
+    action();
+    onClose?.();
+  };
+
+  return (
+    <div className="sm:hidden">
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => runAndClose(handleTestPlay)}
+        className="flex min-h-[44px] w-full items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-secondary disabled:opacity-60"
+      >
+        <Play size={16} className="shrink-0 text-muted-foreground" />
+        <span className="flex-1 text-left">
+          <Tx>测试播放</Tx>
+        </span>
+        <span className="text-xs text-muted-foreground">{testLabel}</span>
+      </button>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={() => runAndClose(handleToggle)}
+        aria-pressed={enabled}
+        className="flex min-h-[44px] w-full items-center gap-2 px-4 py-3 text-sm text-foreground hover:bg-secondary disabled:opacity-60"
+      >
+        <Volume2 size={16} className="shrink-0 text-muted-foreground" />
+        <span className="flex-1 text-left">
+          <Tx>订单语音提醒</Tx>
+        </span>
+        <span
+          className={cn(
+            "rounded-full px-2 py-0.5 text-[11px] font-medium",
+            enabled
+              ? "bg-[color-mix(in_srgb,var(--theme-primary)_18%,var(--theme-surface))] text-[var(--theme-primary)]"
+              : "bg-secondary text-muted-foreground",
+          )}
+        >
+          {statusLabel}
+        </span>
+      </button>
+    </div>
+  );
+}
+
+/** @deprecated 请使用 AdminOrderVoiceProvider + AdminOrderVoiceToolbar */
+export default function AdminOrderVoiceNotifier() {
+  return (
+    <AdminOrderVoiceProvider>
+      <AdminOrderVoiceToolbar />
+    </AdminOrderVoiceProvider>
   );
 }

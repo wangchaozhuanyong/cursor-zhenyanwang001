@@ -22,6 +22,30 @@ FAST_MODE="${FAST_MODE:-1}"
 BACKUP_BEFORE_DEPLOY="${BACKUP_BEFORE_DEPLOY:-1}"
 STATE_DIR="${PROJECT_DIR}/.deploy-state"
 
+# /var/www/damatong 等目录常为 www-data 属主，普通 rsync -a 会因 chgrp 失败（exit 23）
+sync_public_static() {
+  local src_dir="$1"
+  local dest_dir="$2"
+  [[ -d "$src_dir" ]] || return 0
+  local src="${src_dir%/}/"
+  local dest="${dest_dir%/}"
+  if [[ "$dest" == /var/www/* ]] && { [[ ! -e "$dest" ]] || [[ ! -w "$dest" ]]; }; then
+    sudo mkdir -p "$dest"
+    sudo rsync -a --delete "$src" "$dest/"
+    if id www-data &>/dev/null; then
+      sudo chown -R www-data:www-data "$dest"
+    fi
+  else
+    mkdir -p "$dest"
+    if command -v rsync >/dev/null 2>&1; then
+      rsync -a --delete --no-group --no-owner "$src" "$dest/"
+    else
+      rm -rf "${dest:?}/"*
+      cp -a "$src." "$dest/"
+    fi
+  fi
+}
+
 exec 9>"$DEPLOY_LOCK_FILE"
 if ! flock -n 9; then
   echo "⚠️  已有部署进程正在运行，退出：$DEPLOY_LOCK_FILE" | tee -a "$LOG_FILE"
@@ -196,24 +220,12 @@ fi
 
 if [[ -d "$FRONTEND_DIR/dist" ]]; then
   echo "📤 同步 dist → $PUBLIC_FRONTEND" | tee -a "$LOG_FILE"
-  mkdir -p "$PUBLIC_FRONTEND"
-  if command -v rsync >/dev/null 2>&1; then
-    rsync -a --delete "$FRONTEND_DIR/dist/" "$PUBLIC_FRONTEND/"
-  else
-    rm -rf "${PUBLIC_FRONTEND:?}/"*
-    cp -a "$FRONTEND_DIR/dist/." "$PUBLIC_FRONTEND/"
-  fi
+  sync_public_static "$FRONTEND_DIR/dist" "$PUBLIC_FRONTEND"
 fi
 
 if [[ -f "$ADMIN_DIST_DIR/admin-index.html" ]]; then
   echo "[deploy] Sync admin-dist -> $ADMIN_PUBLIC_FRONTEND" | tee -a "$LOG_FILE"
-  mkdir -p "$ADMIN_PUBLIC_FRONTEND"
-  if command -v rsync >/dev/null 2>&1; then
-    rsync -a --delete "$ADMIN_DIST_DIR/" "$ADMIN_PUBLIC_FRONTEND/"
-  else
-    rm -rf "${ADMIN_PUBLIC_FRONTEND:?}/"*
-    cp -a "$ADMIN_DIST_DIR/." "$ADMIN_PUBLIC_FRONTEND/"
-  fi
+  sync_public_static "$ADMIN_DIST_DIR" "$ADMIN_PUBLIC_FRONTEND"
 fi
 
 if [[ ! -f "$ADMIN_PUBLIC_FRONTEND/admin-index.html" ]]; then

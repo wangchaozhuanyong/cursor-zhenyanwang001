@@ -31,6 +31,29 @@ INSTALL_NGINX="${INSTALL_NGINX:-0}"
 PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-/var/www/damatong/dist}"
 ADMIN_PUBLIC_FRONTEND="${ADMIN_PUBLIC_FRONTEND:-/var/www/damatong/admin-dist}"
 
+sync_public_static() {
+  local src_dir="$1"
+  local dest_dir="$2"
+  [[ -d "$src_dir" ]] || return 0
+  local src="${src_dir%/}/"
+  local dest="${dest_dir%/}"
+  if [[ "$dest" == /var/www/* ]] && { [[ ! -e "$dest" ]] || [[ ! -w "$dest" ]]; }; then
+    sudo mkdir -p "$dest"
+    sudo rsync -a --delete "$src" "$dest/"
+    if id www-data &>/dev/null; then
+      sudo chown -R www-data:www-data "$dest"
+    fi
+  else
+    mkdir -p "$dest"
+    if command -v rsync >/dev/null 2>&1; then
+      rsync -a --delete --no-group --no-owner "$src" "$dest/"
+    else
+      rm -rf "${dest:?}/"*
+      cp -a "$src." "$dest/"
+    fi
+  fi
+}
+
 cd "$PROJECT_DIR" || exit 1
 
 echo "📅 部署时间: $(date)" | tee -a "$LOG_FILE"
@@ -100,23 +123,11 @@ if [[ -n "$FRONTEND_SUB" ]]; then
   cd "$PROJECT_DIR" || exit 1
 
   echo "📤 同步构建产物 → $PUBLIC_FRONTEND" | tee -a "$LOG_FILE"
-  mkdir -p "$PUBLIC_FRONTEND"
-  if command -v rsync >/dev/null 2>&1; then
-    rsync -a --delete "$PROJECT_DIR/$FRONTEND_SUB/dist/" "$PUBLIC_FRONTEND/"
-  else
-    rm -rf "${PUBLIC_FRONTEND:?}/"*
-    cp -a "$PROJECT_DIR/$FRONTEND_SUB/dist/." "$PUBLIC_FRONTEND/"
-  fi
+  sync_public_static "$PROJECT_DIR/$FRONTEND_SUB/dist" "$PUBLIC_FRONTEND"
   node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$PUBLIC_FRONTEND" | tee -a "$LOG_FILE"
   if [[ -d "$PROJECT_DIR/$FRONTEND_SUB/admin-dist" ]]; then
     echo "📤 同步 admin-dist → $ADMIN_PUBLIC_FRONTEND" | tee -a "$LOG_FILE"
-    mkdir -p "$ADMIN_PUBLIC_FRONTEND"
-    if command -v rsync >/dev/null 2>&1; then
-      rsync -a --delete "$PROJECT_DIR/$FRONTEND_SUB/admin-dist/" "$ADMIN_PUBLIC_FRONTEND/"
-    else
-      rm -rf "${ADMIN_PUBLIC_FRONTEND:?}/"*
-      cp -a "$PROJECT_DIR/$FRONTEND_SUB/admin-dist/." "$ADMIN_PUBLIC_FRONTEND/"
-    fi
+    sync_public_static "$PROJECT_DIR/$FRONTEND_SUB/admin-dist" "$ADMIN_PUBLIC_FRONTEND"
     node "$PROJECT_DIR/scripts/verify_frontend_dist_assets.js" "$ADMIN_PUBLIC_FRONTEND" | tee -a "$LOG_FILE"
   fi
 else

@@ -1,9 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import * as authService from "@/services/authService";
+import { isLoggedIn } from "@/utils/token";
 import * as userService from "@/services/userService";
 import * as addressService from "@/services/addressService";
-import { isLoggedIn } from "@/utils/token";
 import type { Address } from "@/types/address";
 import type { MemberLevel, WechatLoginBinding } from "@/types/user";
 
@@ -67,6 +67,10 @@ export const useUserStore = create<UserState>()(
       profileSaving: false,
 
       loadProfile: async () => {
+        if (!isLoggedIn()) {
+          set({ profileLoading: false });
+          return;
+        }
         set({ profileLoading: true });
         try {
           const profile = await authService.getProfile();

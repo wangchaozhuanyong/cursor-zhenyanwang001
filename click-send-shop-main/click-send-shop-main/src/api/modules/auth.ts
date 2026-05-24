@@ -35,8 +35,13 @@ export function resetPassword(params: { token: string; newPassword: string }) {
   return post<void>("/auth/password-reset/confirm", params);
 }
 
-export function getProfile() {
-  return get<UserProfile>("/user/profile");
+const SESSION_PROBE_REQUEST = {
+  skipAuthRetry: true,
+  suppressAuthExpired: true,
+} as const;
+
+export function getProfile(options?: { sessionProbe?: boolean }) {
+  return get<UserProfile>("/user/profile", undefined, options?.sessionProbe ? SESSION_PROBE_REQUEST : undefined);
 }
 
 export function sendOtp(params: OtpSendParams) {

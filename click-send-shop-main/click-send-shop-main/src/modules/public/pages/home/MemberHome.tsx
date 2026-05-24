@@ -97,16 +97,15 @@ export default function MemberHome() {
 
   useEffect(() => {
     if (!isLoggedIn()) return;
-    void authService.getProfile()
-      .then(() => {
-        useNotificationStore.getState().fetchUnreadCount();
-        useCouponStore.getState().loadCoupons();
-        void loadHistory().catch(() => {});
-        void loadFavorites().catch(() => {});
-        void loadCart().catch(() => {});
-        void loadOrders({ page: 1, pageSize: 20 }).catch(() => {});
-      })
-      .catch(() => {});
+    void authService.restoreSessionFromCookie().then((ok) => {
+      if (!ok) return;
+      useNotificationStore.getState().fetchUnreadCount();
+      useCouponStore.getState().loadCoupons();
+      void loadHistory().catch(() => {});
+      void loadFavorites().catch(() => {});
+      void loadCart().catch(() => {});
+      void loadOrders({ page: 1, pageSize: 20 }).catch(() => {});
+    });
   }, [loadHistory, loadFavorites, loadCart, loadOrders]);
 
   const couponTop = useMemo(

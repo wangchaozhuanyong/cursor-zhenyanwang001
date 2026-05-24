@@ -1,5 +1,5 @@
 import * as authApi from "@/api/modules/auth";
-import { setTokens, clearTokens, isLoggedIn } from "@/utils/token";
+import { setTokens, setAccessToken, clearTokens, isLoggedIn } from "@/utils/token";
 import type {
   LoginParams,
   RegisterParams,
@@ -78,10 +78,8 @@ export async function bindWechatPhone(params: WechatBindPhoneParams): Promise<Lo
   return res.data;
 }
 
-/** 鍚庣杩斿洖 snake_case锛屽墠绔粺涓€鐢?camelCase */
-export async function getProfile(): Promise<UserProfile> {
-  const res = await authApi.getProfile();
-  const d = res.data as unknown as Record<string, unknown>;
+function mapProfileFromResponse(data: unknown): UserProfile {
+  const d = data as Record<string, unknown>;
   const memberLevelId = (d.member_level_id ?? d.memberLevelId ?? "") as string;
   return {
     id: (d.id ?? d.userId ?? "") as string,
@@ -114,6 +112,47 @@ export async function getProfile(): Promise<UserProfile> {
       }
       : null,
   };
+}
+
+/** 后端返回 snake_case，前端统一为 camelCase */
+export async function getProfile(options?: { sessionProbe?: boolean }): Promise<UserProfile> {
+  const res = await authApi.getProfile(options);
+  return mapProfileFromResponse(res.data);
+}
+
+/**
+ * 启动时用 Cookie 刷新会话；无效时清除本地登录标记，且不在无效会话下请求 /user/profile。
+ */
+export async function restoreSessionFromCookie(): Promise<boolean> {
+  if (!isLoggedIn()) return false;
+
+  const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "/api";
+  try {
+    const refreshRes = await fetch(`${baseUrl}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
+    if (!refreshRes.ok) {
+      clearTokens();
+      return false;
+    }
+
+    try {
+      const body = (await refreshRes.json()) as { data?: { accessToken?: string } };
+      if (body?.data?.accessToken) {
+        setAccessToken(body.data.accessToken);
+      }
+    } catch {
+      // refresh 成功但响应体异常时仍尝试拉取资料
+    }
+
+    await getProfile({ sessionProbe: true });
+    return true;
+  } catch {
+    clearTokens();
+    return false;
+  }
 }
 
 export function isAuthenticated(): boolean {

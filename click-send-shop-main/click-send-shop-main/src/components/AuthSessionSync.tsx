@@ -1,11 +1,11 @@
 import { useLayoutEffect } from "react";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { isLoggedIn, clearTokens } from "@/utils/token";
-import * as authService from "@/services/authService";
+import { isLoggedIn } from "@/utils/token";
+import { restoreSessionFromCookie } from "@/services/authService";
 
 const AUTH_HYDRATE_TIMEOUT_MS = 8_000;
 
-/** 启动时将持久化 isAuthenticated 与登录标记、Cookie 会话对齐 */
+/** 启动时将持久化 isAuthenticated 与 Cookie 会话对齐 */
 export default function AuthSessionSync() {
   useLayoutEffect(() => {
     let cancelled = false;
@@ -23,16 +23,15 @@ export default function AuthSessionSync() {
         window.clearTimeout(hydrateTimeout);
       };
     }
+
     useAuthStore.setState({ isAuthenticated: flagged });
-    void authService
-      .getProfile()
-      .then(() => {
+    void restoreSessionFromCookie()
+      .then((ok) => {
         if (cancelled) return;
-        useAuthStore.setState({ isAuthenticated: true, authHydrated: true });
+        useAuthStore.setState({ isAuthenticated: ok, authHydrated: true });
       })
       .catch(() => {
         if (cancelled) return;
-        clearTokens();
         useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
       })
       .finally(() => {

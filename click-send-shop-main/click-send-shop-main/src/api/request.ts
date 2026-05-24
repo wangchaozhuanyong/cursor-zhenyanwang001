@@ -21,6 +21,8 @@ export type RequestOptions = RequestInit & {
   loadingMode?: LoadingMode;
   /** 401 时不尝试 refresh 重试，避免无效会话下重复请求（如购物车静默拉取） */
   skipAuthRetry?: boolean;
+  /** 401 时不触发全局登出副作用（会话探测、公开页静默请求） */
+  suppressAuthExpired?: boolean;
 };
 
 function gatewayErrorMessage(status: number): string | null {
@@ -78,6 +80,13 @@ function isPublicStorefrontPath(pathname: string): boolean {
     || pathname.startsWith("/content/")
     || pathname.startsWith("/support-download")
     || pathname.startsWith("/install");
+}
+
+function shouldSuppressAuthExpired(options: RequestOptions): boolean {
+  if (options.suppressAuthExpired) return true;
+  const silent = options.skipGlobalLoading || options.loadingMode === "silent";
+  if (!silent || typeof window === "undefined") return false;
+  return isPublicStorefrontPath(window.location.pathname);
 }
 
 function shouldRedirectToLogin(options: RequestOptions, isAuthLogout: boolean, isAccountCancel: boolean): boolean {
@@ -201,7 +210,9 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
       return request<T>(endpoint, { ...options, headers: retryHeaders }, false);
     } catch {
       clearTokens();
-      notifyAuthExpired();
+      if (!shouldSuppressAuthExpired(options)) {
+        notifyAuthExpired();
+      }
       if (shouldRedirectToLogin(options, isAuthLogout, isAccountCancel)) {
         window.location.href = "/login";
       }
@@ -262,7 +273,9 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
     }
     if (res.status === 401 && !isAdminEndpoint) {
       clearTokens();
-      notifyAuthExpired();
+      if (!shouldSuppressAuthExpired(options)) {
+        notifyAuthExpired();
+      }
     }
     throw new ApiError(res.status, extractResponseMessage(body, res.status), {
       ...body,
@@ -275,11 +288,16 @@ async function request<T>(endpoint: string, options: RequestOptions = {}, retry 
   return normalizeMediaUrls(payload, BASE_URL);
 }
 
-export function get<T>(endpoint: string, params?: Record<string, unknown>, options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode" | "skipAuthRetry">) {
+export function get<T>(
+  endpoint: string,
+  params?: Record<string, unknown>,
+  options?: Pick<RequestOptions, "skipGlobalLoading" | "loadingMode" | "skipAuthRetry" | "suppressAuthExpired">,
+) {
   return request<ApiResponse<T>>(`${endpoint}${toQueryString(params)}`, {
     skipGlobalLoading: options?.skipGlobalLoading ?? true,
     loadingMode: options?.loadingMode ?? "silent",
     skipAuthRetry: options?.skipAuthRetry,
+    suppressAuthExpired: options?.suppressAuthExpired,
   });
 }
 

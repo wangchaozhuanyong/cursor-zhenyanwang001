@@ -1,8 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { ApiError } from "@/types/common";
-import { isLoggedIn, clearTokens } from "@/utils/token";
-import { notifyAuthExpired } from "@/lib/authSessionBridge";
+import { isLoggedIn } from "@/utils/token";
 import type { Product, ProductVariant } from "@/types/product";
 import type { CartItem } from "@/types/cart";
 import * as cartService from "@/services/cartService";
@@ -95,9 +94,7 @@ export const useCartStore = create<CartState>()(
             set((s) => ({ items, selection: mergeSelection(s.selection, items), loading: false }));
           } catch (e) {
             if (e instanceof ApiError && e.code === 401) {
-              clearTokens();
-              notifyAuthExpired();
-              set({ loading: false, error: null });
+              set({ loading: false, error: null, items: [], selection: {} });
               return;
             }
             set({ loading: false, error: e instanceof Error ? e.message : "加载购物车失败" });

@@ -196,17 +196,17 @@ async function confirmReceive(userId, orderId) {
 }
 
 module.exports = {
-  createOrder: orderCreate.createOrder,
-  previewOrder: orderCheckout.previewOrder,
+  createOrder: (...args) => orderCreate.createOrder(...args),
+  previewOrder: (...args) => orderCheckout.previewOrder(...args),
   getOrders,
   getOrderSummary,
   getOrderById,
   deleteOrderForBuyer,
-  cancelOrder: orderCancel.cancelOrder,
-  getCheckoutCoupons: orderCheckout.getCheckoutCoupons,
+  cancelOrder: (...args) => orderCancel.cancelOrder(...args),
+  getCheckoutCoupons: (...args) => orderCheckout.getCheckoutCoupons(...args),
   payOrder,
   createStripeCheckoutSession,
   confirmReceive,
   completeShippedOrder,
-  cancelPendingOrderInTransaction: orderCancel.cancelPendingOrderInTransaction,
+  cancelPendingOrderInTransaction: (...args) => orderCancel.cancelPendingOrderInTransaction(...args),
 };

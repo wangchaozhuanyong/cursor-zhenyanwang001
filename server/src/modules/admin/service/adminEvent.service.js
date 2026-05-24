@@ -312,7 +312,7 @@ async function sendTelegramEscalation(event) {
     return { sent: false, reason: 'telegram_not_configured' };
   }
   const providerMessageId = await requireTelegramApi('sendMessage')(config.adminChatId, buildEscalationText(event), {
-    parseMode: config.parseMode,
+    parseMode: undefined,
   });
   return { sent: true, providerMessageId };
 }

@@ -221,7 +221,7 @@ export default function AdminTelegramSettings() {
                 <label className="flex items-center justify-between gap-3 rounded-lg border border-border p-4 md:col-span-2">
                   <div>
                     <div className="font-medium text-foreground"><Tx>启用 Telegram 订单通知</Tx></div>
-                    <p className="text-xs text-muted-foreground"><Tx>关闭后不会发送付款成功提醒，并同步关闭「功能开关」中的 Telegram 项。</Tx></p>
+                    <p className="text-xs text-muted-foreground"><Tx>与「功能开关」中的 Telegram 订单通知双向同步；关闭后不会发送付款成功提醒。</Tx></p>
                   </div>
                   <input
                     type="checkbox"
@@ -260,15 +260,21 @@ export default function AdminTelegramSettings() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-foreground"><Tx>解析模式</Tx></label>
+                  <label className="text-sm font-medium text-foreground">
+                    <Tx>解析模式</Tx>
+                    <AdminFieldHint
+                      text="付款成功订单通知模板按 HTML 渲染并发送；请保持 HTML。测试消息为纯文本。"
+                      className="ml-1"
+                    />
+                  </label>
                   <select
                     className={inputClass}
                     value={form.parseMode}
                     onChange={(e) => patchForm({ parseMode: e.target.value as TelegramNotifyConfig["parseMode"] })}
                   >
-                    <option value="HTML">HTML</option>
-                    <option value="Markdown">Markdown</option>
-                    <option value="MarkdownV2">MarkdownV2</option>
+                    <option value="HTML">HTML（推荐，订单通知）</option>
+                    <option value="Markdown">Markdown（预留）</option>
+                    <option value="MarkdownV2">MarkdownV2（预留）</option>
                   </select>
                 </div>
 

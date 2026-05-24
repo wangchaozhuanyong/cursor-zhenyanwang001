@@ -30,6 +30,7 @@
     "restore:temp": "node scripts/backup/restore-to-temp.js",
     "restore:drill": "node scripts/backup/restore-drill.js",
     "wipe:business-data": "node scripts/wipe-business-data.js",
+    "wipe:test-full": "cross-env WIPE_TEST_FULL=1 node scripts/wipe-business-data.js",
     "purge:demo-products": "node scripts/purge-demo-products.js",
     "seed:content-pages": "node scripts/seed-content-pages.js",
     "seed:policy-paths": "node scripts/seed-policy-paths.js",

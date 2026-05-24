@@ -3,13 +3,15 @@ const { BusinessError, NotFoundError, ValidationError } = require('../../../erro
 const { writeAuditLog } = require('../../../utils/auditLog');
 const repo = require('../repository/adminMemberLevel.repository');
 const adminUserService = require('./adminUser.service');
-const userModule = require('../../user');
 
 const pool = repo.getPool();
-const userApi = /** @type {any} */ (userModule).api || {};
+
+function getUserApi() {
+  return /** @type {any} */ (require('../../user')).api || {};
+}
 
 function requireUserApi(name) {
-  const fn = userApi[name];
+  const fn = getUserApi()[name];
   if (typeof fn !== 'function') throw new Error(`User module api missing: ${name}`);
   return fn;
 }
@@ -188,7 +190,6 @@ module.exports = {
   assignUserLevel,
   unlockUserLevel,
 };
-
 
 
 

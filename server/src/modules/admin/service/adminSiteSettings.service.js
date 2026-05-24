@@ -12,6 +12,10 @@ function getSiteCapabilitiesApi() {
   return /** @type {any} */ (require('../../siteCapabilities')).api || {};
 }
 
+function getTelegramApi() {
+  return /** @type {any} */ (require('../../telegram')).api || {};
+}
+
 const SITE_ASSET_KEYS = new Set(['logoUrl', 'faviconUrl']);
 
 function rowsToMap(rows) {
@@ -186,6 +190,16 @@ async function getSiteCapabilities() {
 async function updateSiteCapabilities(body, adminUserId, req) {
   const before = await getSiteCapabilitiesApi().getSiteCapabilities();
   const after = await getSiteCapabilitiesApi().saveSiteCapabilities(body);
+  if (Object.prototype.hasOwnProperty.call(body, 'telegramOrderNotifyEnabled')) {
+    try {
+      const syncFn = getTelegramApi().syncOrderNotifyEnabled;
+      if (typeof syncFn === 'function') {
+        await syncFn(after.telegramOrderNotifyEnabled);
+      }
+    } catch (e) {
+      console.error('[siteSettings] sync telegram enabled failed:', e?.message || e);
+    }
+  }
   await writeAuditLog({
     req,
     operatorId: adminUserId,

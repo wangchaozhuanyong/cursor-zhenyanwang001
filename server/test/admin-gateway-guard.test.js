@@ -10,6 +10,8 @@ const {
   getConfiguredAllowedOrigins,
 } = require('../src/middleware/adminGatewayGuard');
 
+process.env.AUDIT_LOG_DISABLED = '1';
+
 function withEnv(overrides, fn) {
   const previous = {};
   for (const key of Object.keys(overrides)) {
@@ -32,6 +34,7 @@ function createApp() {
   app.use(adminCsrfGuard);
   app.post('/api/admin/auth/login', (req, res) => res.status(200).json({ ok: true }));
   app.get('/api/admin/auth/csrf', (req, res) => res.status(200).json({ ok: true }));
+  app.post('/api/admin/auth/mfa/reverify', (req, res) => res.status(200).json({ ok: true }));
   app.post('/api/admin/products', (req, res) => res.status(200).json({ ok: true }));
   return app;
 }
@@ -134,4 +137,31 @@ test('allows request when Origin matches allowed list', () => withEnv({
     .send({ name: 'x' });
 
   assert.equal(res.status, 200);
+}));
+
+test('requires CSRF for admin MFA reverify', () => withEnv({
+  NODE_ENV: 'production',
+  ADMIN_ALLOWED_ORIGINS: 'https://shop.example.com',
+  PUBLIC_APP_URL: 'https://shop.example.com',
+}, async () => {
+  const app = createApp();
+  const missing = await request(app)
+    .post('/api/admin/auth/mfa/reverify')
+    .set('Host', 'shop.example.com')
+    .set('X-Forwarded-Proto', 'https')
+    .set('Origin', 'https://shop.example.com')
+    .send({ code: '123456' });
+
+  assert.equal(missing.status, 403);
+
+  const ok = await request(app)
+    .post('/api/admin/auth/mfa/reverify')
+    .set('Host', 'shop.example.com')
+    .set('X-Forwarded-Proto', 'https')
+    .set('Origin', 'https://shop.example.com')
+    .set('X-CSRF-Token', 'token-a')
+    .set('Cookie', 'admin_csrf_token=token-a')
+    .send({ code: '123456' });
+
+  assert.equal(ok.status, 200);
 }));

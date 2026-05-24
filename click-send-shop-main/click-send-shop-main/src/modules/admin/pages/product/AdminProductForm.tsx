@@ -142,7 +142,6 @@ export default function AdminProductForm() {
     region_notice: "",
     compliance_notice: "",
     allow_index: true,
-    stock_warning_threshold: "",
     tag_ids: [] as string[],
     spec_groups: [] as AdminSpecGroup[],
     variants: [

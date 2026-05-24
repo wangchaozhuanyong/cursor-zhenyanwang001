@@ -23,6 +23,8 @@ describe('order pay vs onlinePaymentEnabled', () => {
   let accessToken;
   let orderId;
   let savedCapabilities;
+  let productId;
+  let variantId;
 
   before(async () => {
     savedCapabilities = await siteCapabilities.getSiteCapabilities();
@@ -35,30 +37,20 @@ describe('order pay vs onlinePaymentEnabled', () => {
     accessToken = reg.body.data?.token?.accessToken;
     assert.ok(accessToken);
 
-    const products = await request(app).get('/api/products').query({ pageSize: 5 }).expect(200);
-    assert.equal(products.body.code, 0);
-    let productId = products.body.data?.list?.[0]?.id;
-    let variantId = null;
-    if (!productId) {
-      productId = randomUUID();
-      variantId = randomUUID();
-      await db.query(
-        `INSERT INTO products
-           (id, name, cover_image, images, price, points, stock, status, sort_order, description, is_recommended, is_new, is_hot)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [productId, 'pay-cap-product', '', '[]', 9.9, 0, 10, 'active', 0, '', 0, 0, 0],
-      );
-      await db.query(
-        `INSERT INTO product_variants
-           (id, product_id, sku_code, title, price, stock, enabled, sort_order, is_default)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [variantId, productId, `PCAP-${Date.now()}`, 'Default', 9.9, 10, 1, 0, 1],
-      );
-    } else {
-      const detail = await request(app).get(`/api/products/${productId}`).expect(200);
-      const variants = detail.body.data?.variants || [];
-      variantId = variants[0]?.id || null;
-    }
+    productId = randomUUID();
+    variantId = randomUUID();
+    await db.query(
+      `INSERT INTO products
+         (id, name, cover_image, images, price, points, stock, status, sort_order, description, is_recommended, is_new, is_hot)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [productId, 'pay-cap-product', '', '[]', 9.9, 0, 10, 'active', 0, '', 0, 0, 0],
+    );
+    await db.query(
+      `INSERT INTO product_variants
+         (id, product_id, sku_code, title, price, stock, enabled, sort_order, is_default)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [variantId, productId, `PCAP-${Date.now()}`, 'Default', 9.9, 10, 1, 0, 1],
+    );
 
     await request(app)
       .post('/api/cart')
@@ -88,6 +80,12 @@ describe('order pay vs onlinePaymentEnabled', () => {
 
   after(async () => {
     await siteCapabilities.saveSiteCapabilities(savedCapabilities);
+    if (productId) {
+      await db.query('DELETE FROM inventory_stock_records WHERE product_id = ?', [productId]).catch(() => {});
+      await db.query('DELETE FROM product_variant_spec_values WHERE product_id = ?', [productId]).catch(() => {});
+      await db.query('DELETE FROM product_variants WHERE product_id = ?', [productId]).catch(() => {});
+      await db.query('DELETE FROM products WHERE id = ?', [productId]).catch(() => {});
+    }
   });
 
   test('POST /api/orders/:id/pay reward_wallet is not blocked by online capability', async () => {

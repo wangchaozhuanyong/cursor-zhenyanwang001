@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { KeyRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { ApiError } from "@/types/common";
 import {
   cancelAdminMfaStepUp,
   completeAdminMfaStepUp,
@@ -20,13 +21,22 @@ export default function AdminMfaStepUpHost() {
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorText, setErrorText] = useState("");
   const [mfaEnabled, setMfaEnabled] = useState<boolean | null>(null);
-  const [abortController, setAbortController] = useState<AbortController | null>(null);
-  const suppressAbortToastRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const attemptRef = useRef(0);
+
+  const resetRequestState = useCallback(() => {
+    attemptRef.current += 1;
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    setLoading(false);
+    setErrorText("");
+  }, []);
 
   const show = useCallback(() => {
+    resetRequestState();
     setCode("");
-    setLoading(false);
     setMfaEnabled(true);
     setOpen(true);
     void fetchAdminProfile()
@@ -35,18 +45,18 @@ export default function AdminMfaStepUpHost() {
         setMfaEnabled(enabled);
       })
       .catch(() => setMfaEnabled(true));
-  }, []);
+  }, [resetRequestState]);
 
   useEffect(() => {
     registerAdminMfaStepUpOpener(show);
-    return () => registerAdminMfaStepUpOpener(null);
-  }, [show]);
+    return () => {
+      resetRequestState();
+      registerAdminMfaStepUpOpener(null);
+    };
+  }, [resetRequestState, show]);
 
   const handleClose = () => {
-    suppressAbortToastRef.current = true;
-    abortController?.abort();
-    setAbortController(null);
-    setLoading(false);
+    resetRequestState();
     setOpen(false);
     cancelAdminMfaStepUp();
   };
@@ -54,30 +64,46 @@ export default function AdminMfaStepUpHost() {
   const handleSubmit = async () => {
     const normalized = code.replace(/\D/g, "").slice(0, 6);
     if (normalized.length !== 6) {
-      toast.error(tText("请输入身份验证器中的 6 位验证码"));
+      const message = tText("请输入身份验证器中的 6 位验证码");
+      setErrorText(message);
+      toast.error(message);
       return;
     }
-    abortController?.abort();
+
+    abortControllerRef.current?.abort();
     const controller = new AbortController();
-    suppressAbortToastRef.current = false;
-    setAbortController(controller);
+    const attemptId = attemptRef.current + 1;
+    attemptRef.current = attemptId;
+    abortControllerRef.current = controller;
+    setErrorText("");
     setLoading(true);
+
     const timeoutId = window.setTimeout(() => controller.abort(), MFA_REVERIFY_TIMEOUT_MS);
     try {
       await reverifyAdminMfa(normalized, { signal: controller.signal });
+      if (attemptRef.current !== attemptId) return;
       setOpen(false);
       completeAdminMfaStepUp();
       toast.success(tText("身份验证已通过"));
     } catch (err) {
-      if (controller.signal.aborted && !suppressAbortToastRef.current) {
-        toast.error(tText("验证请求超时或已取消，请重新点击确认验证"));
-      } else if (!controller.signal.aborted) {
-        toast.error(toastErrorMessage(err, "验证失败"));
+      if (attemptRef.current !== attemptId) return;
+
+      const message = controller.signal.aborted
+        ? tText("验证请求超时，请重新发起该操作后再验证")
+        : toastErrorMessage(err, tText("验证失败"));
+      setErrorText(message);
+      toast.error(message);
+
+      if (controller.signal.aborted || (err instanceof ApiError && err.code !== 401)) {
+        setOpen(false);
+        cancelAdminMfaStepUp();
       }
     } finally {
       window.clearTimeout(timeoutId);
-      setLoading(false);
-      setAbortController((current) => (current === controller ? null : current));
+      if (attemptRef.current === attemptId) {
+        setLoading(false);
+        if (abortControllerRef.current === controller) abortControllerRef.current = null;
+      }
     }
   };
 
@@ -85,17 +111,17 @@ export default function AdminMfaStepUpHost() {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
+      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-xl">
         <div className="flex items-center gap-2 text-base font-semibold text-foreground">
           <KeyRound size={18} />
           需要二次身份验证
         </div>
         {mfaEnabled === false ? (
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
             当前账号尚未绑定身份验证器，无法完成二次验证。请退出后重新登录并完成 MFA 绑定；或由超级管理员在「员工账号」中为您重置 MFA 后重新绑定。
           </p>
         ) : (
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
             该操作需要更高安全等级。请打开身份验证器（如 Google Authenticator），输入当前 6 位验证码后继续。
           </p>
         )}
@@ -107,18 +133,23 @@ export default function AdminMfaStepUpHost() {
               inputMode="numeric"
               autoFocus
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              onChange={(e) => {
+                setCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                if (errorText) setErrorText("");
+              }}
               placeholder="000000"
               className="mt-1.5 w-full rounded-lg border border-border bg-secondary px-3 py-2.5 text-center font-mono text-lg tracking-widest text-foreground outline-none focus:border-gold/50 focus:ring-1 focus:ring-gold/20"
-              onKeyDown={(e) => e.key === "Enter" && void handleSubmit()}
+              onKeyDown={(e) => e.key === "Enter" && !loading && void handleSubmit()}
             />
+            {errorText ? (
+              <p className="mt-2 text-xs leading-5 text-destructive">{errorText}</p>
+            ) : null}
           </>
         ) : null}
-        <div className="mt-5 flex justify-end gap-2">
+        <div className="mt-5 flex flex-wrap justify-end gap-2">
           <button
             type="button"
             className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-secondary"
-            disabled={loading}
             onClick={handleClose}
           >
             取消

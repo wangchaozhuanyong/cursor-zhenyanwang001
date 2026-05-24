@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, Database, FileSearch, History, Play, RefreshCw, Save, Shield, SlidersHorizontal, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Database, FileSearch, History, Info, Play, RefreshCw, Save, Shield, SlidersHorizontal, XCircle } from "lucide-react";
+import AdminFieldHint, { AdminPageTitle, AdminSectionTitle } from "@/components/admin/AdminFieldHint";
 import { toast } from "sonner";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import {
@@ -30,6 +31,13 @@ import {
   formatDataCleanupRunType,
   formatDataCleanupTableName,
 } from "@/utils/dataRetentionLabels";
+import {
+  DATA_RETENTION_CATEGORY_HINTS,
+  DATA_RETENTION_FIELD_HINTS,
+  DATA_RETENTION_PAGE_HINT,
+  DATA_RETENTION_TAB_HINTS,
+  getDataCleanupPolicyHelp,
+} from "@/utils/dataRetentionHelp";
 import Pagination from "@/components/admin/Pagination";
 import AdminNativeTable from "@/components/admin/AdminNativeTable";
 import { Tx } from "@/components/admin/AdminText";
@@ -78,12 +86,43 @@ function StatusBadge({ status, tText }: { status?: string; tText: (zh: string) =
   );
 }
 
-function Metric({ label, value, hint }: { label: string; value: string | number; hint?: string }) {
+function HintLabel({
+  label,
+  hint,
+  tText,
+}: {
+  label: string;
+  hint?: string;
+  tText: (zh: string) => string;
+}) {
+  return (
+    <span className="inline-flex items-center gap-1">
+      {tText(label)}
+      {hint ? <AdminFieldHint text={tText(hint)} /> : null}
+    </span>
+  );
+}
+
+function Metric({
+  label,
+  value,
+  hint,
+  fieldHint,
+  tText,
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
+  fieldHint?: string;
+  tText: (zh: string) => string;
+}) {
   return (
     <div className="rounded-lg border border-border bg-card p-4">
-      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+        <HintLabel label={label} hint={fieldHint} tText={tText} />
+      </div>
       <div className="mt-2 text-2xl font-bold text-foreground">{value}</div>
-      {hint ? <div className="mt-1 text-xs text-muted-foreground">{hint}</div> : null}
+      {hint ? <div className="mt-1 text-xs text-muted-foreground">{tText(hint)}</div> : null}
     </div>
   );
 }
@@ -105,9 +144,15 @@ function RunSteps({
             <th className={adminThClassName()}><Tx>策略</Tx></th>
             <th className={adminThClassName()}><Tx>清理对象</Tx></th>
             <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>状态</Tx></th>
-            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>命中</Tx></th>
-            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>删除</Tx></th>
-            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>批次</Tx></th>
+            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+              <HintLabel label="命中" hint={DATA_RETENTION_FIELD_HINTS.matched} tText={tText} />
+            </th>
+            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+              <HintLabel label="删除" hint={DATA_RETENTION_FIELD_HINTS.deleted} tText={tText} />
+            </th>
+            <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+              <HintLabel label="批次" hint={DATA_RETENTION_FIELD_HINTS.batchCount} tText={tText} />
+            </th>
             <th className={adminThClassName()}><Tx>原因</Tx></th>
           </tr>
         </thead>
@@ -308,8 +353,10 @@ export default function AdminDataRetention() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-foreground"><Tx>数据保存与清理中心</Tx></h1>
-          <p className="text-sm text-muted-foreground"><Tx>管理数据保留策略、清理预览、执行记录和防误删边界。</Tx></p>
+          <AdminPageTitle title={<Tx>数据保存与清理中心</Tx>} hint={tText(DATA_RETENTION_PAGE_HINT)} />
+          <p className="mt-1 text-sm text-muted-foreground">
+            <Tx>按规则删除过期记录；订单与付款等核心数据受保护。点击各处的「?」可查看通俗说明。</Tx>
+          </p>
         </div>
         <button
           type="button"
@@ -324,17 +371,26 @@ export default function AdminDataRetention() {
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.key;
+          const tabHint = DATA_RETENTION_TAB_HINTS[tab.key];
           return (
-            <button
+            <div
               key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={`inline-flex min-h-[42px] items-center gap-2 border-b-2 px-3 text-sm font-medium ${
-                active ? "border-[var(--theme-primary)] text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"
+              className={`inline-flex min-h-[42px] items-center gap-1 border-b-2 px-3 ${
+                active ? "border-[var(--theme-primary)]" : "border-transparent"
               }`}
             >
-              <Icon size={15} /> {tText(tab.label)}
-            </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={`inline-flex items-center gap-2 text-sm font-medium ${
+                  active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon size={15} />
+                {tText(tab.label)}
+              </button>
+              {tabHint ? <AdminFieldHint text={tText(tabHint)} /> : null}
+            </div>
           );
         })}
       </div>
@@ -342,13 +398,28 @@ export default function AdminDataRetention() {
       {activeTab === "overview" ? (
         <div className="space-y-4">
           <div className="grid gap-3 md:grid-cols-4">
-            <Metric label={tText("策略总数")} value={overview?.policyCount ?? "-"} />
-            <Metric label={tText("启用策略")} value={overview?.enabledPolicyCount ?? "-"} />
-            <Metric label={tText("锁定策略")} value={overview?.lockedPolicyCount ?? "-"} hint="审计日志默认锁定" />
-            <Metric label={tText("批量范围")} value={overview ? `${overview.batchSizeRange.min}-${overview.batchSizeRange.max}` : "-"} hint="每批删除条数" />
+            <Metric label="策略总数" value={overview?.policyCount ?? "-"} fieldHint={DATA_RETENTION_FIELD_HINTS.policyCount} tText={tText} />
+            <Metric label="启用策略" value={overview?.enabledPolicyCount ?? "-"} fieldHint={DATA_RETENTION_FIELD_HINTS.enabledPolicyCount} tText={tText} />
+            <Metric
+              label="锁定策略"
+              value={overview?.lockedPolicyCount ?? "-"}
+              hint="审计日志默认锁定"
+              fieldHint={DATA_RETENTION_FIELD_HINTS.lockedPolicyCount}
+              tText={tText}
+            />
+            <Metric
+              label="批量范围"
+              value={overview ? `${overview.batchSizeRange.min}-${overview.batchSizeRange.max}` : "-"}
+              hint="每批删除条数"
+              fieldHint={DATA_RETENTION_FIELD_HINTS.batchSizeRange}
+              tText={tText}
+            />
           </div>
           <section className="rounded-lg border border-border bg-card p-4">
-            <div className="mb-3 flex items-center gap-2 font-semibold text-foreground"><History size={16} /><Tx>最近执行</Tx></div>
+            <div className="mb-3 flex items-center gap-2 font-semibold text-foreground">
+              <History size={16} />
+              <Tx>最近执行</Tx>
+            </div>
             <RunSteps steps={runDetailQuery.data?.steps} policyTitleByKey={policyTitleByKey} tText={tText} />
             {!selectedRunId && (
               <div className="space-y-2">
@@ -364,7 +435,11 @@ export default function AdminDataRetention() {
             )}
           </section>
           <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            <div className="mb-2 flex items-center gap-2 font-semibold"><AlertTriangle size={16} /><Tx>默认保护表</Tx></div>
+            <div className="mb-2 flex items-center gap-2 font-semibold">
+              <AlertTriangle size={16} />
+              <Tx>默认保护表</Tx>
+              <AdminFieldHint text={tText(DATA_RETENTION_FIELD_HINTS.protectedTables)} />
+            </div>
             <div className="flex flex-wrap gap-2">
               {(overview?.protectedTables || []).map((table) => (
                 <span key={table} className="rounded-full border border-amber-200 bg-white px-2 py-0.5 text-xs" title={table}>
@@ -378,6 +453,28 @@ export default function AdminDataRetention() {
 
       {activeTab === "policies" ? (
         <div className="space-y-4">
+          <section className="rounded-lg border border-border bg-secondary/30 px-4 py-3 text-sm text-muted-foreground">
+            <div className="flex items-start gap-2">
+              <Info size={16} className="mt-0.5 shrink-0 text-[var(--theme-primary)]" />
+              <div className="space-y-2">
+                <p><Tx>修改数字后必须点该行的「保存」才会生效。鼠标移到表头或策略名称旁的 ? 可查看说明。</Tx></p>
+                <ul className="space-y-1 text-xs">
+                  <li className="flex items-center gap-1">
+                    <span className="font-medium text-foreground"><Tx>保留天数</Tx></span>
+                    <AdminFieldHint text={tText(DATA_RETENTION_FIELD_HINTS.retentionDays)} />
+                  </li>
+                  <li className="flex items-center gap-1">
+                    <span className="font-medium text-foreground"><Tx>批大小</Tx></span>
+                    <AdminFieldHint text={tText(DATA_RETENTION_FIELD_HINTS.batchSize)} />
+                  </li>
+                  <li className="flex items-center gap-1">
+                    <span className="font-medium text-foreground"><Tx>启用</Tx></span>
+                    <AdminFieldHint text={tText(DATA_RETENTION_FIELD_HINTS.enabled)} />
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </section>
           <div className="flex justify-end">
             <button
               type="button"
@@ -390,16 +487,29 @@ export default function AdminDataRetention() {
           </div>
           {Object.entries(groupedPolicies).map(([category, items]) => (
             <section key={category} className="rounded-lg border border-border bg-card">
-              <div className="border-b border-border px-4 py-3 font-semibold text-foreground">{tText(formatDataCleanupCategory(category))}</div>
+              <div className="border-b border-border px-4 py-3">
+                <AdminSectionTitle
+                  title={tText(formatDataCleanupCategory(category))}
+                  hint={DATA_RETENTION_CATEGORY_HINTS[category] ? tText(DATA_RETENTION_CATEGORY_HINTS[category]) : undefined}
+                />
+              </div>
               <AdminNativeTable stickyFirstColumn={false}>
                   <thead className="bg-secondary/50 text-xs text-muted-foreground">
                     <tr>
                       <th className={adminThClassName()}><Tx>策略</Tx></th>
                       <th className={adminThClassName()}><Tx>清理对象</Tx></th>
-                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>保留天数</Tx></th>
-                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>批大小</Tx></th>
-                      <th className={adminThClassName()}><Tx>启用</Tx></th>
-                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>保护</Tx></th>
+                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                        <HintLabel label="保留天数" hint={DATA_RETENTION_FIELD_HINTS.retentionDays} tText={tText} />
+                      </th>
+                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                        <HintLabel label="批大小" hint={DATA_RETENTION_FIELD_HINTS.batchSize} tText={tText} />
+                      </th>
+                      <th className={adminThClassName()}>
+                        <HintLabel label="启用" hint={DATA_RETENTION_FIELD_HINTS.enabled} tText={tText} />
+                      </th>
+                      <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                        <HintLabel label="保护" hint={DATA_RETENTION_FIELD_HINTS.protected} tText={tText} />
+                      </th>
                       <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>操作</Tx></th>
                     </tr>
                   </thead>
@@ -412,8 +522,13 @@ export default function AdminDataRetention() {
                       return (
                         <tr key={policy.key} className="border-t border-border align-top">
                           <td className="px-3 py-3">
-                            <div className="font-medium text-foreground">{tText(formatDataCleanupPolicyTitle(policy))}</div>
-                            <div className="mt-1 max-w-[360px] text-xs leading-relaxed text-muted-foreground">{policy.description}</div>
+                            <div className="flex items-center gap-1.5 font-medium text-foreground">
+                              {tText(formatDataCleanupPolicyTitle(policy))}
+                              <AdminFieldHint
+                                text={tText(getDataCleanupPolicyHelp(policy.key, policy.description))}
+                                contentClassName="max-w-xs"
+                              />
+                            </div>
                           </td>
                           <td className="px-3 py-3 text-muted-foreground">{tText(formatDataCleanupTableName(policy.table_name, policy.key))}</td>
                           <td className="px-3 py-3">
@@ -479,8 +594,14 @@ export default function AdminDataRetention() {
           <section className="rounded-lg border border-border bg-card p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 className="font-semibold text-foreground"><Tx>选择策略并生成预览</Tx></h2>
-                <p className="text-sm text-muted-foreground"><Tx>请先勾选策略并「生成预览」，确认命中条数后再执行清理；不可跳过预览直接删除。</Tx></p>
+                <AdminSectionTitle
+                  title={<Tx>选择策略并生成预览</Tx>}
+                  hint={tText(DATA_RETENTION_FIELD_HINTS.previewWorkflow)}
+                />
+                <p className="mt-1 flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
+                  <Tx>勾选每条策略旁的 ? 可查看会删什么、有什么限制。</Tx>
+                  <AdminFieldHint text={tText(DATA_RETENTION_FIELD_HINTS.testEnvNote)} />
+                </p>
               </div>
               <div className="flex gap-2">
                 <button type="button" onClick={() => { setSelectedKeys(policies.filter((p) => p.enabled).map((p) => p.key)); setPreviewRun(null); }} className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary"><Tx>选择启用项</Tx></button>
@@ -491,10 +612,17 @@ export default function AdminDataRetention() {
               {policies.map((policy) => (
                 <label key={policy.key} className="flex min-h-[48px] items-start gap-2 rounded-lg border border-border p-3 text-sm hover:bg-secondary/50">
                   <input type="checkbox" checked={selectedKeys.includes(policy.key)} onChange={() => togglePolicySelection(policy.key)} className="mt-1 h-4 w-4" />
-                  <span>
-                    <span className="block font-medium text-foreground">{tText(formatDataCleanupPolicyTitle(policy))}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-1 font-medium text-foreground">
+                      {tText(formatDataCleanupPolicyTitle(policy))}
+                      <AdminFieldHint
+                        text={tText(getDataCleanupPolicyHelp(policy.key, policy.description))}
+                        contentClassName="max-w-xs"
+                      />
+                    </span>
                     <span className="block text-xs text-muted-foreground">
-                      {tText(formatDataCleanupTableName(policy.table_name, policy.key))} · {tText("保留")} {policy.retention_days} {tText("天")}
+                      {tText("保留")} {policy.retention_days} {tText("天")}
+                      {policy.enabled ? "" : ` · ${tText("未启用")}`}
                     </span>
                   </span>
                 </label>
@@ -544,8 +672,12 @@ export default function AdminDataRetention() {
                     <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>编号</Tx></th>
                     <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>类型</Tx></th>
                     <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>状态</Tx></th>
-                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>命中</Tx></th>
-                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>删除</Tx></th>
+                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                      <HintLabel label="命中" hint={DATA_RETENTION_FIELD_HINTS.matched} tText={tText} />
+                    </th>
+                    <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                      <HintLabel label="删除" hint={DATA_RETENTION_FIELD_HINTS.deleted} tText={tText} />
+                    </th>
                     <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>开始时间</Tx></th>
                     <th className={adminThClassName(ADMIN_TABLE_NOWRAP_CLASS)}><Tx>操作</Tx></th>
                   </tr>
@@ -582,9 +714,22 @@ export default function AdminDataRetention() {
                   <StatusBadge status={runDetailQuery.data.status} tText={tText} />
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center text-sm">
-                  <div className="rounded bg-secondary/50 p-2"><div className="text-xs text-muted-foreground"><Tx>命中</Tx></div><strong>{runDetailQuery.data.total_matched}</strong></div>
-                  <div className="rounded bg-secondary/50 p-2"><div className="text-xs text-muted-foreground"><Tx>删除</Tx></div><strong>{runDetailQuery.data.total_deleted}</strong></div>
-                  <div className="rounded bg-secondary/50 p-2"><div className="text-xs text-muted-foreground"><Tx>失败</Tx></div><strong>{runDetailQuery.data.total_failed}</strong></div>
+                  <div className="rounded bg-secondary/50 p-2">
+                    <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                      <HintLabel label="命中" hint={DATA_RETENTION_FIELD_HINTS.matched} tText={tText} />
+                    </div>
+                    <strong>{runDetailQuery.data.total_matched}</strong>
+                  </div>
+                  <div className="rounded bg-secondary/50 p-2">
+                    <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                      <HintLabel label="删除" hint={DATA_RETENTION_FIELD_HINTS.deleted} tText={tText} />
+                    </div>
+                    <strong>{runDetailQuery.data.total_deleted}</strong>
+                  </div>
+                  <div className="rounded bg-secondary/50 p-2">
+                    <div className="text-xs text-muted-foreground"><Tx>失败</Tx></div>
+                    <strong>{runDetailQuery.data.total_failed}</strong>
+                  </div>
                 </div>
                 {runDetailQuery.data.error_message ? <div className="rounded border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700">{formatSystemErrorMessage(runDetailQuery.data.error_message)}</div> : null}
                 <RunSteps steps={runDetailQuery.data.steps} policyTitleByKey={policyTitleByKey} tText={tText} />

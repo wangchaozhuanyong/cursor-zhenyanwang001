@@ -2,6 +2,7 @@ const auditLogRepo = require('../modules/admin/repository/auditLog.repository');
 const { generateId } = require('./helpers');
 
 const MAX_JSON_CHARS = 8000;
+const MAX_OBJECT_ID_CHARS = 191;
 
 /**
  * @param {unknown} obj
@@ -74,6 +75,8 @@ async function getOperatorMeta(userId) {
  * }} params
  */
 async function writeAuditLog(params) {
+  if (process.env.AUDIT_LOG_DISABLED === '1') return;
+
   const {
     req,
     operatorId,
@@ -110,7 +113,7 @@ async function writeAuditLog(params) {
       operatorRole: String(role).slice(0, 50),
       actionType: String(actionType).slice(0, 80),
       objectType: String(objectType || '').slice(0, 80),
-      objectId: objectId || null,
+      objectId: objectId == null ? null : String(objectId).slice(0, MAX_OBJECT_ID_CHARS),
       summary: String(summary || '').slice(0, 500),
       beforeStr,
       afterStr,
@@ -132,4 +135,3 @@ module.exports = {
   getOperatorMeta,
   truncateJson,
 };
-

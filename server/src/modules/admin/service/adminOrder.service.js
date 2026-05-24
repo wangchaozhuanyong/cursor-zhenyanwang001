@@ -26,6 +26,10 @@ function getMyinvoisApi() {
   return /** @type {any} */ (require('../../myinvois')).api || {};
 }
 
+function getTelegramApi() {
+  return /** @type {any} */ (require('../../telegram')).api || {};
+}
+
 function requireUserApi(name) {
   const fn = getUserApi()[name];
   if (typeof fn !== 'function') {
@@ -397,6 +401,8 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
     payment_status: orderRow.payment_status || PAYMENT_STATUS.PENDING,
   };
 
+  let telegramNotifyOrderId = null;
+
   try {
     requireOrderApi('assertFulfillmentTransition')(orderRow.status, status);
 
@@ -455,6 +461,7 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
             }
           }
         } catch { /* sales_count is non-critical */ }
+        telegramNotifyOrderId = fullOrder.id;
       }
 
       if (status === ORDER_STATUS.CANCELLED && fullOrder) {
@@ -569,6 +576,17 @@ async function updateOrderStatus(orderId, body, adminUserId, req) {
       throw err;
     } finally {
       conn.release();
+    }
+
+    if (telegramNotifyOrderId) {
+      try {
+        const notify = getTelegramApi().notifyOrderPaid;
+        if (typeof notify === 'function') {
+          await notify(telegramNotifyOrderId, 'admin_order_status_paid');
+        }
+      } catch (e) {
+        console.error('[adminOrder] Telegram notify after status paid failed:', e?.message || e);
+      }
     }
 
     await writeAuditLog({

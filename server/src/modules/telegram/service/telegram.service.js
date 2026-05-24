@@ -8,6 +8,7 @@ function getSiteCapabilitiesApi() {
   return /** @type {any} */ (require('../../siteCapabilities')).api || {};
 }
 const { writeAuditLog } = require('../../../utils/auditLog');
+const { BusinessError, ValidationError } = require('../../../errors');
 const {
   SETTING_KEY,
   BOT_TOKEN_UNCHANGED,
@@ -20,6 +21,8 @@ const {
 } = require('../../../utils/telegramNotifyConfig');
 
 const EVENT_PAYMENT_SUCCESS = 'payment_success';
+/** 付款成功模板仅做 HTML 转义，实际发送固定 HTML，避免 Markdown 模式解析失败 */
+const ORDER_MESSAGE_PARSE_MODE = 'HTML';
 
 let configCache = null;
 
@@ -111,6 +114,26 @@ async function saveAdminSettings(body, adminUserId, req) {
   return after;
 }
 
+/** 与「功能开关」页 telegramOrderNotifyEnabled 双向同步（仅更新 enabled，保留已存 Token 等字段） */
+async function syncOrderNotifyEnabled(enabled) {
+  const enabledFlag = enabled === true || enabled === 'true' || enabled === 1 || enabled === '1';
+  const raw = await getAdminApi().selectSiteSettingValue(SETTING_KEY);
+  const stored = parseStoredConfig(raw) || {};
+  const envMerged = mergeTelegramNotifyConfig(readEnvTelegramConfig(), Object.keys(stored).length ? stored : null);
+  const next = normalizeTelegramNotifyConfig({
+    enabled: enabledFlag,
+    botToken: stored.botToken || '',
+    adminChatId: stored.adminChatId || envMerged.adminChatId,
+    parseMode: stored.parseMode || envMerged.parseMode,
+    includeOrderItems: stored.includeOrderItems ?? envMerged.includeOrderItems,
+    maxMessageLength: stored.maxMessageLength ?? envMerged.maxMessageLength,
+    adminFrontendUrl: stored.adminFrontendUrl || envMerged.adminFrontendUrl,
+  });
+  await getAdminApi().upsertSiteSetting(SETTING_KEY, JSON.stringify(next));
+  invalidateConfigCache();
+  return { enabled: next.enabled };
+}
+
 function buildSampleOrderSnapshot() {
   return {
     order: {
@@ -166,7 +189,7 @@ async function buildMessagePreview(overrides = {}) {
   });
   return {
     eventType: EVENT_PAYMENT_SUCCESS,
-    parseMode: merged.parseMode,
+    parseMode: ORDER_MESSAGE_PARSE_MODE,
     totalParts: messages.length,
     messages,
     sampleOrderNo: snapshot.order.orderNo,
@@ -193,22 +216,31 @@ async function sendMessage(chatId, text, options = {}) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12_000);
   try {
+    const parseMode = options.parseMode !== undefined ? options.parseMode : config.parseMode;
+    const payload = {
+      chat_id: chatId,
+      text,
+      disable_web_page_preview: true,
+    };
+    if (parseMode) payload.parse_mode = parseMode;
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        parse_mode: options.parseMode || config.parseMode,
-        disable_web_page_preview: true,
-      }),
+      body: JSON.stringify(payload),
     });
     const data = /** @type {any} */ (await response.json().catch(() => ({})));
     if (!response.ok || data.ok === false) {
-      throw new Error(data.description || `Telegram API error: ${response.status}`);
+      const detail = data.description || `Telegram API error: ${response.status}`;
+      throw new BusinessError(400, detail);
     }
     return data.result?.message_id ? String(data.result.message_id) : '';
+  } catch (error) {
+    if (error instanceof BusinessError) throw error;
+    if (error?.name === 'AbortError') {
+      throw new BusinessError(504, 'Telegram 请求超时，请稍后重试');
+    }
+    throw new BusinessError(400, safeErrorMessage(error, token));
   } finally {
     clearTimeout(timeout);
   }
@@ -276,7 +308,7 @@ async function notifyOrderPaid(orderId, source = '') {
     messageContentForLog = messages.join('\n\n---\n\n');
     const providerIds = [];
     for (const message of messages) {
-      const id = await sendMessage(config.adminChatId, message, { parseMode: config.parseMode });
+      const id = await sendMessage(config.adminChatId, message, { parseMode: ORDER_MESSAGE_PARSE_MODE });
       if (id) providerIds.push(id);
     }
     await writeLog({
@@ -302,18 +334,29 @@ async function notifyOrderPaid(orderId, source = '') {
 
 async function sendTestMessage() {
   const config = await loadConfig();
-  if (!config.enabled) throw new Error('Telegram 未开启，请先在下方保存并启用');
-  if (!config.botToken) throw new Error('Telegram Bot Token 未配置');
-  if (!config.adminChatId) throw new Error('Telegram 管理员 Chat ID 未配置');
+  if (!config.enabled) {
+    throw new ValidationError('Telegram 未开启，请先保存并启用后再测试');
+  }
+  if (!config.botToken) {
+    throw new ValidationError('Telegram Bot Token 未配置，请填写后保存再测试');
+  }
+  if (!config.adminChatId) {
+    throw new ValidationError('Telegram 管理员 Chat ID 未配置，请填写后保存再测试');
+  }
   const text = '✅ Telegram 通知测试成功\n\n如果你看到这条消息，说明订单通知已经可以正常发送。';
-  const providerMessageId = await sendMessage(config.adminChatId, text, { parseMode: config.parseMode });
-  await repo.insertNotificationLog({
-    targetId: config.adminChatId,
-    eventType: 'test',
-    messageContent: text,
-    sendStatus: 'sent',
-    providerMessageId,
-  });
+  // 测试消息使用纯文本，避免 Markdown/MarkdownV2 转义导致 Telegram 400
+  const providerMessageId = await sendMessage(config.adminChatId, text, { parseMode: undefined });
+  try {
+    await repo.insertNotificationLog({
+      targetId: config.adminChatId,
+      eventType: 'test',
+      messageContent: text,
+      sendStatus: 'sent',
+      providerMessageId,
+    });
+  } catch (logErr) {
+    console.error('[Telegram] test send log failed:', safeErrorMessage(logErr, config.botToken));
+  }
   return { providerMessageId };
 }
 
@@ -330,6 +373,7 @@ module.exports = {
   getStatus,
   getAdminSettings,
   saveAdminSettings,
+  syncOrderNotifyEnabled,
   buildMessagePreview,
   sendMessage,
   notifyOrderPaid,

@@ -1,10 +1,10 @@
 const contentRepo = require('../repository/content.repository');
-const adminModule = require('../../admin');
-
-const adminApi = /** @type {any} */ (adminModule).api || {};
+function getAdminApi() {
+  return /** @type {any} */ (require('../../admin')).api || {};
+}
 
 function requireAdminApi(name) {
-  const fn = adminApi[name];
+  const fn = getAdminApi()[name];
   if (typeof fn !== 'function') {
     throw new Error(`Admin 模块 API 未暴露方法：${name}`);
   }
@@ -81,5 +81,4 @@ exports.getContentPageBySlug = async (slug) => {
 };
 
 exports.getPublicHomeOps = async () => requireAdminApi('getPublicHomeOps')();
-
 

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import PageHeader from "@/components/PageHeader";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import * as settingsService from "@/services/admin/settingsService";
 import { DEFAULT_SITE_CAPABILITIES, type SiteCapabilities } from "@/types/siteCapabilities";
@@ -21,7 +20,7 @@ const FEATURE_ITEMS: Array<{ key: keyof SiteCapabilities; label: string; desc: s
   { key: "shippingEnabled", label: "配送", desc: "关闭后隐藏配送设置，后端拒绝配送管理接口。" },
   { key: "memberLevelEnabled", label: "会员等级", desc: "关闭后隐藏会员等级入口，后端拒绝会员等级管理接口。" },
   { key: "customerServiceDownloadEnabled", label: "客服/APP 页", desc: "关闭后隐藏前台客服/APP 页与底部导航入口。" },
-  { key: "telegramOrderNotifyEnabled", label: "Telegram 订单通知", desc: "控制订单 Telegram 通知能力。" },
+  { key: "telegramOrderNotifyEnabled", label: "Telegram 订单通知", desc: "与「Telegram 通知」页的启用开关同步；关闭后不再发送付款成功提醒。" },
   { key: "languageGateEnabled", label: "中文浏览器限制", desc: "开启后前台商城路由将拦截非中文浏览器；后台 /admin 不受限。仅前端拦截，API 仍可直连。" },
   { key: "restrictedProductComplianceEnabled", label: "受限商品合规", desc: "控制受限商品合规提示和限制逻辑。" },
   { key: "trafficAnalyticsEnabled", label: "流量分析", desc: "关闭后前端隐藏追踪加载，后端可减少埋点入口。" },
@@ -62,6 +61,7 @@ export default function AdminFeatureSettings() {
       setValues({ ...DEFAULT_SITE_CAPABILITIES, ...(next ?? {}) });
       await refreshSiteCapabilities();
       await queryClient.invalidateQueries({ queryKey: adminQueryKeys.siteCapabilities() });
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.telegramSettings() });
       toast.success(tText("功能开关已保存"));
     } catch {
       toast.error(tText("保存失败"));
@@ -72,7 +72,6 @@ export default function AdminFeatureSettings() {
 
   return (
     <div className="space-y-4 p-4">
-      <PageHeader title={tText("功能开关")} />
       <section className="rounded-2xl border border-border bg-card">
         <div className="flex items-center justify-between gap-3 border-b border-border p-4">
           <div className="flex items-center gap-2">

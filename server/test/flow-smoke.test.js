@@ -50,8 +50,8 @@ describe('local flow smoke', () => {
       .query({ pageSize: 50 })
       .expect(200);
     assert.equal(products.body.code, 0);
-    const productList = products.body.data?.list || [];
-    const inStock = productList.find((p) => Number(p?.stock) > 0);
+    // Use an isolated smoke product so this flow does not depend on shared catalog stock.
+    const inStock = null;
     if (inStock) {
       productId = inStock.id;
     } else {

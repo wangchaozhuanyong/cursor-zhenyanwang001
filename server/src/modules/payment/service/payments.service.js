@@ -14,7 +14,8 @@ const payDb = payRepo.getPool();
 
 function publishAdminEvent(event) {
   try {
-    getAdminApi().publishAdminEvent(event);
+    const result = getAdminApi().publishAdminEvent(event);
+    if (result && typeof result.catch === 'function') result.catch(() => {});
   } catch {
     // Best-effort realtime signal; payment processing must not depend on SSE.
   }
@@ -22,11 +23,12 @@ function publishAdminEvent(event) {
 
 function emitAdminEvent(event, options = {}) {
   try {
-    void getAdminApi().emitEvent(event, {
+    const result = getAdminApi().emitEvent(event, {
       operatorId: options.operatorId || null,
       operatorType: options.operatorType || 'system',
       source: options.source || event.source || 'payment',
     });
+    if (result && typeof result.catch === 'function') result.catch(() => {});
   } catch {
     // Event center is best-effort; payment state changes must not depend on it.
   }

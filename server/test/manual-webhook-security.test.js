@@ -3,6 +3,8 @@ const assert = require('node:assert/strict');
 const paymentsService = require('../src/modules/payment/service/payments.service');
 const payRepo = require('../src/modules/payment/repository/payments.repository');
 
+process.env.AUDIT_LOG_DISABLED = '1';
+
 function stableStringify(value) {
   if (value === null || value === undefined) return 'null';
   if (typeof value !== 'object') return JSON.stringify(value);
@@ -113,4 +115,3 @@ describe('manual webhook security', () => {
     }
   });
 });
-

@@ -242,6 +242,80 @@ async function incrementUsedCount(q, couponId) {
   ).catch(() => {});
 }
 
+async function insertCouponEvent(q, event) {
+  await q.query(
+    `INSERT INTO coupon_events
+       (id, coupon_id, user_coupon_id, user_id, event_type, order_id, order_no, admin_user_id, reason, metadata)
+     VALUES (?,?,?,?,?,?,?,?,?,?)`,
+    [
+      event.id,
+      event.couponId,
+      event.userCouponId || null,
+      event.userId || null,
+      event.eventType,
+      event.orderId || null,
+      event.orderNo || null,
+      event.adminUserId || null,
+      event.reason || null,
+      event.metadata ? JSON.stringify(event.metadata) : null,
+    ],
+  ).catch(() => {});
+}
+
+async function selectExpiredUserCoupons(q, limit) {
+  const [rows] = await q.query(
+    `SELECT id, coupon_id, user_id
+       FROM user_coupons
+      WHERE status IN ('available', 'pending')
+        AND valid_until IS NOT NULL
+        AND valid_until < NOW()
+      LIMIT ?`,
+    [limit],
+  );
+  return rows;
+}
+
+async function markUserCouponsExpired(q, ids, reason) {
+  if (!Array.isArray(ids) || !ids.length) return;
+  await q.query(
+    `UPDATE user_coupons
+        SET status = 'expired',
+            invalid_reason = COALESCE(invalid_reason, ?)
+      WHERE id IN (${ids.map(() => '?').join(',')})`,
+    [reason, ...ids],
+  );
+}
+
+async function selectUserCouponForRestore(q, userCouponId) {
+  const [[row]] = await q.query(
+    `SELECT uc.*, c.publish_status AS coupon_publish_status, c.status AS coupon_status,
+            c.invalidated_at, c.stop_use_at, c.deleted_at
+       FROM user_coupons uc
+       LEFT JOIN coupons c ON BINARY c.id = BINARY uc.coupon_id
+      WHERE BINARY uc.id = BINARY ?
+      FOR UPDATE`,
+    [userCouponId],
+  );
+  return row || null;
+}
+
+async function updateUserCouponAfterRestore(q, userCouponId, status, returnReason, invalidReason) {
+  await q.query(
+    `UPDATE user_coupons
+        SET status = ?,
+            used_at = NULL,
+            returned_at = NOW(),
+            return_reason = ?,
+            invalid_reason = CASE WHEN ? IN ('expired','invalidated') THEN ? ELSE invalid_reason END,
+            order_id = NULL,
+            order_no = NULL,
+            discount_amount = NULL,
+            locked_at = NULL
+      WHERE BINARY id = BINARY ?`,
+    [status, returnReason, status, invalidReason, userCouponId],
+  );
+}
+
 async function selectUserOrderCount(userId) {
   const [[row]] = await db.query(
     `SELECT COUNT(*) AS cnt FROM orders
@@ -268,8 +342,12 @@ module.exports = {
   countTotalClaimsForCoupon,
   incrementClaimedCountIfAvailable,
   incrementUsedCount,
+  insertCouponEvent,
+  selectExpiredUserCoupons,
+  markUserCouponsExpired,
+  selectUserCouponForRestore,
+  updateUserCouponAfterRestore,
   selectUserOrderCount,
 };
-
 
 

@@ -72,7 +72,7 @@ function formatGiftItem(row, product) {
 }
 
 async function listActiveGiftItems() {
-  const rows = await giftRepo.selectActiveGiftItems(getOrderApi().getPool());
+  const rows = await giftRepo.selectActiveGiftItems();
   const out = [];
   for (const row of rows) {
     const product = await getProductApi().getProductById(row.product_id);
@@ -83,7 +83,7 @@ async function listActiveGiftItems() {
 }
 
 async function getGiftItem(id) {
-  const row = await giftRepo.selectGiftItemById(getOrderApi().getPool(), id);
+  const row = await giftRepo.selectGiftItemById(null, id);
   if (!row || !row.enabled) throw new NotFoundError('礼品不存在或已下架');
   const product = await getProductApi().getProductById(row.product_id);
   if (!product) throw new NotFoundError('关联商品不存在');
@@ -106,7 +106,7 @@ async function redeemGift(userId, body) {
     throw new ValidationError('请填写收货人、电话和地址');
   }
 
-  const conn = await getOrderApi().getConnection();
+  const conn = await getOrderApi().getOrderConnection();
   try {
     await conn.beginTransaction();
     const gift = await giftRepo.selectGiftItemByIdForUpdate(conn, giftItemId);

@@ -1,4 +1,5 @@
 const { generateId } = require('../../../utils/helpers');
+const couponRepo = require('../repository/coupon.repository');
 
 function normalizeCouponType(type) {
   if (type === 'amount') return 'fixed';
@@ -126,44 +127,14 @@ function resolveUserCouponRuntimeStatus(row, now = new Date()) {
 }
 
 async function insertCouponEvent(q, event) {
-  await q.query(
-    `INSERT INTO coupon_events
-       (id, coupon_id, user_coupon_id, user_id, event_type, order_id, order_no, admin_user_id, reason, metadata)
-     VALUES (?,?,?,?,?,?,?,?,?,?)`,
-    [
-      event.id || generateId(),
-      event.couponId,
-      event.userCouponId || null,
-      event.userId || null,
-      event.eventType,
-      event.orderId || null,
-      event.orderNo || null,
-      event.adminUserId || null,
-      event.reason || null,
-      event.metadata ? JSON.stringify(event.metadata) : null,
-    ],
-  ).catch(() => {});
+  await couponRepo.insertCouponEvent(q, { ...event, id: event.id || generateId() });
 }
 
 async function expireUserCouponsNow(q, options = {}) {
-  const [rows] = await q.query(
-    `SELECT id, coupon_id, user_id
-       FROM user_coupons
-      WHERE status IN ('available', 'pending')
-        AND valid_until IS NOT NULL
-        AND valid_until < NOW()
-      LIMIT ?`,
-    [Math.max(1, Math.min(1000, Number(options.limit || 500)))],
-  );
+  const rows = await couponRepo.selectExpiredUserCoupons(q, Math.max(1, Math.min(1000, Number(options.limit || 500))));
   if (!rows.length) return { expired: 0 };
   const ids = rows.map((r) => r.id);
-  await q.query(
-    `UPDATE user_coupons
-        SET status = 'expired',
-            invalid_reason = COALESCE(invalid_reason, '优惠券已过期')
-      WHERE id IN (${ids.map(() => '?').join(',')})`,
-    ids,
-  );
+  await couponRepo.markUserCouponsExpired(q, ids, '优惠券已过期');
   for (const row of rows) {
     await insertCouponEvent(q, {
       couponId: row.coupon_id,
@@ -177,15 +148,7 @@ async function expireUserCouponsNow(q, options = {}) {
 }
 
 async function restoreCouponAfterOrderCancelled(q, userCouponId, options = {}) {
-  const [[row]] = await q.query(
-    `SELECT uc.*, c.publish_status AS coupon_publish_status, c.status AS coupon_status,
-            c.invalidated_at, c.stop_use_at, c.deleted_at
-       FROM user_coupons uc
-       LEFT JOIN coupons c ON BINARY c.id = BINARY uc.coupon_id
-      WHERE BINARY uc.id = BINARY ?
-      FOR UPDATE`,
-    [userCouponId],
-  );
+  const row = await couponRepo.selectUserCouponForRestore(q, userCouponId);
   if (!row) return { restored: false, status: null };
   let nextStatus = 'available';
   let reason = options.reason || '订单取消返还优惠券';
@@ -202,20 +165,7 @@ async function restoreCouponAfterOrderCancelled(q, userCouponId, options = {}) {
     nextStatus = 'invalidated';
     reason = '订单取消时优惠券已失效';
   }
-  await q.query(
-    `UPDATE user_coupons
-        SET status = ?,
-            used_at = NULL,
-            returned_at = NOW(),
-            return_reason = ?,
-            invalid_reason = CASE WHEN ? IN ('expired','invalidated') THEN ? ELSE invalid_reason END,
-            order_id = NULL,
-            order_no = NULL,
-            discount_amount = NULL,
-            locked_at = NULL
-      WHERE BINARY id = BINARY ?`,
-    [nextStatus, options.reason || reason, nextStatus, reason, userCouponId],
-  );
+  await couponRepo.updateUserCouponAfterRestore(q, userCouponId, nextStatus, options.reason || reason, reason);
   await insertCouponEvent(q, {
     couponId: row.coupon_id,
     userCouponId,

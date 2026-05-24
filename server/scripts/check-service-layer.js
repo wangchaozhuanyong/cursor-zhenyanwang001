@@ -73,12 +73,21 @@ for (const f of files) {
 
 /** *service*.js 中禁止在 pool/conn 上直接 .query */
 const serviceFiles = files.filter((p) => path.basename(p).includes('service') && p.endsWith('.js'));
-const anyConnQueryRe = /\b(?:pool|conn|connection|db)\s*\.\s*query\s*\(/;
+const controllerFiles = files.filter((p) => path.basename(p).includes('controller') && p.endsWith('.js'));
+const directSqlCallRe = /\b[A-Za-z_$][\w$]*\s*\.\s*(?:query|execute)\s*\(/;
 for (const f of serviceFiles) {
   const rel = path.relative(path.join(__dirname, '..'), f);
   const text = fs.readFileSync(f, 'utf8');
-  if (anyConnQueryRe.test(text)) {
-    console.error(`[check-service-layer] Forbidden .query() on pool/conn in service file: ${rel}`);
+  if (directSqlCallRe.test(text)) {
+    console.error(`[check-service-layer] Forbidden .query()/.execute() in service file: ${rel}`);
+    failed = true;
+  }
+}
+for (const f of controllerFiles) {
+  const rel = path.relative(path.join(__dirname, '..'), f);
+  const text = fs.readFileSync(f, 'utf8');
+  if (directSqlCallRe.test(text)) {
+    console.error(`[check-service-layer] Forbidden .query()/.execute() in controller file: ${rel}`);
     failed = true;
   }
 }

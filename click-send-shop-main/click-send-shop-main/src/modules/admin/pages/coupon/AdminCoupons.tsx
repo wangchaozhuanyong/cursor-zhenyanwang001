@@ -110,10 +110,10 @@ export default function AdminCoupons() {
 
     return (
       <AdminTableMobileCard>
-        <motion.div className="mb-2 flex items-start justify-between gap-2">
+        <div className="mb-2 flex items-start justify-between gap-2">
           <p className="text-sm font-semibold">{coupon.title}</p>
           <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${statusColor}`}>{statusLabel}</span>
-        </motion.div>
+        </div>
         <div className="mb-2 flex flex-wrap gap-1.5">
           <span className={`rounded-full px-2 py-0.5 text-xs ${typeColor}`}>{typeLabel}</span>
           {coupon.code ? <span className="rounded-full bg-secondary px-2 py-0.5 font-mono text-xs">{coupon.code}</span> : null}
@@ -132,7 +132,7 @@ export default function AdminCoupons() {
             <button type="button" onClick={() => setIssueCouponId(coupon.id)} className="touch-manipulation flex-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-secondary"><Tx>发券</Tx></button>
             <button type="button" onClick={() => setDeleteId(coupon.id)} className={`touch-manipulation rounded-lg px-3 py-2 text-xs ${THEME_OUTLINE_DANGER}`}><Trash2 size={13} className="inline" /></button>
           </PermissionGate>
-        </motion.div>
+        </div>
       </AdminTableMobileCard>
     );
   };

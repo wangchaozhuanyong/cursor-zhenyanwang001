@@ -9,6 +9,10 @@ import { fetchCouponRecords } from "@/services/admin/couponService";
 import type { CouponClaimRecord } from "@/types/coupon";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
+import {
+  AdminTableMobileCard,
+  AdminTableMobileCardField,
+} from "@/components/admin/AdminTableMobileCard";
 import { AnimatedTable } from "@/modules/micro-interactions";
 import AdminFilterSummaryBar from "@/components/admin/AdminFilterSummaryBar";
 import { AdminEmptyGuideActions } from "@/components/admin/AdminEmptyGuideActions";
@@ -85,6 +89,36 @@ export default function AdminCouponRecords() {
     return `${raw.slice(0, 3)}****${raw.slice(-4)}`;
   };
 
+  const renderMobileCard = (record: CouponClaimRecord) => {
+    const statusLabel = statusLabels[record.status]?.label ? L(statusLabels[record.status].label) : labelCouponRecordStatus(record.status);
+    const statusColor = statusLabels[record.status]?.color || "bg-secondary text-foreground";
+
+    return (
+      <AdminTableMobileCard>
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <p className="text-sm font-semibold">{formatUserDisplay(record.nickname, record.phone)}</p>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${statusColor}`}>{statusLabel}</span>
+        </div>
+        <div className="space-y-2">
+          <AdminTableMobileCardField label={tText("优惠券")}>
+            <span className="text-xs text-muted-foreground">{record.coupon_title || "—"}</span>
+          </AdminTableMobileCardField>
+          <AdminTableMobileCardField label={tText("手机号")}>
+            <span className="text-xs text-muted-foreground">{formatPhone(record.phone)}</span>
+          </AdminTableMobileCardField>
+          <AdminTableMobileCardField label={tText("领取时间")}>
+            <span className="text-xs text-muted-foreground">{formatDateTime(record.claimed_at)}</span>
+          </AdminTableMobileCardField>
+          {record.used_at ? (
+            <AdminTableMobileCardField label={tText("使用时间")}>
+              <span className="text-xs text-muted-foreground">{formatDateTime(record.used_at)}</span>
+            </AdminTableMobileCardField>
+          ) : null}
+        </div>
+      </AdminTableMobileCard>
+    );
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
@@ -138,6 +172,7 @@ export default function AdminCouponRecords() {
             onClearFilters={clearFilters}
           />
         )}
+        renderMobileCard={renderMobileCard}
         renderRow={(record) => (
           <>
             <td className="px-4 py-3">{formatUserDisplay(record.nickname, record.phone)}</td>

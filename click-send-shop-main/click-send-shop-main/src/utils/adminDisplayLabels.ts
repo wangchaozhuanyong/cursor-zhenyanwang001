@@ -331,13 +331,15 @@ export function labelAdminLegacyRole(role: string): string {
 export const RBAC_ROLE_CODE_LABELS: Record<string, string> = {
   super_admin: "超级管理员",
   admin_manager: "运营主管",
+  operator: "运营",
+  content_editor: "内容编辑",
   marketing: "营销",
   finance: "财务",
   warehouse: "仓储",
   customer_service: "客服",
 };
 export function labelRbacRoleCode(code: string): string {
-  return labelFromMap(RBAC_ROLE_CODE_LABELS, code, code);
+  return labelFromMap(RBAC_ROLE_CODE_LABELS, code, "自定义角色");
 }
 
 export const RETURN_TYPE_LABELS: Record<string, string> = {

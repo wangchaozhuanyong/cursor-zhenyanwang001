@@ -327,12 +327,19 @@ export default function AdminAccounts() {
         skeletonRows={8}
         skeletonCols={6}
         className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
-        tableClassName="w-full min-w-[860px] text-sm"
+        tableClassName="w-full min-w-[920px] text-sm"
         theadClassName="border-b border-[var(--theme-border)] bg-[var(--theme-bg)]/70"
         thead={(
           <tr>
-            {tableHeaders.map((h) => (
-              <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
+            {tableHeaders.map((h, i) => (
+              <th
+                key={h}
+                className={`px-4 py-3 text-xs font-semibold text-muted-foreground whitespace-nowrap ${
+                  i === tableHeaders.length - 1 ? "min-w-[9.5rem] text-right" : "text-left"
+                }`}
+              >
+                {h}
+              </th>
             ))}
           </tr>
         )}
@@ -385,20 +392,20 @@ export default function AdminAccounts() {
               </td>
               <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{a.created_at ? formatDateTime(a.created_at) : "-"}</td>
               <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{a.last_login_at ? formatDateTime(a.last_login_at) : <span className="italic text-muted-foreground/60"><Tx>从未登录</Tx></span>}</td>
-              <td className="px-4 py-3">
-                <div className="flex flex-wrap items-center gap-1">
+              <td className="px-4 py-3 text-right whitespace-nowrap">
+                <div className="inline-flex flex-nowrap items-center justify-end gap-1">
                   <PermissionGate permission="role.manage">
                     {!targetLocked && a.role !== "super_admin" && (
                       <>
-                        <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title={a.role === "disabled" ? tText("启用") : tText("禁用")}>
+                        <button type="button" onClick={() => handleToggle(a)} className="touch-manipulation shrink-0 theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title={a.role === "disabled" ? tText("启用") : tText("禁用")}>
                           {a.role === "disabled" ? <ToggleRight size={14} className={THEME_TEXT_SUCCESS_SOFT} /> : <ToggleLeft size={14} />}
                         </button>
                         {(isSuperAdminViewer || !hasPrivilegedRole(a)) && (
-                          <button type="button" onClick={() => { setResetTarget(a); setNewPassword(""); }} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title={tText("重置密码")}>
+                          <button type="button" onClick={() => { setResetTarget(a); setNewPassword(""); }} className="touch-manipulation shrink-0 theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title={tText("重置密码")}>
                             <KeyRound size={14} />
                           </button>
                         )}
-                        <button type="button" onClick={() => setSecurityTarget(a)} className="touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title={tText("安全设置")}>
+                        <button type="button" onClick={() => setSecurityTarget(a)} className="touch-manipulation shrink-0 theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground hover:bg-[var(--theme-bg)]" title={tText("安全设置")}>
                           <ShieldCheck size={14} />
                         </button>
                         <button
@@ -410,7 +417,7 @@ export default function AdminAccounts() {
                               void invalidateAccounts();
                             })
                           }
-                          className={`touch-manipulation theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground ${THEME_HOVER_TEXT_DANGER} hover:bg-[var(--theme-bg)]`}
+                          className={`touch-manipulation shrink-0 theme-rounded border border-[var(--theme-border)] p-1.5 text-muted-foreground ${THEME_HOVER_TEXT_DANGER} hover:bg-[var(--theme-bg)]`}
                           title={tText("删除")}
                         >
                           <Trash2 size={14} />
@@ -418,7 +425,7 @@ export default function AdminAccounts() {
                       </>
                     )}
                     {targetLocked && (
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground"><Shield size={12} /><Tx>不可操作</Tx></span>
+                      <span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground"><Shield size={12} /><Tx>不可操作</Tx></span>
                     )}
                   </PermissionGate>
                 </div>

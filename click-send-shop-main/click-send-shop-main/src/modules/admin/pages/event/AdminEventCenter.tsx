@@ -13,6 +13,8 @@ import {
   labelAdminEventCategory,
   labelAdminEventStatus,
 } from "@/utils/adminEventLabels";
+import { formatDateTime } from "@/utils/formatDateTime";
+import type { AdminEventRecord } from "@/services/admin/eventCenterService";
 
 const tabs = [
   { key: "all", label: "全部" },
@@ -30,6 +32,12 @@ function severityClass(severity: string) {
   if (severity === "P1") return "bg-orange-500 text-white";
   if (severity === "P2") return "bg-amber-100 text-amber-800";
   return "bg-secondary text-muted-foreground";
+}
+
+/** 事件发生时间：优先首次发现，否则用记录创建时间 */
+function formatEventOccurredAt(item: AdminEventRecord) {
+  const raw = item.firstSeenAt || item.createdAt;
+  return raw ? formatDateTime(raw) : "-";
 }
 
 export default function AdminEventCenter() {
@@ -123,16 +131,20 @@ export default function AdminEventCenter() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
-        <div className="grid grid-cols-[110px_90px_1fr_120px_220px] gap-3 border-b border-border px-4 py-2 text-xs font-medium text-muted-foreground">
+      <div className="overflow-x-auto rounded-lg border border-border bg-card">
+        <div className="min-w-[920px]">
+        <div className="grid grid-cols-[90px_90px_minmax(180px,1fr)_152px_100px_minmax(200px,auto)] gap-3 border-b border-border px-4 py-2 text-xs font-medium text-muted-foreground">
           <span><Tx>级别</Tx></span>
           <span><Tx>分类</Tx></span>
           <span><Tx>事件</Tx></span>
+          <span><Tx>时间</Tx></span>
           <span><Tx>状态</Tx></span>
-          <span><Tx>操作</Tx></span>
+          <span className="text-right"><Tx>操作</Tx></span>
         </div>
-        {rows.length ? rows.map((item) => (
-          <div key={item.id} className="grid grid-cols-[110px_90px_1fr_120px_220px] gap-3 border-b border-border px-4 py-3 text-sm last:border-b-0">
+        {rows.length ? rows.map((item) => {
+          const occurredAt = formatEventOccurredAt(item);
+          return (
+          <div key={item.id} className="grid grid-cols-[90px_90px_minmax(180px,1fr)_152px_100px_minmax(200px,auto)] gap-3 border-b border-border px-4 py-3 text-sm last:border-b-0">
             <div><span className={`rounded px-2 py-1 text-xs font-bold ${severityClass(item.severity)}`}>{item.severity}</span></div>
             <div className="flex items-center gap-1 text-muted-foreground">
               {item.category === "security" ? <Shield size={14} className="text-red-600" /> : <AlertTriangle size={14} className="text-amber-600" />}
@@ -142,22 +154,27 @@ export default function AdminEventCenter() {
               <div className="truncate font-medium text-foreground">{tText(formatAdminEventTitle(item.title, item.eventType, item.category))}</div>
               <div className="mt-1 truncate text-xs text-muted-foreground">{tText(formatAdminEventSubtitle(item.message, item.eventType, item.category))}</div>
             </div>
+            <div className="whitespace-nowrap text-xs text-muted-foreground" title={occurredAt}>
+              {occurredAt}
+            </div>
             <div className="text-muted-foreground">{tText(labelAdminEventStatus(item.status))}</div>
-            <div className="flex flex-wrap gap-1">
+            <div className="inline-flex flex-nowrap items-center justify-end gap-1">
               <PermissionGate anyOf={EVENT_VIEW_PERMISSIONS}>
-                <button type="button" className="rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "read" })}><Eye size={13} className="mr-1 inline" /><Tx>已读</Tx></button>
+                <button type="button" className="shrink-0 rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "read" })}><Eye size={13} className="mr-1 inline" /><Tx>已读</Tx></button>
               </PermissionGate>
               <PermissionGate anyOf={EVENT_MANAGE_PERMISSIONS}>
-                <button type="button" className="rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ack" })}><Tx>确认</Tx></button>
-                <button type="button" className="rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "progress" })}><Tx>处理中</Tx></button>
-                <button type="button" className="rounded px-2 py-1 text-xs text-emerald-700 hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "resolve" })}><CheckCircle2 size={13} className="mr-1 inline" /><Tx>完成</Tx></button>
-                <button type="button" className="rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ignore" })}><XCircle size={13} className="mr-1 inline" /><Tx>忽略</Tx></button>
+                <button type="button" className="shrink-0 rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ack" })}><Tx>确认</Tx></button>
+                <button type="button" className="shrink-0 rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "progress" })}><Tx>处理中</Tx></button>
+                <button type="button" className="shrink-0 rounded px-2 py-1 text-xs text-emerald-700 hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "resolve" })}><CheckCircle2 size={13} className="mr-1 inline" /><Tx>完成</Tx></button>
+                <button type="button" className="shrink-0 rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "ignore" })}><XCircle size={13} className="mr-1 inline" /><Tx>忽略</Tx></button>
               </PermissionGate>
             </div>
           </div>
-        )) : (
+        );
+        }) : (
           <div className="px-4 py-10 text-center text-sm text-muted-foreground"><Tx>暂无事件</Tx></div>
         )}
+        </div>
       </div>
     </div>
   );

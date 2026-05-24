@@ -1,12 +1,14 @@
 /**
  * UI overlap audit (extended).
  * Usage: node scripts/audit-ui-overlap.mjs
- * Env: BASE_URL, VIEWPORTS (e.g. "390x844,375x667"), COUPON_STYLES_ALL=1, SKIP_AUTH=1, SKIP_ADMIN=1
+ * Env: BASE_URL, API_BASE_URL, VIEWPORTS (e.g. "390x844,375x667"), COUPON_STYLES_ALL=1, SKIP_AUTH=1, SKIP_ADMIN=1
  */
 import { chromium } from "@playwright/test";
 
 const BASE = process.env.BASE_URL || "http://localhost:8080";
-const API = `${BASE.replace(/\/$/, "")}/api`;
+const API = process.env.API_BASE_URL
+  ? `${process.env.API_BASE_URL.replace(/\/$/, "")}/api`
+  : `${BASE.replace(/\/$/, "")}/api`;
 const VIEWPORTS = (process.env.VIEWPORTS || "390x844,375x667,1280x800")
   .split(",")
   .map((s) => {
@@ -69,6 +71,16 @@ async function jfetch(url, options = {}) {
     throw new Error(`${options.method || "GET"} ${url} -> ${body.message || res.status}`);
   }
   return body.data;
+}
+
+async function isApiAvailable() {
+  try {
+    const res = await fetch(`${API}/health/live`);
+    const body = await res.json().catch(() => ({}));
+    return res.ok && body.code === 0;
+  } catch {
+    return false;
+  }
 }
 
 /** Malaysia local mobile (9–10 digits, e.g. 0123456789) for +60 registration. */
@@ -384,11 +396,21 @@ function pushIssue(report, issue) {
 
 async function main() {
   const report = [];
+  const setupSkips = [];
   const browser = await chromium.launch({ headless: true });
+  const apiAvailable = await isApiAvailable();
 
   let userCreds = null;
   let cartReady = false;
-  if (!SKIP_AUTH) {
+  if (!apiAvailable) {
+    setupSkips.push({
+      phase: "setup",
+      reason: "api_unavailable",
+      message: `API health check failed at ${API}/health/live; auth/admin seeded scans skipped.`,
+    });
+  }
+
+  if (!SKIP_AUTH && apiAvailable) {
     try {
       const user = await registerUser();
       userCreds = { phone: user.phone, password: user.password, token: user.token };
@@ -406,7 +428,7 @@ async function main() {
   }
 
   let adminApiOk = false;
-  if (!SKIP_ADMIN) {
+  if (!SKIP_ADMIN && apiAvailable) {
     try {
       await adminLogin();
       adminApiOk = true;
@@ -551,9 +573,11 @@ async function main() {
     auth: Boolean(userCreds),
     cartSeeded: cartReady,
     admin: adminApiOk,
+    apiAvailable,
     scannedPublicRoutes: PUBLIC_ROUTES.length,
     scrollModes: SCROLL_MODES.length,
     issueCount: realIssues.length,
+    setupSkips,
     setupWarnings: report.filter((r) => r.phase === "setup" || r.error),
     issues: realIssues,
   };

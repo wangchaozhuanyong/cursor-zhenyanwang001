@@ -34,6 +34,11 @@ import {
   getProductSortDirection,
   type ProductSortColumn,
 } from "@/utils/adminProductSort";
+import {
+  adminTableClassName,
+  adminTdClassName,
+  ADMIN_TABLE_NOWRAP_CLASS,
+} from "@/utils/adminTableClasses";
 
 const PAGE_SIZE = 20;
 
@@ -395,7 +400,7 @@ export default function AdminProducts() {
         emptyDescription={emptyGuide.description}
         emptyAction={<AdminEmptyGuideActions guide={emptyGuide} showClearFilters={hasProductFilters} onClearFilters={clearFilters} />}
         className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] theme-shadow overflow-x-auto"
-        tableClassName="w-full min-w-[1320px] text-left text-sm"
+        tableClassName={adminTableClassName("w-full min-w-[1280px] text-left text-sm")}
         theadClassName="border-b border-border text-xs text-muted-foreground"
         thead={(
           <tr>
@@ -472,38 +477,49 @@ export default function AdminProducts() {
 
           return (
             <>
-              <td className="px-4 py-3 w-10"><input type="checkbox" checked={checked} onChange={() => toggleSelect(product.id)} aria-label={`选择${product.name}`} /></td>
-              <td className="px-4 py-3">
+              <td className="w-10"><input type="checkbox" checked={checked} onChange={() => toggleSelect(product.id)} aria-label={`选择${product.name}`} /></td>
+              <td className={adminTdClassName("max-w-[14rem]")}>
                 <div className="flex items-center gap-3">
-                  {product.cover_image ? <img src={product.cover_image} alt={product.name} className="h-11 w-11 rounded-lg border border-border object-cover" /> : <div className="h-11 w-11 rounded-lg border border-border bg-secondary" />}
+                  {product.cover_image ? <img src={product.cover_image} alt={product.name} className="h-11 w-11 shrink-0 rounded-lg border border-border object-cover" /> : <div className="h-11 w-11 shrink-0 rounded-lg border border-border bg-secondary" />}
                   <div className="min-w-0">
                     <AdminTableCell value={product.name} fullText={product.name} maxWidth="13.5rem" />
                   </div>
                 </div>
               </td>
-              <td className="px-4 py-3">{product.category_name || '-'}</td>
-              <td className="px-4 py-3 whitespace-nowrap">{Number(product.enabled_sku_count || product.sku_count || 0)}</td>
-              <td className="px-4 py-3 whitespace-nowrap font-semibold">{skuPrice(product)}</td>
-              <td className="px-4 py-3">
-                <div className="space-y-1">
-                  <span className="font-medium text-foreground">{product.min_cost_price ? money(product.min_cost_price) : '-'}</span>
-                  {missingCost ? <span className={`block w-fit rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_DANGER}`}><Tx>缺成本</Tx></span> : null}
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                <AdminTableCell
+                  value={product.category_name || "-"}
+                  fullText={product.category_name || "-"}
+                  maxWidth="9rem"
+                  muted
+                />
+              </td>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{Number(product.enabled_sku_count || product.sku_count || 0)}</td>
+              <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} font-semibold`)}>{skuPrice(product)}</td>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                <div className="inline-flex max-w-full flex-nowrap items-center gap-1.5">
+                  <span className="font-medium text-foreground">{product.min_cost_price ? money(product.min_cost_price) : "-"}</span>
+                  {missingCost ? <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_DANGER}`}><Tx>缺成本</Tx></span> : null}
                 </div>
               </td>
-              <td className="px-4 py-3"><span className={`rounded-full px-2 py-1 text-xs font-semibold ${marginClass}`}>{percent(margin)}</span></td>
-              <td className="px-4 py-3">
-                <div className="space-y-1">
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${marginClass}`}>{percent(margin)}</span>
+              </td>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                <div className="inline-flex max-w-full flex-nowrap items-center gap-1.5">
                   <span className="font-medium text-foreground">{Number(product.stock || 0)}</span>
-                  {outOfStock ? <span className={`block w-fit rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_DANGER}`}><Tx>缺货</Tx></span> : stockWarning ? <span className={`block w-fit rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_WARNING}`}><Tx>库存预警</Tx></span> : null}
+                  {outOfStock ? <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_DANGER}`}><Tx>缺货</Tx></span> : stockWarning ? <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${THEME_BADGE_WARNING}`}><Tx>库存预警</Tx></span> : null}
                 </div>
               </td>
-              <td className="px-4 py-3 whitespace-nowrap">{Number(product.sales_qty_7d || 0)}</td>
-              <td className="px-4 py-3 whitespace-nowrap">{Number(product.sales_qty_30d || 0)}</td>
-              <td className="px-4 py-3 whitespace-nowrap">{money(product.sales_amount_30d)}</td>
-              <td className="px-4 py-3 whitespace-nowrap">{money(product.gross_profit_30d)}</td>
-              <td className="px-4 py-3"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${meta.className}`}>{meta.label}</span></td>
-              <td className="px-4 py-3 text-right">
-                <button type="button" onClick={() => navigate(`/admin/products/${product.id}`)} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-secondary"><Pencil size={13} /><Tx>编辑</Tx></button>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{Number(product.sales_qty_7d || 0)}</td>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{Number(product.sales_qty_30d || 0)}</td>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{money(product.sales_amount_30d)}</td>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{money(product.gross_profit_30d)}</td>
+              <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>
+                <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${meta.className}`}>{meta.label}</span>
+              </td>
+              <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-right`)}>
+                <button type="button" onClick={() => navigate(`/admin/products/${product.id}`)} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-secondary"><Pencil size={13} /><Tx>编辑</Tx></button>
               </td>
             </>
           );

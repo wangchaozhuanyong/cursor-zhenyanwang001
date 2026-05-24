@@ -40,6 +40,10 @@ export default function AdminFieldHint({
             "inline-flex shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:text-[var(--theme-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)]/40",
             className,
           )}
+          onMouseEnter={() => setOpen(true)}
+          onMouseLeave={() => setOpen(false)}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setOpen(false)}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();

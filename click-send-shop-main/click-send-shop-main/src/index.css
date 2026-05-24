@@ -898,6 +898,11 @@ html[data-app-scope="admin"] .admin-tech-path {
   }
 
   [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) tbody td {
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) tbody td.admin-table-wrap {
     word-break: break-word;
     overflow-wrap: anywhere;
   }

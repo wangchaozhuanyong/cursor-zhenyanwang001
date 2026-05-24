@@ -125,6 +125,7 @@ export default function AdminProductForm() {
     original_price: "",
     sales_count: "",
     stock: "",
+    stock_warning_threshold: "",
     category_id: "",
     sort_order: "",
     description: "",
@@ -141,6 +142,7 @@ export default function AdminProductForm() {
     region_notice: "",
     compliance_notice: "",
     allow_index: true,
+    stock_warning_threshold: "",
     tag_ids: [] as string[],
     spec_groups: [] as AdminSpecGroup[],
     variants: [
@@ -201,6 +203,12 @@ export default function AdminProductForm() {
                     sku_code: "",
                     price: data.price?.toString() || "",
                     stock: data.stock?.toString() || "",
+                    stock_warning_threshold:
+                      data.stock_warning_threshold != null
+                        ? String(data.stock_warning_threshold)
+                        : (data.default_variant?.stock_warning_threshold != null
+                          ? String(data.default_variant.stock_warning_threshold)
+                          : ""),
                     sort_order: 0,
                     is_default: true,
                     enabled: true,
@@ -213,6 +221,12 @@ export default function AdminProductForm() {
                 data.original_price != null ? data.original_price.toString() : "",
               sales_count: data.sales_count != null ? String(data.sales_count) : "0",
               stock: data.stock?.toString() || "",
+              stock_warning_threshold:
+                data.stock_warning_threshold != null
+                  ? String(data.stock_warning_threshold)
+                  : (data.default_variant?.stock_warning_threshold != null
+                    ? String(data.default_variant.stock_warning_threshold)
+                    : ""),
               category_id: data.category_id || "",
               sort_order: data.sort_order?.toString() || "",
               description: data.description || "",
@@ -402,7 +416,8 @@ export default function AdminProductForm() {
           original_price: old?.original_price || "",
           cost_price: old?.cost_price || "",
           stock: old?.stock || "0",
-          stock_warning_threshold: old?.stock_warning_threshold || "5",
+          stock_warning_threshold:
+            old?.stock_warning_threshold || (index === 0 ? f.stock_warning_threshold || "5" : "5"),
           barcode: old?.barcode || "",
           image_url: old?.image_url || "",
           weight: old?.weight || "",
@@ -456,6 +471,7 @@ export default function AdminProductForm() {
         spec_value_ids: [valueId],
         enabled: variant.enabled !== false,
         is_default: true,
+        stock_warning_threshold: variant.stock_warning_threshold || f.stock_warning_threshold || "5",
       })),
     }));
   };
@@ -473,6 +489,9 @@ export default function AdminProductForm() {
       const scNum = parseInt(form.sales_count, 10);
       const mainPrice = parseFloat(form.price) || 0;
       const mainStock = parseInt(form.stock, 10) || 0;
+      const mainStockWarningThreshold = form.stock_warning_threshold
+        ? parseInt(form.stock_warning_threshold, 10) || 0
+        : 5;
       const isSingleDefaultSku = form.spec_groups.length === 0 && form.variants.length === 1;
       const variantsPayload = form.variants.map((v, i) => ({
         id: v.id,
@@ -497,6 +516,7 @@ export default function AdminProductForm() {
           ...variantsPayload[defIdx],
           price: mainPrice,
           stock: mainStock,
+          stock_warning_threshold: mainStockWarningThreshold,
         };
       }
       const complianceType = (form.compliance_type || "normal").trim();
@@ -735,6 +755,32 @@ export default function AdminProductForm() {
                 <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={tText("输入商品名称")} className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
               </div>
               <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  <Tx>库存预警阈值（可选）</Tx>
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={form.stock_warning_threshold}
+                  onChange={(e) => {
+                    const t = e.target.value;
+                    setForm((f) => ({ ...f, stock_warning_threshold: t }));
+                    setForm((f) => {
+                      const defaultIdx = f.variants.findIndex((variant) => variant.is_default);
+                      if (defaultIdx < 0) return f;
+                      const nv = [...f.variants];
+                      nv[defaultIdx] = { ...nv[defaultIdx], stock_warning_threshold: t };
+                      return { ...f, variants: nv };
+                    });
+                  }}
+                  placeholder="5"
+                  className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+                />
+                <div className="mt-1 flex justify-end">
+                  <AdminFieldHint text={<Tx>库存低于或等于此值时会提示有可能补货。空值时默认按 5。</Tx>} />
+                </div>
+              </div>
+              <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>默认展示售价 (RM)</Tx></label>
                 <input value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="0.00" className="w-full rounded-lg bg-secondary px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground" />
                 <div className="mt-1 flex justify-end">
@@ -804,6 +850,7 @@ export default function AdminProductForm() {
                         sku_code: "",
                         price: f.price || "0",
                         stock: f.stock || "0",
+                        stock_warning_threshold: f.stock_warning_threshold || "5",
                         sort_order: f.variants.length,
                         is_default: false,
                       },
@@ -1062,6 +1109,7 @@ export default function AdminProductForm() {
                           value={v.stock_warning_threshold || ""}
                           onChange={(e) => {
                             const t = e.target.value;
+                            if (v.is_default) setForm((f) => ({ ...f, stock_warning_threshold: t }));
                             setForm((f) => {
                               const nv = [...f.variants];
                               nv[idx] = { ...nv[idx], stock_warning_threshold: t };

@@ -39,7 +39,7 @@ import {
   Categories, ProductDetail, NewArrivals, Search,
   Cart, Checkout, Orders, OrderDetail, Returns, PendingReviews,
   Profile, Settings, AddressManage, Favorites, History, Notifications, Coupons, Points, PointsGiftShop, Rewards, Invite,
-  Help, About, ContentCmsPage, SupportDownload, NotFound,
+  Help, About, ContentCmsPage, SupportDownload, TikTokLanding, NotFound,
 } from "@/routes/publicLazyPages";
 
 function SiteIdentitySync() {
@@ -104,6 +104,26 @@ function AppScopeSync() {
   return null;
 }
 
+function TikTokStandaloneRoutes() {
+  const location = useLocation();
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-app-scope", "store");
+    window.dispatchEvent(new CustomEvent("app:scope-changed", { detail: { scope: "store" } }));
+  }, []);
+
+  return (
+    <ErrorBoundary resetKey={location.pathname}>
+      <Suspense fallback={<AppRouteFallback />}>
+        <Routes>
+          <Route path="/tiktok" element={<TikTokLanding />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
+
 function HomeRoute() {
   const authHydrated = useAuthStore((s) => s.authHydrated);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -150,6 +170,13 @@ function CapabilityRoute({ enabled, children }: { enabled: boolean; children: Re
 }
 
 export function StoreAppRoutes() {
+  const location = useLocation();
+  if (/^\/tiktok\/?$/.test(location.pathname)) return <TikTokStandaloneRoutes />;
+
+  return <MainStoreRoutes />;
+}
+
+function MainStoreRoutes() {
   const location = useLocation();
   const capabilities = useSiteCapabilities();
 

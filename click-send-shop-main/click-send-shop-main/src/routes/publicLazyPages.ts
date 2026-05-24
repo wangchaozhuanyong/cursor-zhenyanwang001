@@ -41,5 +41,6 @@ export const Help = lazy(() => import("@/modules/public/pages/content/Help"));
 export const About = lazy(() => import("@/modules/public/pages/content/About"));
 export const ContentCmsPage = lazy(() => import("@/modules/public/pages/content/ContentCmsPage"));
 export const SupportDownload = lazy(() => import("@/modules/public/pages/content/SupportDownload"));
+export const TikTokLanding = lazy(() => import("@/modules/public/pages/content/TikTokLanding"));
 
 export const NotFound = lazy(() => import("@/modules/public/pages/error/NotFound"));

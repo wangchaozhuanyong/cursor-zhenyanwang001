@@ -192,6 +192,7 @@ async function emitEvent(input = {}, options = {}) {
     metadata: { eventType, source: input.source || options.source || '' },
   });
   publishChange(inserted ? 'admin.event.created' : 'admin.event.updated', record);
+  await maybeNotifyTelegramOnCreate(record, inserted, severity);
   return { event: mapRecord(record), inserted };
 }
 
@@ -292,29 +293,20 @@ async function listRules() {
   return repo.listRules();
 }
 
-function buildEscalationText(event) {
-  const target = event.escalation_target || (event.severity === 'P0' ? 'boss' : 'admin_manager');
-  const entity = event.entity_id ? `\n对象：${event.entity_type || '-'} ${event.entity_id}` : '';
-  return [
-    `【后台事件升级】${event.severity} ${event.title}`,
-    `目标：${target}`,
-    `状态：${event.status}`,
-    `类型：${event.event_type}`,
-    entity,
-    event.message ? `说明：${event.message}` : '',
-    `创建时间：${event.created_at}`,
-  ].filter(Boolean).join('\n');
+async function sendTelegramEscalation(event) {
+  const notify = requireTelegramApi('notifyAdminEventEscalation');
+  return notify(event);
 }
 
-async function sendTelegramEscalation(event) {
-  const config = await requireTelegramApi('loadConfig')();
-  if (!config.enabled || !config.botToken || !config.adminChatId) {
-    return { sent: false, reason: 'telegram_not_configured' };
-  }
-  const providerMessageId = await requireTelegramApi('sendMessage')(config.adminChatId, buildEscalationText(event), {
-    parseMode: undefined,
+async function maybeNotifyTelegramOnCreate(record, inserted, severity) {
+  if (!inserted || !['P0', 'P1'].includes(severity)) return;
+  const notify = getTelegramApi().notifyAdminEventAlert;
+  if (typeof notify !== 'function') return;
+  setImmediate(() => {
+    notify(record).catch((error) => {
+      console.warn('[adminEvent] telegram alert failed:', error?.message || error);
+    });
   });
-  return { sent: true, providerMessageId };
 }
 
 async function scanEscalations() {

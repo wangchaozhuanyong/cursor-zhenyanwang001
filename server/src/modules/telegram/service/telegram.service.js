@@ -19,8 +19,14 @@ const {
   toAdminSettingsView,
   resolveBotTokenOnSave,
 } = require('../../../utils/telegramNotifyConfig');
+const {
+  formatTelegramEscalationText,
+  formatTelegramEventAlertText,
+} = require('../../../utils/adminEventLabels');
 
 const EVENT_PAYMENT_SUCCESS = 'payment_success';
+const EVENT_ADMIN_ALERT = 'admin_event_alert';
+const EVENT_ADMIN_ESCALATION = 'admin_event_escalation';
 /** 付款成功模板仅做 HTML 转义，实际发送固定 HTML，避免 Markdown 模式解析失败 */
 const ORDER_MESSAGE_PARSE_MODE = 'HTML';
 
@@ -36,7 +42,10 @@ async function loadConfig() {
   const stored = parseStoredConfig(raw);
   const merged = mergeTelegramNotifyConfig(readEnvTelegramConfig(), stored);
   configCache = {
-    enabled: merged.enabled,
+    enabled: merged.orderNotifyEnabled,
+    orderNotifyEnabled: merged.orderNotifyEnabled,
+    eventNotifyEnabled: merged.eventNotifyEnabled,
+    eventNotifyImmediate: merged.eventNotifyImmediate,
     botToken: merged.botToken,
     adminChatId: merged.adminChatId,
     parseMode: merged.parseMode,
@@ -68,7 +77,10 @@ function readConfig() {
 async function getStatus() {
   const config = await loadConfig();
   return {
-    enabled: config.enabled,
+    enabled: config.orderNotifyEnabled,
+    orderNotifyEnabled: config.orderNotifyEnabled,
+    eventNotifyEnabled: config.eventNotifyEnabled,
+    eventNotifyImmediate: config.eventNotifyImmediate,
     botTokenConfigured: !!config.botToken,
     adminChatIdConfigured: !!config.adminChatId,
     parseMode: config.parseMode,
@@ -96,7 +108,7 @@ async function saveAdminSettings(body, adminUserId, req) {
   const caps = await getSiteCapabilitiesApi().getSiteCapabilities();
   await getSiteCapabilitiesApi().saveSiteCapabilities({
     ...caps,
-    telegramOrderNotifyEnabled: normalized.enabled,
+    telegramOrderNotifyEnabled: normalized.orderNotifyEnabled,
   });
 
   const after = await getAdminSettings();
@@ -122,6 +134,9 @@ async function syncOrderNotifyEnabled(enabled) {
   const envMerged = mergeTelegramNotifyConfig(readEnvTelegramConfig(), Object.keys(stored).length ? stored : null);
   const next = normalizeTelegramNotifyConfig({
     enabled: enabledFlag,
+    orderNotifyEnabled: enabledFlag,
+    eventNotifyEnabled: stored.eventNotifyEnabled ?? envMerged.eventNotifyEnabled,
+    eventNotifyImmediate: stored.eventNotifyImmediate ?? envMerged.eventNotifyImmediate,
     botToken: stored.botToken || '',
     adminChatId: stored.adminChatId || envMerged.adminChatId,
     parseMode: stored.parseMode || envMerged.parseMode,
@@ -131,7 +146,7 @@ async function syncOrderNotifyEnabled(enabled) {
   });
   await getAdminApi().upsertSiteSetting(SETTING_KEY, JSON.stringify(next));
   invalidateConfigCache();
-  return { enabled: next.enabled };
+  return { orderNotifyEnabled: next.orderNotifyEnabled };
 }
 
 function buildSampleOrderSnapshot() {
@@ -247,11 +262,11 @@ async function sendMessage(chatId, text, options = {}) {
 }
 
 async function writeLog({
-  orderId, eventType, status, messageContent = '', providerMessageId = '', errorMessage = '',
+  orderId, eventType, status, messageContent = '', providerMessageId = '', errorMessage = '', targetId,
 }) {
   const config = await loadConfig();
   await repo.insertNotificationLog({
-    targetId: config.adminChatId,
+    targetId: targetId || config.adminChatId,
     orderId,
     eventType,
     messageContent,
@@ -268,19 +283,19 @@ async function notifyOrderPaid(orderId, source = '') {
   const config = await loadConfig();
 
   if (!(await getSiteCapabilitiesApi().isCapabilityEnabled('telegramOrderNotifyEnabled'))) {
-    await writeLog({ orderId, eventType, status: 'skipped', errorMessage: 'Telegram feature disabled' });
+    await writeLog({ orderId, eventType, status: 'skipped', errorMessage: '站点未开启 Telegram 订单通知' });
     return { skipped: true, reason: 'feature_disabled' };
   }
-  if (!config.enabled) {
-    await writeLog({ orderId, eventType, status: 'skipped', errorMessage: 'Telegram disabled' });
-    return { skipped: true, reason: 'disabled' };
+  if (!config.orderNotifyEnabled) {
+    await writeLog({ orderId, eventType, status: 'skipped', errorMessage: '订单 Telegram 通知未启用' });
+    return { skipped: true, reason: 'order_notify_disabled' };
   }
   if (!config.botToken) {
-    await writeLog({ orderId, eventType, status: 'skipped', errorMessage: 'Telegram bot token not configured' });
+    await writeLog({ orderId, eventType, status: 'skipped', errorMessage: '未配置 Bot Token' });
     return { skipped: true, reason: 'missing_bot_token' };
   }
   if (!config.adminChatId) {
-    await writeLog({ orderId, eventType, status: 'skipped', errorMessage: 'Telegram admin chat id not configured' });
+    await writeLog({ orderId, eventType, status: 'skipped', errorMessage: '未配置管理员 Chat ID' });
     return { skipped: true, reason: 'missing_chat_id' };
   }
 
@@ -288,13 +303,13 @@ async function notifyOrderPaid(orderId, source = '') {
   try {
     const alreadySent = await repo.hasSentTelegramEvent(orderId, eventType);
     if (alreadySent) {
-      await writeLog({ orderId, eventType, status: 'skipped', errorMessage: 'Telegram payment_success already sent' });
+      await writeLog({ orderId, eventType, status: 'skipped', errorMessage: '该订单付款通知已发送过' });
       return { skipped: true, reason: 'already_sent' };
     }
 
     const snapshot = await repo.selectTelegramOrderSnapshot(orderId);
     if (!snapshot) {
-      await writeLog({ orderId, eventType, status: 'failed', errorMessage: 'Order not found' });
+      await writeLog({ orderId, eventType, status: 'failed', errorMessage: '订单不存在' });
       return { failed: true, reason: 'order_not_found' };
     }
 
@@ -332,18 +347,92 @@ async function notifyOrderPaid(orderId, source = '') {
   }
 }
 
-async function sendTestMessage() {
-  const config = await loadConfig();
-  if (!config.enabled) {
-    throw new ValidationError('Telegram 未开启，请先保存并启用后再测试');
-  }
+async function assertTelegramConnection(config) {
   if (!config.botToken) {
     throw new ValidationError('Telegram Bot Token 未配置，请填写后保存再测试');
   }
   if (!config.adminChatId) {
     throw new ValidationError('Telegram 管理员 Chat ID 未配置，请填写后保存再测试');
   }
-  const text = '✅ Telegram 通知测试成功\n\n如果你看到这条消息，说明订单通知已经可以正常发送。';
+}
+
+async function sendAdminEventTelegram(eventRow, options = {}) {
+  const kind = options.kind === 'escalation' ? 'escalation' : 'alert';
+  const config = await loadConfig();
+  const logEventType = kind === 'escalation' ? EVENT_ADMIN_ESCALATION : EVENT_ADMIN_ALERT;
+  const entityId = eventRow?.id ? String(eventRow.id) : null;
+
+  if (!config.eventNotifyEnabled) {
+    await writeLog({
+      orderId: null,
+      eventType: logEventType,
+      status: 'skipped',
+      errorMessage: '后台事件 Telegram 通知未启用',
+      targetId: entityId,
+    });
+    return { skipped: true, reason: 'event_notify_disabled' };
+  }
+  if (kind === 'alert' && !config.eventNotifyImmediate) {
+    await writeLog({
+      orderId: null,
+      eventType: logEventType,
+      status: 'skipped',
+      errorMessage: '未开启 P0/P1 新事件即时提醒',
+      targetId: entityId,
+    });
+    return { skipped: true, reason: 'event_immediate_disabled' };
+  }
+  if (!config.botToken || !config.adminChatId) {
+    await writeLog({
+      orderId: null,
+      eventType: logEventType,
+      status: 'skipped',
+      errorMessage: '未配置 Bot Token 或 Chat ID',
+      targetId: entityId,
+    });
+    return { skipped: true, reason: 'telegram_not_configured' };
+  }
+
+  const text = kind === 'escalation'
+    ? formatTelegramEscalationText(eventRow)
+    : formatTelegramEventAlertText(eventRow);
+
+  try {
+    const providerMessageId = await sendMessage(config.adminChatId, text, { parseMode: undefined });
+    await writeLog({
+      orderId: null,
+      eventType: logEventType,
+      status: 'sent',
+      messageContent: text,
+      providerMessageId,
+      targetId: entityId,
+    });
+    return { sent: true, providerMessageId };
+  } catch (error) {
+    await writeLog({
+      orderId: null,
+      eventType: logEventType,
+      status: 'failed',
+      messageContent: text,
+      errorMessage: safeErrorMessage(error, config.botToken),
+      targetId: entityId,
+    });
+    throw error;
+  }
+}
+
+async function notifyAdminEventAlert(eventRow) {
+  return sendAdminEventTelegram(eventRow, { kind: 'alert' });
+}
+
+async function notifyAdminEventEscalation(eventRow) {
+  return sendAdminEventTelegram(eventRow, { kind: 'escalation' });
+}
+
+async function sendTestMessage() {
+  const config = await loadConfig();
+  await assertTelegramConnection(config);
+  const text = '✅ Telegram 通知测试成功\n\n如果你看到这条消息，说明 Bot 与 Chat ID 配置正确，可以接收订单与后台事件通知。';
   // 测试消息使用纯文本，避免 Markdown/MarkdownV2 转义导致 Telegram 400
   const providerMessageId = await sendMessage(config.adminChatId, text, { parseMode: undefined });
   try {
@@ -377,6 +466,8 @@ module.exports = {
   buildMessagePreview,
   sendMessage,
   notifyOrderPaid,
+  notifyAdminEventAlert,
+  notifyAdminEventEscalation,
   sendTestMessage,
   listLogs,
   buildAdminOrderUrl,

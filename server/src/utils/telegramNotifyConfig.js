@@ -4,7 +4,12 @@ const SETTING_KEY = 'telegram_notify_config';
 const BOT_TOKEN_UNCHANGED = '__KEEP__';
 
 const DEFAULT_TELEGRAM_NOTIFY_CONFIG = Object.freeze({
+  /** @deprecated 请使用 orderNotifyEnabled；保存时仍会写入以兼容旧数据 */
   enabled: false,
+  orderNotifyEnabled: false,
+  eventNotifyEnabled: false,
+  /** 开启事件通知时，P0/P1 新事件是否即时推送 */
+  eventNotifyImmediate: true,
   botToken: '',
   adminChatId: '',
   parseMode: 'HTML',
@@ -12,6 +17,12 @@ const DEFAULT_TELEGRAM_NOTIFY_CONFIG = Object.freeze({
   maxMessageLength: 3900,
   adminFrontendUrl: '',
 });
+
+function parseBoolFlag(value, fallback = false) {
+  if (value === true || value === 'true' || value === 1 || value === '1') return true;
+  if (value === false || value === 'false' || value === 0 || value === '0') return false;
+  return fallback;
+}
 
 const PARSE_MODES = new Set(['HTML', 'Markdown', 'MarkdownV2']);
 
@@ -28,8 +39,13 @@ const PARSE_MODES = new Set(['HTML', 'Markdown', 'MarkdownV2']);
  */
 
 function readEnvTelegramConfig() {
+  const orderOn = String(process.env.TELEGRAM_ENABLED || '').toLowerCase() === 'true';
+  const eventOn = String(process.env.TELEGRAM_EVENT_NOTIFY_ENABLED || '').toLowerCase() === 'true';
   return {
-    enabled: String(process.env.TELEGRAM_ENABLED || '').toLowerCase() === 'true',
+    enabled: orderOn,
+    orderNotifyEnabled: orderOn,
+    eventNotifyEnabled: eventOn,
+    eventNotifyImmediate: String(process.env.TELEGRAM_EVENT_NOTIFY_IMMEDIATE || 'true').toLowerCase() !== 'false',
     botToken: String(process.env.TELEGRAM_BOT_TOKEN || '').trim(),
     adminChatId: String(process.env.TELEGRAM_ADMIN_CHAT_ID || '').trim(),
     parseMode: String(process.env.TELEGRAM_PARSE_MODE || 'HTML').trim() || 'HTML',
@@ -62,8 +78,21 @@ function normalizeTelegramNotifyConfig(input = {}, options = {}) {
   const parseModeRaw = String(source.parseMode || DEFAULT_TELEGRAM_NOTIFY_CONFIG.parseMode).trim();
   const parseMode = PARSE_MODES.has(parseModeRaw) ? parseModeRaw : 'HTML';
   const maxLen = Number(source.maxMessageLength);
+  const legacyEnabled = source.enabled !== undefined
+    ? parseBoolFlag(source.enabled, false)
+    : undefined;
+  const orderNotifyEnabled = source.orderNotifyEnabled !== undefined
+    ? parseBoolFlag(source.orderNotifyEnabled, false)
+    : (legacyEnabled !== undefined ? legacyEnabled : false);
+  const eventNotifyEnabled = parseBoolFlag(source.eventNotifyEnabled, false);
+  const eventNotifyImmediate = source.eventNotifyImmediate !== undefined
+    ? parseBoolFlag(source.eventNotifyImmediate, true)
+    : true;
   return {
-    enabled: source.enabled === true || source.enabled === 'true' || source.enabled === 1 || source.enabled === '1',
+    enabled: orderNotifyEnabled,
+    orderNotifyEnabled,
+    eventNotifyEnabled,
+    eventNotifyImmediate,
     botToken: String(source.botToken || '').trim(),
     adminChatId: String(source.adminChatId || '').trim(),
     parseMode,
@@ -81,7 +110,10 @@ function mergeTelegramNotifyConfig(envConfig, storedConfig) {
   const stored = storedConfig ? normalizeTelegramNotifyConfig(storedConfig) : null;
   if (!stored) return { ...env, configSource: 'env' };
   return {
-    enabled: stored.enabled,
+    enabled: stored.orderNotifyEnabled,
+    orderNotifyEnabled: stored.orderNotifyEnabled,
+    eventNotifyEnabled: stored.eventNotifyEnabled,
+    eventNotifyImmediate: stored.eventNotifyImmediate,
     botToken: stored.botToken || env.botToken,
     adminChatId: stored.adminChatId || env.adminChatId,
     parseMode: stored.parseMode || env.parseMode,
@@ -105,7 +137,10 @@ function maskBotToken(token) {
 function toAdminSettingsView(config) {
   const normalized = normalizeTelegramNotifyConfig(config);
   return {
-    enabled: normalized.enabled,
+    enabled: normalized.orderNotifyEnabled,
+    orderNotifyEnabled: normalized.orderNotifyEnabled,
+    eventNotifyEnabled: normalized.eventNotifyEnabled,
+    eventNotifyImmediate: normalized.eventNotifyImmediate,
     botToken: '',
     botTokenMasked: maskBotToken(normalized.botToken),
     botTokenConfigured: !!normalized.botToken,
@@ -129,6 +164,7 @@ module.exports = {
   BOT_TOKEN_UNCHANGED,
   DEFAULT_TELEGRAM_NOTIFY_CONFIG,
   PARSE_MODES,
+  parseBoolFlag,
   readEnvTelegramConfig,
   parseStoredConfig,
   normalizeTelegramNotifyConfig,

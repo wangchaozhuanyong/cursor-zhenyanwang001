@@ -3,7 +3,11 @@ export const TELEGRAM_BOT_TOKEN_UNCHANGED = "__KEEP__";
 export type TelegramParseMode = "HTML" | "Markdown" | "MarkdownV2";
 
 export interface TelegramNotifyConfig {
-  enabled: boolean;
+  /** @deprecated 使用 orderNotifyEnabled */
+  enabled?: boolean;
+  orderNotifyEnabled: boolean;
+  eventNotifyEnabled: boolean;
+  eventNotifyImmediate: boolean;
   botToken: string;
   adminChatId: string;
   parseMode: TelegramParseMode;
@@ -27,7 +31,9 @@ export interface TelegramMessagePreview {
 }
 
 export const DEFAULT_TELEGRAM_NOTIFY_CONFIG: TelegramNotifyConfig = {
-  enabled: false,
+  orderNotifyEnabled: false,
+  eventNotifyEnabled: false,
+  eventNotifyImmediate: true,
   botToken: "",
   adminChatId: "",
   parseMode: "HTML",
@@ -40,8 +46,12 @@ export function normalizeTelegramNotifyConfig(input: Partial<TelegramNotifyConfi
   const source = input && typeof input === "object" ? input : {};
   const parseMode = source.parseMode === "Markdown" || source.parseMode === "MarkdownV2" ? source.parseMode : "HTML";
   const maxLen = Number(source.maxMessageLength);
+  const orderNotifyEnabled = source.orderNotifyEnabled ?? source.enabled ?? false;
   return {
-    enabled: source.enabled === true,
+    enabled: orderNotifyEnabled === true,
+    orderNotifyEnabled: orderNotifyEnabled === true,
+    eventNotifyEnabled: source.eventNotifyEnabled === true,
+    eventNotifyImmediate: source.eventNotifyImmediate !== false,
     botToken: String(source.botToken ?? "").trim(),
     adminChatId: String(source.adminChatId ?? "").trim(),
     parseMode,
@@ -52,8 +62,12 @@ export function normalizeTelegramNotifyConfig(input: Partial<TelegramNotifyConfi
 }
 
 export function settingsToForm(settings: TelegramNotifySettings): TelegramNotifyConfig {
+  const orderNotifyEnabled = settings.orderNotifyEnabled ?? settings.enabled ?? false;
   return {
-    enabled: settings.enabled,
+    enabled: orderNotifyEnabled,
+    orderNotifyEnabled,
+    eventNotifyEnabled: settings.eventNotifyEnabled === true,
+    eventNotifyImmediate: settings.eventNotifyImmediate !== false,
     botToken: "",
     adminChatId: settings.adminChatId,
     parseMode: settings.parseMode,

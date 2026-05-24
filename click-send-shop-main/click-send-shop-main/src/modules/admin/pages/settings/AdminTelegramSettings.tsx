@@ -31,16 +31,16 @@ import {
 } from "@/utils/telegramNotifyConfig";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { useAdminT } from "@/hooks/useAdminT";
+import { formatDateTime } from "@/utils/formatDateTime";
+import {
+  labelTelegramLogErrorMessage,
+  labelTelegramLogEventType,
+  labelTelegramLogSendStatus,
+  telegramLogSendStatusClass,
+} from "@/utils/telegramLogLabels";
 
 const inputClass =
   "w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm outline-none focus:border-[var(--theme-primary)]";
-
-function formatDate(value?: string) {
-  if (!value) return "-";
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "-";
-  return d.toLocaleString("zh-CN", { hour12: false });
-}
 
 export default function AdminTelegramSettings() {
   const { tText } = useAdminT();
@@ -158,7 +158,7 @@ export default function AdminTelegramSettings() {
                 Telegram 通知设置
               </h1>
               <AdminFieldHint
-                text="付款成功后向管理员 Telegram 群发送通知。Bot Token 与 Chat ID 可在本页保存，无需改服务器环境变量。"
+                text="配置 Bot 后，可分别开启「订单付款通知」与「后台事件监控通知」。Bot Token 与 Chat ID 可在本页保存。"
                 size="md"
               />
             </div>
@@ -218,19 +218,6 @@ export default function AdminTelegramSettings() {
             <section className="rounded-xl border border-border bg-card p-4 md:p-5">
               <h2 className="mb-4 font-semibold text-foreground"><Tx>连接配置</Tx></h2>
               <div className="grid gap-4 md:grid-cols-2">
-                <label className="flex items-center justify-between gap-3 rounded-lg border border-border p-4 md:col-span-2">
-                  <div>
-                    <div className="font-medium text-foreground"><Tx>启用 Telegram 订单通知</Tx></div>
-                    <p className="text-xs text-muted-foreground"><Tx>与「功能开关」中的 Telegram 订单通知双向同步；关闭后不会发送付款成功提醒。</Tx></p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    className="h-5 w-5 accent-[var(--theme-primary)]"
-                    checked={form.enabled}
-                    onChange={(e) => patchForm({ enabled: e.target.checked })}
-                  />
-                </label>
-
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-foreground">
                     Bot Token
@@ -318,6 +305,66 @@ export default function AdminTelegramSettings() {
             </section>
 
             <section className="rounded-xl border border-border bg-card p-4 md:p-5">
+              <h2 className="mb-2 font-semibold text-foreground"><Tx>通知类型</Tx></h2>
+              <p className="mb-4 text-xs text-muted-foreground">
+                共用上方 Bot Token 与 Chat ID。可按需单独开启订单通知或后台事件监控通知。
+              </p>
+              <div className="grid gap-4">
+                <label className="flex items-center justify-between gap-3 rounded-lg border border-border p-4">
+                  <div>
+                    <div className="font-medium text-foreground"><Tx>订单付款成功通知</Tx></div>
+                    <p className="text-xs text-muted-foreground">
+                      <Tx>与「功能开关」中的 Telegram 订单通知双向同步；付款成功后发送订单摘要。</Tx>
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="h-5 w-5 accent-[var(--theme-primary)]"
+                    checked={form.orderNotifyEnabled}
+                    onChange={(e) =>
+                      patchForm({ orderNotifyEnabled: e.target.checked, enabled: e.target.checked })
+                    }
+                  />
+                </label>
+
+                <label className="flex items-center justify-between gap-3 rounded-lg border border-border p-4">
+                  <div>
+                    <div className="font-medium text-foreground"><Tx>后台事件监控通知</Tx></div>
+                    <p className="text-xs text-muted-foreground">
+                      网站异常、订单超时、支付/库存/安全等 P0/P1 事件：新建时即时提醒，超时未处理时发送升级提醒（规则见事件中心）。
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="h-5 w-5 accent-[var(--theme-primary)]"
+                    checked={form.eventNotifyEnabled}
+                    onChange={(e) => patchForm({ eventNotifyEnabled: e.target.checked })}
+                  />
+                </label>
+
+                <label
+                  className={`flex items-center justify-between gap-3 rounded-lg border border-border p-4 ${
+                    !form.eventNotifyEnabled ? "opacity-50" : ""
+                  }`}
+                >
+                  <div>
+                    <div className="font-medium text-foreground"><Tx>P0/P1 新事件即时提醒</Tx></div>
+                    <p className="text-xs text-muted-foreground">
+                      事件首次产生时立即推送（去重后不会重复轰炸）；关闭后仅保留超时升级提醒。
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="h-5 w-5 accent-[var(--theme-primary)]"
+                    checked={form.eventNotifyImmediate}
+                    disabled={!form.eventNotifyEnabled}
+                    onChange={(e) => patchForm({ eventNotifyImmediate: e.target.checked })}
+                  />
+                </label>
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-border bg-card p-4 md:p-5">
               <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="font-semibold text-foreground"><Tx>付款成功通知 · 模板预览</Tx></h2>
@@ -372,15 +419,24 @@ export default function AdminTelegramSettings() {
                   <tbody className="divide-y divide-border">
                     {logs.map((log) => (
                       <tr key={log.id}>
-                        <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-xs text-muted-foreground`)}>{formatDate(log.created_at)}</td>
-                        <td className={adminTdClassName()}>{log.event_type}</td>
+                        <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-xs text-muted-foreground`)}>{formatDateTime(log.created_at)}</td>
+                        <td className={adminTdClassName()}>{labelTelegramLogEventType(log.event_type)}</td>
                         <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS)}>{log.order_id || "-"}</td>
                         <td className={adminTdClassName()}>
-                          <span className="rounded-full bg-secondary px-2 py-1 text-xs font-semibold">{log.send_status}</span>
+                          <span
+                            className={`rounded-full px-2 py-1 text-xs font-semibold ${telegramLogSendStatusClass(log.send_status)}`}
+                          >
+                            {labelTelegramLogSendStatus(log.send_status)}
+                          </span>
                         </td>
                         <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} text-xs`)}>{log.provider_message_id || "-"}</td>
                         <td className={adminTdClassName("max-w-[18rem]")}>
-                          <AdminTableCell value={log.error_message || "-"} fullText={log.error_message || ""} maxWidth="17rem" muted />
+                          <AdminTableCell
+                            value={labelTelegramLogErrorMessage(log.error_message)}
+                            fullText={labelTelegramLogErrorMessage(log.error_message)}
+                            maxWidth="17rem"
+                            muted
+                          />
                         </td>
                       </tr>
                     ))}

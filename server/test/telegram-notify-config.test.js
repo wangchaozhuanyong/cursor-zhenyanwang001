@@ -21,12 +21,28 @@ test('resolveBotTokenOnSave keeps existing token when unchanged', () => {
 
 test('mergeTelegramNotifyConfig prefers database values', () => {
   const merged = mergeTelegramNotifyConfig(
-    { enabled: false, botToken: 'env-token', adminChatId: 'env-chat' },
-    { enabled: true, botToken: 'db-token', adminChatId: '' },
+    { orderNotifyEnabled: false, botToken: 'env-token', adminChatId: 'env-chat' },
+    { orderNotifyEnabled: true, eventNotifyEnabled: true, botToken: 'db-token', adminChatId: '' },
   );
-  assert.equal(merged.enabled, true);
+  assert.equal(merged.orderNotifyEnabled, true);
+  assert.equal(merged.eventNotifyEnabled, true);
   assert.equal(merged.botToken, 'db-token');
   assert.equal(merged.adminChatId, 'env-chat');
+});
+
+test('normalizeTelegramNotifyConfig splits order and event notify flags', () => {
+  const legacy = normalizeTelegramNotifyConfig({ enabled: true, eventNotifyEnabled: true });
+  assert.equal(legacy.orderNotifyEnabled, true);
+  assert.equal(legacy.eventNotifyEnabled, true);
+
+  const explicit = normalizeTelegramNotifyConfig({
+    orderNotifyEnabled: false,
+    eventNotifyEnabled: true,
+    eventNotifyImmediate: false,
+  });
+  assert.equal(explicit.orderNotifyEnabled, false);
+  assert.equal(explicit.eventNotifyEnabled, true);
+  assert.equal(explicit.eventNotifyImmediate, false);
 });
 
 test('maskBotToken hides middle segment', () => {

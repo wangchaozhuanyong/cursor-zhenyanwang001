@@ -18,6 +18,7 @@ const {
   mergeTelegramNotifyConfig,
   toAdminSettingsView,
   resolveBotTokenOnSave,
+  buildAdminOrderUrl: buildAdminOrderUrlFromConfig,
 } = require('../../../utils/telegramNotifyConfig');
 const {
   formatTelegramEscalationText,
@@ -158,8 +159,8 @@ function buildSampleOrderSnapshot() {
       contactPhone: '60123456789',
       shippingAddress: '12, Jalan Bukit Bintang, Kuala Lumpur, 55100, Malaysia',
       totalAmount: 128.5,
-      paymentMethod: 'online',
-      paymentChannel: 'stripe',
+      paymentMethod: '在线支付',
+      paymentChannel: 'Stripe',
       paymentStatus: 'paid',
       status: 'paid',
       createdAt: new Date(),
@@ -213,9 +214,7 @@ async function buildMessagePreview(overrides = {}) {
 
 async function buildAdminOrderUrl(orderId, orderNo) {
   const config = await loadConfig();
-  const base = String(config.adminFrontendUrl || '').replace(/\/$/, '');
-  if (!base) return `/admin/orders?keyword=${encodeURIComponent(orderNo || orderId)}`;
-  return `${base}/admin/orders?keyword=${encodeURIComponent(orderNo || orderId)}`;
+  return buildAdminOrderUrlFromConfig(config.adminFrontendUrl, orderId, orderNo);
 }
 
 function safeErrorMessage(error, botToken = '') {

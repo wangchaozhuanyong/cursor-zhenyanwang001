@@ -15,6 +15,15 @@ export const ADMIN_TABLE_WRAP_CLASS = "admin-table-wrap";
 /** 移动端/平板冻结首列 */
 export const ADMIN_TABLE_STICKY_FIRST_CLASS = "admin-table-sticky-first";
 
+/** div 网格布局的数据表（分类管理、事件中心等） */
+export const ADMIN_DATA_GRID_CLASS = "admin-data-grid";
+
+/** 列内容左对齐（树形首列、长文本等例外） */
+export const ADMIN_TABLE_ALIGN_LEFT_CLASS = "admin-table-align-left";
+
+/** 列内容右对齐（少数场景保留） */
+export const ADMIN_TABLE_ALIGN_RIGHT_CLASS = "admin-table-align-right";
+
 export function adminTableClassName(
   extra?: string,
   options?: { fixed?: boolean },
@@ -26,13 +35,17 @@ export function adminTableClassName(
   );
 }
 
+export function adminDataGridClassName(extra?: string): string {
+  return cn(ADMIN_DATA_GRID_CLASS, extra);
+}
+
 export function adminThClassName(extra?: string): string {
   return cn(
-    "text-left text-xs font-semibold text-muted-foreground",
+    "text-center text-xs font-semibold text-muted-foreground",
     extra,
   );
 }
 
 export function adminTdClassName(extra?: string): string {
-  return cn("align-middle text-foreground", extra);
+  return cn("align-middle text-center text-foreground", extra);
 }

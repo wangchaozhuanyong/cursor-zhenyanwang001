@@ -1,5 +1,6 @@
 import * as couponApi from "@/api/modules/coupon";
 import type { UserCoupon, CouponListParams, CheckoutPickerCoupon } from "@/types/coupon";
+import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import type { PaginatedData } from "@/types/common";
 
 export async function fetchUserCoupons(
@@ -22,6 +23,7 @@ export async function fetchAvailableCoupons(orderAmount: number): Promise<UserCo
 function mapUserCouponToCheckoutPicker(uc: UserCoupon, idx: number): CheckoutPickerCoupon {
   const c = uc.coupon;
   const normalizedType = c.type;
+  const display = userCouponToPremiumDisplay(uc);
   return {
     id: uc.id,
     couponId: c.id,
@@ -31,6 +33,7 @@ function mapUserCouponToCheckoutPicker(uc: UserCoupon, idx: number): CheckoutPic
     condition: c.min_amount,
     expire: typeof c.end_date === "string" ? c.end_date.slice(0, 10) : "",
     variantIndex: idx,
+    scopeText: display.scopeText,
   };
 }
 

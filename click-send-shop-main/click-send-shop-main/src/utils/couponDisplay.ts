@@ -36,7 +36,7 @@ export function formatCouponLeftAmount(c: UserCoupon["coupon"]) {
   return `RM ${c.value}`;
 }
 
-function formatCouponScopeText(scopeType?: string, categoryNames?: string[], categoryIds?: string[]) {
+export function formatCouponScopeText(scopeType?: string, categoryNames?: string[], categoryIds?: string[]) {
   if (scopeType === "category") {
     if (Array.isArray(categoryNames) && categoryNames.length > 0) {
       return `适用范围：${categoryNames.join("、")}`;

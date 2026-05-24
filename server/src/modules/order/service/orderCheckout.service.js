@@ -48,6 +48,9 @@ async function getCheckoutCoupons(userId, body) {
       min_amount: coupon.min_amount,
       valid_from: row.valid_from,
       valid_until: row.valid_until,
+      scope_type: coupon.scope_type || 'all',
+      category_ids: coupon.category_ids || [],
+      category_names: coupon.category_names || [],
     };
     const preReason = couponUnavailableReason(row);
     if (preReason) {

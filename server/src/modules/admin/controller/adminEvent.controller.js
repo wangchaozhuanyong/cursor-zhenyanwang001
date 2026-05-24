@@ -19,7 +19,7 @@ exports.list = asyncRoute(async (req, res) => {
 });
 
 exports.summary = asyncRoute(async (req, res) => {
-  res.success(await service.getSummary(req.user.id));
+  res.success(await service.getSummary(req.user.id, req.query));
 });
 
 exports.bossMetrics = asyncRoute(async (_req, res) => {

@@ -415,8 +415,14 @@ export default function Login() {
           <h1 className="mt-3 font-display text-2xl font-bold text-foreground">{renderBrandTitle(siteName)}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{slogan}</p>
         </div>
-        {banners.length > 0 && !layoutCompact ? (
-          <section className="mb-4 lg:hidden">
+        {banners.length > 0 ? (
+          <section
+            className={cn(
+              "mb-4 overflow-hidden lg:hidden [transition:none]",
+              layoutCompact && "pointer-events-none !mb-0 max-h-0 opacity-0",
+            )}
+            aria-hidden={layoutCompact}
+          >
             <LoginBannerCarousel banners={banners} paused={formCompact} />
           </section>
         ) : null}
@@ -475,6 +481,14 @@ export default function Login() {
         ) : null}
 
         <FormFieldShake shake={shakeKey} className="space-y-3.5">
+          <form
+            className="space-y-3.5"
+            autoComplete="on"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleSubmit();
+            }}
+          >
           {mode === "register" && !hasLockedInviteCode && (
             <div>
               <div className="relative">
@@ -532,13 +546,20 @@ export default function Login() {
             <div className="relative">
               <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
+                id="auth-phone"
+                name={mode === "login" ? "username" : "tel"}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete={mode === "login" ? "username" : "tel"}
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                enterKeyHint="next"
                 placeholder="手机号"
                 value={phone}
                 onChange={(e) => {
-                  setPhone(e.target.value.replace(/[^\d\s\-()]/g, ""));
+                  setPhone(e.target.value.replace(/\D/g, ""));
                   if (fieldErrors.phone) setFieldErrors((s) => ({ ...s, phone: undefined }));
                 }}
                 className={cn(INPUT_CLASS, "pl-12 pr-4")}
@@ -552,10 +573,15 @@ export default function Login() {
               <div className="relative">
                 <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
+                  id="auth-password"
+                  name="password"
                   type={showPwd ? "text" : "password"}
                   placeholder="密码"
                   value={password}
                   autoComplete={mode === "login" ? "current-password" : "new-password"}
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  enterKeyHint={mode === "login" ? "go" : "done"}
                   onChange={(e) => {
                     setPassword(e.target.value);
                     if (fieldErrors.password) setFieldErrors((s) => ({ ...s, password: undefined }));
@@ -626,8 +652,7 @@ export default function Login() {
           )}
 
           <button
-            type="button"
-            onClick={handleSubmit}
+            type="submit"
             disabled={loading}
             className="w-full rounded-2xl btn-theme-price py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-gold/20 transition-all active:scale-[0.98] disabled:opacity-60"
           >
@@ -641,6 +666,7 @@ export default function Login() {
               </span>
             ) : mode === "login" ? "登 录" : "注 册"}
           </button>
+          </form>
         </FormFieldShake>
 
         {mode === "login" && showReset && (

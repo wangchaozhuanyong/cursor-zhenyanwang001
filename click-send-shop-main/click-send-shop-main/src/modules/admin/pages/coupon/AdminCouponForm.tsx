@@ -115,6 +115,8 @@ export default function AdminCouponForm() {
   const productLoading = productsQuery.isLoading && !productsQuery.data;
 
   const loading = isNew ? false : couponQuery.isLoading && !couponQuery.data;
+  const claimedCount = Number(couponQuery.data?.claimed_count || 0);
+  const coreRulesLocked = isEdit && claimedCount > 0;
 
   useEffect(() => {
     if (!isEdit) return;
@@ -257,6 +259,14 @@ export default function AdminCouponForm() {
 
       {loading ? <AdminFormSectionsSkeleton sections={3} className="max-w-2xl" /> : (
         <div className="max-w-2xl space-y-6">
+          {coreRulesLocked ? (
+            <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-foreground">
+              <p className="font-medium"><Tx>该券已有用户领取，核心规则已锁定</Tx></p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                <Tx>{`已领取 ${claimedCount} 张。适用范围、使用范围、面额、门槛、会员/新用户限制等不可再改；仅可修改名称、说明、角标，或将使用结束时间延长。若要调整规则，请新建一张优惠券。`}</Tx>
+              </p>
+            </div>
+          ) : null}
           <div className="rounded-xl border border-border bg-card p-6 space-y-4">
             <h3 className="text-sm font-semibold text-foreground"><Tx>基础信息</Tx></h3>
             <div>

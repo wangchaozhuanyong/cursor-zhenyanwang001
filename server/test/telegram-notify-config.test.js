@@ -6,6 +6,8 @@ const {
   mergeTelegramNotifyConfig,
   resolveBotTokenOnSave,
   maskBotToken,
+  resolveAdminFrontendBaseUrl,
+  buildAdminOrderUrl,
 } = require('../src/utils/telegramNotifyConfig');
 
 test('normalizeTelegramNotifyConfig clamps message length', () => {
@@ -47,4 +49,26 @@ test('normalizeTelegramNotifyConfig splits order and event notify flags', () => 
 
 test('maskBotToken hides middle segment', () => {
   assert.match(maskBotToken('1234567890abcdef'), /…/);
+});
+
+test('resolveAdminFrontendBaseUrl prefers ADMIN_PUBLIC_URL over PUBLIC_APP_URL', () => {
+  const prevPublic = process.env.PUBLIC_APP_URL;
+  const prevAdmin = process.env.ADMIN_PUBLIC_URL;
+  process.env.PUBLIC_APP_URL = 'https://damatong.net';
+  process.env.ADMIN_PUBLIC_URL = 'https://console.damatong.net';
+  try {
+    assert.equal(resolveAdminFrontendBaseUrl(), 'https://console.damatong.net');
+    assert.equal(
+      resolveAdminFrontendBaseUrl('https://damatong.net'),
+      'https://console.damatong.net',
+    );
+  } finally {
+    process.env.PUBLIC_APP_URL = prevPublic;
+    process.env.ADMIN_PUBLIC_URL = prevAdmin;
+  }
+});
+
+test('buildAdminOrderUrl links to order detail by id', () => {
+  const url = buildAdminOrderUrl('https://console.damatong.net', 'order-uuid-1', '42522149');
+  assert.equal(url, 'https://console.damatong.net/admin/orders/order-uuid-1');
 });

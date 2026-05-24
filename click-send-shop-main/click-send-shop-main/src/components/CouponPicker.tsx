@@ -77,6 +77,7 @@ function CouponListBody(props: {
               amount={amount}
               minSpendText={getMinSpendText(coupon)}
               expireText={formatCouponExpireText(coupon.expire)}
+              scopeText={coupon.scopeText}
               selected={isSelected}
               disabled={!usable}
               onClick={() => {

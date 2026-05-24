@@ -172,8 +172,8 @@ export default function SiteSettingsPage() {
           ? await uploadSiteAsset(key, file)
           : await uploadSingle(file, { mode: "asset" });
       if (key === "logoUrl" || key === "faviconUrl") {
-        setSettings((prev) => ({ ...prev, logoUrl: res.url, faviconUrl: res.url }));
-        setSaved((prev) => ({ ...prev, logoUrl: res.url, faviconUrl: res.url }));
+        setSettings((prev) => ({ ...prev, [key]: res.url }));
+        setSaved((prev) => ({ ...prev, [key]: res.url }));
         await refreshSiteInfo();
         toast.success(tText("图片已上传并保存"));
       } else {

@@ -18,7 +18,7 @@ export default function AdminTableSortHeader({
 }: AdminTableSortHeaderProps) {
   if (!sortable) {
     return (
-      <th className={cn("px-4 py-3 text-left text-xs font-semibold text-muted-foreground whitespace-nowrap", className)}>
+      <th className={cn("px-4 py-3 text-center text-xs font-semibold text-muted-foreground whitespace-nowrap", className)}>
         {label}
       </th>
     );
@@ -28,12 +28,12 @@ export default function AdminTableSortHeader({
   const active = direction === "asc" || direction === "desc";
 
   return (
-    <th className={cn("px-4 py-3 text-left whitespace-nowrap", className)}>
+    <th className={cn("px-4 py-3 text-center whitespace-nowrap", className)}>
       <button
         type="button"
         onClick={onSort}
         className={cn(
-          "inline-flex max-w-full items-center gap-1 rounded-md text-xs font-semibold transition-colors",
+          "inline-flex max-w-full items-center justify-center gap-1 rounded-md text-xs font-semibold transition-colors",
           active ? "text-[var(--theme-primary)]" : "text-muted-foreground hover:text-foreground",
         )}
         aria-label={

@@ -15,6 +15,7 @@ import {
 } from "@/utils/adminEventLabels";
 import { formatDateTime } from "@/utils/formatDateTime";
 import type { AdminEventRecord } from "@/services/admin/eventCenterService";
+import { adminDataGridClassName } from "@/utils/adminTableClasses";
 
 const tabs = [
   { key: "all", label: "全部" },
@@ -56,8 +57,8 @@ export default function AdminEventCenter() {
     queryFn: eventService.fetchAdminEventBossMetrics,
   });
   const summaryQuery = useQuery({
-    queryKey: adminQueryKeys.eventCenterSummary(),
-    queryFn: eventService.fetchAdminEventSummary,
+    queryKey: adminQueryKeys.eventCenterSummary({ tab }),
+    queryFn: () => eventService.fetchAdminEventSummary({ tab }),
   });
 
   const refresh = () => {
@@ -88,6 +89,22 @@ export default function AdminEventCenter() {
   ] as const;
 
   const rows = eventsQuery.data?.list || [];
+  const categoryCounts = summaryQuery.data?.categoryCounts || {};
+  const categoryOptions = useMemo(() => {
+    const keys = new Set([
+      ...Object.keys(ADMIN_EVENT_CATEGORY_LABELS),
+      ...Object.keys(categoryCounts),
+    ]);
+    return [...keys].map((key) => ({
+      key,
+      label: ADMIN_EVENT_CATEGORY_LABELS[key] || labelAdminEventCategory(key),
+      count: categoryCounts[key] ?? 0,
+    }));
+  }, [categoryCounts]);
+  const categoryTotal = useMemo(
+    () => categoryOptions.reduce((sum, item) => sum + item.count, 0),
+    [categoryOptions],
+  );
 
   return (
     <div className="space-y-4">
@@ -112,19 +129,26 @@ export default function AdminEventCenter() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        {tabs.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            className={`rounded-lg px-3 py-2 text-sm ${tab === item.key ? "bg-foreground text-background" : "border border-border text-muted-foreground hover:bg-secondary"}`}
-            onClick={() => setTab(item.key)}
-          >
-            {tText(item.label)}
-          </button>
-        ))}
+        {tabs.map((item) => {
+          const tabCount = summaryQuery.data?.tabCounts?.[item.key] ?? 0;
+          return (
+            <button
+              key={item.key}
+              type="button"
+              className={`rounded-lg px-3 py-2 text-sm ${tab === item.key ? "bg-foreground text-background" : "border border-border text-muted-foreground hover:bg-secondary"}`}
+              onClick={() => setTab(item.key)}
+            >
+              {tText(`${item.label} (${tabCount})`)}
+            </button>
+          );
+        })}
         <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">
-          <option value=""><Tx>全部分类</Tx></option>
-          {Object.entries(ADMIN_EVENT_CATEGORY_LABELS).map(([key, label]) => <option key={key} value={key}>{tText(label)}</option>)}
+          <option value="">{tText(`全部分类 (${categoryTotal})`)}</option>
+          {categoryOptions.map(({ key, label, count }) => (
+            <option key={key} value={key}>
+              {tText(`${label} (${count})`)}
+            </option>
+          ))}
         </select>
         <div className="ml-auto text-sm text-muted-foreground">
           {tText(`未读 ${summaryQuery.data?.unreadCount || 0} / 未处理 ${summaryQuery.data?.unresolvedCount || 0} / P0 ${summaryQuery.data?.p0Count || 0}`)}
@@ -133,24 +157,24 @@ export default function AdminEventCenter() {
 
       <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <div className="min-w-[920px]">
-        <div className="grid grid-cols-[90px_90px_minmax(180px,1fr)_152px_100px_minmax(200px,auto)] gap-3 border-b border-border px-4 py-2 text-xs font-medium text-muted-foreground">
+        <div className={adminDataGridClassName("grid grid-cols-[90px_90px_minmax(180px,1fr)_152px_100px_minmax(200px,auto)] gap-3 border-b border-border px-4 py-2 text-xs font-medium text-muted-foreground")}>
           <span><Tx>级别</Tx></span>
           <span><Tx>分类</Tx></span>
           <span><Tx>事件</Tx></span>
           <span><Tx>时间</Tx></span>
           <span><Tx>状态</Tx></span>
-          <span className="text-right"><Tx>操作</Tx></span>
+          <span><Tx>操作</Tx></span>
         </div>
         {rows.length ? rows.map((item) => {
           const occurredAt = formatEventOccurredAt(item);
           return (
-          <div key={item.id} className="grid grid-cols-[90px_90px_minmax(180px,1fr)_152px_100px_minmax(200px,auto)] gap-3 border-b border-border px-4 py-3 text-sm last:border-b-0">
+          <div key={item.id} className={adminDataGridClassName("grid grid-cols-[90px_90px_minmax(180px,1fr)_152px_100px_minmax(200px,auto)] gap-3 border-b border-border px-4 py-3 text-sm last:border-b-0")}>
             <div><span className={`rounded px-2 py-1 text-xs font-bold ${severityClass(item.severity)}`}>{item.severity}</span></div>
-            <div className="flex items-center gap-1 text-muted-foreground">
+            <div className="flex items-center justify-center gap-1 text-muted-foreground">
               {item.category === "security" ? <Shield size={14} className="text-red-600" /> : <AlertTriangle size={14} className="text-amber-600" />}
               {tText(labelAdminEventCategory(item.category))}
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 text-center">
               <div className="truncate font-medium text-foreground">{tText(formatAdminEventTitle(item.title, item.eventType, item.category))}</div>
               <div className="mt-1 truncate text-xs text-muted-foreground">{tText(formatAdminEventSubtitle(item.message, item.eventType, item.category))}</div>
             </div>
@@ -158,7 +182,7 @@ export default function AdminEventCenter() {
               {occurredAt}
             </div>
             <div className="text-muted-foreground">{tText(labelAdminEventStatus(item.status))}</div>
-            <div className="inline-flex flex-nowrap items-center justify-end gap-1">
+            <div className="inline-flex flex-nowrap items-center justify-center gap-1">
               <PermissionGate anyOf={EVENT_VIEW_PERMISSIONS}>
                 <button type="button" className="shrink-0 rounded px-2 py-1 text-xs hover:bg-secondary" onClick={() => actionMutation.mutate({ id: item.id, action: "read" })}><Eye size={13} className="mr-1 inline" /><Tx>已读</Tx></button>
               </PermissionGate>

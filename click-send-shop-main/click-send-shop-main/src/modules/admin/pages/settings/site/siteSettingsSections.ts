@@ -51,8 +51,18 @@ export const SITE_SETTINGS_SECTIONS: SiteSettingsSectionDef[] = [
     title: "品牌视觉",
     description: "Logo 与 Favicon，上传后自动转 WEBP 并写入设置。",
     fields: [
-      { key: "logoUrl", label: "Logo", type: "image", hint: "推荐 256×256；用于头部、登录页" },
-      { key: "faviconUrl", label: "Favicon", type: "image", hint: "推荐 32×32；浏览器标签图标" },
+      {
+        key: "logoUrl",
+        label: "网站 Logo",
+        type: "image",
+        hint: "推荐透明 PNG/WebP，正方形 256×256 及以上；用于商城头部、个人中心等（保留透明底）",
+      },
+      {
+        key: "faviconUrl",
+        label: "浏览器图标（Favicon）",
+        type: "image",
+        hint: "推荐白底或浅色底方形图 192×192；用于浏览器标签，勿用透明图（深色标签栏会看不清）",
+      },
     ],
   },
   {

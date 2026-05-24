@@ -113,6 +113,21 @@
     --store-bottom-nav-height: 72px;
     --store-action-bar-height: 4.75rem;
     --store-tab-header-height: 3.5rem;
+    --store-brand-logo-size: 2.25rem;
+  }
+
+  @media (min-width: 1024px) {
+    :root {
+      --store-brand-logo-size: 2.5rem;
+    }
+  }
+
+  .store-brand-logo {
+    height: var(--store-brand-logo-size);
+    width: var(--store-brand-logo-size);
+    flex-shrink: 0;
+    border-radius: 0.375rem;
+    object-fit: contain;
   }
 
   .dark {
@@ -413,6 +428,8 @@
 
   .auth-page-shell > main.auth-page-main {
     transition: none;
+    scroll-padding-bottom: max(6rem, env(safe-area-inset-bottom, 0px));
+    -webkit-overflow-scrolling: touch;
   }
 
   .auth-page-footer {
@@ -886,10 +903,59 @@ html[data-app-scope="admin"] .admin-tech-path {
     border-collapse: collapse;
   }
 
+  [data-admin-shell] .admin-table-scope table.admin-data-table th,
+  [data-admin-shell] .admin-table-scope table.admin-data-table td {
+    padding: var(--admin-table-cell-py) var(--admin-table-cell-px) !important;
+    vertical-align: middle;
+    text-align: center;
+  }
+
   [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) th,
   [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) td {
     padding: var(--admin-table-cell-py) var(--admin-table-cell-px) !important;
     vertical-align: middle;
+  }
+
+  [data-admin-shell] .admin-table-scope table.admin-data-table th.admin-table-align-left,
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-left {
+    text-align: left !important;
+  }
+
+  [data-admin-shell] .admin-table-scope table.admin-data-table th.admin-table-align-right,
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-right {
+    text-align: right !important;
+  }
+
+  [data-admin-shell] .admin-table-scope table.admin-data-table th .inline-flex,
+  [data-admin-shell] .admin-table-scope table.admin-data-table td .inline-flex,
+  [data-admin-shell] .admin-table-scope table.admin-data-table th button.inline-flex,
+  [data-admin-shell] .admin-table-scope table.admin-data-table td > .flex.justify-end {
+    justify-content: center;
+  }
+
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-left > .flex,
+  [data-admin-shell] .admin-table-scope table.admin-data-table th.admin-table-align-left .inline-flex {
+    justify-content: flex-start;
+  }
+
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-right > .flex,
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-right .inline-flex {
+    justify-content: flex-end;
+  }
+
+  [data-admin-shell] .admin-table-scope table.admin-data-table td > div.min-w-0 {
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  [data-admin-shell] .admin-table-scope table.admin-data-table td.admin-table-align-left > div.min-w-0 {
+    margin-inline: 0;
+    text-align: left;
+  }
+
+  [data-admin-shell] .admin-table-scope table.admin-data-table thead th {
+    white-space: nowrap;
+    font-weight: 600;
   }
 
   [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) thead th {
@@ -1017,6 +1083,44 @@ html[data-app-scope="admin"] .admin-tech-path {
 
   [data-admin-shell] .admin-table-mobile-card + .admin-table-mobile-card {
     margin-top: 0;
+  }
+
+  /** div 网格数据表：表头与单元格列内居中 */
+  [data-admin-shell] .admin-data-grid {
+    align-items: center;
+  }
+
+  [data-admin-shell] .admin-data-grid > * {
+    min-width: 0;
+    text-align: center;
+    justify-self: center;
+  }
+
+  [data-admin-shell] .admin-data-grid > .admin-table-align-left {
+    text-align: left;
+    justify-self: stretch;
+  }
+
+  [data-admin-shell] .admin-data-grid > .admin-table-align-right {
+    text-align: right;
+    justify-self: end;
+  }
+
+  [data-admin-shell] .admin-data-grid > .flex:not(.admin-table-align-left) {
+    justify-content: center;
+  }
+
+  [data-admin-shell] .admin-data-grid > .admin-table-align-left.flex {
+    justify-content: flex-start;
+  }
+
+  [data-admin-shell] .admin-data-grid > .inline-flex {
+    justify-content: center;
+  }
+
+  [data-admin-shell] .admin-data-grid > .admin-table-align-right.inline-flex,
+  [data-admin-shell] .admin-data-grid > .admin-table-align-right .inline-flex {
+    justify-content: flex-end;
   }
 }
 

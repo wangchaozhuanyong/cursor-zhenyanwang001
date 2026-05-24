@@ -96,6 +96,8 @@ export interface CheckoutPickerCoupon {
   usable?: boolean;
   reason?: string;
   discountAmount?: number;
+  /** 券面「适用范围」文案，与我的优惠券页一致 */
+  scopeText?: string;
 }
 
 export interface CheckoutCouponsResult {

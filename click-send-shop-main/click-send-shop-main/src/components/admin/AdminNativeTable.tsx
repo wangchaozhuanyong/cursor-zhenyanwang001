@@ -26,7 +26,7 @@ export function AdminNativeTable({
         <table
           className={adminTableClassName(
             cn(
-              "w-full text-left text-sm",
+              "w-full text-sm",
               stickyFirstColumn && ADMIN_TABLE_STICKY_FIRST_CLASS,
               tableClassName,
             ),

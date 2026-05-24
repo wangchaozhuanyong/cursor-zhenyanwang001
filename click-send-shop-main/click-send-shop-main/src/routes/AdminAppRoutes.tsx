@@ -14,7 +14,7 @@ import { useAdminTOptional } from "@/hooks/useAdminT";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { queryClient } from "@/lib/queryClient";
-import { resolveSiteFaviconUrl } from "@/utils/siteBrandAssets";
+import { guessFaviconMime, resolveSiteFaviconUrl } from "@/utils/siteBrandAssets";
 import {
   DEFAULT_APPLE_TOUCH_ICON,
   DEFAULT_FAVICON_ICO,
@@ -41,11 +41,12 @@ function SiteIdentitySync() {
 
   useLayoutEffect(() => {
     const raw = resolveSiteFaviconUrl(siteInfo);
-    const custom = raw && !raw.startsWith("data:") && !/lovable/i.test(raw) ? raw : "";
+    const custom = raw && !/lovable/i.test(raw) ? raw : "";
+    const faviconType = custom ? guessFaviconMime(custom) : undefined;
     const iconTargets: Array<{ rel: string; href: string; type?: string; sizes?: string }> = custom
       ? [
-          { rel: "icon", href: custom },
-          { rel: "apple-touch-icon", href: custom },
+          { rel: "icon", href: custom, type: faviconType, sizes: faviconType === "image/png" ? "192x192" : undefined },
+          { rel: "apple-touch-icon", href: custom, type: faviconType },
         ]
       : [
           { rel: "icon", href: DEFAULT_FAVICON_PNG, type: "image/png", sizes: "192x192" },

@@ -51,8 +51,44 @@ function readEnvTelegramConfig() {
     parseMode: String(process.env.TELEGRAM_PARSE_MODE || 'HTML').trim() || 'HTML',
     includeOrderItems: String(process.env.TELEGRAM_INCLUDE_ORDER_ITEMS || 'true').toLowerCase() !== 'false',
     maxMessageLength: Number(process.env.TELEGRAM_MAX_MESSAGE_LENGTH || 3900) || 3900,
-    adminFrontendUrl: String(process.env.ADMIN_FRONTEND_URL || process.env.PUBLIC_APP_URL || '').trim(),
+    adminFrontendUrl: resolveAdminFrontendBaseUrl(),
   };
+}
+
+/**
+ * 管理后台对外访问根地址（不含路径）。
+ * 优先：显式配置 → ADMIN_PUBLIC_URL → ADMIN_FRONTEND_URL → PUBLIC_APP_URL
+ * 若误将主站域名写入 Telegram 设置而控制台在独立子域，则自动改用 ADMIN_PUBLIC_URL。
+ */
+function resolveAdminFrontendBaseUrl(override = '') {
+  const custom = String(override || '').trim().replace(/\/+$/, '');
+  const adminPublic = String(process.env.ADMIN_PUBLIC_URL || '').trim().replace(/\/+$/, '');
+  const adminFrontend = String(process.env.ADMIN_FRONTEND_URL || '').trim().replace(/\/+$/, '');
+  const publicApp = String(process.env.PUBLIC_APP_URL || '').trim().replace(/\/+$/, '');
+
+  if (custom) {
+    if (adminPublic && publicApp && custom === publicApp && adminPublic !== publicApp) {
+      return adminPublic;
+    }
+    return custom;
+  }
+  return adminPublic || adminFrontend || publicApp;
+}
+
+/** @param {string} orderId @param {string} [orderNo] */
+function buildAdminOrderUrlPath(orderId, orderNo) {
+  const id = String(orderId || '').trim();
+  if (id) {
+    return `/admin/orders/${encodeURIComponent(id)}`;
+  }
+  const keyword = String(orderNo || orderId || '').trim().replace(/^#+/, '');
+  return `/admin/orders?keyword=${encodeURIComponent(keyword)}`;
+}
+
+function buildAdminOrderUrl(overrideBase, orderId, orderNo) {
+  const base = resolveAdminFrontendBaseUrl(overrideBase);
+  const path = buildAdminOrderUrlPath(orderId, orderNo);
+  return base ? `${base}${path}` : path;
 }
 
 function parseStoredConfig(raw) {
@@ -119,7 +155,7 @@ function mergeTelegramNotifyConfig(envConfig, storedConfig) {
     parseMode: stored.parseMode || env.parseMode,
     includeOrderItems: stored.includeOrderItems,
     maxMessageLength: stored.maxMessageLength,
-    adminFrontendUrl: stored.adminFrontendUrl || env.adminFrontendUrl,
+    adminFrontendUrl: resolveAdminFrontendBaseUrl(stored.adminFrontendUrl || env.adminFrontendUrl),
     configSource: 'database',
   };
 }
@@ -172,4 +208,7 @@ module.exports = {
   maskBotToken,
   toAdminSettingsView,
   resolveBotTokenOnSave,
+  resolveAdminFrontendBaseUrl,
+  buildAdminOrderUrlPath,
+  buildAdminOrderUrl,
 };

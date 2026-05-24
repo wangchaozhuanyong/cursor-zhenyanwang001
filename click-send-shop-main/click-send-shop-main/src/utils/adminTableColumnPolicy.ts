@@ -92,7 +92,7 @@ export function getReportColumnMaxWidthStyle(key: string): { maxWidth: string } 
 
 export function reportTableThClassName(key: string): string {
   const preset = getReportColumnPreset(key);
-  const parts = ["px-2 py-2 text-left text-muted-foreground font-medium"];
+  const parts = ["px-2 py-2 text-center text-muted-foreground font-medium"];
   if (preset.nowrap) parts.push("whitespace-nowrap");
   return parts.join(" ");
 }

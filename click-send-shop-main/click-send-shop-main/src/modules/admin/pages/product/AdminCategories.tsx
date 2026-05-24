@@ -18,7 +18,6 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { AdminTableCellGroup } from "@/components/admin/AdminTableCell";
 import PermissionGate from "@/components/admin/PermissionGate";
 import * as categoryService from "@/services/admin/categoryService";
 import * as uploadService from "@/services/uploadService";
@@ -29,6 +28,10 @@ import type { Category } from "@/types/category";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { AnimatedConfirmDialog, LoadingButton } from "@/modules/micro-interactions";
 import { useAdminT } from "@/hooks/useAdminT";
+import {
+  ADMIN_TABLE_ALIGN_LEFT_CLASS,
+  adminDataGridClassName,
+} from "@/utils/adminTableClasses";
 import {
   THEME_BADGE_MUTED,
   THEME_BADGE_SUCCESS,
@@ -426,16 +429,16 @@ export default function AdminCategories() {
       )}
 
       <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <div className="hidden grid-cols-[1fr_100px_90px_110px_120px] gap-3 border-b border-border px-4 py-3 text-xs font-medium text-muted-foreground md:grid">
+        <div className={adminDataGridClassName("hidden grid-cols-[1fr_100px_90px_110px_120px] gap-3 border-b border-border px-4 py-3 text-xs font-medium text-muted-foreground md:grid")}>
           <span><Tx>分类</Tx></span>
           <span><Tx>商品数</Tx></span>
           <span><Tx>显示</Tx></span>
           <span><Tx>排序</Tx></span>
-          <span className="text-right"><Tx>操作</Tx></span>
+          <span><Tx>操作</Tx></span>
         </div>
         {loading
           ? Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="hidden grid-cols-[1fr_100px_90px_110px_120px] items-center gap-3 border-b border-border px-4 py-3 md:grid">
+            <div key={i} className={adminDataGridClassName("hidden grid-cols-[1fr_100px_90px_110px_120px] gap-3 border-b border-border px-4 py-3 md:grid")}>
               <div className="skeleton-base skeleton-shimmer h-9 w-48 rounded-lg" />
               <div className="skeleton-base skeleton-shimmer h-4 w-12 rounded" />
               <div className="skeleton-base skeleton-shimmer h-4 w-10 rounded" />
@@ -453,11 +456,11 @@ export default function AdminCategories() {
               onDragStart={() => setDraggingId(cat.id)}
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => handleDrop(cat.id)}
-              className={`border-b border-border px-3 py-3 text-sm md:grid md:grid-cols-[1fr_100px_90px_110px_120px] md:items-center md:gap-3 md:px-4 ${
+              className={adminDataGridClassName(`border-b border-border px-3 py-2.5 text-sm md:grid md:grid-cols-[1fr_100px_90px_110px_120px] md:gap-3 md:px-4 ${
                 draggingId === cat.id ? "bg-secondary/70 opacity-70" : ""
-              }`}
+              }`)}
             >
-              <div className="flex min-w-0 items-center gap-2" style={{ paddingLeft: cat.level * 24 }}>
+              <div className={`flex min-w-0 items-center gap-2 ${ADMIN_TABLE_ALIGN_LEFT_CLASS}`} style={{ paddingLeft: cat.level * 24 }}>
                 <GripVertical size={15} className="shrink-0 cursor-grab text-muted-foreground" />
                 <button
                   type="button"
@@ -500,20 +503,19 @@ export default function AdminCategories() {
                     {parentSelect(editData.parent_id, (v) => setEditData({ ...editData, parent_id: v }), cat.id)}
                   </div>
                 ) : (
-                  <div className="min-w-0">
-                    <AdminTableCellGroup
-                      maxWidth="14rem"
-                      lines={[
-                        { text: cat.name },
-                        { text: categorySubtitle(cat, categoryNameById, tText), muted: true },
-                      ]}
-                      tooltipLines={[cat.name, categorySubtitle(cat, categoryNameById, tText), cat.id]}
-                    />
+                  <div
+                    className="flex min-w-0 flex-1 items-center gap-2"
+                    title={[cat.name, categorySubtitle(cat, categoryNameById, tText), cat.id].join("\n")}
+                  >
+                    <span className="truncate text-sm font-medium text-foreground">{cat.name}</span>
+                    <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">
+                      {categorySubtitle(cat, categoryNameById, tText)}
+                    </span>
                   </div>
                 )}
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/50 pt-3 md:mt-0 md:contents md:border-0 md:pt-0">
-              <span className="text-xs text-muted-foreground md:text-left"><span className="mr-1 text-[10px] uppercase tracking-wide text-muted-foreground/80 md:hidden">商品</span>{cat.productCount ?? 0}</span>
+              <span className="text-xs text-muted-foreground"><span className="mr-1 text-[10px] uppercase tracking-wide text-muted-foreground/80 md:hidden">商品</span>{cat.productCount ?? 0}</span>
               <PermissionGate permission="category.manage">
                 <button
                   type="button"
@@ -536,7 +538,7 @@ export default function AdminCategories() {
               ) : (
                 <span className="text-xs text-muted-foreground">{cat.sort_order ?? 0}</span>
               )}
-              <div className="ml-auto flex justify-end gap-1 md:ml-0">
+              <div className="flex justify-center gap-1">
                 {isEditing ? (
                   <>
                     <PermissionGate permission="category.manage">

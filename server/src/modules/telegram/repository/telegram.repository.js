@@ -1,5 +1,10 @@
 const db = require('../../../config/db');
 const { generateId } = require('../../../utils/helpers');
+const {
+  labelTelegramPaymentMethod,
+  labelTelegramPaymentChannel,
+  formatTelegramShippingAddress,
+} = require('../../../utils/telegramOrderLabels');
 
 /** 未执行 091 迁移时 notification_logs 不存在，管理端需降级避免 500 */
 let notificationLogsReady;
@@ -38,7 +43,7 @@ function buildShippingAddress(order) {
 
 async function selectTelegramOrderSnapshot(orderId) {
   const [[order]] = await db.query(
-    `SELECT id, user_id, order_no, contact_name, contact_phone, shipping_phone,
+    `SELECT id, user_id, order_no, order_type, contact_name, contact_phone, shipping_phone,
             total_amount, payment_method, payment_channel, payment_status, status,
             address, address_line1, address_line2, address_city, address_state,
             address_postcode, address_country, created_at, paid_at, payment_time
@@ -70,10 +75,10 @@ async function selectTelegramOrderSnapshot(orderId) {
       orderNo: order.order_no,
       customerName: order.contact_name || '客户',
       contactPhone: order.contact_phone || order.shipping_phone || '',
-      shippingAddress: buildShippingAddress(order),
+      shippingAddress: formatTelegramShippingAddress(buildShippingAddress(order)),
       totalAmount: order.total_amount,
-      paymentMethod: order.payment_method || '',
-      paymentChannel: order.payment_channel || '',
+      paymentMethod: labelTelegramPaymentMethod(order.payment_method, order.order_type),
+      paymentChannel: labelTelegramPaymentChannel(order.payment_channel),
       paymentStatus: order.payment_status || '',
       status: order.status || '',
       createdAt: order.created_at,

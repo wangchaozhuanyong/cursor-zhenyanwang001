@@ -119,6 +119,6 @@ export function reportTableBodyCellClass(sticky: boolean) {
 
 export function reportTableHeadCellClass(sticky: boolean) {
   return sticky
-    ? "px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground bg-[var(--theme-surface)]"
-    : "px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground";
+    ? "px-3 py-2.5 text-center text-xs font-semibold text-muted-foreground bg-[var(--theme-surface)]"
+    : "px-3 py-2.5 text-center text-xs font-semibold text-muted-foreground";
 }

@@ -16,7 +16,7 @@ type AdminFieldHintProps = {
 
 const ICON_SIZE = { sm: 13, md: 15 } as const;
 
-/** 管理后台统一说明入口：点击 ? 打开/关闭，桌面与移动端行为一致。 */
+/** 管理后台统一说明入口：悬停或聚焦可查看说明（可移入浮层选中复制）；点击 ? 可固定展开/收起。 */
 export default function AdminFieldHint({
   text,
   size = "sm",
@@ -30,7 +30,12 @@ export default function AdminFieldHint({
   const iconSize = ICON_SIZE[size];
 
   return (
-    <Tooltip open={open} onOpenChange={setOpen} delayDuration={0}>
+    <Tooltip
+      open={open}
+      onOpenChange={setOpen}
+      delayDuration={200}
+      disableHoverableContent={false}
+    >
       <TooltipTrigger asChild>
         <button
           type="button"
@@ -40,10 +45,8 @@ export default function AdminFieldHint({
             "inline-flex shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:text-[var(--theme-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)]/40",
             className,
           )}
-          onMouseEnter={() => setOpen(true)}
-          onMouseLeave={() => setOpen(false)}
+          onPointerEnter={() => setOpen(true)}
           onFocus={() => setOpen(true)}
-          onBlur={() => setOpen(false)}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -56,7 +59,11 @@ export default function AdminFieldHint({
       <TooltipContent
         side={side}
         align={align}
-        className={cn("max-w-sm text-xs leading-relaxed", contentClassName)}
+        sideOffset={6}
+        className={cn(
+          "pointer-events-auto max-w-sm select-text text-xs leading-relaxed",
+          contentClassName,
+        )}
       >
         {text}
       </TooltipContent>

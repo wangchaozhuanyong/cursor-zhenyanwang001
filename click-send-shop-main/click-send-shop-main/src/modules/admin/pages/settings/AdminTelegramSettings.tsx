@@ -271,9 +271,11 @@ export default function AdminTelegramSettings() {
                     className={inputClass}
                     value={form.adminFrontendUrl}
                     onChange={(e) => patchForm({ adminFrontendUrl: e.target.value })}
-                    placeholder="https://admin.example.com"
+                    placeholder="https://console.damatong.net"
                   />
-                  <p className="text-xs text-muted-foreground"><Tx>用于消息末尾「后台查看」链接，请填写管理后台访问地址。</Tx></p>
+                  <p className="text-xs text-muted-foreground">
+                    <Tx>用于消息末尾「后台查看」链接。请填写管理后台实际访问域名（若与商城主站分离，勿填商城首页域名，否则会 404）。</Tx>
+                  </p>
                 </div>
 
                 <label className="flex items-center justify-between gap-3 rounded-lg border border-border p-4">

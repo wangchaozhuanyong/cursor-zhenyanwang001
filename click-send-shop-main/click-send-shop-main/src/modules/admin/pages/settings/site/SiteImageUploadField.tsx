@@ -1,7 +1,11 @@
 import { useRef } from "react";
 import { Image as ImageIcon, Loader2, Upload, X } from "lucide-react";
 import { AdminLabelWithHint } from "@/components/admin/AdminFieldHint";
-import { IMAGE_UPLOAD_HINT_API, IMAGE_UPLOAD_HINT_SITE_ASSET } from "@/constants/imageUploadHints";
+import {
+  IMAGE_UPLOAD_HINT_API,
+  IMAGE_UPLOAD_HINT_SITE_FAVICON,
+  IMAGE_UPLOAD_HINT_SITE_LOGO,
+} from "@/constants/imageUploadHints";
 import { THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
 import { Tx } from "@/components/admin/AdminText";
 import type { SiteSettings } from "@/types/admin";
@@ -28,10 +32,14 @@ export default function SiteImageUploadField({
 }: Props) {
   const { tText } = useAdminT();
   const inputRef = useRef<HTMLInputElement>(null);
-  const isSiteAsset = fieldKey === "logoUrl" || fieldKey === "faviconUrl";
+  const isLogo = fieldKey === "logoUrl";
+  const isFavicon = fieldKey === "faviconUrl";
+  const isSiteAsset = isLogo || isFavicon;
   const imageHint = (
     <>
-      {isSiteAsset ? IMAGE_UPLOAD_HINT_SITE_ASSET : IMAGE_UPLOAD_HINT_API}
+      {isLogo ? IMAGE_UPLOAD_HINT_SITE_LOGO : null}
+      {isFavicon ? IMAGE_UPLOAD_HINT_SITE_FAVICON : null}
+      {!isSiteAsset ? IMAGE_UPLOAD_HINT_API : null}
       {hint ? <p className="mt-1">{hint}</p> : null}
       {!isSiteAsset ? (
         <p className="mt-1 text-amber-600/90"><Tx>上传后请保存当前分组使前台生效。</Tx></p>
@@ -43,7 +51,11 @@ export default function SiteImageUploadField({
     <div>
       <AdminLabelWithHint label={label} hint={imageHint} />
       <div className="flex items-center gap-3">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-secondary">
+        <div
+          className={`flex shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-secondary ${
+            isFavicon ? "h-14 w-14" : "h-20 w-20"
+          }`}
+        >
           {value ? (
             <img src={value} alt={label} className="h-full w-full object-contain" />
           ) : (

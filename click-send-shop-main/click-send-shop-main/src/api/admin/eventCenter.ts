@@ -58,6 +58,16 @@ export type AdminEventSummary = {
   p0Count: number;
   securityCount: number;
   recoveredCount: number;
+  /** 按当前 tab 筛选后、各分类下可见事件数量 */
+  categoryCounts?: Record<string, number>;
+  /** 各 Tab 下可见事件数量（与列表 Tab 筛选一致） */
+  tabCounts?: {
+    all: number;
+    pending: number;
+    urgent: number;
+    security: number;
+    recovered: number;
+  };
 };
 
 export type AdminEventBossMetrics = {
@@ -91,8 +101,8 @@ export function getAdminEvents(params?: AdminEventListParams) {
   return get<PaginatedData<AdminEventRecord>>("/admin/event-center/events", params as unknown as Record<string, string>);
 }
 
-export function getAdminEventSummary() {
-  return get<AdminEventSummary>("/admin/event-center/summary");
+export function getAdminEventSummary(params?: Pick<AdminEventListParams, "tab">) {
+  return get<AdminEventSummary>("/admin/event-center/summary", params as unknown as Record<string, string>);
 }
 
 export function getAdminEventBossMetrics() {

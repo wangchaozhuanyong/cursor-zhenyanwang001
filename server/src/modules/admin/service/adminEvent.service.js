@@ -205,8 +205,13 @@ async function listEvents(query = {}, adminUserId) {
   return { list: list.map(mapRecord), total, page, pageSize };
 }
 
-async function getSummary(adminUserId) {
-  return repo.selectSummary(adminUserId);
+async function getSummary(adminUserId, query = {}) {
+  const [base, categoryCounts, tabCounts] = await Promise.all([
+    repo.selectSummary(adminUserId),
+    repo.selectCategoryCounts(adminUserId, query),
+    repo.selectTabCounts(adminUserId),
+  ]);
+  return { ...base, categoryCounts, tabCounts };
 }
 
 async function getBossMetrics() {

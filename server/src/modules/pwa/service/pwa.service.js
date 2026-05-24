@@ -211,7 +211,7 @@ async function buildManifest(req, iconBasePath = '/api/pwa') {
   const siteInfo = await loadSiteInfoSafe();
   const siteName = resolveSiteName(siteInfo);
   const description = resolveSiteDescription(siteInfo) || NEUTRAL_SITE_DESCRIPTION;
-  const logoUrl = resolvePublicUrl(req, siteInfo.logoUrl || siteInfo.faviconUrl || '');
+  const logoUrl = resolvePublicUrl(req, siteInfo.faviconUrl || siteInfo.logoUrl || '');
   const version = hashBrand(`${siteName}|${description}|${logoUrl}`);
   return {
     name: siteName,
@@ -234,7 +234,7 @@ async function buildManifest(req, iconBasePath = '/api/pwa') {
 
 async function buildIcon(req, { size, maskable }) {
   const siteInfo = await loadSiteInfoSafe();
-  const logoUrl = resolvePublicUrl(req, siteInfo.logoUrl || siteInfo.faviconUrl || '');
+  const logoUrl = resolvePublicUrl(req, siteInfo.faviconUrl || siteInfo.logoUrl || '');
   return buildIconBuffer({ logoUrl, size, maskable, fallbackPath: getFallbackLogoPath() });
 }
 

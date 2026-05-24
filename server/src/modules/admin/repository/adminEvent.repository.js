@@ -190,6 +190,49 @@ async function countEvents(query, adminUserId) {
   return Number(total || 0);
 }
 
+async function selectCategoryCounts(adminUserId, query = {}) {
+  const listQuery = { ...query };
+  delete listQuery.category;
+  delete listQuery.page;
+  delete listQuery.pageSize;
+  const { where, params } = buildListWhere(listQuery, adminUserId);
+  const [rows] = await db.query(
+    `SELECT r.category, COUNT(*) AS total
+     FROM admin_event_records r
+     LEFT JOIN admin_event_user_states us ON us.event_id = r.id AND us.admin_user_id = ?
+     ${where}
+     GROUP BY r.category`,
+    params,
+  );
+  const counts = {};
+  for (const row of rows) {
+    if (!row?.category) continue;
+    counts[String(row.category)] = Number(row.total || 0);
+  }
+  return counts;
+}
+
+async function selectTabCounts(adminUserId) {
+  const [[row]] = await db.query(
+    `SELECT
+      SUM(CASE WHEN us.hidden_at IS NULL THEN 1 ELSE 0 END) AS all_count,
+      SUM(CASE WHEN us.hidden_at IS NULL AND r.status IN ('open', 'acknowledged', 'in_progress') THEN 1 ELSE 0 END) AS pending_count,
+      SUM(CASE WHEN us.hidden_at IS NULL AND r.severity IN ('P0', 'P1') AND r.status IN ('open', 'acknowledged', 'in_progress') THEN 1 ELSE 0 END) AS urgent_count,
+      SUM(CASE WHEN us.hidden_at IS NULL AND r.category = 'security' THEN 1 ELSE 0 END) AS security_count,
+      SUM(CASE WHEN us.hidden_at IS NULL AND r.status IN ('resolved', 'auto_resolved') THEN 1 ELSE 0 END) AS recovered_count
+     FROM admin_event_records r
+     LEFT JOIN admin_event_user_states us ON us.event_id = r.id AND us.admin_user_id = ?`,
+    [adminUserId],
+  );
+  return {
+    all: Number(row?.all_count || 0),
+    pending: Number(row?.pending_count || 0),
+    urgent: Number(row?.urgent_count || 0),
+    security: Number(row?.security_count || 0),
+    recovered: Number(row?.recovered_count || 0),
+  };
+}
+
 async function selectSummary(adminUserId) {
   const [[row]] = await db.query(
     `SELECT
@@ -293,6 +336,8 @@ module.exports = {
   listEvents,
   countEvents,
   selectSummary,
+  selectCategoryCounts,
+  selectTabCounts,
   selectBossMetrics,
   listRules,
   listEscalationCandidates,

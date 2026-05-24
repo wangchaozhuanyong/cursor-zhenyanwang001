@@ -290,9 +290,9 @@ export default function Profile() {
               <img
                 src={logoSrc}
                 alt=""
-                width={28}
-                height={28}
-                className="h-7 w-7 shrink-0 rounded-md object-contain"
+                width={36}
+                height={36}
+                className="store-brand-logo"
                 loading="eager"
                 decoding="async"
               />

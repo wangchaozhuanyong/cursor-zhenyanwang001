@@ -13,11 +13,12 @@ function localizeMessage(message: string | undefined, fallback: string): string 
 
 export function getErrorMessage(error: unknown, fallback = "操作失败"): string {
   if (error instanceof ApiError) {
-    if (error.code === 409) {
-      return "数据已被其他管理员修改，请刷新后再编辑";
-    }
     const data = error.data as Record<string, unknown> | undefined;
     const backendMessage = readString(data?.message) || readString(data?.error);
+    if (error.code === 409) {
+      const conflictFallback = "数据已被其他管理员修改，请刷新后再编辑";
+      return localizeMessage(backendMessage || readString(error.message), conflictFallback);
+    }
     const message = localizeMessage(backendMessage || readString(error.message), fallback);
     const traceId = readString(data?.traceId);
     return traceId && message !== fallback ? `${message}（追踪ID：${traceId}）` : message;

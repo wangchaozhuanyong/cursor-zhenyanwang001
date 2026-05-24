@@ -14,11 +14,11 @@ function isCoarsePointerDevice(): boolean {
   return window.matchMedia("(pointer: coarse)").matches;
 }
 
-/** 迟滞阈值，避免 Chrome visualViewport 微抖导致布局来回切换 */
+/** 迟滞阈值，避免 iOS Chrome visualViewport 微抖导致布局来回切换 */
 function readKeyboardLikelyOpen(prevOpen: boolean): boolean {
   if (typeof window === "undefined" || !window.visualViewport) return false;
   const ratio = window.visualViewport.height / window.innerHeight;
-  return prevOpen ? ratio < 0.85 : ratio < 0.75;
+  return prevOpen ? ratio < 0.88 : ratio < 0.72;
 }
 
 /**
@@ -67,8 +67,14 @@ export function useFormFieldFocus(enabled = true) {
       clearViewportDebounce();
       viewportDebounceRef.current = setTimeout(() => {
         viewportDebounceRef.current = null;
+        const active = document.activeElement;
+        if (isKeyboardTriggerField(active) && coarsePointer.current) {
+          setTextFieldFocused(true);
+          applyKeyboardOpen(true);
+          return;
+        }
         syncKeyboardOpen();
-      }, 120);
+      }, 220);
     };
 
     const setTextFocusedTrue = () => {
@@ -85,7 +91,7 @@ export function useFormFieldFocus(enabled = true) {
         setTextFieldFocused(false);
         syncKeyboardOpen();
         if (!readKeyboardLikelyOpen(keyboardOpenRef.current)) applyKeyboardOpen(false);
-      }, 220);
+      }, 280);
     };
 
     const onFocusIn = (e: FocusEvent) => {
@@ -98,6 +104,11 @@ export function useFormFieldFocus(enabled = true) {
     };
 
     const onViewportResize = () => {
+      if (isKeyboardTriggerField(document.activeElement) && coarsePointer.current) {
+        setTextFieldFocused(true);
+        applyKeyboardOpen(true);
+        return;
+      }
       scheduleViewportSync();
       const kb = readKeyboardLikelyOpen(keyboardOpenRef.current);
       if (isKeyboardTriggerField(document.activeElement) || kb) {

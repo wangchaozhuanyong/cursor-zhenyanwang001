@@ -25,24 +25,8 @@ function rowsToMap(rows) {
     settings[r.setting_key] = r.setting_value;
     version = Math.max(version, Number(r.version || 1));
   });
-  if (settings.logoUrl || settings.faviconUrl) {
-    const unified = String(settings.logoUrl || settings.faviconUrl || '').trim();
-    settings.logoUrl = unified;
-    settings.faviconUrl = unified;
-  }
   settings.version = version;
   return settings;
-}
-
-function withUnifiedBrandAssets(body) {
-  const next = { ...body };
-  const hasLogo = Object.prototype.hasOwnProperty.call(next, 'logoUrl');
-  const hasFavicon = Object.prototype.hasOwnProperty.call(next, 'faviconUrl');
-  if (!hasLogo && !hasFavicon) return next;
-  const unified = String(next.logoUrl || next.faviconUrl || '').trim();
-  next.logoUrl = unified;
-  next.faviconUrl = unified;
-  return next;
 }
 
 function omitBrandAssetsForAudit(value) {
@@ -81,7 +65,7 @@ async function getSiteSettings() {
 async function updateSiteSettings(body, adminUserId, req) {
   const beforeRows = await repo.selectNonShippingSettingsRows();
   const beforeMap = rowsToMap(beforeRows);
-  const normalizedBody = withUnifiedBrandAssets(body);
+  const normalizedBody = { ...body };
   try {
     const expectedVersion = normalizedBody.version === undefined || normalizedBody.version === null || normalizedBody.version === ''
       ? null
@@ -133,6 +117,26 @@ async function updateSiteSettings(body, adminUserId, req) {
   }
 }
 
+async function processSiteAssetUpload(file, key) {
+  const rotated = sharp(file.buffer).rotate();
+  if (key === 'faviconUrl') {
+    const pngBuffer = await rotated
+      .resize(192, 192, {
+        fit: 'contain',
+        background: { r: 255, g: 255, b: 255, alpha: 1 },
+      })
+      .flatten({ background: { r: 255, g: 255, b: 255 } })
+      .png({ compressionLevel: 9 })
+      .toBuffer();
+    return { buffer: pngBuffer, contentType: 'image/png', ext: 'png' };
+  }
+  const webpBuffer = await rotated
+    .resize({ width: 512, height: 512, fit: 'inside', withoutEnlargement: true })
+    .webp({ quality: 90, alphaQuality: 100 })
+    .toBuffer();
+  return { buffer: webpBuffer, contentType: 'image/webp', ext: 'webp' };
+}
+
 async function uploadSiteAsset(file, key, adminUserId, req) {
   if (!SITE_ASSET_KEYS.has(key)) {
     return { error: { code: 400, message: '不支持的站点图片字段' } };
@@ -144,39 +148,30 @@ async function uploadSiteAsset(file, key, adminUserId, req) {
   const beforeRows = await repo.selectNonShippingSettingsRows();
   const beforeMap = rowsToMap(beforeRows);
 
-  const maxWidth = key === 'faviconUrl' ? 64 : 512;
-  const webpBuffer = await sharp(file.buffer)
-    .rotate()
-    .resize({ width: maxWidth, height: maxWidth, fit: 'inside', withoutEnlargement: true })
-    .webp({ quality: key === 'faviconUrl' ? 90 : 85 })
-    .toBuffer();
-  let finalUrl = `data:image/webp;base64,${webpBuffer.toString('base64')}`;
+  const { buffer, contentType, ext } = await processSiteAssetUpload(file, key);
+  let finalUrl = `data:${contentType};base64,${buffer.toString('base64')}`;
   if (isS3StorageEnabled()) {
     const stamp = Date.now();
     const rand = Math.random().toString(36).slice(2, 10);
     const uploaded = await uploadBufferToS3({
-      key: `site-assets/${key}/${stamp}-${rand}.webp`,
-      body: webpBuffer,
-      contentType: 'image/webp',
+      key: `site-assets/${key}/${stamp}-${rand}.${ext}`,
+      body: buffer,
+      contentType,
       cacheControl: 'public, max-age=86400',
     });
     finalUrl = uploaded.url;
   }
 
-  await repo.upsertSetting('logoUrl', finalUrl);
-  await repo.upsertSetting('faviconUrl', finalUrl);
+  await repo.upsertSetting(key, finalUrl);
   await writeAuditLog({
     req,
     operatorId: adminUserId,
     actionType: 'settings.site_asset_upload',
     objectType: 'site_settings',
-    objectId: 'brandAssets',
+    objectId: key,
     summary: `上传站点品牌图片 ${key}`,
-    before: {
-      logoUrl: beforeMap.logoUrl ? '[replaced]' : '',
-      faviconUrl: beforeMap.faviconUrl ? '[replaced]' : '',
-    },
-    after: { logoUrl: finalUrl, faviconUrl: finalUrl },
+    before: { [key]: beforeMap[key] ? '[replaced]' : '' },
+    after: { [key]: finalUrl },
     result: 'success',
   });
 

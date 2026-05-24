@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Download, Loader2, Package, Truck } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import SearchBar from "@/components/SearchBar";
 import Pagination from "@/components/admin/Pagination";
@@ -120,13 +120,14 @@ export default function AdminOrders() {
     [tText],
   );
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { confirm } = useAdminConfirm();
   const [shipTarget, setShipTarget] = useState<{ id: string; orderNo: string } | null>(null);
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState("");
   const [paymentFilter, setPaymentFilter] = useState<"" | PaymentStatus>("");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => (searchParams.get("keyword") || "").replace(/^#+/, "").trim());
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -145,6 +146,11 @@ export default function AdminOrders() {
   const [pageSize, setPageSize] = useState(20);
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [exportingScope, setExportingScope] = useState<"filtered" | "selected" | null>(null);
+
+  useEffect(() => {
+    const kw = (searchParams.get("keyword") || "").replace(/^#+/, "").trim();
+    if (kw) setSearch(kw);
+  }, [searchParams]);
 
   const clearFilters = () => {
     setStatusFilter("");

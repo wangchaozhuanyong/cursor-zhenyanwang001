@@ -31,7 +31,7 @@ import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { trackEvent } from "@/services/analyticsService";
 import { isStandaloneApp } from "@/utils/pwa";
 import { queryClient } from "@/lib/queryClient";
-import { resolveSiteFaviconUrl } from "@/utils/siteBrandAssets";
+import { guessFaviconMime, resolveSiteFaviconUrl } from "@/utils/siteBrandAssets";
 import { POINTS_GIFT_REDEEM_CLIENT_ENABLED } from "@/constants/pointsClientFeatures";
 import {
   MemberHome, GuestHome, Login, BindWechatPhone,
@@ -46,11 +46,12 @@ function SiteIdentitySync() {
 
   useLayoutEffect(() => {
     const raw = resolveSiteFaviconUrl(siteInfo);
-    const custom = raw && !raw.startsWith("data:") && !/lovable/i.test(raw) ? raw : "";
+    const custom = raw && !/lovable/i.test(raw) ? raw : "";
+    const faviconType = custom ? guessFaviconMime(custom) : undefined;
     const iconTargets: Array<{ rel: string; href: string; type?: string; sizes?: string }> = custom
       ? [
-          { rel: "icon", href: custom },
-          { rel: "apple-touch-icon", href: custom },
+          { rel: "icon", href: custom, type: faviconType, sizes: faviconType === "image/png" ? "192x192" : undefined },
+          { rel: "apple-touch-icon", href: custom, type: faviconType },
         ]
       : [
           { rel: "icon", href: DEFAULT_FAVICON_PNG, type: "image/png", sizes: "192x192" },

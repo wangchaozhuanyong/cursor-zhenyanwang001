@@ -33,8 +33,16 @@ function maskPhoneLast5(phone) {
   return digits ? digits.slice(-5).padStart(Math.min(5, digits.length), '*') : '-';
 }
 
+function displayOrDash(value, emptyLabel = '未填写') {
+  const text = String(value ?? '').trim();
+  if (!text || text === '-') return emptyLabel;
+  return text;
+}
+
 function buildItemBlock(item, index) {
-  const skuCode = item.skuCode ? escapeHtml(truncateText(item.skuCode, 64)) : '-';
+  const skuCode = item.skuCode
+    ? escapeHtml(truncateText(item.skuCode, 64))
+    : escapeHtml('未填写');
   return [
     `${index}. ${escapeHtml(truncateText(item.productName || '未命名商品', 60))}`,
     `规格：${escapeHtml(truncateText(item.skuName || '默认规格', 40))}`,
@@ -57,8 +65,8 @@ function splitPaymentSuccessMessage(snapshot, options = {}) {
     `客户：${escapeHtml(truncateText(order.customerName || '客户', 40))}`,
     `手机尾号：${escapeHtml(maskPhoneLast5(order.contactPhone))}`,
     `付款金额：RM ${formatMoney(order.totalAmount)}`,
-    `支付方式：${escapeHtml(order.paymentMethod || '-')}`,
-    `支付渠道：${escapeHtml(order.paymentChannel || '-')}`,
+    `支付方式：${escapeHtml(displayOrDash(order.paymentMethod))}`,
+    `支付渠道：${escapeHtml(displayOrDash(order.paymentChannel))}`,
     `付款时间：${escapeHtml(formatDateTime(order.paidAt))}`,
     '',
     '收货地址：',

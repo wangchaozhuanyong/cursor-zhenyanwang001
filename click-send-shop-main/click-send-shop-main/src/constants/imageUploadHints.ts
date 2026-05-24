@@ -10,8 +10,14 @@ import { BANNER_ASPECT_RATIO, BANNER_SIZE_PRESETS } from "@/constants/bannerAspe
 export const IMAGE_UPLOAD_HINT_API =
   "格式：JPG、PNG、WebP、GIF；单张不超过 15MB。由服务器统一转 WebP 并生成多档尺寸（列表用小图、详情用中图），请勿在浏览器重复压缩。";
 
-export const IMAGE_UPLOAD_HINT_SITE_ASSET =
-  "格式：JPG、PNG、WebP、GIF；单张不超过 5MB。上传后转 WebP：Logo 最长边不超过 512px，Favicon 最长边不超过 64px（均等比缩小）。";
+export const IMAGE_UPLOAD_HINT_SITE_LOGO =
+  "格式：PNG/WebP（推荐透明底）、JPG；≤5MB。上传后保留透明通道，最长边不超过 512px，仅用于网站 Logo 展示。";
+
+export const IMAGE_UPLOAD_HINT_SITE_FAVICON =
+  "格式：PNG/JPG；≤5MB。上传后生成 192×192 白底方形 PNG，仅用于浏览器标签，与网站 Logo 分开保存。";
+
+/** @deprecated 请使用 IMAGE_UPLOAD_HINT_SITE_LOGO / IMAGE_UPLOAD_HINT_SITE_FAVICON */
+export const IMAGE_UPLOAD_HINT_SITE_ASSET = IMAGE_UPLOAD_HINT_SITE_LOGO;
 
 export const IMAGE_UPLOAD_HINT_HOME_NAV_ICON =
   "建议正方形源图 192×192px 及以上；无透明通道时将自动 AI 抠图（首次约下载 40MB 模型，浏览器缓存后更快）。也可填图片 URL、站内路径或 Emoji。";

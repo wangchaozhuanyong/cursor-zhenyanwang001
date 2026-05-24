@@ -505,6 +505,8 @@ router.get('/rewards/records', adminAuth, requirePermission('referral.manage'), 
 /* ---- Settings: referral / points / site / content ---- */
 router.get('/referral-rules', adminAuth, requirePermission('referral.manage'), settingsCtrl.listReferral);
 router.put('/referral-rules/:id', adminAuth, requirePermission('referral.manage'), settingsCtrl.updateReferral);
+router.get('/rewards/settings', adminAuth, requirePermission('referral.manage'), settingsCtrl.getRewardSettings);
+router.put('/rewards/settings', adminAuth, requirePermission('referral.manage'), settingsCtrl.updateRewardSettings);
 const pointsFeature = requireSiteCapability('pointsEnabled', '本站未启用积分功能');
 router.get('/points/rules', adminAuth, pointsFeature, requirePermission('points.manage'), settingsCtrl.listPoints);
 router.put('/points/rules/:id', adminAuth, pointsFeature, requirePermission('points.manage'), settingsCtrl.updatePoints);

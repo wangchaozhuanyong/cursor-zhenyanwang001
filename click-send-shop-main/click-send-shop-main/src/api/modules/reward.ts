@@ -1,5 +1,5 @@
 import { get, post } from "@/api/request";
-import type { RewardRecord, RewardTransaction, WithdrawRequest, RewardListParams } from "@/types/reward";
+import type { RewardRecord, RewardTransaction, WithdrawRequest, RewardListParams, RewardConfig } from "@/types/reward";
 import type { PaginatedData } from "@/types/common";
 
 export function getRewardRecords(params?: RewardListParams) {
@@ -11,7 +11,11 @@ export function getRewardTransactions(params?: RewardListParams) {
 }
 
 export function getRewardBalance() {
-  return get<{ balance: number; pendingAmount: number }>("/rewards/balance");
+  return get<{ balance: number; pendingAmount: number; totalSpent?: number }>("/rewards/balance");
+}
+
+export function getRewardConfig() {
+  return get<RewardConfig>("/rewards/config");
 }
 
 export function requestWithdraw(

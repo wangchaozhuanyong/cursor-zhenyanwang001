@@ -1,19 +1,19 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Camera, Lock, Trash2 } from "lucide-react";
+import { Camera } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import WeChatIcon from "@/components/icons/WeChatIcon";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 import * as meService from "@/services/meService";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
-import { useAuthStore } from "@/stores/useAuthStore";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import * as uploadService from "@/services/uploadService";
 import * as userService from "@/services/userService";
 import * as authService from "@/services/authService";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
+import SettingsSecuritySection from "@/modules/public/pages/user/SettingsSecuritySection";
 
 const CARD = "rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
 
@@ -26,14 +26,6 @@ export default function Settings() {
   const [wechatBinding, setWechatBinding] = useState<{ bound: boolean; nickname?: string | null; avatarUrl?: string | null; boundAt?: string }>({ bound: false });
   const [wechatLoginEnabled, setWechatLoginEnabled] = useState(false);
   const [wechatActionLoading, setWechatActionLoading] = useState(false);
-  const [showPwdForm, setShowPwdForm] = useState(false);
-  const [oldPwd, setOldPwd] = useState("");
-  const [newPwd, setNewPwd] = useState("");
-  const [confirmPwd, setConfirmPwd] = useState("");
-  const [pwdSaving, setPwdSaving] = useState(false);
-  const [showCancelForm, setShowCancelForm] = useState(false);
-  const [cancelConfirmText, setCancelConfirmText] = useState("");
-  const [cancelSaving, setCancelSaving] = useState(false);
   const [birthday, setBirthday] = useState("");
   const [birthdayLocked, setBirthdayLocked] = useState(false);
 
@@ -134,40 +126,6 @@ export default function Settings() {
     }
   };
 
-  const handleChangePwd = async () => {
-    if (!oldPwd || !newPwd) return toast.error("请输入旧密码和新密码");
-    if (newPwd.length < 6) return toast.error("新密码至少 6 位");
-    if (newPwd !== confirmPwd) return toast.error("两次输入密码不一致");
-    setPwdSaving(true);
-    try {
-      await userService.changePassword(oldPwd, newPwd);
-      toast.success("密码修改成功", toastPresetQuickSuccess);
-      setShowPwdForm(false);
-      setOldPwd("");
-      setNewPwd("");
-      setConfirmPwd("");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "密码修改失败");
-    } finally {
-      setPwdSaving(false);
-    }
-  };
-
-  const handleCancelAccount = async () => {
-    if (cancelConfirmText.trim() !== "注销账号") return toast.error("请输入“注销账号”确认操作");
-    setCancelSaving(true);
-    try {
-      await userService.cancelAccount(cancelConfirmText.trim());
-      toast.success("账号已注销", toastPresetQuickSuccess);
-      await useAuthStore.getState().logout();
-      navigate("/", { replace: true });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "注销失败，请重试");
-    } finally {
-      setCancelSaving(false);
-    }
-  };
-
   return (
     <StoreAccountLayout title="账户设置" onBack={goBack} className="store-page text-[var(--theme-text)]" mainClassName="space-y-3 pb-24 sm:py-4 lg:pb-12">
         <section className={CARD}>
@@ -260,7 +218,7 @@ export default function Settings() {
               </label>
             ))}
             <label className="block">
-              <span className="mb-1.5 block text-xs text-[var(--theme-muted)]">生日（用于生日多倍积分）</span>
+              <span className="mb-1.5 block text-xs text-[var(--theme-muted)]">生日</span>
               <input
                 type="date"
                 value={birthday}
@@ -277,40 +235,7 @@ export default function Settings() {
           </div>
         </section>
 
-        <section className={CARD}>
-          <button onClick={() => setShowPwdForm(!showPwdForm)} className="flex w-full items-center justify-between">
-            <div className="flex items-center gap-3"><Lock size={18} className="text-[var(--theme-primary)]" strokeWidth={2} /><span className="text-sm font-medium">修改密码</span></div>
-            <ArrowLeft size={14} className={`text-[var(--theme-muted)] transition-transform ${showPwdForm ? "rotate-90" : "-rotate-90"}`} />
-          </button>
-          {showPwdForm && (
-            <div className="mt-4 space-y-3">
-              <input type="password" value={oldPwd} onChange={(e) => setOldPwd(e.target.value)} placeholder="当前密码" className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
-              <input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} placeholder="新密码（至少6位）" className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
-              <input type="password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)} placeholder="确认新密码" className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
-              <button onClick={handleChangePwd} disabled={pwdSaving} className="w-full rounded-full bg-[var(--theme-primary)] py-3 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">{pwdSaving ? "修改中..." : "确认修改密码"}</button>
-            </div>
-          )}
-        </section>
-
-        <section className="rounded-2xl bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] ring-1 ring-[color-mix(in_srgb,var(--theme-danger)_35%,transparent)] sm:p-4">
-          <button type="button" onClick={() => setShowCancelForm(!showCancelForm)} className="flex w-full items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Trash2 size={18} className="text-[var(--theme-danger)]" />
-              <div className="text-left">
-                <div className="text-sm font-medium text-[var(--theme-danger)]">注销账号</div>
-                <div className="mt-0.5 text-xs text-[var(--theme-muted)]">注销后无法再次登录，收货信息将被匿名化</div>
-              </div>
-            </div>
-            <ArrowLeft size={14} className={`text-[var(--theme-muted)] transition-transform ${showCancelForm ? "rotate-90" : "-rotate-90"}`} />
-          </button>
-          {showCancelForm && (
-            <div className="mt-4 space-y-3">
-              <p className="text-xs leading-5 text-[var(--theme-muted)]">此操作会软删除账号、清空地址，并脱敏历史订单中的收货姓名、电话、地址和备注。</p>
-              <input value={cancelConfirmText} onChange={(e) => setCancelConfirmText(e.target.value)} placeholder="输入“注销账号”确认" className="h-11 w-full rounded-xl bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
-              <button onClick={handleCancelAccount} disabled={cancelSaving} className="w-full rounded-full bg-[var(--theme-danger)] py-3 text-sm font-semibold btn-theme-gradient disabled:opacity-60">{cancelSaving ? "注销中..." : "确认注销账号"}</button>
-            </div>
-          )}
-        </section>
+        <SettingsSecuritySection />
 
         <button onClick={handleSave} disabled={profileSaving} className="w-full rounded-full bg-[var(--theme-primary)] py-3.5 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
           {profileSaving ? "保存中..." : "保存修改"}

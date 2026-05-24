@@ -217,10 +217,12 @@ export default function SupportDownload() {
 
         {activeView === "download" && config.download.enabled !== false ? (
           <div className="space-y-3">
-            <p className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm leading-relaxed text-[var(--theme-text-muted)]">
-              <Smartphone size={14} className="mr-1 inline" />
-              {config.download.description || "可将商城添加到手机桌面，像 App 一样快速打开。"}
-            </p>
+            {config.download.description ? (
+              <p className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm leading-relaxed text-[var(--theme-text-muted)]">
+                <Smartphone size={14} className="mr-1 inline" />
+                {config.download.description}
+              </p>
+            ) : null}
             {browserEnv.isInAppBrowser ? (
               <div className="space-y-3 rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-sm leading-relaxed text-[var(--theme-text-muted)]">
                 <p className="font-semibold text-[var(--theme-text)]">当前是在 App 内打开，可能无法直接添加到桌面。</p>

@@ -216,7 +216,7 @@ async function createCampaignData(adminToken, imagePool) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      site_name: 'FlashCast 模拟联调站点',
+      site_name: '大马通 模拟联调站点',
       announcement: '当前为自动化联调数据环境',
       support_email: 'support@damatong.net',
     }),

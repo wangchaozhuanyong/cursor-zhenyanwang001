@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const {
   migrateSupportSettings,
   stripHelpCenterConfig,
+  parseSupportConfigRaw,
   LEGACY_IM_KEYS,
 } = require('../src/data/supportDownloadMigration');
 
@@ -56,6 +57,29 @@ describe('supportDownloadMigration', () => {
     assert.equal(json.workingHours, undefined);
     assert.equal(json.contactNote, undefined);
     assert.ok(Array.isArray(json.categories));
+  });
+
+  test('preserves empty support and channel descriptions', () => {
+    const config = parseSupportConfigRaw(JSON.stringify({
+      support: {
+        description: '',
+        channels: [
+          {
+            id: 'wx-1',
+            type: 'wechat',
+            name: '微信客服',
+            enabled: true,
+            account: '2421412412535',
+            description: '',
+            sortOrder: 1,
+          },
+        ],
+      },
+      download: { description: '' },
+    }));
+    assert.equal(config.support.description, '');
+    assert.equal(config.support.channels[0].description, '');
+    assert.equal(config.download.description, '');
   });
 
   test('LEGACY_IM_KEYS lists deprecated site setting keys', () => {

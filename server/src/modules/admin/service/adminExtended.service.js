@@ -901,6 +901,35 @@ async function updateReferralRule(id, body, adminUserId, req) {
   return { message: '规则已更新' };
 }
 
+async function getRewardUsageSettings() {
+  const row = await repo.selectRewardUsageSettings();
+  const balanceLabel = String(row?.balance_label || '').trim() || '购物可用返现';
+  const usageNotice = String(row?.usage_notice || '').trim() || '返现金额仅可用于购物，不可提现。';
+  return { balanceLabel, usageNotice };
+}
+
+async function updateRewardUsageSettings(body, adminUserId, req) {
+  const balanceLabel = String(body?.balanceLabel ?? body?.balance_label ?? '').trim() || '购物可用返现';
+  const usageNotice = String(body?.usageNotice ?? body?.usage_notice ?? '').trim() || '返现金额仅可用于购物，不可提现。';
+  if (balanceLabel.length > 50) return { error: { code: 400, message: '余额标签不能超过 50 字' } };
+  if (usageNotice.length > 500) return { error: { code: 400, message: '使用说明不能超过 500 字' } };
+  await repo.upsertRewardUsageSettings({
+    balance_label: balanceLabel,
+    usage_notice: usageNotice,
+  });
+  await writeAuditLog({
+    req,
+    operatorId: adminUserId,
+    actionType: 'reward_usage_settings.update',
+    objectType: 'reward_usage_settings',
+    objectId: '1',
+    summary: '更新返现前台展示设置',
+    after: { balanceLabel, usageNotice },
+    result: 'success',
+  });
+  return { message: '展示设置已保存', data: { balanceLabel, usageNotice } };
+}
+
 async function listContentPages() {
   const rows = await repo.selectContentPages();
   return rows.map((r) => ({
@@ -1086,6 +1115,8 @@ module.exports = {
   updatePointsRule,
   listReferralRules,
   updateReferralRule,
+  getRewardUsageSettings,
+  updateRewardUsageSettings,
   listContentPages,
   createContentPage,
   updateContentPage,

@@ -49,9 +49,9 @@ export default function SupportContactSection({ className }: SupportContactSecti
 
   return (
     <div className={className}>
-      <p className="text-sm text-muted-foreground">
-        {description || "需要人工协助时，请通过下方官方客服渠道联系。"}
-      </p>
+      {description ? (
+        <p className="text-sm text-muted-foreground">{description}</p>
+      ) : null}
       {workingHours ? (
         <p className="mt-2 text-xs text-muted-foreground">
           服务时间：{workingHours}

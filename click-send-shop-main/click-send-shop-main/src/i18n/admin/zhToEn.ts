@@ -384,7 +384,7 @@ export const adminZhToEn: Record<string, string> = {
   "回收站": "Recycle bin",
   "回访客": "回访客",
   "处理中": "Processing",
-  "大马通": "FlashCast",
+  "大马通": "Damatong",
   "如 0": "e.g. 0",
   "定时中": "Scheduled",
   "客单价": "客单价",

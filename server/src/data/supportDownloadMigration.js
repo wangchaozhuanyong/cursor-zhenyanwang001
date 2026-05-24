@@ -64,6 +64,18 @@ function trim(value) {
   return String(value ?? '').trim();
 }
 
+function resolveOptionalConfigText(value, fallback) {
+  if (value === undefined || value === null) return fallback;
+  return trim(value);
+}
+
+function resolveFromSources(sources, fallback) {
+  for (const source of sources) {
+    if (source !== undefined && source !== null) return trim(source);
+  }
+  return fallback;
+}
+
 function normalizeChannel(channel, index) {
   const type = CHANNEL_TYPES.has(channel?.type) ? channel.type : null;
   if (!type) return null;
@@ -96,22 +108,29 @@ function parseSupportConfigRaw(raw) {
       : DEFAULT_PLATFORMS;
     return {
       enabled: parsed?.enabled !== false,
-      title: trim(parsed?.title) || DEFAULT_SUPPORT_DOWNLOAD_CONFIG.title,
-      subtitle: trim(parsed?.subtitle) || DEFAULT_SUPPORT_DOWNLOAD_CONFIG.subtitle,
+      title: resolveOptionalConfigText(parsed?.title, DEFAULT_SUPPORT_DOWNLOAD_CONFIG.title),
+      subtitle: resolveOptionalConfigText(parsed?.subtitle, DEFAULT_SUPPORT_DOWNLOAD_CONFIG.subtitle),
       defaultTab: parsed?.defaultTab === 'download' ? 'download' : 'support',
       support: {
         enabled: parsed?.support?.enabled !== false,
-        title: trim(parsed?.support?.title) || DEFAULT_SUPPORT_DOWNLOAD_CONFIG.support.title,
-        description: trim(parsed?.support?.description ?? parsed?.supportDescription)
-          || DEFAULT_SUPPORT_DOWNLOAD_CONFIG.support.description,
+        title: resolveOptionalConfigText(parsed?.support?.title, DEFAULT_SUPPORT_DOWNLOAD_CONFIG.support.title),
+        description: resolveFromSources(
+          [parsed?.support?.description, parsed?.supportDescription],
+          DEFAULT_SUPPORT_DOWNLOAD_CONFIG.support.description,
+        ),
         workingHours: trim(parsed?.support?.workingHours ?? parsed?.workingHours),
         channels,
       },
       download: {
         enabled: parsed?.download?.enabled !== false && parsed?.showAppInstall !== false,
-        title: trim(parsed?.download?.title ?? parsed?.appInstallTitle) || DEFAULT_SUPPORT_DOWNLOAD_CONFIG.download.title,
-        description: trim(parsed?.download?.description ?? parsed?.appInstallDescription)
-          || DEFAULT_SUPPORT_DOWNLOAD_CONFIG.download.description,
+        title: resolveFromSources(
+          [parsed?.download?.title, parsed?.appInstallTitle],
+          DEFAULT_SUPPORT_DOWNLOAD_CONFIG.download.title,
+        ),
+        description: resolveFromSources(
+          [parsed?.download?.description, parsed?.appInstallDescription],
+          DEFAULT_SUPPORT_DOWNLOAD_CONFIG.download.description,
+        ),
         platforms,
       },
     };

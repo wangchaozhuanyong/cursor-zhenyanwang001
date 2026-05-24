@@ -27,11 +27,40 @@ function resolveBackFallback(pathname: string, explicit?: string, stateFrom?: st
   const path = pathname || "/";
   if (path.startsWith("/admin")) return "/admin";
   if (path.startsWith("/profile")) return "/profile";
+  if (path.startsWith("/product/")) return "/";
 
   const base = path.split("?")[0];
   if (PROFILE_HUB_PATHS.has(base) || base.startsWith("/orders/")) return "/profile";
 
   return "/";
+}
+
+export type GoBackAction =
+  | { kind: "history"; delta: number }
+  | { kind: "path"; path: string; replace: true };
+
+/** Pure resolver for back navigation; fallback is only used when history/state are unavailable. */
+export function resolveGoBackAction(input: {
+  pathname: string;
+  stateFrom?: string;
+  locationKey: string;
+  fallback?: string;
+}): GoBackAction {
+  const stateFrom = input.stateFrom?.startsWith("/") ? input.stateFrom : undefined;
+
+  if (stateFrom) {
+    return { kind: "path", path: stateFrom, replace: true };
+  }
+
+  if (input.locationKey !== "default") {
+    return { kind: "history", delta: -1 };
+  }
+
+  return {
+    kind: "path",
+    path: resolveBackFallback(input.pathname, input.fallback, stateFrom),
+    replace: true,
+  };
 }
 
 export function useGoBack(fallback?: string) {
@@ -40,24 +69,18 @@ export function useGoBack(fallback?: string) {
 
   return useCallback(() => {
     const stateFrom = (location.state as LocationState | null)?.from;
-    const hasHistory = typeof window !== "undefined" && window.history.length > 1;
+    const action = resolveGoBackAction({
+      pathname: location.pathname,
+      stateFrom,
+      locationKey: location.key,
+      fallback,
+    });
 
-    if (fallback) {
-      navigate(fallback, { replace: true });
+    if (action.kind === "history") {
+      navigate(action.delta);
       return;
     }
 
-    if (stateFrom?.startsWith("/")) {
-      navigate(stateFrom, { replace: true });
-      return;
-    }
-
-    if (hasHistory) {
-      navigate(-1);
-      return;
-    }
-
-    const target = resolveBackFallback(location.pathname, undefined, stateFrom);
-    navigate(target, { replace: true });
-  }, [fallback, location.pathname, location.state, navigate]);
+    navigate(action.path, { replace: action.replace });
+  }, [fallback, location.key, location.pathname, location.state, navigate]);
 }

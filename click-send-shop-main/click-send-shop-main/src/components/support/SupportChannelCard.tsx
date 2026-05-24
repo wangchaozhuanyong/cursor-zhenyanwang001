@@ -10,7 +10,6 @@ import {
   buildWeChatLink,
   cleanSupportText,
   getChannelTitle,
-  getDefaultChannelDescription,
 } from "@/utils/supportChannels";
 import { safeOpenExternal } from "@/utils/safeOpen";
 import { trackEvent } from "@/services/analyticsService";
@@ -52,7 +51,7 @@ function getOpenUrl(channel: SupportDownloadChannel) {
 
 export default function SupportChannelCard({ channel }: Props) {
   const account = cleanSupportText(channel.account);
-  const description = cleanSupportText(channel.description) || getDefaultChannelDescription(channel.type);
+  const description = cleanSupportText(channel.description);
   const qrUrl = cleanSupportText(channel.qrUrl);
   const openUrl = getOpenUrl(channel);
   const title = getChannelTitle(channel);
@@ -99,7 +98,9 @@ export default function SupportChannelCard({ channel }: Props) {
     <section className="rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 shadow-[var(--theme-shadow)]">
       <div>
         <h1 className="text-xl font-extrabold tracking-tight text-[var(--theme-text)]">{title}</h1>
-        <p className="mt-2 text-sm leading-relaxed text-[var(--theme-text-muted)]">{description}</p>
+        {description ? (
+          <p className="mt-2 text-sm leading-relaxed text-[var(--theme-text-muted)]">{description}</p>
+        ) : null}
       </div>
 
       {account ? (

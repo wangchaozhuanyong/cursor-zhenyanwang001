@@ -15,7 +15,8 @@ sudo ln -sf "$AVAIL" "$ENABLED"
 echo "==> Disable legacy site configs"
 for leg in \
   /etc/nginx/sites-enabled/cursor-main-frontend.conf \
-  /etc/nginx/sites-enabled/flashcast*.conf; do
+  /etc/nginx/sites-enabled/flashcast*.conf \
+  /etc/nginx/sites-available/cursor-main-frontend.conf; do
   for f in $leg; do
     if [[ -e "$f" ]]; then
       sudo rm -f "$f"

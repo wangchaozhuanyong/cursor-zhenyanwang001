@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import type { MouseEvent } from "react";
 import type { Product } from "@/types/product";
 import Reveal from "@/components/Reveal";
@@ -82,6 +82,7 @@ function ProductCardInner({
   siteContext,
 }: Props & { siteContext: ProductCardSiteContext }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const impressionRef = useRef<HTMLDivElement | null>(null);
   const impressionSentRef = useRef(false);
   const { themeConfig } = useThemeRuntime();
@@ -118,7 +119,9 @@ function ProductCardInner({
 
   const openDetail = (module: string) => {
     void trackEvent({ event_type: "product_click", module, product_id: product.id });
-    navigate(`/product/${product.id}`);
+    navigate(`/product/${product.id}`, {
+      state: { from: `${location.pathname}${location.search}` },
+    });
   };
   const openNewArrivals = (event: MouseEvent) => {
     event.stopPropagation();

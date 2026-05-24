@@ -1,5 +1,5 @@
 import * as rewardApi from "@/api/modules/reward";
-import type { RewardRecord, RewardTransaction, RewardListParams } from "@/types/reward";
+import type { RewardRecord, RewardTransaction, RewardListParams, RewardConfig } from "@/types/reward";
 import type { PaginatedData } from "@/types/common";
 
 export async function fetchRewardRecords(
@@ -18,6 +18,11 @@ export async function fetchRewardTransactions(
 
 export async function fetchRewardBalance(): Promise<{ balance: number; pendingAmount: number }> {
   const res = await rewardApi.getRewardBalance();
+  return res.data;
+}
+
+export async function fetchRewardConfig(): Promise<RewardConfig> {
+  const res = await rewardApi.getRewardConfig();
   return res.data;
 }
 

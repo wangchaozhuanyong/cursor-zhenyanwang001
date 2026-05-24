@@ -19,6 +19,13 @@
     "src/modules/public/pages/order/hooks/useCheckoutAddress.ts",
     "src/modules/public/pages/order/hooks/useCheckoutPaymentSetup.ts",
     "src/modules/public/pages/order/hooks/useCheckoutSubmission.ts",
+    "src/modules/public/pages/order/hooks/useCheckoutCartItems.ts",
+    "src/modules/public/pages/order/hooks/useCheckoutShipping.ts",
+    "src/modules/public/pages/order/hooks/useCheckoutCouponSelection.ts",
+    "src/modules/public/pages/order/hooks/useCheckoutOrderPreview.ts",
+    "src/modules/public/pages/order/hooks/useCheckoutAbandonment.ts",
+    "src/modules/public/pages/order/hooks/useCheckoutSstPreview.ts",
+    "src/modules/public/pages/order/hooks/useCheckoutPage.ts",
     "src/stores/useCartStore.ts"
   ]
 }

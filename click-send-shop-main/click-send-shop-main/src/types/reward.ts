@@ -1,5 +1,6 @@
 export type RewardStatus = "pending" | "approved" | "rejected" | "paid" | "reversed";
-export type RewardTransactionType = "settle" | "reverse" | "withdraw_request" | "withdraw_paid";
+export type RewardTransactionType = "settle" | "reverse" | "withdraw_request" | "withdraw_paid" | "wallet_redeem_order" | "wallet_redeem_refund" | "settle_points" | "reverse_points";
+export type RewardTransactionCategory = "" | "income" | "spend" | "reverse";
 
 export interface RewardRecord {
   id: string;
@@ -61,8 +62,25 @@ export interface WithdrawRequest {
 export interface RewardListParams {
   status?: RewardStatus;
   type?: RewardTransactionType;
+  category?: RewardTransactionCategory;
   keyword?: string;
   userId?: string;
   page?: number;
   pageSize?: number;
+}
+
+export interface RewardUsageSettings {
+  balanceLabel: string;
+  usageNotice: string;
+}
+
+export interface RewardConfig {
+  balance: number;
+  pendingAmount: number;
+  stats: {
+    totalEarned: number;
+    totalSpent: number;
+    reversedAmount: number;
+  };
+  display: RewardUsageSettings;
 }

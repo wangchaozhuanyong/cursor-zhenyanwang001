@@ -44,10 +44,8 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
     else toast.message("当前浏览器可能不支持自动添加，请按下方步骤手动添加到桌面。");
   };
 
-  const title = isAndroid ? "安卓手机添加到桌面" : "苹果手机添加到桌面";
-  const description = isAndroid
-    ? "可将商城添加到手机桌面，像 App 一样快速打开。"
-    : "苹果手机请使用 Safari 浏览器将商城添加到主屏幕。Safari 是苹果手机自带浏览器。";
+  const title = platform.title?.trim() || (isAndroid ? "安卓手机添加到桌面" : "苹果手机添加到桌面");
+  const description = platform.description?.trim() || "";
 
   return (
     <section className="rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 shadow-[var(--theme-shadow)]">
@@ -64,7 +62,9 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
               </span>
             ) : null}
           </div>
-          <p className="mt-1 text-sm leading-relaxed text-[var(--theme-text-muted)]">{description}</p>
+          {description ? (
+            <p className="mt-1 text-sm leading-relaxed text-[var(--theme-text-muted)]">{description}</p>
+          ) : null}
         </div>
       </div>
 

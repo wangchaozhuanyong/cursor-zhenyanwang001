@@ -35,6 +35,8 @@ interface PremiumCouponCardProps {
   /** @deprecated 请使用 layout="home" */
   homeCompact?: boolean;
   colorScheme?: "auto" | "invite";
+  /** 右侧信息区字段顺序：默认名称在前；thresholdFirst 为门槛在前 */
+  infoFieldOrder?: "titleFirst" | "thresholdFirst";
   className?: string;
   onClick?: () => void;
   onAction?: () => void;
@@ -115,6 +117,7 @@ export default function PremiumCouponCard({
   compact = false,
   homeCompact = false,
   colorScheme = "auto",
+  infoFieldOrder = "titleFirst",
   className = "",
   onClick,
   onAction,
@@ -129,11 +132,17 @@ export default function PremiumCouponCard({
   const expireLabel = expireText.includes("有效期") ? expireText : `有效期至：${expireText}`;
   const displayActionLabel = actionLabel ? formatCouponActionLabel(actionLabel, layout) : "";
 
-  const infoRows: Array<{ icon: LucideIcon; prominent: boolean; text: string }> = [
-    { icon: Tag, prominent: true, text: title },
-    { icon: Wallet, prominent: false, text: minSpendText },
-    { icon: Clock, prominent: false, text: expireLabel },
-  ];
+  const infoRows: Array<{ icon: LucideIcon; prominent: boolean; text: string }> = infoFieldOrder === "thresholdFirst"
+    ? [
+        { icon: Wallet, prominent: false, text: minSpendText },
+        { icon: Tag, prominent: true, text: title },
+        { icon: Clock, prominent: false, text: expireLabel },
+      ]
+    : [
+        { icon: Tag, prominent: true, text: title },
+        { icon: Wallet, prominent: false, text: minSpendText },
+        { icon: Clock, prominent: false, text: expireLabel },
+      ];
   if (skin.showScope) {
     infoRows.push({ icon: Package, prominent: false, text: scopeText });
   }

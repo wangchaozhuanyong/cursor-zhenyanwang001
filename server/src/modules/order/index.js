@@ -4,6 +4,7 @@ const returnStateMachine = require('./returnStateMachine');
 const checkoutAbandonmentRepo = require('./repository/checkoutAbandonment.repository');
 const orderRepo = require('./repository/order.repository');
 const orderService = require('./service/order.service');
+const orderCancelService = require('./service/orderCancel.service');
 const orderProfitService = require('./service/orderProfit.service');
 const orderRefundCompensation = require('./service/orderRefundCompensation.service');
 const checkoutAbandonmentService = require('./service/checkoutAbandonment.service');
@@ -46,7 +47,7 @@ const router = Router();
   applyOrderRefundCompensation: orderRefundCompensation.applyOrderRefundCompensation,
   insertOrderNotification: orderRepo.insertNotification,
   insertWebhookEventIfAbsent: orderRepo.insertWebhookEventIfAbsent,
-  cancelPendingOrderInTransaction: orderService.cancelPendingOrderInTransaction,
+  cancelPendingOrderInTransaction: orderCancelService.cancelPendingOrderInTransaction,
   listAdminCheckoutAbandonments: checkoutAbandonmentService.listAdminCheckoutAbandonments,
   listDueCheckoutReminders: checkoutAbandonmentService.listDueCheckoutReminders,
   markCheckoutReminderSent: checkoutAbandonmentService.markCheckoutReminderSent,

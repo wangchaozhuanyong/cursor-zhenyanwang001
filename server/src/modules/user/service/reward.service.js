@@ -3,6 +3,9 @@ const repo = require('../repository/reward.repository');
 const { REWARD_STATUS } = require('../../../constants/status');
 const { ORDER_STATUS, PAYMENT_STATUS } = require('../../../constants/status');
 
+const DEFAULT_REWARD_BALANCE_LABEL = '购物可用返现';
+const DEFAULT_REWARD_USAGE_NOTICE = '返现金额仅可用于购物，不可提现。';
+
 function toMoney(value) {
   const n = parseFloat(value);
   return Number.isFinite(n) ? n : 0;
@@ -202,10 +205,11 @@ async function getRecords(userId, query) {
 async function getTransactions(userId, query) {
   const page = Math.max(1, parseInt(query.page, 10) || 1);
   const pageSize = Math.min(50, Math.max(1, parseInt(query.pageSize, 10) || 20));
-  const { type } = query;
-  const total = await repo.countTransactions(userId, type);
+  const { type, category } = query;
+  const filterCategory = type ? '' : category;
+  const total = await repo.countTransactions(userId, type, filterCategory);
   const offset = (page - 1) * pageSize;
-  const rows = await repo.selectTransactionsPage(userId, type, pageSize, offset);
+  const rows = await repo.selectTransactionsPage(userId, type, pageSize, offset, filterCategory);
   return { list: rows, total, page, pageSize };
 }
 
@@ -255,9 +259,38 @@ async function getBalance(userId) {
   return {
     balance: parseFloat(result.balance),
     pendingWithdraw: parseFloat(result.pendingWithdraw),
-    pendingAmount: parseFloat(result.pendingWithdraw),
+    pendingAmount: parseFloat(result.pendingAmount),
     settledAmount: parseFloat(result.settledAmount),
     reversedAmount: parseFloat(result.reversedAmount),
+    totalSpent: parseFloat(result.totalSpent),
+  };
+}
+
+function formatRewardUsageSettings(row) {
+  const balanceLabel = String(row?.balance_label || '').trim() || DEFAULT_REWARD_BALANCE_LABEL;
+  const usageNotice = String(row?.usage_notice || '').trim() || DEFAULT_REWARD_USAGE_NOTICE;
+  return { balanceLabel, usageNotice };
+}
+
+async function getRewardUsageSettings() {
+  const row = await repo.selectRewardUsageSettings().catch(() => null);
+  return formatRewardUsageSettings(row);
+}
+
+async function getConfig(userId) {
+  const [balance, display] = await Promise.all([
+    getBalance(userId),
+    getRewardUsageSettings(),
+  ]);
+  return {
+    balance: balance.balance,
+    pendingAmount: balance.pendingAmount,
+    stats: {
+      totalEarned: balance.settledAmount,
+      totalSpent: balance.totalSpent,
+      reversedAmount: balance.reversedAmount,
+    },
+    display,
   };
 }
 
@@ -277,6 +310,8 @@ module.exports = {
   getAdminRecords,
   withdraw,
   getBalance,
+  getConfig,
+  getRewardUsageSettings,
   sumRewardTransactionsBalance,
   insertRewardTransaction,
 };

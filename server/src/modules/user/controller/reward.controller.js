@@ -29,6 +29,13 @@ exports.getBalance = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+exports.getConfig = async (req, res, next) => {
+  try {
+    const data = await rewardService.getConfig(req.user.id);
+    res.success(data);
+  } catch (err) { next(err); }
+};
+
 exports.adminListRecords = async (req, res, next) => {
   try {
     const data = await rewardService.getAdminRecords(req.query);

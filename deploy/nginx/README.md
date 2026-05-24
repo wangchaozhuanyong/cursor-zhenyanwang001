@@ -22,6 +22,4 @@ bash deploy/nginx/install-damatong-nginx.sh
 
 ## 环境变量（`server/.env`）
 
-见 `deploy/cloudflare-admin-security.md`：`PUBLIC_APP_URL`、`ADMIN_PUBLIC_URL`、`CORS_ORIGINS` 均使用 `damatong.net` / `console.damatong.net`。
-
-旧域名 `flashcast.com.my` 已在 Nginx 301 到 `https://damatong.net`（源站直连生效；若经 Cloudflare 仍看到旧页，请在 CF 控制台 **Purge Cache** 或添加转发规则）。
+见 `deploy/cloudflare-admin-security.md`：`PUBLIC_APP_URL`、`ADMIN_PUBLIC_URL`、`CORS_ORIGINS` 均使用 `damatong.net` / `console.damatong.net`（不再包含已停用的 `flashcast.com.my`）。

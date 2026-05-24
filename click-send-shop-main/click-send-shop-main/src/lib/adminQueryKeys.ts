@@ -97,6 +97,7 @@ export const adminQueryKeys = {
   rewardsRoot: () => ["admin", "rewards"] as const,
   rewardRecords: (filters?: RewardRecordsListParams) => ["admin", "rewards", "records", filters ?? {}] as const,
   referralRules: () => ["admin", "rewards", "referral-rules"] as const,
+  rewardSettings: () => ["admin", "rewards", "settings"] as const,
   invitesRoot: () => ["admin", "invites"] as const,
   inviteRecords: (filters?: InviteRecordsListParams) => ["admin", "invites", "records", filters ?? {}] as const,
   couponsRoot: () => ["admin", "coupons"] as const,

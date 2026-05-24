@@ -69,6 +69,16 @@ exports.updateReferral = asyncRoute(async (req, res) => {
   res.success(null, r.message);
 });
 
+exports.getRewardSettings = asyncRoute(async (_req, res) => {
+  res.success(await adminExtended.getRewardUsageSettings());
+});
+
+exports.updateRewardSettings = asyncRoute(async (req, res) => {
+  const r = await adminExtended.updateRewardUsageSettings(req.body, req.user?.id, req);
+  if (r.error) return res.fail(r.error.code, r.error.message);
+  res.success(r.data, r.message);
+});
+
 /* ── points rules ── */
 exports.listPoints = asyncRoute(async (_req, res) => {
   res.success(await adminExtended.listPointsRules());

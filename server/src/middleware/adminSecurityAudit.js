@@ -89,8 +89,8 @@ function adminSecurityAudit(req, res, next) {
             eventType: meta.actionType,
             objectType: meta.objectType,
             objectId: meta.objectId || req.path,
-            requestId: req.id || null,
-            at: Date.now(),
+            method: req.method,
+            path: req.path,
           },
           payload: {
             method: req.method,

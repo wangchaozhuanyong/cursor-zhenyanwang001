@@ -351,6 +351,20 @@ async function updateReferralRuleByFields(setFragments, values, id) {
   await db.query(`UPDATE referral_rules SET ${setFragments.join(', ')} WHERE id = ?`, [...values, id]);
 }
 
+async function selectRewardUsageSettings() {
+  const [rows] = await db.query('SELECT * FROM reward_usage_settings WHERE id = 1 LIMIT 1');
+  return rows[0] || null;
+}
+
+async function upsertRewardUsageSettings(row) {
+  await db.query(
+    `INSERT INTO reward_usage_settings (id, balance_label, usage_notice)
+     VALUES (1, ?, ?)
+     ON DUPLICATE KEY UPDATE balance_label = VALUES(balance_label), usage_notice = VALUES(usage_notice)`,
+    [row.balance_label, row.usage_notice],
+  );
+}
+
 async function selectContentPages() {
   const [rows] = await db.query(
     `SELECT * FROM content_pages
@@ -661,6 +675,8 @@ module.exports = {
   updatePointsRuleByFields,
   selectReferralRules,
   updateReferralRuleByFields,
+  selectRewardUsageSettings,
+  upsertRewardUsageSettings,
   selectContentPages,
   selectContentPageBySlug,
   insertContentPage,

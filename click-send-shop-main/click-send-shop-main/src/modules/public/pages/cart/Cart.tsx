@@ -140,7 +140,7 @@ export default function Cart() {
                 icon={ShoppingBag}
                 title="暂无商品"
                 description="快去挑选心仪的商品吧"
-                action={{ label: "去逛逛", onClick: () => navigate("/") }}
+                action={{ label: "去逛逛", onClick: () => navigate("/categories") }}
               />
             ) : (
               <div className="md:theme-rounded md:border md:border-[var(--theme-border)] md:bg-[var(--theme-surface)] md:px-4">

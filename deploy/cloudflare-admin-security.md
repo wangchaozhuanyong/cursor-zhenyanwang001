@@ -1,4 +1,4 @@
-# Flashcast Admin Cloudflare Security Rules
+# Damatong Admin Cloudflare Security Rules
 
 Production domains:
 
@@ -99,7 +99,7 @@ CORS_ORIGINS=https://damatong.net,https://www.damatong.net,https://console.damat
 NODE_ENV=production
 TRUST_PROXY=1
 ADMIN_MFA_SECRET_KEY=<long-random-secret>
-ADMIN_MFA_ISSUER=Flashcast Admin
+ADMIN_MFA_ISSUER=Damatong Admin
 ```
 
 Keep `ADMIN_ALLOWED_ORIGINS` narrow in production. Do not include `damatong.net`, `www.damatong.net`, localhost, wildcard origins, or the public storefront unless temporarily using `ADMIN_COMPAT_ALLOW_PUBLIC_APP_ORIGIN=1` for a controlled migration.

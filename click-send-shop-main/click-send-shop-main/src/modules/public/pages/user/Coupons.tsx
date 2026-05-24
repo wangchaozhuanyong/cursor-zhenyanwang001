@@ -6,13 +6,12 @@ import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCouponStore } from "@/stores/useCouponStore";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
+import EmptyState from "@/components/EmptyState";
 import type { UserCoupon } from "@/types/coupon";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import { cn } from "@/lib/utils";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import {
-  THEME_ACCENT_HERO_ICON,
-  THEME_ACCENT_HERO_ICON_WRAP,
   THEME_ACCENT_HERO_LABEL,
   THEME_ACCENT_HERO_MUTED,
   THEME_ACCENT_HERO_SHELL,
@@ -62,12 +61,52 @@ function toDisplayCoupon(uc: UserCoupon): DisplayCoupon {
   };
 }
 
-type Tab = "available" | "mine" | "pending" | "used" | "expired" | "invalidated";
+type Tab = "all" | "mine" | "pending" | "used" | "expired" | "invalidated";
+type PageView = "mine" | "claimCenter";
+
+const TAB_ITEMS: Array<{ key: Tab; label: string; badge?: boolean }> = [
+  { key: "all", label: "全部" },
+  { key: "mine", label: "可使用", badge: true },
+  { key: "pending", label: "未生效" },
+  { key: "used", label: "已使用" },
+  { key: "expired", label: "已过期" },
+  { key: "invalidated", label: "已失效" },
+];
+
+const EMPTY_STATE_COPY: Record<Tab, { title: string; description?: string }> = {
+  all: { title: "暂无优惠券", description: "已领取的优惠券会显示在这里" },
+  mine: { title: "暂无可使用优惠券", description: "去领券中心看看有没有新券" },
+  pending: { title: "暂无未生效优惠券" },
+  used: { title: "暂无已使用优惠券" },
+  expired: { title: "暂无已过期优惠券" },
+  invalidated: { title: "暂无已失效优惠券" },
+};
+
+function filterByTab(coupons: DisplayCoupon[], tab: Tab): DisplayCoupon[] {
+  const owned = coupons.filter((c) => c.status !== "available");
+  switch (tab) {
+    case "all":
+      return owned;
+    case "mine":
+      return owned.filter((c) => c.status === "claimed");
+    case "pending":
+      return owned.filter((c) => c.status === "pending");
+    case "used":
+      return owned.filter((c) => c.status === "used");
+    case "expired":
+      return owned.filter((c) => c.status === "expired");
+    case "invalidated":
+      return owned.filter((c) => c.status === "invalidated");
+    default:
+      return owned;
+  }
+}
 
 export default function Coupons() {
   const goBack = useGoBack();
   const { coupons: rawCoupons, loading, error, loadCoupons, claimCoupon } = useCouponStore();
-  const [tab, setTab] = useState<Tab>("available");
+  const [tab, setTab] = useState<Tab>("mine");
+  const [pageView, setPageView] = useState<PageView>("mine");
   const [claimingId, setClaimingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -75,20 +114,17 @@ export default function Coupons() {
   }, [loadCoupons]);
 
   const coupons = rawCoupons.map((uc) => toDisplayCoupon(uc));
-
   const available = coupons.filter((c) => c.status === "available");
-  const mine = coupons.filter((c) => c.status === "claimed");
-  const pending = coupons.filter((c) => c.status === "pending");
-  const used = coupons.filter((c) => c.status === "used");
-  const expired = coupons.filter((c) => c.status === "expired");
-  const invalidated = coupons.filter((c) => c.status === "invalidated");
-  const claimedCount = mine.length;
+  const usableCount = coupons.filter((c) => c.status === "claimed").length;
+  const list = pageView === "claimCenter" ? available : filterByTab(coupons, tab);
 
   const handleClaim = async (coupon: DisplayCoupon) => {
     setClaimingId(coupon.id);
     try {
       await claimCoupon(coupon.code);
       toast.success("领取成功！已添加到我的优惠券", toastPresetQuickSuccess);
+      setPageView("mine");
+      setTab("mine");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "领取失败");
     } finally {
@@ -96,12 +132,28 @@ export default function Coupons() {
     }
   };
 
-  const list = tab === "available" ? available
-    : tab === "mine" ? mine
-    : tab === "pending" ? pending
-    : tab === "used" ? used
-    : tab === "expired" ? expired
-    : invalidated;
+  const headerRightSlot = pageView === "claimCenter" ? (
+    <button
+      type="button"
+      onClick={() => setPageView("mine")}
+      className="touch-target shrink-0 whitespace-nowrap px-1 text-sm font-medium text-[var(--theme-primary)]"
+    >
+      我的优惠券
+    </button>
+  ) : (
+    <button
+      type="button"
+      onClick={() => setPageView("claimCenter")}
+      className="touch-target shrink-0 whitespace-nowrap px-1 text-sm font-medium text-[var(--theme-primary)]"
+    >
+      领券中心
+      {available.length > 0 ? (
+        <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_18%,var(--theme-surface))] px-1 text-[10px] font-bold text-[var(--theme-price)]">
+          {available.length}
+        </span>
+      ) : null}
+    </button>
+  );
 
   if (loading && rawCoupons.length === 0) {
     return (
@@ -127,98 +179,139 @@ export default function Coupons() {
   }
 
   return (
-    <StoreAccountLayout title="优惠券" onBack={goBack} className="store-page pb-6" mainClassName="sm:px-4 lg:py-6">
+    <StoreAccountLayout
+      title={pageView === "claimCenter" ? "领券中心" : "优惠券"}
+      onBack={pageView === "claimCenter" ? () => setPageView("mine") : goBack}
+      rightSlot={headerRightSlot}
+      className="store-page pb-6"
+      mainClassName="sm:px-4 lg:py-6"
+    >
+      {pageView === "mine" ? (
+        <div className="mb-4 hidden items-center justify-end lg:flex">
+          <button
+            type="button"
+            onClick={() => setPageView("claimCenter")}
+            className="inline-flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium text-[var(--theme-primary)] ring-1 ring-[var(--theme-border)]"
+          >
+            领券中心
+            {available.length > 0 ? (
+              <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_18%,var(--theme-surface))] px-1 text-[10px] font-bold text-[var(--theme-price)]">
+                {available.length}
+              </span>
+            ) : null}
+          </button>
+        </div>
+      ) : (
+        <div className="mb-4 hidden items-center justify-end lg:flex">
+          <button
+            type="button"
+            onClick={() => setPageView("mine")}
+            className="inline-flex items-center rounded-full px-4 py-2 text-sm font-medium text-[var(--theme-primary)] ring-1 ring-[var(--theme-border)]"
+          >
+            返回我的优惠券
+          </button>
+        </div>
+      )}
+
+      {pageView === "mine" ? (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`relative overflow-hidden rounded-2xl p-6 ${THEME_ACCENT_HERO_SHELL}`}
+          className={cn("rounded-2xl p-5", THEME_ACCENT_HERO_SHELL)}
         >
-          <div
-            className="pointer-events-none absolute -right-6 -top-6 h-32 w-32 rounded-full"
-            style={{ background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 12%, transparent)" }}
-          />
-          <div
-            className="pointer-events-none absolute -bottom-4 -left-4 h-20 w-20 rounded-full"
-            style={{ background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 8%, transparent)" }}
-          />
-
-          <div className="relative flex items-center justify-between">
-            <div>
-              <p className={THEME_ACCENT_HERO_LABEL}>我的优惠券</p>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className={`store-stat-value ${THEME_ACCENT_HERO_VALUE}`}>{claimedCount}</span>
-                <span className={`text-sm ${THEME_ACCENT_HERO_MUTED}`}>张可用</span>
-              </div>
-              <p className={`mt-2 ${THEME_ACCENT_HERO_SUBTLE}`}>
-                {available.length > 0 ? `还有 ${available.length} 张新券待领取` : "所有优惠券已领取"}
-              </p>
-            </div>
-            <div className={`h-16 w-16 ${THEME_ACCENT_HERO_ICON_WRAP}`}>
-              <Ticket size={32} className={THEME_ACCENT_HERO_ICON} />
-            </div>
+          <p className={THEME_ACCENT_HERO_LABEL}>我的优惠券</p>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className={`store-stat-value ${THEME_ACCENT_HERO_VALUE}`}>{usableCount}</span>
+            <span className={`text-sm ${THEME_ACCENT_HERO_MUTED}`}>张可用</span>
           </div>
+          <p className={`mt-2 ${THEME_ACCENT_HERO_SUBTLE}`}>已领取的优惠券都在这里</p>
         </motion.div>
+      ) : null}
 
-        <div className="mt-5 flex rounded-2xl bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] p-1 ring-1 ring-[var(--theme-border)]">
-          {([
-            { key: "available" as Tab, label: "领券中心", count: available.length },
-            { key: "mine" as Tab, label: "可使用", count: mine.length },
-            { key: "pending" as Tab, label: "未生效", count: pending.length },
-            { key: "used" as Tab, label: "已使用", count: used.length },
-            { key: "expired" as Tab, label: "已过期", count: expired.length },
-            { key: "invalidated" as Tab, label: "已失效", count: invalidated.length },
-          ]).map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setTab(t.key)}
-              className={cn(
-                "relative flex-1 rounded-xl py-3 text-sm font-medium transition-all",
-                tab === t.key
-                  ? "bg-[var(--theme-surface)] text-[var(--theme-text-on-surface)] shadow-[var(--theme-shadow)]"
-                  : "text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]",
-              )}
-            >
-              {t.label}
-              {t.count > 0 ? (
-                <span
+      {pageView === "mine" ? (
+        <motion.div
+          className="mt-5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          role="tablist"
+          aria-label="优惠券状态筛选"
+        >
+          <div className="flex min-w-max gap-1 rounded-2xl bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] p-1 ring-1 ring-[var(--theme-border)]">
+            {TAB_ITEMS.map((t) => {
+              const count = t.badge ? usableCount : 0;
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === t.key}
+                  onClick={() => setTab(t.key)}
                   className={cn(
-                    "ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold",
+                    "relative shrink-0 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
                     tab === t.key
-                      ? THEME_BTN_PRICE
-                      : "bg-[color-mix(in_srgb,var(--theme-text-muted)_24%,transparent)] text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]",
+                      ? "bg-[var(--theme-surface)] text-[var(--theme-text-on-surface)] shadow-[var(--theme-shadow)]"
+                      : "text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]",
                   )}
                 >
-                  {t.count}
-                </span>
-              ) : null}
-            </button>
-          ))}
-        </div>
+                  {t.label}
+                  {t.badge && count > 0 ? (
+                    <span
+                      className={cn(
+                        "ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold",
+                        tab === t.key
+                          ? THEME_BTN_PRICE
+                          : "bg-[color-mix(in_srgb,var(--theme-text-muted)_24%,transparent)] text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]",
+                      )}
+                    >
+                      {count}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        </motion.div>
+      ) : null}
 
-        <div className="mt-4 space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
-          <AnimatePresence mode="popLayout">
-            {list.length === 0 && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex flex-col items-center py-16 text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]"
-              >
-                <Ticket size={48} className="mb-3 opacity-20" />
-                <p className="text-sm">{tab === "available" ? "暂无可领取优惠券" : "暂无优惠券记录"}</p>
-              </motion.div>
-            )}
-            {list.map((coupon, i) => (
-              <CouponCard
-                key={coupon.id}
-                coupon={coupon}
-                index={i}
-                claiming={claimingId === coupon.id}
-                onClaim={() => handleClaim(coupon)}
-              />
-            ))}
-          </AnimatePresence>
-        </div>
+      <div className={cn("space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0", pageView === "mine" ? "mt-4" : "mt-0")}>
+        <AnimatePresence mode="popLayout">
+          {list.length === 0 ? (
+            <motion.div
+              key={`empty-${pageView}-${tab}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="lg:col-span-2"
+            >
+              {pageView === "claimCenter" ? (
+                <EmptyState
+                  icon={Ticket}
+                  title="暂无可领取优惠券"
+                  description="新优惠券上线后会出现在这里"
+                />
+              ) : (
+                <EmptyState
+                  icon={Ticket}
+                  title={EMPTY_STATE_COPY[tab].title}
+                  description={EMPTY_STATE_COPY[tab].description}
+                  action={
+                    tab === "mine" && available.length > 0
+                      ? { label: "去领券中心", onClick: () => setPageView("claimCenter") }
+                      : undefined
+                  }
+                />
+              )}
+            </motion.div>
+          ) : null}
+          {list.map((coupon, i) => (
+            <CouponCard
+              key={coupon.id}
+              coupon={coupon}
+              index={i}
+              claiming={claimingId === coupon.id}
+              onClaim={() => handleClaim(coupon)}
+            />
+          ))}
+        </AnimatePresence>
+      </div>
     </StoreAccountLayout>
   );
 }
@@ -248,6 +341,7 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
     >
       <PremiumCouponCard
         colorScheme="invite"
+        infoFieldOrder="thresholdFirst"
         title={coupon.title}
         amountPrefix={coupon.amountPrefix}
         amount={coupon.amount}

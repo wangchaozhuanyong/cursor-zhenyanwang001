@@ -84,7 +84,7 @@ function AdminTitleSync() {
   const { t } = useAdminTOptional();
 
   useEffect(() => {
-    const siteName = (siteInfo.siteName || "Flashcast").trim();
+    const siteName = (siteInfo.siteName || "大马通").trim();
     const routeTitleMap: Array<{ test: (path: string) => boolean; titleKey: string }> = [
       { test: (p) => p === "/admin" || p === "/admin/", titleKey: "routeTitles.admin" },
       { test: (p) => p === "/admin/account", titleKey: "routeTitles.account" },

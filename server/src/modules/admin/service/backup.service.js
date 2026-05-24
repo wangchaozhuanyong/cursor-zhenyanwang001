@@ -29,8 +29,18 @@ function runDetachedScript(scriptRelativePath, args = [], env = {}) {
   child.unref();
 }
 
+function classifyBackupAlertReason(message = '') {
+  const text = String(message || '').toLowerCase();
+  if (/low disk space|enospc|no space|disk/i.test(text)) return 'disk_space';
+  if (/eacces|permission|access denied|denied|read.*dir|mysql.*dir/i.test(text)) return 'permission';
+  if (/s3|bucket|object storage|upload/i.test(text)) return 'object_storage';
+  if (/no successful full backup|no full backup/i.test(text)) return 'missing_full_backup';
+  return 'generic';
+}
+
 async function emitBackupAlert(alert) {
   const id = generateId();
+  const reason = classifyBackupAlertReason(alert.message);
   await repo.insertAlert({ id, ...alert });
   try {
     await require('./adminEvent.service').emitEvent({
@@ -40,8 +50,13 @@ async function emitBackupAlert(alert) {
       title: alert.title,
       message: alert.message || '',
       entityType: 'backup',
-      entityId: alert.relatedJobId || alert.relatedFileId || id,
-      payload: alert,
+      entityId: `${alert.alertType}:${reason}`,
+      fingerprint: {
+        eventType: `backup.${alert.alertType}`,
+        entityType: 'backup',
+        entityId: `${alert.alertType}:${reason}`,
+      },
+      payload: { ...alert, reason },
       source: 'backup_center',
     }, { operatorType: 'system' });
   } catch (err) {

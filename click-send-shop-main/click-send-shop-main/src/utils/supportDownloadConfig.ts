@@ -86,6 +86,25 @@ function trim(value?: string) {
   return String(value || "").trim();
 }
 
+/** 字段未配置时用默认值；显式空字符串保留为空（与后台清空说明一致） */
+export function resolveOptionalConfigText(
+  value: string | undefined | null,
+  fallback: string,
+): string {
+  if (value === undefined || value === null) return fallback;
+  return trim(value);
+}
+
+function resolveFromSources(
+  sources: Array<string | undefined | null>,
+  fallback: string,
+): string {
+  for (const source of sources) {
+    if (source !== undefined && source !== null) return trim(source);
+  }
+  return fallback;
+}
+
 export function normalizeChannel(
   channel: Partial<SupportDownloadChannel> & { type?: string },
   index: number,
@@ -123,7 +142,7 @@ export function normalizePlatform(
     type,
     enabled,
     title: trim(platform.title) || fallback.title,
-    description: trim(platform.description) || fallback.description,
+    description: resolveOptionalConfigText(platform.description, fallback.description),
     buttonText: trim(platform.buttonText) || fallback.buttonText,
     instructions: Array.isArray(platform.instructions) && platform.instructions.length > 0
       ? platform.instructions.map(trim).filter(Boolean)
@@ -148,22 +167,29 @@ export function normalizeSupportDownloadConfig(config: LegacySupportDownloadConf
 
   return {
     enabled: config.enabled !== false,
-    title: trim(config.title) || DEFAULT_SUPPORT_DOWNLOAD_CONFIG.title,
-    subtitle: trim(config.subtitle) || DEFAULT_SUPPORT_DOWNLOAD_CONFIG.subtitle,
+    title: resolveOptionalConfigText(config.title, DEFAULT_SUPPORT_DOWNLOAD_CONFIG.title),
+    subtitle: resolveOptionalConfigText(config.subtitle, DEFAULT_SUPPORT_DOWNLOAD_CONFIG.subtitle),
     defaultTab: config.defaultTab === "download" ? "download" : "support",
     support: {
       enabled: config.support?.enabled !== false,
-      title: trim(config.support?.title) || DEFAULT_SUPPORT_DOWNLOAD_CONFIG.support.title,
-      description: trim(config.support?.description ?? config.supportDescription)
-        || DEFAULT_SUPPORT_DOWNLOAD_CONFIG.support.description,
+      title: resolveOptionalConfigText(config.support?.title, DEFAULT_SUPPORT_DOWNLOAD_CONFIG.support.title),
+      description: resolveFromSources(
+        [config.support?.description, config.supportDescription],
+        DEFAULT_SUPPORT_DOWNLOAD_CONFIG.support.description,
+      ),
       workingHours: trim(config.support?.workingHours ?? config.workingHours),
       channels: channels ?? [],
     },
     download: {
       enabled: config.download?.enabled !== false && config.showAppInstall !== false,
-      title: trim(config.download?.title ?? config.appInstallTitle) || DEFAULT_SUPPORT_DOWNLOAD_CONFIG.download.title,
-      description: trim(config.download?.description ?? config.appInstallDescription)
-        || DEFAULT_SUPPORT_DOWNLOAD_CONFIG.download.description,
+      title: resolveFromSources(
+        [config.download?.title, config.appInstallTitle],
+        DEFAULT_SUPPORT_DOWNLOAD_CONFIG.download.title,
+      ),
+      description: resolveFromSources(
+        [config.download?.description, config.appInstallDescription],
+        DEFAULT_SUPPORT_DOWNLOAD_CONFIG.download.description,
+      ),
       platforms: platforms?.length ? platforms : DEFAULT_PLATFORMS,
     },
   };

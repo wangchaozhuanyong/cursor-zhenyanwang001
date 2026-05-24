@@ -66,23 +66,44 @@ async function selectAdminStats() {
   return result;
 }
 
-async function countTransactions(userId, type) {
+async function countTransactions(userId, type, category) {
   let where = 'WHERE user_id = ?';
   const params = [userId];
   if (type) {
     where += ' AND type = ?';
     params.push(type);
+  } else if (category) {
+    const filter = buildTransactionCategoryFilter(category);
+    where += ` AND ${filter.clause}`;
+    params.push(...filter.params);
   }
   const [[{ total }]] = await db.query(`SELECT COUNT(*) AS total FROM reward_transactions ${where}`, params);
   return total;
 }
 
-async function selectTransactionsPage(userId, type, pageSize, offset) {
+function buildTransactionCategoryFilter(category) {
+  switch (String(category || '').toLowerCase()) {
+    case 'income':
+      return { clause: "type IN ('settle')", params: [] };
+    case 'spend':
+      return { clause: "type IN ('wallet_redeem_order')", params: [] };
+    case 'reverse':
+      return { clause: "type IN ('reverse', 'wallet_redeem_refund')", params: [] };
+    default:
+      return { clause: '1=1', params: [] };
+  }
+}
+
+async function selectTransactionsPage(userId, type, pageSize, offset, category) {
   let where = 'WHERE user_id = ?';
   const params = [userId];
   if (type) {
     where += ' AND type = ?';
     params.push(type);
+  } else if (category) {
+    const filter = buildTransactionCategoryFilter(category);
+    where += ` AND ${filter.clause}`;
+    params.push(...filter.params);
   }
   const [rows] = await db.query(
     `SELECT * FROM reward_transactions ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
@@ -156,7 +177,7 @@ async function insertSettlementRecord(conn, params) {
     );
     return result.affectedRows > 0;
   } catch (err) {
-    /* �?uk_reward_settle_once 骞跺彂鏃讹細棰勬涓?INSERT 涔嬮棿鍙︿竴浜嬪姟鍙兘宸插啓鍏?*/
+    /* ??uk_reward_settle_once ???????????????????INSERT ?????????????????????????????*/
     if (err && (err.code === 'ER_DUP_ENTRY' || err.errno === 1062)) return false;
     throw err;
   }
@@ -243,11 +264,18 @@ async function selectBalanceSummary(userId) {
        COALESCE(SUM(CASE WHEN status = 'success' OR (type = 'withdraw_request' AND status = 'pending') THEN amount ELSE 0 END), 0) AS balance,
        COALESCE(SUM(CASE WHEN type = 'withdraw_request' AND status = 'pending' THEN ABS(amount) ELSE 0 END), 0) AS pendingWithdraw,
        COALESCE(SUM(CASE WHEN type = 'settle' AND status = 'success' THEN amount ELSE 0 END), 0) AS settledAmount,
-       COALESCE(SUM(CASE WHEN type = 'reverse' AND status = 'success' THEN ABS(amount) ELSE 0 END), 0) AS reversedAmount
+       COALESCE(SUM(CASE WHEN type IN ('reverse') AND status = 'success' THEN ABS(amount) ELSE 0 END), 0) AS reversedAmount,
+       COALESCE(SUM(CASE WHEN type IN ('wallet_redeem_order') AND status = 'success' THEN ABS(amount) ELSE 0 END), 0) AS totalSpent,
+       COALESCE(SUM(CASE WHEN type = 'settle' AND status = 'pending' THEN amount ELSE 0 END), 0) AS pendingAmount
      FROM reward_transactions WHERE user_id = ?`,
     [userId],
   );
   return result;
+}
+
+async function selectRewardUsageSettings() {
+  const [rows] = await db.query('SELECT * FROM reward_usage_settings WHERE id = 1 LIMIT 1');
+  return rows[0] || null;
 }
 
 async function countRecordsLegacy(userId, status) {
@@ -314,6 +342,8 @@ module.exports = {
   sumAvailableForWithdraw,
   insertWithdrawRecord,
   selectBalanceSummary,
+  selectRewardUsageSettings,
+  buildTransactionCategoryFilter,
 };
 
 

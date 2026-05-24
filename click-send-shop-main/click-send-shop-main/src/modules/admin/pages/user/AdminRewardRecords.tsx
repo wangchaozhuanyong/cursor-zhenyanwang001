@@ -7,8 +7,9 @@ import Pagination from "@/components/admin/Pagination";
 import PermissionGate from "@/components/admin/PermissionGate";
 import { fetchAdminRewardRecords } from "@/services/admin/rewardService";
 import { fetchReferralRules, updateReferralRule } from "@/services/admin/inviteService";
+import { fetchRewardSettings, saveRewardSettings } from "@/services/admin/rewardSettingsService";
 import type { ReferralRule, ReferralRuleEditRow } from "@/types/invite";
-import type { RewardRecord, RewardStats, RewardStatus } from "@/types/reward";
+import type { RewardRecord, RewardStats, RewardStatus, RewardUsageSettings } from "@/types/reward";
 import { toast } from "sonner";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { formatUserDisplay } from "@/utils/adminDisplayLabels";
@@ -91,7 +92,12 @@ export default function AdminRewardRecords() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [rulesSaving, setRulesSaving] = useState(false);
+  const [displaySaving, setDisplaySaving] = useState(false);
   const [rules, setRules] = useState<ReferralRuleEditRow[]>([]);
+  const [displaySettings, setDisplaySettings] = useState<RewardUsageSettings>({
+    balanceLabel: "购物可用返现",
+    usageNotice: "返现金额仅可用于购物，不可提现。",
+  });
 
   const queryParams = useMemo(
     () => ({ page, pageSize, keyword, status: status || undefined }),
@@ -111,16 +117,28 @@ export default function AdminRewardRecords() {
     staleTime: 60_000,
   });
 
+  const displayQuery = useQuery({
+    queryKey: adminQueryKeys.rewardSettings(),
+    queryFn: fetchRewardSettings,
+    staleTime: 60_000,
+  });
+
   const records = listQuery.data?.list ?? [];
   const stats = listQuery.data?.stats ?? emptyStats;
   const total = listQuery.data?.total ?? 0;
   const loading = listQuery.isLoading && !listQuery.data;
   const rulesLoading = rulesQuery.isLoading && !rulesQuery.data;
+  const displayLoading = displayQuery.isLoading && !displayQuery.data;
 
   useEffect(() => {
     if (!rulesQuery.data) return;
     setRules(normalizeReferralRules(rulesQuery.data));
   }, [rulesQuery.data]);
+
+  useEffect(() => {
+    if (!displayQuery.data) return;
+    setDisplaySettings(displayQuery.data);
+  }, [displayQuery.data]);
 
   const updateRuleField = (id: string, field: "rewardPercent" | "enabled", value: number | boolean) => {
     setRules((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
@@ -142,6 +160,19 @@ export default function AdminRewardRecords() {
       toast.error(toastErrorMessage(e, "保存返现规则失败"));
     } finally {
       setRulesSaving(false);
+    }
+  };
+
+  const saveDisplaySettings = async () => {
+    setDisplaySaving(true);
+    try {
+      await saveRewardSettings(displaySettings);
+      toast.success(tText("前台展示设置已保存"));
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.rewardSettings() });
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "保存展示设置失败"));
+    } finally {
+      setDisplaySaving(false);
     }
   };
 
@@ -289,6 +320,55 @@ export default function AdminRewardRecords() {
               ><Tx>
                 保存返现规则
               </Tx></LoadingButton>
+            </PermissionGate>
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-xl border border-[var(--theme-border)] bg-theme-surface p-4 theme-shadow">
+        <div className="mb-3">
+          <h2 className="text-sm font-semibold text-[var(--theme-text-on-surface)]"><Tx>前台展示设置</Tx></h2>
+          <p className="text-xs text-theme-muted"><Tx>配置用户返现记录页的余额标签与使用说明，保存后立即生效。</Tx></p>
+        </div>
+        {displayLoading ? (
+          <div className="space-y-3">
+            <div className="skeleton-base skeleton-shimmer h-10 w-full rounded-lg" />
+            <div className="skeleton-base skeleton-shimmer h-20 w-full rounded-lg" />
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <label className="grid gap-1">
+              <span className="text-xs font-medium text-theme-muted"><Tx>余额标签</Tx></span>
+              <input
+                value={displaySettings.balanceLabel}
+                onChange={(e) => setDisplaySettings((prev) => ({ ...prev, balanceLabel: e.target.value }))}
+                className="rounded-lg border border-[var(--theme-border)] bg-theme-surface px-3 py-2.5 text-sm text-[var(--theme-text-on-surface)] outline-none"
+                placeholder={tText("购物可用返现")}
+              />
+            </label>
+            <label className="grid gap-1">
+              <span className="text-xs font-medium text-theme-muted"><Tx>使用说明</Tx></span>
+              <textarea
+                value={displaySettings.usageNotice}
+                onChange={(e) => setDisplaySettings((prev) => ({ ...prev, usageNotice: e.target.value }))}
+                rows={3}
+                className="rounded-lg border border-[var(--theme-border)] bg-theme-surface px-3 py-2.5 text-sm text-[var(--theme-text-on-surface)] outline-none"
+                placeholder={tText("返现金额仅可用于购物，不可提现。")}
+              />
+            </label>
+            <div className="rounded-lg border border-dashed border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))] px-3 py-2.5 text-xs text-theme-muted">
+              <p className="font-medium text-[var(--theme-text-on-surface)]">{displaySettings.balanceLabel || tText("购物可用返现")}</p>
+              <p className="mt-1">{displaySettings.usageNotice || tText("返现金额仅可用于购物，不可提现。")}</p>
+            </div>
+            <PermissionGate permission="referral.manage">
+              <LoadingButton
+                type="button"
+                variant="gold"
+                state={displaySaving ? "loading" : "normal"}
+                loadingText="保存中..."
+                onClick={() => void saveDisplaySettings()}
+                className="rounded-lg px-4 py-2 text-xs font-semibold"
+              ><Tx>保存展示设置</Tx></LoadingButton>
             </PermissionGate>
           </div>
         )}
